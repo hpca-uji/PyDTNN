@@ -73,14 +73,14 @@ class BatchNormalizationPycuda(BatchNormalization[TensorGPU], LayerPycuda):
         self.beta = TensorGPU(beta_gpu, self.model.tensor_format, self.model.cudnn_dtype)
         self.memory_used += self.beta.nbytes
 
-        self.dgamma_cpu, self.dgamma = TensorGPU.initialize(self.gamma.ary.shape, self.model.dtype,
+        self.dgamma_cpu, self.dgamma = TensorGPU.new(self.gamma.ary.shape, self.model.dtype,
                                                             tensor_format=self.model.tensor_format,
                                                             cudnn_dtype=self.model.cudnn_dtype,
                                                             gpudirect=self.model.gpudirect,
                                                             drv=(drv if self.model.gpudirect else None))
         self.memory_used += self.dgamma.nbytes
 
-        self.dbeta_cpu, self.dbeta = TensorGPU.initialize(self.beta.ary.shape, self.model.dtype,
+        self.dbeta_cpu, self.dbeta = TensorGPU.new(self.beta.ary.shape, self.model.dtype,
                                                           tensor_format=self.model.tensor_format,
                                                           cudnn_dtype=self.model.cudnn_dtype,
                                                           gpudirect=self.model.gpudirect,

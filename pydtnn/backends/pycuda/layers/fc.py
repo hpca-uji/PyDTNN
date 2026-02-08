@@ -78,7 +78,7 @@ class FCPycuda(FC[TensorGPU], LayerPycuda):
         self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
         self.memory_used += self.dx.nbytes
 
-        self.dw_cpu, self.dw = TensorGPU.initialize(self.weights.ary.shape, self.model.dtype,
+        self.dw_cpu, self.dw = TensorGPU.new(self.weights.ary.shape, self.model.dtype,
                                                     tensor_format=self.model.tensor_format,
                                                     cudnn_dtype=self.model.cudnn_dtype,
                                                     gpudirect=self.model.gpudirect,
@@ -87,7 +87,7 @@ class FCPycuda(FC[TensorGPU], LayerPycuda):
 
         if self.use_bias:
             self.biases: TensorGPU
-            self.db_cpu, self.db = TensorGPU.initialize(self.biases.ary.shape, self.model.dtype,
+            self.db_cpu, self.db = TensorGPU.new(self.biases.ary.shape, self.model.dtype,
                                                         tensor_format=self.model.tensor_format,
                                                         cudnn_dtype=self.model.cudnn_dtype,
                                                         gpudirect=self.model.gpudirect,

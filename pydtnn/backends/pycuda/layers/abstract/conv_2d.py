@@ -63,14 +63,14 @@ class AbstractConv2DPycuda(Conv2D[TensorGPU], LayerPycuda):
             _drv = None
 
         # Derivative dw and derivative db
-        self.dw_cpu, self.dw = TensorGPU.initialize(self.weights.ary.shape, self.model.dtype, tensor_format=self.model.tensor_format,
+        self.dw_cpu, self.dw = TensorGPU.new(self.weights.ary.shape, self.model.dtype, tensor_format=self.model.tensor_format,
                                                     cudnn_dtype=self.model.cudnn_dtype, gpudirect=self.model.gpudirect,
                                                     tensor_type=TensorGPU.TensorTypeEnum.FILTER, drv=_drv)
         self.memory_used += self.dw.nbytes
 
         if self.use_bias:
             self.biases: TensorGPU
-            self.db_cpu, self.db = TensorGPU.initialize(self.biases.ary.shape, self.model.dtype, tensor_format=self.model.tensor_format,
+            self.db_cpu, self.db = TensorGPU.new(self.biases.ary.shape, self.model.dtype, tensor_format=self.model.tensor_format,
                                                         cudnn_dtype=self.model.cudnn_dtype, gpudirect=self.model.gpudirect,
                                                         tensor_type=bias_tensor_type, drv=_drv)
             self.memory_used += self.db.nbytes
