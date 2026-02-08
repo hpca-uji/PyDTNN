@@ -21,8 +21,8 @@ class Conv2DDepthwisePycuda(AbstractConv2DPycuda):
         # Setting weights
         self.weights_shape = (1, self.ci, *self.filter_shape)
 
-    def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
+        super()._model_init(prev_shape, x)
 
         func_name: str = ""
         macros: str = ""
@@ -49,11 +49,11 @@ class Conv2DDepthwisePycuda(AbstractConv2DPycuda):
 
         y_gpu = gpuarray.zeros((self.model.batch_size, *self.shape), self.model.dtype)
         self.y = TensorGPU(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
-        self.real_memory_size += self.y.nbytes
+        self.memory_used += self.y.nbytes
 
         dx_gpu = gpuarray.zeros((self.model.batch_size, *self.shape), self.model.dtype)
         self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
-        self.real_memory_size += self.dx.nbytes
+        self.memory_used += self.dx.nbytes
 
         self.fwd_func: Function = self.cuda_depthwise_conv_2d_fwd(func_name.format(fwd_bwd="fwd"), macros)
         self.bwd_func: Function = self.cuda_depthwise_conv_2d_bwd(func_name.format(fwd_bwd="bwd"), macros)

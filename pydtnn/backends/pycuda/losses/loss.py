@@ -18,8 +18,8 @@ class LossPycuda(Loss[TensorGPU]):
         self.grid = None
         self.block = None
 
-    def initialize(self) -> None:
-        super().initialize()
+    def _model_init(self) -> None:
+        super()._model_init()
         # NOTE: the model must be executed before this one.
         self.grid = self.model.cuda_grid
         self.block = self.model.cuda_block
@@ -28,7 +28,7 @@ class LossPycuda(Loss[TensorGPU]):
         self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
         self.kernel = self.__init_gpu_kernel__()
 
-        self.real_memory_size += self.dx.nbytes + self.loss.nbytes
+        self.memory_used += self.dx.nbytes + self.loss.nbytes
 
     def __init_gpu_kernel__(self) -> Function:
         raise NotImplementedError()

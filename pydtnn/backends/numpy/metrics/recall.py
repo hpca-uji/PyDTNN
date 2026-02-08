@@ -13,16 +13,16 @@ class RecallNumpy(Recall[np.ndarray], MetricNumpy):
 
     conf_matrix_metric: BinaryConfusionMatrixNumpy
 
-    def initialize(self) -> None:
-        super().initialize()
+    def _model_init(self) -> None:
+        super()._model_init()
         self.temp_var_shape = (self.shape[1], )
-        self.temp_memory_size += int(2 * np.prod(self.temp_var_shape)) * np.float32().itemsize
-        self.temp_memory_size += int(1 * np.prod(self.temp_var_shape)) * np.bool().itemsize
-        self.real_memory_size += self.temp_memory_size
+        self.tmp_memory_used += int(2 * np.prod(self.temp_var_shape)) * np.float32().itemsize
+        self.tmp_memory_used += int(1 * np.prod(self.temp_var_shape)) * np.bool().itemsize
+        self.memory_used += self.tmp_memory_used
     # ----
 
-    def post_initialize(self) -> None:
-        super().post_initialize()
+    def _post_init(self) -> None:
+        super()._post_init()
         with self.model.memory:
             self.true_positives = self.model.memory.ndarray(self.temp_var_shape, dtype=np.float32)
             self.false_negatives = self.model.memory.ndarray(self.temp_var_shape, dtype=np.float32)

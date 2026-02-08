@@ -17,12 +17,12 @@ class MetricPycuda(Metric[TensorGPU]):
         self.grid = None
         self.block = None
 
-    def initialize(self) -> None:
-        super().initialize()
-        self.kernel = self.__init_gpu_kernel__()
+    def _model_init(self) -> None:
+        super()._model_init()
+        self.kernel = self._kernel_init()
 
         self.grid = self.model.cuda_grid
         self.block = self.model.cuda_block
 
-    def __init_gpu_kernel__(self) -> Function:
+    def _kernel_init(self) -> Function:
         raise NotImplementedError()

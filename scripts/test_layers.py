@@ -96,7 +96,7 @@ def test_keras(_x: np.ndarray):
     model.add(Input(SHAPE))
     model.add(Conv2D(nfilters=3))
     model.mode = Model.Mode.TRAIN
-    model._initialize()
+    model._model_init()
 
     x = np.copy(_x)
 
@@ -121,8 +121,8 @@ def test_layers_activations(_x: np.ndarray, opt: Optimizer) -> None:
                 model.add(Flatten())
             model.add(test_elem)
             model.mode = Model.Mode.TRAIN
-            model._initialize()
-            opt.initialize(model.get_all_layers(model.layers))
+            model._model_init()
+            opt._model_init(model.get_all_layers(model.layers))
 
             x = np.copy(_x)
 
@@ -174,8 +174,8 @@ def test_add_concat(_x: np.ndarray, opt: Optimizer) -> None:
         model.add(Input(SHAPE))
         model.add(layer)
         model.mode = Model.Mode.TRAIN
-        model._initialize()
-        opt.initialize(model.get_all_layers(model.layers))
+        model._model_init()
+        opt._model_init(model.get_all_layers(model.layers))
 
         x = np.copy(_x)
         t_forward = 0

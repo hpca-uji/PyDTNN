@@ -59,8 +59,8 @@ class NadamPycuda(Nadam[TensorGPU], OptimizerPycuda):
         self.update_gpudirect = SourceModule(code).get_function(_name)
         # -----------
 
-    def initialize(self, list_layers: list[LayerPycuda]) -> None:
-        super().initialize(list_layers)  # type: ignore (The type is correct: LayerPycuda extends LayerBase)
+    def _model_init(self, list_layers: list[LayerPycuda]) -> None:
+        super()._model_init(list_layers)  # type: ignore (The type is correct: LayerPycuda extends LayerBase)
         self.get_pycuda_kernel()
 
         for layer in list_layers:
@@ -72,7 +72,7 @@ class NadamPycuda(Nadam[TensorGPU], OptimizerPycuda):
                 self.context[layer.id]["m_%s" % w_] = gpuarray.zeros_like(w.ary, dtype=layer.model.dtype)
                 self.context[layer.id]["v_%s" % w_] = gpuarray.zeros_like(w.ary, dtype=layer.model.dtype)
 
-                self.real_memory_size += self.context[layer.id]["m_%s" % w_].nbytes + self.context[layer.id]["v_%s" % w_].nbytes  # type: ignore (They are both "gpuarray" and not "int")
+                self.memory_used += self.context[layer.id]["m_%s" % w_].nbytes + self.context[layer.id]["v_%s" % w_].nbytes  # type: ignore (They are both "gpuarray" and not "int")
 
     def update(self, layer: LayerPycuda) -> None:
         self.context[layer]["it"] += 1  # type: ignore (self.context[layer]["it"] is always an integer)

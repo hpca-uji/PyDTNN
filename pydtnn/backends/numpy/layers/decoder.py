@@ -30,34 +30,34 @@ class DecoderNumpy(Decoder[np.ndarray], AbstractBlockLayerNumpy):
         self.paths = [[self.multiheadattention, self.layernormalization_1, self.multiheadattention_enc,
                        self.layernormalization_enc, self.feedforward, self.dropout_2, self.layernormalization_2]]
 
-    def initialize(self, prev_shape, x):
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape, x):
+        super()._model_init(prev_shape, x)
         x_dec, x_enc, mask_dec = x if x else (None, None, None)
         x_dec_shape, x_enc_shape, mask_dec_shape = prev_shape
         mha_shape = (x_dec_shape, mask_dec_shape)
 
         # Initialize all sublayers
         for layer in self.children:
-            layer.init_backend_with_model(self.model)
+            layer._init_backend_with_model(self.model)
 
-        self.multiheadattention.initialize(prev_shape=mha_shape, x=(x_dec, x_dec, x_dec, mask_dec))
-        self.layernormalization_1.initialize(prev_shape=self.shape, x=self.multiheadattention.y)
-        self.multiheadattention_enc.initialize(prev_shape=mha_shape, x=(x_dec, x_enc, x_enc, mask_dec))
+        self.multiheadattention._model_init(prev_shape=mha_shape, x=(x_dec, x_dec, x_dec, mask_dec))
+        self.layernormalization_1._model_init(prev_shape=self.shape, x=self.multiheadattention.y)
+        self.multiheadattention_enc._model_init(prev_shape=mha_shape, x=(x_dec, x_enc, x_enc, mask_dec))
         # self.dropout_enc.initialize(prev_shape=prev_shape, x=self.multiheadattention_enc.y)
-        self.layernormalization_enc.initialize(prev_shape=self.shape, x=self.multiheadattention_enc.y)
+        self.layernormalization_enc._model_init(prev_shape=self.shape, x=self.multiheadattention_enc.y)
 
         # x_aux = self.flatten(self.layernormalization_enc.y)
         self.layernormalization_enc_y_flatten = None  # x_aux.copy()
 
-        self.feedforward.initialize(prev_shape=self.layernormalization_enc.shape, x=self.layernormalization_enc_y_flatten)
+        self.feedforward._model_init(prev_shape=self.layernormalization_enc.shape, x=self.layernormalization_enc_y_flatten)
         # x_aux = self.unflatten(self.feedforward.y)
         self.feedforward_y_unflatten = None  # x_aux.copy()
         # x_aux = self.unflatten(self.feedforward.dx)
         self.feedforward_dx_unflatten = None  # x_aux.copy()
 
-        self.dropout_2.initialize(prev_shape=self.feedforward.shape, x=self.feedforward_y_unflatten)
+        self.dropout_2._model_init(prev_shape=self.feedforward.shape, x=self.feedforward_y_unflatten)
 
-        self.layernormalization_2.initialize(prev_shape=self.dropout_2.shape, x=self.dropout_2.y)
+        self.layernormalization_2._model_init(prev_shape=self.dropout_2.shape, x=self.dropout_2.y)
 
         self.y = self.layernormalization_2.y
 

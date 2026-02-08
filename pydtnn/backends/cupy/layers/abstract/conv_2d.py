@@ -17,8 +17,8 @@ class Conv2DCUPY(Conv2D[np.ndarray], LayerCUPY):
         self.bwd_time = None  # type: ignore
     # ----
 
-    def initialize(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
+        super()._model_init(prev_shape, x)
         if self.use_bias:
             bias_shape = (self.co,)  # NOTE: Is the same shape in every variant and grouping
             self.biases = self.biases_initializer(bias_shape, self.model.dtype)

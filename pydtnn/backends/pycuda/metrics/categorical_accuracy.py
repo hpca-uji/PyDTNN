@@ -11,11 +11,11 @@ from pydtnn.utils.constants import DTYPE2CTYPE
 
 class CategoricalAccuracyPycuda(CategoricalAccuracy[TensorGPU], MetricPycuda):
 
-    def initialize(self) -> None:
-        super().initialize()
+    def _model_init(self) -> None:
+        super()._model_init()
         self.cost = gpuarray.empty((self.model.batch_size,), self.model.dtype)
 
-    def __init_gpu_kernel__(self) -> Function:
+    def _kernel_init(self) -> Function:
         _name = "categorical_accuracy"
         code = """
         __global__ void {name} ({T} *y_targ, {T} *y_pred, {T} *res, int b, int n)

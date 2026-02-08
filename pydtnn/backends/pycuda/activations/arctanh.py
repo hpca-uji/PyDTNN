@@ -16,8 +16,8 @@ class ArctanhPycuda(Arctanh[TensorGPU], ActivationPycuda):
         self.atanh: ElementwiseKernel = None
         self.datanh: ElementwiseKernel = None
 
-    def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
+        super()._model_init(prev_shape, x)
 
         self.atanh = ElementwiseKernel(
             "{T} *in, {T} *out".format(T=DTYPE2CTYPE[self.model.dtype]),
@@ -37,7 +37,7 @@ class ArctanhPycuda(Arctanh[TensorGPU], ActivationPycuda):
         dx_gpu = gpuarray.empty(x.ary.shape, self.model.dtype)
         self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
-        self.real_memory_size += self.y.nbytes + self.dx.nbytes
+        self.memory_used += self.y.nbytes + self.dx.nbytes
 
     def forward(self, x: TensorGPU) -> TensorGPU:
         self.atanh(x.ary, self.y.ary, stream=self.model.stream)

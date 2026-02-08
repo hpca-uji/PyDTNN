@@ -9,19 +9,19 @@ from pydtnn.metrics.categorical_hinge import CategoricalHinge
 
 class CategoricalHingeNumpy(CategoricalHinge[np.ndarray], MetricNumpy):
 
-    def initialize(self) -> None:
-        super().initialize()
+    def _model_init(self) -> None:
+        super()._model_init()
 
         self._pos_shape = self.shape
         self._neg_shape = self.shape
         self.pos_maxm_shape = (self.model.batch_size, )
         self.neg_shape = (self.model.batch_size, )
-        self.temp_memory_size += int(np.prod(self._pos_shape) + np.prod(self._neg_shape) + np.prod(self.pos_maxm_shape) + np.prod(self.neg_shape)) * self.model.dtype.itemsize
-        self.real_memory_size += self.temp_memory_size
+        self.tmp_memory_used += int(np.prod(self._pos_shape) + np.prod(self._neg_shape) + np.prod(self.pos_maxm_shape) + np.prod(self.neg_shape)) * self.model.dtype.itemsize
+        self.memory_used += self.tmp_memory_used
     # ----
 
-    def post_initialize(self) -> None:
-        super().post_initialize()
+    def _post_init(self) -> None:
+        super()._post_init()
         with self.model.memory:
             self._pos = self.model.memory.ndarray(self._pos_shape, dtype=self.model.dtype)
             self._neg = self.model.memory.ndarray(self._neg_shape, dtype=self.model.dtype)

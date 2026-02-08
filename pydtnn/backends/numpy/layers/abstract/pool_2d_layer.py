@@ -14,8 +14,8 @@ class AbstractPool2DLayerNumpy(AbstractPool2DLayer[np.ndarray], LayerNumpy):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def initialize(self, prev_shape: ArrayShape, x: np.ndarray | None = None):
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None):
+        super()._model_init(prev_shape, x)
 
         match self.model.tensor_format:
             case TensorFormat.NCHW:
@@ -47,7 +47,7 @@ class AbstractPool2DLayerNumpy(AbstractPool2DLayer[np.ndarray], LayerNumpy):
             # self.real_memory_size += self.dx.nbytes
         self.y_dx = np.zeros(shape=(max(self.y_size, self.dx_size), ), dtype=self.model.dtype)
         # NOTE: self.y_dx stores both y and dx values.
-        self.real_memory_size += self.y_dx.nbytes
+        self.memory_used += self.y_dx.nbytes
 
         self.fwd_time = \
             im2col_time(m=(self.kh * self.kw), n=(self.model.batch_size * self.ho * self.wo * self.ci),

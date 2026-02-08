@@ -6,8 +6,8 @@ from pydtnn.backends.pycuda.utils.tensor_gpu import TensorGPU
 
 class FlattenPycuda(Flatten[TensorGPU], LayerPycuda):
 
-    def initialize(self, prev_shape, x):
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape, x):
+        super()._model_init(prev_shape, x)
         self.y = x  # type: ignore (it's okay)
 
     def forward(self, x: TensorGPU) -> TensorGPU:

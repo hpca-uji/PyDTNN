@@ -57,8 +57,8 @@ class Conv2DPointwiseNumpy(AbstractConv2DNumpy, Conv2DPointwise):
         # --
     # ---
 
-    def initialize(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
+        super()._model_init(prev_shape, x)
         match self.model.tensor_format:
             case TensorFormat.NCHW:
                 self.forward = self._forward_nchw
@@ -71,11 +71,11 @@ class Conv2DPointwiseNumpy(AbstractConv2DNumpy, Conv2DPointwise):
         # NOTE: These attributes only store data, their values before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
         # self.dw (this one too, but it's initalized in Conv2DNumpy)
         self.y = np.zeros(shape=y_shape, dtype=self.model.dtype)
-        self.real_memory_size += self.y.nbytes
+        self.memory_used += self.y.nbytes
 
         if not self.model.evaluate_only:
             self.dx = np.zeros(shape=(self.ci, self.model.batch_size * self.hi * self.wi), dtype=self.model.dtype)
-            self.real_memory_size += self.dx.nbytes
+            self.memory_used += self.dx.nbytes
     # ------
 
     def _forward_nhwc(self, x: np.ndarray) -> np.ndarray:

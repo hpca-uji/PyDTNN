@@ -76,19 +76,19 @@ def main():
     model_RELU.add(Input(SHAPE, is_shape_in_format=True))
     model_RELU.add(LeakyRelu(negative_slope=-32))
     model_RELU.add(Relu6())
-    model_RELU._initialize()
+    model_RELU._model_init()
 
     model_DEPTH.add(Input(SHAPE, is_shape_in_format=True))
     model_DEPTH.add(Conv2DDepthwise(nfilters=CONV_OUT_CHANNELS, filter_shape=CONV_KERNEL_SIZE, use_bias=use_bias))
-    model_DEPTH._initialize()
+    model_DEPTH._model_init()
 
     model_POINT.add(Input(SHAPE, is_shape_in_format=True))
     model_POINT.add(Conv2DPointwise(nfilters=CONV_OUT_CHANNELS, filter_shape=CONV_KERNEL_SIZE, use_bias=use_bias))
-    model_POINT._initialize()
+    model_POINT._model_init()
 
     model_I2C.add(Input(SHAPE, is_shape_in_format=True))
     model_I2C.add(Conv2D(nfilters=CONV_OUT_CHANNELS, filter_shape=CONV_KERNEL_SIZE, use_bias=use_bias))
-    model_I2C._initialize()
+    model_I2C._model_init()
 
     for name, model in models:
         print(f"{name}")

@@ -13,8 +13,8 @@ from pydtnn.utils.tensor import TensorFormat, format_transpose
 
 class Conv2DNumpy(AbstractConv2DStandardNumpy):
 
-    def initialize(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
+        super()._model_init(prev_shape, x)
 
         # dim_n: Dimension where the "n" of NCHW/NHWC is used in the calculations.
         # self.dim_c: Dimension where the "c" of NCHW/NHWC is used in the calculations.
@@ -57,13 +57,13 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
         # NOTE: These attributes only store data, their values before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
         self.temp_c_r_dx = np.zeros(shape=(max(np.prod(self._x_cr_shape), self.dx_shape_size), ), dtype=self.model.dtype)
         # self.temp_c_r_dx: Temporal array where the cols/rows and dx values are stored.
-        self.real_memory_size += self.temp_c_r_dx.nbytes
+        self.memory_used += self.temp_c_r_dx.nbytes
 
         self.temp_y_bc_br = np.zeros(shape=(max(self.y_size, self.temp_bw_shape_size), ), dtype=self.model.dtype)
         # self.temp_y_bc_br: Temporal array where the y and backward's cols/rows values are stored.
-        self.real_memory_size += self.temp_y_bc_br.nbytes
+        self.memory_used += self.temp_y_bc_br.nbytes
 
-        self.real_memory_size += self.temp_memory_size
+        self.memory_used += self.tmp_memory_used
     # ---
 
     def get_rows(self, batch_size: int) -> np.ndarray:

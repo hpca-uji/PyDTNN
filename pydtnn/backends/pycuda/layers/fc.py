@@ -53,37 +53,37 @@ class FCPycuda(FC[TensorGPU], LayerPycuda):
             case _:
                 return super()._export_prop(key)
 
-    def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
+        super()._model_init(prev_shape, x)
         self.stream_2 = drv.Stream()
 
         # Weights
         self.weights_cpu = self.weights_initializer(self.weights_shape, self.model.dtype)
         weights_gpu = gpuarray.to_gpu(self.weights_cpu)
         self.weights = TensorGPU(weights_gpu, self.model.tensor_format, self.model.cudnn_dtype)
-        self.real_memory_size += self.weights.nbytes
+        self.memory_used += self.weights.nbytes
 
         if self.use_bias:
             # Biases
             self.biases_cpu = self.biases_initializer((1, *self.shape), self.model.dtype)
             biases_gpu = gpuarray.to_gpu(self.biases_cpu)
             self.biases = TensorGPU(biases_gpu, self.model.tensor_format, self.model.cudnn_dtype)
-            self.real_memory_size += self.biases.nbytes
+            self.memory_used += self.biases.nbytes
 
         y_gpu = gpuarray.empty((self.model.batch_size, self.shape[0]), self.model.dtype)
         self.y = TensorGPU(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
-        self.real_memory_size += self.y.nbytes
+        self.memory_used += self.y.nbytes
 
         dx_gpu = gpuarray.empty((self.model.batch_size, *prev_shape), self.model.dtype)
         self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
-        self.real_memory_size += self.dx.nbytes
+        self.memory_used += self.dx.nbytes
 
         self.dw_cpu, self.dw = TensorGPU.initialize(self.weights.ary.shape, self.model.dtype,
                                                     tensor_format=self.model.tensor_format,
                                                     cudnn_dtype=self.model.cudnn_dtype,
                                                     gpudirect=self.model.gpudirect,
                                                     drv=(drv if self.model.gpudirect else None))
-        self.real_memory_size += self.dw.nbytes
+        self.memory_used += self.dw.nbytes
 
         if self.use_bias:
             self.biases: TensorGPU
@@ -92,10 +92,10 @@ class FCPycuda(FC[TensorGPU], LayerPycuda):
                                                         cudnn_dtype=self.model.cudnn_dtype,
                                                         gpudirect=self.model.gpudirect,
                                                         drv=(drv if self.model.gpudirect else None))
-            self.real_memory_size += self.db.nbytes 
+            self.memory_used += self.db.nbytes 
 
         self.one_vec_gpu = gpuarray.to_gpu(np.ones((self.model.batch_size,), self.model.dtype))
-        self.real_memory_size += self.one_vec_gpu.nbytes
+        self.memory_used += self.one_vec_gpu.nbytes
 
         self.nparams = self.weights.nbytes + (self.biases.nbytes if self.use_bias else 0)
 

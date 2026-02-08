@@ -12,14 +12,14 @@ from pydtnn.utils.constants import DTYPE2CTYPE
 
 class CategoricalHingePycuda(CategoricalHinge[TensorGPU], MetricPycuda):
 
-    def initialize(self) -> None:
-        super().initialize()
+    def _model_init(self) -> None:
+        super()._model_init()
         self.res = TensorGPU.create_zeros_tensor(shape=(1, ), dtype=np.dtype(self.model.dtype),
                                                  tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
         self.local_res = TensorGPU.create_zeros_tensor(shape=(self.model.batch_size, ), dtype=np.dtype(self.model.dtype),
                                                        tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
 
-    def __init_gpu_kernel__(self) -> Function:
+    def _kernel_init(self) -> Function:
         _name = "categorical_hinge"
         code = """
 

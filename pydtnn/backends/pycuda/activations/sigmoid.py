@@ -13,8 +13,8 @@ class SigmoidPycuda(Sigmoid[TensorGPU], ActivationPycuda):
         super().__init__(*args, **kwargs)
         self.act_desc = None
 
-    def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
+        super()._model_init(prev_shape, x)
 
         self.act_desc = cudnn.cudnnCreateActivationDescriptor()
 
@@ -30,7 +30,7 @@ class SigmoidPycuda(Sigmoid[TensorGPU], ActivationPycuda):
         dx_gpu = gpuarray.empty(x.ary.shape, self.model.dtype)
         self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
-        self.real_memory_size += self.y.nbytes + self.dx.nbytes
+        self.memory_used += self.y.nbytes + self.dx.nbytes
 
     def forward(self, x: TensorGPU) -> TensorGPU:
         alpha, beta = 1.0, 0.0

@@ -11,8 +11,8 @@ from pydtnn.utils.constants import DTYPE2CTYPE
 
 class RegressionMAEPycuda(RegressionMAE[TensorGPU], MetricPycuda):
 
-    def initialize(self) -> None:
-        super().initialize()
+    def _model_init(self) -> None:
+        super()._model_init()
 
         n = self.model.batch_size
         num_classes = self.model.output_shape
@@ -23,7 +23,7 @@ class RegressionMAEPycuda(RegressionMAE[TensorGPU], MetricPycuda):
         self.local_res = TensorGPU.create_zeros_tensor(shape=(n, *num_classes), dtype=np.dtype(self.model.dtype),
                                                        tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
 
-    def __init_gpu_kernel__(self) -> Function:
+    def _kernel_init(self) -> Function:
         _name = "regression_mae"
         code = """
 

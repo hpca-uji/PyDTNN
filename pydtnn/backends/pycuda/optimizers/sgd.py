@@ -52,8 +52,8 @@ class SGDPycuda(SGD[TensorGPU], OptimizerPycuda):
         self.update_gpudirect = SourceModule(code).get_function(_name)
         # ------------
 
-    def initialize(self, list_layers: list[LayerPycuda]) -> None:
-        super().initialize(list_layers)  # type: ignore (The type is correct: LayerPycuda extends LayerBase)
+    def _model_init(self, list_layers: list[LayerPycuda]) -> None:
+        super()._model_init(list_layers)  # type: ignore (The type is correct: LayerPycuda extends LayerBase)
         self.get_pycuda_kernel()
 
         for layer in list_layers:
@@ -65,7 +65,7 @@ class SGDPycuda(SGD[TensorGPU], OptimizerPycuda):
                     w = getattr(layer, w_)
                     self.context[layer.id]["velocity_%s" % w_] = gpuarray.zeros_like(w.ary, dtype=w.ary.dtype)
 
-                    self.real_memory_size += self.context[layer.id]["velocity_%s" % w_].nbytes  # type: ignore (They are both "gpuarray" and not "int")
+                    self.memory_used += self.context[layer.id]["velocity_%s" % w_].nbytes  # type: ignore (They are both "gpuarray" and not "int")
 
     def update(self, layer: LayerPycuda):
         for w_, dw_ in layer.grad_vars.items():

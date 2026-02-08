@@ -41,8 +41,8 @@ class Conv2DBatchNormalizationTestCase(Conv2DCommonTestCase):
             bn
         ])
         shape = (d.c, d.h, d.w)
-        chain.init_backend_with_model(model)
-        chain.initialize(prev_shape=shape, x=None)
+        chain._init_backend_with_model(model)
+        chain._model_init(prev_shape=shape, x=None)
 
         from_parent = bn.__dict__ | conv2d.__dict__
         fuse = Conv2DBatchNormalization(from_parent=from_parent)

@@ -28,15 +28,15 @@ class AbstractConv2DPycuda(Conv2D[TensorGPU], LayerPycuda):
         self.conv_desc = None
     # ----
 
-    def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
+        super()._model_init(prev_shape, x)
 
         self.stream_2 = drv.Stream()
 
         self.weights_cpu = self.weights_initializer(self.weights_shape, self.model.dtype)
         weights_gpu = gpuarray.to_gpu(self.weights_cpu)
         self.weights = TensorGPU(weights_gpu, self.model.tensor_format, self.model.cudnn_dtype, TensorGPU.TensorTypeEnum.FILTER)
-        self.real_memory_size += self.weights.nbytes
+        self.memory_used += self.weights.nbytes
 
         # Biases
         if self.use_bias:
@@ -44,7 +44,7 @@ class AbstractConv2DPycuda(Conv2D[TensorGPU], LayerPycuda):
             self.biases_cpu = self.biases_initializer(biases_shape, self.model.dtype)
             biases_gpu = gpuarray.to_gpu(self.biases_cpu)
             self.biases = TensorGPU(biases_gpu, self.model.tensor_format, self.model.cudnn_dtype)
-            self.real_memory_size += self.biases.nbytes
+            self.memory_used += self.biases.nbytes
 
         self.fwd_time = \
             matmul_time(m=self.co, n=(self.model.batch_size * self.ho * self.wo), k=(self.ci * self.kh * self.kw),
@@ -66,14 +66,14 @@ class AbstractConv2DPycuda(Conv2D[TensorGPU], LayerPycuda):
         self.dw_cpu, self.dw = TensorGPU.initialize(self.weights.ary.shape, self.model.dtype, tensor_format=self.model.tensor_format,
                                                     cudnn_dtype=self.model.cudnn_dtype, gpudirect=self.model.gpudirect,
                                                     tensor_type=TensorGPU.TensorTypeEnum.FILTER, drv=_drv)
-        self.real_memory_size += self.dw.nbytes
+        self.memory_used += self.dw.nbytes
 
         if self.use_bias:
             self.biases: TensorGPU
             self.db_cpu, self.db = TensorGPU.initialize(self.biases.ary.shape, self.model.dtype, tensor_format=self.model.tensor_format,
                                                         cudnn_dtype=self.model.cudnn_dtype, gpudirect=self.model.gpudirect,
                                                         tensor_type=bias_tensor_type, drv=_drv)
-            self.real_memory_size += self.db.nbytes
+            self.memory_used += self.db.nbytes
     # ----
 
     def _export_weights_dw(self, key: str) -> Any:

@@ -7,7 +7,7 @@ from pydtnn.utils.constants import ArrayShape
 
 class AveragePool2DPycuda(AveragePool2D[TensorGPU], AbstractPool2DLayerPycuda):
 
-    def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
+        super()._model_init(prev_shape, x)
         pool_mode = cudnn.cudnnPoolingMode['CUDNN_POOLING_AVERAGE_COUNT_EXCLUDE_PADDING']
         self.initialize_pool_2d_gpu(prev_shape, x, pool_mode)

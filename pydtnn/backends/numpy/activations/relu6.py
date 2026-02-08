@@ -13,14 +13,14 @@ class Relu6Numpy(Relu6[np.ndarray], ActivationNumpy):
         super().__init__(*args, **kwargs)
         self.mask: np.ndarray = None  # type: ignore (will be initalized in "initialize")
 
-    def initialize(self, prev_shape, x=None):
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape, x=None):
+        super()._model_init(prev_shape, x)
         # NOTE: These attributes only store data, their value before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
         self._y = np.zeros((self.model.batch_size, *self.prev_shape), dtype=self.model.dtype)
         self._mask = np.zeros((self.model.batch_size, *self.prev_shape), dtype=np.int8)
 
-        self.real_memory_size += self._y.nbytes
-        self.real_memory_size += self._mask.nbytes
+        self.memory_used += self._y.nbytes
+        self.memory_used += self._mask.nbytes
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         self.y: np.ndarray = self._y[:x.shape[0], :]

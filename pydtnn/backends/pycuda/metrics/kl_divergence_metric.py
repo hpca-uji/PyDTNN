@@ -9,7 +9,7 @@ from pydtnn.backends.pycuda.metrics.metric import MetricPycuda
 
 class KLDivergenceMetricPycuda(KLDivergenceMetric[TensorGPU], MetricPycuda):
 
-    def __init_gpu_kernel__(self):
+    def _kernel_init(self):
         module = SourceModule("""
         __global__ void kl_divergence_metric(T *y_targ, T *y_pred, T *res, int b, int n, float eps)
         {

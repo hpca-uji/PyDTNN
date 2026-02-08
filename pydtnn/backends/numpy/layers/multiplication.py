@@ -14,8 +14,8 @@ class MultiplicationNumpy(Multiplication[np.ndarray], LayerNumpy):
         self.x1 = None
         self.x2 = None
 
-    def initialize(self, prev_shape, x):
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape, x):
+        super()._model_init(prev_shape, x)
         # Performance model
         self.fwd_time = None
         self.bwd_time = None

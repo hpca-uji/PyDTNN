@@ -12,25 +12,25 @@ class AbstractBlockLayer[T: Array](Layer[T]):
         self.is_block_layer = True
         self.out_shapes: list[tuple[int, ...]] = []
 
-    def initialize(self, prev_shape, x):
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape, x):
+        super()._model_init(prev_shape, x)
         self.initialize_block_layer()
 
         temp_memory_size = []
         for p in self.paths:
             for layer in p:
-                self.real_memory_size += layer.real_memory_size
-                temp_memory_size.append(layer.temp_memory_size)
-        self.temp_memory_size += self.model.memory_cls._total(*temp_memory_size)
+                self.memory_used += layer.memory_used
+                temp_memory_size.append(layer.tmp_memory_used)
+        self.tmp_memory_used += self.model.memory_cls._total(*temp_memory_size)
 
     def initialize_block_layer(self):
         for p_i, p in enumerate(self.paths):
             prev_shape = self.prev_shape
             x = self.x
             for i, layer in enumerate(p):
-                layer.init_backend_with_model(self.model)
+                layer._init_backend_with_model(self.model)
                 layer.parent_layer = self
-                layer.initialize(prev_shape, x)
+                layer._model_init(prev_shape, x)
                 x = layer.y
                 if p_i == 0 and (len(p) - 1) == i:
                     self.y = x

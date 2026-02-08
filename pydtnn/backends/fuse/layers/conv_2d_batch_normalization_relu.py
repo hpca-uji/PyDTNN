@@ -26,11 +26,11 @@ class Conv2DBatchNormalizationReluFuse(Conv2DBatchNormalizationRelu[np.ndarray],
 
     # NOTE: The "__init__" method is being made (more or less) in Model (in _apply_layer_fusion) and in FusedLayerMixIn.
 
-    def initialize(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
+        super()._model_init(prev_shape, x)
 
         self.inv_std = BatchNormalizationNumpy.get_inv_std(self.running_var, self.epsilon, self.model.dtype)
-        self.real_memory_size += self.inv_std.nbytes
+        self.memory_used += self.inv_std.nbytes
 
         self.forward = {"_forward_cw_nchw": self._forward_nchw_cw,
                         "_forward_cg_nchw": self._forward_nchw_cg,

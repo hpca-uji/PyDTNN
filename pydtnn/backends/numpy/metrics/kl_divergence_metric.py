@@ -9,14 +9,14 @@ from pydtnn.metrics.kl_divergence_metric import KLDivergenceMetric
 
 class KLDivergenceMetricNumpy(KLDivergenceMetric[np.ndarray], MetricNumpy):
 
-    def initialize(self) -> None:
-        super().initialize()
+    def _model_init(self) -> None:
+        super()._model_init()
 
-        self.temp_memory_size += int(np.prod(self.shape)) * self.model.dtype.itemsize
-        self.real_memory_size += self.temp_memory_size
+        self.tmp_memory_used += int(np.prod(self.shape)) * self.model.dtype.itemsize
+        self.memory_used += self.tmp_memory_used
 
-    def post_initialize(self) -> None:
-        super().post_initialize()
+    def _post_init(self) -> None:
+        super()._post_init()
         with self.model.memory:
             self.loss = self.model.memory.ndarray(self.shape, dtype=self.model.dtype)
 

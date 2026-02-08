@@ -9,23 +9,23 @@ from pydtnn.losses.categorical_cross_entropy import CategoricalCrossEntropy
 
 class CategoricalCrossEntropyNumpy(CategoricalCrossEntropy[np.ndarray], LossNumpy):
 
-    def initialize(self) -> None:
-        super().initialize()
+    def _model_init(self) -> None:
+        super()._model_init()
 
         self._argmax_shape = (self.model.batch_size, )
         self._y_pred_op_shape = (self.model.batch_size, )
         self._y_pred_shape = self.shape
 
-        self.temp_memory_size += int(np.prod(self._argmax_shape)) * np.int32().itemsize
-        self.temp_memory_size += int(np.prod(self._y_pred_op_shape) + np.prod(self._y_pred_shape)) * self.model.dtype.itemsize
+        self.tmp_memory_used += int(np.prod(self._argmax_shape)) * np.int32().itemsize
+        self.tmp_memory_used += int(np.prod(self._y_pred_op_shape) + np.prod(self._y_pred_shape)) * self.model.dtype.itemsize
 
         # _y_pred_sliced_size = self.model.batch_size
         # + _y_pred_sliced_size
 
-        self.real_memory_size += self.temp_memory_size
+        self.memory_used += self.tmp_memory_used
 
-    def post_initialize(self) -> None:
-        super().post_initialize()
+    def _post_init(self) -> None:
+        super()._post_init()
         with self.model.memory:
             self._argmax = self.model.memory.ndarray(self._argmax_shape, dtype=np.int32)
             self._y_pred_op = self.model.memory.ndarray(self._y_pred_op_shape, dtype=self.model.dtype)

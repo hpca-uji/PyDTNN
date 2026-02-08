@@ -48,12 +48,12 @@ class AbstractPool2DLayerPycuda(AbstractPool2DLayer[TensorGPU], LayerPycuda):
         # Activations y
         y_gpu = gpuarray.empty((self.model.batch_size, *self.shape), self.model.dtype)
         self.y = TensorGPU(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
-        self.real_memory_size += self.y.nbytes
+        self.memory_used += self.y.nbytes
 
         # Derivative dx
         dx_gpu = gpuarray.empty(self.x.ary.shape, self.model.dtype)
         self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
-        self.real_memory_size += self.dx.nbytes
+        self.memory_used += self.dx.nbytes
 
         self.fwd_time = \
             im2col_time(m=(self.kh * self.kw), n=(self.model.batch_size * self.ho * self.wo * self.ci),

@@ -430,8 +430,8 @@ def Unsqueeze(info: dict[str, Any]) -> LayerBase:
             self.axis = axis
         # - END __init__ - #
 
-        def initialize(self, prev_shape, need_dx=False):
-            super().initialize(prev_shape, need_dx)
+        def _model_init(self, prev_shape, need_dx=False):
+            super()._model_init(prev_shape, need_dx)
             self.shape = self.shape + self.model.encode_shape(self.model.tensor_format)
 
         def initialize_block_layer(self):

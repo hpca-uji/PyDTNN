@@ -7,7 +7,7 @@ from pydtnn.utils.constants import ArrayShape
 
 class MaxPool2DPycuda(MaxPool2D[TensorGPU], AbstractPool2DLayerPycuda):
 
-    def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
+        super()._model_init(prev_shape, x)
         pool_mode = cudnn.cudnnPoolingMode['CUDNN_POOLING_MAX']
         self.initialize_pool_2d_gpu(prev_shape, x, pool_mode)

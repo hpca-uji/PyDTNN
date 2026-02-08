@@ -9,9 +9,9 @@ from pydtnn.losses.kl_divergence import KLDivergence
 
 class KLDivergenceNumpy(KLDivergence[np.ndarray], LossNumpy):
 
-    def initialize(self) -> None:
-        super().initialize()
-        self.real_memory_size += self.dx.nbytes
+    def _model_init(self) -> None:
+        super()._model_init()
+        self.memory_used += self.dx.nbytes
 
     def compute(self, y_pred, y_targ, batch_size):
         # loss = np.abs(y_targ * (np.log(np.abs(y_targ / (y_pred + self.eps)) + 1)))

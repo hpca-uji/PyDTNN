@@ -22,8 +22,8 @@ class ConcatenationBlockPycuda(ConcatenationBlock[TensorGPU], AbstractBlockLayer
         self.dy: list[TensorGPU] = None  # type: ignore
         self.idx_co = None  # type: ignore
 
-    def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
+        super()._model_init(prev_shape, x)
         # @warning: super().initialize() calls self.initialize_block_layer() (don't call it again)
         self.concat = ElementwiseKernel(
             "{T} *dst, {T} *src, int N, int H, int W, int C, int first_c, int last_c".format(T=DTYPE2CTYPE[self.model.dtype]),
@@ -76,7 +76,7 @@ class ConcatenationBlockPycuda(ConcatenationBlock[TensorGPU], AbstractBlockLayer
         # Activations y
         y_gpu = gpuarray.empty((self.model.batch_size, *self.shape), self.model.dtype)
         self.y = TensorGPU(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
-        self.real_memory_size += self.y.nbytes
+        self.memory_used += self.y.nbytes
 
         # Derivative dy
         self.dy = []
@@ -84,7 +84,7 @@ class ConcatenationBlockPycuda(ConcatenationBlock[TensorGPU], AbstractBlockLayer
             dy_gpu = gpuarray.empty((self.model.batch_size, *self.out_shapes[i]), self.model.dtype)
             self.dy.append(TensorGPU(dy_gpu, self.model.tensor_format, self.model.cudnn_dtype))
 
-            self.real_memory_size += dy_gpu.nbytes
+            self.memory_used += dy_gpu.nbytes
 
     def forward(self, x: TensorGPU) -> TensorGPU:
         for i, p in enumerate(self.paths):

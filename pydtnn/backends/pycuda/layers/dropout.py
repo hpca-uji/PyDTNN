@@ -23,29 +23,29 @@ class DropoutPycuda(Dropout[TensorGPU], LayerPycuda):
         self.drop_desc: int | None = None
     # ----
 
-    def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
+        super()._model_init(prev_shape, x)
 
         # Activations y
         y_gpu = gpuarray.empty((self.model.batch_size, *self.shape), self.model.dtype)
         self.y = TensorGPU(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
-        self.real_memory_size += self.y.nbytes
+        self.memory_used += self.y.nbytes
 
         # Derivative dx
         dx_gpu = gpuarray.empty((self.model.batch_size, *self.shape), self.model.dtype)
         self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
-        self.real_memory_size += self.dx.nbytes
+        self.memory_used += self.dx.nbytes
 
         self.states_size = cudnn.cudnnDropoutGetStatesSize(self.model.cudnn_handle)
         self.space_size = cudnn.cudnnDropoutGetReserveSpaceSize(self.y.desc)
 
         space_gpu = gpuarray.empty((self.space_size.value,), np.byte)
         self.space = TensorGPU(space_gpu, self.model.tensor_format, self.model.cudnn_dtype, TensorGPU.TensorTypeEnum.OTHER)
-        self.real_memory_size += self.space.nbytes
+        self.memory_used += self.space.nbytes
 
         states_gpu = gpuarray.empty((self.states_size.value,), np.byte)
         self.states = TensorGPU(states_gpu, self.model.tensor_format, self.model.cudnn_dtype, TensorGPU.TensorTypeEnum.OTHER)
-        self.real_memory_size += self.states.nbytes
+        self.memory_used += self.states.nbytes
 
         self.drop_desc = cudnn.cudnnCreateDropoutDescriptor()
 

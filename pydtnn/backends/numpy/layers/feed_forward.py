@@ -19,17 +19,17 @@ class FeedForwardNumpy(FeedForward[np.ndarray], AbstractBlockLayerNumpy):
         self.FC_2 = FC(shape=(self.shape[-1],))
         self.paths = [[self.FC_1, self.relu, self.dropout, self.FC_2]]
 
-    def initialize(self, prev_shape, x):
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape, x):
+        super()._model_init(prev_shape, x)
 
         # Initialize all sublayers
         for layer in self.children:
-            layer.init_backend_with_model(self.model)
+            layer._init_backend_with_model(self.model)
 
-        self.FC_1.initialize(prev_shape=(self.shape[-1],), x=x)
-        self.relu.initialize(prev_shape=(self.d_ff,), x=self.FC_1.y)
-        self.dropout.initialize(prev_shape=(self.d_ff,), x=self.relu.y)
-        self.FC_2.initialize(prev_shape=(self.d_ff,), x=self.dropout.y)
+        self.FC_1._model_init(prev_shape=(self.shape[-1],), x=x)
+        self.relu._model_init(prev_shape=(self.d_ff,), x=self.FC_1.y)
+        self.dropout._model_init(prev_shape=(self.d_ff,), x=self.relu.y)
+        self.FC_2._model_init(prev_shape=(self.d_ff,), x=self.dropout.y)
 
         self.y = self.FC_2.y
         self.dx = self.FC_1.dx

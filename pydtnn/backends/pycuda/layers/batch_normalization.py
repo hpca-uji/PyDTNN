@@ -33,19 +33,19 @@ class BatchNormalizationPycuda(BatchNormalization[TensorGPU], LayerPycuda):
         self.save_inv_var: TensorGPU = None  # type: ignore
         self.factor: float = None  # type: ignore
 
-    def initialize(self, prev_shape: ArrayShape, x: TensorGPU):
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape: ArrayShape, x: TensorGPU):
+        super()._model_init(prev_shape, x)
         self.stream_2 = drv.Stream()
 
         # Activations y
         y_gpu = gpuarray.empty(x.ary.shape, self.model.dtype)
         self.y = TensorGPU(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
-        self.real_memory_size += self.y.nbytes
+        self.memory_used += self.y.nbytes
 
         # Derivative dx
         dx_gpu = gpuarray.zeros(x.ary.shape, self.model.dtype)
         self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
-        self.real_memory_size += self.dx.nbytes
+        self.memory_used += self.dx.nbytes
 
         self.spatial = len(self.shape) > 2
         self.mode = \
@@ -65,49 +65,49 @@ class BatchNormalizationPycuda(BatchNormalization[TensorGPU], LayerPycuda):
         self.gamma_cpu = np.full(shape_, self.gamma_init_val, self.model.dtype)
         gamma_gpu = gpuarray.to_gpu(self.gamma_cpu)
         self.gamma = TensorGPU(gamma_gpu, self.model.tensor_format, self.model.cudnn_dtype)
-        self.real_memory_size += self.gamma.nbytes
+        self.memory_used += self.gamma.nbytes
 
         # beta
         self.beta_cpu = np.full(shape_, self.beta_init_val, self.model.dtype)
         beta_gpu = gpuarray.to_gpu(self.beta_cpu)
         self.beta = TensorGPU(beta_gpu, self.model.tensor_format, self.model.cudnn_dtype)
-        self.real_memory_size += self.beta.nbytes
+        self.memory_used += self.beta.nbytes
 
         self.dgamma_cpu, self.dgamma = TensorGPU.initialize(self.gamma.ary.shape, self.model.dtype,
                                                             tensor_format=self.model.tensor_format,
                                                             cudnn_dtype=self.model.cudnn_dtype,
                                                             gpudirect=self.model.gpudirect,
                                                             drv=(drv if self.model.gpudirect else None))
-        self.real_memory_size += self.dgamma.nbytes
+        self.memory_used += self.dgamma.nbytes
 
         self.dbeta_cpu, self.dbeta = TensorGPU.initialize(self.beta.ary.shape, self.model.dtype,
                                                           tensor_format=self.model.tensor_format,
                                                           cudnn_dtype=self.model.cudnn_dtype,
                                                           gpudirect=self.model.gpudirect,
                                                           drv=(drv if self.model.gpudirect else None))
-        self.real_memory_size += self.dbeta.nbytes
+        self.memory_used += self.dbeta.nbytes
 
         running_mean_gpu = gpuarray.to_gpu(self.moving_mean_initializer(shape_, self.model.dtype))
         self.running_mean = TensorGPU(running_mean_gpu, self.model.tensor_format, self.model.cudnn_dtype)
-        self.real_memory_size += self.running_mean.nbytes
+        self.memory_used += self.running_mean.nbytes
 
         running_var_gpu = gpuarray.to_gpu(self.moving_variance_initializer(shape_, self.model.dtype))
         self.running_var = TensorGPU(running_var_gpu, self.model.tensor_format, self.model.cudnn_dtype)
-        self.real_memory_size += self.running_var.nbytes
+        self.memory_used += self.running_var.nbytes
 
         save_mean_gpu = gpuarray.empty(shape_, self.model.dtype)
         self.save_mean = TensorGPU(save_mean_gpu, self.model.tensor_format, self.model.cudnn_dtype)
-        self.real_memory_size += self.save_mean.nbytes
+        self.memory_used += self.save_mean.nbytes
 
         save_inv_var_gpu = gpuarray.empty(shape_, self.model.dtype)
         self.save_inv_var = TensorGPU(save_inv_var_gpu, self.model.tensor_format, self.model.cudnn_dtype)
-        self.real_memory_size += self.save_inv_var.nbytes
+        self.memory_used += self.save_inv_var.nbytes
 
         self.factor = 1.0 - self.momentum
 
         self.nparams = self.gamma.size + self.beta.size + self.running_mean.size + self.running_var.size
 
-        self.real_memory_size += self.gamma.nbytes
+        self.memory_used += self.gamma.nbytes
     # ---
 
     def forward(self, x: TensorGPU) -> TensorGPU:

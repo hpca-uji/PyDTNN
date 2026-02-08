@@ -11,15 +11,15 @@ from pydtnn.backends.pycuda.utils.tensor_gpu import TensorGPU
 
 class RecallPycuda(Recall[TensorGPU], MetricPycuda):
 
-    def initialize(self) -> None:
-        super().initialize()
+    def _model_init(self) -> None:
+        super()._model_init()
         target_classes = self.model.output_shape[0]
         self.recall = TensorGPU.create_zeros_tensor(shape=(1, ), dtype=np.dtype(np.int32),
                                                     tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
         self.local_recall = TensorGPU.create_zeros_tensor(shape=(target_classes, ), dtype=np.dtype(np.int32),
                                                           tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
 
-    def __init_gpu_kernel__(self) -> Function:
+    def _kernel_init(self) -> Function:
         _name = "binary_confusion_matrix"
         code = """
         //#define TRUE_POSITIVE  {{0,0}}

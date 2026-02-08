@@ -22,12 +22,12 @@ class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], LayerNumpy):
     # -- END __init__ -- #
 
     # Method from AbstractPool2DLayerNumpy
-    def initialize(self, prev_shape: tuple[int, int], x: np.ndarray | None = None):
+    def _model_init(self, prev_shape: tuple[int, int], x: np.ndarray | None = None):
         # The objective is following lines is to override the
         # AbstractPool2DLayer's initialize method, that is avoiding call to
         # "super" since in that case AbstractPool2DLayer will be called
         # eventually.
-        super().initialize(prev_shape, x)
+        super()._model_init(prev_shape, x)
 
         match self.model.tensor_format:
             case TensorFormat.NCHW:
@@ -42,12 +42,12 @@ class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], LayerNumpy):
         y_shape = self.model.encode_shape((self.model.batch_size, self.co, self.ho, self.wo))
         # NOTE: This attribute only stores data, its value before the operation doesn't matter; it's initalized due avoid warnings in "LayerAndActivationBase.export".
         self.y = np.zeros(y_shape, dtype=self.model.dtype)
-        self.real_memory_size += self.y.nbytes
+        self.memory_used += self.y.nbytes
 
         if not self.model.evaluate_only:
             dx_shape = self.model.encode_shape((self.model.batch_size, self.ci, self.hi, self.wi))
             self.dx = np.zeros(dx_shape, dtype=self.model.dtype)
-            self.real_memory_size += self.dx.nbytes
+            self.memory_used += self.dx.nbytes
 
         if self.pooling_not_needed:
             self._forward = (lambda x: x)

@@ -25,8 +25,8 @@ class LayerNormalization[T: Array](Layer[T]):
         self.std = self.xn = None
         self.dgamma = self.dbeta = None
 
-    def initialize(self, prev_shape, x):
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape, x):
+        super()._model_init(prev_shape, x)
         self.shape = shape_ = prev_shape
         self.gamma = np.full(shape_, self.gamma_init_val, self.model.dtype)
         self.beta = np.full(shape_, self.beta_init_val, self.model.dtype)

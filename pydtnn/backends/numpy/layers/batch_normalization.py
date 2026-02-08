@@ -28,8 +28,8 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
                       dtype=dtype)
         return inv_std
 
-    def initialize(self, prev_shape: ArrayShape, x: np.ndarray | None = None):
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None):
+        super()._model_init(prev_shape, x)
 
         if self.spatial:
             self.ci, self.hi, self.wi = self.model.decode_shape(self.shape)
@@ -49,7 +49,7 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
 
         # NOTE: These attributes only store data, their value before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
         self.y_dx: np.ndarray = np.zeros(vars_shape, dtype=self.model.dtype)
-        self.real_memory_size += (self.nparams * self.model.dtype.itemsize) + self.y_dx.nbytes
+        self.memory_used += (self.nparams * self.model.dtype.itemsize) + self.y_dx.nbytes
         # NOTE: This variable stores both y and dx values.
 
         self._mean_inv_shape = shape_
@@ -57,27 +57,27 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
         self.std_shape = shape_
 
         self.std: np.ndarray = np.zeros(shape=self.std_shape, dtype=self.model.dtype)
-        self.real_memory_size += self.std.nbytes
+        self.memory_used += self.std.nbytes
 
-        self.temp_memory_size += int(np.prod(self._mean_inv_shape) + np.prod(self._var_inv_shape)) * self.model.dtype.itemsize
+        self.tmp_memory_used += int(np.prod(self._mean_inv_shape) + np.prod(self._var_inv_shape)) * self.model.dtype.itemsize
 
         # self.dx: np.ndarray = np.zeros(shape=vars_shape, dtype=self.model.dtype)
         # self.real_memory_size += self.dx.nbytes
         self.dgamma: np.ndarray = np.zeros(shape=shape_, dtype=self.model.dtype)
-        self.real_memory_size += self.dgamma.nbytes
+        self.memory_used += self.dgamma.nbytes
         self.dbeta: np.ndarray = np.zeros(shape=shape_, dtype=self.model.dtype)
-        self.real_memory_size += self.dbeta.nbytes
+        self.memory_used += self.dbeta.nbytes
 
         self._mean_shape = (self.ci, )
         self._var_shape = (self.ci, )
         self.dy_xn_shape = vars_shape
-        self.temp_memory_size += int(np.prod(self._mean_shape) + np.prod(self._var_shape) + np.prod(self.dy_xn_shape)) * self.model.dtype.itemsize
+        self.tmp_memory_used += int(np.prod(self._mean_shape) + np.prod(self._var_shape) + np.prod(self.dy_xn_shape)) * self.model.dtype.itemsize
 
-        self.real_memory_size += self.temp_memory_size
+        self.memory_used += self.tmp_memory_used
     # --
 
-    def post_initialize(self) -> None:
-        super().post_initialize()
+    def _post_init(self) -> None:
+        super()._post_init()
         with self.model.memory:
             self._mean_inv = self.model.memory.ndarray(self._mean_inv_shape, dtype=self.model.dtype)
             self._var_inv = self.model.memory.ndarray(self._var_inv_shape, dtype=self.model.dtype)

@@ -8,15 +8,15 @@ from pydtnn.backends.numpy.activations.activation import ActivationNumpy
 
 class SigmoidNumpy(Sigmoid[np.ndarray], ActivationNumpy):
 
-    def initialize(self, prev_shape, x=None):
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape, x=None):
+        super()._model_init(prev_shape, x)
 
         # NOTE: These attributes only store data, their values before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
         self._y: np.ndarray = np.zeros(shape=(self.model.batch_size, *prev_shape), dtype=self.model.dtype)
-        self.real_memory_size += self._y.nbytes
+        self.memory_used += self._y.nbytes
 
         self.dx: np.ndarray = np.zeros(shape=(self.model.batch_size, *prev_shape), dtype=self.model.dtype)
-        self.real_memory_size += self.dx.nbytes
+        self.memory_used += self.dx.nbytes
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         self.y: np.ndarray = self._y[:x.shape[0], :]

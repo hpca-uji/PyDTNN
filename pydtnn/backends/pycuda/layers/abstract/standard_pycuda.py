@@ -27,8 +27,8 @@ class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
                 raise NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
     # -----
 
-    def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
+        super()._model_init(prev_shape, x)
 
         self.dim_n = self.model.batch_size * self.ho * self.wo
         self.dim_c = self.ci * self.kh * self.kw

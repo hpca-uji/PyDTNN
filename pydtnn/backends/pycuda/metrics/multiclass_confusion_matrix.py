@@ -10,8 +10,8 @@ from pydtnn.utils.constants import DTYPE2CTYPE
 
 class MulticlassConfusionMatrixPycuda(MulticlassConfusionMatrix[TensorGPU], MetricPycuda):
 
-    def initialize(self) -> None:
-        super().initialize()
+    def _model_init(self) -> None:
+        super()._model_init()
         n = self.model.batch_size
         target_classes = self.model.output_shape[0]
 
@@ -21,7 +21,7 @@ class MulticlassConfusionMatrixPycuda(MulticlassConfusionMatrix[TensorGPU], Metr
                                                       tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
     # ----
 
-    def __init_gpu_kernel__(self) -> Function:
+    def _kernel_init(self) -> Function:
 
         _name = "multiclass_confusion_matrix"
         code = """

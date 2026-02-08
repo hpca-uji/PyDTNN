@@ -84,16 +84,16 @@ def get_conv2d_layers(d: D) -> tuple[Conv2D, Conv2D]:
                         padding=(d.vpadding, d.hpadding),
                         stride=(d.vstride, d.hstride), dilation=(d.vdilation, d.hdilation),
                         use_bias=True, weights_initializer="glorot_uniform", biases_initializer="zeros")
-    conv2d_i2c.init_backend_with_model(model_i2c)
+    conv2d_i2c._init_backend_with_model(model_i2c)
     conv2d_i2c.debug = True
     conv2d_cg = Conv2D(nfilters=d.kn, filter_shape=(d.kh, d.kw),
                        padding=(d.vpadding, d.hpadding),
                        stride=(d.vstride, d.hstride), dilation=(d.vdilation, d.hdilation),
                        use_bias=True, weights_initializer="glorot_uniform", biases_initializer="zeros")
-    conv2d_cg.init_backend_with_model(model_cg)
+    conv2d_cg._init_backend_with_model(model_cg)
     conv2d_cg.debug = True
     for layer in (conv2d_i2c, conv2d_cg):
-        layer.initialize(prev_shape=(d.c, d.h, d.w))
+        layer._model_init(prev_shape=(d.c, d.h, d.w))
     # Set the same initial weights and biases to both layers
     conv2d_cg.weights = conv2d_i2c.weights.copy()
     conv2d_cg.biases = conv2d_i2c.biases.copy()

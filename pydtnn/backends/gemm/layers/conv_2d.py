@@ -14,8 +14,8 @@ class Conv2DGEMM(AbstractConv2DStandardNumpy):
         # convGemm related attributes (will be initialized in initialize())
         self.cg = None  # type: ignore
 
-    def initialize(self, prev_shape: ArrayShape, x: np.ndarray | None = None):
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None):
+        super()._model_init(prev_shape, x)
         # ConvGemm parameters
         self.cg: ConvGemm = ConvGemm(dtype=self.model.dtype, debug=self.debug, parent_layer=self)
 

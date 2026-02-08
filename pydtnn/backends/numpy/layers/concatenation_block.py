@@ -19,10 +19,10 @@ class ConcatenationBlockNumpy(ConcatenationBlock, AbstractBlockLayerNumpy):
         self.concat_dim: int = None  # type: ignore
     # ---
 
-    def initialize(self, prev_shape, x):
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape, x):
+        super()._model_init(prev_shape, x)
         self.y: np.ndarray = np.zeros((self.model.batch_size, *self.shape), dtype=self.model.dtype)
-        self.real_memory_size += self.y.nbytes
+        self.memory_used += self.y.nbytes
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_REPLICATE)

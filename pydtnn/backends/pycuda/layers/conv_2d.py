@@ -27,8 +27,8 @@ class Conv2DPycuda(AbstractConv2DPycuda):
                 raise NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
     # ---
 
-    def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
+        super()._model_init(prev_shape, x)
 
         # Activations y
         y_gpu = gpuarray.empty((self.model.batch_size, *self.shape), self.model.dtype)
@@ -37,7 +37,7 @@ class Conv2DPycuda(AbstractConv2DPycuda):
         dx_gpu = gpuarray.empty(self.x.ary.shape, self.model.dtype)
         self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
-        self.real_memory_size += self.y.nbytes + self.dx.nbytes
+        self.memory_used += self.y.nbytes + self.dx.nbytes
 
         # Convolution params
         conv_mode = cudnn.cudnnConvolutionMode['CUDNN_CROSS_CORRELATION']
@@ -108,7 +108,7 @@ class Conv2DPycuda(AbstractConv2DPycuda):
         self.forward = self._forward_standard
         self.backward = self._backward_standard
 
-        self.real_memory_size += (getConvolutionWorkspaceSize() - base_conv_memory)
+        self.memory_used += (getConvolutionWorkspaceSize() - base_conv_memory)
     # -----
 
     def _forward_standard(self, x: TensorGPU) -> TensorGPU:

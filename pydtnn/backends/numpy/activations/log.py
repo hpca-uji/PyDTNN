@@ -9,15 +9,15 @@ from pydtnn.backends.numpy.activations.activation import ActivationNumpy
 
 class LogNumpy(Log[np.ndarray], ActivationNumpy):
 
-    def initialize(self, prev_shape, x=None):
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape, x=None):
+        super()._model_init(prev_shape, x)
         # NOTE: These attributes only store data, their value before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
         self.y = np.zeros(shape=(self.model.batch_size, *self.shape), dtype=self.model.dtype)
-        self.real_memory_size += self.y.nbytes
+        self.memory_used += self.y.nbytes
 
         if not self.model.evaluate_only:
             self.dx = np.zeros(shape=(self.model.batch_size, *self.shape), dtype=self.model.dtype)
-            self.real_memory_size += self.dx.nbytes
+            self.memory_used += self.dx.nbytes
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         # def forward(self, x: np.ndarray) -> np.ndarray:

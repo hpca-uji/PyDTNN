@@ -243,15 +243,15 @@ class Model[T: Array]:
         self.memory: PrivateMemory = None  # type: ignore (it will be intialized later if "self.use_memory_pool" is True)
 
         self.nparams = 0
-        self.real_memory_size = 0
-        self.temp_memory_size = 0
+        self.memory_used = 0
+        self.tmp_memory_used = 0
 
         # Get default values from parser and update them from the received kwargs
         self.kwargs: dict[str, Any] = PydtnnArgumentParser().get_default_values()
         self.kwargs.update(kwargs)
 
         # Set MPI and comm
-        self._initialize_mpi()
+        self._mpi_init()
 
         # Set tracer
         self.tracer = get_tracer(tracer_output=tracer_output, tracing=tracing, comm=self.comm, enable_cudnn=enable_cudnn,
@@ -279,7 +279,7 @@ class Model[T: Array]:
         # Cuda
         if self.enable_cudnn:
             if gpuarray and drv and cublas:
-                self._initialize_cudnn()
+                self._cudnn_init()
             else:
                 raise ExceptionGroup("CUDA import error", gpu_errors)
 
@@ -298,7 +298,7 @@ class Model[T: Array]:
 
         # Encryption
         if self.encryption_name:
-            self.crypt = self._init_crypt(self.encryption_name)
+            self.crypt = self._crypt_init(self.encryption_name)
 
         else:
             self.crypt = None
@@ -318,7 +318,7 @@ class Model[T: Array]:
             self.learning_rate = self.learning_rate / self.comm_size
 
         self.optimizer = select_optimizer(self.optimizer_name).from_model(self)
-        self.optimizer.init_backend_with_model(self)
+        self.optimizer._init_backend_with_model(self)
 
         self.schedulers = [
             select_scheduler(scheduler_name).from_model(self)
@@ -332,7 +332,7 @@ class Model[T: Array]:
 
         # Private attributes
         self._evaluate_round: int = 0
-        self._initialized: bool = False
+        self._is_model_init: bool = False
 
         # Read the model (must be the last action, as it calls self._initialize() if there is a model)
         self.model_name: str | None = self.kwargs.get("model_name")
@@ -346,7 +346,7 @@ class Model[T: Array]:
         # NOTE: This parameter come from Parser.
         self.model_sync_participation = Model.SyncParticipation(self.kwargs["model_sync_participation"])
 
-    def _initialize_mpi(self) -> None:
+    def _mpi_init(self) -> None:
         # Communication type
         match self.parallel:
             case "sequential":
@@ -378,7 +378,7 @@ class Model[T: Array]:
             case _:
                 raise ValueError(f"MPI buffers option '{self.use_mpi_buffers}' not recognized.")
 
-    def _initialize_cudnn(self) -> None:
+    def _cudnn_init(self) -> None:
         LIMIT_THREADS_AND_BLOCKS = 1024
         self.cuda_threads = min(self.batch_size, LIMIT_THREADS_AND_BLOCKS)
         self.cuda_blocks = (max(self.batch_size, LIMIT_THREADS_AND_BLOCKS) // self.cuda_threads) + 1
@@ -428,9 +428,10 @@ class Model[T: Array]:
         self.stream = stream
         self.cudnn_dtype = cudnn_dtype
 
-    def _ensure_model_runnable(self) -> None:
-        if not self._initialized:
-            self._initialize()
+    def _ensure_model_init(self) -> None:
+        if self._is_model_init:
+            return
+        self._model_init()
         are_layers = bool(self.layers)
         if not are_layers:
             warn("The model has no layers in it.", RuntimeWarning)
@@ -445,7 +446,7 @@ class Model[T: Array]:
     def __getattr__(self, item) -> Any:
         return self.kwargs.get(item)
 
-    def _init_crypt(self, encryption_name: str) -> crypto.Context:
+    def _crypt_init(self, encryption_name: str) -> crypto.Context:
         """Initialize encryption context"""
         try:
             module = importlib.import_module(f"pydtnn.crypto.{encryption_name}")
@@ -490,7 +491,7 @@ class Model[T: Array]:
         layers = create_model(input_shape, output_shape)
         self.add_layers(layers)  # type: ignore
 
-        self._initialize()
+        self._model_init()
 
     def encode_shape(self, shape: ArrayShape) -> ArrayShape:
         """Transform the shape from `NCHW` order to `model.tensor_format` order (supports 4 or 3 dimensions)"""
@@ -520,24 +521,24 @@ class Model[T: Array]:
         if self.nparams > 0:
             props["params"] = self.nparams
 
-        if self.real_memory_size > 0:
-            memory = utils.convert_size_bytes(self.real_memory_size)
-            if self.temp_memory_size > 0:
-                tmp_memory = utils.convert_size_bytes(self.temp_memory_size)
+        if self.memory_used > 0:
+            memory = utils.convert_size_bytes(self.memory_used)
+            if self.tmp_memory_used > 0:
+                tmp_memory = utils.convert_size_bytes(self.tmp_memory_used)
                 memory = f"{memory} ({tmp_memory} tmp)"
             props["memory"] = memory
 
         if self.optimizer:
-            optimizer_memory = utils.convert_size_bytes(self.optimizer.real_memory_size)
-            if self.optimizer.temp_memory_size > 0:
-                optimizer_tmp_memory = utils.convert_size_bytes(self.optimizer.temp_memory_size)
+            optimizer_memory = utils.convert_size_bytes(self.optimizer.memory_used)
+            if self.optimizer.tmp_memory_used > 0:
+                optimizer_tmp_memory = utils.convert_size_bytes(self.optimizer.tmp_memory_used)
                 optimizer_memory = f"{optimizer_memory} ({optimizer_tmp_memory} tmp)"
             props["optimizer-memory"] = optimizer_memory
 
         if self.loss_func:
-            loss_memory = utils.convert_size_bytes(self.loss_func.real_memory_size)
-            if self.loss_func.temp_memory_size > 0:
-                loss_tmp_memory = utils.convert_size_bytes(self.loss_func.temp_memory_size)
+            loss_memory = utils.convert_size_bytes(self.loss_func.memory_used)
+            if self.loss_func.tmp_memory_used > 0:
+                loss_tmp_memory = utils.convert_size_bytes(self.loss_func.tmp_memory_used)
                 loss_memory = f"{loss_memory} ({loss_tmp_memory} tmp)"
             props["loss-memory"] = loss_memory
 
@@ -545,8 +546,8 @@ class Model[T: Array]:
             metrics_size = 0
             metric_temp_size = 0
             for metric in self.metrics_funcs:
-                metrics_size += metric.real_memory_size
-                metric_temp_size += metric.temp_memory_size
+                metrics_size += metric.memory_used
+                metric_temp_size += metric.tmp_memory_used
             metrics_memory = utils.convert_size_bytes(metrics_size)
             if metric_temp_size > 0:
                 metrics_tmp_memory = utils.convert_size_bytes(metric_temp_size)
@@ -627,7 +628,7 @@ class Model[T: Array]:
             layer.print_in_convdirect_format()
 
     def add(self, layer: LayerBase[T]) -> None:
-        layer.init_backend_with_model(self)
+        layer._init_backend_with_model(self)
 
         if self.layers:
             prev_shape = self.layers[-1].shape
@@ -636,11 +637,11 @@ class Model[T: Array]:
             prev_shape = ()
             y = None
 
-        layer.initialize(prev_shape, y)
+        layer._model_init(prev_shape, y)
 
         self.nparams += layer.nparams
-        self.real_memory_size += layer.real_memory_size
-        self.temp_memory_size += layer.temp_memory_size
+        self.memory_used += layer.memory_used
+        self.tmp_memory_used += layer.tmp_memory_used
         self.layers.append(layer)
 
         if layer.act:
@@ -722,10 +723,10 @@ class Model[T: Array]:
                 fused_layer = select_fuse_layer(layer_name)
 
                 new_curr_layer = fused_layer(from_parent=dict_params)  # type: ignore (it's okay)
-                new_curr_layer.init_backend_with_model(self)
+                new_curr_layer._init_backend_with_model(self)
                 new_curr_layer.__dict__.update(dict_params)
                 try:
-                    new_curr_layer.initialize(prev_shape=layers_to_fuse[0].prev_shape, x=layers_to_fuse[0].x)
+                    new_curr_layer._model_init(prev_shape=layers_to_fuse[0].prev_shape, x=layers_to_fuse[0].x)
                 except Exception as e:
                     warn(f"Aborted fusion, {e}")
                 else:
@@ -744,8 +745,8 @@ class Model[T: Array]:
             self.__layer_fusion(self.layers, self._select_fusion_3)
             self.__layer_fusion(self.layers, self._select_fusion_2)
 
-    def _initialize(self):
-        if self._initialized:
+    def _model_init(self):
+        if self._is_model_init:
             return
         self._apply_layer_fusion()
 
@@ -753,45 +754,45 @@ class Model[T: Array]:
         self._output_shape = (self.batch_size, *self.layers[-1].shape)
 
         self.loss_func = select_loss(self.loss_func_name)()
-        self.loss_func.init_backend_with_model(self)
-        self.loss_func.initialize()
+        self.loss_func._init_backend_with_model(self)
+        self.loss_func._model_init()
 
         self.metrics_funcs = [select_metric(m)() for m in self.metrics_list]
         self.metrics_funcs.sort(key=lambda metric: metric.order)
 
         for metric in self.metrics_funcs:
-            metric.init_backend_with_model(self)
-            metric.initialize()
-            self.real_memory_size += metric.real_memory_size
-            temp_memory_size.append(metric.temp_memory_size)
+            metric._init_backend_with_model(self)
+            metric._model_init()
+            self.memory_used += metric.memory_used
+            temp_memory_size.append(metric.tmp_memory_used)
 
         self.loss_and_metrics = [self.loss_func_name] + self.metrics_list
         self.loss_and_metrics_format = [self.loss_func.format] + [metric.format for metric in self.metrics_funcs]
         self.total_metrics = np.array([0] + [0 for func in self.metrics_funcs], dtype=self.dtype)
         self.tracer.define_event_types(self)
-        self._initialized = True
+        self._is_model_init = True
 
         if self.enable_cudnn:
             assert isinstance(self.optimizer, OptimizerPycuda), f"CUDA is enable but the optimizer's backend is not a GPU one ({type(self.optimizer)=})"
             self.optimizer.set_gpudirect(self.gpudirect)
 
-        self.optimizer.initialize(self.get_all_layers(self.layers))
-        temp_memory_size.append(self.optimizer.temp_memory_size)
+        self.optimizer._model_init(self.get_all_layers(self.layers))
+        temp_memory_size.append(self.optimizer.tmp_memory_used)
 
         for layer in self.layers:
-            temp_memory_size.append(layer.temp_memory_size)
+            temp_memory_size.append(layer.tmp_memory_used)
 
-        self.temp_memory_size = self.memory_cls._total(*temp_memory_size)
-        self.memory = self.memory_cls(size=self.temp_memory_size)
+        self.tmp_memory_used = self.memory_cls._total(*temp_memory_size)
+        self.memory = self.memory_cls(size=self.tmp_memory_used)
 
         for layer in self.get_all_layers():
-            layer.post_initialize()
+            layer._post_init()
 
         for metric in self.metrics_funcs:
-            metric.post_initialize()
+            metric._post_init()
 
-        self.loss_func.post_initialize()
-        self.optimizer.post_initialize()
+        self.loss_func._post_init()
+        self.optimizer._post_init()
 
         # ----
 
@@ -938,7 +939,7 @@ class Model[T: Array]:
                 self.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT], [PYDTNN_EVENT_FINISHED, PYDTNN_EVENT_FINISHED])
 
     def train_dataset(self, bar_width=BAR_WIDTH) -> dict[str, list[np.ndarray]]:
-        self._ensure_model_runnable()
+        self._ensure_model_init()
 
         # If working with CUDA, self.y_batch must be in a GPU's data structure.
         if self.enable_cudnn and self.y_batch is None:
@@ -1231,7 +1232,7 @@ class Model[T: Array]:
         return self.total_metrics
 
     def evaluate_dataset(self, bar_width=BAR_WIDTH):
-        self._ensure_model_runnable()
+        self._ensure_model_init()
 
         if self.enable_cudnn and self.y_batch is None:
             assert gpuarray and self.cudnn_dtype

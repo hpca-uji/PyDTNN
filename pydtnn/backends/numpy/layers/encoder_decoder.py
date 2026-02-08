@@ -16,8 +16,8 @@ class EncoderDecoderNumpy(EncoderDecoder[np.ndarray], AbstractBlockLayerNumpy):
         self.decoder = [Decoder(embedl=self.embedl, d_k=self.d_k, d_ff=self.d_ff, heads=self.heads, dropout_rate=self.dropout_rate) for _ in range(self.dec_layers)]
         self.paths = [self.encoder + self.decoder]
 
-    def initialize(self, prev_shape, x):
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape, x):
+        super()._model_init(prev_shape, x)
         if len(prev_shape) == 2:
             x_enc, x_dec = x if x else (None, None)
             mask_enc = mask_dec = None
@@ -31,13 +31,13 @@ class EncoderDecoderNumpy(EncoderDecoder[np.ndarray], AbstractBlockLayerNumpy):
 
         # Initialize all sublayers
         for layer in self.children:
-            layer.init_backend_with_model(self.model)
+            layer._init_backend_with_model(self.model)
 
-        self.encoder[0].initialize(prev_shape=enc_shape, x=(x_enc, mask_enc))
+        self.encoder[0]._model_init(prev_shape=enc_shape, x=(x_enc, mask_enc))
         for layer in self.encoder[1:]:
-            layer.initialize(prev_shape=enc_shape, x=(x_enc, mask_enc))
+            layer._model_init(prev_shape=enc_shape, x=(x_enc, mask_enc))
         for layer in self.decoder:
-            layer.initialize(prev_shape=dec_shape, x=(x_dec, x_enc, mask_dec))
+            layer._model_init(prev_shape=dec_shape, x=(x_dec, x_enc, mask_dec))
 
         for layer in self.children:
             self.fwd_time += layer.fwd_time

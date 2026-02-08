@@ -9,8 +9,8 @@ from pydtnn.backends.pycuda.utils.tensor_gpu import TensorGPU
 
 
 class LayerNormalizationPycuda(LayerNormalization[TensorGPU], LayerPycuda):
-    def initialize(self, prev_shape, x):
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape, x):
+        super()._model_init(prev_shape, x)
         self.shape = prev_shape
         self.x = x
         self.epsilon = np.float32(self.epsilon)

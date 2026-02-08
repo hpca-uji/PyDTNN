@@ -47,8 +47,8 @@ ci = {macro_index_c}(idx, c);
 
 class AdaptiveAveragePool2DPycuda(AdaptiveAveragePool2D[TensorGPU], LayerPycuda):
 
-    def initialize(self, prev_shape, x: TensorGPU) -> None:
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape, x: TensorGPU) -> None:
+        super()._model_init(prev_shape, x)
 
         self.cuda_fwd_func = self.cuda_adaptive_average_pooling_fwd(dtype=self.model.dtype)
         self.cuda_bwd_func = self.cuda_adaptive_average_pooling_bwd(dtype=self.model.dtype)
@@ -324,7 +324,7 @@ __global__ void {func_name}({T}* dx, {T}* dy,
         dx_gpu = gpuarray.empty(self.x.ary.shape, self.model.dtype)
         self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
-        self.real_memory_size += self.y.nbytes + self.dx.nbytes
+        self.memory_used += self.y.nbytes + self.dx.nbytes
 
         self.fwd_time = \
             im2col_time(m=self.co, n=(self.model.batch_size * self.ho * self.wo * self.ci),

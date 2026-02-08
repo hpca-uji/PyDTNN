@@ -43,8 +43,8 @@ class LayerPycuda(Layer[TensorGPU]):
         self.grid: tuple[int, int, int] = None  # type: ignore
         self.block: tuple[int, int, int] = None  # type: ignore
 
-    def initialize(self, prev_shape: tuple[int, ...], x: TensorGPU | None = None) -> None:
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape: tuple[int, ...], x: TensorGPU | None = None) -> None:
+        super()._model_init(prev_shape, x)
 
         if not self.model.enable_cudnn:
             raise RuntimeError("GPU layers requires CUDNN to be enabled!")

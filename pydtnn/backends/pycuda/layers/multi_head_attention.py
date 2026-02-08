@@ -22,8 +22,8 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorGPU], LayerPycuda):
         # The next attributes will be initialized later
         self.y = self.dx = None
 
-    def initialize(self, prev_shape, x):
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape, x):
+        super()._model_init(prev_shape, x)
         self.query, self.key, self.value, self.mask = x
         self.shape = prev_shape
 

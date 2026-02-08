@@ -35,8 +35,8 @@ class ActivationPycuda(Activation[TensorGPU]):
         self.grid: tuple[int, int, int] = None  # type: ignore
         self.block: tuple[int, int, int] = None  # type: ignore
 
-    def initialize(self, prev_shape: ArrayShape, x: TensorGPU):
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape: ArrayShape, x: TensorGPU):
+        super()._model_init(prev_shape, x)
         self.grid = self.model.cuda_grid
         self.block = self.model.cuda_block
 

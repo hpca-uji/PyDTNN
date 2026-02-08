@@ -12,13 +12,13 @@ class LeakyReluNumpy(LeakyRelu[np.ndarray], ActivationNumpy):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def initialize(self, prev_shape, x=None):
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape, x=None):
+        super()._model_init(prev_shape, x)
         # NOTE: These attributes only store data, their values before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
         self._y = np.zeros((self.model.batch_size, *self.prev_shape), dtype=self.model.dtype)
         self._mask = np.zeros((self.model.batch_size, *self.prev_shape), dtype=self.model.dtype)
 
-        self.real_memory_size += self._y.nbytes + self._mask.nbytes
+        self.memory_used += self._y.nbytes + self._mask.nbytes
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         self.y = self._y[:x.shape[0], :]
