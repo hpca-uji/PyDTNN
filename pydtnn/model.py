@@ -24,7 +24,6 @@ from pydtnn import rank, nprocs, hostname, ranks_per_node, num_gpus, supported_g
 from pydtnn import utils
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.activations.relu import Relu
-from pydtnn.backends.pycuda.optimizers.optimizer import OptimizerPycuda
 from pydtnn.libs.mpi import proto as PROTOCOL
 from pydtnn import crypto
 from pydtnn.datasets.dataset import Dataset
@@ -773,7 +772,6 @@ class Model[T: Array]:
         self._is_model_init = True
 
         if self.enable_cudnn:
-            assert isinstance(self.optimizer, OptimizerPycuda), f"CUDA is enable but the optimizer's backend is not a GPU one ({type(self.optimizer)=})"
             self.optimizer.set_gpudirect(self.gpudirect)
 
         self.optimizer._model_init(self.get_all_layers(self.layers))

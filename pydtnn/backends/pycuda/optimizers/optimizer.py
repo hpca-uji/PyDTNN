@@ -3,12 +3,8 @@ from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.layer_base import LayerBase
 from pydtnn.optimizers.optimizer import Optimizer
 
-#  TODO: Fix this.
-try:
-    from pycuda.driver import Function  # type: ignore
-    from pycuda.elementwise import ElementwiseKernel  # type: ignore
-except BaseException:
-    pass
+from pycuda.driver import Function  # type: ignore
+from pycuda.elementwise import ElementwiseKernel  # type: ignore
 
 
 class OptimizerPycuda(Optimizer[TensorArray]):
