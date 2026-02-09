@@ -938,7 +938,7 @@ class Model[T: Array]:
                 layer.wait_allreduce_async(gradient=gradient)
                 self.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT], [PYDTNN_EVENT_FINISHED, PYDTNN_EVENT_FINISHED])
 
-    def train_dataset(self, bar_width=BAR_WIDTH) -> dict[str, list[np.ndarray]]:
+    def train(self, bar_width=BAR_WIDTH) -> dict[str, list[np.ndarray]]:
         self._ensure_model_init()
 
         # If working with CUDA, self.y_batch must be in a GPU's data structure.
@@ -1231,7 +1231,7 @@ class Model[T: Array]:
 
         return self.total_metrics
 
-    def evaluate_dataset(self, bar_width=BAR_WIDTH):
+    def evaluate(self, bar_width=BAR_WIDTH):
         self._ensure_model_init()
 
         if self.enable_cudnn and self.y_batch is None:

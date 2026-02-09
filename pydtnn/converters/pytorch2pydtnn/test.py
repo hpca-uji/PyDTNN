@@ -164,7 +164,7 @@ def pydtnn_inference(model: PyDTNN_Model, metrics_list=None, dataset=None) -> No
     metrics_list = [f for f in model.metrics.replace(" ", "").split(",")] if metrics_list is None else metrics_list
     model.dataset = dataset if dataset is not None else model.dataset
     model.show()
-    model.evaluate_dataset()
+    model.evaluate()
     print_model_reports(model)
 
 
@@ -218,7 +218,7 @@ def pydtnn_training(model: PyDTNN_Model, dataset: Dataset, num_samples=64 * 2):
 
     # history = model.train(x_train=dataset._x[DatasetEnum.TRAIN][:num_samples], x_val=dataset._x[VAL][:num_samples],
     #                      y_train=dataset._y[DatasetEnum.TRAIN][:num_samples], y_val=dataset._y[VAL][:num_samples])
-    history = model.train_dataset()
+    history = model.train()
     print(f"history: {history}")
 
 
