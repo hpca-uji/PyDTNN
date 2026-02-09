@@ -18,7 +18,8 @@ import multiprocessing
 import os
 
 import numpy as np
-from pydtnn.utils import parse_bool as bool_lambda, get_gpus_per_node
+from pydtnn.utils import parse_bool as bool_lambda
+from pydtnn.utils.gpu import get_gpus_per_node
 from functools import cache
 
 from typing import Any
