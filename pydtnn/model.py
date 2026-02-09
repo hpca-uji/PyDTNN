@@ -14,6 +14,9 @@ from typing import TYPE_CHECKING, Any, Literal
 from warnings import warn
 from collections import abc
 
+#from warnings import filterwarnings
+#filterwarnings("error")
+
 import numpy as np
 from tqdm import tqdm
 
@@ -1123,9 +1126,13 @@ class Model[T: Array]:
 
         if has_batch:
             # Forward pass (FP)
+            #print("==== FORWARD ====")
             for layer in self.layers:
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.FORWARD)
+                #print(f"\t===\n\tBEFORE ({layer.name}-{layer.id}): {x.max()=} | {x.min()=}", end=""); print(f" | {x.mean()=} | {x.std()=}\n\t===")
                 x = layer.forward(x)
+                #print(f"\t===\n\tAFTER ({layer.name}-{layer.id}): {x.max()=} | {x.min()=}", end=""); print(f" | {x.mean()=} | {x.std()=}\n\t===")
+
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
             loss, dx = self.loss_func.compute(x, y_targ, self.real_batch_size)
         else:

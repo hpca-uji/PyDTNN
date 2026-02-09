@@ -2,7 +2,6 @@ from pydtnn.libs import numpy as np
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import numpy as np
-from pydtnn.backends.numpy.utils.relu_cython import capped_relu_cython
 from pydtnn.activations.relu6 import Relu6
 from pydtnn.backends.numpy.activations.activation import ActivationNumpy
 

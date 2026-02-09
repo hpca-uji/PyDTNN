@@ -45,6 +45,9 @@ class AbstractPool2DLayerNumpy(AbstractPool2DLayer[np.ndarray], LayerNumpy):
             self.dx_size = np.prod(self.model.batch_size * self.ci * self.hi * self.wi)
             # self.dx = np.zeros(dx_shape, dtype=self.model.dtype)
             # self.real_memory_size += self.dx.nbytes
+        else: 
+            self.dx_size = 0
+
         self.y_dx = np.zeros(shape=(max(self.y_size, self.dx_size), ), dtype=self.model.dtype)
         # NOTE: self.y_dx stores both y and dx values.
         self.memory_used += self.y_dx.nbytes
