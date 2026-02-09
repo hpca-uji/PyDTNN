@@ -1,6 +1,10 @@
 """Abstract encryption"""
 
-# TODO: Migrate to pyfhel
+# NOTE: scaling factor = global scale
+# NOTE: muldepth = len(coeff_modulus)
+# NOTE: HELib: slots = ploy / 4
+# NOTE: fistMod = max(conff_modulus)
+# NOTE: base params: muldepth, scale, firstMod
 
 import math
 import operator
