@@ -38,9 +38,6 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
                 raise NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
         # -
 
-        self.temp_bw_shape = self._x_cr_shape
-        self.temp_bw_shape_size = np.prod(self.temp_bw_shape)
-
         y_shape = (dim_n, self.co)
         self.y_size = np.prod(y_shape)
 
@@ -55,13 +52,13 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
 
         self.dx_shape_size = int(np.prod(self.dx_shape))
         # NOTE: These attributes only store data, their values before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
-        self.temp_c_r_dx = np.zeros(shape=(max(np.prod(self._x_cr_shape), self.dx_shape_size), ), dtype=self.model.dtype)
-        # self.temp_c_r_dx: Temporal array where the cols/rows and dx values are stored.
-        self.memory_used += self.temp_c_r_dx.nbytes
+        self.temp_c_r = np.zeros(shape=self._x_cr_shape, dtype=self.model.dtype)
+        # self.temp_c_r_dx: Temporal array where the forward and batckward's cols/rows are stored
+        self.memory_used += self.temp_c_r.nbytes
 
-        self.temp_y_bc_br = np.zeros(shape=(max(self.y_size, self.temp_bw_shape_size), ), dtype=self.model.dtype)
+        self.temp_y_dx = np.zeros(shape=(max(self.y_size, self.dx_shape_size), ), dtype=self.model.dtype)
         # self.temp_y_bc_br: Temporal array where the y and backward's cols/rows values are stored.
-        self.memory_used += self.temp_y_bc_br.nbytes
+        self.memory_used += self.temp_y_dx.nbytes
 
         self.memory_used += self.tmp_memory_used
     # ---
@@ -69,23 +66,29 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
     def get_rows(self, batch_size: int) -> np.ndarray:
         dim_n = batch_size * self.ho * self.wo
         shape = (dim_n, self.dim_c)
-        x_rows: np.ndarray = self.temp_c_r_dx[:np.prod(shape)]
+        x_rows: np.ndarray = self.temp_c_r[:np.prod(shape)]
         x_rows = x_rows.reshape(shape)
         return x_rows
 
     def get_cols(self, batch_size: int) -> np.ndarray:
         dim_n = batch_size * self.ho * self.wo
         shape = (self.dim_c, dim_n)
-        x_cols: np.ndarray = self.temp_c_r_dx[:np.prod(shape)]
+        x_cols: np.ndarray = self.temp_c_r[:np.prod(shape)]
         x_cols = x_cols.reshape(shape)
         return x_cols
 
     def get_y(self, batch_size: int) -> np.ndarray:
         dim_n = batch_size * self.ho * self.wo
         shape = (dim_n, self.co)
-        y: np.ndarray = self.temp_y_bc_br[:np.prod(shape)]
+        y: np.ndarray = self.temp_y_dx[:np.prod(shape)]
         y = y.reshape(shape)
         return y
+
+    def get_dx(self, batch_size: int) -> np.ndarray:
+        shape = self.model.encode_shape((batch_size, self.ci, self.hi, self.wi))
+        dx: np.ndarray = self.temp_y_dx[:np.prod(shape)]
+        dx = dx.reshape(shape)
+        return dx
 
 ##########################################################################################################################
 ##########################################################################################################################
@@ -259,7 +262,6 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
         """Version of the backward function that uses im2col and matmul"""
 
         # res = np.asarray(self.res_bw[:(dy.shape[0] * self.ho * self.wo), :], dtype=self.model.dtype)
-        rows: np.ndarray = self.get_rows(dy.shape[0])
         self.dw = self.dw.reshape(self._dw_shape)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_TRANSPOSE_DY)
@@ -275,6 +277,8 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_RESHAPE_DW)
         self.dw = self.dw.reshape(self.weights.shape, copy=False)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+
+        rows: np.ndarray = self.get_rows(dy.shape[0]) # NOTE: rows shares the memory with self.x_rows
 
         # Biases gradient
         if self.use_bias:
@@ -293,7 +297,7 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
                   dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-        dx: np.ndarray = self.temp_c_r_dx[:self.dx_shape_size].reshape(self.dx_shape)[:dy.shape[0]]
+        dx: np.ndarray = self.get_dx(dy.shape[0])
         dx.fill(0)  # NOTE: It is necessary that dx is filled with 0s.
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM)
@@ -305,8 +309,6 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
     def _backward_i2c_nchw(self, dy: np.ndarray) -> np.ndarray:
         """Version of the backward function that uses im2col and matmul"""
         # cols:np.ndarray = np.asarray(self.temp_bw[:, :(dy.shape[0] * self.ho * self.wo)], dtype=self.model.dtype)
-        cols = self.get_cols(dy.shape[0])
-
         self.dw = self.dw.reshape(self._dw_shape)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_TRANSPOSE_DY)
@@ -318,6 +320,8 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
         np.matmul(dy_rows, self.x_cols.T, out=self.dw,
                   dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+
+        cols = self.get_cols(dy.shape[0])  # NOTE: cols shares the memory with self.x_cols
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_RESHAPE_DW)
         self.dw = self.dw.reshape(self.weights.shape)
@@ -340,7 +344,7 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
                   dtype=self.model.dtype, order='C')
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-        dx: np.ndarray = self.temp_c_r_dx[:self.dx_shape_size].reshape(self.dx_shape)[:dy.shape[0]]
+        dx: np.ndarray = self.get_dx(dy.shape[0])
         dx.fill(0)  # NOTE: It is necessary that dx is filled with 0s.
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM)
