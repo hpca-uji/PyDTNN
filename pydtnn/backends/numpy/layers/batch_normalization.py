@@ -89,7 +89,6 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
 
     def _training_fwd(self, x:np.ndarray, _mean: np.ndarray, _var: np.ndarray, y: np.ndarray) -> None:
         # y = ((x - mean(x)) / sqrt(var(x) + epsilon)) * gamma + beta
-        # NOTE: Check this. (xn is already the mean)
         np.subtract(x, _mean, out=self.xn,
                     dtype=self.model.dtype)
 
