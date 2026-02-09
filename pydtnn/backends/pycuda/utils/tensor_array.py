@@ -227,7 +227,7 @@ class TensorArray:
             case self.TensorTypeEnum.SEQ:
                 cudnn.cudnnDestroySeqDataDescriptor(self.desc)
             case self.TensorTypeEnum.OTHER:
-                cudnn.cudnnDestroySeqDataDescriptor(self.desc)
+                pass  # do nothing.
             case tensor_type:
                 raise NotImplementedError(f"Tensor type not implemented! ({tensor_type})")
         self.desc = -1
