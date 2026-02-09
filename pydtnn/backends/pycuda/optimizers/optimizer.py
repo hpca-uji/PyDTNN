@@ -36,5 +36,5 @@ class OptimizerPycuda(Optimizer[TensorArray]):
         super()._model_init(list_layers)
         self._kernel_init()
 
-    def _kernel_init(self) -> "Function":
+    def _kernel_init(self) -> Function:
         pass
