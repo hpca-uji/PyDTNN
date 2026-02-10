@@ -21,7 +21,7 @@ class KLDivergenceMetricNumpy(KLDivergenceMetric[np.ndarray], MetricNumpy):
             self.loss = self.model.memory.ndarray(self.shape, dtype=self.model.dtype)
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
-        y_targ = np.asarray(y_targ, dtype=self.model.dtype)
+        y_targ = np.asarray(y_targ, dtype=self.model.dtype, order="C")
         loss = self.loss[:y_pred.shape[0]]
         # loss = np.abs(y_pred * np.log(np.abs(y_pred / (y_targ + eps) + eps)))
         np.add(y_targ, self.eps, out=loss)

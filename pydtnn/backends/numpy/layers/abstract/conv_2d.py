@@ -24,7 +24,7 @@ class AbstractConv2DNumpy(Conv2D[np.ndarray], LayerNumpy):
         super()._model_init(prev_shape, x)
         if self.use_bias:
             bias_shape = (self.co,)  # NOTE: Is the same shape in every variant and grouping
-            self.biases = np.asarray(self.biases_initializer(bias_shape, self.model.dtype))
+            self.biases = np.asarray(self.biases_initializer(bias_shape, self.model.dtype), order="C")
             self.memory_used += self.biases.nbytes
 
         self.weights = np.asarray(self.weights_initializer(self.weights_shape, self.model.dtype), order="C")

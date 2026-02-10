@@ -46,7 +46,7 @@ class BinaryConfusionMatrixNumpy(BinaryConfusionMatrix[np.ndarray], MetricNumpy)
         Target|T| TP | FN |
               |F| FP | TN |
         """
-        y_targ = np.asarray(y_targ, dtype=self.model.dtype)
+        y_targ = np.asarray(y_targ, dtype=self.model.dtype, order="C")
         # NOTE: y_pred.shape == y_targ.shape == (n<=self.model.batch_size, self.model.output_shape)
         n, target_classes = y_pred.shape
         # assert target_classes == pred_classes, f"target_classes ({target_classes}) != pred_classes {pred_classes}, and must have the same value."

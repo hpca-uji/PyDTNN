@@ -37,7 +37,7 @@ class Conv2DPointwiseNumpy(AbstractConv2DNumpy, Conv2DPointwise):
                 # NCHW's src: co, ci
                 # NHWC's dst: ci, co
                 ary = getattr(self, key)
-                ary[:] = np.asarray(format_transpose(value, "OI", "IO"), dtype=self.model.dtype)
+                ary[:] = np.asarray(format_transpose(value, "OI", "IO"), dtype=self.model.dtype, order="C")
                 return
         return super()._import_prop(key, value)
     # ------
@@ -127,7 +127,7 @@ class Conv2DPointwiseNumpy(AbstractConv2DNumpy, Conv2DPointwise):
         _n, _h, _w, _c = dy.shape
         _dim = _n * _h * _w
         x_shape = self.x.shape
-        dx: np.ndarray = np.asarray(self.dx[:, :_dim], dtype=self.model.dtype)
+        dx: np.ndarray = np.asarray(self.dx[:, :_dim], dtype=self.model.dtype, order="C")
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_TRANSPOSE_DY)
         reshaped_dy: np.ndarray = dy.reshape((_dim, _c))
@@ -162,7 +162,7 @@ class Conv2DPointwiseNumpy(AbstractConv2DNumpy, Conv2DPointwise):
         _n, _c, _h, _w = dy.shape
         _dim = _n * _h * _w
         x_shape = self.x.shape
-        dx = np.asarray(self.dx[:, :_dim], dtype=self.model.dtype)
+        dx = np.asarray(self.dx[:, :_dim], dtype=self.model.dtype, order="C")
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_TRANSPOSE_DY)
         reshaped_dy = dy.reshape((_dim, _c))

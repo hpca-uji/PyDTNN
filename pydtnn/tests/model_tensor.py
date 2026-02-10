@@ -50,7 +50,7 @@ class ModelTensorTestCase(ModelCommonTestCase):
     def nhwc2nchw(x: np.ndarray):
         if len(x.shape) == 4:
             x = format_transpose(x, TensorFormat.NHWC, TensorFormat.NCHW)
-        return np.asarray(x)
+        return np.asarray(x, order="C")
 
     def do_model2_forward_pass(self, model2: Model, x1: list[np.ndarray]) -> list[np.ndarray]:
         """

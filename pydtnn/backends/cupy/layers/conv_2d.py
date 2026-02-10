@@ -71,7 +71,7 @@ class Conv2DCUPY(Conv2DStandardCUPY):
         n = x.shape[0]
         dim_n = n * self.ho * self.wo
         # x_rows = np.zeros(shape=(dim_n, self.dim_c), dtype=self.model.dtype)
-        x_rows = np.asarray(self._x_rows[:dim_n, :], dtype=self.model.dtype)
+        x_rows = np.asarray(self._x_rows[:dim_n, :], dtype=self.model.dtype, order="C")
         res = self.res[:dim_n, :]
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
@@ -119,7 +119,7 @@ class Conv2DCUPY(Conv2DStandardCUPY):
 
         dim_n = x.shape[0] * self.ho * self.wo
         # x_cols = np.zeros(shape=(self.dim_c, dim_n), dtype=self.model.dtype)
-        x_cols = np.asarray(self._x_cols[:, :dim_n], dtype=self.model.dtype)
+        x_cols = np.asarray(self._x_cols[:, :dim_n], dtype=self.model.dtype, order="C")
         res = self.res[:dim_n, :]
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
@@ -157,7 +157,7 @@ class Conv2DCUPY(Conv2DStandardCUPY):
         """Version of the backward function that uses im2col and matmul"""
 
         n = dy.shape[0]
-        res = np.asarray(self.res_bw[:(n * self.ho * self.wo), :], dtype=self.model.dtype)
+        res = np.asarray(self.res_bw[:(n * self.ho * self.wo), :], dtype=self.model.dtype, order="C")
 
         dx = self.dx[:n, :]
         dx.fill(0)  # NOTE: It is necessary that dx is filled with 0s.
@@ -214,7 +214,7 @@ class Conv2DCUPY(Conv2DStandardCUPY):
 
     def _backward_i2c_nchw(self, dy: np.ndarray) -> np.ndarray:
         """Version of the backward function that uses im2col and matmul"""
-        res = np.asarray(self.res_bw[:, :(dy.shape[0] * self.ho * self.wo)], dtype=self.model.dtype)
+        res = np.asarray(self.res_bw[:, :(dy.shape[0] * self.ho * self.wo)], dtype=self.model.dtype, order="C")
 
         dx = self.dx[:dy.shape[0], :]
         dx.fill(0)  # NOTE: It is necessary that dx is filled with 0s.

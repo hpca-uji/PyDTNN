@@ -22,7 +22,7 @@ class CategoricalAccuracyNumpy(CategoricalAccuracy[np.ndarray], MetricNumpy):
             self._argmax = self.model.memory.ndarray(self._argmax_shape, dtype=np.int32)
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
-        y_targ = np.asarray(y_targ, dtype=self.model.dtype)
+        y_targ = np.asarray(y_targ, dtype=self.model.dtype, order="C")
         b = y_targ.shape[0]
         _argmax = self._argmax[:b]
         # return np.sum(y_targ[np.arange(b), np.argmax(y_pred, axis=1)]) * 100 / b

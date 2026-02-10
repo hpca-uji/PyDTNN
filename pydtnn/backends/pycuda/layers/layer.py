@@ -62,7 +62,7 @@ class LayerPycuda(Layer[TensorArray]):
             return super()._export_prop(key)
 
         gpu_ary = getattr(self, key).ary
-        cpu_ary = np.asarray(gpu_ary.get(), dtype=np.float64).copy()
+        cpu_ary = np.asarray(gpu_ary.get(), dtype=np.float64, order="C").copy()
         return cpu_ary
 
     def _import_prop(self, key: str, value) -> None:
@@ -70,7 +70,7 @@ class LayerPycuda(Layer[TensorArray]):
             return super()._import_prop(key, value)
 
         gpu_ary = getattr(self, key).ary
-        cpu_ary = np.asarray(value.reshape(gpu_ary.shape), dtype=self.model.dtype)
+        cpu_ary = np.asarray(value.reshape(gpu_ary.shape), dtype=self.model.dtype, order="C")
         gpu_ary.set(cpu_ary)
 
     def reduce_weights_async(self, gradient=True):
@@ -267,8 +267,8 @@ class LayerPycuda(Layer[TensorArray]):
                 y_batch = np.repeat(y_batch, num_repetitions, axis=0)[:self.model.batch_size]
             # else: The batch has the right shape ==> Nothing to do.
 
-            x_batch = np.asarray(x_batch, dtype=self.model.dtype)
-            y_batch = np.asarray(y_batch, dtype=self.model.dtype)
+            x_batch = np.asarray(x_batch, dtype=self.model.dtype, order="C")
+            y_batch = np.asarray(y_batch, dtype=self.model.dtype, order="C")
 
             assert isinstance(self.y, TensorArray) and isinstance(self.model.y_batch, TensorArray)
             self.y.ary.set(x_batch)

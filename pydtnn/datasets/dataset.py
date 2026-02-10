@@ -486,7 +486,7 @@ class Dataset(ABC):
                 channel = channel.transpose().astype(np.float32)  # type: ignore (it's possible to use copy=None)
                 image = Image.fromarray(channel, mode="F")
                 image = image.resize(size)
-                channel = np.asarray(image, dtype=np.float32)
+                channel = np.asarray(image, dtype=np.float32, order="C")
                 channel = channel.transpose().astype(self.model.dtype)  # type: ignore (it's possible to use copy=None)
                 new_data[n, c] = channel
 
@@ -520,7 +520,7 @@ class Dataset(ABC):
                 channel = channel.transpose().astype(np.float32)  # type: ignore (it's possible to use copy=None)
                 image = Image.fromarray(channel, mode="F")
                 image = image.crop(crop)
-                channel = np.asarray(image, dtype=np.float32)
+                channel = np.asarray(image, dtype=np.float32, order="C")
                 channel = channel.transpose().astype(self.model.dtype)  # type: ignore (it's possible to use copy=None)
                 new_data[n, c] = channel
 
@@ -533,7 +533,7 @@ class Dataset(ABC):
         """Transform a file-like (RGB image) to array (ndarray CHW uint8)"""
         with Image.open(fp=fp) as image:
             image = image.convert("RGB")
-            array = np.asarray(image)
+            array = np.asarray(image, order="C")
             # NOTE: PIL mode RGB is WHC in unit8
             array = format_transpose(array, SampleFormat.WHC, SampleFormat.CHW)
         return array
@@ -542,7 +542,7 @@ class Dataset(ABC):
         """Transform a file-like (gray-scale image) to array (ndarray CHW uint8)"""
         with Image.open(fp=fp) as image:
             image = image.convert("L")
-            array = np.asarray(image)
+            array = np.asarray(image, order="C")
             # NOTE: PIL mode L is WH in unit8
             array = format_transpose(array, ChannelFormat.WH, ChannelFormat.HW)
             array = array[None, ...]

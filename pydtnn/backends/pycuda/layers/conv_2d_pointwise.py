@@ -130,13 +130,13 @@ class Conv2DPointwisePycuda(AbstractConv2DPycuda):
                 # NCHW's dst: self.co, self.ci
                 gpu_ary = value.ary
                 cpu_ary = gpu_ary.get()
-                return np.asarray(format_transpose(np.squeeze(cpu_ary, axis=(1, 2)), "IO", "OI"), dtype=np.float64).copy()
+                return np.asarray(format_transpose(np.squeeze(cpu_ary, axis=(1, 2)), "IO", "OI"), dtype=np.float64, order="C").copy()
             case TensorFormat.NCHW:
                 # NHWC's src: self.ci, self.co
                 # NCHW's dst: self.co, self.ci
                 gpu_ary = value.ary
                 cpu_ary = gpu_ary.get()
-                return np.asarray(np.squeeze(cpu_ary, axis=(2, 3)), dtype=np.float64).copy()
+                return np.asarray(np.squeeze(cpu_ary, axis=(2, 3)), dtype=np.float64, order="C").copy()
             case _:
                 return super()._export_prop(key)
     # ------
@@ -148,12 +148,12 @@ class Conv2DPointwisePycuda(AbstractConv2DPycuda):
             case TensorFormat.NHWC:
                 # NHWC's src: self.ci, self.co
                 # NCHW's dst: self.co, self.ci
-                cpu_ary = np.asarray(np.expand_dims(format_transpose(value, "OI", "IO"), axis=(1, 2)), dtype=self.model.dtype)
+                cpu_ary = np.asarray(np.expand_dims(format_transpose(value, "OI", "IO"), axis=(1, 2)), dtype=self.model.dtype, order="C")
                 attribute.ary.set(cpu_ary)
                 return
             case TensorFormat.NCHW:
                 gpu_ary = attribute.ary
-                cpu_ary = np.asarray(np.expand_dims(value, axis=(2, 3)), dtype=self.model.dtype)
+                cpu_ary = np.asarray(np.expand_dims(value, axis=(2, 3)), dtype=self.model.dtype, order="C")
                 gpu_ary.set(cpu_ary)
                 return
             case _:

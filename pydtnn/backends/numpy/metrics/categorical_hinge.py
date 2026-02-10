@@ -29,7 +29,7 @@ class CategoricalHingeNumpy(CategoricalHinge[np.ndarray], MetricNumpy):
             self.neg = self.model.memory.ndarray(self.neg_shape, dtype=self.model.dtype)
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
-        y_targ = np.asarray(y_targ, dtype=self.model.dtype)
+        y_targ = np.asarray(y_targ, dtype=self.model.dtype, order="C")
         _pos: np.ndarray = self._pos[: y_pred.shape[0]]
         _neg: np.ndarray = self._neg[: y_pred.shape[0]]
         pos_maxm: np.ndarray = self.pos_maxm[: y_pred.shape[0]]

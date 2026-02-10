@@ -30,7 +30,7 @@ class AbstractConv2DStandardNumpy(AbstractConv2DNumpy):
             case TensorFormat.NHWC:
                 # NHWC's src: ci, kh, kw, co
                 # NCHW's dst: co, ci, kh, kw
-                return np.asarray(format_transpose(value, "IHWO", "OIHW"), dtype=np.float64).copy()
+                return np.asarray(format_transpose(value, "IHWO", "OIHW"), dtype=np.float64, order="C").copy()
         return super()._export_prop(key)
     # -----
 
@@ -43,7 +43,7 @@ class AbstractConv2DStandardNumpy(AbstractConv2DNumpy):
                 # NCHW's src: co, ci, kh, kw
                 # NHWC's dst: ci, kh, kw, co
                 ary = getattr(self, key)
-                ary[:] = np.asarray(format_transpose(value, "OIHW", "IHWO"), dtype=self.model.dtype)
+                ary[:] = np.asarray(format_transpose(value, "OIHW", "IHWO"), dtype=self.model.dtype, order="C")
                 return
         return super()._import_prop(key, value)
     # -----

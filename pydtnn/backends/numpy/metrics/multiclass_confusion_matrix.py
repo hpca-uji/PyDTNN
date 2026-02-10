@@ -16,7 +16,7 @@ class MulticlassConfusionMatrixNumpy(MulticlassConfusionMatrix[np.ndarray], Metr
         self.memory_used += self.conf_matrix.nbytes
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> np.ndarray:
-        y_targ = np.asarray(y_targ, dtype=self.model.dtype)
+        y_targ = np.asarray(y_targ, dtype=self.model.dtype, order="C")
         """
         The output will be a confusion matrix like this:
                 |Predicted     |

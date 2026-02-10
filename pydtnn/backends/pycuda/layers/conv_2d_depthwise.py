@@ -188,11 +188,11 @@ class Conv2DDepthwisePycuda(AbstractConv2DPycuda):
             case TensorFormat.NHWC:
                 gpu_ary = value.ary
                 cpu_ary = np.squeeze(gpu_ary.get(), axis=0)
-                return np.asarray(cpu_ary, dtype=np.float64).copy()
+                return np.asarray(cpu_ary, dtype=np.float64, order="C").copy()
             case TensorFormat.NCHW:
                 gpu_ary = value.ary
                 cpu_ary = np.squeeze(gpu_ary.get(), axis=0)
-                return np.asarray(cpu_ary, dtype=np.float64).copy()
+                return np.asarray(cpu_ary, dtype=np.float64, order="C").copy()
             case _:
                 return super()._export_prop(key)
     # ---
@@ -202,13 +202,13 @@ class Conv2DDepthwisePycuda(AbstractConv2DPycuda):
         attribute = getattr(self, key)
         match self.model.tensor_format:
             case TensorFormat.NHWC:
-                cpu_ary = np.asarray(value, dtype=self.model.dtype)
+                cpu_ary = np.asarray(value, dtype=self.model.dtype, order="C")
                 cpu_ary = np.expand_dims(cpu_ary, axis=0)
                 attribute.ary.set(cpu_ary)
                 return
             case TensorFormat.NCHW:
                 gpu_ary = attribute.ary
-                cpu_ary = np.asarray(np.expand_dims(value, axis=0), dtype=self.model.dtype)
+                cpu_ary = np.asarray(np.expand_dims(value, axis=0), dtype=self.model.dtype, order="C")
                 gpu_ary.set(cpu_ary)
                 return
             case _:

@@ -24,7 +24,7 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
     def _import_biases_db(self, key: str, value: Any) -> None:
         attribute = getattr(self, key)
 
-        cpu_ary = np.asarray(np.expand_dims(value, axis=0), dtype=self.model.dtype)
+        cpu_ary = np.asarray(np.expand_dims(value, axis=0), dtype=self.model.dtype, order="C")
         attribute.ary.set(cpu_ary)
         return
     # ---
@@ -43,7 +43,7 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
         gpu_ary = value.ary
         cpu_ary = gpu_ary.get()
 
-        return np.asarray(np.squeeze(cpu_ary, axis=0), dtype=np.float64).copy()
+        return np.asarray(np.squeeze(cpu_ary, axis=0), dtype=np.float64, order="C").copy()
     # ---
 
     def _export_prop(self, key: str) -> Any:

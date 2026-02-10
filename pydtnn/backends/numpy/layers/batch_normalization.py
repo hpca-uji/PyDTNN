@@ -44,8 +44,8 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
 
         self.gamma = np.full(shape_, self.gamma_init_val, dtype=self.model.dtype)
         self.beta = np.full(shape_, self.beta_init_val, dtype=self.model.dtype)
-        self.running_mean = np.asarray(self.moving_mean_initializer(shape_, self.model.dtype))
-        self.running_var = np.asarray(self.moving_variance_initializer(shape_, self.model.dtype))
+        self.running_mean = np.asarray(self.moving_mean_initializer(shape_, self.model.dtype), order="C")
+        self.running_var = np.asarray(self.moving_variance_initializer(shape_, self.model.dtype), order="C")
 
         self.nparams = self.gamma.size + self.beta.size + self.running_mean.size + self.running_var.size
 

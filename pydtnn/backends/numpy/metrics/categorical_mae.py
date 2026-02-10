@@ -22,7 +22,7 @@ class CategoricalMAENumpy(CategoricalMAE[np.ndarray], MetricNumpy):
             self.error = self.model.memory.ndarray(self.shape, dtype=self.model.dtype)
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
-        y_targ = np.asarray(y_targ, dtype=self.model.dtype)
+        y_targ = np.asarray(y_targ, dtype=self.model.dtype, order="C")
         error = self.error[:y_pred.shape[0]]
         # return np.sum(np.absolute(1 - y_pred[np.arange(b), np.argmax(y_targ, axis=1)]))
         np.subtract(y_pred, y_targ, dtype=self.model.dtype, out=error)

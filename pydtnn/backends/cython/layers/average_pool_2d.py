@@ -122,7 +122,7 @@ class AveragePool2DCython(AveragePool2DNumpy):
     def _backward_nchw_i2c(self, dy: np.ndarray) -> np.ndarray:
         pool_size = np.prod(self.pool_shape)
         dy_cols: np.ndarray = np.tile(dy.flatten() / pool_size, (pool_size, 1))  # type: ignore (it is correct.)
-        dy_cols: np.ndarray = np.asarray(dy_cols, dtype=self.model.dtype)
+        dy_cols: np.ndarray = np.asarray(dy_cols, dtype=self.model.dtype, order="C")
         dx: np.ndarray = np.zeros((dy.shape[0], self.hi, self.wi, self.ci), dtype=self.model.dtype)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM)

@@ -233,7 +233,7 @@ class LayerPyTorchTestCase(TestCase):
             if positives_and_negatives:
                 x -= 0.5
 
-        return np.asarray(x, dtype=dtype).copy()
+        return np.asarray(x, dtype=dtype, order="C").copy()
     # ---------
 
     @staticmethod
@@ -309,7 +309,7 @@ class LayerPyTorchTestCase(TestCase):
 
         x = torch.from_numpy(_x.reshape((N, C, H, W), copy=False)).to(torch.device("cpu")).float()
         x_torch: torch.Tensor = torch_model(x)
-        x_torch = np.asarray(x_torch.cpu().detach().numpy(), dtype=pydtnn_model.dtype)
+        x_torch = np.asarray(x_torch.cpu().detach().numpy(), dtype=pydtnn_model.dtype, order="C")
 
         if verbose_test():
             print(f"[{rtol=}, {atol=}]\n{x_pydtnn.max()=}\n{x_torch.max()=}\n{x_pydtnn.min()=}\n{x_torch.min()=}\n{x_pydtnn.std()=}\n{x_torch.std()=}\n{x_pydtnn.mean()=}\n{x_torch.mean()=}")

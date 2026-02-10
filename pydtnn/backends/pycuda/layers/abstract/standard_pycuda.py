@@ -69,7 +69,7 @@ class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
                 # NCHW's dst: co, ci, kh, kw
                 gpu_ary = value.ary
                 cpu_ary = gpu_ary.get()
-                return np.asarray(format_transpose(cpu_ary, "IHWO", "OIHW"), dtype=np.float64).copy()
+                return np.asarray(format_transpose(cpu_ary, "IHWO", "OIHW"), dtype=np.float64, order="C").copy()
             case _:
                 return super()._export_prop(key)
     # ------
@@ -81,7 +81,7 @@ class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
             case TensorFormat.NHWC:
                 # NCHW's src: co, ci, kh, kw
                 # NHWC's dst: ci, kh, kw, co
-                cpu_ary = np.asarray(format_transpose(value, "OIHW", "IHWO"), dtype=self.model.dtype)
+                cpu_ary = np.asarray(format_transpose(value, "OIHW", "IHWO"), dtype=self.model.dtype, order="C")
                 attribute.ary.set(cpu_ary)
                 return
             case _:

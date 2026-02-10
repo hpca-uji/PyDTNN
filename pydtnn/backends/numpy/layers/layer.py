@@ -36,14 +36,14 @@ class LayerNumpy(Layer[np.ndarray]):
             return super()._export_prop(key)
 
         ary = getattr(self, key)
-        return np.asarray(ary, dtype=np.float64).copy()
+        return np.asarray(ary, dtype=np.float64, order="C").copy()
 
     def _import_prop(self, key: str, value) -> None:
         if key not in self._ary_prop:
             return super()._import_prop(key, value)
 
         ary = getattr(self, key)
-        ary[:] = np.asarray(value, dtype=self.model.dtype)
+        ary[:] = np.asarray(value, dtype=self.model.dtype, order="C")
 
     def reduce_weights_async(self, gradient=True):
         if not self.model.comm:
@@ -98,6 +98,6 @@ class LayerNumpy(Layer[np.ndarray]):
             self.model.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT], [PYDTNN_EVENT_FINISHED, PYDTNN_EVENT_FINISHED])
 
     def _sync_x_y(self, x_batch: np.ndarray, y_batch: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        x_batch = np.asarray(x_batch, dtype=self.model.dtype)
-        y_batch = np.asarray(y_batch, dtype=self.model.dtype)
+        x_batch = np.asarray(x_batch, dtype=self.model.dtype, order="C")
+        y_batch = np.asarray(y_batch, dtype=self.model.dtype, order="C")
         return x_batch, y_batch

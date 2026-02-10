@@ -188,7 +188,7 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
         """Version of the forward function that uses im2col and matmul"""
 
         # x_rows = np.zeros(shape=(dim_n, self.dim_c), dtype=self.model.dtype)
-        # x_rows = np.asarray(self._x_rows[:dim_n, :], dtype=self.model.dtype)
+        # x_rows = np.asarray(self._x_rows[:dim_n, :], dtype=self.model.dtype, order="C")
         x_rows = self.get_rows(x.shape[0])
         x_rows.fill(0)
         # y = self.y[:shape[-1], :]
@@ -224,7 +224,7 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
         """Version of the forward function that uses im2col and matmul"""
 
         # x_cols = np.zeros(shape=(self.dim_c, dim_n), dtype=self.model.dtype)
-        # x_cols: np.ndarray = np.asarray(self._x_cr[:, :dim_n], dtype=self.model.dtype)
+        # x_cols: np.ndarray = np.asarray(self._x_cr[:, :dim_n], dtype=self.model.dtype, order="C")
         x_cols = self.get_cols(x.shape[0])
         x_cols.fill(0)
         # y = self.y[:shape[-1], :]
@@ -261,7 +261,7 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
     def _backward_i2c_nhwc(self, dy: np.ndarray) -> np.ndarray:
         """Version of the backward function that uses im2col and matmul"""
 
-        # res = np.asarray(self.res_bw[:(dy.shape[0] * self.ho * self.wo), :], dtype=self.model.dtype)
+        # res = np.asarray(self.res_bw[:(dy.shape[0] * self.ho * self.wo), :], dtype=self.model.dtype, order="C")
         self.dw = self.dw.reshape(self._dw_shape)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_TRANSPOSE_DY)
@@ -308,7 +308,7 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
 
     def _backward_i2c_nchw(self, dy: np.ndarray) -> np.ndarray:
         """Version of the backward function that uses im2col and matmul"""
-        # cols:np.ndarray = np.asarray(self.temp_bw[:, :(dy.shape[0] * self.ho * self.wo)], dtype=self.model.dtype)
+        # cols:np.ndarray = np.asarray(self.temp_bw[:, :(dy.shape[0] * self.ho * self.wo)], dtype=self.model.dtype, order="C")
         self.dw = self.dw.reshape(self._dw_shape)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_TRANSPOSE_DY)
