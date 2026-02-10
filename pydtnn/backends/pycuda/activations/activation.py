@@ -4,7 +4,7 @@ from pydtnn.activations.activation import Activation
 from pydtnn.tracers.events import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
     PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
 from pydtnn.utils.constants import ArrayShape
-from pydtnn.backends.pycuda.utils.tensor_gpu import TensorGPU
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 
 try:
     from pydtnn.libs.mpi import MPI
@@ -17,7 +17,7 @@ except Exception as e:
     pass
 
 
-class ActivationPycuda(Activation[TensorGPU]):
+class ActivationPycuda(Activation[TensorArray]):
     """
     Extends an Activation class with the attributes and methods required by GPU Activations.
 
@@ -30,13 +30,13 @@ class ActivationPycuda(Activation[TensorGPU]):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # The following attributes will be initalized later.
-        self.x: TensorGPU = None  # type: ignore
-        self.dx: TensorGPU = None  # type: ignore
+        self.x: TensorArray = None  # type: ignore
+        self.dx: TensorArray = None  # type: ignore
         self.grid: tuple[int, int, int] = None  # type: ignore
         self.block: tuple[int, int, int] = None  # type: ignore
 
-    def initialize(self, prev_shape: ArrayShape, x: TensorGPU):
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape: ArrayShape, x: TensorArray):
+        super()._model_init(prev_shape, x)
         self.grid = self.model.cuda_grid
         self.block = self.model.cuda_block
 
@@ -141,7 +141,7 @@ class ActivationPycuda(Activation[TensorGPU]):
                 #                            stream=self.stream_2.handle)
 
                 if not self.model.gpudirect:
-                    dw: TensorGPU = getattr(self, dw_)
+                    dw: TensorArray = getattr(self, dw_)
                     dw_cpu = getattr(self, f"{dw_}_cpu")
 
                     # If there is no CUDA-aware MPI, copy data back to GPU
@@ -157,7 +157,7 @@ class ActivationPycuda(Activation[TensorGPU]):
                                           [self.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.ALLREDUCE_DW,
                                            self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.OPS_ALLREDUCE_DW])
             # stream = self.stream_2.handle)
-            dw: TensorGPU = getattr(self, dw_)
+            dw: TensorArray = getattr(self, dw_)
 
             if self.model.enable_nccl:
                 dw *= self.model.rank_weight  # TODO: Check this!!

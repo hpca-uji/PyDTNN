@@ -3,7 +3,7 @@ import numpy as np
 
 import pycuda.gpuarray as gpuarray  # type: ignore
 
-from pydtnn.backends.pycuda.utils.tensor_gpu import TensorGPU
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.layer_base import LayerBase
 from pydtnn.layers.addition_block import AdditionBlock
 from pydtnn.layers.concatenation_block import ConcatenationBlock
@@ -62,8 +62,8 @@ class ModelGpuTestCase(ModelCommonTestCase):
                 gpu_layer.weights_cpu = cpu_layer.weights.copy()
             if gpu_layer.weights_cpu is not None:
                 weights_gpu = gpuarray.to_gpu(gpu_layer.weights_cpu)
-                gpu_layer.weights = TensorGPU(weights_gpu, gpu_layer.model.tensor_format,
-                                              gpu_layer.model.cudnn_dtype, TensorGPU.TensorTypeEnum.FILTER)
+                gpu_layer.weights = TensorArray(weights_gpu, gpu_layer.model.tensor_format,
+                                                gpu_layer.model.cudnn_dtype, TensorArray.TensorTypeEnum.FILTER)
             if gpu_layer.use_bias:
                 if cpu_layer.biases is None:
                     continue
@@ -71,8 +71,8 @@ class ModelGpuTestCase(ModelCommonTestCase):
                 gpu_layer.biases_cpu = cpu_layer.biases.copy()
                 if gpu_layer.biases_cpu is not None:
                     biases_gpu = gpuarray.to_gpu(gpu_layer.biases_cpu)
-                    gpu_layer.biases = TensorGPU(biases_gpu, gpu_layer.model.tensor_format,
-                                                 gpu_layer.model.cudnn_dtype)
+                    gpu_layer.biases = TensorArray(biases_gpu, gpu_layer.model.tensor_format,
+                                                   gpu_layer.model.cudnn_dtype)
 
     def set_data_to_ary(self, ary: "gpuarray",  # type: ignore
                         data: np.ndarray, layer: LayerBase) -> None:

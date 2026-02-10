@@ -10,7 +10,7 @@ from pydtnn.model import Model as PyDTNN_Model
 from pydtnn.layer_base import LayerBase
 from pydtnn.utils.best_of import BestOf
 
-from pydtnn.backends.pycuda.utils.tensor_gpu import TensorGPU
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 try:
     import pycuda.gpuarray as gpuarray
     from pydtnn.libs import cudnn as cudnn
@@ -178,22 +178,22 @@ def are_all_below_threshold(diff: np.ndarray, threshold: float = THRESHOLD) -> b
     return np.all(diff < threshold)
 
 
-def forward_pydtnn_model(model: PyDTNN_Model, dataset: np.ndarray | TensorGPU) -> np.ndarray | TensorGPU:
-    y: np.ndarray | TensorGPU = dataset
+def forward_pydtnn_model(model: PyDTNN_Model, dataset: np.ndarray | TensorArray) -> np.ndarray | TensorArray:
+    y: np.ndarray | TensorArray = dataset
 
     for i in range(1, len(model.layers)):  # NOTE - Remember: Layer 0 is the Input layer and it's ignored
         layer: LayerBase = model.layers[i]
         y = layer.forward(y)
 
     if y is None:
-        y: TensorGPU = layer.y
+        y: TensorArray = layer.y
     # else: Nothing special.
     print(f"y | ({type(y)})")
 
     return y
 
 
-def test_layers_gpu(model: PyDTNN_Model, dataset: np.ndarray) -> TensorGPU:
+def test_layers_gpu(model: PyDTNN_Model, dataset: np.ndarray) -> TensorArray:
 
     print(f"test_layers_gpu - model")
     model.show()
@@ -203,7 +203,7 @@ def test_layers_gpu(model: PyDTNN_Model, dataset: np.ndarray) -> TensorGPU:
     print(f"TYPES_DATA_CUDA[model.dtype]: {TYPES_DATA_CUDA[model.dtype]}")
     dtype = model.dtype
     model.cudnn_dtype = cudnn.cudnnDataType[TYPES_DATA_CUDA[model.dtype]]
-    _dataset = TensorGPU(
+    _dataset = TensorArray(
         gpu_arr=gpuarray.zeros(shape=dataset.shape, dtype=dtype),
         tensor_format=model.tensor_format, cudnn_dtype=model.cudnn_dtype)
 
@@ -212,7 +212,7 @@ def test_layers_gpu(model: PyDTNN_Model, dataset: np.ndarray) -> TensorGPU:
 
     model.y_batch = _dataset
 
-    y: TensorGPU | None = forward_pydtnn_model(model, _dataset)
+    y: TensorArray | None = forward_pydtnn_model(model, _dataset)
 
     return y
 
@@ -249,9 +249,9 @@ def test_layers(name: str, pytorch_model: TEST_PyTorch_Model, kwargs: Dict[str, 
     pytorch_state_dict = pytorch_model.layer.state_dict()
 
     pytorch_weights: None | torch.Tensor = pytorch_state_dict[PYTORCH_LAYER_WEIGHTS] if PYTORCH_LAYER_WEIGHTS in pytorch_state_dict else None
-    pydtnn_weights: None | np.ndarray | TensorGPU = pydtnn_layer.weights
+    pydtnn_weights: None | np.ndarray | TensorArray = pydtnn_layer.weights
 
-    if isinstance(pydtnn_weights, TensorGPU):
+    if isinstance(pydtnn_weights, TensorArray):
         pydtnn_weights: np.ndarray = pydtnn_weights.ary.get()
 
     there_are_pytorch_weigths = pytorch_weights is not None
@@ -262,10 +262,10 @@ def test_layers(name: str, pytorch_model: TEST_PyTorch_Model, kwargs: Dict[str, 
         print(f"weigths are all zeros: {are_all_zeros(pytorch_weights.cpu().detach().numpy() - pydtnn_weights)}")
 
     pytorch_biases: None | torch.Tensor = pytorch_state_dict[PYTORCH_LAYER_BIASES] if PYTORCH_LAYER_BIASES in pytorch_state_dict else None
-    pydtnn_biases: None | np.ndarray | TensorGPU = pydtnn_layer.biases
+    pydtnn_biases: None | np.ndarray | TensorArray = pydtnn_layer.biases
 
-    if isinstance(pydtnn_weights, TensorGPU):
-        pydtnn_biases: TensorGPU = pydtnn_biases.ary.get()
+    if isinstance(pydtnn_weights, TensorArray):
+        pydtnn_biases: TensorArray = pydtnn_biases.ary.get()
 
     there_are_pytorch_biases = pytorch_biases is not None
     there_are_pydtnn_biases = pydtnn_biases is not None

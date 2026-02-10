@@ -10,7 +10,7 @@ class LossNumpy(Loss[np.ndarray]):
     Extends a Loss class with the attributes and methods required by CPU Losses.
     """
 
-    def initialize(self) -> None:
-        super().initialize()
+    def _model_init(self) -> None:
+        super()._model_init()
         self.dx = np.ndarray(self.shape, dtype=self.model.dtype)
-        self.real_memory_size += self.dx.nbytes
+        self.memory_used += self.dx.nbytes

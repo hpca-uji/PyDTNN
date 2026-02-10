@@ -6,11 +6,11 @@ from pycuda.elementwise import ElementwiseKernel  # type: ignore
 from pydtnn.backends.pycuda.optimizers.optimizer import OptimizerPycuda
 from pydtnn.optimizers.sgd import SGD
 from pydtnn.backends.pycuda.layers.layer import LayerPycuda
-from pydtnn.backends.pycuda.utils.tensor_gpu import TensorGPU
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.utils.constants import DTYPE2CTYPE
 
 
-class SGDPycuda(SGD[TensorGPU], OptimizerPycuda):
+class SGDPycuda(SGD[TensorArray], OptimizerPycuda):
     """
     SGDPycuda optimizer
     """
@@ -18,15 +18,14 @@ class SGDPycuda(SGD[TensorGPU], OptimizerPycuda):
     def __init__(self, learning_rate=1e-2, momentum=0.9, nesterov=False, decay=0.0):
         super().__init__(learning_rate, momentum, nesterov, decay)
 
-    def get_pycuda_kernel(self) -> None:
-        dtype = np.dtype(self.model.dtype)
+    def _kernel_init(self) -> None:
         # --- GPU ---
-        parameters_gpu = "{T} *w, {T} * dw, {T} * v, float lr, float decay, float momentum".format(T=DTYPE2CTYPE[dtype])
+        parameters_gpu = "{T} *w, {T} * dw, {T} * v, float lr, float decay, float momentum".format(T=DTYPE2CTYPE[self.model.dtype])
         ops_gpu = {True: "w[i] -= lr * (decay * w[i] + dw[i] + momentum * v[i])",
                    False: "w[i] -= lr * (decay * w[i] + v[i])"}[self.nesterov]
         operations_gpu = "v[i] = momentum * v[i] + dw[i]; {nesterov_ops};".format(nesterov_ops=ops_gpu)
 
-        self.update_gpu = ElementwiseKernel(parameters_gpu, operations_gpu, "SGD_kernel")
+        self.update_kernel = ElementwiseKernel(parameters_gpu, operations_gpu, "SGD_kernel")
         # ------------
 
         # GPU Direct -
@@ -43,7 +42,7 @@ class SGDPycuda(SGD[TensorGPU], OptimizerPycuda):
             }}
             }}
         """.format(
-            T=DTYPE2CTYPE[dtype],
+            T=DTYPE2CTYPE[self.model.dtype],
             nesterov_ops=({True: "w[i] -= lr * (decay * w[i] + dw[i] + momentum * v[i])",
                            False: "w[i] -= lr * (decay * w[i] + v[i])"}[self.nesterov]),
             name=_name
@@ -52,9 +51,8 @@ class SGDPycuda(SGD[TensorGPU], OptimizerPycuda):
         self.update_gpudirect = SourceModule(code).get_function(_name)
         # ------------
 
-    def initialize(self, list_layers: list[LayerPycuda]) -> None:
-        super().initialize(list_layers)  # type: ignore (The type is correct: LayerPycuda extends LayerBase)
-        self.get_pycuda_kernel()
+    def _model_init(self, list_layers: list[LayerPycuda]) -> None:
+        super()._model_init(list_layers)  # type: ignore (The type is correct: LayerPycuda extends LayerBase)
 
         for layer in list_layers:
             list_grad_vars = list(layer.grad_vars.keys())
@@ -65,14 +63,14 @@ class SGDPycuda(SGD[TensorGPU], OptimizerPycuda):
                     w = getattr(layer, w_)
                     self.context[layer.id]["velocity_%s" % w_] = gpuarray.zeros_like(w.ary, dtype=w.ary.dtype)
 
-                    self.real_memory_size += self.context[layer.id]["velocity_%s" % w_].nbytes  # type: ignore (They are both "gpuarray" and not "int")
+                    self.memory_used += self.context[layer.id]["velocity_%s" % w_].nbytes  # type: ignore (They are both "gpuarray" and not "int")
 
     def update(self, layer: LayerPycuda):
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
             velocity = self.context[layer.id]["velocity_%s" % w_]
-            w: TensorGPU
-            dw: TensorGPU
+            w: TensorArray
+            dw: TensorArray
             velocity: gpuarray.GPUArray
 
             if self.gpudirect:
@@ -86,6 +84,6 @@ class SGDPycuda(SGD[TensorGPU], OptimizerPycuda):
                                       stream=layer.stream_2)
             else:
                 n = np.int32(np.prod(w.shape))
-                self.update_gpu(w.ary, dw.ary, velocity, np.float32(self.learning_rate),
-                                np.float32(self.decay), np.float32(self.momentum),
-                                stream=layer.stream_2)
+                self.update_kernel(w.ary, dw.ary, velocity, np.float32(self.learning_rate),
+                                   np.float32(self.decay), np.float32(self.momentum),
+                                   stream=layer.stream_2)

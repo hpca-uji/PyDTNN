@@ -25,8 +25,8 @@ class PromoteToBackend:
         return self
 
     def __init__(self) -> None:
-        self.temp_memory_size: int = 0
-        self.real_memory_size: int = 0
+        self.memory_used: int = 0
+        self.tmp_memory_used: int = 0
 
     def __getattribute__(self, name: str):
         ref = "_backend"
@@ -126,7 +126,7 @@ class PromoteToBackend:
         else:
             delattr(backend, name)
 
-    def init_backend(self) -> None:
+    def _init_backend(self) -> None:
         """
         Initialize the backend implementation used
 
@@ -158,8 +158,8 @@ class PromoteToBackend:
 
     @property
     def canonical_name(self) -> str:
-        frontend = getattr(self, "_frontend", self)
-        return type(frontend).__name__
+        self = getattr(self, "_frontend", self)
+        return type(self).__name__
 
     def _show_props(self) -> dict:
         props = {}
@@ -169,10 +169,10 @@ class PromoteToBackend:
         if self.name != self.canonical_name:
             props["backend"] = self.name.removeprefix(self.canonical_name).lower()
 
-        if self.real_memory_size > 0:
-            memory = utils.convert_size_bytes(self.real_memory_size)
-            if self.temp_memory_size > 0:
-                tmp_memory = utils.convert_size_bytes(self.temp_memory_size)
+        if self.memory_used > 0:
+            memory = utils.convert_size_bytes(self.memory_used)
+            if self.tmp_memory_used > 0:
+                tmp_memory = utils.convert_size_bytes(self.tmp_memory_used)
                 memory = f"{memory} ({tmp_memory} tmp)"
             props["memory"] = memory
 
@@ -189,18 +189,19 @@ class PromoteToBackend:
 
         return f"<{name} {props}>" if props else f"<{name}>"
 
-    def initialize(self) -> None:
+    def _model_init(self) -> None:
         pass
 
-    def post_initialize(self) -> None:
+    def _post_init(self) -> None:
         pass
 
-    def init_backend_with_model(self, model: "model_module.Model") -> None:
+    def _init_backend_with_model(self, model: "model_module.Model") -> None:
         """Initialize backend and link a new model instance"""
         self.model = model  # Set on frontend
-        self.init_backend()
+        self._init_backend()
         self.model = model  # Set on backend
 
     @classmethod
     def from_model[C](cls: type[C], model: "model_module.Model") -> C:
+        """Create object from a given model"""
         raise NotImplementedError("Use a concrete optimizer!")

@@ -94,7 +94,7 @@ class Context(crypto.Context[uarchfhe.PyCiphertext]):
         h = 3  # Secret key Hamming weight (security parameter)
         sigma = 3  # Standard deviation for error distribution (security parameter)
         self._modulus = COEFF_MODULUS[self._security_level][self._poly_degree]
-        self._context = uarchfhe.PyContext(self._poly_degree, self._modulus[0], self._global_scale, sigma, h)
+        self._context = uarchfhe.PyContext(self._poly_degree, max(self._modulus), self._global_scale, sigma, h)
         self._workspace = [0] * self._slots
 
         # Keys
@@ -121,7 +121,7 @@ class Context(crypto.Context[uarchfhe.PyCiphertext]):
         if len(chunk) < self._slots:
             self._workspace[:len(chunk)] = chunk
             chunk = self._workspace
-        return self._ckks.encrypt(chunk, len(chunk), self._global_scale, self._modulus[0])
+        return self._ckks.encrypt(chunk, len(chunk), self._global_scale, max(self._modulus))
 
     def _decrypt_chunk(self, chunk: uarchfhe.PyCiphertext) -> list:
         """Decode cypertext to list"""

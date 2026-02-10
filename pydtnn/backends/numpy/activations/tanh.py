@@ -9,12 +9,12 @@ from pydtnn.backends.numpy.activations.activation import ActivationNumpy
 
 class TanhNumpy(Tanh[np.ndarray], ActivationNumpy):
 
-    def initialize(self, prev_shape, x=None):
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape, x=None):
+        super()._model_init(prev_shape, x)
         # NOTE: This attribute only stores data, its value before the operation doesn't matters; it's initalized due avoid warnings in "LayerAndActivationBase.export".
         self._y = np.zeros((self.model.batch_size, *prev_shape), dtype=self.model.dtype)
 
-        self.real_memory_size += self._y.nbytes
+        self.memory_used += self._y.nbytes
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         self.y = self._y[:x.shape[0], :]

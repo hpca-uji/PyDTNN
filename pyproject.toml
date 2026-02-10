@@ -51,8 +51,8 @@ gpu = [
     "cupy>=13.6.0"
 ]
 mpi = [
-    "net-queue>=1.1.0",
-    "pympi>=1.0.0",
+    "net-queue>=2.0.0",
+    "pympi>=1.1.0",
     "mpi4py>=4.1.0"
 ]
 fhe = [

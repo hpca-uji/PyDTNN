@@ -14,8 +14,8 @@ class Optimizer[T: Array](PromoteToBackend):
         self.learning_rate: float = learning_rate
         self.context = dict[int, dict[str, int | T]]()
 
-    def initialize(self, list_layers: list[LayerBase[T]]) -> None:
-        super().initialize()
+    def _model_init(self, list_layers: list[LayerBase[T]]) -> None:
+        super()._model_init()
         self.dtype = self.model.dtype
 
     def update(self, layer: LayerBase) -> None:

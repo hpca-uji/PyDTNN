@@ -21,8 +21,8 @@ class Conv2DReluFuse(Conv2DRelu[np.ndarray], AbstractConv2DStandardNumpy):
 
     # NOTE: The "__init__" method is being made (more or less) in Model (in _apply_layer_fusion) and in FusedLayerMixIn.
 
-    def initialize(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
+        super()._model_init(prev_shape, x)
         self.forward = {"_forward_cg_nchw": self._forward_nchw_cg,
                         "_forward_cg_nhwc": self._forward_nhwc_cg,
                         "_forward_cw_nchw": self._forward_nchw_cw}[self.forward.__name__]

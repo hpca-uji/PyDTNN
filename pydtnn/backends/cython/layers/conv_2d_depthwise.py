@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import numpy as np
 
+
 class Conv2DDepthwiseCython(Conv2DDepthwiseNumpy):
 
     def _initializing_special_parameters(self):

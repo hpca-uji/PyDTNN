@@ -7,6 +7,6 @@ from pydtnn.utils.constants import ArrayShape
 
 class Flatten[T: Array](Layer[T]):
 
-    def initialize(self, prev_shape: ArrayShape, x: T | None):
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape: ArrayShape, x: T | None):
+        super()._model_init(prev_shape, x)
         self.shape = (int(np.prod(prev_shape)),)

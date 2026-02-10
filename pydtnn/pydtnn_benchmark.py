@@ -68,7 +68,7 @@ def main():
         if model.comm_rank == 0:
             print('**** Evaluating on test dataset...')
             t1 = time.time()
-        _ = model.evaluate_dataset()
+        _ = model.evaluate()
         if model.comm_rank == 0:
             t2 = time.time()
             # noinspection PyUnboundLocalVariable
@@ -93,7 +93,7 @@ def main():
     # Training a model directly from a dataset
     # or alternatively, define any custom data
     # mode.dataset = CustomDataset(model, x, y)
-    history = model.train_dataset()
+    history = model.train()
     # Barrier
     if model.parallel == "data":
         model.comm.Barrier()
@@ -125,7 +125,7 @@ def main():
         if model.comm_rank == 0:
             print('**** Evaluating on test dataset...')
             t1 = time.time()
-        _ = model.evaluate_dataset()
+        _ = model.evaluate()
         if model.comm_rank == 0:
             t2 = time.time()
             # noinspection PyUnboundLocalVariable

@@ -49,5 +49,5 @@ class Parameters(StrEnum):
 
 # NOTE: It is necessary to have "ArrayShape" initialized before TensorGPU
 if typing.TYPE_CHECKING:
-    from pydtnn.backends.pycuda.utils.tensor_gpu import TensorGPU
-type Array = "np.ndarray | TensorGPU"
+    from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+type Array = "np.ndarray | TensorArray"

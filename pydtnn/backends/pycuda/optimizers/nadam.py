@@ -7,11 +7,11 @@ from pydtnn.backends.pycuda.optimizers.optimizer import OptimizerPycuda
 from pydtnn.optimizers.nadam import Nadam
 
 from pydtnn.backends.pycuda.layers.layer import LayerPycuda
-from pydtnn.backends.pycuda.utils.tensor_gpu import TensorGPU
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.utils.constants import DTYPE2CTYPE
 
 
-class NadamPycuda(Nadam[TensorGPU], OptimizerPycuda):
+class NadamPycuda(Nadam[TensorArray], OptimizerPycuda):
     """
     NadamPycuda optimizer
     """
@@ -19,20 +19,19 @@ class NadamPycuda(Nadam[TensorGPU], OptimizerPycuda):
     def __init__(self, learning_rate=1e-2, beta1=0.99, beta2=0.999, epsilon=1e-7, decay=0.0):
         super().__init__(learning_rate, beta1, beta2, epsilon, decay)
 
-    def get_pycuda_kernel(self) -> None:
-        dtype = np.dtype(self.model.dtype)
+    def _kernel_init(self) -> None:
         func_pow = {np.dtype(np.float32): "powf", np.dtype(np.float64): "pow"}
 
         # --- GPU ---
         parameters_gpu = "{T} *w, {T} *dw, {T} *m, {T} *v, float it, " \
-                         "float lr, float decay, float beta1, float beta2, float epsilon".format(T=DTYPE2CTYPE[dtype])
+                         "float lr, float decay, float beta1, float beta2, float epsilon".format(T=DTYPE2CTYPE[self.model.dtype])
         operations_gpu = """
             m[i] = beta1 * m[i] + (1 - beta1) * dw[i];
             v[i] = beta2 * v[i] + (1 - beta2) * {func}(dw[i], 2);
             w[i] -= lr * (decay * w[i] + (((m[i] + (1 - beta1) * dw[i]) / (1 - {func}(beta1, it))) / sqrtf((v[i] / (1 - {func}(beta2, it))) + epsilon)))
-        """.format(func=func_pow[dtype])
+        """.format(func=func_pow[self.model.dtype])
 
-        self.update_gpu = ElementwiseKernel(parameters_gpu, operations_gpu, "Nadam_kernel")
+        self.update_kernel = ElementwiseKernel(parameters_gpu, operations_gpu, "Nadam_kernel")
         # -----------
 
         # GPU DIRECT-
@@ -51,17 +50,16 @@ class NadamPycuda(Nadam[TensorGPU], OptimizerPycuda):
                             sqrt(v[i] / (1 - {func}(beta2, it)) + epsilon)));
                 }}
             }}""".format(
-            T=DTYPE2CTYPE[dtype],
-            func=func_pow[dtype],
+            T=DTYPE2CTYPE[self.model.dtype],
+            func=func_pow[self.model.dtype],
             name=_name
         )
 
         self.update_gpudirect = SourceModule(code).get_function(_name)
         # -----------
 
-    def initialize(self, list_layers: list[LayerPycuda]) -> None:
-        super().initialize(list_layers)  # type: ignore (The type is correct: LayerPycuda extends LayerBase)
-        self.get_pycuda_kernel()
+    def _model_init(self, list_layers: list[LayerPycuda]) -> None:
+        super()._model_init(list_layers)  # type: ignore (The type is correct: LayerPycuda extends LayerBase)
 
         for layer in list_layers:
             self.context[layer.id] = dict[str, int | gpuarray.GPUArray]()
@@ -72,7 +70,7 @@ class NadamPycuda(Nadam[TensorGPU], OptimizerPycuda):
                 self.context[layer.id]["m_%s" % w_] = gpuarray.zeros_like(w.ary, dtype=layer.model.dtype)
                 self.context[layer.id]["v_%s" % w_] = gpuarray.zeros_like(w.ary, dtype=layer.model.dtype)
 
-                self.real_memory_size += self.context[layer.id]["m_%s" % w_].nbytes + self.context[layer.id]["v_%s" % w_].nbytes  # type: ignore (They are both "gpuarray" and not "int")
+                self.memory_used += self.context[layer.id]["m_%s" % w_].nbytes + self.context[layer.id]["v_%s" % w_].nbytes  # type: ignore (They are both "gpuarray" and not "int")
 
     def update(self, layer: LayerPycuda) -> None:
         self.context[layer]["it"] += 1  # type: ignore (self.context[layer]["it"] is always an integer)
@@ -82,8 +80,8 @@ class NadamPycuda(Nadam[TensorGPU], OptimizerPycuda):
             w, dw = getattr(layer, w_), getattr(layer, dw_)
             m = self.context[layer.id]["m_%s" % w_]
             v = self.context[layer.id]["v_%s" % w_]
-            w: TensorGPU
-            dw: TensorGPU
+            w: TensorArray
+            dw: TensorArray
             m: gpuarray.GPUArray
             v: gpuarray.GPUArray
 
@@ -99,8 +97,8 @@ class NadamPycuda(Nadam[TensorGPU], OptimizerPycuda):
                                       grid=(int(blocks), 1, 1), block=(int(threads), 1, 1),
                                       stream=layer.stream_2)
             else:
-                self.update_gpu(w.ary, dw.ary, m, v,
-                                np.float32(it), np.float32(self.learning_rate),
-                                np.float32(self.decay), np.float32(self.beta1),
-                                np.float32(self.beta2), np.float32(self.epsilon),
-                                stream=layer.stream_2)
+                self.update_kernel(w.ary, dw.ary, m, v,
+                                   np.float32(it), np.float32(self.learning_rate),
+                                   np.float32(self.decay), np.float32(self.beta1),
+                                   np.float32(self.beta2), np.float32(self.epsilon),
+                                   stream=layer.stream_2)

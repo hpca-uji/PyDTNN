@@ -2,7 +2,7 @@ import numpy as np
 
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 from pydtnn.backends.pycuda.layers.abstract.conv_2d import AbstractConv2DPycuda
-from pydtnn.backends.pycuda.utils.tensor_gpu import TensorGPU
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.utils.constants import ArrayShape
 
 
@@ -27,17 +27,17 @@ class Conv2DPycuda(AbstractConv2DPycuda):
                 raise NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
     # ---
 
-    def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
+        super()._model_init(prev_shape, x)
 
         # Activations y
         y_gpu = gpuarray.zeros((self.model.batch_size, *self.shape), self.model.dtype)
-        self.y = TensorGPU(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.y = TensorArray(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
         # Derivative dx
         dx_gpu = gpuarray.zeros(self.x.ary.shape, self.model.dtype)
-        self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.dx = TensorArray(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
-        self.real_memory_size += self.y.nbytes + self.dx.nbytes
+        self.memory_used += self.y.nbytes + self.dx.nbytes
 
         # Convolution params
         conv_mode = cudnn.cudnnConvolutionMode['CUDNN_CROSS_CORRELATION']
@@ -108,10 +108,10 @@ class Conv2DPycuda(AbstractConv2DPycuda):
         self.forward = self._forward_standard
         self.backward = self._backward_standard
 
-        self.real_memory_size += (getConvolutionWorkspaceSize() - base_conv_memory)
+        self.memory_used += (getConvolutionWorkspaceSize() - base_conv_memory)
     # -----
 
-    def _forward_standard(self, x: TensorGPU) -> TensorGPU:
+    def _forward_standard(self, x: TensorArray) -> TensorArray:
         alpha, beta = 1.0, 0.0
         # Compute a' = x x weights
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
@@ -134,7 +134,7 @@ class Conv2DPycuda(AbstractConv2DPycuda):
         return self.y
     # -----
 
-    def _backward_standard(self, dy: TensorGPU) -> TensorGPU:
+    def _backward_standard(self, dy: TensorArray) -> TensorArray:
         alpha, beta = 1.0, 0.0
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DW)
         # Compute dw

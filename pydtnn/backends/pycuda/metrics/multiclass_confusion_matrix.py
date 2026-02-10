@@ -1,27 +1,27 @@
 from pydtnn.backends.pycuda.metrics.metric import MetricPycuda
 from pydtnn.metrics.multiclass_confusion_matrix import MulticlassConfusionMatrix
 
-from pydtnn.backends.pycuda.utils.tensor_gpu import TensorGPU
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 import numpy as np
 from pycuda.compiler import SourceModule  # type: ignore
 from pycuda.driver import Function  # type: ignore
 from pydtnn.utils.constants import DTYPE2CTYPE
 
 
-class MulticlassConfusionMatrixPycuda(MulticlassConfusionMatrix[TensorGPU], MetricPycuda):
+class MulticlassConfusionMatrixPycuda(MulticlassConfusionMatrix[TensorArray], MetricPycuda):
 
-    def initialize(self) -> None:
-        super().initialize()
+    def _model_init(self) -> None:
+        super()._model_init()
         n = self.model.batch_size
         target_classes = self.model.output_shape[0]
 
-        self.conf_matrix = TensorGPU.create_zeros_tensor(shape=(1, 1, target_classes, target_classes), dtype=np.dtype(np.int32),
-                                                         tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
-        self.local_cm = TensorGPU.create_zeros_tensor(shape=(1, n, target_classes, target_classes), dtype=np.dtype(np.int32),
-                                                      tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
+        self.conf_matrix = TensorArray.new_zeros(shape=(1, 1, target_classes, target_classes), dtype=np.dtype(np.int32),
+                                                 tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
+        self.local_cm = TensorArray.new_zeros(shape=(1, n, target_classes, target_classes), dtype=np.dtype(np.int32),
+                                              tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
     # ----
 
-    def __init_gpu_kernel__(self) -> Function:
+    def _kernel_init(self) -> Function:
 
         _name = "multiclass_confusion_matrix"
         code = """
@@ -83,7 +83,7 @@ class MulticlassConfusionMatrixPycuda(MulticlassConfusionMatrix[TensorGPU], Metr
         return module
     # ---
 
-    def compute(self, y_pred: TensorGPU, y_targ: TensorGPU) -> np.ndarray:
+    def compute(self, y_pred: TensorArray, y_targ: TensorArray) -> np.ndarray:
         """
         The output will be a confusion matrix like this:
                 |Predicted     |

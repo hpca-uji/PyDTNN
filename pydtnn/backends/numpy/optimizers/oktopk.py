@@ -18,8 +18,8 @@ except (ImportError, ModuleNotFoundError):
 
 
 class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
-    def initialize(self, list_layers: list[LayerBase]) -> None:
-        super().initialize(list_layers)
+    def _model_init(self, list_layers: list[LayerBase]) -> None:
+        super()._model_init(list_layers)
 
         for layer in list_layers:
             self.iterations[layer.id] = 0

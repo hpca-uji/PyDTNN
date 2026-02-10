@@ -99,8 +99,8 @@ class LayerBase[T: Array](PromoteToBackend):
 
         return props
 
-    def initialize(self, prev_shape: ArrayShape, x: T | None = None) -> None:
-        super().initialize()
+    def _model_init(self, prev_shape: ArrayShape, x: T | None = None) -> None:
+        super()._model_init()
         self.id = next(self.model.layer_id_generator)
         self.prev_shape = prev_shape
         self.x = x  # type:ignore (If it's used, it will be type "T"; if not, it will never be accesed)

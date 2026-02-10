@@ -2,7 +2,7 @@ import numpy as np
 
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 from pydtnn.backends.pycuda.layers.abstract.conv_2d import AbstractConv2DPycuda
-from pydtnn.backends.pycuda.utils.tensor_gpu import TensorGPU
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
 
 
@@ -27,8 +27,8 @@ class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
                 raise NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
     # -----
 
-    def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
+        super()._model_init(prev_shape, x)
 
         self.dim_n = self.model.batch_size * self.ho * self.wo
         self.dim_c = self.ci * self.kh * self.kw
@@ -51,12 +51,12 @@ class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
             case _:
                 raise NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
 
-        self.im2_x = TensorGPU.create_zeros_tensor(im2_x_shape, self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype)
-        self.x_2im_var = TensorGPU.create_zeros_tensor(x_2im_var_shape, self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype)
+        self.im2_x = TensorArray.new_zeros(im2_x_shape, self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype)
+        self.x_2im_var = TensorArray.new_zeros(x_2im_var_shape, self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype)
 
-        self.y = TensorGPU.create_zeros_tensor((self.model.batch_size, *self.shape), self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype)
-        self.dw = TensorGPU.create_zeros_tensor(dw_shape, self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype)
-        self.dx = TensorGPU.create_zeros_tensor(self.x.ary.shape, self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype)
+        self.y = TensorArray.new_zeros((self.model.batch_size, *self.shape), self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype)
+        self.dw = TensorArray.new_zeros(dw_shape, self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype)
+        self.dx = TensorArray.new_zeros(self.x.ary.shape, self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype)
     # -----
 
     @override
@@ -88,7 +88,7 @@ class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
                 return super()._import_prop(key, value)
     # ---
 
-    def forward(self, x: TensorGPU) -> TensorGPU:
+    def forward(self, x: TensorArray) -> TensorArray:
         # im2col / im2row
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
         self.im2_func(x.ary, self.weights.ary,
@@ -108,7 +108,7 @@ class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
         return self.y
     # ---
 
-    def backward(self, dy: TensorGPU) -> TensorGPU:
+    def backward(self, dy: TensorArray) -> TensorArray:
 
         self.dx.fill(0)
         # im2col / im2row
@@ -169,7 +169,7 @@ class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
     def fwd_nchw(self, use_bias: bool) -> Function:
         # im2_var.shape = (self.dim_c, self.dim_n) = (self.ci * self.kh * self.kw, self.model.batch_size * self.ho * self.wo)
         code = \
-r"""
+            r"""
 // im2col-related macros
 #define GET_CI(row, h, w) row / (w * h)
 #define GET_KI(row, h, w) (row / w) % h
@@ -194,7 +194,7 @@ __global__ void {FUNC_NAME}(const {T} *const x,
                             int vpadding, int hpadding,
                             int vstride, int hstride,
                             int vdilation, int hdilation)
-{{  
+{{
     const int idx = blockIdx.x * blockDim.x + threadIdx.x;
     const int num_workers = blockDim.x * gridDim.x;
 
@@ -268,7 +268,7 @@ __global__ void {FUNC_NAME}(const {T} *const x,
     def fwd_nhwc(self, use_bias: bool) -> Function:
         # cols.shape = (self.dim_n, self.dim_c) = (self.model.batch_size * self.ho * self.wo, self.ci * self.kh * self.kw)
         code = \
-r"""
+            r"""
 #define GET_NI(row, h, w) row / (w * h)
 #define IS_BETWEEN(min_v, var, max_v) (min_v <= var) && (var < max_v)
 #define SHIFT_ROWS(row, col, dim_cols) row * dim_cols + col
@@ -371,7 +371,7 @@ __global__ void {FUNC_NAME}(const {T} *const x,
     // w_rows = (k, j)
     // y = (i, j)
 
-    // im2_var.shape = (dim_n, dim_c); weights.shape "=" (dim_c, co); y.shape "=" (dim_n * co) || "=": because it's not equal, but "equivalent" in this situation.    
+    // im2_var.shape = (dim_n, dim_c); weights.shape "=" (dim_c, co); y.shape "=" (dim_n * co) || "=": because it's not equal, but "equivalent" in this situation.
     for(i_j = n_offset; i_j < end_offset; i_j++)
         for(k = 0; k < dim_c; k++)
     {{
@@ -407,7 +407,7 @@ __global__ void {FUNC_NAME}(const {T} *const x,
 
     def _backward_nchw(self, use_bias: bool) -> Function:
         code = \
-r"""
+            r"""
 #define IS_BETWEEN(min_v, var, max_v) (min_v <= var) && (var < max_v)
 
 #define SHIFT_DY(ni, ci, hi, wi, n, c, h, w) (((((ni * c) + ci) * h) + hi) * w + wi)
@@ -554,7 +554,7 @@ __global__ void {FUNC_NAME}(const {T} *const dy,
 
     def _backward_nhwc(self, use_bias: bool) -> Function:
         code = \
-r"""
+            r"""
 #define IS_BETWEEN(min_v, var, max_v) (min_v <= var) && (var < max_v)
 #define SHIFT_DY(ni, ci, hi, wi, c, h, w) ((ni * h + hi) * w + wi) * c + ci
 
@@ -617,7 +617,7 @@ __global__ void {FUNC_NAME}(const {T} *const dy,
         n_offset = samples_overworker * overworkers + n_samples * (idx - overworkers);
     }}
     end_offset = n_offset + n_samples;
-    
+
     // dw = np.matmul(im2_var.T, dy.reshape(n*ho*wo, self.co)); im2_var.T.shape = (ci*kh*kw, n*ho*wo)
     for(i_j = n_offset; i_j < end_offset; i_j ++)
         for(k = 0; k < dim_n; k++)
@@ -647,7 +647,7 @@ __global__ void {FUNC_NAME}(const {T} *const dy,
         n_offset = samples_overworker * overworkers + n_samples * (idx - overworkers);
     }}
     end_offset = n_offset + n_samples;
-    
+
 
     // row_2im_var "=" (dim_c, dim_n)
     //mamtul(weights.reshape(self.ci * self.kh * self.kw, co), tranposed dy) <== mamtul(weights.reshape(co, -1).T, tranposed dy)
@@ -699,7 +699,7 @@ __global__ void {FUNC_NAME}(const {T} *const dy,
             y_o = (wi + hpadding - hdilation * kwi);
             yy = y_o / hstride;
             y_o = y_o % hstride;
-            
+
             if((x_o == 0) && (y_o == 0) && IS_BETWEEN(0, xx, ho) && IS_BETWEEN(0, yy, wo))
             {{
                 row = ni * ho * wo + xx * wo + yy;

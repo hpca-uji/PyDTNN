@@ -2,22 +2,22 @@ import numpy as np
 
 from pydtnn.activations.arctanh import Arctanh
 from pydtnn.backends.pycuda.activations.activation import ActivationPycuda
-from pydtnn.backends.pycuda.utils.tensor_gpu import TensorGPU
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 
 from pycuda import gpuarray  # type: ignore
 from pycuda.elementwise import ElementwiseKernel  # type: ignore
 from pydtnn.utils.constants import ArrayShape, DTYPE2CTYPE
 
 
-class ArctanhPycuda(Arctanh[TensorGPU], ActivationPycuda):
+class ArctanhPycuda(Arctanh[TensorArray], ActivationPycuda):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.atanh: ElementwiseKernel = None
         self.datanh: ElementwiseKernel = None
 
-    def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
+        super()._model_init(prev_shape, x)
 
         self.atanh = ElementwiseKernel(
             "{T} *in, {T} *out".format(T=DTYPE2CTYPE[self.model.dtype]),
@@ -31,19 +31,19 @@ class ArctanhPycuda(Arctanh[TensorGPU], ActivationPycuda):
 
         # Activations y
         y_gpu = gpuarray.zeros(x.ary.shape, self.model.dtype)
-        self.y = TensorGPU(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.y = TensorArray(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
         # Derivative dx
         dx_gpu = gpuarray.zeros(x.ary.shape, self.model.dtype)
-        self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.dx = TensorArray(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
-        self.real_memory_size += self.y.nbytes + self.dx.nbytes
+        self.memory_used += self.y.nbytes + self.dx.nbytes
 
-    def forward(self, x: TensorGPU) -> TensorGPU:
+    def forward(self, x: TensorArray) -> TensorArray:
         self.atanh(x.ary, self.y.ary, stream=self.model.stream)
         return self.y
 
-    def backward(self, dy: TensorGPU) -> TensorGPU:
+    def backward(self, dy: TensorArray) -> TensorArray:
         # Compute dx
         self.datanh(dy.ary, self.dx.ary, stream=self.model.stream)
         return self.dx

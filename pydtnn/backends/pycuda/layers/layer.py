@@ -17,12 +17,12 @@ except Exception as e:
     pass
 
 from numpy import ndarray
-from pydtnn.backends.pycuda.utils.tensor_gpu import TensorGPU
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 
 from pycuda import gpuarray  # type: ignore
 
 
-class LayerPycuda(Layer[TensorGPU]):
+class LayerPycuda(Layer[TensorArray]):
     """
     Extends a Layer class with the attributes and methods required by GPU Layers.
     """
@@ -33,9 +33,9 @@ class LayerPycuda(Layer[TensorGPU]):
         # NOTE: All of these values will be initalized in the "initialize" method.
         self.weights_cpu: ndarray = None  # type: ignore
         self.biases_cpu: ndarray = None  # type: ignore
-        self.dx: TensorGPU = None  # type: ignore
-        self.dw: TensorGPU = None  # type: ignore
-        self.db: TensorGPU = None  # type: ignore
+        self.dx: TensorArray = None  # type: ignore
+        self.dw: TensorArray = None  # type: ignore
+        self.db: TensorArray = None  # type: ignore
         self.dw_cpu: ndarray = None  # type: ignore
         self.db_cpu: ndarray = None  # type: ignore
         self.one_vec_cpu: ndarray = None  # type: ignore
@@ -43,8 +43,8 @@ class LayerPycuda(Layer[TensorGPU]):
         self.grid: tuple[int, int, int] = None  # type: ignore
         self.block: tuple[int, int, int] = None  # type: ignore
 
-    def initialize(self, prev_shape: tuple[int, ...], x: TensorGPU | None = None) -> None:
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape: tuple[int, ...], x: TensorArray | None = None) -> None:
+        super()._model_init(prev_shape, x)
 
         if not self.model.enable_cudnn:
             raise RuntimeError("GPU layers requires CUDNN to be enabled!")
@@ -143,7 +143,7 @@ class LayerPycuda(Layer[TensorGPU]):
         for w_, dw_ in self.grad_vars.items():
             if self.model.enable_nccl:
                 self.model.stream.synchronize()
-                dw: TensorGPU = getattr(self, dw_)
+                dw: TensorArray = getattr(self, dw_)
                 # TODO: decrypt
                 setattr(self, dw_, dw)
             else:
@@ -255,7 +255,7 @@ class LayerPycuda(Layer[TensorGPU]):
 
             self.model.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT], [PYDTNN_EVENT_FINISHED, PYDTNN_EVENT_FINISHED])
 
-    def _sync_x_y(self, x_batch: np.ndarray, y_batch: np.ndarray) -> tuple[TensorGPU, TensorGPU]:
+    def _sync_x_y(self, x_batch: np.ndarray, y_batch: np.ndarray) -> tuple[TensorArray, TensorArray]:
         # NOTE: in CUDA it's necessary to always have batches of the same size.
         local_batch_size = x_batch.shape[0]
 
@@ -270,13 +270,13 @@ class LayerPycuda(Layer[TensorGPU]):
             x_batch = np.asarray(x_batch, dtype=self.model.dtype)
             y_batch = np.asarray(y_batch, dtype=self.model.dtype)
 
-            assert isinstance(self.y, TensorGPU) and isinstance(self.model.y_batch, TensorGPU)
+            assert isinstance(self.y, TensorArray) and isinstance(self.model.y_batch, TensorArray)
             self.y.ary.set(x_batch)
             self.model.y_batch.ary.set(y_batch)
             x, y_targ = self.model.layers[0].y, self.model.y_batch
         else:
             empty_x = gpuarray.zeros((1, *self.model.dataset.input_shape), self.model.dtype)[:0]
             empty_y_tag = gpuarray.zeros((1, *self.model.dataset.output_shape), self.model.dtype)[:0]
-            x = TensorGPU(empty_x, self.tensor_format, self.cudnn_dtype)
-            y_targ = TensorGPU(empty_y_tag, self.model.tensor_format, self.model.cudnn_dtype)
+            x = TensorArray(empty_x, self.tensor_format, self.cudnn_dtype)
+            y_targ = TensorArray(empty_y_tag, self.model.tensor_format, self.model.cudnn_dtype)
         return x, y_targ

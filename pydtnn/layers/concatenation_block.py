@@ -10,8 +10,8 @@ CONCAT_DIM_NHWC = -1
 
 
 class ConcatenationBlock[T: Array](AbstractBlockLayer[T]):
-    def initialize(self, prev_shape, x=None):
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape, x=None):
+        super()._model_init(prev_shape, x)
 
         match self.model.tensor_format:
             case TensorFormat.NCHW:

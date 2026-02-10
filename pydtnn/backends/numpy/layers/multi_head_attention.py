@@ -35,8 +35,8 @@ class MultiHeadAttentionNumpy(MultiHeadAttention[np.ndarray], AbstractBlockLayer
         # The next attributes will be initialized later
         self.mask = None
 
-    def initialize(self, prev_shape, x):
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape, x):
+        super()._model_init(prev_shape, x)
         self.shape = prev_shape
         if type(prev_shape[0]) is tuple:
             enc_shape = prev_shape[0]
@@ -47,18 +47,18 @@ class MultiHeadAttentionNumpy(MultiHeadAttention[np.ndarray], AbstractBlockLayer
 
         # Initialize all sublayers
         for layer in self.children:
-            layer.init_backend_with_model(self.model)
+            layer._init_backend_with_model(self.model)
 
-        self.FC_q.initialize(prev_shape=(self.embedl,), x=x)
-        self.FC_k.initialize(prev_shape=(self.embedl,), x=self.FC_q.y)
-        self.FC_v.initialize(prev_shape=(self.embedl,), x=self.FC_k.y)
-        self.mult_qkt.initialize(prev_shape=(1,), x=self.FC_v.y)
-        self.scalar_dk.initialize(prev_shape=(1,), x=self.mult_qkt.y)
-        self.FC_o.initialize(prev_shape=(self.heads * self.d_k,), x=self.scalar_dk.y)
-        self.softmax.initialize(prev_shape=(self.heads, seq, seq,), x=self.FC_o.y)
-        self.dropout.initialize(prev_shape=(self.heads, seq, seq,), x=self.softmax.y)
-        self.mult_smv.initialize(prev_shape=(1,), x=self.dropout.y)
-        self.mult_o.initialize(prev_shape=(1,), x=self.mult_smv.y)
+        self.FC_q._model_init(prev_shape=(self.embedl,), x=x)
+        self.FC_k._model_init(prev_shape=(self.embedl,), x=self.FC_q.y)
+        self.FC_v._model_init(prev_shape=(self.embedl,), x=self.FC_k.y)
+        self.mult_qkt._model_init(prev_shape=(1,), x=self.FC_v.y)
+        self.scalar_dk._model_init(prev_shape=(1,), x=self.mult_qkt.y)
+        self.FC_o._model_init(prev_shape=(self.heads * self.d_k,), x=self.scalar_dk.y)
+        self.softmax._model_init(prev_shape=(self.heads, seq, seq,), x=self.FC_o.y)
+        self.dropout._model_init(prev_shape=(self.heads, seq, seq,), x=self.softmax.y)
+        self.mult_smv._model_init(prev_shape=(1,), x=self.dropout.y)
+        self.mult_o._model_init(prev_shape=(1,), x=self.mult_smv.y)
 
         for layer in self.children:
             if layer.fwd_time is not None:

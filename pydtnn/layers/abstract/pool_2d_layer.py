@@ -18,8 +18,8 @@ class AbstractPool2DLayer[T: Array](Layer[T]):
         self.hdilation, self.wdilation = (dilation, dilation) if isinstance(dilation, int) else dilation
         self.ci = self.hi = self.wi = self.kh = self.kw = self.ho = self.wo = self.co = self.n = 0
 
-    def initialize(self, prev_shape, x: T | None):
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape, x: T | None):
+        super()._model_init(prev_shape, x)
         self.ci, self.hi, self.wi = self.model.decode_shape(prev_shape)
         if self.pool_shape[0] == 0:
             self.pool_shape = (self.hi, self.pool_shape[1])

@@ -1,12 +1,12 @@
 from pydtnn.backends.pycuda.layers.abstract.block_layer import AbstractBlockLayerPycuda
-from pydtnn.backends.pycuda.utils.tensor_gpu import TensorGPU
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.layers.fc import FC
 from pydtnn.layers.dropout import Dropout
 from pydtnn.activations.relu import Relu
 from pydtnn.layers.feed_forward import FeedForward
 
 
-class FeedForwardPycuda(FeedForward[TensorGPU], AbstractBlockLayerPycuda):
+class FeedForwardPycuda(FeedForward[TensorArray], AbstractBlockLayerPycuda):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.FC_1 = FC(shape=(self.d_ff,), use_bias=False)
@@ -18,18 +18,18 @@ class FeedForwardPycuda(FeedForward[TensorGPU], AbstractBlockLayerPycuda):
         # The next attributes will be initialized later
         self.y = self.dx = None
 
-    def initialize(self, prev_shape, x):
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape, x):
+        super()._model_init(prev_shape, x)
         self.shape = prev_shape
 
         # Initialize all sublayers
         for layer in self.children:
-            layer.init_backend_with_model(self.model)
+            layer._init_backend_with_model(self.model)
 
-        self.FC_1.initialize(prev_shape=(self.shape[-1],), x=x)
-        self.relu.initialize(prev_shape=(self.d_ff,), x=self.FC_1.y)
-        self.dropout.initialize(prev_shape=(self.d_ff,), x=self.relu.y)
-        self.FC_2.initialize(prev_shape=(self.d_ff,), x=self.dropout.y)
+        self.FC_1._model_init(prev_shape=(self.shape[-1],), x=x)
+        self.relu._model_init(prev_shape=(self.d_ff,), x=self.FC_1.y)
+        self.dropout._model_init(prev_shape=(self.d_ff,), x=self.relu.y)
+        self.FC_2._model_init(prev_shape=(self.d_ff,), x=self.dropout.y)
 
         self.y = self.FC_2.y
         self.dx = self.FC_1.dx

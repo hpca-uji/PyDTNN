@@ -41,16 +41,16 @@ class Conv2DGroupTestCase(Conv2DCommonTestCase):
             conv2d_depth,
             conv2d_pair
         ])
-        chain.init_backend_with_model(model)
-        chain.initialize(prev_shape=(d.c, d.h, d.w), x=None)
+        chain._init_backend_with_model(model)
+        chain._model_init(prev_shape=(d.c, d.h, d.w), x=None)
 
         conv2d = Conv2D(nfilters=d.kn, filter_shape=(d.kh, d.kw),
                         padding=(d.vpadding, d.hpadding),
                         stride=(d.vstride, d.hstride),
                         dilation=(d.vdilation, d.hdilation),
                         use_bias=True, weights_initializer=glorot_uniform, biases_initializer=zeros)
-        conv2d.init_backend_with_model(model)
-        conv2d.initialize(prev_shape=(d.c, d.h, d.w), x=None)
+        conv2d._init_backend_with_model(model)
+        conv2d._model_init(prev_shape=(d.c, d.h, d.w), x=None)
 
         # Set the same initial weights and biases to both layers
         conv2d_depth.weights = conv2d.weights.copy()

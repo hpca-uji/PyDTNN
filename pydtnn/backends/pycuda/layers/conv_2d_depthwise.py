@@ -2,7 +2,7 @@ import numpy as np
 
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 from pydtnn.backends.pycuda.layers.abstract.conv_2d import AbstractConv2DPycuda, MACROS_NCHW, MACROS_NHWC
-from pydtnn.backends.pycuda.utils.tensor_gpu import TensorGPU
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.utils.constants import ArrayShape, DTYPE2CTYPE
 
 from pydtnn.utils.tensor import TensorFormat
@@ -21,8 +21,8 @@ class Conv2DDepthwisePycuda(AbstractConv2DPycuda):
         # Setting weights
         self.weights_shape = (1, self.ci, *self.filter_shape)
 
-    def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
+        super()._model_init(prev_shape, x)
 
         func_name: str = ""
         macros: str = ""
@@ -48,19 +48,19 @@ class Conv2DDepthwisePycuda(AbstractConv2DPycuda):
         self.total_num_threads = np.prod(self.grid, dtype=np.int32) * np.prod(self.block, dtype=np.int32)
 
         y_gpu = gpuarray.zeros((self.model.batch_size, *self.shape), self.model.dtype)
-        self.y = TensorGPU(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
-        self.real_memory_size += self.y.nbytes
+        self.y = TensorArray(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.memory_used += self.y.nbytes
 
         dx_gpu = gpuarray.zeros((self.model.batch_size, *self.shape), self.model.dtype)
-        self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
-        self.real_memory_size += self.dx.nbytes
+        self.dx = TensorArray(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.memory_used += self.dx.nbytes
 
         self.fwd_func: Function = self.cuda_depthwise_conv_2d_fwd(func_name.format(fwd_bwd="fwd"), macros)
         self.bwd_func: Function = self.cuda_depthwise_conv_2d_bwd(func_name.format(fwd_bwd="bwd"), macros)
         self.bias_sum_fwd: Function = self.cuda_bias_sum_fwd_depthwise_conv()
     # ----
 
-    def _forward_depthwise_nchw(self, x: TensorGPU) -> TensorGPU:
+    def _forward_depthwise_nchw(self, x: TensorArray) -> TensorArray:
         self.x = x
         self.y.fill(0)
 
@@ -79,7 +79,7 @@ class Conv2DDepthwisePycuda(AbstractConv2DPycuda):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.use_bias:
-            self.biases: TensorGPU
+            self.biases: TensorArray
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN_SUM_BIASES)
             self.bias_sum_fwd(x.ary, self.biases.ary,
                               np.int32(n), np.int32(c), np.int32(h), np.int32(w),
@@ -92,7 +92,7 @@ class Conv2DDepthwisePycuda(AbstractConv2DPycuda):
         return self.y
     # ----
 
-    def _forward_depthwise_nhwc(self, x: TensorGPU) -> TensorGPU:
+    def _forward_depthwise_nhwc(self, x: TensorArray) -> TensorArray:
         self.x = x
         n, h, w, c = x.shape
         self.y.fill(0)
@@ -110,7 +110,7 @@ class Conv2DDepthwisePycuda(AbstractConv2DPycuda):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.use_bias:
-            self.biases: TensorGPU
+            self.biases: TensorArray
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN_SUM_BIASES)
             self.bias_sum_fwd(x.ary, self.biases.ary,
                               np.int32(n), np.int32(c), np.int32(h), np.int32(w),
@@ -123,7 +123,7 @@ class Conv2DDepthwisePycuda(AbstractConv2DPycuda):
         return self.y
     # ----
 
-    def _backward_depthwise_nchw(self, dy: TensorGPU) -> TensorGPU:
+    def _backward_depthwise_nchw(self, dy: TensorArray) -> TensorArray:
 
         n, c, h, w = dy.shape
         self.dx.fill(0)
@@ -141,7 +141,7 @@ class Conv2DDepthwisePycuda(AbstractConv2DPycuda):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.use_bias:
-            self.biases: TensorGPU
+            self.biases: TensorArray
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DB)
             self.bias_sum_bwd(dy.ary, self.db.ary,
                               np.int32(c), np.int32(h), np.int32(w),
@@ -152,7 +152,7 @@ class Conv2DDepthwisePycuda(AbstractConv2DPycuda):
         return self.dx
     # -----
 
-    def _backward_depthwise_nhwc(self, dy: TensorGPU) -> TensorGPU:
+    def _backward_depthwise_nhwc(self, dy: TensorArray) -> TensorArray:
         n, h, w, c = dy.shape
         self.dx.fill(0)
 
@@ -169,7 +169,7 @@ class Conv2DDepthwisePycuda(AbstractConv2DPycuda):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.use_bias:
-            self.biases: TensorGPU
+            self.biases: TensorArray
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DB)
             self.bias_sum_bwd(dy.ary, self.db.ary,
                               np.int32(c), np.int32(n * h * w * c),

@@ -23,8 +23,8 @@ class Conv2DDepthwiseNumpy(AbstractConv2DNumpy, Conv2DDepthwise):
         self.weights_shape = (self.ci, *self.filter_shape)
     # ---
 
-    def initialize(self, prev_shape: ArrayShape, x: np.ndarray | None):
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None):
+        super()._model_init(prev_shape, x)
 
         match self.model.tensor_format:
             case TensorFormat.NCHW:
@@ -42,11 +42,11 @@ class Conv2DDepthwiseNumpy(AbstractConv2DNumpy, Conv2DDepthwise):
         dx_shape = self.model.encode_shape((self.model.batch_size, self.hi, self.wi, self.ci))
 
         self._y = np.zeros(shape=_y_shape, dtype=self.model.dtype)
-        self.real_memory_size += self._y.nbytes
+        self.memory_used += self._y.nbytes
 
         if not self.model.evaluate_only:
             self.dx = np.zeros(shape=dx_shape, dtype=self.model.dtype)
-            self.real_memory_size += self.dx.nbytes
+            self.memory_used += self.dx.nbytes
     # ---
 
     def _forward_nhwc(self, x: np.ndarray) -> np.ndarray:

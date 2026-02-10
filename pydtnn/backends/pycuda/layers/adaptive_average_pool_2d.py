@@ -4,7 +4,7 @@ from pydtnn.backends.pycuda.layers.layer import LayerPycuda
 # Import from AbstractPool2DLayerPycuda
 from pydtnn.utils.constants import DTYPE2CTYPE
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
-from pydtnn.backends.pycuda.utils.tensor_gpu import TensorGPU
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.utils.performance_models import im2col_time, col2im_time
 from pycuda import gpuarray   # type: ignore
 from pycuda.compiler import SourceModule   # type: ignore
@@ -45,10 +45,10 @@ ci = {macro_index_c}(idx, c);
 """
 
 
-class AdaptiveAveragePool2DPycuda(AdaptiveAveragePool2D[TensorGPU], LayerPycuda):
+class AdaptiveAveragePool2DPycuda(AdaptiveAveragePool2D[TensorArray], LayerPycuda):
 
-    def initialize(self, prev_shape, x: TensorGPU) -> None:
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape, x: TensorArray) -> None:
+        super()._model_init(prev_shape, x)
 
         self.cuda_fwd_func = self.cuda_adaptive_average_pooling_fwd(dtype=self.model.dtype)
         self.cuda_bwd_func = self.cuda_adaptive_average_pooling_bwd(dtype=self.model.dtype)
@@ -318,13 +318,13 @@ __global__ void {func_name}({T}* dx, {T}* dy,
         self.shape = self.model.encode_shape((self.co, self.ho, self.wo))
         pooling_shape = self.model.encode_shape((self.co, self.ho, self.wo))
         y = gpuarray.zeros((self.model.batch_size, *pooling_shape), self.model.dtype)
-        self.y: TensorGPU = TensorGPU(y, self.model.tensor_format, self.model.cudnn_dtype)
+        self.y: TensorArray = TensorArray(y, self.model.tensor_format, self.model.cudnn_dtype)
 
         # Derivative dx
         dx_gpu = gpuarray.zeros(self.x.ary.shape, self.model.dtype)
-        self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.dx = TensorArray(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
-        self.real_memory_size += self.y.nbytes + self.dx.nbytes
+        self.memory_used += self.y.nbytes + self.dx.nbytes
 
         self.fwd_time = \
             im2col_time(m=self.co, n=(self.model.batch_size * self.ho * self.wo * self.ci),
@@ -335,7 +335,7 @@ __global__ void {func_name}({T}* dx, {T}* dy,
                         cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw,
                         dtype=self.model.dtype)
 
-    def forward(self, x: TensorGPU) -> TensorGPU:
+    def forward(self, x: TensorArray) -> TensorArray:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
 
         if self.pooling_not_needed:
@@ -365,7 +365,7 @@ __global__ void {func_name}({T}* dx, {T}* dy,
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.y
 
-    def backward(self, dy: TensorGPU) -> TensorGPU:
+    def backward(self, dy: TensorArray) -> TensorArray:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
         n, c, h, w = self.model.decode_shape(dy.shape)
 

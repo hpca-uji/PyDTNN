@@ -18,8 +18,8 @@ class BatchNormalizationReluFuse(BatchNormalizationRelu[np.ndarray], BatchNormal
 
     # NOTE: The "__init__" method is being made (more or less) in Model (in _apply_layer_fusion) and in FusedLayerMixIn.
 
-    def initialize(self, prev_shape: ArrayShape, x: np.ndarray | None = None):
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None):
+        super()._model_init(prev_shape, x)
 
         self.inv_std = BatchNormalizationNumpy.get_inv_std(self.running_var, self.epsilon, self.model.dtype)
 
@@ -28,7 +28,7 @@ class BatchNormalizationReluFuse(BatchNormalizationRelu[np.ndarray], BatchNormal
         self.forward = self._forward
         self.backward = self._backward
 
-        self.real_memory_size += self.y.nbytes + self.inv_std.nbytes
+        self.memory_used += self.y.nbytes + self.inv_std.nbytes
 
     def _forward(self, x: np.ndarray) -> np.ndarray:
         """Version of the forward function that uses the BN + Relu"""

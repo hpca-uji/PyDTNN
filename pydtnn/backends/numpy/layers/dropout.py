@@ -15,9 +15,9 @@ class DropoutNumpy(Dropout[np.ndarray], LayerNumpy):
         super().__init__(*args, **kwargs)
         self.mask: np.ndarray = None  # type: ignore (It will be initalized later.)
 
-    def initialize(self, prev_shape, x=None):
-        super().initialize(prev_shape, x)
-        self.real_memory_size += int(np.prod(self.shape)) * self.model.dtype.itemsize
+    def _model_init(self, prev_shape, x=None):
+        super()._model_init(prev_shape, x)
+        self.memory_used += int(np.prod(self.shape)) * self.model.dtype.itemsize
 
     def forward(self, x: np.ndarray) -> np.ndarray:
 

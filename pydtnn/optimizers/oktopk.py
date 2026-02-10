@@ -42,8 +42,8 @@ class OkTopk[T: Array](Optimizer[T]):
 
         return props
 
-    def initialize(self, list_layers: list[LayerBase]) -> None:
-        super().initialize(list_layers)
+    def _model_init(self, list_layers: list[LayerBase]) -> None:
+        super()._model_init(list_layers)
 
         if self.model.model_sync_freq >= 0:
             warn("Optimizer does model sync but global model sync is also enabled!", RuntimeWarning)

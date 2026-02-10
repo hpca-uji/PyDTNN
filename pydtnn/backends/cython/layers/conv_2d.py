@@ -7,6 +7,7 @@ from pydtnn.backends.numpy.layers.conv_2d import Conv2DNumpy
 from pydtnn.backends.cython.utils.im2col_nchw_cython import col2im_nchw_cython, im2col_nchw_cython  # , alt_col2im_nchw_cython
 from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython, row2im_nhwc_cython  # , alt_row2im_nhwc_cython
 
+
 class Conv2DCython(Conv2DNumpy):
 
     def im2row(self, x: np.ndarray, x_rows: np.ndarray) -> None:

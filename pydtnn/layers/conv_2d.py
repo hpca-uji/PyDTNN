@@ -48,8 +48,8 @@ class Conv2D[T: Array](Layer[T]):
         pass
     # ---
 
-    def initialize(self, prev_shape: ArrayShape, x: T | None):
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape: ArrayShape, x: T | None):
+        super()._model_init(prev_shape, x)
         self.ci, self.hi, self.wi = self.model.decode_shape(prev_shape)
         self.kh, self.kw = self.filter_shape
         self._initializing_special_parameters()

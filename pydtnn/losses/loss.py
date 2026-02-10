@@ -10,8 +10,8 @@ class Loss[T: Array](PromoteToBackend):
         super().__init__()
         self.eps = eps
 
-    def initialize(self) -> None:
-        super().initialize()
+    def _model_init(self) -> None:
+        super()._model_init()
         self.shape = self.model._output_shape
 
     def compute(self, y_pred: T, y_targ: T, batch_size: int) -> tuple[float, T]:

@@ -11,8 +11,8 @@ from pydtnn.backends.numpy.layers.layer import LayerNumpy
 
 class SGDNumpy(SGD[np.ndarray], OptimizerNumpy):
 
-    def initialize(self, list_layers: list[LayerNumpy]) -> None:
-        super().initialize(list_layers)
+    def _model_init(self, list_layers: list[LayerNumpy]) -> None:
+        super()._model_init(list_layers)
 
         temp_memory_size = []
 
@@ -25,19 +25,19 @@ class SGDNumpy(SGD[np.ndarray], OptimizerNumpy):
                     velocity: np.ndarray = np.zeros(w.shape, dtype=layer.model.dtype)
                     temp_w = None
                     temp_v = None
-                    self.real_memory_size += velocity.nbytes
+                    self.memory_used += velocity.nbytes
 
                     temp_memory_size.append(int(2 * np.prod(w.shape)) * self.model.dtype.itemsize)
                     self.context[layer.id]["velocity_%s" % w_] = velocity
                     self.context[layer.id]["temp_w_%s" % w_] = temp_w
                     self.context[layer.id]["temp_v_%s" % w_] = temp_v
 
-        self.temp_memory_size += self.model.memory_cls._total(*temp_memory_size)
-        self.real_memory_size += self.temp_memory_size
+        self.tmp_memory_used += self.model.memory_cls._total(*temp_memory_size)
+        self.memory_used += self.tmp_memory_used
     # ---
 
-    def post_initialize(self) -> None:
-        super().post_initialize()
+    def _post_init(self) -> None:
+        super()._post_init()
         for layer_id in self.context.keys():
             with self.model.memory:
                 for key in self.context[layer_id].keys():

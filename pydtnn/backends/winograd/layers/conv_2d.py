@@ -16,8 +16,8 @@ class Conv2DWinograd(AbstractConv2DStandardNumpy):
         # convWinograd related attributes (will be initialized in initialize())
         self.cw: ConvWinograd = None  # type: ignore
 
-    def initialize(self, prev_shape, x: np.ndarray | None = None):
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape, x: np.ndarray | None = None):
+        super()._model_init(prev_shape, x)
         # ConvWinograd parameters
         self.cw = ConvWinograd(self.kh, self.kw, self.hstride, self.wstride,
                                self.hdilation, self.wdilation,

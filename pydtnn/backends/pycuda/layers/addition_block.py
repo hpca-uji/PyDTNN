@@ -3,13 +3,13 @@ from pydtnn.layers.addition_block import AdditionBlock
 from pydtnn.tracers.events import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
     PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
 from pydtnn.libs import cudnn as cudnn
-from pydtnn.backends.pycuda.utils.tensor_gpu import TensorGPU
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 
 
-class AdditionBlockPycuda(AdditionBlock[TensorGPU], AbstractBlockLayerPycuda):
-    y: TensorGPU
+class AdditionBlockPycuda(AdditionBlock[TensorArray], AbstractBlockLayerPycuda):
+    y: TensorArray
 
-    def forward(self, x: TensorGPU) -> TensorGPU:
+    def forward(self, x: TensorArray) -> TensorArray:
         for i, p in enumerate(self.paths):
             y_i = x
             for layer in p:
@@ -28,7 +28,7 @@ class AdditionBlockPycuda(AdditionBlock[TensorGPU], AbstractBlockLayerPycuda):
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.y
 
-    def backward(self, dy: TensorGPU) -> TensorGPU:
+    def backward(self, dy: TensorArray) -> TensorArray:
         for i, p in enumerate(self.paths):
             dx_i = dy
             for layer in reversed(p):

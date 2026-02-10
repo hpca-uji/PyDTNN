@@ -242,7 +242,7 @@ class LayerPyTorchTestCase(TestCase):
         model.add(Input(params.shape))
         model.add_layers(list_layers)
         model.mode = Model.Mode.TRAIN
-        model._initialize()
+        model._model_init()
         return model
     # ---------
 

@@ -6,21 +6,21 @@ from pydtnn.utils.constants import DTYPE2CTYPE
 from pycuda.compiler import SourceModule  # type: ignore
 from pycuda.driver import Function  # type: ignore
 
-from pydtnn.backends.pycuda.utils.tensor_gpu import TensorGPU
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 
 
-class F1ScorePycuda(F1Score[TensorGPU], MetricPycuda):
+class F1ScorePycuda(F1Score[TensorArray], MetricPycuda):
 
-    def initialize(self) -> None:
-        super().initialize()
+    def _model_init(self) -> None:
+        super()._model_init()
         target_classes = self.model.output_shape[0]
-        self.f1 = TensorGPU.create_zeros_tensor(shape=(1, ), dtype=np.dtype(np.int32),
-                                                tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
-        self.local_f1 = TensorGPU.create_zeros_tensor(shape=(target_classes, ), dtype=np.dtype(np.int32),
-                                                      tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
+        self.f1 = TensorArray.new_zeros(shape=(1, ), dtype=np.dtype(np.int32),
+                                        tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
+        self.local_f1 = TensorArray.new_zeros(shape=(target_classes, ), dtype=np.dtype(np.int32),
+                                              tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
     # ----
 
-    def __init_gpu_kernel__(self) -> Function:
+    def _kernel_init(self) -> Function:
         _name = "binary_confusion_matrix"
         code = """
         //#define TRUE_POSITIVE  {{0,0}}
@@ -73,7 +73,7 @@ class F1ScorePycuda(F1Score[TensorGPU], MetricPycuda):
         return module
     # ---
 
-    def compute(self, y_pred: TensorGPU, y_targ: TensorGPU) -> float:
+    def compute(self, y_pred: TensorArray, y_targ: TensorArray) -> float:
 
         target_classes = self.model.output_shape[0]
 

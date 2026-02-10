@@ -18,7 +18,8 @@ import multiprocessing
 import os
 
 import numpy as np
-from pydtnn.utils import parse_bool as bool_lambda, get_gpus_per_node
+from pydtnn.utils import parse_bool as bool_lambda
+from pydtnn.utils.gpu import get_gpus_per_node
 from functools import cache
 
 from typing import Any
@@ -64,17 +65,17 @@ def _get_threads_per_process():
     return threads_per_process
 
 
-def _get_mpi_protocol():
+def _get_mpi_backend():
     try:
-        from pydtnn.libs.mpi import proto as PROTOCOL
+        from pydtnn.libs.mpi import comm as BACKEND
         from pydtnn.libs.mpi import ssl as SSL
     except Exception as e:
-        PROTOCOL = None
+        BACKEND = "native"
         SSL = None
-    protocol = str(PROTOCOL)
-    if PROTOCOL and SSL:
-        protocol = f"{protocol}+tls"
-    return protocol
+    backend = str(BACKEND)
+    if BACKEND and SSL:
+        backend = f"{backend}+tls"
+    return backend
 
 
 def _get_mpi_server():
@@ -351,7 +352,7 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
 
         # Add Communication options
         _cm_group = self.add_argument_group("Communication options")
-        _cm_group.add_argument('--mpi-protocol', type=str, default="", help=argparse.SUPPRESS)
+        _cm_group.add_argument('--mpi-backend', type=str, default="", help=argparse.SUPPRESS)
         _cm_group.add_argument('--mpi-server', type=str, default="", help=argparse.SUPPRESS)
         _cm_group.add_argument('--mpi-port', type=int, default=-1, help=argparse.SUPPRESS)
 
@@ -362,7 +363,7 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
         result.mpi_processes = _get_mpi_processes()
         result.threads_per_process = _get_threads_per_process()
         result.gpus_per_node = get_gpus_per_node()
-        result.mpi_protocol = _get_mpi_protocol()
+        result.mpi_backend = _get_mpi_backend()
         result.mpi_server = _get_mpi_server()
         result.mpi_port = _get_mpi_port()
         # Populate self.lines (for self.print_args())

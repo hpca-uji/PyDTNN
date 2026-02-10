@@ -13,8 +13,8 @@ class Conv2DCUPY(Conv2DStandardCUPY):
         super().__init__(*args, **kwargs)
         self.cuda_compiler = "nvcc"
 
-    def initialize(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
+        super()._model_init(prev_shape, x)
 
         # self.dim_n: Dimension where the "n" of NCHW/NHWC is used in the calculations.
         # self.dim_c: Dimension where the "c" of NCHW/NHWC is used in the calculations.

@@ -21,8 +21,8 @@ class AdaptiveAveragePool2D[T: Array](Layer):
         self.pooling_not_needed: bool = None  # type: ignore
     # ---  END __init__ --- #
 
-    def initialize(self, prev_shape: tuple[int, int], x: T | None) -> None:
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape: tuple[int, int], x: T | None) -> None:
+        super()._model_init(prev_shape, x)
 
         self.ci, self.hi, self.wi = self.model.decode_shape(prev_shape)
 

@@ -13,10 +13,10 @@ if _rc:
     __all__ = _rc.__all__  # type: ignore
 
 
-# Redefine protocol
-proto = (
-    _nq.Protocol(proto)
-    if _nq and (proto := _os.environ.get("PYMPI_PROTO"))
+# Redefine backend
+comm = (
+    _nq.Backend(comm)
+    if _nq and (comm := _os.environ.get("PYMPI_COMM"))
     else None
 )
 

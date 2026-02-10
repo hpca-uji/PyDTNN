@@ -9,8 +9,8 @@ from pydtnn.utils.constants import ArrayShape
 
 
 class SoftmaxNumpy(Softmax[np.ndarray], ActivationNumpy):
-    def initialize(self, prev_shape, x=None):
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape, x=None):
+        super()._model_init(prev_shape, x)
         self.y: np.ndarray
 
         shape_intermediate_ops = list(self.shape)
@@ -18,7 +18,7 @@ class SoftmaxNumpy(Softmax[np.ndarray], ActivationNumpy):
 
         # NOTE: These attributes only store data, their value before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
         self._y = np.zeros(shape=(self.model.batch_size, *self.shape), dtype=self.model.dtype)
-        self.real_memory_size += self._y.nbytes
+        self.memory_used += self._y.nbytes
 
         # Temp_variables
         self.max_x: np.ndarray = None  # type: ignore (they will be intialized later)
@@ -28,16 +28,16 @@ class SoftmaxNumpy(Softmax[np.ndarray], ActivationNumpy):
 
         self.temp_shape = (self.model.batch_size, *shape_intermediate_ops)
         sum_y_shape = max_x_shape = self.temp_shape
-        self.temp_memory_size += int(np.prod(max_x_shape) + np.prod(sum_y_shape)) * self.model.dtype.itemsize
+        self.tmp_memory_used += int(np.prod(max_x_shape) + np.prod(sum_y_shape)) * self.model.dtype.itemsize
 
         self.mul_dy_shape = (self.model.batch_size, *self.shape)
         self.sum_dy_shape = (self.model.batch_size, *shape_intermediate_ops)
-        self.temp_memory_size += int(np.prod(self.mul_dy_shape) + np.prod(self.sum_dy_shape)) * self.model.dtype.itemsize
+        self.tmp_memory_used += int(np.prod(self.mul_dy_shape) + np.prod(self.sum_dy_shape)) * self.model.dtype.itemsize
 
-        self.real_memory_size += self.temp_memory_size
+        self.memory_used += self.tmp_memory_used
 
-    def post_initialize(self):
-        super().post_initialize()
+    def _post_init(self):
+        super()._post_init()
         with self.model.memory:
             self.max_x = self.model.memory.ndarray(self.temp_shape, dtype=self.model.dtype)
             self.sum_y = self.model.memory.ndarray(self.temp_shape, dtype=self.model.dtype)

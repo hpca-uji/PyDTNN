@@ -17,14 +17,14 @@ class MaxPool2DNumpy(MaxPool2D[np.ndarray], AbstractPool2DLayerNumpy):
         self.idx_max: np.ndarray = None  # type: ignore
         self.y: np.ndarray  # NOTE: Defined and initalized in AbstractPool2DLayerNumpy's init and initialize, respectively
 
-    def initialize(self, prev_shape: ArrayShape, x: np.ndarray | None = None):
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None):
+        super()._model_init(prev_shape, x)
         self.minval = int(np.iinfo(self.model.dtype).min) if np.issubdtype(self.model.dtype, np.integer) else float(np.finfo(self.model.dtype).min)
         idx_max_shape = self.model.encode_shape((self.model.batch_size, self.co, self.ho, self.wo))
 
         # NOTE: This attribute only stores data, its value before the operation doesn't matter; it's initalized due avoid warnings in "LayerAndActivationBase.export".
         self._idx_max: np.ndarray = np.zeros(idx_max_shape, dtype=np.int32)
-        self.real_memory_size += self._idx_max.nbytes
+        self.memory_used += self._idx_max.nbytes
     # ---
 
     def _forward_nhwc(self, x: np.ndarray) -> np.ndarray:
@@ -127,24 +127,24 @@ class MaxPool2DNumpy(MaxPool2D[np.ndarray], AbstractPool2DLayerNumpy):
     ##########
 
     def max_pool(self, x: np.ndarray, y: np.ndarray, idx_maxval: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        x = np.pad(x, ((0,0), (0,0), (self.hpadding, self.hpadding), (self.wpadding, self.wpadding)), mode="constant")
+        x = np.pad(x, ((0, 0), (0, 0), (self.hpadding, self.hpadding), (self.wpadding, self.wpadding)), mode="constant")
         for kh in range(self.kh):
             for kw in range(self.kw):
                 h_start = kh * self.hdilation
                 w_start = kw * self.wdilation
                 h_end = h_start + self.hstride * self.ho
                 w_end = w_start + self.wstride * self.wo
-                
+
                 _x = x[:, :, h_start:h_end:self.hstride, w_start:w_end:self.wstride]
                 max_val: np.ndarray = np.max(_x, axis=(2, 3))
                 _idx_maxval: np.ndarray = np.argmax(np.argmax(_x, axis=3), axis=2)
 
-                #y[:, :, h_start:h_end:self.vstride, w_start:w_end:self.hstride] = max_val[:, :]
-                #idx_maxval[:, :, h_start:h_end:self.vstride, w_start:w_end:self.hstride] = _idx_maxval[:, :]
-                #breakpoint()
+                # y[:, :, h_start:h_end:self.vstride, w_start:w_end:self.hstride] = max_val[:, :]
+                # idx_maxval[:, :, h_start:h_end:self.vstride, w_start:w_end:self.hstride] = _idx_maxval[:, :]
+                # breakpoint()
                 for i in range(h_start, h_end // self.hstride):
                     for j in range(w_start, w_end // self.wstride):
                         y[:, :, i, j] = max_val[:, :]
                         idx_maxval[:, :, i, j] = _idx_maxval[:, :]
-                #breakpoint()
+                # breakpoint()
         return (y, idx_maxval)

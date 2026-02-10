@@ -6,11 +6,11 @@ from pycuda.elementwise import ElementwiseKernel  # type: ignore
 from pydtnn.backends.pycuda.optimizers.optimizer import OptimizerPycuda
 from pydtnn.optimizers.rmsprop import RMSProp
 from pydtnn.backends.pycuda.layers.layer import LayerPycuda
-from pydtnn.backends.pycuda.utils.tensor_gpu import TensorGPU
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.utils.constants import DTYPE2CTYPE
 
 
-class RMSPropPycuda(RMSProp[TensorGPU], OptimizerPycuda):
+class RMSPropPycuda(RMSProp[TensorArray], OptimizerPycuda):
     """
     RMSPropPycuda Optimizer
     """
@@ -19,16 +19,14 @@ class RMSPropPycuda(RMSProp[TensorGPU], OptimizerPycuda):
         super().__init__(learning_rate, rho, epsilon, decay)
         # -------------
 
-    def get_pycuda_kernel(self) -> None:
-        dtype = np.dtype(self.model.dtype)
-
-        pow_func = {np.dtype(np.float32): "powf", np.dtype(np.float64): "pow"}[dtype]
+    def _kernel_init(self) -> None:
+        pow_func = {np.dtype(np.float32): "powf", np.dtype(np.float64): "pow"}[self.model.dtype]
 
         # --- GPU ---
-        parameters_gpu = "{T} *w, {T} *dw, {T} *cache, float lr, float decay, float rho, float epsilon".format(T=DTYPE2CTYPE[dtype])
+        parameters_gpu = "{T} *w, {T} *dw, {T} *cache, float lr, float decay, float rho, float epsilon".format(T=DTYPE2CTYPE[self.model.dtype])
         operations_gpu = "cache[i] = rho * cache[i] + (1 - rho) * {func}(dw[i], 2); \
                                              w[i] -= lr * (decay * w[i] + (dw[i] / sqrtf(cache[i] + epsilon)))".format(func=pow_func)
-        self.update_gpu = ElementwiseKernel(parameters_gpu, operations_gpu, "RMSProp_kernel")
+        self.update_kernel = ElementwiseKernel(parameters_gpu, operations_gpu, "RMSProp_kernel")
         # -----------
 
         # GPU DIRECT -
@@ -43,16 +41,15 @@ class RMSPropPycuda(RMSProp[TensorGPU], OptimizerPycuda):
                     w[i] -= lr * (decay * w[i] + (dw[i] / sqrt(cache[i] + epsilon)));
                 }}
         }}
-        """.format(T=DTYPE2CTYPE[dtype],
+        """.format(T=DTYPE2CTYPE[self.model.dtype],
                    func=pow_func,
                    name=_name
                    )
         self.update_gpudirect = SourceModule(code).get_function(_name)
         # -------------
 
-    def initialize(self, list_layers: list[LayerPycuda]) -> None:
-        super().initialize(list_layers)  # type: ignore (The type is correct: LayerPycuda extends LayerBase)
-        self.get_pycuda_kernel()
+    def _model_init(self, list_layers: list[LayerPycuda]) -> None:
+        super()._model_init(list_layers)  # type: ignore (The type is correct: LayerPycuda extends LayerBase)
 
         for layer in list_layers:
             list_grad_vars = list(layer.grad_vars.keys())
@@ -63,14 +60,14 @@ class RMSPropPycuda(RMSProp[TensorGPU], OptimizerPycuda):
                     w = getattr(layer, w_)
                     self.context[layer.id]["cache_%s" % w_] = gpuarray.zeros_like(w.ary, dtype=layer.model.dtype)
 
-                    self.real_memory_size += self.context[layer.id]["cache_%s" % w_].nbytes  # type: ignore (They are both "gpuarray" and not "int")
+                    self.memory_used += self.context[layer.id]["cache_%s" % w_].nbytes  # type: ignore (They are both "gpuarray" and not "int")
 
     def update(self, layer: LayerPycuda):
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
             cache = self.context[layer.id]["cache_%s" % w_]
-            w: TensorGPU
-            dw: TensorGPU
+            w: TensorArray
+            dw: TensorArray
             cache: gpuarray.GPUArray
 
             if self.gpudirect:
@@ -84,6 +81,6 @@ class RMSPropPycuda(RMSProp[TensorGPU], OptimizerPycuda):
                                       grid=(int(blocks), 1, 1), block=(int(threads), 1, 1),
                                       stream=layer.stream_2)
             else:
-                self.update_gpu(w.ary, dw.ary, cache, np.float32(self.learning_rate),
-                                np.float32(self.decay), np.float32(self.rho),
-                                np.float32(self.epsilon), stream=layer.stream_2)
+                self.update_kernel(w.ary, dw.ary, cache, np.float32(self.learning_rate),
+                                   np.float32(self.decay), np.float32(self.rho),
+                                   np.float32(self.epsilon), stream=layer.stream_2)

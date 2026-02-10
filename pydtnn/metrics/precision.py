@@ -8,8 +8,8 @@ class Precision[T: Array](Metric[T]):
     conf_matrix_metric: BinaryConfusionMatrix[T] = None  # type: ignore
     format = "prec: %.4f"
 
-    def initialize(self) -> None:
-        super().initialize()
+    def _model_init(self) -> None:
+        super()._model_init()
         for metric in self.model.metrics_funcs:
             if isinstance(metric, BinaryConfusionMatrix):
                 self.conf_matrix_metric = metric

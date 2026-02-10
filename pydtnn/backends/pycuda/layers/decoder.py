@@ -7,7 +7,7 @@ from pydtnn.layers.multi_head_attention import MultiHeadAttention
 from pydtnn.layers.dropout import Dropout
 from pydtnn.layers.feed_forward import FeedForward
 from pydtnn.layers.layer_normalization import LayerNormalization
-from pydtnn.backends.pycuda.utils.tensor_gpu import TensorGPU
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.layers.decoder import Decoder
 
 
@@ -28,8 +28,8 @@ class DecoderPycuda(AbstractBlockLayerPycuda, Decoder):
         # The next attributes will be initialized later
         self.y = self.dx = None
 
-    def initialize(self, prev_shape, x):
-        super().initialize(prev_shape, x)
+    def _model_init(self, prev_shape, x):
+        super()._model_init(prev_shape, x)
         x_dec, x_enc, mask_dec = x
         x_dec_shape, x_enc_shape, mask_dec_shape = prev_shape
         mha_shape = (x_dec_shape, mask_dec_shape)
@@ -39,36 +39,36 @@ class DecoderPycuda(AbstractBlockLayerPycuda, Decoder):
 
         # Initialize all sublayers
         for layer in self.children:
-            layer.init_backend_with_model(self.model)
+            layer._init_backend_with_model(self.model)
 
-        self.multiheadattention.initialize(prev_shape=mha_shape, x=(x_dec, x_dec, x_dec, mask_dec))
-        self.layernormalization_1.initialize(prev_shape=self.shape, x=self.multiheadattention.y)
-        self.multiheadattention_enc.initialize(prev_shape=mha_shape, x=(x_dec, x_enc, x_enc, mask_dec))
-        self.layernormalization_enc.initialize(prev_shape=self.shape, x=self.multiheadattention_enc.y)
+        self.multiheadattention._model_init(prev_shape=mha_shape, x=(x_dec, x_dec, x_dec, mask_dec))
+        self.layernormalization_1._model_init(prev_shape=self.shape, x=self.multiheadattention.y)
+        self.multiheadattention_enc._model_init(prev_shape=mha_shape, x=(x_dec, x_enc, x_enc, mask_dec))
+        self.layernormalization_enc._model_init(prev_shape=self.shape, x=self.multiheadattention_enc.y)
 
         x_aux = self.flatten(self.layernormalization_enc.y)
-        self.layernormalization_enc_y_flatten = TensorGPU(x_aux.ary, self.model.tensor_fmt, self.model.cudnn_dtype)
+        self.layernormalization_enc_y_flatten = TensorArray(x_aux.ary, self.model.tensor_fmt, self.model.cudnn_dtype)
 
-        self.feedforward.initialize(prev_shape=self.layernormalization_enc.shape, x=self.layernormalization_enc_y_flatten)
+        self.feedforward._model_init(prev_shape=self.layernormalization_enc.shape, x=self.layernormalization_enc_y_flatten)
 
         x_aux = self.unflatten(self.feedforward.y)
-        self.feedforward_y_unflatten = TensorGPU(x_aux.ary, self.model.tensor_fmt, self.model.cudnn_dtype)
+        self.feedforward_y_unflatten = TensorArray(x_aux.ary, self.model.tensor_fmt, self.model.cudnn_dtype)
         x_aux = self.unflatten(self.feedforward.dx)
-        self.feedforward_dx_unflatten = TensorGPU(x_aux.ary, self.model.tensor_fmt, self.model.cudnn_dtype)
+        self.feedforward_dx_unflatten = TensorArray(x_aux.ary, self.model.tensor_fmt, self.model.cudnn_dtype)
 
-        self.dropout_2.initialize(prev_shape=self.feedforward.shape, x=self.feedforward_y_unflatten)
+        self.dropout_2._model_init(prev_shape=self.feedforward.shape, x=self.feedforward_y_unflatten)
         x_aux = self.flatten(self.dropout_2.dx)
-        self.dropout_2_dx_flatten = TensorGPU(x_aux.ary, self.model.tensor_fmt, self.model.cudnn_dtype)
+        self.dropout_2_dx_flatten = TensorArray(x_aux.ary, self.model.tensor_fmt, self.model.cudnn_dtype)
 
-        self.layernormalization_2.initialize(prev_shape=self.dropout_2.shape, x=self.dropout_2.y)
+        self.layernormalization_2._model_init(prev_shape=self.dropout_2.shape, x=self.dropout_2.y)
 
         self.y = self.layernormalization_2.y
         x_aux = self.multiheadattention.dquery
-        self.dx = TensorGPU(x_aux.ary, self.model.tensor_fmt, self.model.cudnn_dtype)
+        self.dx = TensorArray(x_aux.ary, self.model.tensor_fmt, self.model.cudnn_dtype)
         x_aux = self.multiheadattention_enc.dkey
-        self.dx_enc = TensorGPU(x_aux.ary, self.model.tensor_fmt, self.model.cudnn_dtype)
+        self.dx_enc = TensorArray(x_aux.ary, self.model.tensor_fmt, self.model.cudnn_dtype)
         x_aux = self.multiheadattention_enc.dquery
-        self.dx_enc_dquery = TensorGPU(x_aux.ary, self.model.tensor_fmt, self.model.cudnn_dtype)
+        self.dx_enc_dquery = TensorArray(x_aux.ary, self.model.tensor_fmt, self.model.cudnn_dtype)
 
         self.flatten(self.feedforward.y)
         self.flatten(self.feedforward.dx)
