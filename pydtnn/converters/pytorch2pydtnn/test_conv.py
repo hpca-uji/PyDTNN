@@ -99,7 +99,7 @@ def main():
         x = deepcopy(dataset)
         if KWARGS["enable_cudnn"]:
             _dataset = TensorArray(
-                gpu_arr=gpuarray.empty(shape=dataset.shape, dtype=KWARGS["dtype"]),
+                gpu_arr=gpuarray.zeros(shape=dataset.shape, dtype=KWARGS["dtype"]),
                 tensor_format=model.tensor_format, cudnn_dtype=model.cudnn_dtype)
             _dataset.ary.set(dataset)
             x = _dataset

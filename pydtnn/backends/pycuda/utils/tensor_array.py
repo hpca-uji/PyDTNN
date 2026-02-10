@@ -63,7 +63,7 @@ class TensorArray:
                  tensor_type: TensorTypeEnum = TensorTypeEnum.TENSOR,
                  desc: int | None = None, gpudirect: bool = False, cublas: bool = False) -> tuple[np.ndarray, "TensorArray"]:
         x_cpu = np.zeros(shape, dtype)
-        x_gpu = gpuarray.empty(shape, dtype)
+        x_gpu = gpuarray.zeros(shape, dtype)
 
         x_gpu = TensorArray(x_gpu, tensor_format=tensor_format, cudnn_dtype=cudnn_dtype, tensor_type=tensor_type,
                             desc=desc, gpudirect=gpudirect, cublas=cublas)

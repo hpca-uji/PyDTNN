@@ -38,7 +38,7 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
         self.stream_2 = drv.Stream()
 
         # Activations y
-        y_gpu = gpuarray.empty(x.ary.shape, self.model.dtype)
+        y_gpu = gpuarray.zeros(x.ary.shape, self.model.dtype)
         self.y = TensorArray(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
         self.memory_used += self.y.nbytes
 
@@ -95,11 +95,11 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
         self.running_var = TensorArray(running_var_gpu, self.model.tensor_format, self.model.cudnn_dtype)
         self.memory_used += self.running_var.nbytes
 
-        save_mean_gpu = gpuarray.empty(shape_, self.model.dtype)
+        save_mean_gpu = gpuarray.zeros(shape_, self.model.dtype)
         self.save_mean = TensorArray(save_mean_gpu, self.model.tensor_format, self.model.cudnn_dtype)
         self.memory_used += self.save_mean.nbytes
 
-        save_inv_var_gpu = gpuarray.empty(shape_, self.model.dtype)
+        save_inv_var_gpu = gpuarray.zeros(shape_, self.model.dtype)
         self.save_inv_var = TensorArray(save_inv_var_gpu, self.model.tensor_format, self.model.cudnn_dtype)
         self.memory_used += self.save_inv_var.nbytes
 

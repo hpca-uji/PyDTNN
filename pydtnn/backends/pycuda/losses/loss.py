@@ -23,8 +23,8 @@ class LossPycuda(Loss[TensorArray]):
         # NOTE: the model must be executed before this one.
         self.grid = self.model.cuda_grid
         self.block = self.model.cuda_block
-        self.loss = gpuarray.empty((self.model.batch_size,), self.model.dtype)
-        dx_gpu = gpuarray.empty(self.shape, self.model.dtype)
+        self.loss = gpuarray.zeros((self.model.batch_size,), self.model.dtype)
+        dx_gpu = gpuarray.zeros(self.shape, self.model.dtype)
         self.dx = TensorArray(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
         self.kernel = self.__init_gpu_kernel__()
 

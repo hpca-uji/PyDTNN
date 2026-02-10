@@ -70,11 +70,11 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
             self.biases = TensorArray(biases_gpu, self.model.tensor_format, self.model.cudnn_dtype)
             self.memory_used += self.biases.nbytes
 
-        y_gpu = gpuarray.empty((self.model.batch_size, self.shape[0]), self.model.dtype)
+        y_gpu = gpuarray.zeros((self.model.batch_size, self.shape[0]), self.model.dtype)
         self.y = TensorArray(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
         self.memory_used += self.y.nbytes
 
-        dx_gpu = gpuarray.empty((self.model.batch_size, *prev_shape), self.model.dtype)
+        dx_gpu = gpuarray.zeros((self.model.batch_size, *prev_shape), self.model.dtype)
         self.dx = TensorArray(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
         self.memory_used += self.dx.nbytes
 

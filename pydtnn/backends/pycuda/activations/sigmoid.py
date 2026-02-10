@@ -23,11 +23,11 @@ class SigmoidPycuda(Sigmoid[TensorArray], ActivationPycuda):
         cudnn.cudnnSetActivationDescriptor(self.act_desc, mode, nan, 0.0)
 
         # Activations a
-        y_gpu = gpuarray.empty(x.ary.shape, self.model.dtype)
+        y_gpu = gpuarray.zeros(x.ary.shape, self.model.dtype)
         self.y = TensorArray(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
         # Derivative dx
-        dx_gpu = gpuarray.empty(x.ary.shape, self.model.dtype)
+        dx_gpu = gpuarray.zeros(x.ary.shape, self.model.dtype)
         self.dx = TensorArray(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
         self.memory_used += self.y.nbytes + self.dx.nbytes

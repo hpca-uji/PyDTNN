@@ -131,14 +131,14 @@ __global__ void {func_name}({T}* dx, {T}* dy, {T}* mask,
 
         n: int = self.model.batch_size * self.hi * self.wi * self.ci
 
-        _max = gpuarray.empty((self.model.batch_size, *self.shape), self.model.dtype)
+        _max = gpuarray.zeros((self.model.batch_size, *self.shape), self.model.dtype)
         self.max = TensorArray(_max, self.model.tensor_format, self.model.cudnn_dtype)
 
-        _mask = gpuarray.empty((self.model.batch_size, *self.shape), self.model.dtype)
+        _mask = gpuarray.zeros((self.model.batch_size, *self.shape), self.model.dtype)
         self.mask = TensorArray(_mask, self.model.tensor_format, self.model.cudnn_dtype)
 
         # Derivative dx
-        dx_gpu = gpuarray.empty((self.model.batch_size, *self.shape), self.model.dtype)
+        dx_gpu = gpuarray.zeros((self.model.batch_size, *self.shape), self.model.dtype)
         self.dx = TensorArray(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
         self.fwd_time = \

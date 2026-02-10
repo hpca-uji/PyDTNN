@@ -12,7 +12,7 @@ class InputPycuda(Input[TensorArray], LayerPycuda):
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray):
         super()._model_init(prev_shape, x)
 
-        y_gpu = gpuarray.empty((self.model.batch_size, *self.shape), self.model.dtype)
+        y_gpu = gpuarray.zeros((self.model.batch_size, *self.shape), self.model.dtype)
         self.y = TensorArray(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
         self.memory_used += self.y.nbytes
