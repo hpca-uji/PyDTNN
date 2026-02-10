@@ -275,8 +275,8 @@ class LayerPycuda(Layer[TensorGPU]):
             self.model.y_batch.ary.set(y_batch)
             x, y_targ = self.model.layers[0].y, self.model.y_batch
         else:
-            empty_x = gpuarray.empty((1, *self.model.dataset.input_shape), self.model.dtype)[:0]
-            empty_y_tag = gpuarray.empty((1, *self.model.dataset.output_shape), self.model.dtype)[:0]
+            empty_x = gpuarray.zeros((1, *self.model.dataset.input_shape), self.model.dtype)[:0]
+            empty_y_tag = gpuarray.zeros((1, *self.model.dataset.output_shape), self.model.dtype)[:0]
             x = TensorGPU(empty_x, self.tensor_format, self.cudnn_dtype)
             y_targ = TensorGPU(empty_y_tag, self.model.tensor_format, self.model.cudnn_dtype)
         return x, y_targ

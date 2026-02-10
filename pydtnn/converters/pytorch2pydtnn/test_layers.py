@@ -204,7 +204,7 @@ def test_layers_gpu(model: PyDTNN_Model, dataset: np.ndarray) -> TensorGPU:
     dtype = model.dtype
     model.cudnn_dtype = cudnn.cudnnDataType[TYPES_DATA_CUDA[model.dtype]]
     _dataset = TensorGPU(
-        gpu_arr=gpuarray.empty(shape=dataset.shape, dtype=dtype),
+        gpu_arr=gpuarray.zeros(shape=dataset.shape, dtype=dtype),
         tensor_format=model.tensor_format, cudnn_dtype=model.cudnn_dtype)
 
     _dataset.ary.set(dataset)

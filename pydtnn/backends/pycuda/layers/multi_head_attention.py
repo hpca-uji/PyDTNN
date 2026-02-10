@@ -53,7 +53,7 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorGPU], LayerPycuda):
 
         # Dropout Descriptor
         self.states_size = cudnn.cudnnDropoutGetStatesSize(self.model.cudnn_handle)
-        states_gpu = gpuarray.empty((self.states_size.value,), self.model.dtype)
+        states_gpu = gpuarray.zeros((self.states_size.value,), self.model.dtype)
         self.states = TensorGPU(states_gpu, self.model.tensor_fmt, self.model.cudnn_dtype, TensorGPU.TensorTypeEnum.OTHER)
         self.drop_desc = cudnn.cudnnCreateDropoutDescriptor()
         cudnn.cudnnSetDropoutDescriptor(self.drop_desc, self.model.cudnn_handle, self.dropout_rate,
@@ -73,11 +73,11 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorGPU], LayerPycuda):
         checkConvolutionMemory(self.workspace_size)
         weights_size = self.weights_size.value // np.dtype(self.model.dtype).itemsize
         reserve_backward_size = self.reserve_backward_size.value // np.dtype(self.model.dtype).itemsize + 1
-        self.weights = gpuarray.empty((weights_size,), self.model.dtype)
+        self.weights = gpuarray.zeros((weights_size,), self.model.dtype)
         self.weights = TensorGPU(self.weights, self.model.tensor_fmt, self.model.cudnn_dtype, TensorGPU.TensorTypeEnum.OTHER)
-        self.dw = gpuarray.empty((weights_size,), self.model.dtype)
+        self.dw = gpuarray.zeros((weights_size,), self.model.dtype)
         self.dw = TensorGPU(self.dw, self.model.tensor_fmt, self.model.cudnn_dtype, TensorGPU.TensorTypeEnum.OTHER)
-        self.reserve_backward = gpuarray.empty((reserve_backward_size,), self.model.dtype)
+        self.reserve_backward = gpuarray.zeros((reserve_backward_size,), self.model.dtype)
         self.reserve_backward = TensorGPU(self.reserve_backward, self.model.tensor_fmt, self.model.cudnn_dtype, TensorGPU.TensorTypeEnum.OTHER)
 
         # Weights to GPU
@@ -89,13 +89,13 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorGPU], LayerPycuda):
         pycuda.driver.memcpy_htod(self.weights.ptr.value, np.concatenate([w.flatten() for w in _weights]))
 
         # Memory Allocation for Outputs
-        self.y = gpuarray.empty((self.model.batch_size, self.beam, self.seq, self.embedl), self.model.dtype)
+        self.y = gpuarray.zeros((self.model.batch_size, self.beam, self.seq, self.embedl), self.model.dtype)
         self.y = TensorGPU(self.y, self.model.tensor_fmt, self.model.cudnn_dtype, TensorGPU.TensorTypeEnum.SEQ)
-        self.dquery = gpuarray.empty((self.model.batch_size, self.beam, self.seq, self.embedl), self.model.dtype)
+        self.dquery = gpuarray.zeros((self.model.batch_size, self.beam, self.seq, self.embedl), self.model.dtype)
         self.dquery = TensorGPU(self.dquery, self.model.tensor_fmt, self.model.cudnn_dtype, TensorGPU.TensorTypeEnum.SEQ)
-        self.dkey = gpuarray.empty((self.model.batch_size, self.beam, self.seq, self.embedl), self.model.dtype)
+        self.dkey = gpuarray.zeros((self.model.batch_size, self.beam, self.seq, self.embedl), self.model.dtype)
         self.dkey = TensorGPU(self.dkey, self.model.tensor_fmt, self.model.cudnn_dtype, TensorGPU.TensorTypeEnum.SEQ)
-        self.dvalue = gpuarray.empty((self.model.batch_size, self.beam, self.seq, self.embedl), self.model.dtype)
+        self.dvalue = gpuarray.zeros((self.model.batch_size, self.beam, self.seq, self.embedl), self.model.dtype)
         self.dvalue = TensorGPU(self.dvalue, self.model.tensor_fmt, self.model.cudnn_dtype, TensorGPU.TensorTypeEnum.SEQ)
 
         self.current_index = -1  # Training

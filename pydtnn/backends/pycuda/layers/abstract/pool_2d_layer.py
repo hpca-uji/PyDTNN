@@ -46,12 +46,12 @@ class AbstractPool2DLayerPycuda(AbstractPool2DLayer[TensorGPU], LayerPycuda):
         self.shape = self.model.encode_shape((self.co, self.ho, self.wo))
 
         # Activations y
-        y_gpu = gpuarray.empty((self.model.batch_size, *self.shape), self.model.dtype)
+        y_gpu = gpuarray.zeros((self.model.batch_size, *self.shape), self.model.dtype)
         self.y = TensorGPU(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
         self.real_memory_size += self.y.nbytes
 
         # Derivative dx
-        dx_gpu = gpuarray.empty(self.x.ary.shape, self.model.dtype)
+        dx_gpu = gpuarray.zeros(self.x.ary.shape, self.model.dtype)
         self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
         self.real_memory_size += self.dx.nbytes
 

@@ -38,7 +38,7 @@ class BatchNormalizationPycuda(BatchNormalization[TensorGPU], LayerPycuda):
         self.stream_2 = drv.Stream()
 
         # Activations y
-        y_gpu = gpuarray.empty(x.ary.shape, self.model.dtype)
+        y_gpu = gpuarray.zeros(x.ary.shape, self.model.dtype)
         self.y = TensorGPU(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
         self.real_memory_size += self.y.nbytes
 
@@ -95,11 +95,11 @@ class BatchNormalizationPycuda(BatchNormalization[TensorGPU], LayerPycuda):
         self.running_var = TensorGPU(running_var_gpu, self.model.tensor_format, self.model.cudnn_dtype)
         self.real_memory_size += self.running_var.nbytes
 
-        save_mean_gpu = gpuarray.empty(shape_, self.model.dtype)
+        save_mean_gpu = gpuarray.zeros(shape_, self.model.dtype)
         self.save_mean = TensorGPU(save_mean_gpu, self.model.tensor_format, self.model.cudnn_dtype)
         self.real_memory_size += self.save_mean.nbytes
 
-        save_inv_var_gpu = gpuarray.empty(shape_, self.model.dtype)
+        save_inv_var_gpu = gpuarray.zeros(shape_, self.model.dtype)
         self.save_inv_var = TensorGPU(save_inv_var_gpu, self.model.tensor_format, self.model.cudnn_dtype)
         self.real_memory_size += self.save_inv_var.nbytes
 

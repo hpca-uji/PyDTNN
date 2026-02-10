@@ -13,7 +13,7 @@ class CategoricalAccuracyPycuda(CategoricalAccuracy[TensorGPU], MetricPycuda):
 
     def initialize(self) -> None:
         super().initialize()
-        self.cost = gpuarray.empty((self.model.batch_size,), self.model.dtype)
+        self.cost = gpuarray.zeros((self.model.batch_size,), self.model.dtype)
 
     def __init_gpu_kernel__(self) -> Function:
         _name = "categorical_accuracy"

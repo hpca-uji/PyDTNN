@@ -16,9 +16,9 @@ class LayerNormalizationPycuda(LayerNormalization[TensorGPU], LayerPycuda):
         self.epsilon = np.float32(self.epsilon)
 
         # Shape same as x input
-        self.y = gpuarray.empty(x.ary.shape, self.model.dtype)
+        self.y = gpuarray.zeros(x.ary.shape, self.model.dtype)
         self.y = TensorGPU(self.y, self.model.tensor_fmt, self.model.cudnn_dtype)
-        self.dx = gpuarray.empty(x.ary.shape, self.model.dtype)
+        self.dx = gpuarray.zeros(x.ary.shape, self.model.dtype)
         self.dx = TensorGPU(self.dx, self.model.tensor_fmt, self.model.cudnn_dtype)
 
         # Shape same as x input, but batch = 1. For scaling at the end: output = scale * post_normalization + bias
@@ -34,10 +34,10 @@ class LayerNormalizationPycuda(LayerNormalization[TensorGPU], LayerPycuda):
 
         # Shape same as x input, but last layer = 1. For mean computation across the normalization axis.
         mean_shape = (int(np.prod(x.ary.shape) / np.prod([x.ary.shape[i] for i in self.axis])),)  # (*x.ary.shape[:-2], 1, 1)
-        self.std = gpuarray.empty(mean_shape, self.model.dtype)
+        self.std = gpuarray.zeros(mean_shape, self.model.dtype)
         self.std = TensorGPU(self.std, self.model.tensor_fmt, self.model.cudnn_dtype, tensor_type=TensorGPU.TensorTypeEnum.OTHER)
         out_shape = x.ary.shape
-        self.xn = gpuarray.empty(out_shape, self.model.dtype)
+        self.xn = gpuarray.zeros(out_shape, self.model.dtype)
         self.xn = TensorGPU(self.xn, self.model.tensor_fmt, self.model.cudnn_dtype, tensor_type=TensorGPU.TensorTypeEnum.OTHER)
 
         self.__init_kernels_gpu__()

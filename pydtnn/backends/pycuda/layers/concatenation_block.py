@@ -74,14 +74,14 @@ class ConcatenationBlockPycuda(ConcatenationBlock[TensorGPU], AbstractBlockLayer
             "split")
 
         # Activations y
-        y_gpu = gpuarray.empty((self.model.batch_size, *self.shape), self.model.dtype)
+        y_gpu = gpuarray.zeros((self.model.batch_size, *self.shape), self.model.dtype)
         self.y = TensorGPU(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
         self.real_memory_size += self.y.nbytes
 
         # Derivative dy
         self.dy = []
         for i, p in enumerate(self.paths):
-            dy_gpu = gpuarray.empty((self.model.batch_size, *self.out_shapes[i]), self.model.dtype)
+            dy_gpu = gpuarray.zeros((self.model.batch_size, *self.out_shapes[i]), self.model.dtype)
             self.dy.append(TensorGPU(dy_gpu, self.model.tensor_format, self.model.cudnn_dtype))
 
             self.real_memory_size += dy_gpu.nbytes

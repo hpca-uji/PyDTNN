@@ -317,11 +317,11 @@ __global__ void {func_name}({T}* dx, {T}* dy,
         self.ci, self.hi, self.wi = self.model.decode_shape(prev_shape)
         self.shape = self.model.encode_shape((self.co, self.ho, self.wo))
         pooling_shape = self.model.encode_shape((self.co, self.ho, self.wo))
-        y = gpuarray.empty((self.model.batch_size, *pooling_shape), self.model.dtype)
+        y = gpuarray.zeros((self.model.batch_size, *pooling_shape), self.model.dtype)
         self.y: TensorGPU = TensorGPU(y, self.model.tensor_format, self.model.cudnn_dtype)
 
         # Derivative dx
-        dx_gpu = gpuarray.empty(self.x.ary.shape, self.model.dtype)
+        dx_gpu = gpuarray.zeros(self.x.ary.shape, self.model.dtype)
         self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
         self.real_memory_size += self.y.nbytes + self.dx.nbytes
@@ -376,6 +376,7 @@ __global__ void {func_name}({T}* dx, {T}* dy,
         num_active_workers = np.int32(min(total_num_threads, num_elements))
         num_ops_per_worker = np.int32((num_elements + num_active_workers - 1) / num_active_workers)
         num_ops_last_worker = np.int32(num_elements - (num_active_workers - 1) * num_ops_per_worker)
+        self.dx.fill(0)
 
         self.cuda_bwd_func(self.dx.ary, self.y.ary,
                            np.int32(n), np.int32(c), np.int32(h), np.int32(w),
