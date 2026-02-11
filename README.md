@@ -150,8 +150,9 @@ The PyDTNN framework comes with a utility launcher called
   - `--weights-and-bias-filename`: Load weights and bias from file.
     Default: `None`.
   - `--history-file`: Filename to save training loss and metrics.
-  - `--tensor-format`: Data format to be used: `NHWC` or `NCHW`. Optionally,
-    the `AUTO` value sets `NCHW` when the option `--enable-cudnn` is set and `NHWC` otherwise. Default: `NHWC`.
+  - `--tensor-format`: Data format to be used: `NHWC` or `NCHW`.
+    Optionally, the `AUTO` value sets `NCHW` when cuDNN is available,
+    `NHWC` otherwise. Default: `NHWC`.
   - `--random-seed`: Initial state of random number generator. Default: `57005`.
   - `--shared-tmp-memory`: Allows to use a common memory pool for all the temporary data structures.
   - `--shared-storage`: If `True` ranks assume they share the file
@@ -170,9 +171,6 @@ The PyDTNN framework comes with a utility launcher called
     Default: `True`.
   - `--final-model-sync`: Synchronize models on training end. Default:
     `True`.
-  - `--tensor-format`: Data format to be used: `NHWC` or `NCHW`.
-    Optionally, the `AUTO` value sets `NCHW` when the option
-    `--enable-cudnn` is set and `NHWC` otherwise. Default: `NHWC`.
 - Dataset parameters:
   - `--dataset`: Dataset to train: `mnist`, `cifar10`, `synthetic`,
     …. Default: `None`.
@@ -303,12 +301,10 @@ The PyDTNN framework comes with a utility launcher called
   - `--use-mpi-buffers`: Enable the use of MPI buffers. Possible values:
     `True` (MPI operations by buffer), `False` (MPI operations by
     object) or `None` (auto-select the better option). Default: `None`.
-  - `--enable-cudnn`: Enable GPU, use `cuDNN` library. Default: `False`.
   - `--enable-gpudirect`: Enable GPU pinned memory for gradients when
     using a CUDA-aware MPI version. Default: `False`.
   - `--enable-nccl`: Enable the use of the `NCCL` library for collective
-    communications on GPUs. This option can only be set with
-    `--enable-cudnn`. Default. `False`.
+    communications on GPUs. This option can only be set when cuDNN is available. Default. `False`.
   - `--enable-cudnn-auto-conv-alg`: Let `cuDNN` to select the best
     performing convolution algorithm. Default: `True`.
 - Encryption parameters:

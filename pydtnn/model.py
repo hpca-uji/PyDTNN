@@ -230,7 +230,7 @@ class Model[T: Array]:
     cuda_grid: tuple[int, int, int]
     cuda_block: tuple[int, int, int]
 
-    def __init__(self, parallel: ParallelMode = ParallelMode.SEQUENTIAL, use_blocking_mpi: bool = False, enable_cudnn: bool = False,
+    def __init__(self, parallel: ParallelMode = ParallelMode.SEQUENTIAL, use_blocking_mpi: bool = False,
                  enable_gpudirect: bool = False, enable_nccl: bool = False, dtype: np.dtype = np.dtype(np.float32), tracing: bool = False,
                  tracer_output: str = "", tracer_pmlib_server: str = "127.0.0.1", tracer_pmlib_port: int = 6526,
                  tracer_pmlib_device: str = "", **kwargs):
@@ -238,7 +238,7 @@ class Model[T: Array]:
         # Attributes related to the given arguments
         self.parallel: Model.ParallelMode = Model.ParallelMode(parallel)
         self.blocking_mpi: bool = use_blocking_mpi
-        self.enable_cudnn = enable_cudnn
+        self.enable_cudnn = True
         self.gpudirect: bool = enable_gpudirect
         self.enable_nccl: bool = enable_nccl
         self.dtype: np.dtype = np.dtype(dtype)
@@ -254,11 +254,6 @@ class Model[T: Array]:
 
         # Set MPI and comm
         self._mpi_init()
-
-        # Set tracer
-        self.tracer = get_tracer(tracer_output=tracer_output, tracing=tracing, comm=self.comm, enable_cudnn=enable_cudnn,
-                                 tracer_pmlib_server=tracer_pmlib_server, tracer_pmlib_port=tracer_pmlib_port,
-                                 tracer_pmlib_device=tracer_pmlib_device)
 
         # Set performance counter
         self.perf_counter = PerformanceCounter()
@@ -283,6 +278,11 @@ class Model[T: Array]:
             self._cudnn_init()
         else:
             self.enable_cudnn = False
+
+        # Set tracer
+        self.tracer = get_tracer(tracer_output=tracer_output, tracing=tracing, comm=self.comm, enable_cudnn=self.enable_cudnn,
+                                 tracer_pmlib_server=tracer_pmlib_server, tracer_pmlib_port=tracer_pmlib_port,
+                                 tracer_pmlib_device=tracer_pmlib_device)
 
         # Data format
         self.tensor_format: TensorFormat = get_tensor_format(tensor_format=self.tensor_format, gpu=self.enable_cudnn)  # type: ignore

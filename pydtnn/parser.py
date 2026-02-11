@@ -299,14 +299,14 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
                                help="Data parallelization modes: 'sequential', 'data' (MPI). Default: 'sequential'.")
         _pe_group.add_argument('--use-blocking-mpi', type=bool_lambda, default=True,
                                help="Enable non-blocking MPI primitives. Default: True.")
-        _pe_group.add_argument('--use-mpi-buffers', type=bool_lambda,default=None,
+        _pe_group.add_argument('--use-mpi-buffers', type=bool_lambda, default=None,
                                help="Enable the use of MPI buffers. Possible values: 'True' (MPI operations by buffer), 'False' (MPI operations by object) or undefined (auto-select the better option). Default: undefined.")
-        _pe_group.add_argument('--enable-cudnn', type=bool_lambda, default=True,
-                               help="Enable GPU, use cuDNN library. Default: False.")
+        _pe_group.add_argument('--enable-cudnn', type=bool_lambda, default=None,
+                               help="Ignored, always enabled if plausible, present just for compatibility.")
         _pe_group.add_argument('--enable-gpudirect', type=bool_lambda, default=False,
                                help="Enable GPU pinned memory for gradients when using a CUDA-aware MPI version. Default: False.")
         _pe_group.add_argument('--enable-nccl', type=bool_lambda, default=False,
-                               help="Enable the use of the NCCL library for  collective communications on GPUs. This option can only be set with '--enable-cudnn'. Default. False.")
+                               help="Enable the use of the NCCL library for collective communications on GPUs. This option can only be set when cuDNN is available. Default. False.")
         _pe_group.add_argument('--enable-cudnn-auto-conv-alg', type=bool_lambda, default=True,
                                help="Let cuDNN to select the best performing convolution algorithm. Default: True.")
 
@@ -368,6 +368,7 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
         result.mpi_backend = _get_mpi_backend()
         result.mpi_server = _get_mpi_server()
         result.mpi_port = _get_mpi_port()
+        result.enable_cudnn = "AUTO"
         # Populate self.lines (for self.print_args())
         if len(self.lines) == 0:
             lines = []
