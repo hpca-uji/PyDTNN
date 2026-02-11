@@ -237,6 +237,7 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
         self.im2col_alt(x1, x_cols1)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
+        breakpoint()
         self.x_cols = x_cols
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_W)
