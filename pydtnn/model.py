@@ -238,7 +238,7 @@ class Model[T: Array]:
         # Attributes related to the given arguments
         self.parallel: Model.ParallelMode = Model.ParallelMode(parallel)
         self.blocking_mpi: bool = use_blocking_mpi
-        self.enable_cudnn = True
+        self.enable_cudnn = gpuarray is not None and drv is not None and cublas is not None
         self.gpudirect: bool = enable_gpudirect
         self.enable_nccl: bool = enable_nccl
         self.dtype: np.dtype = np.dtype(dtype)
@@ -274,10 +274,8 @@ class Model[T: Array]:
         self.memory_cls = PreallocMemory if self.shared_tmp_memory else PrivateMemory
 
         # Cuda
-        if gpuarray is not None and drv is not None and cublas is not None:
+        if self.enable_cudnn:
             self._cudnn_init()
-        else:
-            self.enable_cudnn = False
 
         # Set tracer
         self.tracer = get_tracer(tracer_output=tracer_output, tracing=tracing, comm=self.comm, enable_cudnn=self.enable_cudnn,
