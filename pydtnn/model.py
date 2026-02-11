@@ -27,7 +27,7 @@ from pydtnn import rank, nprocs, hostname, ranks_per_node, num_gpus, supported_g
 from pydtnn import utils
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.activations.relu import Relu
-from pydtnn.libs.mpi import comm as BACKEND
+from pydtnn.libs.mpi import proto as PROTOCOL
 from pydtnn import crypto
 from pydtnn.datasets.dataset import Dataset
 from pydtnn.layer_base import LayerBase, FusedLayerMixIn
@@ -368,7 +368,7 @@ class Model[T: Array]:
         # Communication method
         match self.use_mpi_buffers:
             case None:
-                self.use_mpi_buffers = BACKEND is None
+                self.use_mpi_buffers = PROTOCOL is None
             case bool():
                 pass
             case _:

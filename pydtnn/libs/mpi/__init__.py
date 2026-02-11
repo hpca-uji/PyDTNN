@@ -14,9 +14,9 @@ if _rc:
 
 
 # Redefine backend
-comm = (
-    _nq.Backend(comm)
-    if _nq and (comm := _os.environ.get("PYMPI_COMM"))
+proto = (
+    _nq.Protocol(proto)
+    if _nq and (proto := _os.environ.get("PYMPI_PROTO"))
     else None
 )
 
