@@ -335,6 +335,8 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
                                help="Port of PMlib tracer device.")
         _tr_group.add_argument('--profile', type=bool_lambda, default=False,
                                help="Obtain cProfile profiles. Default: False.")
+        _tr_group.add_argument('--traceback', type=bool_lambda, default=False,
+                               help="Obtain Traceback profiles. Default: False.")
 
         # Performance modeling options
         _pm_group = self.add_argument_group("Performance modeling options")
