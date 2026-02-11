@@ -273,14 +273,14 @@ class Model[T: Array]:
 
         self.memory_cls = PreallocMemory if self.shared_tmp_memory else PrivateMemory
 
-        # Cuda
-        if self.enable_cudnn:
-            self._cudnn_init()
-
         # Set tracer
         self.tracer = get_tracer(tracer_output=tracer_output, tracing=tracing, comm=self.comm, enable_cudnn=self.enable_cudnn,
                                  tracer_pmlib_server=tracer_pmlib_server, tracer_pmlib_port=tracer_pmlib_port,
                                  tracer_pmlib_device=tracer_pmlib_device)
+
+        # Cuda
+        if self.enable_cudnn:
+            self._cudnn_init()
 
         # Data format
         self.tensor_format: TensorFormat = get_tensor_format(tensor_format=self.tensor_format, gpu=self.enable_cudnn)  # type: ignore
