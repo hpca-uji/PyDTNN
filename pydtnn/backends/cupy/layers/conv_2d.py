@@ -1,11 +1,12 @@
 import cupy as np
 
+from pydtnn.backends.cupy.layers.layer import LayerCupy
 from pydtnn.backends.numpy.layers.conv_2d import Conv2DNumpy
 
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.constants import DTYPE2CTYPE
 
-class Conv2DCUPY(Conv2DNumpy):
+class Conv2DCupy(Conv2DNumpy, LayerCupy):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
