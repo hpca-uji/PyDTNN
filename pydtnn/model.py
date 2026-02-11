@@ -279,11 +279,10 @@ class Model[T: Array]:
         self.memory_cls = PreallocMemory if self.shared_tmp_memory else PrivateMemory
 
         # Cuda
-        if self.enable_cudnn:
-            if gpuarray and drv and cublas:
-                self._cudnn_init()
-            else:
-                raise ExceptionGroup("CUDA import error", gpu_errors)
+        if gpuarray is not None and drv is not None and cublas is not None:
+            self._cudnn_init()
+        else:
+            self.enable_cudnn = False
 
         # Data format
         self.tensor_format: TensorFormat = get_tensor_format(tensor_format=self.tensor_format, gpu=self.enable_cudnn)  # type: ignore
@@ -750,6 +749,8 @@ class Model[T: Array]:
     def _model_init(self):
         if self._is_model_init:
             return
+        self._is_model_init = True
+
         self._apply_layer_fusion()
 
         temp_memory_size = []
@@ -772,10 +773,6 @@ class Model[T: Array]:
         self.loss_and_metrics_format = [self.loss_func.format] + [metric.format for metric in self.metrics_funcs]
         self.total_metrics = np.array([0] + [0 for func in self.metrics_funcs], dtype=self.dtype)
         self.tracer.define_event_types(self)
-        self._is_model_init = True
-
-        if self.enable_cudnn:
-            self.optimizer.set_gpudirect(self.gpudirect)
 
         self.optimizer._model_init(self.get_all_layers(self.layers))
         temp_memory_size.append(self.optimizer.tmp_memory_used)

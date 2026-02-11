@@ -16,12 +16,8 @@ class OptimizerPycuda(Optimizer[TensorArray]):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.gpudirect = False
         self.update_kernel: ElementwiseKernel = None  # type: ignore (It will be intialized later)
         self.update_gpudirect: Function = None  # type: ignore (It will be intialized later)
-
-    def set_gpudirect(self, gpudirect: bool):
-        self.gpudirect = gpudirect
 
     def get_batch_size(self, w: TensorArray) -> np.int32:
         return np.int32(w.size)
