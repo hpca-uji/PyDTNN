@@ -17,6 +17,7 @@ class Optimizer[T: Array](PromoteToBackend):
     def _model_init(self, list_layers: list[LayerBase[T]]) -> None:
         super()._model_init()
         self.dtype = self.model.dtype
+        self.gpudirect = self.model.gpudirect
 
     def update(self, layer: LayerBase) -> None:
         raise NotImplementedError("method \"update\" of an Optimizer's child class is not implemented")

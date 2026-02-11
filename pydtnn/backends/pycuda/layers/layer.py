@@ -17,6 +17,7 @@ except Exception as e:
     pass
 
 from numpy import ndarray
+from pydtnn import gpu_errors
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 
 from pycuda import gpuarray  # type: ignore
@@ -47,7 +48,7 @@ class LayerPycuda(Layer[TensorArray]):
         super()._model_init(prev_shape, x)
 
         if not self.model.enable_cudnn:
-            raise RuntimeError("GPU layers requires CUDNN to be enabled!")
+            raise ExceptionGroup("GPU layers requires CUDNN to be enabled!", gpu_errors)
 
         self.grid = self.model.cuda_grid
         self.block = self.model.cuda_block

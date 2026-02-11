@@ -129,7 +129,7 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
         self.add_argument('--history-file', type=str, default=None,
                           help="Filename to save training loss and metrics.")
         self.add_argument('--tensor-format', type=lambda s: str(s).upper(), default="NHWC",
-                          help="Data format to be used: 'NHWC' or 'NCHW'. Optionally, the 'AUTO' value sets 'NCHW' when the option '--enable-cudnn' is set and 'NHWC' otherwise. Default: 'NHWC'.")
+                          help="Data format to be used: 'NHWC' or 'NCHW'. Optionally, the 'AUTO' value sets 'NCHW' when cuDNN is available, 'NHWC' otherwise. Default: 'NHWC'.")
         self.add_argument('--random-seed', type=int, default=57005,
                           help="Initial state of random number generator. Default: '57005'.")
         self.add_argument('--shared-tmp-memory', type=bool_lambda, default=False,
@@ -301,12 +301,12 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
                                help="Enable non-blocking MPI primitives. Default: True.")
         _pe_group.add_argument('--use-mpi-buffers', type=bool_lambda,default=None,
                                help="Enable the use of MPI buffers. Possible values: 'True' (MPI operations by buffer), 'False' (MPI operations by object) or undefined (auto-select the better option). Default: undefined.")
-        _pe_group.add_argument('--enable-cudnn', type=bool_lambda, default=False,
+        _pe_group.add_argument('--enable-cudnn', type=bool_lambda, default=True,
                                help="Enable GPU, use cuDNN library. Default: False.")
         _pe_group.add_argument('--enable-gpudirect', type=bool_lambda, default=False,
                                help="Enable GPU pinned memory for gradients when using a CUDA-aware MPI version. Default: False.")
         _pe_group.add_argument('--enable-nccl', type=bool_lambda, default=False,
-                               help="Enable the use of the NCCL library for  collective communications on GPUs. This option can only be set  with '--enable-cudnn'. Default. False.")
+                               help="Enable the use of the NCCL library for  collective communications on GPUs. This option can only be set with '--enable-cudnn'. Default. False.")
         _pe_group.add_argument('--enable-cudnn-auto-conv-alg', type=bool_lambda, default=True,
                                help="Let cuDNN to select the best performing convolution algorithm. Default: True.")
 
