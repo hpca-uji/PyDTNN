@@ -4,12 +4,14 @@
 PyDTNN Benchmark script
 """
 
-import cProfile
 import os
-from pathlib import Path
 import sys
 import time
+import cProfile
+from pathlib import Path
 from datetime import datetime
+from traceback import TracebackException
+from contextlib import contextmanager, nullcontext
 
 from pydtnn.model import Model
 from pydtnn.utils import random
@@ -28,6 +30,8 @@ if os.environ.get("EXTRAE_ON", None) == "1":
     pyextrae.startTracing(TracingLibrary)
     Extrae_tracing = True
 
+timestamp = datetime.now().isoformat(timespec="seconds").replace(" ", "-").replace(":", "-").replace(".", "-")
+
 
 def show_options(params):
     for arg in vars(params):
@@ -45,14 +49,28 @@ def print_model_reports(model):
         BestOf.print_report()
 
 
+@contextmanager
+def traceback_context():
+    try:
+        yield
+    except Exception as exc:
+        path = Path(f"traceback-{timestamp}.txt").resolve()
+        with Path(path).open(mode="w") as file:
+            TracebackException.from_exception(exc, capture_locals=True).print(file=file)
+        print(f'Dumped traceback details to: {path}')
+        raise
+
+
 def main():
     # Parse options
     parser = PydtnnArgumentParser()
     config = parser.parse_args()
+    exc_tracer = traceback_context if config.traceback else nullcontext
     # Initialize random seed
     random.seed(config.random_seed)
     # Create model
-    model = Model(**vars(config))
+    with exc_tracer():
+        model = Model(**vars(config))
     # Print model
     if model.comm_rank == 0:
         model.show_model()
@@ -68,7 +86,8 @@ def main():
         if model.comm_rank == 0:
             print('**** Evaluating on test dataset...')
             t1 = time.time()
-        _ = model.evaluate()
+        with exc_tracer():
+            _ = model.evaluate()
         if model.comm_rank == 0:
             t2 = time.time()
             # noinspection PyUnboundLocalVariable
@@ -93,7 +112,8 @@ def main():
     # Training a model directly from a dataset
     # or alternatively, define any custom data
     # mode.dataset = CustomDataset(model, x, y)
-    history = model.train()
+    with exc_tracer():
+        history = model.train()
     # Barrier
     if model.parallel == "data":
         model.comm.Barrier()
@@ -101,10 +121,9 @@ def main():
     if model.comm_rank == 0:
         if model.profile:
             pr.disable()
-            stamp = datetime.now().isoformat(timespec="seconds").replace(" ", "-").replace(":", "-").replace(".", "-")
-            stats = Path(f"profile-{stamp}.stat").resolve()
-            pr.dump_stats(stats)
-            print(f'Dumped profile stats to: {stats}')
+            path = Path(f"profile-{timestamp}.stat").resolve()
+            pr.dump_stats(path)
+            print(f'Dumped profile stats to: {path}')
         t2 = time.time()
         print('**** Done...')
         total_time = t2 - t1
@@ -125,7 +144,8 @@ def main():
         if model.comm_rank == 0:
             print('**** Evaluating on test dataset...')
             t1 = time.time()
-        _ = model.evaluate()
+        with exc_tracer():
+            _ = model.evaluate()
         if model.comm_rank == 0:
             t2 = time.time()
             # noinspection PyUnboundLocalVariable
