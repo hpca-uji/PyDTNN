@@ -230,27 +230,24 @@ class Model[T: Array]:
     cuda_grid: tuple[int, int, int]
     cuda_block: tuple[int, int, int]
 
-    def __init__(self, parallel: ParallelMode = ParallelMode.SEQUENTIAL, use_blocking_mpi: bool = False,
-                 enable_gpudirect: bool = False, enable_nccl: bool = False, dtype: np.dtype = np.dtype(np.float32), tracing: bool = False,
-                 tracer_output: str = "", tracer_pmlib_server: str = "127.0.0.1", tracer_pmlib_port: int = 6526,
-                 tracer_pmlib_device: str = "", **kwargs):
+    def __init__(self, **kwargs):
+
+        # Get default values from parser and update them from the received kwargs
+        self.kwargs: dict[str, Any] = PydtnnArgumentParser().get_default_values()
+        self.kwargs.update(kwargs)
 
         # Attributes related to the given arguments
-        self.parallel: Model.ParallelMode = Model.ParallelMode(parallel)
-        self.blocking_mpi: bool = use_blocking_mpi
+        self.blocking_mpi: bool = self.use_blocking_mpi
         self.enable_cudnn = gpuarray is not None and drv is not None and cublas is not None
-        self.gpudirect: bool = enable_gpudirect
-        self.enable_nccl: bool = enable_nccl
-        self.dtype: np.dtype = np.dtype(dtype)
+        self.gpudirect: bool = self.enable_gpudirect
+        self.enable_nccl: bool = self.enable_nccl
+        self.parallel: Model.ParallelMode = Model.ParallelMode(self.parallel)
+        self.dtype: np.dtype = np.dtype(self.dtype)
         self.memory: PrivateMemory = None  # type: ignore (it will be intialized later if "self.use_memory_pool" is True)
 
         self.nparams = 0
         self.memory_used = 0
         self.tmp_memory_used = 0
-
-        # Get default values from parser and update them from the received kwargs
-        self.kwargs: dict[str, Any] = PydtnnArgumentParser().get_default_values()
-        self.kwargs.update(kwargs)
 
         # Set MPI and comm
         self._mpi_init()
@@ -274,9 +271,9 @@ class Model[T: Array]:
         self.memory_cls = PreallocMemory if self.shared_tmp_memory else PrivateMemory
 
         # Set tracer
-        self.tracer = get_tracer(tracer_output=tracer_output, tracing=tracing, comm=self.comm, enable_cudnn=self.enable_cudnn,
-                                 tracer_pmlib_server=tracer_pmlib_server, tracer_pmlib_port=tracer_pmlib_port,
-                                 tracer_pmlib_device=tracer_pmlib_device)
+        self.tracer = get_tracer(tracer_output=self.tracer_output, tracing=self.tracing, comm=self.comm, enable_cudnn=self.enable_cudnn,
+                                 tracer_pmlib_server=self.tracer_pmlib_server, tracer_pmlib_port=self.tracer_pmlib_port,
+                                 tracer_pmlib_device=self.tracer_pmlib_device)
 
         # Cuda
         if self.enable_cudnn:
