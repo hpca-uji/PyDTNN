@@ -52,7 +52,7 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
 
         self.dx_shape_size = int(np.prod(self.dx_shape))
         # NOTE: These attributes only store data, their values before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
-        self.temp_c_r = np.zeros(shape=self._x_cr_shape, dtype=self.model.dtype)
+        self.temp_c_r = np.zeros(shape=(np.prod(self._x_cr_shape), ), dtype=self.model.dtype)
         # self.temp_c_r_dx: Temporal array where the forward and batckward's cols/rows are stored
         self.memory_used += self.temp_c_r.nbytes
 
@@ -113,7 +113,7 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
 ##########################################################################################################################
 ##########################################################################################################################
 
-    def im2row(self, x: np.ndarray, x_rows: np.ndarray):
+    def im2row(self, x: np.ndarray, x_rows: np.ndarray) -> None:
         n, _, _, _ = x.shape
         for nn in range(n):
             for xx in range(self.ho):
@@ -148,14 +148,14 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
                                         dx[nn, x_x, x_y, cc] += x_rows[row, col]
     # -----
 
-    def im2col(self, x: np.ndarray, x_cols: np.ndarray):
+    def im2col(self, x: np.ndarray, x_cols: np.ndarray) -> None:
         n, _, _, _ = x.shape
 
-        for cc in range(self.ci):
-            for ii in range(self.kh):
-                for jj in range(self.kw):
-                    row = (cc * self.kh + ii) * self.kw + jj
-                    for nn in range(n):
+        for nn in range(n):
+            for cc in range(self.ci):
+                for ii in range(self.kh):
+                    for jj in range(self.kw):
+                        row = (cc * self.kh + ii) * self.kw + jj
                         for xx in range(self.ho):
                             x_x = self.hstride * xx + self.hdilation * ii - self.hpadding
                             for yy in range(self.wo):
@@ -230,10 +230,14 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
         # y = self.y[:shape[-1], :]
         y = self.get_y(x.shape[0])
 
+        x1 = x.copy()
+        x_cols1 = x_cols.copy()
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
         self.im2col(x, x_cols)
+        self.im2col_alt(x1, x_cols1)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
+        breakpoint()
         self.x_cols = x_cols
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_W)
