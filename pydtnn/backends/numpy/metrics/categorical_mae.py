@@ -5,7 +5,7 @@ if TYPE_CHECKING:
 
 from pydtnn.backends.numpy.metrics.metric import MetricNumpy
 from pydtnn.metrics.categorical_mae import CategoricalMAE
-
+import math
 
 class CategoricalMAENumpy(CategoricalMAE[np.ndarray], MetricNumpy):
 
@@ -13,7 +13,7 @@ class CategoricalMAENumpy(CategoricalMAE[np.ndarray], MetricNumpy):
         super()._model_init()
 
         self.error: np.ndarray = None  # type: ignore (It will be initialized later)
-        self.tmp_memory_used += int(np.prod(self.shape)) * self.model.dtype.itemsize
+        self.tmp_memory_used += int(math.prod(self.shape)) * self.model.dtype.itemsize
         self.memory_used += self.tmp_memory_used
 
     def _post_init(self) -> None:

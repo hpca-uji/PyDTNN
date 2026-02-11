@@ -9,6 +9,7 @@ from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EV
 
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import TensorFormat, format_transpose
+import math
 
 
 class Conv2DNumpy(AbstractConv2DStandardNumpy):
@@ -39,7 +40,7 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
         # -
 
         y_shape = (dim_n, self.co)
-        self.y_size = np.prod(y_shape)
+        self.y_size = math.prod(y_shape)
 
         # self.y = np.zeros(shape=(self.dim_n, self.co), dtype=self.model.dtype)
         # self.real_memory_size += self.y.nbytes
@@ -50,9 +51,9 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
         else:
             self.dx_shape = (0,)
 
-        self.dx_shape_size = int(np.prod(self.dx_shape))
+        self.dx_shape_size = int(math.prod(self.dx_shape))
         # NOTE: These attributes only store data, their values before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
-        self.temp_c_r = np.zeros(shape=(np.prod(self._x_cr_shape), ), dtype=self.model.dtype)
+        self.temp_c_r = np.zeros(shape=(math.prod(self._x_cr_shape), ), dtype=self.model.dtype)
         # self.temp_c_r_dx: Temporal array where the forward and batckward's cols/rows are stored
         self.memory_used += self.temp_c_r.nbytes
 
@@ -66,27 +67,27 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
     def get_rows(self, batch_size: int) -> np.ndarray:
         dim_n = batch_size * self.ho * self.wo
         shape = (dim_n, self.dim_c)
-        x_rows: np.ndarray = self.temp_c_r[:np.prod(shape)]
+        x_rows: np.ndarray = self.temp_c_r[:math.prod(shape)]
         x_rows = x_rows.reshape(shape)
         return x_rows
 
     def get_cols(self, batch_size: int) -> np.ndarray:
         dim_n = batch_size * self.ho * self.wo
         shape = (self.dim_c, dim_n)
-        x_cols: np.ndarray = self.temp_c_r[:np.prod(shape)]
+        x_cols: np.ndarray = self.temp_c_r[:math.prod(shape)]
         x_cols = x_cols.reshape(shape)
         return x_cols
 
     def get_y(self, batch_size: int) -> np.ndarray:
         dim_n = batch_size * self.ho * self.wo
         shape = (dim_n, self.co)
-        y: np.ndarray = self.temp_y_dx[:np.prod(shape)]
+        y: np.ndarray = self.temp_y_dx[:math.prod(shape)]
         y = y.reshape(shape)
         return y
 
     def get_dx(self, batch_size: int) -> np.ndarray:
         shape = self.model.encode_shape((batch_size, self.ci, self.hi, self.wi))
-        dx: np.ndarray = self.temp_y_dx[:np.prod(shape)]
+        dx: np.ndarray = self.temp_y_dx[:math.prod(shape)]
         dx = dx.reshape(shape)
         return dx
 
@@ -237,7 +238,6 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
         self.im2col_alt(x1, x_cols1)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-        breakpoint()
         self.x_cols = x_cols
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_W)

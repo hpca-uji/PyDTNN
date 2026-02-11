@@ -5,7 +5,7 @@ if TYPE_CHECKING:
 
 from pydtnn.backends.numpy.losses.loss import LossNumpy
 from pydtnn.losses.categorical_cross_entropy import CategoricalCrossEntropy
-
+import math
 
 class CategoricalCrossEntropyNumpy(CategoricalCrossEntropy[np.ndarray], LossNumpy):
 
@@ -16,8 +16,8 @@ class CategoricalCrossEntropyNumpy(CategoricalCrossEntropy[np.ndarray], LossNump
         self._y_pred_op_shape = (self.model.batch_size, )
         self._y_pred_shape = self.shape
 
-        self.tmp_memory_used += int(np.prod(self._argmax_shape)) * np.int32().itemsize
-        self.tmp_memory_used += int(np.prod(self._y_pred_op_shape) + np.prod(self._y_pred_shape)) * self.model.dtype.itemsize
+        self.tmp_memory_used += int(math.prod(self._argmax_shape)) * np.int32().itemsize
+        self.tmp_memory_used += int(math.prod(self._y_pred_op_shape) + math.prod(self._y_pred_shape)) * self.model.dtype.itemsize
 
         # _y_pred_sliced_size = self.model.batch_size
         # + _y_pred_sliced_size

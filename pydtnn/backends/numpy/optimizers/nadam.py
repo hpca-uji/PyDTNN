@@ -6,7 +6,7 @@ if TYPE_CHECKING:
 from pydtnn.backends.numpy.optimizers.optimizer import OptimizerNumpy
 from pydtnn.optimizers.nadam import Nadam
 from pydtnn.backends.numpy.layers.layer import LayerNumpy
-
+import math
 
 class NadamNumpy(Nadam[np.ndarray], OptimizerNumpy):
 
@@ -27,7 +27,7 @@ class NadamNumpy(Nadam[np.ndarray], OptimizerNumpy):
             vt_temp_w = None
             mt_temp_dw = None
             self.memory_used += momentum.nbytes + velocity.nbytes
-            temp_memory_size.append(int(2 * np.prod(shape)) * self.model.dtype.itemsize)
+            temp_memory_size.append(int(2 * math.prod(shape)) * self.model.dtype.itemsize)
             self.context[layer.id]["m_%s" % w_] = momentum
             self.context[layer.id]["v_%s" % w_] = velocity
             self.context[layer.id]["temp_w_%s" % w_] = vt_temp_w

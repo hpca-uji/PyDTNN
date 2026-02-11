@@ -4,9 +4,9 @@ if TYPE_CHECKING:
     from pydtnn.activations.activation import Activation
 from pydtnn.layers.layer import Layer
 from pydtnn.utils.initializers import InitializerFunc, glorot_uniform, zeros
-import numpy as np
 from pydtnn.utils.constants import Array, ArrayShape, Parameters
 
+import math
 
 class Conv2D[T: Array](Layer[T]):
     def __init__(self, nfilters: int = 1,
@@ -59,7 +59,7 @@ class Conv2D[T: Array](Layer[T]):
         self.shape = self.model.encode_shape((self.co, self.ho, self.wo))
 
         # NOTE: self.weights_shape must be defined in "self._initializing_special_parameters"
-        self.nparams = int(np.prod(self.weights_shape) + (self.co if self.use_bias else 0))
+        self.nparams = int(math.prod(self.weights_shape) + (self.co if self.use_bias else 0))
     # --
 
     def _show_props(self) -> dict:

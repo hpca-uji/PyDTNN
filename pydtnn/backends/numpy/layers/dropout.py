@@ -7,7 +7,7 @@ from pydtnn.backends.numpy.layers.layer import LayerNumpy
 from pydtnn.layers.dropout import Dropout
 from pydtnn.model import Model
 from pydtnn.utils import random
-
+import math
 
 class DropoutNumpy(Dropout[np.ndarray], LayerNumpy):
 
@@ -17,7 +17,7 @@ class DropoutNumpy(Dropout[np.ndarray], LayerNumpy):
 
     def _model_init(self, prev_shape, x=None):
         super()._model_init(prev_shape, x)
-        self.memory_used += int(np.prod(self.shape)) * self.model.dtype.itemsize
+        self.memory_used += int(math.prod(self.shape)) * self.model.dtype.itemsize
 
     def forward(self, x: np.ndarray) -> np.ndarray:
 

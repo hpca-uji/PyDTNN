@@ -7,7 +7,7 @@ import numpy as np
 
 from pydtnn.datasets.dataset import Dataset
 from pydtnn.utils import random
-
+import math
 
 if TYPE_CHECKING:
     from pydtnn.model import Model
@@ -66,7 +66,7 @@ class Tsunamis(Dataset):
                     yield x, y
 
     def _read_file(self, f, offset, nsamples):
-        chunk_size = np.prod(INPUT_SHAPE) + 1
+        chunk_size = math.prod(INPUT_SHAPE) + 1
         f.seek(offset * chunk_size)
         im = np.frombuffer(f.read(nsamples * chunk_size), dtype=np.uint8).reshape(nsamples, chunk_size)
         y_classes, x = im[:, 0].flatten(), im[:, 1:].reshape(nsamples, *INPUT_SHAPE).astype(self.model.dtype)

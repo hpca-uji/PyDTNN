@@ -5,8 +5,7 @@ from typing import IO, TYPE_CHECKING
 import numpy as np
 
 from pydtnn.datasets.dataset import Dataset
-from pydtnn.utils.tensor import TensorFormat
-
+import math
 
 if TYPE_CHECKING:
     from pydtnn.model import Model
@@ -63,7 +62,7 @@ class MNIST(Dataset):
             self._gzip_open(gz).close()
 
     def _actual_data_generator(self, part: Dataset.Part):
-        size = int(np.prod(INPUT_SHAPE))
+        size = int(math.prod(INPUT_SHAPE))
         offset = self._images_header_offset + self._local_offset[part] * size
         nbytes = self._local_nsamples[part] * size
         filename = self._x_filename[part]

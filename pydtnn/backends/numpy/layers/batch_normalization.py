@@ -9,7 +9,7 @@ from pydtnn.model import Model
 from pydtnn.backends.numpy.layers.layer import LayerNumpy
 from pydtnn.utils.tensor import TensorFormat, format_transpose
 from pydtnn.utils.constants import ArrayShape, Parameters
-
+import math
 
 class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
 
@@ -61,7 +61,7 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
         self.std: np.ndarray = np.zeros(shape=self.std_shape, dtype=self.model.dtype)
         self.memory_used += self.std.nbytes
 
-        self.tmp_memory_used += int(np.prod(self._mean_inv_shape) + np.prod(self._var_inv_shape)) * self.model.dtype.itemsize
+        self.tmp_memory_used += int(math.prod(self._mean_inv_shape) + math.prod(self._var_inv_shape)) * self.model.dtype.itemsize
 
         # self.dx: np.ndarray = np.zeros(shape=vars_shape, dtype=self.model.dtype)
         # self.real_memory_size += self.dx.nbytes
@@ -73,7 +73,7 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
         self._mean_shape = (self.ci, )
         self._var_shape = (self.ci, )
         self.dy_xn_shape = vars_shape
-        self.tmp_memory_used += int(np.prod(self._mean_shape) + np.prod(self._var_shape) + np.prod(self.dy_xn_shape)) * self.model.dtype.itemsize
+        self.tmp_memory_used += int(math.prod(self._mean_shape) + math.prod(self._var_shape) + math.prod(self.dy_xn_shape)) * self.model.dtype.itemsize
 
         self.memory_used += self.tmp_memory_used
     # --

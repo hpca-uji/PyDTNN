@@ -1,5 +1,6 @@
 from pydtnn.layers.adaptive_average_pool_2d import AdaptiveAveragePool2D
 from pydtnn.backends.numpy.layers.layer import LayerNumpy
+from pydtnn.utils.constants import ArrayShape
 
 # Imports for the method from AbstractPool2DLayerNumpy
 from pydtnn.utils.tensor import TensorFormat
@@ -22,7 +23,7 @@ class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], LayerNumpy):
     # -- END __init__ -- #
 
     # Method from AbstractPool2DLayerNumpy
-    def _model_init(self, prev_shape: tuple[int, int], x: np.ndarray | None = None):
+    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None):
         # The objective is following lines is to override the
         # AbstractPool2DLayer's initialize method, that is avoiding call to
         # "super" since in that case AbstractPool2DLayer will be called
@@ -59,8 +60,8 @@ class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], LayerNumpy):
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
         return self._backward(dy)
-    
-    def _fwd_nwhc(self, x: np.ndarray, y: np.ndarray) -> None:
+
+    def _fwd_ncwh(self, x: np.ndarray, y: np.ndarray) -> None:
         for nn in range(x.shape[0]):
             for cc in range(self.ci):
                 for hi in range(self.ho):
@@ -80,7 +81,7 @@ class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], LayerNumpy):
                         y[nn, cc, hi, wi] = add / elements
     # ----
 
-    def _fwd_ncwh(self, x: np.ndarray, y: np.ndarray) -> None:
+    def _fwd_nwhc(self, x: np.ndarray, y: np.ndarray) -> None:
         for nn in range(x.shape[0]):
             for cc in range(self.ci):
                 for hi in range(self.ho):
@@ -100,7 +101,7 @@ class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], LayerNumpy):
                         y[nn, hi, wi, cc] = add / elements
     # ----
 
-    def _bwd_nwhc(self, dx: np.ndarray, dy: np.ndarray) -> None:
+    def _bwd_ncwh(self, dx: np.ndarray, dy: np.ndarray) -> None:
         for nn in range(dy.shape[0]):
             for cc in range(self.ci):
                 for ho in range(self.ho):
@@ -118,7 +119,7 @@ class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], LayerNumpy):
                                 dx[nn, cc, i, j] += delta
     # ----
 
-    def _bwd_ncwh(self, dx: np.ndarray, dy: np.ndarray) -> None:
+    def _bwd_nwhc(self, dx: np.ndarray, dy: np.ndarray) -> None:
         for nn in range(dy.shape[0]):
             for cc in range(self.ci):
                 for ho in range(self.ho):

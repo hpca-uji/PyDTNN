@@ -8,7 +8,7 @@ from enum import StrEnum, auto
 from typing import Callable
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils import random
-
+import math
 
 class DistributionModeEnum(StrEnum):
     FAN_IN = auto()
@@ -31,7 +31,7 @@ def _compute_fans(shape: ArrayShape) -> tuple[int, int]:
     if len(shape) == 2:
         fan_in, fan_out = shape[0], shape[1]
     elif len(shape) > 2:
-        receptive_field = np.prod(shape[2:])
+        receptive_field = math.prod(shape[2:])
         fan_in = shape[1] * receptive_field
         fan_out = shape[0] * receptive_field
     else:

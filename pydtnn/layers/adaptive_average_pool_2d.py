@@ -1,8 +1,6 @@
-import numpy as np
-
 from pydtnn.layers.layer import Layer, LayerError
-from pydtnn.utils.constants import Array
-
+from pydtnn.utils.constants import Array, ArrayShape
+import math
 
 class AdaptiveAveragePool2D[T: Array](Layer):
 
@@ -13,7 +11,7 @@ class AdaptiveAveragePool2D[T: Array](Layer):
     #  -> int: if all the output shape's dimensions share values
     #  -> Tuple[int, int]: if it is necessary or it is preferred to define each output dimension individually
 
-    def __init__(self, output_shape: int | tuple[int, int] | None = None):
+    def __init__(self, output_shape: int | ArrayShape | None = None):
         super().__init__()
         self.output_shape = output_shape
 
@@ -21,7 +19,7 @@ class AdaptiveAveragePool2D[T: Array](Layer):
         self.pooling_not_needed: bool = None  # type: ignore
     # ---  END __init__ --- #
 
-    def _model_init(self, prev_shape: tuple[int, int], x: T | None) -> None:
+    def _model_init(self, prev_shape: ArrayShape, x: T | None) -> None:
         super()._model_init(prev_shape, x)
 
         self.ci, self.hi, self.wi = self.model.decode_shape(prev_shape)
@@ -39,7 +37,7 @@ class AdaptiveAveragePool2D[T: Array](Layer):
         self.pooling_not_needed = (self.hi == self.ho) and (self.wi == self.wo)
 
         self.shape = self.model.encode_shape((self.co, self.ho, self.wo))
-        self.n = np.prod(self.shape)
+        self.n = math.prod(self.shape)
     # - END initialize - #º
 
     @staticmethod

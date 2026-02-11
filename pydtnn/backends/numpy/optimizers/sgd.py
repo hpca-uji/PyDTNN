@@ -7,7 +7,7 @@ from pydtnn.backends.numpy.optimizers.optimizer import OptimizerNumpy
 from pydtnn.optimizers.sgd import SGD
 
 from pydtnn.backends.numpy.layers.layer import LayerNumpy
-
+import math
 
 class SGDNumpy(SGD[np.ndarray], OptimizerNumpy):
 
@@ -27,7 +27,7 @@ class SGDNumpy(SGD[np.ndarray], OptimizerNumpy):
                     temp_v = None
                     self.memory_used += velocity.nbytes
 
-                    temp_memory_size.append(int(2 * np.prod(w.shape)) * self.model.dtype.itemsize)
+                    temp_memory_size.append(int(2 * math.prod(w.shape)) * self.model.dtype.itemsize)
                     self.context[layer.id]["velocity_%s" % w_] = velocity
                     self.context[layer.id]["temp_w_%s" % w_] = temp_w
                     self.context[layer.id]["temp_v_%s" % w_] = temp_v

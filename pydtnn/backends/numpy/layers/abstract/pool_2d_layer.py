@@ -42,7 +42,7 @@ class AbstractPool2DLayerNumpy(AbstractPool2DLayer[np.ndarray], LayerNumpy):
 
         if not self.model.evaluate_only:
             # dx_shape = self.model.encode_shape((self.model.batch_size, self.ci, self.hi, self.wi))
-            self.dx_size = np.prod(self.model.batch_size * self.ci * self.hi * self.wi)
+            self.dx_size = self.model.batch_size * self.ci * self.hi * self.wi
             # self.dx = np.zeros(dx_shape, dtype=self.model.dtype)
             # self.real_memory_size += self.dx.nbytes
         else: 

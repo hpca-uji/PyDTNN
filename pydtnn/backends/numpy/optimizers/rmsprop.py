@@ -7,7 +7,7 @@ from pydtnn.backends.numpy.optimizers.optimizer import OptimizerNumpy
 from pydtnn.optimizers.rmsprop import RMSProp
 
 from pydtnn.backends.numpy.layers.layer import LayerNumpy
-
+import math
 
 class RMSPropNumpy(RMSProp[np.ndarray], OptimizerNumpy):
 
@@ -27,7 +27,7 @@ class RMSPropNumpy(RMSProp[np.ndarray], OptimizerNumpy):
                     temp = None
                     self.memory_used += cache.nbytes
 
-                    temp_memory_size.append(int(np.prod(w.shape)) * self.model.dtype.itemsize)
+                    temp_memory_size.append(int(math.prod(w.shape)) * self.model.dtype.itemsize)
                     self.context[layer.id]["cache_%s" % w_] = cache
                     self.context[layer.id]["temp_%s" % w_] = temp
 

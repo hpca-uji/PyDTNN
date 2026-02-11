@@ -6,7 +6,7 @@ if TYPE_CHECKING:
 from pydtnn.backends.numpy.metrics.metric import MetricNumpy
 from pydtnn.backends.numpy.metrics.binary_confusion_matrix import BinaryConfusionMatrixNumpy
 from pydtnn.metrics.f1_score import F1Score
-
+import math
 
 class F1ScoreNumpy(F1Score[np.ndarray], MetricNumpy):
 
@@ -17,8 +17,8 @@ class F1ScoreNumpy(F1Score[np.ndarray], MetricNumpy):
         shape = self.shape[1]
 
         self.temp_var_shape = (shape, )
-        self.tmp_memory_used += int(3 * np.prod(self.temp_var_shape)) * np.float32().itemsize
-        self.tmp_memory_used += int(1 * np.prod(self.temp_var_shape)) * np.bool().itemsize
+        self.tmp_memory_used += int(3 * math.prod(self.temp_var_shape)) * np.float32().itemsize
+        self.tmp_memory_used += int(1 * math.prod(self.temp_var_shape)) * np.bool().itemsize
         self.memory_used += self.tmp_memory_used
     # ----
 

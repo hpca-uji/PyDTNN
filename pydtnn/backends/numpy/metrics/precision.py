@@ -7,7 +7,7 @@ from pydtnn.backends.numpy.metrics.binary_confusion_matrix import BinaryConfusio
 from pydtnn.backends.numpy.metrics.metric import MetricNumpy
 from pydtnn.metrics.precision import Precision
 # from pydtnn.backends.numpy.utils.div_arrays_set_if_zero import div_arrays_set_if_zero
-
+import math
 
 class PrecisionNumpy(Precision[np.ndarray], MetricNumpy):
 
@@ -16,8 +16,8 @@ class PrecisionNumpy(Precision[np.ndarray], MetricNumpy):
     def _model_init(self) -> None:
         super()._model_init()
         self.temp_var_shape = (self.shape[1], )
-        self.tmp_memory_used += int(2 * np.prod(self.temp_var_shape)) * np.float32().itemsize
-        self.tmp_memory_used += int(1 * np.prod(self.temp_var_shape)) * np.bool().itemsize
+        self.tmp_memory_used += int(2 * math.prod(self.temp_var_shape)) * np.float32().itemsize
+        self.tmp_memory_used += int(1 * math.prod(self.temp_var_shape)) * np.bool().itemsize
         self.memory_used += self.tmp_memory_used
     # ----
 

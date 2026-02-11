@@ -5,14 +5,14 @@ if TYPE_CHECKING:
 
 from pydtnn.backends.numpy.metrics.metric import MetricNumpy
 from pydtnn.metrics.regression_mse import RegressionMSE
-
+import math
 
 class RegressionMSENumpy(RegressionMSE[np.ndarray], MetricNumpy):
 
     def _model_init(self) -> None:
         super()._model_init()
 
-        self.tmp_memory_used += int(np.prod(self.shape)) * self.model.dtype.itemsize
+        self.tmp_memory_used += int(math.prod(self.shape)) * self.model.dtype.itemsize
         self.memory_used += self.tmp_memory_used
     # ----
 

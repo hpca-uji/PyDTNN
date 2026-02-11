@@ -5,7 +5,7 @@ if TYPE_CHECKING:
 
 from pydtnn.backends.numpy.metrics.metric import MetricNumpy
 from pydtnn.metrics.categorical_hinge import CategoricalHinge
-
+import math
 
 class CategoricalHingeNumpy(CategoricalHinge[np.ndarray], MetricNumpy):
 
@@ -16,7 +16,7 @@ class CategoricalHingeNumpy(CategoricalHinge[np.ndarray], MetricNumpy):
         self._neg_shape = self.shape
         self.pos_maxm_shape = (self.model.batch_size, )
         self.neg_shape = (self.model.batch_size, )
-        self.tmp_memory_used += int(np.prod(self._pos_shape) + np.prod(self._neg_shape) + np.prod(self.pos_maxm_shape) + np.prod(self.neg_shape)) * self.model.dtype.itemsize
+        self.tmp_memory_used += int(math.prod(self._pos_shape) + math.prod(self._neg_shape) + math.prod(self.pos_maxm_shape) + math.prod(self.neg_shape)) * self.model.dtype.itemsize
         self.memory_used += self.tmp_memory_used
     # ----
 

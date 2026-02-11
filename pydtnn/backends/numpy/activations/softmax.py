@@ -5,8 +5,6 @@ if TYPE_CHECKING:
 
 from pydtnn.activations.softmax import Softmax
 from pydtnn.backends.numpy.activations.activation import ActivationNumpy
-from pydtnn.utils.constants import ArrayShape
-
 
 class SoftmaxNumpy(Softmax[np.ndarray], ActivationNumpy):
     def _model_init(self, prev_shape, x=None):

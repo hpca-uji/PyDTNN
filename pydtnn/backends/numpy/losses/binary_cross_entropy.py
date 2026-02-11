@@ -5,14 +5,14 @@ if TYPE_CHECKING:
 
 from pydtnn.backends.numpy.losses.loss import LossNumpy
 from pydtnn.losses.binary_cross_entropy import BinaryCrossEntropy
-
+import math
 
 class BinaryCrossEntropyNumpy(BinaryCrossEntropy[np.ndarray], LossNumpy):
 
     def _model_init(self) -> None:
         super()._model_init()
 
-        self.tmp_memory_used += int(5 * np.prod(self.shape)) * self.model.dtype.itemsize
+        self.tmp_memory_used += int(5 * math.prod(self.shape)) * self.model.dtype.itemsize
         self.memory_used += self.tmp_memory_used
 
     def _post_init(self) -> None:

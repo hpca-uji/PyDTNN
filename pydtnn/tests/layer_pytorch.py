@@ -28,7 +28,7 @@ from pydtnn.utils import random
 from pydtnn.utils.tensor import TensorFormat, format_reshape, format_transpose
 from pydtnn.tests.abstract.common import Params, TestCase, verbose_test
 from pydtnn.utils.constants import Parameters
-
+import math
 
 # from torch.testing._internal.common_utils import _numpy_to_torch_dtype_dict
 numpy_to_torch_dtype_dict = {
@@ -208,7 +208,7 @@ class LayerPyTorchTestCase(TestCase):
     @staticmethod
     def get_test_data(no_zeros=False, normalize=True, positives_and_negatives=True,
                       shape_with_elements=(params.batch_size, *params.shape), dtype=params.dtype) -> np.ndarray:
-        num_elems = np.prod(shape_with_elements) // 4
+        num_elems = math.prod(shape_with_elements) // 4
 
         x_1 = np.arange(num_elems)
         x_2 = np.arange(num_elems) * -1
@@ -387,7 +387,7 @@ class LayerPyTorchTestCase(TestCase):
 
     def test_FC(self):
         pydtnn_layers = [Flatten(), FC(shape=FC_OUPUT_SHAPE)]
-        torch_model = torch.nn.Sequential(torch.nn.Flatten(), torch.nn.Linear(in_features=np.prod(self.params.shape), out_features=LINEAR_OUTPUT))
+        torch_model = torch.nn.Sequential(torch.nn.Flatten(), torch.nn.Linear(in_features=math.prod(self.params.shape), out_features=LINEAR_OUTPUT))
         pydtnn_model = LayerPyTorchTestCase.initialize_pydtnn_model(pydtnn_layers, params=self.params)
         _x = LayerPyTorchTestCase.get_test_data()
         self.do_test(_x=_x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="FC", rtol=1e-5, atol=1e-5)

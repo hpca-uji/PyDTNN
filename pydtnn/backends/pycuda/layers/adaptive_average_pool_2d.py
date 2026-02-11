@@ -12,6 +12,7 @@ from pycuda.driver import Function   # type: ignore
 
 import numpy as np
 from pydtnn.utils.tensor import TensorFormat
+import math
 
 # --- CONSTANTS --- #
 _MACRO_INDEX_FIRST_ELEMENT = "INDEX_FIRST_ELEMENT"
@@ -343,11 +344,11 @@ __global__ void {func_name}({T}* dx, {T}* dy,
         else:
             n, c, h, w = self.model.decode_shape(x.shape)
 
-            # NOTE: "num_elements" (or simply "N") is the number of elements to process. Usually it would be np.prod(x.shape),
+            # NOTE: "num_elements" (or simply "N") is the number of elements to process. Usually it would be math.prod(x.shape),
             #   but in this case we are putting elements in the output instead of processing the input's elements.
-            num_elements = np.prod((n, c, self.ho, self.wo), dtype=np.int32)
+            num_elements = np.int32(math.prod((n, c, self.ho, self.wo)))
 
-            total_num_threads = np.prod(self.grid, dtype=np.int32) * np.prod(self.block, dtype=np.int32)
+            total_num_threads = np.int32(math.prod(self.grid) * math.prod(self.block))
 
             # If num_elements < total_num_threads, only will work "num_elements" threads. In the other cases will work "total_num_threads" threads.
             num_active_workers = np.int32(min(total_num_threads, num_elements))
@@ -369,9 +370,9 @@ __global__ void {func_name}({T}* dx, {T}* dy,
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
         n, c, h, w = self.model.decode_shape(dy.shape)
 
-        num_elements = np.prod((n, c, self.ho, self.wo), dtype=np.int32)
+        num_elements = np.int32(math.prod((n, c, self.ho, self.wo)))
 
-        total_num_threads = np.prod(self.grid, dtype=np.int32) * np.prod(self.block, dtype=np.int32)
+        total_num_threads = np.int32(math.prod(self.grid) * math.prod(self.block))
 
         num_active_workers = np.int32(min(total_num_threads, num_elements))
         num_ops_per_worker = np.int32((num_elements + num_active_workers - 1) / num_active_workers)

@@ -1,8 +1,6 @@
-import numpy as np
-
 from pydtnn.layers.layer import Layer, LayerError
 from pydtnn.utils.constants import Array
-
+import math
 
 class AbstractPool2DLayer[T: Array](Layer[T]):
 
@@ -32,7 +30,7 @@ class AbstractPool2DLayer[T: Array](Layer[T]):
         if not (self.ho > 0 and self.wo > 0):
             raise LayerError(f"Output dimensions must be greater than 0. ho: {self.ho}, wo: {self.wo}.")
         self.shape = self.model.encode_shape((self.co, self.ho, self.wo))
-        self.n = np.prod(self.shape)
+        self.n = math.prod(self.shape)
 
     def _show_props(self) -> dict:
         props = super()._show_props()

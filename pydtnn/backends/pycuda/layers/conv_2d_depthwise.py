@@ -45,7 +45,7 @@ class Conv2DDepthwisePycuda(AbstractConv2DPycuda):
                 # TODO: self devolvía la versión con el número
                 raise NotImplementedError(f"\"{self.name}\" is not implemented for \"{self.model.tensor_format}\" format.")
 
-        self.total_num_threads = np.prod(self.grid, dtype=np.int32) * np.prod(self.block, dtype=np.int32)
+        self.total_num_threads = np.int32(math.prod(self.grid) * math.prod(self.block))
 
         y_gpu = gpuarray.zeros((self.model.batch_size, *self.shape), self.model.dtype)
         self.y = TensorArray(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)

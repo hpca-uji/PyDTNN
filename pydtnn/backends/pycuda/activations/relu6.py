@@ -9,7 +9,7 @@ from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OP
 from pycuda import gpuarray  # type: ignore
 from pycuda.compiler import SourceModule  # type: ignore
 from pycuda.driver import Function  # type: ignore
-
+import math
 
 class Relu6Pycuda(Relu6[TensorArray], ActivationPycuda):
 
@@ -33,7 +33,7 @@ class Relu6Pycuda(Relu6[TensorArray], ActivationPycuda):
         self.cuda_fwd_func = self.cuda_adaptive_average_pooling_fwd(dtype=self.model.dtype)
         self.cuda_bwd_func = self.cuda_adaptive_average_pooling_bwd(dtype=self.model.dtype)
 
-        self.total_num_threads = np.prod(self.grid, dtype=np.int32) * np.prod(self.block, dtype=np.int32)
+        self.total_num_threads = np.int32(math.prod(self.grid) * math.prod(self.block))
 
         self.initialize_relu_2d_gpu(prev_shape)
     # ----
@@ -100,7 +100,7 @@ __global__ void {func_name}({T}* dx, {T}* dy, {T}* mask,
     def forward(self, x: TensorArray) -> TensorArray:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
 
-        n = np.prod(x.shape, dtype=np.int32)
+        n = np.int32(math.prod(x.shape))
 
         self.cuda_fwd_func(x.ary, self.mask.ary, self.max.ary,
                            np.float32(self.cap), self.total_num_threads, n,
@@ -115,7 +115,7 @@ __global__ void {func_name}({T}* dx, {T}* dy, {T}* mask,
     def backward(self, dy: TensorArray) -> TensorArray:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
 
-        n = np.prod(dy.shape, dtype=np.int32)
+        n = np.int32(math.prod(dy.shape))
 
         self.cuda_bwd_func(self.dx.ary, dy.ary, self.mask.ary,
                            self.total_num_threads, n,
