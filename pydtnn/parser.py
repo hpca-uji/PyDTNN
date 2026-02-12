@@ -237,7 +237,7 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
         _op_group.add_argument('--learning-rate-scaling', default=False, type=bool_lambda,
                                help="Scale learning rate in data parallelism: new_lr = lr / num_procs.  True if specified.")
         _op_group.add_argument('--optimizer-momentum', type=float, default=0.9,
-                               help="Decay rate for 'sgd' optimizer. Default: 0.9. optimizers. Default: 1e-8.")
+                               help="Decay rate for optimizers. Default: 0.9.")
         _op_group.add_argument('--optimizer-decay', type=float, default=0.0,
                                help="Decay rate for optimizers. Default: 0.0.")
         _op_group.add_argument('--optimizer-nesterov', default=False, type=bool_lambda,
