@@ -105,12 +105,12 @@ class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], LayerNumpy):
         for nn in range(dy.shape[0]):
             for cc in range(self.ci):
                 for ho in range(self.ho):
-                    h_start = AdaptiveAveragePool2D._index_first_element(ho, self.hi, self.ho)
-                    h_end = AdaptiveAveragePool2D._index_last_element(ho, self.hi, self.ho)
+                    h_start = AdaptiveAveragePool2D._index_first_element(ho, self.ho, self.hi)
+                    h_end = AdaptiveAveragePool2D._index_last_element(ho, self.ho, self.hi)
                     elements_h = h_end - h_start
                     for wo in range(self.wo):
-                        w_start = AdaptiveAveragePool2D._index_first_element(wo, self.wi, self.wo)
-                        w_end = AdaptiveAveragePool2D._index_last_element(wo, self.wi, self.wo)
+                        w_start = AdaptiveAveragePool2D._index_first_element(wo, self.wo, self.wi)
+                        w_end = AdaptiveAveragePool2D._index_last_element(wo, self.wo, self.wi)
                         elements = elements_h * (w_end - w_start)
 
                         delta = dy[nn, cc, ho, wo] / elements
@@ -123,12 +123,12 @@ class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], LayerNumpy):
         for nn in range(dy.shape[0]):
             for cc in range(self.ci):
                 for ho in range(self.ho):
-                    h_start = AdaptiveAveragePool2D._index_first_element(ho, self.hi, self.ho)
-                    h_end = AdaptiveAveragePool2D._index_last_element(ho, self.hi, self.ho)
+                    h_start = AdaptiveAveragePool2D._index_first_element(ho, self.ho, self.hi)
+                    h_end = AdaptiveAveragePool2D._index_last_element(ho, self.ho, self.hi)
                     elements_h = h_end - h_start
                     for wo in range(self.wo):
-                        w_start = AdaptiveAveragePool2D._index_first_element(wo, self.wi, self.wo)
-                        w_end = AdaptiveAveragePool2D._index_last_element(wo, self.wi, self.wo)
+                        w_start = AdaptiveAveragePool2D._index_first_element(wo, self.wo, self.wi)
+                        w_end = AdaptiveAveragePool2D._index_last_element(wo, self.wo, self.wi)
                         elements = elements_h * (w_end - w_start)
 
                         delta = dy[nn, ho, wo, cc] / elements

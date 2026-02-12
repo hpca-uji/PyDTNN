@@ -2,7 +2,6 @@ from pydtnn.libs import numpy as np
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import numpy as np
-# from pydtnn.backends.numpy.utils.bn_training_cython import bn_training_bwd_cython , bn_training_fwd_cython
 
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.model import Model
