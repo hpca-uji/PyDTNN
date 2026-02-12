@@ -10,19 +10,19 @@ if TYPE_CHECKING:
     import numpy as np
 
 class AdaptiveAveragePool2DCython(AdaptiveAveragePool2DNumpy):
-    def _fwd_nwhc(self, x: np.ndarray, y: np.ndarray) -> None:
+    def _fwd_nhwc(self, x: np.ndarray, y: np.ndarray) -> None:
         adaptive_avg_pooling_fwd_nhwc_cython(x, y)
     # ----
 
-    def _fwd_ncwh(self, x: np.ndarray, y: np.ndarray) -> None:
+    def _fwd_nchw(self, x: np.ndarray, y: np.ndarray) -> None:
         adaptive_avg_pooling_fwd_nchw_cython(x, y)
     # ----
 
-    def _bwd_nwhc(self, dx: np.ndarray, dy: np.ndarray) -> None:
+    def _bwd_nhwc(self, dx: np.ndarray, dy: np.ndarray) -> None:
         adaptive_avg_pooling_bwd_nhwc_cython(dx, dy)
     # ----
 
-    def _bwd_ncwh(self, dx: np.ndarray, dy: np.ndarray) -> None:
+    def _bwd_nchw(self, dx: np.ndarray, dy: np.ndarray) -> None:
         adaptive_avg_pooling_bwd_nchw_cython(dx, dy)
     # ----
 

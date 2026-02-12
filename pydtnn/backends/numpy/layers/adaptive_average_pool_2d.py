@@ -61,7 +61,7 @@ class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], LayerNumpy):
     def backward(self, dy: np.ndarray) -> np.ndarray:
         return self._backward(dy)
 
-    def _fwd_ncwh(self, x: np.ndarray, y: np.ndarray) -> None:
+    def _fwd_nchw(self, x: np.ndarray, y: np.ndarray) -> None:
         for nn in range(x.shape[0]):
             for cc in range(self.ci):
                 for hi in range(self.ho):
@@ -81,7 +81,7 @@ class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], LayerNumpy):
                         y[nn, cc, hi, wi] = add / elements
     # ----
 
-    def _fwd_nwhc(self, x: np.ndarray, y: np.ndarray) -> None:
+    def _fwd_nhwc(self, x: np.ndarray, y: np.ndarray) -> None:
         for nn in range(x.shape[0]):
             for cc in range(self.ci):
                 for hi in range(self.ho):
@@ -101,7 +101,7 @@ class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], LayerNumpy):
                         y[nn, hi, wi, cc] = add / elements
     # ----
 
-    def _bwd_ncwh(self, dx: np.ndarray, dy: np.ndarray) -> None:
+    def _bwd_nchw(self, dx: np.ndarray, dy: np.ndarray) -> None:
         for nn in range(dy.shape[0]):
             for cc in range(self.ci):
                 for ho in range(self.ho):
@@ -119,7 +119,7 @@ class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], LayerNumpy):
                                 dx[nn, cc, i, j] += delta
     # ----
 
-    def _bwd_nwhc(self, dx: np.ndarray, dy: np.ndarray) -> None:
+    def _bwd_nhwc(self, dx: np.ndarray, dy: np.ndarray) -> None:
         for nn in range(dy.shape[0]):
             for cc in range(self.ci):
                 for ho in range(self.ho):
@@ -140,14 +140,14 @@ class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], LayerNumpy):
     def _forward_nhwc(self, x: np.ndarray) -> np.ndarray:
         y: np.ndarray = self.y[:x.shape[0], :]
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_ADP_AVG_POOL)
-        self._fwd_nwhc(x, y)
+        self._fwd_nhwc(x, y)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return np.asarray(y, dtype=self.model.dtype, order="C")
 
     def _forward_nchw(self, x: np.ndarray) -> np.ndarray:
         y: np.ndarray = self.y[:x.shape[0], :]
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_ADP_AVG_POOL)
-        self._fwd_ncwh(x, y)
+        self._fwd_nchw(x, y)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return np.asarray(y, dtype=self.model.dtype, order="C")
 
@@ -155,7 +155,7 @@ class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], LayerNumpy):
         dx: np.ndarray = self.dx[:dy.shape[0]]
         dx.fill(0)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ADP_AVG_POOL)
-        self._bwd_nwhc(dx, dy)
+        self._bwd_nhwc(dx, dy)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return np.asarray(dx, dtype=self.model.dtype, order="C")
 
@@ -163,6 +163,6 @@ class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], LayerNumpy):
         dx: np.ndarray = self.dx[:dy.shape[0]]
         dx.fill(0)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ADP_AVG_POOL)
-        self._bwd_ncwh(dx, dy)
+        self._bwd_nchw(dx, dy)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return np.asarray(dx, dtype=self.model.dtype, order="C")
