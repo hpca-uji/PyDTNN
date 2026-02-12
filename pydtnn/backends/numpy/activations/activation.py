@@ -25,7 +25,8 @@ class ActivationNumpy(Activation[np.ndarray]):
     def _model_init(self, prev_shape, x: np.ndarray | None = None):
         super()._model_init(prev_shape, x)
 
-    def reduce_weights_async(self, gradient: bool = True) -> None:
+    def reduce_weights_async(self, gradient=True):
+        # NOTE: Keep in sync with Layer
         if not self.model.comm:
             return
         self.reqs_allred = {}
@@ -33,31 +34,24 @@ class ActivationNumpy(Activation[np.ndarray]):
         for w_, dw_ in self.grad_vars.items():
             dw_ = dw_ if gradient else w_
             dw: np.ndarray = getattr(self, dw_)
-            np.multiply(dw, self.model.rank_weight, out=dw,
-                        dtype=self.model.dtype)
-            if self.model.crypt:
-                dw = self.model.crypt.encrypt(dw)
-            if self.model.use_mpi_buffers:
-                req = self.model.comm.Iallreduce(MPI.IN_PLACE, dw, op=MPI.SUM)
-            else:
-                req = self.model.comm.iallreduce(dw, op=MPI.SUM)
+            dw = self.model._layer_reduce_encode(dw)
+            req = self.model._layer_reduce_async(dw)
             self.reqs_allred[dw_] = req
 
-    def wait_allreduce_async(self, gradient=True) -> None:
+    def wait_allreduce_async(self, gradient=True):
+        # NOTE: Keep in sync with Layer
         if not self.model.comm or self.model.enable_nccl:
             return
         for w_, dw_ in self.grad_vars.items():
             dw_ = dw_ if gradient else w_
-            res = self.reqs_allred[dw_].wait()
-            if res is None:
-                dw = getattr(self, dw_)
-            else:
-                dw = res
-            if self.model.crypt:
-                dw = self.model.crypt.decrypt(dw)
+            dw = getattr(self, dw_)
+            req = self.reqs_allred[dw_]
+            dw = self.model._layer_reduce_wait(dw, req)
+            dw = self.model._layer_reduce_decode(dw)
             setattr(self, dw_, dw)
 
-    def reduce_weights_sync(self, gradient=True) -> None:
+    def reduce_weights_sync(self, gradient=True):
+        # NOTE: Keep in sync with Layer
         if not self.model.comm:
             return
         for w_, dw_ in self.grad_vars.items():
@@ -66,15 +60,8 @@ class ActivationNumpy(Activation[np.ndarray]):
                                           [self.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.ALLREDUCE_DW,
                                            self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.OPS_ALLREDUCE_DW])
             dw: np.ndarray = getattr(self, dw_)
-            np.multiply(dw, self.model.rank_weight, out=dw,
-                        dtype=self.model.dtype)
-            if self.model.crypt:
-                dw = self.model.crypt.encrypt(dw)  # type: ignore
-            if self.model.use_mpi_buffers:
-                self.model.comm.Allreduce(MPI.IN_PLACE, dw, op=MPI.SUM)
-            else:
-                dw = self.model.comm.allreduce(dw, op=MPI.SUM)
-            if self.model.crypt:
-                dw = self.model.crypt.decrypt(dw)  # type: ignore
+            dw = self.model._layer_reduce_encode(dw)
+            dw = self.model._layer_reduce_sync(dw)
+            dw = self.model._layer_reduce_decode(dw)
             setattr(self, dw_, dw)
             self.model.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT], [PYDTNN_EVENT_FINISHED, PYDTNN_EVENT_FINISHED])

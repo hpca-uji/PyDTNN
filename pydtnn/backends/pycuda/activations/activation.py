@@ -41,6 +41,7 @@ class ActivationPycuda(Activation[TensorArray]):
         self.block = self.model.cuda_block
 
     def reduce_weights_async(self, gradient=True):
+        # NOTE: Keep in sync with Layer
         if not self.model.comm:
             return
         self.reqs_allred = {}
@@ -56,9 +57,9 @@ class ActivationPycuda(Activation[TensorArray]):
             dw = getattr(self, dw_)
 
             if self.model.enable_nccl:
-                self.model.stream.synchronize()
+                # self.model.stream.synchronize()
                 dw *= self.model.rank_weight
-                # TODO: crypt
+                # TODO: self.model._encode_reduce
                 nccl.ncclAllReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type,
                                    nccl.RedOp.Sum, comm=self.model.nccl_comm,
                                    stream=self.stream_2.handle)
@@ -90,39 +91,30 @@ class ActivationPycuda(Activation[TensorArray]):
 
                 if not self.model.gpudirect:
                     self.stream_2.synchronize()
-                else:
-                    self.model.stream.synchronize()
 
                 dw_cpu = getattr(self, f"{dw_}_cpu")
-                dw_cpu *= self.model.rank_weight
-                if self.model.crypt:
-                    dw_cpu = self.model.crypt.encrypt(dw_cpu)
-                if isinstance(dw_cpu, abc.Buffer):
-                    req = self.model.comm.Iallreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
-                else:
-                    req = self.model.comm.iallreduce(dw_cpu, op=MPI.SUM)
+                dw_cpu = self.model._layer_reduce_encode(dw_cpu)
+                req = self.model._layer_reduce_async(dw_cpu)
                 self.reqs_allred[dw_] = req
 
     def wait_allreduce_async(self, gradient=True):
+        # NOTE: Keep in sync with Layer
         if not self.model.comm:
             return
 
         for w_, dw_ in self.grad_vars.items():
             if self.model.enable_nccl:
-                self.model.stream.synchronize()
-                dw = getattr(self, dw_)
-                # TODO: decrypt
+                # self.model.stream.synchronize()
+                dw: TensorArray = getattr(self, dw_)
+                # TODO: self.model._decode_reduce
                 setattr(self, dw_, dw)
             else:
                 dw_ = dw_ if gradient else w_
-                res = self.reqs_allred[dw_].wait()
-                if res is None:
-                    dw = getattr(self, dw_)
-                else:
-                    dw = res
-                if self.model.crypt:
-                    dw = self.model.crypt.decrypt(dw)  # type: ignore
-                setattr(self, dw_, dw)
+                dw_cpu = getattr(self, f"{dw_}_cpu")
+                req = self.reqs_allred[dw_]
+                dw_cpu = self.model._layer_reduce_wait(dw_cpu, req)
+                dw_cpu = self.model._layer_reduce_decode(dw_cpu)  # FIXME: dw and dw_cpu relation unclear
+                setattr(self, f"{dw_}_cpu", dw_cpu)
 
                 # # Hierarchical mode NCCL + MPI
                 # if self.model.enable_nccl:
@@ -140,14 +132,14 @@ class ActivationPycuda(Activation[TensorArray]):
                 #                            root=0, comm=self.model.nccl_comm,
                 #                            stream=self.stream_2.handle)
 
-                if not self.model.gpudirect:
-                    dw: TensorArray = getattr(self, dw_)
-                    dw_cpu = getattr(self, f"{dw_}_cpu")
+                dw = getattr(self, dw_)
+                dw_cpu = getattr(self, f"{dw_}_cpu")
 
-                    # If there is no CUDA-aware MPI, copy data back to GPU
-                    dw.ary.set_async(dw_cpu, self.stream_2)
+                # If there is no CUDA-aware MPI, copy data back to GPU
+                dw.ary.set_async(dw_cpu, self.stream_2)
 
     def reduce_weights_sync(self, gradient=True):
+        # NOTE: Keep in sync with Layer
         if not self.model.comm:
             return
 
@@ -157,17 +149,17 @@ class ActivationPycuda(Activation[TensorArray]):
                                           [self.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.ALLREDUCE_DW,
                                            self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.OPS_ALLREDUCE_DW])
             # stream = self.stream_2.handle)
-            dw: TensorArray = getattr(self, dw_)
+            dw = getattr(self, dw_)
 
             if self.model.enable_nccl:
-                dw *= self.model.rank_weight  # TODO: Check this!!
-                self.stream_2.synchronize()
-                # TODO: crypt
+                # self.stream_2.synchronize()
+                dw *= self.model.rank_weight
+                # TODO: self.model._encode_reduce
                 nccl.ncclAllReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type,
                                    nccl.RedOp.Sum, comm=self.model.nccl_comm,
                                    stream=self.stream_2.handle)
-                self.stream_2.synchronize()
-                # TODO: decrypt
+                # self.stream_2.synchronize()
+                # TODO: self.mode._decode_reduce
 
                 # # Hierarchical mode NCCL + MPI
                 # if len(self.model.inter_ranks) == 1:
@@ -204,18 +196,12 @@ class ActivationPycuda(Activation[TensorArray]):
                     self.stream_2.synchronize()
 
                 dw_cpu = getattr(self, f"{dw_}_cpu")
-                dw_cpu *= self.model.rank_weight
-                if self.model.crypt:
-                    dw_cpu = self.model.crypt.encrypt(dw_cpu)
-                if self.model.use_mpi_buffers:
-                    self.model.comm.Allreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
-                else:
-                    dw_cpu = self.model.comm.allreduce(dw_cpu, op=MPI.SUM)
-                if self.model.crypt:
-                    dw_cpu = self.model.crypt.decrypt(dw_cpu)
+                dw_cpu = self.model._layer_reduce_encode(dw_cpu)
+                dw_cpu = self.model._layer_reduce_sync(dw_cpu)
+                dw_cpu = self.model._layer_reduce_decode(dw_cpu)
                 setattr(self, f"{dw_}_cpu", dw_cpu)
 
-                if not self.model.gpudirect:
-                    dw.ary.set_async(dw_cpu, self.stream_2)
+                # If there is no CUDA-aware MPI, copy data back to GPU
+                dw.ary.set_async(dw_cpu, self.stream_2)
 
             self.model.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT], [PYDTNN_EVENT_FINISHED, PYDTNN_EVENT_FINISHED])

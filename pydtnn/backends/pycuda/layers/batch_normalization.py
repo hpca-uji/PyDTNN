@@ -152,7 +152,7 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
 
         # DtoH dw when data parallelism and no GPU direct/NCCL is used
         if self.model.comm and not self.model.gpudirect and not self.model.enable_nccl:
-            self.model.stream.synchronize()
+            # self.model.stream.synchronize()
             self.dgamma.ary.get_async(self.stream_2, self.dgamma_cpu)
             self.dbeta.ary.get_async(self.stream_2, self.dbeta_cpu)
         return self.dx

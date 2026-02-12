@@ -84,3 +84,4 @@ class RMSPropPycuda(RMSProp[TensorArray], OptimizerPycuda):
                 self.update_kernel(w.ary, dw.ary, cache, np.float32(self.learning_rate),
                                    np.float32(self.decay), np.float32(self.rho),
                                    np.float32(self.epsilon), stream=layer.stream_2)
+            self._dtoh_ary(layer=layer, w_gpu=w, w_cpu=getattr(layer, f"{w_}_cpu"))

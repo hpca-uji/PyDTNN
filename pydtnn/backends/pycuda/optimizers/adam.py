@@ -101,3 +101,4 @@ class AdamPycuda(Adam[TensorArray], OptimizerPycuda):
                                    np.float32(self.decay), np.float32(self.beta1),
                                    np.float32(self.beta2), np.float32(self.epsilon),
                                    stream=layer.stream_2)
+            self._dtoh_ary(layer=layer, w_gpu=w, w_cpu=getattr(layer, f"{w_}_cpu"))

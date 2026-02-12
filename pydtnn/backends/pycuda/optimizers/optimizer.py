@@ -34,3 +34,8 @@ class OptimizerPycuda(Optimizer[TensorArray]):
 
     def _kernel_init(self) -> Function:
         pass
+
+    def _dtoh_ary(self, layer: LayerBase, w_gpu: TensorArray, w_cpu: np.ndarray) -> None:
+        if self.model.comm and not self.model.gpudirect and not self.model.enable_nccl:
+            # self.model.stream.synchronize()
+            w_gpu.ary.get_async(layer.stream_2, w_cpu)
