@@ -153,7 +153,7 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
 
         # DtoH dw when data parallelism and no GPU direct/NCCL is used
         if self.model.comm and not self.model.gpudirect and not self.model.enable_nccl:
-            self.model.stream.synchronize()
+            # self.model.stream.synchronize()
             self.dw.ary.get_async(self.stream_2, self.dw_cpu)
 
         if self.use_bias:
@@ -173,7 +173,7 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
 
             # DtoH db when data parallelism and no GPU direct/NCCL is used
             if self.model.comm and not self.model.gpudirect and not self.model.enable_nccl:
-                self.model.stream.synchronize()
+                # self.model.stream.synchronize()
                 self.db.ary.get_async(self.stream_2, self.db_cpu)
 
         # Compute dx

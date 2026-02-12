@@ -27,7 +27,7 @@ from pydtnn import rank, nprocs, hostname, ranks_per_node, num_gpus, supported_g
 from pydtnn import utils
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.activations.relu import Relu
-from pydtnn.libs.mpi import comm as BACKEND
+from pydtnn.libs.mpi import proto as PROTOCOL
 from pydtnn import crypto
 from pydtnn.datasets.dataset import Dataset
 from pydtnn.layer_base import LayerBase, FusedLayerMixIn
@@ -368,7 +368,7 @@ class Model[T: Array]:
         # Communication method
         match self.use_mpi_buffers:
             case None:
-                self.use_mpi_buffers = BACKEND is None
+                self.use_mpi_buffers = PROTOCOL is None
             case bool():
                 pass
             case _:
@@ -504,6 +504,38 @@ class Model[T: Array]:
     def decode_tensor(self, data: np.ndarray) -> np.ndarray:
         """Transpose elements of data from `model.tensor_format` format to `NCHW` format (supports 4 or 3 dimensions)."""
         return decode_tensor(data, self.tensor_format)  # type: ignore (TensorGPU does not have transpose yet)
+
+    def _layer_reduce_encode(self, data: np.ndarray):
+        data *= self.rank_weight
+        if self.crypt:
+            data = self.crypt.encrypt(data)  # type: ignore
+        return data
+
+    def _layer_reduce_decode(self, data) -> np.ndarray:
+        if self.crypt:
+            data = self.crypt.decrypt(data)
+        return data
+
+    def _layer_reduce_sync(self, data: np.ndarray) -> np.ndarray:
+        assert self.comm is not None, "Reduce without communicator"
+        if self.use_mpi_buffers:
+            self.comm.Allreduce(MPI.IN_PLACE, data, op=MPI.SUM)
+        else:
+            data = self.comm.allreduce(data, op=MPI.SUM)
+        return data
+
+    def _layer_reduce_async(self, data):
+        assert self.comm is not None, "Reduce without communicator"
+        if self.use_mpi_buffers:
+            req = self.comm.Iallreduce(MPI.IN_PLACE, data, op=MPI.SUM)
+        else:
+            req = self.comm.iallreduce(data, op=MPI.SUM)
+        return req
+
+    def _layer_reduce_wait(self, data, request):
+        if (response := request.wait()) is not None:
+            data = response
+        return data
 
     def _show_props(self) -> dict:
         props = {}
