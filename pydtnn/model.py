@@ -1088,7 +1088,7 @@ class Model[T: Array]:
                 if rank_avail < self.model_sync_min_avail:
                     sync_model = False
 
-                val_batch_loss = self._evaluate_batch(x_batch, y_batch, sync_model=False and sync_model)
+                val_batch_loss = self._evaluate_batch(x_batch, y_batch, sync_model=sync_model)
 
                 if batch_size <= 0:
                     continue
