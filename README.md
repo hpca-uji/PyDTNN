@@ -177,14 +177,10 @@ The PyDTNN framework comes with a utility launcher called
   - `--dataset-path`: Path to dataset folder.
   - `--dataset-lang`: Dataset language. Default: `en`.
   - `--dataset-lang2`: Dataset second language. Default: `de`.
-  - `--synthetic-train-samples`: Number of synthetic train sample.
-    Default: `1000`.
-  - `--synthetic-test-samples`: Number of synthetic train sample.
-    Default: `100`.
-  - `--synthetic-input-shape`: Synthetic input shape (coma
-    separated). Default: `3,32,32`.
-  - `--synthetic-output-shape`: Synthetic output shape (coma
-    separated). Default: `10`.
+  - `--synthetic-train-samples`: Number of synthetic train sample. Default: `1000`.
+  - `--synthetic-test-samples`: Number of synthetic train sample. Default: `100`.
+  - `--synthetic-input-shape`: Synthetic input shape (coma separated). Default: `3,32,32`.
+  - `--synthetic-output-shape`: Synthetic output shape (coma separated). Default: `10`.
   - `--dataset-percentage`: Percentage of dataset that will be used. If
     it is `0`: it is deactivated; if is is a value below `1` (and above
     `0`): it will perform undersampling; and if is is a value above `1`:

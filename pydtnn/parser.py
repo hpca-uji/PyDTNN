@@ -174,7 +174,7 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
         _ds_group.add_argument('--synthetic-input-shape', default="3,32,32", type=str,
                                help="Synthetic input shape (coma separated). Default: 3,32,32.")
         _ds_group.add_argument('--synthetic-output-shape', default="10", type=str,
-                               help="Synthetic input shape (coma separated). Default: 10.")
+                               help="Synthetic output shape (coma separated). Default: 10.")
         _ds_group.add_argument('--test-as-validation', default=False, type=bool_lambda,
                                help="Prevent making partitions on training data for training+validation data, use test data for validation. True if specified.")
         _ds_group.add_argument('--validation-split', type=factor, default=0.2,
