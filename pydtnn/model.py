@@ -668,8 +668,8 @@ class Model[T: Array]:
         layer._model_init(prev_shape, y)
 
         self.nparams += layer.nparams
-        self.memory_used += layer.memory_used
-        self.tmp_memory_used += layer.tmp_memory_used
+        # self.memory_used += layer.memory_used
+        # self.tmp_memory_used += layer.tmp_memory_used
         self.layers.append(layer)
 
         if layer.act:
@@ -786,6 +786,8 @@ class Model[T: Array]:
         self.loss_func = select_loss(self.loss_func_name)()
         self.loss_func._init_backend_with_model(self)
         self.loss_func._model_init()
+        self.memory_used += self.loss_func.memory_used
+        temp_memory_size.append(self.loss_func.tmp_memory_used)
 
         self.metrics_funcs = [select_metric(m)() for m in self.metrics_list]
         self.metrics_funcs.sort(key=lambda metric: metric.order)
@@ -802,12 +804,15 @@ class Model[T: Array]:
         self.tracer.define_event_types(self)
 
         self.optimizer._model_init(self.get_all_layers(self.layers))
+        self.memory_used += self.optimizer.memory_used
         temp_memory_size.append(self.optimizer.tmp_memory_used)
 
         for layer in self.layers:
+            self.memory_used += layer.memory_used
             temp_memory_size.append(layer.tmp_memory_used)
 
         self.tmp_memory_used = self.memory_cls._total(*temp_memory_size)
+        self.memory_used += self.tmp_memory_used
         self.memory = self.memory_cls(size=self.tmp_memory_used)
 
         for layer in self.get_all_layers():
