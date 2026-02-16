@@ -1,9 +1,5 @@
 from pydtnn.backends.cupy.layers.layer import LayerCupy
 from pydtnn.backends.numpy.layers.adaptive_average_pool_2d import AdaptiveAveragePool2DNumpy
-from pydtnn.backends.cython.utils.adaptive_avg_pooling_nhwc_cython import adaptive_avg_pooling_fwd_nhwc_cython
-from pydtnn.backends.cython.utils.adaptive_avg_pooling_nchw_cython import adaptive_avg_pooling_fwd_nchw_cython
-from pydtnn.backends.cython.utils.adaptive_avg_pooling_nhwc_cython import adaptive_avg_pooling_bwd_nhwc_cython
-from pydtnn.backends.cython.utils.adaptive_avg_pooling_nchw_cython import adaptive_avg_pooling_bwd_nchw_cython
 
 from pydtnn.utils.constants import DTYPE2CTYPE
 from pydtnn.libs import numpy as np
@@ -108,7 +104,7 @@ r"""
 __global__ void {FUNC_NAME}({T}* x, {T}* y,
                             int n, int c,
                             int hi, int wi,
-                            int ho, wo,
+                            int ho, int wo,
                             int N)
 {{
     int h_start, h_end, elements_h, w_start, w_end, elements;
@@ -187,7 +183,7 @@ __global__ void {FUNC_NAME}({T}* x, {T}* y,
 __global__ void {FUNC_NAME}({T}* dx, {T}* dy,
                             int n, int c,
                             int hi, int wi,
-                            int ho, wo,
+                            int ho, int wo,
                             int N)
 {{
     int h_start, h_end, elements_kh, w_start, w_end, elements_kw;

@@ -18,7 +18,7 @@ class AveragePool2DCython(AveragePool2DNumpy):
     ##############
 
     def _fwd_avg_pool_nchw(self, x: np.ndarray, y: np.ndarray) -> None:
-        average_pool_2d_fwd_nhwc_cython(x, y,
+        average_pool_2d_fwd_nchw_cython(x, y,
                                         self.kh, self.kw, self.ho, self.wo,
                                         self.hpadding, self.wpadding,
                                         self.hstride, self.wstride,
@@ -26,7 +26,7 @@ class AveragePool2DCython(AveragePool2DNumpy):
     # ----
 
     def _fwd_avg_pool_nhwc(self, x: np.ndarray, y: np.ndarray) -> None:
-        average_pool_2d_fwd_nchw_cython(x, y,
+        average_pool_2d_fwd_nhwc_cython(x, y,
                                         self.kh, self.kw, self.ho, self.wo,
                                         self.hpadding, self.wpadding,
                                         self.hstride, self.wstride,

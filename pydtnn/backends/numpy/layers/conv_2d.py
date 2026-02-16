@@ -231,11 +231,8 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
         # y = self.y[:shape[-1], :]
         y = self.get_y(x.shape[0])
 
-        x1 = x.copy()
-        x_cols1 = x_cols.copy()
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
         self.im2col(x, x_cols)
-        self.im2col_alt(x1, x_cols1)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.x_cols = x_cols
