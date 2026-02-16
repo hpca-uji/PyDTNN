@@ -1,7 +1,5 @@
 """Abstract encryption"""
 
-# NOTE: HELib: ploy = slots + 2
-
 import math
 import operator
 import itertools
@@ -10,8 +8,6 @@ from collections import abc
 from dataclasses import dataclass
 
 import numpy as np
-
-from pydtnn.utils.constants import ArrayShape
 
 
 __all__ = (
@@ -53,7 +49,7 @@ COEFF_MODULUS = {
 class Ciphertext[C, P: np.number]:
     """Abstract ciphertext"""
     dtype: np.dtype[P]
-    shape: ArrayShape
+    shape: tuple[int, ...]
     _chunks: tuple[C, ...] = dataclasses.field(repr=False)
 
     def _new(self, /, *args, **kwds):
