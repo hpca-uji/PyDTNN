@@ -1,10 +1,6 @@
 """Abstract encryption"""
 
-# NOTE: scaling factor = global scale
-# NOTE: muldepth = len(coeff_modulus)
-# NOTE: HELib: slots = ploy / 4
-# NOTE: fistMod = max(conff_modulus)
-# NOTE: base params: muldepth, scale, firstMod
+# NOTE: HELib: ploy = slots + 2
 
 import math
 import operator
