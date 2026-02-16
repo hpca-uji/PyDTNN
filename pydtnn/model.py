@@ -24,7 +24,8 @@ from tqdm import tqdm
 from pydtnn import MPI_MODULE, Cudnn_Handle_Type, Cublas_Handle_Type, gpu_errors, MPI, drv, gpuarray, tensor_array, nccl, cudnn, cublas  # type: ignore (cublas exist)
 from pydtnn import rank, nprocs, hostname, ranks_per_node, num_gpus, supported_gpu, nccl_comm, cudnn_handle, cublas_handle, device, context, stream
 
-from pydtnn import utils, crypto
+from pydtnn import utils
+from pydtnn.libs import uhe
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.activations.relu import Relu
 from pydtnn.libs.mpi import proto as PROTOCOL
@@ -441,17 +442,17 @@ class Model[T: Array]:
     def __getattr__(self, item) -> Any:
         return self.kwargs.get(item)
 
-    def _crypt_init(self, encryption_name: str) -> crypto.Context:
+    def _crypt_init(self, encryption_name: str) -> uhe.Context:
         """Initialize encryption context"""
-        backend = crypto.Backend(encryption_name)
-        options = crypto.Options(
+        backend = uhe.Backend(encryption_name)
+        options = uhe.Options(
             slots=self.encryption_slots,
             scale=self.encryption_scale,
             security=self.encryption_security
         )
 
         if self.comm_rank == 0:
-            crypt = crypto.new(backend, options)
+            crypt = uhe.new(backend, options)
 
         if self.comm:
             crypt = self.comm.bcast(crypt if self.comm_rank == 0 else None)

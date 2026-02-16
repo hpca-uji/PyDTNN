@@ -3,7 +3,7 @@
 import enum
 import importlib
 
-from pydtnn.crypto.core import Options, Context, Ciphertext
+from pydtnn.libs.uhe.core import Options, Context, Ciphertext
 
 
 __all__ = (

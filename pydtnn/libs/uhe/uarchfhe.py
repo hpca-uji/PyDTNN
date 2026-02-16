@@ -2,15 +2,15 @@
 
 # FIXME: Serialization performance
 
-from functools import cached_property
 import sys
 import copyreg
 import dataclasses
 from dataclasses import dataclass
+from functools import cached_property
 
 import numpy as np
 
-from pydtnn.crypto import core
+from pydtnn.libs.uhe import core
 
 # Make sure global package is not confused with current package
 _pkg = sys.path.pop(0)
