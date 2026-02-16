@@ -10,6 +10,6 @@ python3 "${dir:?}/export_dataset.py" \
   --model=simplecnn \
   --dataset=mnist \
   --dataset-path=datasets/mnist \
-  --export-weights=1,1.125,1.25,1.5 \
+  --export-split-weights=1,1.125,1.25,1.5 \
   --parallel=sequential \
   --shared-storage=True

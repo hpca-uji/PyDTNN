@@ -157,9 +157,9 @@ class Dataset(ABC):
         """Export dataset (possibly split and rank specific)"""
 
         # Data generators
-        gen_train = self._data_generator(Dataset.Part.TRAIN)
-        gen_val = self._data_generator(Dataset.Part.VAL)
-        gen_test = self._data_generator(Dataset.Part.TEST)
+        gen_train = self._transform_data_generator(Dataset.Part.TRAIN)
+        gen_val = self._transform_data_generator(Dataset.Part.VAL)
+        gen_test = self._transform_data_generator(Dataset.Part.TEST)
 
         # Reconstruct validation split
         if self.test_as_validation:
