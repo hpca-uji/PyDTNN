@@ -89,11 +89,6 @@ class Folder(Dataset):
         np_label = np.zeros(shape=num_classes, dtype=np.uint8)
         np_label[label] = 1
         return np_label
-
-    @override
-    def _init_actual_data(self):
-        if not self.model.transform_resize:
-            raise ValueError("Model transform_resize must be enabled for dataset!")
     # ---
 
     @override
