@@ -131,6 +131,10 @@ class Dataset(ABC):
         if self.debug:
             self._print_report()
 
+    @property
+    def name(self) -> str:
+        return type(self).__name__
+
     def _gzip_open(self, filename: str) -> IO[bytes]:
         """Open a gZIP file (creating or loading seek table)"""
         path = Path(filename)
@@ -153,8 +157,8 @@ class Dataset(ABC):
         else:
             return f
 
-    def export(self, split_weights: list[float] = [1]):
-        """Export dataset (possibly split and rank specific)"""
+    def export(self) -> dict[str, np.ndarray]:
+        """Export dataset"""
 
         # Data generators
         gen_train = self._transform_data_generator(Dataset.Part.TRAIN)
@@ -185,6 +189,23 @@ class Dataset(ABC):
             case _:
                 raise NotImplementedError(f"Unsupported model dtype {self.model.dtype}")
 
+        return {
+            "name": self.name,  # type: ignore
+            "x_train": x_train,
+            "y_train": y_train,
+            "x_test": x_test,
+            "y_test": y_test
+        }
+
+    def _export_split(self, data: dict[str, np.ndarray], split_weights: list[float] = [1]) -> Generator[dict[str, np.ndarray]]:
+        """Generate export data splits"""
+
+        # Get data
+        x_train = data["x_train"]
+        y_train = data["y_train"]
+        x_test = data["x_test"]
+        y_test = data["y_test"]
+
         # Calculate percentage splits
         total = sum(split_weights)
         split_percentage = [weight / total for weight in itertools.accumulate(split_weights)]
@@ -196,24 +217,24 @@ class Dataset(ABC):
         x_test = np.split(x_test, (len(x_test) * np_splits).astype(int))
         y_test = np.split(y_test, (len(y_test) * np_splits).astype(int))
 
-        # Save arrays
-        for split, (x_train, y_train, x_test, y_test) in enumerate(zip(x_train, y_train, x_test, y_test)):
-            path = Path(self.model.dataset_path) / f"archive.{split}.npz"
+        # Yield splits
+        for x_train, y_train, x_test, y_test in zip(x_train, y_train, x_test, y_test):
+            yield {
+                **data,
+                "x_train": x_train,
+                "y_train": y_train,
+                "x_test": x_test,
+                "y_test": y_test
+            }
 
-            # Export dataset
-            np.savez_compressed(path,
-                                x_train=x_train,
-                                y_train=y_train,
-                                x_test=x_test,
-                                y_test=y_test)
+    def export_archive(self, path: Path | None = None, split_weights: list[float] = [1]):
+        """Export dataset to an archive"""
+        data = self.export()
+        datas = self._export_split(data, split_weights)
+        path = path if path else Path(self.model.dataset_path)
 
-            # Debug information
-            if self.debug:
-                print(f"Export: {path}")
-                print(f"x_train: {x_train.shape}")
-                print(f"y_train: {y_train.shape}")
-                print(f"x_test: {x_test.shape}")
-                print(f"y_test: {y_test.shape}")
+        for split, data in enumerate(datas):
+            np.savez_compressed(path / f"archive.{split}.npz", **data)
 
     @property
     def train_nsamples(self):
