@@ -49,19 +49,31 @@ class Ciphertext[C, P: np.number]:
         """Add two ciphertexts"""
         return operator.add(a, b)
 
-    def __add__(self, other):
-        """Add two ciphertexts"""
+    def _mul_chunk(self, a: C, b: C) -> C:
+        """Multiply two ciphertexts"""
+        return operator.mul(a, b)
+
+    def _op_scalar(self, op, other):
+        """Execute a element by element operation"""
         self._operable(other)
 
         if other.shape != self.shape:
             raise TypeError(f"Different underlying shapes ({other.shape} != {self.shape})")
 
-        chunks = tuple(itertools.starmap(self._add_chunk, zip(self._chunks, other._chunks)))
+        chunks = tuple(itertools.starmap(op, zip(self._chunks, other._chunks)))
 
         return self._new(
             shape=self.shape,
             _chunks=chunks
         )
+
+    def __add__(self, other):
+        """Add two ciphertexts"""
+        return self._op_scalar(self._add_chunk, other)
+
+    def __mul__(self, other):
+        """Multiply two ciphertexts"""
+        return self._op_scalar(self._mul_chunk, other)
 
 
 class Context[C]:

@@ -81,6 +81,10 @@ class Ciphertext[P: np.number](crypto.Ciphertext[uarchfhe.PyCiphertext, P]):
         """Add two ciphertexts"""
         return uarchfhe.PyCiphertext.add(a, b)
 
+    def _mul_chunk(self, a: uarchfhe.PyCiphertext, b: uarchfhe.PyCiphertext) -> uarchfhe.PyCiphertext:
+        """Multiply two ciphertexts"""
+        return uarchfhe.PyCiphertext.mul(a, b)
+
 
 class Context(crypto.Context[uarchfhe.PyCiphertext]):
     """uArchFHE context"""
