@@ -50,7 +50,7 @@ class Context(crypto.Context[openfhe.Ciphertext]):
         parameters.SetSecurityLevel(level)
         parameters.SetRingDim(ring_dim)
         parameters.SetScalingModSize(self._scale)
-        parameters.SetMultiplicativeDepth(0)
+        parameters.SetMultiplicativeDepth(len(self._coeff_modulus))
         self._context = openfhe.GenCryptoContext(parameters)
         self._context.Enable(openfhe.PKESchemeFeature.PKE)
         self._context.Enable(openfhe.PKESchemeFeature.KEYSWITCH)
