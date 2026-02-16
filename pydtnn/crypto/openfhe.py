@@ -22,7 +22,7 @@ __all__ = (
 
 
 SECURITY_LEVEL = {
-    0: openfhe.SecurityLevel.HEStd_NotSet,
+    # 0: openfhe.SecurityLevel.HEStd_NotSet,
     128: openfhe.SecurityLevel.HEStd_128_classic,
     192: openfhe.SecurityLevel.HEStd_192_classic,
     256: openfhe.SecurityLevel.HEStd_256_classic
@@ -38,18 +38,18 @@ class Context(crypto.Context[openfhe.Ciphertext]):
     """OpenFHE context"""
     _cls = Ciphertext
 
-    def __init__(self, poly_degree: int = 13, global_scale: int = 40, security_level: int = 128) -> None:
+    def __init__(self, slots: int = 12, scale: int = 40, security: int = 128) -> None:
         """Initialize context"""
-        super().__init__(poly_degree, global_scale, security_level)
+        super().__init__(slots, scale, security)
 
         ring_dim = 2 ** self._poly_degree
-        level = SECURITY_LEVEL[self._security_level]
+        level = SECURITY_LEVEL[self._security]
 
         # Context
         parameters = openfhe.CCParamsCKKSRNS()
         parameters.SetSecurityLevel(level)
         parameters.SetRingDim(ring_dim)
-        parameters.SetScalingModSize(self._global_scale)
+        parameters.SetScalingModSize(self._scale)
         parameters.SetMultiplicativeDepth(0)
         self._context = openfhe.GenCryptoContext(parameters)
         self._context.Enable(openfhe.PKESchemeFeature.PKE)

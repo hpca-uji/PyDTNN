@@ -29,7 +29,7 @@ __all__ = (
 
 
 SECURITY_LEVEL = {
-    0: sealapi.SEC_LEVEL_TYPE.NONE,
+    # 0: sealapi.SEC_LEVEL_TYPE.NONE,
     128: sealapi.SEC_LEVEL_TYPE.TC128,
     192: sealapi.SEC_LEVEL_TYPE.TC192,
     256: sealapi.SEC_LEVEL_TYPE.TC256
@@ -81,26 +81,26 @@ class Context(crypto.Context[CKKSVector]):
     """TenSEAL context"""
     _cls = Ciphertext
 
-    def __init__(self, poly_degree: int = 13, global_scale: int = 40, security_level: int = 128) -> None:
+    def __init__(self, slots: int = 12, scale: int = 40, security: int = 128) -> None:
         """Initialize context"""
-        super().__init__(poly_degree, global_scale, security_level)
+        super().__init__(slots, scale, security)
 
-        poly_degree = 2 ** self._poly_degree
-        level = SECURITY_LEVEL[self._security_level]
+        slots = 2 ** self._poly_degree
+        level = SECURITY_LEVEL[self._security]
 
         # Context
         modulus = [
             m.bit_count()
-            for m in sealapi.CoeffModulus.BFVDefault(poly_degree, level)
+            for m in sealapi.CoeffModulus.BFVDefault(slots, level)
         ]
         self._private_context = tenseal.context(
             scheme=tenseal.SCHEME_TYPE.CKKS,
-            poly_modulus_degree=poly_degree,
+            poly_modulus_degree=slots,
             coeff_mod_bit_sizes=modulus
         )
 
         # Keys
-        self._private_context.global_scale = 2 ** self._global_scale
+        self._private_context.global_scale = 2 ** self._scale
         self._private_context.generate_galois_keys()
         self._private_context.generate_relin_keys()
 

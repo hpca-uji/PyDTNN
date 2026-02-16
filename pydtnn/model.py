@@ -451,9 +451,9 @@ class Model[T: Array]:
 
         if self.comm_rank == 0:
             crypt = module.Context(
-                poly_degree=self.encryption_poly_degree,
-                global_scale=self.encryption_global_scale,
-                security_level=self.encryption_security_level
+                slots=self.encryption_slots,
+                scale=self.encryption_scale,
+                security=self.encryption_security
             )
 
         if self.comm:

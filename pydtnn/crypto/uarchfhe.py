@@ -25,36 +25,6 @@ __all__ = (
 )
 
 
-# COEFF_MODULUS[security_level][poly_degree]
-# source: sealapi.CoeffModulus.BFVDefault
-COEFF_MODULUS = {
-    128: {
-        10: [27],
-        11: [54],
-        12: [36, 36, 37],
-        13: [43, 43, 44, 44, 44],
-        14: [48, 48, 48, 49, 49, 49, 49, 49, 49],
-        15: [55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 56]
-    },
-    192: {
-        10: [19],
-        11: [37],
-        12: [25, 25, 25],
-        13: [38, 38, 38, 38],
-        14: [50, 50, 50, 50, 50, 50],
-        15: [54, 54, 54, 54, 54, 55, 55, 55, 55, 55, 55]
-    },
-    256: {
-        10: [14],
-        11: [29],
-        12: [58],
-        13: [39, 39, 40],
-        14: [47, 47, 47, 48, 48],
-        15: [52, 53, 53, 53, 53, 53, 53, 53, 53]
-    }
-}
-
-
 @dataclass(eq=False, order=False, slots=True, frozen=True)
 class Ciphertext[P: np.number](crypto.Ciphertext[uarchfhe.PyCiphertext, P]):
     """uArchFHE ciphertext"""
@@ -90,16 +60,15 @@ class Context(crypto.Context[uarchfhe.PyCiphertext]):
     """uArchFHE context"""
     _cls = Ciphertext
 
-    def __init__(self, poly_degree: int = 13, global_scale: int = 40, security_level: int = 128) -> None:
+    def __init__(self, slots: int = 12, scale: int = 40, security: int = 128) -> None:
         """Initialize context"""
-        super().__init__(poly_degree, global_scale, security_level)
+        super().__init__(slots, scale, security)
 
         # Context
         h = 3  # Secret key Hamming weight (security parameter)
         sigma = 3  # Standard deviation for error distribution (security parameter)
-        self._modulus = COEFF_MODULUS[self._security_level][self._poly_degree]
-        self._context = uarchfhe.PyContext(self._poly_degree, max(self._modulus), self._global_scale, sigma, h)
-        self._workspace = [0] * self._slots
+        self._context = uarchfhe.PyContext(self._poly_degree, max(self._coeff_modulus), self._scale, sigma, h)
+        self._workspace = [0] * (2 ** self._slots)
 
         # Keys
         keygen = uarchfhe.PyKeyGen(self._context)
@@ -122,10 +91,10 @@ class Context(crypto.Context[uarchfhe.PyCiphertext]):
 
     def _encrypt_chunk(self, chunk: list) -> uarchfhe.PyCiphertext:
         """Encode list to ciphertext"""
-        if len(chunk) < self._slots:
+        if len(chunk) < len(self._workspace):
             self._workspace[:len(chunk)] = chunk
             chunk = self._workspace
-        return self._ckks.encrypt(chunk, len(chunk), self._global_scale, max(self._modulus))
+        return self._ckks.encrypt(chunk, len(chunk), self._scale, max(self._coeff_modulus))
 
     def _decrypt_chunk(self, chunk: uarchfhe.PyCiphertext) -> list:
         """Decode cypertext to list"""

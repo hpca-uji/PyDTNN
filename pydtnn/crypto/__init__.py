@@ -23,6 +23,36 @@ __all__ = (
 )
 
 
+# COEFF_MODULUS[security_level][poly_degree]
+# source: sealapi.CoeffModulus.BFVDefault
+COEFF_MODULUS = {
+    128: {
+        10: [27],
+        11: [54],
+        12: [36, 36, 37],
+        13: [43, 43, 44, 44, 44],
+        14: [48, 48, 48, 49, 49, 49, 49, 49, 49],
+        15: [55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 56]
+    },
+    192: {
+        10: [19],
+        11: [37],
+        12: [25, 25, 25],
+        13: [38, 38, 38, 38],
+        14: [50, 50, 50, 50, 50, 50],
+        15: [54, 54, 54, 54, 54, 55, 55, 55, 55, 55, 55]
+    },
+    256: {
+        10: [14],
+        11: [29],
+        12: [58],
+        13: [39, 39, 40],
+        14: [47, 47, 47, 48, 48],
+        15: [52, 53, 53, 53, 53, 53, 53, 53, 53]
+    }
+}
+
+
 @dataclass(eq=False, order=False, slots=True, frozen=True)
 class Ciphertext[C, P: np.number]:
     """Abstract ciphertext"""
@@ -80,15 +110,21 @@ class Context[C]:
     """Abstract context"""
     _cls: type[Ciphertext]
 
-    def __init__(self, poly_degree: int = 13, global_scale: int = 40, security_level: int = 128) -> None:
+    def __init__(self, slots: int = 12, scale: int = 40, security: int = 128) -> None:
         """Initialize context"""
-        self._poly_degree = poly_degree
-        self._global_scale = global_scale
-        self._security_level = security_level
+        self._slots = slots
+        self._scale = scale
+        self._security = security
 
     @property
-    def _slots(self) -> int:
-        return 2 ** (self._poly_degree - 1)
+    def _poly_degree(self) -> int:
+        """Polynomial degree"""
+        return self._slots + 1
+
+    @property
+    def _coeff_modulus(self) -> list[int]:
+        """Coefficient modulus"""
+        return COEFF_MODULUS[self._security][self._poly_degree]
 
     def _new[P: np.number](self, /, dtype: np.dtype[P], *args, **kwds) -> Ciphertext[C, P]:
         """Create new operable ciphertext"""
@@ -101,7 +137,10 @@ class Context[C]:
         """Transform numpy array into batched lists"""
         if obj.size == 0:
             return
-        for part in np.array_split(obj.reshape(-1), range(self._slots, obj.size, self._slots)):
+
+        chunk_size = 2 ** self._slots
+
+        for part in np.array_split(obj.reshape(-1), range(chunk_size, obj.size, chunk_size)):
             yield part.tolist()
 
     def _encrypt_chunk(self, chunk: list) -> C:

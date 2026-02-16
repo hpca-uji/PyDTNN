@@ -250,7 +250,7 @@ The PyDTNN framework comes with a utility launcher called
     `regression_mae`, `binary_confusion_matrix`,
     `multiclass_confusion_matrix`, `precision`, `recall`, `f1_score`.
     Default: `categorical_accuracy`.
-- Learning rate schedulers parameters:
+- Schedulers parameters:
   - `--schedulers`: List of comma-separated LR schedulers: `warm_up`,
     `early_stopping`, `reduce_lr_on_plateau`, `reduce_lr_every_nepochs`,
     `model_checkpoint`. Default:
@@ -305,12 +305,11 @@ The PyDTNN framework comes with a utility launcher called
 - Encryption parameters:
   - `--encryption`: Encryption library: `tenseal`, `openfhe`, `None`.
     Default `None`.
-  - `--encryption-poly-degree`: Encryption polynomial degree.
-    `2 ^ value`. Default: `13`.
-  - `--encryption-global-scale`: Encryption global scale. `2 ^ value`.
+  - `--encryption-slots`: Encryption slot count.
+    `2 ^ value`. Default: `12`.
+  - `--encryption-scale`: Encryption operational scale. `2 ^ value`.
     Default: `40`.
-  - `--encryption-security-level`: Encryption security level: `0` (Not
-    set), `128`, `192`, `256`. Default: `128`.
+  - `--encryption-security`: Encryption security level: `128`, `192`, `256`. Default: `128`.
 - Tracing and profiling parameters:
   - `--tracing`: Obtain Simple/Extrae-based traces. Default: `False`.
   - `--tracer-output`: Output file to store the Simple/Extrae-based
