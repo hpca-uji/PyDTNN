@@ -227,14 +227,17 @@ class Dataset(ABC):
                 "y_test": y_test
             }
 
-    def export_archive(self, path: Path | None = None, split_weights: list[float] = [1]):
+    def export_archive(self, path: Path | None = None, split_weights: list[float] | None = None):
         """Export dataset to an archive"""
         data = self.export()
-        datas = self._export_split(data, split_weights)
         path = path if path else Path(self.model.dataset_path)
 
-        for split, data in enumerate(datas):
-            np.savez_compressed(path / f"archive.{split}.npz", **data)
+        if split_weights:
+            datas = self._export_split(data, split_weights)
+            for split, data in enumerate(datas):
+                np.savez_compressed(path / f"archive.{split}.npz", **data)
+        else:
+            np.savez_compressed(path / "archive.npz", **data)
 
     @property
     def train_nsamples(self):
