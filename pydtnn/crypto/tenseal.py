@@ -10,7 +10,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from pydtnn import crypto
+from pydtnn.crypto import core
 
 # Make sure global package is not confused with current package
 _pkg = sys.path.pop(0)
@@ -37,7 +37,7 @@ SECURITY_LEVEL = {
 
 
 @dataclass(eq=False, order=False, slots=True, frozen=True)
-class Ciphertext[P: np.number](crypto.Ciphertext[CKKSVector, P]):
+class Ciphertext[P: np.number](core.Ciphertext[CKKSVector, P]):
     """TenSEAL ciphertext"""
     _context: bytes = dataclasses.field(repr=False)
 
@@ -77,13 +77,13 @@ class Ciphertext[P: np.number](crypto.Ciphertext[CKKSVector, P]):
             return None
 
 
-class Context(crypto.Context[CKKSVector]):
+class Context(core.Context[CKKSVector]):
     """TenSEAL context"""
     _cls = Ciphertext
 
-    def __init__(self, slots: int = 12, scale: int = 40, security: int = 128) -> None:
+    def __init__(self, options: core.Options = core.Options()) -> None:
         """Initialize context"""
-        super().__init__(slots, scale, security)
+        super().__init__(options)
 
         slots = 2 ** self._poly_degree
         level = SECURITY_LEVEL[self._security]
@@ -110,7 +110,7 @@ class Context(crypto.Context[CKKSVector]):
 
         self._context = pickle.dumps(self._public_context)
 
-    def _new(self, /, *args, **kwds) -> crypto.Ciphertext:
+    def _new(self, /, *args, **kwds) -> core.Ciphertext:
         """Create new operable ciphertext"""
         return super()._new(_context=self._context, *args, **kwds)
 

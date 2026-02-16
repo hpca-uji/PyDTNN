@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from pydtnn import crypto
+from pydtnn.crypto import core
 
 # Make sure global package is not confused with current package
 _pkg = sys.path.pop(0)
@@ -30,17 +30,17 @@ SECURITY_LEVEL = {
 
 
 @dataclass(repr=False, eq=False, order=False, slots=True, frozen=True)
-class Ciphertext[P: np.number](crypto.Ciphertext[openfhe.Ciphertext, P]):
+class Ciphertext[P: np.number](core.Ciphertext[openfhe.Ciphertext, P]):
     """OpenFHE ciphertext"""
 
 
-class Context(crypto.Context[openfhe.Ciphertext]):
+class Context(core.Context[openfhe.Ciphertext]):
     """OpenFHE context"""
     _cls = Ciphertext
 
-    def __init__(self, slots: int = 12, scale: int = 40, security: int = 128) -> None:
+    def __init__(self, options: core.Options = core.Options()) -> None:
         """Initialize context"""
-        super().__init__(slots, scale, security)
+        super().__init__(options)
 
         ring_dim = 2 ** self._poly_degree
         level = SECURITY_LEVEL[self._security]

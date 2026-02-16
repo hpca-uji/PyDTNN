@@ -10,7 +10,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from pydtnn import crypto
+from pydtnn.crypto import core
 
 # Make sure global package is not confused with current package
 _pkg = sys.path.pop(0)
@@ -26,7 +26,7 @@ __all__ = (
 
 
 @dataclass(eq=False, order=False, slots=True, frozen=True)
-class Ciphertext[P: np.number](crypto.Ciphertext[uarchfhe.PyCiphertext, P]):
+class Ciphertext[P: np.number](core.Ciphertext[uarchfhe.PyCiphertext, P]):
     """uArchFHE ciphertext"""
     _context: uarchfhe.PyContext = dataclasses.field(repr=False)
 
@@ -56,13 +56,13 @@ class Ciphertext[P: np.number](crypto.Ciphertext[uarchfhe.PyCiphertext, P]):
         return uarchfhe.PyCiphertext.mul(a, b)
 
 
-class Context(crypto.Context[uarchfhe.PyCiphertext]):
+class Context(core.Context[uarchfhe.PyCiphertext]):
     """uArchFHE context"""
     _cls = Ciphertext
 
-    def __init__(self, slots: int = 12, scale: int = 40, security: int = 128) -> None:
+    def __init__(self, options: core.Options = core.Options()) -> None:
         """Initialize context"""
-        super().__init__(slots, scale, security)
+        super().__init__(options)
 
         # Context
         h = 3  # Secret key Hamming weight (security parameter)
@@ -85,7 +85,7 @@ class Context(crypto.Context[uarchfhe.PyCiphertext]):
         state.pop("_ckks", None)
         return state
 
-    def _new(self, /, *args, **kwds) -> crypto.Ciphertext:
+    def _new(self, /, *args, **kwds) -> core.Ciphertext:
         """Create new operable ciphertext"""
         return super()._new(_context=self._context, *args, **kwds)
 
