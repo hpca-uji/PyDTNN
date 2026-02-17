@@ -23,7 +23,6 @@ from tqdm import tqdm
 from pydtnn import MPI_MODULE, Cudnn_Handle_Type, Cublas_Handle_Type, gpu_errors, MPI, drv, gpuarray, tensor_array, nccl, cudnn, cublas  # type: ignore (cublas exist)
 from pydtnn import rank, nprocs, hostname, ranks_per_node, num_gpus, supported_gpu, nccl_comm, cudnn_handle, cublas_handle, device, context, stream
 
-import uhe
 from pydtnn import utils
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.activations.relu import Relu
@@ -56,6 +55,13 @@ from pydtnn.utils.constants import Array, NetworkAlgEnum, ArrayShape, Parameters
 from pydtnn.metrics.metric import Metric
 from pydtnn.utils.memory_pool import PrivateMemory, PreallocMemory
 
+if TYPE_CHECKING:
+    import uhe
+else:
+    try:
+        import uhe
+    except Exception:
+        uhe = None
 
 # --- CONSTANS --- #
 BAR_WIDTH = 140
@@ -441,8 +447,11 @@ class Model[T: Array]:
     def __getattr__(self, item) -> Any:
         return self.kwargs.get(item)
 
-    def _crypt_init(self, encryption_name: str) -> uhe.Context:
+    def _crypt_init(self, encryption_name: str) -> "uhe.Context":
         """Initialize encryption context"""
+        if uhe is None:
+            raise RuntimeError("uHE is not avaliable, but is requiested!")
+
         backend = uhe.Backend(encryption_name)
         options = uhe.Options(
             slots=self.encryption_slots,
