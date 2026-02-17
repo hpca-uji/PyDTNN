@@ -102,6 +102,7 @@ r"""
         # NOTE: N = n * c * ho * wo; x's format: NCHW
         code = \
             r"""
+extern "C"
 {MACROS}
 #define SHIFT_WEIGHTS(ci, khi, kwi, c, kh, kw) ((ci * kh + khi) * kw + kwi)
 #define IS_BETWEEN(min_v, var, max_v) (min_v <= var) && (var < max_v)
@@ -178,6 +179,7 @@ __global__ void {FUNC_NAME}({T}* x, {T}* weights, {T}* y,
         # NOTE: N = n * ci * hi * wo; dx's format: NCHW
         code = \
             r"""
+extern "C"
 {MACROS}
 #define SHIFT_WEIGHTS(ci, khi, kwi, c, kh, kw) ((ci * kh + khi) * kw + kwi)
 #define GET_C_WEIGHTS(idx, c, kh, kw) (idx / (kw * kh))

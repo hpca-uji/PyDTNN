@@ -28,6 +28,7 @@ class BatchNormalizationCupy(BatchNormalizationNumpy, LayerCupy):
 
         code = \
             r"""
+extern "C"
 #define GET_J(idx, dim_j) (idx % dim_j)
 #define INDEX_FIRST_ELEMENT(index, dim_in, dim_out) ((index * dim_in) / dim_out)
 #define INDEX_LAST_ELEMENT(index, dim_in, dim_out) ((((index + 1) * dim_in) + dim_out - 1) / dim_out)
