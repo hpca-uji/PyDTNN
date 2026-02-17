@@ -188,7 +188,7 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
         self._training_bwd(dx, dy)
 
         if self.spatial:
-            dx = dx.reshape((n, self.hi, self.wi, self.ci), copy=False)
+            dx = dx.reshape((n, self.hi, self.wi, self.ci))
             dx = format_transpose(dx, TensorFormat.NHWC, self.model.tensor_format)
         # else: nothing special (It has the right format)
 

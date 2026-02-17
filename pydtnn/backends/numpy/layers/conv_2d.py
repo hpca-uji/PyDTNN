@@ -201,7 +201,7 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
         self.x_rows = x_rows
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_W)
-        w_cols = self.weights.reshape((-1, self.co), copy=False)
+        w_cols = self.weights.reshape((-1, self.co))
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_MATMUL)
@@ -211,12 +211,12 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
 
         if self.use_bias:
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_SUM_BIASES)
-            np.add(y, self.biases.reshape((-1, self.co), copy=False), out=y,
+            np.add(y, self.biases.reshape((-1, self.co)), out=y,
                    dtype=self.model.dtype)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_Y)
-        y = y.reshape((-1, self.ho, self.wo, self.co), copy=False)
+        y = y.reshape((-1, self.ho, self.wo, self.co))
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return np.asarray(y, dtype=self.model.dtype, order="C")
@@ -238,7 +238,7 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
         self.x_cols = x_cols
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_W)
-        w_rows = self.weights.reshape((self.co, -1), copy=False)
+        w_rows = self.weights.reshape((self.co, -1))
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_MATMUL)
@@ -248,13 +248,13 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
 
         if self.use_bias:
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_SUM_BIASES)
-            np.add(y, self.biases.reshape((-1, self.co), copy=False), out=y,
+            np.add(y, self.biases.reshape((-1, self.co)), out=y,
                    dtype=self.model.dtype)
 
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_Y)
-        y: np.ndarray = format_transpose(y.reshape((-1, self.ho, self.wo, self.co), copy=False), "NHWC", "NCHW")
+        y: np.ndarray = format_transpose(y.reshape((-1, self.ho, self.wo, self.co)), "NHWC", "NCHW")
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return np.asarray(y, dtype=self.model.dtype, order="C")
@@ -266,7 +266,7 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
         self.dw = self.dw.reshape(self._dw_shape)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_TRANSPOSE_DY)
-        dy_cols: np.ndarray = dy.reshape((-1, self.co), copy=False)
+        dy_cols: np.ndarray = dy.reshape((-1, self.co))
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         # Weigths gradient
@@ -276,7 +276,7 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_RESHAPE_DW)
-        self.dw = self.dw.reshape(self.weights.shape, copy=False)
+        self.dw = self.dw.reshape(self.weights.shape)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         rows: np.ndarray = self.get_rows(dy.shape[0]) # NOTE: rows shares the memory with self.x_rows
@@ -290,7 +290,7 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
 
         # Data gradient
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_TRANSPOSE_W)
-        w_rows = self.weights.reshape((-1, self.co), copy=False).T
+        w_rows = self.weights.reshape((-1, self.co)).T
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_MATMUL)
@@ -337,7 +337,7 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
 
         # Data gradient
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_TRANSPOSE_W)
-        w_cols = self.weights.reshape((self.co, -1), copy=False).T
+        w_cols = self.weights.reshape((self.co, -1)).T
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_MATMUL)

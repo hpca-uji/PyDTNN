@@ -104,6 +104,7 @@ r"""
             r"""
 {MACROS}
 #define SHIFT_WEIGHTS(ci, khi, kwi, c, kh, kw) ((ci * kh + khi) * kw + kwi)
+#define IS_BETWEEN(min_v, var, max_v) (min_v <= var) && (var < max_v)
 
 __global__ void {FUNC_NAME}({T}* x, {T}* weights, {T}* y,
                             int n, int c, int h, int w,
@@ -182,6 +183,7 @@ __global__ void {FUNC_NAME}({T}* x, {T}* weights, {T}* y,
 #define GET_C_WEIGHTS(idx, c, kh, kw) (idx / (kw * kh))
 #define GET_H_WEIGHTS(idx, c, kh, kw) (idx / kw) % kh
 #define GET_W_WEIGHTS(idx, c, kh, kw) (idx % kw)
+#define IS_BETWEEN(min_v, var, max_v) (min_v <= var) && (var < max_v)
 
 __global__ void {FUNC_NAME}({T}* dx, {T}* dy, {T}* x,
                             {T}* dw, {T}* weights,

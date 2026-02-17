@@ -95,7 +95,7 @@ class ConvCommonTestCase(TestCase):
                                                     vpadding=d.vpadding, hpadding=d.hpadding,
                                                     vstride=d.vstride, hstride=d.hstride,
                                                     vdilation=d.vdilation, hdilation=d.hdilation)
-            test_result: np.ndarray = test_result.reshape((-1, kn), copy=False)
+            test_result: np.ndarray = test_result.reshape((-1, kn))
             n, h, w, c = x.shape
 
             ho = (h + 2 * d.vpadding - d.vdilation * (d.kh - 1) - 1) // d.vstride + 1
@@ -112,7 +112,7 @@ class ConvCommonTestCase(TestCase):
                                d.vpadding, d.hpadding,
                                d.vstride, d.hstride,
                                d.vdilation, d.hdilation)
-            w_c = weights.reshape((-1, kn), copy=False)
+            w_c = weights.reshape((-1, kn))
             ref_result = x_c @ w_c
             if verbose_test():
                 print("{:3}    {:9.7f}             {:11.2f}"
@@ -138,7 +138,7 @@ class ConvCommonTestCase(TestCase):
                                                     vpadding=d.vpadding, hpadding=d.hpadding,
                                                     vstride=d.vstride, hstride=d.hstride,
                                                     vdilation=d.vdilation, hdilation=d.hdilation)
-            test_result: np.ndarray = test_result.reshape((-1, d.kn), copy=False)
+            test_result: np.ndarray = test_result.reshape((-1, d.kn))
             n, h, w, c = x.shape
 
             ho = (h + 2 * d.vpadding - d.vdilation * (d.kh - 1) - 1) // d.vstride + 1
@@ -155,7 +155,7 @@ class ConvCommonTestCase(TestCase):
                                d.vpadding, d.hpadding,
                                d.vstride, d.hstride,
                                d.vdilation, d.hdilation)
-            w_c = weights.reshape((-1, d.kn), copy=False)
+            w_c = weights.reshape((-1, d.kn))
             ref_result = x_c @ w_c
             if verbose_test():
                 print("{:3}    {:9.7f}".format(b,
@@ -181,7 +181,7 @@ class ConvCommonTestCase(TestCase):
                                                     vpadding=padding, hpadding=padding,
                                                     vstride=d.vstride, hstride=d.hstride,
                                                     vdilation=d.vdilation, hdilation=d.hdilation)
-            test_result: np.ndarray = test_result.reshape((-1, d.kn), copy=False)
+            test_result: np.ndarray = test_result.reshape((-1, d.kn))
             n, h, w, c = x.shape
 
             ho = (h + 2 * padding - d.vdilation * (d.kh - 1) - 1) // d.vstride + 1
@@ -198,7 +198,7 @@ class ConvCommonTestCase(TestCase):
                                padding, padding,
                                d.vstride, d.hstride,
                                d.vdilation, d.hdilation)
-            w_c = weights.reshape((-1, d.kn), copy=False)
+            w_c = weights.reshape((-1, d.kn))
             ref_result = x_c @ w_c
             if verbose_test():
                 print("{:3}    {:9.7f}".format(padding,
@@ -224,7 +224,7 @@ class ConvCommonTestCase(TestCase):
                                                     vpadding=d.vpadding, hpadding=d.hpadding,
                                                     vstride=stride, hstride=stride,
                                                     vdilation=d.vdilation, hdilation=d.hdilation)
-            test_result: np.ndarray = test_result.reshape((-1, d.kn), copy=False)
+            test_result: np.ndarray = test_result.reshape((-1, d.kn))
             n, h, w, c = x.shape
 
             ho = (h + 2 * d.vpadding - d.vdilation * (d.kh - 1) - 1) // stride + 1
@@ -241,7 +241,7 @@ class ConvCommonTestCase(TestCase):
                                d.vpadding, d.hpadding,
                                stride, stride,
                                d.vdilation, d.hdilation)
-            w_c = weights.reshape((-1, d.kn), copy=False)
+            w_c = weights.reshape((-1, d.kn))
             ref_result = x_c @ w_c
             if verbose_test():
                 print("{:3}    {:9.7f}".format(stride,
@@ -269,7 +269,7 @@ class ConvCommonTestCase(TestCase):
                                                         vpadding=d.vpadding, hpadding=d.hpadding,
                                                         vstride=vstride, hstride=hstride,
                                                         vdilation=d.vdilation, hdilation=d.hdilation)
-                test_result: np.ndarray = test_result.reshape((-1, d.kn), copy=False)
+                test_result: np.ndarray = test_result.reshape((-1, d.kn))
                 n, h, w, c = x.shape
 
                 ho = (h + 2 * d.vpadding - d.vdilation * (d.kh - 1) - 1) // vstride + 1
@@ -286,7 +286,7 @@ class ConvCommonTestCase(TestCase):
                                    d.vpadding, d.hpadding,
                                    vstride, hstride,
                                    d.vdilation, d.hdilation)
-                w_c = weights.reshape((-1, d.kn), copy=False)
+                w_c = weights.reshape((-1, d.kn))
                 ref_result = x_c @ w_c
                 if verbose_test():
                     print("{:3} {:3}    {:9.7f}".format(vstride, hstride,
@@ -312,7 +312,7 @@ class ConvCommonTestCase(TestCase):
                                                     vpadding=d.vpadding, hpadding=d.hpadding,
                                                     vstride=d.vstride, hstride=d.hstride,
                                                     vdilation=dilation, hdilation=dilation)
-            test_result: np.ndarray = test_result.reshape((-1, d.kn), copy=False)
+            test_result: np.ndarray = test_result.reshape((-1, d.kn))
             n, h, w, c = x.shape
 
             ho = (h + 2 * d.vpadding - dilation * (d.kh - 1) - 1) // d.vstride + 1
@@ -329,7 +329,7 @@ class ConvCommonTestCase(TestCase):
                                d.vpadding, d.hpadding,
                                d.vstride, d.hstride,
                                dilation, dilation)
-            w_c = weights.reshape((-1, d.kn), copy=False)
+            w_c = weights.reshape((-1, d.kn))
             ref_result = x_c @ w_c
             if verbose_test():
                 print("{:3}    {:9.7f}".format(dilation,

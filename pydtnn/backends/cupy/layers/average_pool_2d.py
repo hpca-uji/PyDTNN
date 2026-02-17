@@ -101,6 +101,7 @@ r"""
         code = \
             r"""
 {MACROS}
+#define IS_BETWEEN(min_v, var, max_v) (min_v <= var) && (var < max_v)
 
 __global__ void {FUNC_NAME}({T}* x, {T}* y,
                             int n, int c, int h, int w,
@@ -183,7 +184,7 @@ __global__ void {FUNC_NAME}({T}* x, {T}* y,
         code = \
             r"""
 {MACROS}
-
+#define IS_BETWEEN(min_v, var, max_v) (min_v <= var) && (var < max_v)
 
 __global__ void {FUNC_NAME}({T}* dx, {T}* dy,
                             int n, int c, int h, int w,

@@ -122,7 +122,7 @@ class Conv2DDepthwiseNumpy(AbstractConv2DNumpy, Conv2DDepthwise):
 
         if self.use_bias:
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_SUM_BIASES)
-            y: np.ndarray = y.reshape((self.co, -1), copy=False)
+            y: np.ndarray = y.reshape((self.co, -1))
             for i in range(self.co):
                 np.add(y[i], self.biases[i], out=y[i],
                        dtype=self.model.dtype)
@@ -146,7 +146,7 @@ class Conv2DDepthwiseNumpy(AbstractConv2DNumpy, Conv2DDepthwise):
 
         if self.use_bias:
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_SUM_BIASES)
-            y: np.ndarray = y.reshape((self.co, -1), copy=False)
+            y: np.ndarray = y.reshape((self.co, -1))
             for i in range(self.co):
                 np.add(y[i], self.biases[i], out=y[i],
                        dtype=self.model.dtype)

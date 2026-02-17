@@ -60,6 +60,6 @@ class PreallocMemory(PrivateMemory):
         if order != "C":
             raise RuntimeError("PreallocMemory only supports C order")
         buffer = self._malloc(size=int(math.prod(shape) * np.dtype(dtype).itemsize))
-        array = np.frombuffer(buffer, dtype=dtype).reshape(shape, copy=False) 
+        array = np.frombuffer(buffer, dtype=dtype).reshape(shape) 
         array.fill(0)
         return array
