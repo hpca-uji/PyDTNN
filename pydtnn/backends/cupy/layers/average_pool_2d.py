@@ -163,6 +163,8 @@ __global__ void {FUNC_NAME}({T}* x, {T}* y,
 }}
 """
         code = code.format(FUNC_NAME=func_name, T=DTYPE2CTYPE[self.model.dtype], MACROS=macros)
+        return np.RawKernel(code, func_name, backend=self.cuda_compiler)
+    # ---
 
 
     def _bwd_nchw_kernel(self, macros: str) -> np.RawKernel:
@@ -288,3 +290,5 @@ __global__ void {FUNC_NAME}({T}* dx, {T}* dy,
 }}
 """
         code = code.format(FUNC_NAME=func_name, T=DTYPE2CTYPE[self.model.dtype], MACROS=macros)
+        return np.RawKernel(code, func_name, backend=self.cuda_compiler)
+    # ---

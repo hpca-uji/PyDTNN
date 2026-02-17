@@ -83,3 +83,5 @@ __global__ void {FUNC_NAME}({T}* dx, {T}* dy, {T}* xn,
 }}
 """
         code = code.format(FUNC_NAME=func_name, T=DTYPE2CTYPE[self.model.dtype])
+        return np.RawKernel(code, func_name, backend=self.cuda_compiler)
+    # ---

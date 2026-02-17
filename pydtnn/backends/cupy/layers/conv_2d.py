@@ -139,7 +139,7 @@ r"""
 #define GET_KH(idx, ho, wo, kh, kw, ci) (idx / kw) % kh
 #define GET_KW(idx, ho, wo, kh, kw, ci) (idx % kw)
 """
-        self.im2_rc_kernel(func_name="im2row", macros = macros) 
+        return self.im2_rc_kernel(func_name="im2row", macros = macros) 
     # -----
 
     def im2col_kernel(self) -> np.RawKernel:
@@ -156,7 +156,7 @@ r"""
 #define GET_KH(idx, ho, wo, kh, kw, ci) (idx / kw) % kh
 #define GET_KW(idx, ho, wo, kh, kw, ci) (idx % kw)
 """
-        self.im2_rc_kernel(func_name="im2col", macros = macros) 
+        return self.im2_rc_kernel(func_name="im2col", macros = macros) 
     # -----
 
 # =======================
@@ -178,7 +178,7 @@ r"""
 #define GET_COL(ci, khi, kwi, kh, kw) (ci * kh + khi) * kw + kwi
 #define GET_COLS(c, kh, kw) c * kh * kw
 """
-        self.rc2im_kernel(func_name="row2im", macros = macros) 
+        return self.rc2im_kernel(func_name="row2im", macros = macros) 
     # -----
 
     def col2im_kernel(self) -> np.RawKernel:
@@ -198,7 +198,7 @@ r"""
 #define GET_COL(ci, khi, kwi, kh, kw) (ci * kh + khi) * kw + kwi
 #define GET_COLS(c, kh, kw) c * kh * kw
 """
-        self.rc2im_kernel(func_name="col2im", macros = macros) 
+        return self.rc2im_kernel(func_name="col2im", macros = macros) 
     # -----
 
     def rc2im_kernel(self, func_name: str, macros: str) -> np.RawKernel:
