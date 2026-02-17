@@ -4,7 +4,7 @@ from pydtnn.backends.cupy.activations.activation import ActivationCupy
 from pydtnn.utils.constants import DTYPE2CTYPE
 
 
-class ReluCython(ReluNumpy, ActivationCupy):
+class ReluCupy(ReluNumpy, ActivationCupy):
 
     def _model_init(self, prev_shape, x=None):
         super()._model_init(prev_shape, x)

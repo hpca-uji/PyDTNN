@@ -17,7 +17,7 @@ class PrecisionNumpy(Precision[np.ndarray], MetricNumpy):
         super()._model_init()
         self.temp_var_shape = (self.shape[1], )
         self.tmp_memory_used += int(2 * math.prod(self.temp_var_shape)) * np.float32().itemsize
-        self.tmp_memory_used += int(1 * math.prod(self.temp_var_shape)) * np.bool().itemsize
+        self.tmp_memory_used += int(1 * math.prod(self.temp_var_shape)) * np.bool_().itemsize
         self.memory_used += self.tmp_memory_used
     # ----
 
@@ -26,7 +26,7 @@ class PrecisionNumpy(Precision[np.ndarray], MetricNumpy):
         with self.model.memory:
             self.true_positives = self.model.memory.ndarray(self.temp_var_shape, dtype=np.float32)
             self.false_positives = self.model.memory.ndarray(self.temp_var_shape, dtype=np.float32)
-            self.are_zeros = self.model.memory.ndarray(self.temp_var_shape, dtype=np.bool)
+            self.are_zeros = self.model.memory.ndarray(self.temp_var_shape, dtype=np.bool_)
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
         true_positives = self.true_positives

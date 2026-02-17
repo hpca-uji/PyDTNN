@@ -5,6 +5,7 @@ if TYPE_CHECKING:
 
 from pydtnn.activations.softmax import Softmax
 from pydtnn.backends.numpy.activations.activation import ActivationNumpy
+import math
 
 class SoftmaxNumpy(Softmax[np.ndarray], ActivationNumpy):
     def _model_init(self, prev_shape, x=None):
@@ -26,11 +27,11 @@ class SoftmaxNumpy(Softmax[np.ndarray], ActivationNumpy):
 
         self.temp_shape = (self.model.batch_size, *shape_intermediate_ops)
         sum_y_shape = max_x_shape = self.temp_shape
-        self.tmp_memory_used += int(np.prod(max_x_shape) + np.prod(sum_y_shape)) * self.model.dtype.itemsize
+        self.tmp_memory_used += int(math.prod(max_x_shape) + math.prod(sum_y_shape)) * self.model.dtype.itemsize
 
         self.mul_dy_shape = (self.model.batch_size, *self.shape)
         self.sum_dy_shape = (self.model.batch_size, *shape_intermediate_ops)
-        self.tmp_memory_used += int(np.prod(self.mul_dy_shape) + np.prod(self.sum_dy_shape)) * self.model.dtype.itemsize
+        self.tmp_memory_used += int(math.prod(self.mul_dy_shape) + math.prod(self.sum_dy_shape)) * self.model.dtype.itemsize
 
         self.memory_used += self.tmp_memory_used
 

@@ -3,7 +3,7 @@ from pydtnn.backends.numpy.metrics.binary_confusion_matrix import BinaryConfusio
 import cupy as np
 
 
-class BinaryConfusionMatrixCUPY(BinaryConfusionMatrixNumpy):
+class BinaryConfusionMatrixCupy(BinaryConfusionMatrixNumpy):
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> np.ndarray:
         return super().compute(y_pred, y_targ).get()

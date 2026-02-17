@@ -2,7 +2,7 @@ from pathlib import Path
 import warnings
 import itertools
 import functools
-from abc import ABC, abstractmethod
+
 from typing import TYPE_CHECKING, Generator, IO, Callable
 from enum import IntEnum
 
@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 type TransformFunc = Callable[[np.ndarray, np.ndarray], tuple[np.ndarray, np.ndarray]]
 
 
-class Dataset(ABC):
+class Dataset:
     """
     NOTE
     - input_shape is expected to be in NCHW format
@@ -314,7 +314,6 @@ class Dataset(ABC):
 
         return int(local_offset), int(local_nsamples), int(nsamples)
 
-    @abstractmethod
     def _init_actual_data(self):
         """Generates initial self._x[] and self._y[]. To be implemented in derived classes."""
         pass

@@ -8,10 +8,6 @@ from pydtnn.utils.constants import DTYPE2CTYPE
 
 class Conv2DCupy(Conv2DNumpy, LayerCupy):
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.cuda_compiler = "nvcc"
-
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
         super()._model_init(prev_shape, x)
 
