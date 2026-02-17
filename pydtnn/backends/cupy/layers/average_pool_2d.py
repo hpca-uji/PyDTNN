@@ -156,7 +156,7 @@ __global__ void {FUNC_NAME}({T}* x, {T}* y,
 
             if(IS_BETWEEN(0, hi, h) && IS_BETWEEN(0, wi, w))
             {{
-                accum += (*(x + SHIFT(ni, ci, hi, wi, c, h, w)));
+                accum += (*(x + SHIFT(ni, ci, hi, wi, n, c, h, w)));
                 items += 1;
             }}
         }}
@@ -285,7 +285,7 @@ __global__ void {FUNC_NAME}({T}* dx, {T}* dy,
 
                 if((_yy == 0) && IS_BETWEEN(0, yy, wo))
                 {{
-                    *(dx + idx) += (*(dy + SHIFT(ni, ci, xx, yy, c, ho, wo)));
+                    *(dx + idx) += (*(dy + SHIFT(ni, ci, xx, yy, n, c, ho, wo)));
                 }}
             }}
         }}

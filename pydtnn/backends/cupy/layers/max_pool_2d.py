@@ -158,7 +158,7 @@ __global__ void {FUNC_NAME}({T}* x, {T}* y, int* idx_max,
 
                 if(IS_BETWEEN(0, wi, w))
                 {{
-                    val = (*(x + SHIFT(ni, ci, hi, wi, c, h, w)));
+                    val = (*(x + SHIFT(ni, ci, hi, wi, n, c, h, w)));
                     if (val > max_val)
                     {{
                         max_val = val;
@@ -250,12 +250,12 @@ __global__ void {FUNC_NAME}({T}* dx, {T}* dy, int* idx_max,
 
                 if((_yy == 0) && IS_BETWEEN(0, yy, wo))
                 {{
-                    idx_maxval = (*(idx_max + SHIFT(ni, ci, xx, yy, c, ho, wo)));
+                    idx_maxval = (*(idx_max + SHIFT(ni, ci, xx, yy, n, c, ho, wo)));
                     ii = idx_maxval / kh;
                     jj = idx_maxval % kw;
                     
                     if((ii == khi) && (jj == kwi))
-                        *(dx + idx) += (*(dy + SHIFT(ni, ci, xx, yy, c, ho, wo)));
+                        *(dx + idx) += (*(dy + SHIFT(ni, ci, xx, yy, n, c, ho, wo)));
                 }}
             }}
         }}

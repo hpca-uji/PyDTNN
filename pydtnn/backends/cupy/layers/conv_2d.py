@@ -116,7 +116,7 @@ __global__ void {FUNC_NAME}(const {T} *const x,
         wi = wstride * woi + hdilation * kwi - hpadding;
 
         if(IS_BETWEEN(0, hi, h) && IS_BETWEEN(0, wi, w))
-            *(rows + idx) = *(x + SHIFT(ni, ci, hi, wi, c, h, w));
+            *(rows + idx) = *(x + SHIFT(ni, ci, hi, wi, n, c, h, w));
         else
             *(rows + idx) = ({T}) 0.0;
     }}

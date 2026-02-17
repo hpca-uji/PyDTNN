@@ -153,7 +153,7 @@ __global__ void {FUNC_NAME}({T}* x, {T}* weights, {T}* y,
             {{
                 wi = wstride * woi + wdilation * kwi - wpadding;
                 if(IS_BETWEEN(0, wi, w))
-                    *(y + idx) += (*(x + SHIFT(ni, ci, hi, wi, c, h, w))) * (*(weights + SHIFT_WEIGHTS(ci, khi, kwi, c, kh, kw)));
+                    *(y + idx) += (*(x + SHIFT(ni, ci, hi, wi, n, c, h, w))) * (*(weights + SHIFT_WEIGHTS(ci, khi, kwi, c, kh, kw)));
             }}
         }}
     }}
@@ -242,7 +242,7 @@ __global__ void {FUNC_NAME}({T}* dx, {T}* dy, {T}* x,
                 _woi = _woi % wstride;
 
                 if((_woi == 0) && IS_BETWEEN(0, woi, wo))
-                    *(dx + idx) += (*(weights + SHIFT_WEIGHTS(ci, khi, kwi, c, kh, kw))) * (*(dy + SHIFT(ni, ci, hi, wi, c, h, w)));
+                    *(dx + idx) += (*(weights + SHIFT_WEIGHTS(ci, khi, kwi, n, c, kh, kw))) * (*(dy + SHIFT(ni, ci, hi, wi, n, c, h, w)));
             }}
         }}
     }}
@@ -281,7 +281,7 @@ __global__ void {FUNC_NAME}({T}* dx, {T}* dy, {T}* x,
                     
                     wi = wstride * woi + wdilation * kwi - wpadding;
                     if(IS_BETWEEN(0, wi, w))
-                        *(dw + idx) += (*(weights + SHIFT_WEIGHTS(ci, khi, kwi, c, kh, kw))) * (*(x + SHIFT(ni, ci, hi, wi, c, h, w)));
+                        *(dw + idx) += (*(weights + SHIFT_WEIGHTS(ci, khi, kwi, c, kh, kw))) * (*(x + SHIFT(ni, ci, hi, wi, n, c, h, w)));
                 }}
             }}
         }}
