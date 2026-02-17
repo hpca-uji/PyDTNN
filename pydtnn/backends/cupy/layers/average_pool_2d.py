@@ -140,10 +140,10 @@ __global__ void {FUNC_NAME}({T}* x, {T}* y,
 
     for(idx = n_offset; idx < end_offset; idx++)
     {{
-        ni = GET_N(idx, ho, wo, c);
-        hoi = GET_H(idx, ho, wo, c);
-        woi = GET_W(idx, ho, wo, c);
-        ci = GET_C(idx, ho, wo, c);
+        ni = GET_N(idx, n, ho, wo, c);
+        hoi = GET_H(idx, n, ho, wo, c);
+        woi = GET_W(idx, n, ho, wo, c);
+        ci = GET_C(idx, n, ho, wo, c);
 
         accum = ({T}) 0.0;
         items = 0;
@@ -226,10 +226,10 @@ __global__ void {FUNC_NAME}({T}* dx, {T}* dy,
     // NOTE: This one iterates over dy (n, c, ho, wo || n, ho, wo, c)
     for(idx = n_offset; idx < end_offset; idx++)
     {{
-        // ni = GET_N(idx, ho, wo, c);
-        hoi = GET_H(idx, ho, wo, c);
-        woi = GET_W(idx, ho, wo, c);
-        // ci = GET_C(idx, ho, wo, c);
+        // ni = GET_N(idx, n, ho, wo, c);
+        hoi = GET_H(idx, n, ho, wo, c);
+        woi = GET_W(idx, n, ho, wo, c);
+        // ci = GET_C(idx, n, ho, wo, c);
         
         for(khi = 0; khi < kh; khi++)
             for(kwi = 0; kwi < kw; kwi++)
@@ -266,10 +266,10 @@ __global__ void {FUNC_NAME}({T}* dx, {T}* dy,
     // NOTE: This one iterates over dy (n, c, hi, wi || n, hi, wi, c)
     for(idx = n_offset; idx < end_offset; idx++)
     {{
-        ni = GET_N(idx, hi, wi, c);
-        hi = GET_H(idx, hi, wi, c);
-        wi = GET_W(idx, hi, wi, c);
-        ci = GET_C(idx, hi, wi, c);
+        ni = GET_N(idx, n, hi, wi, c);
+        hi = GET_H(idx, n, hi, wi, c);
+        wi = GET_W(idx, n, hi, wi, c);
+        ci = GET_C(idx, n, hi, wi, c);
         
         for(khi = 0; khi < kh; khi++)
         {{

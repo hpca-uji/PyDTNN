@@ -141,10 +141,10 @@ __global__ void {FUNC_NAME}({T}* x, {T}* weights, {T}* y,
 
     for(idx = n_offset; idx < end_offset; idx++)
     {{
-        ni = GET_N(idx, ho, wo, kh, kw, c);
-        hoi = GET_HO(idx, ho, wo, kh, kw, c);
-        woi = GET_WO(idx, ho, wo, kh, kw, c);
-        ci = GET_CI(idx, ho, wo, kh, kw, c);
+        ni = GET_N(idx, n, c, ho, wo);
+        hoi = GET_HO(idx, n, c, ho, wo);
+        woi = GET_WO(idx, n, c, ho, wo);
+        ci = GET_CI(idx, n, c, ho, wo);
         
         for(khi = 0; khi < kh; khi++)
         {{
@@ -224,10 +224,10 @@ __global__ void {FUNC_NAME}({T}* dx, {T}* dy, {T}* x,
 
     for(idx = n_offset; idx < end_offset; idx++)
     {{
-        ni = GET_N(idx, h, w, c);
-        hi = GET_H(idx, h, w, c);
-        wi = GET_W(idx, h, w, c);
-        ci = GET_C(idx, h, w, c);
+        ni = GET_N(idx, n, c, h, w);
+        hi = GET_H(idx, n, c, h, w);
+        wi = GET_W(idx, n, c, h, w);
+        ci = GET_C(idx, n, c, h, w);
 
         for(khi = 0; khi < kh; khi++)
         {{
