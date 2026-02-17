@@ -18,7 +18,7 @@ class AdaptiveAveragePool2DCupy(AdaptiveAveragePool2DNumpy, LayerCupy):
 r"""
 #define GET_N(idx, n, c, h, w) (idx / (w * h * c))
 #define GET_C(idx, n, c, h, w) (idx / (w * h)) % c
-#define GET_H(idx, n, c, h, w) (idx / w) %h
+#define GET_H(idx, n, c, h, w) (idx / w) % h
 #define GET_W(idx, n, c, h, w) (idx % w)
 #define SHIFT(ni, ci, hi, wi, n, c, h, w) (((ni * c + ci) * h + hi) * w + wi)
 """

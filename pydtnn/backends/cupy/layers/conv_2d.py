@@ -252,21 +252,23 @@ __global__ void {FUNC_NAME}(const {T} *const rows,
         ci = GET_C(idx, h, w, c);
 
         for(khi = 0; khi < kh; khi++)
-            for(kwi = 0; kwi < kw; kwi++)
         {{
             _hoi = (hi + vpadding - vdilation * khi);
             hoi = _hoi / hstride;
             _hoi = _hoi % hstride;
 
-            _woi = (wi + hpadding - hdilation * kwi);
-            woi = _woi / wstride;
-            _woi = _woi % wstride;
-
-            if((_hoi == 0) && (_woi == 0) && IS_BETWEEN(0, hoi, ho) && IS_BETWEEN(0, woi, wo))
+            for(kwi = 0; (kwi < kw) && ((_hoi == 0) && IS_BETWEEN(0, hoi, ho)); kwi++)
             {{
-                row = GET_ROW(ni, hoi, woi, ho, wo);
-                col = GET_COL(ci, khi, kwi, kh, kw);
-                *(dx + idx) += *(rows + SHIFT(row, col, num_cols));
+                _woi = (wi + hpadding - hdilation * kwi);
+                woi = _woi / wstride;
+                _woi = _woi % wstride;
+
+                if((_woi == 0) && IS_BETWEEN(0, woi, wo))
+                {{
+                    row = GET_ROW(ni, hoi, woi, ho, wo);
+                    col = GET_COL(ci, khi, kwi, kh, kw);
+                    *(dx + idx) += *(rows + SHIFT(row, col, num_cols));
+                }}
             }}
         }}
     }}
