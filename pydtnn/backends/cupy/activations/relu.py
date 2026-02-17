@@ -31,6 +31,7 @@ class ReluCupy(ReluNumpy, ActivationCupy):
         func_name = "relu_fwd"
         code = \
             r"""
+extern "C"
 __global__ void {FUNC_NAME}({T}* x, {T}* max, {T}* mask, int N)
 {{
     int i;
@@ -83,6 +84,7 @@ __global__ void {FUNC_NAME}({T}* x, {T}* max, {T}* mask, int N)
         func_name = "relu_bwd"
         code = \
             r"""
+extern "C"
 __global__ void {FUNC_NAME}({T}* dx, {T}* dy, {T}* mask, int N)
 {{
     int i;

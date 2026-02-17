@@ -31,6 +31,7 @@ class LeakyReluCupy(LeakyReluNumpy, ActivationCupy):
         func_name = "leaky_relu_fwd"
         code = \
             r"""
+extern "C"
 __global__ void {FUNC_NAME}({T}* x, {T}* max, {T}* mask,
                             float negative_slope, int N)
 {{

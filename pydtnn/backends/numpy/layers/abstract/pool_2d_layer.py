@@ -8,7 +8,7 @@ from pydtnn.libs import numpy as np
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import numpy as np
-
+import math
 
 class AbstractPool2DLayerNumpy(AbstractPool2DLayer[np.ndarray], LayerNumpy):
     def __init__(self, *args, **kwargs):
@@ -64,13 +64,13 @@ class AbstractPool2DLayerNumpy(AbstractPool2DLayer[np.ndarray], LayerNumpy):
 
     def get_y(self, batch_size: int) -> np.ndarray:
         y_shape = self.model.encode_shape((batch_size, self.co, self.ho, self.wo))
-        y_size = np.prod(y_shape)
+        y_size = math.prod(y_shape)
         y = self.y_dx[:y_size]
         return y.reshape(y_shape)
 
     def get_dx(self, batch_size: int) -> np.ndarray:
         dx_shape = self.model.encode_shape((batch_size, self.ci, self.hi, self.wi))
-        dx_size = np.prod(dx_shape)
+        dx_size = math.prod(dx_shape)
         dx = self.y_dx[:dx_size]
         return dx.reshape(dx_shape)
 
