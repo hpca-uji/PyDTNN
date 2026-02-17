@@ -10,9 +10,6 @@
 [submodule "vendor/net-queue"]
 	path = vendor/net-queue
 	url = https://github.com/hpca-uji/net-queue.git
-[submodule "vendor/uhe"]
-	path = vendor/pympi
-	url = https://github.com/hpca-uji/uhe.git
 [submodule "vendor/convGemm"]
 	path = vendor/convGemm
 	url = https://github.com/hpca-uji/convGemm.git
@@ -31,3 +28,6 @@
 [submodule "vendor/uarchfhe"]
 	path = vendor/uarchfhe
 	url = https://github.com/darwinquezada/he_hpc
+[submodule "vendor/uhe"]
+	path = vendor/uhe
+	url = https://github.com/hpca-uji/uhe.git

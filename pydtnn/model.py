@@ -3,7 +3,6 @@ PyDTNN model
 """
 
 import enum
-import importlib
 import itertools
 import operator
 import time
@@ -24,8 +23,8 @@ from tqdm import tqdm
 from pydtnn import MPI_MODULE, Cudnn_Handle_Type, Cublas_Handle_Type, gpu_errors, MPI, drv, gpuarray, tensor_array, nccl, cudnn, cublas  # type: ignore (cublas exist)
 from pydtnn import rank, nprocs, hostname, ranks_per_node, num_gpus, supported_gpu, nccl_comm, cudnn_handle, cublas_handle, device, context, stream
 
+import uhe
 from pydtnn import utils
-from pydtnn.libs import uhe
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.activations.relu import Relu
 from pydtnn.libs.mpi import proto as PROTOCOL
