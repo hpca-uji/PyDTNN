@@ -96,7 +96,7 @@ Optionally, if you are going to use FHE, you should have installed the
 corresponding system libraries, and install the required Python packages
 with:
 ```sh
-pip install .[mpi]
+pip install .[fhe]
 ```
 
 Optionally, if you are going to use PyMPI, you can switch protocols
