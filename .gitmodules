@@ -28,3 +28,6 @@
 [submodule "vendor/uarchfhe"]
 	path = vendor/uarchfhe
 	url = https://github.com/darwinquezada/he_hpc
+[submodule "vendor/uhe"]
+	path = vendor/uhe
+	url = ssh://git@lorca.act.uji.es:2222/ciber-cafe/uhe.git
