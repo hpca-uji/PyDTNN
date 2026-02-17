@@ -69,6 +69,7 @@ class Conv2DCupy(Conv2DNumpy, LayerCupy):
 r"""
 extern "C"
 {MACROS}
+#define IS_BETWEEN(min_v, var, max_v) (min_v <= var) && (var < max_v)
 
 __global__ void {FUNC_NAME}(const {T} *const x,
                             {T}* rows,
@@ -206,6 +207,7 @@ r"""
             r"""
 extern "C"
 {MACROS}
+#define IS_BETWEEN(min_v, var, max_v) (min_v <= var) && (var < max_v)
 
 __global__ void {FUNC_NAME}(const {T} *const rows,
                             {T}* dx,

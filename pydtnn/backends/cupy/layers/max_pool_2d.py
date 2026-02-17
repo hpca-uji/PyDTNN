@@ -99,7 +99,9 @@ r"""
         # NOTE: N = n * c * ho * wo; y's format: NCHW
         code = \
             r"""
+extern "C"
 {MACROS}
+#define IS_BETWEEN(min_v, var, max_v) (min_v <= var) && (var < max_v)
 
 __global__ void {FUNC_NAME}({T}* x, {T}* y, int* idx_max,
                             int n, int c, int h, int w,
@@ -190,7 +192,9 @@ __global__ void {FUNC_NAME}({T}* x, {T}* y, int* idx_max,
         # NOTE: N = n * ci * hi * wo; dx's format: NCHW
         code = \
             r"""
+extern "C"
 {MACROS}
+#define IS_BETWEEN(min_v, var, max_v) (min_v <= var) && (var < max_v)
 
 __global__ void {FUNC_NAME}({T}* dx, {T}* dy, int* idx_max,
                             int n, int c, int h, int w,

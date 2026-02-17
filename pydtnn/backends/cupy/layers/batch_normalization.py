@@ -28,9 +28,11 @@ class BatchNormalizationCupy(BatchNormalizationNumpy, LayerCupy):
 
         code = \
             r"""
+extern "C"
 #define GET_J(idx, dim_j) (idx % dim_j)
 #define INDEX_FIRST_ELEMENT(index, dim_in, dim_out) ((index * dim_in) / dim_out)
 #define INDEX_LAST_ELEMENT(index, dim_in, dim_out) ((((index + 1) * dim_in) + dim_out - 1) / dim_out)
+#define IS_BETWEEN(min_v, var, max_v) (min_v <= var) && (var < max_v)
 
 __global__ void {FUNC_NAME}({T}* dx, {T}* dy, {T}* xn,
                             {T}* std, {T}* gamma,
