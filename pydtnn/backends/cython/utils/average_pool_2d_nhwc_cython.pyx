@@ -97,3 +97,48 @@ def average_pool_2d_bwd_nhwc_cython(npDT[:,:,:,::1] dy,
                                 if 0 <= x_y < w:
                                     dx[nn, x_x, x_y, cc] += avgval
 
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.initializedcheck(False)
+def average_pool_2d_bwd_nhwc_cython_alt(npDT[:,:,:,::1] dy,
+                                        npDT[:,:,:,::1] dx,
+                                        int n, int h, int w, int c,
+                                        int kh, int kw, int ho, int wo,
+                                        int hpadding, int wpadding,
+                                        int hstride, int wstride,
+                                        int hdilation, int wdilation) -> None:
+    
+    cdef int nn, xx, yy, cc, ii, jj, _xx, _yy, items, hi, wi
+
+    for nn in prange(n, nogil=True):
+        for cc in range(c):
+            for xx in range(ho):
+                for yy in range(wo):
+                    items = 0
+                    for ii in range(kh):
+                        x_x = hstride * xx + hdilation * ii - hpadding
+                        if 0 <= x_x < h:
+                            for jj in range(kw):
+                                x_y = wstride * yy + wdilation * jj - wpadding
+                                if 0 <= x_y < w:
+                                    items = items + 1
+                    dy[nn, xx, yy, cc] = <npDT> (dy[nn, xx, yy, cc] / items)
+    
+    for nn in prange(n, nogil=True):
+        for cc in range(c):
+            for hi in range(h):
+                for wi in range(w):
+                    for ii in range(kh):
+                        for jj in range(kw):
+                            # hi = hstride * xx + hdilation * ii - hpadding
+                            # wi = wstride * yy + wdilation * jj - wpadding
+                            _xx = hi + hpadding - hdilation * ii
+                            xx = _xx // hstride
+                            _xx = _xx % hstride 
+
+                            _yy = wi + wpadding - wdilation * jj
+                            yy = _yy // wstride
+                            _yy = _yy % wstride
+
+                            if (_xx == 0) and (_yy == 0) and (0 <= xx < ho) and (0 <= yy < wo):
+                                dx[nn, hi, wi, cc] = dx[nn, hi, wi, cc] + dy[nn, xx, yy, cc]

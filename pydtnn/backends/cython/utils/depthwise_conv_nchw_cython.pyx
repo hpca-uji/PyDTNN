@@ -27,9 +27,9 @@ def depthwise_conv_nchw_cython(npDT[:,:,:,::1] x,
                                npDT[:,:,::1] k,
                                npDT[:,:,:,::1] res,
                                int ho, int wo,
-                               int vpadding, int hpadding,
-                               int vstride, int hstride,
-                               int vdilation, int hdilation)-> None:
+                               int hpadding, int wpadding,
+                               int hstride, int wstride,
+                               int hdilation, int wdilation)-> None:
     cdef int n = x.shape[0]
     cdef int c = x.shape[1]
     cdef int h = x.shape[2]
@@ -45,10 +45,10 @@ def depthwise_conv_nchw_cython(npDT[:,:,:,::1] x,
             for jj in range(kw):
                 for nn in range(n):
                     for xx in range(ho):
-                        x_x = vstride * xx + vdilation * ii - vpadding
+                        x_x = hstride * xx + hdilation * ii - hpadding
                         if 0 <= x_x < h:
                             for yy in range(wo):
-                                x_y = hstride * yy + hdilation * jj - hpadding
+                                x_y = wstride * yy + wdilation * jj - wpadding
                                 if 0 <= x_y < w:
                                     res[nn, cc, xx, yy] += k[cc, ii, jj] * x[nn, cc, x_x, x_y]
 # =================== #
@@ -63,9 +63,9 @@ def depthwise_conv_backward_nchw_cython(npDT[:,:,:,::1] dy,
                                         npDT[:,:,::1] k,
                                         npDT[:,:,:,::1] dx,
                                         npDT[:,:,::1] dw,
-                                        int vpadding, int hpadding,
-                                        int vstride, int hstride,
-                                        int vdilation, int hdilation)-> None:
+                                        int hpadding, int wpadding,
+                                        int hstride, int wstride,
+                                        int hdilation, int wdilation)-> None:
     cdef int n = x.shape[0]
     cdef int c = x.shape[1]
     cdef int h = x.shape[2]
@@ -86,10 +86,10 @@ def depthwise_conv_backward_nchw_cython(npDT[:,:,:,::1] dy,
                 val_k = k[cc, ii, jj]
                 for nn in range(n):
                     for xx in range(ho):
-                        x_x = vstride * xx + vdilation * ii - vpadding
+                        x_x = hstride * xx + hdilation * ii - hpadding
                         if 0 <= x_x < h:
                             for yy in range(wo):
-                                x_y = hstride * yy + hdilation * jj - hpadding
+                                x_y = wstride * yy + wdilation * jj - wpadding
                                 val_dy = dy[nn, cc, xx, yy]
                                 if 0 <= x_y < w:
                                     dw[cc, ii, jj] = x[nn, cc, x_x, x_y] * val_dy

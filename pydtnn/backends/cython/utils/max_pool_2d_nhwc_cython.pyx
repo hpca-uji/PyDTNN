@@ -25,9 +25,9 @@ def max_pool_2d_fwd_nhwc_cython(npDT[:,:,:,::1] x,
                                 npDT[:,:,:,::1] y,
                                 np.int32_t[:,:,:,::1] idx_max,
                                 int kh, int kw, int ho, int wo,
-                                int vpadding, int hpadding,
-                                int vstride, int hstride, 
-                                int vdilation, int hdilation,
+                                int hpadding, int wpadding,
+                                int hstride, int wstride, 
+                                int hdilation, int wdilation,
                                 npDT minval) -> None:
     cdef int n = x.shape[0]
     cdef int h = x.shape[1]
@@ -43,10 +43,10 @@ def max_pool_2d_fwd_nhwc_cython(npDT[:,:,:,::1] x,
                 for cc in range(c):
                     maxval, idx_maxval = minval, 0
                     for ii in range(kh):
-                        x_x = vstride * xx + vdilation * ii - vpadding
+                        x_x = hstride * xx + hdilation * ii - hpadding
                         if 0 <= x_x < h:
                             for jj in range(kw):
-                                x_y = hstride * yy + hdilation * jj - hpadding
+                                x_y = wstride * yy + wdilation * jj - wpadding
                                 if 0 <= x_y < w:
                                     val = x[nn, x_x, x_y, cc]
                                     if val > maxval:
@@ -70,9 +70,9 @@ def max_pool_2d_bwd_nhwc_cython(npDT[:,:,:,::1] dy,
                                 npDT[:,:,:,::1] dx,
                                 int n, int h, int w, int c,
                                 int kh, int kw, int ho, int wo,
-                                int vpadding, int hpadding,
-                                int vstride, int hstride,
-                                int vdilation, int hdilation) -> None:
+                                int hpadding, int wpadding,
+                                int hstride, int wstride,
+                                int hdilation, int wdilation) -> None:
 
     cdef int nn, xx, yy, cc, ii, jj, x_x, x_y, idx_maxval
 
@@ -82,7 +82,7 @@ def max_pool_2d_bwd_nhwc_cython(npDT[:,:,:,::1] dy,
                 for cc in range(c):
                     idx_maxval = idx_max[nn, xx, yy, cc]
                     ii, jj = idx_maxval // kh, idx_maxval % kw
-                    x_x = vstride * xx + vdilation * ii - vpadding
-                    x_y = hstride * yy + hdilation * jj - hpadding
+                    x_x = hstride * xx + hdilation * ii - hpadding
+                    x_y = wstride * yy + wdilation * jj - wpadding
                     if 0 <= x_x < h and 0 <= x_y < w:
                         dx[nn, x_x, x_y, cc] += dy[nn, xx, yy, cc]
