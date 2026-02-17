@@ -20,8 +20,8 @@ import numpy as np
 from tqdm import tqdm
 
 # TODO: Check if all the elements imported here are necessary and if they are corretly set in Model's code.
-from pydtnn import MPI_MODULE, Cudnn_Handle_Type, Cublas_Handle_Type, gpu_errors, MPI, drv, gpuarray, tensor_array, nccl, cudnn, cublas  # type: ignore (cublas exist)
-from pydtnn import rank, nprocs, hostname, ranks_per_node, num_gpus, supported_gpu, nccl_comm, cudnn_handle, cublas_handle, device, context, stream
+from pydtnn import MPI_MODULE, Cudnn_Handle_Type, Cublas_Handle_Type, MPI, drv, gpuarray, nccl, cudnn, cublas  # type: ignore (cublas exist)
+from pydtnn import hostname, ranks_per_node, num_gpus, nccl_comm, cudnn_handle, cublas_handle, context, stream
 
 from pydtnn import utils
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray

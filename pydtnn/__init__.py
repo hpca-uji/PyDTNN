@@ -27,14 +27,15 @@ except Exception as e:
 
 try:
     import pycuda  # type: ignore
+    import pycuda.driver as drv  # type: ignore
 except Exception as e:
     gpu_errors.append(e)
     pycuda = None
     drv = None
     gpuarray = None
+    stream = None
     has_drv = False
 else:
-    import pycuda.driver as drv  # type: ignore
     import pycuda.gpuarray as gpuarray  # type: ignore
     has_drv = True
 
@@ -97,7 +98,7 @@ else:
 # ---
 
 # INIT CUPY
-if cupy is not None:
+if cupy is not None and drv is not None:
     rank = MPI.COMM_WORLD.rank if MPI else 0
     cupy.cuda.runtime.setDevice(rank % cupy.cuda.runtime.getDeviceCount())
     stream: cupy.cuda.Stream = cupy.cuda.get_current_stream()
@@ -127,7 +128,7 @@ if cupy is None and drv is None:
 # ---
 
 # INIT CUDNN
-if cudnn is not None and device is not None:
+if cudnn is not None and drv is not None:
     # NOTE: CUDNN initalization must be done after "drv.init()"
     cudnn_handle: Cudnn_Handle_Type = cudnn.cudnnCreate()  # type: ignore
     atexit.register(lambda: cudnn.cudnnDestroy(cudnn_handle))  # type: ignore
