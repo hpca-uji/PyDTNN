@@ -118,15 +118,15 @@ class Dataset:
              self._nsamples[part]
              ) = self._compute_local_workload(self._nsamples[part])
 
+        self.x_empty_batch = np.zeros(shape=self.model.encode_shape((0, *self.input_shape)), dtype=self.model.dtype)
+        self.y_empty_batch = np.zeros(shape=(0, *self.output_shape), dtype=self.model.dtype)
+
         # Declare _x and _y for train, val and test dataset parts
-        self._x: list[np.ndarray]
-        self._y: list[np.ndarray]
+        self._x = [self.x_empty_batch] * len(Dataset.Part)
+        self._y = [self.y_empty_batch] * len(Dataset.Part)
 
         self._data_generator = self._actual_data_generator
         self._init_actual_data()
-
-        self.x_empty_batch = np.zeros(shape=self.model.encode_shape((0, *self.input_shape)), dtype=self.model.dtype)
-        self.y_empty_batch = np.zeros(shape=(0, *self.output_shape), dtype=self.model.dtype)
 
         if self.debug:
             self._print_report()
