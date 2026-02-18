@@ -13,15 +13,17 @@ class ReluCupy(ReluNumpy, ActivationCupy):
 
 
     def forward(self, x: np.ndarray) -> np.ndarray:
+        return super().forward(x)
         self.y = self._y[:x.shape[0], :]
         self.mask = self._mask[:x.shape[0], :]
 
         self.fwd(self.model.cuda_grid,
                  self.model.cuda_block,
-                 (x, self.y, self.mask, x.size))
+                 (x, self.y, self.mask, self.y.size))
         return self.y
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
+        return super().backward(dy)
         self.bwd(self.model.cuda_grid,
                  self.model.cuda_block,
                  (dy, dy, self.mask, dy.size))
@@ -60,17 +62,17 @@ __global__ void {FUNC_NAME}({T}* x, {T}* max, {T}* mask, int N)
 
     for(i = n_offset; i < end_offset; i++)
     {{
-        elem = x[i];
+        elem = *(x + i);
 
         if (elem > 0)
         {{
-            max[i] = elem;
-            mask[i] = 1;
+            *(max + i) = elem;
+            *(mask + i) = 1;
         }}
         else
         {{
-            max[i] = 0;
-            mask[i] = 0;
+            *(max + i) = 0;
+            *(mask + i) = 0;
         }}
     }}
 }}
@@ -112,7 +114,7 @@ __global__ void {FUNC_NAME}({T}* dx, {T}* dy, {T}* mask, int N)
     end_offset = n_offset + n_samples;
 
     for(i = n_offset; i < end_offset; i++)
-        dx[i] = dy[i] * mask[i];
+        *(dx + i) = (*(dy + i)) * (*(mask + i));
 }}
 """
         code = code.format(FUNC_NAME=func_name, T=DTYPE2CTYPE[self.model.dtype])

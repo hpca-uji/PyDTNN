@@ -105,12 +105,12 @@ __global__ void {FUNC_NAME}(const {T} *const x,
 
     for(idx = n_offset; idx < end_offset; idx++)
     {{
-        ni = GET_N(idx, ho, wo, kh, kw, c);
-        hoi = GET_HO(idx, ho, wo, kh, kw, c);
-        woi = GET_WO(idx, ho, wo, kh, kw, c);
-        ci = GET_CI(idx, ho, wo, kh, kw, c);
-        khi = GET_KH(idx, ho, wo, kh, kw, c);
-        kwi = GET_KW(idx, ho, wo, kh, kw, c);
+        ni = GET_N(idx, n, c, ho, wo, kh, kw);
+        hoi = GET_HO(idx, n, c, ho, wo, kh, kw);
+        woi = GET_WO(idx, n, c, ho, wo, kh, kw);
+        ci = GET_CI(idx, n, c, ho, wo, kh, kw);
+        khi = GET_KH(idx, n, c, ho, wo, kh, kw);
+        kwi = GET_KW(idx, n, c, ho, wo, kh, kw);
 
         hi = hstride * hoi + vdilation * khi - vpadding;
         wi = wstride * woi + hdilation * kwi - hpadding;
@@ -131,14 +131,14 @@ __global__ void {FUNC_NAME}(const {T} *const x,
         # rows format: (N, HO, WO, CI, KH, KW)
         macros=\
 r"""
-#define SHIFT(ni, ci, hi, wi, c, h, w) ((ni * h + hi) * w + wi) * c + ci
+#define SHIFT(ni, ci, hi, wi, n, c, h, w) ((ni * h + hi) * w + wi) * c + ci
 
-#define GET_N(idx, ho, wo, kh, kw, ci) (idx / (ci * kw * kh * wo * ho))
-#define GET_HO(idx, ho, wo, kh, kw, ci) (idx / (ci * kw * kh * wo)) % ho
-#define GET_WO(idx, ho, wo, kh, kw, ci) (idx / (ci * kw * kh)) % wo
-#define GET_CI(idx, ho, wo, kh, kw, ci) (idx / (kw * kh)) % ci
-#define GET_KH(idx, ho, wo, kh, kw, ci) (idx / kw) % kh
-#define GET_KW(idx, ho, wo, kh, kw, ci) (idx % kw)
+#define GET_N(idx, n, ci, ho, wo, kh, kw) (idx / (ci * kw * kh * wo * ho))
+#define GET_HO(idx, n, ci, ho, wo, kh, kw) (idx / (ci * kw * kh * wo)) % ho
+#define GET_WO(idx, n, ci, ho, wo, kh, kw) (idx / (ci * kw * kh)) % wo
+#define GET_CI(idx, n, ci, ho, wo, kh, kw) (idx / (kw * kh)) % ci
+#define GET_KH(idx, n, ci, ho, wo, kh, kw) (idx / kw) % kh
+#define GET_KW(idx, n, ci, ho, wo, kh, kw) (idx % kw)
 """
         return self.im2_rc_kernel(func_name="im2row", macros = macros) 
     # -----
@@ -148,14 +148,14 @@ r"""
         # cols format: (N, CI, HO, WO, KH, KW)
         macros=\
 r"""
-#define SHIFT(ni, ci, hi, wi, c, h, w) ((ni * c + ci) * h + hi) * w + wi
+#define SHIFT(ni, ci, hi, wi, n, c, h, w) ((ni * c + ci) * h + hi) * w + wi
 
-#define GET_N(idx, ho, wo, kh, kw, ci) (idx / (kw * kh * wo * ho * ci))
-#define GET_HO(idx, ho, wo, kh, kw, ci) (idx / (kw * kh * wo * ho)) % ci
-#define GET_WO(idx, ho, wo, kh, kw, ci) (idx / (kw * kh * wo)) % ho
-#define GET_CI(idx, ho, wo, kh, kw, ci) (idx / (kw * kh)) % wo
-#define GET_KH(idx, ho, wo, kh, kw, ci) (idx / kw) % kh
-#define GET_KW(idx, ho, wo, kh, kw, ci) (idx % kw)
+#define GET_N(idx, n, ci, ho, wo, kh, kw) (idx / (kw * kh * wo * ho * ci))
+#define GET_HO(idx, n, ci, ho, wo, kh, kw) (idx / (kw * kh * wo * ho)) % ci
+#define GET_WO(idx, n, ci, ho, wo, kh, kw) (idx / (kw * kh * wo)) % ho
+#define GET_CI(idx, n, ci, ho, wo, kh, kw) (idx / (kw * kh)) % wo
+#define GET_KH(idx, n, ci, ho, wo, kh, kw) (idx / kw) % kh
+#define GET_KW(idx, n, ci, ho, wo, kh, kw) (idx % kw)
 """
         return self.im2_rc_kernel(func_name="im2col", macros = macros) 
     # -----
@@ -170,10 +170,10 @@ r"""
 #define IS_BETWEEN(min_v, var, max_v) (min_v <= var) && (var < max_v)
 #define SHIFT(i, j, dim_j) (i * dim_j) + j
 
-#define GET_N(idx, h, w, c) (idx / (c * w * h))
-#define GET_H(idx, h, w, c) (idx / (c * w)) % h
-#define GET_W(idx, h, w, c) (idx / c) % w
-#define GET_C(idx, h, w, c) idx % c
+#define GET_N(idx, n, c, h, w) (idx / (c * w * h))
+#define GET_H(idx, n, c, h, w) (idx / (c * w)) % h
+#define GET_W(idx, n, c, h, w) (idx / c) % w
+#define GET_C(idx, n, c, h, w) idx % c
 
 #define GET_ROW(ni, hoi, woi, ho, wo) (ni * ho + hoi) * wo + woi
 #define GET_COL(ci, khi, kwi, kh, kw) (ci * kh + khi) * kw + kwi
@@ -190,10 +190,10 @@ r"""
 #define IS_BETWEEN(min_v, var, max_v) (min_v <= var) && (var < max_v)
 #define SHIFT(i, j, dim_j) (i * dim_j) + j
 
-#define GET_N(idx, h, w, c) (idx / (w * h * c))
-#define GET_C(idx, h, w, c) (idx / (w * h)) % c
-#define GET_H(idx, h, w, c) (idx / w) % h
-#define GET_W(idx, h, w, c) idx % w
+#define GET_N(idx, n, c, h, w) (idx / (w * h * c))
+#define GET_C(idx, n, c, h, w) (idx / (w * h)) % c
+#define GET_H(idx, n, c, h, w) (idx / w) % h
+#define GET_W(idx, n, c, h, w) idx % w
 
 #define GET_ROW(ni, hoi, woi, ho, wo) (ni * ho + hoi) * wo + woi
 #define GET_COL(ci, khi, kwi, kh, kw) (ci * kh + khi) * kw + kwi
@@ -244,10 +244,10 @@ __global__ void {FUNC_NAME}(const {T} *const rows,
 
     for(idx = n_offset; idx < end_offset; idx++)
     {{
-        ni = GET_N(idx, h, w, c);
-        hi = GET_H(idx, h, w, c);
-        wi = GET_W(idx, h, w, c);
-        ci = GET_C(idx, h, w, c);
+        ni = GET_N(idx, n, c, h, w);
+        hi = GET_H(idx, n, c, h, w);
+        wi = GET_W(idx, n, c, h, w);
+        ci = GET_C(idx, n, c, h, w);
 
         for(khi = 0; khi < kh; khi++)
         {{

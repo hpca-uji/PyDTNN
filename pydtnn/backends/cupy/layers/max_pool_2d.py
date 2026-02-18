@@ -39,29 +39,31 @@ r"""
     def _fwd_max_pool_nchw(self, x: np.ndarray, y: np.ndarray) -> None:
         self.fwd_nchw(self.model.cuda_grid,
                       self.model.cuda_block,
-                      (x, y,
+                      (x, y, self.idx_max,
                        x.shape[0], self.ci, self.hi, self.wi,
                        self.kh, self.kw, self.ho, self.wo,
                        self.hpadding, self.wpadding,
                        self.hstride, self.wstride,
-                       self.hdilation, self.wdilation))
+                       self.hdilation, self.wdilation, 
+                       self.minval))
     # ----
 
     def _fwd_max_pool_nhwc(self, x: np.ndarray, y: np.ndarray) -> None:
         self.fwd_nhwc(self.model.cuda_grid,
                       self.model.cuda_block,
-                      (x, y,
+                      (x, y, self.idx_max,
                        x.shape[0], self.ci, self.hi, self.wi,
                        self.kh, self.kw, self.ho, self.wo,
                        self.hpadding, self.wpadding,
                        self.hstride, self.wstride,
-                       self.hdilation, self.wdilation))
+                       self.hdilation, self.wdilation, 
+                       self.minval))
     # ----
 
     def _bwd_max_pool_nchw(self, dx: np.ndarray, dy: np.ndarray) -> None:
         self.bwd_nchw(self.model.cuda_grid,
                       self.model.cuda_block,
-                      (dy, dx,
+                      (dy, dx, self.idx_max,
                        dy.shape[0], self.hi, self.wi, self.ci,
                        self.kh, self.kw, self.ho, self.wo,
                        self.hpadding, self.wpadding,
@@ -72,7 +74,7 @@ r"""
     def _bwd_max_pool_nhwc(self, dx: np.ndarray, dy: np.ndarray) -> None:
         self.bwd_nhwc(self.model.cuda_grid,
                       self.model.cuda_block,
-                      (dy, dx,
+                      (dy, dx, self.idx_max,
                        dy.shape[0], self.hi, self.wi, self.ci,
                        self.kh, self.kw, self.ho, self.wo,
                        self.hpadding, self.wpadding,
@@ -111,8 +113,8 @@ __global__ void {FUNC_NAME}({T}* x, {T}* y, int* idx_max,
                             int hdilation, int wdilation,
                             {T} minval)
 {{
-    int ni, ci, hoi, woi, khi, kwi, items;
-    int idx_max_val, ii, jj;
+    int ni, ci, hoi, woi, khi, kwi;
+    int idx_max_val, ii, jj, wi, hi;
     {T} max_val, val;
 
     int idx;
@@ -141,13 +143,10 @@ __global__ void {FUNC_NAME}({T}* x, {T}* y, int* idx_max,
 
     for(idx = n_offset; idx < end_offset; idx++)
     {{
-        ni = GET_N(idx, n, ho, wo, c);
-        hoi = GET_H(idx, n, ho, wo, c);
-        woi = GET_W(idx, n, ho, wo, c);
-        ci = GET_C(idx, n, ho, wo, c);
-
-        accum = ({T}) 0.0;
-        items = 0;
+        ni = GET_N(idx, n, c, ho, wo);
+        ci = GET_C(idx, n, c, ho, wo);
+        hoi = GET_H(idx, n, c, ho, wo);
+        woi = GET_W(idx, n, c, ho, wo);
         
         for(khi = 0; khi < kh; khi++)
         {{
@@ -168,7 +167,7 @@ __global__ void {FUNC_NAME}({T}* x, {T}* y, int* idx_max,
             }}
         }}
         *(idx_max + idx) = idx_max_val;
-        *(y + idx) = ({T}) (accum / items);
+        *(y + idx) = ({T}) max_val;
     }}
 }}
 """
@@ -203,8 +202,9 @@ __global__ void {FUNC_NAME}({T}* dx, {T}* dy, int* idx_max,
                             int hstride, int wstride,
                             int hdilation, int wdilation)
 {{
-    int ni, ci, hoi, woi, khi, kwi, items, hi, wi;
+    int ni, ci, khi, kwi, hi, wi, _xx, xx, _yy, yy;
     int idx, ii, jj;
+    {T} idx_maxval;
 
     const int N = n * h * w * c;
     const int base_idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -231,10 +231,10 @@ __global__ void {FUNC_NAME}({T}* dx, {T}* dy, int* idx_max,
     // NOTE: This one iterates over dy (n, c, hi, wi || n, hi, wi, c)
     for(idx = n_offset; idx < end_offset; idx++)
     {{
-        ni = GET_N(idx, n, hi, wi, c);
-        hi = GET_H(idx, n, hi, wi, c);
-        wi = GET_W(idx, n, hi, wi, c);
-        ci = GET_C(idx, n, hi, wi, c);
+        ni = GET_N(idx, n, c, hi, wi);
+        ci = GET_C(idx, n, c, hi, wi);
+        hi = GET_H(idx, n, c, hi, wi);
+        wi = GET_W(idx, n, c, hi, wi);
         
         for(khi = 0; khi < kh; khi++)
         {{

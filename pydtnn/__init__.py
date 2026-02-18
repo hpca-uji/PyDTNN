@@ -114,7 +114,7 @@ if drv is not None:
     context = device.make_context()
     stream: drv.Stream = drv.Stream()  # type: ignore
     stream_handle = stream.handle
-    atexit.register(lambda: context.detach())  # type: ignore
+    atexit.register(lambda: context.pop())  # type: ignore
 else:
     context = None  # type: ignore
     # Defaults handled later

@@ -111,7 +111,7 @@ __global__ void {FUNC_NAME}({T}* x, {T}* y,
                             int hstride, int wstride,
                             int hdilation, int wdilation)
 {{
-    int ni, ci, hoi, woi, khi, kwi, items;
+    int ni, ci, hoi, woi, khi, kwi, items, hi, wi;
     {T} accum;
 
     int idx;
@@ -140,10 +140,10 @@ __global__ void {FUNC_NAME}({T}* x, {T}* y,
 
     for(idx = n_offset; idx < end_offset; idx++)
     {{
-        ni = GET_N(idx, n, ho, wo, c);
-        hoi = GET_H(idx, n, ho, wo, c);
-        woi = GET_W(idx, n, ho, wo, c);
-        ci = GET_C(idx, n, ho, wo, c);
+        ni = GET_N(idx, n, c, ho, wo);
+        hoi = GET_H(idx, n, c, ho, wo);
+        woi = GET_W(idx, n, c, ho, wo);
+        ci = GET_C(idx, n, c, ho, wo);
 
         accum = ({T}) 0.0;
         items = 0;
@@ -195,8 +195,9 @@ __global__ void {FUNC_NAME}({T}* dx, {T}* dy,
                             int hstride, int wstride,
                             int hdilation, int wdilation)
 {{
-    int ni, ci, hoi, woi, khi, kwi, items;
-    int idx;
+    int ni, ci, hi, wi, hoi, woi, khi, kwi, items;
+    int idx, _xx, xx, _yy, yy;
+    {T} accum;
 
     const int N_avg = n * ho * wo * c;
     const int N_pool = n * h * w * c;
@@ -226,20 +227,19 @@ __global__ void {FUNC_NAME}({T}* dx, {T}* dy,
     // NOTE: This one iterates over dy (n, c, ho, wo || n, ho, wo, c)
     for(idx = n_offset; idx < end_offset; idx++)
     {{
-        // ni = GET_N(idx, n, ho, wo, c);
-        hoi = GET_H(idx, n, ho, wo, c);
-        woi = GET_W(idx, n, ho, wo, c);
-        // ci = GET_C(idx, n, ho, wo, c);
+        // ni = GET_N(idx, n, c, ho, wo);
+        hoi = GET_H(idx, n, c, ho, wo);
+        woi = GET_W(idx, n, c, ho, wo);
+        // ci = GET_C(idx, n, c, ho, wo);
         
         for(khi = 0; khi < kh; khi++)
-            for(kwi = 0; kwi < kw; kwi++)
         {{
             hi = wstride * hoi + hdilation * khi - hpadding;
-            wi = wstride * woi + wdilation * kwi - wpadding;
-
-            if(IS_BETWEEN(0, hi, h) && IS_BETWEEN(0, wi, w))
+            for(kwi = 0; (kwi < kw) && (IS_BETWEEN(0, hi, h)); kwi++)
             {{
-                items += 1;
+                wi = wstride * woi + wdilation * kwi - wpadding;
+                if(IS_BETWEEN(0, wi, w))
+                    items += 1;
             }}
         }}
         *(dy + idx) = ({T}) ( *(dy + idx) / items);
@@ -266,10 +266,10 @@ __global__ void {FUNC_NAME}({T}* dx, {T}* dy,
     // NOTE: This one iterates over dy (n, c, hi, wi || n, hi, wi, c)
     for(idx = n_offset; idx < end_offset; idx++)
     {{
-        ni = GET_N(idx, n, hi, wi, c);
-        hi = GET_H(idx, n, hi, wi, c);
-        wi = GET_W(idx, n, hi, wi, c);
-        ci = GET_C(idx, n, hi, wi, c);
+        ni = GET_N(idx, n, c, hi, wi);
+        ci = GET_C(idx, n, c, hi, wi);
+        hi = GET_H(idx, n, c, hi, wi);
+        wi = GET_W(idx, n, c, hi, wi);
         
         for(khi = 0; khi < kh; khi++)
         {{

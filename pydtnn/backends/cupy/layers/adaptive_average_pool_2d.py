@@ -189,7 +189,7 @@ __global__ void {FUNC_NAME}({T}* dx, {T}* dy,
                             int N)
 {{
     int h_start, h_end, elements_kh, w_start, w_end, elements_kw;
-    int ni, ci, i, j, index_h, index_w, index_ho, index_wo;
+    int ni, ci, index_h, index_w, index_ho, index_wo;
     {T} delta;
 
 

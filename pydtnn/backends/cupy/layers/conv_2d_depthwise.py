@@ -115,7 +115,7 @@ __global__ void {FUNC_NAME}({T}* x, {T}* weights, {T}* y,
                             int hdilation, int wdilation)
 {{
     int ni, ci, khi, kwi, hoi, woi;
-    int idx;
+    int idx, hi, wi;
 
     const int N = n * ho * wo * c;
     const int base_idx = blockIdx.x * blockDim.x + threadIdx.x;
