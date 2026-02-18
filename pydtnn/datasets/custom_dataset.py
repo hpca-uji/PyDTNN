@@ -80,3 +80,6 @@ class CustomDataset(Dataset):
             local_slice = slice(local_offset, local_offset + local_nsamples)
             self._x[part] = self.__x_source[part][local_slice, ...]
             self._y[part] = self.__y_source[part][local_slice, ...]
+
+    def _actual_data_generator(self, part: Dataset.Part):
+        yield self._x[part], self._y[part]
