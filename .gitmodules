@@ -28,6 +28,6 @@
 [submodule "vendor/uarchfhe"]
 	path = vendor/uarchfhe
 	url = https://github.com/darwinquezada/he_hpc
-[submodule "vendor/uhe"]
-	path = vendor/uhe
-	url = https://github.com/hpca-uji/uhe.git
+[submodule "vendor/polyhe"]
+	path = vendor/polyhe
+	url = https://github.com/hpca-uji/polyhe.git

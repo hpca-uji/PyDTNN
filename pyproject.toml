@@ -56,7 +56,7 @@ mpi = [
     "mpi4py>=4.1.0"
 ]
 fhe = [
-    "uhe>=0.1.0"
+    "polyhe>=0.1.0"
 ]
 test = [
     "torch>=2.6.0",

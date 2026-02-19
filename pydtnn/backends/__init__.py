@@ -202,6 +202,6 @@ class PromoteToBackend:
         self.model = model  # Set on backend
 
     @classmethod
-    def from_model[C](cls: type[C], model: "model_module.Model") -> C:
+    def from_model[T](cls: type[T], model: "model_module.Model") -> T:
         """Create object from a given model"""
         raise NotImplementedError("Use a concrete optimizer!")

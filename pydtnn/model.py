@@ -56,12 +56,12 @@ from pydtnn.metrics.metric import Metric
 from pydtnn.utils.memory_pool import PrivateMemory, PreallocMemory
 
 if TYPE_CHECKING:
-    import uhe
+    import polyhe
 else:
     try:
-        import uhe
+        import polyhe
     except Exception:
-        uhe = None
+        polyhe = None
 
 # --- CONSTANS --- #
 BAR_WIDTH = 140
@@ -447,20 +447,20 @@ class Model[T: Array]:
     def __getattr__(self, item) -> Any:
         return self.kwargs.get(item)
 
-    def _crypt_init(self, encryption_name: str) -> "uhe.Context":
+    def _crypt_init(self, encryption_name: str) -> "polyhe.Context":
         """Initialize encryption context"""
-        if uhe is None:
+        if polyhe is None:
             raise RuntimeError("uHE is not avaliable, but is requiested!")
 
-        backend = uhe.Backend(encryption_name)
-        options = uhe.Options(
+        backend = polyhe.Backend(encryption_name)
+        options = polyhe.Options(
             slots=self.encryption_slots,
             scale=self.encryption_scale,
             security=self.encryption_security
         )
 
         if self.comm_rank == 0:
-            crypt = uhe.new(backend, options)
+            crypt = polyhe.new(backend, options)
 
         if self.comm:
             crypt = self.comm.bcast(crypt if self.comm_rank == 0 else None)
