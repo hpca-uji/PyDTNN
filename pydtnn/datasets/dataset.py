@@ -185,12 +185,13 @@ class Dataset:
         # Populate data
         for i, (x_batch, y_batch, _) in enumerate(gen_train):
             offset = i * self.model.batch_size
-            x_train[offset:offset+self.model.batch_size] = self.model.decode_tensor(x_batch)
-            y_train[offset:offset+self.model.batch_size] = y_batch
+            n = x_batch.shape[0]
+            x_train[offset:offset + n] = self.model.decode_tensor(x_batch)
+            y_train[offset:offset + n] = y_batch
         for i, (x_batch, y_batch, _) in enumerate(gen_test):
             offset = i * self.model.batch_size
-            x_test[offset:offset+self.model.batch_size] = self.model.decode_tensor(x_batch)
-            y_test[offset:offset+self.model.batch_size] = y_batch
+            x_test[offset:offset + n] = self.model.decode_tensor(x_batch)
+            y_test[offset:offset + n] = y_batch
 
         return {
             "name": self.name,  # type: ignore
