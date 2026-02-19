@@ -1,9 +1,10 @@
+from pydtnn.backends.cupy.metrics.metric import MetricCupy
 from pydtnn.backends.numpy.metrics.binary_confusion_matrix import BinaryConfusionMatrixNumpy
 
 import cupy as np
 
 
-class BinaryConfusionMatrixCupy(BinaryConfusionMatrixNumpy):
+class BinaryConfusionMatrixCupy(BinaryConfusionMatrixNumpy, MetricCupy):
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> np.ndarray:
         return super().compute(y_pred, y_targ).get()
