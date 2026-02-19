@@ -43,8 +43,8 @@ def archive(model: "Model", force_test_as_validation=False, debug=False) -> "Cus
             raise NotImplementedError(f"Unsupported model dtype {model.dtype}")
 
     # Ensure dataset transformations are applied
-    x_train, y_train = x_train.copy(), y_train.copy()
-    x_test, y_test = x_test.copy(), y_test.copy()
+    x_train, y_train = np.ascontiguousarray(x_train), np.ascontiguousarray(y_train)
+    x_test, y_test = np.ascontiguousarray(x_test), np.ascontiguousarray(y_test)
 
     # Create dataset
     dataset = CustomDataset(

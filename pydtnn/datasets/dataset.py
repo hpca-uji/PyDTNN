@@ -161,33 +161,36 @@ class Dataset:
         """Export dataset"""
 
         # Data generators
-        gen_train = self._transform_data_generator(Dataset.Part.TRAIN)
-        gen_val = self._transform_data_generator(Dataset.Part.VAL)
-        gen_test = self._transform_data_generator(Dataset.Part.TEST)
+        gen_train = self._actual_batch_generator(Dataset.Part.TRAIN)
+        gen_val = self._actual_batch_generator(Dataset.Part.VAL)
+        gen_test = self._actual_batch_generator(Dataset.Part.TEST)
+        num_train = self._nsamples[Dataset.Part.TRAIN]
+        num_val = self._nsamples[Dataset.Part.VAL]
+        num_test = self._nsamples[Dataset.Part.TEST]
 
         # Reconstruct validation split
         if self.test_as_validation:
             gen_test = itertools.chain(gen_test, gen_val)
+            num_test += num_val
         else:
             gen_train = itertools.chain(gen_train, gen_val)
+            num_train += num_val
 
-        # T from generators
-        x_train, y_train = map(np.concat, zip(*gen_train))
-        x_test, y_test = map(np.concat, zip(*gen_test))
+        # Allocate data
+        x_train = np.zeros((num_train, *self.input_shape), dtype=np.float64)
+        y_train = np.zeros((num_train, *self.output_shape), dtype=np.float64)
+        x_test = np.zeros((num_test, *self.input_shape), dtype=np.float64)
+        y_test = np.zeros((num_test, *self.output_shape), dtype=np.float64)
 
-        # Ensure dataset is in NCHW
-        x_train = self.model.decode_tensor(x_train)
-        x_test = self.model.decode_tensor(x_test)
-
-        # Ensure dataset is in float64
-        match self.model.dtype:
-            case np.float64:
-                pass
-            case np.float32:
-                x_train, y_train = x_train.astype(np.float64), y_train.astype(np.float64)
-                x_test, y_test = x_test.astype(np.float64), y_test.astype(np.float64)
-            case _:
-                raise NotImplementedError(f"Unsupported model dtype {self.model.dtype}")
+        # Populate data
+        for i, (x_batch, y_batch, _) in enumerate(gen_train):
+            offset = i * self.model.batch_size
+            x_train[offset:offset+self.model.batch_size] = self.model.decode_tensor(x_batch)
+            y_train[offset:offset+self.model.batch_size] = y_batch
+        for i, (x_batch, y_batch, _) in enumerate(gen_test):
+            offset = i * self.model.batch_size
+            x_test[offset:offset+self.model.batch_size] = self.model.decode_tensor(x_batch)
+            y_test[offset:offset+self.model.batch_size] = y_batch
 
         return {
             "name": self.name,  # type: ignore
