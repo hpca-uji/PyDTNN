@@ -203,8 +203,7 @@ __global__ void {FUNC_NAME}({T}* dx, {T}* dy, int* idx_max,
                             int hdilation, int wdilation)
 {{
     int ni, ci, khi, kwi, hi, wi, _xx, xx, _yy, yy;
-    int idx, ii, jj;
-    {T} idx_maxval;
+    int idx, ii, jj, idx_maxval;
 
     const int N = n * h * w * c;
     const int base_idx = blockIdx.x * blockDim.x + threadIdx.x;

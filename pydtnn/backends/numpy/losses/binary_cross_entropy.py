@@ -43,7 +43,7 @@ class BinaryCrossEntropyNumpy(BinaryCrossEntropy[np.ndarray], LossNumpy):
         np.subtract(neg_targ, y_pred, out=log_maximum)
         np.maximum(log_maximum, self.eps, out=log_maximum)
         np.log(log_maximum, out=log_maximum)
-        loss: float = -np.sum(log_maximum) / b
+        loss: float = float(-np.sum(log_maximum) / b)
 
         # Dx
         np.clip(y_pred, a_min=self.eps, a_max=(1 - self.eps), out=_y_pred)
