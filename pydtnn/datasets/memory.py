@@ -15,7 +15,7 @@ TENSOR_ASSERT = {
 }
 
 
-class CustomDataset(Dataset):
+class Memory(Dataset):
     """
     Custom Dataset
 

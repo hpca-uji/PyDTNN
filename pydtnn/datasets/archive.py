@@ -2,15 +2,14 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from pydtnn.datasets.custom_dataset import CustomDataset
-from pydtnn.utils.tensor import TensorFormat
+from pydtnn.datasets.memory import Memory
 from pydtnn.utils.constants import ArrayShape
 
 if TYPE_CHECKING:
     from pydtnn.model import Model
 
 
-def archive(model: "Model", force_test_as_validation=False, debug=False) -> "CustomDataset":
+def archive(model: "Model", force_test_as_validation=False, debug=False) -> "Memory":
     """
     Archived Dataset
 
@@ -47,7 +46,7 @@ def archive(model: "Model", force_test_as_validation=False, debug=False) -> "Cus
     x_test, y_test = np.ascontiguousarray(x_test), np.ascontiguousarray(y_test)
 
     # Create dataset
-    dataset = CustomDataset(
+    dataset = Memory(
         model,
         x_train=x_train,
         y_train=y_train,
