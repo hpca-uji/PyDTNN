@@ -161,18 +161,15 @@ class Dataset:
         """Export dataset"""
 
         # Data generators
-        gen_train = self._actual_batch_generator(Dataset.Part.TRAIN)
-        gen_val = self._actual_batch_generator(Dataset.Part.VAL)
-        gen_test = self._actual_batch_generator(Dataset.Part.TEST)
-        num_train = self._nsamples[Dataset.Part.TRAIN]
-        num_val = self._nsamples[Dataset.Part.VAL]
-        num_test = self._nsamples[Dataset.Part.TEST]
+        gen_train = BackgroundGenerator(self._actual_batch_generator(Dataset.Part.TRAIN), max_prefetch=1)
+        gen_val = BackgroundGenerator(self._actual_batch_generator(Dataset.Part.VAL), max_prefetch=1)
+        gen_test = BackgroundGenerator(self._actual_batch_generator(Dataset.Part.TEST), max_prefetch=1)
+        num_train = self._local_nsamples[Dataset.Part.TRAIN]
+        num_val = self._local_nsamples[Dataset.Part.VAL]
+        num_test = self._local_nsamples[Dataset.Part.TEST]
 
         # Reconstruct validation split
-        if self.test_as_validation:
-            gen_test = itertools.chain(gen_test, gen_val)
-            num_test += num_val
-        else:
+        if not self.test_as_validation:
             gen_train = itertools.chain(gen_train, gen_val)
             num_train += num_val
 
@@ -183,15 +180,18 @@ class Dataset:
         y_test = np.zeros((num_test, *self.output_shape), dtype=np.float64)
 
         # Populate data
+        offset = 0
         for i, (x_batch, y_batch, _) in enumerate(gen_train):
-            offset = i * self.model.batch_size
             n = x_batch.shape[0]
             x_train[offset:offset + n] = self.model.decode_tensor(x_batch)
             y_train[offset:offset + n] = y_batch
+            offset += n
+        offset = 0
         for i, (x_batch, y_batch, _) in enumerate(gen_test):
-            offset = i * self.model.batch_size
+            n = x_batch.shape[0]
             x_test[offset:offset + n] = self.model.decode_tensor(x_batch)
             y_test[offset:offset + n] = y_batch
+            offset += n
 
         return {
             "name": self.name,  # type: ignore
