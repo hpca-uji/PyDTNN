@@ -67,4 +67,4 @@ def vgg6(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[LayerBas
     return model
 
 
-vgg = vgg16
+vgg16_tensorflow = vgg16

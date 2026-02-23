@@ -1,5 +1,4 @@
 from collections.abc import Sequence
-
 from pydtnn.activations.relu import Relu
 from pydtnn.activations.softmax import Softmax
 from pydtnn.layers.average_pool_2d import AveragePool2D
@@ -12,15 +11,22 @@ from pydtnn.layers.flatten import Flatten
 from pydtnn.layers.input import Input
 from pydtnn.layer_base import LayerBase
 from pydtnn.utils.constants import ArrayShape
+# NOTE: PyDTNN follows PyTorch's definitions
+# NOTE: TensorFlow uses BatchNormalization with 1.001e-5 epsilon and 0.99 momentum
+# NOTE: TensorFlow uses AveragePool2D with (2, 2) pool shape
+# NOTE: TensorFlow uses FC with 1024 shape
+# NOTE: TensorFlow uses LeakyReLU
 
 
-def mobilenetv1(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[LayerBase]:
+def mobileNet(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[LayerBase]:
+    first_filters = 32
+
     model = list[LayerBase]()
     _ = model.append
-
-    first_filters = 32
     _(Input(shape=input_shape))
-    _(Conv2D(nfilters=first_filters, filter_shape=(3, 3), padding=1, stride=2, activation=Relu, use_bias=False))
+    _(Conv2D(nfilters=first_filters, filter_shape=(3, 3), padding=1, stride=2, use_bias=False))
+    _(BatchNormalization())
+    _(Relu())
 
     layout = [[64, 1], [128, 2], [256, 2], [512, 6], [1024, 2]]
     for n_filt, reps in layout:
@@ -36,7 +42,10 @@ def mobilenetv1(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[L
 
     _(AveragePool2D(pool_shape=(1, 1)))
     _(Flatten())
-    _(FC(shape=(1024,)))
+    _(FC(shape=(1024,), activation=Relu))
     _(FC(shape=output_shape, activation=Softmax))
 
     return model
+
+
+mobilenetv1 = mobileNet
