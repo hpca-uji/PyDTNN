@@ -232,7 +232,7 @@ UAFHE_SRC="$SRC/uarchfhe"
 # git clone https://github.com/darwinquezada/he_hpc.git "$UAFHE_SRC"
 git submodule update --init "$UAFHE_SRC"
 cd "$UAFHE_SRC"
-git checkout 088687caa09d831fbe77c5484f1acde12d5ce538
+git checkout c1201accbdddca83cf44fa1d24bd0b180b23617b
 
 # Install
 pip install "$UAFHE_SRC/crates/fhe_py_binding"
@@ -251,7 +251,7 @@ POLYHE_SRC="$SRC/polyhe"
 # git clone https://github.com/hpca-uji/polyhe.git "$POLYHE_SRC"
 git submodule update --init "$POLYHE_SRC"
 cd "$POLYHE_SRC"
-git checkout d0a53b95644073e13cbf948189c259ccee3c3ee2
+git checkout 68b58f2f8793fcc62069c197c4b4c5e225bcbc83
 
 # Install
 pip install "$POLYHE_SRC"
