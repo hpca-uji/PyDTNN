@@ -69,27 +69,27 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
         shape = (dim_n, self.dim_c)
         x_rows: np.ndarray = self.temp_c_r[:math.prod(shape)]
         x_rows = x_rows.reshape(shape)
-        return x_rows
+        return np.ascontiguousarray(x_rows, dtype=self.model.dtype)
 
     def get_cols(self, batch_size: int) -> np.ndarray:
         dim_n = batch_size * self.ho * self.wo
         shape = (self.dim_c, dim_n)
         x_cols: np.ndarray = self.temp_c_r[:math.prod(shape)]
         x_cols = x_cols.reshape(shape)
-        return x_cols
+        return np.ascontiguousarray(x_cols, dtype=self.model.dtype)
 
     def get_y(self, batch_size: int) -> np.ndarray:
         dim_n = batch_size * self.ho * self.wo
         shape = (dim_n, self.co)
         y: np.ndarray = self.temp_y_dx[:math.prod(shape)]
         y = y.reshape(shape)
-        return y
+        return np.ascontiguousarray(y, dtype=self.model.dtype)
 
     def get_dx(self, batch_size: int) -> np.ndarray:
         shape = self.model.encode_shape((batch_size, self.ci, self.hi, self.wi))
         dx: np.ndarray = self.temp_y_dx[:math.prod(shape)]
         dx = dx.reshape(shape)
-        return dx
+        return np.ascontiguousarray(dx, dtype=self.model.dtype)
 
 ##########################################################################################################################
 ##########################################################################################################################

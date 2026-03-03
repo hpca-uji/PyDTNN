@@ -34,7 +34,7 @@ class AveragePool2DNumpy(AveragePool2D[np.ndarray], AbstractPool2DLayerNumpy):
         for nn in range(x.shape[0]):
                 for xx in range(self.ho):
                     for yy in range(self.wo):
-                        for cc in range(self.c9):
+                        for cc in range(self.ci):
                             accum = 0.0
                             items = 0
                             # accum, items = 0, (kh * kw)

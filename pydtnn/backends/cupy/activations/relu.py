@@ -3,7 +3,6 @@ from pydtnn.libs import numpy as np
 from pydtnn.backends.cupy.activations.activation import ActivationCupy
 from pydtnn.utils.constants import DTYPE2CTYPE
 
-
 class ReluCupy(ReluNumpy, ActivationCupy):
 
     def _model_init(self, prev_shape, x=None):
@@ -13,9 +12,8 @@ class ReluCupy(ReluNumpy, ActivationCupy):
 
 
     def forward(self, x: np.ndarray) -> np.ndarray:
-        return super().forward(x)
-        self.y = self._y[:x.shape[0], :]
-        self.mask = self._mask[:x.shape[0], :]
+        self.y = np.ascontiguousarray(self._y[:x.shape[0], :], dtype=self.model.dtype)
+        self.mask = np.ascontiguousarray(self._mask[:x.shape[0], :], dtype=self.model.dtype)
 
         self.fwd(self.model.cuda_grid,
                  self.model.cuda_block,
@@ -23,7 +21,6 @@ class ReluCupy(ReluNumpy, ActivationCupy):
         return self.y
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
-        return super().backward(dy)
         self.bwd(self.model.cuda_grid,
                  self.model.cuda_block,
                  (dy, dy, self.mask, dy.size))
@@ -114,7 +111,7 @@ __global__ void {FUNC_NAME}({T}* dx, {T}* dy, {T}* mask, int N)
     end_offset = n_offset + n_samples;
 
     for(i = n_offset; i < end_offset; i++)
-        *(dx + i) = (*(dy + i)) * (*(mask + i));
+        *(dx + i) = (*(dx + i)) * (*(mask + i));
 }}
 """
         code = code.format(FUNC_NAME=func_name, T=DTYPE2CTYPE[self.model.dtype])
