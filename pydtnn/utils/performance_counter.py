@@ -71,33 +71,37 @@ class PerformanceCounter:
         return self._mean_memory(self.TESTING)
 
     def print_report(self):
+        _report = list[str]()
         if self.num_epochs > 0:
-            print(" -------------------------------------")
-            print("| Performance counter training report |")
-            print(" -------------------------------------")
-            print(f'Training time (from model): {self.training_time:5.4f} s')
-            print(f'Training time per epoch (from model): '
-                  f'{self.training_time / self.num_epochs:5.4f} s')
-            print(f'Training throughput (from model): {self.training_throughput:5.4f} samples/s')
-            print(f'Training time (from model, estimated from last half of each epoch): '
-                  f'{self.training_time_estimated_from_last_half_of_each_epoch:5.4f} s')
-            print(f'Training throughput (from model, from last half of each epoch): '
-                  f'{self.training_throughput_only_last_half_of_each_epoch:5.4f} samples/s')
-            print(f'Training maximum memory allocated: '
-                  f'{self.training_maximum_memory / 1024:.2f} MiB')
-            print(f'Training mean memory allocated: '
-                  f'{self.training_mean_memory / 1024:.2f} MiB')
+            _report.append(" -------------------------------------")
+            _report.append("| Performance counter training report |")
+            _report.append(" -------------------------------------")
+            _report.append(f'Training time (from model): {self.training_time:5.4f} s')
+            _report.append(f'Training time per epoch (from model): '
+                           f'{self.training_time / self.num_epochs:5.4f} s')
+            _report.append(f'Training throughput (from model): {self.training_throughput:5.4f} samples/s')
+            _report.append(f'Training time (from model, estimated from last half of each epoch): '
+                           f'{self.training_time_estimated_from_last_half_of_each_epoch:5.4f} s')
+            _report.append(f'Training throughput (from model, from last half of each epoch): '
+                           f'{self.training_throughput_only_last_half_of_each_epoch:5.4f} samples/s')
+            _report.append(f'Training maximum memory allocated: '
+                           f'{self.training_maximum_memory / 1024:.2f} MiB')
+            _report.append(f'Training mean memory allocated: '
+                           f'{self.training_mean_memory / 1024:.2f} MiB')
 
         if self.num_evaluations > 0:
-            print(" ------------------------------------")
-            print("| Performance counter testing report |")
-            print(" ------------------------------------")
-            print(f'Testing time (from model): {self.testing_time / self.num_evaluations:5.4f} s')
-            print(f'Testing throughput (from model): {self.testing_throughput:5.4f} samples/s')
-            print(f'Testing maximum memory allocated: ',
-                  f'{self.testing_maximum_memory / 1024:.2f} MiB')
-            print(f'Testing mean memory allocated: ',
-                  f'{self.testing_mean_memory / 1024:.2f} MiB')
+            _report.append(" ------------------------------------")
+            _report.append("| Performance counter testing report |")
+            _report.append(" ------------------------------------")
+            _report.append(f'Testing time (from model): {self.testing_time / self.num_evaluations:5.4f} s')
+            _report.append(f'Testing throughput (from model): {self.testing_throughput:5.4f} samples/s')
+            _report.append(f'Testing maximum memory allocated: ')
+            _report.append(f'{self.testing_maximum_memory / 1024:.2f} MiB')
+            _report.append(f'Testing mean memory allocated: ')
+            _report.append(f'{self.testing_mean_memory / 1024:.2f} MiB')
+
+        report = '\n'.join(_report)
+        print(report)
 
     # -------------------------------
     #  Private methods

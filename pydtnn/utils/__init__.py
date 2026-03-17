@@ -42,9 +42,11 @@ class BackgroundGenerator[T](threading.Thread):
 
 def print_with_header(header: str, to_be_printed=None) -> None:
     """Print header with and optional value"""
-    print(f"# {header}")
+    to_print = list[str]()
+    to_print.append(f"# {header}")
     if to_be_printed is not None:
-        print(to_be_printed)
+        to_print.append(to_be_printed)
+    print('\n'.join(to_print))
 
 
 def parse_bool(x) -> bool:

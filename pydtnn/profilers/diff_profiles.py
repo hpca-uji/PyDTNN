@@ -104,8 +104,7 @@ def do_diff():
     """Do the diff"""
     data = []
     total_times = []
-    print(f"Comparing '{INPUT_FILE_NAME[0]}' with '{INPUT_FILE_NAME[1]}'...")
-    print()
+    print(f"Comparing '{INPUT_FILE_NAME[0]}' with '{INPUT_FILE_NAME[1]}'...\n")
     for i in range(2):
         file_open = open if INPUT_FILE_NAME[i][-3:] != ".gz" else gzip.open
         with file_open(INPUT_FILE_NAME[i], 'rt') as file:
@@ -138,9 +137,7 @@ def do_diff():
             if values == [0, 0.0, 0.0, 0.0, 0.0]:
                 continue
             t.add_row([values[0], values[1], values[2], values[3], values[4], key])
-    print(f"Differences between '{INPUT_FILE_NAME[0]}' and '{INPUT_FILE_NAME[1]}'")
-    print(t)
-    print()
+    print(f"Differences between '{INPUT_FILE_NAME[0]}' and '{INPUT_FILE_NAME[1]}'\n{t}\n")
     t.clear_rows()
     for common_key in common_keys:
         data[0].pop(common_key)
@@ -150,15 +147,13 @@ def do_diff():
             print(f"Calls only in '{INPUT_FILE_NAME[i]}'")
             for key, values in data[i].items():
                 t.add_row([values[0], values[1], values[2], values[3], values[4], key])
-            print(t)
-            print()
+            print(f"{t}\n")
             t.clear_rows()
     print("Total times")
     t = PrettyTable([INPUT_FILE_NAME[0], INPUT_FILE_NAME[1]])
     t.align = "r"
     t.add_row([round(x, 3) for x in total_times])
-    print(t)
-    print()
+    print(f"{t}\n")
 
 
 def main():

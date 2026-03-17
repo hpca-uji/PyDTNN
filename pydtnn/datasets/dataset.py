@@ -275,20 +275,22 @@ class Dataset:
         return self._batch_generator(Dataset.Part.TEST)
 
     def _print_report(self):
+        report = list[str]()
         if self.model.comm_rank == 0:
-            print(f"Initial nsamples:"
-                  f" train: {self._initial_nsamples[Dataset.Part.TRAIN]} "
-                  f" val: {self._initial_nsamples[Dataset.Part.VAL]} "
-                  f" test: {self._initial_nsamples[Dataset.Part.TEST]} "
-                  )
+            report.append(f"Initial nsamples:")
+            report.append(f" train: {self._initial_nsamples[Dataset.Part.TRAIN]} ")
+            report.append(f" val: {self._initial_nsamples[Dataset.Part.VAL]} ")
+            report.append(f" test: {self._initial_nsamples[Dataset.Part.TEST]} ")
+
         desc = ["train", "val", "test"]
         for part in (Dataset.Part.TRAIN, Dataset.Part.VAL, Dataset.Part.TEST):
             prefix = f"{self.model.rank}: " if part is Dataset.Part.TRAIN else "   "
-            print(f"{prefix}"
-                  f" {desc[part]} offset: {self._local_offset[part]}"
-                  f" {desc[part]} local nsamples: {self._local_nsamples[part]}"
-                  f" {desc[part]} nsamples: {self._nsamples[part]}"
-                  )
+            report.append(f"{prefix}")
+            report.append(f" {desc[part]} offset: {self._local_offset[part]}")
+            report.append(f" {desc[part]} local nsamples: {self._local_nsamples[part]}")
+            report.append(f" {desc[part]} nsamples: {self._nsamples[part]}")
+        
+        print('\n'.join(report))
 
     def _compute_local_workload(self, nsamples: int):
         """Computes the offset (in number of samples) and the number of samples for the current rank"""
