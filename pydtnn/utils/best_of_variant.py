@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from typing import Callable, List
 
 from pydtnn.backends.numpy.layers.conv_2d.direct_cpu import Conv2DDirectNumpy

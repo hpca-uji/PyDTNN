@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 # Typing related (or non important) imports
 from typing import Any, Callable
 from pydtnn.converters.pytorch2pydtnn.layers.activation import LeakyReLU, LogSigmoid, ReLU, ReLU6, Sigmoid, Softmax, Tanh

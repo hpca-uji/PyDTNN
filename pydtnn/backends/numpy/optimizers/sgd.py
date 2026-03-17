@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from pydtnn.libs import numpy as np
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -12,7 +15,7 @@ import math
 class SGDNumpy(SGD[np.ndarray], OptimizerNumpy):
 
     def _model_init(self, list_layers: list[LayerNumpy]) -> None:
-        super()._model_init(list_layers)
+        super()._model_init(list_layers)  # type: ignore (it's the right type)
 
         temp_memory_size = []
 
@@ -29,8 +32,8 @@ class SGDNumpy(SGD[np.ndarray], OptimizerNumpy):
 
                     temp_memory_size.append(int(2 * math.prod(w.shape)) * self.model.dtype.itemsize)
                     self.context[layer.id]["velocity_%s" % w_] = velocity
-                    self.context[layer.id]["temp_w_%s" % w_] = temp_w
-                    self.context[layer.id]["temp_v_%s" % w_] = temp_v
+                    self.context[layer.id]["temp_w_%s" % w_] = temp_w  # type: ignore (it's the right type)
+                    self.context[layer.id]["temp_v_%s" % w_] = temp_v  # type: ignore (it's the right type)
 
         self.tmp_memory_used += self.model.memory_cls._total(*temp_memory_size)
         self.memory_used += self.tmp_memory_used

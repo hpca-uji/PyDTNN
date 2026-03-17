@@ -1,6 +1,9 @@
 """
 Python interface to the PMLib library
 """
+import logging
+logger = logging.getLogger(__name__)
+
 import ctypes
 import ctypes.util
 import functools
@@ -124,7 +127,7 @@ class PMLib:
 
     def info(self, msg):
         if self.verbose is True:
-            print("[PMLib]:", msg)
+            logger.info("[PMLib]:", msg)
 
     @check_pmlib_returned_status
     def set_server(self, server_ip, port):
@@ -207,9 +210,8 @@ class PMLib:
         # Next and previous samples from start_time and end_time, respectively
         next_sample_from_start = self._next_sample_from_start(start_time)
         previous_sample_from_end = self._previous_sample_from_end(end_time)
-        if debug:
-            print(f">> {next_sample_from_start=}")
-            print(f">> {previous_sample_from_end=}")
+        logger.debug(f">> {next_sample_from_start=}")
+        logger.debug(f">> {previous_sample_from_end=}")
         # Interpolate watts for start and end time
         watts_on_start_time, watts_on_end_time = [], []
         for watts in self.watts:
@@ -219,9 +221,8 @@ class PMLib:
         # Promote watts_on_start_time and watts_on_end_time to np.arrays
         watts_on_start_time = np.array(watts_on_start_time)
         watts_on_end_time = np.array(watts_on_end_time)
-        if debug:
-            print(f">> {watts_on_start_time[0]=} ({self.watts[0, next_sample_from_start]=})")
-            print(f">> {watts_on_end_time[0]=} ({self.watts[0, previous_sample_from_end]=})")
+        logger.debug(f">> {watts_on_start_time[0]=} ({self.watts[0, next_sample_from_start]=})")
+        logger.debug(f">> {watts_on_end_time[0]=} ({self.watts[0, previous_sample_from_end]=})")
         # Integrate the energy
         if next_sample_from_start > previous_sample_from_end:
             # Integrate the energy between the two interpolated samples

@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from copy import deepcopy
 
 from pydtnn.layers.conv_2d import Conv2D

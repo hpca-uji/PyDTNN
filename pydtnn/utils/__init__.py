@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import os
 import sys
 import math
@@ -46,8 +49,8 @@ def print_with_header(header: str, to_be_printed=None) -> None:
     to_print.append(f"# {header}")
     if to_be_printed is not None:
         to_print.append(to_be_printed)
-    print('\n'.join(to_print))
-
+    info_to_print = '\n'.join(to_print)
+    logger.info(info_to_print)
 
 def parse_bool(x) -> bool:
     """Returns True if value is a user truthy value"""

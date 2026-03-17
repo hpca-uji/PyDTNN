@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import numpy as np
 from pydtnn.utils.transpose_cython import transpose_0312_ijk_cython, transpose_0312_ikj_cython
 

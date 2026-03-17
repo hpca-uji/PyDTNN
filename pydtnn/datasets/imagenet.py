@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from typing import TYPE_CHECKING
 from collections import abc
 from contextlib import ExitStack, contextmanager

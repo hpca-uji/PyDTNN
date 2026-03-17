@@ -1,7 +1,10 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import numpy as np
 
-from pycuda import gpuarray
-from pycuda.compiler import SourceModule
+from pycuda import gpuarray  # type: ignore
+from pycuda.compiler import SourceModule  # type: ignore
 
 from pydtnn.layers.layer_normalization import LayerNormalization
 from pydtnn.backends.pycuda.layers.layer import LayerPycuda

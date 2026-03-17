@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from pydtnn.activations.relu6 import Relu6
 from pydtnn.utils.performance_models import im2col_time, col2im_time
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray

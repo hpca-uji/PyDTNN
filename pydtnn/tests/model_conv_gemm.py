@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import unittest
 
 from pydtnn.layers.layer import LayerError

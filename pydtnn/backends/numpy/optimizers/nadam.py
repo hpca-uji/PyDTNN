@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from pydtnn.libs import numpy as np
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -11,7 +14,7 @@ import math
 class NadamNumpy(Nadam[np.ndarray], OptimizerNumpy):
 
     def _model_init(self, list_layers: list[LayerNumpy]) -> None:
-        super()._model_init(list_layers)
+        super()._model_init(list_layers)  # type: ignore (it is the right type)
 
         temp_memory_size = []
 
@@ -30,8 +33,8 @@ class NadamNumpy(Nadam[np.ndarray], OptimizerNumpy):
             temp_memory_size.append(int(2 * math.prod(shape)) * self.model.dtype.itemsize)
             self.context[layer.id]["m_%s" % w_] = momentum
             self.context[layer.id]["v_%s" % w_] = velocity
-            self.context[layer.id]["temp_w_%s" % w_] = vt_temp_w
-            self.context[layer.id]["temp_dw_%s" % w_] = mt_temp_dw
+            self.context[layer.id]["temp_w_%s" % w_] = vt_temp_w  # type: ignore (it is the right type)
+            self.context[layer.id]["temp_dw_%s" % w_] = mt_temp_dw  # type: ignore (it is the right type)
 
         self.tmp_memory_used += self.model.memory_cls._total(*temp_memory_size)
         self.memory_used += self.tmp_memory_used

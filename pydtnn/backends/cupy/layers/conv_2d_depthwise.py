@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from pydtnn.backends.cupy.layers.layer import LayerCupy
 from pydtnn.backends.numpy.layers.conv_2d_depthwise import Conv2DDepthwiseNumpy
 from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape

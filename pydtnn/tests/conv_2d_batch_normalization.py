@@ -1,8 +1,12 @@
 import unittest
 
+import logging
+logger = logging.getLogger(__name__)
+
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.conv_2d import Conv2D
+# TODO: MIRAR ESTO.
 from pydtnn.layers.conv_2d_batch_normalization import Conv2DBatchNormalization
 from pydtnn.model import Model
 from pydtnn.backends.numpy.layers.abstract.conv_2d import AbstractConv2DNumpy

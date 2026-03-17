@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import unittest
 import warnings
 
@@ -70,7 +73,7 @@ class ModelTensorTestCase(ModelCommonTestCase):
     def compare_forward(self, model1: Model, x1: list[np.ndarray], model2: Model, x2: list[np.ndarray]):
         assert len(x1) == len(x2), "x1 and x2 should have the same length"
         if verbose_test():
-            print(f"\nComparing outputs of both models...")
+            logger.info(f"\nComparing outputs of both models...")
         for i, layer in enumerate(model1.layers, 1):
             # Skip test on layers that behave randomly
             # NOTE: Dropout uses random data and Flatten just reshape the input (it make no sense to undo its work, change the format and flatten again only to compare both formats)
@@ -85,7 +88,7 @@ class ModelTensorTestCase(ModelCommonTestCase):
     def compare_backward(self, model1: Model, dx1, model2: Model, dx2):
         assert len(dx1) == len(dx2), "dx1 and dx2 should have the same length"
         if verbose_test():
-            print(f"\nComparing dw of both models...")
+            logger.info(f"\nComparing dw of both models...")
         for i, layer in reversed(list(enumerate(model2.layers, 0))):
             if isinstance(layer, (Conv2D, FC)):
                 rtol, atol = self.get_tolerance(layer)
@@ -105,7 +108,7 @@ class ModelTensorTestCase(ModelCommonTestCase):
                                         f"Backward dw from layer {layer.name_with_id} differ"
                                         f" ({self.print_stats(layer.dw, model1.layers[i].dw, rtol, atol)})")
         if verbose_test():
-            print(f"\nComparing db of both models...")
+            logger.info(f"\nComparing db of both models...")
         for i, layer in reversed(list(enumerate(model2.layers, 0))):
             if isinstance(layer, (Conv2D, FC)) and layer.use_bias:
                 rtol, atol = self.get_tolerance(layer)
@@ -115,7 +118,7 @@ class ModelTensorTestCase(ModelCommonTestCase):
                                 f"Backward db from layer {layer.name_with_id} differ"
                                 f" ({self.print_stats(layer.db, model1.layers[i].db, rtol, atol)})")
         if verbose_test():
-            print(f"\nComparing dx of both models...")
+            logger.info(f"\nComparing dx of both models...")
         for i, layer in reversed(list(enumerate(model2.layers, 0))):
             # Skip test on layers that behave randomly and Flatten
             if not isinstance(layer, (Dropout, Flatten)):

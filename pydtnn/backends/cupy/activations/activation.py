@@ -1,5 +1,7 @@
-from pydtnn.backends.numpy.activations.activation import ActivationNumpy
+import logging
+logger = logging.getLogger(__name__)
 
+from pydtnn.backends.numpy.activations.activation import ActivationNumpy
 
 class ActivationCupy(ActivationNumpy):
     

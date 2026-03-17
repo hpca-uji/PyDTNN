@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from pydtnn.backends.numpy.activations.log import LogNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.backends.cython.utils.log_activation_cython import log_bwd_cython, log_fwd_cython

@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from pydtnn.layers.adaptive_average_pool_2d import AdaptiveAveragePool2D
 from pydtnn.backends.numpy.layers.layer import LayerNumpy
 from pydtnn.utils.constants import ArrayShape

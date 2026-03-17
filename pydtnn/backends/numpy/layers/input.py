@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from pydtnn.backends.numpy.layers.layer import LayerNumpy
 from pydtnn.layers.input import Input
 from pydtnn.libs import numpy as np

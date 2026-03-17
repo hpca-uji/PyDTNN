@@ -1,3 +1,7 @@
+import logging
+# TODO: Check if this is what I want.
+logger = logging.getLogger(__name__)
+
 from pydtnn.backends import PromoteToBackend
 from pydtnn.utils import find_component
 
@@ -33,7 +37,7 @@ class Scheduler(PromoteToBackend):
 
     def log(self, text: str):
         if self.verbose and self.model.comm_rank == 0:
-            print(f"{self}: {text}")
+            logger.info(f"{self}: {text}")
 
 
 def select(name: str) -> type[Scheduler]:

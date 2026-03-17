@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from pydtnn.layers.abstract.block_layer import AbstractBlockLayer
 from pydtnn.layers.layer import LayerError
 from pydtnn.utils.tensor import TensorFormat

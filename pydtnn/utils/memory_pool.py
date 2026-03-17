@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import pydtnn.libs.numpy as np
 from pydtnn.utils.constants import ArrayShape
 import math

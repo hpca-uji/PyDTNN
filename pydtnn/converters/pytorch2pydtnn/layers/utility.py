@@ -2,6 +2,9 @@
 # In this file must be implemented only the translation of PyTorch Convolutional layers to its PyDTNN equivalent.
 # _______________________________________________________________________________________________________________
 
+import logging
+logger = logging.getLogger(__name__)
+
 # Functionality imports
 from pydtnn.layers.flatten import Flatten as _Flatten
 # import pydtnn.converters.pytorch2pydtnn.common as cm

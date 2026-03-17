@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from functools import partial
 from warnings import warn
 
@@ -66,6 +69,7 @@ class Conv2DDirect(AbstractConv2DStandardNumpy):
         self.out = None
 
         if self.use_bias:
+            logger.warning(f"\"{self.__class__.__name__}\" never uses the biases.")
             warn(f"\"{self.__class__.__name__}\" never uses the biases.", RuntimeWarning)
     # -----
 

@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from pydtnn.backends.numpy.layers.adaptive_average_pool_2d import AdaptiveAveragePool2DNumpy
 from pydtnn.backends.cython.utils.adaptive_avg_pooling_nhwc_cython import adaptive_avg_pooling_fwd_nhwc_cython
 from pydtnn.backends.cython.utils.adaptive_avg_pooling_nchw_cython import adaptive_avg_pooling_fwd_nchw_cython

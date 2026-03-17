@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from pydtnn.backends.numpy.layers.abstract.conv_2d_standard import AbstractConv2DStandardNumpy
 from pydtnn.layer_base import FusedLayerMixIn
 from pydtnn.layers.conv_2d import Conv2D

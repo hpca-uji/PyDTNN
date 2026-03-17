@@ -2,6 +2,9 @@
 PyDTNN initializers
 """
 
+import logging
+logger = logging.getLogger(__name__)
+
 import numpy as np
 import scipy.stats as stats
 from enum import StrEnum, auto

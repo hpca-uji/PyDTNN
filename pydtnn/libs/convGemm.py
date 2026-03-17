@@ -2,6 +2,9 @@
 PyDTNN convGemm module
 """
 
+import logging
+logger = logging.getLogger(__name__)
+
 import ctypes
 import platform
 import weakref
@@ -425,26 +428,21 @@ def __usage_example__():
     ho = (h + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
     wo = (w + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
     out = (np.ones((kn, b * ho * wo)) * 10).astype(np.float32, order='C')
-    print("Using conv_gemm to compute alpha * weights * im2col(x) + beta * out...")
+    logger.info("Using conv_gemm to compute alpha * weights * im2col(x) + beta * out...")
     conv_gemm = ConvGemm(debug=False)
     conv_gemm_result = conv_gemm.conv_gemm_nchw(weights, x,
                                                 vpadding=vpadding, hpadding=hpadding,
                                                 vstride=vstride, hstride=hstride,
                                                 vdilation=vdilation, hdilation=hdilation,
                                                 out=out.reshape(kn, b, ho, wo))
-    print(conv_gemm_result)
-    print("Sum: ", conv_gemm_result.sum())
-    print()
-    print("Using im2col and mm...")
+    logger.info('\n'.join([str(conv_gemm_result), f"Sum: {conv_gemm_result.sum()}", "", "Using im2col and mm..."]))
     x_c = np.zeros((c * kh * kw, b * ho * wo))
     im2col_nchw_cython(x, x_c,
                        kh, kw, ho, wo,
                        vpadding, hpadding, vstride, hstride, vdilation, hdilation)
     w_c = weights.reshape(kn, -1)
     im2col_mm_result = (w_c @ x_c + out).reshape(kn, b, ho, wo).transpose(1, 0, 2, 3)
-    print(im2col_mm_result)
-    print("Sum: ", im2col_mm_result.sum())
-    print("np.allclose: ", np.allclose(conv_gemm_result, im2col_mm_result))
+    logger.info('\n'.join([str(im2col_mm_result), f"Sum: {im2col_mm_result.sum()}", f"np.allclose: {np.allclose(conv_gemm_result, im2col_mm_result)}"]))
     # print(conv_gemm_result - im2col_mm_result)
     # Times
     conv_gemm_t = timeit(lambda: conv_gemm.conv_gemm_nchw(weights, x,
@@ -452,13 +450,11 @@ def __usage_example__():
                                                           vstride=vstride, hstride=hstride,
                                                           vdilation=vdilation, hdilation=hdilation),
                          number=10) / 10
-    print("Times")
-    print("-----")
-    print("conv_gemm time: {:.4f}".format(conv_gemm_t))
+    logger.info('\n'.join(["Times", "-----", "conv_gemm time: {:.4f}".format(conv_gemm_t)]))
     im2col_t = timeit(lambda: time_it_func(x, w_c, out, b, kn, ho, wo, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation),
                       number=10) / 10
     mm_t = timeit(lambda: w_c @ x_c + out, number=10) / 10
-    print("im2col+mm time: {:.4f}  (im2col: {:.4f}  mm: {:.4f}".format(im2col_t + mm_t, im2col_t, mm_t))
+    logger.info("im2col+mm time: {:.4f}  (im2col: {:.4f}  mm: {:.4f}".format(im2col_t + mm_t, im2col_t, mm_t))
 
 
 if __name__ == "__main__":

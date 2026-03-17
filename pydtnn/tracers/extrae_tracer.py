@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import ctypes
 import os
 from importlib import import_module

@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import os
 import platform
 
@@ -18,11 +21,11 @@ class BestOfProfiler:
         # First run
         #
         problem_size = self.best_method.get_problem_size(*args, **kwargs)
-        print(f"{problem_size}: First run (checking outputs)", sep="", end="")
+        logger.info(f"{problem_size}: First run (checking outputs)")
         outputs = []
         for i in range(self.best_method.total_alternatives):
             outputs.append(self.best_method(*args, **kwargs))
-            print(".", sep="", end="")
+            logger.info(".")
             if i > 0:
                 if isinstance(outputs[0], np.ndarray):
                     name_0 = self.best_method.alternatives[0][0]
@@ -31,14 +34,12 @@ class BestOfProfiler:
         #
         # Rest runs
         #
-        print(" ", sep="", end="")
-        print(f"Next runs (getting times)", sep="", end="")
+        logger.info(f" \nNext runs (getting times)")
         for i in range(0, (self.best_method.total_rounds - 1) * self.best_method.total_alternatives):
             if self.best_method.best_method_has_been_found(*args, **kwargs):
                 break
             self.best_method(*args, **kwargs)
-            print(".", sep="", end="")
-        print()
+            logger.info(".")
 
     def print_results(self):
         c = Console(force_terminal=True)

@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import time
 from collections import defaultdict
 
@@ -71,7 +74,7 @@ class SimpleTracerPMLib(SimpleTracer):
             self.pmlib.get_counter_data()
             super()._write_output()
             watts_filename = self.output_filename + ".watts"
-            print(f"Writing watts output to '{watts_filename}'...")
+            logger.info(f"Writing watts output to '{watts_filename}'...")
             with open(watts_filename, 'w') as f:
                 header = "Time"
                 header += ";Watts"

@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import numpy as np
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.layer_base import LayerBase

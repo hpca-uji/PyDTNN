@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from pydtnn.backends.pycuda.metrics.metric import MetricPycuda
 from pydtnn.metrics.binary_confusion_matrix import BinaryConfusionMatrix
 

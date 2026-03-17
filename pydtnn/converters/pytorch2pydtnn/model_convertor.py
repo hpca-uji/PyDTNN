@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 # Typing related
 from pydtnn.layer_base import LayerBase
 from pydtnn.activations.activation import Activation

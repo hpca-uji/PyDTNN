@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from pycuda import gpuarray  # type: ignore
 from pycuda.driver import Function  # type: ignore
 

@@ -2,7 +2,9 @@
 Common methods and properties for various unitary tests
 """
 
-import os
+import logging
+logger = logging.getLogger(__name__)
+
 import sys
 import unittest
 import warnings

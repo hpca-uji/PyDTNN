@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from pathlib import Path
 import warnings
 import itertools
@@ -290,7 +293,7 @@ class Dataset:
             report.append(f" {desc[part]} local nsamples: {self._local_nsamples[part]}")
             report.append(f" {desc[part]} nsamples: {self._nsamples[part]}")
         
-        print('\n'.join(report))
+        logger.info('\n'.join(report))
 
     def _compute_local_workload(self, nsamples: int):
         """Computes the offset (in number of samples) and the number of samples for the current rank"""

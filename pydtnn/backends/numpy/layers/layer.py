@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from pydtnn.model import Model

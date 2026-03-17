@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from pydtnn.backends.cupy.layers.layer import LayerCupy
 from pydtnn.backends.numpy.layers.max_pool_2d import MaxPool2DNumpy
 from pydtnn.libs import numpy as np

@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -183,7 +186,7 @@ class IWSLT(Dataset):
         lines2 = file.readlines()
         file.close()
         if len(lines1) != len(lines2):
-            print("Los archivos tienen un numero de muestras distintas, {} y {}".format(len(lines1), len(lines2)))
+            logger.error("Los archivos tienen un numero de muestras distintas, {} y {}".format(len(lines1), len(lines2)))
             return -1
 
         file = open(self.file, "w")
@@ -205,5 +208,5 @@ class IWSLT(Dataset):
         file.writelines("\n".join(lines))
         file.close()
         nlines_out = len(lines)
-        print("{} lines in, {} lines out".format(nlines_in, nlines_out))
+        logger.info("{} lines in, {} lines out".format(nlines_in, nlines_out))
     # === Preprocess ===

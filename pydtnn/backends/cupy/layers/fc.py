@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from pydtnn.backends.cupy.layers.layer import LayerCupy
 from pydtnn.backends.numpy.layers.fc import FCNumpy
 from pydtnn.utils.constants import ArrayShape

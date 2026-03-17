@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import os
 import itertools
 from typing import IO, TYPE_CHECKING

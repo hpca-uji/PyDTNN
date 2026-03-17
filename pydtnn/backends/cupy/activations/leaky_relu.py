@@ -1,8 +1,10 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from pydtnn.backends.numpy.activations.leaky_relu import LeakyReluNumpy
 from pydtnn.backends.cupy.activations.activation import ActivationCupy
 from pydtnn.utils.constants import DTYPE2CTYPE
 from pydtnn.libs import numpy as np
-
 
 class LeakyReluCupy(LeakyReluNumpy, ActivationCupy):
 

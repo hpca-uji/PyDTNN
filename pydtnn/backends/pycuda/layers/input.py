@@ -1,4 +1,6 @@
-import numpy as np
+import logging
+logger = logging.getLogger(__name__)
+
 from pycuda import gpuarray  # type: ignore
 
 from pydtnn.layers.input import Input

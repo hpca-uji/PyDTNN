@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from pydtnn.optimizers.optimizer import Optimizer
 from pydtnn.libs import numpy as np
 from typing import TYPE_CHECKING

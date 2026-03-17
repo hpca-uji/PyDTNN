@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import warnings
 
 from pydtnn.libs import numpy as np
@@ -157,6 +160,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
 
         if method == "cython_with_vel_and_momentum":
             if self.momentum == 0:
+                logger.warning("If momentum is 0 use 'cython' method, it produces the same output but it is faster")
                 warnings.warn("If momentum is 0 use 'cython' method, it produces the same output but it is faster", RuntimeWarning)
 
             if len(self.dw_original_shape) != 2:
@@ -180,6 +184,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
 
         if method == "numpy_with_vel_and_momentum":
             if self.momentum == 0:
+                logger.warning("If momentum is 0 use just 'numpy' method, it produces the same output but it is faster")
                 warnings.warn("If momentum is 0 use just 'numpy' method, it produces the same output but it is faster", RuntimeWarning)
 
             if len(self.dw_original_shape) != 2:
@@ -196,6 +201,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
 
         if method == "like_sgd":
             """Use only for debugging purposes"""
+            logger.warning("This method should be used only in case of debugging for performance reasons.")
             warnings.warn("This method should be used only in case of debugging for performance reasons.", RuntimeWarning)
 
             dw = coo_u.toarray()
@@ -446,6 +452,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
             return coo_topk
 
         if method == "collective_allreduce_then_slice":
+            logger.warning("This reduce_topk method ('collective_allreduce_then_slice') should be used only in case of debugging for performance reasons.")
             warnings.warn("This reduce_topk method ('collective_allreduce_then_slice') should be used only in case of debugging for performance reasons.", RuntimeWarning)
             all_reduced_coo = self.model.comm.allreduce(coo_topk, op=MPI.SUM)
             row_start = 0 if self.model.rank == 0 else boundaries[self.model.rank - 1]
@@ -541,6 +548,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
             return SparseMatrixCOO(all_val, all_row, all_col, self.dw_2d_shape, has_canonical_format=True)
 
         if input_format == "dense":
+            logger.warning("Try to avoid dense communications!")
             warnings.warn("Try to avoid dense communications!", RuntimeWarning)
             return np.concatenate(self.model.comm.allgather(local_data))
 
@@ -558,7 +566,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
         if self.model.rank == 0:
             if message not in self.info_messages:
                 self.info_messages.add(message)
-                print(message)
+                logger.info(message)
 
     def _has_canonical_format(self, indexes):
         """
@@ -575,6 +583,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
             has_canonical_format (bool): True if indexes are in canonical format, False if not.
         """
 
+        logger.warning("This function ('has_canonical_format') should be used only in case of debugging for performance reasons.")
         warnings.warn("This function ('has_canonical_format') should be used only in case of debugging for performance reasons.", RuntimeWarning)
 
         row, col = indexes

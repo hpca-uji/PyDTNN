@@ -1,5 +1,8 @@
 """Message Passing Interface"""
 
+import logging
+logger = logging.getLogger(__name__)
+
 import os as _os
 
 try:

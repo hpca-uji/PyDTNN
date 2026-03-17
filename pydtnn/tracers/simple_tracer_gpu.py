@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 try:
     import pycuda.driver as drv  # type: ignore
 except Exception as e:

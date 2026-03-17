@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import numpy as np
 
 from pydtnn.metrics.categorical_mae import CategoricalMAE

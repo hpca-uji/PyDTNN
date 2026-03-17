@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from pydtnn.backends.numpy.layers.average_pool_2d import AveragePool2DNumpy
 from pydtnn.libs import numpy as np
 from typing import TYPE_CHECKING

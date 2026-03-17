@@ -1,4 +1,7 @@
-from pydtnn.backends.pycuda.libs import libcudnn as cudnn
+import logging
+logger = logging.getLogger(__name__)
+
+from pydtnn.backends.pycuda.libs import libcudnn as cudnn  # type: ignore
 
 from pydtnn.backends.pycuda.layers.abstract.block_layer import AbstractBlockLayerPycuda
 from pydtnn.layers.encoder import Encoder

@@ -1,4 +1,5 @@
-from collections import abc
+import logging
+logger = logging.getLogger(__name__)
 
 from pydtnn.activations.activation import Activation
 from pydtnn.tracers.events import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \

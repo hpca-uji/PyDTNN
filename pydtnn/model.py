@@ -1,6 +1,8 @@
 """
 PyDTNN model
 """
+import logging
+logger = logging.getLogger(__name__)
 
 import enum
 import itertools
@@ -435,6 +437,7 @@ class Model[T: Array]:
         self._model_init()
         are_layers = bool(self.layers)
         if not are_layers:
+            logger.warning("The model has no layers in it.")
             warn("The model has no layers in it.", RuntimeWarning)
         elif not self.dataset:
             raise ValueError("There is no dataset and the model has layers.")
@@ -467,6 +470,7 @@ class Model[T: Array]:
 
         assert crypt is not None
         if self.enable_nccl:
+            logger.warning("If NCCL is active, encryption is disabled")
             warn("If NCCL is active, encryption is disabled", RuntimeWarning)
 
         return crypt
@@ -478,11 +482,13 @@ class Model[T: Array]:
         # Change input_shape to model.tensor_format
         input_shape = format_reshape(self.dataset.input_shape, SampleFormat.CHW, self.tensor_format.as_sample())  # type: ignore
         if len(input_shape) != 3:
+            logger.warning(f"Input layer does not have 3 dimensions ({input_shape}), it may cause issues!")
             warn(f"Input layer does not have 3 dimensions ({input_shape}), it may cause issues!", RuntimeWarning)
         launch_shape_warning = len(input_shape) == 3 and not (input_shape[0] > input_shape[2]) if self.tensor_format is TensorFormat.NHWC \
             else len(input_shape) == 3 and not (input_shape[0] < input_shape[1])
         if launch_shape_warning:
             warning_text = f"Input layer shape {input_shape} may not be in {self.tensor_format} format, regardless of model format! "
+            logger.warning(warning_text)
             warn(warning_text, RuntimeWarning)
             warning_text = None
         output_shape = tuple(self.dataset.output_shape)
@@ -645,8 +651,8 @@ class Model[T: Array]:
                 _show.append(f"|{str(value):^{size}s}")
             _show.append("\n|\n")
         _show.append(sep)
-        _show.append('\n')
-        print(''.join(_show))
+        _show.append('\n\n')
+        logger.info(''.join(_show))
 
     def show_model(self) -> None:
         key: str = "Model Summary"
@@ -654,17 +660,16 @@ class Model[T: Array]:
         _show.append(key + "\n" + "=" * len(key))
         for key, value in self._show_props().items():
             _show.append(f"- {key.replace('-', ' ').capitalize()}: {value}")
-        print('\n'.join(_show))
+        _show.append("")
+        logger.info('\n'.join(_show))
 
     def show(self) -> None:
         self.show_model()
-        print()
         self.show_layers()
-        print()
 
     def print_in_convdirect_format(self) -> None:
         line = "#l\tkn\two\tho\tt\tkh\tkw\tci\twi\thi"
-        print(line)
+        logger.info(line)
         for layer in self.layers:
             layer.print_in_convdirect_format()
 
@@ -760,7 +765,7 @@ class Model[T: Array]:
 
             if layer_name:
                 dict_params = reduce(operator.or_, (layer.__dict__ for layer in reversed(layers_to_fuse)))
-                print(f"Fusing {' + '.join(map(lambda layer: layer.name_with_id, layers_to_fuse))}")
+                logger.info(f"Fusing {' + '.join(map(lambda layer: layer.name_with_id, layers_to_fuse))}")
                 fused_layer = select_fuse_layer(layer_name)
 
                 new_curr_layer = fused_layer(from_parent=dict_params)  # type: ignore (it's okay)
@@ -769,6 +774,7 @@ class Model[T: Array]:
                 try:
                     new_curr_layer._model_init(prev_shape=layers_to_fuse[0].prev_shape, x=layers_to_fuse[0].x)
                 except Exception as e:
+                    logger.warning(f"Aborted fusion, {e}")
                     warn(f"Aborted fusion, {e}")
                 else:
                     start = i - len(layers_to_fuse)
@@ -858,6 +864,7 @@ class Model[T: Array]:
 
         model_name = str(data.get(Parameters.MODEL_NAME))
         if model_name != self.model_name:
+            logger.warning(f"Importing from different models! (self: {self.model_name}, got: {model_name})")
             warn(f"Importing from different models! (self: {self.model_name}, got: {model_name})", RuntimeWarning)
 
         for layer, data in zip(self.layers, data[Parameters.LAYERS]):
@@ -1132,10 +1139,10 @@ class Model[T: Array]:
 
             for c in range(len(self.loss_and_metrics)):
                 if not self.loss_and_metrics_format[c]:
-                    print(f"{self.loss_and_metrics[c]}: {train_total_loss[c]}")
+                    logger.info(f"{self.loss_and_metrics[c]}: {train_total_loss[c]}")
             for c in range(len(self.loss_and_metrics)):
                 if not self.loss_and_metrics_format[c]:
-                    print(f"val_{self.loss_and_metrics[c]}: {val_total_loss[c]}")
+                    logger.info(f"val_{self.loss_and_metrics[c]}: {val_total_loss[c]}")
 
             if sync_epoch:
                 if self.comm is not None:

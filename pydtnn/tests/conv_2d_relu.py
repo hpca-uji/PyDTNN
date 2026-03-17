@@ -1,8 +1,12 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import unittest
 
 from pydtnn.activations.relu import Relu
 from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.conv_2d import Conv2D
+# TODO: Mirar esto.
 from pydtnn.layers.conv_2d_relu import Conv2DRelu
 from pydtnn.model import Model
 from pydtnn.backends.numpy.layers.abstract.conv_2d import AbstractConv2DNumpy

@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import numpy as np
 
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
@@ -11,7 +14,6 @@ from typing import Any, override
 from pycuda import gpuarray  # type: ignore
 from pycuda.compiler import SourceModule  # type: ignore
 from pycuda.driver import Function  # type: ignore
-
 
 class Conv2DDepthwisePycuda(AbstractConv2DPycuda):
 
@@ -45,7 +47,7 @@ class Conv2DDepthwisePycuda(AbstractConv2DPycuda):
                 # TODO: self devolvía la versión con el número
                 raise NotImplementedError(f"\"{self.name}\" is not implemented for \"{self.model.tensor_format}\" format.")
 
-        self.total_num_threads = np.int32(math.prod(self.grid) * math.prod(self.block))
+        self.total_num_threads = np.int32(np.prod(self.grid) * np.prod(self.block))
 
         y_gpu = gpuarray.zeros((self.model.batch_size, *self.shape), self.model.dtype)
         self.y = TensorArray(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)

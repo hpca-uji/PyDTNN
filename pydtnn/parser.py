@@ -12,6 +12,8 @@ initially have default values for all the attributes declared on the self.
 If you want to define a new option, just declare it here. It will automatically
 be available as a Model attribute.
 """
+import logging
+logger = logging.getLogger(__name__)
 
 import argparse
 import multiprocessing
@@ -401,7 +403,7 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
         return result
 
     def print_args(self) -> None:
-        print("\n".join(self.lines))
+        logger.info("\n".join(self.lines))
 
     def get_default_values(self) -> dict[str, Any]:
         return vars(self.parse_args([]))

@@ -2,6 +2,9 @@
 PyDTNN convWinograd module
 """
 
+import logging
+logger = logging.getLogger(__name__)
+
 import ctypes
 import math
 import platform
@@ -235,7 +238,7 @@ class ConvWinograd:
             self.conv_winograd_workspace_alloc_kernel = \
                 getattr(self.__class__.lib_cw, f"conv_winograd_workspace_alloc_kernel")
         except AttributeError:
-            print(f"Winograd conv_winograd_workspace_alloc_pre/kernel routines not found.")
+            logger.error(f"Winograd conv_winograd_workspace_alloc_pre/kernel routines not found.")
             self.conv_winograd_workspace_alloc_pre = None
             self.conv_winograd_workspace_alloc_kernel = None
 
@@ -597,7 +600,7 @@ def __usage_example__():
     weights = random.random((kn, c, kh, kw)).astype(np.float32, order='C')
     x = random.random((b, c, h, w)).astype(np.float32, order='C')
     biases = (np.ones((kn, b * ho * wo)) * 10).astype(np.float32, order='C')
-    print("Using conv_winograd NCHW to compute weights * x + biases...")
+    logger.info("Using conv_winograd NCHW to compute weights * x + biases...")
     r = False
     conv_winograd = ConvWinograd(kh, kw, vstride, hstride, vdilation, hdilation, debug=False)
     conv_winograd_result_nchw = conv_winograd.conv_winograd_nchw(weights, x, biases_wg,
@@ -609,8 +612,8 @@ def __usage_example__():
                                                                       vstride=vstride, hstride=hstride,
                                                                       vdilation=vdilation, hdilation=hdilation, relu=r),
                              number=10) / 10
-    print("conv_winograd time: {:.4f}".format(conv_winograd_t))
-    print("Using im2col and mm NCHW ...")
+    logger.info("conv_winograd time: {:.4f}".format(conv_winograd_t))
+    logger.info("Using im2col and mm NCHW ...")
     x_c = np.zeros((c * kh * kw, b * ho * wo))
     im2col_nchw_cython(x, x_c,
                        kh, kw, ho, wo,
@@ -619,13 +622,13 @@ def __usage_example__():
     im2col_mm_result_nchw = (w_c @ x_c + biases).reshape(kn, -1, ho, wo).transpose(1, 0, 2, 3)
     mm_t = timeit(lambda: time_it_im2col(x, w_c, biases, b, kn, ho, wo, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation),
                   number=10) / 10
-    print("mm time: {:.4f}".format(mm_t))
+    logger.info("mm time: {:.4f}".format(mm_t))
 
     # NHWC --------------------------
     weights = random.random((c, kh, kw, kn)).astype(np.float32, order='C')
     x = random.random((b, h, w, c)).astype(np.float32, order='C')
     biases = (np.ones((b * ho * wo, kn)) * 10).astype(np.float32, order='C')
-    print("Using conv_winograd NHWC to compute weights * x + biases...")
+    logger.info("Using conv_winograd NHWC to compute weights * x + biases...")
     r = False
     conv_winograd = ConvWinograd(kh, kw, vstride, hstride, vdilation, hdilation,
                                  tensor_format=TensorFormat.NHWC, debug=False)
@@ -638,8 +641,8 @@ def __usage_example__():
                                                                       vstride=vstride, hstride=hstride,
                                                                       vdilation=vdilation, hdilation=hdilation, relu=r),
                              number=10) / 10
-    print("conv_winograd time: {:.4f}".format(conv_winograd_t))
-    print("Using im2col and mm NHWC ...")
+    logger.info("conv_winograd time: {:.4f}".format(conv_winograd_t))
+    logger.info("Using im2col and mm NHWC ...")
     x_c = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype=x.dtype)
     im2row_nhwc_cython(x, x_c,
                        kh, kw, ho, wo,
@@ -649,18 +652,18 @@ def __usage_example__():
     mm_t = timeit(
         lambda: time_it_func(x, w_c, biases, b, kn, ho, wo, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation),
         number=10) / 10
-    print("mm time: {:.4f}".format(mm_t))
+    logger.info("mm time: {:.4f}".format(mm_t))
 
     if r:
         im2col_mm_result_nhwc = np.maximum(im2col_mm_result_nhwc, 0)
 
-    print("Sum WINOGRAD NCHW: ", conv_winograd_result_nchw.sum(), conv_winograd_result_nchw.shape)
-    print("Sum   IM2COL NCHW: ", im2col_mm_result_nchw.sum(), im2col_mm_result_nchw.shape)
-    print("np.allclose NCHW: ", np.allclose(conv_winograd_result_nchw, im2col_mm_result_nchw, atol=1e-3))
-    print()
-    print("Sum WINOGRAD NHWC: ", conv_winograd_result_nhwc.sum(), conv_winograd_result_nhwc.shape)
-    print("Sum   IM2COL NHWC: ", im2col_mm_result_nhwc.sum(), im2col_mm_result_nhwc.shape)
-    print("np.allclose NHWC: ", np.allclose(conv_winograd_result_nhwc, im2col_mm_result_nhwc, atol=1e-3))
+    logger.info('\n'.join([f"Sum WINOGRAD NCHW: {conv_winograd_result_nchw.sum()} {conv_winograd_result_nchw.shape}",
+                           f"Sum   IM2COL NCHW: {im2col_mm_result_nchw.sum()} {im2col_mm_result_nchw.shape}",
+                           f"np.allclose NCHW: {np.allclose(conv_winograd_result_nchw, im2col_mm_result_nchw, atol=1e-3)}",
+                           "",
+                           f"Sum WINOGRAD NHWC: {conv_winograd_result_nhwc.sum()} {conv_winograd_result_nhwc.shape}",
+                           f"Sum   IM2COL NHWC: {im2col_mm_result_nhwc.sum()} {im2col_mm_result_nhwc.shape}",
+                           f"np.allclose NHWC: {np.allclose(conv_winograd_result_nhwc, im2col_mm_result_nhwc, atol=1e-3)}"]))
     # """
 
     # n = 65
@@ -686,8 +689,7 @@ def __usage_example__():
                                 for tensor_fmt in [TensorFormat.NCHW, TensorFormat.NHWC]:
                                     conv_winograd = ConvWinograd(kh, kw, vstride, hstride, vdilation, hdilation,
                                                                  tensor_format=tensor_fmt, debug=False)
-                                    print(nn, cc, kk, hh, ww, vpadding, hpadding, kh, conv_winograd.tensor_format_str,
-                                          end="")
+                                    logger.info(f"{nn} {cc} {kk} {hh} {ww} {vpadding} {hpadding} {kh} {conv_winograd.tensor_format_str}")
 
                                     biases_wg = (np.ones(kk) * 10).astype(np.float32, order='C')
                                     match tensor_fmt:
@@ -757,13 +759,13 @@ def __usage_example__():
                                         case tensor_fmt:
                                             raise NotImplementedError(f"Unsupported tensor format {tensor_fmt}!")
 
-                                    print(" conv_winograd time: {:.4f} ".format(conv_winograd_t), end="")
-                                    print("mm time: {:.4f} ".format(im2col_t), end="")
-                                    print("np.allclose:",
+                                    logger.info(" conv_winograd time: {:.4f} ".format(conv_winograd_t), end="")
+                                    logger.info("mm time: {:.4f} ".format(im2col_t), end="")
+                                    logger.info("np.allclose:",
                                           np.allclose(conv_winograd_result, im2col_mm_result, atol=1e-3), end="")
                                     # print(" np.sum:", np.max(np.abs(conv_winograd_result-im2col_mm_result)), end="")
-                                    print((" WINOGR", " IM2COL")[conv_winograd_t > im2col_t],
-                                          im2col_t / conv_winograd_t)
+                                    logger.info((" WINOGR", " IM2COL")[conv_winograd_t > im2col_t],
+                                                im2col_t / conv_winograd_t)
     # """
 
 

@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from unittest import skip
 
 import numpy as np
@@ -296,7 +299,7 @@ class LayerPyTorchTestCase(TestCase):
 
         num_elems = (len("Testing: ") + len(name_test))
         if verbose_test():
-            print(f"\n\n{'=' * num_elems}\nTesting: {name_test}\n{'=' * num_elems}")
+            logger.info(f"\n\n{'=' * num_elems}\nTesting: {name_test}\n{'=' * num_elems}")
 
         x = np.copy(_x)
 
@@ -312,11 +315,11 @@ class LayerPyTorchTestCase(TestCase):
         x_torch = np.asarray(x_torch.cpu().detach().numpy(), dtype=pydtnn_model.dtype, order="C")
 
         if verbose_test():
-            print(f"[{rtol=}, {atol=}]\n{x_pydtnn.max()=}\n{x_torch.max()=}\n{x_pydtnn.min()=}\n{x_torch.min()=}\n{x_pydtnn.std()=}\n{x_torch.std()=}\n{x_pydtnn.mean()=}\n{x_torch.mean()=}")
+            logger.info(f"[{rtol=}, {atol=}]\n{x_pydtnn.max()=}\n{x_torch.max()=}\n{x_pydtnn.min()=}\n{x_torch.min()=}\n{x_pydtnn.std()=}\n{x_torch.std()=}\n{x_pydtnn.mean()=}\n{x_torch.mean()=}")
 
         diff = x_pydtnn - x_torch
         if verbose_test():
-            print(f"{diff.max()=}\n{diff.min()=}\n{diff.std()=}\n{diff.mean()=}")
+            logger.info(f"{diff.max()=}\n{diff.min()=}\n{diff.std()=}\n{diff.mean()=}")
 
         # if not (diff < rtol).all():
         #    print(f"x_pydtnn:\n{x_pydtnn}")

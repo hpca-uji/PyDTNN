@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from pydtnn.backends.numpy.metrics.metric import MetricNumpy
 from pydtnn.metrics.multiclass_confusion_matrix import MulticlassConfusionMatrix
 

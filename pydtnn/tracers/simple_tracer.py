@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import atexit
 from collections import defaultdict
 from timeit import default_timer as timer
@@ -70,8 +73,8 @@ class SimpleTracer(Tracer):
         """This method will be called at exit only if tracing has been enabled at any time"""
         if self.rank == 0:
             if len(self.pending_events):
-                print("Warning: finishing simple tracer while there are pending events to be marked as finished.")
-            print(f"Writing simple tracer output to '{self.output_filename}'...")
+                logger.warning("Warning: finishing simple tracer while there are pending events to be marked as finished.")
+            logger.info(f"Writing simple tracer output to '{self.output_filename}'...")
             with open(self.output_filename, 'w') as f:
                 f.write(self._output_header() + "\n")
                 for event_type_value, events in self.events.items():

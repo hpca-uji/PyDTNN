@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import operator
 import warnings
 import numpy as np

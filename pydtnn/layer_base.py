@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import logging
+logger = logging.getLogger(__name__)
+
 import numpy as np
 
 from typing import TYPE_CHECKING, Any
@@ -8,7 +11,6 @@ if TYPE_CHECKING:
     from pydtnn.activations.activation import Activation
     from pydtnn.optimizers.optimizer import Optimizer
 
-from pydtnn import utils
 from pydtnn.utils.constants import Array, ArrayShape, Parameters
 from pydtnn.backends import PromoteToBackend
 

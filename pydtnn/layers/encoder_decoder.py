@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from pydtnn.layers.abstract.block_layer import AbstractBlockLayer
 from pydtnn.utils.constants import Array
 

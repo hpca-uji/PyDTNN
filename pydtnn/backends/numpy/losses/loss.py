@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from pydtnn.losses.loss import Loss
 from pydtnn.libs import numpy as np
 from typing import TYPE_CHECKING

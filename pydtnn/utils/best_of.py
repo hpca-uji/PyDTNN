@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import traceback
 import types
 from collections import defaultdict
@@ -492,7 +495,6 @@ class BestOf:
     def _walk_nodes_and_print_as_table(node: _BestOfExecution):
         for child in node.children:
             child.print_as_table()
-            print()
             BestOf._walk_nodes_and_print_as_table(child)
 
     @staticmethod
@@ -502,5 +504,4 @@ class BestOf:
     @staticmethod
     def print_report():
         BestOf._root.print_report()
-        print()
         BestOf.print_tables()

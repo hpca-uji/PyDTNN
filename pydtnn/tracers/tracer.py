@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import resource
 import sys
 import abc
@@ -146,7 +149,7 @@ class Tracer(metaclass=PostInitCaller):
         u = resource.getrusage(resource.RUSAGE_SELF)
         if text != "":
             text = f" {text}:"
-        print(f">>>{text} user time={u[0]:.2f}, sys time={u[1]:.2f}, mem={u[2] / 1024:.2f} MiB")
+        logger.info(f">>>{text} user time={u[0]:.2f}, sys time={u[1]:.2f}, mem={u[2] / 1024:.2f} MiB")
 
     def set_stream(self, stream):
         pass

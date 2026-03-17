@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -58,13 +61,12 @@ def archive(model: "Model", force_test_as_validation=False, debug=False) -> "Mem
     )
 
     # Debug information
-    if dataset.debug:
-        debug_str = list[str]()
-        debug_str.append(f"Import: {dataset.model.dataset_raw_path}")
-        debug_str.append(f"x_train: {x_train.shape}")
-        debug_str.append(f"y_train: {y_train.shape}")
-        debug_str.append(f"x_test: {x_test.shape}")
-        debug_str.append(f"y_test: {y_test.shape}")
-        print('\n'.join(debug_str))
+    debug_str = list[str]()
+    debug_str.append(f"Import: {dataset.model.dataset_raw_path}")
+    debug_str.append(f"x_train: {x_train.shape}")
+    debug_str.append(f"y_train: {y_train.shape}")
+    debug_str.append(f"x_test: {x_test.shape}")
+    debug_str.append(f"y_test: {y_test.shape}")
+    logger.debug('\n'.join(debug_str))
 
     return dataset

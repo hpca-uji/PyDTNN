@@ -3,6 +3,9 @@
 # _______________________________________________________________________________________________________________
 
 # Typing related (or non important) imports
+import logging
+logger = logging.getLogger(__name__)
+
 from typing import Any
 
 # Functionality imports

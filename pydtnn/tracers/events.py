@@ -1,6 +1,9 @@
 """
 Tracer events
 """
+import logging
+logger = logging.getLogger(__name__)
+
 from enum import IntEnum, auto
 
 # ========================== #

@@ -2,6 +2,9 @@
 # In this file must be implemented only the translation of PyTorch Normalization layers to its PyDTNN equivalent.
 # _______________________________________________________________________________________________________________
 
+import logging
+logger = logging.getLogger(__name__)
+
 # Typing related (or non important) imports
 from typing import Any
 

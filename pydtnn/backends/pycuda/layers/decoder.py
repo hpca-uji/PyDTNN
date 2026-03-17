@@ -1,6 +1,9 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import numpy as np
 
-from pydtnn.backends.pycuda.libs import libcudnn as cudnn
+from pydtnn.backends.pycuda.libs import libcudnn as cudnn  # type: ignore
 
 from pydtnn.backends.pycuda.layers.abstract.block_layer import AbstractBlockLayerPycuda
 from pydtnn.layers.multi_head_attention import MultiHeadAttention

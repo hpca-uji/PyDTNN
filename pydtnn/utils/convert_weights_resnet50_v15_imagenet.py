@@ -2,6 +2,9 @@
 PyDTNN: TF to PyDTNN ResNet-50-v1.5 weights converter
 """
 
+import logging
+logger = logging.getLogger(__name__)
+
 import os
 import sys
 import h5py
@@ -153,4 +156,4 @@ if __name__ == "__main__":
     f.close()
     np.savez_compressed(OUT_FILE.split(".")[0], **out)
 
-    print(f"Successfully written PyDTNN output file {OUT_FILE}!")
+    logger.info(f"Successfully written PyDTNN output file {OUT_FILE}!")

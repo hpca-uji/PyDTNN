@@ -1,8 +1,13 @@
 import unittest
 
+import logging
+logger = logging.getLogger(__name__)
+
 from pydtnn.activations.relu import Relu
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.concatenation_block import ConcatenationBlock
+
+# TODO: Mirar esto.
 from pydtnn.layers.batch_normalization_relu import BatchNormalizationRelu
 from pydtnn.model import Model
 from pydtnn.tests.abstract.common import D, Params

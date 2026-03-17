@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import unittest
 import numpy as np
 
@@ -97,7 +100,8 @@ class ModelGpuTestCase(ModelCommonTestCase):
         # The rest of the layers
         for i, layer in enumerate(model2.layers[1:], 1):
             if verbose_test():
-                print(layer)
+                if verbose_test():
+                    logger.info(layer)
             self.set_data_to_ary(model2.layers[i - 1].y.ary, x1[i], layer)
             out = layer.forward(model2.layers[i - 1].y)
             x2.append(out.ary.get())
@@ -116,7 +120,7 @@ class ModelGpuTestCase(ModelCommonTestCase):
 
         for i, layer in reversed(list(enumerate(model2.layers))[:-1]):
             if verbose_test():
-                print(layer)
+                logger.info(layer)
             self.set_data_to_ary(model2.layers[i + 1].dx.ary, dx1[i + 1], layer)
             out = layer.backward(model2.layers[i + 1].dx)
             dx2.insert(0, out.ary.get().copy())

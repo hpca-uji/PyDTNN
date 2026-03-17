@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -74,7 +77,7 @@ class MaskLang(Dataset):
         self.lines = [line.replace("\n", "") for line in self.lines]
 
         self.train_val_nsamples = len(self.lines)
-        print(self.train_val_nsamples)
+        logger.info(self.train_val_nsamples)
         self.train_nsamples = None
 
     def get_dictionary(self, language):

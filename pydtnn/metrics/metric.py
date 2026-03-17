@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from abc import abstractmethod
 
 from pydtnn.backends import PromoteToBackend

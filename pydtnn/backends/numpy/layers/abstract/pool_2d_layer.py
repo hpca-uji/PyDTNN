@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from pydtnn.backends.numpy.layers.layer import LayerNumpy
 from pydtnn.layers.abstract.pool_2d_layer import AbstractPool2DLayer
 from pydtnn.utils.performance_models import im2col_time, col2im_time

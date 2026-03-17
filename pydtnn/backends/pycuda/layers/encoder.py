@@ -1,4 +1,7 @@
-from pydtnn.backends.pycuda.libs import libcudnn as cudnn
+import logging
+logger = logging.getLogger(__name__)
+
+from pydtnn.backends.pycuda.libs import libcudnn as cudnn  # type: ignore
 
 import numpy as np
 

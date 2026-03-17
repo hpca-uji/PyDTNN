@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import numpy as np
 
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
@@ -46,7 +49,7 @@ class Conv2DPointwisePycuda(AbstractConv2DPycuda):
             case _:
                 raise NotImplementedError(f"\"conv_2d_gpu_depthwise\" is not implemented for \"{self.model.tensor_format}\" format.")
 
-        self.total_num_threads = np.int32(math.prod(self.grid) * math.prod(self.block))
+        self.total_num_threads = np.int32(np.prod(self.grid) * np.prod(self.block))
 
         y_gpu = gpuarray.to_gpu(np.zeros(shape=(self.model.batch_size, *self.shape), dtype=self.model.dtype))
         self.y = TensorArray(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)

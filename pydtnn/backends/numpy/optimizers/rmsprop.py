@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from pydtnn.libs import numpy as np
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -12,7 +15,7 @@ import math
 class RMSPropNumpy(RMSProp[np.ndarray], OptimizerNumpy):
 
     def _model_init(self, list_layers: list[LayerNumpy]) -> None:
-        super()._model_init(list_layers)
+        super()._model_init(list_layers)  # type: ignore (it is the right type)
 
         temp_memory_size = []
 
@@ -29,7 +32,7 @@ class RMSPropNumpy(RMSProp[np.ndarray], OptimizerNumpy):
 
                     temp_memory_size.append(int(math.prod(w.shape)) * self.model.dtype.itemsize)
                     self.context[layer.id]["cache_%s" % w_] = cache
-                    self.context[layer.id]["temp_%s" % w_] = temp
+                    self.context[layer.id]["temp_%s" % w_] = temp  # type: ignore (it is the right type)
 
         self.tmp_memory_used += self.model.memory_cls._total(*temp_memory_size)
         self.memory_used += self.tmp_memory_used

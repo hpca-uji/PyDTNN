@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from typing import Any
 from pydtnn.layers.conv_2d import Conv2D
 

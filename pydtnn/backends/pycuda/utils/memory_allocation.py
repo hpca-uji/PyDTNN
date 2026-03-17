@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import ctypes
 
 import pycuda.driver as drv  # type: ignore

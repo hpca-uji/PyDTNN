@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import ctypes
 import copy
 from enum import StrEnum, auto

@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from pydtnn.layers.layer import Layer
 from pydtnn.utils import find_component
 

@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import warnings
 import numpy as np
 
@@ -61,6 +64,7 @@ class SparseMatrixCOO:
         if len(dense_array.shape) != 2:
             raise AssertionError("Dense array must be 2D.")
 
+        logger.warning("From dense constructor should be used only in case of debugging for performance reasons.")
         warnings.warn("From dense constructor should be used only in case of debugging for performance reasons.")
 
         row, col = np.where(dense_array != 0)
@@ -165,6 +169,7 @@ class SparseMatrixCOO:
             dense_matrix: (np.array): a dense matrix
         """
 
+        logger.warning("This function ('to_sparse') should be used only in case of debugging for performance reasons.")
         warnings.warn("This function ('to_sparse') should be used only in case of debugging for performance reasons.")
 
         dense_matrix = np.zeros(self.shape, dtype=np.float32)
@@ -223,6 +228,7 @@ class SparseMatrixCOO:
             has_canonical_format (boolean): True if indexes are in canonical format, False if not.
         """
 
+        logger.warning("This function ('has_canonical_format') should be used only in case of debugging for performance reasons.")
         warnings.warn("This function ('has_canonical_format') should be used only in case of debugging for performance reasons.")
 
         if self.nnz == 0:

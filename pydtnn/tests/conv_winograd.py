@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import inspect
 import unittest
 
@@ -59,19 +62,19 @@ class ConvWinogradTestCase(ConvCommonTestCase):
             np.add(im2row_mm_result, biases.reshape((-1, kn), copy=False), out=im2row_mm_result, dtype=im2row_mm_result.dtype)
         if verbose_test():
             print_with_header("{} conv_winograd_result".format(inspect.stack()[1][3]), conv_winograd_result)
-            print("Shape: ", conv_winograd_result.shape,
-                  " Sum: ", conv_winograd_result.sum(),
-                  " Min: ", conv_winograd_result.min(),
-                  " Max: ", conv_winograd_result.max())
+            logger.info("Shape: ", conv_winograd_result.shape,
+                        " Sum: ", conv_winograd_result.sum(),
+                        " Min: ", conv_winograd_result.min(),
+                        " Max: ", conv_winograd_result.max())
             print_with_header("{} im2row_mm_result".format(inspect.stack()[1][3]), im2row_mm_result)
-            print("Shape: ", im2row_mm_result.shape,
-                  " Sum: ", im2row_mm_result.sum(),
-                  " Min: ", im2row_mm_result.min(),
-                  " Max: ", im2row_mm_result.max())
-            print("---")
-            print("Maximum difference: ",
-                  max([abs(x - y) for x, y in zip(conv_winograd_result.flatten(), im2row_mm_result.flatten())]))
-            print("---")
+            logger.info("Shape: ", im2row_mm_result.shape,
+                        " Sum: ", im2row_mm_result.sum(),
+                        " Min: ", im2row_mm_result.min(),
+                        " Max: ", im2row_mm_result.max())
+            logger.info("---")
+            logger.info("Maximum difference: ",
+                        max([abs(x - y) for x, y in zip(conv_winograd_result.flatten(), im2row_mm_result.flatten())]))
+            logger.info("---")
         return conv_winograd_result, im2row_mm_result
 
     @staticmethod

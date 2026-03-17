@@ -1,5 +1,8 @@
 """PyDTNN environment initialization"""
 
+import logging
+logger = logging.getLogger(__name__)
+
 import os
 import atexit
 import platform

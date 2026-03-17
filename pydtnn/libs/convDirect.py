@@ -1,6 +1,8 @@
 """
 PyDTNN convDirect module
 """
+import logging
+logger = logging.getLogger(__name__)
 
 import ctypes
 import sys
@@ -266,7 +268,7 @@ def __usage_example__():
     x = random.random((b, h, w, c)).astype(np.float32, order='C')
     out = (np.ones((b, ho, wo, kn)) * 10).astype(np.float32, order='C')
 
-    print("Using conv_direct to compute weights * x + out...")
+    logger.info("Using conv_direct to compute weights * x + out...")
     # conv_direct = ConvDirect("convdirect_im2row_nhwc_default")
     conv_direct = ConvDirect("convdirect_block_blis_nhwc_blis")
     # conv_direct = ConvDirect("convdirect_conv_gemm_nhwc_default")
@@ -281,7 +283,7 @@ def __usage_example__():
                                                            vstride=vstride, hstride=hstride,
                                                            vdilation=vdilation, hdilation=hdilation),
                            number=10) / 10
-    print("Using im2col and mm NHWC ...")
+    logger.info("Using im2col and mm NHWC ...")
 
     x_c = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype=x.dtype)
     im2row_nhwc_cython(x, x_c,
@@ -293,11 +295,11 @@ def __usage_example__():
         lambda: time_it_func(x, w_c, out, b, kn, ho, wo, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation),
         number=10) / 10
 
-    print("conv_direct time: {:.4f}".format(conv_direct_t))
-    print("im2row + mm time: {:.4f}".format(mm_t))
-    print("Sum WINOGRAD NHWC: ", conv_direct_result.sum(), conv_direct_result.shape)
-    print("Sum   IM2COL NHWC: ", im2col_mm_result_nhwc.sum(), im2col_mm_result_nhwc.shape)
-    print("np.allclose NHWC: ", np.allclose(conv_direct_result, im2col_mm_result_nhwc, atol=1e-3))
+    logger.info("conv_direct time: {:.4f}".format(conv_direct_t))
+    logger.info("im2row + mm time: {:.4f}".format(mm_t))
+    logger.info(f"Sum WINOGRAD NHWC: {conv_direct_result.sum()} {conv_direct_result.shape}")
+    logger.info(f"Sum   IM2COL NHWC: {im2col_mm_result_nhwc.sum()} {im2col_mm_result_nhwc.shape}")
+    logger.info(f"np.allclose NHWC: {np.allclose(conv_direct_result, im2col_mm_result_nhwc, atol=1e-3)}")
 
 
 if __name__ == "__main__":

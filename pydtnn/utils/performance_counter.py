@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import resource
 from collections import defaultdict
 
@@ -101,7 +104,7 @@ class PerformanceCounter:
             _report.append(f'{self.testing_mean_memory / 1024:.2f} MiB')
 
         report = '\n'.join(_report)
-        print(report)
+        logger.info(report)
 
     # -------------------------------
     #  Private methods

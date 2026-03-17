@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import cupy as np
 
 from pydtnn.backends.cupy.layers.layer import LayerCupy

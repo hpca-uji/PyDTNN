@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from pydtnn.backends.cupy.metrics.metric import MetricCupy
 from pydtnn.backends.numpy.metrics.f1_score import F1ScoreNumpy
 from pydtnn.libs import numpy as np

@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from pydtnn.activations.sigmoid import Sigmoid
 from pydtnn.backends.pycuda.activations.activation import ActivationPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray

@@ -1,6 +1,9 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import numpy as np
-from pycuda import gpuarray
-from pycuda.compiler import SourceModule
+from pycuda import gpuarray  # type: ignore
+from pycuda.compiler import SourceModule  # type: ignore
 
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.losses.kl_divergence import KLDivergence

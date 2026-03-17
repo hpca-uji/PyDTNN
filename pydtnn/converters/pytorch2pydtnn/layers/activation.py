@@ -2,12 +2,11 @@
 # In this file must be implemented only the translation of PyTorch Activations layers to its PyDTNN equivalent.
 # _______________________________________________________________________________________________________________
 
-# Typing related (or non important) imports
 import logging
 logger = logging.getLogger(__name__)
 
+# Typing related (or non important) imports
 from typing import Any
-
 
 # Functionality imports
 from pydtnn.activations.arctanh import Arctanh as _Arctanh
