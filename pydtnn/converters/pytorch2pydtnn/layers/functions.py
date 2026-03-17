@@ -3,7 +3,7 @@
 # _______________________________________________________________________________________________________________
 
 # Typing related (or non important) imports
-from typing import Dict, Any, Tuple, List
+from typing import Any
 from pydtnn.layer_base import LayerBase
 
 # Functionality imports
@@ -25,14 +25,14 @@ from pydtnn.converters.pytorch2pydtnn.layers import activation
 # ------------------ #
 
 
-def adaptive_avg_pool_2d(args: Dict[str, str]) -> Tuple[AveragePool2D, str]:
+def adaptive_avg_pool_2d(args: dict[str, str]) -> tuple[AveragePool2D, str]:
     # It is not the layer, but the operation itself.
     # from torch.nn.functional import adaptive_avg_pool2d
     # adaptive_avg_pool2d(input: Tensor, output_size: BroadcastingList2[int])
 
     dict_params = dict()
     # Example: torch.nn.functional.adaptive_avg_pool2d(relu, (1, 1)) | args = 'relu, (1, 1)'
-    params: List[str] = args[cm.PARAMETERS].split(cm.ARGS_SEPARATOR)
+    params: list[str] = args[cm.PARAMETERS].split(cm.ARGS_SEPARATOR)
     # removing the input layer:
     dict_params["input"] = params.pop(0)  # Situation after operation: [] or ['number'] or ['(number', 'number)']
 
@@ -52,7 +52,7 @@ def adaptive_avg_pool_2d(args: Dict[str, str]) -> Tuple[AveragePool2D, str]:
     return (AdaptiveAveragePool2D(dict_params), dict_params["input"])
 
 
-def add(args: Dict[str, Any]) -> Tuple[AdditionBlock, str]:
+def add(args: dict[str, Any]) -> tuple[AdditionBlock, str]:
     # https://pytorch.org/docs/stable/generated/torch.add.html
 
     # It should be prepared so the params have the following format: "[layer1,layer2]"
@@ -61,7 +61,7 @@ def add(args: Dict[str, Any]) -> Tuple[AdditionBlock, str]:
     params = cm.separate_function_params(args[cm.PARAMETERS])
 
     params = cm.get_equivalent_layer(params, dict_equivalent_layers)
-    dict_layers: Dict[str, Tuple[LayerBase, str]] = args[cm.LAYERS]
+    dict_layers: dict[str, tuple[LayerBase, str]] = args[cm.LAYERS]
 
     list_layers, to_remove, input_layer_name = cm.get_lists_operations_and_outputs(dict_layers=dict_layers, layer_inputs=params)
 
@@ -80,20 +80,20 @@ def add(args: Dict[str, Any]) -> Tuple[AdditionBlock, str]:
     return (AdditionBlock(*list_layers), input_layer_name)
 
 
-def concat(args: Dict[str, Any]) -> Tuple[ConcatenationBlock, str]:
+def concat(args: dict[str, Any]) -> tuple[ConcatenationBlock, str]:
     # https://pytorch.org/docs/main/generated/torch.cat.html
 
     # TODO: es necesario hacer un diccionario que sustituya los parámetros que ya han sido introducidos por la capa de concatenación/adición.
     # También hay que haer que solo aparezca una única vez.
     layer_name: str = args[cm.OPERATION_VAR]
-    dict_equivalent_layers: Dict[str, str] = args[cm.EQUIVALENT_LAYERS]
-    parameters: List[str] = args[cm.PARAMETERS].split("],")
+    dict_equivalent_layers: dict[str, str] = args[cm.EQUIVALENT_LAYERS]
+    parameters: list[str] = args[cm.PARAMETERS].split("],")
 
     params = parameters.pop(0)  # Since PyDTNN always concatenate in the same dimensions, the rest of the PyTorch parameters can be ignored
     params = cm.separate_function_params(params)
     params = cm.get_equivalent_layer(params, dict_equivalent_layers)
 
-    dict_layers: Dict[str, Tuple[LayerBase, str]] = args[cm.LAYERS]
+    dict_layers: dict[str, tuple[LayerBase, str]] = args[cm.LAYERS]
     list_layers, to_remove, input_layer_name = cm.get_lists_operations_and_outputs(dict_layers=dict_layers, layer_inputs=params)
 
     to_remove = set(to_remove)  # Remove multiple ocurrences of a layer. Consecuence of "get_equivalent_layer".
@@ -112,11 +112,11 @@ def concat(args: Dict[str, Any]) -> Tuple[ConcatenationBlock, str]:
     return (ConcatenationBlock(*list_layers), input_layer_name)
 
 
-def flatten(args: Dict[str, str]) -> Tuple[Flatten, str]:
+def flatten(args: dict[str, str]) -> tuple[Flatten, str]:
     # https://pytorch.org/docs/stable/generated/torch.flatten.html
     # torch.flatten(input, start_dim=0, end_dim=-1)
 
-    def switch(list_params: List[str], dict_params: Dict[str, str] = dict()) -> Dict[str, str]:
+    def switch(list_params: list[str], dict_params: dict[str, str] = dict()) -> dict[str, str]:
         # This is a switch with "fall through".
         match len(list_params):
             case 3:
@@ -147,7 +147,7 @@ def flatten(args: Dict[str, str]) -> Tuple[Flatten, str]:
 # ------------------ #
 
 
-def log(args: Dict[str, Any]) -> Tuple[Log, str]:
+def log(args: dict[str, Any]) -> tuple[Log, str]:
     # https://pytorch.org/docs/stable/generated/torch.nn.functional.logsigmoid.html#torch.nn.functional.logsigmoid
 
     dict_params = dict()
@@ -163,7 +163,7 @@ def log(args: Dict[str, Any]) -> Tuple[Log, str]:
     return (activation.LogSigmoid(**dict_params), dict_params["input"])
 
 
-def relu(args: Dict[str, str]) -> Tuple[Relu, str]:
+def relu(args: dict[str, str]) -> tuple[Relu, str]:
 
     # https://pytorch.org/docs/stable/generated/torch.nn.functional.relu.html#torch.nn.functional.relu
     # It is not the layer, but the operation itself.
@@ -183,24 +183,24 @@ def relu(args: Dict[str, str]) -> Tuple[Relu, str]:
     return (activation.ReLU(dict_params), dict_params[cm.ARGUMENTS]["input"])
 
 
-def sigmoid(args: Dict[str, Any]) -> Tuple[Sigmoid, str]:
+def sigmoid(args: dict[str, Any]) -> tuple[Sigmoid, str]:
     # https://pytorch.org/docs/stable/generated/torch.nn.functional.sigmoid.html#torch.nn.functional.sigmoid
     # Not used Pytorch's parameters: inplace.
 
     dict_params = dict()
 
-    params: List[str] = args[cm.PARAMETERS].split(cm.ARGS_SEPARATOR)
+    params: list[str] = args[cm.PARAMETERS].split(cm.ARGS_SEPARATOR)
     # removing the input layer:
     dict_params["input"] = params.pop(0)
 
     return (activation.Sigmoid(**dict_params), dict_params["input"])
 
 
-def softmax(args: Dict[str, Any]) -> Tuple[Softmax, str]:
+def softmax(args: dict[str, Any]) -> tuple[Softmax, str]:
     # https://pytorch.org/docs/stable/generated/torch.nn.functional.softmax.html#torch.nn.functional.softmax
     # softmax(input, dim=None, _stacklevel=3, dtype=None)
 
-    def switch(list_params: List[str], dict_params: Dict[str, str] = dict()) -> Dict[str, str]:
+    def switch(list_params: list[str], dict_params: dict[str, str] = dict()) -> dict[str, str]:
         # This is a switch with "fall through".
         match len(list_params):
             case 3:
@@ -226,11 +226,11 @@ def softmax(args: Dict[str, Any]) -> Tuple[Softmax, str]:
     return (activation.Softmax(**dict_params), dict_params["input"])
 
 
-def tanh(args: Dict[str, Any]) -> Tuple[Tanh, str]:
+def tanh(args: dict[str, Any]) -> tuple[Tanh, str]:
     # https://pytorch.org/docs/stable/generated/torch.nn.functional.tanh.html#torch.nn.functional.tanh
     dict_params = dict()
 
-    params: List[str] = args[cm.PARAMETERS].split(cm.ARGS_SEPARATOR)
+    params: list[str] = args[cm.PARAMETERS].split(cm.ARGS_SEPARATOR)
     # removing the input layer:
     dict_params["input"] = params.pop(0)
 

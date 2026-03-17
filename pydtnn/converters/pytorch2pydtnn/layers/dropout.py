@@ -3,7 +3,7 @@
 # _______________________________________________________________________________________________________________
 
 # Typing related (or non important) imports
-from typing import Dict, Any
+from typing import Any
 
 # Functionality imports
 from pydtnn.layers.dropout import Dropout as _Dropout
@@ -12,7 +12,7 @@ import pydtnn.converters.pytorch2pydtnn.common as cm
 # ------------------- #
 
 
-def Dropout(args: Dict[str, Any]) -> _Dropout:
+def Dropout(args: dict[str, Any]) -> _Dropout:
     # https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html#torch.nn.Dropout
 
     # PyTorch attributes:

@@ -3,7 +3,7 @@
 # _______________________________________________________________________________________________________________
 
 # Typing related (or non important) imports
-from typing import Dict, Any
+from typing import Any
 
 # Functionality imports
 from pydtnn.layers.max_pool_2d import MaxPool2D
@@ -31,7 +31,7 @@ PYDTNN_DILATION = "dilation"
 # ------------------- #
 
 
-def MaxPool2d(args: Dict[str, Any]) -> MaxPool2D:
+def MaxPool2d(args: dict[str, Any]) -> MaxPool2D:
     # https://pytorch.org/docs/stable/generated/torch.nn.MaxPool2d.html#torch.nn.MaxPool2d
 
     # PyTorch attributes:
@@ -55,7 +55,7 @@ def MaxPool2d(args: Dict[str, Any]) -> MaxPool2D:
     return MaxPool2D(**layer_args)
 
 
-def AvgPool2d(args: Dict[str, Any]) -> AveragePool2D:
+def AvgPool2d(args: dict[str, Any]) -> AveragePool2D:
     # https://pytorch.org/docs/stable/generated/torch.nn.AvgPool2d.html#torch.nn.AvgPool2d
 
     # PyTorch attributes:
@@ -78,7 +78,7 @@ def AvgPool2d(args: Dict[str, Any]) -> AveragePool2D:
     return AveragePool2D(**layer_args)
 
 
-def AdaptiveAvgPool2d(args: Dict[str, Any]) -> AdaptiveAveragePool2D:
+def AdaptiveAvgPool2d(args: dict[str, Any]) -> AdaptiveAveragePool2D:
     # https://pytorch.org/docs/stable/generated/torch.nn.AdaptiveAvgPool2d.html#torch.nn.AdaptiveAvgPool2d
     # from torch.nn import AdaptiveAvgPool2d
 

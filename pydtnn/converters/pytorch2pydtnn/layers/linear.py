@@ -3,7 +3,7 @@
 # _______________________________________________________________________________________________________________
 
 # Typing related (or non important) imports
-from typing import Dict, Any
+from typing import Any
 
 # Functionality imports
 from pydtnn.layers.fc import FC
@@ -11,7 +11,7 @@ import pydtnn.converters.pytorch2pydtnn.common as cm
 
 
 # ------------------ #
-def Linear(args: Dict[str, Any]) -> FC:
+def Linear(args: dict[str, Any]) -> FC:
     # https://pytorch.org/docs/stable/generated/torch.nn.Linear.html#torch.nn.Linear
 
     # PyTorch attributes:

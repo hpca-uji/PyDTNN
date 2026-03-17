@@ -1,5 +1,5 @@
 # Typing related (or non important) imports
-from typing import Dict, Any, Callable, Tuple, List
+from typing import Any, Callable
 from pydtnn.converters.pytorch2pydtnn.layers.activation import LeakyReLU, LogSigmoid, ReLU, ReLU6, Sigmoid, Softmax, Tanh
 from pydtnn.converters.pytorch2pydtnn.layers.convolutional import Conv2d
 from pydtnn.converters.pytorch2pydtnn.layers.dropout import Dropout
@@ -54,16 +54,16 @@ SPECIAL_CASES = ["torchvision_models_googlenet_GoogLeNetOutputs"]
 
 def not_implemented(name: str) -> Callable:
     # Normal usage of this: switch_pytorch_pydtnn([not_implemented_layer_name])(args)
-    def _not_implemented(args: Dict[str, Any]) -> None:
+    def _not_implemented(args: dict[str, Any]) -> None:
         raise NotImplementedError(f"Layer \"{name}\" not implemented - Args received:\n{args} ")
     return _not_implemented
 
 
-def prepare_pydtnn_arguments(arguments: Dict[str, Any], torch_dict_keys: List[str], pydtnn_dict_keys: List[str]) -> Dict[str, Any]:
+def prepare_pydtnn_arguments(arguments: dict[str, Any], torch_dict_keys: list[str], pydtnn_dict_keys: list[str]) -> dict[str, Any]:
     return {pydtnn_key: arguments[torch_key] for torch_key, pydtnn_key in zip(torch_dict_keys, pydtnn_dict_keys) if torch_key in arguments}
 
 
-def switch_pytorch_pydtnn(name: str) -> Callable[[Dict[str, Any]], LayerBase]:
+def switch_pytorch_pydtnn(name: str) -> Callable[[dict[str, Any]], LayerBase]:
     # NOTE: name is the result of torch.nn.[layer]._get_name();
     #   if PyTorch change their layer's names, then it's necessary to change the names here.
     match name:
@@ -102,7 +102,7 @@ def switch_operation_symbols(op: str) -> str:
 # --- switch_operation_symbols --- #
 
 
-def function_operation_to_pydtnn(name: str) -> Callable[[Dict[str, Any]], Tuple[LayerBase, str]]:
+def function_operation_to_pydtnn(name: str) -> Callable[[dict[str, Any]], tuple[LayerBase, str]]:
 
     # NOTE: I found impossible to do a switch (match-case) nor a dictionary due the name may be larger than the "key" (e.g.: name = torch.flatten(input, start_dim=0, end_dim=-1); "key" = "flatten")
     if ADD in name:
@@ -131,7 +131,7 @@ def function_operation_to_pydtnn(name: str) -> Callable[[Dict[str, Any]], Tuple[
     return op
 
 
-def get_lists_operations_and_outputs(dict_layers: Dict[str, Tuple[LayerBase, str]], layer_inputs: List[str]) -> Tuple[List[List[LayerBase]], List[str], str]:
+def get_lists_operations_and_outputs(dict_layers: dict[str, tuple[LayerBase, str]], layer_inputs: list[str]) -> tuple[list[list[LayerBase]], list[str], str]:
     # NOTE: It is assumed that the model will by a feed-forward network
     dict_branch = {}
 
@@ -165,8 +165,8 @@ def get_lists_operations_and_outputs(dict_layers: Dict[str, Tuple[LayerBase, str
 
     # -- Trimming the dict and storing the data to be returned -- #
 
-    lists_operations: List[LayerBase] = list()  # List of lists (one list per branch)
-    lists_outputs: List[str] = list()  # List of strings (all branches in one list)
+    lists_operations: list[LayerBase] = list()  # list of lists (one list per branch)
+    lists_outputs: list[str] = list()  # list of strings (all branches in one list)
     for inpt in layer_inputs:
         # - Trimming the dict - #
         for coincidence in coincidences:
@@ -184,7 +184,7 @@ def get_lists_operations_and_outputs(dict_layers: Dict[str, Tuple[LayerBase, str
     return (lists_operations, lists_outputs, new_previous_layer)
 
 
-def separate_function_params(params: str) -> List[str]:
+def separate_function_params(params: str) -> list[str]:
     # Example: '[layer1_0_bn3,layer1_0_downsample_1]'
     params = params.replace('[', '').replace(']', '')  # Removing non-useful characters
     params = params.split(',')
@@ -197,7 +197,7 @@ def separate_function_params(params: str) -> List[str]:
 #       ↘→→→→→→↑
 
 
-def get_equivalent_layer(params: List[str], dict_equivalent_layers: Dict[str, str]) -> List[str]:
+def get_equivalent_layer(params: list[str], dict_equivalent_layers: dict[str, str]) -> list[str]:
     equivalent_layers = dict()
     for param in params:
         layer = param

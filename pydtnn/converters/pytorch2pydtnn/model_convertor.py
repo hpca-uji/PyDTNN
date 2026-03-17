@@ -1,5 +1,4 @@
 # Typing related
-from typing import List, Dict, Tuple
 from pydtnn.layer_base import LayerBase
 from pydtnn.activations.activation import Activation
 import numpy as np
@@ -12,7 +11,7 @@ import pydtnn.converters.pytorch2pydtnn.common as cm
 import copy
 
 
-def load_layers(model: PyDTNN_Model, layers: List[LayerBase], activation_layer: Activation) -> None:
+def load_layers(model: PyDTNN_Model, layers: list[LayerBase], activation_layer: Activation) -> None:
     for layer in layers:
         model.add(layer)
     if not isinstance(layers[-1], Activation) and activation_layer is not None:
@@ -20,12 +19,12 @@ def load_layers(model: PyDTNN_Model, layers: List[LayerBase], activation_layer: 
     model._model_init()
 
 
-def extract_layers_relations(model: torch.nn.Module) -> Dict[str, Tuple[str | torch.nn.Module, str]]:
+def extract_layers_relations(model: torch.nn.Module) -> dict[str, tuple[str | torch.nn.Module, str]]:
     # TODO: Search the way "torch.fx.symbolic_trace" generates ".code" and not extracting the data from a
     # graph: torch.fx.GraphModule
     graph = torch.fx.symbolic_trace(model)
 
-    # {[output's variable name]: Tuple([string with operation name or the layer object], [string with the args])}
+    # {[output's variable name]: tuple([string with operation name or the layer object], [string with the args])}
     relations_dic = dict()
 
     # -- CONSTANTS -- #
@@ -115,9 +114,9 @@ def extract_layers_relations(model: torch.nn.Module) -> Dict[str, Tuple[str | to
     return relations_dic
 
 
-def convert_layers_and_set_weights_and_biases(input_shape: Tuple[int], layers: Dict[str, Tuple[str | torch.nn.Module, str]]) -> List[LayerBase]:
+def convert_layers_and_set_weights_and_biases(input_shape: tuple[int], layers: dict[str, tuple[str | torch.nn.Module, str]]) -> list[LayerBase]:
 
-    converted_layers: Dict[str, LayerBase] = dict()
+    converted_layers: dict[str, LayerBase] = dict()
 
     # Constants
     # - state_dicts keys.
@@ -235,7 +234,7 @@ def check_kwargs_and_set_default(kwargs: dict) -> None:
             kwargs[k] = DICT_KWARGS_DEFAULT_VALUES[k]
 
 
-def convert_model(model: torch.nn.Module, input_shape: Tuple[int],
+def convert_model(model: torch.nn.Module, input_shape: tuple[int],
                   default_output_activation_layer: Activation | None = None, **kwargs) -> PyDTNN_Model:
     # "default_output_activation_layer" parameter: if there is no activation layer at the end, the one in this parameter is added to the converted model.
     check_kwargs_and_set_default(kwargs)

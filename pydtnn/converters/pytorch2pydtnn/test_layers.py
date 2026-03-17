@@ -1,6 +1,6 @@
 from model_convertor import convert_model
 
-from typing import Dict, Tuple, Any, Callable
+from typing import Any, Callable
 
 from torch.nn import Module as PyTorch_Model
 import torch.nn as nn
@@ -70,7 +70,7 @@ TYPES_DATA_CUDA = {np.float64: "CUDNN_DATA_DOUBLE",
                    np.int8: "CUDNN_DATA_INT8",
                    np.int32: "CUDNN_DATA_INT32"}
 
-DICT_SUPPORTED_LAYERS: Dict[str, Tuple[nn.Module, float]] = {
+DICT_SUPPORTED_LAYERS: dict[str, tuple[nn.Module, float]] = {
     # Activations:
     "LogSigmoid": (nn.LogSigmoid(), 1e-5),  # PyTorch is more precise ==> it can differ in elements below "e-08"
     "ReLU": (nn.ReLU(), 1e-5),
@@ -217,7 +217,7 @@ def test_layers_gpu(model: PyDTNN_Model, dataset: np.ndarray) -> TensorArray:
     return y
 
 
-def test_layers(name: str, pytorch_model: TEST_PyTorch_Model, kwargs: Dict[str, Any], input_shape: Tuple[int, int, int],
+def test_layers(name: str, pytorch_model: TEST_PyTorch_Model, kwargs: dict[str, Any], input_shape: tuple[int, int, int],
                 device: torch.device, dataset: np.ndarray, threshold: float, function_to_test_layers: Callable) -> None:
 
     print(pytorch_model)
@@ -301,7 +301,7 @@ def test_layers(name: str, pytorch_model: TEST_PyTorch_Model, kwargs: Dict[str, 
     print("=========================================\n")
 
 
-def test_add_and_concat(name: str, pytorch_model: TEST_PyTorch_Model, kwargs: Dict[str, Any], input_shape: Tuple[int, int, int],
+def test_add_and_concat(name: str, pytorch_model: TEST_PyTorch_Model, kwargs: dict[str, Any], input_shape: tuple[int, int, int],
                         device: torch.device, dataset: np.ndarray, threshold: float = THRESHOLD) -> None:
 
     print(pytorch_model)

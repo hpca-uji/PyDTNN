@@ -3,7 +3,10 @@
 # _______________________________________________________________________________________________________________
 
 # Typing related (or non important) imports
-from typing import Dict, Any
+import logging
+logger = logging.getLogger(__name__)
+
+from typing import Any
 
 
 # Functionality imports
@@ -19,26 +22,26 @@ import pydtnn.converters.pytorch2pydtnn.common as cm
 # ------------------- #
 
 
-def Arctanh(args: Dict[str, Any]) -> _Arctanh:
+def Arctanh(args: dict[str, Any]) -> _Arctanh:
     # NOTE: There is no equivalent in PyTorch
     not_used = args
     return _Arctanh()
 
 
-def LogSigmoid(args: Dict[str, Any]) -> _Log:
+def LogSigmoid(args: dict[str, Any]) -> _Log:
     # https://pytorch.org/docs/stable/generated/torch.nn.LogSigmoid.html#torch.nn.LogSigmoid
     not_used = args
     return _Log()
 
 
-def ReLU(args: Dict[str, Any]) -> _Relu:
+def ReLU(args: dict[str, Any]) -> _Relu:
     # https://pytorch.org/docs/stable/generated/torch.nn.ReLU.html#torch.nn.ReLU
     # Not used Pytorch's parameters: inplace.
     not_used = args
     return _Relu()
 
 
-def ReLU6(args: Dict[str, Any]) -> _Relu:
+def ReLU6(args: dict[str, Any]) -> _Relu:
     # https://pytorch.org/docs/stable/generated/torch.nn.ReLU.html#torch.nn.ReLU
     # Not used Pytorch's parameters: inplace.
     not_used = args
@@ -48,7 +51,7 @@ def ReLU6(args: Dict[str, Any]) -> _Relu:
     return _Relu6()
 
 
-def LeakyReLU(args: Dict[str, Any]) -> _Relu:
+def LeakyReLU(args: dict[str, Any]) -> _Relu:
     # https://pytorch.org/docs/stable/generated/torch.nn.ReLU.html#torch.nn.ReLU
     # Not used Pytorch's parameters: inplace.
     NEGATIVE_SLOPE = "negative_slope"
@@ -60,20 +63,20 @@ def LeakyReLU(args: Dict[str, Any]) -> _Relu:
     return _LeakyRelu(**layer_args)
 
 
-def Sigmoid(args: Dict[str, Any]) -> _Sigmoid:
+def Sigmoid(args: dict[str, Any]) -> _Sigmoid:
     # https://pytorch.org/docs/stable/generated/torch.nn.Sigmoid.html#torch.nn.Sigmoid
     not_used = args
     return _Sigmoid()
 
 
-def Softmax(args: Dict[str, Any]) -> _Softmax:
+def Softmax(args: dict[str, Any]) -> _Softmax:
     # https://pytorch.org/docs/stable/generated/torch.nn.Softmax.html#torch.nn.Softmax
     # Not used Pytorch's parameters: dim.
     not_used = args
     return _Softmax()
 
 
-def Tanh(args: Dict[str, Any]) -> _Tanh:
+def Tanh(args: dict[str, Any]) -> _Tanh:
     # https://pytorch.org/docs/stable/generated/torch.nn.Tanh.html#torch.nn.Tanh
     not_used = args
     return _Tanh()

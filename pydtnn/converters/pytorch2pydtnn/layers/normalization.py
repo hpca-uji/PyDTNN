@@ -3,7 +3,7 @@
 # _______________________________________________________________________________________________________________
 
 # Typing related (or non important) imports
-from typing import Dict, Any
+from typing import Any
 
 # Functionality imports
 from pydtnn.layers.batch_normalization import BatchNormalization
@@ -12,7 +12,7 @@ import pydtnn.converters.pytorch2pydtnn.common as cm
 # ------------------ #
 
 
-def BatchNorm2d(args: Dict[str, Any]) -> BatchNormalization:
+def BatchNorm2d(args: dict[str, Any]) -> BatchNormalization:
     # https://pytorch.org/docs/stable/generated/torch.nn.BatchNorm2d.html#torch.nn.BatchNorm2d
 
     # PyTorch attributes:

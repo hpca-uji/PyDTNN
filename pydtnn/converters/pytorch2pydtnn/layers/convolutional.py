@@ -3,7 +3,7 @@
 # _______________________________________________________________________________________________________________
 
 # Typing related (or non important) imports
-from typing import Dict, Any
+from typing import Any
 
 # Functionality imports
 from pydtnn.layers.conv_2d import Conv2D as _Conv2D
@@ -12,7 +12,7 @@ import pydtnn.converters.pytorch2pydtnn.common as cm
 # ------------------ #
 
 
-def Conv2d(args: Dict[str, Any]) -> _Conv2D:
+def Conv2d(args: dict[str, Any]) -> _Conv2D:
     # https://pytorch.org/docs/stable/generated/torch.nn.Conv2d.html#torch.nn.Conv2d
 
     # PyTorch attributes:

@@ -1,7 +1,5 @@
 from model_convertor import convert_model
 
-from typing import Dict
-
 from pydtnn.activations.softmax import Softmax
 from pydtnn.datasets.dataset import select as select_dataset
 from torchvision.models import vgg19, alexnet, densenet169, resnet50, googlenet
@@ -73,9 +71,9 @@ KWARGS = {
 }
 
 
-def get_model_layers(model: torch.nn.Module, name: str = "self") -> Dict[str, torch.nn.Module]:
+def get_model_layers(model: torch.nn.Module, name: str = "self") -> dict[str, torch.nn.Module]:
     # Recursive function to get the models without containers modules.
-    def _get_model_layers(model: torch.nn.Module, name: str, dict_modules: Dict[str, torch.nn.Module]):
+    def _get_model_layers(model: torch.nn.Module, name: str, dict_modules: dict[str, torch.nn.Module]):
         # The recursive function.
         children = list(model.named_children())
         if len(children) > 0:
