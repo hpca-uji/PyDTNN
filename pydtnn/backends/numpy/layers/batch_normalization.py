@@ -102,6 +102,9 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
                     dtype=self.model.dtype)
         np.add(y, self.beta, out=y,
                dtype=self.model.dtype)
+
+        self.std = np.asarray(self.std, dtype=self.model.dtype, order="C")
+        self.xn = np.asarray(self.xn, dtype=self.model.dtype, order="C")
     # ---
 
     def _training_bwd(self, dx: np.ndarray, dy: np.ndarray) -> None:
@@ -127,8 +130,8 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
             x = x.reshape((-1, self.ci))
         # else: x = x (no reshape needed)
 
-        y: np.ndarray = self.y_dx[:x.shape[0], :]
-        self.xn: np.ndarray = self._xn[:x.shape[0], :]
+        y: np.ndarray = np.asarray(self.y_dx[:x.shape[0], :], dtype=self.model.dtype, order="C")
+        self.xn: np.ndarray = np.asarray(self._xn[:x.shape[0], :], dtype=self.model.dtype, order="C")
 
         if self.model.mode is Model.Mode.EVALUATE:
             _mean = self.running_mean
@@ -147,7 +150,7 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
                         dtype=self.model.dtype)
             np.add(self.running_mean, self._mean_inv, out=self.running_mean,
                    dtype=self.model.dtype)
-
+                   
             # self.running_var = self.momentum * self.running_var + inv_momentum * _var
             np.multiply(self.momentum, self.running_var, out=self.running_var,
                         dtype=self.model.dtype)
@@ -155,6 +158,7 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
                         dtype=self.model.dtype)
             np.add(self.running_var, self._var_inv, out=self.running_var,
                    dtype=self.model.dtype)
+            self.running_var = np.asarray(self.running_var, dtype=self.model.dtype, order="C")
         # anyways:
 
         # bn_training_fwd_cython(x, y, self.xn, self.std, self.gamma, self.beta, _mean, _var, self.epsilon)
@@ -173,17 +177,20 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
 
             # NOTE: Executing in this format gives better results.
             dy = format_transpose(dy, self.model.tensor_format, TensorFormat.NHWC)
-            dy = dy.reshape((num_elems, self.ci))
+            dy = np.asarray(dy.reshape((num_elems, self.ci)), dtype=self.model.dtype, order="C")
         else:
             num_elems = n
 
-        dx: np.ndarray = self.y_dx[: num_elems, :]
+        dx: np.ndarray = np.asarray(self.y_dx[: num_elems, :], dtype=self.model.dtype, order="C")
         #dx.fill(0)
-        dy_xn: np.ndarray = self.dy_xn[: num_elems, :]
+        dy_xn: np.ndarray = np.asarray(self.dy_xn[: num_elems, :], dtype=self.model.dtype, order="C")
 
         np.multiply(dy, self.xn, out=dy_xn, dtype=self.model.dtype)
         np.sum(dy_xn, axis=0, out=self.dgamma, dtype=self.model.dtype)
         np.sum(dy, axis=0, out=self.dbeta, dtype=self.model.dtype)
+
+        self.dgamma = np.asarray(self.dgamma, dtype=self.model.dtype, order="C")
+        self.dbeta = np.asarray(self.dbeta, dtype=self.model.dtype, order="C")
 
         self._training_bwd(dx, dy)
 

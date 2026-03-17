@@ -39,17 +39,11 @@
 - Replace `print` statements with `logger` calls.
 
 # Publish
-Dependencies: `build twine`
+Dependencies: `gcc patchelf` and `build twine auditwheel`
 
 ```sh
 python -m build --outdir ./dist/
-python -m twine upload --repository pypi ./dist/*
-```
-
-## Precompile
-Dependencies: `gcc patchelf` and `build auditwheel`
-
-```sh
 python -m build --outdir ./build/ --wheel
 python -m auditwheel repair --wheel-dir ./dist/ ./build/*.whl
+python -m twine upload --repository pypi ./dist/*
 ```

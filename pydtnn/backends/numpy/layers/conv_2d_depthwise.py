@@ -113,7 +113,7 @@ class Conv2DDepthwiseNumpy(AbstractConv2DNumpy, Conv2DDepthwise):
         """ Version of the forward that perform a depthwise convolution"""
 
         self.x = x
-        y: np.ndarray = self._y[:x.shape[0], ]
+        y: np.ndarray = np.ascontiguousarray(self._y[:x.shape[0], ], dtype=self.model.dtype)
         y.fill(0)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_DEPTHWISE_CONV)
@@ -137,7 +137,7 @@ class Conv2DDepthwiseNumpy(AbstractConv2DNumpy, Conv2DDepthwise):
     def _forward_nchw(self, x: np.ndarray) -> np.ndarray:
         """ Version of the forward that perform a depthwise convolution"""
         self.x = x
-        y: np.ndarray = self._y[:x.shape[0], ]
+        y: np.ndarray = np.ascontiguousarray(self._y[:x.shape[0], ], dtype=self.model.dtype)
         y.fill(0)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_DEPTHWISE_CONV)
@@ -160,7 +160,7 @@ class Conv2DDepthwiseNumpy(AbstractConv2DNumpy, Conv2DDepthwise):
 
     def _backward_nhwc(self, dy: np.ndarray) -> np.ndarray:
 
-        dx: np.ndarray = self.dx[:dy.shape[0], ]
+        dx: np.ndarray = np.ascontiguousarray(self.dx[:dy.shape[0], ], dtype=self.model.dtype)
         dx.fill(0)
 
         self._conv_bwd_nhwc(dx, dy)
@@ -174,7 +174,7 @@ class Conv2DDepthwiseNumpy(AbstractConv2DNumpy, Conv2DDepthwise):
 
     def _backward_nchw(self, dy: np.ndarray) -> np.ndarray:
 
-        dx: np.ndarray = self.dx[:dy.shape[0], ]
+        dx: np.ndarray = np.ascontiguousarray(self.dx[:dy.shape[0], ], dtype=self.model.dtype)
         dx.fill(0)
 
         self._conv_bwd_nhwc(dx, dy)

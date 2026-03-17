@@ -38,6 +38,7 @@ r"""
         #----
 
     def _fwd_avg_pool_nchw(self, x: np.ndarray, y: np.ndarray) -> None:
+        #return super()._fwd_avg_pool_nchw(x, y)
         self.fwd_nchw(self.model.cuda_grid,
                       self.model.cuda_block,
                       (x, y,
@@ -49,6 +50,8 @@ r"""
     # ----
 
     def _fwd_avg_pool_nhwc(self, x: np.ndarray, y: np.ndarray) -> None:
+        #return super()._fwd_avg_pool_nhwc(x, y)
+        y.fill(0)
         self.fwd_nhwc(self.model.cuda_grid,
                       self.model.cuda_block,
                       (x, y,
@@ -60,9 +63,10 @@ r"""
     # ----
 
     def _bwd_avg_pool_nchw(self, dx: np.ndarray, dy: np.ndarray) -> None:
+        #return super()._bwd_avg_pool_nchw(dx, dy)
         self.bwd_nchw(self.model.cuda_grid,
                       self.model.cuda_block,
-                      (dy, dx,
+                      (dx, dy,
                        dy.shape[0], self.hi, self.wi, self.ci,
                        self.kh, self.kw, self.ho, self.wo,
                        self.hpadding, self.wpadding,
@@ -71,9 +75,10 @@ r"""
     # ----
 
     def _bwd_avg_pool_nhwc(self, dx: np.ndarray, dy: np.ndarray) -> None:
+        #return super()._bwd_avg_pool_nhwc(dx, dy)
         self.bwd_nhwc(self.model.cuda_grid,
                       self.model.cuda_block,
-                      (dy, dx,
+                      (dx, dy,
                        dy.shape[0], self.hi, self.wi, self.ci,
                        self.kh, self.kw, self.ho, self.wo,
                        self.hpadding, self.wpadding,
@@ -246,6 +251,7 @@ __global__ void {FUNC_NAME}({T}* dx, {T}* dy,
     }}
 
     // Making the (average) pool
+    __syncthreads();
 
     overworkers = N_pool % num_workers;
     samples_worker = N_pool / num_workers;

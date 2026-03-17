@@ -11,10 +11,13 @@ class BatchNormalizationCupy(BatchNormalizationNumpy, LayerCupy):
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
         super()._model_init(prev_shape, x)
 
+        self.stream_2 = np.cuda.Stream()
+
         self.bwd = self._bwd_kernel()
         #----
 
     def _training_bwd(self, dx: np.ndarray, dy: np.ndarray) -> None:
+        #return super()._training_bwd(dx, dy)
         dim_i, dim_j = dx.shape
         self.bwd(self.model.cuda_grid,
                  self.model.cuda_block,
@@ -43,7 +46,6 @@ __global__ void {FUNC_NAME}({T}* dx, {T}* dy, {T}* xn,
     const int n = (const int) dim_i;
     {T} _gamma, _std, _dy, _xn, _dgamma, _dbeta;
 
-
     // BLOCK DISTRIBUTION
     int idx;
     const int base_idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -68,7 +70,6 @@ __global__ void {FUNC_NAME}({T}* dx, {T}* dy, {T}* xn,
     end_offset = n_offset + n_samples;
     // BLOCK DISTRIBUTION
 
-
     for(idx = n_offset; idx < end_offset; idx++)
     {{
         j = GET_J(idx, dim_j);
@@ -80,7 +81,7 @@ __global__ void {FUNC_NAME}({T}* dx, {T}* dy, {T}* xn,
         _dgamma = *(dgamma + j);    // dgamma[j]
         _dbeta = *(dbeta + j);      // dbeta[j]
 
-        *(dx + idx) = ({T}) ( _gamma / ( _std * dim_i) ) * (dim_i * _dy - _xn * _dgamma - _dbeta);
+        *(dx + idx) = ({T}) ( _gamma / ( _std * n) ) * (n * _dy - _xn * _dgamma - _dbeta);
     }}
 }}
 """

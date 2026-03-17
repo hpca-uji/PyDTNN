@@ -232,7 +232,7 @@ UAFHE_SRC="$SRC/uarchfhe"
 # git clone https://github.com/darwinquezada/he_hpc.git "$UAFHE_SRC"
 git submodule update --init "$UAFHE_SRC"
 cd "$UAFHE_SRC"
-git checkout 088687caa09d831fbe77c5484f1acde12d5ce538
+git checkout 7970d0dfad5b74939da492cf61c5d9c4a9753c19
 
 # Install
 pip install "$UAFHE_SRC/crates/fhe_py_binding"
@@ -251,7 +251,7 @@ POLYHE_SRC="$SRC/polyhe"
 # git clone https://github.com/hpca-uji/polyhe.git "$POLYHE_SRC"
 git submodule update --init "$POLYHE_SRC"
 cd "$POLYHE_SRC"
-git checkout d0a53b95644073e13cbf948189c259ccee3c3ee2
+git checkout ba143af10e5fc5b6478e1fceb8f9fb6e18864b3c
 
 # Install
 pip install "$POLYHE_SRC"
@@ -270,7 +270,7 @@ NQ_SRC="$SRC/net-queue"
 # git clone https://github.com/hpca-uji/net-queue.git "$NQ_SRC"
 git submodule update --init "$NQ_SRC"
 cd "$NQ_SRC"
-git checkout 749ad5328be82722ede4e657518d28f27b64be61
+git checkout c58a4d9f7257965bb384ac01957d37d838527587
 
 # Install
 pip install "$NQ_SRC"
@@ -289,7 +289,7 @@ PYMPI_SRC="$SRC/pympi"
 # git clone https://github.com/hpca-uji/pympi.git "$PYMPI_SRC"
 git submodule update --init "$PYMPI_SRC"
 cd "$PYMPI_SRC"
-git checkout bb0bfc9dba920ee65249f6adf23b30548d32cbf4
+git checkout 84fd1ebe670c0b048ef8a20c5ef0c1a601b71658
 
 # Install
 pip install "$PYMPI_SRC"

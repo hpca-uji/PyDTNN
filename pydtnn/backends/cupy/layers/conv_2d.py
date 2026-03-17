@@ -11,6 +11,8 @@ class Conv2DCupy(Conv2DNumpy, LayerCupy):
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
         super()._model_init(prev_shape, x)
 
+        self.stream_2 = np.cuda.Stream()
+
         self._im2row = self.im2row_kernel()
         self._im2col = self.im2col_kernel()
         self._row2im = self.row2im_kernel()
@@ -18,6 +20,7 @@ class Conv2DCupy(Conv2DNumpy, LayerCupy):
         #----
 
     def im2row(self, x: np.ndarray, x_rows: np.ndarray) -> None:
+        #return super().im2row(x, x_rows)
         self._im2row(self.model.cuda_grid,
                     self.model.cuda_block,
                     (x, x_rows,
@@ -29,6 +32,7 @@ class Conv2DCupy(Conv2DNumpy, LayerCupy):
     # -----
 
     def row2im(self, x_rows: np.ndarray, dx: np.ndarray) -> None:
+        #return super().im2row(x_rows, dx)
         self._row2im(self.model.cuda_grid,
                     self.model.cuda_block,
                     (x_rows, dx,
@@ -40,6 +44,7 @@ class Conv2DCupy(Conv2DNumpy, LayerCupy):
     # -----
 
     def im2col(self, x: np.ndarray, x_cols: np.ndarray) -> None:
+        #return super().im2col(x, x_cols)
         self._im2row(self.model.cuda_grid,
                     self.model.cuda_block,
                     (x, x_cols,
@@ -50,6 +55,7 @@ class Conv2DCupy(Conv2DNumpy, LayerCupy):
                      self.hdilation, self.wdilation))
     # -----
     def col2im(self, x_cols: np.ndarray, dx: np.ndarray) -> None:
+        #return super().im2row(x_cols, dx)
         self._col2im(self.model.cuda_grid,
                     self.model.cuda_block,
                     (x_cols, dx,

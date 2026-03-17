@@ -335,7 +335,7 @@ class Model[T: Array]:
         self._evaluate_round: int = 0
         self._is_model_init: bool = False
 
-        # Read the model (must be the last action, as it calls self._initialize() if there is a model)
+        # Read the model (must be the last action, as it calls self._model_init() if there is a model)
         self.model_name: str | None = self.kwargs.get("model_name")
         if self.model_name:
             self._read_model(self.model_name)

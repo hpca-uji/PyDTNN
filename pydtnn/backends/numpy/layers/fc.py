@@ -62,8 +62,7 @@ class FCNumpy(FC[np.ndarray], LayerNumpy):
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         self.x = x
-        y = self.y[: x.shape[0], :]
-
+        y = np.ascontiguousarray(self.y[: x.shape[0], :], dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_MATMUL)
         np.matmul(x, self.weights, out=y,
                   dtype=self.model.dtype)
@@ -89,8 +88,8 @@ class FCNumpy(FC[np.ndarray], LayerNumpy):
         if self.use_bias:
             # self.db = np.sum(dy, axis=0)
             np.sum(dy, axis=0, out=self.db)
-
-        dx = self.dx[:self.x.shape[0], :]
+        
+        dx = np.asarray(self.dx[: self.x.shape[0], :], dtype=self.model.dtype, order="C")
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_MATMUL)
         # dx = np.matmul(dy, self.weights.T)
         np.matmul(dy, self.weights.T, out=dx,

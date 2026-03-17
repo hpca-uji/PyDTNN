@@ -66,13 +66,13 @@ class AbstractPool2DLayerNumpy(AbstractPool2DLayer[np.ndarray], LayerNumpy):
         y_shape = self.model.encode_shape((batch_size, self.co, self.ho, self.wo))
         y_size = math.prod(y_shape)
         y = self.y_dx[:y_size]
-        return y.reshape(y_shape)
+        return np.ascontiguousarray(y.reshape(y_shape), dtype=self.model.dtype)
 
     def get_dx(self, batch_size: int) -> np.ndarray:
         dx_shape = self.model.encode_shape((batch_size, self.ci, self.hi, self.wi))
         dx_size = math.prod(dx_shape)
         dx = self.y_dx[:dx_size]
-        return dx.reshape(dx_shape)
+        return np.ascontiguousarray(dx.reshape(dx_shape), dtype=self.model.dtype)
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         msg = """This is a fake forward function. It will be masked on initialization by _forward_i2c or _forward_cg"""
