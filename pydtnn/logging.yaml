@@ -1,0 +1,15 @@
+version: 1
+formatters:
+  brief:
+    format: '%(message)s'
+  precise:
+    format: '[%(asctime)s] [%(name)s] [%(levelname)s]: %(message)s'
+handlers:
+  console:
+    class: logging.StreamHandler
+    formatter: precise
+    stream: ext://sys.stderr
+loggers:
+  pydtnn:
+    level: INFO
+    handlers: [console]

@@ -5,19 +5,20 @@ PyDTNN Benchmark script
 """
 
 import logging
-import logging.config
-# TODO: Add a config file.
-logging.config.fileConfig("logging.conf")
 logger = logging.getLogger(__name__)
 
 import os
 import sys
 import time
 import cProfile
+import logging.config
+from importlib import resources
 from pathlib import Path
 from datetime import datetime
 from traceback import TracebackException
 from contextlib import contextmanager, nullcontext
+
+from yaml import safe_load
 
 from pydtnn.model import Model
 from pydtnn.utils import random
@@ -67,6 +68,8 @@ def traceback_context():
 
 
 def main():
+    log_conf = safe_load(resources.read_text("pydtnn", "logging.yaml"))
+    logging.config.dictConfig(log_conf)
     # Parse options
     parser = PydtnnArgumentParser()
     config = parser.parse_args()
