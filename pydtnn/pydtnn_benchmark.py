@@ -5,8 +5,9 @@ PyDTNN Benchmark script
 """
 
 import logging
+import logging.config
 # TODO: Add a config file.
-logging.basicConfig(level=logging.DEBUG)
+logging.config.fileConfig("logging.conf")
 logger = logging.getLogger(__name__)
 
 import os
