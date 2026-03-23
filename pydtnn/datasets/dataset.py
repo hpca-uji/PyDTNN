@@ -361,11 +361,7 @@ class Dataset:
         return output
 
     def _actual_data_generator(self, part: Part) -> Generator[tuple[np.ndarray, np.ndarray]]:
-        # NOTE: Yield is necessary so this function is a generator,
-        #       however want to produce a empty iterable,
-        #       so we return immediately without yielding
-        return
-        yield
+        yield self._x[part], self._y[part]
 
     @staticmethod
     def _x_transformer_adaptor(func: Callable[[np.ndarray], np.ndarray]) -> TransformFunc:

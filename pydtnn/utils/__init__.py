@@ -6,11 +6,15 @@ import sys
 import math
 import string
 import ctypes
+import zipfile
 import threading
 from queue import Queue
+from pathlib import PurePath
 from importlib import import_module
 from ctypes.util import find_library
 from collections.abc import Iterable
+
+import numpy as np
 
 
 class BackgroundGenerator[T](threading.Thread):
@@ -136,3 +140,27 @@ def load_library(name: str):
                               f"using 'export LD_LIBRARY_PATH={name.upper()}_LIB_PATH:$LD_LIBRARY_PATH' and "
                               f"then call this application again.")
     return ctypes.CDLL(path)
+
+
+def get_npz_shape(f):
+    """Get NPZ member shapes without loading the archive"""
+    shapes = {}
+
+    with zipfile.ZipFile(f, 'r') as z:
+        for name in z.namelist():
+            stem = PurePath(name).stem
+
+            with z.open(name) as f:
+                version = np.lib.format.read_magic(f)
+
+                match version:
+                    case (1, 0):
+                        shape, fortran, dtype = np.lib.format.read_array_header_1_0(f)
+                    case (2, 0):
+                        shape, fortran, dtype = np.lib.format.read_array_header_2_0(f)
+                    case version:
+                        raise ValueError(f"Unsupported version: {version}")
+
+                shapes[stem] = shape
+
+    return shapes

@@ -52,13 +52,15 @@ class Memory(Dataset):
         if len(x_test.shape) == 3 and not TENSOR_ASSERT[self.model.tensor_format](x_test.shape[0], x_test.shape[2]):
             warnings.warn(f"Dataset x_test.shape {x_test.shape} may not be in {self.model.tensor_format.upper()} format, following the model format!", RuntimeWarning)
 
+        test_as_validation = self.model.test_as_validation or force_test_as_validation
+
         self.__x_source: list[np.ndarray] = []
         self.__y_source: list[np.ndarray] = []
         # Sources for the training part
         self.__x_source.append(x_train)
         self.__y_source.append(y_train)
         # Sources for the validation part
-        if force_test_as_validation:
+        if test_as_validation:
             self.__x_source.append(x_test)
             self.__y_source.append(y_test)
         else:
@@ -83,6 +85,3 @@ class Memory(Dataset):
             local_slice = slice(local_offset, local_offset + local_nsamples)
             self._x[part] = self.__x_source[part][local_slice, ...]
             self._y[part] = self.__y_source[part][local_slice, ...]
-
-    def _actual_data_generator(self, part: Dataset.Part):
-        yield self._x[part], self._y[part]
