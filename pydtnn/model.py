@@ -433,6 +433,8 @@ class Model[T: Array]:
 
     def _ensure_model_init(self) -> None:
         # TODO: Mirar de combinar la comprobación con "_model_init"
+        # TODO: añadir aquí lo siguiente (si es necesario hacerlo aquí):
+        #input_shape = format_reshape(self.dataset.input_shape, SampleFormat.CHW, self.tensor_format.as_sample())  # type: ignore
         if self._is_model_init:
             return
         self._model_init()

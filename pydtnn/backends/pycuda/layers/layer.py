@@ -263,6 +263,6 @@ class LayerPycuda(Layer[TensorArray]):
         else:
             empty_x = gpuarray.zeros((1, *self.model.dataset.input_shape), self.model.dtype)[:0]
             empty_y_tag = gpuarray.zeros((1, *self.model.dataset.output_shape), self.model.dtype)[:0]
-            x = TensorArray(empty_x, self.tensor_format, self.cudnn_dtype)
+            x = TensorArray(empty_x, self.model.tensor_format, self.model.cudnn_dtype)
             y_targ = TensorArray(empty_y_tag, self.model.tensor_format, self.model.cudnn_dtype)
         return x, y_targ

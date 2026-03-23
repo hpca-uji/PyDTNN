@@ -41,10 +41,10 @@ class Memory(Dataset):
                 raise ValueError("Both x_test and y_test must be provided or, alternatively, none of them!")
 
         if input_shape is None:
-            _input_shape: ArrayShape = x_train.shape[1:]
+            input_shape = x_train.shape[1:]
 
         if output_shape is None:
-            _output_shape: ArrayShape = y_train.shape[1:]
+            output_shape = y_train.shape[1:]
 
         if len(x_train.shape) == 3 and not TENSOR_ASSERT[self.model.tensor_format](x_train.shape[0], x_train.shape[2]):
             warnings.warn(f"Dataset x_train.shape {x_train.shape} may not be in {self.model.tensor_format.upper()} format, following the model format!", RuntimeWarning)
@@ -73,8 +73,8 @@ class Memory(Dataset):
         super().__init__(model,
                          x_train.shape[0],
                          x_test.shape[0],
-                         _input_shape,
-                         _output_shape,
+                         input_shape,
+                         output_shape,
                          force_test_as_validation=force_test_as_validation,
                          debug=debug)
 
