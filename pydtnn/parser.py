@@ -212,8 +212,8 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
         _oo_group = self.add_argument_group("Optimization options")
         _oo_group.add_argument('--enable-best-of', type=bool_lambda, default=False,
                                help="Enable the BestOf auto-tuner.")
-        _oo_group.add_argument('--enable-memory-cache', type=bool_lambda, default=True,
-                               help="Enable the memory cache module to use persistent memory.")
+        # _oo_group.add_argument('--enable-memory-cache', type=bool_lambda, default=True,
+        #                        help="Enable the memory cache module to use persistent memory.")
         _oo_group.add_argument('--enable-fused-bn-relu', type=bool_lambda, default=False,
                                help="Fuse BatchNormalization and Relu layers. True if specified.")
         _oo_group.add_argument('--enable-fused-conv-relu', type=bool_lambda, default=False,

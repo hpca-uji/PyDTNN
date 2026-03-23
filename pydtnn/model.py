@@ -191,7 +191,7 @@ class Model[T: Array]:
     initial_model_sync: bool
     dataset_percentage: float
     use_mpi_buffers: bool
-    enable_memory_cache: bool
+    # enable_memory_cache: bool
     gpus_per_node: int
     weights_and_bias_filename: str
     learning_rate_scaling: bool
@@ -270,10 +270,10 @@ class Model[T: Array]:
         self.mode: Model.Mode = Model.Mode.UNSPECIFIED
 
         # Memory cache optimization
-        if self.enable_memory_cache:
-            MemoryCache.enable()
-        else:
-            MemoryCache.disable()
+        # if self.enable_memory_cache:
+        #     MemoryCache.enable()
+        # else:
+        #     MemoryCache.disable()
 
         self.memory_cls = PreallocMemory if self.shared_tmp_memory else PrivateMemory
 

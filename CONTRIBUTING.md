@@ -28,15 +28,11 @@
 - Temporal shared memory on block layers may be overwritten by child layers.
 
 # Planned
+- Move from `cupy-cuda` package to `cupy` for AMD ROCm support.
 - Move `gpu.utils.memory_allocation` from a global namespace to a model instance.
-- Generate a shared temporary memory space for layers on the model (for CPU in `ndarray` and for GPU in `GPUArray`).
 - Move common code of `.pyi` and `.pyx` to a shared module.
 - Extract GPU `SourceModule` to `.cu` files.
-- Rework `BestOf` to not use globals.
 - Rework `BestOf` eliminate them and move it to test scripts.
-- Rework `MemoryCache` to not use globals.
-- Rework the fuse layer implementations.
-- Replace `print` statements with `logger` calls.
 
 # Publish
 Dependencies: `gcc patchelf` and `build twine auditwheel`

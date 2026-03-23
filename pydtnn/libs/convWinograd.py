@@ -20,7 +20,7 @@ from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython
 from pydtnn.utils.tensor import TensorFormat, encode_shape, decode_shape
 from pydtnn.utils import load_library
 from pydtnn.utils.best_of import BestOf
-from pydtnn.utils.memory_cache import MemoryCache
+# from pydtnn.utils.memory_cache import MemoryCache
 
 try:
     load_library("convwinograd")
@@ -257,10 +257,10 @@ class ConvWinograd:
                                                       ctypes.c_uint(vpadding), ctypes.c_uint(hpadding), ctypes.byref(_v), ctypes.byref(_m))
             return _v, _m
 
-        self.cw_cache_pre = MemoryCache(lambda args: winograd_workspace_alloc_pre(*args))
-        self.cw_cache_kernel = MemoryCache(lambda args: winograd_workspace_alloc_kernel(*args))
-        self.y_cache = MemoryCache(lambda shape: np.zeros(shape, self.dtype))
-        self.d_cache = MemoryCache(lambda shape: np.zeros(shape, self.dtype))
+        self.cw_cache_pre = lambda args: winograd_workspace_alloc_pre(*args)  # MemoryCache
+        self.cw_cache_kernel = lambda args: winograd_workspace_alloc_kernel(*args)  # MemoryCache
+        self.y_cache = lambda shape: np.zeros(shape, self.dtype)  # MemoryCache
+        self.d_cache = lambda shape: np.zeros(shape, self.dtype)  # MemoryCache
 
         # Debug
         self.debug = debug
