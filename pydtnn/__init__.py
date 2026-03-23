@@ -61,7 +61,7 @@ except Exception as e:
     gpu_errors.append(e)
 
 try:
-    from skcuda import cublas  # type: ignore
+    from pydtnn.libs import cublas  # type: ignore
 except Exception as e:
     cublas = None
     gpu_errors.append(e)

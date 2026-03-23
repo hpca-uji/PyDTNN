@@ -6,7 +6,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 try:
-    from skcuda import cublas  # type: ignore
+    from pydtnn.libs import cublas  # type: ignore
 except Exception:
     pass
 
