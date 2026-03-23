@@ -432,6 +432,7 @@ class Model[T: Array]:
         self.cudnn_dtype = cudnn_dtype
 
     def _ensure_model_init(self) -> None:
+        # TODO: Mirar de combinar la comprobación con "_model_init"
         if self._is_model_init:
             return
         self._model_init()

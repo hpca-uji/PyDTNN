@@ -52,7 +52,7 @@ class Memory(Dataset):
         if len(x_test.shape) == 3 and not TENSOR_ASSERT[self.model.tensor_format](x_test.shape[0], x_test.shape[2]):
             warnings.warn(f"Dataset x_test.shape {x_test.shape} may not be in {self.model.tensor_format.upper()} format, following the model format!", RuntimeWarning)
 
-        test_as_validation = self.model.test_as_validation or force_test_as_validation
+        test_as_validation = model.test_as_validation or force_test_as_validation
 
         self.__x_source: list[np.ndarray] = []
         self.__y_source: list[np.ndarray] = []
