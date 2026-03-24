@@ -507,4 +507,4 @@ class BestOf:
         BestOf.print_tables()
 
 
-BestOf.use_always_the_first_alternative()
+BestOf.use_always_the_first_alternative(True)
