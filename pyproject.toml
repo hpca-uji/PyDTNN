@@ -98,7 +98,3 @@ include = [
     "pydtnn",
     "pydtnn.*"
 ]
-
-[[tool.uv.index]]
-name = "nvidia-pyindex"
-url = "https://pypi.ngc.nvidia.com"

@@ -88,7 +88,6 @@ Optionally, if you are going to use GPU, you should have installed the
 corresponding system libraries, and install the required Python packages
 with:
 ```sh
-pip install nvidia-pyindex
 pip install .[gpu]
 ```
 
