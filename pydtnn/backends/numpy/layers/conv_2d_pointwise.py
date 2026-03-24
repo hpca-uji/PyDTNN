@@ -9,9 +9,6 @@ if TYPE_CHECKING:
 from pydtnn.backends.numpy.layers.abstract.conv_2d import AbstractConv2DNumpy
 from pydtnn.layers.conv_2d_pointwise import Conv2DPointwise
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum, PYDTNN_EVENT_FINISHED
-from pydtnn.utils.best_transpose_0231 import best_transpose_0231
-from pydtnn.utils.best_transpose_0312 import best_transpose_0312
-from pydtnn.model import Model
 from pydtnn.utils.constants import ArrayShape, Parameters
 from pydtnn.utils.tensor import TensorFormat, format_transpose
 
@@ -97,6 +94,7 @@ class Conv2DPointwiseNumpy(AbstractConv2DNumpy, Conv2DPointwise):
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return np.asarray(y, dtype=self.model.dtype, order="C")
+    # ----
 
     def _forward_nchw(self, x: np.ndarray) -> np.ndarray:
 
@@ -105,17 +103,17 @@ class Conv2DPointwiseNumpy(AbstractConv2DNumpy, Conv2DPointwise):
         y: np.ndarray = self.y[:x.shape[0], :]
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_TRANSPOSE_Y)
-        y = best_transpose_0231(y)  # type: ignore (It's Okay)
+        y = format_transpose(y, TensorFormat.NCHW, TensorFormat.NHWC)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_POINTWISE_CONV)
-        np.matmul(best_transpose_0231(x),  # type: ignore (It's Okay)
+        np.matmul(format_transpose(x, TensorFormat.NCHW, TensorFormat.NHWC),
                   self.weights.T, out=y,
                   dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_TRANSPOSE_Y)
-        y: np.ndarray = best_transpose_0312(y)  # type: ignore (It's Okay)
+        y: np.ndarray = format_transpose(y, TensorFormat.NHWC, TensorFormat.NCHW)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.use_bias:
@@ -124,9 +122,9 @@ class Conv2DPointwiseNumpy(AbstractConv2DNumpy, Conv2DPointwise):
                    dtype=self.model.dtype)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return np.asarray(y, dtype=self.model.dtype, order="C")
+    # ----
 
     def _backward_nhwc(self, dy: np.ndarray) -> np.ndarray:
-
         _n, _h, _w, _c = dy.shape
         _dim = _n * _h * _w
         x_shape = self.x.shape
@@ -159,9 +157,9 @@ class Conv2DPointwiseNumpy(AbstractConv2DNumpy, Conv2DPointwise):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return np.asarray(dx.reshape(x_shape), dtype=self.model.dtype, order="C")
+    # ----
 
     def _backward_nchw(self, dy: np.ndarray) -> np.ndarray:
-
         _n, _c, _h, _w = dy.shape
         _dim = _n * _h * _w
         x_shape = self.x.shape
@@ -194,3 +192,4 @@ class Conv2DPointwiseNumpy(AbstractConv2DNumpy, Conv2DPointwise):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return np.asarray(dx.reshape(x_shape), dtype=self.model.dtype, order="C")
+    # ----
