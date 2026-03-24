@@ -250,12 +250,12 @@ class BestOf:
         return current_execution
 
     @classmethod
-    def use_always_the_first_alternative(cls, update: bool = False):
+    def use_always_the_first_alternative(cls, value: bool = True, update: bool = False):
         """
         Forces all BestOf classes to always call the first alternative,
         deactivating any competition among the different alternatives.
         """
-        cls._use_first_alternative = True
+        cls._use_first_alternative = value
         if not update:
             return
         import gc
@@ -505,3 +505,6 @@ class BestOf:
     def print_report():
         BestOf._root.print_report()
         BestOf.print_tables()
+
+
+BestOf.use_always_the_first_alternative()

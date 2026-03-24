@@ -290,8 +290,8 @@ class Model[T: Array]:
         self.tensor_format: TensorFormat = get_tensor_format(tensor_format=self.tensor_format, gpu=self.enable_cudnn)  # type: ignore
 
         # Disable BestOf globally if not enabled
-        if self.enable_best_of is False:
-            BestOf.use_always_the_first_alternative()
+        # if self.enable_best_of is False:
+        #     BestOf.use_always_the_first_alternative()
 
         self.batch_size = get_batch_size(local_size=self.batch_size, global_size=self.global_batch_size, comm_size=self.comm_size)
 

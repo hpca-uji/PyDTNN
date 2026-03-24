@@ -23,7 +23,7 @@ from yaml import safe_load
 from pydtnn.model import Model
 from pydtnn.utils import random
 from pydtnn.parser import PydtnnArgumentParser
-from pydtnn.utils.best_of import BestOf
+# from pydtnn.utils.best_of import BestOf
 
 ompi_stdout_rank = os.environ.get("OMPI_STDOUT_RANK", None)
 if ompi_stdout_rank and os.environ.get("OMPI_COMM_WORLD_RANK", "0") != ompi_stdout_rank:
@@ -51,8 +51,8 @@ def print_model_reports(model):
     # Print performance counter report
     model.perf_counter.print_report()
     # Print BestOf report
-    if model.enable_best_of:
-        BestOf.print_report()
+    # if model.enable_best_of:
+    #     BestOf.print_report()
 
 
 @contextmanager

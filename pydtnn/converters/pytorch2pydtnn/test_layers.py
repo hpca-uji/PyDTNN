@@ -8,7 +8,7 @@ import torch
 
 from pydtnn.model import Model as PyDTNN_Model
 from pydtnn.layer_base import LayerBase
-from pydtnn.utils.best_of import BestOf
+# from pydtnn.utils.best_of import BestOf
 
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 try:
@@ -100,9 +100,9 @@ def print_model_reports(model: PyDTNN_Model):
     # Print performance counter report
     model.perf_counter.print_report()
     # Print BestOf report
-    if model.enable_best_of:
-        print()
-        BestOf.print_report()
+    # if model.enable_best_of:
+    #     print()
+    #     BestOf.print_report()
 
 
 class TEST_PyTorch_Model(PyTorch_Model):

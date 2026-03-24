@@ -25,7 +25,7 @@ from pydtnn.models.inceptionv3_cifar10 import inceptionv3_cifar10 as pydtnn_ince
 
 from pydtnn.model import Model as PyDTNN_Model
 from pydtnn.datasets.dataset import select as select_dataset
-from pydtnn.utils.best_of import BestOf
+# from pydtnn.utils.best_of import BestOf
 
 import torch
 from torch.nn import CrossEntropyLoss
@@ -153,9 +153,9 @@ def print_model_reports(model):
     # Print performance counter report
     model.perf_counter.print_report()
     # Print BestOf report
-    if model.enable_best_of:
-        print()
-        BestOf.print_report()
+    # if model.enable_best_of:
+    #     print()
+    #     BestOf.print_report()
 
 
 def pydtnn_inference(model: PyDTNN_Model, metrics_list=None, dataset=None) -> None:
