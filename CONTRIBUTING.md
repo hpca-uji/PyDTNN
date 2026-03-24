@@ -32,7 +32,6 @@
 - Move `gpu.utils.memory_allocation` from a global namespace to a model instance.
 - Move common code of `.pyi` and `.pyx` to a shared module.
 - Extract GPU `SourceModule` to `.cu` files.
-- Rework `BestOf` eliminate them and move it to test scripts.
 
 # Publish
 Dependencies: `gcc patchelf` and `build twine auditwheel`
