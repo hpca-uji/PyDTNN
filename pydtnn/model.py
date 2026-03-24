@@ -49,8 +49,6 @@ from pydtnn.tracers.simple_tracer import SimpleTracer
 from pydtnn.tracers.simple_tracer_gpu import SimpleTracerPycuda
 from pydtnn.tracers.simple_tracer_pmlib import SimpleTracerPMLib
 from pydtnn.tracers.tracer import Tracer
-from pydtnn.utils.best_of import BestOf
-from pydtnn.utils.memory_cache import MemoryCache
 from pydtnn.utils.performance_counter import PerformanceCounter
 from pydtnn.utils.tensor import SampleFormat, TensorFormat, format_reshape, encode_shape, encode_tensor, decode_shape, decode_tensor
 from pydtnn.utils.constants import Array, NetworkAlgEnum, ArrayShape, Parameters

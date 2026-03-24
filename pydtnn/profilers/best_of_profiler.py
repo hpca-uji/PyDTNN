@@ -6,7 +6,7 @@ import platform
 
 import numpy as np
 
-from pydtnn.utils.best_of import BestOf
+from pydtnn.utils.best_of.best_of import BestOf
 from pydtnn.utils import print_with_header
 
 

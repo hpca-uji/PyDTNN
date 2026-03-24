@@ -19,8 +19,7 @@ from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython
 
 from pydtnn.utils.tensor import TensorFormat, encode_shape, decode_shape
 from pydtnn.utils import load_library
-from pydtnn.utils.best_of import BestOf
-# from pydtnn.utils.memory_cache import MemoryCache
+from pydtnn.utils.best_of.best_of import BestOf
 
 try:
     load_library("convwinograd")

@@ -6,7 +6,7 @@ from typing import Callable
 import numpy as np
 
 from pydtnn.utils.transpose_cython import transpose_0231_ijk_cython, transpose_0231_ikj_cython
-from pydtnn.utils.best_of import BestOf
+from pydtnn.utils.best_of.best_of import BestOf
 
 
 def transpose_0231_numpy(original: np.ndarray,

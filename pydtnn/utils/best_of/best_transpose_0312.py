@@ -4,7 +4,7 @@ logger = logging.getLogger(__name__)
 import numpy as np
 from pydtnn.utils.transpose_cython import transpose_0312_ijk_cython, transpose_0312_ikj_cython
 
-from pydtnn.utils.best_of import BestOf
+from pydtnn.utils.best_of.best_of import BestOf
 from typing import Callable
 
 

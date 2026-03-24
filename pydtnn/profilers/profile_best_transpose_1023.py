@@ -7,7 +7,7 @@ For running the tests run:
 
 from pydtnn.profilers.best_of_profiler import BestOfProfiler
 from pydtnn.tests.abstract.common import alexnet_layers
-from pydtnn.utils.best_transpose_1023 import best_transpose_1023
+from pydtnn.utils.best_of.best_transpose_1023 import best_transpose_1023
 from pydtnn.utils import random
 
 

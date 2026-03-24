@@ -4,7 +4,7 @@ logger = logging.getLogger(__name__)
 import warnings
 import numpy as np
 
-from pydtnn.utils.sparse_cython import \
+from pydtnn.utils.sparse.sparse_cython import \
     top_threshold_selection_dense_cython, \
     top_threshold_selection_coo_cython, \
     summ_coo_cython

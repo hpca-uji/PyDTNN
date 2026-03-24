@@ -6,7 +6,7 @@ from typing import Callable, List
 from pydtnn.backends.numpy.layers.conv_2d.direct_cpu import Conv2DDirectNumpy
 from pydtnn.backends.numpy.layers.conv_2d.winograd_cpu import Conv2DWinogradNumpy
 from pydtnn.model import Model
-from pydtnn.utils.best_of import BestOf
+from pydtnn.utils.best_of.best_of import BestOf
 
 import numpy as np
 from pydtnn.utils.constants import ArrayShape

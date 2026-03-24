@@ -12,7 +12,7 @@ from pydtnn.backends.numpy.optimizers.optimizer import OptimizerNumpy
 from pydtnn.backends.cython.utils.oktopk_utils_cython import compute_dense_acc_cython, intersect_2d_indexes_cython, reset_residuals_cython, update_sparsed_weights_cython, update_sparsed_weights_mv_cython
 from pydtnn.layer_base import LayerBase
 from pydtnn.optimizers.oktopk import OkTopk
-from pydtnn.utils.sparse import SparseMatrixCOO
+from pydtnn.utils.sparse.sparse import SparseMatrixCOO
 
 try:
     from pydtnn.libs.mpi import MPI
