@@ -125,10 +125,10 @@ class ConvWinograd:
         if parent_layer is not None:
             self.get_parent_layer = weakref.ref(parent_layer)
             self.evaluate_only = self.get_parent_layer().model.evaluate_only
-            enable_best_of = self.get_parent_layer().model.enable_best_of
+            # enable_best_of = self.get_parent_layer().model.enable_best_of
         else:
-            enable_best_of = False
             self.evaluate_only = True
+        enable_best_of = True
 
         if isinstance(dtype, np.dtype):
             self.dtype = dtype

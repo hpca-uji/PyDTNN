@@ -210,8 +210,8 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
 
         # Optimization options
         _oo_group = self.add_argument_group("Optimization options")
-        _oo_group.add_argument('--enable-best-of', type=bool_lambda, default=False,
-                               help="Enable the BestOf auto-tuner.")
+        # _oo_group.add_argument('--enable-best-of', type=bool_lambda, default=False,
+        #                        help="Enable the BestOf auto-tuner.")
         # _oo_group.add_argument('--enable-memory-cache', type=bool_lambda, default=True,
         #                        help="Enable the memory cache module to use persistent memory.")
         _oo_group.add_argument('--enable-fused-bn-relu', type=bool_lambda, default=False,
@@ -224,11 +224,11 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
                                help="Fuse Conv2D and BatchNormalization and Relu layers. Default: False.")
 
         # Convolution methods
-        _cm_group = self.add_argument_group("Convolution options")
-        _cm_group.add_argument('--conv-direct-method', type=str, default="",
-                               help="Use ConvDirect module to realize convolutions in Conv2D layers. True if specified.")
-        _cm_group.add_argument('--conv-direct-methods-for-best-of', type=str, default="",
-                               help="ConvDirect modules to compare in 'best_of' option if specified.")
+        # _cm_group = self.add_argument_group("Convolution options")
+        # _cm_group.add_argument('--conv-direct-method', type=str, default="",
+        #                        help="Use ConvDirect module to realize convolutions in Conv2D layers. True if specified.")
+        # _cm_group.add_argument('--conv-direct-methods-for-best-of', type=str, default="",
+        #                        help="ConvDirect modules to compare in 'best_of' option if specified.")
 
         # Optimizer options
         _op_group = self.add_argument_group("Optimizer options")

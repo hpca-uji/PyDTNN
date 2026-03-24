@@ -29,23 +29,22 @@ class Conv2DDirect(AbstractConv2DStandardNumpy):
             func.__name__ = name
             setattr(self, name, func)
 
-        # ConvDirect parameters
-        methods = []
-        if self.model.conv_direct_method:
-            methods = [self.model.conv_direct_method]
-        if self.model.enable_best_of:
-            if self.model.conv_direct_methods_for_best_of != "":
-                methods = self.model.conv_direct_methods_for_best_of.split(',')
+        methods = [
+            f"convdirect_original_{self.model.tensor_format}_default",
+            f"convdirect_renamed_{self.model.tensor_format}_default",
+            f"convdirect_reorder_{self.model.tensor_format}_default",
+            f"convdirect_block_{self.model.tensor_format}_default",
+            f"convdirect_im2row_{self.model.tensor_format}_default",
+            f"convdirect_block_blis_{self.model.tensor_format}_blis",
+            f"convdirect_conv_gemm_{self.model.tensor_format}_default"
+        ]
+
         for n, method in enumerate(methods):
-            self.cd.append(ConvDirect(method, dtype=self.model.dtype, tensor_format=self.model.tensor_format,
-                                      debug=self.debug, parent_layer=self))
-            try:
-                getattr(self, f"_forward_cd{n}_nhwc")
-            except AttributeError:
-                new(f"_forward_cd{n}_nhwc", partial(self._forward_cd, n=n))
-                new(f"_forward_cd{n}_nchw", partial(self._forward_cd, n=n))
-                new(f"_backward_cd{n}_nhwc", partial(self._backward_cd, n=n))
-                new(f"_backward_cd{n}_nchw", partial(self._backward_cd, n=n))
+            self.cd.append(ConvDirect(method, dtype=self.model.dtype, tensor_format=self.model.tensor_format, debug=self.debug, parent_layer=self))
+            new(f"_forward_cd{n}_nhwc", partial(self._forward_cd, n=n))
+            new(f"_forward_cd{n}_nchw", partial(self._forward_cd, n=n))
+            new(f"_backward_cd{n}_nhwc", partial(self._backward_cd, n=n))
+            new(f"_backward_cd{n}_nchw", partial(self._backward_cd, n=n))
     # ----
 
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None):
