@@ -270,7 +270,7 @@ NQ_SRC="$SRC/net-queue"
 # git clone https://github.com/hpca-uji/net-queue.git "$NQ_SRC"
 git submodule update --init "$NQ_SRC"
 cd "$NQ_SRC"
-git checkout c58a4d9f7257965bb384ac01957d37d838527587
+git checkout 741179fc316d0e021f1158fcc6c8537d783c3dde
 
 # Install
 pip install "$NQ_SRC"
@@ -289,7 +289,7 @@ PYMPI_SRC="$SRC/pympi"
 # git clone https://github.com/hpca-uji/pympi.git "$PYMPI_SRC"
 git submodule update --init "$PYMPI_SRC"
 cd "$PYMPI_SRC"
-git checkout 84fd1ebe670c0b048ef8a20c5ef0c1a601b71658
+git checkout d6dedb59280931fd167e25d5de23a68fee955b27
 
 # Install
 pip install "$PYMPI_SRC"
