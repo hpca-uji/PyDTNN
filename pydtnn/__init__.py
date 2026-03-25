@@ -24,14 +24,19 @@ except Exception:
 
 try:
     import cupy  # type: ignore
+    logger.debug("Cupy available")
 except Exception as e:
+    logger.debug(f"Cupy not available\n{e}")
     cupy = None
     gpu_errors.append(e)
 
 try:
     import pycuda  # type: ignore
+    logger.debug("PyCuda available")
     import pycuda.driver as drv  # type: ignore
+    logger.debug("drv available")
 except Exception as e:
+    logger.debug(f"PyCuda or drv not available\n{e}")
     gpu_errors.append(e)
     pycuda = None
     drv = None
@@ -44,25 +49,33 @@ else:
 
 try:
     from pydtnn.backends.pycuda.utils import tensor_array  # type: ignore
+    logger.debug(f"tensor_array available")
 except Exception as e:
+    logger.debug(f"tensor_array not available\n{e}")
     tensor_array = None
     gpu_errors.append(e)
 
 try:
     from pydtnn.libs import nccl as nccl  # type: ignore
+    logger.debug(f"nccl available")
 except Exception as e:
+    logger.debug(f"nccl not available\n{e}")
     nccl = None
     gpu_errors.append(e)
 
 try:
     from pydtnn.libs import cudnn as cudnn  # type: ignore
+    logger.debug(f"cudnn available")
 except Exception as e:
+    logger.debug(f"cudnn not available\n{e}")
     cudnn = None
     gpu_errors.append(e)
 
 try:
     from pydtnn.libs import cublas  # type: ignore
+    logger.debug(f"cublas available")
 except Exception as e:
+    logger.debug(f"cublas available\n{e}")
     cublas = None
     gpu_errors.append(e)
 

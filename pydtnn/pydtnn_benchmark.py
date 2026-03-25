@@ -20,11 +20,6 @@ from contextlib import contextmanager, nullcontext
 
 from yaml import safe_load
 
-from pydtnn.model import Model
-from pydtnn.utils import random
-from pydtnn.parser import PydtnnArgumentParser
-# from pydtnn.utils.best_of import BestOf
-
 ompi_stdout_rank = os.environ.get("OMPI_STDOUT_RANK", None)
 if ompi_stdout_rank and os.environ.get("OMPI_COMM_WORLD_RANK", "0") != ompi_stdout_rank:
     sys.stdout = sys.stderr = open(os.devnull, "w")
@@ -70,6 +65,12 @@ def traceback_context():
 def main():
     log_conf = safe_load(resources.read_text("pydtnn", "logging.yaml"))
     logging.config.dictConfig(log_conf)
+
+    from pydtnn.model import Model
+    from pydtnn.utils import random
+    from pydtnn.parser import PydtnnArgumentParser
+    # from pydtnn.utils.best_of import BestOf
+
     # Parse options
     parser = PydtnnArgumentParser()
     config = parser.parse_args()
