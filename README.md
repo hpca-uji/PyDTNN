@@ -12,8 +12,8 @@ and inference, PyDTNN exploits inter-process parallelism (via MPI) and
 intra-process parallelism (via multithreading), leveraging the capabilities
 of multicore processors and GPUs at the node level. For this purpose,
 PyDTNN relies on mpi4py/pympi/NCCL for message passing, BLAS routines
-accessed through NumPy/Cython for multicore processors, and PyCUDA/CuPy/cuDNN/cuBLAS
-for GPU acceleration.
+accessed through NumPy/Cython for multicore processors,
+and PyCUDA/CuPy/cuDNN/cuBLAS for GPU acceleration.
 
 Supported layers:
 - Fully-connected
