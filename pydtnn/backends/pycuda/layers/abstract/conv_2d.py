@@ -82,7 +82,7 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
     def _export_weights_dw(self, key: str) -> Any:
         # NOTE: Every variant must implement their version of this method.
         # super()._export_prop(key)
-        msg = "This is a \"fake\" function. It must be overrided by the child classes."
+        msg = "This is a fake function. It must be overrided by the child classes."
         raise NotImplementedError(f"Conv2DPycuda forward: {msg}")
     # ----
 
@@ -129,7 +129,7 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
     def _import_weights_dw(self, key: str, value: Any) -> None:
         # NOTE: Every variant must implement their version of this method.
         # super()._export_prop(key)
-        msg = "This is a \"fake\" function. It must be overrided by the child classes"
+        msg = "This is a fake function. It must be overrided by the child classes"
         raise NotImplementedError(f"Conv2DPycuda forward: {msg}")
     # ----
 

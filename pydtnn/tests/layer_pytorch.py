@@ -326,7 +326,7 @@ class LayerPyTorchTestCase(TestCase):
         #    print(f"x_torch:\n{x_torch}")
         #    print(f"diff:\n{diff}")
 
-        # self.assertTrue((diff < rtol).all()), f"Not all values are below the rtol. Max. difference: \"{diff.max()}\". Std. deviation: \"{diff.std()}\". Min. difference: {diff.min()}."
+        # self.assertTrue((diff < rtol).all()), f"Not all values are below the rtol. Max. difference: {diff.max()}. Std. deviation: {diff.std()}. Min. difference: {diff.min()}."
         self.assertTrue(np.allclose(x_pydtnn, x_torch, rtol=rtol, atol=atol))
     # ---------
     # ====================

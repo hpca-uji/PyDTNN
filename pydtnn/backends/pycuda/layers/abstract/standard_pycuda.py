@@ -27,7 +27,7 @@ class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
                 # NOTE: It is this shape, even if in the CPU version is different.
                 # self.weights_shape = (self.co, *self.filter_shape, self.ci)
             case _:
-                raise NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
+                raise NotImplementedError(f"{self.model.tensor_format} format not implemented.")
     # -----
 
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
@@ -52,7 +52,7 @@ class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
                 self.im2_func = self.fwd_nhwc(self.use_bias)
                 self._2im_func = self._backward_nhwc(self.use_bias)
             case _:
-                raise NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
+                raise NotImplementedError(f"{self.model.tensor_format} format not implemented.")
 
         self.im2_x = TensorArray.new_zeros(im2_x_shape, self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype)
         self.x_2im_var = TensorArray.new_zeros(x_2im_var_shape, self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype)

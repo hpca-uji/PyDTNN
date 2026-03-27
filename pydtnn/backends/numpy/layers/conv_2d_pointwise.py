@@ -53,7 +53,7 @@ class Conv2DPointwiseNumpy(AbstractConv2DNumpy, Conv2DPointwise):
             case TensorFormat.NHWC:
                 self.weights_shape = (self.ci, self.co)
             case _:
-                raise NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
+                raise NotImplementedError(f"{self.model.tensor_format} format not implemented.")
         # --
     # ---
 

@@ -30,7 +30,7 @@ class Conv2DGEMM(AbstractConv2DStandardNumpy):
                 self.forward = self._forward_cg_nhwc
                 self.backward = self._backward_cg_nhwc
             case _:
-                raise NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
+                raise NotImplementedError(f"{self.model.tensor_format} format not implemented.")
         # ---
     # ----
 

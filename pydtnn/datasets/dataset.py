@@ -457,7 +457,7 @@ class Dataset:
             case TensorFormat.NHWC:
                 width_dim = 2
             case _:
-                raise NotImplementedError(f"\"Dataset _do_flip_image\" is not implemented for \"{self.model.tensor_format}\" format.")
+                raise NotImplementedError(f"Dataset _do_flip_image is not implemented for {self.model.tensor_format} format.")
 
         limit = min(n, int(n * self.model.augment_flip_prob))
         s = np.arange(n)
@@ -493,7 +493,7 @@ class Dataset:
                     data[ri, :t[i], :ll[i], :] = 0.0
                     data[ri, b:, r:, :] = 0.0
                 case _:
-                    raise NotImplementedError(f"\"Dataset _do_crop_images\" is not implemented for \"{self.model.tensor_format}\" format.")
+                    raise NotImplementedError(f"Dataset _do_crop_images is not implemented for {self.model.tensor_format} format.")
             data[ri, ...] = np.roll(data[ri, ...], random.integers(-t[i], (h - b)), axis=1)
             data[ri, ...] = np.roll(data[ri, ...], random.integers(-ll[i], (w - r)), axis=2)
         return data

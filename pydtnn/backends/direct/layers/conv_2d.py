@@ -59,7 +59,7 @@ class Conv2DDirect(AbstractConv2DStandardNumpy):
                 self.forward = self._forward_cd0_nchw
                 self.backward = self._backward_cd0_nchw
             case _:
-                raise NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
+                raise NotImplementedError(f"{self.model.tensor_format} format not implemented.")
         # --
 
         out_shape = encode_shape((self.model.batch_size, self.co, self.ho, self.wo))
@@ -68,8 +68,8 @@ class Conv2DDirect(AbstractConv2DStandardNumpy):
         self.out = None
 
         if self.use_bias:
-            logger.warning(f"\"{self.__class__.__name__}\" never uses the biases.")
-            warn(f"\"{self.__class__.__name__}\" never uses the biases.", RuntimeWarning)
+            logger.warning(f"{self.__class__.__name__} never uses the biases.")
+            warn(f"{self.__class__.__name__} never uses the biases.", RuntimeWarning)
     # -----
 
     def _forward_cd(self, x: np.ndarray, n=0) -> np.ndarray:

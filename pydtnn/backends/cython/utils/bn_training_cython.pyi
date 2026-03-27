@@ -28,7 +28,7 @@ def bn_training_fwd_cython[T: _npDT](x: _npDT_2Dims[T],
         eps (float): epsilon.
 
     Returns:
-        out: Nothing. The output is stored in \"y\", \"xn\" and \"std\".
+        out: Nothing. The output is stored in `y`, `xn` and `std`.
 
     Note:
         It's never used.

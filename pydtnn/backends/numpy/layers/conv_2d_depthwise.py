@@ -37,7 +37,7 @@ class Conv2DDepthwiseNumpy(AbstractConv2DNumpy, Conv2DDepthwise):
             case _:
                 _y_shape = None
                 dx_shape = None
-                raise NotImplementedError(f"Format \"{self.model.tensor_format}\" is not supported in \"Conv2DDepthwiseNumpy\" layer.")
+                raise NotImplementedError(f"Format {self.model.tensor_format} is not supported in Conv2DDepthwiseNumpy layer.")
         # ---
         _y_shape = self.model.encode_shape((self.model.batch_size, self.co, self.ho, self.wo))
         dx_shape = self.model.encode_shape((self.model.batch_size, self.hi, self.wi, self.ci))

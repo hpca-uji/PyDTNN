@@ -27,7 +27,7 @@ class Conv2DPycuda(AbstractConv2DPycuda):
                 # NOTE: It is this shape, even if in the CPU version is different.
                 self.weights_shape = (self.co, *self.filter_shape, self.ci)
             case _:
-                raise NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
+                raise NotImplementedError(f"{self.model.tensor_format} format not implemented.")
     # ---
 
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:

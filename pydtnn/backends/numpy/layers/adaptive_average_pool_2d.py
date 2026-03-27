@@ -41,7 +41,7 @@ class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], LayerNumpy):
                 self._forward = self._forward_nhwc
                 self._backward = self._backward_nhwc
             case _:
-                raise NotImplementedError(f"\"AdaptiveAveragePool2DNumpy\" is not implemented for \"{self.model.tensor_format}\" format.")
+                raise NotImplementedError(f"AdaptiveAveragePool2DNumpy is not implemented for {self.model.tensor_format} format.")
 
         y_shape = self.model.encode_shape((self.model.batch_size, self.co, self.ho, self.wo))
         # NOTE: This attribute only stores data, its value before the operation doesn't matter; it's initalized due avoid warnings in "LayerAndActivationBase.export".

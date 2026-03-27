@@ -45,7 +45,7 @@ class Conv2DDepthwisePycuda(AbstractConv2DPycuda):
                 self.backward = self._backward_depthwise_nhwc
             case _:
                 # TODO: self devolvía la versión con el número
-                raise NotImplementedError(f"\"{self.name}\" is not implemented for \"{self.model.tensor_format}\" format.")
+                raise NotImplementedError(f"{self.name} is not implemented for {self.model.tensor_format} format.")
 
         self.total_num_threads = np.int32(np.prod(self.grid) * np.prod(self.block))
 

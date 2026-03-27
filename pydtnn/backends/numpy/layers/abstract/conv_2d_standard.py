@@ -21,7 +21,7 @@ class AbstractConv2DStandardNumpy(AbstractConv2DNumpy):
             case TensorFormat.NHWC:
                 self.weights_shape = (self.ci, *self.filter_shape, self.co)
             case _:
-                raise NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
+                raise NotImplementedError(f"{self.model.tensor_format} format not implemented.")
     # ---
 
     def _export_prop(self, key: str):

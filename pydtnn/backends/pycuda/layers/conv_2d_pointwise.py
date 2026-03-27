@@ -27,7 +27,7 @@ class Conv2DPointwisePycuda(AbstractConv2DPycuda):
             case TensorFormat.NHWC:
                 self.weights_shape = (self.co, self.ci)
             case _:
-                raise NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
+                raise NotImplementedError(f"{self.model.tensor_format} format not implemented.")
         # --
 
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
@@ -47,7 +47,7 @@ class Conv2DPointwisePycuda(AbstractConv2DPycuda):
                 macros = MACROS_NHWC
                 self.bias_sum_bwd = self.cuda_sum_bias_axis_012()
             case _:
-                raise NotImplementedError(f"\"conv_2d_gpu_depthwise\" is not implemented for \"{self.model.tensor_format}\" format.")
+                raise NotImplementedError(f"conv_2d_gpu_depthwise is not implemented for {self.model.tensor_format} format.")
 
         self.total_num_threads = np.int32(np.prod(self.grid) * np.prod(self.block))
 

@@ -1238,7 +1238,7 @@ class Model[T: Array]:
                 else:
                     return 0.0
             case _:
-                raise ValueError(f"Model synchronization participation option '{self.model_sync_participation}' not recognized. Only recognized: \"{list(Model.SyncParticipation)}\"")
+                raise ValueError(f"Model synchronization participation option '{self.model_sync_participation}' not recognized. Only recognized: {list(Model.SyncParticipation)}")
 
         min_nsamples, max_nsamples, total_nsamples = min(comm_nsamples), max(comm_nsamples), sum(comm_nsamples)
         comm_size = len(comm_nsamples)
@@ -1252,7 +1252,7 @@ class Model[T: Array]:
                 inverse_nsamples = min_nsamples + (max_nsamples - self.dataset._nsamples[part])
                 return inverse_nsamples / total_nsamples
             case _:
-                raise ValueError(f"Model synchronization algorithm option '{self.model_sync_alg}' not recognized. Only recognized: \"{list(Model.SyncAlg)}\"")
+                raise ValueError(f"Model synchronization algorithm option '{self.model_sync_alg}' not recognized. Only recognized: {list(Model.SyncAlg)}")
 
     def _evaluate_batch(self, x_batch: np.ndarray, y_batch: np.ndarray, sync_model=True) -> np.ndarray:
         self.mode = Model.Mode.EVALUATE

@@ -40,7 +40,7 @@ def pads_from_onnx_to_pydtnn(pads: list[int]) -> tuple[int, int]:  # -> list[tup
 def not_implemented(name: str) -> Callable:
     # Normal usage of this: switch_pytorch_pydtnn([not_implemented_layer_name])(args)
     def _not_implemented(args: dict[str, Any]) -> None:
-        raise NotImplementedError(f"Layer \"{name}\" not implemented - Args received:\n{args} ")
+        raise NotImplementedError(f"Layer {name} not implemented - Args received:\n{args} ")
     return _not_implemented
 # --- END not_implemented --- #
 

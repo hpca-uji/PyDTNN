@@ -32,5 +32,5 @@ class ConcatenationBlock[T: Array](AbstractBlockLayer[T]):
                 self.idx_co: np.ndarray = np.cumsum(self.out_co, axis=0)
                 self.shape: ArrayShape = (*self.out_shapes[0][:CONCAT_DIM_NHWC], sum(self.out_co))
             case tensor_format:
-                raise NotImplementedError(f"\"ConcatenationBlock\" is not implemented for \"{tensor_format}\" format.")
+                raise NotImplementedError(f"ConcatenationBlock is not implemented for {tensor_format} format.")
         self.co, self.ho, self.wo = self.model.decode_shape(self.shape)

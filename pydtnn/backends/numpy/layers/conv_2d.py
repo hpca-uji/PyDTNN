@@ -39,7 +39,7 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
             case _:
                 self._x_cr_shape = (None, )
                 _dw_shape = (None, )
-                raise NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
+                raise NotImplementedError(f"{self.model.tensor_format} format not implemented.")
         # -
 
         y_shape = (dim_n, self.co)

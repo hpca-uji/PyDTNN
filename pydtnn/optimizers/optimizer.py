@@ -23,7 +23,7 @@ class Optimizer[T: Array](PromoteToBackend):
         self.gpudirect = self.model.gpudirect
 
     def update(self, layer: LayerBase) -> None:
-        raise NotImplementedError("method \"update\" of an Optimizer's child class is not implemented")
+        raise NotImplementedError("method update of an Optimizer's child class is not implemented")
 
 
 def select(name: str) -> type[Optimizer]:

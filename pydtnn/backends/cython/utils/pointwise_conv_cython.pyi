@@ -13,5 +13,5 @@ def pointwise_conv_cython[T: _npDT](x: _npDT_4Dims[T], k: _npDT_2Dims[T], out: _
         k (npDT_2Dims): 2-dimensinal array where the kernel is stored.
         out (npDT_4Dims): 4-dimensinal array where the output is stored.
     Returns:
-        Nothing. The output is stored in \"out\".
+        Nothing. The output is stored in `out`.
     """
