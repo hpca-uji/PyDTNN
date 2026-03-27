@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# Source: https://github.com/lebedov/scikit-cuda
 
 """
 Utility functions.
