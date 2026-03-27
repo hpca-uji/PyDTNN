@@ -429,19 +429,14 @@ class Model[T: Array]:
         self.stream = stream
         self.cudnn_dtype = cudnn_dtype
 
-    def _ensure_model_init(self) -> None:
-        # TODO: Mirar de combinar la comprobación con "_model_init"
-        # TODO: añadir aquí lo siguiente (si es necesario hacerlo aquí):
-        #input_shape = format_reshape(self.dataset.input_shape, SampleFormat.CHW, self.tensor_format.as_sample())  # type: ignore
-        if self._is_model_init:
-            return
-        self._model_init()
-        are_layers = bool(self.layers)
-        if not are_layers:
-            logger.warning("The model has no layers in it.")
-            warn("The model has no layers in it.", RuntimeWarning)
+    def _ensure_model_runable(self) -> None:
+        if not self.layers:
+            warn_text = "The model has no layers in it."
+            logger.warning(warn_text)
+            warn(warn_text, RuntimeWarning)
         elif not self.dataset:
             raise ValueError("There is no dataset and the model has layers.")
+        self._model_init()
 
     @property
     def dataset_path(self) -> str:
@@ -471,8 +466,9 @@ class Model[T: Array]:
 
         assert crypt is not None
         if self.enable_nccl:
-            logger.warning("If NCCL is active, encryption is disabled")
-            warn("If NCCL is active, encryption is disabled", RuntimeWarning)
+            warn_text = "If NCCL is active, encryption is disabled"
+            logger.warning(warn_text)
+            warn(warn_text, RuntimeWarning)
 
         return crypt
 
@@ -483,24 +479,19 @@ class Model[T: Array]:
         # Change input_shape to model.tensor_format
         input_shape = format_reshape(self.dataset.input_shape, SampleFormat.CHW, self.tensor_format.as_sample())  # type: ignore
         if len(input_shape) != 3:
-            logger.warning(f"Input layer does not have 3 dimensions ({input_shape}), it may cause issues!")
-            warn(f"Input layer does not have 3 dimensions ({input_shape}), it may cause issues!", RuntimeWarning)
+            warn_text = f"Input layer does not have 3 dimensions ({input_shape}), it may cause issues!"
+            logger.warning(warn_text)
+            warn(warn_text, RuntimeWarning)
         launch_shape_warning = len(input_shape) == 3 and not (input_shape[0] > input_shape[2]) if self.tensor_format is TensorFormat.NHWC \
             else len(input_shape) == 3 and not (input_shape[0] < input_shape[1])
         if launch_shape_warning:
-            warning_text = f"Input layer shape {input_shape} may not be in {self.tensor_format} format, regardless of model format! "
-            logger.warning(warning_text)
-            warn(warning_text, RuntimeWarning)
-            warning_text = None
+            warn_text = f"Input layer shape {input_shape} may not be in {self.tensor_format} format, regardless of model format! "
+            logger.warning(warn_text)
+            warn(warn_text, RuntimeWarning)
         output_shape = tuple(self.dataset.output_shape)
-
-        self.input_shape = input_shape
-        self.output_shape = output_shape
 
         layers = create_model(input_shape, output_shape)
         self.add_layers(layers)  # type: ignore
-
-        self._model_init()
 
     def encode_shape(self, shape: ArrayShape) -> ArrayShape:
         """Transform the shape from `NCHW` order to `model.tensor_format` order (supports 4 or 3 dimensions)"""
@@ -775,8 +766,9 @@ class Model[T: Array]:
                 try:
                     new_curr_layer._model_init(prev_shape=layers_to_fuse[0].prev_shape, x=layers_to_fuse[0].x)
                 except Exception as e:
-                    logger.warning(f"Aborted fusion, {e}")
-                    warn(f"Aborted fusion, {e}")
+                    warn_text = f"Aborted fusion, {e}"
+                    logger.warning(warn_text)
+                    warn(warn_text, RuntimeWarning)
                 else:
                     start = i - len(layers_to_fuse)
                     del layers[start: i]
@@ -865,8 +857,9 @@ class Model[T: Array]:
 
         model_name = str(data.get(Parameters.MODEL_NAME))
         if model_name != self.model_name:
-            logger.warning(f"Importing from different models! (self: {self.model_name}, got: {model_name})")
-            warn(f"Importing from different models! (self: {self.model_name}, got: {model_name})", RuntimeWarning)
+            warn_text = f"Importing from different models! (self: {self.model_name}, got: {model_name})"
+            logger.warning(warn_text)
+            warn(warn_text, RuntimeWarning)
 
         for layer, data in zip(self.layers, data[Parameters.LAYERS]):
             layer.import_(data)  # type: ignore (It is the right data type.)
@@ -990,7 +983,7 @@ class Model[T: Array]:
                 self.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT], [PYDTNN_EVENT_FINISHED, PYDTNN_EVENT_FINISHED])
 
     def train(self, bar_width=BAR_WIDTH) -> dict[str, list[np.ndarray]]:
-        self._ensure_model_init()
+        self._ensure_model_runable()
 
         # If working with CUDA, self.y_batch must be in a GPU's data structure.
         if self.enable_cudnn and self.y_batch is None:
@@ -1283,7 +1276,7 @@ class Model[T: Array]:
         return self.total_metrics
 
     def evaluate(self, bar_width=BAR_WIDTH):
-        self._ensure_model_init()
+        self._ensure_model_runable()
 
         if self.enable_cudnn and self.y_batch is None:
             assert gpuarray and self.cudnn_dtype
