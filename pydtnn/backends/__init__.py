@@ -197,9 +197,9 @@ class PromoteToBackend:
 
     def _init_backend_with_model(self, model: "model_module.Model") -> None:
         """Initialize backend and link a new model instance"""
-        self.model = model  # Set on frontend
-        self._init_backend()
         self.model = model  # Set on backend
+        self._init_backend()
+        self.model = model  # Set on frontend
 
     @classmethod
     def from_model[T](cls: type[T], model: "model_module.Model") -> T:
