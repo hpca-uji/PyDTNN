@@ -28,7 +28,7 @@ from pydtnn import hostname, ranks_per_node, num_gpus, nccl_comm, cudnn_handle, 
 from pydtnn import utils
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.activations.relu import Relu
-from pydtnn.libs.mpi import proto as PROTOCOL
+from pydtnn.libs.mpi.rc import proto as PROTOCOL
 from pydtnn.datasets.dataset import Dataset
 from pydtnn.layer_base import LayerBase, FusedLayerMixIn
 from pydtnn.layers.batch_normalization import BatchNormalization
