@@ -105,14 +105,16 @@ with:
 export PYDTNN_CUPY=yes
 ```
 
-### From source
+### Contributing and installing from source
 Download PyDTNN source code from its GitHub repository and
-install PyDTNN in editable mode (see `CONTRIBUTING.md` for more details):
+install it in editable mode:
 ```sh
 git clone https://github.com/hpca-uji/PyDTNN.git
 cd PyDTNN
 pip install --config-settings editable_mode=compat -e .
 ```
+
+For more information on how to work on the project see `CONTRIBUTING.md`.
 
 For more information on how to manage external dependencies see
 `vendor/README.md`.
