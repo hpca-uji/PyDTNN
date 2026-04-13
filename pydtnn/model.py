@@ -625,34 +625,33 @@ class Model[T: Array]:
         sep += "+"
 
         # Show header
-        _show = list[str]()
+        _show = [""]
         _show.append(sep)
-        _show.append('\n')
+        _show.append("")
         for header, size in struct.items():
-            _show.append(f"|{header.replace('-', ' ').capitalize():^{size}s}")
-        _show.append("\n|\n")
+            _show[-1] += (f"|{header.replace('-', ' ').capitalize():^{size}s}")
+        _show[-1] += ("|")
 
         # Show layers
         top_layers = {layer.id for layer in self.layers}
         for layer_id, props in all_props.items():
             if layer_id in top_layers:
                 _show.append(sep)
-                _show.append('\n')
+            _show.append("")
             for header, size in struct.items():
                 value = props.get(header, "")
-                _show.append(f"|{str(value):^{size}s}")
-            _show.append("\n|\n")
+                _show[-1] += (f"|{str(value):^{size}s}")
+            _show[-1] += ("|")
         _show.append(sep)
-        _show.append('\n\n')
-        logger.info(''.join(_show))
+        logger.info('\n'.join(_show))
 
     def show_model(self) -> None:
         key: str = "Model Summary"
-        _show = list[str]()
-        _show.append(key + "\n" + "=" * len(key))
+        _show = [""]
+        _show.append(key)
+        _show.append("=" * len(key))
         for key, value in self._show_props().items():
             _show.append(f"- {key.replace('-', ' ').capitalize()}: {value}")
-        _show.append("")
         logger.info('\n'.join(_show))
 
     def show(self) -> None:

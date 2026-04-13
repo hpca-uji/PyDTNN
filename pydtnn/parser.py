@@ -224,9 +224,9 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
                                help="Fuse Conv2D and BatchNormalization and Relu layers. Default: False.")
 
         # Convolution methods
-        # _cm_group = self.add_argument_group("Convolution options")
-        # _cm_group.add_argument('--conv-direct-method', type=str, default="",
-        #                        help="Use ConvDirect module to realize convolutions in Conv2D layers. True if specified.")
+        _cm_group = self.add_argument_group("Convolution options")
+        _cm_group.add_argument('--conv-direct-method', type=str, default="",
+                               help="ConvDirect algorithm to use in Conv2D layers. Default: 'convdirect_original_{tensor_format}_default'")
         # _cm_group.add_argument('--conv-direct-methods-for-best-of', type=str, default="",
         #                        help="ConvDirect modules to compare in 'best_of' option if specified.")
 
