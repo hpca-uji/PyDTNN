@@ -67,6 +67,8 @@ python -m twine upload --repository pypi ./dist/*
 ├── CONTRIBUTING.md
 ├── pyproject.toml
 ├── setup.py
+├── .editor
+├── .mailmap
 ├── LICENSE
 ├── # other resources
 ```
