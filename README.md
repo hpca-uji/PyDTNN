@@ -57,45 +57,30 @@ Supported datasets:
   downloaded from: <https://github.com/hpca-uji/PyDTNN>
 - And others via generic data loaders.
 
-## Installing PyDTNN from source
-Download PyDTNN source code from its GitHub repository and enter the
-PyDTNN directory:
+## Installing PyDTNN
 ```sh
-git clone https://github.com/hpca-uji/PyDTNN.git
-cd PyDTNN
-```
-
-Then package itself must be installed:
-```sh
-pip install .
-```
-
-If you plan to modify the PyDTNN code, instead of using the previous
-line, you can install PyDTNN in editable mode (see `CONTRIBUTING.md` for
-more details):
-```sh
-pip install --config-settings editable_mode=compat -e .
+pip install pydtnn
 ```
 
 Optionally, if you are going to use MPI, you should have installed the
 corresponding system libraries, and install the required Python packages
 with:
 ```sh
-pip install .[mpi]
+pip install pydtnn[mpi]
 ```
 
 Optionally, if you are going to use GPU, you should have installed the
 corresponding system libraries, and install the required Python packages
 with:
 ```sh
-pip install .[gpu]
+pip install pydtnn[gpu]
 ```
 
 Optionally, if you are going to use FHE, you should have installed the
 corresponding system libraries, and install the required Python packages
 with:
 ```sh
-pip install .[fhe]
+pip install pydtnn[fhe]
 ```
 
 Optionally, if you are going to use PyMPI, you can switch protocols
@@ -118,6 +103,15 @@ Optionally, if you are going to use CuPy, you can switch NumPy implementation
 with:
 ```sh
 export PYDTNN_CUPY=yes
+```
+
+### From source
+Download PyDTNN source code from its GitHub repository and
+install PyDTNN in editable mode (see `CONTRIBUTING.md` for more details):
+```sh
+git clone https://github.com/hpca-uji/PyDTNN.git
+cd PyDTNN
+pip install --config-settings editable_mode=compat -e .
 ```
 
 For more information on how to manage external dependencies see
