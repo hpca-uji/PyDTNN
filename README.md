@@ -218,10 +218,8 @@ The PyDTNN framework comes with a utility launcher called
   - `--enable-fused-conv-bn-relu`: Fuse `Conv2D` and
     `BatchNormalization` and `Relu` layers. Default: `False`.
 - Convolution operation parameters:
-  - `--conv-direct-method`: Use `ConvDirect` module to realize
-    convolutions in `Conv2D` layers. `True` if specified.
-  - `--conv-direct-methods-for-best-of`: `ConvDirect` modules to compare
-    in `best_of` option if specified.
+  - `--conv-direct-method`: ConvDirect algorithm to use in Conv2D layers.
+    Default: `convdirect_original_{tensor_format}_default`.
 - Optimizer parameters:
   - `--optimizer`: Optimizers: `sgd`, `rmsprop`, `adam`, `nadam`.
     Default: `sgd`.

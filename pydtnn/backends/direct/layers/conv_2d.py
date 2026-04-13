@@ -22,14 +22,14 @@ class Conv2DDirect(AbstractConv2DStandardNumpy):
         # convDirect related attributes (will be initialized in initialize())
         self.cd = []
 
-    def _add_forward_backward_methods(self):
+    def _algo_init(self):
         """Add the different forward and backward methods to the class"""
 
         def new(name, func):
             func.__name__ = name
             setattr(self, name, func)
 
-        methods = [
+        self._algos = [
             f"convdirect_original_{self.model.tensor_format}_default",
             f"convdirect_renamed_{self.model.tensor_format}_default",
             f"convdirect_reorder_{self.model.tensor_format}_default",
@@ -39,27 +39,26 @@ class Conv2DDirect(AbstractConv2DStandardNumpy):
             f"convdirect_conv_gemm_{self.model.tensor_format}_default"
         ]
 
-        for n, method in enumerate(methods):
+        for n, method in enumerate(self._algos):
             self.cd.append(ConvDirect(method, dtype=self.model.dtype, tensor_format=self.model.tensor_format, debug=self.debug, parent_layer=self))
-            new(f"_forward_cd{n}_nhwc", partial(self._forward_cd, n=n))
-            new(f"_forward_cd{n}_nchw", partial(self._forward_cd, n=n))
-            new(f"_backward_cd{n}_nhwc", partial(self._backward_cd, n=n))
-            new(f"_backward_cd{n}_nchw", partial(self._backward_cd, n=n))
+            new(f"_forward_cd{n}_{self.model.tensor_format}", partial(self._forward_cd, n=n))
+            new(f"_backward_cd{n}_{self.model.tensor_format}", partial(self._forward_cd, n=n))
     # ----
 
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None):
         super()._model_init(prev_shape, x)
-        self._add_forward_backward_methods()
+        self._algo_init()
 
-        match self.model.tensor_format:
-            case TensorFormat.NHWC:
-                self.forward = self._forward_cd0_nhwc
-                self.backward = self._backward_cd0_nhwc
-            case TensorFormat.NCHW:
-                self.forward = self._forward_cd0_nchw
-                self.backward = self._backward_cd0_nchw
-            case _:
-                raise NotImplementedError(f"{self.model.tensor_format} format not implemented.")
+        if self.model.conv_direct_method:
+            try:
+                n = self._algos.index(self.model.conv_direct_method)
+            except ValueError as e:
+                raise ValueError("Specified conv_direct_method not found!") from e
+        else:
+            n = 0
+
+        self.forward = getattr(self, f"_forward_cd{n}_{self.model.tensor_format}")
+        self.backward = getattr(self, f"_backward_cd{n}_{self.model.tensor_format}")
         # --
 
         out_shape = encode_shape((self.model.batch_size, self.co, self.ho, self.wo))
