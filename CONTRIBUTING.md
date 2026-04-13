@@ -6,7 +6,7 @@
 - Every CUDA's kernel must have a different name. If two kernels have the same name, CUDA will not identify the correct function.
 - Test changes in every backend (cpu, gpu, ...). Changes base classes may have unexpected changes in some backends.
 - Use `numpy`'s functions over its operands  versions. Sometimes they over better precision, even if theoretically identical.
-- Ensure `README.rst` and `parser.py` are in-sync. When adding, modifying or deleting options, check changes are reflected on both sources.
+- Ensure `README.md` and `parser.py` are in-sync. When adding, modifying or deleting options, check changes are reflected on both sources.
 - If a test to compare some layers' outputs of different models is being implemented,
   it is necessary to ensure the copy of those outputs before executing the following layer,
   due there are some layers that operate with their input in-place.
