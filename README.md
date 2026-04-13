@@ -53,7 +53,7 @@ Supported datasets:
   Romanian. As unofficial task, conventional bilingual text
   translation is offered between English and Arabic, French,
   Japanese, Chinese, German and Korean. This dataset is included into
-  the repository. Its binary version can be
+  the repository. Its plain version can be
   downloaded from: <https://github.com/hpca-uji/PyDTNN>
 - And others via generic data loaders.
 

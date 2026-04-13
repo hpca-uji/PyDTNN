@@ -1,38 +1,61 @@
-# Guidelines
-- Don't re-export symbols from `__init__.py` or other, instead modules use from their true location.
-- Don't use star imports. It can cause problems for type-checker and IDEs, especially if multiple are present.
-- Use `pydtnn.utils.random` for randomness, other generator are not multi-thread aware.
-- If plausible do not define `__init__.py` in modules. It can easily cause circular imports.
-- Every CUDA's kernel must have a different name. If two kernels have the same name, CUDA will not identify the correct function.
-- Test changes in every backend (cpu, gpu, ...). Changes base classes may have unexpected changes in some backends.
-- Use `numpy`'s functions over its operands  versions. Sometimes they over better precision, even if theoretically identical.
-- Ensure `README.md` and `parser.py` are in-sync. When adding, modifying or deleting options, check changes are reflected on both sources.
-- If a test to compare some layers' outputs of different models is being implemented,
-  it is necessary to ensure the copy of those outputs before executing the following layer,
-  due there are some layers that operate with their input in-place.
-- Don't use `np.ndarray()` to create numpy's array, use a explicit initializer (like `np.zeros()`, `np.ones()`, `np.arange()` or `np.empty()`).
-- Don't use `np.transpose(ary, format)` with a magic number, use `format_tranpose(ary, src, dst)` to provide an explicit format.
-- The variants of the 2D convolutional layer must be in `conv_2d_variants`. If that is changed,
-  it is necessary to reflect this changes in the Conv2D's variable `backend_module_name` and in every backend' variant folder.
+# Contributing guidelines
+## Imports
+- Do not re-export symbols (ie from `__init__.py`), always import from the original module.
+- Avoid star imports (`from x import *`), they break type checking and IDE support.
+- Avoid defining `__init__.py` unless strictly necessary (it can easily introduce circular imports).
 
-# Knowledge
-- On components `__init__` is used for configuration, while `initialize` for resource allocations.
-- `enable-gpudirect` changes where data is stored, from CPU in `ndarray` to GPU in `GPUArray`, and requires `enable-cudnn`.
-- `enable-nccl` changes where reductions are made, from CPU with `MPI` to GPU with `NCCL`, and requires `enable-gpudirect`.
-- `encryption` requires `NCCL` to be off, it it is on, encryption will be skipped.
-- `encryption` normally requires `use-mpi-buffers` to be off, as must crypto does not expose buffer access.
-  Also the MPI library does not support async object reduces, such as `mpi4py`, `use-blocking-mpi` must be specified.
-- If using `conda` and `pip install --config-settings editable_mode=compat -e .` errors with `no such option: --config-settings`,
-  deactivate all environments and then reactivate only the one you want.
-- Temporal shared memory on block layers may be overwritten by child layers.
+## Numpy
+- Prefer `numpy` functions over operators when possible (they may offer better numerical precision).
+- Do not create arrays using `np.ndarray()`, use explicit initializers such as `np.zeros()`, `np.ones()`, `np.arange()`, or `np.empty()`.
+- Avoid magic numbers in `np.transpose(ary, format)`, use `format_transpose(ary, src, dst)` instead.
 
-# Planned
-- Move from `cupy-cuda` package to `cupy` for AMD ROCm support.
-- Move `gpu.utils.memory_allocation` from a global namespace to a model instance.
-- Move common code of `.pyi` and `.pyx` to a shared module.
-- Extract GPU `SourceModule` to `.cu` files.
+## Cython
+- Cython's `.pyx` can be included anywhere, but must be accompanied by a `.pyi` typing interface.
 
-# Publish
+## Random
+- Use `pydtnn.utils.random` for random number generation. Other generators are not multi-thread aware.
+
+## GPU
+- Each CUDA kernel must have a unique name. Duplicate names will cause incorrect kernel resolution.
+
+## Tests
+- Test all changes across backends (CPU, GPU, etc.), changes in base classes may introduce backend-specific issues.
+- When comparing outputs between layers or models, always copy outputs before passing them to the next layer, some layers perform in-place operations.
+
+## Configuration
+- Keep `README.md` and `parser.py` in sync, any change in options must be reflected in both.
+
+
+
+# Architecture notes
+- In components, `__init__` is used for model-agnostic configuration, and `_model_init` for model specific configuration and resource allocation.
+
+## GPU
+- `--enable-gpudirect` moves data from CPU (`ndarray`) to GPU (`GPUArray`), requires `enable-cudnn`
+- `--enable-nccl` moves reductions from CPU (`MPI`) to GPU (`NCCL`), requires `enable-gpudirect`
+
+## Encryption
+- Requires `NCCL` to be disabled (otherwise it will be skipped), typically requires
+  `--use-mpi-buffers=False` (crypto libraries usually do not expose buffer access) and
+  `--use-blocking-mpi=True` (MPI like `mpi4py` does not support async object reductions)
+
+## Memory
+- When using `PreallocMemory`, temporary memory in block layers will overlap its child layers, therefore it may be overwritten.
+
+## Troubleshoot
+- If using `conda` and `pip install` fails with `no such option: --config-settings`, deactivate all environments and reactivate only the target environment.
+
+
+
+# Planned changes
+- Replace `cupy-cuda` with `cupy` (for AMD ROCm support)
+- Move `gpu.utils.memory_allocation` from global scope to model instance
+- Extract shared logic from `.pyi` and `.pyx` into a common module
+- Move GPU `SourceModule` code into `.cu` files
+
+
+
+# Publishing guide
 Dependencies: `gcc patchelf` and `build twine auditwheel`
 
 ```sh
@@ -40,4 +63,115 @@ python -m build --outdir ./dist/
 python -m build --outdir ./build/ --wheel
 python -m auditwheel repair --wheel-dir ./dist/ ./build/*.whl
 python -m twine upload --repository pypi ./dist/*
+```
+
+
+
+# Project structure
+## Repository root
+```
+├── README.md
+├── CONTRIBUTING.md
+├── pyproject.toml
+├── setup.py
+├── LICENSE
+├── # other resources
+```
+## Python package
+```
+├── pydtnn
+│   ├── logging.yaml
+│   ├── pydtnn_benchmark.py
+│   ├── parser.py
+│   ├── model.py
+│   ├── layer_base.py
+```
+### Components
+```
+│   ├── activations
+│   │   ├── activation.py  # base
+│   │   └── # each implementation
+│   ├── models
+│   │   ├── # each implementation
+│   ├── layers
+│   │   ├── abstract  # shared
+│   │   ├── layer.py  # base
+│   │   └── # each implementation
+│   ├── losses
+│   │   ├── loss.py  # base
+│   │   └── # each implementation
+│   ├── metrics
+│   │   ├── metric.py  # base
+│   │   └── # each implementation
+│   ├── schedulers
+│   │   ├── scheduler.py  # base
+│   │   └── # each implementation
+│   ├── optimizers
+│   │   ├── optimizer.py  # base
+│   │   └── # each implementation
+│   ├── backends
+│   │   ├── __init__.py  # base
+│   │   ├── numpy 
+│   │   ├── cython
+│   │   │   ├── # implementation
+│   │   │   └── utils  # pyx & pyi
+│   │   ├── # each implementation with whole components structure
+│   │   └── pycuda
+│   │       ├── # implentation
+│   │       └── utils
+│   │           ├── memory_allocation.py
+│   │           └── tensor_array.py
+```
+### Support modules
+```
+│   ├── datasets
+│   │   ├── dataset.py  # base
+│   │   ├── archive.py
+│   │   ├── memory.py
+│   │   ├── folder.py
+│   │   ├── synthetic.py
+│   │   └── # each implementation
+│   ├── tracers
+│   │   ├── events.py
+│   │   ├── tracer.py
+│   │   └── # each implementation
+│   ├── tests
+│   │   ├── README.md
+│   │   ├── groups  # test groupings
+│   │   └── abstract  # base test cases
+│   ├── converters
+│   │   ├── README.md
+│   │   ├── onnx2pydtnn
+│   │   ├── pydtnn2onnx
+│   │   └── pytorch2pydtnn
+│   ├── libs
+│   │   ├── # bindings to libraries
+│   │   └── utils.py
+│   └── utils
+│       ├── constants.py
+│       ├── initializers.py
+│       ├── debug.py
+│       ├── gpu.py
+│       ├── memory_pool.py
+│       ├── pmlib.py
+│       ├── profiler.py
+│       ├── random.py
+│       ├── tensor.py
+│       └── # other utilities
+```
+## Support files
+```
+├── scripts
+│   ├── README.md
+│   ├── models
+│   ├── datasets
+│   ├── extrae
+│   ├── profilers
+│   ├── tests
+│   └── utils
+├── vendor
+│   ├── README.md
+│   └── # each repository
+└── datasets
+    └── # each dataset
 ```
