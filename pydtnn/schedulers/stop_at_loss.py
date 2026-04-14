@@ -28,7 +28,7 @@ class StopAtLoss(SchedulerWithLossOrMetric):
         if ("accuracy" in self.loss_or_metric and loss[idx] > self.threshold_value) or \
                 ("accuracy" not in self.loss_or_metric and loss[idx] < self.threshold_value):
             self.stop_training = True
-            self.log("Metric '{self.loss_or_metric}' reached threshold value {self.threshold_value}, stop training.")
+            self.log(f"Metric '{self.loss_or_metric}' reached threshold value {self.threshold_value}, stop training.")
 
     @classmethod
     def from_model(cls, model: "Model") -> "StopAtLoss":
