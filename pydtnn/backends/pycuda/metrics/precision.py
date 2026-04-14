@@ -23,7 +23,7 @@ class PrecisionPycuda(Precision[TensorArray], MetricPycuda):
                                                      tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
 
     def _kernel_init(self) -> Function:
-        _name = "binary_confusion_matrix"
+        _name = "precision"
         code = """
         //#define TRUE_POSITIVE  {{0,0}}
         #define TRUE_POSITIVE_0  0

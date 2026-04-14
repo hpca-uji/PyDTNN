@@ -145,8 +145,8 @@ __global__ void {FUNC_NAME}({T}* x, {T}* weights, {T}* y,
     for(idx = n_offset; idx < end_offset; idx++)
     {{
         ni = GET_N(idx, n, c, ho, wo);
-        hoi = GET_HO(idx, n, c, ho, wo);
-        woi = GET_WO(idx, n, c, ho, wo);
+        hoi = GET_H(idx, n, c, ho, wo);
+        woi = GET_W(idx, n, c, ho, wo);
         ci = GET_CI(idx, n, c, ho, wo);
         
         for(khi = 0; khi < kh; khi++)

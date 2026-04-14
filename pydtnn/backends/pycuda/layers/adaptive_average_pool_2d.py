@@ -29,24 +29,13 @@ _FULL_MACRO_SHIFT_POINTER = f"#define {_MACRO_SHIFT_POINTER}(p, c, h, w, ni, ci,
 _SHIFT_POINTER_NCHW = "p + ((ni * c + ci) * h + hi) * w + wi"
 _SHIFT_POINTER_NHWC = "p + ((ni * h + hi) * w + wi) * c + ci"
 
-_FULL_MACRO_INDEX_C_NCHW = f"#define {_MACRO_INDEX_C}(idx, c, h, w) (idx / (h * w)) % c"
-_FULL_MACRO_INDEX_H_NCHW = f"#define {_MACRO_INDEX_H}(idx, h, w) (idx / w) % h"
-_FULL_MACRO_INDEX_W_NCHW = f"#define {_MACRO_INDEX_W}(idx, w) idx % w"
-_DIMENSION_INDEX_CODE_NCHW = \
-    """
-ci = {macro_index_c}(idx, c, new_h, new_w);
-hi = {macro_index_h}(idx, new_h, new_w);
-wi = {macro_index_w}(idx, new_w);
-"""
-_FULL_MACRO_INDEX_H_NHWC = f"#define {_MACRO_INDEX_H}(idx, h, w, c) (idx / (w * c)) % h"
-_FULL_MACRO_INDEX_W_NHWC = f"#define {_MACRO_INDEX_W}(idx, w, c) (idx / c) % w"
-_FULL_MACRO_INDEX_C_NHWC = f"#define {_MACRO_INDEX_C}(idx, c) idx % c"
-_DIMENSION_INDEX_CODE_NHWC = \
-    """
-hi = {macro_index_h}(idx, new_h, new_w, c);
-wi = {macro_index_w}(idx, new_w, c);
-ci = {macro_index_c}(idx, c);
-"""
+_FULL_MACRO_INDEX_C_NCHW = f"#define INDEX_C(idx, c, h, w) (idx / (h * w)) % c"
+_FULL_MACRO_INDEX_H_NCHW = f"#define INDEX_H(idx, c, h, w) (idx / w) % h"
+_FULL_MACRO_INDEX_W_NCHW = f"#define INDEX_W(idx, c, h, w) idx % w"
+
+_FULL_MACRO_INDEX_H_NHWC = f"#define INDEX_H(idx, c, h, w) (idx / (w * c)) % h"
+_FULL_MACRO_INDEX_W_NHWC = f"#define INDEX_W(idx, c, h, w) (idx / c) % w"
+_FULL_MACRO_INDEX_C_NHWC = f"#define INDEX_C(idx, c, h, w) idx % c"
 
 
 class AdaptiveAveragePool2DPycuda(AdaptiveAveragePool2D[TensorArray], LayerPycuda):
@@ -71,7 +60,6 @@ class AdaptiveAveragePool2DPycuda(AdaptiveAveragePool2D[TensorArray], LayerPycud
         _full_macro_index_c = ""
         _full_macro_index_h = ""
         _full_macro_index_w = ""
-        _dimension_index_code = ""
         _full_macro_shift_pointer = [_FULL_MACRO_SHIFT_POINTER]
 
         match self.model.tensor_format:
@@ -81,7 +69,6 @@ class AdaptiveAveragePool2DPycuda(AdaptiveAveragePool2D[TensorArray], LayerPycud
                 _full_macro_index_c = _FULL_MACRO_INDEX_C_NCHW
                 _full_macro_index_h = _FULL_MACRO_INDEX_H_NCHW
                 _full_macro_index_w = _FULL_MACRO_INDEX_W_NCHW
-                _dimension_index_code = _DIMENSION_INDEX_CODE_NCHW
                 # -- END cuda_adaptive_average_pooling_fwd_nchw --
             case TensorFormat.NHWC:
                 # NOTE: It has been tested and it return values that seems to make sense,
@@ -91,16 +78,12 @@ class AdaptiveAveragePool2DPycuda(AdaptiveAveragePool2D[TensorArray], LayerPycud
                 _full_macro_index_h = _FULL_MACRO_INDEX_H_NHWC
                 _full_macro_index_w = _FULL_MACRO_INDEX_W_NHWC
                 _full_macro_index_c = _FULL_MACRO_INDEX_C_NHWC
-                _dimension_index_code = _DIMENSION_INDEX_CODE_NHWC
                 # -- END cuda_adaptive_average_pooling_fwd_nhwc --
             case _:
                 raise NotImplementedError(f"{self.model.tensor_format} is not an implemented format.")
 
         _func_name = "".join(_func_name)
         _full_macro_shift_pointer = "".join(_full_macro_shift_pointer)
-        _dimension_index_code = _dimension_index_code.format(macro_index_c=_MACRO_INDEX_C,
-                                                             macro_index_h=_MACRO_INDEX_H,
-                                                             macro_index_w=_MACRO_INDEX_W)
 
         code = """
 #define {macro_index_n}(idx, N, n) idx * n / N
@@ -135,7 +118,9 @@ __global__ void {func_name}({T}* x, {T}* y,
     idx *= num_ops_per_worker;
 
     ni = {macro_index_n}(idx, N, n);
-    {dimension_index_code}
+    ci = {macro_index_c}(idx, c, new_h, new_w);
+    hi = {macro_index_h}(idx, c, new_h, new_w);
+    wi = {macro_index_w}(idx, c, new_h, new_w);
     first_iteration = TRUE;
 
     for(ni = ni;
@@ -185,7 +170,6 @@ __global__ void {func_name}({T}* x, {T}* y,
                            macro_index_first_element=_MACRO_INDEX_FIRST_ELEMENT,
                            macro_index_last_element=_MACRO_INDEX_LAST_ELEMENT,
                            macro_desp_pointer=_MACRO_SHIFT_POINTER,
-                           dimension_index_code=_dimension_index_code,
                            func_name=_func_name,
                            T=_t
                            )
@@ -200,7 +184,6 @@ __global__ void {func_name}({T}* x, {T}* y,
         _full_macro_index_c = ""
         _full_macro_index_h = ""
         _full_macro_index_w = ""
-        _dimension_index_code = ""
         _full_macro_shift_pointer = [_FULL_MACRO_SHIFT_POINTER]
 
         match self.model.tensor_format:
@@ -210,22 +193,17 @@ __global__ void {func_name}({T}* x, {T}* y,
                 _full_macro_index_c = _FULL_MACRO_INDEX_C_NCHW
                 _full_macro_index_h = _FULL_MACRO_INDEX_H_NCHW
                 _full_macro_index_w = _FULL_MACRO_INDEX_W_NCHW
-                _dimension_index_code = _DIMENSION_INDEX_CODE_NCHW
             case TensorFormat.NHWC:
                 _func_name.append("_nhwc")
                 _full_macro_shift_pointer.append(_SHIFT_POINTER_NHWC)
                 _full_macro_index_h = _FULL_MACRO_INDEX_H_NHWC
                 _full_macro_index_w = _FULL_MACRO_INDEX_W_NHWC
                 _full_macro_index_c = _FULL_MACRO_INDEX_C_NHWC
-                _dimension_index_code = _DIMENSION_INDEX_CODE_NHWC
             case _:
                 raise NotImplementedError(f"{self.model.tensor_format} is not an implemented format.")
 
         _func_name = "".join(_func_name)
         _full_macro_shift_pointer = "".join(_full_macro_shift_pointer)
-        _dimension_index_code = _dimension_index_code.format(macro_index_c=_MACRO_INDEX_C,
-                                                             macro_index_h=_MACRO_INDEX_H,
-                                                             macro_index_w=_MACRO_INDEX_W)
 
         code = """
 #define {macro_index_n}(idx, N, n) idx * n / N
@@ -260,7 +238,9 @@ __global__ void {func_name}({T}* dx, {T}* dy,
     idx *= num_ops_per_worker;
 
     ni = {macro_index_n}(idx, N, n);
-    {dimension_index_code}
+    ci = {macro_index_c}(idx, c, new_h, new_w);
+    hi = {macro_index_h}(idx, c, new_h, new_w);
+    wi = {macro_index_w}(idx, c, new_h, new_w);
     first_iteration = TRUE;
 
     for(ni = ni;
@@ -309,7 +289,6 @@ __global__ void {func_name}({T}* dx, {T}* dy,
                            macro_index_first_element=_MACRO_INDEX_FIRST_ELEMENT,
                            macro_index_last_element=_MACRO_INDEX_LAST_ELEMENT,
                            macro_desp_pointer=_MACRO_SHIFT_POINTER,
-                           dimension_index_code=_dimension_index_code,
                            func_name=_func_name,
                            T=_t
                            )

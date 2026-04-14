@@ -281,12 +281,9 @@ __global__ void {func_name}({T}* y, {T}* b,
 
     for(idx = blockIdx.x * blockDim.x + threadIdx.x; idx < N; idx += num_workers)
     {{
-        ni = INDEX_N(idx, N, n);
         ci = INDEX_C(idx, c, h, w);
-        hi = INDEX_H(idx, c, h, w);
-        wi = INDEX_W(idx, c, h, w);
 
-        *(SHIFT_POINTER(y, c, h, w, ni, ci, hi, wi)) += (*(b+ci));
+        (*(y + idx)) += (*(b+ci));
     }}
 }}
 """

@@ -43,7 +43,7 @@ class SGDPycuda(SGD[TensorArray], OptimizerPycuda):
                 v[i] = momentum * v[i] + dw[i];
                 {nesterov_ops};
             }}
-            }}
+        }}
         """.format(
             T=DTYPE2CTYPE[self.model.dtype],
             nesterov_ops=({True: "w[i] -= lr * (decay * w[i] + dw[i] + momentum * v[i])",
