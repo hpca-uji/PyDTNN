@@ -42,24 +42,6 @@
   ---
 - If using `conda` and `pip install` fails with `no such option: --config-settings`, deactivate all environments and reactivate only the target environment.
 
-# Planned
-- Replace `cupy-cuda` with `cupy` (for AMD ROCm support)
-- Move `gpu.utils.memory_allocation` from global scope to model instance
-- Extract shared logic from `.pyi` and `.pyx` into a common module
-- Move GPU `SourceModule` code into `.cu` files
-
-# Publishing
-Dependencies: `gcc patchelf` and `build twine auditwheel`
-
-```sh
-python -m build --outdir ./dist/
-python -m build --outdir ./build/ --wheel
-python -m auditwheel repair --wheel-dir ./dist/ ./build/*.whl
-python -m twine upload --repository pypi ./dist/*
-```
-
-
-
 # Structure
 ## Repository root
 ```
@@ -169,4 +151,20 @@ python -m twine upload --repository pypi ./dist/*
 │   └── # each repository
 └── datasets
     └── # each dataset
+```
+
+# Planned
+- Replace `cupy-cuda` with `cupy` (for AMD ROCm support)
+- Move `gpu.utils.memory_allocation` from global scope to model instance
+- Extract shared logic from `.pyi` and `.pyx` into a common module
+- Move GPU `SourceModule` code into `.cu` files
+
+# Publishing
+Dependencies: `gcc patchelf` and `build twine auditwheel`
+
+```sh
+python -m build --outdir ./dist/
+python -m build --outdir ./build/ --wheel
+python -m auditwheel repair --wheel-dir ./dist/ ./build/*.whl
+python -m twine upload --repository pypi ./dist/*
 ```
