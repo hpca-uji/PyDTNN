@@ -60,7 +60,8 @@ class SimpleTracer(Tracer):
             self.emit_event(evt_type_val, evt_val)
 
     def _output_header(self) -> str:
-        return "Event type;Event value;Event name;Calls;Total time;Median of times"
+        return "Event type,Event value,Event name,Calls,Total time,Median of times"
+        # return "Event type;Event value;Event name;Calls;Total time;Median of times"
 
     def _output_row(self, event_type_value: int, event_value: int) -> str:
         event_type = self.event_types[event_type_value]
@@ -69,7 +70,8 @@ class SimpleTracer(Tracer):
         _times.sort()
         total_time = sum(_times)
         mean_of_times = _times[len(_times) // 2]
-        return f"{event_type_name};{event_value};{event_type[event_value]};{_calls};{total_time};{mean_of_times}"
+        return f"{event_type_name},{event_value},{event_type[event_value]},{_calls},{total_time},{mean_of_times}"
+        # return f"{event_type_name};{event_value};{event_type[event_value]};{_calls};{total_time};{mean_of_times}"
 
     def _write_output(self):
         """This method will be called at exit only if tracing has been enabled at any time"""

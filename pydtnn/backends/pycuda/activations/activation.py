@@ -94,7 +94,10 @@ class ActivationPycuda(Activation[TensorArray]):
                     self.stream_2.synchronize()
 
                 dw_cpu = getattr(self, f"{dw_}_cpu")
+                self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.LAYER_ENCODE)
                 dw_cpu = self.model._layer_reduce_encode(dw_cpu)
+                self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+
                 req = self.model._layer_reduce_async(dw_cpu)
                 self.reqs_allred[dw_] = req
 
@@ -114,7 +117,10 @@ class ActivationPycuda(Activation[TensorArray]):
                 dw_cpu = getattr(self, f"{dw_}_cpu")
                 req = self.reqs_allred[dw_]
                 dw_cpu = self.model._layer_reduce_wait(dw_cpu, req)
+
+                self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.LAYER_DECODE)
                 dw_cpu = self.model._layer_reduce_decode(dw_cpu)  # FIXME: dw and dw_cpu relation unclear
+                self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
                 setattr(self, f"{dw_}_cpu", dw_cpu)
 
                 # # Hierarchical mode NCCL + MPI
@@ -146,9 +152,6 @@ class ActivationPycuda(Activation[TensorArray]):
 
         for w_, dw_ in self.grad_vars.items():
             dw_ = dw_ if gradient else w_
-            self.model.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT],
-                                          [self.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.ALLREDUCE_DW,
-                                           self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.OPS_ALLREDUCE_DW])
             # stream = self.stream_2.handle)
             dw = getattr(self, dw_)
 
@@ -156,9 +159,11 @@ class ActivationPycuda(Activation[TensorArray]):
                 # self.stream_2.synchronize()
                 dw *= self.model.rank_weight
                 # TODO: self.model._encode_reduce
+                self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.OPS_ALLREDUCE_DW)
                 nccl.ncclAllReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type,
                                    nccl.RedOp.Sum, comm=self.model.nccl_comm,
                                    stream=self.stream_2.handle)
+                self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
                 # self.stream_2.synchronize()
                 # TODO: self.mode._decode_reduce
 
@@ -197,12 +202,20 @@ class ActivationPycuda(Activation[TensorArray]):
                     self.stream_2.synchronize()
 
                 dw_cpu = getattr(self, f"{dw_}_cpu")
+
+                self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.LAYER_ENCODE)
                 dw_cpu = self.model._layer_reduce_encode(dw_cpu)
+                self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+
+                self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.OPS_ALLREDUCE_DW)
                 dw_cpu = self.model._layer_reduce_sync(dw_cpu)
+                self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+
+                self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.LAYER_DECODE)
                 dw_cpu = self.model._layer_reduce_decode(dw_cpu)
+                self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+
                 setattr(self, f"{dw_}_cpu", dw_cpu)
 
                 # If there is no CUDA-aware MPI, copy data back to GPU
                 dw.ary.set_async(dw_cpu, self.stream_2)
-
-            self.model.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT], [PYDTNN_EVENT_FINISHED, PYDTNN_EVENT_FINISHED])

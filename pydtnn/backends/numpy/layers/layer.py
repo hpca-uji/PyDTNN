@@ -49,7 +49,7 @@ class LayerNumpy(Layer[np.ndarray]):
         ary[:] = np.asarray(value, dtype=self.model.dtype, order="C")
 
     def reduce_weights_async(self, gradient=True):
-        # NOTE: Keep in sync with Activation
+        # NOTE: Keep in sync with Layer
         if not self.model.comm:
             return
         self.reqs_allred = {}
@@ -57,12 +57,14 @@ class LayerNumpy(Layer[np.ndarray]):
         for w_, dw_ in self.grad_vars.items():
             dw_ = dw_ if gradient else w_
             dw: np.ndarray = getattr(self, dw_)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.LAYER_ENCODE)
             dw = self.model._layer_reduce_encode(dw)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
             req = self.model._layer_reduce_async(dw)
             self.reqs_allred[dw_] = req
 
     def wait_allreduce_async(self, gradient=True):
-        # NOTE: Keep in sync with Activation
+        # NOTE: Keep in sync with Layer
         if not self.model.comm or self.model.enable_nccl:
             return
         for w_, dw_ in self.grad_vars.items():
@@ -70,24 +72,32 @@ class LayerNumpy(Layer[np.ndarray]):
             dw = getattr(self, dw_)
             req = self.reqs_allred[dw_]
             dw = self.model._layer_reduce_wait(dw, req)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.LAYER_DECODE)
             dw = self.model._layer_reduce_decode(dw)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
             setattr(self, dw_, dw)
 
     def reduce_weights_sync(self, gradient=True):
-        # NOTE: Keep in sync with Activation
+        # NOTE: Keep in sync with Layer
         if not self.model.comm:
             return
         for w_, dw_ in self.grad_vars.items():
             dw_ = dw_ if gradient else w_
-            self.model.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT],
-                                          [self.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.ALLREDUCE_DW,
-                                           self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.OPS_ALLREDUCE_DW])
             dw: np.ndarray = getattr(self, dw_)
+
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.LAYER_ENCODE)
             dw = self.model._layer_reduce_encode(dw)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.OPS_ALLREDUCE_DW)
             dw = self.model._layer_reduce_sync(dw)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.LAYER_DECODE)
             dw = self.model._layer_reduce_decode(dw)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+
             setattr(self, dw_, dw)
-            self.model.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT], [PYDTNN_EVENT_FINISHED, PYDTNN_EVENT_FINISHED])
 
     def _sync_x_y(self, x_batch: np.ndarray, y_batch: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         x_batch = np.asarray(x_batch, dtype=self.model.dtype, order="C")
