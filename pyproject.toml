@@ -41,10 +41,9 @@ requires-python = ">=3.13"
 dependencies = [
     "cython>=0.29.21",
     "numpy>=1.19.4",
-    "matplotlib>=3.3.3",
     "prettytable>=2.1.0",
     "rich>=9.9.0",
-    "scikit-image>=0.17.2",
+    "pillow>=12.1.0",
     "scipy>=1.5.4",
     "tqdm>=4.55.0",
     "rapidgzip>=0.15.2",
