@@ -18,7 +18,8 @@ from datetime import datetime
 from traceback import TracebackException
 from contextlib import contextmanager, nullcontext
 
-from yaml import safe_load
+import numpy as np
+from yaml import safe_load, safe_dump
 
 ompi_stdout_rank = os.environ.get("OMPI_STDOUT_RANK", None)
 if ompi_stdout_rank and os.environ.get("OMPI_COMM_WORLD_RANK", "0") != ompi_stdout_rank:
@@ -48,6 +49,12 @@ def print_model_reports(model):
     # Print BestOf report
     # if model.enable_best_of:
     #     BestOf.print_report()
+
+
+def native_object(obj):
+    if isinstance(obj, np.ndarray):
+        return obj.tolist()
+    return obj
 
 
 @contextmanager
@@ -140,12 +147,15 @@ def main():
             logger.info(f'Training and validation throughput: '
                         f'{(model.dataset.train_nsamples * model.perf_counter.num_epochs) / total_time:5.4f} samples/s')
         if model.history_file:
+            events = []
+            epochs = max(len(v) for v in history.values())
+            for epoch in range(epochs):
+                events.append({
+                    key: native_object(history[key][epoch])
+                    for key in history
+                })
             with open(model.history_file, "w") as f:
-                epochs = max(len(v) for v in history.values())
-                for epoch in range(epochs):
-                    f.write(f"epoch: {epoch}\n")
-                    for key in history:
-                        f.write(f"    {key}: {history[key][epoch]}\n")
+                safe_dump(events, f)
     # Second (and last) evaluation
     if model.evaluate_on_train:
         if model.comm_rank == 0:
