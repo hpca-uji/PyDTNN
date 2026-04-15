@@ -1,4 +1,6 @@
 import logging
+
+from pydtnn import utils
 logger = logging.getLogger(__name__)
 
 import atexit
@@ -71,11 +73,12 @@ class SimpleTracer(Tracer):
 
     def _write_output(self):
         """This method will be called at exit only if tracing has been enabled at any time"""
-        if self.rank == 0:
+        output_filename = utils.string_substitute(self.output_filename, rank=self.rank)
+        if output_filename != self.output_filename or self.rank == 0:
             if len(self.pending_events):
                 logger.warning("Warning: finishing simple tracer while there are pending events to be marked as finished.")
-            logger.info(f"Writing simple tracer output to '{self.output_filename}'...")
-            with open(self.output_filename, 'w') as f:
+            logger.info(f"Writing simple tracer output to '{output_filename}'...")
+            with open(output_filename, 'w') as f:
                 f.write(self._output_header() + "\n")
                 for event_type_value, events in self.events.items():
                     for event_value in events.keys():
