@@ -54,13 +54,8 @@ def print_model_reports(model):
 
 
 class HistoryDumper(yaml.SafeDumper):
-    def represent_list(self, data):
-        node = super().represent_list(data)
-        node.flow_style = True
-        return node
-
     def represent_ndarray(self, data):
-        return self.represent_list(data.tolist())
+        return self.represent_scalar('!ndarray', repr(data), style="|")
 
 HistoryDumper.add_representer(np.ndarray, HistoryDumper.represent_ndarray)
 
