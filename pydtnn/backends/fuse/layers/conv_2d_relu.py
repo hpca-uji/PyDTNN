@@ -1,14 +1,14 @@
+from typing import TYPE_CHECKING
+from pydtnn.libs import numpy as np
+from pydtnn.utils.constants import Array, ArrayShape
+from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
+from pydtnn.layers.conv_2d import Conv2D
+from pydtnn.backends.fuse.layers.layer import LayerFuse as FusedLayerMixIn
+from pydtnn.backends.numpy.layers.abstract.conv_2d_standard import AbstractConv2DStandardNumpy
 import logging
 logger = logging.getLogger(__name__)
 
-from pydtnn.backends.numpy.layers.abstract.conv_2d_standard import AbstractConv2DStandardNumpy
-from pydtnn.backends.fuse.layers.layer import LayerFuse as FusedLayerMixIn
-from pydtnn.layers.conv_2d import Conv2D
-from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
-from pydtnn.utils.constants import Array, ArrayShape
 
-from pydtnn.libs import numpy as np
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import numpy as np
 

@@ -1,14 +1,14 @@
 """PyDTNN environment initialization"""
 
+from collections import Counter
+from types import ModuleType
+import subprocess
+import platform
+import atexit
+import os
 import logging
 logger = logging.getLogger(__name__)
 
-import os
-import atexit
-import platform
-import subprocess
-from types import ModuleType
-from collections import Counter
 
 type MPI_MODULE = ModuleType
 type Cudnn_Handle_Type = int

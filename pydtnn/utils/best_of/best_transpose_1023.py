@@ -1,11 +1,9 @@
+from typing import Callable
+from pydtnn.utils.best_of.best_of import BestOf
+from pydtnn.utils.transpose_cython import transpose_1023_ijk_cython, transpose_1023_jik_cython
+import numpy as np
 import logging
 logger = logging.getLogger(__name__)
-
-import numpy as np
-from pydtnn.utils.transpose_cython import transpose_1023_ijk_cython, transpose_1023_jik_cython
-
-from pydtnn.utils.best_of.best_of import BestOf
-from typing import Callable
 
 
 def transpose_1023_numpy(original: np.ndarray,

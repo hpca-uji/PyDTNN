@@ -1,16 +1,16 @@
+import math
+from pydtnn.utils import random
+from pydtnn.model import Model
+from pydtnn.layers.dropout import Dropout
+from pydtnn.backends.numpy.layers.layer import LayerNumpy
+from typing import TYPE_CHECKING
+from pydtnn.libs import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
-from pydtnn.libs import numpy as np
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import numpy as np
 
-from pydtnn.backends.numpy.layers.layer import LayerNumpy
-from pydtnn.layers.dropout import Dropout
-from pydtnn.model import Model
-from pydtnn.utils import random
-import math
 
 class DropoutNumpy(Dropout[np.ndarray], LayerNumpy):
 

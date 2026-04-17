@@ -1,15 +1,13 @@
+from pydtnn.utils.constants import ArrayShape
+from pydtnn.datasets.dataset import Dataset
+from pydtnn.utils import get_npz_shape
+from numpy.lib.npyio import NpzFile
+import numpy as np
+from functools import cached_property
+from typing import TYPE_CHECKING
 import logging
 logger = logging.getLogger(__name__)
 
-from typing import TYPE_CHECKING
-from functools import cached_property
-
-import numpy as np
-from numpy.lib.npyio import NpzFile
-
-from pydtnn.utils import get_npz_shape
-from pydtnn.datasets.dataset import Dataset
-from pydtnn.utils.constants import ArrayShape
 
 if TYPE_CHECKING:
     from pydtnn.model import Model

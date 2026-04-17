@@ -1,22 +1,17 @@
+from pydtnn.utils.constants import ArrayShape, DTYPE2CTYPE, Parameters
+from pydtnn.utils.tensor import TensorFormat
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.backends.pycuda.layers.layer import LayerPycuda
+from pydtnn.utils.performance_models import matmul_time
+import numpy as np
+from pycuda.driver import Function  # type: ignore
+from pycuda.compiler import SourceModule  # type: ignore
+from pycuda import gpuarray  # type: ignore
+import pycuda.driver as drv  # type: ignore
+from pydtnn.layers.conv_2d import Conv2D
+from typing import Any
 import logging
 logger = logging.getLogger(__name__)
-
-from typing import Any
-from pydtnn.layers.conv_2d import Conv2D
-
-import pycuda.driver as drv  # type: ignore
-from pycuda import gpuarray  # type: ignore
-from pycuda.compiler import SourceModule  # type: ignore
-from pycuda.driver import Function  # type: ignore
-
-import numpy as np
-
-from pydtnn.utils.performance_models import matmul_time
-from pydtnn.backends.pycuda.layers.layer import LayerPycuda
-
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.utils.tensor import TensorFormat
-from pydtnn.utils.constants import ArrayShape, DTYPE2CTYPE, Parameters
 
 
 class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):

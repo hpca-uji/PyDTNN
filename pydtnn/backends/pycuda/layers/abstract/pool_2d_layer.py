@@ -1,16 +1,14 @@
+from pydtnn.utils.constants import ArrayShape
+from pydtnn.layers.layer import ParameterException
+from pydtnn.utils.performance_models import im2col_time, col2im_time
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.backends.pycuda.layers.layer import LayerPycuda
+from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
+from pycuda import gpuarray   # type: ignore
+from pydtnn.libs import cudnn as cudnn
+from pydtnn.layers.abstract.pool_2d_layer import AbstractPool2DLayer
 import logging
 logger = logging.getLogger(__name__)
-
-from pydtnn.layers.abstract.pool_2d_layer import AbstractPool2DLayer
-from pydtnn.libs import cudnn as cudnn
-from pycuda import gpuarray   # type: ignore
-
-from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
-from pydtnn.backends.pycuda.layers.layer import LayerPycuda
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.utils.performance_models import im2col_time, col2im_time
-from pydtnn.layers.layer import ParameterException
-from pydtnn.utils.constants import ArrayShape
 
 
 class AbstractPool2DLayerPycuda(AbstractPool2DLayer[TensorArray], LayerPycuda):

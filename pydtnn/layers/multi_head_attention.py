@@ -1,9 +1,8 @@
+from pydtnn.utils.constants import Array
+from pydtnn.utils import initializers
+from pydtnn.layers.abstract.block_layer import AbstractBlockLayer
 import logging
 logger = logging.getLogger(__name__)
-
-from pydtnn.layers.abstract.block_layer import AbstractBlockLayer
-from pydtnn.utils import initializers
-from pydtnn.utils.constants import Array
 
 
 class MultiHeadAttention[T: Array](AbstractBlockLayer[T]):

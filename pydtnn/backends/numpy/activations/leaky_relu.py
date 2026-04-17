@@ -1,11 +1,11 @@
+from typing import TYPE_CHECKING
+from pydtnn.libs import numpy as np
+from pydtnn.backends.numpy.activations.activation import ActivationNumpy
+from pydtnn.activations.leaky_relu import LeakyRelu
 import logging
 logger = logging.getLogger(__name__)
 
-from pydtnn.activations.leaky_relu import LeakyRelu
-from pydtnn.backends.numpy.activations.activation import ActivationNumpy
 
-from pydtnn.libs import numpy as np
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import numpy as np
 

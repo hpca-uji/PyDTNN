@@ -1,10 +1,8 @@
+import numpy as np
+from collections import defaultdict
+import resource
 import logging
 logger = logging.getLogger(__name__)
-
-import resource
-from collections import defaultdict
-
-import numpy as np
 
 
 class PerformanceCounter:

@@ -1,15 +1,14 @@
+from pydtnn.layers.encoder_decoder import EncoderDecoder
+from pydtnn.backends.numpy.layers.decoder import Decoder
+from pydtnn.backends.numpy.layers.encoder import Encoder
+from pydtnn.backends.numpy.layers.abstract.block_layer import AbstractBlockLayerNumpy
+from typing import TYPE_CHECKING
+from pydtnn.libs import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
-from pydtnn.libs import numpy as np
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import numpy as np
-
-from pydtnn.backends.numpy.layers.abstract.block_layer import AbstractBlockLayerNumpy
-from pydtnn.backends.numpy.layers.encoder import Encoder
-from pydtnn.backends.numpy.layers.decoder import Decoder
-from pydtnn.layers.encoder_decoder import EncoderDecoder
 
 
 class EncoderDecoderNumpy(EncoderDecoder[np.ndarray], AbstractBlockLayerNumpy):

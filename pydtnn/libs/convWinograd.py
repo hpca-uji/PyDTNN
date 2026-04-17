@@ -2,24 +2,22 @@
 PyDTNN convWinograd module
 """
 
+from pydtnn.utils.best_of.best_of import BestOf
+from pydtnn.utils import load_library
+from pydtnn.utils.tensor import TensorFormat, encode_shape, decode_shape
+from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython
+from pydtnn.backends.cython.utils.im2col_nchw_cython import im2col_nchw_cython
+import numpy as np
+from functools import partial
+from collections import defaultdict
+import weakref
+from warnings import warn
+import platform
+import math
+import ctypes
 import logging
 logger = logging.getLogger(__name__)
 
-import ctypes
-import math
-import platform
-from warnings import warn
-import weakref
-from collections import defaultdict
-from functools import partial
-
-import numpy as np
-from pydtnn.backends.cython.utils.im2col_nchw_cython import im2col_nchw_cython
-from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython
-
-from pydtnn.utils.tensor import TensorFormat, encode_shape, decode_shape
-from pydtnn.utils import load_library
-from pydtnn.utils.best_of.best_of import BestOf
 
 try:
     load_library("convwinograd")
@@ -761,7 +759,7 @@ def __usage_example__():
                                     logger.info(" conv_winograd time: {:.4f} ".format(conv_winograd_t), end="")
                                     logger.info("mm time: {:.4f} ".format(im2col_t), end="")
                                     logger.info("np.allclose:",
-                                          np.allclose(conv_winograd_result, im2col_mm_result, atol=1e-3), end="")
+                                                np.allclose(conv_winograd_result, im2col_mm_result, atol=1e-3), end="")
                                     # print(" np.sum:", np.max(np.abs(conv_winograd_result-im2col_mm_result)), end="")
                                     logger.info((" WINOGR", " IM2COL")[conv_winograd_t > im2col_t],
                                                 im2col_t / conv_winograd_t)

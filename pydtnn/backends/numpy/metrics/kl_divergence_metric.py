@@ -1,14 +1,14 @@
+import math
+from pydtnn.metrics.kl_divergence_metric import KLDivergenceMetric
+from pydtnn.backends.numpy.metrics.metric import MetricNumpy
+from typing import TYPE_CHECKING
+from pydtnn.libs import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
-from pydtnn.libs import numpy as np
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import numpy as np
 
-from pydtnn.backends.numpy.metrics.metric import MetricNumpy
-from pydtnn.metrics.kl_divergence_metric import KLDivergenceMetric
-import math
 
 class KLDivergenceMetricNumpy(KLDivergenceMetric[np.ndarray], MetricNumpy):
 

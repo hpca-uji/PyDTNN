@@ -1,9 +1,8 @@
+from pydtnn.utils.constants import ArrayShape, Array
+from pydtnn.utils import find_component
+from pydtnn.abstract.layerable import Layerable
 import logging
 logger = logging.getLogger(__name__)
-
-from pydtnn.abstract.layerable import Layerable
-from pydtnn.utils import find_component
-from pydtnn.utils.constants import ArrayShape, Array
 
 
 class Activation[T: Array](Layerable[T]):

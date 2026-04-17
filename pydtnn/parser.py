@@ -12,19 +12,16 @@ initially have default values for all the attributes declared on the self.
 If you want to define a new option, just declare it here. It will automatically
 be available as a Model attribute.
 """
+from typing import Any
+from functools import cache
+from pydtnn.utils.gpu import get_gpus_per_node
+from pydtnn.utils import parse_bool as bool_lambda
+import numpy as np
+import os
+import multiprocessing
+import argparse
 import logging
 logger = logging.getLogger(__name__)
-
-import argparse
-import multiprocessing
-import os
-
-import numpy as np
-from pydtnn.utils import parse_bool as bool_lambda
-from pydtnn.utils.gpu import get_gpus_per_node
-from functools import cache
-
-from typing import Any
 
 
 def factor(x):
@@ -113,8 +110,11 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
         # Model
         self.add_argument('--model', dest="model_name", type=str, default=None,
                           help="Neural network model: 'simplemlp', 'simplecnn', 'alexnet', 'vgg11', 'vgg16', etc. Default: 'None'.")
-        self.add_argument('--backend', type=str, default="cpu",
-                          help="Backend selection priority. Format: [module[,module[,...]]:]backend[,backend[,...]][;...]. Example: 'all:numpy;conv_2d:gemm;layers,optimizers:numpy,cython'. Selection: More specific modules are attempted first, backend order goes from least to most priority.Default: 'cpu'.")
+        self.add_argument(
+            '--backend',
+            type=str,
+            default="cpu",
+            help="Backend selection priority. Format: [module[,module[,...]]:]backend[,backend[,...]][;...]. Example: 'all:numpy;conv_2d:gemm;layers,optimizers:numpy,cython'. Selection: More specific modules are attempted first, backend order goes from least to most priority.Default: 'cpu'.")
         self.add_argument('--batch-size', type=int, default=None,
                           help="Batch size per MPI rank. Or 'batch_size' or 'global_batch_size' must have a value different from 'None' (but not both). Default: 'None'.")
         self.add_argument('--global-batch-size', type=int, default=None,
@@ -144,8 +144,11 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
         _sy_group = self.add_argument_group("Synchronization options")
         _sy_group.add_argument('--shared-storage', default=True, type=bool_lambda,
                                help="If 'True' ranks assume they share the file system. Default: True.")
-        _sy_group.add_argument('--model-sync-freq', type=int, default=0,
-                               help="Number of batches between model synchronization. The '0' value synchronizes gradients every batch. Positive values synchronizes gradients and weights every N batches. Negative values disables synchronization. Default: 0.")
+        _sy_group.add_argument(
+            '--model-sync-freq',
+            type=int,
+            default=0,
+            help="Number of batches between model synchronization. The '0' value synchronizes gradients every batch. Positive values synchronizes gradients and weights every N batches. Negative values disables synchronization. Default: 0.")
         _sy_group.add_argument('--model-sync-alg', type=str, default="avg", choices=["avg", "wavg", "invwavg"],
                                help="Aggregation method used to synchronize models: 'avg', 'wavg' or 'invwavg'. Default: 'avg'.")
         _sy_group.add_argument('--model-sync-participation', type=str, default="all", choices=["all", "avail2all"],
@@ -161,8 +164,11 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
         _ds_group = self.add_argument_group("Dataset options")
         _ds_group.add_argument('--dataset', dest="dataset_name", type=str, default=None,
                                help="Dataset to train: 'mnist', 'cifar10', 'synthetic', …. Default: 'None'.")
-        _ds_group.add_argument('--dataset-percentage', type=float, default=0.0,
-                               help="Percentage of dataset that will be used. If it is '0': it is deactivated; if is is a value below '1' (and above 0): it will perform undersampling; and if is is a value above '1': it will perform oversampling. Default: 0.")
+        _ds_group.add_argument(
+            '--dataset-percentage',
+            type=float,
+            default=0.0,
+            help="Percentage of dataset that will be used. If it is '0': it is deactivated; if is is a value below '1' (and above 0): it will perform undersampling; and if is is a value above '1': it will perform oversampling. Default: 0.")
         _ds_group.add_argument('--dataset-path', type=str, default=_default_dataset_path,
                                help="Path to the dataset.")
         _ds_group.add_argument('--dataset-lang', type=str, default="en",
@@ -258,15 +264,26 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
                                help="Variable for 'oktopk' optimizers. Default: 32.")
         _op_group.add_argument('--optimizer-density', type=float, default=0.01,
                                help="Variable for 'oktopk' optimizers. Default: 0.01.")
-        _op_group.add_argument('--loss-func', dest="loss_func_name", type=str, default="categorical_cross_entropy",
-                               help="Loss functions that is evaluated on each trained batch: 'categorical_cross_entropy', 'binary_cross_entropy' or 'kl_divergence'. Default 'categorical_cross_entropy'.")
-        _op_group.add_argument('--metrics', type=str, default="categorical_accuracy",
-                               help="List of comma-separated metrics that are evaluated on each trained batch: 'categorical_accuracy', 'categorical_hinge', 'categorical_mse', 'categorical_mae', 'regression_mse', 'regression_mae', 'binary_confusion_matrix', 'multiclass_confusion_matrix', 'precision', 'recall', 'f1_score'. Default: 'categorical_accuracy'.")
+        _op_group.add_argument(
+            '--loss-func',
+            dest="loss_func_name",
+            type=str,
+            default="categorical_cross_entropy",
+            help="Loss functions that is evaluated on each trained batch: 'categorical_cross_entropy', 'binary_cross_entropy' or 'kl_divergence'. Default 'categorical_cross_entropy'.")
+        _op_group.add_argument(
+            '--metrics',
+            type=str,
+            default="categorical_accuracy",
+            help="List of comma-separated metrics that are evaluated on each trained batch: 'categorical_accuracy', 'categorical_hinge', 'categorical_mse', 'categorical_mae', 'regression_mse', 'regression_mae', 'binary_confusion_matrix', 'multiclass_confusion_matrix', 'precision', 'recall', 'f1_score'. Default: 'categorical_accuracy'.")
 
         # Schedulers options
         _sh_group = self.add_argument_group("Schedulers options")
-        _sh_group.add_argument('--schedulers', dest="schedulers_names", type=str, default="early_stopping,reduce_lr_on_plateau,model_checkpoint",
-                               help="List of comma-separated LR schedulers: 'warm_up', 'early_stopping', 'reduce_lr_on_plateau', 'reduce_lr_every_nepochs', 'model_checkpoint'. Default: 'early_stopping,reduce_lr_on_plateau,model_checkpoint'.")
+        _sh_group.add_argument(
+            '--schedulers',
+            dest="schedulers_names",
+            type=str,
+            default="early_stopping,reduce_lr_on_plateau,model_checkpoint",
+            help="List of comma-separated LR schedulers: 'warm_up', 'early_stopping', 'reduce_lr_on_plateau', 'reduce_lr_every_nepochs', 'model_checkpoint'. Default: 'early_stopping,reduce_lr_on_plateau,model_checkpoint'.")
         _sh_group.add_argument('--warm-up-epochs', type=int, default=5,
                                help="Number of batches (ramp up) that the LR is scaled up from 0 until LR. Default: 5.")
         _sh_group.add_argument('--early-stopping-metric', type=str, default="val_categorical_cross_entropy",
@@ -304,8 +321,11 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
                                help="Data parallelization modes: 'sequential', 'data' (MPI). Default: 'sequential'.")
         _pe_group.add_argument('--use-blocking-mpi', type=bool_lambda, default=True,
                                help="Enable non-blocking MPI primitives. Default: True.")
-        _pe_group.add_argument('--use-mpi-buffers', type=bool_lambda, default=None,
-                               help="Enable the use of MPI buffers. Possible values: 'True' (MPI operations by buffer), 'False' (MPI operations by object) or undefined (auto-select the better option). Default: undefined.")
+        _pe_group.add_argument(
+            '--use-mpi-buffers',
+            type=bool_lambda,
+            default=None,
+            help="Enable the use of MPI buffers. Possible values: 'True' (MPI operations by buffer), 'False' (MPI operations by object) or undefined (auto-select the better option). Default: undefined.")
         _pe_group.add_argument('--enable-cudnn', type=bool_lambda, default=None,
                                help="Ignored, always enabled if plausible, present just for compatibility.")
         _pe_group.add_argument('--enable-gpudirect', type=bool_lambda, default=False,

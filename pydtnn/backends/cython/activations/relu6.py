@@ -1,10 +1,9 @@
+from pydtnn.backends.cython.activations.activation import ActivationCython
+from pydtnn.backends.numpy.activations.relu6 import Relu6Numpy
+from pydtnn.backends.cython.utils.relu_cython import capped_relu_cython
+from pydtnn.libs import numpy as np
 import logging
 logger = logging.getLogger(__name__)
-
-from pydtnn.libs import numpy as np
-from pydtnn.backends.cython.utils.relu_cython import capped_relu_cython
-from pydtnn.backends.numpy.activations.relu6 import Relu6Numpy
-from pydtnn.backends.cython.activations.activation import ActivationCython
 
 
 class Relu6Cython(Relu6Numpy, ActivationCython):

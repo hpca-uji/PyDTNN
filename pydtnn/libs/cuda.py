@@ -7,5 +7,5 @@ Python interface to CUDA functions.
 
 from __future__ import absolute_import
 
-from .cudart import *
-from .cudadrv import *
+from pydtnn.libs.cudart import *
+from pydtnn.libs.cudadrv import *

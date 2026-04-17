@@ -4,24 +4,23 @@
 PyDTNN Benchmark script
 """
 
+import numpy as np
+import yaml
+from contextlib import contextmanager, nullcontext
+from traceback import TracebackException
+from datetime import datetime
+from pathlib import Path
+from importlib import resources
+import logging.config
+import cProfile
+import time
+import sys
+import os
 import logging
 
 from pydtnn import utils
 logger = logging.getLogger(__name__)
 
-import os
-import sys
-import time
-import cProfile
-import logging.config
-from importlib import resources
-from pathlib import Path
-from datetime import datetime
-from traceback import TracebackException
-from contextlib import contextmanager, nullcontext
-
-import yaml
-import numpy as np
 
 ompi_stdout_rank = os.environ.get("OMPI_STDOUT_RANK", None)
 if ompi_stdout_rank and os.environ.get("OMPI_COMM_WORLD_RANK", "0") != ompi_stdout_rank:
@@ -56,6 +55,7 @@ def print_model_reports(model):
 class HistoryDumper(yaml.SafeDumper):
     def represent_ndarray(self, data):
         return self.represent_scalar('!ndarray', repr(data), style="|")
+
 
 HistoryDumper.add_representer(np.ndarray, HistoryDumper.represent_ndarray)
 

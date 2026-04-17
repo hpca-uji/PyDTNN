@@ -1,15 +1,15 @@
+from pydtnn.libs import numpy as np
+from pydtnn.layers.layer import Layer
+from typing import TYPE_CHECKING
 import logging
 
 from pydtnn.backends.numpy.abstract.layerable import LayerableNumpy
 logger = logging.getLogger(__name__)
 
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from pydtnn.model import Model
-from pydtnn.layers.layer import Layer
 
 
-from pydtnn.libs import numpy as np
 if TYPE_CHECKING:
     import numpy as np
 

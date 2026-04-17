@@ -1,13 +1,13 @@
+from pydtnn.utils.constants import Parameters
+from pydtnn.utils.tensor import TensorFormat, format_transpose
+from pydtnn.backends.numpy.layers.abstract.conv_2d import AbstractConv2DNumpy
+from typing import TYPE_CHECKING
+from pydtnn.libs import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
-from pydtnn.libs import numpy as np
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import numpy as np
-from pydtnn.backends.numpy.layers.abstract.conv_2d import AbstractConv2DNumpy
-from pydtnn.utils.tensor import TensorFormat, format_transpose
-from pydtnn.utils.constants import Parameters
 
 
 class AbstractConv2DStandardNumpy(AbstractConv2DNumpy):

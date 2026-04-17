@@ -1,10 +1,10 @@
+from pydtnn.utils.constants import DTYPE2CTYPE
+from pydtnn.backends.cupy.activations.activation import ActivationCupy
+from pydtnn.libs import numpy as np
+from pydtnn.backends.numpy.activations.relu import ReluNumpy
 import logging
 logger = logging.getLogger(__name__)
 
-from pydtnn.backends.numpy.activations.relu import ReluNumpy
-from pydtnn.libs import numpy as np
-from pydtnn.backends.cupy.activations.activation import ActivationCupy
-from pydtnn.utils.constants import DTYPE2CTYPE
 
 class ReluCupy(ReluNumpy, ActivationCupy):
 
@@ -12,7 +12,6 @@ class ReluCupy(ReluNumpy, ActivationCupy):
         super()._model_init(prev_shape, x)
         self.fwd = self.relu_fwd()
         self.bwd = self.relu_bwd()
-
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         self.y = np.ascontiguousarray(self._y[:x.shape[0], :], dtype=self.model.dtype)

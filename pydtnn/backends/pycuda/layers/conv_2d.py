@@ -1,20 +1,15 @@
+from pycuda import gpuarray  # type: ignore
+from pydtnn.backends.pycuda.utils.memory_allocation import checkConvolutionMemory, getConvolutionWorkspaceSize, getConvolutionWorkspacePtr
+from pydtnn.libs import cudnn as cudnn
+from typing import Any, override
+from pydtnn.utils.tensor import TensorFormat, format_transpose
+from pydtnn.utils.constants import ArrayShape
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.backends.pycuda.layers.abstract.conv_2d import AbstractConv2DPycuda
+from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
+import numpy as np
 import logging
 logger = logging.getLogger(__name__)
-
-import numpy as np
-
-from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
-from pydtnn.backends.pycuda.layers.abstract.conv_2d import AbstractConv2DPycuda
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.utils.constants import ArrayShape
-
-
-from pydtnn.utils.tensor import TensorFormat, format_transpose
-from typing import Any, override
-
-from pydtnn.libs import cudnn as cudnn
-from pydtnn.backends.pycuda.utils.memory_allocation import checkConvolutionMemory, getConvolutionWorkspaceSize, getConvolutionWorkspacePtr
-from pycuda import gpuarray  # type: ignore
 
 
 class Conv2DPycuda(AbstractConv2DPycuda):

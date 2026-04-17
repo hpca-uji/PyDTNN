@@ -5,7 +5,8 @@
 Python interface to CUDA driver functions.
 """
 
-import sys, ctypes
+import sys
+import ctypes
 
 # Load library:
 if 'linux' in sys.platform:
@@ -29,185 +30,244 @@ for _libcuda_libname in _libcuda_libname_list:
         pass
     else:
         break
-if _libcuda == None:
+if _libcuda is None:
     raise OSError('CUDA driver library not found')
 
 # Exceptions corresponding to various CUDA driver errors:
+
 
 class CUDA_ERROR(Exception):
     """CUDA error."""
     pass
 
+
 class CUDA_ERROR_INVALID_VALUE(CUDA_ERROR):
     pass
+
 
 class CUDA_ERROR_OUT_OF_MEMORY(CUDA_ERROR):
     pass
 
+
 class CUDA_ERROR_NOT_INITIALIZED(CUDA_ERROR):
     pass
+
 
 class CUDA_ERROR_DEINITIALIZED(CUDA_ERROR):
     pass
 
+
 class CUDA_ERROR_PROFILER_DISABLED(CUDA_ERROR):
     pass
+
 
 class CUDA_ERROR_PROFILER_NOT_INITIALIZED(CUDA_ERROR):
     pass
 
+
 class CUDA_ERROR_PROFILER_ALREADY_STARTED(CUDA_ERROR):
     pass
+
 
 class CUDA_ERROR_PROFILER_ALREADY_STOPPED(CUDA_ERROR):
     pass
 
+
 class CUDA_ERROR_NO_DEVICE(CUDA_ERROR):
     pass
+
 
 class CUDA_ERROR_INVALID_DEVICE(CUDA_ERROR):
     pass
 
+
 class CUDA_ERROR_INVALID_IMAGE(CUDA_ERROR):
     pass
+
 
 class CUDA_ERROR_INVALID_CONTEXT(CUDA_ERROR):
     pass
 
+
 class CUDA_ERROR_CONTEXT_ALREADY_CURRENT(CUDA_ERROR):
     pass
+
 
 class CUDA_ERROR_MAP_FAILED(CUDA_ERROR):
     pass
 
+
 class CUDA_ERROR_UNMAP_FAILED(CUDA_ERROR):
     pass
+
 
 class CUDA_ERROR_ARRAY_IS_MAPPED(CUDA_ERROR):
     pass
 
+
 class CUDA_ERROR_ALREADY_MAPPED(CUDA_ERROR):
     pass
+
 
 class CUDA_ERROR_NO_BINARY_FOR_GPU(CUDA_ERROR):
     pass
 
+
 class CUDA_ERROR_ALREADY_ACQUIRED(CUDA_ERROR):
     pass
+
 
 class CUDA_ERROR_NOT_MAPPED(CUDA_ERROR):
     pass
 
+
 class CUDA_ERROR_NOT_MAPPED_AS_ARRAY(CUDA_ERROR):
     pass
+
 
 class CUDA_ERROR_NOT_MAPPED_AS_POINTER(CUDA_ERROR):
     pass
 
+
 class CUDA_ERROR_ECC_UNCORRECTABLE(CUDA_ERROR):
     pass
+
 
 class CUDA_ERROR_UNSUPPORTED_LIMIT(CUDA_ERROR):
     pass
 
+
 class CUDA_ERROR_CONTEXT_ALREADY_IN_USE(CUDA_ERROR):
     pass
+
 
 class CUDA_ERROR_PEER_ACCESS_UNSUPPORTED(CUDA_ERROR):
     pass
 
+
 class CUDA_ERROR_INVALID_PTX(CUDA_ERROR):
     pass
+
 
 class CUDA_ERROR_INVALID_GRAPHICS_CONTEXT(CUDA_ERROR):
     pass
 
+
 class CUDA_ERROR_INVALID_SOURCE(CUDA_ERROR):
     pass
+
 
 class CUDA_ERROR_FILE_NOT_FOUND(CUDA_ERROR):
     pass
 
+
 class CUDA_ERROR_SHARED_OBJECT_SYMBOL_NOT_FOUND(CUDA_ERROR):
     pass
+
 
 class CUDA_ERROR_SHARED_OBJECT_INIT_FAILED(CUDA_ERROR):
     pass
 
+
 class CUDA_ERROR_OPERATING_SYSTEM(CUDA_ERROR):
     pass
+
 
 class CUDA_ERROR_INVALID_HANDLE(CUDA_ERROR):
     pass
 
+
 class CUDA_ERROR_NOT_FOUND(CUDA_ERROR):
     pass
+
 
 class CUDA_ERROR_NOT_READY(CUDA_ERROR):
     pass
 
+
 class CUDA_ERROR_ILLEGAL_ADDRESS(CUDA_ERROR):
     pass
+
 
 class CUDA_ERROR_LAUNCH_OUT_OF_RESOURCES(CUDA_ERROR):
     pass
 
+
 class CUDA_ERROR_LAUNCH_TIMEOUT(CUDA_ERROR):
     pass
+
 
 class CUDA_ERROR_LAUNCH_INCOMPATIBLE_TEXTURING(CUDA_ERROR):
     pass
 
+
 class CUDA_ERROR_PEER_ACCESS_ALREADY_ENABLED(CUDA_ERROR):
     pass
+
 
 class CUDA_ERROR_PEER_ACCESS_NOT_ENABLED(CUDA_ERROR):
     pass
 
+
 class CUDA_ERROR_PRIMARY_CONTEXT_ACTIVE(CUDA_ERROR):
     pass
+
 
 class CUDA_ERROR_CONTEXT_IS_DESTROYED(CUDA_ERROR):
     pass
 
+
 class CUDA_ERROR_ASSERT(CUDA_ERROR):
     pass
+
 
 class CUDA_ERROR_TOO_MANY_PEERS(CUDA_ERROR):
     pass
 
+
 class CUDA_ERROR_HOST_MEMORY_ALREADY_REGISTERED(CUDA_ERROR):
     pass
+
 
 class CUDA_ERROR_HOST_MEMORY_NOT_REGISTERED(CUDA_ERROR):
     pass
 
+
 class CUDA_ERROR_HARDWARE_STACK_ERROR(CUDA_ERROR):
     pass
+
 
 class CUDA_ERROR_ILLEGAL_INSTRUCTION(CUDA_ERROR):
     pass
 
+
 class CUDA_ERROR_MISALIGNED_ADDRESS(CUDA_ERROR):
     pass
+
 
 class CUDA_ERROR_INVALID_ADDRESS_SPACE(CUDA_ERROR):
     pass
 
+
 class CUDA_ERROR_INVALID_PC(CUDA_ERROR):
     pass
+
 
 class CUDA_ERROR_LAUNCH_FAILED(CUDA_ERROR):
     pass
 
+
 class CUDA_ERROR_NOT_PERMITTED(CUDA_ERROR):
     pass
+
 
 class CUDA_ERROR_NOT_SUPPORTED(CUDA_ERROR):
     pass
 
+
 class CUDA_ERROR_UNKNOWN(CUDA_ERROR):
     pass
+
 
 CUDA_EXCEPTIONS = {
     1: CUDA_ERROR_INVALID_VALUE,
@@ -267,7 +327,8 @@ CUDA_EXCEPTIONS = {
     800: CUDA_ERROR_NOT_PERMITTED,
     801: CUDA_ERROR_NOT_SUPPORTED,
     999: CUDA_ERROR_UNKNOWN
-    }
+}
+
 
 def cuCheckStatus(status):
     """
@@ -294,6 +355,7 @@ def cuCheckStatus(status):
         else:
             raise e
 
+
 CU_POINTER_ATTRIBUTE_CONTEXT = 1
 CU_POINTER_ATTRIBUTE_MEMORY_TYPE = 2
 CU_POINTER_ATTRIBUTE_DEVICE_POINTER = 3
@@ -303,6 +365,8 @@ _libcuda.cuPointerGetAttribute.restype = int
 _libcuda.cuPointerGetAttribute.argtypes = [ctypes.c_void_p,
                                            ctypes.c_int,
                                            ctypes.c_uint]
+
+
 def cuPointerGetAttribute(attribute, ptr):
     data = ctypes.c_void_p()
     status = _libcuda.cuPointerGetAttribute(data, attribute, ptr)

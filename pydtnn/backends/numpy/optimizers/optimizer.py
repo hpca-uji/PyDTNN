@@ -1,10 +1,10 @@
+from typing import TYPE_CHECKING
+from pydtnn.libs import numpy as np
+from pydtnn.optimizers.optimizer import Optimizer
+from pydtnn.backends.numpy.abstract.base import BaseNumpy
 import logging
 logger = logging.getLogger(__name__)
 
-from pydtnn.backends.numpy.abstract.base import BaseNumpy
-from pydtnn.optimizers.optimizer import Optimizer
-from pydtnn.libs import numpy as np
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import numpy as np
 

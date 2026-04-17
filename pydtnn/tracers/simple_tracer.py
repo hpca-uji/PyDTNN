@@ -1,15 +1,13 @@
+from typing import TYPE_CHECKING
+from pydtnn.tracers.tracer import Tracer
+from timeit import default_timer as timer
+from collections import defaultdict
+import atexit
 import logging
 
 from pydtnn import utils
 logger = logging.getLogger(__name__)
 
-import atexit
-from collections import defaultdict
-from timeit import default_timer as timer
-
-from pydtnn.tracers.tracer import Tracer
-
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from pympi.MPI import Comm as MPI_COMM

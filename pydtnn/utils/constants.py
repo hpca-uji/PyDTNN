@@ -1,10 +1,9 @@
+import numpy as np
+from enum import auto, StrEnum
+import typing
 import logging
 logger = logging.getLogger(__name__)
 
-import typing
-from enum import auto, StrEnum
-
-import numpy as np
 
 type ArrayShape = tuple[int, ...]
 DTYPE2CTYPE: dict[np.dtype, str] = {

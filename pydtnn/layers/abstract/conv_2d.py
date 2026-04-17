@@ -1,15 +1,15 @@
+import math
+from pydtnn.utils.constants import Array, ArrayShape, Parameters
+from pydtnn.utils.initializers import InitializerFunc, glorot_uniform, zeros
+from pydtnn.layers.layer import Layer
+from typing import TYPE_CHECKING, Optional
 import logging
 logger = logging.getLogger(__name__)
 
-from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from pydtnn.activations.activation import Activation
-from pydtnn.layers.layer import Layer
-from pydtnn.utils.initializers import InitializerFunc, glorot_uniform, zeros
-from pydtnn.utils.constants import Array, ArrayShape, Parameters
 
-import math
 
 class AbstractConv2D[T: Array](Layer[T]):
     def __init__(self, nfilters: int = 1,

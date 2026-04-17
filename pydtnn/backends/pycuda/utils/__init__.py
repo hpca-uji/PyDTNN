@@ -2,6 +2,7 @@
 PyDTNN Utilities
 """
 
+import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
@@ -9,8 +10,6 @@ try:
     from pydtnn.libs import cublas  # type: ignore
 except Exception:
     pass
-
-import numpy as np
 
 
 def matmul_gpu(handle, trans_a, trans_b, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc, dtype):

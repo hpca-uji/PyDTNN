@@ -1,13 +1,13 @@
+from typing import TYPE_CHECKING
+from pydtnn.libs import numpy as np
+from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
+from pydtnn.backends.numpy.layers.conv_2d_depthwise import Conv2DDepthwiseNumpy
+from pydtnn.backends.cupy.layers.layer import LayerCupy
+from pydtnn.backends.cupy.layers.abstract.conv_2d import AbstractConv2DCupy
 import logging
 logger = logging.getLogger(__name__)
 
-from pydtnn.backends.cupy.layers.abstract.conv_2d import AbstractConv2DCupy
-from pydtnn.backends.cupy.layers.layer import LayerCupy
-from pydtnn.backends.numpy.layers.conv_2d_depthwise import Conv2DDepthwiseNumpy
-from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
 
-from pydtnn.libs import numpy as np
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import numpy as np
 
@@ -18,7 +18,7 @@ class Conv2DDepthwiseCython(Conv2DDepthwiseNumpy, AbstractConv2DCupy, LayerCupy)
         super()._model_init(prev_shape, x)
 
         macros_nchw = \
-r"""
+            r"""
 #define GET_N(idx, n, c, h, w) (idx / (w * h * c))
 #define GET_C(idx, n, c, h, w) (idx / (w * h)) % c
 #define GET_H(idx, n, c, h, w) (idx / w) %h
@@ -27,7 +27,7 @@ r"""
 """
 
         macros_nhwc = \
-r"""
+            r"""
 #define GET_N(idx, n, c, h, w) (idx / (c * w * h))
 #define GET_H(idx, n, c, h, w) (idx / (c * w)) % h
 #define GET_W(idx, n, c, h, w) (idx / c) % w
@@ -39,7 +39,7 @@ r"""
         self.fwd_nchw = self._fwd_nchw_kernel(macros_nchw)
         self.bwd_nhwc = self._bwd_nhwc_kernel(macros_nhwc)
         self.bwd_nchw = self._bwd_nchw_kernel(macros_nchw)
-        #----
+        # ----
 
     def _conv_fwd_nhwc(self, x: np.ndarray, y: np.ndarray) -> None:
         self.fwd_nhwc(self.model.cuda_grid,
@@ -56,35 +56,35 @@ r"""
         self.fwd_nchw(self.model.cuda_grid,
                       self.model.cuda_block,
                       (x, self.weights, y,
-                      x.shape[0], self.ci, self.hi, self.wi,
-                      self.ho, self.wo, self.kh, self.kw,
-                      self.hpadding, self.wpadding,
-                      self.hstride, self.wstride,
-                      self.hdilation, self.wdilation))
+                       x.shape[0], self.ci, self.hi, self.wi,
+                       self.ho, self.wo, self.kh, self.kw,
+                       self.hpadding, self.wpadding,
+                       self.hstride, self.wstride,
+                       self.hdilation, self.wdilation))
     # ----
 
     def _conv_bwd_nhwc(self, dx: np.ndarray, dy: np.ndarray) -> None:
         self.bwd_nhwc(self.model.cuda_grid,
                       self.model.cuda_block,
                       (dx, dy, self.x,
-                      self.weights, self.dw,
-                      dy.shape[0], self.ci, self.hi, self.wi,
-                      self.ho, self.wo, self.kh, self.kw,
-                      self.hpadding, self.wpadding,
-                      self.hstride, self.wstride,
-                      self.hdilation, self.wdilation))
+                       self.weights, self.dw,
+                       dy.shape[0], self.ci, self.hi, self.wi,
+                       self.ho, self.wo, self.kh, self.kw,
+                       self.hpadding, self.wpadding,
+                       self.hstride, self.wstride,
+                       self.hdilation, self.wdilation))
     # ----
 
     def _conv_bwd_nchw(self, dx: np.ndarray, dy: np.ndarray) -> None:
         self.bwd_nchw(self.model.cuda_grid,
                       self.model.cuda_block,
                       (dx, dy, self.x,
-                      self.weights, self.dw,
-                      dy.shape[0], self.ci, self.hi, self.wi,
-                      self.ho, self.wo, self.kh, self.kw,
-                      self.hpadding, self.wpadding,
-                      self.hstride, self.wstride,
-                      self.hdilation, self.wdilation))
+                       self.weights, self.dw,
+                       dy.shape[0], self.ci, self.hi, self.wi,
+                       self.ho, self.wo, self.kh, self.kw,
+                       self.hpadding, self.wpadding,
+                       self.hstride, self.wstride,
+                       self.hdilation, self.wdilation))
     # ----
 
 ####################################################################################################
@@ -102,7 +102,7 @@ r"""
     # ---
 
     def _fwd_kernel(self, func_name: str, macros: str) -> np.RawKernel:
-        
+
         # NOTE: N = n * c * ho * wo; x's format: NCHW
         code = \
             r"""
@@ -149,7 +149,7 @@ __global__ void {FUNC_NAME}({T}* x, {T}* weights, {T}* y,
         hoi = GET_HO(idx, n, c, ho, wo);
         woi = GET_WO(idx, n, c, ho, wo);
         ci = GET_CI(idx, n, c, ho, wo);
-        
+
         for(khi = 0; khi < kh; khi++)
         {{
             hi = wstride * hoi + hdilation * khi - hpadding;
@@ -164,9 +164,8 @@ __global__ void {FUNC_NAME}({T}* x, {T}* weights, {T}* y,
 }}
 """
         code = code.format(FUNC_NAME=func_name, T=DTYPE2CTYPE[self.model.dtype], MACROS=macros)
-        return np.RawKernel(code, func_name, backend=self.cuda_compiler) 
+        return np.RawKernel(code, func_name, backend=self.cuda_compiler)
     # ---
-
 
     def _bwd_nchw_kernel(self, macros: str) -> np.RawKernel:
         func_name = "depthwise_conv_bwd_nchw"
@@ -179,7 +178,7 @@ __global__ void {FUNC_NAME}({T}* x, {T}* weights, {T}* y,
     # ---
 
     def _bwd_kernel(self, func_name: str, macros: str) -> np.RawKernel:
-        
+
         # NOTE: N = n * ci * hi * wo; dx's format: NCHW
         code = \
             r"""
@@ -282,7 +281,7 @@ __global__ void {FUNC_NAME}({T}* dx, {T}* dy, {T}* x,
                 hi = hstride * hoi + hdilation * khi - hpadding;
                 for(woi = 0; (woi < wo) && (IS_BETWEEN(0, hi, h)); woi++)
                 {{
-                    
+
                     wi = wstride * woi + wdilation * kwi - wpadding;
                     if(IS_BETWEEN(0, wi, w))
                         *(dw + idx) += (*(weights + SHIFT_WEIGHTS(ci, khi, kwi, c, kh, kw))) * (*(x + SHIFT(ni, ci, hi, wi, n, c, h, w)));

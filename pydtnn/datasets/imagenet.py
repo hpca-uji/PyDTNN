@@ -1,20 +1,17 @@
+from pydtnn.utils import random
+from pydtnn.datasets.dataset import Dataset
+from scipy.io import loadmat
+import numpy as np
+import typing
+from pathlib import Path, PurePath
+import tarfile
+import copy
+import io
+from contextlib import ExitStack, contextmanager
+from collections import abc
+from typing import TYPE_CHECKING
 import logging
 logger = logging.getLogger(__name__)
-
-from typing import TYPE_CHECKING
-from collections import abc
-from contextlib import ExitStack, contextmanager
-import io
-import copy
-import tarfile
-from pathlib import Path, PurePath
-import typing
-
-import numpy as np
-from scipy.io import loadmat
-
-from pydtnn.datasets.dataset import Dataset
-from pydtnn.utils import random
 
 
 if TYPE_CHECKING:

@@ -1,10 +1,8 @@
+from pydtnn.utils import load_library
+import numpy as np
+import ctypes
 import logging
 logger = logging.getLogger(__name__)
-
-import ctypes
-import numpy as np
-
-from pydtnn.utils import load_library
 
 
 def blis():

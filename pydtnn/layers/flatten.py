@@ -1,11 +1,10 @@
+import math
+from pydtnn.utils.constants import ArrayShape
+from pydtnn.utils.constants import Array
+from pydtnn.layers.layer import Layer
 import logging
 logger = logging.getLogger(__name__)
 
-from pydtnn.layers.layer import Layer
-
-from pydtnn.utils.constants import Array
-from pydtnn.utils.constants import ArrayShape
-import math
 
 class Flatten[T: Array](Layer[T]):
 

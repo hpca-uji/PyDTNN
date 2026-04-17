@@ -1,18 +1,16 @@
 """
 PyDTNN convDirect module
 """
+from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython
+from pydtnn.utils import load_library
+from pydtnn.utils.tensor import TensorFormat, encode_shape, decode_shape
+import numpy as np
+import weakref
+import sys
+import ctypes
 import logging
 logger = logging.getLogger(__name__)
 
-import ctypes
-import sys
-import weakref
-
-import numpy as np
-
-from pydtnn.utils.tensor import TensorFormat, encode_shape, decode_shape
-from pydtnn.utils import load_library
-from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython
 
 try:
     load_library("convDirect")

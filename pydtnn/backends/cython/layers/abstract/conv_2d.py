@@ -1,16 +1,15 @@
+from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython, row2im_nhwc_cython  # , alt_row2im_nhwc_cython
+from pydtnn.backends.cython.utils.im2col_nchw_cython import col2im_nchw_cython, im2col_nchw_cython  # , alt_col2im_nchw_cython
+from typing import TYPE_CHECKING
+from pydtnn.libs import numpy as np
+from pydtnn.backends.cython.layers.layer import LayerCython
+from pydtnn.backends.numpy.layers.abstract.conv_2d import AbstractConv2DNumpy
 import logging
 logger = logging.getLogger(__name__)
 
-from pydtnn.backends.numpy.layers.abstract.conv_2d import AbstractConv2DNumpy
-from pydtnn.backends.cython.layers.layer import LayerCython
-from pydtnn.libs import numpy as np
 
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import numpy as np
-
-from pydtnn.backends.cython.utils.im2col_nchw_cython import col2im_nchw_cython, im2col_nchw_cython  # , alt_col2im_nchw_cython
-from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython, row2im_nhwc_cython  # , alt_row2im_nhwc_cython
 
 
 class AbstractConv2DCython(AbstractConv2DNumpy, LayerCython):

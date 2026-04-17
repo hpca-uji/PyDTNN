@@ -1,15 +1,12 @@
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pycuda.driver import Function  # type: ignore
+from pycuda.compiler import SourceModule  # type: ignore
+from pydtnn.utils.constants import DTYPE2CTYPE
+from pydtnn.metrics.precision import Precision
+from pydtnn.backends.pycuda.metrics.metric import MetricPycuda
+import numpy as np
 import logging
 logger = logging.getLogger(__name__)
-
-import numpy as np
-
-from pydtnn.backends.pycuda.metrics.metric import MetricPycuda
-from pydtnn.metrics.precision import Precision
-from pydtnn.utils.constants import DTYPE2CTYPE
-from pycuda.compiler import SourceModule  # type: ignore
-from pycuda.driver import Function  # type: ignore
-
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 
 
 class PrecisionPycuda(Precision[TensorArray], MetricPycuda):

@@ -1,10 +1,8 @@
+from pydtnn.utils.constants import Array
+from pydtnn.layers.layer import Layer
+import numpy as np
 import logging
 logger = logging.getLogger(__name__)
-
-import numpy as np
-
-from pydtnn.layers.layer import Layer
-from pydtnn.utils.constants import Array
 
 
 # https://melfm.github.io/posts/2018-08-Understanding-Normalization/

@@ -1,17 +1,16 @@
+from pydtnn.utils.tensor import TensorFormat
+from pydtnn.utils.constants import ArrayShape
+from typing import TYPE_CHECKING
+from pydtnn.libs import numpy as np
+from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
+from pydtnn.layers.conv_2d_depthwise import Conv2DDepthwise
+from pydtnn.backends.numpy.layers.abstract.conv_2d import AbstractConv2DNumpy
 import logging
 logger = logging.getLogger(__name__)
 
-from pydtnn.backends.numpy.layers.abstract.conv_2d import AbstractConv2DNumpy
-from pydtnn.layers.conv_2d_depthwise import Conv2DDepthwise
-from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 
-from pydtnn.libs import numpy as np
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import numpy as np
-
-from pydtnn.utils.constants import ArrayShape
-from pydtnn.utils.tensor import TensorFormat
 
 
 class Conv2DDepthwiseNumpy(AbstractConv2DNumpy, Conv2DDepthwise):
@@ -94,7 +93,7 @@ class Conv2DDepthwiseNumpy(AbstractConv2DNumpy, Conv2DDepthwise):
                                         self.dw[cc, ii, jj] = self.x[nn, x_x, x_y, cc] * val_dy
                                         dx[nn, x_x, x_y, cc] += val_k * val_dy
     # -----
-    
+
     def _conv_bwd_nchw(self, dx: np.ndarray, dy: np.ndarray) -> None:
         for cc in range(self.ci):
             for ii in range(self.kh):

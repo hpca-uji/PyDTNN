@@ -2,15 +2,15 @@
 # In this file must be implemented only the translation of PyTorch Normalization layers to its PyDTNN equivalent.
 # _______________________________________________________________________________________________________________
 
+import pydtnn.converters.pytorch2pydtnn.common as cm
+from pydtnn.layers.batch_normalization import BatchNormalization
+from typing import Any
 import logging
 logger = logging.getLogger(__name__)
 
 # Typing related (or non important) imports
-from typing import Any
 
 # Functionality imports
-from pydtnn.layers.batch_normalization import BatchNormalization
-import pydtnn.converters.pytorch2pydtnn.common as cm
 
 # ------------------ #
 

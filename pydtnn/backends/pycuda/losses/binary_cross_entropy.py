@@ -1,14 +1,12 @@
+from pydtnn.utils.constants import DTYPE2CTYPE
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.backends.pycuda.losses.loss import LossPycuda
+from pydtnn.losses.binary_cross_entropy import BinaryCrossEntropy
+from pycuda.driver import Function  # type: ignore
+from pycuda.compiler import SourceModule  # type: ignore
+from pycuda import gpuarray  # type: ignore
 import logging
 logger = logging.getLogger(__name__)
-
-from pycuda import gpuarray  # type: ignore
-from pycuda.compiler import SourceModule  # type: ignore
-from pycuda.driver import Function  # type: ignore
-
-from pydtnn.losses.binary_cross_entropy import BinaryCrossEntropy
-from pydtnn.backends.pycuda.losses.loss import LossPycuda
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.utils.constants import DTYPE2CTYPE
 
 
 class BinaryCrossEntropyPycuda(LossPycuda, BinaryCrossEntropy[TensorArray]):

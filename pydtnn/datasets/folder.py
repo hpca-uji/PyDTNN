@@ -1,15 +1,14 @@
+from typing import TYPE_CHECKING, override, Generator
+from pydtnn.utils import random
+from pydtnn.utils.constants import ArrayShape
+from pydtnn.datasets.dataset import Dataset
+import numpy as np
+import copy
+import os
 import logging
 logger = logging.getLogger(__name__)
 
-import os
-import copy
-import numpy as np
 
-from pydtnn.datasets.dataset import Dataset
-from pydtnn.utils.constants import ArrayShape
-from pydtnn.utils import random
-
-from typing import TYPE_CHECKING, override, Generator
 if TYPE_CHECKING:
     from pydtnn.model import Model
 

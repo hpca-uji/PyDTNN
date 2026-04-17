@@ -1,18 +1,17 @@
+import math
+from pycuda.driver import Function  # type: ignore
+from pycuda.compiler import SourceModule  # type: ignore
+from pycuda import gpuarray  # type: ignore
+from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
+import numpy as np
+from pydtnn.utils.constants import ArrayShape, DTYPE2CTYPE
+from pydtnn.backends.pycuda.activations.activation import ActivationPycuda
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.utils.performance_models import im2col_time, col2im_time
+from pydtnn.activations.relu6 import Relu6
 import logging
 logger = logging.getLogger(__name__)
 
-from pydtnn.activations.relu6 import Relu6
-from pydtnn.utils.performance_models import im2col_time, col2im_time
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.backends.pycuda.activations.activation import ActivationPycuda
-from pydtnn.utils.constants import ArrayShape, DTYPE2CTYPE
-
-import numpy as np
-from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
-from pycuda import gpuarray  # type: ignore
-from pycuda.compiler import SourceModule  # type: ignore
-from pycuda.driver import Function  # type: ignore
-import math
 
 class Relu6Pycuda(Relu6[TensorArray], ActivationPycuda):
 

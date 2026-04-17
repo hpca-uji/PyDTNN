@@ -1,16 +1,17 @@
+import math
+from pydtnn.metrics.precision import Precision
+from pydtnn.backends.numpy.metrics.metric import MetricNumpy
+from pydtnn.backends.numpy.metrics.binary_confusion_matrix import BinaryConfusionMatrixNumpy
+from typing import TYPE_CHECKING
+from pydtnn.libs import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
-from pydtnn.libs import numpy as np
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import numpy as np
 
-from pydtnn.backends.numpy.metrics.binary_confusion_matrix import BinaryConfusionMatrixNumpy
-from pydtnn.backends.numpy.metrics.metric import MetricNumpy
-from pydtnn.metrics.precision import Precision
 # from pydtnn.backends.numpy.utils.div_arrays_set_if_zero import div_arrays_set_if_zero
-import math
+
 
 class PrecisionNumpy(Precision[np.ndarray], MetricNumpy):
 

@@ -1,14 +1,12 @@
+from pydtnn.utils import find_component
+from pydtnn.tracers.events import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
+from typing import TYPE_CHECKING
+import abc
+import sys
+import resource
 import logging
 logger = logging.getLogger(__name__)
 
-import resource
-import sys
-import abc
-
-from typing import TYPE_CHECKING
-
-from pydtnn.tracers.events import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
-from pydtnn.utils import find_component
 
 if TYPE_CHECKING:
     from pydtnn.model import Model

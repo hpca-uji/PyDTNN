@@ -1,12 +1,11 @@
+from memray._memray import compute_statistics as memray_statistics
+from pathlib import Path
+import tempfile
+import memray
+import time
+import gc
 import logging
 logger = logging.getLogger(__name__)
-
-import gc
-import time
-import memray
-import tempfile
-from pathlib import Path
-from memray._memray import compute_statistics as memray_statistics
 
 
 class Profiler:

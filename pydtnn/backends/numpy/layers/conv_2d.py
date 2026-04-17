@@ -1,18 +1,15 @@
+import math
+from pydtnn.utils.tensor import TensorFormat, format_transpose
+from pydtnn.utils.constants import ArrayShape
+from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
+from pydtnn.backends.numpy.layers.abstract.conv_2d_standard import AbstractConv2DStandardNumpy
+from typing import TYPE_CHECKING
+from pydtnn.libs import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
-from pydtnn.libs import numpy as np
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import numpy as np
-
-from pydtnn.backends.numpy.layers.abstract.conv_2d_standard import AbstractConv2DStandardNumpy
-
-from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
-
-from pydtnn.utils.constants import ArrayShape
-from pydtnn.utils.tensor import TensorFormat, format_transpose
-import math
 
 
 class Conv2DNumpy(AbstractConv2DStandardNumpy):
@@ -188,7 +185,7 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
         self.dw = self.dw.reshape(self.weights.shape)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-        rows: np.ndarray = self.get_rows(dy.shape[0]) # NOTE: rows shares the memory with self.x_rows
+        rows: np.ndarray = self.get_rows(dy.shape[0])  # NOTE: rows shares the memory with self.x_rows
 
         # Biases gradient
         if self.use_bias:

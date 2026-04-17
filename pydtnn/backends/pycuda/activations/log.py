@@ -1,16 +1,13 @@
+from pycuda.elementwise import ElementwiseKernel  # type: ignore
+from pycuda import gpuarray  # type: ignore
+from pydtnn.libs import cudnn as cudnn
+from pydtnn.utils.constants import ArrayShape, DTYPE2CTYPE
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.backends.pycuda.activations.activation import ActivationPycuda
+from pydtnn.activations.log import Log
+import numpy as np
 import logging
 logger = logging.getLogger(__name__)
-
-import numpy as np
-
-from pydtnn.activations.log import Log
-from pydtnn.backends.pycuda.activations.activation import ActivationPycuda
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.utils.constants import ArrayShape, DTYPE2CTYPE
-
-from pydtnn.libs import cudnn as cudnn
-from pycuda import gpuarray  # type: ignore
-from pycuda.elementwise import ElementwiseKernel  # type: ignore
 
 
 class LogPycuda(Log[TensorArray], ActivationPycuda):

@@ -1,17 +1,17 @@
+from pydtnn.abstract.layerable import Layerable
+from pydtnn.converters.pytorch2pydtnn.layers.utility import Flatten
+from pydtnn.converters.pytorch2pydtnn.layers.pooling import AdaptiveAvgPool2d, AvgPool2d, MaxPool2d
+from pydtnn.converters.pytorch2pydtnn.layers.normalization import BatchNorm2d
+from pydtnn.converters.pytorch2pydtnn.layers.linear import Linear
+from pydtnn.converters.pytorch2pydtnn.layers.functions import adaptive_avg_pool_2d, add, concat, flatten, relu, sigmoid, softmax, log, tanh
+from pydtnn.converters.pytorch2pydtnn.layers.dropout import Dropout
+from pydtnn.converters.pytorch2pydtnn.layers.convolutional import Conv2d
+from pydtnn.converters.pytorch2pydtnn.layers.activation import LeakyReLU, LogSigmoid, ReLU, ReLU6, Sigmoid, Softmax, Tanh
+from typing import Any, Callable
 import logging
 logger = logging.getLogger(__name__)
 
 # Typing related (or non important) imports
-from typing import Any, Callable
-from pydtnn.converters.pytorch2pydtnn.layers.activation import LeakyReLU, LogSigmoid, ReLU, ReLU6, Sigmoid, Softmax, Tanh
-from pydtnn.converters.pytorch2pydtnn.layers.convolutional import Conv2d
-from pydtnn.converters.pytorch2pydtnn.layers.dropout import Dropout
-from pydtnn.converters.pytorch2pydtnn.layers.functions import adaptive_avg_pool_2d, add, concat, flatten, relu, sigmoid, softmax, log, tanh
-from pydtnn.converters.pytorch2pydtnn.layers.linear import Linear
-from pydtnn.converters.pytorch2pydtnn.layers.normalization import BatchNorm2d
-from pydtnn.converters.pytorch2pydtnn.layers.pooling import AdaptiveAvgPool2d, AvgPool2d, MaxPool2d
-from pydtnn.converters.pytorch2pydtnn.layers.utility import Flatten
-from pydtnn.abstract.layerable import Layerable
 
 # Functionality imports
 

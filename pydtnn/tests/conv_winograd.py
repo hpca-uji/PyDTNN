@@ -1,17 +1,15 @@
+from pydtnn.utils.tensor import TensorFormat
+from pydtnn.utils import print_with_header
+from pydtnn.tests.abstract.conv_common import ConvCommonTestCase
+from pydtnn.tests.abstract.common import verbose_test, D
+from pydtnn.libs.convWinograd import ConvWinograd
+from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython
+import numpy as np
+import unittest
+import inspect
 import logging
 logger = logging.getLogger(__name__)
 
-import inspect
-import unittest
-
-import numpy as np
-
-from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython
-from pydtnn.libs.convWinograd import ConvWinograd
-from pydtnn.tests.abstract.common import verbose_test, D
-from pydtnn.tests.abstract.conv_common import ConvCommonTestCase
-from pydtnn.utils import print_with_header
-from pydtnn.utils.tensor import TensorFormat
 
 # if (kh, kw) == (2, 2) and (vstride, hstride) == (1, 1) and (vdilation, hdilation) == (1, 1):
 # if (kh, kw) == (3, 3) and (vstride, hstride) == (1, 1) and (vdilation, hdilation) == (1, 1):

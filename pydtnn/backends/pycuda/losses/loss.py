@@ -1,14 +1,12 @@
+from pydtnn.utils.constants import ArrayShape
+from pydtnn.model import Model
+from pydtnn.losses.loss import Loss
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.backends.pycuda.abstract.base import BasePycuda
+from pycuda.driver import Function  # type: ignore
+from pycuda import gpuarray  # type: ignore
 import logging
 logger = logging.getLogger(__name__)
-
-from pycuda import gpuarray  # type: ignore
-from pycuda.driver import Function  # type: ignore
-
-from pydtnn.backends.pycuda.abstract.base import BasePycuda
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.losses.loss import Loss
-from pydtnn.model import Model
-from pydtnn.utils.constants import ArrayShape
 
 
 class LossPycuda(Loss[TensorArray], BasePycuda):

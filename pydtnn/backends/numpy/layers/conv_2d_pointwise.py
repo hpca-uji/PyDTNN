@@ -1,16 +1,15 @@
+from pydtnn.utils.tensor import TensorFormat, format_transpose
+from pydtnn.utils.constants import ArrayShape, Parameters
+from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum, PYDTNN_EVENT_FINISHED
+from pydtnn.layers.conv_2d_pointwise import Conv2DPointwise
+from pydtnn.backends.numpy.layers.abstract.conv_2d import AbstractConv2DNumpy
+from typing import TYPE_CHECKING
+from pydtnn.libs import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
-from pydtnn.libs import numpy as np
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import numpy as np
-
-from pydtnn.backends.numpy.layers.abstract.conv_2d import AbstractConv2DNumpy
-from pydtnn.layers.conv_2d_pointwise import Conv2DPointwise
-from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum, PYDTNN_EVENT_FINISHED
-from pydtnn.utils.constants import ArrayShape, Parameters
-from pydtnn.utils.tensor import TensorFormat, format_transpose
 
 
 class Conv2DPointwiseNumpy(Conv2DPointwise, AbstractConv2DNumpy):

@@ -1,60 +1,60 @@
 """
 PyDTNN model
 """
+from pydtnn.utils.memory_pool import PrivateMemory, PreallocMemory
+from pydtnn.metrics.metric import Metric
+from pydtnn.utils.constants import Array, NetworkAlgEnum, ArrayShape, Parameters
+from pydtnn.utils.tensor import SampleFormat, TensorFormat, format_reshape, encode_shape, encode_tensor, decode_shape, decode_tensor
+from pydtnn.utils.performance_counter import PerformanceCounter
+from pydtnn.tracers.tracer import Tracer
+from pydtnn.tracers.simple_tracer_pmlib import SimpleTracerPMLib
+from pydtnn.tracers.simple_tracer_gpu import SimpleTracerPycuda
+from pydtnn.tracers.simple_tracer import SimpleTracer
+from pydtnn.tracers.extrae_tracer import ExtraeTracer
+from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
+from pydtnn.utils.performance_models import allreduce_time
+from pydtnn.parser import PydtnnArgumentParser
+from pydtnn.backends.fuse.layers.layer import select as select_fuse_layer
+from pydtnn.schedulers.scheduler import select as select_scheduler
+from pydtnn.models.model import select as select_model
+from pydtnn.metrics.metric import select as select_metric
+from pydtnn.optimizers.optimizer import select as select_optimizer
+from pydtnn.losses.loss import select as select_loss
+from pydtnn.datasets.dataset import select as select_dataset
+from pydtnn.losses.loss import Loss
+from pydtnn.layers.conv_2d import Conv2D
+from pydtnn.layers.batch_normalization import BatchNormalization
+from pydtnn.backends.fuse.layers.layer import LayerFuse as FusedLayerMixIn
+from pydtnn.abstract.layerable import Layerable
+from pydtnn.datasets.dataset import Dataset
+from pydtnn.libs.mpi.rc import proto as PROTOCOL
+from pydtnn.activations.relu import Relu
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn import utils
+from pydtnn import hostname, ranks_per_node, num_gpus, nccl_comm, cudnn_handle, cublas_handle, context, stream
+from pydtnn import MPI_MODULE, Cudnn_Handle_Type, Cublas_Handle_Type, MPI, drv, gpuarray, nccl, cudnn, cublas  # type: ignore (cublas exist)
+from tqdm import tqdm
+import numpy as np
+from collections import abc
+from warnings import warn
+from typing import TYPE_CHECKING, Any, Literal
+from types import ModuleType
+from timeit import default_timer as timer
+from functools import reduce
+import time
+import operator
+import itertools
+import enum
 import logging
 logger = logging.getLogger(__name__)
 
-import enum
-import itertools
-import operator
-import time
-from functools import reduce
-from timeit import default_timer as timer
-from types import ModuleType
-from typing import TYPE_CHECKING, Any, Literal
-from warnings import warn
-from collections import abc
 
-#from warnings import filterwarnings
-#filterwarnings("error")
+# from warnings import filterwarnings
+# filterwarnings("error")
 
-import numpy as np
-from tqdm import tqdm
 
 # TODO: Check if all the elements imported here are necessary and if they are corretly set in Model's code.
-from pydtnn import MPI_MODULE, Cudnn_Handle_Type, Cublas_Handle_Type, MPI, drv, gpuarray, nccl, cudnn, cublas  # type: ignore (cublas exist)
-from pydtnn import hostname, ranks_per_node, num_gpus, nccl_comm, cudnn_handle, cublas_handle, context, stream
 
-from pydtnn import utils
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.activations.relu import Relu
-from pydtnn.libs.mpi.rc import proto as PROTOCOL
-from pydtnn.datasets.dataset import Dataset
-from pydtnn.abstract.layerable import Layerable
-from pydtnn.backends.fuse.layers.layer import LayerFuse as FusedLayerMixIn
-from pydtnn.layers.batch_normalization import BatchNormalization
-from pydtnn.layers.conv_2d import Conv2D
-from pydtnn.losses.loss import Loss
-from pydtnn.datasets.dataset import select as select_dataset
-from pydtnn.losses.loss import select as select_loss
-from pydtnn.optimizers.optimizer import select as select_optimizer
-from pydtnn.metrics.metric import select as select_metric
-from pydtnn.models.model import select as select_model
-from pydtnn.schedulers.scheduler import select as select_scheduler
-from pydtnn.backends.fuse.layers.layer import select as select_fuse_layer
-from pydtnn.parser import PydtnnArgumentParser
-from pydtnn.utils.performance_models import allreduce_time
-from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
-from pydtnn.tracers.extrae_tracer import ExtraeTracer
-from pydtnn.tracers.simple_tracer import SimpleTracer
-from pydtnn.tracers.simple_tracer_gpu import SimpleTracerPycuda
-from pydtnn.tracers.simple_tracer_pmlib import SimpleTracerPMLib
-from pydtnn.tracers.tracer import Tracer
-from pydtnn.utils.performance_counter import PerformanceCounter
-from pydtnn.utils.tensor import SampleFormat, TensorFormat, format_reshape, encode_shape, encode_tensor, decode_shape, decode_tensor
-from pydtnn.utils.constants import Array, NetworkAlgEnum, ArrayShape, Parameters
-from pydtnn.metrics.metric import Metric
-from pydtnn.utils.memory_pool import PrivateMemory, PreallocMemory
 
 if TYPE_CHECKING:
     import polyhe

@@ -3,14 +3,14 @@
 # _______________________________________________________________________________________________________________
 
 # Typing related (or non important) imports
+import pydtnn.converters.pytorch2pydtnn.common as cm
+from pydtnn.layers.dropout import Dropout as _Dropout
+from typing import Any
 import logging
 logger = logging.getLogger(__name__)
 
-from typing import Any
 
 # Functionality imports
-from pydtnn.layers.dropout import Dropout as _Dropout
-import pydtnn.converters.pytorch2pydtnn.common as cm
 
 # ------------------- #
 

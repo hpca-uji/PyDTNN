@@ -1,37 +1,35 @@
+import math
+from pydtnn.utils.constants import Parameters
+from pydtnn.tests.abstract.common import Params, TestCase, verbose_test
+from pydtnn.utils.tensor import TensorFormat, format_reshape, format_transpose
+from pydtnn.utils import random
+from pydtnn.model import Model
+from pydtnn.layers.max_pool_2d import MaxPool2D
+from pydtnn.abstract.layerable import Layerable
+from pydtnn.layers.input import Input
+from pydtnn.layers.flatten import Flatten
+from pydtnn.layers.fc import FC
+from pydtnn.layers.dropout import Dropout
+from pydtnn.layers.conv_2d import Conv2D
+from pydtnn.layers.concatenation_block import ConcatenationBlock
+from pydtnn.layers.batch_normalization import BatchNormalization
+from pydtnn.layers.average_pool_2d import AveragePool2D
+from pydtnn.layers.addition_block import AdditionBlock
+from pydtnn.layers.adaptive_average_pool_2d import AdaptiveAveragePool2D
+from pydtnn.activations.tanh import Tanh
+from pydtnn.activations.softmax import Softmax
+from pydtnn.activations.sigmoid import Sigmoid
+from pydtnn.activations.relu6 import Relu6
+from pydtnn.activations.relu import Relu
+from pydtnn.activations.log import Log
+from pydtnn.activations.leaky_relu import LeakyRelu
+from pydtnn.activations.arctanh import Arctanh
+import torch
+import numpy as np
+from unittest import skip
 import logging
 logger = logging.getLogger(__name__)
 
-from unittest import skip
-
-import numpy as np
-import torch
-
-from pydtnn.activations.arctanh import Arctanh
-from pydtnn.activations.leaky_relu import LeakyRelu
-from pydtnn.activations.log import Log
-from pydtnn.activations.relu import Relu
-from pydtnn.activations.relu6 import Relu6
-from pydtnn.activations.sigmoid import Sigmoid
-from pydtnn.activations.softmax import Softmax
-from pydtnn.activations.tanh import Tanh
-from pydtnn.layers.adaptive_average_pool_2d import AdaptiveAveragePool2D
-from pydtnn.layers.addition_block import AdditionBlock
-from pydtnn.layers.average_pool_2d import AveragePool2D
-from pydtnn.layers.batch_normalization import BatchNormalization
-from pydtnn.layers.concatenation_block import ConcatenationBlock
-from pydtnn.layers.conv_2d import Conv2D
-from pydtnn.layers.dropout import Dropout
-from pydtnn.layers.fc import FC
-from pydtnn.layers.flatten import Flatten
-from pydtnn.layers.input import Input
-from pydtnn.abstract.layerable import Layerable
-from pydtnn.layers.max_pool_2d import MaxPool2D
-from pydtnn.model import Model
-from pydtnn.utils import random
-from pydtnn.utils.tensor import TensorFormat, format_reshape, format_transpose
-from pydtnn.tests.abstract.common import Params, TestCase, verbose_test
-from pydtnn.utils.constants import Parameters
-import math
 
 # from torch.testing._internal.common_utils import _numpy_to_torch_dtype_dict
 numpy_to_torch_dtype_dict = {

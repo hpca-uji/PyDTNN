@@ -1,11 +1,9 @@
+from pydtnn.schedulers.scheduler_with_loss_or_metric import SchedulerWithLossOrMetric
+import numpy as np
+from typing import TYPE_CHECKING
 import logging
 logger = logging.getLogger(__name__)
 
-from typing import TYPE_CHECKING
-
-import numpy as np
-
-from pydtnn.schedulers.scheduler_with_loss_or_metric import SchedulerWithLossOrMetric
 
 if TYPE_CHECKING:
     from pydtnn.model import Model

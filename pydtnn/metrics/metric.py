@@ -1,12 +1,10 @@
+import numpy as np
+from pydtnn.utils.constants import Array
+from pydtnn.utils import find_component
+from pydtnn.abstract.base import Base
+from abc import abstractmethod
 import logging
 logger = logging.getLogger(__name__)
-
-from abc import abstractmethod
-
-from pydtnn.abstract.base import Base
-from pydtnn.utils import find_component
-from pydtnn.utils.constants import Array
-import numpy as np
 
 
 class Metric[T: Array](Base):

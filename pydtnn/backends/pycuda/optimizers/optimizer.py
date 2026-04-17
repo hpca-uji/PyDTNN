@@ -1,14 +1,12 @@
+from pycuda.elementwise import ElementwiseKernel  # type: ignore
+from pycuda.driver import Function  # type: ignore
+from pydtnn.optimizers.optimizer import Optimizer
+from pydtnn.abstract.layerable import Layerable
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.backends.pycuda.abstract.base import BasePycuda
+import numpy as np
 import logging
 logger = logging.getLogger(__name__)
-
-import numpy as np
-from pydtnn.backends.pycuda.abstract.base import BasePycuda
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.abstract.layerable import Layerable
-from pydtnn.optimizers.optimizer import Optimizer
-
-from pycuda.driver import Function  # type: ignore
-from pycuda.elementwise import ElementwiseKernel  # type: ignore
 
 
 class OptimizerPycuda(Optimizer[TensorArray], BasePycuda):

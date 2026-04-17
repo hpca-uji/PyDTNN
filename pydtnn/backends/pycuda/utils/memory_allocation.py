@@ -1,9 +1,7 @@
+import pycuda.driver as drv  # type: ignore
+import ctypes
 import logging
 logger = logging.getLogger(__name__)
-
-import ctypes
-
-import pycuda.driver as drv  # type: ignore
 
 
 # The below code will allocate the maximum used memory, which will be shared

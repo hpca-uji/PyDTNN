@@ -1,18 +1,15 @@
+import numpy as np
+from pydtnn.utils.tensor import encode_shape
+from pydtnn.utils.constants import ArrayShape
+from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
+from pydtnn.libs.convDirect import ConvDirect
+from warnings import warn
+from functools import partial
 import logging
 
 from pydtnn.backends.direct.layers.abstract.conv_2d import AbstractConv2DDirect
 from pydtnn.backends.numpy.layers.conv_2d import Conv2DNumpy
 logger = logging.getLogger(__name__)
-
-from functools import partial
-from warnings import warn
-
-from pydtnn.libs.convDirect import ConvDirect
-from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
-from pydtnn.utils.constants import ArrayShape
-from pydtnn.utils.tensor import encode_shape
-
-import numpy as np
 
 
 class Conv2DDirect(Conv2DNumpy, AbstractConv2DDirect):

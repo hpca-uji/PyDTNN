@@ -1,10 +1,9 @@
 from __future__ import annotations
+from pydtnn.utils import find_component
+from pydtnn.utils.constants import Array
 
 import logging
 logger = logging.getLogger(__name__)
-
-from pydtnn.utils.constants import Array
-from pydtnn.utils import find_component
 
 
 class LayerFuse[T: Array]():

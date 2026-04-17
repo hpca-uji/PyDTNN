@@ -1,16 +1,15 @@
+from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
+from pydtnn.utils.performance_models import matmul_time
+from pydtnn.model import Model
+from pydtnn.layers.fc import FC
+from pydtnn.backends.numpy.layers.layer import LayerNumpy
+from typing import TYPE_CHECKING
+from pydtnn.libs import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
-from pydtnn.libs import numpy as np
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import numpy as np
-
-from pydtnn.backends.numpy.layers.layer import LayerNumpy
-from pydtnn.layers.fc import FC
-from pydtnn.model import Model
-from pydtnn.utils.performance_models import matmul_time
-from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 
 
 class FCNumpy(FC[np.ndarray], LayerNumpy):
@@ -91,7 +90,7 @@ class FCNumpy(FC[np.ndarray], LayerNumpy):
         if self.use_bias:
             # self.db = np.sum(dy, axis=0)
             np.sum(dy, axis=0, out=self.db)
-        
+
         dx = np.asarray(self.dx[: self.x.shape[0], :], dtype=self.model.dtype, order="C")
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_MATMUL)
         # dx = np.matmul(dy, self.weights.T)

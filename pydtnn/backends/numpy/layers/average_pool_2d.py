@@ -1,14 +1,13 @@
+from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
+from pydtnn.layers.average_pool_2d import AveragePool2D
+from pydtnn.backends.numpy.layers.abstract.pool_2d_layer import AbstractPool2DLayerNumpy
+from typing import TYPE_CHECKING
+from pydtnn.libs import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
-from pydtnn.libs import numpy as np
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import numpy as np
-from pydtnn.backends.numpy.layers.abstract.pool_2d_layer import AbstractPool2DLayerNumpy
-from pydtnn.layers.average_pool_2d import AveragePool2D
-
-from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 
 
 class AveragePool2DNumpy(AveragePool2D[np.ndarray], AbstractPool2DLayerNumpy):
@@ -35,21 +34,21 @@ class AveragePool2DNumpy(AveragePool2D[np.ndarray], AbstractPool2DLayerNumpy):
 
     def _fwd_avg_pool_nhwc(self, x: np.ndarray, y: np.ndarray) -> None:
         for nn in range(x.shape[0]):
-                for xx in range(self.ho):
-                    for yy in range(self.wo):
-                        for cc in range(self.ci):
-                            accum = 0.0
-                            items = 0
-                            # accum, items = 0, (kh * kw)
-                            for ii in range(self.kh):
-                                x_x = self.hstride * xx + self.hdilation * ii - self.hpadding
-                                if 0 <= x_x < self.hi:
-                                    for jj in range(self.kw):
-                                        x_y = self.wstride * yy + self.wdilation * jj - self.wpadding
-                                        if 0 <= x_y < self.wi:
-                                            accum += x[nn, x_x, x_y, cc]
-                                            items += 1
-                            y[nn, xx, yy, cc] = (accum / items)
+            for xx in range(self.ho):
+                for yy in range(self.wo):
+                    for cc in range(self.ci):
+                        accum = 0.0
+                        items = 0
+                        # accum, items = 0, (kh * kw)
+                        for ii in range(self.kh):
+                            x_x = self.hstride * xx + self.hdilation * ii - self.hpadding
+                            if 0 <= x_x < self.hi:
+                                for jj in range(self.kw):
+                                    x_y = self.wstride * yy + self.wdilation * jj - self.wpadding
+                                    if 0 <= x_y < self.wi:
+                                        accum += x[nn, x_x, x_y, cc]
+                                        items += 1
+                        y[nn, xx, yy, cc] = (accum / items)
     # ----
 
     def _bwd_avg_pool_nhwc(self, dx: np.ndarray, dy: np.ndarray) -> None:

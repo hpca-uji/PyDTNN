@@ -1,17 +1,17 @@
+from pydtnn.utils.constants import ArrayShape
+from typing import TYPE_CHECKING
+from pydtnn.libs import numpy as np
+from pydtnn.utils.constants import DTYPE2CTYPE
+from pydtnn.backends.numpy.layers.adaptive_average_pool_2d import AdaptiveAveragePool2DNumpy
+from pydtnn.backends.cupy.layers.layer import LayerCupy
+from pydtnn.backends.cupy.layers.abstract.pool_2d_layer import AbstractPool2DLayerCupy
 import logging
 logger = logging.getLogger(__name__)
 
-from pydtnn.backends.cupy.layers.abstract.pool_2d_layer import AbstractPool2DLayerCupy
-from pydtnn.backends.cupy.layers.layer import LayerCupy
-from pydtnn.backends.numpy.layers.adaptive_average_pool_2d import AdaptiveAveragePool2DNumpy
 
-from pydtnn.utils.constants import DTYPE2CTYPE
-from pydtnn.libs import numpy as np
-from typing import TYPE_CHECKING
-
-from pydtnn.utils.constants import ArrayShape
 if TYPE_CHECKING:
     import numpy as np
+
 
 class AdaptiveAveragePool2DCupy(AdaptiveAveragePool2DNumpy, AbstractPool2DLayerCupy, LayerCupy):
 
@@ -19,7 +19,7 @@ class AdaptiveAveragePool2DCupy(AdaptiveAveragePool2DNumpy, AbstractPool2DLayerC
         super()._model_init(prev_shape, x)
 
         macros_nchw = \
-r"""
+            r"""
 #define GET_N(idx, n, c, h, w) (idx / (w * h * c))
 #define GET_C(idx, n, c, h, w) (idx / (w * h)) % c
 #define GET_H(idx, n, c, h, w) (idx / w) % h
@@ -28,7 +28,7 @@ r"""
 """
 
         macros_nhwc = \
-r"""
+            r"""
 #define GET_N(idx, n, c, h, w) (idx / (c * w * h))
 #define GET_H(idx, n, c, h, w) (idx / (c * w)) % h
 #define GET_W(idx, n, c, h, w) (idx / c) % w
@@ -40,7 +40,7 @@ r"""
         self.fwd_nhwc = self._fwd_nhwc_kernel(macros_nhwc)
         self.bwd_nchw = self._bwd_nchw_kernel(macros_nchw)
         self.bwd_nhwc = self._bwd_nhwc_kernel(macros_nhwc)
-        #----
+        # ----
 
     def _fwd_nhwc(self, x: np.ndarray, y: np.ndarray) -> None:
         N = x.shape[0] * self.ci * self.ho * self.wo  # y.size
@@ -97,7 +97,7 @@ r"""
     # ---
 
     def _fwd_kernel(self, func_name: str, macros: str) -> np.RawKernel:
-        
+
         # NOTE: N = n * c * ho * wo; x's format: NCHW
         code = \
             r"""
@@ -166,7 +166,6 @@ __global__ void {FUNC_NAME}({T}* x, {T}* y,
         return np.RawKernel(code, func_name, backend=self.cuda_compiler)
     # ----
 
-
     def _bwd_nchw_kernel(self, macros: str) -> np.RawKernel:
         func_name = "adaptive_avg_pooling_bwd_nchw"
         return self._bwd_kernel(func_name, macros)
@@ -178,7 +177,7 @@ __global__ void {FUNC_NAME}({T}* x, {T}* y,
     # ---
 
     def _bwd_kernel(self, func_name: str, macros: str) -> np.RawKernel:
-        
+
         # NOTE: N = n * ci * hi * wo; x's format: NCHW
         code = \
             r"""

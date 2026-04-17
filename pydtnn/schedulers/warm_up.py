@@ -1,11 +1,9 @@
+from numpy import ndarray
+from pydtnn.schedulers.scheduler import Scheduler
+from typing import TYPE_CHECKING
 import logging
 logger = logging.getLogger(__name__)
 
-from typing import TYPE_CHECKING
-
-from pydtnn.schedulers.scheduler import Scheduler
-
-from numpy import ndarray
 
 if TYPE_CHECKING:
     from pydtnn.model import Model

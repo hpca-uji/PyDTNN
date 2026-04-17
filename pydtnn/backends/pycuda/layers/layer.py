@@ -1,16 +1,12 @@
+from pycuda import gpuarray  # type: ignore
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn import gpu_errors
+from numpy import ndarray
+from pydtnn.backends.pycuda.abstract.layerable import LayerablePycuda
+from pydtnn.layers.layer import Layer
+import numpy as np
 import logging
 logger = logging.getLogger(__name__)
-
-import numpy as np
-
-from pydtnn.layers.layer import Layer
-from pydtnn.backends.pycuda.abstract.layerable import LayerablePycuda
-
-from numpy import ndarray
-from pydtnn import gpu_errors
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-
-from pycuda import gpuarray  # type: ignore
 
 
 class LayerPycuda(Layer[TensorArray], LayerablePycuda):

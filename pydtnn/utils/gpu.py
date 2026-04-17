@@ -1,8 +1,7 @@
+import subprocess
+import re
 import logging
 logger = logging.getLogger(__name__)
-
-import re
-import subprocess
 
 
 def get_gpu_memory_used() -> str:

@@ -1,9 +1,9 @@
 """Message Passing Interface"""
 
+import os as _os
 import logging
 logger = logging.getLogger(__name__)
 
-import os as _os
 
 try:
     import pympi.rc as _rc

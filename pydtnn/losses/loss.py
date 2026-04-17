@@ -1,9 +1,8 @@
+from pydtnn.utils.constants import Array
+from pydtnn.utils import find_component
+from pydtnn.abstract.base import Base
 import logging
 logger = logging.getLogger(__name__)
-
-from pydtnn.abstract.base import Base
-from pydtnn.utils import find_component
-from pydtnn.utils.constants import Array
 
 
 class Loss[T: Array](Base):

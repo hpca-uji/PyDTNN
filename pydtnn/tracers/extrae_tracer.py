@@ -1,14 +1,12 @@
+from typing import TYPE_CHECKING
+from pydtnn.tracers.tracer import Tracer
+from importlib import import_module
+import os
+import ctypes
 import logging
 logger = logging.getLogger(__name__)
 
-import ctypes
-import os
-from importlib import import_module
 
-from pydtnn.tracers.tracer import Tracer
-
-
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from pydtnn.model import Model
 

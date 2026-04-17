@@ -1,14 +1,11 @@
+from pydtnn.tests.abstract.model_common import ModelCommonTestCase
+from pydtnn.tests.abstract.common import Params
+from pydtnn.model import Model
+from pydtnn.layers.layer import LayerError
+import numpy as np
+import unittest
 import logging
 logger = logging.getLogger(__name__)
-
-import unittest
-
-import numpy as np
-
-from pydtnn.layers.layer import LayerError
-from pydtnn.model import Model
-from pydtnn.tests.abstract.common import Params
-from pydtnn.tests.abstract.model_common import ModelCommonTestCase
 
 
 class ModelDTypeTestCase(ModelCommonTestCase):

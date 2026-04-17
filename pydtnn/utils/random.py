@@ -1,10 +1,8 @@
+import numpy as np
+import threading
+import weakref
 import logging
 logger = logging.getLogger(__name__)
-
-import weakref
-import threading
-
-import numpy as np
 
 
 class SafeGenerator:

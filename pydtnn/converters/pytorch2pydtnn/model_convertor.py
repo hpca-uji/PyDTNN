@@ -1,17 +1,17 @@
+import copy
+import pydtnn.converters.pytorch2pydtnn.common as cm
+from pydtnn.layers.input import Input
+from pydtnn.model import Model as PyDTNN_Model
+import torch
+import numpy as np
+from pydtnn.activations.activation import Activation
+from pydtnn.abstract.layerable import Layerable
 import logging
 logger = logging.getLogger(__name__)
 
 # Typing related
-from pydtnn.abstract.layerable import Layerable
-from pydtnn.activations.activation import Activation
-import numpy as np
 
 # Operations/transformations related
-import torch
-from pydtnn.model import Model as PyDTNN_Model
-from pydtnn.layers.input import Input
-import pydtnn.converters.pytorch2pydtnn.common as cm
-import copy
 
 
 def load_layers(model: PyDTNN_Model, layers: list[Layerable], activation_layer: Activation) -> None:

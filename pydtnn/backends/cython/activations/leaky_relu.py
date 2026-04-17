@@ -1,11 +1,9 @@
+from pydtnn.libs import numpy as np
+from pydtnn.backends.cython.activations.activation import ActivationCython
+from pydtnn.backends.cython.utils.relu_cython import leaky_relu_cython
+from pydtnn.backends.numpy.activations.leaky_relu import LeakyReluNumpy
 import logging
 logger = logging.getLogger(__name__)
-
-from pydtnn.backends.numpy.activations.leaky_relu import LeakyReluNumpy
-from pydtnn.backends.cython.utils.relu_cython import leaky_relu_cython
-from pydtnn.backends.cython.activations.activation import ActivationCython
-
-from pydtnn.libs import numpy as np
 
 
 class LeakyReluCython(LeakyReluNumpy, ActivationCython):

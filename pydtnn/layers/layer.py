@@ -1,12 +1,11 @@
 """
 PyDTNN Layer base class
 """
+from pydtnn.utils.constants import Array
+from pydtnn.utils import find_component
+from pydtnn.abstract.layerable import Layerable
 import logging
 logger = logging.getLogger(__name__)
-
-from pydtnn.abstract.layerable import Layerable
-from pydtnn.utils import find_component
-from pydtnn.utils.constants import Array
 
 
 class LayerError(ValueError):

@@ -1,10 +1,9 @@
 """Message Passing Interface"""
 
+import sys as _sys
+import os as _os
 import logging
 logger = logging.getLogger(__name__)
-
-import os as _os
-import sys as _sys
 
 
 # Select implementation

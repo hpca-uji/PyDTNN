@@ -1,21 +1,21 @@
+import math
+from pydtnn.utils.tensor import TensorFormat
+import numpy as np
+from pycuda.driver import Function   # type: ignore
+from pycuda.compiler import SourceModule   # type: ignore
+from pycuda import gpuarray   # type: ignore
+from pydtnn.utils.performance_models import im2col_time, col2im_time
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
+from pydtnn.utils.constants import DTYPE2CTYPE
+from pydtnn.backends.pycuda.layers.layer import LayerPycuda
+from pydtnn.layers.adaptive_average_pool_2d import AdaptiveAveragePool2D
 import logging
 logger = logging.getLogger(__name__)
 
-from pydtnn.layers.adaptive_average_pool_2d import AdaptiveAveragePool2D
-from pydtnn.backends.pycuda.layers.layer import LayerPycuda
 
 # Import from AbstractPool2DLayerPycuda
-from pydtnn.utils.constants import DTYPE2CTYPE
-from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.utils.performance_models import im2col_time, col2im_time
-from pycuda import gpuarray   # type: ignore
-from pycuda.compiler import SourceModule   # type: ignore
-from pycuda.driver import Function   # type: ignore
 
-import numpy as np
-from pydtnn.utils.tensor import TensorFormat
-import math
 
 # --- CONSTANTS --- #
 _MACRO_INDEX_FIRST_ELEMENT = "INDEX_FIRST_ELEMENT"

@@ -1,12 +1,11 @@
+import numpy as np
+from pydtnn.utils.constants import ArrayShape, Array
+from pydtnn.utils.tensor import TensorFormat
+from pydtnn.layers.layer import LayerError
+from pydtnn.layers.abstract.block_layer import AbstractBlockLayer
 import logging
 logger = logging.getLogger(__name__)
 
-from pydtnn.layers.abstract.block_layer import AbstractBlockLayer
-from pydtnn.layers.layer import LayerError
-from pydtnn.utils.tensor import TensorFormat
-from pydtnn.utils.constants import ArrayShape, Array
-
-import numpy as np
 
 CONCAT_DIM_NCHW = 1
 CONCAT_DIM_NHWC = -1

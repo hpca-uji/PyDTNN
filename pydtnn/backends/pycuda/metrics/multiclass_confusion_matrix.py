@@ -1,14 +1,12 @@
+from pydtnn.utils.constants import DTYPE2CTYPE
+from pycuda.driver import Function  # type: ignore
+from pycuda.compiler import SourceModule  # type: ignore
+import numpy as np
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.metrics.multiclass_confusion_matrix import MulticlassConfusionMatrix
+from pydtnn.backends.pycuda.metrics.metric import MetricPycuda
 import logging
 logger = logging.getLogger(__name__)
-
-from pydtnn.backends.pycuda.metrics.metric import MetricPycuda
-from pydtnn.metrics.multiclass_confusion_matrix import MulticlassConfusionMatrix
-
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-import numpy as np
-from pycuda.compiler import SourceModule  # type: ignore
-from pycuda.driver import Function  # type: ignore
-from pydtnn.utils.constants import DTYPE2CTYPE
 
 
 class MulticlassConfusionMatrixPycuda(MulticlassConfusionMatrix[TensorArray], MetricPycuda):

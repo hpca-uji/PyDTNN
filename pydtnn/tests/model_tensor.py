@@ -1,22 +1,19 @@
+from pydtnn.utils.tensor import TensorFormat, format_transpose
+from pydtnn.tests.abstract.common import verbose_test, Params
+from pydtnn.tests.abstract.model_common import ModelCommonTestCase
+from pydtnn.model import Model
+from pydtnn.layers.layer import LayerError
+from pydtnn.layers.flatten import Flatten
+from pydtnn.layers.fc import FC
+from pydtnn.layers.dropout import Dropout
+from pydtnn.layers.conv_2d import Conv2D
+from pydtnn.layers.concatenation_block import ConcatenationBlock
+from pydtnn.layers.addition_block import AdditionBlock
+import numpy as np
+import warnings
+import unittest
 import logging
 logger = logging.getLogger(__name__)
-
-import unittest
-import warnings
-
-import numpy as np
-
-from pydtnn.layers.addition_block import AdditionBlock
-from pydtnn.layers.concatenation_block import ConcatenationBlock
-from pydtnn.layers.conv_2d import Conv2D
-from pydtnn.layers.dropout import Dropout
-from pydtnn.layers.fc import FC
-from pydtnn.layers.flatten import Flatten
-from pydtnn.layers.layer import LayerError
-from pydtnn.model import Model
-from pydtnn.tests.abstract.model_common import ModelCommonTestCase
-from pydtnn.tests.abstract.common import verbose_test, Params
-from pydtnn.utils.tensor import TensorFormat, format_transpose
 
 
 class ModelTensorTestCase(ModelCommonTestCase):

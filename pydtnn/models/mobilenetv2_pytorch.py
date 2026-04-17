@@ -28,11 +28,11 @@ def mobileNet(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Lay
 
     layout = [
         # expand_ration, n_filt, reps, stride
-        [1,  16, 1, 1],
-        [6,  24, 2, 2],
-        [6,  32, 3, 2],
-        [6,  64, 4, 2],
-        [6,  96, 3, 1],
+        [1, 16, 1, 1],
+        [6, 24, 2, 2],
+        [6, 32, 3, 2],
+        [6, 64, 4, 2],
+        [6, 96, 3, 1],
         [6, 160, 3, 2],
         [6, 320, 1, 1],
     ]

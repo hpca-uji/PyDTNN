@@ -1,16 +1,13 @@
+from pydtnn.utils import print_with_header
+from pydtnn.tests.abstract.conv_common import ConvCommonTestCase
+from pydtnn.tests.abstract.common import verbose_test
+from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython
+from pydtnn.libs.convDirect import ConvDirect
+import numpy as np
+from unittest import SkipTest
+import inspect
 import logging
 logger = logging.getLogger(__name__)
-
-import inspect
-from unittest import SkipTest
-
-import numpy as np
-
-from pydtnn.libs.convDirect import ConvDirect
-from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython
-from pydtnn.tests.abstract.common import verbose_test
-from pydtnn.tests.abstract.conv_common import ConvCommonTestCase
-from pydtnn.utils import print_with_header
 
 
 class ConvDirectTestCase(ConvCommonTestCase):

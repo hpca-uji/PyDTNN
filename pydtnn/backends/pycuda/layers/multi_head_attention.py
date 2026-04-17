@@ -1,17 +1,14 @@
 # https://github.com/storypku/cuda-support-for-bazel/blob/9a9c90c7d73fdafb3fbc8713232405cae4ae66d8/examples/cudnn-samples/multiHeadAttention/multiHeadAttention.cpp
+from pydtnn.backends.pycuda.utils.memory_allocation import checkConvolutionMemory, getConvolutionWorkspaceSize, getConvolutionWorkspacePtr
+from pydtnn.layers.multi_head_attention import MultiHeadAttention
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.backends.pycuda.layers.layer import LayerPycuda
+import pycuda
+from pycuda import gpuarray  # type: ignore
+from pydtnn.libs import cudnn as cudnn
+import numpy as np
 import logging
 logger = logging.getLogger(__name__)
-
-import numpy as np
-
-from pydtnn.libs import cudnn as cudnn
-from pycuda import gpuarray  # type: ignore
-import pycuda
-
-from pydtnn.backends.pycuda.layers.layer import LayerPycuda
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.layers.multi_head_attention import MultiHeadAttention
-from pydtnn.backends.pycuda.utils.memory_allocation import checkConvolutionMemory, getConvolutionWorkspaceSize, getConvolutionWorkspacePtr
 
 
 class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):

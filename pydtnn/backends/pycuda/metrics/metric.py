@@ -1,13 +1,11 @@
+from pydtnn.utils.constants import ArrayShape
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.metrics.metric import Metric
+from pydtnn.backends.pycuda.abstract.base import BasePycuda
+from pycuda.driver import Function  # type: ignore
+from pycuda import gpuarray  # type: ignore
 import logging
 logger = logging.getLogger(__name__)
-
-from pycuda import gpuarray  # type: ignore
-from pycuda.driver import Function  # type: ignore
-
-from pydtnn.backends.pycuda.abstract.base import BasePycuda
-from pydtnn.metrics.metric import Metric
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.utils.constants import ArrayShape
 
 
 class MetricPycuda(Metric[TensorArray], BasePycuda):

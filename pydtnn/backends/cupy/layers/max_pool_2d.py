@@ -1,13 +1,13 @@
+from pydtnn.utils.constants import ArrayShape, DTYPE2CTYPE
+from typing import TYPE_CHECKING
+from pydtnn.libs import numpy as np
+from pydtnn.backends.numpy.layers.max_pool_2d import MaxPool2DNumpy
+from pydtnn.backends.cupy.layers.layer import LayerCupy
+from pydtnn.backends.cupy.layers.abstract.pool_2d_layer import AbstractPool2DLayerCupy
 import logging
 logger = logging.getLogger(__name__)
 
-from pydtnn.backends.cupy.layers.abstract.pool_2d_layer import AbstractPool2DLayerCupy
-from pydtnn.backends.cupy.layers.layer import LayerCupy
-from pydtnn.backends.numpy.layers.max_pool_2d import MaxPool2DNumpy
-from pydtnn.libs import numpy as np
-from typing import TYPE_CHECKING
 
-from pydtnn.utils.constants import ArrayShape, DTYPE2CTYPE
 if TYPE_CHECKING:
     import numpy as np
 
@@ -17,7 +17,7 @@ class MaxPool2DCupy(MaxPool2DNumpy, AbstractPool2DLayerCupy, LayerCupy):
         super()._model_init(prev_shape, x)
 
         macros_nchw = \
-r"""
+            r"""
 #define GET_N(idx, n, c, h, w) (idx / (w * h * c))
 #define GET_C(idx, n, c, h, w) (idx / (w * h)) % c
 #define GET_H(idx, n, c, h, w) (idx / w) % h
@@ -26,7 +26,7 @@ r"""
 """
 
         macros_nhwc = \
-r"""
+            r"""
 #define GET_N(idx, n, c, h, w) (idx / (c * w * h))
 #define GET_H(idx, n, c, h, w) (idx / (c * w)) % h
 #define GET_W(idx, n, c, h, w) (idx / c) % w
@@ -38,7 +38,7 @@ r"""
         self.fwd_nhwc = self._fwd_nhwc_kernel(macros_nhwc)
         self.bwd_nchw = self._bwd_nchw_kernel(macros_nchw)
         self.bwd_nhwc = self._bwd_nhwc_kernel(macros_nhwc)
-        #----
+        # ----
 
     def _fwd_max_pool_nchw(self, x: np.ndarray, y: np.ndarray) -> None:
         self.fwd_nchw(self.model.cuda_grid,
@@ -48,7 +48,7 @@ r"""
                        self.kh, self.kw, self.ho, self.wo,
                        self.hpadding, self.wpadding,
                        self.hstride, self.wstride,
-                       self.hdilation, self.wdilation, 
+                       self.hdilation, self.wdilation,
                        self.minval))
     # ----
 
@@ -60,7 +60,7 @@ r"""
                        self.kh, self.kw, self.ho, self.wo,
                        self.hpadding, self.wpadding,
                        self.hstride, self.wstride,
-                       self.hdilation, self.wdilation, 
+                       self.hdilation, self.wdilation,
                        self.minval))
     # ----
 
@@ -101,7 +101,7 @@ r"""
     # ---
 
     def _fwd_kernel(self, func_name: str, macros: str) -> np.RawKernel:
-        
+
         # NOTE: N = n * c * ho * wo; y's format: NCHW
         code = \
             r"""
@@ -151,7 +151,7 @@ __global__ void {FUNC_NAME}({T}* x, {T}* y, int* idx_max,
         ci = GET_C(idx, n, c, ho, wo);
         hoi = GET_H(idx, n, c, ho, wo);
         woi = GET_W(idx, n, c, ho, wo);
-        
+
         for(khi = 0; khi < kh; khi++)
         {{
             hi = wstride * hoi + hdilation * khi - hpadding;
@@ -179,7 +179,6 @@ __global__ void {FUNC_NAME}({T}* x, {T}* y, int* idx_max,
         return np.RawKernel(code, func_name, backend=self.cuda_compiler)
     #  ---
 
-
     def _bwd_nchw_kernel(self, macros: str) -> np.RawKernel:
         func_name = "max_pool_bwd_nchw"
         return self._bwd_kernel(func_name, macros)
@@ -191,7 +190,7 @@ __global__ void {FUNC_NAME}({T}* x, {T}* y, int* idx_max,
     # ---
 
     def _bwd_kernel(self, func_name: str, macros: str) -> np.RawKernel:
-        
+
         # NOTE: N = n * ci * hi * wo; dx's format: NCHW
         code = \
             r"""
@@ -238,7 +237,7 @@ __global__ void {FUNC_NAME}({T}* dx, {T}* dy, int* idx_max,
         ci = GET_C(idx, n, c, hi, wi);
         hi = GET_H(idx, n, c, hi, wi);
         wi = GET_W(idx, n, c, hi, wi);
-        
+
         for(khi = 0; khi < kh; khi++)
         {{
             _xx = hi + hpadding - hdilation * khi;
@@ -256,7 +255,7 @@ __global__ void {FUNC_NAME}({T}* dx, {T}* dy, int* idx_max,
                     idx_maxval = (*(idx_max + SHIFT(ni, ci, xx, yy, n, c, ho, wo)));
                     ii = idx_maxval / kh;
                     jj = idx_maxval % kw;
-                    
+
                     if((ii == khi) && (jj == kwi))
                         *(dx + idx) += (*(dy + SHIFT(ni, ci, xx, yy, n, c, ho, wo)));
                 }}

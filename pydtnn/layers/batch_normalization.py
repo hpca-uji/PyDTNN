@@ -1,15 +1,11 @@
+from pydtnn.utils.constants import Array, ArrayShape, Parameters
+from pydtnn.utils.initializers import zeros, ones
+from typing import Any, Callable
+from pydtnn.layers.layer import Layer
+import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
-import numpy as np
-
-from pydtnn.layers.layer import Layer
-
-from typing import Any, Callable
-
-from pydtnn.utils.initializers import zeros, ones
-
-from pydtnn.utils.constants import Array, ArrayShape, Parameters
 
 class BatchNormalization[T: Array](Layer[T]):
 

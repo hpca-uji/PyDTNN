@@ -1,18 +1,16 @@
+from pydtnn.utils.constants import ArrayShape, Parameters
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.libs import cudnn as cudnn
+from pydtnn.backends.pycuda.layers.layer import LayerPycuda
+from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
+from pydtnn.model import Model
+from pydtnn.layers.batch_normalization import BatchNormalization
+from pycuda import gpuarray  # type: ignore
+import pycuda.driver as drv  # type: ignore
+import numpy as np
+from typing import Any
 import logging
 logger = logging.getLogger(__name__)
-
-from typing import Any
-import numpy as np
-import pycuda.driver as drv  # type: ignore
-from pycuda import gpuarray  # type: ignore
-
-from pydtnn.layers.batch_normalization import BatchNormalization
-from pydtnn.model import Model
-from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
-from pydtnn.backends.pycuda.layers.layer import LayerPycuda
-from pydtnn.libs import cudnn as cudnn
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.utils.constants import ArrayShape, Parameters
 
 
 class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
