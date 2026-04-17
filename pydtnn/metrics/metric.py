@@ -3,13 +3,13 @@ logger = logging.getLogger(__name__)
 
 from abc import abstractmethod
 
-from pydtnn.backends import PromoteToBackend
+from pydtnn.abstract.base import Base
 from pydtnn.utils import find_component
 from pydtnn.utils.constants import Array
 import numpy as np
 
 
-class Metric[T: Array](PromoteToBackend):
+class Metric[T: Array](Base):
     format = ""
     order = 0   # No need of special order.
 

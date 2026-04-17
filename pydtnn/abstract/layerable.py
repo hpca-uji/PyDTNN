@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from pydtnn.optimizers.optimizer import Optimizer
 
 from pydtnn.utils.constants import Array, ArrayShape, Parameters
-from pydtnn.backends import PromoteToBackend
+from pydtnn.abstract.base import Base
 
 try:
     from pycuda.driver import Stream  # type: ignore
@@ -20,7 +20,7 @@ except Exception:
     pass
 
 
-class LayerBase[T: Array](PromoteToBackend):
+class Layerable[T: Array](Base[T]):
     def __init__(self, shape: ArrayShape = ()) -> None:
         super().__init__()
         self.nparams: int = 0
@@ -33,9 +33,9 @@ class LayerBase[T: Array](PromoteToBackend):
         self.grad_vars: dict[str, str] = {}
         self.fwd_time: np.ndarray = None  # type: ignore
         self.bwd_time: np.ndarray = None  # type: ignore
-        self.paths: list[list[LayerBase[T]]] = []
+        self.paths: list[list[Layerable[T]]] = []
         self.reqs_allred = {}
-        self.parent_layer: LayerBase | None = None
+        self.parent_layer: Layerable | None = None
 
         # The following attributes will be initialized later
         self.id: int = None  # type: ignore
@@ -128,8 +128,8 @@ class LayerBase[T: Array](PromoteToBackend):
         pass
 
     @property
-    def children(self) -> list[LayerBase[T]]:
-        children: list[LayerBase[T]] = []
+    def children(self) -> list[Layerable[T]]:
+        children: list[Layerable[T]] = []
         for path in self.paths:
             children += [layer for layer in path]
         return children
@@ -183,12 +183,3 @@ class LayerBase[T: Array](PromoteToBackend):
         if Parameters.PATHS in data:
             self._import_prop(Parameters.PATHS, data[Parameters.PATHS])
     # -----
-
-
-class FusedLayerMixIn[T: Array]():
-    def __init__(self, *args, **kwargs):
-        from_parent = kwargs.pop("from_parent", None)
-        if from_parent is None:
-            super().__init__(*args, **kwargs)
-        else:
-            self.__dict__.update(from_parent)

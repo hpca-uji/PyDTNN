@@ -30,7 +30,8 @@ from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.activations.relu import Relu
 from pydtnn.libs.mpi.rc import proto as PROTOCOL
 from pydtnn.datasets.dataset import Dataset
-from pydtnn.layer_base import LayerBase, FusedLayerMixIn
+from pydtnn.abstract.layerable import Layerable
+from pydtnn.backends.fuse.layers.layer import LayerFuse as FusedLayerMixIn
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.losses.loss import Loss
@@ -40,7 +41,7 @@ from pydtnn.optimizers.optimizer import select as select_optimizer
 from pydtnn.metrics.metric import select as select_metric
 from pydtnn.models.model import select as select_model
 from pydtnn.schedulers.scheduler import select as select_scheduler
-from pydtnn.backends.fuse.layers import select as select_fuse_layer
+from pydtnn.backends.fuse.layers.layer import select as select_fuse_layer
 from pydtnn.parser import PydtnnArgumentParser
 from pydtnn.utils.performance_models import allreduce_time
 from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
@@ -261,7 +262,7 @@ class Model[T: Array]:
         self.perf_counter = PerformanceCounter()
 
         # Layers' attributes
-        self.layers: list[LayerBase] = []
+        self.layers: list[Layerable] = []
         self.layer_id_generator: abc.Iterator[int] = iter(itertools.count())
 
         # Set current mode to unspecified
@@ -664,7 +665,7 @@ class Model[T: Array]:
         for layer in self.layers:
             layer.print_in_convdirect_format()
 
-    def add(self, layer: LayerBase[T]) -> None:
+    def add(self, layer: Layerable[T]) -> None:
         layer._init_backend_with_model(self)
 
         if self.layers:
@@ -684,12 +685,12 @@ class Model[T: Array]:
         if layer.act:
             self.add(layer.act())
 
-    def add_layers(self, list_layers: list[LayerBase[T]]) -> None:
+    def add_layers(self, list_layers: list[Layerable[T]]) -> None:
         for layer in list_layers:
             self.add(layer)
     # --- END add_layers ---
 
-    def get_all_layers(self, from_layers: list[LayerBase[T]] | None = None) -> list[LayerBase[T]]:
+    def get_all_layers(self, from_layers: list[Layerable[T]] | None = None) -> list[Layerable[T]]:
         if from_layers is None:
             from_layers = self.layers
         this_recursion_layers = []
@@ -699,7 +700,7 @@ class Model[T: Array]:
             this_recursion_layers += self.get_all_layers(children)
         return this_recursion_layers
 
-    def _select_fusion_3(self, fused_layers: list) -> tuple[str | None, list[LayerBase | FusedLayerMixIn | None]]:
+    def _select_fusion_3(self, fused_layers: list) -> tuple[str | None, list[Layerable | FusedLayerMixIn | None]]:
         layer2 = fused_layers[-1] if len(fused_layers) > 0 else None
         layer1 = fused_layers[-2] if len(fused_layers) > 1 else None
         layer0 = fused_layers[-3] if len(fused_layers) > 2 else None
@@ -717,7 +718,7 @@ class Model[T: Array]:
         return layer_name, [layer0, layer1, layer2]
     # ----
 
-    def _select_fusion_2(self, fused_layers: list) -> tuple[str | None, list[LayerBase | FusedLayerMixIn | None]]:
+    def _select_fusion_2(self, fused_layers: list) -> tuple[str | None, list[Layerable | FusedLayerMixIn | None]]:
         layer2 = fused_layers[-1] if len(fused_layers) > 0 else None
         layer1 = fused_layers[-2] if len(fused_layers) > 1 else None
 
@@ -743,7 +744,7 @@ class Model[T: Array]:
         return layer_name, [layer1, layer2]
     # ----
 
-    def __layer_fusion(self, layers: list[LayerBase], switch_fusion: abc.Callable) -> None:
+    def __layer_fusion(self, layers: list[Layerable], switch_fusion: abc.Callable) -> None:
         i = 0
         while i < len(layers):
             curr_layer = layers[i]

@@ -4,7 +4,7 @@ PyDTNN Layer base class
 import logging
 logger = logging.getLogger(__name__)
 
-from pydtnn.layer_base import LayerBase
+from pydtnn.abstract.layerable import Layerable
 from pydtnn.utils import find_component
 from pydtnn.utils.constants import Array
 
@@ -17,7 +17,7 @@ class ParameterException(LayerError):
     pass
 
 
-class Layer[T: Array](LayerBase[T]):
+class Layer[T: Array](Layerable[T]):
     pass
 
 

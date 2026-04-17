@@ -15,15 +15,15 @@ Tensorflow parameters names:
 """
 
 from collections.abc import Sequence
-from pydtnn.layer_base import LayerBase
+from pydtnn.abstract.layerable import Layerable
 from pydtnn.layers.encoder import Encoder
 from pydtnn.layers.input import Input
 from pydtnn.utils.constants import ArrayShape
 
 
-def bert(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[LayerBase]:
+def bert(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
     """Bert-Medium"""
-    model = list[LayerBase]()
+    model = list[Layerable]()
     _ = model.append
 
     n_encoders = 8

@@ -4,7 +4,7 @@ logger = logging.getLogger(__name__)
 from typing import TYPE_CHECKING
 from warnings import warn
 
-from pydtnn.layer_base import LayerBase
+from pydtnn.abstract.layerable import Layerable
 from pydtnn.optimizers.optimizer import Optimizer
 from pydtnn.utils.constants import Array
 
@@ -45,7 +45,7 @@ class OkTopk[T: Array](Optimizer[T]):
 
         return props
 
-    def _model_init(self, list_layers: list[LayerBase]) -> None:
+    def _model_init(self, list_layers: list[Layerable]) -> None:
         super()._model_init(list_layers)
 
         if self.model.model_sync_freq >= 0:

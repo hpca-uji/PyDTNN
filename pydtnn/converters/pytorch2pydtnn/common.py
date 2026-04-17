@@ -11,7 +11,7 @@ from pydtnn.converters.pytorch2pydtnn.layers.linear import Linear
 from pydtnn.converters.pytorch2pydtnn.layers.normalization import BatchNorm2d
 from pydtnn.converters.pytorch2pydtnn.layers.pooling import AdaptiveAvgPool2d, AvgPool2d, MaxPool2d
 from pydtnn.converters.pytorch2pydtnn.layers.utility import Flatten
-from pydtnn.layer_base import LayerBase
+from pydtnn.abstract.layerable import Layerable
 
 # Functionality imports
 
@@ -66,7 +66,7 @@ def prepare_pydtnn_arguments(arguments: dict[str, Any], torch_dict_keys: list[st
     return {pydtnn_key: arguments[torch_key] for torch_key, pydtnn_key in zip(torch_dict_keys, pydtnn_dict_keys) if torch_key in arguments}
 
 
-def switch_pytorch_pydtnn(name: str) -> Callable[[dict[str, Any]], LayerBase]:
+def switch_pytorch_pydtnn(name: str) -> Callable[[dict[str, Any]], Layerable]:
     # NOTE: name is the result of torch.nn.[layer]._get_name();
     #   if PyTorch change their layer's names, then it's necessary to change the names here.
     match name:
@@ -105,7 +105,7 @@ def switch_operation_symbols(op: str) -> str:
 # --- switch_operation_symbols --- #
 
 
-def function_operation_to_pydtnn(name: str) -> Callable[[dict[str, Any]], tuple[LayerBase, str]]:
+def function_operation_to_pydtnn(name: str) -> Callable[[dict[str, Any]], tuple[Layerable, str]]:
 
     # NOTE: I found impossible to do a switch (match-case) nor a dictionary due the name may be larger than the "key" (e.g.: name = torch.flatten(input, start_dim=0, end_dim=-1); "key" = "flatten")
     if ADD in name:
@@ -134,7 +134,7 @@ def function_operation_to_pydtnn(name: str) -> Callable[[dict[str, Any]], tuple[
     return op
 
 
-def get_lists_operations_and_outputs(dict_layers: dict[str, tuple[LayerBase, str]], layer_inputs: list[str]) -> tuple[list[list[LayerBase]], list[str], str]:
+def get_lists_operations_and_outputs(dict_layers: dict[str, tuple[Layerable, str]], layer_inputs: list[str]) -> tuple[list[list[Layerable]], list[str], str]:
     # NOTE: It is assumed that the model will by a feed-forward network
     dict_branch = {}
 
@@ -168,7 +168,7 @@ def get_lists_operations_and_outputs(dict_layers: dict[str, tuple[LayerBase, str
 
     # -- Trimming the dict and storing the data to be returned -- #
 
-    lists_operations: list[LayerBase] = list()  # list of lists (one list per branch)
+    lists_operations: list[Layerable] = list()  # list of lists (one list per branch)
     lists_outputs: list[str] = list()  # list of strings (all branches in one list)
     for inpt in layer_inputs:
         # - Trimming the dict - #

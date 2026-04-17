@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 # Typing related (or non important) imports
 from typing import Any
-from pydtnn.layer_base import LayerBase
+from pydtnn.abstract.layerable import Layerable
 
 # Functionality imports
 from pydtnn.layers.average_pool_2d import AveragePool2D
@@ -64,7 +64,7 @@ def add(args: dict[str, Any]) -> tuple[AdditionBlock, str]:
     params = cm.separate_function_params(args[cm.PARAMETERS])
 
     params = cm.get_equivalent_layer(params, dict_equivalent_layers)
-    dict_layers: dict[str, tuple[LayerBase, str]] = args[cm.LAYERS]
+    dict_layers: dict[str, tuple[Layerable, str]] = args[cm.LAYERS]
 
     list_layers, to_remove, input_layer_name = cm.get_lists_operations_and_outputs(dict_layers=dict_layers, layer_inputs=params)
 
@@ -96,7 +96,7 @@ def concat(args: dict[str, Any]) -> tuple[ConcatenationBlock, str]:
     params = cm.separate_function_params(params)
     params = cm.get_equivalent_layer(params, dict_equivalent_layers)
 
-    dict_layers: dict[str, tuple[LayerBase, str]] = args[cm.LAYERS]
+    dict_layers: dict[str, tuple[Layerable, str]] = args[cm.LAYERS]
     list_layers, to_remove, input_layer_name = cm.get_lists_operations_and_outputs(dict_layers=dict_layers, layer_inputs=params)
 
     to_remove = set(to_remove)  # Remove multiple ocurrences of a layer. Consecuence of "get_equivalent_layer".

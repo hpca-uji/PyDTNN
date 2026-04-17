@@ -4,6 +4,7 @@ logger = logging.getLogger(__name__)
 import numpy as np
 
 from pydtnn.layers.layer import Layer
+from pydtnn.backends.pycuda.abstract.layerable import LayerablePycuda
 from pydtnn.tracers.events import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
     PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
 
@@ -24,7 +25,7 @@ from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pycuda import gpuarray  # type: ignore
 
 
-class LayerPycuda(Layer[TensorArray]):
+class LayerPycuda(Layer[TensorArray], LayerablePycuda):
     """
     Extends a Layer class with the attributes and methods required by GPU Layers.
     """

@@ -11,15 +11,15 @@ from pydtnn.layers.dropout import Dropout
 from pydtnn.layers.fc import FC
 from pydtnn.layers.flatten import Flatten
 from pydtnn.layers.input import Input
-from pydtnn.layer_base import LayerBase
+from pydtnn.abstract.layerable import Layerable
 from pydtnn.utils.constants import ArrayShape
 # NOTE: TensorFlow uses AveragePool2D with (2, 2) pool shape
 
 
-def mobileNet(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[LayerBase]:
+def mobileNet(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
     first_filters = 32
 
-    model = list[LayerBase]()
+    model = list[Layerable]()
     _ = model.append
     _(Input(shape=input_shape))
     _(Conv2D(nfilters=first_filters, filter_shape=(3, 3), padding=1, stride=2, use_bias=False))

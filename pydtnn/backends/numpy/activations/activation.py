@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING
+from pydtnn.backends.numpy.abstract.layerable import LayerableNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.tracers.events import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
     PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
@@ -15,7 +16,7 @@ if TYPE_CHECKING:
     import numpy as np
 
 
-class ActivationNumpy(Activation[np.ndarray]):
+class ActivationNumpy(Activation[np.ndarray], LayerableNumpy):
     """
     Extends an Activation class with the attributes and methods required by CPU Activations.
 

@@ -2,7 +2,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # Typing related
-from pydtnn.layer_base import LayerBase
+from pydtnn.abstract.layerable import Layerable
 from pydtnn.activations.activation import Activation
 import numpy as np
 
@@ -14,7 +14,7 @@ import pydtnn.converters.pytorch2pydtnn.common as cm
 import copy
 
 
-def load_layers(model: PyDTNN_Model, layers: list[LayerBase], activation_layer: Activation) -> None:
+def load_layers(model: PyDTNN_Model, layers: list[Layerable], activation_layer: Activation) -> None:
     for layer in layers:
         model.add(layer)
     if not isinstance(layers[-1], Activation) and activation_layer is not None:
@@ -117,9 +117,9 @@ def extract_layers_relations(model: torch.nn.Module) -> dict[str, tuple[str | to
     return relations_dic
 
 
-def convert_layers_and_set_weights_and_biases(input_shape: tuple[int], layers: dict[str, tuple[str | torch.nn.Module, str]]) -> list[LayerBase]:
+def convert_layers_and_set_weights_and_biases(input_shape: tuple[int], layers: dict[str, tuple[str | torch.nn.Module, str]]) -> list[Layerable]:
 
-    converted_layers: dict[str, LayerBase] = dict()
+    converted_layers: dict[str, Layerable] = dict()
 
     # Constants
     # - state_dicts keys.

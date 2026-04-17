@@ -1,6 +1,7 @@
 import logging
 logger = logging.getLogger(__name__)
 
+from pydtnn.backends.cupy.layers.abstract.conv_2d import AbstractConv2DCupy
 from pydtnn.backends.cupy.layers.layer import LayerCupy
 from pydtnn.backends.numpy.layers.conv_2d_depthwise import Conv2DDepthwiseNumpy
 from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
@@ -11,7 +12,7 @@ if TYPE_CHECKING:
     import numpy as np
 
 
-class Conv2DDepthwiseCython(Conv2DDepthwiseNumpy, LayerCupy):
+class Conv2DDepthwiseCython(Conv2DDepthwiseNumpy, AbstractConv2DCupy, LayerCupy):
 
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
         super()._model_init(prev_shape, x)

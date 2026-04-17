@@ -1,12 +1,12 @@
 import logging
 logger = logging.getLogger(__name__)
 
-from pydtnn.backends import PromoteToBackend
+from pydtnn.abstract.base import Base
 from pydtnn.utils import find_component
 from pydtnn.utils.constants import Array
 
 
-class Loss[T: Array](PromoteToBackend):
+class Loss[T: Array](Base):
     format = ""
 
     def __init__(self, eps=1e-8):

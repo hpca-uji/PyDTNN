@@ -1,12 +1,12 @@
 from collections.abc import Sequence
-from pydtnn.layer_base import LayerBase
+from pydtnn.abstract.layerable import Layerable
 from pydtnn.layers.input import Input
 from pydtnn.layers.multi_head_attention import MultiHeadAttention
 from pydtnn.utils.constants import ArrayShape
 
 
-def transformer_test(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[LayerBase]:
-    model = list[LayerBase]()
+def transformer_test(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
+    model = list[Layerable]()
     _ = model.append
 
     _(Input(shape=((1, 75, 300))))

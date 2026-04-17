@@ -1,16 +1,18 @@
 import logging
 logger = logging.getLogger(__name__)
 
+from pydtnn.backends.gemm.layers.abstract.conv_2d import AbstractConv2DGemm
+
 import numpy as np
 
-from pydtnn.backends.numpy.layers.abstract.conv_2d_standard import AbstractConv2DStandardNumpy
 from pydtnn.libs.convGemm import ConvGemm
+from pydtnn.backends.numpy.layers.conv_2d import Conv2DNumpy
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import TensorFormat
 
 
-class Conv2DGEMM(AbstractConv2DStandardNumpy):
+class Conv2DGemm(Conv2DNumpy, AbstractConv2DGemm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

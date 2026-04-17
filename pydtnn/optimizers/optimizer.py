@@ -1,13 +1,13 @@
 import logging
 logger = logging.getLogger(__name__)
 
-from pydtnn.backends import PromoteToBackend
-from pydtnn.layer_base import LayerBase
+from pydtnn.abstract.base import Base
+from pydtnn.abstract.layerable import Layerable
 from pydtnn.utils import find_component
 from pydtnn.utils.constants import Array
 
 
-class Optimizer[T: Array](PromoteToBackend):
+class Optimizer[T: Array](Base):
     """
     Optimizer abstract base class
     """
@@ -17,12 +17,12 @@ class Optimizer[T: Array](PromoteToBackend):
         self.learning_rate: float = learning_rate
         self.context = dict[int, dict[str, int | T]]()
 
-    def _model_init(self, list_layers: list[LayerBase[T]]) -> None:
+    def _model_init(self, list_layers: list[Layerable[T]]) -> None:
         super()._model_init()
         self.dtype = self.model.dtype
         self.gpudirect = self.model.gpudirect
 
-    def update(self, layer: LayerBase) -> None:
+    def update(self, layer: Layerable) -> None:
         raise NotImplementedError("method update of an Optimizer's child class is not implemented")
 
 

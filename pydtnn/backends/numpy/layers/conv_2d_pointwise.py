@@ -13,7 +13,7 @@ from pydtnn.utils.constants import ArrayShape, Parameters
 from pydtnn.utils.tensor import TensorFormat, format_transpose
 
 
-class Conv2DPointwiseNumpy(AbstractConv2DNumpy, Conv2DPointwise):
+class Conv2DPointwiseNumpy(Conv2DPointwise, AbstractConv2DNumpy):
 
     def _export_prop(self, key: str):
         if key not in {Parameters.WEIGHTS, Parameters.DW}:

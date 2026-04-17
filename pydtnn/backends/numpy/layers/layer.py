@@ -1,4 +1,6 @@
 import logging
+
+from pydtnn.backends.numpy.abstract.layerable import LayerableNumpy
 logger = logging.getLogger(__name__)
 
 from typing import TYPE_CHECKING
@@ -18,7 +20,7 @@ if TYPE_CHECKING:
     import numpy as np
 
 
-class LayerNumpy(Layer[np.ndarray]):
+class LayerNumpy(Layer[np.ndarray], LayerableNumpy):
     """
     Extends a Layer class with the attributes and methods required by CPU Layers.
     """

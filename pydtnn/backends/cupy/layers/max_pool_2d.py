@@ -1,6 +1,7 @@
 import logging
 logger = logging.getLogger(__name__)
 
+from pydtnn.backends.cupy.layers.abstract.pool_2d_layer import AbstractPool2DLayerCupy
 from pydtnn.backends.cupy.layers.layer import LayerCupy
 from pydtnn.backends.numpy.layers.max_pool_2d import MaxPool2DNumpy
 from pydtnn.libs import numpy as np
@@ -11,7 +12,7 @@ if TYPE_CHECKING:
     import numpy as np
 
 
-class MaxPool2DCupy(MaxPool2DNumpy, LayerCupy):
+class MaxPool2DCupy(MaxPool2DNumpy, AbstractPool2DLayerCupy, LayerCupy):
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
         super()._model_init(prev_shape, x)
 

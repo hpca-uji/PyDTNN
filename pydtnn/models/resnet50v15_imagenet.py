@@ -8,15 +8,15 @@ from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.fc import FC
 from pydtnn.layers.flatten import Flatten
 from pydtnn.layers.input import Input
-from pydtnn.layer_base import LayerBase
+from pydtnn.abstract.layerable import Layerable
 from pydtnn.utils.initializers import he_uniform
 from pydtnn.activations.softmax import Softmax
 from pydtnn.layers.max_pool_2d import MaxPool2D
 from pydtnn.utils.constants import ArrayShape
 
 
-def resnet50v15_imagenet(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[LayerBase]:
-    model = list[LayerBase]()
+def resnet50v15_imagenet(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
+    model = list[Layerable]()
     _ = model.append
 
     """

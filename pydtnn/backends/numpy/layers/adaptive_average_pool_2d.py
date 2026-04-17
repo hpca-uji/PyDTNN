@@ -1,6 +1,7 @@
 import logging
 logger = logging.getLogger(__name__)
 
+from pydtnn.backends.numpy.layers.abstract.pool_2d_layer import AbstractPool2DLayerNumpy
 from pydtnn.layers.adaptive_average_pool_2d import AdaptiveAveragePool2D
 from pydtnn.backends.numpy.layers.layer import LayerNumpy
 from pydtnn.utils.constants import ArrayShape
@@ -16,7 +17,7 @@ if TYPE_CHECKING:
     import numpy as np
 
 
-class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], LayerNumpy):
+class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], AbstractPool2DLayerNumpy):
     # The backend is almost the same as a AveragePool2D layer.
 
     def __init__(self, *args, **kwargs):

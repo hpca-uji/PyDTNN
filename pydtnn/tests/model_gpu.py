@@ -7,7 +7,7 @@ import numpy as np
 import pycuda.gpuarray as gpuarray  # type: ignore
 
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.layer_base import LayerBase
+from pydtnn.abstract.layerable import Layerable
 from pydtnn.layers.addition_block import AdditionBlock
 from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.conv_2d import Conv2D
@@ -78,7 +78,7 @@ class ModelGpuTestCase(ModelCommonTestCase):
                                                    gpu_layer.model.cudnn_dtype)
 
     def set_data_to_ary(self, ary: "gpuarray",  # type: ignore
-                        data: np.ndarray, layer: LayerBase) -> None:
+                        data: np.ndarray, layer: Layerable) -> None:
         try:
             ary.set(data.copy())
         except ValueError as e:

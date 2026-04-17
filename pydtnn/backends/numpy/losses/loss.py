@@ -1,6 +1,7 @@
 import logging
 logger = logging.getLogger(__name__)
 
+from pydtnn.backends.numpy.abstract.base import BaseNumpy
 from pydtnn.losses.loss import Loss
 from pydtnn.libs import numpy as np
 from typing import TYPE_CHECKING
@@ -8,7 +9,7 @@ if TYPE_CHECKING:
     import numpy as np
 
 
-class LossNumpy(Loss[np.ndarray]):
+class LossNumpy(Loss[np.ndarray], BaseNumpy):
     """
     Extends a Loss class with the attributes and methods required by CPU Losses.
     """

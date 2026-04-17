@@ -6,15 +6,15 @@ from pydtnn.layers.max_pool_2d import MaxPool2D
 from pydtnn.layers.flatten import Flatten
 from pydtnn.layers.fc import FC
 from pydtnn.layers.dropout import Dropout
-from pydtnn.layer_base import LayerBase
+from pydtnn.abstract.layerable import Layerable
 from pydtnn.activations.relu import Relu
 from pydtnn.activations.softmax import Softmax
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.layers.batch_normalization import BatchNormalization
 
 
-def simplecnn(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[LayerBase]:
-    model = list[LayerBase]()
+def simplecnn(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
+    model = list[Layerable]()
     _ = model.append
 
     _(Input(shape=input_shape))

@@ -1,4 +1,6 @@
 import logging
+
+from pydtnn.backends.cupy.layers.abstract.conv_2d import AbstractConv2DCupy
 logger = logging.getLogger(__name__)
 
 import cupy as np
@@ -9,7 +11,7 @@ from pydtnn.backends.numpy.layers.conv_2d import Conv2DNumpy
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.constants import DTYPE2CTYPE
 
-class Conv2DCupy(Conv2DNumpy, LayerCupy):
+class Conv2DCupy(Conv2DNumpy, AbstractConv2DCupy, LayerCupy):
 
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
         super()._model_init(prev_shape, x)

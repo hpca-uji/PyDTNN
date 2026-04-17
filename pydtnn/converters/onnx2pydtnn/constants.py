@@ -2,7 +2,7 @@
 from pydtnn.converters.onnx2pydtnn.operations.implemented_operations import *
 
 from typing import Callable
-from pydtnn.layer_base import LayerBase
+from pydtnn.abstract.layerable import Layerable
 
 CONST_NODE = "node"
 CONST_OPSET = "opset_version"
@@ -45,7 +45,7 @@ def not_implemented(name: str) -> Callable:
 # --- END not_implemented --- #
 
 
-def switch_onnx_operation_to_pydtnn(name: str) -> Callable[[dict[str, Any]], LayerBase]:
+def switch_onnx_operation_to_pydtnn(name: str) -> Callable[[dict[str, Any]], Layerable]:
     match name:
         case "Add": return Add
         case "AveragePool": return AveragePool

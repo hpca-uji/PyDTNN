@@ -4,12 +4,13 @@ logger = logging.getLogger(__name__)
 from pycuda import gpuarray  # type: ignore
 from pycuda.driver import Function  # type: ignore
 
+from pydtnn.backends.pycuda.abstract.base import BasePycuda
 from pydtnn.metrics.metric import Metric
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.utils.constants import ArrayShape
 
 
-class MetricPycuda(Metric[TensorArray]):
+class MetricPycuda(Metric[TensorArray], BasePycuda):
     """
     Extends a Metric class with the attributes and methods required by GPU Metrics.
     """
