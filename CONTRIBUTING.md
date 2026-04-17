@@ -58,13 +58,15 @@
 ```
 ├── pydtnn
 │   ├── logging.yaml
-│   ├── pydtnn_benchmark.py
+│   ├── cli.py
 │   ├── parser.py
 │   ├── model.py
-│   ├── layer_base.py
 ```
 ### Components
 ```
+|   ├── abstract
+|   |   ├── base.py
+│   │   └── layerable.py
 │   ├── activations
 │   │   ├── activation.py  # base
 │   │   └── # each implementation
