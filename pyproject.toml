@@ -92,7 +92,8 @@ pydtnn-benchmark = "pydtnn.cli:main"
 
 [build-system]
 requires = [
-    "setuptools>=68.2.0",
+    "setuptools>=82.0.1",
+    "setuptools-scm>=10.0.5",
     "cython>=0.29.21",
     "numpy>=1.19.4"
 ]
