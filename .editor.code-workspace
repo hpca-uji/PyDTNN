@@ -9,8 +9,6 @@
 		"editor.tabSize": 4,
 		"files.exclude": {
 			"pydtnn.egg-info": true,
-			"build": true,
-			"vendor/build": true,
 			"pydtnn/**/*.c": true,
 			"datasets/**/*.idx": true,
 			"**/__pycache__": true,

@@ -1,4 +1,4 @@
-/dist/
+/build/
 /.venv*
 /pydtnn.log
 __pycache__/

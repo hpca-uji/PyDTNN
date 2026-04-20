@@ -164,8 +164,8 @@ Dependencies: `gcc patchelf` and `build twine auditwheel`
 Ensure before publishing the working tree is public under `master`.  
 
 ```sh
-python -m build --outdir ./dist/ --sdist
-python -m build --outdir ./dist/.build/ --wheel
-python -m auditwheel repair --wheel-dir ./dist/ ./dist/.build/*.whl
-python -m twine upload --repository pypi ./dist/*
+python -m build --outdir ./build/ --sdist
+python -m build --outdir ./build/wheel/ --wheel
+python -m auditwheel repair --wheel-dir ./build/ ./build/wheel/*.whl
+python -m twine upload --repository pypi ./build/*
 ```
