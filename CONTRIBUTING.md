@@ -159,7 +159,6 @@
 - Replace `cupy-cuda` with `cupy` (for AMD ROCm support)
 - Move `gpu.utils.memory_allocation` from global scope to model instance
 - Extract shared logic from `.pyi` and `.pyx` into a common module
-- Move GPU `SourceModule` code into `.cu` files
 
 # Publishing
 Dependencies: `gcc patchelf` and `build twine auditwheel`
