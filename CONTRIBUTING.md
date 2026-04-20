@@ -167,5 +167,5 @@ Ensure before publishing the working tree is public under `master`.
 python -m build --outdir ./build/ --sdist
 python -m build --outdir ./build/wheel/ --wheel
 python -m auditwheel repair --wheel-dir ./build/ ./build/wheel/*.whl
-python -m twine upload --repository pypi ./build/*
+python -m twine upload --repository pypi ./build/pydtnn-*
 ```
