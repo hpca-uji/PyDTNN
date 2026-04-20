@@ -1,11 +1,9 @@
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.backends.pycuda.metrics.metric import MetricPycuda
+from pydtnn.metrics.regression_mae import RegressionMAE
+import numpy as np
 import logging
 logger = logging.getLogger(__name__)
-
-import numpy as np
-
-from pydtnn.metrics.regression_mae import RegressionMAE
-from pydtnn.backends.pycuda.metrics.metric import MetricPycuda
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 
 class RegressionMAEPycuda(RegressionMAE[TensorArray], MetricPycuda):
 

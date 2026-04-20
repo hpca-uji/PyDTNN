@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 
-from pydtnn.layer_base import LayerBase
+from pydtnn.abstract.layerable import Layerable
 from pydtnn.layers.conv_2d_depthwise import Conv2DDepthwise
 from pydtnn.layers.conv_2d_pointwise import Conv2DPointwise
 from pydtnn.layers.input import Input
@@ -15,7 +15,7 @@ from pydtnn.activations.softmax import Softmax
 from pydtnn.utils.constants import ArrayShape
 
 
-def mobileNet(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[LayerBase]:
+def mobileNet(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
     first_filters = 32
     last_channel = 1280
 
@@ -28,11 +28,11 @@ def mobileNet(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Lay
 
     layout = [
         # expand_ration, n_filt, reps, stride
-        [1,  16, 1, 1],
-        [6,  24, 2, 2],
-        [6,  32, 3, 2],
-        [6,  64, 4, 2],
-        [6,  96, 3, 1],
+        [1, 16, 1, 1],
+        [6, 24, 2, 2],
+        [6, 32, 3, 2],
+        [6, 64, 4, 2],
+        [6, 96, 3, 1],
         [6, 160, 3, 2],
         [6, 320, 1, 1],
     ]

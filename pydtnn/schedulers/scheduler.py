@@ -1,12 +1,11 @@
+from pydtnn.utils import find_component
+from pydtnn.abstract.base import Base
 import logging
 # TODO: Check if this is what I want.
 logger = logging.getLogger(__name__)
 
-from pydtnn.backends import PromoteToBackend
-from pydtnn.utils import find_component
 
-
-class Scheduler(PromoteToBackend):
+class Scheduler(Base):
     """
     Scheduler base class
     """

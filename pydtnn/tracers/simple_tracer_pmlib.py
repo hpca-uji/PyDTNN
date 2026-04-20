@@ -1,15 +1,12 @@
+from typing import TYPE_CHECKING
+from pydtnn.utils.pmlib import PMLib
+from pydtnn.tracers.simple_tracer import SimpleTracer
+import numpy as np
+from collections import defaultdict
+import time
 import logging
 logger = logging.getLogger(__name__)
 
-import time
-from collections import defaultdict
-
-import numpy as np
-
-from pydtnn.tracers.simple_tracer import SimpleTracer
-from pydtnn.utils.pmlib import PMLib
-
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from pympi.MPI import Comm as MPI_COMM

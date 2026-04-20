@@ -1,16 +1,15 @@
+from pydtnn.utils.tensor import TensorFormat
+from pydtnn.utils.constants import ArrayShape
+from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
+from pydtnn.backends.numpy.layers.conv_2d import Conv2DNumpy
+from pydtnn.libs.convGemm import ConvGemm
+import numpy as np
+from pydtnn.backends.gemm.layers.abstract.conv_2d import AbstractConv2DGemm
 import logging
 logger = logging.getLogger(__name__)
 
-import numpy as np
 
-from pydtnn.backends.numpy.layers.abstract.conv_2d_standard import AbstractConv2DStandardNumpy
-from pydtnn.libs.convGemm import ConvGemm
-from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
-from pydtnn.utils.constants import ArrayShape
-from pydtnn.utils.tensor import TensorFormat
-
-
-class Conv2DGEMM(AbstractConv2DStandardNumpy):
+class Conv2DGemm(Conv2DNumpy, AbstractConv2DGemm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -30,7 +29,7 @@ class Conv2DGEMM(AbstractConv2DStandardNumpy):
                 self.forward = self._forward_cg_nhwc
                 self.backward = self._backward_cg_nhwc
             case _:
-                raise NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
+                raise NotImplementedError(f"{self.model.tensor_format} format not implemented.")
         # ---
     # ----
 

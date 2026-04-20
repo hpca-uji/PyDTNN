@@ -1,13 +1,14 @@
+# Source: https://github.com/hannes-brt/cudnn-python-wrappers
 """
 Python interface to the NVIDIA cuDNN library
 """
 
+import ctypes.util
+import ctypes
+import sys
 import logging
 logger = logging.getLogger(__name__)
 
-import sys
-import ctypes
-import ctypes.util
 
 if sys.platform in ('linux2', 'linux'):
     _libcudnn_libname_list = ['libcudnn.so', 'libcudnn.so.7', 'libcudnn.so.6.0.21']

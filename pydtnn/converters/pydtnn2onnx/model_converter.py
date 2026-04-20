@@ -1,6 +1,6 @@
 # Typing related
 from typing import Any
-from pydtnn.layer_base import LayerBase
+from pydtnn.abstract.layerable import Layerable
 import numpy as np
 
 # Operations/transformations related
@@ -58,7 +58,7 @@ def extract_attributes(node: onnx.NodeProto) -> dict[str, Any]:
 # --- END extract_attributes --- #
 
 
-def get_lists_operations_and_outputs(info: dict[str, Any], operations: dict[str, tuple[LayerBase, list[str]]]) -> tuple[list[list[LayerBase]], list[str]]:
+def get_lists_operations_and_outputs(info: dict[str, Any], operations: dict[str, tuple[Layerable, list[str]]]) -> tuple[list[list[Layerable]], list[str]]:
 
     # NOTE: It is assumed that the model will by a feed-forward netowork
     dict_branch = {}
@@ -120,7 +120,7 @@ def get_actual_inputs(list_inputs: list[str], weights_names: list[str]) -> list[
 # --- END get_actual_inputs --- #
 
 
-def _get_and_put_operation(node: onnx.NodeProto, opset_version: int, operations: dict[str, tuple[LayerBase, list[str]]],
+def _get_and_put_operation(node: onnx.NodeProto, opset_version: int, operations: dict[str, tuple[Layerable, list[str]]],
                            weights: dict[str, np.ndarray], output: list[str] | None = None) -> None:
 
     info = {  # cons.CONST_NODE: node, # Refererence to the model itself (TODO: see if it's necessary. If not ==> delete)
@@ -145,7 +145,7 @@ def _get_and_put_operation(node: onnx.NodeProto, opset_version: int, operations:
 
 
 def get_operations(onnx_model: onnx.ModelProto, opset_version: int, inputs: dict[str, np.shape],
-                   weights: dict[str, np.ndarray], outputs: dict[str, np.shape]) -> list[LayerBase]:
+                   weights: dict[str, np.ndarray], outputs: dict[str, np.shape]) -> list[Layerable]:
 
     # TODO: meter otros parámetros que se puedan necesitar
     # operations = list()

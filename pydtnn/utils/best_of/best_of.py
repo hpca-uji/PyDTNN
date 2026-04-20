@@ -1,18 +1,16 @@
+from rich.tree import Tree
+from rich.table import Table
+from rich.console import Console
+from rich import box
+import numpy as np
+from typing import Hashable, Callable, Union, Any, Optional
+from timeit import default_timer as timer
+from contextlib import suppress
+from collections import defaultdict
+import types
+import traceback
 import logging
 logger = logging.getLogger(__name__)
-
-import traceback
-import types
-from collections import defaultdict
-from contextlib import suppress
-from timeit import default_timer as timer
-from typing import Hashable, Callable, Union, Any, Optional
-
-import numpy as np
-from rich import box
-from rich.console import Console
-from rich.table import Table
-from rich.tree import Tree
 
 
 class _BestOfExecution:

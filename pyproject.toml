@@ -1,6 +1,6 @@
 [project]
 name = "pydtnn"
-version = "3.2.0"
+version = "3.4.1"
 description = "Python Distributed Training of Neural Networks"
 readme = "README.md"
 license = "GPL-3.0-or-later"
@@ -21,23 +21,29 @@ authors = [
 maintainers = [{ name = "Manuel Francisco Dolz Zaragozá", email = "dolzm@uji.es" }]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Education",
     "Intended Audience :: Science/Research",
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Cython",
     "Topic :: Scientific/Engineering",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Environment :: Console",
+    "Environment :: GPU",
+    "Operating System :: POSIX",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows"
 ]
 keywords = ["Deep neural networks", "Distributed parallel training", "Python"]
-urls = { Homepage = "https://github.com/hpca-uji/PyDTNN", Repository = "https://github.com/hpca-uji/PyDTNN.git"}
+urls = { Homepage = "https://github.com/hpca-uji/PyDTNN", Repository = "https://github.com/hpca-uji/PyDTNN.git" }
 
 requires-python = ">=3.13"
 dependencies = [
     "cython>=0.29.21",
     "numpy>=1.19.4",
-    "matplotlib>=3.3.3",
     "prettytable>=2.1.0",
     "rich>=9.9.0",
-    "scikit-image>=0.17.2",
+    "pillow>=12.1.0",
     "scipy>=1.5.4",
     "tqdm>=4.55.0",
     "rapidgzip>=0.15.2",
@@ -50,9 +56,8 @@ gpu = [
     "cupy-cuda12x>=13.6.0"
 ]
 mpi = [
-    "net-queue>=2.1.0",
-    "pympi>=1.2.0",
-    "mpi4py>=4.1.0"
+    "mpi4py>=4.1.0",
+    "pympi>=1.4.0"
 ]
 fhe = [
     "polyhe>=1.0.0"
@@ -83,7 +88,7 @@ dev = [
 ]
 
 [project.scripts]
-pydtnn-benchmark = "pydtnn.pydtnn_benchmark:main"
+pydtnn-benchmark = "pydtnn.cli:main"
 
 [build-system]
 requires = [

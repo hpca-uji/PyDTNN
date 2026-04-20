@@ -1,8 +1,8 @@
+from pydtnn.utils.constants import ArrayShape, Array
+from pydtnn.activations.relu import Relu
 import logging
 logger = logging.getLogger(__name__)
 
-from pydtnn.activations.relu import Relu
-from pydtnn.utils.constants import ArrayShape, Array
 
 class LeakyRelu[T: Array](Relu[T]):
 

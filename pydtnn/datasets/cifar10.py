@@ -1,16 +1,13 @@
+from pydtnn.utils import random
+from pydtnn.datasets.dataset import Dataset
+import math
+import numpy as np
+from typing import TYPE_CHECKING
+import tarfile
+import copy
+import os
 import logging
 logger = logging.getLogger(__name__)
-
-import os
-import copy
-import tarfile
-from typing import TYPE_CHECKING
-
-import numpy as np
-import math
-
-from pydtnn.datasets.dataset import Dataset
-from pydtnn.utils import random
 
 
 if TYPE_CHECKING:

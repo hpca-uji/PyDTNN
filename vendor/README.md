@@ -251,29 +251,10 @@ POLYHE_SRC="$SRC/polyhe"
 # git clone https://github.com/hpca-uji/polyhe.git "$POLYHE_SRC"
 git submodule update --init "$POLYHE_SRC"
 cd "$POLYHE_SRC"
-git checkout ba143af10e5fc5b6478e1fceb8f9fb6e18864b3c
+git checkout 05f2a4c168f370d2ea5c1781bed0758f63c26687
 
 # Install
 pip install "$POLYHE_SRC"
-```
-
-## net-queue
-Source: <https://github.com/hpca-uji/net-queue>
-
-Dependencies: `python3` and virutal Python environment
-
-```sh
-# Configuration
-NQ_SRC="$SRC/net-queue"
-
-# Source
-# git clone https://github.com/hpca-uji/net-queue.git "$NQ_SRC"
-git submodule update --init "$NQ_SRC"
-cd "$NQ_SRC"
-git checkout 741179fc316d0e021f1158fcc6c8537d783c3dde
-
-# Install
-pip install "$NQ_SRC"
 ```
 
 ## pympi
@@ -289,7 +270,7 @@ PYMPI_SRC="$SRC/pympi"
 # git clone https://github.com/hpca-uji/pympi.git "$PYMPI_SRC"
 git submodule update --init "$PYMPI_SRC"
 cd "$PYMPI_SRC"
-git checkout d6dedb59280931fd167e25d5de23a68fee955b27
+git checkout 6b4456166dac555ffae865f4a8b1df5f12d92476
 
 # Install
 pip install "$PYMPI_SRC"

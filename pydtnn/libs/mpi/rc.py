@@ -1,16 +1,12 @@
 """Message Passing Interface"""
 
-import logging
-logger = logging.getLogger(__name__)
-
 import os as _os
+
 
 try:
     import pympi.rc as _rc
-    import net_queue as _nq
 except Exception:
     _rc = None
-    _nq = None
 
 if _rc:
     __all__ = _rc.__all__  # type: ignore
@@ -18,8 +14,8 @@ if _rc:
 
 # Redefine backend
 proto = (
-    _nq.Protocol(proto)
-    if _nq and (proto := _os.environ.get("PYMPI_PROTO"))
+    proto
+    if (proto := _os.environ.get("PYMPI_PROTO"))
     else None
 )
 

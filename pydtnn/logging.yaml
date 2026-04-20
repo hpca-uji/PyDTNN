@@ -9,6 +9,11 @@ handlers:
     class: logging.StreamHandler
     formatter: precise
     stream: ext://sys.stderr
+  file:
+    class: logging.FileHandler
+    formatter: precise
+    filename: logging.log
+    mode: w
 loggers:
   pydtnn:
     level: INFO

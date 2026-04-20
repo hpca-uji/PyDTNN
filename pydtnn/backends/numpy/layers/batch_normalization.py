@@ -1,17 +1,17 @@
+import math
+from pydtnn.utils.constants import ArrayShape, Parameters
+from pydtnn.utils.tensor import TensorFormat, format_transpose
+from pydtnn.backends.numpy.layers.layer import LayerNumpy
+from pydtnn.model import Model
+from pydtnn.layers.batch_normalization import BatchNormalization
+from typing import TYPE_CHECKING
+from pydtnn.libs import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
-from pydtnn.libs import numpy as np
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import numpy as np
 
-from pydtnn.layers.batch_normalization import BatchNormalization
-from pydtnn.model import Model
-from pydtnn.backends.numpy.layers.layer import LayerNumpy
-from pydtnn.utils.tensor import TensorFormat, format_transpose
-from pydtnn.utils.constants import ArrayShape, Parameters
-import math
 
 class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
 
@@ -89,7 +89,7 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
             self._var = self.model.memory.ndarray(self._var_shape, dtype=self.model.dtype)
             self.dy_xn = self.model.memory.ndarray(self.dy_xn_shape, dtype=self.model.dtype)
 
-    def _training_fwd(self, x:np.ndarray, _mean: np.ndarray, _var: np.ndarray, y: np.ndarray) -> None:
+    def _training_fwd(self, x: np.ndarray, _mean: np.ndarray, _var: np.ndarray, y: np.ndarray) -> None:
         # y = ((x - mean(x)) / sqrt(var(x) + epsilon)) * gamma + beta
         np.subtract(x, _mean, out=self.xn,
                     dtype=self.model.dtype)
@@ -153,7 +153,7 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
                         dtype=self.model.dtype)
             np.add(self.running_mean, self._mean_inv, out=self.running_mean,
                    dtype=self.model.dtype)
-                   
+
             # self.running_var = self.momentum * self.running_var + inv_momentum * _var
             np.multiply(self.momentum, self.running_var, out=self.running_var,
                         dtype=self.model.dtype)
@@ -185,7 +185,7 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
             num_elems = n
 
         dx: np.ndarray = np.asarray(self.y_dx[: num_elems, :], dtype=self.model.dtype, order="C")
-        #dx.fill(0)
+        # dx.fill(0)
         dy_xn: np.ndarray = np.asarray(self.dy_xn[: num_elems, :], dtype=self.model.dtype, order="C")
 
         np.multiply(dy, self.xn, out=dy_xn, dtype=self.model.dtype)

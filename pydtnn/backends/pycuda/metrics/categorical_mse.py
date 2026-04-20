@@ -1,11 +1,9 @@
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.backends.pycuda.metrics.metric import MetricPycuda
+from pydtnn.metrics.categorical_mse import CategoricalMSE
+import numpy as np
 import logging
 logger = logging.getLogger(__name__)
-
-import numpy as np
-
-from pydtnn.metrics.categorical_mse import CategoricalMSE
-from pydtnn.backends.pycuda.metrics.metric import MetricPycuda
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 
 class CategoricalMSEPycuda(CategoricalMSE[TensorArray], MetricPycuda):
 

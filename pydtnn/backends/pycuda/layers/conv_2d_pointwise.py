@@ -1,19 +1,14 @@
+from pycuda.driver import Function  # type: ignore
+from pycuda import gpuarray  # type: ignore
+from typing import Any, override
+from pydtnn.utils.tensor import TensorFormat, format_transpose
+from pydtnn.utils.constants import ArrayShape
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.backends.pycuda.layers.abstract.conv_2d import AbstractConv2DPycuda
+from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
+import numpy as np
 import logging
 logger = logging.getLogger(__name__)
-
-import numpy as np
-
-from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
-from pydtnn.backends.pycuda.layers.abstract.conv_2d import AbstractConv2DPycuda
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.utils.constants import ArrayShape
-
-from pydtnn.utils.tensor import TensorFormat, format_transpose
-from typing import Any, override
-
-from pycuda import gpuarray  # type: ignore
-from pycuda.driver import Function  # type: ignore
-
 
 class Conv2DPointwisePycuda(AbstractConv2DPycuda):
 
@@ -26,7 +21,7 @@ class Conv2DPointwisePycuda(AbstractConv2DPycuda):
             case TensorFormat.NHWC:
                 self.weights_shape = (self.co, self.ci)
             case _:
-                raise NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
+                raise NotImplementedError(f"{self.model.tensor_format} format not implemented.")
         # --
 
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
@@ -41,7 +36,7 @@ class Conv2DPointwisePycuda(AbstractConv2DPycuda):
                 #self.bias_sum_bwd = self.cuda_sum_bias_axis_012()
                 self.bias_sum_bwd = self._get_kernel(code_file_name="conv2d", func_name="cuda_sum_bias_axis_012")
             case _:
-                raise NotImplementedError(f"\"conv_2d_gpu_depthwise\" is not implemented for \"{self.model.tensor_format}\" format.")
+                raise NotImplementedError(f"conv_2d_gpu_depthwise is not implemented for {self.model.tensor_format} format.")
 
         self.total_num_threads = np.int32(np.prod(self.grid) * np.prod(self.block))
 

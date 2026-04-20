@@ -1,17 +1,18 @@
+import math
+from typing import TYPE_CHECKING
+from pydtnn.libs import numpy as np
+from pydtnn.utils.constants import ArrayShape
+from pydtnn.utils.tensor import TensorFormat
+from pydtnn.utils.performance_models import im2col_time, col2im_time
+from pydtnn.layers.abstract.pool_2d_layer import AbstractPool2DLayer
+from pydtnn.backends.numpy.layers.layer import LayerNumpy
 import logging
 logger = logging.getLogger(__name__)
 
-from pydtnn.backends.numpy.layers.layer import LayerNumpy
-from pydtnn.layers.abstract.pool_2d_layer import AbstractPool2DLayer
-from pydtnn.utils.performance_models import im2col_time, col2im_time
-from pydtnn.utils.tensor import TensorFormat
-from pydtnn.utils.constants import ArrayShape
 
-from pydtnn.libs import numpy as np
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import numpy as np
-import math
+
 
 class AbstractPool2DLayerNumpy(AbstractPool2DLayer[np.ndarray], LayerNumpy):
     def __init__(self, *args, **kwargs):
@@ -48,7 +49,7 @@ class AbstractPool2DLayerNumpy(AbstractPool2DLayer[np.ndarray], LayerNumpy):
             self.dx_size = self.model.batch_size * self.ci * self.hi * self.wi
             # self.dx = np.zeros(dx_shape, dtype=self.model.dtype)
             # self.real_memory_size += self.dx.nbytes
-        else: 
+        else:
             self.dx_size = 0
 
         self.y_dx = np.zeros(shape=(max(self.y_size, self.dx_size), ), dtype=self.model.dtype)

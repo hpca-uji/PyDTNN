@@ -1,15 +1,15 @@
+import math
+from pydtnn.metrics.f1_score import F1Score
+from pydtnn.backends.numpy.metrics.binary_confusion_matrix import BinaryConfusionMatrixNumpy
+from pydtnn.backends.numpy.metrics.metric import MetricNumpy
+from typing import TYPE_CHECKING
+from pydtnn.libs import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
-from pydtnn.libs import numpy as np
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import numpy as np
 
-from pydtnn.backends.numpy.metrics.metric import MetricNumpy
-from pydtnn.backends.numpy.metrics.binary_confusion_matrix import BinaryConfusionMatrixNumpy
-from pydtnn.metrics.f1_score import F1Score
-import math
 
 class F1ScoreNumpy(F1Score[np.ndarray], MetricNumpy):
 

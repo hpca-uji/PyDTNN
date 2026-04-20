@@ -1,11 +1,9 @@
+from pydtnn.datasets.dataset import Dataset
+import numpy as np
+from typing import TYPE_CHECKING
 import logging
 logger = logging.getLogger(__name__)
 
-from typing import TYPE_CHECKING
-
-import numpy as np
-
-from pydtnn.datasets.dataset import Dataset
 
 if TYPE_CHECKING:
     from pydtnn.model import Model

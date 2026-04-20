@@ -1,15 +1,14 @@
+from pydtnn.tracers.events import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
+    PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
+from pydtnn.layers.concatenation_block import ConcatenationBlock
+from pydtnn.backends.numpy.layers.abstract.block_layer import AbstractBlockLayerNumpy
+from typing import TYPE_CHECKING
+from pydtnn.libs import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
-from pydtnn.libs import numpy as np
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import numpy as np
-
-from pydtnn.backends.numpy.layers.abstract.block_layer import AbstractBlockLayerNumpy
-from pydtnn.layers.concatenation_block import ConcatenationBlock
-from pydtnn.tracers.events import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
-    PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
 
 
 class ConcatenationBlockNumpy(ConcatenationBlock, AbstractBlockLayerNumpy):

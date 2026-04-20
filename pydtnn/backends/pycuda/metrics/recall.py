@@ -1,13 +1,9 @@
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.metrics.recall import Recall
+from pydtnn.backends.pycuda.metrics.metric import MetricPycuda
+import numpy as np
 import logging
 logger = logging.getLogger(__name__)
-
-import numpy as np
-
-from pydtnn.backends.pycuda.metrics.metric import MetricPycuda
-from pydtnn.metrics.recall import Recall
-
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-
 
 class RecallPycuda(Recall[TensorArray], MetricPycuda):
 

@@ -1,12 +1,10 @@
+from pydtnn.layers.encoder_decoder import EncoderDecoder
+from pydtnn.layers.decoder import Decoder
+from pydtnn.layers.encoder import Encoder
+from pydtnn.backends.pycuda.layers.abstract.block_layer import AbstractBlockLayerPycuda
+from pydtnn.backends.pycuda.libs import libcudnn as cudnn  # type: ignore
 import logging
 logger = logging.getLogger(__name__)
-
-from pydtnn.backends.pycuda.libs import libcudnn as cudnn  # type: ignore
-
-from pydtnn.backends.pycuda.layers.abstract.block_layer import AbstractBlockLayerPycuda
-from pydtnn.layers.encoder import Encoder
-from pydtnn.layers.decoder import Decoder
-from pydtnn.layers.encoder_decoder import EncoderDecoder
 
 
 class EncoderDecoderPycuda(AbstractBlockLayerPycuda, EncoderDecoder):

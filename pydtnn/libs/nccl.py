@@ -2,13 +2,13 @@
 Python interface to the NVIDIA NCCL library
 """
 
+from enum import Enum
+import ctypes.util
+import ctypes
+import sys
 import logging
 logger = logging.getLogger(__name__)
 
-import sys
-import ctypes
-import ctypes.util
-from enum import Enum
 
 if sys.platform in ('linux2', 'linux'):
     _libnccl_libname_list = ['libnccl.so']

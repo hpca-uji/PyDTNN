@@ -10,7 +10,7 @@ from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.fc import FC
 from pydtnn.layers.flatten import Flatten
 from pydtnn.layers.input import Input
-from pydtnn.layer_base import LayerBase
+from pydtnn.abstract.layerable import Layerable
 from pydtnn.layers.max_pool_2d import MaxPool2D
 from pydtnn.utils.constants import ArrayShape
 # NOTE: PyDTNN follows PyTorch's definitions
@@ -19,8 +19,8 @@ from pydtnn.utils.constants import ArrayShape
 # NOTE: TensorFlow uses FC with 1024 shape
 
 
-def resNet50(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[LayerBase]:
-    model = list[LayerBase]()
+def resNet50(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
+    model = list[Layerable]()
     _ = model.append
     _(Input(shape=input_shape))
     _(Conv2D(nfilters=64, filter_shape=(7, 7), stride=2, padding=3, weights_initializer=he_uniform))

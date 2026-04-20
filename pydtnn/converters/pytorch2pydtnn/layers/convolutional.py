@@ -3,14 +3,14 @@
 # _______________________________________________________________________________________________________________
 
 # Typing related (or non important) imports
+import pydtnn.converters.pytorch2pydtnn.common as cm
+from pydtnn.layers.conv_2d import Conv2D as _Conv2D
+from typing import Any
 import logging
 logger = logging.getLogger(__name__)
 
-from typing import Any
 
 # Functionality imports
-from pydtnn.layers.conv_2d import Conv2D as _Conv2D
-import pydtnn.converters.pytorch2pydtnn.common as cm
 
 # ------------------ #
 

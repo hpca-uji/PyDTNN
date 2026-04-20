@@ -1,22 +1,18 @@
+import numpy as np
+from collections.abc import Iterable
+from ctypes.util import find_library
+from importlib import import_module
+from pathlib import PurePath
+from queue import Queue
+import threading
+import zipfile
+import ctypes
+import string
+import math
+import sys
+import os
 import logging
 logger = logging.getLogger(__name__)
-
-import os
-import sys
-import math
-import string
-import ctypes
-import zipfile
-import threading
-from queue import Queue
-from pathlib import PurePath
-from importlib import import_module
-from ctypes.util import find_library
-from collections.abc import Iterable
-from importlib import resources
-from pydtnn import package_name
-
-import numpy as np
 
 
 class BackgroundGenerator[T](threading.Thread):
@@ -57,6 +53,7 @@ def print_with_header(header: str, to_be_printed=None) -> None:
         to_print.append(to_be_printed)
     info_to_print = '\n'.join(to_print)
     logger.info(info_to_print)
+
 
 def parse_bool(x) -> bool:
     """Returns True if value is a user truthy value"""

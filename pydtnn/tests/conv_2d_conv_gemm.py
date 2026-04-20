@@ -1,15 +1,13 @@
+from pydtnn.utils.initializers import glorot_uniform, zeros
+from pydtnn.utils.tensor import TensorFormat
+from pydtnn.tests.abstract.conv_2d_common import Conv2DCommonTestCase
+from pydtnn.tests.abstract.common import Params
+from pydtnn.tests.abstract.common import D
+from pydtnn.model import Model
+from pydtnn.layers.conv_2d import Conv2D
+from copy import deepcopy
 import logging
 logger = logging.getLogger(__name__)
-
-from copy import deepcopy
-
-from pydtnn.layers.conv_2d import Conv2D
-from pydtnn.model import Model
-from pydtnn.tests.abstract.common import D
-from pydtnn.tests.abstract.common import Params
-from pydtnn.tests.abstract.conv_2d_common import Conv2DCommonTestCase
-from pydtnn.utils.tensor import TensorFormat
-from pydtnn.utils.initializers import glorot_uniform, zeros
 
 
 class Conv2DConvGemmTestCase(Conv2DCommonTestCase):

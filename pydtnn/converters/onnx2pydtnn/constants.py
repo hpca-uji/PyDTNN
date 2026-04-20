@@ -2,7 +2,7 @@
 from pydtnn.converters.onnx2pydtnn.operations.implemented_operations import *
 
 from typing import Callable
-from pydtnn.layer_base import LayerBase
+from pydtnn.abstract.layerable import Layerable
 
 CONST_NODE = "node"
 CONST_OPSET = "opset_version"
@@ -40,12 +40,12 @@ def pads_from_onnx_to_pydtnn(pads: list[int]) -> tuple[int, int]:  # -> list[tup
 def not_implemented(name: str) -> Callable:
     # Normal usage of this: switch_pytorch_pydtnn([not_implemented_layer_name])(args)
     def _not_implemented(args: dict[str, Any]) -> None:
-        raise NotImplementedError(f"Layer \"{name}\" not implemented - Args received:\n{args} ")
+        raise NotImplementedError(f"Layer {name} not implemented - Args received:\n{args} ")
     return _not_implemented
 # --- END not_implemented --- #
 
 
-def switch_onnx_operation_to_pydtnn(name: str) -> Callable[[dict[str, Any]], LayerBase]:
+def switch_onnx_operation_to_pydtnn(name: str) -> Callable[[dict[str, Any]], Layerable]:
     match name:
         case "Add": return Add
         case "AveragePool": return AveragePool

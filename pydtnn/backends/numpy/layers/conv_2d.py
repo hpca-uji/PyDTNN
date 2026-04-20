@@ -1,18 +1,15 @@
+import math
+from pydtnn.utils.tensor import TensorFormat, format_transpose
+from pydtnn.utils.constants import ArrayShape
+from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
+from pydtnn.backends.numpy.layers.abstract.conv_2d_standard import AbstractConv2DStandardNumpy
+from typing import TYPE_CHECKING
+from pydtnn.libs import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
-from pydtnn.libs import numpy as np
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import numpy as np
-
-from pydtnn.backends.numpy.layers.abstract.conv_2d_standard import AbstractConv2DStandardNumpy
-
-from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
-
-from pydtnn.utils.constants import ArrayShape
-from pydtnn.utils.tensor import TensorFormat, format_transpose
-import math
 
 
 class Conv2DNumpy(AbstractConv2DStandardNumpy):
@@ -39,7 +36,7 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
             case _:
                 self._x_cr_shape = (None, )
                 _dw_shape = (None, )
-                raise NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
+                raise NotImplementedError(f"{self.model.tensor_format} format not implemented.")
         # -
 
         y_shape = (dim_n, self.co)
@@ -93,100 +90,6 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
         dx: np.ndarray = self.temp_y_dx[:math.prod(shape)]
         dx = dx.reshape(shape)
         return np.ascontiguousarray(dx, dtype=self.model.dtype)
-
-##########################################################################################################################
-##########################################################################################################################
-#### TEST ####
-##############
-
-    def col2im_alt(self, x: np.ndarray, x_rows: np.ndarray) -> np.ndarray:
-        x = np.pad(x, ((0, 0), (0, 0), (self.hpadding, self.hpadding), (self.wpadding, self.wpadding)), mode="constant")
-        cols = list[np.ndarray]()
-
-        for kh in range(self.kh):
-            for kw in range(self.kw):
-                h_start = kh * self.hdilation
-                w_start = kw * self.wdilation
-                h_end = h_start + self.hstride * self.ho
-                w_end = w_start + self.wstride * self.wo
-
-                col = x[:, :, h_start:h_end:self.hstride, w_start:w_end:self.wstride]
-                cols.append(col)
-        return np.stack(cols, axis=2).reshape(x_rows.shape)
-
-##########################################################################################################################
-##########################################################################################################################
-
-    def im2row(self, x: np.ndarray, x_rows: np.ndarray) -> None:
-        n, _, _, _ = x.shape
-        for nn in range(n):
-            for xx in range(self.ho):
-                for yy in range(self.wo):
-                    row = (nn * self.ho + xx) * self.wo + yy
-                    for ii in range(self.kh):
-                        x_x = self.hstride * xx + self.hdilation * ii - self.hpadding
-                        for jj in range(self.kw):
-                            x_y = self.wstride * yy + self.wdilation * jj - self.wpadding
-                            for cc in range(self.ci):
-                                col = (cc * self.kh + ii) * self.kw + jj
-                                if (0 <= x_x < self.hi) and (0 <= x_y < self.wi):
-                                    x_rows[row, col] = x[nn, x_x, x_y, cc]
-                                else:
-                                    x_rows[row, col] = 0.0
-    # -----
-
-    def row2im(self, x_rows: np.ndarray, dx: np.ndarray) -> None:
-        n, _, _, _ = dx.shape
-        for nn in range(n):
-            for xx in range(self.ho):
-                for yy in range(self.wo):
-                    row = (nn * self.ho + xx) * self.wo + yy
-                    for cc in range(self.ci):
-                        for ii in range(self.kh):
-                            x_x = self.hstride * xx + self.hdilation * ii - self.hpadding
-                            if 0 <= x_x < self.hi:
-                                for jj in range(self.kw):
-                                    x_y = self.wstride * yy + self.wdilation * jj - self.wpadding
-                                    if 0 <= x_y < self.wi:
-                                        col = (cc * self.kh + ii) * self.kw + jj
-                                        dx[nn, x_x, x_y, cc] += x_rows[row, col]
-    # -----
-
-    def im2col(self, x: np.ndarray, x_cols: np.ndarray) -> None:
-        n, _, _, _ = x.shape
-
-        for nn in range(n):
-            for cc in range(self.ci):
-                for ii in range(self.kh):
-                    for jj in range(self.kw):
-                        row = (cc * self.kh + ii) * self.kw + jj
-                        for xx in range(self.ho):
-                            x_x = self.hstride * xx + self.hdilation * ii - self.hpadding
-                            for yy in range(self.wo):
-                                x_y = self.wstride * yy + self.wdilation * jj - self.wpadding
-                                col = (nn * self.ho + xx) * self.wo + yy
-                                if (0 <= x_x < self.hi) and (0 <= x_y < self.wi):
-                                    x_cols[row, col] = x[nn, cc, x_x, x_y]
-                                else:
-                                    x_cols[row, col] = 0.0
-    # -----
-
-    def col2im(self, x_cols: np.ndarray, dx: np.ndarray) -> None:
-        n, _, _, _ = dx.shape
-        for cc in range(self.ci):
-            for ii in range(self.kh):
-                for jj in range(self.kw):
-                    row = (cc * self.kh + ii) * self.kw + jj
-                    for nn in range(n):
-                        for xx in range(self.ho):
-                            x_x = self.hstride * xx + self.hdilation * ii - self.hpadding
-                            if (0 <= x_x < self.hi):
-                                for yy in range(self.wo):
-                                    x_y = self.wstride * yy + self.wdilation * jj - self.wpadding
-                                    col = (nn * self.ho + xx) * self.wo + yy
-                                    if (0 <= x_y < self.wi):
-                                        dx[nn, cc, x_x, x_y] = x_cols[row, col]
-    # -----
 
     def _forward_i2c_nhwc(self, x: np.ndarray) -> np.ndarray:
         """Version of the forward function that uses im2col and matmul"""
@@ -282,7 +185,7 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
         self.dw = self.dw.reshape(self.weights.shape)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-        rows: np.ndarray = self.get_rows(dy.shape[0]) # NOTE: rows shares the memory with self.x_rows
+        rows: np.ndarray = self.get_rows(dy.shape[0])  # NOTE: rows shares the memory with self.x_rows
 
         # Biases gradient
         if self.use_bias:

@@ -1,14 +1,15 @@
+from typing import TYPE_CHECKING
+from pydtnn.libs import numpy as np
+from pydtnn.optimizers.optimizer import Optimizer
+from pydtnn.backends.numpy.abstract.base import BaseNumpy
 import logging
 logger = logging.getLogger(__name__)
 
-from pydtnn.optimizers.optimizer import Optimizer
-from pydtnn.libs import numpy as np
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import numpy as np
 
 
-class OptimizerNumpy(Optimizer[np.ndarray]):
+class OptimizerNumpy(Optimizer[np.ndarray], BaseNumpy):
     """
     Extends an Optimizer class with the attributes and methods required by CPU Optimizers.
     """

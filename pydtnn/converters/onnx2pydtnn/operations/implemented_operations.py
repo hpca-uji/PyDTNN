@@ -1,6 +1,6 @@
 # Typing related (or non important) imports
 from typing import Any
-from pydtnn.layer_base import LayerBase
+from pydtnn.abstract.layerable import Layerable
 
 # Functionality imports
 import pydtnn.layers as layer
@@ -14,7 +14,7 @@ import pydtnn.converters.onnx2pydtnn.constants as cons
 # ===== #
 
 
-def Add(info: dict[str, Any]) -> LayerBase:
+def Add(info: dict[str, Any]) -> Layerable:
 
     # TODO: from print to "log - debug" or somthing like that.
     print(f"attributes: {info[cons.CONST_ATTRIBUTES]}")
@@ -25,7 +25,7 @@ def Add(info: dict[str, Any]) -> LayerBase:
 # --- END Add --- #
 
 
-def AveragePool(info: dict[str, Any]) -> LayerBase:
+def AveragePool(info: dict[str, Any]) -> Layerable:
 
     # Onnx attributes names from: https://onnx.ai/onnx/operators/onnx__AveragePool.html
     ONNX_COUNT_DILATATIONS = "dilations"
@@ -63,7 +63,7 @@ def AveragePool(info: dict[str, Any]) -> LayerBase:
 # = B = #
 # ===== #
 
-def BatchNormalization(info: dict[str, Any]) -> LayerBase:
+def BatchNormalization(info: dict[str, Any]) -> Layerable:
     print(f"attributes: {info[cons.CONST_ATTRIBUTES]}")
 
     # Onnx attributes names from: https://onnx.ai/onnx/operators/onnx__BatchNormalization.html#l-onnx-doc-batchnormalization
@@ -92,7 +92,7 @@ def BatchNormalization(info: dict[str, Any]) -> LayerBase:
 # = C = #
 # ===== #
 
-def Concat(info: dict[str, Any]) -> LayerBase:
+def Concat(info: dict[str, Any]) -> Layerable:
     print(f"attributes: {info[cons.CONST_ATTRIBUTES]}")
     # Onnx attributes names from: https://onnx.ai/onnx/operators/onnx__Concat.html#l-onnx-doc-concat
     ONNX_AXIS = "axis"
@@ -106,7 +106,7 @@ def Concat(info: dict[str, Any]) -> LayerBase:
 # --- END Concat --- #
 
 
-def Conv(info: dict[str, Any]) -> LayerBase:
+def Conv(info: dict[str, Any]) -> Layerable:
 
     print(f"attributes: {info[cons.CONST_ATTRIBUTES]}")
 
@@ -156,7 +156,7 @@ def Conv(info: dict[str, Any]) -> LayerBase:
 # = D = #
 # ===== #
 
-def Dropout(info: dict[str, Any]) -> LayerBase:
+def Dropout(info: dict[str, Any]) -> Layerable:
     print(f"attributes: {info[cons.CONST_ATTRIBUTES]}")
     # Onnx attributes names from: https://onnx.ai/onnx/operators/onnx__Dropout.html#l-onnx-doc-dropout
     ONNX_SEED = "seed"  # TODO: Check if the random seed it's important. If it is, check how to set it.
@@ -192,7 +192,7 @@ def Dropout(info: dict[str, Any]) -> LayerBase:
 # ===== #
 
 
-def Flatten(info: dict[str, Any]) -> LayerBase:
+def Flatten(info: dict[str, Any]) -> Layerable:
     print(f"attributes: {info[cons.CONST_ATTRIBUTES]}")
     # Source: https://onnx.ai/onnx/operators/onnx__Flatten.html
     # It has one attribute (axis), but there is no equivalence in PyDTNN.
@@ -208,7 +208,7 @@ def Flatten(info: dict[str, Any]) -> LayerBase:
 # ===== #
 
 
-def Gemm(info: dict[str, Any]) -> LayerBase:
+def Gemm(info: dict[str, Any]) -> Layerable:
 
     print(f"attributes: {info[cons.CONST_ATTRIBUTES]}")
     # Onnx documentation: https://onnx.ai/onnx/operators/onnx__Gemm.html
@@ -271,7 +271,7 @@ def Gemm(info: dict[str, Any]) -> LayerBase:
 # --- END Gemm --- #
 
 
-def GlobalAveragePool(info: dict[str, Any]) -> LayerBase:
+def GlobalAveragePool(info: dict[str, Any]) -> Layerable:
     print(f"attributes: {info[cons.CONST_ATTRIBUTES]}")
     # 1.- Onnx documentation: https://onnx.ai/onnx/operators/onnx__GlobalAveragePool.html
 
@@ -302,7 +302,7 @@ def GlobalAveragePool(info: dict[str, Any]) -> LayerBase:
 # = M = #
 # ===== #
 
-def MaxPool(info: dict[str, Any]) -> LayerBase:
+def MaxPool(info: dict[str, Any]) -> Layerable:
     print("------")
     print(f"attributes: {info[cons.CONST_ATTRIBUTES]}")
 
@@ -340,7 +340,7 @@ def MaxPool(info: dict[str, Any]) -> LayerBase:
 # --- END MaxPool --- #
 
 
-def Mul(info: dict[str, Any]) -> LayerBase:
+def Mul(info: dict[str, Any]) -> Layerable:
     print(f"attributes: {info[cons.CONST_ATTRIBUTES]}")
 
     # TODO: Move it to a file and do it in the right way.
@@ -389,7 +389,7 @@ def Mul(info: dict[str, Any]) -> LayerBase:
 # = R = #
 # ===== #
 
-def Relu(info: dict[str, Any]) -> LayerBase:
+def Relu(info: dict[str, Any]) -> Layerable:
     # ONNX info: https://onnx.ai/onnx/operators/onnx__Relu.html
     print(f"attributes: {info[cons.CONST_ATTRIBUTES]}")
     from pydtnn.activations.relu import Relu
@@ -405,7 +405,7 @@ def Relu(info: dict[str, Any]) -> LayerBase:
 # ===== #
 
 
-def Unsqueeze(info: dict[str, Any]) -> LayerBase:
+def Unsqueeze(info: dict[str, Any]) -> Layerable:
     # Onnx information: https://onnx.ai/onnx/operators/onnx__Unsqueeze.html
     print(f"attributes: {info[cons.CONST_ATTRIBUTES]}")
     ONNX_AXES = "axes"

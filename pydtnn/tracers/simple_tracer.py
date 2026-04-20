@@ -1,13 +1,13 @@
+from typing import TYPE_CHECKING
+from pydtnn.tracers.tracer import Tracer
+from timeit import default_timer as timer
+from collections import defaultdict
+import atexit
 import logging
+
+from pydtnn import utils
 logger = logging.getLogger(__name__)
 
-import atexit
-from collections import defaultdict
-from timeit import default_timer as timer
-
-from pydtnn.tracers.tracer import Tracer
-
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from pympi.MPI import Comm as MPI_COMM
@@ -58,7 +58,8 @@ class SimpleTracer(Tracer):
             self.emit_event(evt_type_val, evt_val)
 
     def _output_header(self) -> str:
-        return "Event type;Event value;Event name;Calls;Total time;Median of times"
+        return "Event type,Event value,Event name,Calls,Total time,Median of times"
+        # return "Event type;Event value;Event name;Calls;Total time;Median of times"
 
     def _output_row(self, event_type_value: int, event_value: int) -> str:
         event_type = self.event_types[event_type_value]
@@ -67,15 +68,17 @@ class SimpleTracer(Tracer):
         _times.sort()
         total_time = sum(_times)
         mean_of_times = _times[len(_times) // 2]
-        return f"{event_type_name};{event_value};{event_type[event_value]};{_calls};{total_time};{mean_of_times}"
+        return f"{event_type_name},{event_value},{event_type[event_value]},{_calls},{total_time},{mean_of_times}"
+        # return f"{event_type_name};{event_value};{event_type[event_value]};{_calls};{total_time};{mean_of_times}"
 
     def _write_output(self):
         """This method will be called at exit only if tracing has been enabled at any time"""
-        if self.rank == 0:
+        output_filename = utils.string_substitute(self.output_filename, rank=self.rank)
+        if output_filename != self.output_filename or self.rank == 0:
             if len(self.pending_events):
                 logger.warning("Warning: finishing simple tracer while there are pending events to be marked as finished.")
-            logger.info(f"Writing simple tracer output to '{self.output_filename}'...")
-            with open(self.output_filename, 'w') as f:
+            logger.info(f"Writing simple tracer output to '{output_filename}'...")
+            with open(output_filename, 'w') as f:
                 f.write(self._output_header() + "\n")
                 for event_type_value, events in self.events.items():
                     for event_value in events.keys():

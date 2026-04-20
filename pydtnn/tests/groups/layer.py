@@ -1,9 +1,9 @@
 """Layer test group"""
 
+from warnings import warn
 import logging
 logger = logging.getLogger(__name__)
 
-from warnings import warn
 
 try:
     from pydtnn.tests.layer_pytorch import LayerPyTorchTestCase

@@ -1,6 +1,7 @@
 import logging
 logger = logging.getLogger(__name__)
 
+
 class MemoryCache(dict):
     """
     Dictionary derived class that can use the provided factory function to

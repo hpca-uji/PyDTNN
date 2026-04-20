@@ -1,8 +1,8 @@
 """Library test group"""
+from warnings import warn
 import logging
 logger = logging.getLogger(__name__)
 
-from warnings import warn
 
 # ConvGemm
 try:

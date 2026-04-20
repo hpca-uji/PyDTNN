@@ -1,15 +1,12 @@
+from pydtnn.utils.tensor import TensorFormat, format_transpose
+from pydtnn.utils import print_with_header, random
+from pydtnn.tests.abstract.common import TestCase
+from pydtnn.tests.abstract.common import verbose_test, D
+from pydtnn.layers.conv_2d import Conv2D
+import numpy as np
+import inspect
 import logging
 logger = logging.getLogger(__name__)
-
-import inspect
-
-import numpy as np
-
-from pydtnn.layers.conv_2d import Conv2D
-from pydtnn.tests.abstract.common import verbose_test, D
-from pydtnn.tests.abstract.common import TestCase
-from pydtnn.utils import print_with_header, random
-from pydtnn.utils.tensor import TensorFormat, format_transpose
 
 
 class Conv2DCommonTestCase[T: Conv2D](TestCase):

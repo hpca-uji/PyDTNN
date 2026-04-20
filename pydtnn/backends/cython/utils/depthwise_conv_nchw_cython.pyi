@@ -54,5 +54,5 @@ def depthwise_conv_backward_nchw_cython[T: _npDT](dy: _npDT_4Dims[T],
         vdilation (int): vertical dilation value.
         hdilation (int): horizontal dilation value.
     Returns:
-        Nothing. The outputs are stored in \"dx\" and \"dw\".
+        Nothing. The outputs are stored in `dx` and `dw`.
     """

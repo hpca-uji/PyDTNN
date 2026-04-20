@@ -1,8 +1,7 @@
+from pydtnn.utils.constants import Array
+from pydtnn.metrics.confusion_matrix import ConfusionMatrix
 import logging
 logger = logging.getLogger(__name__)
-
-from pydtnn.metrics.confusion_matrix import ConfusionMatrix
-from pydtnn.utils.constants import Array
 
 
 class MulticlassConfusionMatrix[T: Array](ConfusionMatrix[T]):

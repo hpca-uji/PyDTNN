@@ -1,14 +1,14 @@
+from typing import TYPE_CHECKING
+from pydtnn.utils.constants import ArrayShape
+from pydtnn.utils.tensor import TensorFormat
+from pydtnn.datasets.dataset import Dataset
+import numpy as np
+import warnings
+import operator
 import logging
 logger = logging.getLogger(__name__)
 
-import operator
-import warnings
-import numpy as np
-from pydtnn.datasets.dataset import Dataset
-from pydtnn.utils.tensor import TensorFormat
-from pydtnn.utils.constants import ArrayShape
 
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from pydtnn.model import Model
 

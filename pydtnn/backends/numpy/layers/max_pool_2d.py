@@ -1,15 +1,14 @@
+from pydtnn.utils.constants import ArrayShape
+from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
+from pydtnn.layers.max_pool_2d import MaxPool2D
+from pydtnn.backends.numpy.layers.abstract.pool_2d_layer import AbstractPool2DLayerNumpy
+from typing import TYPE_CHECKING
+from pydtnn.libs import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
-from pydtnn.libs import numpy as np
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import numpy as np
-
-from pydtnn.backends.numpy.layers.abstract.pool_2d_layer import AbstractPool2DLayerNumpy
-from pydtnn.layers.max_pool_2d import MaxPool2D
-from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
-from pydtnn.utils.constants import ArrayShape
 
 
 class MaxPool2DNumpy(MaxPool2D[np.ndarray], AbstractPool2DLayerNumpy):

@@ -1,18 +1,17 @@
+from pydtnn.utils.tensor import TensorFormat
+import numpy as np
+from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
+from pydtnn.libs.convWinograd import ConvWinograd
+from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython
+from pydtnn.backends.cython.utils.im2col_nchw_cython import im2col_nchw_cython
 import logging
+
+from pydtnn.backends.numpy.layers.conv_2d import Conv2DNumpy
+from pydtnn.backends.winograd.layers.abstract.conv_2d import AbstractConv2DWinograd
 logger = logging.getLogger(__name__)
 
-from pydtnn.backends.numpy.layers.abstract.conv_2d_standard import AbstractConv2DStandardNumpy
-from pydtnn.backends.cython.utils.im2col_nchw_cython import im2col_nchw_cython
-from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython
-from pydtnn.libs.convWinograd import ConvWinograd
-from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 
-import numpy as np
-
-from pydtnn.utils.tensor import TensorFormat
-
-
-class Conv2DWinograd(AbstractConv2DStandardNumpy):
+class Conv2DWinograd(Conv2DNumpy, AbstractConv2DWinograd):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -35,7 +34,7 @@ class Conv2DWinograd(AbstractConv2DStandardNumpy):
                 self.forward = self._forward_cw_nhwc
                 self.backward = self._backward_cw_nhwc
             case _:
-                raise NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
+                raise NotImplementedError(f"{self.model.tensor_format} format not implemented.")
         # ---
 
     def _forward_cw_nhwc(self, x: np.ndarray) -> np.ndarray:

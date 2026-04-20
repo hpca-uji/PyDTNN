@@ -1,14 +1,14 @@
+from typing import TYPE_CHECKING
+from pydtnn.libs import numpy as np
+from pydtnn.utils.constants import Array, ArrayShape
+from pydtnn.layers.batch_normalization import BatchNormalization
+from pydtnn.backends.fuse.layers.layer import LayerFuse as FusedLayerMixIn
+from pydtnn.backends.numpy.layers.batch_normalization import BatchNormalizationNumpy
+from pydtnn.backends.fuse.utils.bn_inference_cython import bn_relu_inference_cython
 import logging
 logger = logging.getLogger(__name__)
 
-from pydtnn.backends.fuse.utils.bn_inference_cython import bn_relu_inference_cython
-from pydtnn.backends.numpy.layers.batch_normalization import BatchNormalizationNumpy
-from pydtnn.layer_base import FusedLayerMixIn
-from pydtnn.layers.batch_normalization import BatchNormalization
-from pydtnn.utils.constants import Array, ArrayShape
 
-from pydtnn.libs import numpy as np
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import numpy as np
 

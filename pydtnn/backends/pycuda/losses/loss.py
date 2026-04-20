@@ -1,16 +1,15 @@
+from pydtnn.losses.loss import Loss
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.backends.pycuda.abstract.base import BasePycuda
+from pycuda.driver import Function  # type: ignore
+from pycuda import gpuarray  # type: ignore
 import logging
 logger = logging.getLogger(__name__)
-
-from pycuda import gpuarray  # type: ignore
-from pycuda.driver import Function  # type: ignore
-
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.losses.loss import Loss
-
-from pydtnn.utils.uses_cuda import PyCudaCudaCode
 from pydtnn.utils.constants import DTYPE2CTYPE
+from pydtnn.utils.uses_cuda import PyCudaCudaCode
 
-class LossPycuda(Loss[TensorArray], PyCudaCudaCode):
+class LossPycuda(Loss[TensorArray], BasePycuda, PyCudaCudaCode):
+
     """
     Extends a Loss class with the attributes and methods required by GPU Losses.
     """

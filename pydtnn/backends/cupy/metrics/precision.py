@@ -1,12 +1,13 @@
+from typing import TYPE_CHECKING
+from pydtnn.libs import numpy as np
+from pydtnn.backends.numpy.metrics.precision import PrecisionNumpy
+from pydtnn.backends.cupy.metrics.metric import MetricCupy
 import logging
 logger = logging.getLogger(__name__)
 
-from pydtnn.backends.cupy.metrics.metric import MetricCupy
-from pydtnn.backends.numpy.metrics.precision import PrecisionNumpy
-from pydtnn.libs import numpy as np
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import numpy as np
+
 
 class PrecisionCupy(PrecisionNumpy, MetricCupy):
 
@@ -16,7 +17,6 @@ class PrecisionCupy(PrecisionNumpy, MetricCupy):
             self.true_positives = self.model.memory.ndarray(self.temp_var_shape, dtype=np.float32)
             self.false_positives = self.model.memory.ndarray(self.temp_var_shape, dtype=np.float32)
             self.false_negatives = self.model.memory.ndarray(self.temp_var_shape, dtype=np.float32)
-
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
         true_positives = self.true_positives

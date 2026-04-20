@@ -1,18 +1,15 @@
+from pycuda.driver import Function  # type: ignore
+from pycuda import gpuarray  # type: ignore
+from typing import Any, override
+from pydtnn.utils.tensor import TensorFormat
+from pydtnn.utils.constants import ArrayShape
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.backends.pycuda.layers.abstract.conv_2d import AbstractConv2DPycuda
+from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
+import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
-import numpy as np
-
-from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
-from pydtnn.backends.pycuda.layers.abstract.conv_2d import AbstractConv2DPycuda
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.utils.constants import ArrayShape
-
-from pydtnn.utils.tensor import TensorFormat
-from typing import Any, override
-
-from pycuda import gpuarray  # type: ignore
-from pycuda.driver import Function  # type: ignore
 
 class Conv2DDepthwisePycuda(AbstractConv2DPycuda):
 
@@ -39,7 +36,7 @@ class Conv2DDepthwisePycuda(AbstractConv2DPycuda):
                 self.backward = self._backward_depthwise_nhwc
             case _:
                 # TODO: self devolvía la versión con el número
-                raise NotImplementedError(f"\"{self.name}\" is not implemented for \"{self.model.tensor_format}\" format.")
+                raise NotImplementedError(f"{self.name} is not implemented for {self.model.tensor_format} format.")
 
         self.total_num_threads = np.int32(np.prod(self.grid) * np.prod(self.block))
 

@@ -1,14 +1,12 @@
+from pydtnn.utils import find_component
+from pydtnn.tracers.events import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
+from typing import TYPE_CHECKING
+import abc
+import sys
+import resource
 import logging
 logger = logging.getLogger(__name__)
 
-import resource
-import sys
-import abc
-
-from typing import TYPE_CHECKING
-
-from pydtnn.tracers.events import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
-from pydtnn.utils import find_component
 
 if TYPE_CHECKING:
     from pydtnn.model import Model
@@ -128,10 +126,10 @@ class Tracer(metaclass=PostInitCaller):
         ops_constants = [(event._name_, event._value_) for event in PYDTNN_OPS_EVENT_enum]
         for layer in model.get_all_layers():
             for (name, val) in mdl_constants:
-                mdl_event[layer.id * PYDTNN_MDL_EVENTS + val] = f"{layer.name_with_id}_{name[11:].lower()}"
+                mdl_event[layer.id * PYDTNN_MDL_EVENTS + val] = f"{layer.name_with_id}_{name.lower()}"
             for (name, val) in ops_constants:
                 ops_event[
-                    layer.id * PYDTNN_OPS_EVENTS + val] = f"{layer.id:03}_{layer.name}_{name[11:].lower()}"
+                    layer.id * PYDTNN_OPS_EVENTS + val] = f"{layer.id:03}_{layer.name}_{name.lower()}"
 
     @abc.abstractmethod
     def _emit_event(self, evt_type: int, evt_val: int, stream=None):

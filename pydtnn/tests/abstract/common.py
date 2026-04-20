@@ -2,17 +2,14 @@
 Common methods and properties for various unitary tests
 """
 
+from pydtnn.utils.tensor import TensorFormat
+from pydtnn.utils import random
+import numpy as np
+import warnings
+import unittest
+import sys
 import logging
 logger = logging.getLogger(__name__)
-
-import sys
-import unittest
-import warnings
-
-import numpy as np
-
-from pydtnn.utils import random
-from pydtnn.utils.tensor import TensorFormat
 
 
 # @warning: must be a function, don't use a @property decorator

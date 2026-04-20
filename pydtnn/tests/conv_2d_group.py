@@ -1,17 +1,16 @@
+from pydtnn.utils.initializers import glorot_uniform, zeros
+from pydtnn.utils.tensor import TensorFormat
+from pydtnn.tests.abstract.conv_2d_common import Conv2DCommonTestCase
+from pydtnn.tests.abstract.common import Params
+from pydtnn.tests.abstract.common import D
+from pydtnn.backends.numpy.layers.abstract.conv_2d import AbstractConv2DNumpy
+from pydtnn.model import Model
+from pydtnn.layers.conv_2d_pointwise import Conv2DPointwise
+from pydtnn.layers.conv_2d_depthwise import Conv2DDepthwise
+from pydtnn.layers.conv_2d import Conv2D
+from pydtnn.layers.concatenation_block import ConcatenationBlock
 import logging
 logger = logging.getLogger(__name__)
-
-from pydtnn.layers.concatenation_block import ConcatenationBlock
-from pydtnn.layers.conv_2d import Conv2D
-from pydtnn.layers.conv_2d_depthwise import Conv2DDepthwise
-from pydtnn.layers.conv_2d_pointwise import Conv2DPointwise
-from pydtnn.model import Model
-from pydtnn.backends.numpy.layers.abstract.conv_2d import AbstractConv2DNumpy
-from pydtnn.tests.abstract.common import D
-from pydtnn.tests.abstract.common import Params
-from pydtnn.tests.abstract.conv_2d_common import Conv2DCommonTestCase
-from pydtnn.utils.tensor import TensorFormat
-from pydtnn.utils.initializers import glorot_uniform, zeros
 
 
 class Conv2DGroupTestCase(Conv2DCommonTestCase):

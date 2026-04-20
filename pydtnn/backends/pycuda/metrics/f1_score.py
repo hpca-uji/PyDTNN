@@ -1,13 +1,9 @@
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.metrics.f1_score import F1Score
+from pydtnn.backends.pycuda.metrics.metric import MetricPycuda
+import numpy as np
 import logging
 logger = logging.getLogger(__name__)
-
-import numpy as np
-
-from pydtnn.backends.pycuda.metrics.metric import MetricPycuda
-from pydtnn.metrics.f1_score import F1Score
-
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-
 
 class F1ScorePycuda(F1Score[TensorArray], MetricPycuda):
 

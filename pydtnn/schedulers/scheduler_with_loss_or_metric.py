@@ -1,9 +1,8 @@
+from pydtnn.schedulers.scheduler import Scheduler
+from typing import TYPE_CHECKING
 import logging
 logger = logging.getLogger(__name__)
 
-from typing import TYPE_CHECKING
-
-from pydtnn.schedulers.scheduler import Scheduler
 
 if TYPE_CHECKING:
     from pydtnn.model import Model
@@ -24,7 +23,7 @@ class SchedulerWithLossOrMetric(Scheduler):
         try:
             return self.model.loss_and_metrics.index(self.loss_or_metric)
         except ValueError as e:
-            raise ValueError("{self}: loss or metric '{self.loss_or_metric}' not found in current model!") from e
+            raise ValueError(f"{self}: loss or metric '{self.loss_or_metric}' not found in current model!") from e
 
     @classmethod
     def from_model(cls, model: "Model") -> "WarmUpLRScheduler":

@@ -1,10 +1,16 @@
 #!/usr/bin/env python
+# Source: https://github.com/lebedov/scikit-cuda
 
 """
 Python interface to CUDA runtime functions.
 """
 
-import atexit, ctypes, platform, re, sys, warnings
+import atexit
+import ctypes
+import platform
+import re
+import sys
+import warnings
 import numpy as np
 
 # Load library:
@@ -37,10 +43,12 @@ for _libcudart_libname in _libcudart_libname_list:
         pass
     else:
         break
-if _libcudart == None:
+if _libcudart is None:
     raise OSError('CUDA runtime library not found')
 
 # Code adapted from PARRET:
+
+
 def POINTER(obj):
     """
     Create ctypes pointer to object.
@@ -64,27 +72,33 @@ def POINTER(obj):
     return p
 
 # Classes corresponding to CUDA vector structures:
+
+
 class float2(ctypes.Structure):
     _fields_ = [
         ('x', ctypes.c_float),
         ('y', ctypes.c_float)
-        ]
+    ]
+
 
 class cuFloatComplex(float2):
     @property
     def value(self):
         return complex(self.x, self.y)
 
+
 class double2(ctypes.Structure):
     _fields_ = [
         ('x', ctypes.c_double),
         ('y', ctypes.c_double)
-        ]
+    ]
+
 
 class cuDoubleComplex(double2):
     @property
     def value(self):
         return complex(self.x, self.y)
+
 
 def gpuarray_ptr(g):
     """
@@ -120,8 +134,11 @@ def gpuarray_ptr(g):
     else:
         raise ValueError('unrecognized type')
 
+
 _libcudart.cudaGetErrorString.restype = ctypes.c_char_p
 _libcudart.cudaGetErrorString.argtypes = [ctypes.c_int]
+
+
 def cudaGetErrorString(e):
     """
     Retrieve CUDA error string.
@@ -144,317 +161,398 @@ def cudaGetErrorString(e):
     return _libcudart.cudaGetErrorString(e)
 
 # Generic CUDA error:
+
+
 class cudaError(Exception):
     """CUDA error."""
     pass
 
 # Exceptions corresponding to various CUDA runtime errors:
+
+
 class cudaErrorMissingConfiguration(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(1)
     pass
+
 
 class cudaErrorMemoryAllocation(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(2)
     pass
 
+
 class cudaErrorInitializationError(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(3)
     pass
+
 
 class cudaErrorLaunchFailure(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(4)
     pass
 
+
 class cudaErrorPriorLaunchFailure(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(5)
     pass
+
 
 class cudaErrorLaunchTimeout(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(6)
     pass
 
+
 class cudaErrorLaunchOutOfResources(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(7)
     pass
+
 
 class cudaErrorInvalidDeviceFunction(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(8)
     pass
 
+
 class cudaErrorInvalidConfiguration(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(9)
     pass
+
 
 class cudaErrorInvalidDevice(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(10)
     pass
 
+
 class cudaErrorInvalidValue(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(11)
     pass
+
 
 class cudaErrorInvalidPitchValue(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(12)
     pass
 
+
 class cudaErrorInvalidSymbol(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(13)
     pass
+
 
 class cudaErrorMapBufferObjectFailed(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(14)
     pass
 
+
 class cudaErrorUnmapBufferObjectFailed(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(15)
     pass
+
 
 class cudaErrorInvalidHostPointer(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(16)
     pass
 
+
 class cudaErrorInvalidDevicePointer(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(17)
     pass
+
 
 class cudaErrorInvalidTexture(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(18)
     pass
 
+
 class cudaErrorInvalidTextureBinding(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(19)
     pass
+
 
 class cudaErrorInvalidChannelDescriptor(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(20)
     pass
 
+
 class cudaErrorInvalidMemcpyDirection(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(21)
     pass
+
 
 class cudaErrorTextureFetchFailed(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(23)
     pass
 
+
 class cudaErrorTextureNotBound(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(24)
     pass
+
 
 class cudaErrorSynchronizationError(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(25)
     pass
 
+
 class cudaErrorInvalidFilterSetting(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(26)
     pass
+
 
 class cudaErrorInvalidNormSetting(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(27)
     pass
 
+
 class cudaErrorMixedDeviceExecution(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(28)
     pass
+
 
 class cudaErrorCudartUnloading(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(29)
     pass
 
+
 class cudaErrorUnknown(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(30)
     pass
+
 
 class cudaErrorNotYetImplemented(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(31)
     pass
 
+
 class cudaErrorMemoryValueTooLarge(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(32)
     pass
+
 
 class cudaErrorInvalidResourceHandle(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(33)
     pass
 
+
 class cudaErrorNotReady(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(34)
     pass
+
 
 class cudaErrorInsufficientDriver(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(35)
     pass
 
+
 class cudaErrorSetOnActiveProcess(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(36)
     pass
+
 
 class cudaErrorInvalidSurface(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(37)
     pass
 
+
 class cudaErrorNoDevice(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(38)
     pass
+
 
 class cudaErrorECCUncorrectable(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(39)
     pass
 
+
 class cudaErrorSharedObjectSymbolNotFound(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(40)
     pass
+
 
 class cudaErrorSharedObjectInitFailed(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(41)
     pass
 
+
 class cudaErrorUnsupportedLimit(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(42)
     pass
+
 
 class cudaErrorDuplicateVariableName(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(43)
     pass
 
+
 class cudaErrorDuplicateTextureName(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(44)
     pass
+
 
 class cudaErrorDuplicateSurfaceName(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(45)
     pass
 
+
 class cudaErrorDevicesUnavailable(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(46)
     pass
+
 
 class cudaErrorInvalidKernelImage(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(47)
     pass
 
+
 class cudaErrorNoKernelImageForDevice(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(48)
     pass
+
 
 class cudaErrorIncompatibleDriverContext(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(49)
     pass
 
+
 class cudaErrorPeerAccessAlreadyEnabled(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(50)
     pass
+
 
 class cudaErrorPeerAccessNotEnabled(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(51)
     pass
 
+
 class cudaErrorDeviceAlreadyInUse(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(54)
     pass
+
 
 class cudaErrorProfilerDisabled(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(55)
     pass
 
+
 class cudaErrorProfilerNotInitialized(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(56)
     pass
+
 
 class cudaErrorProfilerAlreadyStarted(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(57)
     pass
 
+
 class cudaErrorProfilerAlreadyStopped(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(58)
     pass
+
 
 class cudaErrorAssert(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(59)
     pass
 
+
 class cudaErrorTooManyPeers(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(60)
     pass
+
 
 class cudaErrorHostMemoryAlreadyRegistered(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(61)
     pass
 
+
 class cudaErrorHostMemoryNotRegistered(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(62)
     pass
+
 
 class cudaErrorOperatingSystem(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(63)
     pass
 
+
 class cudaErrorPeerAccessUnsupported(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(64)
     pass
+
 
 class cudaErrorLaunchMaxDepthExceeded(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(65)
     pass
 
+
 class cudaErrorLaunchFileScopedTex(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(66)
     pass
+
 
 class cudaErrorLaunchFileScopedSurf(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(67)
     pass
 
+
 class cudaErrorSyncDepthExceeded(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(68)
     pass
+
 
 class cudaErrorLaunchPendingCountExceeded(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(69)
     pass
 
+
 class cudaErrorNotPermitted(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(70)
     pass
+
 
 class cudaErrorNotSupported(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(71)
     pass
 
+
 class cudaErrorHardwareStackError(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(72)
     pass
+
 
 class cudaErrorIllegalInstruction(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(73)
     pass
 
+
 class cudaErrorMisalignedAddress(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(74)
     pass
+
 
 class cudaErrorInvalidAddressSpace(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(75)
     pass
 
+
 class cudaErrorInvalidPc(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(76)
     pass
+
 
 class cudaErrorIllegalAddress(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(77)
     pass
 
+
 class cudaErrorInvalidPtx(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(78)
     pass
 
+
 class cudaErrorInvalidGraphicsContext(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(79)
+
 
 class cudaErrorStartupFailure(cudaError):
     __doc__ = _libcudart.cudaGetErrorString(127)
     pass
+
 
 cudaExceptions = {
     1: cudaErrorMissingConfiguration,
@@ -537,7 +635,8 @@ cudaExceptions = {
     78: cudaErrorInvalidPtx,
     79: cudaErrorInvalidGraphicsContext,
     127: cudaErrorStartupFailure
-    }
+}
+
 
 def cudaCheckStatus(status):
     """
@@ -564,10 +663,13 @@ def cudaCheckStatus(status):
         else:
             raise e
 
+
 # Memory allocation functions (adapted from pystream):
 _libcudart.cudaMalloc.restype = int
 _libcudart.cudaMalloc.argtypes = [ctypes.POINTER(ctypes.c_void_p),
                                   ctypes.c_size_t]
+
+
 def cudaMalloc(count, ctype=None):
     """
     Allocate device memory.
@@ -592,12 +694,15 @@ def cudaMalloc(count, ctype=None):
     ptr = ctypes.c_void_p()
     status = _libcudart.cudaMalloc(ctypes.byref(ptr), count)
     cudaCheckStatus(status)
-    if ctype != None:
+    if ctype is not None:
         ptr = ctypes.cast(ptr, ctypes.POINTER(ctype))
     return ptr
 
+
 _libcudart.cudaFree.restype = int
 _libcudart.cudaFree.argtypes = [ctypes.c_void_p]
+
+
 def cudaFree(ptr):
     """
     Free device memory.
@@ -615,10 +720,13 @@ def cudaFree(ptr):
     status = _libcudart.cudaFree(ptr)
     cudaCheckStatus(status)
 
+
 _libcudart.cudaMallocPitch.restype = int
 _libcudart.cudaMallocPitch.argtypes = [ctypes.POINTER(ctypes.c_void_p),
                                        ctypes.POINTER(ctypes.c_size_t),
                                        ctypes.c_size_t, ctypes.c_size_t]
+
+
 def cudaMallocPitch(pitch, rows, cols, elesize):
     """
     Allocate pitched device memory.
@@ -646,10 +754,11 @@ def cudaMallocPitch(pitch, rows, cols, elesize):
 
     ptr = ctypes.c_void_p()
     status = _libcudart.cudaMallocPitch(ctypes.byref(ptr),
-                                        ctypes.c_size_t(pitch), cols*elesize,
+                                        ctypes.c_size_t(pitch), cols * elesize,
                                         rows)
     cudaCheckStatus(status)
     return ptr, pitch
+
 
 # Memory copy modes:
 cudaMemcpyHostToHost = 0
@@ -661,6 +770,8 @@ cudaMemcpyDefault = 4
 _libcudart.cudaMemcpy.restype = int
 _libcudart.cudaMemcpy.argtypes = [ctypes.c_void_p, ctypes.c_void_p,
                                   ctypes.c_size_t, ctypes.c_int]
+
+
 def cudaMemcpy_htod(dst, src, count):
     """
     Copy memory from host to device.
@@ -682,6 +793,7 @@ def cudaMemcpy_htod(dst, src, count):
                                    ctypes.c_size_t(count),
                                    cudaMemcpyHostToDevice)
     cudaCheckStatus(status)
+
 
 def cudaMemcpy_dtoh(dst, src, count):
     """
@@ -705,9 +817,12 @@ def cudaMemcpy_dtoh(dst, src, count):
                                    cudaMemcpyDeviceToHost)
     cudaCheckStatus(status)
 
+
 _libcudart.cudaMemGetInfo.restype = int
 _libcudart.cudaMemGetInfo.argtypes = [ctypes.c_void_p,
                                       ctypes.c_void_p]
+
+
 def cudaMemGetInfo():
     """
     Return the amount of free and total device memory.
@@ -728,8 +843,11 @@ def cudaMemGetInfo():
     cudaCheckStatus(status)
     return free.value, total.value
 
+
 _libcudart.cudaSetDevice.restype = int
 _libcudart.cudaSetDevice.argtypes = [ctypes.c_int]
+
+
 def cudaSetDevice(dev):
     """
     Set current CUDA device.
@@ -746,8 +864,11 @@ def cudaSetDevice(dev):
     status = _libcudart.cudaSetDevice(dev)
     cudaCheckStatus(status)
 
+
 _libcudart.cudaGetDevice.restype = int
 _libcudart.cudaGetDevice.argtypes = [ctypes.POINTER(ctypes.c_int)]
+
+
 def cudaGetDevice():
     """
     Get current CUDA device.
@@ -767,8 +888,11 @@ def cudaGetDevice():
     cudaCheckStatus(status)
     return dev.value
 
+
 _libcudart.cudaDriverGetVersion.restype = int
 _libcudart.cudaDriverGetVersion.argtypes = [ctypes.POINTER(ctypes.c_int)]
+
+
 def cudaDriverGetVersion():
     """
     Get installed CUDA driver version.
@@ -787,8 +911,11 @@ def cudaDriverGetVersion():
     cudaCheckStatus(status)
     return version.value
 
+
 _libcudart.cudaRuntimeGetVersion.restype = int
 _libcudart.cudaRuntimeGetVersion.argtypes = [ctypes.POINTER(ctypes.c_int)]
+
+
 def cudaRuntimeGetVersion():
     """
     Get installed CUDA runtime version.
@@ -807,10 +934,12 @@ def cudaRuntimeGetVersion():
     cudaCheckStatus(status)
     return version.value
 
+
 try:
     _cudart_version = cudaRuntimeGetVersion()
-except:
+except BaseException:
     _cudart_version = 99999
+
 
 class _cudart_version_req(object):
     """
@@ -825,11 +954,11 @@ class _cudart_version_req(object):
             minor = '0'
         else:
             major, minor = re.search(r'(\d+)\.(\d+)', self.vs).groups()
-        self.vi = int(major.ljust(len(major)+1, '0')+minor.ljust(2, '0'))
+        self.vi = int(major.ljust(len(major) + 1, '0') + minor.ljust(2, '0'))
 
-    def __call__(self,f):
-        def f_new(*args,**kwargs):
-            raise NotImplementedError('CUDART '+self.vs+' required')
+    def __call__(self, f):
+        def f_new(*args, **kwargs):
+            raise NotImplementedError('CUDART ' + self.vs + ' required')
         f_new.__doc__ = f.__doc__
 
         if _cudart_version >= self.vi:
@@ -837,9 +966,11 @@ class _cudart_version_req(object):
         else:
             return f_new
 
+
 # Memory types:
 cudaMemoryTypeHost = 1
 cudaMemoryTypeDevice = 2
+
 
 class cudaPointerAttributes(ctypes.Structure):
     _fields_ = [
@@ -847,11 +978,14 @@ class cudaPointerAttributes(ctypes.Structure):
         ('device', ctypes.c_int),
         ('devicePointer', ctypes.c_void_p),
         ('hostPointer', ctypes.c_void_p)
-        ]
+    ]
+
 
 _libcudart.cudaPointerGetAttributes.restype = int
 _libcudart.cudaPointerGetAttributes.argtypes = [ctypes.c_void_p,
                                                 ctypes.c_void_p]
+
+
 def cudaPointerGetAttributes(ptr):
     """
     Get memory pointer attributes.

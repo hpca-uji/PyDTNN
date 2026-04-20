@@ -1,13 +1,12 @@
+from pydtnn.backends.numpy.layers.layer import LayerNumpy
+from pydtnn.layers.layer_normalization import LayerNormalization
+from typing import TYPE_CHECKING
+from pydtnn.libs import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
-from pydtnn.libs import numpy as np
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import numpy as np
-
-from pydtnn.layers.layer_normalization import LayerNormalization
-from pydtnn.backends.numpy.layers.layer import LayerNumpy
 
 
 class LayerNormalizationNumpy(LayerNormalization[np.ndarray], LayerNumpy):

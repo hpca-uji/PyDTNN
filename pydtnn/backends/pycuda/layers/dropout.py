@@ -1,16 +1,14 @@
+import ctypes
+from pydtnn.utils.constants import ArrayShape
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.libs import cudnn as cudnn
+from pydtnn.backends.pycuda.layers.layer import LayerPycuda
+from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
+from pydtnn.layers.dropout import Dropout
+from pycuda import gpuarray  # type: ignore
+import numpy as np
 import logging
 logger = logging.getLogger(__name__)
-
-import numpy as np
-from pycuda import gpuarray  # type: ignore
-
-from pydtnn.layers.dropout import Dropout
-from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
-from pydtnn.backends.pycuda.layers.layer import LayerPycuda
-from pydtnn.libs import cudnn as cudnn
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.utils.constants import ArrayShape
-import ctypes
 
 
 class DropoutPycuda(Dropout[TensorArray], LayerPycuda):

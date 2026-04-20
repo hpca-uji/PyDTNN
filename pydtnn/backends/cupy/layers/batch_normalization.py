@@ -1,13 +1,14 @@
+from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
+from typing import TYPE_CHECKING
+from pydtnn.libs import numpy as np
+from pydtnn.backends.numpy.layers.batch_normalization import BatchNormalizationNumpy
+from pydtnn.backends.cupy.layers.layer import LayerCupy
 import logging
 logger = logging.getLogger(__name__)
 
-from pydtnn.backends.cupy.layers.layer import LayerCupy
-from pydtnn.backends.numpy.layers.batch_normalization import BatchNormalizationNumpy
-from pydtnn.libs import numpy as np
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import numpy as np
-from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
+
 
 class BatchNormalizationCupy(BatchNormalizationNumpy, LayerCupy):
 
@@ -18,10 +19,10 @@ class BatchNormalizationCupy(BatchNormalizationNumpy, LayerCupy):
         self.defines_replaces = {"\"TYPE\"": DTYPE2CTYPE[self.model.dtype]}
 
         self.bwd = self._bwd_kernel()
-        #----
+        # ----
 
     def _training_bwd(self, dx: np.ndarray, dy: np.ndarray) -> None:
-        #return super()._training_bwd(dx, dy)
+        # return super()._training_bwd(dx, dy)
         dim_i, dim_j = dx.shape
         self.bwd(self.model.cuda_grid,
                  self.model.cuda_block,

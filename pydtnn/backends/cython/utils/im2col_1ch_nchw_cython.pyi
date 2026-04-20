@@ -27,7 +27,7 @@ def im2col_1ch_nchw_cython[T: _npDT](x: _npDT_4Dims[T],
         vdilation (int): vertical dilation value.
         hdilation (int): horizontal dilation value.
     Returns:
-        Nothing, it is stored in \"cols\".
+        Nothing, it is stored in `cols`.
     """
 
 
@@ -53,5 +53,5 @@ def col2im_1ch_nchw_cython[T: _npDT](cols: _npDT_2Dims[T],
         vdilation (int): vertical dilation value.
         hdilation (int): horizontal dilation value.
     Returns:
-        Nothing, it is stored in \"x\".
+        Nothing, it is stored in `x`.
     """

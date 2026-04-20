@@ -1,10 +1,8 @@
+import numpy as np
+from collections import defaultdict
+import resource
 import logging
 logger = logging.getLogger(__name__)
-
-import resource
-from collections import defaultdict
-
-import numpy as np
 
 
 class PerformanceCounter:
@@ -98,10 +96,8 @@ class PerformanceCounter:
             _report.append(" ------------------------------------")
             _report.append(f'Testing time (from model): {self.testing_time / self.num_evaluations:5.4f} s')
             _report.append(f'Testing throughput (from model): {self.testing_throughput:5.4f} samples/s')
-            _report.append(f'Testing maximum memory allocated: ')
-            _report.append(f'{self.testing_maximum_memory / 1024:.2f} MiB')
-            _report.append(f'Testing mean memory allocated: ')
-            _report.append(f'{self.testing_mean_memory / 1024:.2f} MiB')
+            _report.append(f'Testing maximum memory allocated: {self.testing_maximum_memory / 1024:.2f} MiB')
+            _report.append(f'Testing mean memory allocated: {self.testing_mean_memory / 1024:.2f} MiB')
 
         report = '\n'.join(_report)
         logger.info(report)

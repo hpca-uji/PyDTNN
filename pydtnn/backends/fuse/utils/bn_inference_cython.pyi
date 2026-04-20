@@ -44,5 +44,5 @@ def bn_relu_inference_cython[T: _npDT](x: _npDT_2Dims[T],
         beta (npDT_1Dims): The input's 1 dimensions ndarray the beta's values
 
     Returns:
-        Nothing. The output will be stored in \"y\".
+        Nothing. The output will be stored in `y`.
     """

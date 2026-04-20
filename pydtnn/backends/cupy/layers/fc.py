@@ -1,10 +1,9 @@
+import cupy as np
+from pydtnn.utils.constants import ArrayShape
+from pydtnn.backends.numpy.layers.fc import FCNumpy
+from pydtnn.backends.cupy.layers.layer import LayerCupy
 import logging
 logger = logging.getLogger(__name__)
-
-from pydtnn.backends.cupy.layers.layer import LayerCupy
-from pydtnn.backends.numpy.layers.fc import FCNumpy
-from pydtnn.utils.constants import ArrayShape
-import cupy as np
 
 
 class FCCupy(FCNumpy, LayerCupy):

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# Source: https://github.com/lebedov/scikit-cuda
 
 """
 Utility functions.
@@ -19,7 +20,6 @@ try:
     import elftools
 except ImportError:
     import re
-
 
     def get_soname(filename):
         """
@@ -51,13 +51,13 @@ except ImportError:
             p = subprocess.Popen(cmds, stdout=subprocess.PIPE,
                                  env=dict(os.environ, LANG="en"))
             out = p.communicate()[0].decode()
-        except:
+        except BaseException:
             raise RuntimeError('error executing {0}'.format(cmds))
 
         if sys.platform == 'darwin':
-            result = re.search('^\s@rpath/(lib.+.dylib)', out, re.MULTILINE)
+            result = re.search('^\\s@rpath/(lib.+.dylib)', out, re.MULTILINE)
         else:
-            result = re.search('^\s+SONAME\s+(.+)$',out,re.MULTILINE)
+            result = re.search('^\\s+SONAME\\s+(.+)$', out, re.MULTILINE)
 
         if result:
             return result.group(1)
@@ -114,8 +114,8 @@ else:
             raise RuntimeError('unsupported machine architecture')
 
         entsize = dynamic['sh_entsize']
-        for k in range(dynamic['sh_size']//entsize):
-            result = st.parse(dynamic.data()[k*entsize:(k+1)*entsize])
+        for k in range(dynamic['sh_size'] // entsize):
+            result = st.parse(dynamic.data()[k * entsize:(k + 1) * entsize])
 
             # The following value for the SONAME tag is specified in elf.h:
             if result.d_tag == 14:
@@ -123,6 +123,7 @@ else:
 
         # No SONAME found:
         return ''
+
 
 def find_lib_path(name):
     """
@@ -168,7 +169,7 @@ def find_lib_path(name):
     # First, check the directories in LD_LIBRARY_PATH:
     expr = r'\s+(lib%s\.[^\s]+)\s+\-\>' % re.escape(name)
     for dir_path in filter(len,
-            os.environ.get('LD_LIBRARY_PATH', '').split(':')):
+                           os.environ.get('LD_LIBRARY_PATH', '').split(':')):
         f = os.popen('/sbin/ldconfig -Nnv %s 2>/dev/null' % dir_path)
         try:
             data = f.read()
@@ -193,7 +194,7 @@ def find_lib_path(name):
         's390x-64': 'libc6,64bit',
         'ia64-64': 'libc6,IA-64',
         'arm-32': 'libc6(,hard-float)?',
-        }
+    }
     abi_type = mach_map.get(machine, 'libc6')
     expr = r'\s+lib%s\.[^\s]+\s+\(%s.*\=\>\s(.+)' % (re.escape(name), abi_type)
     f = os.popen('/sbin/ldconfig -p 2>/dev/null')

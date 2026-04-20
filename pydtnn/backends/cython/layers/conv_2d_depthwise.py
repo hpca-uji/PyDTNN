@@ -1,18 +1,18 @@
+from typing import TYPE_CHECKING
+from pydtnn.libs import numpy as np
+from pydtnn.backends.cython.utils.depthwise_conv_nhwc_cython import depthwise_conv_backward_nhwc_cython, depthwise_conv_nhwc_cython
+from pydtnn.backends.cython.utils.depthwise_conv_nchw_cython import depthwise_conv_backward_nchw_cython, depthwise_conv_nchw_cython
+from pydtnn.backends.numpy.layers.conv_2d_depthwise import Conv2DDepthwiseNumpy
+from pydtnn.backends.cython.layers.abstract.conv_2d import AbstractConv2DCython
 import logging
 logger = logging.getLogger(__name__)
 
-from pydtnn.backends.numpy.layers.conv_2d_depthwise import Conv2DDepthwiseNumpy
-from pydtnn.backends.cython.utils.depthwise_conv_nchw_cython import depthwise_conv_backward_nchw_cython, depthwise_conv_nchw_cython
-from pydtnn.backends.cython.utils.depthwise_conv_nhwc_cython import depthwise_conv_backward_nhwc_cython, depthwise_conv_nhwc_cython
-from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 
-from pydtnn.libs import numpy as np
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import numpy as np
 
 
-class Conv2DDepthwiseCython(Conv2DDepthwiseNumpy):
+class Conv2DDepthwiseCython(Conv2DDepthwiseNumpy, AbstractConv2DCython):
 
     def _conv_fwd_nhwc(self, x: np.ndarray, y: np.ndarray) -> None:
         depthwise_conv_nhwc_cython(x, self.weights, y, self.ho, self.wo,

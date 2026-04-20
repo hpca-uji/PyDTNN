@@ -1,10 +1,8 @@
+from pydtnn.backends.cupy.activations.activation import ActivationCupy
+from pydtnn.backends.numpy.activations.relu6 import Relu6Numpy
+from pydtnn.libs import numpy as np
 import logging
 logger = logging.getLogger(__name__)
-
-from pydtnn.libs import numpy as np
-from pydtnn.backends.numpy.activations.relu6 import Relu6Numpy
-from pydtnn.backends.cupy.activations.activation import ActivationCupy
-
 class Relu6Cupy(Relu6Numpy, ActivationCupy):
 
     def _model_init(self, prev_shape, x=None):

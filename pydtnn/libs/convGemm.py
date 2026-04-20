@@ -2,17 +2,15 @@
 PyDTNN convGemm module
 """
 
+from pydtnn.utils import load_library
+from pydtnn.backends.cython.utils.im2col_nchw_cython import im2col_nchw_cython
+import numpy as np
+import weakref
+import platform
+import ctypes
 import logging
 logger = logging.getLogger(__name__)
 
-import ctypes
-import platform
-import weakref
-
-import numpy as np
-from pydtnn.backends.cython.utils.im2col_nchw_cython import im2col_nchw_cython
-
-from pydtnn.utils import load_library
 
 try:
     load_library("convGemm")

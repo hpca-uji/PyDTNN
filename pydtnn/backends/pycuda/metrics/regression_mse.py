@@ -1,11 +1,10 @@
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.backends.pycuda.metrics.metric import MetricPycuda
+from pydtnn.metrics.regression_mse import RegressionMSE
+import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
-import numpy as np
-
-from pydtnn.metrics.regression_mse import RegressionMSE
-from pydtnn.backends.pycuda.metrics.metric import MetricPycuda
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 class RegressionMSEPycuda(RegressionMSE[TensorArray], MetricPycuda):
 
     def _model_init(self) -> None:

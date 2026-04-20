@@ -2,26 +2,26 @@
 # In this file must be implemented only the translation of PyTorch functions to its PyDTNN equivalent.
 # _______________________________________________________________________________________________________________
 
+from pydtnn.converters.pytorch2pydtnn.layers import activation
+import pydtnn.converters.pytorch2pydtnn.common as cm
+from pydtnn.activations.tanh import Tanh
+from pydtnn.activations.softmax import Softmax
+from pydtnn.activations.sigmoid import Sigmoid
+from pydtnn.activations.relu import Relu
+from pydtnn.activations.log import Log
+from pydtnn.layers.flatten import Flatten
+from pydtnn.layers.concatenation_block import ConcatenationBlock
+from pydtnn.layers.addition_block import AdditionBlock
+from pydtnn.layers.adaptive_average_pool_2d import AdaptiveAveragePool2D
+from pydtnn.layers.average_pool_2d import AveragePool2D
+from pydtnn.abstract.layerable import Layerable
+from typing import Any
 import logging
 logger = logging.getLogger(__name__)
 
 # Typing related (or non important) imports
-from typing import Any
-from pydtnn.layer_base import LayerBase
 
 # Functionality imports
-from pydtnn.layers.average_pool_2d import AveragePool2D
-from pydtnn.layers.adaptive_average_pool_2d import AdaptiveAveragePool2D
-from pydtnn.layers.addition_block import AdditionBlock
-from pydtnn.layers.concatenation_block import ConcatenationBlock
-from pydtnn.layers.flatten import Flatten
-from pydtnn.activations.log import Log
-from pydtnn.activations.relu import Relu
-from pydtnn.activations.sigmoid import Sigmoid
-from pydtnn.activations.softmax import Softmax
-from pydtnn.activations.tanh import Tanh
-import pydtnn.converters.pytorch2pydtnn.common as cm
-from pydtnn.converters.pytorch2pydtnn.layers import activation
 
 # ------------------ #
 # - Torch Functions  #
@@ -64,7 +64,7 @@ def add(args: dict[str, Any]) -> tuple[AdditionBlock, str]:
     params = cm.separate_function_params(args[cm.PARAMETERS])
 
     params = cm.get_equivalent_layer(params, dict_equivalent_layers)
-    dict_layers: dict[str, tuple[LayerBase, str]] = args[cm.LAYERS]
+    dict_layers: dict[str, tuple[Layerable, str]] = args[cm.LAYERS]
 
     list_layers, to_remove, input_layer_name = cm.get_lists_operations_and_outputs(dict_layers=dict_layers, layer_inputs=params)
 
@@ -96,7 +96,7 @@ def concat(args: dict[str, Any]) -> tuple[ConcatenationBlock, str]:
     params = cm.separate_function_params(params)
     params = cm.get_equivalent_layer(params, dict_equivalent_layers)
 
-    dict_layers: dict[str, tuple[LayerBase, str]] = args[cm.LAYERS]
+    dict_layers: dict[str, tuple[Layerable, str]] = args[cm.LAYERS]
     list_layers, to_remove, input_layer_name = cm.get_lists_operations_and_outputs(dict_layers=dict_layers, layer_inputs=params)
 
     to_remove = set(to_remove)  # Remove multiple ocurrences of a layer. Consecuence of "get_equivalent_layer".

@@ -1,13 +1,11 @@
+from pycuda import gpuarray  # type:ignore
+from pydtnn.libs import cudnn as cudnn
+from pydtnn.utils.constants import ArrayShape
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.backends.pycuda.activations.activation import ActivationPycuda
+from pydtnn.activations.sigmoid import Sigmoid
 import logging
 logger = logging.getLogger(__name__)
-
-from pydtnn.activations.sigmoid import Sigmoid
-from pydtnn.backends.pycuda.activations.activation import ActivationPycuda
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.utils.constants import ArrayShape
-
-from pydtnn.libs import cudnn as cudnn
-from pycuda import gpuarray  # type:ignore
 
 
 class SigmoidPycuda(Sigmoid[TensorArray], ActivationPycuda):

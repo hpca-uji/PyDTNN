@@ -1,14 +1,12 @@
+from pydtnn.utils.tensor import TensorFormat, encode_shape, decode_shape
+from pydtnn.utils.constants import ArrayShape
+import numpy as np
+from enum import StrEnum, auto
+import copy
+import ctypes
 import logging
 logger = logging.getLogger(__name__)
 
-import ctypes
-import copy
-from enum import StrEnum, auto
-
-import numpy as np
-
-from pydtnn.utils.constants import ArrayShape
-from pydtnn.utils.tensor import TensorFormat, encode_shape, decode_shape
 
 try:
     from pycuda import gpuarray  # type: ignore

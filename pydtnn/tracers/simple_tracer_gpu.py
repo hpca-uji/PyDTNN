@@ -1,3 +1,5 @@
+from pydtnn.tracers.simple_tracer import SimpleTracer
+from typing import TYPE_CHECKING
 import logging
 logger = logging.getLogger(__name__)
 
@@ -6,9 +8,6 @@ try:
 except Exception as e:
     pass
 
-from typing import TYPE_CHECKING
-
-from pydtnn.tracers.simple_tracer import SimpleTracer
 
 if TYPE_CHECKING:
     from pympi.MPI import Comm as MPI_COMM

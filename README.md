@@ -53,49 +53,34 @@ Supported datasets:
   Romanian. As unofficial task, conventional bilingual text
   translation is offered between English and Arabic, French,
   Japanese, Chinese, German and Korean. This dataset is included into
-  the repository. Its binary version can be
+  the repository. Its plain version can be
   downloaded from: <https://github.com/hpca-uji/PyDTNN>
 - And others via generic data loaders.
 
-## Installing PyDTNN from source
-Download PyDTNN source code from its GitHub repository and enter the
-PyDTNN directory:
+## Installing PyDTNN
 ```sh
-git clone https://github.com/hpca-uji/PyDTNN.git
-cd PyDTNN
-```
-
-Then package itself must be installed:
-```sh
-pip install .
-```
-
-If you plan to modify the PyDTNN code, instead of using the previous
-line, you can install PyDTNN in editable mode (see `CONTRIBUTING.md` for
-more details):
-```sh
-pip install --config-settings editable_mode=compat -e .
+pip install pydtnn
 ```
 
 Optionally, if you are going to use MPI, you should have installed the
 corresponding system libraries, and install the required Python packages
 with:
 ```sh
-pip install .[mpi]
+pip install pydtnn[mpi]
 ```
 
 Optionally, if you are going to use GPU, you should have installed the
 corresponding system libraries, and install the required Python packages
 with:
 ```sh
-pip install .[gpu]
+pip install pydtnn[gpu]
 ```
 
 Optionally, if you are going to use FHE, you should have installed the
 corresponding system libraries, and install the required Python packages
 with:
 ```sh
-pip install .[fhe]
+pip install pydtnn[fhe]
 ```
 
 Optionally, if you are going to use PyMPI, you can switch protocols
@@ -119,6 +104,17 @@ with:
 ```sh
 export PYDTNN_CUPY=yes
 ```
+
+### Contributing and installing from source
+Download PyDTNN source code from its GitHub repository and
+install it in editable mode:
+```sh
+git clone https://github.com/hpca-uji/PyDTNN.git
+cd PyDTNN
+pip install --config-settings editable_mode=compat -e .
+```
+
+For more information on how to work on the project see `CONTRIBUTING.md`.
 
 For more information on how to manage external dependencies see
 `vendor/README.md`.
@@ -218,10 +214,8 @@ The PyDTNN framework comes with a utility launcher called
   - `--enable-fused-conv-bn-relu`: Fuse `Conv2D` and
     `BatchNormalization` and `Relu` layers. Default: `False`.
 - Convolution operation parameters:
-  - `--conv-direct-method`: Use `ConvDirect` module to realize
-    convolutions in `Conv2D` layers. `True` if specified.
-  - `--conv-direct-methods-for-best-of`: `ConvDirect` modules to compare
-    in `best_of` option if specified.
+  - `--conv-direct-method`: ConvDirect algorithm to use in Conv2D layers.
+    Default: `convdirect_original_{tensor_format}_default`.
 - Optimizer parameters:
   - `--optimizer`: Optimizers: `sgd`, `rmsprop`, `adam`, `nadam`.
     Default: `sgd`.

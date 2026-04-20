@@ -2,7 +2,7 @@ from collections.abc import Sequence
 
 from pydtnn.activations.relu import Relu
 from pydtnn.activations.sigmoid import Sigmoid
-from pydtnn.layer_base import LayerBase
+from pydtnn.abstract.layerable import Layerable
 from pydtnn.layers.average_pool_2d import AveragePool2D
 from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.conv_2d import Conv2D
@@ -14,8 +14,8 @@ from pydtnn.utils.initializers import he_uniform
 from pydtnn.utils.constants import ArrayShape
 
 
-def tsunamis_eflows_UMA(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[LayerBase]:
-    model = list[LayerBase]()
+def tsunamis_eflows_UMA(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
+    model = list[Layerable]()
     _ = model.append
 
     _(Input(shape=input_shape))

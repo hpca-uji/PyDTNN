@@ -1,8 +1,7 @@
+from pydtnn.utils.constants import Array
+from pydtnn.layers.layer import Layer
 import logging
 logger = logging.getLogger(__name__)
-
-from pydtnn.layers.layer import Layer
-from pydtnn.utils.constants import Array
 
 
 class AbstractBlockLayer[T: Array](Layer[T]):

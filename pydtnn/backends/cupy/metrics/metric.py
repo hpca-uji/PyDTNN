@@ -1,7 +1,7 @@
+from pydtnn.backends.numpy.metrics.metric import MetricNumpy
 import logging
 logger = logging.getLogger(__name__)
 
-from pydtnn.backends.numpy.metrics.metric import MetricNumpy
 
 class MetricCupy(MetricNumpy):
     """

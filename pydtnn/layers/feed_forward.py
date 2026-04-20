@@ -1,8 +1,7 @@
+from pydtnn.utils.constants import Array, ArrayShape
+from pydtnn.layers.abstract.block_layer import AbstractBlockLayer
 import logging
 logger = logging.getLogger(__name__)
-
-from pydtnn.layers.abstract.block_layer import AbstractBlockLayer
-from pydtnn.utils.constants import Array, ArrayShape
 
 
 class FeedForward[T: Array](AbstractBlockLayer[T]):

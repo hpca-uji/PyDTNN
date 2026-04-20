@@ -2,22 +2,22 @@
 # In this file must be implemented only the translation of PyTorch Activations layers to its PyDTNN equivalent.
 # _______________________________________________________________________________________________________________
 
+import pydtnn.converters.pytorch2pydtnn.common as cm
+from pydtnn.activations.tanh import Tanh as _Tanh
+from pydtnn.activations.softmax import Softmax as _Softmax
+from pydtnn.activations.sigmoid import Sigmoid as _Sigmoid
+from pydtnn.activations.leaky_relu import LeakyRelu as _LeakyRelu
+from pydtnn.activations.relu6 import Relu6 as _Relu6
+from pydtnn.activations.relu import Relu as _Relu
+from pydtnn.activations.log import Log as _Log
+from pydtnn.activations.arctanh import Arctanh as _Arctanh
+from typing import Any
 import logging
 logger = logging.getLogger(__name__)
 
 # Typing related (or non important) imports
-from typing import Any
 
 # Functionality imports
-from pydtnn.activations.arctanh import Arctanh as _Arctanh
-from pydtnn.activations.log import Log as _Log
-from pydtnn.activations.relu import Relu as _Relu
-from pydtnn.activations.relu6 import Relu6 as _Relu6
-from pydtnn.activations.leaky_relu import LeakyRelu as _LeakyRelu
-from pydtnn.activations.sigmoid import Sigmoid as _Sigmoid
-from pydtnn.activations.softmax import Softmax as _Softmax
-from pydtnn.activations.tanh import Tanh as _Tanh
-import pydtnn.converters.pytorch2pydtnn.common as cm
 # ------------------- #
 
 

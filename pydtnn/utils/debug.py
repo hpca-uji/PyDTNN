@@ -1,10 +1,9 @@
+import threading
+import functools
+import inspect
+import os
 import logging
 logger = logging.getLogger(__name__)
-
-import os
-import inspect
-import functools
-import threading
 
 
 def debug_line(*args) -> None:

@@ -1,16 +1,12 @@
+from typing import Any, override
+from pydtnn.utils.tensor import TensorFormat, format_transpose
+from pydtnn.utils.constants import ArrayShape
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.backends.pycuda.layers.abstract.conv_2d import AbstractConv2DPycuda
+from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
+import numpy as np
 import logging
 logger = logging.getLogger(__name__)
-
-import numpy as np
-
-from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
-from pydtnn.backends.pycuda.layers.abstract.conv_2d import AbstractConv2DPycuda
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.utils.constants import ArrayShape
-
-
-from pydtnn.utils.tensor import TensorFormat, format_transpose
-from typing import Any, override
 
 class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
 
@@ -23,7 +19,7 @@ class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
                 # NOTE: It is this shape, even if in the CPU version is different.
                 # self.weights_shape = (self.co, *self.filter_shape, self.ci)
             case _:
-                raise NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
+                raise NotImplementedError(f"{self.model.tensor_format} format not implemented.")
     # -----
 
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
@@ -51,7 +47,7 @@ class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
                 self.im2_func = self._get_kernel(code_file_name="conv_2d_nhwc", func_name="im2row")
                 self._2im_func = self._get_kernel(code_file_name="conv_2d_nhwc", func_name="row2im")
             case _:
-                raise NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
+                raise NotImplementedError(f"{self.model.tensor_format} format not implemented.")
 
         self.im2_x = TensorArray.new_zeros(im2_x_shape, self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype)
         self.x_2im_var = TensorArray.new_zeros(x_2im_var_shape, self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype)

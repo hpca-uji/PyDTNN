@@ -1,10 +1,10 @@
 """
 Tracer events
 """
+from enum import IntEnum, auto
 import logging
 logger = logging.getLogger(__name__)
 
-from enum import IntEnum, auto
 
 # ========================== #
 # ========= COMMON ========= #
@@ -13,9 +13,9 @@ PYDTNN_EVENT_FINISHED = 0
 # ========================== #
 
 
-# ========================== #
-# ==== PYDTNN_MDL_EVENT ==== #
-# ========================== #
+# ============================ #
+# ==== PYDTNN_MODEL_EVENT ==== #
+# ============================ #
 class PYDTNN_MDL_EVENT_enum(IntEnum):
     FORWARD = auto()  # Originally: 1
     BACKWARD = auto()  # Originally: 2
@@ -26,11 +26,11 @@ class PYDTNN_MDL_EVENT_enum(IntEnum):
 
 PYDTNN_MDL_EVENT = 60000001
 PYDTNN_MDL_EVENTS = len(PYDTNN_MDL_EVENT_enum)
-# ========================== #
+# ============================ #
 
-# ========================== #
-# ==== PYDTNN_OPS_EVENT ==== #
-# ========================== #
+# ================================ #
+# ==== PYDTNN_OPERATION_EVENT ==== #
+# ================================ #
 
 
 class PYDTNN_OPS_EVENT_enum(IntEnum):
@@ -87,8 +87,10 @@ class PYDTNN_OPS_EVENT_enum(IntEnum):
     BACKWARD_MHA = auto()  # Orginally: 50
     BACKWARD_FEEDFORWARD = auto()   # Orginally: 51
     FORWARD_ADP_AVG_POOL = auto()  # Orginally: 39
+    LAYER_ENCODE = auto()
+    LAYER_DECODE = auto()
 
 
 PYDTNN_OPS_EVENT = 60000002
 PYDTNN_OPS_EVENTS = len(PYDTNN_OPS_EVENT_enum)
-# ========================== #
+# ================================ #

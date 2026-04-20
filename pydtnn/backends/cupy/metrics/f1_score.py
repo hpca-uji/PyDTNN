@@ -1,12 +1,13 @@
+from typing import TYPE_CHECKING
+from pydtnn.libs import numpy as np
+from pydtnn.backends.numpy.metrics.f1_score import F1ScoreNumpy
+from pydtnn.backends.cupy.metrics.metric import MetricCupy
 import logging
 logger = logging.getLogger(__name__)
 
-from pydtnn.backends.cupy.metrics.metric import MetricCupy
-from pydtnn.backends.numpy.metrics.f1_score import F1ScoreNumpy
-from pydtnn.libs import numpy as np
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import numpy as np
+
 
 class F1ScoreCupy(F1ScoreNumpy, MetricCupy):
 

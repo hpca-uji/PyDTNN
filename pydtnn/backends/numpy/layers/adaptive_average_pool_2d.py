@@ -1,22 +1,23 @@
+from typing import TYPE_CHECKING
+from pydtnn.libs import numpy as np
+from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
+from pydtnn.utils.tensor import TensorFormat
+from pydtnn.utils.constants import ArrayShape
+from pydtnn.backends.numpy.layers.layer import LayerNumpy
+from pydtnn.layers.adaptive_average_pool_2d import AdaptiveAveragePool2D
+from pydtnn.backends.numpy.layers.abstract.pool_2d_layer import AbstractPool2DLayerNumpy
 import logging
 logger = logging.getLogger(__name__)
 
-from pydtnn.layers.adaptive_average_pool_2d import AdaptiveAveragePool2D
-from pydtnn.backends.numpy.layers.layer import LayerNumpy
-from pydtnn.utils.constants import ArrayShape
 
 # Imports for the method from AbstractPool2DLayerNumpy
-from pydtnn.utils.tensor import TensorFormat
 
 # Imports for the methods from AveragePool2DNumpy
-from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
-from pydtnn.libs import numpy as np
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import numpy as np
 
 
-class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], LayerNumpy):
+class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], AbstractPool2DLayerNumpy):
     # The backend is almost the same as a AveragePool2D layer.
 
     def __init__(self, *args, **kwargs):
@@ -41,7 +42,7 @@ class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], LayerNumpy):
                 self._forward = self._forward_nhwc
                 self._backward = self._backward_nhwc
             case _:
-                raise NotImplementedError(f"\"AdaptiveAveragePool2DNumpy\" is not implemented for \"{self.model.tensor_format}\" format.")
+                raise NotImplementedError(f"AdaptiveAveragePool2DNumpy is not implemented for {self.model.tensor_format} format.")
 
         y_shape = self.model.encode_shape((self.model.batch_size, self.co, self.ho, self.wo))
         # NOTE: This attribute only stores data, its value before the operation doesn't matter; it's initalized due avoid warnings in "LayerAndActivationBase.export".

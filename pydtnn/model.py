@@ -1,59 +1,60 @@
 """
 PyDTNN model
 """
+from pydtnn.utils.memory_pool import PrivateMemory, PreallocMemory
+from pydtnn.metrics.metric import Metric
+from pydtnn.utils.constants import Array, NetworkAlgEnum, ArrayShape, Parameters
+from pydtnn.utils.tensor import SampleFormat, TensorFormat, format_reshape, encode_shape, encode_tensor, decode_shape, decode_tensor
+from pydtnn.utils.performance_counter import PerformanceCounter
+from pydtnn.tracers.tracer import Tracer
+from pydtnn.tracers.simple_tracer_pmlib import SimpleTracerPMLib
+from pydtnn.tracers.simple_tracer_gpu import SimpleTracerPycuda
+from pydtnn.tracers.simple_tracer import SimpleTracer
+from pydtnn.tracers.extrae_tracer import ExtraeTracer
+from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
+from pydtnn.utils.performance_models import allreduce_time
+from pydtnn.parser import PydtnnArgumentParser
+from pydtnn.backends.fuse.layers.layer import select as select_fuse_layer
+from pydtnn.schedulers.scheduler import select as select_scheduler
+from pydtnn.models.model import select as select_model
+from pydtnn.metrics.metric import select as select_metric
+from pydtnn.optimizers.optimizer import select as select_optimizer
+from pydtnn.losses.loss import select as select_loss
+from pydtnn.datasets.dataset import select as select_dataset
+from pydtnn.losses.loss import Loss
+from pydtnn.layers.conv_2d import Conv2D
+from pydtnn.layers.batch_normalization import BatchNormalization
+from pydtnn.backends.fuse.layers.layer import LayerFuse as FusedLayerMixIn
+from pydtnn.abstract.layerable import Layerable
+from pydtnn.datasets.dataset import Dataset
+from pydtnn.libs.mpi.rc import proto as PROTOCOL
+from pydtnn.activations.relu import Relu
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn import utils
+from pydtnn import hostname, ranks_per_node, num_gpus, nccl_comm, cudnn_handle, cublas_handle, context, stream
+from pydtnn import MPI_MODULE, Cudnn_Handle_Type, Cublas_Handle_Type, MPI, drv, gpuarray, nccl, cudnn, cublas  # type: ignore (cublas exist)
+from tqdm import tqdm
+import numpy as np
+from collections import abc
+from warnings import warn
+from typing import TYPE_CHECKING, Any, Literal
+from types import ModuleType
+from timeit import default_timer as timer
+from functools import reduce
+import time
+import operator
+import itertools
+import enum
 import logging
 logger = logging.getLogger(__name__)
 
-import enum
-import itertools
-import operator
-import time
-from functools import reduce
-from timeit import default_timer as timer
-from types import ModuleType
-from typing import TYPE_CHECKING, Any, Literal
-from warnings import warn
-from collections import abc
 
-#from warnings import filterwarnings
-#filterwarnings("error")
+# from warnings import filterwarnings
+# filterwarnings("error")
 
-import numpy as np
-from tqdm import tqdm
 
 # TODO: Check if all the elements imported here are necessary and if they are corretly set in Model's code.
-from pydtnn import MPI_MODULE, Cudnn_Handle_Type, Cublas_Handle_Type, MPI, drv, gpuarray, nccl, cudnn, cublas  # type: ignore (cublas exist)
-from pydtnn import hostname, ranks_per_node, num_gpus, nccl_comm, cudnn_handle, cublas_handle, context, stream
 
-from pydtnn import utils
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.activations.relu import Relu
-from pydtnn.libs.mpi import proto as PROTOCOL
-from pydtnn.datasets.dataset import Dataset
-from pydtnn.layer_base import LayerBase, FusedLayerMixIn
-from pydtnn.layers.batch_normalization import BatchNormalization
-from pydtnn.layers.conv_2d import Conv2D
-from pydtnn.losses.loss import Loss
-from pydtnn.datasets.dataset import select as select_dataset
-from pydtnn.losses.loss import select as select_loss
-from pydtnn.optimizers.optimizer import select as select_optimizer
-from pydtnn.metrics.metric import select as select_metric
-from pydtnn.models.model import select as select_model
-from pydtnn.schedulers.scheduler import select as select_scheduler
-from pydtnn.backends.fuse.layers import select as select_fuse_layer
-from pydtnn.parser import PydtnnArgumentParser
-from pydtnn.utils.performance_models import allreduce_time
-from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
-from pydtnn.tracers.extrae_tracer import ExtraeTracer
-from pydtnn.tracers.simple_tracer import SimpleTracer
-from pydtnn.tracers.simple_tracer_gpu import SimpleTracerPycuda
-from pydtnn.tracers.simple_tracer_pmlib import SimpleTracerPMLib
-from pydtnn.tracers.tracer import Tracer
-from pydtnn.utils.performance_counter import PerformanceCounter
-from pydtnn.utils.tensor import SampleFormat, TensorFormat, format_reshape, encode_shape, encode_tensor, decode_shape, decode_tensor
-from pydtnn.utils.constants import Array, NetworkAlgEnum, ArrayShape, Parameters
-from pydtnn.metrics.metric import Metric
-from pydtnn.utils.memory_pool import PrivateMemory, PreallocMemory
 
 if TYPE_CHECKING:
     import polyhe
@@ -261,7 +262,7 @@ class Model[T: Array]:
         self.perf_counter = PerformanceCounter()
 
         # Layers' attributes
-        self.layers: list[LayerBase] = []
+        self.layers: list[Layerable] = []
         self.layer_id_generator: abc.Iterator[int] = iter(itertools.count())
 
         # Set current mode to unspecified
@@ -429,19 +430,14 @@ class Model[T: Array]:
         self.stream = stream
         self.cudnn_dtype = cudnn_dtype
 
-    def _ensure_model_init(self) -> None:
-        # TODO: Mirar de combinar la comprobación con "_model_init"
-        # TODO: añadir aquí lo siguiente (si es necesario hacerlo aquí):
-        #input_shape = format_reshape(self.dataset.input_shape, SampleFormat.CHW, self.tensor_format.as_sample())  # type: ignore
-        if self._is_model_init:
-            return
-        self._model_init()
-        are_layers = bool(self.layers)
-        if not are_layers:
-            logger.warning("The model has no layers in it.")
-            warn("The model has no layers in it.", RuntimeWarning)
+    def _ensure_model_runable(self) -> None:
+        if not self.layers:
+            warn_text = "The model has no layers in it."
+            logger.warning(warn_text)
+            warn(warn_text, RuntimeWarning)
         elif not self.dataset:
             raise ValueError("There is no dataset and the model has layers.")
+        self._model_init()
 
     @property
     def dataset_path(self) -> str:
@@ -471,8 +467,9 @@ class Model[T: Array]:
 
         assert crypt is not None
         if self.enable_nccl:
-            logger.warning("If NCCL is active, encryption is disabled")
-            warn("If NCCL is active, encryption is disabled", RuntimeWarning)
+            warn_text = "If NCCL is active, encryption is disabled"
+            logger.warning(warn_text)
+            warn(warn_text, RuntimeWarning)
 
         return crypt
 
@@ -483,24 +480,19 @@ class Model[T: Array]:
         # Change input_shape to model.tensor_format
         input_shape = format_reshape(self.dataset.input_shape, SampleFormat.CHW, self.tensor_format.as_sample())  # type: ignore
         if len(input_shape) != 3:
-            logger.warning(f"Input layer does not have 3 dimensions ({input_shape}), it may cause issues!")
-            warn(f"Input layer does not have 3 dimensions ({input_shape}), it may cause issues!", RuntimeWarning)
+            warn_text = f"Input layer does not have 3 dimensions ({input_shape}), it may cause issues!"
+            logger.warning(warn_text)
+            warn(warn_text, RuntimeWarning)
         launch_shape_warning = len(input_shape) == 3 and not (input_shape[0] > input_shape[2]) if self.tensor_format is TensorFormat.NHWC \
             else len(input_shape) == 3 and not (input_shape[0] < input_shape[1])
         if launch_shape_warning:
-            warning_text = f"Input layer shape {input_shape} may not be in {self.tensor_format} format, regardless of model format! "
-            logger.warning(warning_text)
-            warn(warning_text, RuntimeWarning)
-            warning_text = None
+            warn_text = f"Input layer shape {input_shape} may not be in {self.tensor_format} format, regardless of model format! "
+            logger.warning(warn_text)
+            warn(warn_text, RuntimeWarning)
         output_shape = tuple(self.dataset.output_shape)
-
-        self.input_shape = input_shape
-        self.output_shape = output_shape
 
         layers = create_model(input_shape, output_shape)
         self.add_layers(layers)  # type: ignore
-
-        self._model_init()
 
     def encode_shape(self, shape: ArrayShape) -> ArrayShape:
         """Transform the shape from `NCHW` order to `model.tensor_format` order (supports 4 or 3 dimensions)"""
@@ -634,34 +626,33 @@ class Model[T: Array]:
         sep += "+"
 
         # Show header
-        _show = list[str]()
+        _show = [""]
         _show.append(sep)
-        _show.append('\n')
+        _show.append("")
         for header, size in struct.items():
-            _show.append(f"|{header.replace('-', ' ').capitalize():^{size}s}")
-        _show.append("\n|\n")
+            _show[-1] += (f"|{header.replace('-', ' ').capitalize():^{size}s}")
+        _show[-1] += ("|")
 
         # Show layers
         top_layers = {layer.id for layer in self.layers}
         for layer_id, props in all_props.items():
             if layer_id in top_layers:
                 _show.append(sep)
-                _show.append('\n')
+            _show.append("")
             for header, size in struct.items():
                 value = props.get(header, "")
-                _show.append(f"|{str(value):^{size}s}")
-            _show.append("\n|\n")
+                _show[-1] += (f"|{str(value):^{size}s}")
+            _show[-1] += ("|")
         _show.append(sep)
-        _show.append('\n\n')
-        logger.info(''.join(_show))
+        logger.info('\n'.join(_show))
 
     def show_model(self) -> None:
         key: str = "Model Summary"
-        _show = list[str]()
-        _show.append(key + "\n" + "=" * len(key))
+        _show = [""]
+        _show.append(key)
+        _show.append("=" * len(key))
         for key, value in self._show_props().items():
             _show.append(f"- {key.replace('-', ' ').capitalize()}: {value}")
-        _show.append("")
         logger.info('\n'.join(_show))
 
     def show(self) -> None:
@@ -674,7 +665,7 @@ class Model[T: Array]:
         for layer in self.layers:
             layer.print_in_convdirect_format()
 
-    def add(self, layer: LayerBase[T]) -> None:
+    def add(self, layer: Layerable[T]) -> None:
         layer._init_backend_with_model(self)
 
         if self.layers:
@@ -694,12 +685,12 @@ class Model[T: Array]:
         if layer.act:
             self.add(layer.act())
 
-    def add_layers(self, list_layers: list[LayerBase[T]]) -> None:
+    def add_layers(self, list_layers: list[Layerable[T]]) -> None:
         for layer in list_layers:
             self.add(layer)
     # --- END add_layers ---
 
-    def get_all_layers(self, from_layers: list[LayerBase[T]] | None = None) -> list[LayerBase[T]]:
+    def get_all_layers(self, from_layers: list[Layerable[T]] | None = None) -> list[Layerable[T]]:
         if from_layers is None:
             from_layers = self.layers
         this_recursion_layers = []
@@ -709,7 +700,7 @@ class Model[T: Array]:
             this_recursion_layers += self.get_all_layers(children)
         return this_recursion_layers
 
-    def _select_fusion_3(self, fused_layers: list) -> tuple[str | None, list[LayerBase | FusedLayerMixIn | None]]:
+    def _select_fusion_3(self, fused_layers: list) -> tuple[str | None, list[Layerable | FusedLayerMixIn | None]]:
         layer2 = fused_layers[-1] if len(fused_layers) > 0 else None
         layer1 = fused_layers[-2] if len(fused_layers) > 1 else None
         layer0 = fused_layers[-3] if len(fused_layers) > 2 else None
@@ -727,7 +718,7 @@ class Model[T: Array]:
         return layer_name, [layer0, layer1, layer2]
     # ----
 
-    def _select_fusion_2(self, fused_layers: list) -> tuple[str | None, list[LayerBase | FusedLayerMixIn | None]]:
+    def _select_fusion_2(self, fused_layers: list) -> tuple[str | None, list[Layerable | FusedLayerMixIn | None]]:
         layer2 = fused_layers[-1] if len(fused_layers) > 0 else None
         layer1 = fused_layers[-2] if len(fused_layers) > 1 else None
 
@@ -753,7 +744,7 @@ class Model[T: Array]:
         return layer_name, [layer1, layer2]
     # ----
 
-    def __layer_fusion(self, layers: list[LayerBase], switch_fusion: abc.Callable) -> None:
+    def __layer_fusion(self, layers: list[Layerable], switch_fusion: abc.Callable) -> None:
         i = 0
         while i < len(layers):
             curr_layer = layers[i]
@@ -775,8 +766,9 @@ class Model[T: Array]:
                 try:
                     new_curr_layer._model_init(prev_shape=layers_to_fuse[0].prev_shape, x=layers_to_fuse[0].x)
                 except Exception as e:
-                    logger.warning(f"Aborted fusion, {e}")
-                    warn(f"Aborted fusion, {e}")
+                    warn_text = f"Aborted fusion, {e}"
+                    logger.warning(warn_text)
+                    warn(warn_text, RuntimeWarning)
                 else:
                     start = i - len(layers_to_fuse)
                     del layers[start: i]
@@ -865,8 +857,9 @@ class Model[T: Array]:
 
         model_name = str(data.get(Parameters.MODEL_NAME))
         if model_name != self.model_name:
-            logger.warning(f"Importing from different models! (self: {self.model_name}, got: {model_name})")
-            warn(f"Importing from different models! (self: {self.model_name}, got: {model_name})", RuntimeWarning)
+            warn_text = f"Importing from different models! (self: {self.model_name}, got: {model_name})"
+            logger.warning(warn_text)
+            warn(warn_text, RuntimeWarning)
 
         for layer, data in zip(self.layers, data[Parameters.LAYERS]):
             layer.import_(data)  # type: ignore (It is the right data type.)
@@ -970,27 +963,23 @@ class Model[T: Array]:
     def _weight_update(self, gradient=True, blocking=True):
         if blocking:
             for layer in self.layers:
-                self.tracer.emit_event(PYDTNN_MDL_EVENT,
-                                       layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.ALLREDUCE_DW)
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.ALLREDUCE_DW)
                 layer.reduce_weights_sync(gradient=gradient)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
         else:
             for layer in self.layers:
-                self.tracer.emit_event(PYDTNN_MDL_EVENT,
-                                       layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.ALLREDUCE_DW)
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.ALLREDUCE_DW)
                 layer.reduce_weights_async(gradient=gradient)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
             for layer in self.layers:
-                self.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT],
-                                        [layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.WAIT_DW,
-                                        layer.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.OPS_ALLREDUCE_DW])
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.WAIT_DW)
                 layer.wait_allreduce_async(gradient=gradient)
-                self.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT], [PYDTNN_EVENT_FINISHED, PYDTNN_EVENT_FINISHED])
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
     def train(self, bar_width=BAR_WIDTH) -> dict[str, list[np.ndarray]]:
-        self._ensure_model_init()
+        self._ensure_model_runable()
 
         # If working with CUDA, self.y_batch must be in a GPU's data structure.
         if self.enable_cudnn and self.y_batch is None:
@@ -1238,7 +1227,7 @@ class Model[T: Array]:
                 else:
                     return 0.0
             case _:
-                raise ValueError(f"Model synchronization participation option '{self.model_sync_participation}' not recognized. Only recognized: \"{list(Model.SyncParticipation)}\"")
+                raise ValueError(f"Model synchronization participation option '{self.model_sync_participation}' not recognized. Only recognized: {list(Model.SyncParticipation)}")
 
         min_nsamples, max_nsamples, total_nsamples = min(comm_nsamples), max(comm_nsamples), sum(comm_nsamples)
         comm_size = len(comm_nsamples)
@@ -1252,7 +1241,7 @@ class Model[T: Array]:
                 inverse_nsamples = min_nsamples + (max_nsamples - self.dataset._nsamples[part])
                 return inverse_nsamples / total_nsamples
             case _:
-                raise ValueError(f"Model synchronization algorithm option '{self.model_sync_alg}' not recognized. Only recognized: \"{list(Model.SyncAlg)}\"")
+                raise ValueError(f"Model synchronization algorithm option '{self.model_sync_alg}' not recognized. Only recognized: {list(Model.SyncAlg)}")
 
     def _evaluate_batch(self, x_batch: np.ndarray, y_batch: np.ndarray, sync_model=True) -> np.ndarray:
         self.mode = Model.Mode.EVALUATE
@@ -1283,7 +1272,7 @@ class Model[T: Array]:
         return self.total_metrics
 
     def evaluate(self, bar_width=BAR_WIDTH):
-        self._ensure_model_init()
+        self._ensure_model_runable()
 
         if self.enable_cudnn and self.y_batch is None:
             assert gpuarray and self.cudnn_dtype

@@ -1,12 +1,12 @@
+from pydtnn.utils.constants import Array, ArrayShape, Parameters
+from pydtnn.utils.initializers import InitializerFunc, glorot_uniform, zeros
+from pydtnn.layers.layer import Layer
+from typing import TYPE_CHECKING
 import logging
 logger = logging.getLogger(__name__)
 
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from pydtnn.activations.activation import Activation
-from pydtnn.layers.layer import Layer
-from pydtnn.utils.initializers import InitializerFunc, glorot_uniform, zeros
-from pydtnn.utils.constants import Array, ArrayShape, Parameters
 
 
 class FC[T: Array](Layer[T]):

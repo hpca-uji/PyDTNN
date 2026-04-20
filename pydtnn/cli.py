@@ -4,21 +4,23 @@
 PyDTNN Benchmark script
 """
 
+import numpy as np
+import yaml
+from contextlib import contextmanager, nullcontext
+from traceback import TracebackException
+from datetime import datetime
+from pathlib import Path
+from importlib import resources
+import logging.config
+import cProfile
+import time
+import sys
+import os
 import logging
+
+from pydtnn import utils
 logger = logging.getLogger(__name__)
 
-import os
-import sys
-import time
-import cProfile
-import logging.config
-from importlib import resources
-from pathlib import Path
-from datetime import datetime
-from traceback import TracebackException
-from contextlib import contextmanager, nullcontext
-
-from yaml import safe_load
 
 ompi_stdout_rank = os.environ.get("OMPI_STDOUT_RANK", None)
 if ompi_stdout_rank and os.environ.get("OMPI_COMM_WORLD_RANK", "0") != ompi_stdout_rank:
@@ -50,6 +52,14 @@ def print_model_reports(model):
     #     BestOf.print_report()
 
 
+class HistoryDumper(yaml.SafeDumper):
+    def represent_ndarray(self, data):
+        return self.represent_scalar('!ndarray', repr(data), style="|")
+
+
+HistoryDumper.add_representer(np.ndarray, HistoryDumper.represent_ndarray)
+
+
 @contextmanager
 def traceback_context():
     try:
@@ -63,7 +73,7 @@ def traceback_context():
 
 
 def main():
-    log_conf = safe_load(resources.read_text("pydtnn", "logging.yaml"))
+    log_conf = yaml.safe_load(resources.read_text("pydtnn", "logging.yaml"))
     logging.config.dictConfig(log_conf)
 
     from pydtnn.model import Model
@@ -139,13 +149,15 @@ def main():
             logger.info(f'Training and validation time per epoch: {total_time / model.perf_counter.num_epochs:5.4f} s')
             logger.info(f'Training and validation throughput: '
                         f'{(model.dataset.train_nsamples * model.perf_counter.num_epochs) / total_time:5.4f} samples/s')
-        if model.history_file:
-            with open(model.history_file, "w") as f:
-                epochs = max(len(v) for v in history.values())
-                for epoch in range(epochs):
-                    f.write(f"epoch: {epoch}\n")
-                    for key in history:
-                        f.write(f"    {key}: {history[key][epoch]}\n")
+    # Store history information
+    history_file = utils.string_substitute(model.history_file, rank=model.comm_rank)
+    if history_file != model.history_file or model.comm_rank == 0:
+        events = []
+        epochs = max(len(v) for v in history.values())
+        for epoch in range(epochs):
+            events.append({"epoch": epoch} | {key: history[key][epoch] for key in history})
+        with open(history_file, "w") as f:
+            yaml.dump_all(events, f, HistoryDumper, allow_unicode=True, sort_keys=False)
     # Second (and last) evaluation
     if model.evaluate_on_train:
         if model.comm_rank == 0:

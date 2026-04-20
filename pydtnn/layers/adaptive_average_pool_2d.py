@@ -1,9 +1,9 @@
+import math
+from pydtnn.utils.constants import Array, ArrayShape
+from pydtnn.layers.layer import Layer, LayerError
 import logging
 logger = logging.getLogger(__name__)
 
-from pydtnn.layers.layer import Layer, LayerError
-from pydtnn.utils.constants import Array, ArrayShape
-import math
 
 class AdaptiveAveragePool2D[T: Array](Layer):
 

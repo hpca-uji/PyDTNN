@@ -1,13 +1,10 @@
+from pydtnn.utils import print_with_header, random
+from pydtnn.tests.abstract.common import verbose_test, D, alexnet_layers, TestCase
+from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython
+import numpy as np
+import inspect
 import logging
 logger = logging.getLogger(__name__)
-
-import inspect
-
-import numpy as np
-
-from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython
-from pydtnn.tests.abstract.common import verbose_test, D, alexnet_layers, TestCase
-from pydtnn.utils import print_with_header, random
 
 
 class ConvCommonTestCase(TestCase):

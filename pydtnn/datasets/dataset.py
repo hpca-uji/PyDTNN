@@ -1,21 +1,18 @@
+from pydtnn.utils.constants import ArrayShape
+from pydtnn.utils import BackgroundGenerator, find_component, random
+from pydtnn.utils.tensor import ChannelFormat, SampleFormat, TensorFormat, format_transpose
+import rapidgzip
+from PIL import Image
+import numpy as np
+from enum import IntEnum
+from typing import TYPE_CHECKING, Generator, IO, Callable
+import functools
+import itertools
+import warnings
+from pathlib import Path
 import logging
 logger = logging.getLogger(__name__)
 
-from pathlib import Path
-import warnings
-import itertools
-import functools
-
-from typing import TYPE_CHECKING, Generator, IO, Callable
-from enum import IntEnum
-
-import numpy as np
-from PIL import Image
-import rapidgzip
-
-from pydtnn.utils.tensor import ChannelFormat, SampleFormat, TensorFormat, format_transpose
-from pydtnn.utils import BackgroundGenerator, find_component, random
-from pydtnn.utils.constants import ArrayShape
 
 if TYPE_CHECKING:
     from pydtnn.model import Model
@@ -292,7 +289,7 @@ class Dataset:
             report.append(f" {desc[part]} offset: {self._local_offset[part]}")
             report.append(f" {desc[part]} local nsamples: {self._local_nsamples[part]}")
             report.append(f" {desc[part]} nsamples: {self._nsamples[part]}")
-        
+
         logger.info('\n'.join(report))
 
     def _compute_local_workload(self, nsamples: int):
@@ -457,7 +454,7 @@ class Dataset:
             case TensorFormat.NHWC:
                 width_dim = 2
             case _:
-                raise NotImplementedError(f"\"Dataset _do_flip_image\" is not implemented for \"{self.model.tensor_format}\" format.")
+                raise NotImplementedError(f"Dataset _do_flip_image is not implemented for {self.model.tensor_format} format.")
 
         limit = min(n, int(n * self.model.augment_flip_prob))
         s = np.arange(n)
@@ -493,7 +490,7 @@ class Dataset:
                     data[ri, :t[i], :ll[i], :] = 0.0
                     data[ri, b:, r:, :] = 0.0
                 case _:
-                    raise NotImplementedError(f"\"Dataset _do_crop_images\" is not implemented for \"{self.model.tensor_format}\" format.")
+                    raise NotImplementedError(f"Dataset _do_crop_images is not implemented for {self.model.tensor_format} format.")
             data[ri, ...] = np.roll(data[ri, ...], random.integers(-t[i], (h - b)), axis=1)
             data[ri, ...] = np.roll(data[ri, ...], random.integers(-ll[i], (w - r)), axis=2)
         return data

@@ -3,12 +3,13 @@ import typing
 import importlib
 
 from pydtnn import utils
+from pydtnn.utils.constants import Array
 
 if typing.TYPE_CHECKING:
     from pydtnn import model as model_module
 
 
-class PromoteToBackend:
+class Base[T: Array]:
     _backend: typing.Self
     _frontend: typing.Self
 

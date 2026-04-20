@@ -1,12 +1,11 @@
+from pydtnn.utils.constants import ArrayShape
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.backends.pycuda.layers.layer import LayerPycuda
+from pydtnn.layers.input import Input
+from pycuda import gpuarray  # type: ignore
+import numpy as np
 import logging
 logger = logging.getLogger(__name__)
-
-from pycuda import gpuarray  # type: ignore
-
-from pydtnn.layers.input import Input
-from pydtnn.backends.pycuda.layers.layer import LayerPycuda
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.utils.constants import ArrayShape
 
 
 class InputPycuda(Input[TensorArray], LayerPycuda):
@@ -24,3 +23,29 @@ class InputPycuda(Input[TensorArray], LayerPycuda):
 
     def backward(self, dy: TensorArray) -> TensorArray:
         return dy
+
+    def _sync_x_y(self, x_batch: np.ndarray, y_batch: np.ndarray) -> tuple[TensorArray, TensorArray]:
+        # NOTE: in CUDA it's necessary to always have batches of the same size.
+        local_batch_size = x_batch.shape[0]
+
+        if local_batch_size != 0:
+            if local_batch_size != self.model.batch_size:
+                # NOTE: if x_batch is empty (local_batch_size == 0), this will mean the end of the loop where this function is called.
+                num_repetitions = np.ceil(self.model.batch_size / local_batch_size)
+                x_batch = np.repeat(x_batch, num_repetitions, axis=0)[:self.model.batch_size]
+                y_batch = np.repeat(y_batch, num_repetitions, axis=0)[:self.model.batch_size]
+            # else: The batch has the right shape ==> Nothing to do.
+
+            x_batch = np.asarray(x_batch, dtype=self.model.dtype, order="C")
+            y_batch = np.asarray(y_batch, dtype=self.model.dtype, order="C")
+
+            assert isinstance(self.y, TensorArray) and isinstance(self.model.y_batch, TensorArray)
+            self.y.ary.set(x_batch)
+            self.model.y_batch.ary.set(y_batch)
+            x, y_targ = self.model.layers[0].y, self.model.y_batch
+        else:
+            empty_x = gpuarray.zeros((1, *self.model.dataset.input_shape), self.model.dtype)[:0]
+            empty_y_tag = gpuarray.zeros((1, *self.model.dataset.output_shape), self.model.dtype)[:0]
+            x = TensorArray(empty_x, self.model.tensor_format, self.model.cudnn_dtype)
+            y_targ = TensorArray(empty_y_tag, self.model.tensor_format, self.model.cudnn_dtype)
+        return x, y_targ

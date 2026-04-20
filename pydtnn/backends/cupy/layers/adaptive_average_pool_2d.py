@@ -1,18 +1,19 @@
+from pydtnn.utils.constants import ArrayShape
+from typing import TYPE_CHECKING
+from pydtnn.libs import numpy as np
+from pydtnn.utils.constants import DTYPE2CTYPE
+from pydtnn.backends.numpy.layers.adaptive_average_pool_2d import AdaptiveAveragePool2DNumpy
+from pydtnn.backends.cupy.layers.layer import LayerCupy
+from pydtnn.backends.cupy.layers.abstract.pool_2d_layer import AbstractPool2DLayerCupy
 import logging
 logger = logging.getLogger(__name__)
 
-from pydtnn.backends.cupy.layers.layer import LayerCupy
-from pydtnn.backends.numpy.layers.adaptive_average_pool_2d import AdaptiveAveragePool2DNumpy
 
-from pydtnn.utils.constants import DTYPE2CTYPE
-from pydtnn.libs import numpy as np
-from typing import TYPE_CHECKING
-
-from pydtnn.utils.constants import ArrayShape
 if TYPE_CHECKING:
     import numpy as np
 
-class AdaptiveAveragePool2DCupy(AdaptiveAveragePool2DNumpy, LayerCupy):
+
+class AdaptiveAveragePool2DCupy(AdaptiveAveragePool2DNumpy, AbstractPool2DLayerCupy, LayerCupy):
 
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
         super()._model_init(prev_shape, x)
