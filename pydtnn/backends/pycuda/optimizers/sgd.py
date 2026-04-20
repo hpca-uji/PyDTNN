@@ -32,26 +32,9 @@ class SGDPycuda(SGD[TensorArray], OptimizerPycuda):
         # ------------
 
         # GPU Direct -
-        _name = "SGD_kernel_gpudirect"
-        code = """
-        __global__ void {name}({T} *w, {T} *dw, {T} *v,
-                            float lr, float decay, float momentum, int N)
-        {{
-            int i = blockIdx.x * blockDim.x + threadIdx.x;
-            if (i < N)
-            {{
-                v[i] = momentum * v[i] + dw[i];
-                {nesterov_ops};
-            }}
-        }}
-        """.format(
-            T=DTYPE2CTYPE[self.model.dtype],
-            nesterov_ops=({True: "w[i] -= lr * (decay * w[i] + dw[i] + momentum * v[i])",
-                           False: "w[i] -= lr * (decay * w[i] + v[i])"}[self.nesterov]),
-            name=_name
-        )
-
-        self.update_gpudirect = SourceModule(code).get_function(_name)
+        self.defines_replaces: dict[str, str] = {"\"TYPE\"": DTYPE2CTYPE[self.model.dtype],
+                                                 "NESTEROV_OPS" : "NESTEROV_OPS" if self.nesterov else "NOT_NESTEROV"}
+        self.update_gpudirect = self._get_kernel(func_name_subfix="_gpu_direct")
         # ------------
 
     def _model_init(self, list_layers: list[LayerPycuda]) -> None:
@@ -78,12 +61,10 @@ class SGDPycuda(SGD[TensorArray], OptimizerPycuda):
 
             if self.gpudirect:
                 n = self.get_batch_size(w)
-                threads, blocks = self.get_threads_and_blocks()
-
                 self.update_gpudirect(w.ary.gpudata, dw.ptr_intp, velocity.gpudata,
                                       np.float32(self.learning_rate), np.float32(self.decay),
                                       np.float32(self.momentum), np.int32(n),
-                                      grid=(int(blocks), 1, 1), block=(int(threads), 1, 1),
+                                      self.model.cuda_grid, block=self.model.cuda_block,
                                       stream=layer.stream_2)
             else:
                 n = np.int32(np.prod(w.shape))

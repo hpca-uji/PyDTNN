@@ -1,4 +1,6 @@
 import logging
+
+from pydtnn.utils.uses_cuda import PyCudaCudaCode
 logger = logging.getLogger(__name__)
 
 from pydtnn.activations.relu6 import Relu6
@@ -14,7 +16,7 @@ from pycuda.compiler import SourceModule  # type: ignore
 from pycuda.driver import Function  # type: ignore
 import math
 
-class Relu6Pycuda(Relu6[TensorArray], ActivationPycuda):
+class Relu6Pycuda(Relu6[TensorArray], ActivationPycuda, PyCudaCudaCode):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -33,71 +35,13 @@ class Relu6Pycuda(Relu6[TensorArray], ActivationPycuda):
 
         self.memory_used += self.y.nbytes + self.mask.nbytes
 
-        self.cuda_fwd_func = self.cuda_adaptive_average_pooling_fwd(dtype=self.model.dtype)
-        self.cuda_bwd_func = self.cuda_adaptive_average_pooling_bwd(dtype=self.model.dtype)
+        self.defines_replaces = {"\"TYPE\"": DTYPE2CTYPE[self.model.dtype]}
+        self.cuda_fwd_func = self._fwd_kernel()
+        self.cuda_bwd_func = self._bwd_kernel()
 
         self.total_num_threads = np.int32(math.prod(self.grid) * math.prod(self.block))
 
         self.initialize_relu_2d_gpu(prev_shape)
-    # ----
-
-    def cuda_adaptive_average_pooling_fwd(self, dtype: np.dtype) -> Function:
-        _func_name = "cuda_relu6_fwd"
-        _t = DTYPE2CTYPE[dtype]  # variable Type
-
-        code = \
-            """
-__global__ void {func_name}({T}* x, {T}* max, {T}* mask,
-                            float cap, int num_workers, int N)
-{{
-    int i;
-    {T} elem;
-
-    for(i = blockIdx.x * blockDim.x + threadIdx.x; i < N; i += num_workers)
-    {{
-        elem = x[i];
-
-        if(elem >= cap)
-        {{
-            max[i] = ({T}) cap;
-            mask[i] = 1;
-        }}
-        else if (elem > 0)
-        {{
-            max[i] = elem;
-            mask[i] = 1;
-        }}
-        else
-        {{
-            max[i] = 0;
-            mask[i] = 0;
-        }}
-    }}
-}}
-"""
-        code = code.format(func_name=_func_name, T=_t)
-
-        return SourceModule(code).get_function(_func_name)
-    # ----
-
-    def cuda_adaptive_average_pooling_bwd(self, dtype: np.dtype) -> Function:
-        _func_name = "cuda_relu6_bwd"
-        _t = DTYPE2CTYPE[dtype]  # variable Type
-
-        code = \
-            """
-__global__ void {func_name}({T}* dx, {T}* dy, {T}* mask,
-                            int num_workers, int N)
-{{
-    int i;
-
-    for(i = blockIdx.x * blockDim.x + threadIdx.x; i < N; i += num_workers)
-        dx[i] = dy[i] * mask[i];
-}}
-"""
-        code = code.format(func_name=_func_name, T=_t)
-
-        return SourceModule(code).get_function(_func_name)
     # ----
 
     def forward(self, x: TensorArray) -> TensorArray:

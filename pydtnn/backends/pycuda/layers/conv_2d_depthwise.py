@@ -4,15 +4,14 @@ logger = logging.getLogger(__name__)
 import numpy as np
 
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
-from pydtnn.backends.pycuda.layers.abstract.conv_2d import AbstractConv2DPycuda, MACROS_NCHW, MACROS_NHWC
+from pydtnn.backends.pycuda.layers.abstract.conv_2d import AbstractConv2DPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.utils.constants import ArrayShape, DTYPE2CTYPE
+from pydtnn.utils.constants import ArrayShape
 
 from pydtnn.utils.tensor import TensorFormat
 from typing import Any, override
 
 from pycuda import gpuarray  # type: ignore
-from pycuda.compiler import SourceModule  # type: ignore
 from pycuda.driver import Function  # type: ignore
 
 class Conv2DDepthwisePycuda(AbstractConv2DPycuda):
@@ -25,22 +24,17 @@ class Conv2DDepthwisePycuda(AbstractConv2DPycuda):
 
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
         super()._model_init(prev_shape, x)
-
-        func_name: str = ""
-        macros: str = ""
         self.bias_sum_bwd: Function = None
 
         match self.model.tensor_format:
             case TensorFormat.NCHW:
-                func_name = "cuda_depthwise_conv_2d_{fwd_bwd}_nchw"
-                macros = MACROS_NCHW
-                self.bias_sum_bwd = self.cuda_sum_bias_axis_023()
+                #self.bias_sum_bwd = self.cuda_sum_bias_axis_023()
+                self.bias_sum_bwd = self._get_kernel(code_file_name="conv2d", func_name="cuda_sum_bias_axis_023")
                 self.forward = self._forward_depthwise_nchw
                 self.backward = self._backward_depthwise_nchw
             case TensorFormat.NHWC:
-                func_name = "cuda_depthwise_conv_2d_{fwd_bwd}_nhwc"
-                macros = MACROS_NHWC
-                self.bias_sum_bwd = self.cuda_sum_bias_axis_012()
+                #self.bias_sum_bwd = self.cuda_sum_bias_axis_012()
+                self.bias_sum_bwd = self._get_kernel(code_file_name="conv2d", func_name="cuda_sum_bias_axis_012")
                 self.forward = self._forward_depthwise_nhwc
                 self.backward = self._backward_depthwise_nhwc
             case _:
@@ -57,9 +51,9 @@ class Conv2DDepthwisePycuda(AbstractConv2DPycuda):
         self.dx = TensorArray(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
         self.memory_used += self.dx.nbytes
 
-        self.fwd_func: Function = self.cuda_depthwise_conv_2d_fwd(func_name.format(fwd_bwd="fwd"), macros)
-        self.bwd_func: Function = self.cuda_depthwise_conv_2d_bwd(func_name.format(fwd_bwd="bwd"), macros)
-        self.bias_sum_fwd: Function = self.cuda_bias_sum_fwd_depthwise_conv()
+        self.fwd_func: Function = self._fwd_kernel()
+        self.bwd_func: Function = self._bwd_kernel()
+        self.bias_sum_fwd: Function = self._get_kernel(func_name="cuda_bias_sum_fwd_depthwise_conv")
     # ----
 
     def _forward_depthwise_nchw(self, x: TensorArray) -> TensorArray:
@@ -216,139 +210,3 @@ class Conv2DDepthwisePycuda(AbstractConv2DPycuda):
             case _:
                 return super()._import_prop(key, value)
     # ---
-
-
-#########################################################################################################
-## CUDA CODE ##
-###############
-
-    def cuda_depthwise_conv_2d_fwd(self, _func_name: str, _macros: str) -> Function:
-
-        code = \
-            """
-{macros}
-__global__ void {func_name}({T}* x, {T}* k, {T}* res,
-                            int vpadding, int hpadding,
-                            int vstride, int hstride,
-                            int vdilation, int hdilation,
-                            int n, int c, int h, int w,
-                            int kh, int kw, int ho, int wo,
-                            int num_workers)
-{{
-    int idx, cc, hi, wi, yy, xx, nn, x_x, x_y;
-    int N = n * c * ho * wo;
-    {T} val_k, val_x;
-
-    for(idx = blockIdx.x * blockDim.x + threadIdx.x; idx < N; idx += num_workers)
-    {{
-        cc = INDEX_C(idx, c, ho, wo);
-        xx = INDEX_H(idx, c, ho, wo);
-        yy = INDEX_W(idx, c, ho, wo);
-
-        for (hi = 0; hi < kh; hi++)
-        {{
-            for (wi = 0; wi < kw; wi++)
-            {{
-                x_x = vstride * xx + vdilation * hi - vpadding;
-                x_y = hstride * yy + hdilation * wi - hpadding;
-                if ((0 <= x_x) && (x_x < h) && (0 <= x_y) && (x_y < w))
-                {{
-                    val_k = *(SHIFT_POINTER(k, c, h, w, 0, cc, hi, wi));
-                    val_x = *(SHIFT_POINTER(x, c, h, w, nn, cc, x_x, x_y));
-                    *(SHIFT_POINTER(res, c, h, w, nn, cc, xx, yy)) += ({T}) (val_k * val_x);
-                }}
-            }}
-        }}
-    }}
-}}
-"""
-        _t = DTYPE2CTYPE[self.model.dtype]  # variable Type
-
-        code = code.format(macros=_macros,
-                           func_name=_func_name,
-                           T=_t
-                           )
-        module = SourceModule(code).get_function(_func_name)
-
-        return module
-    # ---
-
-    def cuda_depthwise_conv_2d_bwd(self, _func_name: str, _macros: str) -> Function:
-
-        code = \
-            """
-{macros}
-__global__ void {func_name}({T}* dy, {T}* x, {T}* k,
-                            {T}* dx, {T}* dw,
-                            int vpadding, int hpadding,
-                            int vstride, int hstride,
-                            int vdilation, int hdilation,
-                            int n, int c, int h, int w,
-                            int kh, int kw, int ho, int wo,
-                            int num_workers)
-{{
-    int idx, cc, khi, kwi, yy, xx, nn, x_x, x_y;
-    {T} val_k, val_dy, val_x;
-    int N = n * c * ho * wo;
-
-    for(idx = blockIdx.x * blockDim.x + threadIdx.x; idx < N; idx += num_workers)
-    {{
-        cc = INDEX_C(idx, c, ho, wo);
-        xx = INDEX_H(idx, c, ho, wo);
-        yy = INDEX_W(idx, c, ho, wo);
-
-        val_dy = ({T}) *(SHIFT_POINTER(dy, c, h, w, nn, cc, xx, yy));
-        for (khi = 0; khi < kh; khi++)
-        {{
-            for (kwi = 0; kwi < kw; kwi++)
-            {{
-                x_x = vstride * xx + vdilation * khi - vpadding;
-                x_y = hstride * yy + hdilation * kwi - hpadding;
-                if ((0 <= x_x) && (x_x < h) && (0 <= x_y) && (x_y < w)){{
-                    val_k = *(SHIFT_POINTER(k, c, h, w, 0, cc, khi, kwi));
-                    val_x = *(SHIFT_POINTER(x, c, h, w, nn, cc, x_x, x_y));
-                    *(SHIFT_POINTER(dw, c, h, w, 0, cc, khi, kwi)) = ({T}) (val_x * val_dy);
-                    *(SHIFT_POINTER(dx, c, h, w, nn, cc, x_x, x_y)) += ({T}) (val_k * val_dy);
-                }}
-            }}
-        }}
-    }}
-}}
-"""
-        _t = DTYPE2CTYPE[self.model.dtype]  # variable Type
-
-        code = code.format(macros=_macros,
-                           func_name=_func_name,
-                           T=_t
-                           )
-        module = SourceModule(code).get_function(_func_name)
-
-        return module
-    # ---
-
-    def cuda_bias_sum_fwd_depthwise_conv(self, _func_name: str = "bias_sum_fwd_depthwise_conv") -> Function:
-        _t = DTYPE2CTYPE[self.model.dtype]  # variable Type
-
-        code = \
-            """
-__global__ void {func_name}({T}* x, {T}* bias,
-                            int co, int N,
-                            int num_workers)
-{{
-    int idx;
-
-    for(idx = blockIdx.x * blockDim.x + threadIdx.x; idx < N; idx += num_workers)
-    {{
-        *(x + idx) += *(bias + ( idx / (N/co) ) );
-    }}
-}}
-"""
-
-        code = code.format(func_name=_func_name,
-                           T=_t
-                           )
-        module = SourceModule(code).get_function(_func_name)
-
-        return module
-    # ----
-#########################################################################################################

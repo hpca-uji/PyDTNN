@@ -3,13 +3,9 @@ logger = logging.getLogger(__name__)
 
 import numpy as np
 from pycuda import gpuarray  # type: ignore
-from pycuda.compiler import SourceModule  # type: ignore
-from pycuda.driver import Function  # type: ignore
-
 from pydtnn.metrics.categorical_accuracy import CategoricalAccuracy
 from pydtnn.backends.pycuda.metrics.metric import MetricPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.utils.constants import DTYPE2CTYPE
 
 
 class CategoricalAccuracyPycuda(CategoricalAccuracy[TensorArray], MetricPycuda):
@@ -17,36 +13,6 @@ class CategoricalAccuracyPycuda(CategoricalAccuracy[TensorArray], MetricPycuda):
     def _model_init(self) -> None:
         super()._model_init()
         self.cost = gpuarray.zeros((self.model.batch_size,), self.model.dtype)
-
-    def _kernel_init(self) -> Function:
-        _name = "categorical_accuracy"
-        code = """
-        __global__ void {name} ({T} *y_targ, {T} *y_pred, {T} *res, int b, int n)
-        {{
-            int idx = blockIdx.x * blockDim.x + threadIdx.x;
-            const int workers = blockDim.x * gridDim.x;
-
-            for(; idx < b; idx += workers)
-            {{
-                int i = 0, max = 0;
-                {T} max_value = y_pred[idx * n];
-                for ( i = 1; i < n; i++ )
-                {{
-                    if ( y_pred[idx * n + i] > max_value )
-                    {{
-                        max = i;
-                        max_value = y_pred[idx * n + i];
-                    }}
-                }}
-                res[idx] = y_targ[idx * n + max];
-            }}
-            return;
-        }}
-        """.format(T=DTYPE2CTYPE[self.model.dtype],
-                   name=_name)
-
-        module = SourceModule(code).get_function(_name)
-        return module
 
     def compute(self, y_pred: TensorArray, y_targ: TensorArray) -> float:
         self.kernel(y_targ.ary, y_pred.ary, self.cost,

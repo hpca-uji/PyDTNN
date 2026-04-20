@@ -6,8 +6,6 @@ from pydtnn.layers.conv_2d import Conv2D
 
 import pycuda.driver as drv  # type: ignore
 from pycuda import gpuarray  # type: ignore
-from pycuda.compiler import SourceModule  # type: ignore
-from pycuda.driver import Function  # type: ignore
 
 import numpy as np
 
@@ -16,7 +14,7 @@ from pydtnn.backends.pycuda.layers.layer import LayerPycuda
 
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.utils.tensor import TensorFormat
-from pydtnn.utils.constants import ArrayShape, DTYPE2CTYPE, Parameters
+from pydtnn.utils.constants import ArrayShape, Parameters
 
 
 class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
@@ -151,90 +149,3 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
     def backward(self, dy: TensorArray) -> TensorArray:
         msg = "This is a fake backward function. It must be masked on initialization by a _backward implementation."
         raise NotImplementedError(f"Conv2DPycuda backward: {msg}")
-
-
-#########################################################################################################
-## CUDA-RELATED COMMON CODE ##
-##############################
-
-
-    def cuda_sum_bias_axis_023(self, _func_name: str = "bias_sum_bwd_depthwise_conv_nchw") -> Function:
-        _t = DTYPE2CTYPE[self.model.dtype]  # variable Type
-
-        # np.sum(dy, axis=(0, 2, 3), out=self.db)
-        code = \
-            """
-__global__ void {func_name}({T}* dy, {T}* db
-                            int c, int h, int w,
-                            int N, int num_workers)
-{{
-    int idx, index_c;
-
-    for(idx = blockIdx.x * blockDim.x + threadIdx.x; idx < N; idx += num_workers)
-    {{
-        index_c = (idx / (h*w)) % c;
-        *(db + index_c) += *(dy + idx);
-    }}
-}}
-"""
-
-        code = code.format(func_name=_func_name,
-                           T=_t
-                           )
-        module = SourceModule(code).get_function(_func_name)
-
-        return module
-    # ----
-
-    def cuda_sum_bias_axis_012(self, _func_name: str = "bias_sum_bwd_depthwise_conv_nhwc") -> Function:
-        _t = DTYPE2CTYPE[self.model.dtype]  # variable Type
-
-        # np.sum(dy, axis=(0, 1, 2), out=self.db)
-        code = \
-            """
-__global__ void {func_name}({T}* dy, {T}* db,
-                            int c, int N,
-                            int num_workers)
-{{
-    int idx;
-
-    for(idx = blockIdx.x * blockDim.x + threadIdx.x; idx < N; idx += num_workers)
-    {{
-        *(db + (idx % c)) += *(dy + idx);
-    }}
-}}
-"""
-
-        code = code.format(func_name=_func_name,
-                           T=_t
-                           )
-        module = SourceModule(code).get_function(_func_name)
-
-        return module
-    # ----
-
-# CUDA-related constans
-
-
-MACROS_NCHW = \
-    """
-#define SHIFT_POINTER(p, c, h, w, ni, ci, hi, wi) p + ((ni * c + ci) * h + hi) * w + wi
-#define SHIFT_POINTER_K(p, c, yc, ci, yci) p + (yci * c + ci)
-#define INDEX_N(idx, N, n) idx * n / N
-#define INDEX_C(idx, c, h, w) (idx / (h * w)) % c
-#define INDEX_H(idx, c, h, w) (idx / w) % h
-#define INDEX_W(idx, c, h, w) idx % w
-"""
-# ---
-
-MACROS_NHWC = \
-    """
-#define SHIFT_POINTER(p, c, h, w, ni, ci, hi, wi) p + ((ni * h + hi) * w + wi) * c + ci
-#define SHIFT_POINTER_K(p, c, yc, ci, yci) p + (ci * yc + yci)
-#define INDEX_N(idx, N, n) idx * n / N
-#define INDEX_H(idx, h, w, c) (idx / (w * c)) % h
-#define INDEX_W(idx, h, w, c) (idx / c) % w
-#define INDEX_C(idx, h, w, c) idx % c
-"""
-# ---
-#########################################################################################################

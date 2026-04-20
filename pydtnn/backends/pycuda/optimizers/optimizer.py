@@ -9,13 +9,12 @@ from pydtnn.optimizers.optimizer import Optimizer
 from pycuda.driver import Function  # type: ignore
 from pycuda.elementwise import ElementwiseKernel  # type: ignore
 
+from pydtnn.utils.uses_cuda import PyCudaCudaCode
 
-class OptimizerPycuda(Optimizer[TensorArray]):
+class OptimizerPycuda(Optimizer[TensorArray], PyCudaCudaCode):
     """
     Extends an Optimizer class with the attributes and methods required by GPU Optimizers.
     """
-
-    LIMIT_THREADS_AND_BLOCKS = 1024
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -25,11 +24,6 @@ class OptimizerPycuda(Optimizer[TensorArray]):
     def get_batch_size(self, w: TensorArray) -> np.int32:
         return np.int32(w.size)
         # return np.int32(np.prod(((w.shape))))
-
-    def get_threads_and_blocks(self):
-        threads = min(self.model.real_batch_size, self.LIMIT_THREADS_AND_BLOCKS)
-        blocks = max(self.model.real_batch_size, self.LIMIT_THREADS_AND_BLOCKS) // threads + 1
-        return threads, blocks
 
     def _model_init(self, list_layers: list[LayerBase[TensorArray]]) -> None:
         super()._model_init(list_layers)

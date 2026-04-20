@@ -7,6 +7,7 @@ from pydtnn.layers.layer import Layer
 from pydtnn.tracers.events import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
     PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
 
+# TODO: Check if this is necessary
 try:
     from pydtnn.libs.mpi import MPI
 except Exception as e:
@@ -22,9 +23,10 @@ from pydtnn import gpu_errors
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 
 from pycuda import gpuarray  # type: ignore
+from pydtnn.utils.uses_cuda import PyCudaCudaCode
+from pydtnn.utils.constants import DTYPE2CTYPE
 
-
-class LayerPycuda(Layer[TensorArray]):
+class LayerPycuda(Layer[TensorArray], PyCudaCudaCode):
     """
     Extends a Layer class with the attributes and methods required by GPU Layers.
     """
@@ -53,6 +55,11 @@ class LayerPycuda(Layer[TensorArray]):
 
         self.grid = self.model.cuda_grid
         self.block = self.model.cuda_block
+
+        self.defines_replaces = {
+            "\"TYPE\"": DTYPE2CTYPE[self.model.dtype],
+            "TENSOR_FORMAT": str(self.model.tensor_format)
+        }
     # ---
 
     @property

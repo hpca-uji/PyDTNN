@@ -33,22 +33,8 @@ class RMSPropPycuda(RMSProp[TensorArray], OptimizerPycuda):
         # -----------
 
         # GPU DIRECT -
-        _name = "RMSProp_kernel_gpudirect"
-        code = """
-        __global__ void {name}({T} *w, {T} *dw, {T} *cache,
-                                float lr, float decay, float rho, float epsilon, int N)
-        {{
-                int i = blockIdx.x * blockDim.x + threadIdx.x;
-                if (i < N) {{
-                    cache[i] = rho * cache[i] + (1 - rho) * {func}(dw[i], 2);
-                    w[i] -= lr * (decay * w[i] + (dw[i] / sqrt(cache[i] + epsilon)));
-                }}
-        }}
-        """.format(T=DTYPE2CTYPE[self.model.dtype],
-                   func=pow_func,
-                   name=_name
-                   )
-        self.update_gpudirect = SourceModule(code).get_function(_name)
+        self.defines_replaces: dict[str, str] = {"\"TYPE\"": DTYPE2CTYPE[self.model.dtype], "powf_or_pow" : pow_func}
+        self.update_gpudirect = self._get_kernel(func_name_subfix="_gpu_direct")
         # -------------
 
     def _model_init(self, list_layers: list[LayerPycuda]) -> None:
@@ -75,13 +61,11 @@ class RMSPropPycuda(RMSProp[TensorArray], OptimizerPycuda):
 
             if self.gpudirect:
                 n = self.get_batch_size(w)
-                threads, blocks = self.get_threads_and_blocks()
-
                 self.update_gpudirect(w.ary.gpudata, dw.ptr_intp, cache.gpudata,
                                       np.float32(self.learning_rate),
                                       np.float32(self.decay), np.float32(self.rho),
                                       np.float32(self.epsilon), np.int32(n),
-                                      grid=(int(blocks), 1, 1), block=(int(threads), 1, 1),
+                                      self.model.cuda_grid, block=self.model.cuda_block,
                                       stream=layer.stream_2)
             else:
                 self.update_kernel(w.ary, dw.ary, cache, np.float32(self.learning_rate),

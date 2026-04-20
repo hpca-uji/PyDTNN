@@ -3,7 +3,6 @@ logger = logging.getLogger(__name__)
 
 import numpy as np
 from pycuda import gpuarray  # type:ignore
-from pycuda.compiler import SourceModule  # type:ignore
 from pycuda.elementwise import ElementwiseKernel  # type:ignore
 
 from pydtnn.backends.pycuda.optimizers.optimizer import OptimizerPycuda
@@ -38,26 +37,8 @@ class AdamPycuda(Adam[TensorArray], OptimizerPycuda):
         # -----------
 
         # GPU DIRECT-
-        _name = "Adam_kernel_gpudirect"
-        code = """
-            __global__ void {name}({T} *w, {T} *dw, {T} *m, {T} *v,
-                                   float it, float lr, float decay,
-                                   float beta1, float beta2, float epsilon, int N)
-            {{
-                int i = blockIdx.x * blockDim.x + threadIdx.x;
-                if (i < N)
-                {{
-                    m[i] = beta1 * m[i] + (1 - beta1) * dw[i];
-                    v[i] = beta2 * v[i] + (1 - beta2) * {func}(dw[i], 2);
-                    w[i] -= lr * (decay * w[i] + ((m[i] / (1 - {func}(beta1, it))) /
-                                              sqrt(v[i] / (1 - {func}(beta2, it)) + epsilon)));
-                }}
-            }}"""
-        code = code.format(T=DTYPE2CTYPE[self.model.dtype],
-                           func=func_pow[self.model.dtype],
-                           name=_name)
-
-        self.update_gpudirect = SourceModule(code).get_function(_name)
+        self.defines_replaces: dict[str, str] = {"\"TYPE\"": DTYPE2CTYPE[self.model.dtype], "powf_or_pow" : func_pow[self.model.dtype]}
+        self.update_gpudirect = self._get_kernel(func_name_subfix="_gpu_direct")
         # -----------
 
     def _model_init(self, list_layers: list[LayerPycuda]) -> None:
@@ -89,14 +70,12 @@ class AdamPycuda(Adam[TensorArray], OptimizerPycuda):
 
             if self.gpudirect:
                 n = self.get_batch_size(w)
-                threads, blocks = self.get_threads_and_blocks()
-
                 self.update_gpudirect(w.ary.gpudata, dw.ptr_intp, m.gpudata, v.gpudata,
                                       np.float32(it), np.float32(self.learning_rate),
                                       np.float32(self.decay), np.float32(self.beta1),
                                       np.float32(self.beta2), np.float32(self.epsilon),
                                       np.int32(n),
-                                      grid=(int(blocks), 1, 1), block=(int(threads), 1, 1),
+                                      self.model.cuda_grid, block=self.model.cuda_block,
                                       stream=layer.stream_2)
             else:
                 self.update_kernel(w.ary, dw.ary, m, v,

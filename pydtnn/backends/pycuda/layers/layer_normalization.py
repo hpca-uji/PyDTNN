@@ -78,86 +78,11 @@ class LayerNormalizationPycuda(LayerNormalization[TensorArray], LayerPycuda):
         return self.dx
 
     def __init_kernels_gpu__(self):
-        module = SourceModule("""
-        __global__ void gpu_forward(T *x, T *y, T *xn, T *std, T *gamma, T *beta, float epsilon, int batch, int n)
-        {
-            int idx = blockIdx.x * blockDim.x + threadIdx.x;
-            if (idx < batch) {
-                int i = 0;
-                T mu = 0;
-                T var = 0;
-                T xc = 0;
-                // Mean
-                for ( i = 0; i < n; i++ ) {
-                    mu += x[idx * n + i] / n;
-                }
 
-                // Var
-                for ( i = 0; i < n; i++ ){
-                    xc = x[idx * n + i] - mu;
-                    var += (xc * xc) / n;
-                    xn[idx * n + i] = xc;
-                }
-                var = sqrtf(var + epsilon);
-                std[idx] = var;
-                // Normalization and Scaling
-                for ( i = 0; i < n; i++ ){
-                    xn[idx * n + i] /= (var + epsilon);
-                    y[idx * n + i] = gamma[i] * xn[idx * n +i] + beta[i];
-                }
-            }
-            return;
-        }
-        """.replace("T", {np.float32: "float", np.float64: "double"}[self.model.dtype]))
-        self.kernel_forward = module.get_function("gpu_forward")
+        self.kernel_forward = self._fwd_kernel()
         n = np.prod([self.y.ary.shape[i] for i in self.axis])
         self.kernel_dim_params = (np.int32(np.prod(self.y.ary.shape) // n), np.int32(n))
 
-        module = SourceModule("""
-        __global__ void gpu_backward(T *dy, T *dx, T *xn, T *std, T *gamma, float epsilon, int batch, int n)
-        {
-            int idx = blockIdx.x * blockDim.x + threadIdx.x;
-            if (idx < batch) {
-                int i = 0;
-                T mean1 = 0;
-                T mean2 = 0;
-
-                // Means
-                for ( i = 0; i < n; i++ ) {
-                    mean1 += gamma[i] * xn[idx * n + i] * (dy[idx * n + i] / n);
-                    mean2 += gamma[i] * (dy[idx * n + i] / n);
-                }
-
-                // dx
-                for ( i = 0; i < n; i++ ) {
-                    dx[idx * n + i] = (dy[idx * n + i] - xn[idx * n + i] * mean1 - mean2) / (std[idx] + epsilon);
-                }
-            }
-            return;
-        }
-        """.replace("T", {np.float32: "float", np.float64: "double"}[self.model.dtype]))
-        self.kernel_backward = module.get_function("gpu_backward")
-
-        module = SourceModule("""
-        __global__ void gpu_backward_weights(T *dy, T *xn, T *dgamma, T *dbeta, float epsilon, int batch, int n)
-        {
-            int idx = blockIdx.x * blockDim.x + threadIdx.x;
-            if (idx < n) {
-                int i = 0;
-                T mean1 = 0;
-                T mean2 = 0;
-
-                // Means
-                for ( i = 0; i < batch; i++ ) {
-                    mean1 += xn[i * n + idx] * (dy[i * n + idx] / batch);
-                    mean2 += dy[i * n + idx] / batch;
-                }
-                dgamma[idx] = (fabs(mean1) < epsilon) ? 0.0 : mean1;
-                dbeta[idx] = (fabs(mean2) < epsilon) ? 0.0 : mean2;
-            }
-            return;
-        }
-        """.replace("T", {np.float32: "float", np.float64: "double"}[self.model.dtype]))
-        self.kernel_backward_weigths = module.get_function("gpu_backward_weights")
-
+        self.kernel_backward = self._bwd_kernel()
+        self.kernel_backward_weigths =  self._get_kernel(func_name="layer_normalization_backward_weights")
         return

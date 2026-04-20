@@ -6,10 +6,11 @@ from pycuda.driver import Function  # type: ignore
 
 from pydtnn.metrics.metric import Metric
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.utils.constants import ArrayShape
 
+from pydtnn.utils.uses_cuda import PyCudaCudaCode
+from pydtnn.utils.constants import DTYPE2CTYPE
 
-class MetricPycuda(Metric[TensorArray]):
+class MetricPycuda(Metric[TensorArray], PyCudaCudaCode):
     """
     Extends a Metric class with the attributes and methods required by GPU Metrics.
     """
@@ -28,4 +29,6 @@ class MetricPycuda(Metric[TensorArray]):
         self.block = self.model.cuda_block
 
     def _kernel_init(self) -> Function:
-        raise NotImplementedError()
+        self.defines_replaces = {"\"TYPE\"": DTYPE2CTYPE[self.model.dtype]}
+        self.kernel = self._get_kernel()
+        return self.kernel

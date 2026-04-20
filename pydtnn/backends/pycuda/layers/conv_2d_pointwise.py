@@ -4,15 +4,14 @@ logger = logging.getLogger(__name__)
 import numpy as np
 
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
-from pydtnn.backends.pycuda.layers.abstract.conv_2d import AbstractConv2DPycuda, MACROS_NCHW, MACROS_NHWC
+from pydtnn.backends.pycuda.layers.abstract.conv_2d import AbstractConv2DPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.utils.constants import ArrayShape, DTYPE2CTYPE
+from pydtnn.utils.constants import ArrayShape
 
 from pydtnn.utils.tensor import TensorFormat, format_transpose
 from typing import Any, override
 
 from pycuda import gpuarray  # type: ignore
-from pycuda.compiler import SourceModule  # type: ignore
 from pycuda.driver import Function  # type: ignore
 
 
@@ -32,20 +31,15 @@ class Conv2DPointwisePycuda(AbstractConv2DPycuda):
 
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
         super()._model_init(prev_shape, x)
-
-        func_name: str = ""
-        macros: str = ""
         self.bias_sum_bwd: Function = None
 
         match self.model.tensor_format:
             case TensorFormat.NCHW:
-                func_name = "cuda_depthwise_conv_2d_{fwd_bwd}_nchw"
-                macros = MACROS_NCHW
-                self.bias_sum_bwd = self.cuda_sum_bias_axis_023()
+                #self.bias_sum_bwd = self.cuda_sum_bias_axis_023()
+                self.bias_sum_bwd = self._get_kernel(code_file_name="conv2d", func_name="cuda_sum_bias_axis_023")
             case TensorFormat.NHWC:
-                func_name = "cuda_depthwise_conv_2d_{fwd_bwd}_nhwc"
-                macros = MACROS_NHWC
-                self.bias_sum_bwd = self.cuda_sum_bias_axis_012()
+                #self.bias_sum_bwd = self.cuda_sum_bias_axis_012()
+                self.bias_sum_bwd = self._get_kernel(code_file_name="conv2d", func_name="cuda_sum_bias_axis_012")
             case _:
                 raise NotImplementedError(f"\"conv_2d_gpu_depthwise\" is not implemented for \"{self.model.tensor_format}\" format.")
 
@@ -62,9 +56,9 @@ class Conv2DPointwisePycuda(AbstractConv2DPycuda):
 
         self.forward = self._forward_pointwise
         self.backward = self._backward_pointwise
-        self.fwd_func: Function = self.cuda_pointwise_conv_2d_fwd(func_name.format(fwd_bwd="fwd"), macros)
-        self.bwd_func: Function = self.cuda_pointwise_conv_2d_bwd(func_name.format(fwd_bwd="bwd"), macros)
-        self.bias_sum_fwd: Function = self.cuda_bias_pointwise_conv_2d_fwd("bias_pointwise_conv_2d_fwd", macros)
+        self.fwd_func: Function = self._fwd_kernel
+        self.bwd_func: Function = self._fwd_kernel
+        self.bias_sum_fwd: Function = self._get_kernel(func_name="cuda_bias_sum_fwd_pointwise_conv")
     # ----
 
     def _forward_pointwise(self, x: TensorArray) -> TensorArray:
@@ -162,139 +156,3 @@ class Conv2DPointwisePycuda(AbstractConv2DPycuda):
             case _:
                 return super()._export_prop(key)
     # ---
-
-#########################################################################################################
-## CUDA CODE ##
-###############
-    def cuda_pointwise_conv_2d_fwd(self, _func_name: str, _macros: str) -> Function:
-
-        code = \
-            """
-{macros}
-
-__global__ void {func_name}({T}* x, {T}* k, {T}* y,
-                            int n, int c, int h, int w,
-                            int yc, int num_workers)
-{{
-    int idx, ni, ci, hi, wi, yci;
-    {T} val_k, val_x;
-
-    int N = n*c*h*w;
-
-    // k.shape = (yc, x's c)
-
-    for(idx = blockIdx.x * blockDim.x + threadIdx.x; idx < N; idx += num_workers)
-    {{
-        ni = INDEX_N(idx, N, n);
-        ci = INDEX_C(idx, c, h, w);
-        hi = INDEX_H(idx, c, h, w);
-        wi = INDEX_W(idx, c, h, w);
-
-        val_x = *(SHIFT_POINTER(x, c, h, w, ni, ci, hi, wi));
-        for(yci = 0; yci < yc; yci++)
-        {{
-            //y = x * k
-            //val_k = k[yci][ci]; ==> val_k = k + (yci * c + ci);
-            //val_k = k[ci][yci]; ==> val_k = k + (ci * kc + yci);
-            val_k = *(SHIFT_POINTER_K(k, c, yc, ci, yci));
-            *(SHIFT_POINTER(y, yc, h, w, ni, yci, hi, wi)) += ({T}) (val_x * val_k);
-        }}
-    }}
-}}
-"""
-        _t = DTYPE2CTYPE[self.model.dtype]  # variable Type
-
-        code = code.format(macros=_macros,
-                           func_name=_func_name,
-                           T=_t
-                           )
-        module = SourceModule(code).get_function(_func_name)
-
-        return module
-    # ---
-
-    def cuda_pointwise_conv_2d_bwd(self, _func_name: str, _macros: str) -> Function:
-
-        code = \
-            """
-{macros}
-
-__global__ void {func_name}({T}* dy, {T}* x, {T}* k,
-                            {T}* dx, {T}* dw,
-                            int n, int c, int h, int w,
-                            int xc, int num_workers)
-{{
-    int idx, ni, ci, hi, wi, xci;
-    {T} val_dy, val_k, val_x;
-
-    int N = n*c*h*w;
-
-    // NCHW: k.shape = dw.shape = (dy's c , x's c)
-    // NHWC: k.shape = dw.shape = (x's c, dy's c)
-
-    for(idx = blockIdx.x * blockDim.x + threadIdx.x; idx < N; idx += num_workers)
-    {{
-        ni = INDEX_N(idx, N, n);
-        ci = INDEX_C(idx, c, h, w);
-        hi = INDEX_H(idx, c, h, w);
-        wi = INDEX_W(idx, c, h, w);
-
-        val_dy = *SHIFT_POINTER(dy, c, h, w, ni, ci, hi, wi);
-        for(xci = 0; xci < kc; xci++)
-        {{
-            //dw = x * dy
-            val_x = *(SHIFT_POINTER(x, xc, h, w, ni, xci, hi, wi));
-            *(SHIFT_POINTER_K(dw, c, xc, ci, xci)) = ({T}) (val_x * val_dy);
-
-            //dx = w * dy
-            val_k = *(SHIFT_POINTER_K(k, c, xc, ci, xci));
-            *(SHIFT_POINTER(dx, kc, h, w, nn, xci, hi, wi)) += ({T}) (val_k * val_dy);
-        }}
-    }}
-}}
-"""
-        _t = DTYPE2CTYPE[self.model.dtype]  # variable Type
-
-        code = code.format(macros=_macros,
-                           func_name=_func_name,
-                           T=_t
-                           )
-        module = SourceModule(code).get_function(_func_name)
-
-        return module
-    # ---
-
-    def cuda_bias_pointwise_conv_2d_fwd(self, _func_name: str, _macros: str) -> Function:
-
-        code = \
-            """
-{macros}
-
-__global__ void {func_name}({T}* y, {T}* b,
-                            int n, int c, int h, int w,
-                            int N,
-                            int num_workers)
-{{
-    int idx, ni, ci, hi, wi;
-
-    // self.biases.shape = (self.co,)
-
-    for(idx = blockIdx.x * blockDim.x + threadIdx.x; idx < N; idx += num_workers)
-    {{
-        ci = INDEX_C(idx, c, h, w);
-
-        (*(y + idx)) += (*(b+ci));
-    }}
-}}
-"""
-        _t = DTYPE2CTYPE[self.model.dtype]  # variable Type
-
-        code = code.format(macros=_macros,
-                           func_name=_func_name,
-                           T=_t
-                           )
-        module = SourceModule(code).get_function(_func_name)
-
-        return module
-    # ---
-#########################################################################################################
