@@ -105,6 +105,12 @@ with:
 export PYDTNN_CUPY=yes
 ```
 
+Optionally, if you are going to use CuPy with ROCm, you can switch CuPy implementation
+with:
+```sh
+pip install cupy-rocm-7-0
+```
+
 ### Contributing and installing from source
 Download PyDTNN source code from its GitHub repository and
 install it in editable mode:
