@@ -156,12 +156,12 @@
 ```
 
 # Planned
-- Replace `cupy-cuda` with `cupy` (for AMD ROCm support)
 - Move `gpu.utils.memory_allocation` from global scope to model instance
 - Extract shared logic from `.pyi` and `.pyx` into a common module
 
 # Publishing
-Dependencies: `gcc patchelf` and `build twine auditwheel`
+Dependencies: `gcc patchelf` and `build twine auditwheel`  
+Ensure before publishing the working tree is public under `master`.  
 
 ```sh
 python -m build --outdir ./dist/
