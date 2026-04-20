@@ -1,5 +1,5 @@
 /build/
-/.venv*
+/.venv/
 /pydtnn.log
 __pycache__/
 
