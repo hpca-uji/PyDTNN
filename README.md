@@ -116,8 +116,7 @@ pip install --config-settings editable_mode=compat -e .
 
 For more information on how to work on the project see `CONTRIBUTING.md`.
 
-For more information on how to manage external dependencies see
-`vendor/README.md`.
+For more information on how to manage external dependencies see `vendor/README.md`.
 
 ## Launcher options
 The PyDTNN framework comes with a utility launcher called
@@ -132,8 +131,7 @@ The PyDTNN framework comes with a utility launcher called
     Selection: More specific modules are attempted first, backend order goes from least to most priority.
     Default: `cpu`.
   - `--batch-size`: Batch size per MPI rank. Default: `None`.
-  - `--global-batch-size`: Batch size between all MPI ranks. Default:
-    `None`.
+  - `--global-batch-size`: Batch size between all MPI ranks. Default: `None`.
   - `--dtype`: Datatype to use: `float32`, `float64`. Default:
     `float32`.
   - `--num-epochs`: Number of epochs to perform. Default: `1`.
@@ -162,20 +160,22 @@ The PyDTNN framework comes with a utility launcher called
     models: `all` or `avail2all`. Default: `all`.
   - `--model-sync-min-avail`: Minimum ranks with data required to
     synchronize models. Default: `0`.
-  - `--initial-model-sync`: Synchronize models on training start.
-    Default: `True`.
-  - `--final-model-sync`: Synchronize models on training end. Default:
-    `True`.
+  - `--initial-model-sync`: Synchronize models on training start. Default: `True`.
+  - `--final-model-sync`: Synchronize models on training end. Default: `True`.
 - Dataset parameters:
   - `--dataset`: Dataset to train: `mnist`, `cifar10`, `synthetic`,
     …. Default: `None`.
   - `--dataset-path`: Path to dataset folder.
   - `--dataset-lang`: Dataset language. Default: `en`.
   - `--dataset-lang2`: Dataset second language. Default: `de`.
-  - `--synthetic-train-samples`: Number of synthetic train sample. Default: `1000`.
-  - `--synthetic-test-samples`: Number of synthetic train sample. Default: `100`.
-  - `--synthetic-input-shape`: Synthetic input shape (coma separated). Default: `3,32,32`.
-  - `--synthetic-output-shape`: Synthetic output shape (coma separated). Default: `10`.
+  - `--synthetic-train-samples`: Number of synthetic train sample.
+    Default: `1000`.
+  - `--synthetic-test-samples`: Number of synthetic train sample.
+    Default: `100`.
+  - `--synthetic-input-shape`: Synthetic input shape (coma separated).
+    Default: `3,32,32`.
+  - `--synthetic-output-shape`: Synthetic output shape (coma separated).
+    Default: `10`.
   - `--dataset-percentage`: Percentage of dataset that will be used. If
     it is `0`: it is deactivated; if is is a value below `1` (and above
     `0`): it will perform undersampling; and if is is a value above `1`:
@@ -184,18 +184,14 @@ The PyDTNN framework comes with a utility launcher called
     for training+validation data, use test data for validation. `True`
     if specified.
   - `--validation-split`: Split between training and validation data.
-  - `--augment-flip`: Flip horizontally training images. Default:
-    `False`.
-  - `--augment-flip-prob`: Probability to flip training images. Default:
-    `0.5`.
+  - `--augment-flip`: Flip horizontally training images. Default: `False`.
+  - `--augment-flip-prob`: Probability to flip training images. Default: `0.5`.
   - `--augment-crop`: Crop training images. Default: `False`.
   - `--augment-crop-size`: Size to crop training images. Default: `16`.
-  - `--augment-crop-prob`: Probability to crop training images. Default:
-    `0.5`.
+  - `--augment-crop-prob`: Probability to crop training images. Default: `0.5`.
   - `--validation-split`: Split between training and validation data.
   - `--transform-crop`: Crop the images. `True` if specified.
-  - `--transform-crop-perc`: Central crop of the images. Default:
-    `0.875`.
+  - `--transform-crop-perc`: Central crop of the images. Default: `0.875`.
   - `--transform-resize`: Resize the images. `True` if specified.
   - `--transform-resize-size`: New size of the images. Default: `300`.
   - `--normalize`: Normalize dataset. Default: `False`.
@@ -205,12 +201,9 @@ The PyDTNN framework comes with a utility launcher called
   - `--enable-best-of`: Enable the `BestOf` auto-tuner.
   - `--enable-memory-cache`: Enable the memory cache module to use
     persistent memory.
-  - `--enable-fused-bn-relu`: Fuse `BatchNormalization` and `Relu`
-    layers. `True` if specified.
-  - `--enable-fused-conv-relu`: Fuse `Conv2D` and `Relu` layers. `True`
-    if specified.
-  - `--enable-fused-conv-bn`: Fuse `Conv2D` and `BatchNormalization`
-    layers. `True` if specified.
+  - `--enable-fused-bn-relu`: Fuse `BatchNormalization` and `Relu` layers. `True` if specified.
+  - `--enable-fused-conv-relu`: Fuse `Conv2D` and `Relu` layers. `True` if specified.
+  - `--enable-fused-conv-bn`: Fuse `Conv2D` and `BatchNormalization` layers. `True` if specified.
   - `--enable-fused-conv-bn-relu`: Fuse `Conv2D` and
     `BatchNormalization` and `Relu` layers. Default: `False`.
 - Convolution operation parameters:
@@ -235,8 +228,8 @@ The PyDTNN framework comes with a utility launcher called
   - `--optimizer-rho`: Variable for `rmsprop` optimizers. Default:
     `0.99`.
   - `--loss-func`: Loss functions that is evaluated on each trained
-    batch: `categorical_cross_entropy`, `binary_cross_entropy` or `kl_divergence`. Default
-    `categorical_cross_entropy`.
+    batch: `categorical_cross_entropy`, `binary_cross_entropy` or `kl_divergence`.
+    Default: `categorical_cross_entropy`.
   - `--metrics`: List of comma-separated metrics that are evaluated on
     each trained batch: `categorical_accuracy`, `categorical_hinge`,
     `categorical_mse`, `categorical_mae`, `regression_mse`,
@@ -259,14 +252,14 @@ The PyDTNN framework comes with a utility launcher called
   - `--reduce-lr-on-plateau-metric`: Loss metric monitored by
     `reduce_lr_on_plateau` scheduler. Default:
     `val_categorical_cross_entropy`.
-  - `--reduce-lr-on-plateau-factor`: Factor by which the learning rate
-    will be reduced. `new_lr = lr *factor`. Default: `0.1`.
-  - `--reduce-lr-on-plateau-patience`: Number of epochs with no
-    improvement after which LR will be reduced. Default: `5`.
+  - `--reduce-lr-on-plateau-factor`: Factor by which the learning rate will be reduced.
+    `new_lr = lr *factor`. Default: `0.1`.
+  - `--reduce-lr-on-plateau-patience`: Number of epochs with no improvement
+    after which LR will be reduced. Default: `5`.
   - `--reduce-lr-on-plateau-min-lr`: Lower bound on the learning rate.
     Default: `0`.
-  - `--reduce-lr-every-nepochs-factor`: Factor by which the learning
-    rate will be reduced. `new_lr = lr*factor`. Default: `0.1`.
+  - `--reduce-lr-every-nepochs-factor`: Factor by which the learning rate
+    will be reduced. `new_lr = lr*factor`. Default: `0.1`.
   - `--reduce-lr-every-nepochs-nepochs`: Number of epochs after which LR
     will be periodically reduced. Default: `5`.
   - `--reduce-lr-every-nepochs-min-lr`: Lower bound on the learning
@@ -279,36 +272,31 @@ The PyDTNN framework comes with a utility launcher called
     `model_checkpoint` scheduler. Default:
     `val_categorical_cross_entropy`
   - `--model-checkpoint-save-freq`: Frequency (in epochs) at which the
-    model weights and bias will be saved by the `model_checkpoint`
-    scheduler. Default: `2`.
+    model weights and bias will be saved by the `model_checkpoint` scheduler.
+    Default: `2`.
 - Parallelization and other performance-related parameters:
   - `--parallel`: Data parallelization modes: `sequential`, `data`
     (MPI). Default: `sequential`.
-  - `--use-blocking-mpi`: Enable blocking MPI primitives. Default:
-    `True`.
+  - `--use-blocking-mpi`: Enable blocking MPI primitives. Default: `True`.
   - `--use-mpi-buffers`: Enable the use of MPI buffers. Possible values:
     `True` (MPI operations by buffer), `False` (MPI operations by
     object) or `None` (auto-select the better option). Default: `None`.
   - `--enable-gpudirect`: Enable GPU pinned memory for gradients when
     using a CUDA-aware MPI version. Default: `False`.
   - `--enable-nccl`: Enable the use of the `NCCL` library for collective
-    communications on GPUs. This option can only be set when cuDNN is available. Default. `False`.
+    communications on GPUs. This option can only be set when cuDNN is available.
+    Default: `False`.
   - `--enable-cudnn-auto-conv-alg`: Let `cuDNN` to select the best
     performing convolution algorithm. Default: `True`.
 - Encryption parameters:
-  - `--encryption`: Encryption library: `tenseal`, `openfhe`, `None`.
-    Default `None`.
-  - `--encryption-slots`: Encryption slot count.
-    `2 ^ value`. Default: `12`.
-  - `--encryption-scale`: Encryption operational scale. `2 ^ value`.
-    Default: `40`.
+  - `--encryption`: Encryption library: `tenseal`, `openfhe`, `None`. Default `None`.
+  - `--encryption-slots`: Encryption slot count. `2 ^ value`. Default: `12`.
+  - `--encryption-scale`: Encryption operational scale. `2 ^ value`. Default: `40`.
   - `--encryption-security`: Encryption security level: `128`, `192`, `256`. Default: `128`.
 - Tracing and profiling parameters:
   - `--tracing`: Obtain Simple/Extrae-based traces. Default: `False`.
-  - `--tracer-output`: Output file to store the Simple/Extrae-based
-    traces.
-  - `--tracer-pmlib-server`: Address of PMlib tracer server. Default:
-    `127.0.0.1`.
+  - `--tracer-output`: Output file to store the Simple/Extrae-based traces.
+  - `--tracer-pmlib-server`: Address of PMlib tracer server. Default: `127.0.0.1`.
   - `--tracer-pmlib-port`: Port of PMlib tracer server. Default: `6526`.
   - `--tracer-pmlib-device`: Port of PMlib tracer device.
   - `--profile`: Obtain cProfile profiles. Default: `False`.

@@ -5,7 +5,7 @@
 !/vendor/README.md
 
 __pycache__/
-/logger.log
+/pydtnn.log
 
 *.c
 *.so

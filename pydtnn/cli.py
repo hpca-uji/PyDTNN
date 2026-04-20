@@ -73,7 +73,7 @@ def traceback_context():
 
 
 def main():
-    log_conf = yaml.safe_load(resources.read_text("pydtnn", "logging.yaml"))
+    log_conf = yaml.safe_load(resources.read_text("pydtnn", "logger.yaml"))
     logging.config.dictConfig(log_conf)
 
     from pydtnn.model import Model

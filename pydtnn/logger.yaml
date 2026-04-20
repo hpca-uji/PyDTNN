@@ -12,7 +12,7 @@ handlers:
   file:
     class: logging.FileHandler
     formatter: precise
-    filename: logging.log
+    filename: pydtnn.log
     mode: w
 loggers:
   pydtnn:
