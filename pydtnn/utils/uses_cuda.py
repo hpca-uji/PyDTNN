@@ -1,17 +1,21 @@
-from pycuda.driver import Function, Module  # type: ignore
-from pycuda.compiler import SourceModule  # type:ignore
-import cupy as cp
-
 from pydtnn.utils import get_code_from_file
-from typing import override
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pycuda.driver import Function, Module  # type: ignore
+    from pycuda.compiler import SourceModule  # type:ignore
+    import cupy as cp
 
 type Abs_Module = "Module | cp.RawModule"
-type Abs_Function =  "Function | cp.RawKernel"
+type Abs_Function = "Function | cp.RawKernel"
+
 
 class UsesCudaCode[M: Abs_Module, F: Abs_Function]():
+    cuda_compiler = "nvcc"
 
-    def __init__(self, base_path_code: str) -> None:
-        self.base_path_code = base_path_code
+    def __init__(self, *args, **kwds) -> None:
+        super().__init__(*args, **kwds)
+        self.base_path_code = "/".join([*self.__module__.split(".")[1:3], "utils"])
         self.defines_replaces = dict[str, str]()
 
     def _get_kernel_function(self,
@@ -24,7 +28,7 @@ class UsesCudaCode[M: Abs_Module, F: Abs_Function]():
         func_name = f"{func_name}{func_name_subfix}"
 
         return kernel.get_function(func_name)
-    
+
     def _get_code(self,
                   path_code: str | None,
                   code_file_name: str | None,
@@ -33,14 +37,14 @@ class UsesCudaCode[M: Abs_Module, F: Abs_Function]():
 
         if defines_replaces is None:
             defines_replaces = self.defines_replaces
-        
+
         if path_code is None:
             path_code = self.base_path_code
 
         if code_file_name is None:
             # NOTE: self.__module__ must be something like "pydtnn.backends.cython.activations.relu"
             code_file_name = self.__module__.split(".")[-1]
-        
+
         if file_extension is not None:
             code_file_name = f"{code_file_name}{file_extension}"
 
@@ -55,19 +59,19 @@ class UsesCudaCode[M: Abs_Module, F: Abs_Function]():
                     code_file_name: str | None = None,
                     func_name: str | None = None,
                     defines_replaces: dict[str, str] | None = None,
-                    func_name_subfix: str = "", 
+                    func_name_subfix: str = "",
                     file_extension: str | None = ".cu") -> F:
         # NOTE: If you are searching for the source files, go to "{self.base_path_code}/{file_name_without_exception}.cu"
         #   NOTE (cont.) e.g.: if you are searching for the relu6 source files, go to "/pydtnn/backends/{backend}/leaky_relu.cu"
 
-        code = self._get_code(path_code = path_code,
-                              code_file_name = code_file_name,
-                              defines_replaces = defines_replaces, 
-                              file_extension = file_extension)
+        code = self._get_code(path_code=path_code,
+                              code_file_name=code_file_name,
+                              defines_replaces=defines_replaces,
+                              file_extension=file_extension)
         kernel = self._get_module(code)
 
-        return self._get_kernel_function(kernel = kernel, func_name = func_name,
-                                         func_name_subfix = func_name_subfix)
+        return self._get_kernel_function(kernel=kernel, func_name=func_name,
+                                         func_name_subfix=func_name_subfix)
     # ----
 
     def _fwd_kernel(self, path_code: str | None = None,
@@ -76,7 +80,7 @@ class UsesCudaCode[M: Abs_Module, F: Abs_Function]():
                     defines_replaces: dict[str, str] | None = None) -> F:
         return self._get_kernel(path_code, code_file_name,
                                 func_name, defines_replaces,
-                                func_name_subfix = "_fwd")
+                                func_name_subfix="_fwd")
     # ----
 
     def _bwd_kernel(self, path_code: str | None = None,
@@ -85,31 +89,5 @@ class UsesCudaCode[M: Abs_Module, F: Abs_Function]():
                     defines_replaces: dict[str, str] | None = None) -> F:
         return self._get_kernel(path_code, code_file_name,
                                 func_name, defines_replaces,
-                                func_name_subfix = "_bwd")
+                                func_name_subfix="_bwd")
     # ----
-
-# ================================================================================= #
-# ================================================================================= #
-
-class CupyCudaCode(UsesCudaCode[cp.RawModule, cp.RawKernel]):
-
-    def __init__(self, base_path_code: str, cupy_cuda_compiler: str = "nvcc") -> None:
-        super().__init__(base_path_code)
-        self.cupy_cuda_compiler = cupy_cuda_compiler
-        self.base_path_code = f"/backends/cupy/source_modules/"
-
-    @override
-    def _get_module(self, code: str) -> cp.RawKernel:
-        return cp.RawModule(code, backend=self.cupy_cuda_compiler)
-# ---------
-
-class PyCudaCudaCode(UsesCudaCode[Module, Function]):
-
-    def __init__(self, base_path_code: str) -> None:
-        super().__init__(base_path_code)
-        self.base_path_code = f"/backends/pycuda/source_modules/"
-
-    @override
-    def _get_module(self, code: str) -> SourceModule:
-        return SourceModule(code)
-# ---------

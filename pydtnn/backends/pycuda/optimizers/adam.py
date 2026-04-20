@@ -34,7 +34,7 @@ class AdamPycuda(Adam[TensorArray], OptimizerPycuda):
         # -----------
 
         # GPU DIRECT-
-        self.defines_replaces: dict[str, str] = {"\"TYPE\"": DTYPE2CTYPE[self.model.dtype], "powf_or_pow" : func_pow[self.model.dtype]}
+        self.defines_replaces: dict[str, str] = {"\"TYPE\"": DTYPE2CTYPE[self.model.dtype], "powf_or_pow": func_pow[self.model.dtype]}
         self.update_gpudirect = self._get_kernel(func_name_subfix="_gpu_direct")
         # -----------
 

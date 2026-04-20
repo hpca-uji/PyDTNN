@@ -10,6 +10,7 @@ import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
+
 class Conv2DPointwisePycuda(AbstractConv2DPycuda):
 
     def _initializing_special_parameters(self):
@@ -30,10 +31,10 @@ class Conv2DPointwisePycuda(AbstractConv2DPycuda):
 
         match self.model.tensor_format:
             case TensorFormat.NCHW:
-                #self.bias_sum_bwd = self.cuda_sum_bias_axis_023()
+                # self.bias_sum_bwd = self.cuda_sum_bias_axis_023()
                 self.bias_sum_bwd = self._get_kernel(code_file_name="conv2d", func_name="cuda_sum_bias_axis_023")
             case TensorFormat.NHWC:
-                #self.bias_sum_bwd = self.cuda_sum_bias_axis_012()
+                # self.bias_sum_bwd = self.cuda_sum_bias_axis_012()
                 self.bias_sum_bwd = self._get_kernel(code_file_name="conv2d", func_name="cuda_sum_bias_axis_012")
             case _:
                 raise NotImplementedError(f"conv_2d_gpu_depthwise is not implemented for {self.model.tensor_format} format.")

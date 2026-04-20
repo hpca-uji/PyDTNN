@@ -31,7 +31,7 @@ class RMSPropPycuda(RMSProp[TensorArray], OptimizerPycuda):
         # -----------
 
         # GPU DIRECT -
-        self.defines_replaces: dict[str, str] = {"\"TYPE\"": DTYPE2CTYPE[self.model.dtype], "powf_or_pow" : pow_func}
+        self.defines_replaces: dict[str, str] = {"\"TYPE\"": DTYPE2CTYPE[self.model.dtype], "powf_or_pow": pow_func}
         self.update_gpudirect = self._get_kernel(func_name_subfix="_gpu_direct")
         # -------------
 

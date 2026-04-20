@@ -81,5 +81,5 @@ class LayerNormalizationPycuda(LayerNormalization[TensorArray], LayerPycuda):
         self.kernel_dim_params = (np.int32(np.prod(self.y.ary.shape) // n), np.int32(n))
 
         self.kernel_backward = self._bwd_kernel()
-        self.kernel_backward_weigths =  self._get_kernel(func_name="layer_normalization_backward_weights")
+        self.kernel_backward_weigths = self._get_kernel(func_name="layer_normalization_backward_weights")
         return

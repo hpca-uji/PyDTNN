@@ -10,12 +10,10 @@ from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.utils.performance_models import im2col_time, col2im_time
 from pydtnn.activations.relu6 import Relu6
 import logging
-
-from pydtnn.utils.uses_cuda import PyCudaCudaCode
 logger = logging.getLogger(__name__)
 
 
-class Relu6Pycuda(Relu6[TensorArray], ActivationPycuda, PyCudaCudaCode):
+class Relu6Pycuda(Relu6[TensorArray], ActivationPycuda):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

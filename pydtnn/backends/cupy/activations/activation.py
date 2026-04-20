@@ -1,3 +1,6 @@
+import cupy as cp
+from pydtnn.libs import numpy as libnp
+from pydtnn.utils.constants import DTYPE2CTYPE
 from pydtnn.backends.numpy.activations.activation import ActivationNumpy
 from pydtnn.backends.cupy.abstract.layerable import LayerableCupy
 import logging
@@ -5,19 +8,8 @@ import logging
 from pydtnn.utils.constants import ArrayShape
 logger = logging.getLogger(__name__)
 
-from pydtnn.backends.numpy.activations.activation import ActivationNumpy
-from pydtnn.utils.constants import DTYPE2CTYPE
 
-from pydtnn.libs import numpy as libnp
-import cupy as cp
-
-from utils.uses_cuda import CupyCudaCode
-
-class ActivationCupy(ActivationNumpy, LayerableCupy, CupyCudaCode):
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.cuda_compiler = "nvcc"
+class ActivationCupy(ActivationNumpy, LayerableCupy):
 
     def _model_init(self, prev_shape: ArrayShape, x: cp.ndarray | None = None):
         super()._model_init(prev_shape, x)

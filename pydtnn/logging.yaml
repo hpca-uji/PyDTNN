@@ -17,4 +17,4 @@ handlers:
 loggers:
   pydtnn:
     level: INFO
-    handlers: [console]
+    handlers: [console, file]

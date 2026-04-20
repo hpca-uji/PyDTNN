@@ -5,6 +5,7 @@ import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
+
 class RegressionMSEPycuda(RegressionMSE[TensorArray], MetricPycuda):
 
     def _model_init(self) -> None:

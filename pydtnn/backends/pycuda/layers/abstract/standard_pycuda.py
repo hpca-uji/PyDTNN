@@ -8,6 +8,7 @@ import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
+
 class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
 
     def _initializing_special_parameters(self):
@@ -27,7 +28,7 @@ class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
 
         self.dim_n = self.model.batch_size * self.ho * self.wo
         self.dim_c = self.ci * self.kh * self.kw
-        
+
         self.defines_replaces["DEFINE_BIAS"] = "BIAS_DB" if self.use_bias else "DEFINE_BIAS"
 
         match self.model.tensor_format:

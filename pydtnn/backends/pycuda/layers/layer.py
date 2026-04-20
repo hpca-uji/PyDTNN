@@ -4,13 +4,13 @@ from pydtnn import gpu_errors
 from numpy import ndarray
 from pydtnn.backends.pycuda.abstract.layerable import LayerablePycuda
 from pydtnn.layers.layer import Layer
+from pydtnn.utils.constants import DTYPE2CTYPE
 import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
-from pydtnn.utils.constants import DTYPE2CTYPE
-from pydtnn.utils.uses_cuda import PyCudaCudaCode
-class LayerPycuda(Layer[TensorArray], LayerablePycuda, PyCudaCudaCode):
+
+class LayerPycuda(Layer[TensorArray], LayerablePycuda):
     """
     Extends a Layer class with the attributes and methods required by GPU Layers.
     """

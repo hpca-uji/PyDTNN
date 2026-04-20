@@ -20,10 +20,10 @@ class AveragePool2DCupy(AveragePool2DNumpy, AbstractPool2DLayerCupy, LayerCupy):
                                  "TENSOR_FORMAT": str(self.model.tensor_format)}
         self.fwd_kernel = self._fwd_kernel()
         self.bwd_kernel = self._bwd_kernel()
-        #----
+        # ----
 
     def _fwd_avg_pool_nchw(self, x: np.ndarray, y: np.ndarray) -> None:
-        #return super()._fwd_avg_pool_nchw(x, y)
+        # return super()._fwd_avg_pool_nchw(x, y)
         self.fwd_kernel(self.model.cuda_grid,
                         self.model.cuda_block,
                         (x, y,
@@ -48,7 +48,7 @@ class AveragePool2DCupy(AveragePool2DNumpy, AbstractPool2DLayerCupy, LayerCupy):
     # ----
 
     def _bwd_avg_pool_nchw(self, dx: np.ndarray, dy: np.ndarray) -> None:
-        #return super()._bwd_avg_pool_nchw(dx, dy)
+        # return super()._bwd_avg_pool_nchw(dx, dy)
         self.bwd_kernel(self.model.cuda_grid,
                         self.model.cuda_block,
                         (dx, dy,
@@ -60,7 +60,7 @@ class AveragePool2DCupy(AveragePool2DNumpy, AbstractPool2DLayerCupy, LayerCupy):
     # ----
 
     def _bwd_avg_pool_nhwc(self, dx: np.ndarray, dy: np.ndarray) -> None:
-        #return super()._bwd_avg_pool_nhwc(dx, dy)
+        # return super()._bwd_avg_pool_nhwc(dx, dy)
         self.bwd_kernel(self.model.cuda_grid,
                         self.model.cuda_block,
                         (dx, dy,

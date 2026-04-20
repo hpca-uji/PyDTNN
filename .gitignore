@@ -2,8 +2,10 @@
 /dist/
 /build/
 /vendor/*/
+!/vendor/README.md
 
 __pycache__/
+/logger.log
 
 *.c
 *.so

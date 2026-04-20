@@ -10,12 +10,10 @@ from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.utils.performance_models import im2col_time, col2im_time
 from pydtnn.activations.leaky_relu import LeakyRelu
 import logging
-
-from pydtnn.utils.uses_cuda import PyCudaCudaCode
 logger = logging.getLogger(__name__)
 
 
-class LeakyReluPycuda(LeakyRelu[TensorArray], ActivationPycuda, PyCudaCudaCode):
+class LeakyReluPycuda(LeakyRelu[TensorArray], ActivationPycuda):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -65,7 +63,6 @@ class LeakyReluPycuda(LeakyRelu[TensorArray], ActivationPycuda, PyCudaCudaCode):
         self.bwd_time = \
             col2im_time(m=self.ci, n=n, cpu_speed=self.model.cpu_speed,
                         memory_bw=self.model.memory_bw, dtype=self.model.dtype)
-
 
     def forward(self, x: TensorArray) -> TensorArray:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)

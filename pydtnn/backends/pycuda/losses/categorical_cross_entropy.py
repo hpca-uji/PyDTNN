@@ -6,6 +6,7 @@ import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
+
 class CategoricalCrossEntropyPycuda(LossPycuda, CategoricalCrossEntropy[TensorArray]):
 
     def compute(self, y_pred: TensorArray, y_targ: TensorArray, batch_size: int) -> tuple[float, TensorArray]:

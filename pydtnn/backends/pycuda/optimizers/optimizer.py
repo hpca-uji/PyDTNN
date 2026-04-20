@@ -7,10 +7,9 @@ from pydtnn.backends.pycuda.abstract.base import BasePycuda
 import numpy as np
 import logging
 logger = logging.getLogger(__name__)
-from pydtnn.utils.uses_cuda import PyCudaCudaCode
 
 
-class OptimizerPycuda(Optimizer[TensorArray], BasePycuda, PyCudaCudaCode):
+class OptimizerPycuda(Optimizer[TensorArray], BasePycuda):
 
     """
     Extends an Optimizer class with the attributes and methods required by GPU Optimizers.

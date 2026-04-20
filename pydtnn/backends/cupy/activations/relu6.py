@@ -3,6 +3,8 @@ from pydtnn.backends.numpy.activations.relu6 import Relu6Numpy
 from pydtnn.libs import numpy as np
 import logging
 logger = logging.getLogger(__name__)
+
+
 class Relu6Cupy(Relu6Numpy, ActivationCupy):
 
     def _model_init(self, prev_shape, x=None):

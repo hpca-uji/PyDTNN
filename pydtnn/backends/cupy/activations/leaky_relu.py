@@ -4,6 +4,7 @@ from pydtnn.backends.numpy.activations.leaky_relu import LeakyReluNumpy
 import logging
 logger = logging.getLogger(__name__)
 
+
 class LeakyReluCupy(LeakyReluNumpy, ActivationCupy):
 
     def _model_init(self, prev_shape, x=None):

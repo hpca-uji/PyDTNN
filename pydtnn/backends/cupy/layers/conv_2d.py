@@ -15,12 +15,12 @@ class Conv2DCupy(Conv2DNumpy, AbstractConv2DCupy, LayerCupy):
         super()._model_init(prev_shape, x)
 
         self.stream_2 = np.cuda.Stream()
-        #self.defines_replaces = {"\"TYPE\"": DTYPE2CTYPE[self.model.dtype], "TENSOR_FORMAT": str(self.model.tensor_format)}
+        # self.defines_replaces = {"\"TYPE\"": DTYPE2CTYPE[self.model.dtype], "TENSOR_FORMAT": str(self.model.tensor_format)}
 
-        self._im2row = self._get_kernel(func_name = "im2row", defines_replaces = {"\"TYPE\"": DTYPE2CTYPE[self.model.dtype], "TENSOR_FORMAT": "nhwc"})
-        self._im2col = self._get_kernel(func_name = "im2col", defines_replaces = {"\"TYPE\"": DTYPE2CTYPE[self.model.dtype], "TENSOR_FORMAT": "nchw"})
-        self._row2im = self._get_kernel(func_name = "row2im", defines_replaces = {"\"TYPE\"": DTYPE2CTYPE[self.model.dtype], "TENSOR_FORMAT": "nhwc"})
-        self._col2im = self._get_kernel(func_name = "col2im", defines_replaces = {"\"TYPE\"": DTYPE2CTYPE[self.model.dtype], "TENSOR_FORMAT": "nchw"})
+        self._im2row = self._get_kernel(func_name="im2row", defines_replaces={"\"TYPE\"": DTYPE2CTYPE[self.model.dtype], "TENSOR_FORMAT": "nhwc"})
+        self._im2col = self._get_kernel(func_name="im2col", defines_replaces={"\"TYPE\"": DTYPE2CTYPE[self.model.dtype], "TENSOR_FORMAT": "nchw"})
+        self._row2im = self._get_kernel(func_name="row2im", defines_replaces={"\"TYPE\"": DTYPE2CTYPE[self.model.dtype], "TENSOR_FORMAT": "nhwc"})
+        self._col2im = self._get_kernel(func_name="col2im", defines_replaces={"\"TYPE\"": DTYPE2CTYPE[self.model.dtype], "TENSOR_FORMAT": "nchw"})
     # ----
 
     def im2row(self, x: np.ndarray, x_rows: np.ndarray) -> None:

@@ -1,13 +1,13 @@
+from pydtnn.utils.constants import DTYPE2CTYPE
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.metrics.metric import Metric
 from pydtnn.backends.pycuda.abstract.base import BasePycuda
 from pycuda.driver import Function  # type: ignore
 import logging
 logger = logging.getLogger(__name__)
-from pydtnn.utils.constants import DTYPE2CTYPE
-from pydtnn.utils.uses_cuda import PyCudaCudaCode
 
-class MetricPycuda(Metric[TensorArray], BasePycuda, PyCudaCudaCode):
+
+class MetricPycuda(Metric[TensorArray], BasePycuda):
     """
     Extends a Metric class with the attributes and methods required by GPU Metrics.
     """

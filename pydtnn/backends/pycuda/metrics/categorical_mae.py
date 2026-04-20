@@ -5,6 +5,7 @@ import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
+
 class CategoricalMAEPycuda(CategoricalMAE[TensorArray], MetricPycuda):
 
     def _model_init(self) -> None:

@@ -6,6 +6,7 @@ import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
+
 class KLDivergencePycuda(KLDivergence[TensorArray], LossPycuda):
 
     def compute(self, y_pred, y_targ, batch_size):

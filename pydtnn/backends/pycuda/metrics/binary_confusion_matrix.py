@@ -5,6 +5,7 @@ from pydtnn.backends.pycuda.metrics.metric import MetricPycuda
 import logging
 logger = logging.getLogger(__name__)
 
+
 class BinaryConfusionMatrixPycuda(BinaryConfusionMatrix[TensorArray], MetricPycuda):
 
     def _model_init(self) -> None:

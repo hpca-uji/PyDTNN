@@ -5,6 +5,7 @@ from pycuda import gpuarray  # type: ignore
 import logging
 logger = logging.getLogger(__name__)
 
+
 class BinaryCrossEntropyPycuda(LossPycuda, BinaryCrossEntropy[TensorArray]):
 
     def compute(self, y_pred: TensorArray, y_targ: TensorArray, batch_size: int) -> tuple[float, TensorArray]:

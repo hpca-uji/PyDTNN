@@ -31,7 +31,7 @@ class SGDPycuda(SGD[TensorArray], OptimizerPycuda):
 
         # GPU Direct -
         self.defines_replaces: dict[str, str] = {"\"TYPE\"": DTYPE2CTYPE[self.model.dtype],
-                                                 "NESTEROV_OPS" : "NESTEROV_OPS" if self.nesterov else "NOT_NESTEROV"}
+                                                 "NESTEROV_OPS": "NESTEROV_OPS" if self.nesterov else "NOT_NESTEROV"}
         self.update_gpudirect = self._get_kernel(func_name_subfix="_gpu_direct")
         # ------------
 

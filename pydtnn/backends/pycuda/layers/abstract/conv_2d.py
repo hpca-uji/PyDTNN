@@ -11,6 +11,7 @@ from typing import Any
 import logging
 logger = logging.getLogger(__name__)
 
+
 class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
 
     def __init__(self, *args, **kwargs):

@@ -4,6 +4,7 @@ from pydtnn.backends.numpy.activations.relu import ReluNumpy
 import logging
 logger = logging.getLogger(__name__)
 
+
 class ReluCupy(ReluNumpy, ActivationCupy):
 
     def _model_init(self, prev_shape, x=None):
