@@ -1,16 +1,15 @@
-/.venv/
 /dist/
-/build/
-/vendor/*/
-!/vendor/README.md
-
-__pycache__/
+/.venv*
 /pydtnn.log
+__pycache__/
 
 *.c
 *.so
 *.idx
 *.egg-info
+
+/vendor/*/
+!/vendor/README.md
 
 /datasets/*/
 !/datasets/mnist/

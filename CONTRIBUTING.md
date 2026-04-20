@@ -97,7 +97,7 @@
 │   │   ├── # each implementation with whole components structure
 │   │   └── pycuda
 │   │       ├── # implentation
-│   │       └── utils
+│   │       └── utils  # cu files
 │   │           ├── memory_allocation.py
 │   │           └── tensor_array.py
 ```
@@ -165,7 +165,7 @@ Ensure before publishing the working tree is public under `master`.
 
 ```sh
 python -m build --outdir ./dist/ --sdist
-python -m build --outdir ./build/ --wheel
-python -m auditwheel repair --wheel-dir ./dist/ ./build/*.whl
+python -m build --outdir ./dist/.build/ --wheel
+python -m auditwheel repair --wheel-dir ./dist/ ./dist/.build/*.whl
 python -m twine upload --repository pypi ./dist/*
 ```
