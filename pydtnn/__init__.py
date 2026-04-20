@@ -15,6 +15,7 @@ type Cudnn_Handle_Type = int
 type Cublas_Handle_Type = int
 
 gpu_errors = []
+package_name = __name__
 
 # OPTIONAL IMPORTS
 try:

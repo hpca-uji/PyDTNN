@@ -13,6 +13,8 @@ from pathlib import PurePath
 from importlib import import_module
 from ctypes.util import find_library
 from collections.abc import Iterable
+from importlib import resources
+from pydtnn import package_name
 
 import numpy as np
 
@@ -164,3 +166,21 @@ def get_npz_shape(f):
                 shapes[stem] = shape
 
     return shapes
+
+def get_code_from_file(path: str, replaces: dict[str, str] = dict()) -> str:
+    """
+    Args:
+        path (str): Path to the code's file.
+        replaces (dict[str, str] | None): A dictionary where the keys are the parts of code to replace and the values are the replacements, or None if there is nothing to replace.  
+            NOTE: Remeber to add the ' \" ' if they are necessary (e.g.:{'\"TYPE\"': float} to substitude all the "TYPE" with float).
+    Returns:
+       code (str): The code as a string (str).
+    
+    """
+
+    code = resources.read_text(package_name, path)
+    # "prepocessor" (replacing generic "defines" and other sections of code with the actual code)
+    for rep in replaces.items():
+        code = code.replace(*rep)
+
+    return code
