@@ -11,7 +11,7 @@ from pydtnn.tracers.simple_tracer_pmlib import SimpleTracerPMLib
 from pydtnn.tracers.simple_tracer_gpu import SimpleTracerPycuda
 from pydtnn.tracers.simple_tracer import SimpleTracer
 from pydtnn.tracers.extrae_tracer import ExtraeTracer
-from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
+from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_MDL_EVENT_enum
 from pydtnn.utils.performance_models import allreduce_time
 from pydtnn.parser import PydtnnArgumentParser
 from pydtnn.backends.fuse.layers.layer import select as select_fuse_layer
@@ -984,11 +984,11 @@ class Model[T: Array]:
         if blocking:
             self._model_reduce_sync(gradient)
         elif pipeline:
-            self._model_reduce_async(gradient)
             self._model_reduce_wait(gradient)
+            self._model_reduce_async(gradient)
         else:
-            self._model_reduce_wait(gradient)
             self._model_reduce_async(gradient)
+            self._model_reduce_wait(gradient)
 
     def train(self, bar_width=BAR_WIDTH) -> dict[str, list[np.ndarray]]:
         self._ensure_model_runable()

@@ -157,7 +157,6 @@
 
 # Planned
 - Model tensor parallelism (previously implemented on a prototype)
-- Model pipeline parallelism
 - Model quantization (operate on high precision and reduce on weight size)
 
 # Publishing
