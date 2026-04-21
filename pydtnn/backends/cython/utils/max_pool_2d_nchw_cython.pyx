@@ -2,21 +2,13 @@ import numpy as np
 cimport numpy as np
 cimport cython
 from cython.parallel import prange
+from pydtnn.backends.cython.utils.base cimport npDT
 
 __all__ = (
     "max_pool_2d_fwd_nchw_cython",
     "max_pool_2d_bwd_nchw_cython"
 )
 
-# =================== #
-# --- COMMON --- #
-ctypedef fused npDT:
-    np.int8_t
-    np.float32_t
-    np.float64_t
-    # NOTE: in order to extend the supported data types, add the new types here.
-# -- END npDT -- #
-# =================== #
 
 # --- Forward --- #
 @cython.boundscheck(False)

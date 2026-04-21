@@ -1,19 +1,16 @@
-__all__ = (
-    "sigmoid_fwd_cython",
-    "sigmoid_bwd_cython"
-)
 
 import numpy as np
 cimport numpy as np
 cimport cython
 from cython.parallel import prange
 from cython.cimports.libc.math import exp
+from pydtnn.backends.cython.utils.base cimport npDT
 
-# Declare fused type npDT (to be used with template functions)
-ctypedef fused npDT:
-    np.int8_t
-    np.float32_t
-    np.float64_t
+__all__ = (
+    "sigmoid_fwd_cython",
+    "sigmoid_bwd_cython"
+)
+
 
 @cython.boundscheck(False)
 @cython.wraparound(False)

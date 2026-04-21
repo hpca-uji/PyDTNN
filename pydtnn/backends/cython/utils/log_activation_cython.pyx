@@ -1,21 +1,16 @@
-__all__ = (
-    "log_fwd_cython",
-    "log_bwd_cython"
-)
 
 import numpy as np
 cimport numpy as np
 cimport cython
 from cython.parallel import prange
 from cython.cimports.libc.math import exp, log
+from pydtnn.backends.cython.utils.base cimport npDT
 
-# NOTE: Not recommended to use if the "x" contains "big" negative values.
+__all__ = (
+    "log_fwd_cython",
+    "log_bwd_cython"
+)
 
-# Declare fused type npDT (to be used with template functions)
-ctypedef fused npDT:
-    np.int8_t
-    np.float32_t
-    np.float64_t
 
 @cython.boundscheck(False)
 @cython.wraparound(False)

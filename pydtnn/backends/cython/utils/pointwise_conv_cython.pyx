@@ -2,16 +2,13 @@ import numpy as np
 cimport numpy as np
 cimport cython
 from cython.parallel import prange
+from pydtnn.backends.cython.utils.base cimport npDT
 
-# =================== #
-# --- COMMON --- #
-ctypedef fused npDT:
-    np.int8_t
-    np.float32_t
-    np.float64_t
-    # NOTE: in order to extend the supported data types, add the new types here.
-# -- END npDT -- #
-# =================== #
+__all__ = (
+    "pointwise_conv_cython",
+)
+
+
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.initializedcheck(False)
