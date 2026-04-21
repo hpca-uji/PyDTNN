@@ -133,8 +133,9 @@ The PyDTNN framework comes with a utility launcher called
     `alexnet`, `vgg11`, `vgg16`, etc. Default: `None`.
   - `--backend`: Backend selection priority.
     Format: `[module[,module[,...]]:]backend[,backend[,...]][;...]`.
-    Example: `all:numpy;conv_2d:gemm;layers,optimizers:numpy,cython`.
+    Example: `"all:numpy;conv_2d:gemm;layers,optimizers:numpy,cython"`.
     Selection: More specific modules are attempted first, backend order goes from least to most priority.
+    (Note: remember to put value between quotes, specially if there is a ";" in it).
     Default: `cpu`.
   - `--batch-size`: Batch size per MPI rank. Default: `None`.
   - `--global-batch-size`: Batch size between all MPI ranks. Default: `None`.
