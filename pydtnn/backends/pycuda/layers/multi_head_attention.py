@@ -1,5 +1,4 @@
 # https://github.com/storypku/cuda-support-for-bazel/blob/9a9c90c7d73fdafb3fbc8713232405cae4ae66d8/examples/cudnn-samples/multiHeadAttention/multiHeadAttention.cpp
-from pydtnn.backends.pycuda.utils.memory_allocation import checkConvolutionMemory, getConvolutionWorkspaceSize, getConvolutionWorkspacePtr
 from pydtnn.layers.multi_head_attention import MultiHeadAttention
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.backends.pycuda.layers.layer import LayerPycuda
@@ -70,7 +69,7 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
 
         # GPU Memory Allocation
         self.weights_size, self.workspace_size, self.reserve_backward_size = cudnn.cudnnGetMultiHeadAttnBuffers(self.model.cudnn_handle, self.attn_desc)
-        checkConvolutionMemory(self.workspace_size)
+        self.model.layers[0].checkConvolutionMemory(self.workspace_size)
         weights_size = self.weights_size.value // np.dtype(self.model.dtype).itemsize
         reserve_backward_size = self.reserve_backward_size.value // np.dtype(self.model.dtype).itemsize + 1
         self.weights = gpuarray.zeros((weights_size,), self.model.dtype)
@@ -138,7 +137,7 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
                                             self.dvalue.desc, value.ptr,
                                             self.y.desc, self.y.ptr,
                                             self.weights_size.value, self.weights.ptr,
-                                            getConvolutionWorkspaceSize(), getConvolutionWorkspacePtr(),
+                                            self.model.layers[0].getConvolutionWorkspaceSize(), self.model.layers[0].getConvolutionWorkspacePtr(),
                                             self.reserve_backward_size.value, self.reserve_backward.ptr)
         else:
             cudnn.cudnnMultiHeadAttnForward(self.model.cudnn_handle, self.attn_desc,
@@ -150,7 +149,7 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
                                             self.dvalue.desc, value.ptr,
                                             self.y.desc, self.y.ptr,
                                             self.weights_size.value, self.weights.ptr,
-                                            getConvolutionWorkspaceSize(), getConvolutionWorkspacePtr(),
+                                            self.model.layers[0].getConvolutionWorkspaceSize(), self.model.layers[0].getConvolutionWorkspacePtr(),
                                             0, None)
         return self.y
 
@@ -163,7 +162,7 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
                                              self.dkey.desc, self.dkey.ptr, self.key.ptr,
                                              self.dvalue.desc, self.dvalue.ptr, self.value.ptr,
                                              self.weights_size.value, self.weights.ptr,
-                                             getConvolutionWorkspaceSize(), getConvolutionWorkspacePtr(),
+                                             self.model.layers[0].getConvolutionWorkspaceSize(), self.model.layers[0].getConvolutionWorkspacePtr(),
                                              self.reserve_backward_size.value, self.reserve_backward.ptr)
 
         cudnn.cudnnMultiHeadAttnBackwardWeights(self.model.cudnn_handle, self.attn_desc, self.add_grad,
@@ -172,7 +171,7 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
                                                 self.dvalue.desc, self.value.ptr,
                                                 self.y.desc, dy.ptr,
                                                 self.weights_size.value, self.weights.ptr, self.dw.ptr,
-                                                getConvolutionWorkspaceSize(), getConvolutionWorkspacePtr(),
+                                                self.model.layers[0].getConvolutionWorkspaceSize(), self.model.layers[0].getConvolutionWorkspacePtr(),
                                                 self.reserve_backward_size.value, self.reserve_backward.ptr)
 
         return self.dquery, self.dkey, self.dvalue

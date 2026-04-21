@@ -3,12 +3,16 @@ from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.backends.pycuda.layers.layer import LayerPycuda
 from pydtnn.layers.input import Input
 from pycuda import gpuarray  # type: ignore
+import pycuda.driver as drv  # type: ignore
+import ctypes
 import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
 
 class InputPycuda(Input[TensorArray], LayerPycuda):
+    ws_size = 0
+    ws: drv.DeviceAllocation = None
 
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray):
         super()._model_init(prev_shape, x)
@@ -49,3 +53,23 @@ class InputPycuda(Input[TensorArray], LayerPycuda):
             x = TensorArray(empty_x, self.model.tensor_format, self.model.cudnn_dtype)
             y_targ = TensorArray(empty_y_tag, self.model.tensor_format, self.model.cudnn_dtype)
         return x, y_targ
+
+    @property
+    def ws_ptr(self) -> ctypes.c_void_p:
+        return ctypes.c_void_p(int(self.ws))
+
+    def checkConvolutionMemory(self, size) -> None:
+        if 0 < size.value < self.ws_size:
+            return
+
+        if self.ws is not None:
+            self.ws.free()
+
+        self.ws_size = size.value
+        self.ws = drv.mem_alloc(self.ws_size)
+
+    def getConvolutionWorkspacePtr(self) -> ctypes.c_void_p:
+        return self.ws_ptr
+
+    def getConvolutionWorkspaceSize(self) -> int:
+        return self.ws_size

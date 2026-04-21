@@ -1,5 +1,4 @@
 from pycuda import gpuarray  # type: ignore
-from pydtnn.backends.pycuda.utils.memory_allocation import checkConvolutionMemory, getConvolutionWorkspaceSize, getConvolutionWorkspacePtr
 from pydtnn.libs import cudnn as cudnn
 from typing import Any, override
 from pydtnn.utils.tensor import TensorFormat, format_transpose
@@ -72,12 +71,12 @@ class Conv2DPycuda(AbstractConv2DPycuda):
             if self.model.enable_cudnn_auto_conv_alg else \
             cudnn.cudnnConvolutionFwdAlgo['CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_PRECOMP_GEMM']
 
-        base_conv_memory = getConvolutionWorkspaceSize()
+        base_conv_memory = self.model.layers[0].getConvolutionWorkspaceSize()
 
         local_size = cudnn.cudnnGetConvolutionForwardWorkspaceSize(self.model.cudnn_handle,
                                                                    x.desc, self.weights.desc, self.conv_desc,
                                                                    self.y.desc, self.fwd_algo)
-        checkConvolutionMemory(local_size)
+        self.model.layers[0].checkConvolutionMemory(local_size)
 
         self.bwd_dw_algo = cudnn.cudnnFindConvolutionBackwardFilterAlgorithm(self.model.cudnn_handle,
                                                                              x.desc, self.y.desc, self.conv_desc,
@@ -88,7 +87,7 @@ class Conv2DPycuda(AbstractConv2DPycuda):
         local_size = cudnn.cudnnGetConvolutionBackwardFilterWorkspaceSize(self.model.cudnn_handle,
                                                                           x.desc, self.y.desc, self.conv_desc,
                                                                           self.weights.desc, self.bwd_dw_algo)
-        checkConvolutionMemory(local_size)
+        self.model.layers[0].checkConvolutionMemory(local_size)
 
         self.bwd_dx_algo = cudnn.cudnnFindConvolutionBackwardDataAlgorithm(self.model.cudnn_handle,
                                                                            self.weights.desc, self.y.desc,
@@ -101,12 +100,12 @@ class Conv2DPycuda(AbstractConv2DPycuda):
                                                                         self.weights.desc, self.y.desc,
                                                                         self.conv_desc,
                                                                         x.desc, self.bwd_dx_algo)
-        checkConvolutionMemory(local_size)
+        self.model.layers[0].checkConvolutionMemory(local_size)
 
         self.forward = self._forward_standard
         self.backward = self._backward_standard
 
-        self.memory_used += (getConvolutionWorkspaceSize() - base_conv_memory)
+        self.memory_used += (self.model.layers[0].getConvolutionWorkspaceSize() - base_conv_memory)
     # -----
 
     def _forward_standard(self, x: TensorArray) -> TensorArray:
@@ -117,7 +116,7 @@ class Conv2DPycuda(AbstractConv2DPycuda):
                                       x.desc, x.ptr,
                                       self.weights.desc, self.weights.ptr,
                                       self.conv_desc, self.fwd_algo,
-                                      getConvolutionWorkspacePtr(), getConvolutionWorkspaceSize(), beta,
+                                      self.model.layers[0].getConvolutionWorkspacePtr(), self.model.layers[0].getConvolutionWorkspaceSize(), beta,
                                       self.y.desc, self.y.ptr)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
@@ -139,7 +138,7 @@ class Conv2DPycuda(AbstractConv2DPycuda):
         cudnn.cudnnConvolutionBackwardFilter(self.model.cudnn_handle, alpha,
                                              self.x.desc, self.x.ptr,
                                              dy.desc, dy.ptr, self.conv_desc, self.bwd_dw_algo,
-                                             getConvolutionWorkspacePtr(), getConvolutionWorkspaceSize(), beta,
+                                             self.model.layers[0].getConvolutionWorkspacePtr(), self.model.layers[0].getConvolutionWorkspaceSize(), beta,
                                              self.dw.desc, self.dw.ptr)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
@@ -167,7 +166,7 @@ class Conv2DPycuda(AbstractConv2DPycuda):
                                            self.weights.desc, self.weights.ptr,
                                            dy.desc, dy.ptr,
                                            self.conv_desc, self.bwd_dx_algo,
-                                           getConvolutionWorkspacePtr(), getConvolutionWorkspaceSize(), beta,
+                                           self.model.layers[0].getConvolutionWorkspacePtr(), self.model.layers[0].getConvolutionWorkspaceSize(), beta,
                                            self.dx.desc, self.dx.ptr)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.dx

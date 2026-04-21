@@ -156,7 +156,6 @@
 ```
 
 # Planned
-- Move `gpu.utils.memory_allocation` from global scope to model instance
 - Extract shared logic from `.pyi` and `.pyx` into a common module
 
 # Publishing
