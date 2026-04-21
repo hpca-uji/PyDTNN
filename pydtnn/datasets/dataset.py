@@ -89,10 +89,10 @@ class Dataset:
             transformations_training.append(self._x_transformer_adaptor(self._do_transform_resize))
             transformations_always.append(self._x_transformer_adaptor(self._do_transform_resize))
 
-        if self.model.augment_flip:
+        if self.model.augment_flip_prob > 0:
             transformations_training.append(self._x_transformer_adaptor(self._do_flip_images))
 
-        if self.model.augment_crop:
+        if self.model.augment_crop_prob > 0:
             transformations_training.append(self._x_transformer_adaptor(self._do_augment_crop))
 
         if self.model.augment_shuffle:

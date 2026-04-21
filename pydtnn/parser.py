@@ -189,16 +189,12 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
                                help="Split between training and validation data.")
         _ds_group.add_argument('--augment-shuffle', default=True, type=bool_lambda,
                                help="Shuffle training images. Default: True.")
-        _ds_group.add_argument('--augment-flip', default=False, type=bool_lambda,
-                               help="Flip horizontally training images. Default: False.")
-        _ds_group.add_argument('--augment-flip-prob', type=factor, default=0.5,
-                               help="Probability to flip training images. Default: 0.5.")
-        _ds_group.add_argument('--augment-crop', default=False, type=bool_lambda,
-                               help="Crop training images. Default: False.")
+        _ds_group.add_argument('--augment-flip-prob', type=factor, default=0.0,
+                               help="Probability to flip training images. If the value is less or equal to 0 it is disabled. Default: 0.0.")
+        _ds_group.add_argument('--augment-crop-prob', type=factor, default=0.0,
+                               help="Probability to crop training images. If the value is less or equal to 0 it is disabled. Default: 0.0.")
         _ds_group.add_argument('--augment-crop-size', type=int, default=16,
                                help="Size to crop training images. Default: 16.")
-        _ds_group.add_argument('--augment-crop-prob', type=factor, default=0.5,
-                               help="Probability to crop training images. Default: 0.5.")
         _ds_group.add_argument('--transform-crop', default=False, type=bool_lambda,
                                help="Crop the images. True if specified.")
         _ds_group.add_argument('--transform-crop-perc', type=float, default=0.875,

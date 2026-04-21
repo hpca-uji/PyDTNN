@@ -190,11 +190,9 @@ The PyDTNN framework comes with a utility launcher called
     for training+validation data, use test data for validation. `True`
     if specified.
   - `--validation-split`: Split between training and validation data.
-  - `--augment-flip`: Flip horizontally training images. Default: `False`.
-  - `--augment-flip-prob`: Probability to flip training images. Default: `0.5`.
-  - `--augment-crop`: Crop training images. Default: `False`.
+  - `--augment-flip-prob`: Probability to flip training images. If the value is less or equal to 0 it is disabled. Default: `0.0`.
+  - `--augment-crop-prob`: Probability to crop training images. If the value is less or equal to 0 it is disabled. Default: `0.0`.
   - `--augment-crop-size`: Size to crop training images. Default: `16`.
-  - `--augment-crop-prob`: Probability to crop training images. Default: `0.5`.
   - `--validation-split`: Split between training and validation data.
   - `--transform-crop`: Crop the images. `True` if specified.
   - `--transform-crop-perc`: Central crop of the images. Default: `0.875`.
