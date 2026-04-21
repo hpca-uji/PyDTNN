@@ -178,7 +178,7 @@ class ParamsLayerPytorch(Params):
         self.shape = format_reshape((C, H, W), "CHW", self.tensor_format[1:])
         self.model_name = None
         self.evaluate_only = True
-        self.parallel = "sequential"
+        self.parallel_data = False
         self.loss_func = "categorical_cross_entropy"
         self.enable_cudnn = False
         self.omm = None

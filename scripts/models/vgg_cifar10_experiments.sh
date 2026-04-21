@@ -41,7 +41,7 @@ for procs in 6 4 2 1; do
       --reduce-lr-on-plateau-min-lr=0 \
       --stop-at-loss-metric=val_categorical_accuracy \
       --stop-at-loss-threshold=70.0 \
-      --parallel=data \
+      --parallel-data=True \
       --use-blocking-mpi=True \
       --tracing=False \
       --profile=False \

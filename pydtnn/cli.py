@@ -116,7 +116,7 @@ def main():
             print_model_reports(model)
             raise SystemExit(0)
     # Barrier
-    if model.parallel in ["data"]:
+    if model.parallel_data:
         model.comm.Barrier()
     # Training
     if model.comm_rank == 0:
@@ -132,7 +132,7 @@ def main():
     with exc_tracer():
         history = model.train()
     # Barrier
-    if model.parallel == "data":
+    if model.parallel_data:
         model.comm.Barrier()
     # Print performance results and evaluation history
     if model.comm_rank == 0:

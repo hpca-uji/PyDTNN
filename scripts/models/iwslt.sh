@@ -27,7 +27,7 @@ pydtnn-benchmark \
   --reduce-lr-on-plateau-factor=0.1 \
   --reduce-lr-on-plateau-patience=5 \
   --reduce-lr-on-plateau-min-lr=0 \
-  --parallel=sequential \
+  --parallel-data=False \
   --use-blocking-mpi=True \
   --tracing=False \
   --profile=False \

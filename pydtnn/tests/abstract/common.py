@@ -20,7 +20,7 @@ def verbose_test():
 
 class Params:
     def __init__(self) -> None:
-        self.parallel = "sequential"
+        self.parallel_data = False
         self.dtype: np.dtype = np.dtype(np.float32)
         self.tensor_format = TensorFormat.NHWC.upper()
         self.backend = "cpu"

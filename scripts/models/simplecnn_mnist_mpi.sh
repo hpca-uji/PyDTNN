@@ -34,7 +34,7 @@ mpirun -np 1 "${MPI_ARGS[@]}" \
   --reduce-lr-every-nepochs-min-lr=0.001 \
   --early-stopping-metric=val_categorical_cross_entropy \
   --early-stopping-patience=20 \
-  --parallel=data \
+  --parallel-data=True \
   --use-blocking-mpi=True \
   --use-mpi-buffers=False \
   --tracing=False \

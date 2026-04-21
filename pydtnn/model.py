@@ -247,7 +247,6 @@ class Model[T: Array]:
         self.enable_cudnn = gpuarray is not None and drv is not None and cublas is not None
         self.gpudirect: bool = self.enable_gpudirect
         self.enable_nccl: bool = self.enable_nccl
-        self.parallel: Model.ParallelMode = Model.ParallelMode(self.parallel)
         self.dtype: np.dtype = np.dtype(self.dtype)
         self.memory: PrivateMemory = None  # type: ignore (it will be intialized later if "self.use_memory_pool" is True)
 
@@ -350,15 +349,12 @@ class Model[T: Array]:
 
     def _mpi_init(self) -> None:
         # Communication type
-        match self.parallel:
-            case "sequential":
-                self.MPI, self.comm = (None, None)
-            case "data":
-                if not MPI:
-                    raise ValueError("Please, install mpi4py to allow parallel MPI execution!")
-                self.MPI, self.comm = (MPI, MPI.COMM_WORLD)
-            case _:
-                raise ValueError(f"Parallel option '{self.parallel}' not recognized.")
+        if self.parallel_data:
+            if not MPI:
+                raise ValueError("Please, install mpi4py to allow parallel MPI execution!")
+            self.MPI, self.comm = (MPI, MPI.COMM_WORLD)
+        else:
+            self.MPI, self.comm = (None, None)
 
         # Communication size
         self.rank_weight = 1.0

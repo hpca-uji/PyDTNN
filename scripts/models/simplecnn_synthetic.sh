@@ -31,7 +31,7 @@ pydtnn-benchmark \
   --reduce-lr-every-nepochs-min-lr=0.001 \
   --early-stopping-metric=val_categorical_cross_entropy \
   --early-stopping-patience=20 \
-  --parallel=sequential \
+  --parallel-data=False \
   --tracing=False \
   --profile=False \
   --backend=cpu \

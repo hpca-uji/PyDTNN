@@ -40,7 +40,7 @@ mpirun -np 1 \
   --reduce-lr-every-nepochs-min-lr=0.001 \
   --stop-at-loss-metric=val_categorical_accuracy \
   --stop-at-loss-threshold=70.0 \
-  --parallel=data \
+  --parallel-data=True \
   --use-blocking-mpi=True \
   --tracing=False \
   --profile=False \

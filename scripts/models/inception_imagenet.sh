@@ -37,7 +37,7 @@ mpirun -np 2 \
   --reduce-lr-on-plateau-min-lr=0.0001 \
   --stop-at-loss-metric=val_categorical_accuracy \
   --stop-at-loss-threshold=70.0 \
-  --parallel=sequential \
+  --parallel-data=False \
   --use-blocking-mpi=False \
   --tracing=False \
   --profile=False \

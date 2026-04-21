@@ -29,7 +29,7 @@ function run_model() {
     --learning-rate=0.01 \
     --loss-func=categorical_cross_entropy \
     --schedulers= \
-    --parallel=sequential \
+    --parallel-data=False \
     --tracing=False \
     --profile=False \
     --backend=cpu \
