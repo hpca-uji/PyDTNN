@@ -1,0 +1,336 @@
+import enum
+from timeit import default_timer as timer
+
+from tqdm import tqdm
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.datasets.dataset import Dataset
+from pydtnn.utils.constants import Array
+import numpy as np
+
+from pydtnn._model.model_eval import Model_Eval
+from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_MDL_EVENT_enum
+import time
+
+
+import logging
+logger = logging.getLogger(__name__)
+
+class Model_Train[T: Array](Model_Eval[T]):
+
+    class SyncParticipation(enum.StrEnum):
+        ALL = enum.auto()
+        AVAIL2ALL = enum.auto()
+    
+    class SyncAlgorithm(enum.StrEnum):
+        AVG = enum.auto()
+        WAVG = enum.auto()
+        INVAVG = enum.auto()
+    
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+        # Synchronization parameters
+        # NOTE: This parameter come from Parser.
+        self.model_sync_algo = self.SyncAlgorithm(self.model_sync_algo)
+
+        # NOTE: This parameter come from Parser.
+        self.model_sync_participation = self.SyncParticipation(self.kwargs["model_sync_participation"])
+
+
+    def _model_reduce_sync(self, gradient=True):
+        for layer in self.layers:
+            self.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.ALLREDUCE_DW)
+            layer.reduce_weights_sync(gradient=gradient)
+            self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
+
+    def _model_reduce_async(self, gradient=True):
+        for layer in self.layers:
+            self.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.ALLREDUCE_DW)
+            layer.reduce_weights_async(gradient=gradient)
+            self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
+
+    def _model_reduce_wait(self, gradient=True):
+        for layer in self.layers:
+            self.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.WAIT_DW)
+            layer.wait_allreduce_async(gradient=gradient)
+            self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
+
+    # TODO: Modify the method's name.
+    def _weight_update(self, gradient=True, blocking=True, pipeline=False):
+        if blocking:
+            self._model_reduce_sync(gradient)
+        elif pipeline:
+            self._model_reduce_wait(gradient)
+            self._model_reduce_async(gradient)
+        else:
+            self._model_reduce_async(gradient)
+            self._model_reduce_wait(gradient)
+    # -----
+
+    def _compute_rank_weight(self, mask: list[int], part: Dataset.Part) -> float:
+        match self.model_sync_participation:
+            case Model.SyncParticipation.ALL:
+                comm_nsamples = self.comm_nsamples[part]
+            case Model.SyncParticipation.AVAIL2ALL:
+                if mask[self.comm_rank]:
+                    comm_nsamples = [nsamples for nsamples, mask in zip(self.comm_nsamples[part], mask) if mask]
+                else:
+                    return 0.0
+            case _:
+                raise ValueError(f"Model synchronization participation option '{self.model_sync_participation}' not recognized. Only recognized: {list(Model.SyncParticipation)}")
+
+        min_nsamples, max_nsamples, total_nsamples = min(comm_nsamples), max(comm_nsamples), sum(comm_nsamples)
+        comm_size = len(comm_nsamples)
+
+        match self.model_sync_algo:
+            case Model.SyncAlgorithm.AVG:
+                return 1.0 / comm_size
+            case Model.SyncAlgorithm.WAVG:
+                return self.dataset._nsamples[part] / total_nsamples
+            case Model.SyncAlgorithm.INVAVG:
+                inverse_nsamples = min_nsamples + (max_nsamples - self.dataset._nsamples[part])
+                return inverse_nsamples / total_nsamples
+            case _:
+                raise ValueError(f"Model synchronization algorithm option '{self.model_sync_algo}' not recognized. Only recognized: {list(Model.SyncAlgorithm)}")
+
+
+    def _train_batch(self, x_batch: np.ndarray, y_batch: np.ndarray, sync_model=True) -> np.ndarray:
+        self.mode = Model.Mode.TRAIN
+
+        # Schedulers begin
+        for sched in self.schedulers:
+            sched.on_batch_begin()
+
+        self.real_batch_size = x_batch.shape[0]
+        x, y_targ = self.layers[0]._sync_x_y(x_batch, y_batch)
+
+        has_batch = x_batch.shape[0] > 0
+
+        if has_batch:
+            # Forward pass (FP)
+            for layer in self.layers:
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.FORWARD)
+                x = layer.forward(x)
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
+            loss, dx = self.loss_func.compute(x, y_targ, self.real_batch_size)
+        else:
+            if y_targ.shape[0] != x_batch.shape[0]:
+                raise ValueError(f"y_targ.shape[0] ({y_targ.shape[0]}) and x_batch.shape[0] ({x_batch.shape[0]}) must have the same value.")
+            loss, dx = 0.0, y_targ
+
+        total_metrics, _ = self._compute_metrics_funcs(x, y_targ, loss, comm=sync_model)
+        assert total_metrics is not None
+        self.total_metrics = total_metrics
+
+        if has_batch:
+            # Backward pass (BP)
+            for layer in reversed(self.layers):
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.BACKWARD)
+                dx = layer.backward(dx)
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
+
+        if self.enable_cudnn:
+            assert self.stream
+            self.stream.synchronize()  # type: ignore
+
+        # Gradient update (GU)
+        if self.model_sync_freq >= 0 and sync_model:
+            self._weight_update(gradient=True, blocking=self.blocking_mpi, pipeline=self.parallel_pipeline)
+
+        if has_batch or sync_model:
+
+            # Optimizer
+            for layer in self.layers:
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.UPDATE_DW)
+                layer.update_weights(self.optimizer)
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
+
+        # Weight update (WU)
+        if self.model_sync_freq > 0 and sync_model:
+            self._weight_update(gradient=False, blocking=self.blocking_mpi, pipeline=self.parallel_pipeline)
+
+        if self.enable_cudnn:
+            for layer in self.layers:
+                if layer.grad_vars:
+                    layer.stream_2.synchronize()  # type: ignore
+
+        # Schedulers end
+        for sched in self.schedulers:
+            sched.on_batch_end(self)
+
+        return self.total_metrics
+    # -----
+
+    def train(self, bar_width=BAR_WIDTH) -> dict[str, list[np.ndarray]]:
+        self._ensure_model_runable()
+
+        # If working with CUDA, self.y_batch must be in a GPU's data structure.
+        if self.enable_cudnn and self.y_batch is None:
+            assert gpuarray and self.cudnn_dtype
+            tensor_ary = TensorArray(
+                gpuarray.empty((self.batch_size, *self.layers[-1].shape), self.dtype),
+                self.tensor_format, self.cudnn_dtype)
+            self.y_batch = tensor_ary  # type: ignore
+
+        self.history = {lm: [] for lm in (self.loss_and_metrics + [f"val_{m}" for m in self.loss_and_metrics])}
+
+        self.comm_nsamples = list(zip(*self.comm.allgather(self.dataset._nsamples) if self.comm else [self.dataset._nsamples]))
+
+        terminate = False  # True: ends the following loop.
+        global_terminate = False
+
+        model_sync_count = 0
+        train_batches_min = min(self.comm_nsamples[Dataset.Part.TRAIN]) / (self.batch_size * self.nprocs)
+        val_batches_min = min(self.comm_nsamples[Dataset.Part.VAL]) / (self.batch_size * self.nprocs)
+
+        for epoch in range(self.num_epochs):
+            train_batch_generator, val_batch_generator = self.dataset.get_train_val_generator()
+            sync_epoch = False
+
+            train_total_loss, train_batch_count = np.zeros(len(self.loss_and_metrics)), 0
+            val_total_loss, val_batch_count = np.zeros(len(self.loss_and_metrics)), 0
+
+            if self.comm_rank == 0:
+                string = ""
+                fmt = "%%%dd" % (len(str(self.num_epochs)))
+                epoch_string = "Epoch %s/%s" % (fmt, fmt)
+                pbar = tqdm(total=self.dataset.train_nsamples, ncols=bar_width,
+                            ascii=" ▁▂▃▄▅▆▇█", smoothing=0.3,
+                            desc=epoch_string % (epoch + 1, self.num_epochs), unit=" samples")
+
+            for sched in self.schedulers:
+                sched.on_epoch_begin(self, self.rank)
+
+            # --- TRAIN --- #
+            for i_batch, (x_batch, y_batch, batch_size) in enumerate(train_batch_generator):
+                if terminate:
+                    x_batch = x_batch[:0]
+                    y_batch = y_batch[:0]
+
+                local_batch_size = x_batch.shape[0]
+                sync_model = (self.model_sync_freq <= 0) or (model_sync_count % self.model_sync_freq == 0)
+
+                if sync_model:
+                    sync_epoch = True
+
+                if model_sync_count == 0 and not self.initial_model_sync:
+                    sync_model = False
+
+                model_sync_count += 1
+
+                if i_batch >= train_batches_min and sync_model:
+                    rank_mask = self.comm.allgather(min(1, local_batch_size)) if self.comm else [min(1, local_batch_size)]
+                else:
+                    rank_mask = [1] * self.comm_size
+                rank_avail = sum(rank_mask)
+
+                if rank_avail <= 0 or global_terminate:
+                    break
+
+                if rank_avail < self.model_sync_min_avail:
+                    sync_model = False
+
+                self.rank_weight = self._compute_rank_weight(rank_mask, Dataset.Part.TRAIN)
+
+                tic = timer()
+                train_batch_loss = self._train_batch(x_batch, y_batch, sync_model=sync_model)
+                toc = timer()
+
+                if local_batch_size <= 0:
+                    if self.comm_rank == 0:
+                        pbar.set_postfix_str(s=f"{string}, waiting…", refresh=True)
+                    continue
+
+                train_total_loss, train_batch_count, string = \
+                    self._update_running_average(train_batch_loss, train_total_loss, train_batch_count, batch_size)
+                if self.comm_rank == 0:
+                    # noinspection PyUnboundLocalVariable
+                    pbar.set_postfix_str(s=string, refresh=True)
+                    pbar.update(batch_size)
+                    self.perf_counter.add_training_time_and_batch_size(epoch, toc - tic, batch_size)
+
+            if self.comm_rank == 0:
+                train_string = string
+                for c in range(len(self.loss_and_metrics)):
+                    self.history[self.loss_and_metrics[c]].append(train_total_loss[c])
+
+            # ----------- #
+            # --- VAL --- #
+            # ----------- #
+            
+            # NOTE: El for es exáctamente igual que el de evaluate de mode_eval
+            for i_batch, (x_batch, y_batch, batch_size) in enumerate(val_batch_generator):
+                if terminate:
+                    x_batch = x_batch[:0]
+                    y_batch = y_batch[:0]
+
+                local_batch_size = x_batch.shape[0]
+
+                sync_model = (self.model_sync_freq <= 0) or (model_sync_count % self.model_sync_freq == 0)
+
+                if sync_model:
+                    sync_epoch = True
+
+                if model_sync_count == 0 and not self.initial_model_sync:
+                    sync_model = False
+
+                model_sync_count += 1
+
+                if i_batch < val_batches_min:
+                    rank_mask = [1] * self.comm_size
+                else:
+                    rank_mask = self.comm.allgather(min(1, local_batch_size)) if self.comm else [min(1, local_batch_size)]
+                rank_avail = sum(rank_mask)
+
+                if rank_avail <= 0:
+                    break
+
+                if rank_avail < self.model_sync_min_avail:
+                    sync_model = False
+
+                val_batch_loss = self._evaluate_batch(x_batch, y_batch, sync_model=sync_model)
+
+                if batch_size <= 0:
+                    continue
+
+                val_total_loss, val_batch_count, string = \
+                    self._update_running_average(val_batch_loss, val_total_loss, val_batch_count, batch_size, prefix="val_")
+                if self.comm_rank == 0:
+                    pbar.set_postfix_str(s=f"{train_string}, {string}", refresh=True)
+
+            if self.comm_rank == 0:
+                for c in range(len(self.loss_and_metrics)):
+                    self.history["val_" + self.loss_and_metrics[c]].append(val_total_loss[c])
+
+            for sched in self.schedulers:
+                sched.on_epoch_end(train_total_loss, val_total_loss)
+                if sched.stop_training:
+                    terminate = True
+
+            if self.comm_rank == 0:
+                pbar.close()
+                # Sleep for half a second to allow pbar to write its output before returning
+                time.sleep(.5)
+
+            for c in range(len(self.loss_and_metrics)):
+                if not self.loss_and_metrics_format[c]:
+                    logger.info(f"{self.loss_and_metrics[c]}: {train_total_loss[c]}")
+            for c in range(len(self.loss_and_metrics)):
+                if not self.loss_and_metrics_format[c]:
+                    logger.info(f"val_{self.loss_and_metrics[c]}: {val_total_loss[c]}")
+
+            if sync_epoch:
+                if self.comm is not None:
+                    op = MPI.LAND  # type: ignore
+                    global_terminate = self.comm.allreduce(terminate, op=op)
+                else:
+                    global_terminate = terminate
+
+            if global_terminate:
+                break
+
+        # Synchronize model
+        if self.final_model_sync:
+            self._weight_update(gradient=False, blocking=self.blocking_mpi)
+
+        self.tracer.define_event_types(self)
+        return self.history
