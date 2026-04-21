@@ -2,6 +2,16 @@ import cython
 import numpy as np
 cimport numpy as np
 from cython.parallel cimport prange
+from pydtnn.backends.cython.utils.base cimport npDT
+
+__all__ = (
+    "compute_dense_acc_cython",
+    "intersect_2d_indexes_cython",
+    "reset_residuals_cython",
+    "update_dense_weights_cython",
+    "update_sparsed_weights_cython",
+    "update_sparsed_weights_mv_cython"
+)
 
 
 @cython.boundscheck(False)

@@ -2,21 +2,13 @@ import numpy as np
 cimport numpy as np
 cimport cython
 from cython.parallel import prange
+from pydtnn.backends.cython.utils.base cimport npDT
 
 __all__ = (
     "im2row_1ch_nhwc_cython",
     "row2im_1ch_nhwc_cython"
 )
 
-# =================== #
-# --- COMMON --- #
-ctypedef fused npDT:
-    np.int8_t
-    np.float32_t
-    np.float64_t
-    # NOTE: in order to extend the supported data types, add the new types here.
-# -- END npDT -- #
-# =================== #
 
 # --- im2row --- #
 @cython.boundscheck(False)

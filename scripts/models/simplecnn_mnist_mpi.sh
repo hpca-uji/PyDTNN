@@ -16,7 +16,7 @@ mpirun -np 1 "${MPI_ARGS[@]}" \
   --dataset=mnist \
   --dataset-path=datasets/mnist \
   --test-as-validation=False \
-  --augment-flip-prop=0.5 \
+  --augment-flip=0.5 \
   --batch-size=64 \
   --validation-split=0.2 \
   --encryption= \

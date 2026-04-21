@@ -3,17 +3,12 @@ cimport numpy as np
 cimport cython
 from cython.parallel import prange
 from libc.math cimport sqrt
+from pydtnn.backends.cython.utils.base cimport npDT
 
-# --- COMMON --- #
-ctypedef fused npDT:
-    np.int8_t
-    np.float32_t
-    np.float64_t
-    # NOTE: in order to extend the supported data types, add the new types here.
-# -- END npDT -- #
-
-# =================== #
-# =================== #
+__all__ = (
+    "bn_training_fwd_cython",
+    "bn_training_bwd_cython"
+)
 
 # --- FORWARD --- #
 @cython.boundscheck(False)

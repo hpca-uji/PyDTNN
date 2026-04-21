@@ -156,7 +156,10 @@
 ```
 
 # Planned
-- Extract shared logic from `.pyi` and `.pyx` into a common module
+- Model tensor parallelism
+- Model pipeline parallelism
+- Network quantization (reduce on send)
+- Model quantization (reduce on weights)
 
 # Publishing
 Dependencies: `gcc patchelf` and `build twine auditwheel`  

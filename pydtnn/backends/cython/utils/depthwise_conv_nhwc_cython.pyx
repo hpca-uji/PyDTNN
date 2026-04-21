@@ -2,23 +2,14 @@ import numpy as np
 cimport numpy as np
 cimport cython
 from cython.parallel import prange
+from pydtnn.backends.cython.utils.base cimport npDT
 
 __all__ = (
     "depthwise_conv_nhwc_cython",
     "depthwise_conv_backward_nhwc_cython"
 )
 
-# =================== #
-# --- COMMON --- #
-ctypedef fused npDT:
-    np.int8_t
-    np.float32_t
-    np.float64_t
-    # NOTE: in order to extend the supported data types, add the new types here.
-# -- END npDT -- #
-# =================== #
 
-# =============== #
 # --- FORWARD --- #
 
 @cython.boundscheck(False)

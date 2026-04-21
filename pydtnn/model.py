@@ -178,9 +178,9 @@ class Model[T: Array]:
     dataset_name: str
     shared_storage: bool
     encryption_name: str
-    augment_flip_prob: float
+    augment_flip: float
     augment_crop_size: int
-    augment_crop_prob: float
+    augment_crop: float
     transform_crop: bool
     transform_crop_perc: int
     transform_resize: bool

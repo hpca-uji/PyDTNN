@@ -2,6 +2,7 @@ import numpy as np
 cimport numpy as np
 cimport cython
 from cython.parallel import prange
+from pydtnn.backends.cython.utils.base cimport npDT
 
 __all__ = (
     "relu_cython",
@@ -9,11 +10,6 @@ __all__ = (
     "leaky_relu_cython"
 )
 
-# Declare fused type npDT (to be used with template functions)
-ctypedef fused npDT:
-    np.int8_t
-    np.float32_t
-    np.float64_t
 
 ###############################################
 #                 relu_cython                 #
