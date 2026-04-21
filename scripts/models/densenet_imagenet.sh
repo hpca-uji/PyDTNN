@@ -12,8 +12,8 @@ mpirun -np 2 \
   --synthetic-input-shape=3,227,227 \
   --synthetic-output-shape=1000 \
   --test-as-validation=False \
-  --augment-flip-prop=0.5 \
-  --augment-crop-prop=0.5 \
+  --augment-flip=0.5 \
+  --augment-crop=0.5 \
   --augment-crop-size=16 \
   --test-as-validation=True \
   --batch-size=64 \

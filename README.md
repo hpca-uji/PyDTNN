@@ -190,8 +190,8 @@ The PyDTNN framework comes with a utility launcher called
     for training+validation data, use test data for validation. `True`
     if specified.
   - `--validation-split`: Split between training and validation data.
-  - `--augment-flip-prob`: Probability to flip training images. If the value is less or equal to 0 it is disabled. Default: `0.0`.
-  - `--augment-crop-prob`: Probability to crop training images. If the value is less or equal to 0 it is disabled. Default: `0.0`.
+  - `--augment-flip`: Probability to flip training images. If the value is less or equal to 0 it is disabled. Default: `0.0`.
+  - `--augment-crop`: Probability to crop training images. If the value is less or equal to 0 it is disabled. Default: `0.0`.
   - `--augment-crop-size`: Size to crop training images. Default: `16`.
   - `--validation-split`: Split between training and validation data.
   - `--transform-crop`: Crop the images. `True` if specified.
@@ -374,10 +374,10 @@ $ mpirun -np 12 \
   dataset_test_path              : datasets/mnist
   test_as_validation             : False
   augment_flip                    : True
-  augment_flip_prob               : 0.5
+  augment_flip               : 0.5
   augment_crop                    : False
   augment_crop_size               : 16
-  augment_crop_prob               : 0.5
+  augment_crop               : 0.5
   batch_size                     : 64
   global_batch_size              : None
   validation_split               : 0.2
@@ -607,10 +607,10 @@ $ pydtnn-benchmark \
   dataset_path                   : datasets/cifar10/cifar-10-binary.tar.gz
   test_as_validation             : True
   augment_flip                    : True
-  augment_flip_prob               : 0.5
+  augment_flip               : 0.5
   augment_crop                    : True
   augment_crop_size               : 16
-  augment_crop_prob               : 0.5
+  augment_crop               : 0.5
   validation_split               : 0.2
   optimizer_name                 : sgd
   learning_rate                  : 0.01

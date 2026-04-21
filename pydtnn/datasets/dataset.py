@@ -89,10 +89,10 @@ class Dataset:
             transformations_training.append(self._x_transformer_adaptor(self._do_transform_resize))
             transformations_always.append(self._x_transformer_adaptor(self._do_transform_resize))
 
-        if self.model.augment_flip_prob > 0:
+        if self.model.augment_flip > 0:
             transformations_training.append(self._x_transformer_adaptor(self._do_flip_images))
 
-        if self.model.augment_crop_prob > 0:
+        if self.model.augment_crop > 0:
             transformations_training.append(self._x_transformer_adaptor(self._do_augment_crop))
 
         if self.model.augment_shuffle:
@@ -456,7 +456,7 @@ class Dataset:
             case _:
                 raise NotImplementedError(f"Dataset _do_flip_image is not implemented for {self.model.tensor_format} format.")
 
-        limit = min(n, int(n * self.model.augment_flip_prob))
+        limit = min(n, int(n * self.model.augment_flip))
         s = np.arange(n)
         random.shuffle(s)
         s = s[:limit]
@@ -473,7 +473,7 @@ class Dataset:
     def _do_augment_crop(self, data: np.ndarray) -> np.ndarray:
         n, c, h, w = self.model.decode_shape(data.shape)
         crop_size = min(self.model.augment_crop_size, h, w)
-        limit = min(n, int(n * self.model.augment_crop_prob))
+        limit = min(n, int(n * self.model.augment_crop))
         s = np.arange(n)
         random.shuffle(s)
         s = s[:limit]
