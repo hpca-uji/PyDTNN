@@ -9,8 +9,5 @@ __pycache__/
 *.egg-info
 
 /vendor/*/
-!/vendor/README.md
-
 /datasets/*/
-!/datasets/mnist/
-!/datasets/iwslt/
+!/vendor/README.md
