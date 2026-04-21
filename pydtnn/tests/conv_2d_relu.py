@@ -5,7 +5,7 @@ from pydtnn.tests.abstract.common import Params
 from pydtnn.tests.abstract.common import D
 from pydtnn.backends.numpy.layers.abstract.conv_2d import AbstractConv2DNumpy
 from pydtnn.model import Model
-from pydtnn.layers.conv_2d_relu import Conv2DRelu
+from pydtnn.backends.fuse.layers.conv_2d_relu import Conv2DRelu
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.activations.relu import Relu

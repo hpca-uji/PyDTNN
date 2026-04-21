@@ -5,7 +5,7 @@ from pydtnn.tests.abstract.common import Params
 from pydtnn.tests.abstract.common import D
 from pydtnn.backends.numpy.layers.abstract.conv_2d import AbstractConv2DNumpy
 from pydtnn.model import Model
-from pydtnn.layers.conv_2d_batch_normalization import Conv2DBatchNormalization
+from pydtnn.backends.fuse.layers.conv_2d_batch_normalization import Conv2DBatchNormalization
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.batch_normalization import BatchNormalization

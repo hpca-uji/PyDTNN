@@ -1,6 +1,6 @@
-from pydtnn.utils import print_with_header, random
+from pydtnn.utils import print_with_header
 from pydtnn.tests.abstract.conv_common import ConvCommonTestCase
-from pydtnn.tests.abstract.common import verbose_test, D, alexnet_layers
+from pydtnn.tests.abstract.common import verbose_test, D
 from pydtnn.libs.convGemm import ConvGemm
 from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython
 import numpy as np
