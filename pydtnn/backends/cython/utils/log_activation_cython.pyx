@@ -1,6 +1,4 @@
 
-import numpy as np
-cimport numpy as np
 cimport cython
 from cython.parallel import prange
 from cython.cimports.libc.math import exp, log

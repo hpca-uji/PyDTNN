@@ -1,5 +1,3 @@
-import numpy as np
-cimport numpy as np
 cimport cython
 from cython.parallel import prange
 from libc.math cimport sqrt
@@ -31,9 +29,9 @@ def bn_training_fwd_cython(npDT[:,::1] x,
 
     for i in prange(n, nogil=True):
         for j in range(c):
-            xn[i, j] = x[i, j] - mean[j]
             std[j] = <npDT> sqrt(var[j] + eps)
-            y[i, j] = <npDT> ((xn[i, j] / std[j]) * gamma[j]) + beta[j]
+            xn[i, j] = <npDT> ((x[i, j] - mean[j]) / std[j])
+            y[i, j] = xn[i, j] * gamma[j] + beta[j]
     return None
 
 

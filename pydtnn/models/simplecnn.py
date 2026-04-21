@@ -10,7 +10,6 @@ from pydtnn.abstract.layerable import Layerable
 from pydtnn.activations.relu import Relu
 from pydtnn.activations.softmax import Softmax
 from pydtnn.utils.constants import ArrayShape
-from pydtnn.layers.batch_normalization import BatchNormalization
 
 
 def simplecnn(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
@@ -21,7 +20,6 @@ def simplecnn(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Lay
     _(Conv2D(nfilters=4, filter_shape=(3, 3), padding=1, stride=1, activation=Relu))
     _(Conv2D(nfilters=8, filter_shape=(3, 3), padding=1, stride=1, activation=Relu))
     _(MaxPool2D(pool_shape=(2, 2), stride=2))
-    _(BatchNormalization())
     _(Flatten())
     _(FC(shape=(128,), activation=Relu))
     _(Dropout(rate=0.5))
