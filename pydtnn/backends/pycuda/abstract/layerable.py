@@ -114,7 +114,7 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
 
                 # If there is no CUDA-aware MPI, copy data back to GPU
                 dw.ary.set_async(dw_cpu, self.stream_2)
-        self.self.reqs_allred.clear()
+        self.reqs_allred.clear()
 
     def reduce_weights_sync(self, gradient=True):
         # NOTE: Keep in sync with Layer

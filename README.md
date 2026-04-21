@@ -283,6 +283,7 @@ The PyDTNN framework comes with a utility launcher called
     Default: `2`.
 - Parallelization and other performance-related parameters:
   - `--parallel-data`: Enable data parallelization. Default: `False`.
+  - `--parallel-pipeline`: Enable pipeline parallelization. Default: `False`.
   - `--use-blocking-mpi`: Enable blocking MPI primitives. Default: `True`.
   - `--use-mpi-buffers`: Enable the use of MPI buffers. Possible values:
     `True` (MPI operations by buffer), `False` (MPI operations by

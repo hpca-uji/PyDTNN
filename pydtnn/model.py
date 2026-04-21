@@ -135,10 +135,6 @@ class Model[T: Array]:
     PyDTNN Model
     """
 
-    class ParallelMode(enum.StrEnum):
-        SEQUENTIAL = enum.auto()
-        DATA = enum.auto()
-
     class Mode(enum.StrEnum):
         EVALUATE = enum.auto()
         TRAIN = enum.auto()
@@ -349,7 +345,7 @@ class Model[T: Array]:
 
     def _mpi_init(self) -> None:
         # Communication type
-        if self.parallel_data:
+        if self.parallel_data or self.parallel_pipeline:
             if not MPI:
                 raise ValueError("Please, install mpi4py to allow parallel MPI execution!")
             self.MPI, self.comm = (MPI, MPI.COMM_WORLD)
@@ -984,12 +980,15 @@ class Model[T: Array]:
             self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
     # TODO: Modify the method's name.
-    def _weight_update(self, gradient=True, blocking=True):
+    def _weight_update(self, gradient=True, blocking=True, pipeline=False):
         if blocking:
             self._model_reduce_sync(gradient)
-        else:
+        elif pipeline:
             self._model_reduce_async(gradient)
-            self._model_reduce_wait(gradient=True)
+            self._model_reduce_wait(gradient)
+        else:
+            self._model_reduce_wait(gradient)
+            self._model_reduce_async(gradient)
 
     def train(self, bar_width=BAR_WIDTH) -> dict[str, list[np.ndarray]]:
         self._ensure_model_runable()
@@ -1205,7 +1204,7 @@ class Model[T: Array]:
 
         # Gradient update (GU)
         if self.model_sync_freq >= 0 and sync_model:
-            self._weight_update(gradient=True, blocking=self.blocking_mpi)
+            self._weight_update(gradient=True, blocking=self.blocking_mpi, pipeline=self.parallel_pipeline)
 
         if has_batch or sync_model:
 
@@ -1217,7 +1216,7 @@ class Model[T: Array]:
 
         # Weight update (WU)
         if self.model_sync_freq > 0 and sync_model:
-            self._weight_update(gradient=False, blocking=self.blocking_mpi)
+            self._weight_update(gradient=False, blocking=self.blocking_mpi, pipeline=self.parallel_pipeline)
 
         if self.enable_cudnn:
             for layer in self.layers:
