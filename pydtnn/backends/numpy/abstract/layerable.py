@@ -11,8 +11,7 @@ class LayerableNumpy(Layerable[np.ndarray], BaseNumpy):
         # NOTE: Keep in sync with Layer
         if not self.model.comm:
             return
-        self.reqs_allred = {}
-
+        assert len(self.reqs_allred) == 0, "MPI request overwritten (not waited)!"
         for w_, dw_ in self.grad_vars.items():
             dw_ = dw_ if gradient else w_
             dw: np.ndarray = getattr(self, dw_)
@@ -24,7 +23,7 @@ class LayerableNumpy(Layerable[np.ndarray], BaseNumpy):
 
     def wait_allreduce_async(self, gradient=True):
         # NOTE: Keep in sync with Layer
-        if not self.model.comm or self.model.enable_nccl:
+        if not self.model.comm or self.model.enable_nccl or not self.reqs_allred:
             return
         for w_, dw_ in self.grad_vars.items():
             dw_ = dw_ if gradient else w_
@@ -35,6 +34,7 @@ class LayerableNumpy(Layerable[np.ndarray], BaseNumpy):
             dw = self.model._layer_reduce_decode(dw)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
             setattr(self, dw_, dw)
+        self.self.reqs_allred.clear()
 
     def reduce_weights_sync(self, gradient=True):
         # NOTE: Keep in sync with Layer

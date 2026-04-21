@@ -969,24 +969,31 @@ class Model[T: Array]:
         string = string[:-2]
         return total, count + batch_size, string
 
+    def _model_reduce_sync(self, gradient=True):
+        for layer in self.layers:
+            self.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.ALLREDUCE_DW)
+            layer.reduce_weights_sync(gradient=gradient)
+            self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
+
+    def _model_reduce_async(self, gradient=True):
+        for layer in self.layers:
+            self.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.ALLREDUCE_DW)
+            layer.reduce_weights_async(gradient=gradient)
+            self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
+
+    def _model_reduce_wait(self, gradient=True):
+        for layer in self.layers:
+            self.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.WAIT_DW)
+            layer.wait_allreduce_async(gradient=gradient)
+            self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
+
     # TODO: Modify the method's name.
     def _weight_update(self, gradient=True, blocking=True):
         if blocking:
-            for layer in self.layers:
-                self.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.ALLREDUCE_DW)
-                layer.reduce_weights_sync(gradient=gradient)
-                self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
-
+            self._model_reduce_sync(gradient)
         else:
-            for layer in self.layers:
-                self.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.ALLREDUCE_DW)
-                layer.reduce_weights_async(gradient=gradient)
-                self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
-
-            for layer in self.layers:
-                self.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.WAIT_DW)
-                layer.wait_allreduce_async(gradient=gradient)
-                self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
+            self._model_reduce_async(gradient)
+            self._model_reduce_wait(gradient=True)
 
     def train(self, bar_width=BAR_WIDTH) -> dict[str, list[np.ndarray]]:
         self._ensure_model_runable()
