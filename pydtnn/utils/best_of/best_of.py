@@ -7,6 +7,7 @@ from typing import Hashable, Callable, Union, Any, Optional
 from timeit import default_timer as timer
 from contextlib import suppress
 from collections import defaultdict
+from collections import abc
 import types
 import traceback
 import logging
@@ -186,16 +187,16 @@ class BestOf:
             stages = 1
         if stages == 1:
             for a in alternatives:
-                assert type(a[1]) in (types.FunctionType, types.LambdaType, types.BuiltinFunctionType), \
+                assert isinstance(a[1], abc.Callable), \
                     f"Expected a function for the '{a[0]}' alternative, got a '{type(a[1])}'."
         else:
             for a in alternatives:
-                assert type(a[1]) in (list, tuple), \
+                assert isinstance(a[1], abc.Sequence), \
                     f"Expected a list with the methods to be called for each stage of the '{a[0]}' pipeline."
                 assert len(a[1]) == stages, \
                     f"Expected {stages} methods for the '{a[0]}' pipeline, received {len(a[1])}."
                 for i, m in enumerate(a[1]):
-                    assert type(m) in (types.FunctionType, types.LambdaType), \
+                    assert isinstance(m, abc.Callable), \
                         f"Expected a function for stage {i} of the '{a[0]}' pipeline alternative."
         # Assign its initial value to each property
         self.name = name
