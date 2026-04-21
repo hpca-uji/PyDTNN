@@ -144,7 +144,7 @@ class Model[T: Array]:
         TRAIN = enum.auto()
         UNSPECIFIED = enum.auto()
 
-    class SyncAlg(enum.StrEnum):
+    class SyncAlgorithm(enum.StrEnum):
         AVG = enum.auto()
         WAVG = enum.auto()
         INVAVG = enum.auto()
@@ -199,6 +199,8 @@ class Model[T: Array]:
     transform_resize_size: int
     normalize_offset: float
     normalize_scale: float
+    model_sync_quantize: bool
+    model_sync_dtype: np.dtype
 # ------------
 
     rank_weight: float
@@ -341,7 +343,7 @@ class Model[T: Array]:
 
         # Synchronization parameters
         # NOTE: This parameter come from Parser.
-        self.model_sync_alg = Model.SyncAlg(self.model_sync_alg)
+        self.model_sync_algo = Model.SyncAlgorithm(self.model_sync_algo)
 
         # NOTE: This parameter come from Parser.
         self.model_sync_participation = Model.SyncParticipation(self.kwargs["model_sync_participation"])
@@ -510,13 +512,23 @@ class Model[T: Array]:
 
     def _layer_reduce_encode(self, data: np.ndarray):
         data *= self.rank_weight
+
+        if self.model_sync_quantize:
+            data = np.astype(data, self.model_sync_dtype)
+
         if self.crypt:
             data = self.crypt.encrypt(data)  # type: ignore
+
         return data
 
     def _layer_reduce_decode(self, data) -> np.ndarray:
+
         if self.crypt:
             data = self.crypt.decrypt(data)
+
+        if self.model_sync_quantize:
+            data = np.astype(data, self.dtype)
+
         return data
 
     def _layer_reduce_sync(self, data: np.ndarray) -> np.ndarray:
@@ -1230,16 +1242,16 @@ class Model[T: Array]:
         min_nsamples, max_nsamples, total_nsamples = min(comm_nsamples), max(comm_nsamples), sum(comm_nsamples)
         comm_size = len(comm_nsamples)
 
-        match self.model_sync_alg:
-            case Model.SyncAlg.AVG:
+        match self.model_sync_algo:
+            case Model.SyncAlgorithm.AVG:
                 return 1.0 / comm_size
-            case Model.SyncAlg.WAVG:
+            case Model.SyncAlgorithm.WAVG:
                 return self.dataset._nsamples[part] / total_nsamples
-            case Model.SyncAlg.INVAVG:
+            case Model.SyncAlgorithm.INVAVG:
                 inverse_nsamples = min_nsamples + (max_nsamples - self.dataset._nsamples[part])
                 return inverse_nsamples / total_nsamples
             case _:
-                raise ValueError(f"Model synchronization algorithm option '{self.model_sync_alg}' not recognized. Only recognized: {list(Model.SyncAlg)}")
+                raise ValueError(f"Model synchronization algorithm option '{self.model_sync_algo}' not recognized. Only recognized: {list(Model.SyncAlgorithm)}")
 
     def _evaluate_batch(self, x_batch: np.ndarray, y_batch: np.ndarray, sync_model=True) -> np.ndarray:
         self.mode = Model.Mode.EVALUATE

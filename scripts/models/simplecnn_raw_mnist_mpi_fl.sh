@@ -16,7 +16,7 @@ mpirun -np 4 "${MPI_ARGS[@]}" \
   --dataset=archive \
   --dataset-path=datasets/mnist \
   --model-sync-participation=all \
-  --model-sync-alg=avg \
+  --model-sync-algo=avg \
   --model-sync-min-avail=0 \
   --test-as-validation=False \
   --augment-flip=0.5 \

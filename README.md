@@ -160,7 +160,7 @@ The PyDTNN framework comes with a utility launcher called
     The `0` value synchronizes gradients every batch. Positive values
     synchronizes gradients and weights every N batches. Negative values
     disables synchronization. Default: `0`.
-  - `--model-sync-alg`: Aggregation method used to synchronize models:
+  - `--model-sync-algo`: Aggregation method used to synchronize models:
     `avg`, `wavg` or `invwavg`. Default: `avg`.
   - `--model-sync-participation`: Rank participation to synchronize
     models: `all` or `avail2all`. Default: `all`.
@@ -168,6 +168,8 @@ The PyDTNN framework comes with a utility launcher called
     synchronize models. Default: `0`.
   - `--initial-model-sync`: Synchronize models on training start. Default: `True`.
   - `--final-model-sync`: Synchronize models on training end. Default: `True`.
+  - `--model-sync-quantize`: Enable model quantization on synchronize. Default: `False`.
+  - `--model-sync-dtype`: Model synchronization quantization target dtype. Default: `float16`.
 - Dataset parameters:
   - `--dataset`: Dataset to train: `mnist`, `cifar10`, `synthetic`,
     …. Default: `None`.

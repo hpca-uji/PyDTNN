@@ -149,7 +149,7 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
             type=int,
             default=0,
             help="Number of batches between model synchronization. The '0' value synchronizes gradients every batch. Positive values synchronizes gradients and weights every N batches. Negative values disables synchronization. Default: 0.")
-        _sy_group.add_argument('--model-sync-alg', type=str, default="avg", choices=["avg", "wavg", "invwavg"],
+        _sy_group.add_argument('--model-sync-algo', type=str, default="avg", choices=["avg", "wavg", "invwavg"],
                                help="Aggregation method used to synchronize models: 'avg', 'wavg' or 'invwavg'. Default: 'avg'.")
         _sy_group.add_argument('--model-sync-participation', type=str, default="all", choices=["all", "avail2all"],
                                help="Rank participation to synchronize models: 'all' or 'avail2all'. Default: 'all'.")
@@ -159,6 +159,10 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
                                help="Synchronize models on training start. Default: True.")
         _sy_group.add_argument('--final-model-sync', type=bool_lambda, default=True,
                                help="Synchronize models on training end. Default: True.")
+        _sy_group.add_argument('--model-sync-quantize', type=bool_lambda, default=False,
+                               help="Enable model quantization on synchronize. Default: False.")
+        _sy_group.add_argument('--model-sync-dtype', type=np_dtype, default=np.float16,
+                               help="Model synchronization quantization target dtype. Default: float16.")
 
         # Dataset options
         _ds_group = self.add_argument_group("Dataset options")

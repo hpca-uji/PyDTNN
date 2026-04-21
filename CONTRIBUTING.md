@@ -156,10 +156,9 @@
 ```
 
 # Planned
-- Model tensor parallelism
+- Model tensor parallelism (previously implemented on a prototype)
 - Model pipeline parallelism
-- Network quantization (reduce on send)
-- Model quantization (reduce on weights)
+- Model quantization (operate on high precision and reduce on weight size)
 
 # Publishing
 Dependencies: `gcc patchelf` and `build twine auditwheel`  
