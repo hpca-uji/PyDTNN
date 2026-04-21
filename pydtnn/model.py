@@ -1200,7 +1200,7 @@ class Model[T: Array]:
             assert self.stream
             self.stream.synchronize()  # type: ignore
 
-        # Gradient update
+        # Gradient update (GU)
         if self.model_sync_freq >= 0 and sync_model:
             self._weight_update(gradient=True, blocking=self.blocking_mpi)
 
@@ -1212,7 +1212,7 @@ class Model[T: Array]:
                 layer.update_weights(self.optimizer)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
-        # Weight update
+        # Weight update (WU)
         if self.model_sync_freq > 0 and sync_model:
             self._weight_update(gradient=False, blocking=self.blocking_mpi)
 
