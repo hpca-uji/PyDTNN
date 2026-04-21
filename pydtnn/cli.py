@@ -90,6 +90,7 @@ def main():
     # Create model
     with exc_tracer():
         model = Model(**vars(config))
+        model._ensure_model_runable()
     # Print model
     if model.comm_rank == 0:
         model.show_model()

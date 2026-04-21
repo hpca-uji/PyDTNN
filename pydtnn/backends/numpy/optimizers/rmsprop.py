@@ -30,6 +30,8 @@ class RMSPropNumpy(RMSProp[np.ndarray], OptimizerNumpy):
                     self.memory_used += cache.nbytes
 
                     temp_memory_size.append(int(math.prod(w.shape)) * self.model.dtype.itemsize)
+                    #NOTE: int(math.prod(w.shape)): temp_.nbytes = w.nbytes
+
                     self.context[layer.id]["cache_%s" % w_] = cache
                     self.context[layer.id]["temp_%s" % w_] = temp  # type: ignore (it is the right type)
 

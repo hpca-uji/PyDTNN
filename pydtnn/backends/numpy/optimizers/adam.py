@@ -32,6 +32,8 @@ class AdamNumpy(Adam[np.ndarray], OptimizerNumpy):
                 self.memory_used += momentum.nbytes + velocity.nbytes
 
                 temp_memory_size.append(int(2 * math.prod(shape)) * self.model.dtype.itemsize)
+                #NOTE: int(2 * math.prod(w.shape)): temp_w.nbytes = temp_dw.nbytes = w.nbytes ==> temp_w.nbytes + temp_dw.nbytes = 2 * w.nbytes
+
                 self.context[layer.id]["m_%s" % w_] = momentum
                 self.context[layer.id]["v_%s" % w_] = velocity
                 self.context[layer.id]["temp_w_%s" % w_] = vt_temp_w  # type: ignore (it is the right type)
