@@ -34,7 +34,7 @@ class LayerableNumpy(Layerable[np.ndarray], BaseNumpy):
             dw = self.model._layer_reduce_decode(dw)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
             setattr(self, dw_, dw)
-        self.self.reqs_allred.clear()
+        self.reqs_allred.clear()
 
     def reduce_weights_sync(self, gradient=True):
         # NOTE: Keep in sync with Layer
