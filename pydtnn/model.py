@@ -754,14 +754,14 @@ class Model[T: Array]:
         return layer_name, [layer1, layer2]
     # ----
 
-    def __layer_fusion(self, layers: list[Layerable], switch_fusion: abc.Callable) -> None:
+    def _layer_fusion(self, layers: list[Layerable], switch_fusion: abc.Callable) -> None:
         i = 0
         while i < len(layers):
             curr_layer = layers[i]
 
             # Recurse if layer group
             for j, p in enumerate(curr_layer.paths):
-                self.__layer_fusion(curr_layer.paths[j], switch_fusion)
+                self._layer_fusion(curr_layer.paths[j], switch_fusion)
 
             layer_name, layers_to_fuse = switch_fusion(layers[:i])
 
@@ -792,8 +792,8 @@ class Model[T: Array]:
         if not self.enable_cudnn and any([self.enable_fused_bn_relu, self.enable_fused_conv_relu, self.enable_fused_conv_bn, self.enable_fused_conv_bn_relu]):
             # NOTE: 1st the 3 layers fusion, then the rest:
             self.backend = f"layers:fuse;{self.backend}"
-            self.__layer_fusion(self.layers, self._select_fusion_3)
-            self.__layer_fusion(self.layers, self._select_fusion_2)
+            self._layer_fusion(self.layers, self._select_fusion_3)
+            self._layer_fusion(self.layers, self._select_fusion_2)
 
     def _model_init(self):
         if self._is_model_init:
