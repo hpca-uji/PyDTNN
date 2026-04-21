@@ -281,8 +281,7 @@ The PyDTNN framework comes with a utility launcher called
     model weights and bias will be saved by the `model_checkpoint` scheduler.
     Default: `2`.
 - Parallelization and other performance-related parameters:
-  - `--parallel`: Data parallelization modes: `sequential`, `data`
-    (MPI). Default: `sequential`.
+  - `--parallel-data`: Enable data parallelization. Default: `False`.
   - `--use-blocking-mpi`: Enable blocking MPI primitives. Default: `True`.
   - `--use-mpi-buffers`: Enable the use of MPI buffers. Possible values:
     `True` (MPI operations by buffer), `False` (MPI operations by
@@ -334,7 +333,7 @@ $ mpirun -np 12 \
       --reduce-lr-every-nepochs-min-lr=0.001 \
       --early-stopping-metric=val_categorical_cross_entropy \
       --early-stopping-patience=20 \
-      --parallel=sequential \
+      --parallel-data=False \
       --tracing=False \
       --profile=False \
       --enable-cudnn=True \

@@ -16,7 +16,7 @@ pydtnn-benchmark \
   --learning-rate=0.0001 \
   --optimizer-momentum=0.9 \
   --loss-func=kl_divergence \
-  --parallel=sequential \
+  --parallel-data=False \
   --use-blocking-mpi=True \
   --tracing=False \
   --profile=False \

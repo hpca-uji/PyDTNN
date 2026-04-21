@@ -55,7 +55,7 @@ mpirun -genv LD_PRELOAD $EXTRAELIB -iface ib0 -hosts $HOSTS -ppn $PROCS_PER_NODE
   --reduce-lr-on-plateau-factor=0.1 \
   --reduce-lr-on-plateau-patience=5 \
   --reduce-lr-on-plateau-min-lr=0 \
-  --parallel=data \
+  --parallel-data=True \
   --use-blocking-mpi=True \
   --tracing=True \
   --profile=False \

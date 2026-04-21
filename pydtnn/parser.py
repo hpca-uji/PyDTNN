@@ -317,8 +317,8 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
 
         # Parallel execution options
         _pe_group = self.add_argument_group("Parallel execution options")
-        _pe_group.add_argument('--parallel', type=str, default="sequential", choices=["sequential", "data"],
-                               help="Data parallelization modes: 'sequential', 'data' (MPI). Default: 'sequential'.")
+        _pe_group.add_argument('--parallel-data', type=bool_lambda, default=False,
+                               help="Enable data parallelization modes. Default: 'False'.")
         _pe_group.add_argument('--use-blocking-mpi', type=bool_lambda, default=True,
                                help="Enable non-blocking MPI primitives. Default: True.")
         _pe_group.add_argument(

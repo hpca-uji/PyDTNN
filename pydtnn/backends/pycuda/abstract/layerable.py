@@ -15,7 +15,7 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
         # NOTE: Keep in sync with Layer
         if not self.model.comm:
             return
-        self.reqs_allred = {}
+        assert len(self.reqs_allred) == 0, "MPI request overwritten (not waited)!"
 
         # if self.model.enable_cudnn:
         #     if self.model.enable_nccl or self.model.gpudirect:
@@ -73,7 +73,7 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
 
     def wait_allreduce_async(self, gradient=True):
         # NOTE: Keep in sync with Layer
-        if not self.model.comm:
+        if not self.model.comm or not self.reqs_allred:
             return
 
         for w_, dw_ in self.grad_vars.items():
@@ -114,6 +114,7 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
 
                 # If there is no CUDA-aware MPI, copy data back to GPU
                 dw.ary.set_async(dw_cpu, self.stream_2)
+        self.self.reqs_allred.clear()
 
     def reduce_weights_sync(self, gradient=True):
         # NOTE: Keep in sync with Layer

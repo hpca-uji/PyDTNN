@@ -51,7 +51,7 @@ mpirun -iface ib0 -hosts $HOSTS -ppn $PROCS_PER_NODE -np $NUMPROCS \
   --reduce-lr-on-plateau-factor=0.1 \
   --reduce-lr-on-plateau-patience=4 \
   --reduce-lr-on-plateau-min-lr=0 \
-  --parallel=data \
+  --parallel-data=True \
   --use-blocking-mpi=True \
   --tracing=False \
   --profile=False \
