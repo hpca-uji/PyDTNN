@@ -1,4 +1,5 @@
 from __future__ import annotations
+from pydtnn.layers.layer import Layer
 from pydtnn.utils import find_component
 from pydtnn.utils.constants import Array
 
@@ -6,7 +7,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class LayerFuse[T: Array]():
+class LayerFuse[T: Array](Layer):
     def __init__(self, *args, **kwargs):
         from_parent = kwargs.pop("from_parent", None)
         if from_parent is None:
