@@ -156,6 +156,7 @@
 ```
 
 # Planned
+- Separate model into separate responsibilities (types, init, import, show, train, eval, utils)
 - Model tensor parallelism (previously implemented on a prototype)
 - Model quantization (operate on high precision and reduce on weight size)
 
