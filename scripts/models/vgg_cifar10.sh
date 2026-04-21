@@ -16,8 +16,6 @@ pydtnn-benchmark \
   --normalize-offset=-0.472 \
   --normalize-scale=1 \
   --test-as-validation=True \
-  --augment-flip=False \
-  --augment-crop=False \
   --batch-size=64 \
   --validation-split=0.2 \
   --steps-per-epoch=0 \

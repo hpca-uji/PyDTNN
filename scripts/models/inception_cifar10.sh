@@ -11,8 +11,8 @@ mpirun -np 2 \
   --normalize=True \
   --normalize-offset=-0.472 \
   --normalize-scale=1 \
-  --augment-flip=True \
-  --augment-crop=True \
+  --augment-flip-prop=0.5 \
+  --augment-crop-prop=0.5 \
   --augment-crop-size=16 \
   --test-as-validation=True \
   --batch-size=128 \

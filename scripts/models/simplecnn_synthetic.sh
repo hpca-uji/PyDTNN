@@ -16,8 +16,6 @@ pydtnn-benchmark \
   --transform-crop-perc=0.8 \
   --transform-resize=False \
   --transform-resize-size=16 \
-  --augment-crop=False \
-  --augment-flip=False \
   --augment-shuffle=True \
   --batch-size=64 \
   --num-epochs=50 \
