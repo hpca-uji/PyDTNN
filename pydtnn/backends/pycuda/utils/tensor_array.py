@@ -218,15 +218,7 @@ class TensorArray:
 
     def reshape(self, shape, order="C") -> "TensorArray":
         """Reshape TensorArray"""
-        return TensorArray(
-            gpu_arr=self.ary.reshape(shape, order),
-            tensor_format=self.tensor_format,
-            cudnn_dtype=self.cudnn_dtype,
-            tensor_type=self.tensor_type,
-            desc=self.desc,
-            gpudirect=self.gpudirect,
-            cublas=self.cublas
-        )
+        return self._view(self.ary.reshape(shape, order))
 
     def squeeze(self, dtype=None) -> "TensorArray":
         """Squeeze TensorArray"""
@@ -270,12 +262,9 @@ class TensorArray:
 
         return value
 
-    def copy(self):
-        """ NumPy-like copy. """
-        return copy.deepcopy(self)
-
-    def __copy__(self):
-        return TensorArray(gpu_arr=self.ary,
+    def _view(self, ary):
+        """TensorArray view"""
+        return TensorArray(gpu_arr=ary,
                            tensor_format=self.tensor_format,
                            cudnn_dtype=self.cudnn_dtype,
                            tensor_type=self.tensor_type,
@@ -283,7 +272,16 @@ class TensorArray:
                            cublas=self.cublas,
                            desc=self.desc)
 
+    def copy(self):
+        """ NumPy-like copy. """
+        return copy.deepcopy(self)
+
+    def __copy__(self):
+        """Shallow copy"""
+        return self._view(self.ary)
+
     def __deepcopy__(self, memo: dict):
+        """Deep copy"""
         obj = TensorArray(gpu_arr=copy.deepcopy(self.ary, memo),
                           tensor_format=self.tensor_format,
                           cudnn_dtype=self.cudnn_dtype,
