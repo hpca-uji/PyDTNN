@@ -5,13 +5,16 @@ from warnings import warn
 
 from pydtnn import MPI
 
+from pydtnn.metrics.metric import Metric
+from pydtnn.tracers.tracer import Tracer
+from collections.abc import Sequence
 from pydtnn._model.model_base import Model_Base as Model
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.tracers.extrae_tracer import ExtraeTracer
 from pydtnn.tracers.simple_tracer import SimpleTracer
 from pydtnn.tracers.simple_tracer_gpu import SimpleTracerPycuda
 from pydtnn.tracers.simple_tracer_pmlib import SimpleTracerPMLib
-from pydtnn.utils.constants import Array
+from pydtnn.utils.constants import Array, ArrayShape
 from pydtnn.utils.tensor import SampleFormat, TensorFormat, format_reshape
 from pydtnn.utils.performance_models import allreduce_time
 from pydtnn.models.model import select as select_model
@@ -27,46 +30,6 @@ else:
     MPI_COMM = ModuleType
 
 class Model_Utils[T: Array](Model[T]):
-    def _update_running_average(self, curr: np.ndarray, total: np.ndarray, count: int,
-                                batch_size: int, prefix="") -> tuple[np.ndarray, int, str]:
-        string = ""
-        total = ((curr * batch_size) + (total * count)) / (count + batch_size)
-        for c in range(len(self.loss_and_metrics)):
-            loss_str = self.loss_and_metrics_format[c]
-            if loss_str:
-                string += ("%s, " % (prefix + loss_str)) % total[c]
-        string = string[:-2]
-        return total, count + batch_size, string
-    # ----
-
-    def _compute_metrics_funcs(self, y_pred: T, y_targ: T, loss: float, blocking=True, comm=True) -> tuple[np.ndarray, None] | tuple[None, Any]:
-        loss_req: Any | None = None
-        _losses: np.ndarray | None
-
-        if y_targ.shape[0] > 0:
-            metrics = [func.compute(y_pred, y_targ) for func in self.metrics_funcs]
-            _losses = np.array([loss, *metrics], dtype=np.object_)
-        else:
-            _losses = self.total_metrics.copy()
-            _losses[0] = loss
-
-        if self.comm is not None and comm:
-            assert MPI
-
-            _losses /= self.comm_size
-            if blocking:
-                _losses = self.comm.allreduce(_losses, op=MPI.SUM)
-            else:
-                loss_req = self.comm.iallreduce(_losses, op=MPI.SUM)
-        else:
-            if blocking:
-                pass
-            else:
-                raise NotImplementedError("can not compute metrics non-blocking locally")
-
-        return _losses, loss_req
-    # ----
-
 
     def calculate_time(self) -> np.ndarray:
         # Total elapsed_time, Comp elapsed_time, Memo elapsed_time, Net elapsed_time
@@ -110,39 +73,56 @@ class Model_Utils[T: Array](Model[T]):
         return total_time
     # ----
 
-    # NOTE: Esto se puede hacer sin self: pasamos como entrada las cosas útiles
-    def _read_model(self, model_name: str) -> None:
-        create_model = select_model(model_name)
+def compute_metrics_funcs(y_pred: Array, y_targ: Array, loss: float, metrics_funcs: list[Metric],
+                           total_metrics: np.ndarray | None, comm: MPI_COMM | None, comm_size:int, blocking=True,
+                           use_comm=True) -> tuple[np.ndarray, None] | tuple[None, Any]:
+        loss_req: Any | None = None
+        _losses: np.ndarray | None
 
-        # NOTE: Dataset is always in NCHW
-        # Change input_shape to model.tensor_format
-        input_shape = format_reshape(self.dataset.input_shape, SampleFormat.CHW, self.tensor_format.as_sample())
-        if len(input_shape) != 3:
-            warn_text = f"Input layer does not have 3 dimensions ({input_shape}), it may cause issues!"
-            logger.warning(warn_text)
-            warn(warn_text, RuntimeWarning)
-        launch_shape_warning = len(input_shape) == 3 and not (input_shape[0] > input_shape[2]) if self.tensor_format is TensorFormat.NHWC \
-            else len(input_shape) == 3 and not (input_shape[0] < input_shape[1])
-        if launch_shape_warning:
-            warn_text = f"Input layer shape {input_shape} may not be in {self.tensor_format} format, regardless of model format! "
-            logger.warning(warn_text)
-            warn(warn_text, RuntimeWarning)
-        output_shape = tuple(self.dataset.output_shape)
+        if y_targ.shape[0] > 0:
+            metrics = [func.compute(y_pred, y_targ) for func in metrics_funcs]
+            _losses = np.array([loss, *metrics], dtype=np.object_)
+        else:
+            _losses = total_metrics.copy()  #type: ignore (In this case, total_metrics will not be None)
+            _losses[0] = loss
 
-        layers = create_model(input_shape, output_shape)
-        self.add_layers(layers)  # type: ignore
+        if comm is not None and use_comm:
+            assert MPI
 
+            _losses /= comm_size
+            if blocking:
+                _losses = comm.allreduce(_losses, op=MPI.SUM)
+            else:
+                loss_req = comm.iallreduce(_losses, op=MPI.SUM)
+        else:
+            if blocking:
+                pass
+            else:
+                raise NotImplementedError("can not compute metrics non-blocking locally")
 
-    def get_all_layers(self, from_layers: list[Layerable[T]] | None = None) -> list[Layerable[T]]:
-        if from_layers is None:
-            from_layers = self.layers
-        this_recursion_layers = []
-        for layer in from_layers:
-            this_recursion_layers.append(layer)
-            children = layer.children
-            this_recursion_layers += self.get_all_layers(children)
-        return this_recursion_layers
+        return _losses, loss_req
+    # ----
 
+def read_model(model_name: str, input_shape: ArrayShape, output_shape: ArrayShape, tensor_format: TensorFormat) -> Sequence[Layerable]:
+    create_model = select_model(model_name)
+
+    # NOTE: Dataset is always in NCHW
+    # Change input_shape to model.tensor_format
+    input_shape = format_reshape(input_shape, SampleFormat.CHW, tensor_format.as_sample())
+    if len(input_shape) != 3:
+        warn_text = f"Input layer does not have 3 dimensions ({input_shape}), it may cause issues!"
+        logger.warning(warn_text)
+        warn(warn_text, RuntimeWarning)
+    launch_shape_warning = len(input_shape) == 3 and not (input_shape[0] > input_shape[2]) if tensor_format is TensorFormat.NHWC \
+        else len(input_shape) == 3 and not (input_shape[0] < input_shape[1])
+    if launch_shape_warning:
+        warn_text = f"Input layer shape {input_shape} may not be in {tensor_format} format, regardless of model format! "
+        logger.warning(warn_text)
+        warn(warn_text, RuntimeWarning)
+
+    layers = create_model(input_shape, output_shape)
+    return layers
+    # ----
 
 def get_tracer(tracer_output: str, tracing: bool, comm: MPI_COMM | None, enable_cudnn: bool,
                tracer_pmlib_server: str, tracer_pmlib_port: int, tracer_pmlib_device: str) -> Tracer:

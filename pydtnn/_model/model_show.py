@@ -1,5 +1,5 @@
 from pydtnn import utils
-from pydtnn._model.model_base import Model_Base as Model
+from pydtnn._model.model_layer import Model_Layer as Model
 import logging
 
 from pydtnn.utils.constants import Array

@@ -1,4 +1,5 @@
 import time
+from typing import Generator
 
 import numpy as np
 from timeit import default_timer as timer
@@ -8,9 +9,10 @@ from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.datasets.dataset import Dataset
 from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_MDL_EVENT_enum
 from pydtnn.utils.constants import Array
+from pydtnn._model.model_utils import compute_metrics_funcs
 from pydtnn import gpuarray
 
-from pydtnn._model.model_init import Model_Init as Model
+from pydtnn._model.model_reduce import Model_Reduce as Model
 
 import logging
 logger = logging.getLogger(__name__)
@@ -56,46 +58,63 @@ class Model_Eval[T: Array](Model[T]):
             loss = 0.0
         assert y_pred is not None
 
-        total_metrics, _ = self._compute_metrics_funcs(y_pred, y_targ, loss, comm=sync_model)
+        total_metrics = None
+        total_metrics, _ = compute_metrics_funcs(y_pred, y_targ, loss, metrics_funcs=self.metrics_funcs,
+                                                 total_metrics=total_metrics, comm=self.comm,
+                                                 comm_size=self.comm_size, use_comm=sync_model)
         assert total_metrics is not None
         self.total_metrics = total_metrics
 
         return self.total_metrics
 
-    def evaluate(self, bar_width=Model.BAR_WIDTH):
-        self._ensure_model_runable()
-
-        if self.enable_cudnn and self.y_batch is None:
-            assert gpuarray and self.cudnn_dtype
-            tensor_ary = TensorArray(
-                gpuarray.empty((self.batch_size, *self.layers[-1].shape), self.dtype),
-                self.tensor_format, self.cudnn_dtype)
-            self.y_batch = tensor_ary  # type: ignore
-
-        self.comm_nsamples = list(zip(*self.comm.allgather(self.dataset._nsamples) if self.comm else [self.dataset._nsamples]))
-
-        test_batches_min = min(self.comm_nsamples[Dataset.Part.TEST]) / (self.batch_size * self.nprocs)
-
-        test_batch_generator = self.dataset.get_test_generator()
+    def update_status(self, pbar: tqdm, batch_loss: np.ndarray, total_loss: np.ndarray, 
+                      batch_count: int, batch_size: int, output_prefix: str, delta: float = -1,
+                      prev_string: str = "") -> tuple[np.ndarray, int]:
+        # noinspection PyUnboundLocalVariable
+        total_loss, batch_count, string = \
+            self._update_running_average(batch_loss, total_loss, batch_count, batch_size, prefix=output_prefix)
 
         if self.comm_rank == 0:
-            test_total_loss, test_batch_count = np.zeros(len(self.loss_and_metrics)), 0
-            pbar = tqdm(total=self.dataset.test_nsamples, ncols=bar_width,
-                        ascii=" ▁▂▃▄▅▆▇█", smoothing=0.3,
-                        desc="Testing", unit=" samples")
+            # noinspection PyUnboundLocalVariable
+            pbar.set_postfix_str(s=f"{prev_string}{string}", refresh=True)
+            pbar.update(batch_size)
+            if delta >= 0:
+                self.perf_counter.add_testing_time_and_batch_size(self._evaluate_round, delta, batch_size)
+        
+        return total_loss, batch_count
+    # ------
 
-        model_sync_count = 0
-        for i_batch, (x_batch, y_batch, batch_size) in enumerate(test_batch_generator):
+    
+    def do_evaluation(self, pbar: tqdm,
+                      batch_generator: Generator[tuple[np.ndarray, np.ndarray, int]],
+                      model_sync_count: int,
+                      batches_min: float,
+                      total_loss: np.ndarray,
+                      batch_count: int, 
+                      terminate: bool = False,
+                      prev_string: str = "",
+                      out_prefix: str = "") -> tuple[int, bool]:
+        """
+        Return:
+            tuple[model_sync_count (int), sync_epoch (bool)]
+        """
+        for i_batch, (x_batch, y_batch, batch_size) in enumerate(batch_generator):
+            if terminate:
+                x_batch = x_batch[:0]
+                y_batch = y_batch[:0]
             local_batch_size = x_batch.shape[0]
 
             sync_model = (self.model_sync_freq <= 0) or (model_sync_count % self.model_sync_freq == 0)
 
+            if sync_model:
+                sync_epoch = True
+
             if model_sync_count == 0 and not self.initial_model_sync:
                 sync_model = False
-
+            
             model_sync_count += 1
 
-            if i_batch < test_batches_min:
+            if i_batch < batches_min:
                 rank_mask = [1] * self.comm_size
             else:
                 rank_mask = self.comm.allgather(min(1, local_batch_size)) if self.comm else [min(1, local_batch_size)]
@@ -114,14 +133,41 @@ class Model_Eval[T: Array](Model[T]):
             if batch_size <= 0:
                 continue
 
-            if self.comm_rank == 0:
-                # noinspection PyUnboundLocalVariable
-                test_total_loss, test_batch_count, string = \
-                    self._update_running_average(test_batch_loss, test_total_loss, test_batch_count, batch_size, prefix="test_")
-                # noinspection PyUnboundLocalVariable
-                pbar.set_postfix_str(s=string, refresh=True)
-                pbar.update(batch_size)
-                self.perf_counter.add_testing_time_and_batch_size(self._evaluate_round, toc - tic, batch_size)
+            total_loss, batch_count = self.update_status(pbar = pbar, batch_loss=test_batch_loss,
+                                                         total_loss=total_loss, batch_count=batch_count,
+                                                         batch_size=batch_size, output_prefix=out_prefix, delta=toc- tic,
+                                                         prev_string = prev_string)
+
+        return (model_sync_count, sync_epoch)
+    # -----
+
+    def evaluate(self, bar_width=Model.BAR_WIDTH):
+        self._ensure_model_runable()
+
+        if self.enable_cudnn and self.y_batch is None:
+            assert gpuarray and self.cudnn_dtype
+            tensor_ary = TensorArray(
+                gpuarray.empty((self.batch_size, *self.layers[-1].shape), self.dtype),
+                self.tensor_format, self.cudnn_dtype)
+            self.y_batch = tensor_ary  # type: ignore
+
+        self.comm_nsamples = list(zip(*self.comm.allgather(self.dataset._nsamples) if self.comm else [self.dataset._nsamples]))
+
+        test_batches_min: float = min(self.comm_nsamples[Dataset.Part.TEST]) / (self.batch_size * self.nprocs)
+
+        test_batch_generator = self.dataset.get_test_generator()
+
+        if self.comm_rank == 0:
+            test_total_loss, test_batch_count = np.zeros(len(self.loss_and_metrics)), 0
+            pbar = tqdm(total=self.dataset.test_nsamples, ncols=bar_width,
+                        ascii=" ▁▂▃▄▅▆▇█", smoothing=0.3,
+                        desc="Testing", unit=" samples")
+
+        self.do_evaluation(pbar = pbar, batch_generator = test_batch_generator,
+                           model_sync_count = 0, batches_min = test_batches_min,
+                           total_loss = test_total_loss, batch_count = test_batch_count ,
+                           out_prefix="test_")
+
 
         # Increment self._evaluate_round
         self._evaluate_round += 1

@@ -5,6 +5,7 @@ from tqdm import tqdm
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.datasets.dataset import Dataset
 from pydtnn.utils.constants import Array
+from pydtnn._model.model_utils import compute_metrics_funcs
 import numpy as np
 
 
@@ -102,6 +103,18 @@ class Model_Train[T: Array](Model[T]):
             case _:
                 raise ValueError(f"Model synchronization algorithm option '{self.model_sync_algo}' not recognized. Only recognized: {list(Model.SyncAlgorithm)}")
 
+    def update_status(self, pbar: tqdm, batch_loss: np.ndarray, total_loss: np.ndarray, 
+                      batch_count: int, batch_size: int, output_prefix: str = "val_", delta: float = -1,
+
+                      prev_string: str = "") -> tuple[np.ndarray, int]:
+        total_loss, batch_count, string = \
+                    self._update_running_average(batch_loss, total_loss, batch_count, batch_size, prefix=output_prefix)
+        
+        if self.comm_rank == 0:
+            pbar.set_postfix_str(s=f"{prev_string}{string}", refresh=True)
+        
+        return total_loss, batch_count
+    # ------
 
     def _train_batch(self, x_batch: np.ndarray, y_batch: np.ndarray, sync_model=True) -> np.ndarray:
         self.mode = Model.Mode.TRAIN
@@ -127,7 +140,10 @@ class Model_Train[T: Array](Model[T]):
                 raise ValueError(f"y_targ.shape[0] ({y_targ.shape[0]}) and x_batch.shape[0] ({x_batch.shape[0]}) must have the same value.")
             loss, dx = 0.0, y_targ
 
-        total_metrics, _ = self._compute_metrics_funcs(x, y_targ, loss, comm=sync_model)
+        total_metrics = None
+        total_metrics, _ = compute_metrics_funcs(x, y_targ, loss, metrics_funcs=self.metrics_funcs,
+                                                 total_metrics=total_metrics, comm=self.comm,
+                                                 comm_size=self.comm_size, use_comm=sync_model)
         assert total_metrics is not None
         self.total_metrics = total_metrics
 
@@ -266,50 +282,14 @@ class Model_Train[T: Array](Model[T]):
             # ----------- #
             # --- VAL --- #
             # ----------- #
-            
-            for i_batch, (x_batch, y_batch, batch_size) in enumerate(val_batch_generator):
-                # NOTE: El for es exáctamente igual que el de evaluate de mode_eval
-                if terminate:
-                    x_batch = x_batch[:0]
-                    y_batch = y_batch[:0]
+            self.do_evaluation(pbar = pbar, batch_generator = val_batch_generator,
+                               model_sync_count = 0, batches_min = val_batches_min,
+                               total_loss = val_total_loss, batch_count = val_batch_count,
+                               prev_string = f"{train_string}, ")
 
-                local_batch_size = x_batch.shape[0]
-
-                sync_model = (self.model_sync_freq <= 0) or (model_sync_count % self.model_sync_freq == 0)
-
-                if sync_model:
-                    sync_epoch = True
-
-                if model_sync_count == 0 and not self.initial_model_sync:
-                    sync_model = False
-
-                model_sync_count += 1
-
-                if i_batch < val_batches_min:
-                    rank_mask = [1] * self.comm_size
-                else:
-                    rank_mask = self.comm.allgather(min(1, local_batch_size)) if self.comm else [min(1, local_batch_size)]
-                rank_avail = sum(rank_mask)
-
-                if rank_avail <= 0:
-                    break
-
-                if rank_avail < self.model_sync_min_avail:
-                    sync_model = False
-
-                val_batch_loss = self._evaluate_batch(x_batch, y_batch, sync_model=sync_model)
-
-                if batch_size <= 0:
-                    continue
-
-                val_total_loss, val_batch_count, string = \
-                    self._update_running_average(val_batch_loss, val_total_loss, val_batch_count, batch_size, prefix="val_")
-                if self.comm_rank == 0:
-                    pbar.set_postfix_str(s=f"{train_string}, {string}", refresh=True)
-
-            if self.comm_rank == 0:
-                for c in range(len(self.loss_and_metrics)):
-                    self.history["val_" + self.loss_and_metrics[c]].append(val_total_loss[c])
+            #if self.comm_rank == 0:  # All nodes must have history, not only the 0.
+            for c in range(len(self.loss_and_metrics)):
+                self.history["val_" + self.loss_and_metrics[c]].append(val_total_loss[c])
 
             for sched in self.schedulers:
                 sched.on_epoch_end(train_total_loss, val_total_loss)

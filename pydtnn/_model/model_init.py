@@ -1,4 +1,4 @@
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from warnings import warn
 
 import numpy as np
@@ -7,6 +7,7 @@ from pydtnn import MPI, drv, nccl, cudnn
 from pydtnn import hostname, ranks_per_node, num_gpus, nccl_comm, cudnn_handle, cublas_handle, context, stream
 
 from pydtnn._model.model_layer import Model_Layer as Model
+from pydtnn._model.model_utils import read_model
 from pydtnn.libs.mpi.rc import proto as PROTOCOL
 from pydtnn import MPI, utils
 from pydtnn.losses.loss import select as select_loss
@@ -15,6 +16,13 @@ from pydtnn.optimizers.optimizer import select as select_optimizer
 from pydtnn.utils.gpu import CudnnDataType
 
 import logging
+if TYPE_CHECKING:
+    import polyhe  # type: ignore (polyhe exist if it's installed)
+else:
+    try:
+        import polyhe
+    except Exception:
+        polyhe = None
 
 from pydtnn.utils.constants import Array
 logger = logging.getLogger(__name__)
@@ -29,14 +37,15 @@ class Model_Init[T: Array](Model[T]):
         # Set MPI and comm
         self._mpi_init()
 
-        # Cuda
+        # Encryption [NOTE: Always after initializing MPI (if you are going to use MPI)]
+        if self.encryption_name:
+            self.crypt = self._crypt_init(self.encryption_name)
+        else:
+            self.crypt = None
+
+        # Cuda [NOTE: Always after initializing MPI (if you are going to use MPI)]
         if self.enable_cudnn:
             self._cudnn_init()
-
-        # Read the model (must be the last action, as it calls self._model_init() if there is a model)
-        self.model_name: str | None = self.kwargs.get("model_name")
-        if self.model_name:
-            self._read_model(self.model_name)
         
         # Private attributes
         self._is_model_init: bool = False
@@ -53,7 +62,39 @@ class Model_Init[T: Array](Model[T]):
 
         # Metrics list
         self.metrics_list: list[str] = [m for m in self.metrics.replace(" ", "").split(",")]
+
+        # Read the model (NOTE: must be the last action, as it calls self._model_init() if there is a model)
+        self.model_name: str | None = self.kwargs.get("model_name")
+        if self.model_name:
+            self.add_layers(read_model(self.model_name, self.dataset.input_shape, self.dataset.output_shape, self.tensor_format))
     # ----- __init__ ----- #
+
+    def _crypt_init(self, encryption_name: str) -> "polyhe.Context":
+        """Initialize encryption context"""
+        if polyhe is None:
+            raise RuntimeError("uHE is not avaliable, but is requiested!")
+
+        backend = polyhe.Backend(encryption_name)
+        options = polyhe.Options(
+            slots=self.encryption_slots,
+            scale=self.encryption_scale,
+            security=self.encryption_security
+        )
+
+        if self.comm_rank == 0:
+            crypt = polyhe.new(backend, options)
+
+        if self.comm:
+            crypt = self.comm.bcast(crypt if self.comm_rank == 0 else None)
+
+        assert crypt is not None
+        if self.enable_nccl:
+            warn_text = "If NCCL is active, encryption is disabled"
+            logger.warning(warn_text)
+            warn(warn_text, RuntimeWarning)
+
+        return crypt
+    # -----
 
     def _mpi_init(self) -> None:
         # Communication type
@@ -202,5 +243,4 @@ class Model_Init[T: Array](Model[T]):
 
         self.loss_func._post_init()
         self.optimizer._post_init()
-
         # ----

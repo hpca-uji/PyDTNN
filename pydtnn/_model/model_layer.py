@@ -43,7 +43,7 @@ class Model_Layer[T: Array](Model[T]):
             self.add(layer.act())
     # ---
 
-    def add_layers(self, list_layers: list[Layerable[T]]) -> None:
+    def add_layers(self, list_layers: abc.Sequence[Layerable[T]]) -> None:
         for layer in list_layers:
             self.add(layer)
     # --- END add_layers ---

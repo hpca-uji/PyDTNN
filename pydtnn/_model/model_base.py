@@ -5,6 +5,7 @@ import numpy as np
 import logging
 
 from pydtnn.datasets.dataset import Dataset
+from pydtnn.optimizers.optimizer import Optimizer
 logger = logging.getLogger(__name__)
 
 import itertools
@@ -16,7 +17,7 @@ from pydtnn.losses.loss import Loss
 from pydtnn.parser import PydtnnArgumentParser
 from pydtnn.utils.constants import Array, ArrayShape, NetworkAlgEnum, Parameters
 from pydtnn.utils.tensor import TensorFormat, encode_shape, encode_tensor, decode_shape, decode_tensor
-from pydtnn import MPI_MODULE, Cudnn_Handle_Type, Cublas_Handle_Type
+from pydtnn import MPI_MODULE, Cudnn_Handle_Type, Cublas_Handle_Type, drv, gpuarray, cublas
 from collections import abc
 from pydtnn.utils.performance_counter import PerformanceCounter
 from pydtnn.utils.memory_pool import PrivateMemory, PreallocMemory
@@ -93,6 +94,23 @@ class Model_Base[T: Array]:
     normalize_scale: float
     model_sync_quantize: bool
     model_sync_dtype: np.dtype
+    enable_fused_conv_bn: bool
+    enable_fused_conv_relu: bool
+    enable_fused_bn_relu: bool
+    enable_fused_conv_bn_relu: bool
+    conv_direct_method: str
+    parallel_data: bool
+    parallel_pipeline: bool
+    use_blocking_mpi: bool
+    enable_gpudirect: bool
+    shared_tmp_memory: bool
+    tracing: bool
+    tracer_output: str
+    tracer_pmlib_server: str
+    tracer_pmlib_port: int
+    tracer_pmlib_device: str
+    model_name:str
+    global_batch_size:int
 # ------------
 
     rank_weight: float
@@ -127,6 +145,7 @@ class Model_Base[T: Array]:
 
     cuda_grid: tuple[int, int, int]
     cuda_block: tuple[int, int, int]
+    optimizer: Optimizer
     
 ##########################################
     ## INIT ##
@@ -178,6 +197,7 @@ class Model_Base[T: Array]:
         # Dataset
         if self.dataset_name:
             self.dataset: Dataset = select_dataset(self.dataset_name)(self)
+    # ---- #
 
 
     def encode_shape(self, shape: ArrayShape) -> ArrayShape:
@@ -209,8 +229,8 @@ class Model_Base[T: Array]:
 
         return data
 
-    def import_(self, data: "dict[str, Any] | Model") -> None:
-        if isinstance(data, Model):
+    def import_(self, data: "dict[str, Any] | Model_Base") -> None:
+        if isinstance(data, Model_Base):
             data = data.export()
 
         model_name = str(data.get(Parameters.MODEL_NAME))

@@ -9,8 +9,8 @@ logger = logging.getLogger(__name__)
 
 
 if TYPE_CHECKING:
-    from pydtnn.model import Model
-    from pydtnn.layers.layer import Layer
+    from pydtnn._model.model_layer import Model_Layer as Model
+    from pydtnn.abstract.layerable import Layerable
 
 
 class EventType:
@@ -101,7 +101,7 @@ class Tracer(metaclass=PostInitCaller):
         """Fake method, will be replaced by lambda: None or _emit_event()"""
         pass
 
-    def emit_nevent(self, evt_evt: list[int, int], evt_val: list[int, int], stream=None):
+    def emit_nevent(self, evt_evt: list[int], evt_val: list[int], stream=None):
         """Fake method, will be replaced by lambda: None or _emit_nevent()"""
         pass
 
@@ -109,7 +109,7 @@ class Tracer(metaclass=PostInitCaller):
         """Fake method, will be replaced by lambda: None or _print_memory_usage()"""
         pass
 
-    def _get_layers_recursively(self, layers: list["Layer"]) -> list["Layer"]:
+    def _get_layers_recursively(self, layers: list["Layerable"]) -> list["Layerable"]:
         all_layers = []
         for layer in layers:
             all_layers.append(layer)
