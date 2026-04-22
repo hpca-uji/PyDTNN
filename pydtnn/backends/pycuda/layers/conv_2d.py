@@ -113,11 +113,11 @@ class Conv2DPycuda(AbstractConv2DPycuda):
         # Compute a' = x x weights
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
         cudnn.cudnnConvolutionForward(self.model.cudnn_handle, alpha,
-                                      x.desc, x.ptr,
-                                      self.weights.desc, self.weights.ptr,
+                                      x.desc, x.ptr_voidp,
+                                      self.weights.desc, self.weights.ptr_voidp,
                                       self.conv_desc, self.fwd_algo,
                                       self.model.layers[0].getConvolutionWorkspacePtr(), self.model.layers[0].getConvolutionWorkspaceSize(), beta,
-                                      self.y.desc, self.y.ptr)
+                                      self.y.desc, self.y.ptr_voidp)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.use_bias:
@@ -125,8 +125,8 @@ class Conv2DPycuda(AbstractConv2DPycuda):
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
                                          self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN_SUM_BIASES)
             # Compute a = a' + biases
-            cudnn.cudnnAddTensor(self.model.cudnn_handle, alpha, self.biases.desc, self.biases.ptr,
-                                 beta, self.y.desc, self.y.ptr)
+            cudnn.cudnnAddTensor(self.model.cudnn_handle, alpha, self.biases.desc, self.biases.ptr_voidp,
+                                 beta, self.y.desc, self.y.ptr_voidp)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.y
     # -----
@@ -136,10 +136,10 @@ class Conv2DPycuda(AbstractConv2DPycuda):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DW)
         # Compute dw
         cudnn.cudnnConvolutionBackwardFilter(self.model.cudnn_handle, alpha,
-                                             self.x.desc, self.x.ptr,
-                                             dy.desc, dy.ptr, self.conv_desc, self.bwd_dw_algo,
+                                             self.x.desc, self.x.ptr_voidp,
+                                             dy.desc, dy.ptr_voidp, self.conv_desc, self.bwd_dw_algo,
                                              self.model.layers[0].getConvolutionWorkspacePtr(), self.model.layers[0].getConvolutionWorkspaceSize(), beta,
-                                             self.dw.desc, self.dw.ptr)
+                                             self.dw.desc, self.dw.ptr_voidp)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         # DtoH dw when data parallelism and no GPU direct/NCCL is used
@@ -151,8 +151,8 @@ class Conv2DPycuda(AbstractConv2DPycuda):
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DB)
             # Compute db
             cudnn.cudnnConvolutionBackwardBias(self.model.cudnn_handle, alpha,
-                                               dy.desc, dy.ptr, beta,
-                                               self.db.desc, self.db.ptr)
+                                               dy.desc, dy.ptr_voidp, beta,
+                                               self.db.desc, self.db.ptr_voidp)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
             # DtoH db when data parallelism and no GPU direct/NCCL is used
@@ -163,11 +163,11 @@ class Conv2DPycuda(AbstractConv2DPycuda):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
         # Compute dx
         cudnn.cudnnConvolutionBackwardData(self.model.cudnn_handle, alpha,
-                                           self.weights.desc, self.weights.ptr,
-                                           dy.desc, dy.ptr,
+                                           self.weights.desc, self.weights.ptr_voidp,
+                                           dy.desc, dy.ptr_voidp,
                                            self.conv_desc, self.bwd_dx_algo,
                                            self.model.layers[0].getConvolutionWorkspacePtr(), self.model.layers[0].getConvolutionWorkspaceSize(), beta,
-                                           self.dx.desc, self.dx.ptr)
+                                           self.dx.desc, self.dx.ptr_voidp)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.dx
     # ----

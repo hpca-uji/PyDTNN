@@ -120,7 +120,7 @@ class DecoderPycuda(AbstractBlockLayerPycuda, Decoder):
         # dx = feedforward.dx + layernormalization_2.dx
         cudnn.cudnnAddTensor(self.model.cudnn_handle,
                              alpha, self.layernormalization_2.dx.desc, self.layernormalization_2.dx.ptr,
-                             beta, self.feedforward_dx_unflatten.desc, self.feedforward_dx_unflatten.ptr)
+                             beta, self.feedforward_dx_unflatten.desc, self.feedforward_dx_unflatten.ptr_voidp)
 
         # Self Attention Encoder
         self.layernormalization_enc.backward(self.feedforward_dx_unflatten)
@@ -128,7 +128,7 @@ class DecoderPycuda(AbstractBlockLayerPycuda, Decoder):
         # dx_enc = multihead.dkey + multiheadattention.dvalue
         cudnn.cudnnAddTensor(self.model.cudnn_handle,
                              alpha, self.dx_enc.desc, self.multiheadattention_enc.dvalue.ptr,
-                             beta, self.dx_enc.desc, self.dx_enc.ptr)
+                             beta, self.dx_enc.desc, self.dx_enc.ptr_voidp)
         # dx = layernorm_enc.dx + multihead_enc.dquery
         cudnn.cudnnAddTensor(self.model.cudnn_handle,
                              alpha, self.dx_enc_dquery.desc, self.layernormalization_enc.dx.ptr,
@@ -141,13 +141,13 @@ class DecoderPycuda(AbstractBlockLayerPycuda, Decoder):
         # dx = layernorm_1.dx + multihead.dquery + multihead.dkey + multihead.dvalue
         cudnn.cudnnAddTensor(self.model.cudnn_handle,
                              alpha, self.dx.desc, self.layernormalization_1.dx.ptr,
-                             beta, self.dx.desc, self.dx.ptr)
+                             beta, self.dx.desc, self.dx.ptr_voidp)
         cudnn.cudnnAddTensor(self.model.cudnn_handle,
                              alpha, self.dx.desc, self.multiheadattention.dkey.ptr,
-                             beta, self.dx.desc, self.dx.ptr)
+                             beta, self.dx.desc, self.dx.ptr_voidp)
         cudnn.cudnnAddTensor(self.model.cudnn_handle,
                              alpha, self.dx.desc, self.multiheadattention.dvalue.ptr,
-                             beta, self.dx.desc, self.dx.ptr)
+                             beta, self.dx.desc, self.dx.ptr_voidp)
         return self.dx, self.dx_enc
         # else:
         #     return self.dx_enc

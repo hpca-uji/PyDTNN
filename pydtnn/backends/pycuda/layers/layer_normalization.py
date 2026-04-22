@@ -24,21 +24,21 @@ class LayerNormalizationPycuda(LayerNormalization[TensorArray], LayerPycuda):
         # Shape same as x input, but batch = 1. For scaling at the end: output = scale * post_normalization + bias
         gamma_shape = (int(np.prod([x.ary.shape[i] for i in self.axis])),)
         self.gamma = gpuarray.to_gpu(np.full(gamma_shape, self.gamma_init_val, self.model.dtype))
-        self.gamma = TensorArray(self.gamma, self.model.tensor_fmt, self.model.cudnn_dtype, tensor_type=TensorArray.TensorTypeEnum.OTHER)
+        self.gamma = TensorArray(self.gamma, self.model.tensor_fmt, self.model.cudnn_dtype, tensor_type=TensorArray.TensorType.OTHER)
         self.beta = gpuarray.zeros(gamma_shape, self.model.dtype)
-        self.beta = TensorArray(self.beta, self.model.tensor_fmt, self.model.cudnn_dtype, tensor_type=TensorArray.TensorTypeEnum.OTHER)
+        self.beta = TensorArray(self.beta, self.model.tensor_fmt, self.model.cudnn_dtype, tensor_type=TensorArray.TensorType.OTHER)
         self.dgamma = gpuarray.zeros(gamma_shape, self.model.dtype)
-        self.dgamma = TensorArray(self.dgamma, self.model.tensor_fmt, self.model.cudnn_dtype, tensor_type=TensorArray.TensorTypeEnum.OTHER)
+        self.dgamma = TensorArray(self.dgamma, self.model.tensor_fmt, self.model.cudnn_dtype, tensor_type=TensorArray.TensorType.OTHER)
         self.dbeta = gpuarray.zeros(gamma_shape, self.model.dtype)
-        self.dbeta = TensorArray(self.dbeta, self.model.tensor_fmt, self.model.cudnn_dtype, tensor_type=TensorArray.TensorTypeEnum.OTHER)
+        self.dbeta = TensorArray(self.dbeta, self.model.tensor_fmt, self.model.cudnn_dtype, tensor_type=TensorArray.TensorType.OTHER)
 
         # Shape same as x input, but last layer = 1. For mean computation across the normalization axis.
         mean_shape = (int(np.prod(x.ary.shape) / np.prod([x.ary.shape[i] for i in self.axis])),)  # (*x.ary.shape[:-2], 1, 1)
         self.std = gpuarray.zeros(mean_shape, self.model.dtype)
-        self.std = TensorArray(self.std, self.model.tensor_fmt, self.model.cudnn_dtype, tensor_type=TensorArray.TensorTypeEnum.OTHER)
+        self.std = TensorArray(self.std, self.model.tensor_fmt, self.model.cudnn_dtype, tensor_type=TensorArray.TensorType.OTHER)
         out_shape = x.ary.shape
         self.xn = gpuarray.zeros(out_shape, self.model.dtype)
-        self.xn = TensorArray(self.xn, self.model.tensor_fmt, self.model.cudnn_dtype, tensor_type=TensorArray.TensorTypeEnum.OTHER)
+        self.xn = TensorArray(self.xn, self.model.tensor_fmt, self.model.cudnn_dtype, tensor_type=TensorArray.TensorType.OTHER)
 
         self.__init_kernels_gpu__()
         self.threads = int(min(self.kernel_dim_params[0], 1024))

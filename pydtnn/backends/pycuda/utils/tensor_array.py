@@ -18,7 +18,7 @@ except Exception:
 
 class TensorArray:
 
-    class TensorTypeEnum(StrEnum):
+    class TensorType(StrEnum):
         TENSOR = auto()
         FILTER = auto()
         SEQ = auto()
@@ -28,17 +28,16 @@ class TensorArray:
     @staticmethod
     def new_empty(shape: ArrayShape, dtype: np.dtype,
                   tensor_format: TensorFormat, cudnn_dtype: int,
-                  tensor_type: TensorTypeEnum = TensorTypeEnum.TENSOR, desc: int | None = None,
+                  tensor_type: TensorType = TensorType.TENSOR, desc: int | None = None,
                   gpudirect: bool = False, cublas: bool = False):
         gpu_arr = gpuarray.empty(shape, dtype)
         return TensorArray(gpu_arr=gpu_arr, tensor_format=tensor_format, cudnn_dtype=cudnn_dtype,
                            tensor_type=tensor_type, desc=desc, gpudirect=gpudirect, cublas=cublas)
-    # ---
 
     @staticmethod
     def new_zeros(shape: ArrayShape, dtype: np.dtype,
                   tensor_format: TensorFormat, cudnn_dtype: int,
-                  tensor_type: TensorTypeEnum = TensorTypeEnum.TENSOR, desc: int | None = None,
+                  tensor_type: TensorType = TensorType.TENSOR, desc: int | None = None,
                   gpudirect: bool = False, cublas: bool = False):
         gpu_arr = gpuarray.zeros(shape, dtype)
         return TensorArray(gpu_arr=gpu_arr, tensor_format=tensor_format, cudnn_dtype=cudnn_dtype,
@@ -47,34 +46,30 @@ class TensorArray:
     @staticmethod
     def new_pair_gpudirect(drv: "pycuda_driver", shape: ArrayShape, dtype: np.dtype,
                            tensor_format: TensorFormat, cudnn_dtype: int,
-                           tensor_type: TensorTypeEnum = TensorTypeEnum.TENSOR,
+                           tensor_type: TensorType = TensorType.TENSOR,
                            desc: int | None = None, gpudirect: bool = False, cublas: bool = False) -> tuple[np.ndarray, "TensorArray"]:
         x_cpu = drv.aligned_zeros(shape, dtype)
         x_gpu = drv.register_host_memory(x_cpu, flags=drv.mem_host_register_flags.DEVICEMAP)
 
         x_gpu = TensorArray(x_gpu, tensor_format=tensor_format, cudnn_dtype=cudnn_dtype, tensor_type=tensor_type,
                             desc=desc, gpudirect=gpudirect, cublas=cublas)
-
         return (x_cpu, x_gpu)
-    # ---
 
     @staticmethod
     def new_pair(shape: ArrayShape, dtype: np.dtype,
                  tensor_format: TensorFormat, cudnn_dtype: int,
-                 tensor_type: TensorTypeEnum = TensorTypeEnum.TENSOR,
+                 tensor_type: TensorType = TensorType.TENSOR,
                  desc: int | None = None, gpudirect: bool = False, cublas: bool = False) -> tuple[np.ndarray, "TensorArray"]:
         x_cpu = np.zeros(shape, dtype)
         x_gpu = gpuarray.zeros(shape, dtype)
-
         x_gpu = TensorArray(x_gpu, tensor_format=tensor_format, cudnn_dtype=cudnn_dtype, tensor_type=tensor_type,
                             desc=desc, gpudirect=gpudirect, cublas=cublas)
-
         return (x_cpu, x_gpu)
 
     @staticmethod
     def new(shape: ArrayShape, dtype: np.dtype,
             tensor_format: TensorFormat, cudnn_dtype: int,
-            tensor_type: TensorTypeEnum = TensorTypeEnum.TENSOR,
+            tensor_type: TensorType = TensorType.TENSOR,
             desc: int | None = None, gpudirect: bool = False, cublas: bool = False,
             drv: "pycuda_driver" = None) -> tuple[np.ndarray, "TensorArray"]:
         if drv is not None:
@@ -90,7 +85,7 @@ class TensorArray:
     # ---
 
     def __init__(self, gpu_arr: "gpuarray.GPUArray", tensor_format: TensorFormat, cudnn_dtype: int,
-                 tensor_type: TensorTypeEnum = TensorTypeEnum.TENSOR, desc: int | None = None,
+                 tensor_type: TensorType = TensorType.TENSOR, desc: int | None = None,
                  gpudirect: bool = False, cublas: bool = False):
 
         self.tensor_format = TensorFormat(tensor_format.lower())
@@ -98,20 +93,134 @@ class TensorArray:
         self.tensor_type = tensor_type
         self.gpudirect = gpudirect
         self.cublas = cublas
-        self.cudnn_tensor_format = cudnn.cudnnTensorFormat['CUDNN_TENSOR_' + tensor_format.upper()]
-        # The following atributes will be initalized in _initalize:
-        self.ary: gpuarray.GPUArray = None
-        self.size: int = -1
-        self.nbytes: int = -1
-        self.desc: int = -1
+
         # ---
-        self._meta_init(gpu_arr, desc)
+        self.ary: gpuarray.GPUArray
+        self.desc: int = -1
+
+        self._set_ary(gpu_arr)
+
+        if desc:
+            self.desc = desc
+        elif self.size > 0:
+            self._desc_init()
+
+    @property
+    def cudnn_tensor_format(self) -> int:
+        return cudnn.cudnnTensorFormat['CUDNN_TENSOR_' + self.tensor_format.upper()]
+
+    def _encode_shape(self, shape):
+        return encode_shape(shape, self.tensor_format)
+
+    def _decode_shape(self, shape):
+        return decode_shape(shape, self.tensor_format)
+
+    def _set_ary(self, gpu_arr: "gpuarray.GPUArray") -> None:
+        """Set backing gpu array"""
+        match len(gpu_arr.shape):
+            case 1:
+                match self.tensor_format:
+                    case TensorFormat.NCHW:
+                        shape = (1, *gpu_arr.shape, 1, 1)
+                    case TensorFormat.NHWC:
+                        shape = (1, 1, 1, *gpu_arr.shape)
+                    case tensor_format:
+                        raise NotImplementedError(f"Unsupported tensor format {tensor_format}!")
+            case 2:
+                match self.tensor_format:
+                    case TensorFormat.NCHW:
+                        shape = (*gpu_arr.shape, 1, 1)
+                    case TensorFormat.NHWC:
+                        shape = (gpu_arr.shape[0], 1, 1, gpu_arr.shape[1])
+                    case tensor_format:
+                        raise NotImplementedError(f"Unsupported tensor format {tensor_format}!")
+            case 3:
+                match self.tensor_format:
+                    case TensorFormat.NCHW:
+                        shape = (gpu_arr.shape[0], 1, gpu_arr.shape[1], gpu_arr.shape[2])
+                    case TensorFormat.NHWC:
+                        raise NotImplementedError("Shape padding not implemented for 3-dim shape on NHWC")
+            case 4:
+                pass  # exact
+            case _:
+                raise ValueError(f"The expected len shape are 1, 2, 3 or 4. Shape received: {len(gpu_arr.shape)}.")
+
+        self.shape_cpu = gpu_arr.shape
+        self.ary = gpu_arr.reshape(shape)
     # ---
 
-    def to_cpu(self) -> np.ndarray:
+    @property
+    def ptr_voidp(self) -> ctypes.c_void_p:
+        if self.gpudirect:
+            return ctypes.c_void_p(int(self.ary.base.get_device_pointer()))
+        else:
+            return ctypes.c_void_p(int(self.ary.gpudata))
+
+    @property
+    def ptr_intp(self) -> np.intp:
+        return np.intp(self.ary.base.get_device_pointer())
+
+    def _desc_init(self) -> None:
+        match self.tensor_type:
+            case self.TensorType.TENSOR:
+                n, c, h, w = self._decode_shape(self.shape)
+                self.desc = cudnn.cudnnCreateTensorDescriptor()
+                cudnn.cudnnSetTensor4dDescriptor(self.desc, self.cudnn_tensor_format,
+                                                 self.cudnn_dtype, n, c, h, w)
+            case self.TensorType.FILTER:
+                n, c, h, w = self._decode_shape(self.shape)
+                self.desc = cudnn.cudnnCreateFilterDescriptor()
+                cudnn.cudnnSetFilter4dDescriptor(self.desc, self.cudnn_dtype,
+                                                 self.cudnn_tensor_format, n, c, h, w)
+            case self.TensorType.SEQ:
+                self.desc = cudnn.cudnnCreateSeqDataDescriptor()
+                dimA = np.array([0, 0, 0, 0], dtype=np.int32)
+                dimA[cudnn.cudnnSeqDataAxis["CUDNN_SEQDATA_BATCH_DIM"]] = self.shape[0]
+                dimA[cudnn.cudnnSeqDataAxis["CUDNN_SEQDATA_BEAM_DIM"]] = self.shape[1]
+                dimA[cudnn.cudnnSeqDataAxis["CUDNN_SEQDATA_TIME_DIM"]] = self.shape[2]
+                dimA[cudnn.cudnnSeqDataAxis["CUDNN_SEQDATA_VECT_DIM"]] = self.shape[3]
+                axes = np.array([0, 0, 0, 0], dtype=np.int32)
+                axes[0] = cudnn.cudnnSeqDataAxis["CUDNN_SEQDATA_BATCH_DIM"]
+                axes[1] = cudnn.cudnnSeqDataAxis["CUDNN_SEQDATA_BEAM_DIM"]
+                axes[2] = cudnn.cudnnSeqDataAxis["CUDNN_SEQDATA_TIME_DIM"]
+                axes[3] = cudnn.cudnnSeqDataAxis["CUDNN_SEQDATA_VECT_DIM"]
+                self.seq_length_array = np.full(shape=(self.shape[0] * self.shape[1]), fill_value=self.shape[-2], dtype=np.int32)
+                # print(self.shape, dimA, axes, len(seq_length_array))
+                cudnn.cudnnSetSeqDataDescriptor(self.desc, self.cudnn_dtype,
+                                                np.int32(4), dimA, axes,
+                                                np.int32(len(self.seq_length_array)), self.seq_length_array,
+                                                None)
+            case self.TensorType.OTHER:
+                pass  # do nothing.
+
+            case tensor_type:
+                raise NotImplementedError(f"Tensor type not implemented! ({tensor_type})")
+    # ---
+
+    def _del_desc(self) -> None:
+        match self.tensor_type:
+            case self.TensorType.TENSOR:
+                cudnn.cudnnDestroyTensorDescriptor(self.desc)
+            case self.TensorType.FILTER:
+                cudnn.cudnnDestroyFilterDescriptor(self.desc)
+            case self.TensorType.SEQ:
+                cudnn.cudnnDestroySeqDataDescriptor(self.desc)
+            case self.TensorType.OTHER:
+                pass  # do nothing.
+            case tensor_type:
+                raise NotImplementedError(f"Tensor type not implemented! ({tensor_type})")
+        self.desc = -1
+    # ---
+
+    def __getattr__(self, name):
+        return getattr(self.ary, name)
+    # ---
+
+    def __array__(self, dtype=None):
+        """Support for np.array(self)"""
         value = self.ary.get()
 
-        match len(self.ary.shape):
+        match len(self.cpu_shape):
             case 1:
                 match self.tensor_format:
                     case TensorFormat.NCHW:
@@ -145,44 +254,10 @@ class TensorArray:
             case _:
                 raise ValueError(f"The expected len shape are 1, 2, 3 or 4. Shape received: {len(self.ary.shape)}.")
 
-        return value
+        return np.asarray(value, dtype=dtype)
 
-    def from_cpu(self, value: np.ndarray) -> None:
-        match len(value.shape):
-            case 1:
-                match self.tensor_format:
-                    case TensorFormat.NCHW:
-                        # shape = (1, *ary.shape, 1, 1)
-                        value = np.expand_dims(value, axis=(0, 2, 3))
-                    case TensorFormat.NHWC:
-                        # shape = (1, 1, 1, *ary.shape)
-                        value = np.expand_dims(value, axis=(0, 1, 2))
-                    case tensor_format:
-                        raise NotImplementedError(f"Unsupported tensor format {tensor_format}!")
-            case 2:
-                match self.tensor_format:
-                    case TensorFormat.NCHW:
-                        # shape = (*ary.shape, 1, 1)
-                        value = np.expand_dims(value, axis=(2, 3))
-                    case TensorFormat.NHWC:
-                        # shape = (ary.shape[0], 1, 1, ary.shape[1])
-                        value = np.expand_dims(value, axis=(1, 2))
-                    case tensor_format:
-                        raise NotImplementedError(f"Unsupported tensor format {tensor_format}!")
-            case 3:
-                match self.tensor_format:
-                    case TensorFormat.NCHW:
-                        # shape = (ary.shape[0], 1, ary.shape[1], ary.shape[2])
-                        value = np.expand_dims(value, axis=(1,))
-                    case TensorFormat.NHWC:
-                        raise NotImplementedError("Shape padding not implemented for 3-dim shape on NHWC")
-            case 4:
-                # shape = ary.shape
-                pass  # exact
-            case _:
-                raise ValueError(f"The expected len shape are 1, 2, 3 or 4. Shape received: {len(value.shape)}.")
-
-        self.ary.set(value)
+    def set(self, value: np.ndarray) -> None:
+        self.ary.reshape(self.shape_cpu).set(value)
 
     def copy(self):
         """ NumPy-like copy. """
@@ -208,124 +283,7 @@ class TensorArray:
         memo[id(self)] = obj
         return obj
 
-    def encode_shape(self, shape):
-        return encode_shape(shape, self.tensor_format)
-
-    def decode_shape(self, shape):
-        return decode_shape(shape, self.tensor_format)
-
-    def _set_shape(self, gpu_arr: "gpuarray.GPUArray") -> None:
-
-        match len(gpu_arr.shape):
-            case 1:
-                match self.tensor_format:
-                    case TensorFormat.NCHW:
-                        self.shape = (1, *gpu_arr.shape, 1, 1)
-                    case TensorFormat.NHWC:
-                        self.shape = (1, 1, 1, *gpu_arr.shape)
-                    case tensor_format:
-                        raise NotImplementedError(f"Unsupported tensor format {tensor_format}!")
-            case 2:
-                match self.tensor_format:
-                    case TensorFormat.NCHW:
-                        self.shape = (*gpu_arr.shape, 1, 1)
-                    case TensorFormat.NHWC:
-                        self.shape = (gpu_arr.shape[0], 1, 1, gpu_arr.shape[1])
-                    case tensor_format:
-                        raise NotImplementedError(f"Unsupported tensor format {tensor_format}!")
-            case 3:
-                match self.tensor_format:
-                    case TensorFormat.NCHW:
-                        self.shape = (gpu_arr.shape[0], 1, gpu_arr.shape[1], gpu_arr.shape[2])
-                    case TensorFormat.NHWC:
-                        raise NotImplementedError("Shape padding not implemented for 3-dim shape on NHWC")
-            case 4:
-                self.shape = gpu_arr.shape
-            case _:
-                raise ValueError(f"The expected len shape are 1, 2, 3 or 4. Shape received: {len(gpu_arr.shape)}.")
-    # ---
-
-    def _set_ptr(self, gpu_arr: "gpuarray.GPUArray") -> None:
-        if self.gpudirect:
-            self.ptr_intp = np.intp(self.ary.base.get_device_pointer())
-            self.ptr = ctypes.c_void_p(int(self.ary.base.get_device_pointer()))
-        else:
-            self.ptr = ctypes.c_void_p(int(gpu_arr.gpudata))
-    # ---
-
-    def _set_desc(self, desc: int | None) -> None:
-        if desc is not None:
-            self.desc = desc
-        else:
-            match self.tensor_type:
-                case self.TensorTypeEnum.TENSOR:
-                    n, c, h, w = self.decode_shape(self.shape)
-                    self.desc = cudnn.cudnnCreateTensorDescriptor()
-                    cudnn.cudnnSetTensor4dDescriptor(self.desc, self.cudnn_tensor_format,
-                                                     self.cudnn_dtype, n, c, h, w)
-                case self.TensorTypeEnum.FILTER:
-                    n, c, h, w = self.decode_shape(self.shape)
-                    self.desc = cudnn.cudnnCreateFilterDescriptor()
-                    cudnn.cudnnSetFilter4dDescriptor(self.desc, self.cudnn_dtype,
-                                                     self.cudnn_tensor_format, n, c, h, w)
-                case self.TensorTypeEnum.SEQ:
-                    if len(self.shape) == 3:
-                        self.shape = (self.shape[0], 1, self.shape[-2], self.shape[-1])
-                    self.desc = cudnn.cudnnCreateSeqDataDescriptor()
-                    dimA = np.array([0, 0, 0, 0], dtype=np.int32)
-                    dimA[cudnn.cudnnSeqDataAxis["CUDNN_SEQDATA_BATCH_DIM"]] = self.shape[0]
-                    dimA[cudnn.cudnnSeqDataAxis["CUDNN_SEQDATA_BEAM_DIM"]] = self.shape[1]
-                    dimA[cudnn.cudnnSeqDataAxis["CUDNN_SEQDATA_TIME_DIM"]] = self.shape[2]
-                    dimA[cudnn.cudnnSeqDataAxis["CUDNN_SEQDATA_VECT_DIM"]] = self.shape[3]
-                    axes = np.array([0, 0, 0, 0], dtype=np.int32)
-                    axes[0] = cudnn.cudnnSeqDataAxis["CUDNN_SEQDATA_BATCH_DIM"]
-                    axes[1] = cudnn.cudnnSeqDataAxis["CUDNN_SEQDATA_BEAM_DIM"]
-                    axes[2] = cudnn.cudnnSeqDataAxis["CUDNN_SEQDATA_TIME_DIM"]
-                    axes[3] = cudnn.cudnnSeqDataAxis["CUDNN_SEQDATA_VECT_DIM"]
-                    self.seq_length_array = np.full(shape=(self.shape[0] * self.shape[1]), fill_value=self.shape[-2], dtype=np.int32)
-                    # print(self.shape, dimA, axes, len(seq_length_array))
-                    cudnn.cudnnSetSeqDataDescriptor(self.desc, self.cudnn_dtype,
-                                                    np.int32(4), dimA, axes,
-                                                    np.int32(len(self.seq_length_array)), self.seq_length_array,
-                                                    None)
-                case self.TensorTypeEnum.OTHER:
-                    pass  # do nothing.
-
-                case tensor_type:
-                    raise NotImplementedError(f"Tensor type not implemented! ({tensor_type})")
-    # ---
-
-    def _del_desc(self) -> None:
-        match self.tensor_type:
-            case self.TensorTypeEnum.TENSOR:
-                cudnn.cudnnDestroyTensorDescriptor(self.desc)
-            case self.TensorTypeEnum.FILTER:
-                cudnn.cudnnDestroyFilterDescriptor(self.desc)
-            case self.TensorTypeEnum.SEQ:
-                cudnn.cudnnDestroySeqDataDescriptor(self.desc)
-            case self.TensorTypeEnum.OTHER:
-                pass  # do nothing.
-            case tensor_type:
-                raise NotImplementedError(f"Tensor type not implemented! ({tensor_type})")
-        self.desc = -1
-
-    def _meta_init(self, gpu_arr: "gpuarray.GPUArray", desc: int | None = None) -> None:
-        self.ary = gpu_arr
-        self._set_shape(gpu_arr)
-        self.size = gpu_arr.size
-        self.nbytes = gpu_arr.nbytes
-        if self.size != 0:
-            self._set_ptr(gpu_arr)
-            self._set_desc(desc)
-    # ---
-
-    def reshape(self, shape: ArrayShape):
-        self.ary = self.ary.reshape(shape)
-        self.shape = shape
-        return self
-    # ---
-
-    def free_gpu_arr(self) -> None:
+    def close(self) -> None:
         if self.ary is not None:
             self._del_desc()
             del self.ary
@@ -336,20 +294,6 @@ class TensorArray:
     def __del__(self) -> None:
         """Best effort finalizer"""
         try:
-            self.free_gpu_arr()
+            self.close()
         except:  # noqa: E722
             pass
-
-    def set_ary(self, gpu_arr: "gpuarray.GPUArray", desc: int | None = None) -> None:
-        self.free_gpu_arr()
-        self._meta_init(gpu_arr, desc)
-    # ---
-
-    def set_ary_from_ndarray(self, arr: np.ndarray, desc: int | None = None) -> None:
-        self.free_gpu_arr()
-        self._meta_init(gpuarray.to_gpu(arr), desc)
-    # ---
-
-    def fill(self, scalar: int | float) -> None:
-        self.ary.fill(scalar)
-    # ---

@@ -98,7 +98,7 @@ class EncoderPycuda(AbstractBlockLayerPycuda, Encoder):
         # y = dropout_2.y + layernormalization_1.y
         cudnn.cudnnAddTensor(self.model.cudnn_handle,
                              alpha, self.feedforward_y_unflatten.desc, self.layernormalization_1.y.ptr,
-                             beta, self.feedforward_y_unflatten.desc, self.feedforward_y_unflatten.ptr)
+                             beta, self.feedforward_y_unflatten.desc, self.feedforward_y_unflatten.ptr_voidp)
 
         self.layernormalization_2.forward(self.feedforward_y_unflatten)
         return self.y
@@ -115,7 +115,7 @@ class EncoderPycuda(AbstractBlockLayerPycuda, Encoder):
         # dx = feedforward.dx + layernormalization_2.dx
         cudnn.cudnnAddTensor(self.model.cudnn_handle,
                              alpha, self.feedforward_dx_unflatten.desc, self.layernormalization_2.dx.ptr,
-                             beta, self.feedforward_dx_unflatten.desc, self.feedforward_dx_unflatten.ptr)
+                             beta, self.feedforward_dx_unflatten.desc, self.feedforward_dx_unflatten.ptr_voidp)
 
         # Self Attention
         self.layernormalization_1.backward(self.feedforward_dx_unflatten)
@@ -125,11 +125,11 @@ class EncoderPycuda(AbstractBlockLayerPycuda, Encoder):
         # dx = layernorm_1.dx + multihead.dquery + multihead.dkey + multihead.dvalue
         cudnn.cudnnAddTensor(self.model.cudnn_handle,
                              alpha, self.dx.desc, self.layernormalization_1.dx.ptr,
-                             beta, self.dx.desc, self.dx.ptr)
+                             beta, self.dx.desc, self.dx.ptr_voidp)
         cudnn.cudnnAddTensor(self.model.cudnn_handle,
                              alpha, self.dx.desc, self.multiheadattention.dkey.ptr,
-                             beta, self.dx.desc, self.dx.ptr)
+                             beta, self.dx.desc, self.dx.ptr_voidp)
         cudnn.cudnnAddTensor(self.model.cudnn_handle,
                              alpha, self.dx.desc, self.multiheadattention.dvalue.ptr,
-                             beta, self.dx.desc, self.dx.ptr)
+                             beta, self.dx.desc, self.dx.ptr_voidp)
         return self.dx
