@@ -244,6 +244,7 @@ class Model[T: Array]:
         self.gpudirect: bool = self.enable_gpudirect
         self.enable_nccl: bool = self.enable_nccl
         self.dtype: np.dtype = np.dtype(self.dtype)
+        self.param_dtype: np.dtype = np.dtype(self.quantize_dtype) if self.quantize else self.dtype
         self.memory: PrivateMemory = None  # type: ignore (it will be intialized later if "self.use_memory_pool" is True)
 
         self.nparams = 0
