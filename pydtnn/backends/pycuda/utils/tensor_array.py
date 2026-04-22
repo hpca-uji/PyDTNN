@@ -216,6 +216,22 @@ class TensorArray:
         return getattr(self.ary, name)
     # ---
 
+    def reshape(self, shape, order="C") -> "TensorArray":
+        """Reshape TensorArray"""
+        return TensorArray(
+            gpu_arr=self.ary.reshape(shape, order),
+            tensor_format=self.tensor_format,
+            cudnn_dtype=self.cudnn_dtype,
+            tensor_type=self.tensor_type,
+            desc=self.desc,
+            gpudirect=self.gpudirect,
+            cublas=self.cublas
+        )
+
+    def squeeze(self, dtype=None) -> "TensorArray":
+        """Squeeze TensorArray"""
+        raise ValueError("Can't squeeze TensorArray")
+
     def set(self, value: np.ndarray) -> None:
         """CPU to GPU with expand_dims"""
         self.ary.reshape(self.shape_cpu).set(value)
@@ -292,3 +308,51 @@ class TensorArray:
             self.close()
         except:  # noqa: E722
             pass
+
+    def __len__(self):
+        return len(self.ary)
+
+    def __add__(other):
+        return self.ary.__add__(other)
+
+    def __radd__(other):
+        return self.ary.__radd__(other)
+
+    def __sub__(other):
+        return self.ary.__sub__(other)
+
+    def __rsub__(other):
+        return self.ary.__rsub__(other)
+
+    def __iadd__(other):
+        return self.ary.__iadd__(other)
+
+    def __isub__(other):
+        return self.ary.__isub__(other)
+
+    def __neg__(other):
+        return self.ary.__neg__(other)
+
+    def __mul__(other):
+        return self.ary.__mul__(other)
+
+    def __rmul__(other):
+        return self.ary.__rmul__(other)
+
+    def __truediv__(other):
+        return self.ary.__truediv__(other)
+
+    def __rtruediv__(other):
+        return self.ary.__rtruediv__(other)
+
+    def __pow__(other):
+        return self.ary.__pow__(other)
+
+    def __rpow__(other):
+        return self.ary.__rpow__(other)
+
+    def __getitem__(index):
+        return self.ary.__getitem__(index)
+
+    def __abs__():
+        return self.ary.__abs__()
