@@ -15,7 +15,6 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
         # NOTE: Keep in sync with Layer
         if not self.model.comm:
             return
-        assert len(self.reqs_allred) == 0, "MPI request overwritten (not waited)!"
 
         # if self.model.enable_cudnn:
         #     if self.model.enable_nccl or self.model.gpudirect:
@@ -68,12 +67,13 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
                 dw_cpu = self.model._layer_reduce_encode(dw_cpu)
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
+                assert dw_ not in self.reqs_allred, f"MPI request overwritten ({dw_} not waited)!"
                 req = self.model._layer_reduce_async(dw_cpu)
                 self.reqs_allred[dw_] = req
 
     def wait_allreduce_async(self, gradient=True):
         # NOTE: Keep in sync with Layer
-        if not self.model.comm or not self.reqs_allred:
+        if not self.model.comm:
             return
 
         for w_, dw_ in self.grad_vars.items():
@@ -85,7 +85,8 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
             else:
                 dw_ = dw_ if gradient else w_
                 dw_cpu = getattr(self, f"{dw_}_cpu")
-                req = self.reqs_allred[dw_]
+                req = self.reqs_allred.pop(dw_, None)
+                if req is None: continue  # noqa: E701
                 dw_cpu = self.model._layer_reduce_wait(dw_cpu, req)
 
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.LAYER_DECODE)
@@ -114,7 +115,6 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
 
                 # If there is no CUDA-aware MPI, copy data back to GPU
                 dw.ary.set_async(dw_cpu, self.stream_2)
-        self.reqs_allred.clear()
 
     def reduce_weights_sync(self, gradient=True):
         # NOTE: Keep in sync with Layer

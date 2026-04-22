@@ -323,11 +323,8 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
                                help="Enable pipeline parallelization modes. Default: 'False'.")
         _pe_group.add_argument('--use-blocking-mpi', type=bool_lambda, default=True,
                                help="Enable non-blocking MPI primitives. Default: True.")
-        _pe_group.add_argument(
-            '--use-mpi-buffers',
-            type=bool_lambda,
-            default=None,
-            help="Enable the use of MPI buffers. Possible values: 'True' (MPI operations by buffer), 'False' (MPI operations by object) or undefined (auto-select the better option). Default: undefined.")
+        _pe_group.add_argument('--use-mpi-buffers', type=bool_lambda, default=None,
+                               help="Enable the use of MPI buffers. Possible values: 'True' (MPI operations by buffer), 'False' (MPI operations by object) or undefined (auto-select the better option). Default: undefined.")
         _pe_group.add_argument('--enable-cudnn', type=bool_lambda, default=None,
                                help="Ignored, always enabled if plausible, present just for compatibility.")
         _pe_group.add_argument('--enable-gpudirect', type=bool_lambda, default=False,

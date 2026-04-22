@@ -151,14 +151,15 @@ def main():
             logger.info(f'Training and validation throughput: '
                         f'{(model.dataset.train_nsamples * model.perf_counter.num_epochs) / total_time:5.4f} samples/s')
     # Store history information
-    history_file = utils.string_substitute(model.history_file, rank=model.comm_rank)
-    if history_file != model.history_file or model.comm_rank == 0:
-        events = []
-        epochs = max(len(v) for v in history.values())
-        for epoch in range(epochs):
-            events.append({"epoch": epoch} | {key: history[key][epoch] for key in history})
-        with open(history_file, "w") as f:
-            yaml.dump_all(events, f, HistoryDumper, allow_unicode=True, sort_keys=False)
+    if model.history_file:
+        history_file = utils.string_substitute(model.history_file, rank=model.comm_rank)
+        if history_file != model.history_file or model.comm_rank == 0:
+            events = []
+            epochs = max(len(v) for v in history.values())
+            for epoch in range(epochs):
+                events.append({"epoch": epoch} | {key: history[key][epoch] for key in history})
+            with open(history_file, "w") as f:
+                yaml.dump_all(events, f, HistoryDumper, allow_unicode=True, sort_keys=False)
     # Second (and last) evaluation
     if model.evaluate_on_train:
         if model.comm_rank == 0:
