@@ -1,4 +1,4 @@
-from pydtnn._model.model_init import Model_Init as Model
+from pydtnn.context.init import Context_Init
 from pydtnn.utils.constants import Array
 import numpy as np
 from pydtnn import MPI
@@ -6,7 +6,7 @@ from pydtnn import MPI
 import logging
 logger = logging.getLogger(__name__)
 
-class Model_Reduce[T: Array](Model[T]):
+class Context_Reduce[T: Array](Context_Init[T]):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

@@ -9,15 +9,15 @@ from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.datasets.dataset import Dataset
 from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_MDL_EVENT_enum
 from pydtnn.utils.constants import Array
-from pydtnn._model.model_utils import compute_metrics_funcs
+from pydtnn.context.utils import compute_metrics_funcs
 from pydtnn import gpuarray
 
-from pydtnn._model.model_reduce import Model_Reduce as Model
+from pydtnn.context.reduce import Context_Reduce
 
 import logging
 logger = logging.getLogger(__name__)
 
-class Model_Eval[T: Array](Model[T]):
+class Context_Eval[T: Array](Context_Reduce[T]):
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -37,7 +37,7 @@ class Model_Eval[T: Array](Model[T]):
 
 
     def _evaluate_batch(self, x_batch: np.ndarray, y_batch: np.ndarray, sync_model=True) -> np.ndarray:
-        self.mode = Model.Mode.EVALUATE
+        self.mode = Context_Reduce.Mode.EVALUATE
 
         self.real_batch_size = x_batch.shape[0]
         x, y_targ = self.layers[0]._sync_x_y(x_batch, y_batch)
@@ -141,7 +141,7 @@ class Model_Eval[T: Array](Model[T]):
         return (model_sync_count, sync_epoch)
     # -----
 
-    def evaluate(self, bar_width=Model.BAR_WIDTH):
+    def evaluate(self, bar_width=Context_Reduce.BAR_WIDTH):
         self._ensure_model_runable()
 
         if self.enable_cudnn and self.y_batch is None:

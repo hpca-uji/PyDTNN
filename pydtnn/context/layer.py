@@ -1,6 +1,6 @@
 from warnings import warn
 
-from pydtnn._model.model_base import Model_Base as Model
+from pydtnn.context.base import Context_Base
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.activations.relu import Relu
 from pydtnn.layers.conv_2d import Conv2D
@@ -16,7 +16,7 @@ import operator
 import logging
 logger = logging.getLogger(__name__)
 
-class Model_Layer[T: Array](Model[T]):
+class Context_Layer[T: Array](Context_Base[T]):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

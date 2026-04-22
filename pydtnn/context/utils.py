@@ -8,7 +8,6 @@ from pydtnn import MPI
 from pydtnn.metrics.metric import Metric
 from pydtnn.tracers.tracer import Tracer
 from collections.abc import Sequence
-from pydtnn._model.model_base import Model_Base as Model
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.tracers.extrae_tracer import ExtraeTracer
 from pydtnn.tracers.simple_tracer import SimpleTracer
@@ -29,49 +28,47 @@ if TYPE_CHECKING:
 else:
     MPI_COMM = ModuleType
 
-class Model_Utils[T: Array](Model[T]):
+def calculate_time(model) -> np.ndarray:
+    # Total elapsed_time, Comp elapsed_time, Memo elapsed_time, Net elapsed_time
+    total_time: np.ndarray = np.zeros((4,), dtype=np.float32)
 
-    def calculate_time(self) -> np.ndarray:
-        # Total elapsed_time, Comp elapsed_time, Memo elapsed_time, Net elapsed_time
-        total_time: np.ndarray = np.zeros((4,), dtype=np.float32)
+    # Forward pass (FP)
+    for layer in model.layers:
+        total_time += layer.fwd_time
 
-        # Forward pass (FP)
-        for layer in self.layers:
-            total_time += layer.fwd_time
+    if model.blocking_mpi:
+        # Blocking MPI
+        # Back propagation. Gradient computation (GC) and weights update (WU)
+        for layer in model.layers:
+            total_time += layer.bwd_time
 
-        if self.blocking_mpi:
-            # Blocking MPI
-            # Back propagation. Gradient computation (GC) and weights update (WU)
-            for layer in self.layers:
-                total_time += layer.bwd_time
+        # Weight update (WU)
+        for layer in model.layers:
+            weights_size = 0 if (weights := layer.weights) is None else weights.size
+            biases_size = 0 if (biases := layer.biases) is None else biases.size
+            if model.comm and weights_size > 0:
+                total_time += allreduce_time(weights_size + biases_size,
+                                                model.cpu_speed, model.network_bw, model.network_lat,
+                                                model.network_alg, model.nprocs, model.dtype)
+    else:
+        total_time_iar: int = 0
+        # Non-blocking MPI
+        # Back propagation. Gradient computation (GC) and weights update (WU)
+        for layer in model.layers:
+            total_time += layer.bwd_time
+            weights_size = 0 if (weights := layer.weights) is None else weights.size
+            biases_size = 0 if (biases := layer.biases) is None else biases.size
+            if model.comm and weights_size > 0:
+                time_iar = allreduce_time(weights_size + biases_size,
+                                            model.cpu_speed, model.network_bw, model.network_lat,
+                                            model.network_alg, model.nprocs, model.dtype)
+                total_time[3] += time_iar[3]
+                total_time_iar = max(total_time[0], total_time_iar) + time_iar[0]
 
-            # Weight update (WU)
-            for layer in self.layers:
-                weights_size = 0 if (weights := layer.weights) is None else weights.size
-                biases_size = 0 if (biases := layer.biases) is None else biases.size
-                if self.comm and weights_size > 0:
-                    total_time += allreduce_time(weights_size + biases_size,
-                                                 self.cpu_speed, self.network_bw, self.network_lat,
-                                                 self.network_alg, self.nprocs, self.dtype)
-        else:
-            total_time_iar: int = 0
-            # Non-blocking MPI
-            # Back propagation. Gradient computation (GC) and weights update (WU)
-            for layer in self.layers:
-                total_time += layer.bwd_time
-                weights_size = 0 if (weights := layer.weights) is None else weights.size
-                biases_size = 0 if (biases := layer.biases) is None else biases.size
-                if self.comm and weights_size > 0:
-                    time_iar = allreduce_time(weights_size + biases_size,
-                                              self.cpu_speed, self.network_bw, self.network_lat,
-                                              self.network_alg, self.nprocs, self.dtype)
-                    total_time[3] += time_iar[3]
-                    total_time_iar = max(total_time[0], total_time_iar) + time_iar[0]
+        total_time[0] = max(total_time[0], total_time_iar)
 
-            total_time[0] = max(total_time[0], total_time_iar)
-
-        return total_time
-    # ----
+    return total_time
+# ----
 
 def compute_metrics_funcs(y_pred: Array, y_targ: Array, loss: float, metrics_funcs: list[Metric],
                            total_metrics: np.ndarray | None, comm: MPI_COMM | None, comm_size:int, blocking=True,

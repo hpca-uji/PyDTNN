@@ -1,11 +1,11 @@
 from pydtnn import utils
-from pydtnn._model.model_layer import Model_Layer as Model
+from pydtnn.context.layer import Context_Layer
 import logging
 
 from pydtnn.utils.constants import Array
 logger = logging.getLogger(__name__)
 
-class Model_Show[T: Array](Model[T]):
+class Context_Show[T: Array](Context_Layer[T]):
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)

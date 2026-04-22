@@ -22,7 +22,7 @@ from collections import abc
 from pydtnn.utils.performance_counter import PerformanceCounter
 from pydtnn.utils.memory_pool import PrivateMemory, PreallocMemory
 
-from pydtnn._model.model_utils import get_batch_size, get_tensor_format, get_tracer
+from pydtnn.context.utils import get_batch_size, get_tensor_format, get_tracer
 from pydtnn.datasets.dataset import select as select_dataset
 
 # NOTE: mpi4py has more functions, but no typing
@@ -31,11 +31,7 @@ if TYPE_CHECKING:
 else:
     MPI_COMM = ModuleType
 
-class Model_Base[T: Array]:
-
-    """
-    PyDTNN Model
-    """
+class Context_Base[T: Array]:
 
     BAR_WIDTH = 140
     DEFAULT_BACH_SIZE = 64
@@ -111,6 +107,7 @@ class Model_Base[T: Array]:
     tracer_pmlib_device: str
     model_name:str
     global_batch_size:int
+    dataset_path: str
 # ------------
 
     rank_weight: float
@@ -176,7 +173,7 @@ class Model_Base[T: Array]:
         self.layer_id_generator: abc.Iterator[int] = iter(itertools.count())
 
         # Set current mode to unspecified
-        self.mode: Model_Base.Mode = Model_Base.Mode.UNSPECIFIED
+        self.mode: Context_Base.Mode = Context_Base.Mode.UNSPECIFIED
 
 
         self.memory_cls = PreallocMemory if self.shared_tmp_memory else PrivateMemory
@@ -229,8 +226,8 @@ class Model_Base[T: Array]:
 
         return data
 
-    def import_(self, data: "dict[str, Any] | Model_Base") -> None:
-        if isinstance(data, Model_Base):
+    def import_(self, data: "dict[str, Any] | Context_Base") -> None:
+        if isinstance(data, Context_Base):
             data = data.export()
 
         model_name = str(data.get(Parameters.MODEL_NAME))

@@ -6,8 +6,8 @@ import numpy as np
 from pydtnn import MPI, drv, nccl, cudnn
 from pydtnn import hostname, ranks_per_node, num_gpus, nccl_comm, cudnn_handle, cublas_handle, context, stream
 
-from pydtnn._model.model_layer import Model_Layer as Model
-from pydtnn._model.model_utils import read_model
+from pydtnn.context.layer import Context_Layer
+from pydtnn.context.utils import read_model
 from pydtnn.libs.mpi.rc import proto as PROTOCOL
 from pydtnn import MPI, utils
 from pydtnn.losses.loss import select as select_loss
@@ -27,7 +27,7 @@ else:
 from pydtnn.utils.constants import Array
 logger = logging.getLogger(__name__)
 
-class Model_Init[T: Array](Model[T]):
+class Context_Init[T: Array](Context_Layer[T]):
     
     LIMIT_THREADS_AND_BLOCKS = 1024
 

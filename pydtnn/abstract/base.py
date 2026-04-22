@@ -6,7 +6,7 @@ from pydtnn import utils
 from pydtnn.utils.constants import Array
 
 if typing.TYPE_CHECKING:
-    from pydtnn._model import model_base as model_module
+    from pydtnn.context import base as model_module
 
 
 class Base[T: Array]:
@@ -196,13 +196,13 @@ class Base[T: Array]:
     def _post_init(self) -> None:
         pass
 
-    def _init_backend_with_model(self, model: "model_module.Model_Base[T]") -> None:
+    def _init_backend_with_model(self, model: "model_module.Context_Base[T]") -> None:
         """Initialize backend and link a new model instance"""
         self.model = model  # Set on frontend
         self._init_backend()
         self.model = model  # Set on backend
 
     @classmethod
-    def from_model[S](cls: type[S], model: "model_module.Model_Base[T]") -> S:
+    def from_model[S](cls: type[S], model: "model_module.Context_Base[T]") -> S:
         """Create object from a given model"""
         raise NotImplementedError("Use a concrete optimizer!")

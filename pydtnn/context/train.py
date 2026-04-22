@@ -5,12 +5,12 @@ from tqdm import tqdm
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.datasets.dataset import Dataset
 from pydtnn.utils.constants import Array
-from pydtnn._model.model_utils import compute_metrics_funcs
+from pydtnn.context.utils import compute_metrics_funcs
 import numpy as np
 
 
 from pydtnn.schedulers.scheduler import select as select_scheduler
-from pydtnn._model.model_eval import Model_Eval as Model
+from pydtnn.context.eval import Context_Eval
 from pydtnn import gpuarray
 from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_MDL_EVENT_enum
 import time
@@ -19,7 +19,7 @@ import time
 import logging
 logger = logging.getLogger(__name__)
 
-class Model_Train[T: Array](Model[T]):
+class Context_Train[T: Array](Context_Eval[T]):
 
     class SyncParticipation(enum.StrEnum):
         ALL = enum.auto()
@@ -79,29 +79,29 @@ class Model_Train[T: Array](Model[T]):
 
     def _compute_rank_weight(self, mask: list[int], part: Dataset.Part) -> float:
         match self.model_sync_participation:
-            case Model_Train.SyncParticipation.ALL:
+            case Context_Train.SyncParticipation.ALL:
                 comm_nsamples = self.comm_nsamples[part]
-            case Model_Train.SyncParticipation.AVAIL2ALL:
+            case Context_Train.SyncParticipation.AVAIL2ALL:
                 if mask[self.comm_rank]:
                     comm_nsamples = [nsamples for nsamples, mask in zip(self.comm_nsamples[part], mask) if mask]
                 else:
                     return 0.0
             case _:
-                raise ValueError(f"Model synchronization participation option '{self.model_sync_participation}' not recognized. Only recognized: {list(Model.SyncParticipation)}")
+                raise ValueError(f"Model synchronization participation option '{self.model_sync_participation}' not recognized. Only recognized: {list(Context_Eval.SyncParticipation)}")
 
         min_nsamples, max_nsamples, total_nsamples = min(comm_nsamples), max(comm_nsamples), sum(comm_nsamples)
         comm_size = len(comm_nsamples)
 
         match self.model_sync_algo:
-            case Model_Train.SyncAlgorithm.AVG:
+            case Context_Train.SyncAlgorithm.AVG:
                 return 1.0 / comm_size
-            case Model_Train.SyncAlgorithm.WAVG:
+            case Context_Train.SyncAlgorithm.WAVG:
                 return self.dataset._nsamples[part] / total_nsamples
-            case Model_Train.SyncAlgorithm.INVAVG:
+            case Context_Train.SyncAlgorithm.INVAVG:
                 inverse_nsamples = min_nsamples + (max_nsamples - self.dataset._nsamples[part])
                 return inverse_nsamples / total_nsamples
             case _:
-                raise ValueError(f"Model synchronization algorithm option '{self.model_sync_algo}' not recognized. Only recognized: {list(Model.SyncAlgorithm)}")
+                raise ValueError(f"Model synchronization algorithm option '{self.model_sync_algo}' not recognized. Only recognized: {list(Context_Eval.SyncAlgorithm)}")
 
     def update_status(self, pbar: tqdm, batch_loss: np.ndarray, total_loss: np.ndarray, 
                       batch_count: int, batch_size: int, output_prefix: str = "val_", delta: float = -1,
@@ -117,7 +117,7 @@ class Model_Train[T: Array](Model[T]):
     # ------
 
     def _train_batch(self, x_batch: np.ndarray, y_batch: np.ndarray, sync_model=True) -> np.ndarray:
-        self.mode = Model.Mode.TRAIN
+        self.mode = Context_Eval.Mode.TRAIN
 
         # Schedulers begin
         for sched in self.schedulers:
@@ -186,7 +186,7 @@ class Model_Train[T: Array](Model[T]):
         return self.total_metrics
     # -----
 
-    def train(self, bar_width=Model.BAR_WIDTH) -> dict[str, list[np.ndarray]]:
+    def train(self, bar_width=Context_Eval.BAR_WIDTH) -> dict[str, list[np.ndarray]]:
         self._ensure_model_runable()
 
         # If working with CUDA, self.y_batch must be in a GPU's data structure.
