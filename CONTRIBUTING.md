@@ -157,7 +157,6 @@
 
 # Planned
 - Fix NLP support
-- Add TensorArray.{to,from}_cpu (set/get as np.ndarray, with squeeze/expand extra dims)
 - PyCUDA parameter quantization (operate on model.dtype, weights on model.param_dtype)
 - Separate model into responsibilities (types, init, import, show, train, eval, utils)
 - Model tensor parallelism (previously implemented on a prototype)
