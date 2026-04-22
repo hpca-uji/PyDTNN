@@ -1,8 +1,16 @@
+import enum
 import subprocess
 import re
 import logging
 logger = logging.getLogger(__name__)
 
+
+class CudnnDataType(enum.StrEnum):
+    FLOAT64 = "CUDNN_DATA_DOUBLE"
+    FLOAT32 = "CUDNN_DATA_FLOAT"
+    INT8 = "CUDNN_DATA_INT8"
+    INT32 = "CUDNN_DATA_INT32"
+# -----
 
 def get_gpu_memory_used() -> str:
     pattern = r"Used *: .*"
