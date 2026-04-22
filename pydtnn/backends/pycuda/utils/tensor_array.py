@@ -216,48 +216,43 @@ class TensorArray:
         return getattr(self.ary, name)
     # ---
 
-    def __array__(self, dtype=None):
-        """Support for np.array(self)"""
+    def set(self, value: np.ndarray) -> None:
+        """CPU to GPU with expand_dims"""
+        self.ary.reshape(self.shape_cpu).set(value)
+
+    def get(self):
+        """GPU to CPU with squeeze"""
         value = self.ary.get()
 
         match len(self.cpu_shape):
             case 1:
                 match self.tensor_format:
                     case TensorFormat.NCHW:
-                        # shape = (1, *ary.shape, 1, 1)
                         value = np.squeeze(value, axis=(0, 2, 3))
                     case TensorFormat.NHWC:
-                        # shape = (1, 1, 1, *ary.shape)
                         value = np.squeeze(value, axis=(0, 1, 2))
                     case tensor_format:
                         raise NotImplementedError(f"Unsupported tensor format {tensor_format}!")
             case 2:
                 match self.tensor_format:
                     case TensorFormat.NCHW:
-                        # shape = (*ary.shape, 1, 1)
                         value = np.squeeze(value, axis=(2, 3))
                     case TensorFormat.NHWC:
-                        # shape = (ary.shape[0], 1, 1, ary.shape[1])
                         value = np.squeeze(value, axis=(1, 2))
                     case tensor_format:
                         raise NotImplementedError(f"Unsupported tensor format {tensor_format}!")
             case 3:
                 match self.tensor_format:
                     case TensorFormat.NCHW:
-                        # shape = (ary.shape[0], 1, ary.shape[1], ary.shape[2])
                         value = np.squeeze(value, axis=(1,))
                     case TensorFormat.NHWC:
                         raise NotImplementedError("Shape padding not implemented for 3-dim shape on NHWC")
             case 4:
-                # shape = ary.shape
                 pass  # exact
             case _:
                 raise ValueError(f"The expected len shape are 1, 2, 3 or 4. Shape received: {len(self.ary.shape)}.")
 
-        return np.asarray(value, dtype=dtype)
-
-    def set(self, value: np.ndarray) -> None:
-        self.ary.reshape(self.shape_cpu).set(value)
+        return value
 
     def copy(self):
         """ NumPy-like copy. """

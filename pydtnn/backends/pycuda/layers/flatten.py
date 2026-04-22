@@ -14,7 +14,7 @@ class FlattenPycuda(Flatten[TensorArray], LayerPycuda):
 
     def forward(self, x: TensorArray) -> TensorArray:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_Y)
-        self.y.ary = x.ary.reshape((self.model.batch_size, *self.shape))  # TODO: skips TensorArray reshape
+        self.y.ary = x.ary.reshape((self.model.batch_size, *self.shape))  # TODO: revise, it skips TensorArray reshape
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.y
 
