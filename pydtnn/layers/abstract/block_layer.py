@@ -1,4 +1,4 @@
-from pydtnn.utils.constants import Array
+from pydtnn.utils.constants import Array, ArrayShape
 from pydtnn.layers.layer import Layer
 import logging
 logger = logging.getLogger(__name__)
@@ -12,7 +12,7 @@ class AbstractBlockLayer[T: Array](Layer[T]):
         for path in args:
             self.paths.append(path)
         self.is_block_layer = True
-        self.out_shapes: list[tuple[int, ...]] = []
+        self.out_shapes: list[ArrayShape] = []
 
     def _model_init(self, prev_shape, x):
         super()._model_init(prev_shape, x)

@@ -3,6 +3,8 @@ import numpy as np
 from enum import auto, StrEnum
 
 import logging
+
+from pydtnn.utils.constants import ArrayShape
 logger = logging.getLogger(__name__)
 
 
@@ -46,16 +48,16 @@ class TensorFormat(StrEnum):
 
 
 # Helpers
-def format_reshape(shape: tuple[int, ...], src: str, dst: str) -> tuple[int, ...]:
+def format_reshape(shape: ArrayShape, src: str, dst: str) -> ArrayShape:
     """
     Transform the `shape` from its current `src` order to `dst` order.
 
     Args:
-        shape (tuple[int, ...]): source shape data.
+        shape (ArrayShape): source shape data.
         src (str): current format.
         dst (str): desired format.
     Returns:
-        (tuple[int, ...]): `shape` with `dst` order.
+        (ArrayShape): `shape` with `dst` order.
     """
 
     assert len(shape) == len(src) == len(dst), f"Inconsistent number of dimensions ({shape=}, {src=}, {dst=})"
@@ -86,28 +88,28 @@ def format_transpose(data: np.ndarray, src: str, dst: str) -> np.ndarray:
 
 
 # Encoders
-def encode_shape(shape: tuple[int, ...], format: str = TensorFormat.NCHW) -> tuple[int, ...]:
+def encode_shape(shape: ArrayShape, format: str = TensorFormat.NCHW) -> ArrayShape:
     """
     Transform the `shape` from its current `NCHW` order to `format` order (or less).
 
     Args:
-        shape (tuple[int, ...]): source shape data.
+        shape (ArrayShape): source shape data.
         format (str): encoded format (NCHW).
     Returns:
-        (tuple[int, ...]): `shape` with encoded order.
+        (ArrayShape): `shape` with encoded order.
     """
     return format_reshape(shape, TensorFormat.NCHW[-len(shape):], format[-len(shape):])
 
 
-def decode_shape(shape: tuple[int, ...], format: str = TensorFormat.NCHW) -> tuple[int, ...]:
+def decode_shape(shape: ArrayShape, format: str = TensorFormat.NCHW) -> ArrayShape:
     """
     Transform the `shape` from its current `format` order to `NCHW` order (or less).
 
     Args:
-        shape (tuple[int, ...]): encoded shape data.
+        shape (ArrayShape): encoded shape data.
         format (str): encoded format (NCHW).
     Returns:
-        (tuple[int, ...]): `shape` with `NCHW` order.
+        (ArrayShape): `shape` with `NCHW` order.
     """
     return format_reshape(shape, format[-len(shape):], TensorFormat.NCHW[-len(shape):])
 

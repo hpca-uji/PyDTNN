@@ -1,5 +1,3 @@
-
-
 from collections.abc import Callable, Sequence
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.utils import find_component

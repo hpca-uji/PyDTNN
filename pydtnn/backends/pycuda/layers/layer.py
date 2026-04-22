@@ -4,7 +4,7 @@ from pydtnn import gpu_errors
 from numpy import ndarray
 from pydtnn.backends.pycuda.abstract.layerable import LayerablePycuda
 from pydtnn.layers.layer import Layer
-from pydtnn.utils.constants import DTYPE2CTYPE
+from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
 import numpy as np
 import logging
 logger = logging.getLogger(__name__)
@@ -31,7 +31,7 @@ class LayerPycuda(Layer[TensorArray], LayerablePycuda):
         self.grid: tuple[int, int, int] = None  # type: ignore
         self.block: tuple[int, int, int] = None  # type: ignore
 
-    def _model_init(self, prev_shape: tuple[int, ...], x: TensorArray | None = None) -> None:
+    def _model_init(self, prev_shape: ArrayShape, x: TensorArray | None = None) -> None:
         super()._model_init(prev_shape, x)
 
         if not self.model.enable_cudnn:
