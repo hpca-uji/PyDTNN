@@ -1,19 +1,59 @@
+from typing import Any
+from warnings import warn
 
-    
-from pydtnn._model.model_base import Model_Base
+import numpy as np
+
+from pydtnn import MPI, drv, nccl, cudnn
+from pydtnn import hostname, ranks_per_node, num_gpus, nccl_comm, cudnn_handle, cublas_handle, context, stream
+
+from pydtnn._model.model_layer import Model_Layer as Model
 from pydtnn.libs.mpi.rc import proto as PROTOCOL
-from pydtnn import MPI
+from pydtnn import MPI, utils
+from pydtnn.losses.loss import select as select_loss
+from pydtnn.metrics.metric import select as select_metric
+from pydtnn.optimizers.optimizer import select as select_optimizer
+from pydtnn.utils.gpu import CudnnDataType
 
-class Model_Init(Model_Base):
+import logging
 
-    def _ensure_model_runable(self) -> None:
-        if not self.layers:
-            warn_text = "The model has no layers in it."
-            logger.warning(warn_text)
-            warn(warn_text, RuntimeWarning)
-        elif not self.dataset:
-            raise ValueError("There is no dataset and the model has layers.")
-        self._model_init()
+from pydtnn.utils.constants import Array
+logger = logging.getLogger(__name__)
+
+class Model_Init[T: Array](Model[T]):
+    
+    LIMIT_THREADS_AND_BLOCKS = 1024
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        # Set MPI and comm
+        self._mpi_init()
+
+        # Cuda
+        if self.enable_cudnn:
+            self._cudnn_init()
+
+        # Read the model (must be the last action, as it calls self._model_init() if there is a model)
+        self.model_name: str | None = self.kwargs.get("model_name")
+        if self.model_name:
+            self._read_model(self.model_name)
+        
+        # Private attributes
+        self._is_model_init: bool = False
+
+        # Optimizers and LRSchedulers
+        if self.learning_rate_scaling:
+            # using comm_size instead of nprocs might not be appropriate,
+            # as it differs to how learning_rate is defined elsewhere,
+            # but for now it just a parser option difference that helps testing
+            self.learning_rate = self.learning_rate / self.comm_size
+
+        self.optimizer = select_optimizer(self.optimizer_name).from_model(self)
+        self.optimizer._init_backend_with_model(self)
+
+        # Metrics list
+        self.metrics_list: list[str] = [m for m in self.metrics.replace(" ", "").split(",")]
+    # ----- __init__ ----- #
 
     def _mpi_init(self) -> None:
         # Communication type
@@ -43,11 +83,11 @@ class Model_Init(Model_Base):
                 pass
             case _:
                 raise ValueError(f"MPI buffers option '{self.use_mpi_buffers}' not recognized.")
+    # ----- _mpi_init ----- #
 
     def _cudnn_init(self) -> None:
-        LIMIT_THREADS_AND_BLOCKS = 1024
-        self.cuda_threads = min(self.batch_size, LIMIT_THREADS_AND_BLOCKS)
-        self.cuda_blocks = (max(self.batch_size, LIMIT_THREADS_AND_BLOCKS) // self.cuda_threads) + 1
+        self.cuda_threads = min(self.batch_size, self.LIMIT_THREADS_AND_BLOCKS)
+        self.cuda_blocks = (max(self.batch_size, self.LIMIT_THREADS_AND_BLOCKS) // self.cuda_threads) + 1
         # NOTE: Seems that in PyDTNN, usually the ".x" (blockIdx.x, threadIdx.x, ...) is the only dimension used.
         self.cuda_grid = (self.cuda_blocks, 1, 1)
         self.cuda_block = (self.cuda_threads, 1, 1)
@@ -79,7 +119,7 @@ class Model_Init(Model_Base):
 
         self.tracer.set_stream(stream)
 
-        cudnn_types = {np.float64: CudnnDataType.FLAOT64,
+        cudnn_types = {np.float64: CudnnDataType.FLOAT64,
                        np.float32: CudnnDataType.FLOAT32,
                        np.int8: CudnnDataType.INT8,
                        np.int32: CudnnDataType.INT32}
@@ -93,6 +133,7 @@ class Model_Init(Model_Base):
         self.cublas_handle = cublas_handle
         self.stream = stream
         self.cudnn_dtype = cudnn_dtype
+    # ----- _cudnn_init ----- #
 
     def _ensure_model_runable(self) -> None:
         if not self.layers:
@@ -110,32 +151,6 @@ class Model_Init(Model_Base):
 
     def __getattr__(self, item) -> Any:
         return self.kwargs.get(item)
-
-    def _crypt_init(self, encryption_name: str) -> "polyhe.Context":
-        """Initialize encryption context"""
-        if polyhe is None:
-            raise RuntimeError("uHE is not avaliable, but is requiested!")
-
-        backend = polyhe.Backend(encryption_name)
-        options = polyhe.Options(
-            slots=self.encryption_slots,
-            scale=self.encryption_scale,
-            security=self.encryption_security
-        )
-
-        if self.comm_rank == 0:
-            crypt = polyhe.new(backend, options)
-
-        if self.comm:
-            crypt = self.comm.bcast(crypt if self.comm_rank == 0 else None)
-
-        assert crypt is not None
-        if self.enable_nccl:
-            warn_text = "If NCCL is active, encryption is disabled"
-            logger.warning(warn_text)
-            warn(warn_text, RuntimeWarning)
-
-        return crypt
 
     def _model_init(self):
         if self._is_model_init:

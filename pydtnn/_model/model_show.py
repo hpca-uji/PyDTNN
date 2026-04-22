@@ -1,11 +1,11 @@
 from pydtnn import utils
-from pydtnn._model.model_base import Model_Base
+from pydtnn._model.model_base import Model_Base as Model
 import logging
 
 from pydtnn.utils.constants import Array
 logger = logging.getLogger(__name__)
 
-class Model_Show[T: Array](Model_Base[T]):
+class Model_Show[T: Array](Model[T]):
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)

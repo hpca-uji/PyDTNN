@@ -8,14 +8,19 @@ from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.datasets.dataset import Dataset
 from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_MDL_EVENT_enum
 from pydtnn.utils.constants import Array
+from pydtnn import gpuarray
 
-from pydtnn._model.model_base import Model_Base
+from pydtnn._model.model_init import Model_Init as Model
 
+import logging
+logger = logging.getLogger(__name__)
 
-class Model_Eval[T: Array](Model_Base[T]):
+class Model_Eval[T: Array](Model[T]):
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
+        # Private attributes
+        self._evaluate_round: int = 0
     
     def _update_running_average(self, curr: np.ndarray, total: np.ndarray, count: int,
                                 batch_size: int, prefix="") -> tuple[np.ndarray, int, str]:
@@ -28,36 +33,9 @@ class Model_Eval[T: Array](Model_Base[T]):
         string = string[:-2]
         return total, count + batch_size, string
 
-    def _compute_metrics_funcs(self, y_pred: T, y_targ: T, loss: float, blocking=True, comm=True) -> tuple[np.ndarray, None] | tuple[None, Any]:
-        loss_req: Any | None = None
-        _losses: np.ndarray | None
-
-        if y_targ.shape[0] > 0:
-            metrics = [func.compute(y_pred, y_targ) for func in self.metrics_funcs]
-            _losses = np.array([loss, *metrics], dtype=np.object_)
-        else:
-            _losses = self.total_metrics.copy()
-            _losses[0] = loss
-
-        if self.comm is not None and comm:
-            assert MPI
-
-            _losses /= self.comm_size
-            if blocking:
-                _losses = self.comm.allreduce(_losses, op=MPI.SUM)
-            else:
-                loss_req = self.comm.iallreduce(_losses, op=MPI.SUM)
-        else:
-            if blocking:
-                pass
-            else:
-                raise NotImplementedError("can not compute metrics non-blocking locally")
-
-        return _losses, loss_req
-
 
     def _evaluate_batch(self, x_batch: np.ndarray, y_batch: np.ndarray, sync_model=True) -> np.ndarray:
-        self.mode = self.Mode.EVALUATE
+        self.mode = Model.Mode.EVALUATE
 
         self.real_batch_size = x_batch.shape[0]
         x, y_targ = self.layers[0]._sync_x_y(x_batch, y_batch)
@@ -84,7 +62,7 @@ class Model_Eval[T: Array](Model_Base[T]):
 
         return self.total_metrics
 
-    def evaluate(self, bar_width=BAR_WIDTH):
+    def evaluate(self, bar_width=Model.BAR_WIDTH):
         self._ensure_model_runable()
 
         if self.enable_cudnn and self.y_batch is None:

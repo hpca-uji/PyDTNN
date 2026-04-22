@@ -1,19 +1,32 @@
+from typing import TYPE_CHECKING, Any, Literal
 
-
-
+import numpy as np
 from warnings import warn
 
-from pydtnn._model.model_base import Model_Base
+from pydtnn import MPI
+
+from pydtnn._model.model_base import Model_Base as Model
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.tracers.extrae_tracer import ExtraeTracer
 from pydtnn.tracers.simple_tracer import SimpleTracer
 from pydtnn.tracers.simple_tracer_gpu import SimpleTracerPycuda
 from pydtnn.tracers.simple_tracer_pmlib import SimpleTracerPMLib
 from pydtnn.utils.constants import Array
-from pydtnn.utils.tensor import TensorFormat
+from pydtnn.utils.tensor import SampleFormat, TensorFormat, format_reshape
+from pydtnn.utils.performance_models import allreduce_time
+from pydtnn.models.model import select as select_model
+
+import logging
+logger = logging.getLogger(__name__)
 
 
-class Model_Utils[T: Array](Model_Base[T]):
+# NOTE: mpi4py has more functions, but no typing
+if TYPE_CHECKING:
+    from pympi.MPI import Comm as MPI_COMM
+else:
+    MPI_COMM = ModuleType
+
+class Model_Utils[T: Array](Model[T]):
     def _update_running_average(self, curr: np.ndarray, total: np.ndarray, count: int,
                                 batch_size: int, prefix="") -> tuple[np.ndarray, int, str]:
         string = ""
@@ -24,7 +37,7 @@ class Model_Utils[T: Array](Model_Base[T]):
                 string += ("%s, " % (prefix + loss_str)) % total[c]
         string = string[:-2]
         return total, count + batch_size, string
-
+    # ----
 
     def _compute_metrics_funcs(self, y_pred: T, y_targ: T, loss: float, blocking=True, comm=True) -> tuple[np.ndarray, None] | tuple[None, Any]:
         loss_req: Any | None = None
@@ -95,14 +108,15 @@ class Model_Utils[T: Array](Model_Base[T]):
             total_time[0] = max(total_time[0], total_time_iar)
 
         return total_time
+    # ----
 
-    from pydtnn.models.model import select as select_model
+    # NOTE: Esto se puede hacer sin self: pasamos como entrada las cosas útiles
     def _read_model(self, model_name: str) -> None:
         create_model = select_model(model_name)
 
         # NOTE: Dataset is always in NCHW
         # Change input_shape to model.tensor_format
-        input_shape = format_reshape(self.dataset.input_shape, SampleFormat.CHW, self.tensor_format.as_sample())  # type: ignore
+        input_shape = format_reshape(self.dataset.input_shape, SampleFormat.CHW, self.tensor_format.as_sample())
         if len(input_shape) != 3:
             warn_text = f"Input layer does not have 3 dimensions ({input_shape}), it may cause issues!"
             logger.warning(warn_text)
@@ -128,7 +142,6 @@ class Model_Utils[T: Array](Model_Base[T]):
             children = layer.children
             this_recursion_layers += self.get_all_layers(children)
         return this_recursion_layers
-    
 
 
 def get_tracer(tracer_output: str, tracing: bool, comm: MPI_COMM | None, enable_cudnn: bool,
@@ -147,7 +160,7 @@ def get_tracer(tracer_output: str, tracing: bool, comm: MPI_COMM | None, enable_
     return tracer
 
 
-def get_tensor_format(tensor_format: Literal["AUTO", "NCHW", "NHWC"] = "AUTO", gpu: bool = False) -> TensorFormat:
+def get_tensor_format(tensor_format: TensorFormat | Literal["AUTO"] = "AUTO", gpu: bool = False) -> TensorFormat:
     match tensor_format.upper():
         case "AUTO":
             return TensorFormat.NCHW if gpu else TensorFormat.NHWC
@@ -159,7 +172,7 @@ def get_tensor_format(tensor_format: Literal["AUTO", "NCHW", "NHWC"] = "AUTO", g
             raise NotImplementedError(f"\'{tensor_format}\' is not supported.")
 
 
-def get_batch_size(local_size: int | None, global_size: int | None, comm_size: int, default: int = DEFAULT_BACH_SIZE) -> int:
+def get_batch_size(local_size: int | None, global_size: int | None, comm_size: int, default: int = Model.DEFAULT_BACH_SIZE) -> int:
     if local_size and global_size:
         raise ValueError("Can not define 'local_batch_size' and 'global_batch_size' simultaneously")
 

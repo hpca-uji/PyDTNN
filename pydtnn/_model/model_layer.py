@@ -1,8 +1,26 @@
-from pydtnn._model.model_base import Model_Base
+from warnings import warn
+
+from pydtnn._model.model_base import Model_Base as Model
+from pydtnn.abstract.layerable import Layerable
+from pydtnn.activations.relu import Relu
+from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.utils.constants import Array
 
+from pydtnn.backends.fuse.layers.layer import select as select_fuse_layer
+from pydtnn.backends.fuse.layers.layer import LayerFuse as FusedLayerMixIn
+from pydtnn.layers.batch_normalization import BatchNormalization
+from collections import abc
+from functools import reduce
+import operator
 
-class Model_Layer[T: Array](Model_Base[T]):
+import logging
+logger = logging.getLogger(__name__)
+
+class Model_Layer[T: Array](Model[T]):
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+    # ---
 
     def add(self, layer: Layerable[T]) -> None:
         layer._init_backend_with_model(self)
@@ -23,6 +41,7 @@ class Model_Layer[T: Array](Model_Base[T]):
 
         if layer.act:
             self.add(layer.act())
+    # ---
 
     def add_layers(self, list_layers: list[Layerable[T]]) -> None:
         for layer in list_layers:
@@ -114,6 +133,7 @@ class Model_Layer[T: Array](Model_Base[T]):
                     layers.insert(start, new_curr_layer)
                     i -= len(layers_to_fuse)
             i += 1
+    # ------
 
     def _apply_layer_fusion(self):
         """ Apply layer fusion in a recursive manner """
@@ -123,3 +143,4 @@ class Model_Layer[T: Array](Model_Base[T]):
             self.backend = f"layers:fuse;{self.backend}"
             self._layer_fusion(self.layers, self._select_fusion_3)
             self._layer_fusion(self.layers, self._select_fusion_2)
+    # ------

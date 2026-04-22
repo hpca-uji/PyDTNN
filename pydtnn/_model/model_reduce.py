@@ -1,8 +1,59 @@
-from pydtnn._model.model_base import Model_Base
+from typing import TYPE_CHECKING
+from warnings import warn
+
+from pydtnn._model.model_base import Model_Base as Model
 from pydtnn.utils.constants import Array
+import numpy as np
+from pydtnn import MPI
 
+import logging
+logger = logging.getLogger(__name__)
 
-class Model_Reduce[T: Array](Model_Base[T]):
+if TYPE_CHECKING:
+    import polyhe
+else:
+    try:
+        import polyhe
+    except Exception:
+        polyhe = None
+
+class Model_Reduce[T: Array](Model[T]):
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        # Encryption
+        if self.encryption_name:
+            self.crypt = self._crypt_init(self.encryption_name)
+        else:
+            self.crypt = None
+    
+    def _crypt_init(self, encryption_name: str) -> "polyhe.Context":
+        """Initialize encryption context"""
+        if polyhe is None:
+            raise RuntimeError("uHE is not avaliable, but is requiested!")
+
+        backend = polyhe.Backend(encryption_name)
+        options = polyhe.Options(
+            slots=self.encryption_slots,
+            scale=self.encryption_scale,
+            security=self.encryption_security
+        )
+
+        if self.comm_rank == 0:
+            crypt = polyhe.new(backend, options)
+
+        if self.comm:
+            crypt = self.comm.bcast(crypt if self.comm_rank == 0 else None)
+
+        assert crypt is not None
+        if self.enable_nccl:
+            warn_text = "If NCCL is active, encryption is disabled"
+            logger.warning(warn_text)
+            warn(warn_text, RuntimeWarning)
+
+        return crypt
+    # -----
+
     def _layer_reduce_encode(self, data: np.ndarray):
         data *= self.rank_weight
 

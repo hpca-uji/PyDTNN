@@ -1,23 +1,49 @@
 import enum
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from warnings import warn
 import numpy as np
 import logging
 
+from pydtnn.datasets.dataset import Dataset
 logger = logging.getLogger(__name__)
 
+import itertools
+
+from pydtnn.abstract.layerable import Layerable
+from pydtnn.metrics.metric import Metric
+
+from pydtnn.losses.loss import Loss
 from pydtnn.parser import PydtnnArgumentParser
-from pydtnn.utils.constants import Array, NetworkAlgEnum, Parameters
+from pydtnn.utils.constants import Array, ArrayShape, NetworkAlgEnum, Parameters
+from pydtnn.utils.tensor import TensorFormat, encode_shape, encode_tensor, decode_shape, decode_tensor
+from pydtnn import MPI_MODULE, Cudnn_Handle_Type, Cublas_Handle_Type
+from collections import abc
+from pydtnn.utils.performance_counter import PerformanceCounter
+from pydtnn.utils.memory_pool import PrivateMemory, PreallocMemory
+
+from pydtnn._model.model_utils import get_batch_size, get_tensor_format, get_tracer
+from pydtnn.datasets.dataset import select as select_dataset
+
+# NOTE: mpi4py has more functions, but no typing
+if TYPE_CHECKING:
+    from pympi.MPI import Comm as MPI_COMM
+else:
+    MPI_COMM = ModuleType
 
 class Model_Base[T: Array]:
 
     """
     PyDTNN Model
     """
+
+    BAR_WIDTH = 140
+    DEFAULT_BACH_SIZE = 64
+
     class Mode(enum.StrEnum):
         EVALUATE = enum.auto()
         TRAIN = enum.auto()
         UNSPECIFIED = enum.auto()
+    # ---
 
 # Explicit declaration of those model attributes that are referenced by other parts of PyDTNN
 #   NOTE: The following parameters come from "Parser"
@@ -112,7 +138,7 @@ class Model_Base[T: Array]:
         self.kwargs.update(kwargs)
 
         # Attributes related to the given arguments
-        self.blocking_mpi: bool = self.use_blocking_mpi
+        self.blocking_mpi: bool = self.use_blocking_mpi # TODO: MIRAR de dónde sale esto.
         self.enable_cudnn = gpuarray is not None and drv is not None and cublas is not None
         self.gpudirect: bool = self.enable_gpudirect
         self.enable_nccl: bool = self.enable_nccl
@@ -123,9 +149,6 @@ class Model_Base[T: Array]:
         self.memory_used = 0
         self.tmp_memory_used = 0
 
-        # Set MPI and comm
-        self._mpi_init()
-
         # Set performance counter
         self.perf_counter = PerformanceCounter()
 
@@ -134,13 +157,8 @@ class Model_Base[T: Array]:
         self.layer_id_generator: abc.Iterator[int] = iter(itertools.count())
 
         # Set current mode to unspecified
-        self.mode: Model.Mode = Model.Mode.UNSPECIFIED
+        self.mode: Model_Base.Mode = Model_Base.Mode.UNSPECIFIED
 
-        # Memory cache optimization
-        # if self.enable_memory_cache:
-        #     MemoryCache.enable()
-        # else:
-        #     MemoryCache.disable()
 
         self.memory_cls = PreallocMemory if self.shared_tmp_memory else PrivateMemory
 
@@ -149,29 +167,10 @@ class Model_Base[T: Array]:
                                  tracer_pmlib_server=self.tracer_pmlib_server, tracer_pmlib_port=self.tracer_pmlib_port,
                                  tracer_pmlib_device=self.tracer_pmlib_device)
 
-        # Cuda
-        if self.enable_cudnn:
-            self._cudnn_init()
-
         # Data format
-        self.tensor_format: TensorFormat = get_tensor_format(tensor_format=self.tensor_format, gpu=self.enable_cudnn)  # type: ignore
-
-        # Disable BestOf globally if not enabled
-        # if self.enable_best_of is False:
-        #     BestOf.use_always_the_first_alternative()
+        self.tensor_format: TensorFormat = get_tensor_format(tensor_format=self.tensor_format, gpu=self.enable_cudnn)
 
         self.batch_size = get_batch_size(local_size=self.batch_size, global_size=self.global_batch_size, comm_size=self.comm_size)
-
-        # Attributes that will be properly initialized elsewhere
-
-        # ---
-
-        # Encryption
-        if self.encryption_name:
-            self.crypt = self._crypt_init(self.encryption_name)
-
-        else:
-            self.crypt = None
 
         # Load weights and bias
         if self.weights_and_bias_filename:
@@ -180,37 +179,22 @@ class Model_Base[T: Array]:
         if self.dataset_name:
             self.dataset: Dataset = select_dataset(self.dataset_name)(self)
 
-        # Optimizers and LRSchedulers
-        if self.learning_rate_scaling:
-            # using comm_size instead of nprocs might not be appropriate,
-            # as it differs to how learning_rate is defined elsewhere,
-            # but for now it just a parser option difference that helps testing
-            self.learning_rate = self.learning_rate / self.comm_size
 
-        self.optimizer = select_optimizer(self.optimizer_name).from_model(self)
-        self.optimizer._init_backend_with_model(self)
+    def encode_shape(self, shape: ArrayShape) -> ArrayShape:
+        """Transform the shape from `NCHW` order to `model.tensor_format` order (supports 4 or 3 dimensions)"""
+        return encode_shape(shape, self.tensor_format)
 
-        self.schedulers = [
-            select_scheduler(scheduler_name).from_model(self)
-            for scheduler_name in filter(None, self.schedulers_names.split(","))
-        ]
-        for scheduler in self.schedulers:
-            scheduler.model = self
+    def decode_shape(self, shape: ArrayShape) -> ArrayShape:
+        """Transform the shape from `model.tensor_format` order to `NCHW` order (supports 4 or 3 dimensions)."""
+        return decode_shape(shape, self.tensor_format)
 
-        # Metrics list
-        self.metrics_list: list[str] = [m for m in self.metrics.replace(" ", "").split(",")]
+    def encode_tensor(self, data: np.ndarray) -> np.ndarray:
+        """Transpose elements of data from `NCHW` format to `model.tensor_format` format (supports 4 or 3 dimensions)."""
+        return encode_tensor(data, self.tensor_format)  # type: ignore (TensorGPU does not have transpose yet)
 
-        # Private attributes
-        self._evaluate_round: int = 0
-        self._is_model_init: bool = False
-
-        # Read the model (must be the last action, as it calls self._model_init() if there is a model)
-        self.model_name: str | None = self.kwargs.get("model_name")
-        if self.model_name:
-            self._read_model(self.model_name)
-
-
-    
+    def decode_tensor(self, data: np.ndarray) -> np.ndarray:
+        """Transpose elements of data from `model.tensor_format` format to `NCHW` format (supports 4 or 3 dimensions)."""
+        return decode_tensor(data, self.tensor_format)  # type: ignore (TensorGPU does not have transpose yet)
     
     def export(self) -> dict[str, Any]:
         data = {}
@@ -226,7 +210,7 @@ class Model_Base[T: Array]:
         return data
 
     def import_(self, data: "dict[str, Any] | Model") -> None:
-        if isinstance(data, Model_Base):
+        if isinstance(data, Model):
             data = data.export()
 
         model_name = str(data.get(Parameters.MODEL_NAME))

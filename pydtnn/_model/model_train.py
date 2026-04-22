@@ -7,7 +7,10 @@ from pydtnn.datasets.dataset import Dataset
 from pydtnn.utils.constants import Array
 import numpy as np
 
-from pydtnn._model.model_eval import Model_Eval
+
+from pydtnn.schedulers.scheduler import select as select_scheduler
+from pydtnn._model.model_eval import Model_Eval as Model
+from pydtnn import gpuarray
 from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_MDL_EVENT_enum
 import time
 
@@ -15,7 +18,7 @@ import time
 import logging
 logger = logging.getLogger(__name__)
 
-class Model_Train[T: Array](Model_Eval[T]):
+class Model_Train[T: Array](Model[T]):
 
     class SyncParticipation(enum.StrEnum):
         ALL = enum.auto()
@@ -34,6 +37,13 @@ class Model_Train[T: Array](Model_Eval[T]):
 
         # NOTE: This parameter come from Parser.
         self.model_sync_participation = self.SyncParticipation(self.kwargs["model_sync_participation"])
+
+        self.schedulers = [
+            select_scheduler(scheduler_name).from_model(self)
+            for scheduler_name in filter(None, self.schedulers_names.split(","))
+        ]
+        for scheduler in self.schedulers:
+            scheduler.model = self
 
 
     def _model_reduce_sync(self, gradient=True):
@@ -68,9 +78,9 @@ class Model_Train[T: Array](Model_Eval[T]):
 
     def _compute_rank_weight(self, mask: list[int], part: Dataset.Part) -> float:
         match self.model_sync_participation:
-            case Model.SyncParticipation.ALL:
+            case Model_Train.SyncParticipation.ALL:
                 comm_nsamples = self.comm_nsamples[part]
-            case Model.SyncParticipation.AVAIL2ALL:
+            case Model_Train.SyncParticipation.AVAIL2ALL:
                 if mask[self.comm_rank]:
                     comm_nsamples = [nsamples for nsamples, mask in zip(self.comm_nsamples[part], mask) if mask]
                 else:
@@ -82,11 +92,11 @@ class Model_Train[T: Array](Model_Eval[T]):
         comm_size = len(comm_nsamples)
 
         match self.model_sync_algo:
-            case Model.SyncAlgorithm.AVG:
+            case Model_Train.SyncAlgorithm.AVG:
                 return 1.0 / comm_size
-            case Model.SyncAlgorithm.WAVG:
+            case Model_Train.SyncAlgorithm.WAVG:
                 return self.dataset._nsamples[part] / total_nsamples
-            case Model.SyncAlgorithm.INVAVG:
+            case Model_Train.SyncAlgorithm.INVAVG:
                 inverse_nsamples = min_nsamples + (max_nsamples - self.dataset._nsamples[part])
                 return inverse_nsamples / total_nsamples
             case _:
@@ -160,7 +170,7 @@ class Model_Train[T: Array](Model_Eval[T]):
         return self.total_metrics
     # -----
 
-    def train(self, bar_width=BAR_WIDTH) -> dict[str, list[np.ndarray]]:
+    def train(self, bar_width=Model.BAR_WIDTH) -> dict[str, list[np.ndarray]]:
         self._ensure_model_runable()
 
         # If working with CUDA, self.y_batch must be in a GPU's data structure.
@@ -257,8 +267,8 @@ class Model_Train[T: Array](Model_Eval[T]):
             # --- VAL --- #
             # ----------- #
             
-            # NOTE: El for es exáctamente igual que el de evaluate de mode_eval
             for i_batch, (x_batch, y_batch, batch_size) in enumerate(val_batch_generator):
+                # NOTE: El for es exáctamente igual que el de evaluate de mode_eval
                 if terminate:
                     x_batch = x_batch[:0]
                     y_batch = y_batch[:0]
