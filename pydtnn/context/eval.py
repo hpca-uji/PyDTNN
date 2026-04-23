@@ -1,15 +1,16 @@
 import time
-from typing import Generator
+from typing import Any, Generator
 
 import numpy as np
 from timeit import default_timer as timer
 
+from pympi import MPI
 from tqdm import tqdm
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.datasets.dataset import Dataset
 from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_MDL_EVENT_enum
 from pydtnn.utils.constants import Array
-from pydtnn.context.utils import compute_metrics_funcs, BAR_WIDTH
+from pydtnn.context.utils import BAR_WIDTH
 from pydtnn import gpuarray
 
 from pydtnn.context.sync import Sync
@@ -24,6 +25,33 @@ class Eval[T: Array](Sync[T]):
         super().__init__(**kwargs)
         # Private attributes
         self._evaluate_round: int = 0
+
+    def _compute_metrics_funcs(self, y_pred: T, y_targ: T, loss: float, blocking=True, comm=True) -> tuple[np.ndarray, None] | tuple[None, Any]:
+        loss_req: Any | None = None
+        _losses: np.ndarray | None
+
+        if y_targ.shape[0] > 0:
+            metrics = [func.compute(y_pred, y_targ) for func in self.metrics_funcs]
+            _losses = np.array([loss, *metrics], dtype=np.object_)
+        else:
+            _losses = self.total_metrics.copy()
+            _losses[0] = loss
+
+        if self.comm is not None and comm:
+            assert MPI
+
+            _losses /= self.comm_size
+            if blocking:
+                _losses = self.comm.allreduce(_losses, op=MPI.SUM)
+            else:
+                loss_req = self.comm.iallreduce(_losses, op=MPI.SUM)
+        else:
+            if blocking:
+                pass
+            else:
+                raise NotImplementedError("can not compute metrics non-blocking locally")
+
+        return _losses, loss_req
 
     def _update_running_average(self, curr: np.ndarray, total: np.ndarray, count: int,
                                 batch_size: int, prefix="") -> tuple[np.ndarray, int, str]:
@@ -59,9 +87,7 @@ class Eval[T: Array](Sync[T]):
         assert y_pred is not None
 
         total_metrics = None
-        total_metrics, _ = compute_metrics_funcs(y_pred, y_targ, loss, metrics_funcs=self.metrics_funcs,
-                                                 total_metrics=total_metrics, comm=self.comm,
-                                                 comm_size=self.comm_size, use_comm=sync_model)
+        total_metrics, _ = self._compute_metrics_funcs(y_pred, y_targ, loss, comm=sync_model)
         assert total_metrics is not None
         self.total_metrics = total_metrics
 

@@ -6,7 +6,7 @@ from tqdm import tqdm
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.datasets.dataset import Dataset
 from pydtnn.utils.constants import Array
-from pydtnn.context.utils import compute_metrics_funcs, BAR_WIDTH
+from pydtnn.context.utils import BAR_WIDTH
 import numpy as np
 
 
@@ -142,9 +142,7 @@ class Train[T: Array](Eval[T]):
             loss, dx = 0.0, y_targ
 
         total_metrics = None
-        total_metrics, _ = compute_metrics_funcs(x, y_targ, loss, metrics_funcs=self.metrics_funcs,
-                                                 total_metrics=total_metrics, comm=self.comm,
-                                                 comm_size=self.comm_size, use_comm=sync_model)
+        total_metrics, _ = self._compute_metrics_funcs(x, y_targ, loss, comm=sync_model)
         assert total_metrics is not None
         self.total_metrics = total_metrics
 

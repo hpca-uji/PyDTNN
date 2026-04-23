@@ -49,11 +49,11 @@ class Util[T: Array](Base[T]):
 
     def encode_tensor(self, data: np.ndarray) -> np.ndarray:
         """Transpose elements of data from `NCHW` format to `model.tensor_format` format (supports 4 or 3 dimensions)."""
-        return encode_tensor(data, self.tensor_format)  # type: ignore (TensorGPU does not have transpose yet)
+        return encode_tensor(data, self.tensor_format)
 
     def decode_tensor(self, data: np.ndarray) -> np.ndarray:
         """Transpose elements of data from `model.tensor_format` format to `NCHW` format (supports 4 or 3 dimensions)."""
-        return decode_tensor(data, self.tensor_format)  # type: ignore (TensorGPU does not have transpose yet)
+        return decode_tensor(data, self.tensor_format)
 
     @property
     def dataset_path(self) -> str:
@@ -104,38 +104,6 @@ def calculate_time(model) -> np.ndarray:
         total_time[0] = max(total_time[0], total_time_iar)
 
     return total_time
-# ----
-
-
-def compute_metrics_funcs(y_pred: Array, y_targ: Array, loss: float, metrics_funcs: list[Metric],
-                          total_metrics: np.ndarray | None, comm: MPI_COMM | None, comm_size: int, blocking=True,
-                          use_comm=True) -> tuple[np.ndarray, None] | tuple[None, Any]:
-    loss_req: Any | None = None
-    _losses: np.ndarray | None
-
-    if y_targ.shape[0] > 0:
-        metrics = [func.compute(y_pred, y_targ) for func in metrics_funcs]
-        _losses = np.array([loss, *metrics], dtype=np.object_)
-    else:
-        _losses = total_metrics.copy()  # type: ignore (In this case, total_metrics will not be None)
-        _losses[0] = loss
-
-    if comm is not None and use_comm:
-        assert MPI
-
-        _losses /= comm_size
-        if blocking:
-            _losses = comm.allreduce(_losses, op=MPI.SUM)
-        else:
-            loss_req = comm.iallreduce(_losses, op=MPI.SUM)
-    else:
-        if blocking:
-            pass
-        else:
-            raise NotImplementedError("can not compute metrics non-blocking locally")
-
-    return _losses, loss_req
-    # ----
 
 
 def read_model(model_name: str, input_shape: ArrayShape, output_shape: ArrayShape, tensor_format: TensorFormat) -> Sequence[Layerable]:
