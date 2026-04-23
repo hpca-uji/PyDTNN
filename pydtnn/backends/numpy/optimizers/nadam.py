@@ -80,26 +80,18 @@ class NadamNumpy(Nadam[np.ndarray], OptimizerNumpy):
 
         if not (self.are_all_zeros(w) and self.are_all_zeros(dw) or self.are_all_zeros(m) or self.are_all_zeros(v)):
             # NOTE: The operations are unrolled in order to reduce the memory consumed by intermediate copies of the variables during the operations.
-            inv_beta1 = (1 - self.beta1)
-            inv_beta2 = (1 - self.beta2)
-
             # m = self.beta1 * m + (1 - self.beta1) * dw
-            np.multiply(inv_beta1, dw, dtype=self.dtype, out=mt_temp_dw)
+            np.multiply((1 - self.beta1), dw, dtype=self.dtype, out=mt_temp_dw)
 
-            np.multiply(m, self.beta1, out=m,
-                        dtype=self.dtype)
-            np.add(m, mt_temp_dw, out=m,
-                   dtype=self.dtype)
+            np.multiply(m, self.beta1, dtype=self.dtype, out=m)
+            np.add(m, mt_temp_dw, dtype=self.dtype, out=m)
 
             # v = self.beta2 * v + (1 - self.beta2) * dw ** 2
             np.pow(dw, 2, dtype=self.dtype, out=mt_temp_dw)
-            np.multiply(mt_temp_dw, inv_beta2, out=mt_temp_dw,
-                        dtype=self.dtype)
+            np.multiply(mt_temp_dw, (1 - self.beta2), dtype=self.dtype, out=mt_temp_dw)
 
-            np.multiply(v, self.beta2, out=v,
-                        dtype=self.dtype)
-            np.add(v, mt_temp_dw, out=v,
-                   dtype=self.dtype)
+            np.multiply(v, self.beta2, dtype=self.dtype, out=v)
+            np.add(v, mt_temp_dw, dtype=self.dtype, out=v)
 
             # w -= self.learning_rate * (self.decay * w + (mt / np.sqrt(vt + epsilon))) ==>
             # w -= (self.learning_rate * self.decay * w) + (self.learning_rate * (mt / np.sqrt(vt + epsilon))))
@@ -107,32 +99,25 @@ class NadamNumpy(Nadam[np.ndarray], OptimizerNumpy):
             # w -= (self.learning_rate * self.decay * w)
             np.multiply((self.learning_rate * self.decay), w, dtype=self.dtype, out=mt_temp_dw)
 
-            np.subtract(w, mt_temp_dw, out=w,
-                        dtype=self.dtype)
+            np.subtract(w, mt_temp_dw, dtype=self.dtype, out=w)
 
             # (
+            # NOTE: mt actually is "m / (1 - self.beta1 ** it)", the following formula is a small optimization to reduce operations:
             # mt = (m + (1 - self.beta1) * dw) / (1 - self.beta1 ** it)
-            np.multiply(inv_beta1, dw, dtype=self.dtype, out=mt_temp_dw)
-            np.divide(mt_temp_dw, (inv_beta1 ** it), out=mt_temp_dw,
-                      dtype=self.dtype)
-            np.add(m, mt_temp_dw, out=mt_temp_dw,
-                   dtype=self.dtype)
+            np.multiply((1 - self.beta1), dw, dtype=self.dtype, out=mt_temp_dw)
+            np.divide(mt_temp_dw, ((1 - self.beta1 ** it)), dtype=self.dtype, out=mt_temp_dw)
+            np.add(m, mt_temp_dw, dtype=self.dtype, out=mt_temp_dw)
             # )
 
             # (
             # vt = v / (1 - self.beta2 ** it)
-            np.divide(v, (inv_beta2 ** it), dtype=self.dtype, out=vt_temp_w)
+            np.divide(v, ((1 - self.beta2 ** it)), dtype=self.dtype, out=vt_temp_w)
             # )
 
             # w -= (self.learning_rate * (mt / np.sqrt(vt + epsilon))))
-            np.add(vt_temp_w, self.epsilon, out=vt_temp_w,
-                   dtype=self.dtype)
-            np.sqrt(vt_temp_w, out=vt_temp_w,
-                    dtype=self.dtype)
-            np.divide(mt_temp_dw, vt_temp_w, out=mt_temp_dw,
-                      dtype=self.dtype)
-            np.multiply(self.learning_rate, mt_temp_dw, out=mt_temp_dw,
-                        dtype=self.dtype)
-            np.subtract(w, mt_temp_dw, out=w,
-                        dtype=self.dtype)
+            np.add(vt_temp_w, self.epsilon, dtype=self.dtype, out=vt_temp_w)
+            np.sqrt(vt_temp_w, dtype=self.dtype, out=vt_temp_w)
+            np.divide(mt_temp_dw, vt_temp_w, dtype=self.dtype, out=mt_temp_dw)
+            np.multiply(self.learning_rate, mt_temp_dw, dtype=self.dtype, out=mt_temp_dw)
+            np.subtract(w, mt_temp_dw, dtype=self.dtype, out=w)
         # else: continue
