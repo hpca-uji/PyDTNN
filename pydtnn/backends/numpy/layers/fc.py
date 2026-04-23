@@ -66,14 +66,12 @@ class FCNumpy(FC[np.ndarray], LayerNumpy):
         self.x = x
         y = np.ascontiguousarray(self.y[: x.shape[0], :], dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_MATMUL)
-        np.matmul(x, self.weights, out=y,
-                  dtype=self.model.dtype)
+        np.matmul(x, self.weights, out=y, dtype=self.model.dtype)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.use_bias:
-            np.add(y, self.biases, out=y,
-                   dtype=self.model.dtype)
+            np.add(y, self.biases, out=y, dtype=self.model.dtype)
 
         return np.asarray(y, dtype=self.model.dtype, order="C")
     # ---
@@ -83,8 +81,7 @@ class FCNumpy(FC[np.ndarray], LayerNumpy):
         # self.model.mode = ModelModeEnum.TRAIN is asumed from this point.
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DW_MATMUL)
         # self.dw = np.matmul(self.x.T, dy)
-        np.matmul(self.x.T, dy, self.dw,
-                  dtype=self.model.dtype)
+        np.matmul(self.x.T, dy, self.dw, dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.use_bias:
@@ -94,8 +91,7 @@ class FCNumpy(FC[np.ndarray], LayerNumpy):
         dx = np.asarray(self.dx[: self.x.shape[0], :], dtype=self.model.dtype, order="C")
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_MATMUL)
         # dx = np.matmul(dy, self.weights.T)
-        np.matmul(dy, self.weights.T, out=dx,
-                  dtype=self.model.dtype)
+        np.matmul(dy, self.weights.T, out=dx, dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return np.asarray(dx, dtype=self.model.dtype, order="C")
     # --

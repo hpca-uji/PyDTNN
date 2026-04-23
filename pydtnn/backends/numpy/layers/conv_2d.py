@@ -117,8 +117,7 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
 
         if self.use_bias:
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_SUM_BIASES)
-            np.add(y, self.biases.reshape((-1, self.co)), out=y,
-                   dtype=self.model.dtype)
+            np.add(y, self.biases.reshape((-1, self.co)), out=y, dtype=self.model.dtype)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_Y)
@@ -154,8 +153,7 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
 
         if self.use_bias:
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_SUM_BIASES)
-            np.add(y, self.biases.reshape((-1, self.co)), out=y,
-                   dtype=self.model.dtype)
+            np.add(y, self.biases.reshape((-1, self.co)), out=y, dtype=self.model.dtype)
 
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
@@ -177,8 +175,7 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
 
         # Weigths gradient
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DW_MATMUL)
-        np.matmul(self.x_rows.T, dy_cols, out=self.dw,
-                  dtype=self.model.dtype)
+        np.matmul(self.x_rows.T, dy_cols, out=self.dw, dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_RESHAPE_DW)
@@ -200,8 +197,7 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_MATMUL)
-        np.matmul(dy_cols, w_rows, out=rows,
-                  dtype=self.model.dtype)
+        np.matmul(dy_cols, w_rows, out=rows, dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         dx: np.ndarray = self.get_dx(dy.shape[0])
