@@ -7,7 +7,7 @@ from pydtnn import MPI, drv, nccl, cudnn
 from pydtnn import hostname, ranks_per_node, num_gpus, nccl_comm, cudnn_handle, cublas_handle, context, stream
 
 from pydtnn.context.layer import Context_Layer
-from pydtnn.context.utils import read_model
+from pydtnn.context.utils import read_model, LIMIT_THREADS_AND_BLOCKS
 from pydtnn.libs.mpi.rc import proto as PROTOCOL
 from pydtnn import MPI, utils
 from pydtnn.losses.loss import select as select_loss
@@ -30,8 +30,6 @@ from pydtnn.utils.constants import Array
 logger = logging.getLogger(__name__)
 
 class Context_Init[T: Array](Context_Layer[T]):
-    
-    LIMIT_THREADS_AND_BLOCKS = 1024
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -133,8 +131,8 @@ class Context_Init[T: Array](Context_Layer[T]):
     # ----- _mpi_init ----- #
 
     def _cudnn_init(self) -> None:
-        self.cuda_threads = min(self.batch_size, self.LIMIT_THREADS_AND_BLOCKS)
-        self.cuda_blocks = (max(self.batch_size, self.LIMIT_THREADS_AND_BLOCKS) // self.cuda_threads) + 1
+        self.cuda_threads = min(self.batch_size, LIMIT_THREADS_AND_BLOCKS)
+        self.cuda_blocks = (max(self.batch_size, LIMIT_THREADS_AND_BLOCKS) // self.cuda_threads) + 1
         # NOTE: Seems that in PyDTNN, usually the ".x" (blockIdx.x, threadIdx.x, ...) is the only dimension used.
         self.cuda_grid = (self.cuda_blocks, 1, 1)
         self.cuda_block = (self.cuda_threads, 1, 1)

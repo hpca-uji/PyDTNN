@@ -31,6 +31,7 @@ else:
 
 BAR_WIDTH = 140
 DEFAULT_BACH_SIZE = 64
+LIMIT_THREADS_AND_BLOCKS = 1024
 
 def calculate_time(model) -> np.ndarray:
     # Total elapsed_time, Comp elapsed_time, Memo elapsed_time, Net elapsed_time
