@@ -3,9 +3,9 @@ from pydtnn.tracers.tracer import Tracer
 from timeit import default_timer as timer
 from collections import defaultdict
 import atexit
-import logging
-
+from types import ModuleType
 from pydtnn import utils
+import logging
 logger = logging.getLogger(__name__)
 
 

@@ -17,6 +17,7 @@ from pydtnn.utils.constants import Array, ArrayShape
 from pydtnn.utils.tensor import SampleFormat, TensorFormat, format_reshape
 from pydtnn.utils.performance_models import allreduce_time
 from pydtnn.models.model import select as select_model
+from types import ModuleType
 
 import logging
 logger = logging.getLogger(__name__)
@@ -27,6 +28,9 @@ if TYPE_CHECKING:
     from pympi.MPI import Comm as MPI_COMM
 else:
     MPI_COMM = ModuleType
+
+BAR_WIDTH = 140
+DEFAULT_BACH_SIZE = 64
 
 def calculate_time(model) -> np.ndarray:
     # Total elapsed_time, Comp elapsed_time, Memo elapsed_time, Net elapsed_time
@@ -149,7 +153,7 @@ def get_tensor_format(tensor_format: TensorFormat | Literal["AUTO"] = "AUTO", gp
             raise NotImplementedError(f"\'{tensor_format}\' is not supported.")
 
 
-def get_batch_size(local_size: int | None, global_size: int | None, comm_size: int, default: int = Model.DEFAULT_BACH_SIZE) -> int:
+def get_batch_size(local_size: int | None, global_size: int | None, comm_size: int, default: int = DEFAULT_BACH_SIZE) -> int:
     if local_size and global_size:
         raise ValueError("Can not define 'local_batch_size' and 'global_batch_size' simultaneously")
 

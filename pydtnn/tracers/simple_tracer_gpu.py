@@ -1,5 +1,6 @@
 from pydtnn.tracers.simple_tracer import SimpleTracer
 from typing import TYPE_CHECKING
+from types import ModuleType
 import logging
 logger = logging.getLogger(__name__)
 

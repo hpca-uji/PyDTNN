@@ -5,7 +5,7 @@ from tqdm import tqdm
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.datasets.dataset import Dataset
 from pydtnn.utils.constants import Array
-from pydtnn.context.utils import compute_metrics_funcs
+from pydtnn.context.utils import compute_metrics_funcs, BAR_WIDTH
 import numpy as np
 
 
@@ -186,7 +186,7 @@ class Context_Train[T: Array](Context_Eval[T]):
         return self.total_metrics
     # -----
 
-    def train(self, bar_width=Context_Eval.BAR_WIDTH) -> dict[str, list[np.ndarray]]:
+    def train(self, bar_width=BAR_WIDTH) -> dict[str, list[np.ndarray]]:
         self._ensure_model_runable()
 
         # If working with CUDA, self.y_batch must be in a GPU's data structure.

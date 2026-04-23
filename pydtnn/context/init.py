@@ -14,6 +14,8 @@ from pydtnn.losses.loss import select as select_loss
 from pydtnn.metrics.metric import select as select_metric
 from pydtnn.optimizers.optimizer import select as select_optimizer
 from pydtnn.utils.gpu import CudnnDataType
+from pydtnn.datasets.dataset import Dataset
+from pydtnn.datasets.dataset import select as select_dataset
 
 import logging
 if TYPE_CHECKING:
@@ -46,6 +48,10 @@ class Context_Init[T: Array](Context_Layer[T]):
         # Cuda [NOTE: Always after initializing MPI (if you are going to use MPI)]
         if self.enable_cudnn:
             self._cudnn_init()
+        
+        # Dataset [NOTE: Always after initializing MPI (if you are going to use MPI)]
+        if self.dataset_name:
+            self.dataset: Dataset = select_dataset(self.dataset_name)(self)
         
         # Private attributes
         self._is_model_init: bool = False

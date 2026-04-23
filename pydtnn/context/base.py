@@ -4,7 +4,6 @@ from warnings import warn
 import numpy as np
 import logging
 
-from pydtnn.datasets.dataset import Dataset
 from pydtnn.optimizers.optimizer import Optimizer
 logger = logging.getLogger(__name__)
 
@@ -23,7 +22,7 @@ from pydtnn.utils.performance_counter import PerformanceCounter
 from pydtnn.utils.memory_pool import PrivateMemory, PreallocMemory
 
 from pydtnn.context.utils import get_batch_size, get_tensor_format, get_tracer
-from pydtnn.datasets.dataset import select as select_dataset
+from types import ModuleType
 
 # NOTE: mpi4py has more functions, but no typing
 if TYPE_CHECKING:
@@ -32,9 +31,6 @@ else:
     MPI_COMM = ModuleType
 
 class Context_Base[T: Array]:
-
-    BAR_WIDTH = 140
-    DEFAULT_BACH_SIZE = 64
 
     class Mode(enum.StrEnum):
         EVALUATE = enum.auto()
@@ -194,9 +190,6 @@ class Context_Base[T: Array]:
         # Load weights and bias
         if self.weights_and_bias_filename:
             self.load_weights_and_bias(self.weights_and_bias_filename)
-        # Dataset
-        if self.dataset_name:
-            self.dataset: Dataset = select_dataset(self.dataset_name)(self)
     # ---- #
 
 

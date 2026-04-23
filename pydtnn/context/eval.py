@@ -9,7 +9,7 @@ from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.datasets.dataset import Dataset
 from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_MDL_EVENT_enum
 from pydtnn.utils.constants import Array
-from pydtnn.context.utils import compute_metrics_funcs
+from pydtnn.context.utils import compute_metrics_funcs, BAR_WIDTH
 from pydtnn import gpuarray
 
 from pydtnn.context.reduce import Context_Reduce
@@ -141,7 +141,7 @@ class Context_Eval[T: Array](Context_Reduce[T]):
         return (model_sync_count, sync_epoch)
     # -----
 
-    def evaluate(self, bar_width=Context_Reduce.BAR_WIDTH):
+    def evaluate(self, bar_width=BAR_WIDTH):
         self._ensure_model_runable()
 
         if self.enable_cudnn and self.y_batch is None:

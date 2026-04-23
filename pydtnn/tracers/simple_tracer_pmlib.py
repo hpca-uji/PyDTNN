@@ -4,6 +4,7 @@ from pydtnn.tracers.simple_tracer import SimpleTracer
 import numpy as np
 from collections import defaultdict
 import time
+from types import ModuleType
 import logging
 logger = logging.getLogger(__name__)
 
