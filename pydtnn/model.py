@@ -1,12 +1,10 @@
 
-from pydtnn.context.show import Context_Show
-from pydtnn.context.train import Context_Train
+from pydtnn.context.show import Show
+from pydtnn.context.train import Train
 from pydtnn.utils.constants import Array
-import logging
-logger = logging.getLogger(__name__)
 
 
-class Model[T: Array](Context_Train[T], Context_Show[T]):
+class Model[T: Array](Train[T], Show[T]):
     """
     # PyDTNN model
     """

@@ -1,3 +1,16 @@
+from types import ModuleType
+from pydtnn.context.utils import get_batch_size, get_tensor_format, get_tracer
+from pydtnn.utils.memory_pool import PrivateMemory, PreallocMemory
+from pydtnn.utils.performance_counter import PerformanceCounter
+from collections import abc
+from pydtnn import MPI_MODULE, Cudnn_Handle_Type, Cublas_Handle_Type, drv, gpuarray, cublas
+from pydtnn.utils.tensor import TensorFormat, encode_shape, encode_tensor, decode_shape, decode_tensor
+from pydtnn.utils.constants import Array, ArrayShape, NetworkAlgEnum, Parameters
+from pydtnn.parser import PydtnnArgumentParser
+from pydtnn.losses.loss import Loss
+from pydtnn.metrics.metric import Metric
+from pydtnn.abstract.layerable import Layerable
+import itertools
 import enum
 from typing import TYPE_CHECKING, Any
 from warnings import warn
@@ -7,22 +20,6 @@ import logging
 from pydtnn.optimizers.optimizer import Optimizer
 logger = logging.getLogger(__name__)
 
-import itertools
-
-from pydtnn.abstract.layerable import Layerable
-from pydtnn.metrics.metric import Metric
-
-from pydtnn.losses.loss import Loss
-from pydtnn.parser import PydtnnArgumentParser
-from pydtnn.utils.constants import Array, ArrayShape, NetworkAlgEnum, Parameters
-from pydtnn.utils.tensor import TensorFormat, encode_shape, encode_tensor, decode_shape, decode_tensor
-from pydtnn import MPI_MODULE, Cudnn_Handle_Type, Cublas_Handle_Type, drv, gpuarray, cublas
-from collections import abc
-from pydtnn.utils.performance_counter import PerformanceCounter
-from pydtnn.utils.memory_pool import PrivateMemory, PreallocMemory
-
-from pydtnn.context.utils import get_batch_size, get_tensor_format, get_tracer
-from types import ModuleType
 
 # NOTE: mpi4py has more functions, but no typing
 if TYPE_CHECKING:
@@ -30,7 +27,8 @@ if TYPE_CHECKING:
 else:
     MPI_COMM = ModuleType
 
-class Context_Base[T: Array]:
+
+class Base[T: Array]:
 
     class Mode(enum.StrEnum):
         EVALUATE = enum.auto()
@@ -101,8 +99,8 @@ class Context_Base[T: Array]:
     tracer_pmlib_server: str
     tracer_pmlib_port: int
     tracer_pmlib_device: str
-    model_name:str
-    global_batch_size:int
+    model_name: str
+    global_batch_size: int
     dataset_path: str
     quantize: bool
     quantize_dtype: np.dtype
@@ -141,7 +139,7 @@ class Context_Base[T: Array]:
     cuda_grid: tuple[int, int, int]
     cuda_block: tuple[int, int, int]
     optimizer: Optimizer
-    
+
 ##########################################
     ## INIT ##
     ##########
@@ -152,7 +150,7 @@ class Context_Base[T: Array]:
         self.kwargs.update(kwargs)
 
         # Attributes related to the given arguments
-        self.blocking_mpi: bool = self.use_blocking_mpi # TODO: MIRAR de dónde sale esto.
+        self.blocking_mpi: bool = self.use_blocking_mpi  # TODO: MIRAR de dónde sale esto.
         self.enable_cudnn = gpuarray is not None and drv is not None and cublas is not None
         self.gpudirect: bool = self.enable_gpudirect
         self.enable_nccl: bool = self.enable_nccl
@@ -172,8 +170,7 @@ class Context_Base[T: Array]:
         self.layer_id_generator: abc.Iterator[int] = iter(itertools.count())
 
         # Set current mode to unspecified
-        self.mode: Context_Base.Mode = Context_Base.Mode.UNSPECIFIED
-
+        self.mode: Base.Mode = Base.Mode.UNSPECIFIED
 
         self.memory_cls = PreallocMemory if self.shared_tmp_memory else PrivateMemory
 
@@ -192,7 +189,6 @@ class Context_Base[T: Array]:
             self.load_weights_and_bias(self.weights_and_bias_filename)
     # ---- #
 
-
     def encode_shape(self, shape: ArrayShape) -> ArrayShape:
         """Transform the shape from `NCHW` order to `model.tensor_format` order (supports 4 or 3 dimensions)"""
         return encode_shape(shape, self.tensor_format)
@@ -208,8 +204,9 @@ class Context_Base[T: Array]:
     def decode_tensor(self, data: np.ndarray) -> np.ndarray:
         """Transpose elements of data from `model.tensor_format` format to `NCHW` format (supports 4 or 3 dimensions)."""
         return decode_tensor(data, self.tensor_format)  # type: ignore (TensorGPU does not have transpose yet)
-    
+
     def export(self) -> dict[str, Any]:
+        """Export model state"""
         data = {}
 
         if self.model_name is not None:
@@ -222,8 +219,9 @@ class Context_Base[T: Array]:
 
         return data
 
-    def import_(self, data: "dict[str, Any] | Context_Base") -> None:
-        if isinstance(data, Context_Base):
+    def import_(self, data: "dict[str, Any] | Base") -> None:
+        """Import model state"""
+        if isinstance(data, Base):
             data = data.export()
 
         model_name = str(data.get(Parameters.MODEL_NAME))

@@ -196,13 +196,13 @@ class Base[T: Array]:
     def _post_init(self) -> None:
         pass
 
-    def _init_backend_with_model(self, model: "model_module.Context_Base[T]") -> None:
+    def _init_backend_with_model(self, model: "model_module.Base[T]") -> None:
         """Initialize backend and link a new model instance"""
         self.model = model  # Set on frontend
         self._init_backend()
         self.model = model  # Set on backend
 
     @classmethod
-    def from_model[S](cls: type[S], model: "model_module.Context_Base[T]") -> S:
+    def from_model[S](cls: type[S], model: "model_module.Base[T]") -> S:
         """Create object from a given model"""
         raise NotImplementedError("Use a concrete optimizer!")

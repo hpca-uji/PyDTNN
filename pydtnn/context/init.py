@@ -6,7 +6,7 @@ import numpy as np
 from pydtnn import MPI, drv, nccl, cudnn
 from pydtnn import hostname, ranks_per_node, num_gpus, nccl_comm, cudnn_handle, cublas_handle, context, stream
 
-from pydtnn.context.layer import Context_Layer
+from pydtnn.context.layer import Layer
 from pydtnn.context.utils import read_model, LIMIT_THREADS_AND_BLOCKS
 from pydtnn.libs.mpi.rc import proto as PROTOCOL
 from pydtnn import MPI, utils
@@ -29,7 +29,8 @@ else:
 from pydtnn.utils.constants import Array
 logger = logging.getLogger(__name__)
 
-class Context_Init[T: Array](Context_Layer[T]):
+
+class Init[T: Array](Layer[T]):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -46,11 +47,11 @@ class Context_Init[T: Array](Context_Layer[T]):
         # Cuda [NOTE: Always after initializing MPI (if you are going to use MPI)]
         if self.enable_cudnn:
             self._cudnn_init()
-        
+
         # Dataset [NOTE: Always after initializing MPI (if you are going to use MPI)]
         if self.dataset_name:
             self.dataset: Dataset = select_dataset(self.dataset_name)(self)
-        
+
         # Private attributes
         self._is_model_init: bool = False
 

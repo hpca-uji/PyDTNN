@@ -1,11 +1,12 @@
 from pydtnn import utils
-from pydtnn.context.layer import Context_Layer
+from pydtnn.context.layer import Layer
 import logging
 
 from pydtnn.utils.constants import Array
 logger = logging.getLogger(__name__)
 
-class Context_Show[T: Array](Context_Layer[T]):
+
+class Show[T: Array](Layer[T]):
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)

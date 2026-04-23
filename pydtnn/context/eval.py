@@ -12,18 +12,19 @@ from pydtnn.utils.constants import Array
 from pydtnn.context.utils import compute_metrics_funcs, BAR_WIDTH
 from pydtnn import gpuarray
 
-from pydtnn.context.reduce import Context_Reduce
+from pydtnn.context.sync import Sync
 
 import logging
 logger = logging.getLogger(__name__)
 
-class Context_Eval[T: Array](Context_Reduce[T]):
+
+class Eval[T: Array](Sync[T]):
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         # Private attributes
         self._evaluate_round: int = 0
-    
+
     def _update_running_average(self, curr: np.ndarray, total: np.ndarray, count: int,
                                 batch_size: int, prefix="") -> tuple[np.ndarray, int, str]:
         string = ""
@@ -35,9 +36,8 @@ class Context_Eval[T: Array](Context_Reduce[T]):
         string = string[:-2]
         return total, count + batch_size, string
 
-
     def _evaluate_batch(self, x_batch: np.ndarray, y_batch: np.ndarray, sync_model=True) -> np.ndarray:
-        self.mode = Context_Reduce.Mode.EVALUATE
+        self.mode = Sync.Mode.EVALUATE
 
         self.real_batch_size = x_batch.shape[0]
         x, y_targ = self.layers[0]._sync_x_y(x_batch, y_batch)
@@ -67,9 +67,9 @@ class Context_Eval[T: Array](Context_Reduce[T]):
 
         return self.total_metrics
 
-    def update_status(self, pbar: tqdm, batch_loss: np.ndarray, total_loss: np.ndarray, 
+    def update_status(self, pbar: tqdm, batch_loss: np.ndarray, total_loss: np.ndarray,
                       batch_count: int, batch_size: int, output_prefix: str, delta: float = -1,
-                      prev_string: str = "") -> tuple[np.ndarray, int]:
+                      prev_string: str = "") -> tuple[np.ndarray, int, str]:
         # noinspection PyUnboundLocalVariable
         total_loss, batch_count, string = \
             self._update_running_average(batch_loss, total_loss, batch_count, batch_size, prefix=output_prefix)
@@ -77,20 +77,19 @@ class Context_Eval[T: Array](Context_Reduce[T]):
         if self.comm_rank == 0:
             # noinspection PyUnboundLocalVariable
             pbar.set_postfix_str(s=f"{prev_string}{string}", refresh=True)
-            pbar.update(batch_size)
             if delta >= 0:
+                pbar.update(batch_size)
                 self.perf_counter.add_testing_time_and_batch_size(self._evaluate_round, delta, batch_size)
-        
-        return total_loss, batch_count
+
+        return total_loss, batch_count, string
     # ------
 
-    
     def do_evaluation(self, pbar: tqdm,
                       batch_generator: Generator[tuple[np.ndarray, np.ndarray, int]],
                       model_sync_count: int,
                       batches_min: float,
                       total_loss: np.ndarray,
-                      batch_count: int, 
+                      batch_count: int,
                       terminate: bool = False,
                       prev_string: str = "",
                       out_prefix: str = "") -> tuple[int, bool]:
@@ -111,7 +110,7 @@ class Context_Eval[T: Array](Context_Reduce[T]):
 
             if model_sync_count == 0 and not self.initial_model_sync:
                 sync_model = False
-            
+
             model_sync_count += 1
 
             if i_batch < batches_min:
@@ -133,10 +132,10 @@ class Context_Eval[T: Array](Context_Reduce[T]):
             if batch_size <= 0:
                 continue
 
-            total_loss, batch_count = self.update_status(pbar = pbar, batch_loss=test_batch_loss,
+            total_loss, batch_count, string = self.update_status(pbar=pbar, batch_loss=test_batch_loss,
                                                          total_loss=total_loss, batch_count=batch_count,
-                                                         batch_size=batch_size, output_prefix=out_prefix, delta=toc- tic,
-                                                         prev_string = prev_string)
+                                                         batch_size=batch_size, output_prefix=out_prefix, delta=toc - tic,
+                                                         prev_string=prev_string)
 
         return (model_sync_count, sync_epoch)
     # -----
@@ -163,11 +162,10 @@ class Context_Eval[T: Array](Context_Reduce[T]):
                         ascii=" ▁▂▃▄▅▆▇█", smoothing=0.3,
                         desc="Testing", unit=" samples")
 
-        self.do_evaluation(pbar = pbar, batch_generator = test_batch_generator,
-                           model_sync_count = 0, batches_min = test_batches_min,
-                           total_loss = test_total_loss, batch_count = test_batch_count ,
+        self.do_evaluation(pbar=pbar, batch_generator=test_batch_generator,
+                           model_sync_count=0, batches_min=test_batches_min,
+                           total_loss=test_total_loss, batch_count=test_batch_count,
                            out_prefix="test_")
-
 
         # Increment self._evaluate_round
         self._evaluate_round += 1
@@ -176,7 +174,7 @@ class Context_Eval[T: Array](Context_Reduce[T]):
             pbar.close()
             # Sleep for half a second to allow pbar to write its output before returning
             time.sleep(.5)
-        
+
         # End pipelines
         self._model_reduce_wait(gradient=True)
         self._model_reduce_wait(gradient=False)

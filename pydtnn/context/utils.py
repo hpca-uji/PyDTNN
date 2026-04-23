@@ -33,6 +33,7 @@ BAR_WIDTH = 140
 DEFAULT_BACH_SIZE = 64
 LIMIT_THREADS_AND_BLOCKS = 1024
 
+
 def calculate_time(model) -> np.ndarray:
     # Total elapsed_time, Comp elapsed_time, Memo elapsed_time, Net elapsed_time
     total_time: np.ndarray = np.zeros((4,), dtype=np.float32)
@@ -53,8 +54,8 @@ def calculate_time(model) -> np.ndarray:
             biases_size = 0 if (biases := layer.biases) is None else biases.size
             if model.comm and weights_size > 0:
                 total_time += allreduce_time(weights_size + biases_size,
-                                                model.cpu_speed, model.network_bw, model.network_lat,
-                                                model.network_alg, model.nprocs, model.dtype)
+                                             model.cpu_speed, model.network_bw, model.network_lat,
+                                             model.network_alg, model.nprocs, model.dtype)
     else:
         total_time_iar: int = 0
         # Non-blocking MPI
@@ -65,8 +66,8 @@ def calculate_time(model) -> np.ndarray:
             biases_size = 0 if (biases := layer.biases) is None else biases.size
             if model.comm and weights_size > 0:
                 time_iar = allreduce_time(weights_size + biases_size,
-                                            model.cpu_speed, model.network_bw, model.network_lat,
-                                            model.network_alg, model.nprocs, model.dtype)
+                                          model.cpu_speed, model.network_bw, model.network_lat,
+                                          model.network_alg, model.nprocs, model.dtype)
                 total_time[3] += time_iar[3]
                 total_time_iar = max(total_time[0], total_time_iar) + time_iar[0]
 
@@ -75,35 +76,37 @@ def calculate_time(model) -> np.ndarray:
     return total_time
 # ----
 
+
 def compute_metrics_funcs(y_pred: Array, y_targ: Array, loss: float, metrics_funcs: list[Metric],
-                           total_metrics: np.ndarray | None, comm: MPI_COMM | None, comm_size:int, blocking=True,
-                           use_comm=True) -> tuple[np.ndarray, None] | tuple[None, Any]:
-        loss_req: Any | None = None
-        _losses: np.ndarray | None
+                          total_metrics: np.ndarray | None, comm: MPI_COMM | None, comm_size: int, blocking=True,
+                          use_comm=True) -> tuple[np.ndarray, None] | tuple[None, Any]:
+    loss_req: Any | None = None
+    _losses: np.ndarray | None
 
-        if y_targ.shape[0] > 0:
-            metrics = [func.compute(y_pred, y_targ) for func in metrics_funcs]
-            _losses = np.array([loss, *metrics], dtype=np.object_)
+    if y_targ.shape[0] > 0:
+        metrics = [func.compute(y_pred, y_targ) for func in metrics_funcs]
+        _losses = np.array([loss, *metrics], dtype=np.object_)
+    else:
+        _losses = total_metrics.copy()  # type: ignore (In this case, total_metrics will not be None)
+        _losses[0] = loss
+
+    if comm is not None and use_comm:
+        assert MPI
+
+        _losses /= comm_size
+        if blocking:
+            _losses = comm.allreduce(_losses, op=MPI.SUM)
         else:
-            _losses = total_metrics.copy()  #type: ignore (In this case, total_metrics will not be None)
-            _losses[0] = loss
-
-        if comm is not None and use_comm:
-            assert MPI
-
-            _losses /= comm_size
-            if blocking:
-                _losses = comm.allreduce(_losses, op=MPI.SUM)
-            else:
-                loss_req = comm.iallreduce(_losses, op=MPI.SUM)
+            loss_req = comm.iallreduce(_losses, op=MPI.SUM)
+    else:
+        if blocking:
+            pass
         else:
-            if blocking:
-                pass
-            else:
-                raise NotImplementedError("can not compute metrics non-blocking locally")
+            raise NotImplementedError("can not compute metrics non-blocking locally")
 
-        return _losses, loss_req
+    return _losses, loss_req
     # ----
+
 
 def read_model(model_name: str, input_shape: ArrayShape, output_shape: ArrayShape, tensor_format: TensorFormat) -> Sequence[Layerable]:
     create_model = select_model(model_name)
@@ -125,6 +128,7 @@ def read_model(model_name: str, input_shape: ArrayShape, output_shape: ArrayShap
     layers = create_model(input_shape, output_shape)
     return layers
     # ----
+
 
 def get_tracer(tracer_output: str, tracing: bool, comm: MPI_COMM | None, enable_cudnn: bool,
                tracer_pmlib_server: str, tracer_pmlib_port: int, tracer_pmlib_device: str) -> Tracer:

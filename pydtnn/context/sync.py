@@ -1,4 +1,4 @@
-from pydtnn.context.init import Context_Init
+from pydtnn.context.init import Init
 from pydtnn.utils.constants import Array
 import numpy as np
 from pydtnn import MPI
@@ -6,7 +6,8 @@ from pydtnn import MPI
 import logging
 logger = logging.getLogger(__name__)
 
-class Context_Reduce[T: Array](Context_Init[T]):
+
+class Sync[T: Array](Init[T]):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

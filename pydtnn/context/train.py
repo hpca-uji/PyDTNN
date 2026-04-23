@@ -10,8 +10,8 @@ import numpy as np
 
 
 from pydtnn.schedulers.scheduler import select as select_scheduler
-from pydtnn.context.eval import Context_Eval
-from pydtnn import gpuarray
+from pydtnn.context.eval import Eval
+from pydtnn import gpuarray, MPI
 from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_MDL_EVENT_enum
 import time
 
@@ -19,17 +19,18 @@ import time
 import logging
 logger = logging.getLogger(__name__)
 
-class Context_Train[T: Array](Context_Eval[T]):
+
+class Train[T: Array](Eval[T]):
 
     class SyncParticipation(enum.StrEnum):
         ALL = enum.auto()
         AVAIL2ALL = enum.auto()
-    
+
     class SyncAlgorithm(enum.StrEnum):
         AVG = enum.auto()
         WAVG = enum.auto()
         INVAVG = enum.auto()
-    
+
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         # Synchronization parameters
@@ -45,7 +46,6 @@ class Context_Train[T: Array](Context_Eval[T]):
         ]
         for scheduler in self.schedulers:
             scheduler.model = self
-
 
     def _model_reduce_sync(self, gradient=True):
         for layer in self.layers:
@@ -79,45 +79,45 @@ class Context_Train[T: Array](Context_Eval[T]):
 
     def _compute_rank_weight(self, mask: list[int], part: Dataset.Part) -> float:
         match self.model_sync_participation:
-            case Context_Train.SyncParticipation.ALL:
+            case Train.SyncParticipation.ALL:
                 comm_nsamples = self.comm_nsamples[part]
-            case Context_Train.SyncParticipation.AVAIL2ALL:
+            case Train.SyncParticipation.AVAIL2ALL:
                 if mask[self.comm_rank]:
                     comm_nsamples = [nsamples for nsamples, mask in zip(self.comm_nsamples[part], mask) if mask]
                 else:
                     return 0.0
             case _:
-                raise ValueError(f"Model synchronization participation option '{self.model_sync_participation}' not recognized. Only recognized: {list(Context_Eval.SyncParticipation)}")
+                raise ValueError(f"Model synchronization participation option '{self.model_sync_participation}' not recognized. Only recognized: {list(Eval.SyncParticipation)}")
 
         min_nsamples, max_nsamples, total_nsamples = min(comm_nsamples), max(comm_nsamples), sum(comm_nsamples)
         comm_size = len(comm_nsamples)
 
         match self.model_sync_algo:
-            case Context_Train.SyncAlgorithm.AVG:
+            case Train.SyncAlgorithm.AVG:
                 return 1.0 / comm_size
-            case Context_Train.SyncAlgorithm.WAVG:
+            case Train.SyncAlgorithm.WAVG:
                 return self.dataset._nsamples[part] / total_nsamples
-            case Context_Train.SyncAlgorithm.INVAVG:
+            case Train.SyncAlgorithm.INVAVG:
                 inverse_nsamples = min_nsamples + (max_nsamples - self.dataset._nsamples[part])
                 return inverse_nsamples / total_nsamples
             case _:
-                raise ValueError(f"Model synchronization algorithm option '{self.model_sync_algo}' not recognized. Only recognized: {list(Context_Eval.SyncAlgorithm)}")
+                raise ValueError(f"Model synchronization algorithm option '{self.model_sync_algo}' not recognized. Only recognized: {list(Eval.SyncAlgorithm)}")
 
-    def update_status(self, pbar: tqdm, batch_loss: np.ndarray, total_loss: np.ndarray, 
-                      batch_count: int, batch_size: int, output_prefix: str = "val_", delta: float = -1,
+    #def update_status(self, pbar: tqdm, batch_loss: np.ndarray, total_loss: np.ndarray,
+    #                  batch_count: int, batch_size: int, output_prefix: str = "val_", delta: float = -1,
 
-                      prev_string: str = "") -> tuple[np.ndarray, int]:
-        total_loss, batch_count, string = \
-                    self._update_running_average(batch_loss, total_loss, batch_count, batch_size, prefix=output_prefix)
-        
-        if self.comm_rank == 0:
-            pbar.set_postfix_str(s=f"{prev_string}{string}", refresh=True)
-        
-        return total_loss, batch_count
+    #                  prev_string: str = "") -> tuple[np.ndarray, int]:
+    #    total_loss, batch_count, string = \
+    #        self._update_running_average(batch_loss, total_loss, batch_count, batch_size, prefix=output_prefix)
+
+    #    if self.comm_rank == 0:
+    #        pbar.set_postfix_str(s=f"{prev_string}{string}", refresh=True)
+
+    #    return total_loss, batch_count
     # ------
 
     def _train_batch(self, x_batch: np.ndarray, y_batch: np.ndarray, sync_model=True) -> np.ndarray:
-        self.mode = Context_Eval.Mode.TRAIN
+        self.mode = Eval.Mode.TRAIN
 
         # Schedulers begin
         for sched in self.schedulers:
@@ -266,13 +266,10 @@ class Context_Train[T: Array](Context_Eval[T]):
                         pbar.set_postfix_str(s=f"{string}, waiting…", refresh=True)
                     continue
 
-                train_total_loss, train_batch_count, string = \
-                    self._update_running_average(train_batch_loss, train_total_loss, train_batch_count, batch_size)
-                if self.comm_rank == 0:
-                    # noinspection PyUnboundLocalVariable
-                    pbar.set_postfix_str(s=string, refresh=True)
-                    pbar.update(batch_size)
-                    self.perf_counter.add_training_time_and_batch_size(epoch, toc - tic, batch_size)
+                train_total_loss, train_batch_count, string = self.update_status(pbar=pbar, batch_loss=train_batch_loss,
+                                                                                 total_loss=train_total_loss, batch_count=train_batch_count,
+                                                                                 batch_size=batch_size, output_prefix="train_", delta=toc - tic,
+                                                                                 prev_string="")
 
             if self.comm_rank == 0:
                 train_string = string
@@ -282,12 +279,13 @@ class Context_Train[T: Array](Context_Eval[T]):
             # ----------- #
             # --- VAL --- #
             # ----------- #
-            self.do_evaluation(pbar = pbar, batch_generator = val_batch_generator,
-                               model_sync_count = 0, batches_min = val_batches_min,
-                               total_loss = val_total_loss, batch_count = val_batch_count,
-                               prev_string = f"{train_string}, ")
+            model_sync_count, val_sync_epoch = self.do_evaluation(pbar=pbar, batch_generator=val_batch_generator,
+                                                                  model_sync_count=model_sync_count, batches_min=val_batches_min,
+                                                                  total_loss=val_total_loss, batch_count=val_batch_count,
+                                                                  prev_string=f"{train_string}, ", out_prefix="val_")
+            sync_epoch = sync_epoch or val_sync_epoch
 
-            #if self.comm_rank == 0:  # All nodes must have history, not only the 0.
+            # if self.comm_rank == 0:  # All nodes must have history, not only the 0.
             for c in range(len(self.loss_and_metrics)):
                 self.history["val_" + self.loss_and_metrics[c]].append(val_total_loss[c])
 
@@ -317,7 +315,7 @@ class Context_Train[T: Array](Context_Eval[T]):
 
             if global_terminate:
                 break
-        
+
         # End pipelines
         self._model_reduce_wait(gradient=True)
         self._model_reduce_wait(gradient=False)
