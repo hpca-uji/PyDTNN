@@ -139,8 +139,9 @@ The PyDTNN framework comes with a utility launcher called
     Default: `cpu`.
   - `--batch-size`: Batch size per MPI rank. Default: `None`.
   - `--global-batch-size`: Batch size between all MPI ranks. Default: `None`.
-  - `--dtype`: Datatype to use: `float32`, `float64`. Default:
-    `float32`.
+  - `--dtype`: Datatype to use: `float32`, `float64`. Default: `float32`.
+  - `--quantize`: Enable model quantization. Default: `False`.
+  - `--quantize-dtype`: Datatype to use: `float32`, `float64`. Default: `float16`.
   - `--num-epochs`: Number of epochs to perform. Default: `1`.
   - `--steps-per-epoch`: Trims the training data depending on the given
     number of steps per epoch. Default: `0`, i.e., do not trim.

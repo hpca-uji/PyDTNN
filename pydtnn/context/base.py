@@ -108,6 +108,8 @@ class Context_Base[T: Array]:
     model_name:str
     global_batch_size:int
     dataset_path: str
+    quantize: bool
+    quantize_dtype: np.dtype
 # ------------
 
     rank_weight: float
@@ -160,6 +162,7 @@ class Context_Base[T: Array]:
         self.enable_nccl: bool = self.enable_nccl
         self.dtype: np.dtype = np.dtype(self.dtype)
         self.memory: PrivateMemory = None  # type: ignore (it will be intialized later if "self.use_memory_pool" is True)
+        self.param_dtype: np.dtype = np.dtype(self.quantize_dtype) if self.quantize else self.dtype
 
         self.nparams = 0
         self.memory_used = 0

@@ -176,3 +176,7 @@ class Context_Eval[T: Array](Context_Reduce[T]):
             pbar.close()
             # Sleep for half a second to allow pbar to write its output before returning
             time.sleep(.5)
+        
+        # End pipelines
+        self._model_reduce_wait(gradient=True)
+        self._model_reduce_wait(gradient=False)

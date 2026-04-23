@@ -100,6 +100,14 @@
 │   │       └── utils  # cu files
 │   │           ├── memory_allocation.py
 │   │           └── tensor_array.py
+│   ├── context
+│   │   ├── base.py  # parameters and basic methods
+│   │   ├── layer.py  # methods related to layers
+│   │   ├── show.py  # methods related to show the context information
+│   │   ├── init.py  # code to initialize the model
+│   │   ├── reduce.py  # methods related to reduce operations
+│   │   ├── eval.py  # code to do an inference
+│   │   └── train.py # code to do a training
 ```
 ### Support modules
 ```
@@ -156,9 +164,9 @@
 ```
 
 # Planned
-- Separate model into responsibilities (types, init, import, show, train, eval, utils)
+- Fix NLP support
+- PyCUDA parameter quantization (operate on model.dtype, weights on model.param_dtype)
 - Model tensor parallelism (previously implemented on a prototype)
-- Model quantization (operate on high precision and reduce on weight size)
 
 # Publishing
 Dependencies: `gcc patchelf` and `build twine auditwheel`  

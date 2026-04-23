@@ -14,7 +14,7 @@ mpirun -np 4 "${MPI_ARGS[@]}" \
   pydtnn-benchmark \
   --model=simplecnn \
   --dataset=archive \
-  --dataset-path=datasets/mnist \
+  --dataset-path='datasets/mnist/archive.${rank}.npz' \
   --model-sync-participation=all \
   --model-sync-algo=avg \
   --model-sync-min-avail=0 \

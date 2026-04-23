@@ -26,7 +26,7 @@ class AdditionBlockPycuda(AdditionBlock[TensorArray], AbstractBlockLayerPycuda):
                                              self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_ELTW_SUM)
                 # noinspection PyUnboundLocalVariable
                 cudnn.cudnnAddTensor(self.model.cudnn_handle, alpha, y_i.desc,
-                                     y_i.ptr, beta, self.y.desc, self.y.ptr)
+                                     y_i.ptr_voidp, beta, self.y.desc, self.y.ptr_voidp)
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.y
 
@@ -45,6 +45,6 @@ class AdditionBlockPycuda(AdditionBlock[TensorArray], AbstractBlockLayerPycuda):
                                              self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ELTW_SUM)
                 # noinspection PyUnboundLocalVariable
                 cudnn.cudnnAddTensor(self.model.cudnn_handle, alpha, dx_i.desc,
-                                     dx_i.ptr, beta, self.dx.desc, self.dx.ptr)
+                                     dx_i.ptr_voidp, beta, self.dx.desc, self.dx.ptr_voidp)
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.dx

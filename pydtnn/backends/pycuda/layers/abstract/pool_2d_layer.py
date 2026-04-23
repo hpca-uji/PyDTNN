@@ -69,8 +69,8 @@ class AbstractPool2DLayerPycuda(AbstractPool2DLayer[TensorArray], LayerPycuda):
         alpha, beta = 1.0, 0.0
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
         cudnn.cudnnPoolingForward(self.model.cudnn_handle, self.pool_desc, alpha,
-                                  x.desc, x.ptr, beta,
-                                  self.y.desc, self.y.ptr)
+                                  x.desc, x.ptr_voidp, beta,
+                                  self.y.desc, self.y.ptr_voidp)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.y
 
@@ -79,9 +79,9 @@ class AbstractPool2DLayerPycuda(AbstractPool2DLayer[TensorArray], LayerPycuda):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
         # Compute dx
         cudnn.cudnnPoolingBackward(self.model.cudnn_handle, self.pool_desc, alpha,
-                                   self.y.desc, self.y.ptr,
-                                   dy.desc, dy.ptr,
-                                   self.x.desc, self.x.ptr,
-                                   beta, self.dx.desc, self.dx.ptr)
+                                   self.y.desc, self.y.ptr_voidp,
+                                   dy.desc, dy.ptr_voidp,
+                                   self.x.desc, self.x.ptr_voidp,
+                                   beta, self.dx.desc, self.dx.ptr_voidp)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.dx

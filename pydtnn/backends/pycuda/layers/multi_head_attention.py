@@ -36,14 +36,14 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
         o_weights_shape = (self.heads * self.d_k, self.embedl)
         o_biases_shape = (1, self.embedl)
 
-        self.q_weights_cpu = self.weights_initializer(weights_shape, self.model.dtype)
-        self.k_weights_cpu = self.weights_initializer(weights_shape, self.model.dtype)
-        self.v_weights_cpu = self.weights_initializer(weights_shape, self.model.dtype)
-        self.q_biases_cpu = self.biases_initializer(biases_shape, self.model.dtype)
-        self.k_biases_cpu = self.biases_initializer(biases_shape, self.model.dtype)
-        self.v_biases_cpu = self.biases_initializer(biases_shape, self.model.dtype)
-        self.o_weights_cpu = self.weights_initializer(o_weights_shape, self.model.dtype)
-        self.o_biases_cpu = self.biases_initializer(o_biases_shape, self.model.dtype)
+        self.q_weights_cpu = self.weights_initializer(weights_shape, self.model.param_dtype)
+        self.k_weights_cpu = self.weights_initializer(weights_shape, self.model.param_dtype)
+        self.v_weights_cpu = self.weights_initializer(weights_shape, self.model.param_dtype)
+        self.q_biases_cpu = self.biases_initializer(biases_shape, self.model.param_dtype)
+        self.k_biases_cpu = self.biases_initializer(biases_shape, self.model.param_dtype)
+        self.v_biases_cpu = self.biases_initializer(biases_shape, self.model.param_dtype)
+        self.o_weights_cpu = self.weights_initializer(o_weights_shape, self.model.param_dtype)
+        self.o_biases_cpu = self.biases_initializer(o_biases_shape, self.model.param_dtype)
         self.nparams = 0
         _weights = [self.q_weights_cpu, self.k_weights_cpu, self.v_weights_cpu, self.o_weights_cpu,
                     self.q_biases_cpu, self.k_biases_cpu, self.v_biases_cpu, self.o_biases_cpu]
@@ -53,10 +53,10 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
         # Dropout Descriptor
         self.states_size = cudnn.cudnnDropoutGetStatesSize(self.model.cudnn_handle)
         states_gpu = gpuarray.zeros((self.states_size.value,), self.model.dtype)
-        self.states = TensorArray(states_gpu, self.model.tensor_fmt, self.model.cudnn_dtype, TensorArray.TensorTypeEnum.OTHER)
+        self.states = TensorArray(states_gpu, self.model.tensor_fmt, self.model.cudnn_dtype, TensorArray.TensorType.OTHER)
         self.drop_desc = cudnn.cudnnCreateDropoutDescriptor()
         cudnn.cudnnSetDropoutDescriptor(self.drop_desc, self.model.cudnn_handle, self.dropout_rate,
-                                        self.states.ptr, self.states_size.value, seed=0)
+                                        self.states.ptr_voidp, self.states_size.value, seed=0)
 
         # Attention Descriptor
         self.attn_mode = cudnn.cudnnAttnMode["CUDNN_ATTN_QUERYMAP_ONE_TO_ONE"]
@@ -73,11 +73,11 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
         weights_size = self.weights_size.value // np.dtype(self.model.dtype).itemsize
         reserve_backward_size = self.reserve_backward_size.value // np.dtype(self.model.dtype).itemsize + 1
         self.weights = gpuarray.zeros((weights_size,), self.model.dtype)
-        self.weights = TensorArray(self.weights, self.model.tensor_fmt, self.model.cudnn_dtype, TensorArray.TensorTypeEnum.OTHER)
+        self.weights = TensorArray(self.weights, self.model.tensor_fmt, self.model.cudnn_dtype, TensorArray.TensorType.OTHER)
         self.dw = gpuarray.zeros((weights_size,), self.model.dtype)
-        self.dw = TensorArray(self.dw, self.model.tensor_fmt, self.model.cudnn_dtype, TensorArray.TensorTypeEnum.OTHER)
+        self.dw = TensorArray(self.dw, self.model.tensor_fmt, self.model.cudnn_dtype, TensorArray.TensorType.OTHER)
         self.reserve_backward = gpuarray.zeros((reserve_backward_size,), self.model.dtype)
-        self.reserve_backward = TensorArray(self.reserve_backward, self.model.tensor_fmt, self.model.cudnn_dtype, TensorArray.TensorTypeEnum.OTHER)
+        self.reserve_backward = TensorArray(self.reserve_backward, self.model.tensor_fmt, self.model.cudnn_dtype, TensorArray.TensorType.OTHER)
 
         # Weights to GPU
         # self.copy_weights()
@@ -85,17 +85,17 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
                           "CUDNN_MH_ATTN_Q_BIASES", "CUDNN_MH_ATTN_K_BIASES", "CUDNN_MH_ATTN_V_BIASES", "CUDNN_MH_ATTN_O_BIASES"]
         _weights = [self.q_weights_cpu, self.k_weights_cpu, self.v_weights_cpu, self.o_weights_cpu,
                     self.q_biases_cpu, self.k_biases_cpu, self.v_biases_cpu, self.o_biases_cpu]
-        pycuda.driver.memcpy_htod(self.weights.ptr.value, np.concatenate([w.flatten() for w in _weights]))
+        pycuda.driver.memcpy_htod(self.weights.ptr_voidp.value, np.concatenate([w.flatten() for w in _weights]))
 
         # Memory Allocation for Outputs
         self.y = gpuarray.zeros((self.model.batch_size, self.beam, self.seq, self.embedl), self.model.dtype)
-        self.y = TensorArray(self.y, self.model.tensor_fmt, self.model.cudnn_dtype, TensorArray.TensorTypeEnum.SEQ)
+        self.y = TensorArray(self.y, self.model.tensor_fmt, self.model.cudnn_dtype, TensorArray.TensorType.SEQ)
         self.dquery = gpuarray.zeros((self.model.batch_size, self.beam, self.seq, self.embedl), self.model.dtype)
-        self.dquery = TensorArray(self.dquery, self.model.tensor_fmt, self.model.cudnn_dtype, TensorArray.TensorTypeEnum.SEQ)
+        self.dquery = TensorArray(self.dquery, self.model.tensor_fmt, self.model.cudnn_dtype, TensorArray.TensorType.SEQ)
         self.dkey = gpuarray.zeros((self.model.batch_size, self.beam, self.seq, self.embedl), self.model.dtype)
-        self.dkey = TensorArray(self.dkey, self.model.tensor_fmt, self.model.cudnn_dtype, TensorArray.TensorTypeEnum.SEQ)
+        self.dkey = TensorArray(self.dkey, self.model.tensor_fmt, self.model.cudnn_dtype, TensorArray.TensorType.SEQ)
         self.dvalue = gpuarray.zeros((self.model.batch_size, self.beam, self.seq, self.embedl), self.model.dtype)
-        self.dvalue = TensorArray(self.dvalue, self.model.tensor_fmt, self.model.cudnn_dtype, TensorArray.TensorTypeEnum.SEQ)
+        self.dvalue = TensorArray(self.dvalue, self.model.tensor_fmt, self.model.cudnn_dtype, TensorArray.TensorType.SEQ)
 
         self.current_index = -1  # Training
         self.low_window_index = np.full(shape=(self.batch, self.beam, self.seq), fill_value=0, dtype=np.int32)
@@ -113,12 +113,12 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
         _weights = [self.q_weights_cpu, self.k_weights_cpu, self.v_weights_cpu, self.o_weights_cpu,
                     self.q_biases_cpu, self.k_biases_cpu, self.v_biases_cpu, self.o_biases_cpu]
 
-        pycuda.driver.memcpy_htod(self.weights.ptr.value, np.concatenate([w.flatten() for w in _weights]))
+        pycuda.driver.memcpy_htod(self.weights.ptr_voidp.value, np.concatenate([w.flatten() for w in _weights]))
         return
 
         for i in range(len(_weights)):
             wDesc, dest = cudnn.cudnnGetMultiHeadAttnWeights(self.model.cudnn_handle, self.attn_desc,
-                                                             cudnn.cudnnMultiHeadAttnWeightKind[_weights_types[i]], self.weights_size.value, self.weights.ptr)
+                                                             cudnn.cudnnMultiHeadAttnWeightKind[_weights_types[i]], self.weights_size.value, self.weights.ptr_voidp)
             print(_weights_types[i], dest)
             # Check wDesc order matches
             if dest is not None:
@@ -135,10 +135,10 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
                                             residuals.ptr,
                                             self.dkey.desc, key.ptr,
                                             self.dvalue.desc, value.ptr,
-                                            self.y.desc, self.y.ptr,
-                                            self.weights_size.value, self.weights.ptr,
+                                            self.y.desc, self.y.ptr_voidp,
+                                            self.weights_size.value, self.weights.ptr_voidp,
                                             self.model.layers[0].getConvolutionWorkspaceSize(), self.model.layers[0].getConvolutionWorkspacePtr(),
-                                            self.reserve_backward_size.value, self.reserve_backward.ptr)
+                                            self.reserve_backward_size.value, self.reserve_backward.ptr_voidp)
         else:
             cudnn.cudnnMultiHeadAttnForward(self.model.cudnn_handle, self.attn_desc,
                                             self.current_index, self.low_window_index, self.high_window_index,
@@ -147,8 +147,8 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
                                             residuals.ptr,
                                             self.dkey.desc, key.ptr,
                                             self.dvalue.desc, value.ptr,
-                                            self.y.desc, self.y.ptr,
-                                            self.weights_size.value, self.weights.ptr,
+                                            self.y.desc, self.y.ptr_voidp,
+                                            self.weights_size.value, self.weights.ptr_voidp,
                                             self.model.layers[0].getConvolutionWorkspaceSize(), self.model.layers[0].getConvolutionWorkspacePtr(),
                                             0, None)
         return self.y
@@ -157,21 +157,21 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
         cudnn.cudnnMultiHeadAttnBackwardData(self.model.cudnn_handle, self.attn_desc,
                                              self.low_window_index, self.high_window_index,
                                              self.dev_seq_lengths_QO.ptr, self.dev_seq_lengths_KV.ptr,
-                                             self.y.desc, dy.ptr,
-                                             self.dquery.desc, self.dquery.ptr, self.query.ptr,
-                                             self.dkey.desc, self.dkey.ptr, self.key.ptr,
-                                             self.dvalue.desc, self.dvalue.ptr, self.value.ptr,
-                                             self.weights_size.value, self.weights.ptr,
+                                             self.y.desc, dy.ptr_voidp,
+                                             self.dquery.desc, self.dquery.ptr_voidp, self.query.ptr,
+                                             self.dkey.desc, self.dkey.ptr_voidp, self.key.ptr,
+                                             self.dvalue.desc, self.dvalue.ptr_voidp, self.value.ptr,
+                                             self.weights_size.value, self.weights.ptr_voidp,
                                              self.model.layers[0].getConvolutionWorkspaceSize(), self.model.layers[0].getConvolutionWorkspacePtr(),
-                                             self.reserve_backward_size.value, self.reserve_backward.ptr)
+                                             self.reserve_backward_size.value, self.reserve_backward.ptr_voidp)
 
         cudnn.cudnnMultiHeadAttnBackwardWeights(self.model.cudnn_handle, self.attn_desc, self.add_grad,
                                                 self.dquery.desc, self.query.ptr,
                                                 self.dkey.desc, self.key.ptr,
                                                 self.dvalue.desc, self.value.ptr,
-                                                self.y.desc, dy.ptr,
-                                                self.weights_size.value, self.weights.ptr, self.dw.ptr,
+                                                self.y.desc, dy.ptr_voidp,
+                                                self.weights_size.value, self.weights.ptr_voidp, self.dw.ptr_voidp,
                                                 self.model.layers[0].getConvolutionWorkspaceSize(), self.model.layers[0].getConvolutionWorkspacePtr(),
-                                                self.reserve_backward_size.value, self.reserve_backward.ptr)
+                                                self.reserve_backward_size.value, self.reserve_backward.ptr_voidp)
 
         return self.dquery, self.dkey, self.dvalue

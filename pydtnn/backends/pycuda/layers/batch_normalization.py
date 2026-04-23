@@ -117,20 +117,20 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
             case Model.Mode.TRAIN:
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
                 cudnn.cudnnBatchNormalizationForwardTraining(self.model.cudnn_handle, self.mode,
-                                                             alpha, beta, x.desc, x.ptr,
-                                                             self.y.desc, self.y.ptr, self.gamma_beta_mean_var_desc,
-                                                             self.gamma.ptr,
-                                                             self.beta.ptr, self.factor, self.running_mean.ptr,
-                                                             self.running_var.ptr,
-                                                             self.epsilon, self.save_mean.ptr, self.save_inv_var.ptr)
+                                                             alpha, beta, x.desc, x.ptr_voidp,
+                                                             self.y.desc, self.y.ptr_voidp, self.gamma_beta_mean_var_desc,
+                                                             self.gamma.ptr_voidp,
+                                                             self.beta.ptr_voidp, self.factor, self.running_mean.ptr_voidp,
+                                                             self.running_var.ptr_voidp,
+                                                             self.epsilon, self.save_mean.ptr_voidp, self.save_inv_var.ptr_voidp)
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
             case Model.Mode.EVALUATE:
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
                 cudnn.cudnnBatchNormalizationForwardInference(self.model.cudnn_handle, self.mode,
-                                                              alpha, beta, x.desc, x.ptr,
-                                                              self.y.desc, self.y.ptr, self.gamma_beta_mean_var_desc,
-                                                              self.gamma.ptr,
-                                                              self.beta.ptr, self.running_mean.ptr, self.running_var.ptr,
+                                                              alpha, beta, x.desc, x.ptr_voidp,
+                                                              self.y.desc, self.y.ptr_voidp, self.gamma_beta_mean_var_desc,
+                                                              self.gamma.ptr_voidp,
+                                                              self.beta.ptr_voidp, self.running_mean.ptr_voidp, self.running_var.ptr_voidp,
                                                               self.epsilon)
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
             case _:
@@ -145,10 +145,10 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
         # Compute dx, dgamma, dbeta
         cudnn.cudnnBatchNormalizationBackward(self.model.cudnn_handle, self.mode,
                                               alpha_dx, beta_dx, alpha_dgb, beta_dgb,
-                                              self.x.desc, self.x.ptr, dy.desc, dy.ptr,
-                                              self.dx.desc, self.dx.ptr, self.gamma_beta_mean_var_desc,
-                                              self.gamma.ptr, self.dgamma.ptr, self.dbeta.ptr, self.epsilon,
-                                              self.save_mean.ptr, self.save_inv_var.ptr)
+                                              self.x.desc, self.x.ptr_voidp, dy.desc, dy.ptr_voidp,
+                                              self.dx.desc, self.dx.ptr_voidp, self.gamma_beta_mean_var_desc,
+                                              self.gamma.ptr_voidp, self.dgamma.ptr_voidp, self.dbeta.ptr_voidp, self.epsilon,
+                                              self.save_mean.ptr_voidp, self.save_inv_var.ptr_voidp)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         # DtoH dw when data parallelism and no GPU direct/NCCL is used

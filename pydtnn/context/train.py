@@ -317,6 +317,10 @@ class Context_Train[T: Array](Context_Eval[T]):
 
             if global_terminate:
                 break
+        
+        # End pipelines
+        self._model_reduce_wait(gradient=True)
+        self._model_reduce_wait(gradient=False)
 
         # Synchronize model
         if self.final_model_sync:

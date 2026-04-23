@@ -14,6 +14,7 @@ pydtnn-benchmark \
   --transform-resize=False \
   --transform-resize-size=16 \
   --augment-shuffle=True \
+  --quantize=True \
   --batch-size=64 \
   --num-epochs=50 \
   --steps-per-epoch=0 \
@@ -31,6 +32,6 @@ pydtnn-benchmark \
   --parallel-data=False \
   --tracing=False \
   --profile=False \
-  --backend=cpu \
+  --backend=cpu,gemm \
   --enable-cudnn=False \
   --dtype=float32

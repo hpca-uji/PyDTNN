@@ -116,6 +116,6 @@ class ConcatenationBlockPycuda(ConcatenationBlock[TensorArray], AbstractBlockLay
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
                                              self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ELTW_SUM)
                 cudnn.cudnnAddTensor(self.model.cudnn_handle, alpha, dx_i.desc,
-                                     dx_i.ptr, beta, self.dx.desc, self.dx.ptr)
+                                     dx_i.ptr_voidp, beta, self.dx.desc, self.dx.ptr_voidp)
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.dx

@@ -119,7 +119,7 @@ def extract_parameters():
     # Patterns
     command_pattern = re.compile(r"[^#]*.*pydtnn-benchmark")
     parameter_pattern = re.compile(r"--([^=]+)=([^ ]+)")
-    ignore_parameters = ("dataset_train_path", "dataset_test_path", "parallel", "history_file")
+    ignore_parameters = ("dataset_path", "parallel_data", "parallel_pipeline", "history_file")
     # Extract the parameters
     for model, file in models_files.items():
         with open(os.path.join(SCRIPT_PATH, file), 'r') as f:

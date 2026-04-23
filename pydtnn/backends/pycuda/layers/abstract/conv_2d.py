@@ -31,7 +31,7 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
 
         self.weights_cpu = self.weights_initializer(self.weights_shape, self.model.dtype)
         weights_gpu = gpuarray.to_gpu(self.weights_cpu)
-        self.weights = TensorArray(weights_gpu, self.model.tensor_format, self.model.cudnn_dtype, TensorArray.TensorTypeEnum.FILTER)
+        self.weights = TensorArray(weights_gpu, self.model.tensor_format, self.model.cudnn_dtype, TensorArray.TensorType.FILTER)
         self.memory_used += self.weights.nbytes
 
         # Biases
@@ -52,16 +52,16 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
                         cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw, dtype=self.model.dtype)  # type: ignore (It is correct.)
 
         if self.model.gpudirect:
-            bias_tensor_type = TensorArray.TensorTypeEnum.FILTER
+            bias_tensor_type = TensorArray.TensorType.FILTER
             _drv = drv
         else:
-            bias_tensor_type = TensorArray.TensorTypeEnum.TENSOR
+            bias_tensor_type = TensorArray.TensorType.TENSOR
             _drv = None
 
         # Derivative dw and derivative db
         self.dw_cpu, self.dw = TensorArray.new(self.weights.ary.shape, self.model.dtype, tensor_format=self.model.tensor_format,
                                                cudnn_dtype=self.model.cudnn_dtype, gpudirect=self.model.gpudirect,
-                                               tensor_type=TensorArray.TensorTypeEnum.FILTER, drv=_drv)
+                                               tensor_type=TensorArray.TensorType.FILTER, drv=_drv)
         self.memory_used += self.dw.nbytes
 
         if self.use_bias:
@@ -86,9 +86,9 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
 
         match self.model.tensor_format:
             case TensorFormat.NHWC:
-                return np.asarray(np.squeeze(cpu_ary, axis=(0, 1, 2)), dtype=np.float64, order="C").copy()
+                return np.asarray(cpu_ary, dtype=np.float64, order="C").copy()
             case TensorFormat.NCHW:
-                return np.asarray(np.squeeze(cpu_ary, axis=(0, 2, 3)), dtype=np.float64, order="C").copy()
+                return np.asarray(cpu_ary, dtype=np.float64, order="C").copy()
             case _:
                 return super()._export_prop(key)
     # ----
@@ -108,12 +108,12 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
 
         match self.model.tensor_format:
             case TensorFormat.NHWC:
-                cpu_ary = np.asarray(np.expand_dims(value, axis=(0, 1, 2)), dtype=self.model.dtype, order="C")
-                attribute.ary.set(cpu_ary)
+                cpu_ary = np.asarray(value, dtype=self.model.dtype, order="C")
+                attribute.set(cpu_ary)
                 return
             case TensorFormat.NCHW:
-                cpu_ary = np.asarray(np.expand_dims(value, axis=(0, 2, 3)), dtype=self.model.dtype, order="C")
-                attribute.ary.set(cpu_ary)
+                cpu_ary = np.asarray(value, dtype=self.model.dtype, order="C")
+                attribute.set(cpu_ary)
                 return
             # case _: (next return)
         return super()._import_prop(key, value)

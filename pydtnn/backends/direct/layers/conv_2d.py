@@ -72,7 +72,7 @@ class Conv2DDirect(Conv2DNumpy, AbstractConv2DDirect):
         """Version of the forward function that uses the convDirect library"""
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVDIRECT)
-        y = self.cd[n].conv_direct(self.weights, x, self.out,
+        y = self.cd[n].conv_direct(np.asarray(self.weights, dtype=self.model.dtype), x, self.out,
                                    vpadding=self.hpadding, hpadding=self.wpadding,
                                    vstride=self.hstride, hstride=self.wstride,
                                    vdilation=self.hdilation, hdilation=self.wdilation)

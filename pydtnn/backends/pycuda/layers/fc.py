@@ -133,7 +133,7 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
                                          self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN_SUM_BIASES)
             # Compute a = a' + biases
             cudnn.cudnnAddTensor(self.model.cudnn_handle, alpha, self.biases.desc,
-                                 self.biases.ptr, beta, self.y.desc, self.y.ptr)
+                                 self.biases.ptr_voidp, beta, self.y.desc, self.y.ptr_voidp)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.y
 
