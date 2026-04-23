@@ -1,8 +1,8 @@
 from warnings import warn
 
-from pydtnn.context.base import Base
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.activations.relu import Relu
+from pydtnn.context.utils import Util
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.utils.constants import Array
 
@@ -17,7 +17,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class Layer[T: Array](Base[T]):
+class Layer[T: Array](Util[T]):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

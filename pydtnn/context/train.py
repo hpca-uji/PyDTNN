@@ -241,7 +241,7 @@ class Train[T: Array](Eval[T]):
 
             total_loss, batch_count, string = self._update_status(pbar=pbar, batch_loss=train_batch_loss,
                                                                   total_loss=total_loss, batch_count=batch_count,
-                                                                  batch_size=batch_size, output_prefix=out_prefix, delta=toc,
+                                                                  batch_size=batch_size, output_prefix=out_prefix, delta=delta,
                                                                   prev_string=prev_string)
 
         return (model_sync_count, sync_epoch, string)
