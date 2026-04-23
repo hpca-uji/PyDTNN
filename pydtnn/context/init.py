@@ -1,23 +1,31 @@
+from collections import abc
+import itertools
 from typing import TYPE_CHECKING, Any
 from warnings import warn
 
 import numpy as np
 
 from pydtnn import MPI, drv, nccl, cudnn
-from pydtnn import hostname, ranks_per_node, num_gpus, nccl_comm, cudnn_handle, cublas_handle, context, stream
+from pydtnn import hostname, ranks_per_node, num_gpus, nccl_comm, cudnn_handle, cublas_handle, context, stream, gpuarray, cublas
 
-from pydtnn.context.layer import Layer
-from pydtnn.context.utils import read_model, LIMIT_THREADS_AND_BLOCKS
+from pydtnn.abstract.layerable import Layerable
+from pydtnn.context.base import Base
+from pydtnn.context.export import Export
+from pydtnn.context.utils import get_batch_size, get_tensor_format, get_tracer, read_model, LIMIT_THREADS_AND_BLOCKS
 from pydtnn.libs.mpi.rc import proto as PROTOCOL
-from pydtnn import MPI, utils
 from pydtnn.losses.loss import select as select_loss
 from pydtnn.metrics.metric import select as select_metric
 from pydtnn.optimizers.optimizer import select as select_optimizer
+from pydtnn.parser import PydtnnArgumentParser
 from pydtnn.utils.gpu import CudnnDataType
 from pydtnn.datasets.dataset import Dataset
 from pydtnn.datasets.dataset import select as select_dataset
 
 import logging
+
+from pydtnn.utils.memory_pool import PreallocMemory, PrivateMemory
+from pydtnn.utils.performance_counter import PerformanceCounter
+from pydtnn.utils.tensor import TensorFormat
 if TYPE_CHECKING:
     import polyhe  # type: ignore (polyhe exist if it's installed)
 else:
@@ -30,10 +38,49 @@ from pydtnn.utils.constants import Array
 logger = logging.getLogger(__name__)
 
 
-class Init[T: Array](Layer[T]):
+class Init[T: Array](Export[T]):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
+        # Get default values from parser and update them from the received kwargs
+        self.kwargs: dict[str, Any] = PydtnnArgumentParser().get_default_values()
+        self.kwargs.update(kwargs)
+
+        # Attributes related to the given arguments
+        self.blocking_mpi: bool = self.use_blocking_mpi  # TODO: MIRAR de dónde sale esto.
+        self.enable_cudnn = gpuarray is not None and drv is not None and cublas is not None
+        self.gpudirect: bool = self.enable_gpudirect
+        self.enable_nccl: bool = self.enable_nccl
+        self.dtype: np.dtype = np.dtype(self.dtype)
+        self.memory: PrivateMemory = None  # type: ignore (it will be intialized later if "self.use_memory_pool" is True)
+        self.param_dtype: np.dtype = np.dtype(self.quantize_dtype) if self.quantize else self.dtype
+
+        self.nparams = 0
+        self.memory_used = 0
+        self.tmp_memory_used = 0
+
+        # Set performance counter
+        self.perf_counter = PerformanceCounter()
+
+        # Layers' attributes
+        self.layers: list[Layerable] = []
+        self.layer_id_generator: abc.Iterator[int] = iter(itertools.count())
+
+        # Set current mode to unspecified
+        self.mode: Base.Mode = Base.Mode.UNSPECIFIED
+
+        self.memory_cls = PreallocMemory if self.shared_tmp_memory else PrivateMemory
+
+        # Set tracer
+        self.tracer = get_tracer(tracer_output=self.tracer_output, tracing=self.tracing, comm=self.comm, enable_cudnn=self.enable_cudnn,
+                                 tracer_pmlib_server=self.tracer_pmlib_server, tracer_pmlib_port=self.tracer_pmlib_port,
+                                 tracer_pmlib_device=self.tracer_pmlib_device)
+
+        # Data format
+        self.tensor_format: TensorFormat = get_tensor_format(tensor_format=self.tensor_format, gpu=self.enable_cudnn)
+
+        self.batch_size = get_batch_size(local_size=self.batch_size, global_size=self.global_batch_size, comm_size=self.comm_size)
 
         # Set MPI and comm
         self._mpi_init()
@@ -72,6 +119,10 @@ class Init[T: Array](Layer[T]):
         self.model_name: str | None = self.kwargs.get("model_name")
         if self.model_name:
             self.add_layers(read_model(self.model_name, self.dataset.input_shape, self.dataset.output_shape, self.tensor_format))
+
+        # Load weights and bias
+        if self.weights_and_bias_filename:
+            self.load_weights_and_bias(self.weights_and_bias_filename)
     # ----- __init__ ----- #
 
     def _crypt_init(self, encryption_name: str) -> "polyhe.Context":
@@ -189,14 +240,6 @@ class Init[T: Array](Layer[T]):
         elif not self.dataset:
             raise ValueError("There is no dataset and the model has layers.")
         self._model_init()
-
-    @property
-    def dataset_path(self) -> str:
-        """Raw dataset path with rank substituted"""
-        return utils.string_substitute(self.kwargs["dataset_path"], rank=self.comm_rank)
-
-    def __getattr__(self, item) -> Any:
-        return self.kwargs.get(item)
 
     def _model_init(self):
         if self._is_model_init:
