@@ -67,9 +67,9 @@ class Eval[T: Array](Sync[T]):
 
         return self.total_metrics
 
-    def update_status(self, pbar: tqdm, batch_loss: np.ndarray, total_loss: np.ndarray,
-                      batch_count: int, batch_size: int, output_prefix: str, delta: float = -1,
-                      prev_string: str = "") -> tuple[np.ndarray, int, str]:
+    def _update_status(self, pbar: tqdm, batch_loss: np.ndarray, total_loss: np.ndarray,
+                       batch_count: int, batch_size: int, output_prefix: str, delta: float = -1,
+                       prev_string: str = "") -> tuple[np.ndarray, int, str]:
         # noinspection PyUnboundLocalVariable
         total_loss, batch_count, string = \
             self._update_running_average(batch_loss, total_loss, batch_count, batch_size, prefix=output_prefix)
@@ -84,19 +84,22 @@ class Eval[T: Array](Sync[T]):
         return total_loss, batch_count, string
     # ------
 
-    def do_evaluation(self, pbar: tqdm,
-                      batch_generator: Generator[tuple[np.ndarray, np.ndarray, int]],
-                      model_sync_count: int,
-                      batches_min: float,
-                      total_loss: np.ndarray,
-                      batch_count: int,
-                      terminate: bool = False,
-                      prev_string: str = "",
-                      out_prefix: str = "") -> tuple[int, bool]:
+    def _evalutate_round(self, pbar: tqdm,
+                         batch_generator: Generator[tuple[np.ndarray, np.ndarray, int]],
+                         model_sync_count: int,
+                         batches_min: float,
+                         total_loss: np.ndarray,
+                         batch_count: int,
+                         terminate: bool = False,
+                         prev_string: str = "",
+                         out_prefix: str = "") -> tuple[int, bool, str]:
         """
         Return:
             tuple[model_sync_count (int), sync_epoch (bool)]
         """
+        sync_epoch = False
+        string = ""
+
         for i_batch, (x_batch, y_batch, batch_size) in enumerate(batch_generator):
             if terminate:
                 x_batch = x_batch[:0]
@@ -128,16 +131,20 @@ class Eval[T: Array](Sync[T]):
             tic = timer()
             test_batch_loss = self._evaluate_batch(x_batch, y_batch, sync_model=sync_model)
             toc = timer()
+            delta = toc - tic
+
+            if out_prefix != "test_":
+                delta = -1
 
             if batch_size <= 0:
                 continue
 
-            total_loss, batch_count, string = self.update_status(pbar=pbar, batch_loss=test_batch_loss,
-                                                         total_loss=total_loss, batch_count=batch_count,
-                                                         batch_size=batch_size, output_prefix=out_prefix, delta=toc - tic,
-                                                         prev_string=prev_string)
+            total_loss, batch_count, string = self._update_status(pbar=pbar, batch_loss=test_batch_loss,
+                                                                  total_loss=total_loss, batch_count=batch_count,
+                                                                  batch_size=batch_size, output_prefix=out_prefix, delta=delta,
+                                                                  prev_string=prev_string)
 
-        return (model_sync_count, sync_epoch)
+        return (model_sync_count, sync_epoch, string)
     # -----
 
     def evaluate(self, bar_width=BAR_WIDTH):
@@ -162,10 +169,10 @@ class Eval[T: Array](Sync[T]):
                         ascii=" ▁▂▃▄▅▆▇█", smoothing=0.3,
                         desc="Testing", unit=" samples")
 
-        self.do_evaluation(pbar=pbar, batch_generator=test_batch_generator,
-                           model_sync_count=0, batches_min=test_batches_min,
-                           total_loss=test_total_loss, batch_count=test_batch_count,
-                           out_prefix="test_")
+        self._evalutate_round(pbar=pbar, batch_generator=test_batch_generator,
+                              model_sync_count=0, batches_min=test_batches_min,
+                              total_loss=test_total_loss, batch_count=test_batch_count,
+                              out_prefix="test_")
 
         # Increment self._evaluate_round
         self._evaluate_round += 1

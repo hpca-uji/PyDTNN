@@ -38,6 +38,7 @@ class Base[T: Array]:
 
 # Explicit declaration of those model attributes that are referenced by other parts of PyDTNN
 #   NOTE: The following parameters come from "Parser"
+    backend: str
     steps_per_epoch: int
     cpu_speed: float
     memory_bw: float

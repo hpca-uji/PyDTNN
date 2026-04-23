@@ -1,3 +1,4 @@
+from collections.abc import Generator
 import enum
 from timeit import default_timer as timer
 
@@ -103,7 +104,7 @@ class Train[T: Array](Eval[T]):
             case _:
                 raise ValueError(f"Model synchronization algorithm option '{self.model_sync_algo}' not recognized. Only recognized: {list(Eval.SyncAlgorithm)}")
 
-    #def update_status(self, pbar: tqdm, batch_loss: np.ndarray, total_loss: np.ndarray,
+    # def update_status(self, pbar: tqdm, batch_loss: np.ndarray, total_loss: np.ndarray,
     #                  batch_count: int, batch_size: int, output_prefix: str = "val_", delta: float = -1,
 
     #                  prev_string: str = "") -> tuple[np.ndarray, int]:
@@ -186,6 +187,65 @@ class Train[T: Array](Eval[T]):
         return self.total_metrics
     # -----
 
+    def _train_round(self, pbar: tqdm,
+                     batch_generator: Generator[tuple[np.ndarray, np.ndarray, int]],
+                     model_sync_count: int,
+                     batches_min: float,
+                     total_loss: np.ndarray,
+                     batch_count: int,
+                     terminate: bool = False,
+                     prev_string: str = "",
+                     out_prefix: str = "") -> tuple[int, bool, str]:
+        sync_epoch = False
+        string = ""
+
+        for i_batch, (x_batch, y_batch, batch_size) in enumerate(batch_generator):
+            if terminate:
+                x_batch = x_batch[:0]
+                y_batch = y_batch[:0]
+
+            local_batch_size = x_batch.shape[0]
+            sync_model = (self.model_sync_freq <= 0) or (model_sync_count % self.model_sync_freq == 0)
+
+            if sync_model:
+                sync_epoch = True
+
+            if model_sync_count == 0 and not self.initial_model_sync:
+                sync_model = False
+
+            model_sync_count += 1
+
+            if i_batch >= batches_min and sync_model:
+                rank_mask = self.comm.allgather(min(1, local_batch_size)) if self.comm else [min(1, local_batch_size)]
+            else:
+                rank_mask = [1] * self.comm_size
+            rank_avail = sum(rank_mask)
+
+            if rank_avail <= 0:
+                break
+
+            if rank_avail < self.model_sync_min_avail:
+                sync_model = False
+
+            self.rank_weight = self._compute_rank_weight(rank_mask, Dataset.Part.TRAIN)
+
+            tic = timer()
+            train_batch_loss = self._train_batch(x_batch, y_batch, sync_model=sync_model)
+            toc = timer()
+            delta = toc - tic
+
+            if local_batch_size <= 0:
+                if self.comm_rank == 0:
+                    pbar.set_postfix_str(s=f"{string}, waiting…", refresh=True)
+                continue
+
+            total_loss, batch_count, string = self._update_status(pbar=pbar, batch_loss=train_batch_loss,
+                                                                  total_loss=total_loss, batch_count=batch_count,
+                                                                  batch_size=batch_size, output_prefix=out_prefix, delta=toc,
+                                                                  prev_string=prev_string)
+
+        return (model_sync_count, sync_epoch, string)
+
     def train(self, bar_width=BAR_WIDTH) -> dict[str, list[np.ndarray]]:
         self._ensure_model_runable()
 
@@ -226,63 +286,26 @@ class Train[T: Array](Eval[T]):
             for sched in self.schedulers:
                 sched.on_epoch_begin(self, self.rank)
 
+            # ------------- #
             # --- TRAIN --- #
-            for i_batch, (x_batch, y_batch, batch_size) in enumerate(train_batch_generator):
-                if terminate:
-                    x_batch = x_batch[:0]
-                    y_batch = y_batch[:0]
+            # ------------- #
+            model_sync_count, train_sync_epoch, string = self._train_round(pbar=pbar, batch_generator=train_batch_generator,
+                                                                           model_sync_count=model_sync_count, batches_min=train_batches_min,
+                                                                           total_loss=train_total_loss, batch_count=train_batch_count,
+                                                                           prev_string="", out_prefix="train_")
+            sync_epoch = sync_epoch or train_sync_epoch
+            train_string = string
 
-                local_batch_size = x_batch.shape[0]
-                sync_model = (self.model_sync_freq <= 0) or (model_sync_count % self.model_sync_freq == 0)
-
-                if sync_model:
-                    sync_epoch = True
-
-                if model_sync_count == 0 and not self.initial_model_sync:
-                    sync_model = False
-
-                model_sync_count += 1
-
-                if i_batch >= train_batches_min and sync_model:
-                    rank_mask = self.comm.allgather(min(1, local_batch_size)) if self.comm else [min(1, local_batch_size)]
-                else:
-                    rank_mask = [1] * self.comm_size
-                rank_avail = sum(rank_mask)
-
-                if rank_avail <= 0 or global_terminate:
-                    break
-
-                if rank_avail < self.model_sync_min_avail:
-                    sync_model = False
-
-                self.rank_weight = self._compute_rank_weight(rank_mask, Dataset.Part.TRAIN)
-
-                tic = timer()
-                train_batch_loss = self._train_batch(x_batch, y_batch, sync_model=sync_model)
-                toc = timer()
-
-                if local_batch_size <= 0:
-                    if self.comm_rank == 0:
-                        pbar.set_postfix_str(s=f"{string}, waiting…", refresh=True)
-                    continue
-
-                train_total_loss, train_batch_count, string = self.update_status(pbar=pbar, batch_loss=train_batch_loss,
-                                                                                 total_loss=train_total_loss, batch_count=train_batch_count,
-                                                                                 batch_size=batch_size, output_prefix="train_", delta=toc - tic,
-                                                                                 prev_string="")
-
-            if self.comm_rank == 0:
-                train_string = string
-                for c in range(len(self.loss_and_metrics)):
-                    self.history[self.loss_and_metrics[c]].append(train_total_loss[c])
+            for c in range(len(self.loss_and_metrics)):
+                self.history[self.loss_and_metrics[c]].append(train_total_loss[c])
 
             # ----------- #
             # --- VAL --- #
             # ----------- #
-            model_sync_count, val_sync_epoch = self.do_evaluation(pbar=pbar, batch_generator=val_batch_generator,
-                                                                  model_sync_count=model_sync_count, batches_min=val_batches_min,
-                                                                  total_loss=val_total_loss, batch_count=val_batch_count,
-                                                                  prev_string=f"{train_string}, ", out_prefix="val_")
+            model_sync_count, val_sync_epoch, string = self._evalutate_round(pbar=pbar, batch_generator=val_batch_generator,
+                                                                             model_sync_count=model_sync_count, batches_min=val_batches_min,
+                                                                             total_loss=val_total_loss, batch_count=val_batch_count,
+                                                                             prev_string=f"{train_string}, ", out_prefix="val_")
             sync_epoch = sync_epoch or val_sync_epoch
 
             # if self.comm_rank == 0:  # All nodes must have history, not only the 0.

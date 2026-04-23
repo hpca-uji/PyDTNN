@@ -93,12 +93,9 @@ def main():
         model._ensure_model_runable()
     # Print model
     if model.comm_rank == 0:
+        parser.print_args()
         model.show_model()
         model.show_layers()
-    # Print parameters
-    if model.comm_rank == 0:
-        logger.info('**** Parameters:')
-        parser.print_args()
     # First (or unique) evaluation
     if model.evaluate_on_train or model.evaluate_only:
         if model.comm_rank == 0:

@@ -94,7 +94,7 @@ class Base[T: Array]:
                 try:
                     backend_module = importlib.import_module(backend_module_name)
                 except ModuleNotFoundError as exc:
-                    if backend_module_name.startswith(exc.name):
+                    if backend_module_name.startswith(exc.name):  # type: ignore
                         continue  # Backend not found
                     raise  # Backend raised exception
                 cls_name = f"{cls.__name__}{backend.title()}"

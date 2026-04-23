@@ -72,7 +72,8 @@ class PerformanceCounter:
         return self._mean_memory(self.TESTING)
 
     def print_report(self):
-        _report = list[str]()
+        _report = [""]
+
         if self.num_epochs > 0:
             _report.append(" -------------------------------------")
             _report.append("| Performance counter training report |")
