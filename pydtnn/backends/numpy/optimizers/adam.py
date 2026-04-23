@@ -83,10 +83,7 @@ class AdamNumpy(Adam[np.ndarray], OptimizerNumpy):
             if not (self.are_all_zeros(w) and self.are_all_zeros(dw) and self.are_all_zeros(m) and self.are_all_zeros(v)):
                 # NOTE: The operations are unrolled in order to reduce the memory consumed by intermediate copies of the variables during the operations.
                 # m = self.beta1 * m + (1 - self.beta1) * dw
-                inv_beta1 = (1 - self.beta1)
-                inv_beta2 = (1 - self.beta2)
-
-                np.multiply(inv_beta1, dw, dtype=self.dtype, out=mt_temp_dw)
+                np.multiply((1 - self.beta1), dw, dtype=self.dtype, out=mt_temp_dw)
 
                 np.multiply(m, self.beta1, out=m,
                             dtype=self.dtype)
@@ -98,13 +95,15 @@ class AdamNumpy(Adam[np.ndarray], OptimizerNumpy):
 
                 np.multiply(v, self.beta2, out=v,
                             dtype=self.dtype)
-                np.multiply(mt_temp_dw, inv_beta2, out=mt_temp_dw,
+                np.multiply(mt_temp_dw, (1 - self.beta2), out=mt_temp_dw,
                             dtype=self.dtype)
                 np.add(v, mt_temp_dw, out=v,
                        dtype=self.dtype)
 
-                np.divide(m, (inv_beta1 ** it), dtype=self.dtype, out=mt_temp_dw)
-                np.divide(v, (inv_beta2 ** it), dtype=self.dtype, out=vt_temp_w)
+                # mt = m / (1 - self.beta1 ** it)
+                np.divide(m, (1 - self.beta1 ** it), dtype=self.dtype, out=mt_temp_dw)
+                # vt = v / (1 - self.beta2 ** it)
+                np.divide(v, (1 - self.beta2 ** it), dtype=self.dtype, out=vt_temp_w)
 
                 # w -= self.learning_rate * (self.decay * w + (mt / np.sqrt(vt + self.epsilon)))
 

@@ -151,7 +151,7 @@ class Base[T: Array]:
         self._frontend = self
 
     # Base class
-    model: "model_module.Context_Base"
+    model: "model_module.Base"
 
     @property
     def name(self) -> str:
