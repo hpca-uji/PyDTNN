@@ -14,7 +14,7 @@ class Loss[T: Array](Base):
 
     def _model_init(self) -> None:
         super()._model_init()
-        self.shape = self.model._output_shape
+        self.shape = (self.model.batch_size, *self.model.output_shape)
 
     def compute(self, y_pred: T, y_targ: T, batch_size: int) -> tuple[float, T]:
         raise NotImplementedError()

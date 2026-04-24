@@ -285,6 +285,14 @@ class Init[T: Array](Export[T]):
             raise ValueError("There is no dataset and the model has layers.")
         self._model_init()
 
+    @property
+    def input_shape(self):
+        return self.layers[0].shape
+
+    @property
+    def output_shape(self):
+        return self.layers[-1].shape
+
     def _model_init(self):
         if self._is_model_init:
             return
@@ -293,7 +301,6 @@ class Init[T: Array](Export[T]):
         self._apply_layer_fusion()
 
         temp_memory_size = []
-        self._output_shape = (self.batch_size, *self.layers[-1].shape)
 
         self.loss_func = select_loss(self.loss_func_name)()
         self.loss_func._init_backend_with_model(self)
