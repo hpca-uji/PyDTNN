@@ -17,7 +17,7 @@ class BatchNormalizationCupy(BatchNormalizationNumpy, LayerCupy):
 
         self.stream_2 = Stream()
         self.defines_replaces = {"\"TYPE\"": DTYPE2CTYPE[self.model.dtype]}
-        
+
         self.fwd = self._fwd_kernel()
         self.bwd = self._bwd_kernel()
         # ----

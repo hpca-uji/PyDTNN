@@ -3,7 +3,6 @@ from pydtnn.utils.uses_cuda import UsesCudaCode
 from cupy import RawKernel, RawModule  # type: ignore
 
 
-
 class BaseCupy(UsesCudaCode, BaseNumpy):
 
     def _get_module(self, code: str) -> RawKernel:

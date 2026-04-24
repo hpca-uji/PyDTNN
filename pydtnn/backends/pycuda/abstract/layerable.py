@@ -86,7 +86,8 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
                 dw_ = dw_ if gradient else w_
                 dw_cpu = getattr(self, f"{dw_}_cpu")
                 req = self.reqs_allred.pop(dw_, None)
-                if req is None: continue  # noqa: E701
+                if req is None:
+                    continue  # noqa: E701
                 dw_cpu = self.model._layer_reduce_wait(dw_cpu, req)
 
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.LAYER_DECODE)

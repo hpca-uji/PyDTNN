@@ -279,9 +279,9 @@ class ConvWinograd:
             setattr(self, f"conv_winograd_{self.tensor_format}", self.alternatives[r][0][1])
 
     def conv_winograd_workspace_alloc_kernel(self, m: ctypes.c_uint, r: ctypes.c_uint,
-                                                      n: ctypes.c_uint, k: ctypes.c_uint, c: ctypes.c_uint,
-                                                      hi: ctypes.c_uint, wi: ctypes.c_uint, kh: ctypes.c_uint, kw: ctypes.c_uint,
-                                                      vpadding: ctypes.c_uint, hpadding: ctypes.c_uint, _v: ctypes.c_void_p, _m: ctypes.c_void_p):
+                                             n: ctypes.c_uint, k: ctypes.c_uint, c: ctypes.c_uint,
+                                             hi: ctypes.c_uint, wi: ctypes.c_uint, kh: ctypes.c_uint, kw: ctypes.c_uint,
+                                             vpadding: ctypes.c_uint, hpadding: ctypes.c_uint, _v: ctypes.c_void_p, _m: ctypes.c_void_p):
         pass
 
     def conv_winograd_workspace_alloc_pre(self, m: ctypes.c_uint, r: ctypes.c_uint, k: ctypes.c_uint, c: ctypes.c_uint, _u: ctypes.c_void_p):
@@ -746,7 +746,7 @@ def __usage_example__():
                                                                vpadding, hpadding,
                                                                vstride, hstride,
                                                                vdilation, hdilation
-                                            ) @ w_c + biases  # type: ignore  # FIXME: disabled?
+                                                               ) @ w_c + biases  # type: ignore  # FIXME: disabled?
                                             im2col_mm_result = im2col_mm_result.reshape(-1, ho, wo, kk)
                                             im2col_t = timeit(
                                                 lambda: time_it_func(x, w_c, biases, b, kn, ho, wo, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation),
@@ -772,9 +772,9 @@ def __usage_example__():
 
                                     logger.info(
                                         " conv_winograd time: {:.4f} ".format(conv_winograd_t) +
-                                            "mm time: {:.4f} ".format(im2col_t) +
-                                            "np.allclose: {}".format(np.allclose(conv_winograd_result, im2col_mm_result, atol=1e-3))
-                                        )
+                                        "mm time: {:.4f} ".format(im2col_t) +
+                                        "np.allclose: {}".format(np.allclose(conv_winograd_result, im2col_mm_result, atol=1e-3))
+                                    )
                                     # print(" np.sum:", np.max(np.abs(conv_winograd_result-im2col_mm_result)), end="")
                                     logger.info((" WINOGR", " IM2COL")[conv_winograd_t > im2col_t],
                                                 im2col_t / conv_winograd_t)

@@ -436,7 +436,7 @@ def Unsqueeze(info: dict[str, Any]) -> Layerable:
         def _model_init(self, prev_shape, need_dx=False):
             super()._model_init(prev_shape, need_dx)
             self.shape = self.forward(np.zeros(prev_shape)).shape  # FIXME: revisar, estaba lo de antes
-            #self.shape = self.shape + self.model.encode_shape(self.model.tensor_format)
+            # self.shape = self.shape + self.model.encode_shape(self.model.tensor_format)
 
         def initialize_block_layer(self):
             super().initialize_block_layer()

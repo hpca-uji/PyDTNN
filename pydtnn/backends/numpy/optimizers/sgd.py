@@ -30,7 +30,7 @@ class SGDNumpy(SGD[np.ndarray], OptimizerNumpy):
                     self.memory_used += velocity.nbytes
 
                     temp_memory_size.append(int(2 * math.prod(w.shape)) * self.model.dtype.itemsize)
-                    #NOTE: int(2 * math.prod(w.shape)): temp_w.nbytes = temp_v.nbytes = w.nbytes ==> temp_w.nbytes + temp_v.nbytes = 2 * w.nbytes
+                    # NOTE: int(2 * math.prod(w.shape)): temp_w.nbytes = temp_v.nbytes = w.nbytes ==> temp_w.nbytes + temp_v.nbytes = 2 * w.nbytes
 
                     self.context[layer.id]["velocity_%s" % w_] = velocity
                     self.context[layer.id]["temp_w_%s" % w_] = temp_w  # type: ignore (it's the right type)

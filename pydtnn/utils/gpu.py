@@ -12,6 +12,7 @@ class CudnnDataType(enum.StrEnum):
     INT32 = "CUDNN_DATA_INT32"
 # -----
 
+
 def get_gpu_memory_used() -> str:
     pattern = r"Used *: .*"
     try:
