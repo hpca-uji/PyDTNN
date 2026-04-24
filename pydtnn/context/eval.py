@@ -93,7 +93,7 @@ class Eval[T: Array](Sync[T]):
 
         return self.total_metrics
 
-    def _update_status(self, pbar: tqdm, batch_loss: np.ndarray, total_loss: np.ndarray,
+    def _update_status(self, pbar: tqdm | None, batch_loss: np.ndarray, total_loss: np.ndarray,
                        batch_count: int, batch_size: int, output_prefix: str, delta: float = -1,
                        prev_string: str = "") -> tuple[np.ndarray, int, str]:
         # noinspection PyUnboundLocalVariable
@@ -102,15 +102,15 @@ class Eval[T: Array](Sync[T]):
 
         if self.comm_rank == 0:
             # noinspection PyUnboundLocalVariable
-            pbar.set_postfix_str(s=f"{prev_string}{string}", refresh=True)
+            pbar.set_postfix_str(s=f"{prev_string}{string}", refresh=True)  # type: ignore (Here is a 'tqdm', only is None in self.comm_rank != 0)
             if delta >= 0:
-                pbar.update(batch_size)
+                pbar.update(batch_size)  # type: ignore (Here is a 'tqdm', only is None in self.comm_rank != 0)
                 self.perf_counter.add_testing_time_and_batch_size(self._evaluate_round, delta, batch_size)
 
         return total_loss, batch_count, string
     # ------
 
-    def _evalutate_round(self, pbar: tqdm,
+    def _evalutate_round(self, pbar: tqdm | None,
                          batch_generator: Generator[tuple[np.ndarray, np.ndarray, int]],
                          model_sync_count: int,
                          batches_min: float,
@@ -194,6 +194,8 @@ class Eval[T: Array](Sync[T]):
             pbar = tqdm(total=self.dataset.test_nsamples, ncols=bar_width,
                         ascii=" ▁▂▃▄▅▆▇█", smoothing=0.3,
                         desc="Testing", unit=" samples")
+        else:
+            pbar = None
 
         self._evalutate_round(pbar=pbar, batch_generator=test_batch_generator,
                               model_sync_count=0, batches_min=test_batches_min,
@@ -204,7 +206,7 @@ class Eval[T: Array](Sync[T]):
         self._evaluate_round += 1
 
         if self.comm_rank == 0:
-            pbar.close()
+            pbar.close()  # type: ignore (Here is a 'tqdm', only is None in self.comm_rank != 0)
             # Sleep for half a second to allow pbar to write its output before returning
             time.sleep(.5)
 

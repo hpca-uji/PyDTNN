@@ -185,7 +185,7 @@ class Train[T: Array](Eval[T]):
         return self.total_metrics
     # -----
 
-    def _train_round(self, pbar: tqdm,
+    def _train_round(self, pbar: tqdm | None,
                      batch_generator: Generator[tuple[np.ndarray, np.ndarray, int]],
                      model_sync_count: int,
                      batches_min: float,
@@ -234,7 +234,7 @@ class Train[T: Array](Eval[T]):
 
             if local_batch_size <= 0:
                 if self.comm_rank == 0:
-                    pbar.set_postfix_str(s=f"{string}, waiting…", refresh=True)
+                    pbar.set_postfix_str(s=f"{string}, waiting…", refresh=True)   # type: ignore (Here is a 'tqdm', only is None in self.comm_rank != 0)
                 continue
 
             total_loss, batch_count, string = self._update_status(pbar=pbar, batch_loss=train_batch_loss,
@@ -280,6 +280,8 @@ class Train[T: Array](Eval[T]):
                 pbar = tqdm(total=self.dataset.train_nsamples, ncols=bar_width,
                             ascii=" ▁▂▃▄▅▆▇█", smoothing=0.3,
                             desc=epoch_string % (epoch + 1, self.num_epochs), unit=" samples")
+            else:
+                pbar = None
 
             for sched in self.schedulers:
                 sched.on_epoch_begin(self, self.rank)
@@ -316,7 +318,7 @@ class Train[T: Array](Eval[T]):
                     terminate = True
 
             if self.comm_rank == 0:
-                pbar.close()
+                pbar.close()  # type: ignore (Here is a 'tqdm', only is None in self.comm_rank != 0)
                 # Sleep for half a second to allow pbar to write its output before returning
                 time.sleep(.5)
 
