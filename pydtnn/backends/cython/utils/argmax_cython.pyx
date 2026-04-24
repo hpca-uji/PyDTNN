@@ -12,7 +12,7 @@ __all__ = (
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.initializedcheck(False)
-def argmax_cython(np.ndarray[npDT, ndim=2] x, 
+def argmax_cython(npDT[:, :] x, 
                   npDT[:] maxv, 
                   np.int32_t[:] amax,
                   np.int32_t[:] rng,

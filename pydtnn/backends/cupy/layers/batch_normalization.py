@@ -17,9 +17,22 @@ class BatchNormalizationCupy(BatchNormalizationNumpy, LayerCupy):
 
         self.stream_2 = np.cuda.Stream()
         self.defines_replaces = {"\"TYPE\"": DTYPE2CTYPE[self.model.dtype]}
-
+        
+        self.fwd = self._fwd_kernel()
         self.bwd = self._bwd_kernel()
         # ----
+
+    def _training_fwd(self, x: np.ndarray, _mean: np.ndarray, _var: np.ndarray, y: np.ndarray) -> None:
+        # return super()._training_bwd(dx, dy)
+        dim_i, dim_j = x.shape
+        self.fwd(self.model.cuda_grid,
+                 self.model.cuda_block,
+                 (x, y, self.xn,
+                  self.std, self.gamma,
+                  self.beta, _mean,
+                  _var, self.epsilon,
+                  dim_i, dim_j, x.size))
+    # ---
 
     def _training_bwd(self, dx: np.ndarray, dy: np.ndarray) -> None:
         # return super()._training_bwd(dx, dy)

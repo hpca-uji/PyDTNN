@@ -141,13 +141,13 @@ __global__ void im2_row_col(const TYPE *const x,
 
 #define IS_BETWEEN(min_v, var, max_v) (min_v <= var) && (var < max_v)
 
-__global__ void NAME_FUNC_BWD(const TYPE *const rows,
-                              TYPE* dx,
-                              int n, int c, int h, int w,
-                              int ho, int wo, int kh, int kw,
-                              int vpadding, int hpadding,
-                              int hstride, int wstride,
-                              int vdilation, int hdilation)
+__global__ void row_col_2im(const TYPE *const rows,
+                            TYPE* dx,
+                            int n, int c, int h, int w,
+                            int ho, int wo, int kh, int kw,
+                            int vpadding, int hpadding,
+                            int hstride, int wstride,
+                            int vdilation, int hdilation)
 {
     const int base_idx = blockIdx.x * blockDim.x + threadIdx.x;
     const int num_workers = blockDim.x * gridDim.x;

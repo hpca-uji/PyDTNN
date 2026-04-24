@@ -27,9 +27,11 @@ def bn_training_fwd_cython(npDT[:,::1] x,
     n = x.shape[0]
     c = x.shape[1]
 
+    for j in prange(c, nogil=True):
+        std[j] = <npDT> sqrt(var[j] + eps)
+
     for i in prange(n, nogil=True):
         for j in range(c):
-            std[j] = <npDT> sqrt(var[j] + eps)
             xn[i, j] = <npDT> ((x[i, j] - mean[j]) / std[j])
             y[i, j] = xn[i, j] * gamma[j] + beta[j]
     return None

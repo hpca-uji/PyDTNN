@@ -7,6 +7,78 @@ extern "C"
 #define INDEX_LAST_ELEMENT(index, dim_in, dim_out) ((((index + 1) * dim_in) + dim_out - 1) / dim_out)
 #define IS_BETWEEN(min_v, var, max_v) (min_v <= var) && (var < max_v)
 
+#define SQRT_INT_FLOAT sqrtf
+#define SQRT_DOUBLE sqrt
+
+#ifdef double
+    #define SQRT_FUNCTION SQRT_DOUBLE
+#else
+    #define SQRT_FUNCTION SQRT_INT_FLOAT
+#endif
+
+
+
+
+__global__ void batch_normalization_fwd(TYPE* x, TYPE* y, TYPE* xn,
+                                        TYPE* std, TYPE* gamma,
+                                        TYPE* beta, TYPE* mean,
+                                        TYPE* var, float eps,
+                                        int dim_i, int dim_j, int N)
+{
+    int j;
+    const int n = (const int) dim_i;
+    TYPE _x, _xn, _std, _gamma, _beta, _mean, _var;
+
+    // BLOCK DISTRIBUTION
+    int idx;
+    const int base_idx = blockIdx.x * blockDim.x + threadIdx.x;
+    const int num_workers = blockDim.x * gridDim.x;
+    int samples_worker, samples_overworker, overworkers;
+    int n_samples, n_offset, end_offset;
+
+
+    for(idx = base_idx; idx < dim_j; idx + num_workers)
+    {
+         _var = *(var + idx);  // var[j]
+        *(std + idx) = (TYPE) (SQRT_FUNCTION(_var + eps))
+    }
+    __syncthreads()
+
+
+    overworkers = N % num_workers;
+    samples_worker = N / num_workers;
+    samples_overworker = samples_worker + 1;
+
+    if (base_idx < overworkers)
+    {
+        n_samples = samples_overworker;
+        n_offset = base_idx * n_samples;
+    }
+    else
+    {
+        n_samples = samples_worker;
+        n_offset = samples_overworker * overworkers + n_samples * (base_idx - overworkers);
+    }
+    end_offset = n_offset + n_samples;
+    // BLOCK DISTRIBUTION
+
+    for(idx = n_offset; idx < end_offset; idx++)
+    {
+        j = GET_J(idx, dim_j);
+
+        _x = *(x + idx);    // x[idx] = x[i][j]
+        _gamma = *(gamma + j);  // gamma[j]
+        _beta = *(beta + j);    // beta[j]
+        _std = *(std + j);  // std[j]
+        
+        *(xn + idx) = (TYPE) ((_x - _mean) / _std )
+        _xn = *(xn + idx);// xn[idx] = xn[i][j]
+        
+        *(y + idx) = (TYPE) ( _xn * _gamma + _beta);
+    }
+}
+
+
 __global__ void batch_normalization_bwd(TYPE* dx, TYPE* dy, TYPE* xn,
                                         TYPE* std, TYPE* gamma,
                                         TYPE* dgamma, TYPE* dbeta,

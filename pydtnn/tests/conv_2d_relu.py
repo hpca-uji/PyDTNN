@@ -1,9 +1,9 @@
+from pydtnn.layers.abstract.conv_2d import AbstractConv2D
 from pydtnn.utils.initializers import glorot_uniform, zeros
 from pydtnn.utils.tensor import TensorFormat
 from pydtnn.tests.abstract.conv_2d_common import Conv2DCommonTestCase
 from pydtnn.tests.abstract.common import Params
 from pydtnn.tests.abstract.common import D
-from pydtnn.backends.numpy.layers.abstract.conv_2d import AbstractConv2DNumpy
 from pydtnn.model import Model
 from pydtnn.backends.fuse.layers.conv_2d_relu import Conv2DRelu
 from pydtnn.layers.conv_2d import Conv2D
@@ -26,10 +26,10 @@ class Conv2DReluTestCase(Conv2DCommonTestCase):
     del Conv2DCommonTestCase
 
     @staticmethod
-    def _get_layers(d: D, deconv=False, trans=False) -> tuple[AbstractConv2DNumpy, AbstractConv2DNumpy]:
+    def _get_layers(d: D, deconv=False, trans=False) -> tuple[ConcatenationBlock, AbstractConv2D]:
         params = Params()
         params.tensor_format = TensorFormat.NCHW.upper()
-        params.batch_size = d.b
+        params.batch_size = d.b  # type: ignore (it's okay)
         params.backend = "cpu;conv_2d:gemm"
         model = Model(**vars(params))
         model.mode = Model.Mode.TRAIN
