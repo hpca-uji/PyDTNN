@@ -1,34 +1,15 @@
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any
 
 import numpy as np
-from warnings import warn
 
-from pydtnn import MPI, utils
+from pydtnn import utils
 
 from pydtnn.context.base import Base
-from pydtnn.metrics.metric import Metric
-from pydtnn.tracers.tracer import Tracer
-from collections.abc import Sequence
-from pydtnn.abstract.layerable import Layerable
-from pydtnn.tracers.extrae_tracer import ExtraeTracer
-from pydtnn.tracers.simple_tracer import SimpleTracer
-from pydtnn.tracers.simple_tracer_gpu import SimpleTracerPycuda
-from pydtnn.tracers.simple_tracer_pmlib import SimpleTracerPMLib
 from pydtnn.utils.constants import Array, ArrayShape
-from pydtnn.utils.tensor import SampleFormat, TensorFormat, decode_shape, encode_shape, format_reshape, encode_tensor, decode_tensor
-from pydtnn.utils.performance_models import allreduce_time
-from pydtnn.models.model import select as select_model
-from types import ModuleType
+from pydtnn.utils.tensor import decode_shape, encode_shape, encode_tensor, decode_tensor
 
 import logging
 logger = logging.getLogger(__name__)
-
-
-# NOTE: mpi4py has more functions, but no typing
-if TYPE_CHECKING:
-    from pympi.MPI import Comm as MPI_COMM
-else:
-    MPI_COMM = ModuleType
 
 BAR_WIDTH = 140
 DEFAULT_BACH_SIZE = 64
@@ -36,8 +17,14 @@ LIMIT_THREADS_AND_BLOCKS = 1024
 
 
 class Util[T: Array](Base[T]):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+
+    @property
+    def input_shape(self):
+        return self.layers[0].shape
+
+    @property
+    def output_shape(self):
+        return self.layers[-1].shape
 
     def encode_shape(self, shape: ArrayShape) -> ArrayShape:
         """Transform the shape from `NCHW` order to `model.tensor_format` order (supports 4 or 3 dimensions)"""
@@ -62,115 +49,3 @@ class Util[T: Array](Base[T]):
 
     def __getattr__(self, item) -> Any:
         return self.kwargs.get(item)
-
-
-def calculate_time(model) -> np.ndarray:
-    # Total elapsed_time, Comp elapsed_time, Memo elapsed_time, Net elapsed_time
-    total_time: np.ndarray = np.zeros((4,), dtype=np.float32)
-
-    # Forward pass (FP)
-    for layer in model.layers:
-        total_time += layer.fwd_time
-
-    if model.blocking_mpi:
-        # Blocking MPI
-        # Back propagation. Gradient computation (GC) and weights update (WU)
-        for layer in model.layers:
-            total_time += layer.bwd_time
-
-        # Weight update (WU)
-        for layer in model.layers:
-            weights_size = 0 if (weights := layer.weights) is None else weights.size
-            biases_size = 0 if (biases := layer.biases) is None else biases.size
-            if model.comm and weights_size > 0:
-                total_time += allreduce_time(weights_size + biases_size,
-                                             model.cpu_speed, model.network_bw, model.network_lat,
-                                             model.network_alg, model.nprocs, model.dtype)
-    else:
-        total_time_iar: int = 0
-        # Non-blocking MPI
-        # Back propagation. Gradient computation (GC) and weights update (WU)
-        for layer in model.layers:
-            total_time += layer.bwd_time
-            weights_size = 0 if (weights := layer.weights) is None else weights.size
-            biases_size = 0 if (biases := layer.biases) is None else biases.size
-            if model.comm and weights_size > 0:
-                time_iar = allreduce_time(weights_size + biases_size,
-                                          model.cpu_speed, model.network_bw, model.network_lat,
-                                          model.network_alg, model.nprocs, model.dtype)
-                total_time[3] += time_iar[3]
-                total_time_iar = max(total_time[0], total_time_iar) + time_iar[0]
-
-        total_time[0] = max(total_time[0], total_time_iar)
-
-    return total_time
-
-
-def read_model(model_name: str, input_shape: ArrayShape, output_shape: ArrayShape, tensor_format: TensorFormat) -> Sequence[Layerable]:
-    create_model = select_model(model_name)
-
-    # NOTE: Dataset is always in NCHW
-    # Change input_shape to model.tensor_format
-    input_shape = format_reshape(input_shape, SampleFormat.CHW, tensor_format.as_sample())
-    if len(input_shape) != 3:
-        warn_text = f"Input layer does not have 3 dimensions ({input_shape}), it may cause issues!"
-        logger.warning(warn_text)
-        warn(warn_text, RuntimeWarning)
-    launch_shape_warning = len(input_shape) == 3 and not (input_shape[0] > input_shape[2]) if tensor_format is TensorFormat.NHWC \
-        else len(input_shape) == 3 and not (input_shape[0] < input_shape[1])
-    if launch_shape_warning:
-        warn_text = f"Input layer shape {input_shape} may not be in {tensor_format} format, regardless of model format! "
-        logger.warning(warn_text)
-        warn(warn_text, RuntimeWarning)
-
-    layers = create_model(input_shape, output_shape)
-    return layers
-    # ----
-
-
-def get_tracer(tracer_output: str, tracing: bool, comm: MPI_COMM | None, enable_cudnn: bool,
-               tracer_pmlib_server: str, tracer_pmlib_port: int, tracer_pmlib_device: str) -> Tracer:
-
-    if tracer_output == "":
-        tracer = ExtraeTracer(tracing)
-    else:
-        if enable_cudnn:
-            tracer = SimpleTracerPycuda(tracing, tracer_output, comm)
-        else:
-            if tracer_pmlib_device != "":
-                tracer = SimpleTracerPMLib(tracing, tracer_output, comm, tracer_pmlib_server, tracer_pmlib_port, tracer_pmlib_device)
-            else:
-                tracer = SimpleTracer(tracing, tracer_output, comm)
-    return tracer
-
-
-def get_tensor_format(tensor_format: TensorFormat | Literal["AUTO"] = "AUTO", gpu: bool = False) -> TensorFormat:
-    match tensor_format.upper():
-        case "AUTO":
-            return TensorFormat.NCHW if gpu else TensorFormat.NHWC
-        case "NCHW":
-            return TensorFormat.NCHW
-        case "NHWC":
-            return TensorFormat.NHWC
-        case _:
-            raise NotImplementedError(f"\'{tensor_format}\' is not supported.")
-
-
-def get_batch_size(local_size: int | None, global_size: int | None, comm_size: int, default: int = DEFAULT_BACH_SIZE) -> int:
-    if local_size and global_size:
-        raise ValueError("Can not define 'local_batch_size' and 'global_batch_size' simultaneously")
-
-    if global_size:
-        # NOTE: Using comm_size instead of nprocs might not be appropriate,
-        #       as it differs to how global_batch_size is defined elsewhere,
-        #       but for now it just a parser option difference that helps testing
-        batch_size = global_size // comm_size
-    elif local_size:
-        batch_size = local_size
-    else:
-        batch_size = default
-
-    if batch_size < 1:
-        raise ValueError(f"'batch_size' ({batch_size}) too small or too many processes (num processes: {comm_size})")
-
-    return batch_size

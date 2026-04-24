@@ -19,10 +19,6 @@ logger = logging.getLogger(__name__)
 
 class Layer[T: Array](Util[T]):
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-    # ---
-
     def add(self, layer: Layerable[T]) -> None:
         layer._init_backend_with_model(self)
 

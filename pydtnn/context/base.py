@@ -1,6 +1,7 @@
 from types import ModuleType
 from pydtnn import MPI_MODULE, Cudnn_Handle_Type, Cublas_Handle_Type
 from pydtnn.abstract.layerable import Layerable
+from pydtnn.utils.memory_pool import PrivateMemory
 from pydtnn.utils.tensor import TensorFormat
 from pydtnn.utils.constants import Array, ArrayShape, NetworkAlgEnum
 from pydtnn.losses.loss import Loss
@@ -16,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 # NOTE: mpi4py has more functions, but no typing
 if TYPE_CHECKING:
-    from pympi.MPI import Comm as MPI_COMM
+    from pympi.MPI import Comm as MPI_COMM  # type: ignore
 else:
     MPI_COMM = ModuleType
 
@@ -107,6 +108,9 @@ class Base[T: Array]:
     layers: list[Layerable]
     kwargs: dict[str, Any]
 
+    memory_cls: type[PrivateMemory]
+    memory: PrivateMemory
+
     rank_weight: float
     comm_rank: int
     comm_size: int
@@ -116,6 +120,7 @@ class Base[T: Array]:
     MPI: MPI_MODULE | None
     comm: MPI_COMM | None
 
+    gpudirect: bool
     nccl_type: Any | None
     nccl_comm: Any | None
     cudnn_handle: Cudnn_Handle_Type | None

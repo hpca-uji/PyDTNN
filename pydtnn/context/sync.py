@@ -9,9 +9,6 @@ logger = logging.getLogger(__name__)
 
 class Sync[T: Array](Init[T]):
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
     def _layer_reduce_encode(self, data: np.ndarray):
         data *= self.rank_weight
 
