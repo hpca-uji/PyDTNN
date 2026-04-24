@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 if TYPE_CHECKING:
-    from pympi.MPI import Comm as MPI_COMM
+    from pympi.MPI import Comm as MPI_COMM  # type: ignore
 else:
     from types import ModuleType
     MPI_COMM = ModuleType
@@ -49,12 +49,14 @@ class SimpleTracerPMLib(SimpleTracer):
     def _output_header(self) -> str:
         output = super()._output_header()
         output += ";Joules"
+        assert self.pmlib.len_lines
         for i in range(1, self.pmlib.len_lines):
             output += f";Line{i - 1}"
         return output + ";Mean of intermediate power samples"
 
     def _output_row(self, event_type_value: int, event_value: int) -> str:
         output = super()._output_row(event_type_value, event_value) + ";"
+        assert self.pmlib.len_lines
         joules = np.zeros(self.pmlib.len_lines)
         intermediate_samples = 0
         for start_time, end_time in self.times[event_type_value][event_value]:
@@ -76,10 +78,14 @@ class SimpleTracerPMLib(SimpleTracer):
             with open(watts_filename, 'w') as f:
                 header = "Time"
                 header += ";Watts"
+                assert self.pmlib.len_lines
                 for i in range(1, self.pmlib.len_lines):
                     header += f";Line{i - 1}"
                 f.write(header + "\n")
+                assert self.pmlib.times
                 elapsed_times = self.pmlib.times - self.pmlib.times[0]
+                assert isinstance(elapsed_times, np.ndarray)
+                assert self.pmlib.watts
                 elapsed_times_watts = np.concatenate((elapsed_times.reshape(1, -1), self.pmlib.watts)).transpose()
                 for row in elapsed_times_watts:
                     f.write(";".join(f"{x}" for x in row) + "\n")

@@ -19,7 +19,7 @@ class SparseMatrixCOO:
     This class is not designed to store explict zeros so, len(self.data) should always be equal to nnz.
     """
 
-    def __init__(self, data, row, col, shape, has_canonical_format):
+    def __init__(self, data, row: np.ndarray[tuple[int], np.dtype[np.int32]], col: np.ndarray[tuple[int], np.dtype[np.int32]], shape, has_canonical_format):
         """
         Primary initializer for SparseMatrixCOO.
 

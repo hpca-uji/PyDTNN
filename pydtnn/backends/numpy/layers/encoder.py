@@ -81,7 +81,7 @@ class EncoderNumpy(Encoder[np.ndarray], AbstractBlockLayerNumpy):
     def forward(self, x, mask=None):
         # Self Attention
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_MHA)
-        x_1 = self.multiheadattention.forward(x, x, x, mask)
+        x_1 = self.multiheadattention.forward(x, x, x, mask)  # type: ignore (encoder has multiple parameters)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         x_1 = self.dropout_1.forward(x_1)
         x_1 = x_1 + x

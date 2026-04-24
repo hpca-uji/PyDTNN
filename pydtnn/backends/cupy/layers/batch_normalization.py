@@ -1,6 +1,6 @@
 from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
 from typing import TYPE_CHECKING
-from pydtnn.libs import numpy as np
+from cupy.cuda import Stream  # type: ignore
 from pydtnn.backends.numpy.layers.batch_normalization import BatchNormalizationNumpy
 from pydtnn.backends.cupy.layers.layer import LayerCupy
 import logging
@@ -15,7 +15,7 @@ class BatchNormalizationCupy(BatchNormalizationNumpy, LayerCupy):
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
         super()._model_init(prev_shape, x)
 
-        self.stream_2 = np.cuda.Stream()
+        self.stream_2 = Stream()
         self.defines_replaces = {"\"TYPE\"": DTYPE2CTYPE[self.model.dtype]}
         
         self.fwd = self._fwd_kernel()

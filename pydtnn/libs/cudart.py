@@ -158,6 +158,7 @@ def cudaGetErrorString(e):
 
     """
 
+    assert _libcudart
     return _libcudart.cudaGetErrorString(e)
 
 # Generic CUDA error:
@@ -692,6 +693,7 @@ def cudaMalloc(count, ctype=None):
     """
 
     ptr = ctypes.c_void_p()
+    assert _libcudart
     status = _libcudart.cudaMalloc(ctypes.byref(ptr), count)
     cudaCheckStatus(status)
     if ctype is not None:
@@ -717,6 +719,7 @@ def cudaFree(ptr):
 
     """
 
+    assert _libcudart
     status = _libcudart.cudaFree(ptr)
     cudaCheckStatus(status)
 
@@ -753,6 +756,7 @@ def cudaMallocPitch(pitch, rows, cols, elesize):
     """
 
     ptr = ctypes.c_void_p()
+    assert _libcudart
     status = _libcudart.cudaMallocPitch(ctypes.byref(ptr),
                                         ctypes.c_size_t(pitch), cols * elesize,
                                         rows)
@@ -789,6 +793,7 @@ def cudaMemcpy_htod(dst, src, count):
 
     """
 
+    assert _libcudart
     status = _libcudart.cudaMemcpy(dst, src,
                                    ctypes.c_size_t(count),
                                    cudaMemcpyHostToDevice)
@@ -812,6 +817,7 @@ def cudaMemcpy_dtoh(dst, src, count):
 
     """
 
+    assert _libcudart
     status = _libcudart.cudaMemcpy(dst, src,
                                    ctypes.c_size_t(count),
                                    cudaMemcpyDeviceToHost)
@@ -838,6 +844,7 @@ def cudaMemGetInfo():
 
     free = ctypes.c_size_t()
     total = ctypes.c_size_t()
+    assert _libcudart
     status = _libcudart.cudaMemGetInfo(ctypes.byref(free),
                                        ctypes.byref(total))
     cudaCheckStatus(status)
@@ -861,6 +868,7 @@ def cudaSetDevice(dev):
 
     """
 
+    assert _libcudart
     status = _libcudart.cudaSetDevice(dev)
     cudaCheckStatus(status)
 
@@ -884,6 +892,7 @@ def cudaGetDevice():
     """
 
     dev = ctypes.c_int()
+    assert _libcudart
     status = _libcudart.cudaGetDevice(ctypes.byref(dev))
     cudaCheckStatus(status)
     return dev.value
@@ -907,6 +916,7 @@ def cudaDriverGetVersion():
     """
 
     version = ctypes.c_int()
+    assert _libcudart
     status = _libcudart.cudaDriverGetVersion(ctypes.byref(version))
     cudaCheckStatus(status)
     return version.value
@@ -930,6 +940,7 @@ def cudaRuntimeGetVersion():
     """
 
     version = ctypes.c_int()
+    assert _libcudart
     status = _libcudart.cudaRuntimeGetVersion(ctypes.byref(version))
     cudaCheckStatus(status)
     return version.value
@@ -953,7 +964,9 @@ class _cudart_version_req(object):
             major = str(v)
             minor = '0'
         else:
-            major, minor = re.search(r'(\d+)\.(\d+)', self.vs).groups()
+            match = re.search(r'(\d+)\.(\d+)', self.vs)
+            assert match
+            major, minor = match.groups()
         self.vi = int(major.ljust(len(major) + 1, '0') + minor.ljust(2, '0'))
 
     def __call__(self, f):
@@ -1012,7 +1025,7 @@ def cudaPointerGetAttributes(ptr):
     """
 
     attributes = cudaPointerAttributes()
-    status = \
-        _libcudart.cudaPointerGetAttributes(ctypes.byref(attributes), ptr)
+    assert _libcudart
+    status = _libcudart.cudaPointerGetAttributes(ctypes.byref(attributes), ptr)
     cudaCheckStatus(status)
     return attributes.memoryType, attributes.device

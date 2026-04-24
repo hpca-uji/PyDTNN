@@ -1,7 +1,7 @@
-from memray._memray import compute_statistics as memray_statistics
+from memray._memray import compute_statistics as memray_statistics  # type: ignore
 from pathlib import Path
 import tempfile
-import memray
+import memray  # type: ignore
 import time
 import gc
 import logging

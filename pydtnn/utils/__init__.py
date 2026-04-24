@@ -1,7 +1,8 @@
 import numpy as np
 from collections.abc import Iterable
 from ctypes.util import find_library
-from importlib import import_module
+from importlib import import_module, resources
+from pydtnn import package_name
 from pathlib import PurePath
 from queue import Queue
 import threading

@@ -17,7 +17,7 @@ if sys.version_info < (3,):
     range = xrange
 
 try:
-    import elftools
+    import elftools  # type: ignore
 except ImportError:
     import re
 
@@ -68,11 +68,11 @@ except ImportError:
 
 else:
     import ctypes
-    import elftools.elf.elffile as elffile
-    import elftools.construct.macros as macros
-    import elftools.elf.structs as structs
+    import elftools.elf.elffile as elffile  # type: ignore
+    import elftools.construct.macros as macros  # type: ignore
+    import elftools.elf.structs as structs  # type: ignore
 
-    def get_soname(filename):
+    def get_soname(filename):  # type: ignore
         """
         Retrieve SONAME of shared library.
 

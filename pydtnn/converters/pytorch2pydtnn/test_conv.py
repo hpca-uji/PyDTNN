@@ -1,4 +1,5 @@
 import numpy as np
+from pydtnn.abstract.layerable import Layerable
 from pydtnn.layers.conv_2d_depthwise import Conv2DDepthwise
 from pydtnn.layers.conv_2d_pointwise import Conv2DPointwise
 from pydtnn.model import Model
@@ -13,7 +14,7 @@ from pydtnn.utils import random
 
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 try:
-    import pycuda.gpuarray as gpuarray
+    import pycuda.gpuarray as gpuarray  # type: ignore
     from pydtnn.libs import cudnn as cudnn
 except BaseException:
     pass
@@ -71,22 +72,21 @@ def main():
 
     for _, model in models:
         model: Model
-        model.dataset = dataset
 
-    model_RELU.add(Input(SHAPE, is_shape_in_format=True))
+    model_RELU.add(Input(SHAPE))
     model_RELU.add(LeakyRelu(negative_slope=-32))
     model_RELU.add(Relu6())
     model_RELU._model_init()
 
-    model_DEPTH.add(Input(SHAPE, is_shape_in_format=True))
+    model_DEPTH.add(Input(SHAPE))
     model_DEPTH.add(Conv2DDepthwise(nfilters=CONV_OUT_CHANNELS, filter_shape=CONV_KERNEL_SIZE, use_bias=use_bias))
     model_DEPTH._model_init()
 
-    model_POINT.add(Input(SHAPE, is_shape_in_format=True))
+    model_POINT.add(Input(SHAPE))
     model_POINT.add(Conv2DPointwise(nfilters=CONV_OUT_CHANNELS, filter_shape=CONV_KERNEL_SIZE, use_bias=use_bias))
     model_POINT._model_init()
 
-    model_I2C.add(Input(SHAPE, is_shape_in_format=True))
+    model_I2C.add(Input(SHAPE))
     model_I2C.add(Conv2D(nfilters=CONV_OUT_CHANNELS, filter_shape=CONV_KERNEL_SIZE, use_bias=use_bias))
     model_I2C._model_init()
 
@@ -107,7 +107,7 @@ def main():
         num_layers = len(model.layers)
         print("Forward")
         for i in range(num_layers):
-            layer: Layer = model.layers[i]
+            layer: Layerable = model.layers[i]
             print(f"{layer=}")
             x: np.ndarray | TensorArray = layer.forward(x)
             print(f"{x.shape=}")
@@ -116,13 +116,13 @@ def main():
         dy = x
         print("Backward")
         for i in range(num_layers - 1, 0, -1):
-            layer: Layer = model.layers[i]
+            layer: Layerable = model.layers[i]
             dy: np.ndarray | TensorArray = layer.backward(dy)
             print(f"{dy.shape=}")
         print("\n=========\n")
 
         for i in range(num_layers - 1, 0, -1):
-            layer: Layer = model.layers[i]
+            layer: Layerable = model.layers[i]
             layer.update_weights(model.optimizer)
 
 

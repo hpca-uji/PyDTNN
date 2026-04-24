@@ -17,14 +17,14 @@ class LayerNormalizationNumpy(LayerNormalization[np.ndarray], LayerNumpy):
         var = np.mean(xc ** 2, axis=self.axis, keepdims=True)
 
         # self.std = np.sqrt(var + self.epsilon)
-        self.std = np.add(var, self.epsilon)
+        self.std: np.ndarray = np.add(var, self.epsilon)
         np.sqrt(self.std, out=self.std, dtype=self.model.dtype)
 
         # self.xn = xc / self.std
-        self.xn = np.divide(xc, self.std, dtype=self.model.dtype)
+        self.xn: np.ndarray = np.divide(xc, self.std, dtype=self.model.dtype)
 
         # y = self.gamma * self.xn + self.beta
-        y = np.multiply(self.gamma, self.xn, dtype=self.model.dtype)
+        y: np.ndarray = np.multiply(self.gamma, self.xn, dtype=self.model.dtype)
         np.add(y, self.beta, out=y)
 
         return y

@@ -53,7 +53,7 @@ class AbstractConv2DNumpy(AbstractConv2D[np.ndarray], LayerNumpy):
         self.bwd_time = \
             matmul_time(m=self.co, n=(self.ci * self.kh * self.kw), k=(self.model.batch_size * self.ho * self.wo),
                         cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw,
-                        dtype=self.model.dtype)
+                        dtype=self.model.dtype)  # type: ignore (It works well.)
         self.bwd_time += matmul_time(m=(self.ci * self.kh * self.kw), n=(self.model.batch_size * self.ho * self.wo),
                                      k=self.co, cpu_speed=self.model.cpu_speed,
                                      memory_bw=self.model.memory_bw, dtype=self.model.dtype)

@@ -29,7 +29,7 @@ if ompi_stdout_rank and os.environ.get("OMPI_COMM_WORLD_RANK", "0") != ompi_stdo
 Extrae_tracing = False
 if os.environ.get("EXTRAE_ON", None) == "1":
     TracingLibrary = "libptmpitrace.so"
-    import pyextrae.common.extrae as pyextrae
+    import pyextrae.common.extrae as pyextrae  # type: ignore
 
     pyextrae.startTracing(TracingLibrary)
     Extrae_tracing = True
@@ -115,6 +115,7 @@ def main():
             raise SystemExit(0)
     # Barrier
     if model.parallel_data:
+        assert model.comm
         model.comm.Barrier()
     # Training
     if model.comm_rank == 0:
@@ -131,6 +132,7 @@ def main():
         history = model.train()
     # Barrier
     if model.parallel_data:
+        assert model.comm
         model.comm.Barrier()
     # Print performance results and evaluation history
     if model.comm_rank == 0:

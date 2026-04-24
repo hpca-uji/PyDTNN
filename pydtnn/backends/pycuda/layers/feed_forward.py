@@ -18,7 +18,8 @@ class FeedForwardPycuda(FeedForward[TensorArray], AbstractBlockLayerPycuda):
         self.paths = [[self.FC_1, self.relu, self.dropout, self.FC_2]]
 
         # The next attributes will be initialized later
-        self.y = self.dx = None
+        self.y: TensorArray = None  # type: ignore
+        self.dx: TensorArray = None  # type: ignore
 
     def _model_init(self, prev_shape, x):
         super()._model_init(prev_shape, x)

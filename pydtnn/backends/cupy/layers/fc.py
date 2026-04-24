@@ -1,4 +1,5 @@
-import cupy as np
+import numpy as np
+from cupy.cuda import Stream  # type: ignore
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.backends.numpy.layers.fc import FCNumpy
 from pydtnn.backends.cupy.layers.layer import LayerCupy
@@ -11,4 +12,4 @@ class FCCupy(FCNumpy, LayerCupy):
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
         super()._model_init(prev_shape, x)
 
-        self.stream_2 = np.cuda.Stream()
+        self.stream_2 = Stream()

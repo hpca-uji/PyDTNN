@@ -2,7 +2,7 @@ import copy
 import pydtnn.converters.pytorch2pydtnn.common as cm
 from pydtnn.layers.input import Input
 from pydtnn.model import Model as PyDTNN_Model
-import torch
+import torch  # type: ignore
 import numpy as np
 from pydtnn.activations.activation import Activation
 from pydtnn.abstract.layerable import Layerable
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 # Operations/transformations related
 
 
-def load_layers(model: PyDTNN_Model, layers: list[Layerable], activation_layer: Activation) -> None:
+def load_layers(model: PyDTNN_Model, layers: list[Layerable], activation_layer: Activation | None) -> None:
     for layer in layers:
         model.add(layer)
     if not isinstance(layers[-1], Activation) and activation_layer is not None:
@@ -117,9 +117,9 @@ def extract_layers_relations(model: torch.nn.Module) -> dict[str, tuple[str | to
     return relations_dic
 
 
-def convert_layers_and_set_weights_and_biases(input_shape: tuple[int], layers: dict[str, tuple[str | torch.nn.Module, str]]) -> list[Layerable]:
+def convert_layers_and_set_weights_and_biases(input_shape: tuple[int, int, int], layers: dict[str, tuple[str | torch.nn.Module, str]]) -> list[Layerable]:
 
-    converted_layers: dict[str, Layerable] = dict()
+    converted_layers: dict[str, tuple[Layerable, str | None]] = dict()
 
     # Constants
     # - state_dicts keys.
@@ -137,7 +137,7 @@ def convert_layers_and_set_weights_and_biases(input_shape: tuple[int], layers: d
 
     fst_layer = layer_var_names[0]
     _input = layers[fst_layer][1]
-    converted_layers[_input] = ((Input(input_shape), None))
+    converted_layers[_input] = (Input(input_shape), None)
 
     dict_equivalent_layer = dict()
     # If there are two layers like the following ones:
@@ -150,7 +150,7 @@ def convert_layers_and_set_weights_and_biases(input_shape: tuple[int], layers: d
         operation, params = layers[operation_variable]
 
         if isinstance(operation, torch.nn.Module):
-            layer = operation
+            layer: torch.nn.Module = operation
             layer_var = operation_variable
 
             name = layer._get_name()
@@ -237,7 +237,7 @@ def check_kwargs_and_set_default(kwargs: dict) -> None:
             kwargs[k] = DICT_KWARGS_DEFAULT_VALUES[k]
 
 
-def convert_model(model: torch.nn.Module, input_shape: tuple[int],
+def convert_model(model: torch.nn.Module, input_shape: tuple[int, int, int],
                   default_output_activation_layer: Activation | None = None, **kwargs) -> PyDTNN_Model:
     # "default_output_activation_layer" parameter: if there is no activation layer at the end, the one in this parameter is added to the converted model.
     check_kwargs_and_set_default(kwargs)

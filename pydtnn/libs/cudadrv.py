@@ -369,6 +369,7 @@ _libcuda.cuPointerGetAttribute.argtypes = [ctypes.c_void_p,
 
 def cuPointerGetAttribute(attribute, ptr):
     data = ctypes.c_void_p()
+    assert _libcuda
     status = _libcuda.cuPointerGetAttribute(data, attribute, ptr)
     cuCheckStatus(status)
     return data

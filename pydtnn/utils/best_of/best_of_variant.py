@@ -2,8 +2,8 @@ from pydtnn.utils.constants import ArrayShape
 import numpy as np
 from pydtnn.utils.best_of.best_of import BestOf
 from pydtnn.model import Model
-from pydtnn.backends.numpy.layers.conv_2d.winograd_cpu import Conv2DWinogradNumpy
-from pydtnn.backends.numpy.layers.conv_2d.direct_cpu import Conv2DDirectNumpy
+from pydtnn.backends.numpy.layers.conv_2d.winograd_cpu import Conv2DWinogradNumpy  # type: ignore  # FIXME: too old
+from pydtnn.backends.numpy.layers.conv_2d.direct_cpu import Conv2DDirectNumpy  # type: ignore  # FIXME: too old
 from typing import Callable, List
 import logging
 logger = logging.getLogger(__name__)

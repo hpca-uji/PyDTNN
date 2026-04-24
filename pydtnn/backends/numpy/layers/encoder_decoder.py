@@ -14,9 +14,9 @@ if TYPE_CHECKING:
 class EncoderDecoderNumpy(EncoderDecoder[np.ndarray], AbstractBlockLayerNumpy):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.encoder = [Encoder(embedl=self.embedl, d_k=self.d_k, d_ff=self.d_ff, heads=self.heads, dropout_rate=self.dropout_rate) for _ in range(self.enc_layers)]
-        self.decoder = [Decoder(embedl=self.embedl, d_k=self.d_k, d_ff=self.d_ff, heads=self.heads, dropout_rate=self.dropout_rate) for _ in range(self.dec_layers)]
-        self.paths = [self.encoder + self.decoder]
+        self.encoder = [Encoder[np.ndarray](embedl=self.embedl, d_k=self.d_k, d_ff=self.d_ff, heads=self.heads, dropout_rate=self.dropout_rate) for _ in range(self.enc_layers)]
+        self.decoder = [Decoder[np.ndarray](embedl=self.embedl, d_k=self.d_k, d_ff=self.d_ff, heads=self.heads, dropout_rate=self.dropout_rate) for _ in range(self.dec_layers)]
+        self.paths = [self.encoder + self.decoder]  # type: ignore
 
     def _model_init(self, prev_shape, x):
         super()._model_init(prev_shape, x)
@@ -35,11 +35,11 @@ class EncoderDecoderNumpy(EncoderDecoder[np.ndarray], AbstractBlockLayerNumpy):
         for layer in self.children:
             layer._init_backend_with_model(self.model)
 
-        self.encoder[0]._model_init(prev_shape=enc_shape, x=(x_enc, mask_enc))
+        self.encoder[0]._model_init(prev_shape=enc_shape, x=(x_enc, mask_enc))  # type: ignore (encoder has multiple parameters)
         for layer in self.encoder[1:]:
-            layer._model_init(prev_shape=enc_shape, x=(x_enc, mask_enc))
+            layer._model_init(prev_shape=enc_shape, x=(x_enc, mask_enc))  # type: ignore (encoder has multiple parameters)
         for layer in self.decoder:
-            layer._model_init(prev_shape=dec_shape, x=(x_dec, x_enc, mask_dec))
+            layer._model_init(prev_shape=dec_shape, x=(x_dec, x_enc, mask_dec))  # type: ignore (encoder has multiple parameters)
 
         for layer in self.children:
             self.fwd_time += layer.fwd_time
@@ -57,19 +57,19 @@ class EncoderDecoderNumpy(EncoderDecoder[np.ndarray], AbstractBlockLayerNumpy):
             x, x_mask, y, y_mask = x
         # print(x.shape, x_mask.shape, y.shape, y_mask.shape)
         for i in range(self.enc_layers):  # Encoding layers
-            x = self.encoder[i].forward(x, x_mask)
+            x = self.encoder[i].forward(x, x_mask)  # type: ignore (encoder has multiple parameters)
         for i in range(self.dec_layers):  # Decoding layers
-            y = self.decoder[i].forward(y, x, y_mask)
+            y = self.decoder[i].forward(y, x, y_mask)  # type: ignore (encoder has multiple parameters)
         self.y = y
         return y
 
     def backward(self, prev_dx):
         dx_tgt = prev_dx
-        dx_enc = 0.
+        dx_enc = 0.0
         for i in range(self.dec_layers):  # Decoding layers
             dx_tgt, dx2 = self.decoder[-1 * (i + 1)].backward(dx_tgt)
             dx_enc += dx2
         for i in range(self.enc_layers):  # Enconding layers
-            dx_enc = self.encoder[-1 * (i + 1)].backward(dx_enc)
+            dx_enc = self.encoder[-1 * (i + 1)].backward(dx_enc)  # type: ignore (encoder has multiple parameters)
         # if self.need_dx:
         return dx_tgt, dx_enc

@@ -6,9 +6,9 @@ import os as _os
 
 # Select implementation
 if _os.environ.get("PYMPI_PROTO"):
-    from pympi import MPI as _module
+    from pympi import MPI as _module  # type: ignore
 else:
-    from mpi4py import MPI as _module
+    from mpi4py import MPI as _module  # type: ignore
 
 # Replace module
 _sys.modules[__name__] = _module

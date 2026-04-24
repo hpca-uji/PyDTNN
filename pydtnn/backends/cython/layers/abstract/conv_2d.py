@@ -15,21 +15,21 @@ if TYPE_CHECKING:
 class AbstractConv2DCython(AbstractConv2DNumpy, LayerCython):
 
     def im2row(self, x: np.ndarray, x_rows: np.ndarray) -> None:
-        im2row_nhwc_cython(x, x_rows,
+        im2row_nhwc_cython(x, x_rows,  # type: ignore
                            self.kh, self.kw, self.ho, self.wo,
                            self.hpadding, self.wpadding,
                            self.hstride, self.wstride, self.hdilation, self.wdilation)
         # -----------------
 
     def im2col(self, x: np.ndarray, x_cols: np.ndarray) -> None:
-        im2col_nchw_cython(x, x_cols,
+        im2col_nchw_cython(x, x_cols,  # type: ignore
                            self.kh, self.kw, self.ho, self.wo,
                            self.hpadding, self.wpadding,
                            self.hstride, self.wstride, self.hdilation, self.wdilation)
         # -----------------
 
     def row2im(self, x_rows: np.ndarray, dx: np.ndarray) -> None:
-        row2im_nhwc_cython(x_rows, dx,
+        row2im_nhwc_cython(x_rows, dx,  # type: ignore
                            dx.shape[0], self.hi, self.wi, self.ci,
                            self.kh, self.kw, self.ho, self.wo,
                            self.hpadding, self.wpadding,
@@ -37,7 +37,7 @@ class AbstractConv2DCython(AbstractConv2DNumpy, LayerCython):
        # -----------------
 
     def col2im(self, x_cols: np.ndarray, dx: np.ndarray) -> None:
-        col2im_nchw_cython(x_cols, dx,
+        col2im_nchw_cython(x_cols, dx,  # type: ignore
                            dx.shape[0], self.ci, self.hi, self.wi,
                            self.kh, self.kw, self.ho, self.wo,
                            self.hpadding, self.wpadding,

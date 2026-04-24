@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 if TYPE_CHECKING:
-    from pydtnn.context.base import Base as Model
+    from pydtnn.context.utils import Util as Model
 
 
 type TransformFunc = Callable[[np.ndarray, np.ndarray], tuple[np.ndarray, np.ndarray]]
@@ -239,9 +239,9 @@ class Dataset:
         if split_weights:
             datas = self._export_split(data, split_weights)
             for split, data in enumerate(datas):
-                np.savez_compressed(path / f"archive.{split}.npz", **data)
+                np.savez_compressed(path / f"archive.{split}.npz", **data)  # type: ignore
         else:
-            np.savez_compressed(path / "archive.npz", **data)
+            np.savez_compressed(path / "archive.npz", **data)  # type: ignore
 
     @property
     def train_nsamples(self):

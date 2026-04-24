@@ -35,8 +35,8 @@ class Synthetic(Dataset):
                          debug=debug)
 
     def _init_actual_data(self):
-        self._x = [np.empty((0,)) for part in Dataset.Part]
-        self._y = [np.empty((0,)) for part in Dataset.Part]
+        self._x: list[np.ndarray] = [np.empty((0,)) for part in Dataset.Part]
+        self._y: list[np.ndarray] = [np.empty((0,)) for part in Dataset.Part]
 
         for part in Dataset.Part:
             local_batches = self._local_nsamples[part] // self.model.batch_size

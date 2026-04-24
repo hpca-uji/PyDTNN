@@ -11,7 +11,7 @@ except Exception as e:
 
 
 if TYPE_CHECKING:
-    from pympi.MPI import Comm as MPI_COMM
+    from pympi.MPI import Comm as MPI_COMM  # type: ignore
 else:
     from types import ModuleType
     MPI_COMM = ModuleType
@@ -55,7 +55,7 @@ class SimpleTracerPycuda(SimpleTracer):
             evt_time = start.time_till(end) * 1e-3
             self._release_start_end_event(start, end)
             previous_calls, previous_time = self.events[_evt_type_val][_evt_val]
-            self.events[_evt_type_val][_evt_val] = [previous_calls + 1, previous_time + evt_time]
+            self.events[_evt_type_val][_evt_val] = [previous_calls + 1, previous_time + evt_time]  # type: ignore
 
     def _emit_nevent(self, evt_type_val_list: list, evt_val_list: list, stream=None):
         """This method will be called only if tracing is enabled"""

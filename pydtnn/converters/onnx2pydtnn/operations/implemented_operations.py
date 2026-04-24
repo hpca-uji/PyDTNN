@@ -1,5 +1,7 @@
 # Typing related (or non important) imports
 from typing import Any
+
+import numpy as np
 from pydtnn.abstract.layerable import Layerable
 
 # Functionality imports
@@ -256,6 +258,7 @@ def Gemm(info: dict[str, Any]) -> Layerable:
         return b.T if transB is not None else b
 
     def _biases_initializer(*to_ignore):
+        assert c is not None
         return beta * c
 
     def _mod_forward(x):
@@ -421,7 +424,7 @@ def Unsqueeze(info: dict[str, Any]) -> Layerable:
     # TODO: Move it to a file and do it in the right way.
 
     from numpy import expand_dims
-    from pydtnn.layers.layer import Layer
+    from pydtnn.layers.abstract.block_layer import AbstractBlockLayer as Layer
 
     class _Unsqueeze(Layer):
 
@@ -432,7 +435,8 @@ def Unsqueeze(info: dict[str, Any]) -> Layerable:
 
         def _model_init(self, prev_shape, need_dx=False):
             super()._model_init(prev_shape, need_dx)
-            self.shape = self.shape + self.model.encode_shape(self.model.tensor_format)
+            self.shape = self.forward(np.zeros(prev_shape)).shape  # FIXME: revisar, estaba lo de antes
+            #self.shape = self.shape + self.model.encode_shape(self.model.tensor_format)
 
         def initialize_block_layer(self):
             super().initialize_block_layer()

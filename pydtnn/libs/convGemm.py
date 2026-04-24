@@ -61,6 +61,7 @@ class ConvGemm:
         self.dtype = dtype
         if ConvGemm.lib_cg is None:
             ConvGemm.lib_cg = load_library("convGemm")
+        assert self.lib_cg
 
         # Declare ac_pack and bc_pack and allocate space for them
         self.ac_pack = ctypes.POINTER(ctypes.c_float)()
@@ -367,6 +368,7 @@ def __free__(pack):
         import sys
         exec_bytes = open(sys.executable, "rb").read()
         match = re.search("msvcr([0-9]+|t).dll", str(exec_bytes), re.IGNORECASE)
+        assert match, "MSVCR not found!"
         return match.group(0)
 
     if platform.system() == 'Windows':
@@ -389,13 +391,13 @@ def time_it_func(x: np.ndarray, w_c: np.ndarray, out: np.ndarray,
                  ) -> int | float:
 
     res = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype=x.dtype)
-    im2col_nchw_cython(x, res,
+    im2col_nchw_cython(x, res,  # type: ignore
                        kh, kw, ho, wo,
                        vpadding, hpadding, vstride, hstride,
                        vdilation, hdilation)
     res = res @ w_c
     res += out.reshape(b * ho * wo, kn)
-    return res
+    return res  # type: ignore
 
 
 def __usage_example__():
@@ -435,7 +437,7 @@ def __usage_example__():
                                                 out=out.reshape(kn, b, ho, wo))
     logger.info('\n'.join([str(conv_gemm_result), f"Sum: {conv_gemm_result.sum()}", "", "Using im2col and mm..."]))
     x_c = np.zeros((c * kh * kw, b * ho * wo))
-    im2col_nchw_cython(x, x_c,
+    im2col_nchw_cython(x, x_c,  # type: ignore
                        kh, kw, ho, wo,
                        vpadding, hpadding, vstride, hstride, vdilation, hdilation)
     w_c = weights.reshape(kn, -1)

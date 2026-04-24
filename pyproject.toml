@@ -47,7 +47,8 @@ dependencies = [
     "scipy>=1.5.4",
     "tqdm>=4.55.0",
     "rapidgzip>=0.15.2",
-    "pyyaml>=6.0.3"
+    "pyyaml>=6.0.3",
+    "spacy>=3.8.14"
 ]
 
 [project.optional-dependencies]
@@ -64,7 +65,8 @@ fhe = [
 ]
 test = [
     "torch>=2.6.0",
-    "torchvision>=0.21.0"
+    "torchvision>=0.21.0",
+    "torchmetrics>=1.9.0"
 ]
 profile = [
     "memray>=1.19.1"

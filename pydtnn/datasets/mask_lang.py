@@ -78,7 +78,7 @@ class MaskLang(Dataset):
         self.train_nsamples = None
 
     def get_dictionary(self, language):
-        import spacy
+        import spacy  # type: ignore
         table = {
             "en": "en_core_web_md",
             "de": "de_core_news_md"
@@ -121,7 +121,7 @@ class MaskLang(Dataset):
             y = tgt_embeddings
             yield x, y
 
-    def _actual_data_generator_preprocess(self):
+    def _actual_data_generator_preprocess(self, part):
         batch_size = self.model.batch_size
         rank = self.model.rank
 

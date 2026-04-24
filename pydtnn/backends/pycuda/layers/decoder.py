@@ -26,7 +26,8 @@ class DecoderPycuda(AbstractBlockLayerPycuda, Decoder):
         self.paths = [[self.multiheadattention, self.layernormalization_1, self.multiheadattention_enc, self.layernormalization_enc, self.feedforward, self.dropout_2, self.layernormalization_2]]
 
         # The next attributes will be initialized later
-        self.y = self.dx = None
+        self.y: TensorArray = None  # type: ignore
+        self.dx: TensorArray = None  # type: ignore
 
     def _model_init(self, prev_shape, x):
         super()._model_init(prev_shape, x)
@@ -92,11 +93,11 @@ class DecoderPycuda(AbstractBlockLayerPycuda, Decoder):
     def forward(self, x, x_enc, mask=None):
         alpha, beta = 1.0, 1.0
         # Self Attention
-        self.multiheadattention.forward(x, x, x, mask, x)
+        self.multiheadattention.forward(x, x, x, mask, x)  # type: ignore (multiheadattention uses more parameters)
         self.layernormalization_1.forward(self.multiheadattention.y)
 
         # Self Attention Encoder
-        self.multiheadattention_enc.forward(self.layernormalization_1.y, x_enc, x_enc, mask, self.layernormalization_1.y)
+        self.multiheadattention_enc.forward(self.layernormalization_1.y, x_enc, x_enc, mask, self.layernormalization_1.y)  # type: ignore (multiheadattention uses more parameters)
         self.layernormalization_enc.forward(self.multiheadattention_enc.y)
 
         # Feed Forward

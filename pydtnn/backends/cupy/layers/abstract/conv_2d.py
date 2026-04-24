@@ -1,11 +1,10 @@
 from pydtnn.utils.constants import DTYPE2CTYPE
 from pydtnn.utils.constants import ArrayShape
-from pydtnn.backends.numpy.layers.conv_2d import Conv2DNumpy
 from pydtnn.backends.cupy.layers.layer import LayerCupy
 import cupy as np
+from cupy.cuda import Stream  # type: ignore
 from typing import TYPE_CHECKING
 from pydtnn.libs import numpy as np
-from pydtnn.backends.cython.layers.layer import LayerCython
 import logging
 
 from pydtnn.backends.numpy.layers.abstract.conv_2d import AbstractConv2DNumpy
@@ -21,7 +20,7 @@ class AbstractConv2DCupy(AbstractConv2DNumpy, AbstractConv2D[np.ndarray], LayerC
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
         super()._model_init(prev_shape, x)
 
-        self.stream_2 = np.cuda.Stream()
+        self.stream_2 = Stream()
 
         self._im2row = self._get_kernel(func_name="im2_row_col", defines_replaces={"\"TYPE\"": DTYPE2CTYPE[self.model.dtype], "TENSOR_FORMAT": self.model.tensor_format})
         self._im2col = self._get_kernel(func_name="im2_row_col", defines_replaces={"\"TYPE\"": DTYPE2CTYPE[self.model.dtype], "TENSOR_FORMAT": self.model.tensor_format})

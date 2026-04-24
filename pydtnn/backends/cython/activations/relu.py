@@ -12,5 +12,6 @@ class ReluCython(ReluNumpy, ActivationCython):
         n = x.shape[0]
         self.y = self._y[:n, :]
         self.mask = self._mask[:n, :]
-        relu_cython(x.reshape(-1, copy=False), self.y.reshape(-1, copy=False), self.mask.reshape(-1, copy=False))
+        mask: np.ndarray[tuple[int], np.int8] = self.mask.reshape(-1, copy=False)
+        relu_cython(x.reshape(-1, copy=False), self.y.reshape(-1, copy=False), mask)
         return self.y

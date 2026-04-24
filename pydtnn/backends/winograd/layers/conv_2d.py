@@ -69,7 +69,7 @@ class Conv2DWinograd(Conv2DNumpy, AbstractConv2DWinograd):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_IM2COL)
 
         self.x_rows = np.zeros(((dy.shape[0] * self.ho * self.wo), (self.ci * self.kh * self.kw)), dtype=self.model.dtype)
-        im2row_nhwc_cython(self.cw_x, self.x_rows,
+        im2row_nhwc_cython(self.cw_x, self.x_rows,  # type: ignore
                            self.kh, self.kw, self.ho, self.wo,
                            self.hpadding, self.wpadding,
                            self.hstride, self.wstride, self.hdilation, self.wdilation)
@@ -82,8 +82,7 @@ class Conv2DWinograd(Conv2DNumpy, AbstractConv2DWinograd):
         n, c, _, _ = dy.shape
         self.x_cols = np.zeros((c * self.kh * self.kw, n * self.ho * self.wo))
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_IM2COL)
-        im2col_nchw_cython(self.cw_x,
-                           self.x_cols,
+        im2col_nchw_cython(self.cw_x, self.x_cols,  # type: ignore
                            self.kh, self.kw,
                            self.ho, self.wo,
                            self.hpadding, self.wpadding,

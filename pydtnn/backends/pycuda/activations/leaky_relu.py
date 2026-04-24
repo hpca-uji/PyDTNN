@@ -59,10 +59,10 @@ class LeakyReluPycuda(LeakyRelu[TensorArray], ActivationPycuda):
 
         self.fwd_time = \
             im2col_time(m=self.ci, n=n, cpu_speed=self.model.cpu_speed,
-                        memory_bw=self.model.memory_bw, dtype=self.model.dtype)
+                        memory_bw=self.model.memory_bw, dtype=self.model.dtype)  # type: ignore (it's fine)
         self.bwd_time = \
             col2im_time(m=self.ci, n=n, cpu_speed=self.model.cpu_speed,
-                        memory_bw=self.model.memory_bw, dtype=self.model.dtype)
+                        memory_bw=self.model.memory_bw, dtype=self.model.dtype)  # type: ignore (it's fine)
 
     def forward(self, x: TensorArray) -> TensorArray:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)

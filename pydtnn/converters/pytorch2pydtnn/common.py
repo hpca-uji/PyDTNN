@@ -87,8 +87,8 @@ def switch_pytorch_pydtnn(name: str) -> Callable[[dict[str, Any]], Layerable]:
         case "Flatten": return Flatten
 
         # Not actual PyTorch layers (are torch functions):
-        case "Add": return add  # Possible FIXME: if the constants ADD values are changed, change the case in order to have the same value.
-        case "Concat": return concat  # Possible FIXME: if the constants CONCAT values are changed, change the case in order to have the same value.
+        case "Add": return add  # type: ignore  # Possible FIXME: if the constants ADD values are changed, change the case in order to have the same value.
+        case "Concat": return concat  # type: ignore  # Possible FIXME: if the constants CONCAT values are changed, change the case in order to have the same value.
         # Base case:
         case _: return not_implemented(name)
 
@@ -168,7 +168,7 @@ def get_lists_operations_and_outputs(dict_layers: dict[str, tuple[Layerable, str
 
     # -- Trimming the dict and storing the data to be returned -- #
 
-    lists_operations: list[Layerable] = list()  # list of lists (one list per branch)
+    lists_operations: list[list[Layerable]] = list()  # list of lists (one list per branch)
     lists_outputs: list[str] = list()  # list of strings (all branches in one list)
     for inpt in layer_inputs:
         # - Trimming the dict - #
@@ -190,8 +190,7 @@ def get_lists_operations_and_outputs(dict_layers: dict[str, tuple[Layerable, str
 def separate_function_params(params: str) -> list[str]:
     # Example: '[layer1_0_bn3,layer1_0_downsample_1]'
     params = params.replace('[', '').replace(']', '')  # Removing non-useful characters
-    params = params.split(',')
-    return [param.strip() for param in params]  # Removing spaces
+    return [param.strip() for param in params.split(',')]  # Removing spaces
 
 # NOTE: This coversor does *not* work in the cases like the following:
 # A, B, C, D, E are layers, D and E are layers like concatenation or addition layers.

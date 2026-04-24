@@ -22,9 +22,12 @@ class LayerNormalization[T: Array](Layer[T]):
         self.grad_vars = {"beta": "dbeta", "gamma": "dgamma"}
         self.sync_stats = sync_stats
         # The next attributes will be initialized later
-        self.gamma = self.beta = None
-        self.std = self.xn = None
-        self.dgamma = self.dbeta = None
+        self.gamma: np.ndarray = None  # type: ignore
+        self.beta: np.ndarray = None  # type: ignore
+        self.std: np.ndarray = None  # type: ignore
+        self.xn: np.ndarray = None  # type: ignore
+        self.dgamma: np.ndarray = None  # type: ignore
+        self.dbeta: np.ndarray = None  # type: ignore
 
     def _model_init(self, prev_shape, x):
         super()._model_init(prev_shape, x)

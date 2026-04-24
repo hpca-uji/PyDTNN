@@ -42,7 +42,7 @@ class ConvDirectTestCase(ConvCommonTestCase):
 
         x_c: np.ndarray = np.zeros(shape=(dim_n, dim_c), dtype=x.dtype)
 
-        im2row_nhwc_cython(x, x_c,
+        im2row_nhwc_cython(x, x_c,  # type: ignore
                            kh, kw, ho, wo,
                            vpadding, hpadding,
                            vstride, hstride,

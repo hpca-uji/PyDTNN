@@ -20,7 +20,7 @@ class ReduceLREveryNEpochs(Scheduler):
         self.nepochs = nepochs
         self.min_lr = min_lr
 
-    def on_epoch_end(self, train_loss: ndarray[float], val_loss: ndarray[float]) -> None:
+    def on_epoch_end(self, train_loss: ndarray, val_loss: ndarray) -> None:
         self.epoch_count += 1
         if self.epoch_count % self.nepochs == 0 and self.model.optimizer.learning_rate * self.factor >= self.min_lr:
             self.model.optimizer.learning_rate *= self.factor

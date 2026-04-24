@@ -43,7 +43,7 @@ class Conv2DConvGemmTestCase(Conv2DCommonTestCase):
                            use_bias=True, weights_initializer=glorot_uniform, biases_initializer=zeros)
         conv2d_cg._init_backend_with_model(model_cg)
         for layer in (conv2d_i2c, conv2d_cg):
-            layer._model_init(prev_shape=model_i2c.encode_shape((d.c, d.h, d.w)))
+            layer._model_init(prev_shape=model_i2c.encode_shape((d.c, d.h, d.w)), x=None)
         # Set the same initial weights and biases to both layers
         conv2d_cg.weights = conv2d_i2c.weights.copy()
         conv2d_cg.biases = conv2d_i2c.biases.copy()

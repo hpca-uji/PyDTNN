@@ -35,6 +35,7 @@ class ExtraeTracer(Tracer):
             for i, description in event_type.items():
                 values[i] = i
                 descriptions[i] = description
+            assert self.pyextrae
             self.pyextrae.Extrae[os.getpid()].Extrae_define_event_type(
                 ctypes.pointer(ctypes.c_uint(event_type_value)),
                 ctypes.c_char_p(description.encode('utf-8')),
@@ -44,8 +45,10 @@ class ExtraeTracer(Tracer):
 
     def _emit_event(self, evt_type: int, val: int, stream=None):
         """This method will be called only if tracing is enabled"""
+        assert self.pyextrae
         self.pyextrae.eventandcounters(evt_type, val)
 
     def _emit_nevent(self, evt: int, val: int, stream=None):
         """This method will be called only if tracing is enabled"""
+        assert self.pyextrae
         self.pyextrae.neventandcounters(evt, val)

@@ -82,9 +82,8 @@ class ModelCommonTestCase(TestCase):
             raise unittest.SkipTest(f"Model {model_name} incompatible with {params_dict['dataset_name']}") from exc
         # loss function
         loss_func_name = model1.loss_func_name
-        local_batch_size = model1.batch_size
         loss_cls = select_loss(loss_func_name)
-        loss_func = loss_cls(shape=(local_batch_size, *model1.layers[-1].shape))
+        loss_func = loss_cls()
         loss_func._init_backend_with_model(model1)
         loss_func._model_init()
         return model1, loss_func

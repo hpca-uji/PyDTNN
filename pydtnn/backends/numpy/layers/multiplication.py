@@ -19,8 +19,8 @@ class MultiplicationNumpy(Multiplication[np.ndarray], LayerNumpy):
     def _model_init(self, prev_shape, x):
         super()._model_init(prev_shape, x)
         # Performance model
-        self.fwd_time = None
-        self.bwd_time = None
+        self.fwd_time = None  # type: ignore (defined later)
+        self.bwd_time = None  # type: ignore (defined later)
 
     def transpose(self, x):
         return x.swapaxes(-2, -1)

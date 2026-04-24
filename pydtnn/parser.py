@@ -48,8 +48,7 @@ available at: '{_scripts_path}'."""
 
 def _get_mpi_processes():
     try:
-        # noinspection PyUnresolvedReferences,PyPackageRequirements
-        from pympi import MPI
+        from pympi import MPI  # type: ignore
     except Exception:
         mpi_processes = 1
     else:

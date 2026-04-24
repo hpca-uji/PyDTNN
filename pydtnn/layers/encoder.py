@@ -12,4 +12,4 @@ class Encoder[T: Array](AbstractBlockLayer[T]):
         self.d_k = d_k
         self.d_ff = d_ff
         self.dropout_rate = dropout_rate
-        self.y = self.dx = None
+        self.y = self.dx = None  # type: ignore

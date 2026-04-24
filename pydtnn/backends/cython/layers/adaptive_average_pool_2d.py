@@ -16,17 +16,17 @@ if TYPE_CHECKING:
 
 class AdaptiveAveragePool2DCython(AdaptiveAveragePool2DNumpy, AbstractPool2DLayerCython):
     def _fwd_nhwc(self, x: np.ndarray, y: np.ndarray) -> None:
-        adaptive_avg_pooling_fwd_nhwc_cython(x, y)
+        adaptive_avg_pooling_fwd_nhwc_cython(x, y)  # type: ignore
     # ----
 
     def _fwd_nchw(self, x: np.ndarray, y: np.ndarray) -> None:
-        adaptive_avg_pooling_fwd_nchw_cython(x, y)
+        adaptive_avg_pooling_fwd_nchw_cython(x, y)  # type: ignore
     # ----
 
     def _bwd_nhwc(self, dx: np.ndarray, dy: np.ndarray) -> None:
-        adaptive_avg_pooling_bwd_nhwc_cython(dx, dy)
+        adaptive_avg_pooling_bwd_nhwc_cython(dx, dy)  # type: ignore
     # ----
 
     def _bwd_nchw(self, dx: np.ndarray, dy: np.ndarray) -> None:
-        adaptive_avg_pooling_bwd_nchw_cython(dx, dy)
+        adaptive_avg_pooling_bwd_nchw_cython(dx, dy)  # type: ignore
     # ----

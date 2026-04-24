@@ -130,42 +130,50 @@ class PMLib:
     @check_pmlib_returned_status
     def set_server(self, server_ip, port):
         self.info("Setting server...")
+        assert self._pmlib
         return self._pmlib.pm_set_server(server_ip.encode('utf-8'), port, ctypes.byref(self.server))
 
     @check_pmlib_returned_status
     def create_lines(self, lines_string):
         self.info("Setting lines...")
+        assert self._pmlib
         return self._pmlib.pm_set_lines(lines_string.encode('utf-8'), ctypes.byref(self.lines))
 
     @check_pmlib_returned_status
     def create_counter(self, counter_string, aggregate=0, interval=0):
         self.info("Creating counter...")
+        assert self._pmlib
         return self._pmlib.pm_create_counter(counter_string.encode('utf-8'), self.lines, aggregate, interval,
                                              self.server, ctypes.byref(self.counter))
 
     @check_pmlib_returned_status
     def start_counter(self):
         self.info("Starting counter...")
+        assert self._pmlib
         return self._pmlib.pm_start_counter(ctypes.byref(self.counter))
 
     @check_pmlib_returned_status
     def stop_counter(self):
         self.info("Stopping counter...")
+        assert self._pmlib
         return self._pmlib.pm_stop_counter(ctypes.byref(self.counter))
 
     @check_pmlib_returned_status
     def _get_counter_data(self):
         self.info("Getting counter data...")
+        assert self._pmlib
         return self._pmlib.pm_get_counter_data(ctypes.byref(self.counter))
 
     @check_pmlib_returned_status
     def print_data_text(self, output_string, set_value):
         self.info(f"Writing data to '{output_string}' file...")
+        assert self._pmlib
         return self._pmlib.pm_print_data_text(output_string.encode('utf-8'), self.counter, self.lines, set_value)
 
     @check_pmlib_returned_status
     def finalize_counter(self):
         self.info("Finalizing counter...")
+        assert self._pmlib
         return self._pmlib.pm_finalize_counter(ctypes.byref(self.counter))
 
     def get_counter_data(self):
@@ -186,9 +194,12 @@ class PMLib:
             self.len_lines += 1
 
     def _next_sample_from_start(self, start_time):
+        assert self.len_samples
+        assert self.times
         return min(self.len_samples - 1, int((start_time - self.times[0]) / self.period) + 1)
 
     def _previous_sample_from_end(self, end_time):
+        assert self.times
         return max(0, int(np.ceil((end_time - self.times[0]) / self.period)) - 1)
 
     def get_number_of_intermediate_samples(self, start_time, end_time):
@@ -199,6 +210,7 @@ class PMLib:
 
     def get_joules(self, start_time, end_time, debug=False):
         # Check boundaries
+        assert self.times
         if start_time >= end_time:
             raise ValueError("End time must be greater than start time")
         if start_time < self.times[0]:
@@ -212,6 +224,7 @@ class PMLib:
         logger.debug(f">> {previous_sample_from_end=}")
         # Interpolate watts for start and end time
         watts_on_start_time, watts_on_end_time = [], []
+        assert self.watts
         for watts in self.watts:
             a, b = np.interp([start_time, end_time], self.times, watts)
             watts_on_start_time.append(a)

@@ -6,7 +6,6 @@ from pydtnn.utils import load_library
 from pydtnn.utils.tensor import TensorFormat, encode_shape, decode_shape
 import numpy as np
 import weakref
-import sys
 import ctypes
 import logging
 logger = logging.getLogger(__name__)
@@ -224,13 +223,13 @@ def time_it_func(x: np.ndarray, w_c: np.ndarray, out: np.ndarray,
                  vdilation: int, hdilation: int,
                  ) -> int | float:
     res = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype=x.dtype)
-    im2row_nhwc_cython(x, res,
+    im2row_nhwc_cython(x, res,  # type: ignore
                        kh, kw, ho, wo,
                        vpadding, hpadding, vstride, hstride,
                        vdilation, hdilation)
     res = res @ w_c
     res += out.reshape(b * ho * wo, kn)
-    return res
+    return res  # type: ignore
 
 
 def __usage_example__():

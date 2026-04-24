@@ -2,10 +2,10 @@ from model_convertor import convert_model
 
 from pydtnn.activations.softmax import Softmax
 from pydtnn.datasets.dataset import select as select_dataset
-from torchvision.models import vgg19, alexnet, densenet169, resnet50, googlenet
-from torchvision.models import densenet121, densenet201, resnet18, resnet34, resnet101, resnet152, vgg11, vgg16
+from torchvision.models import vgg19, alexnet, densenet169, resnet50, googlenet  # type: ignore
+from torchvision.models import densenet121, densenet201, resnet18, resnet34, resnet101, resnet152, vgg11, vgg16  # type: ignore
 
-from torchmetrics import Accuracy, Metric
+from torchmetrics import Accuracy, Metric  # type: ignore
 
 from pydtnn.datasets.dataset import Dataset
 
@@ -27,8 +27,8 @@ from pydtnn.model import Model as PyDTNN_Model
 from pydtnn.datasets.dataset import select as select_dataset
 # from pydtnn.utils.best_of import BestOf
 
-import torch
-from torch.nn import CrossEntropyLoss
+import torch  # type: ignore
+from torch.nn import CrossEntropyLoss  # type: ignore
 
 
 dict_test = {

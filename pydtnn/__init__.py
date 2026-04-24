@@ -118,7 +118,7 @@ else:
 if cupy is not None and drv is not None:
     rank = MPI.COMM_WORLD.rank if MPI else 0
     cupy.cuda.runtime.setDevice(rank % cupy.cuda.runtime.getDeviceCount())
-    stream: cupy.cuda.Stream = cupy.cuda.get_current_stream()
+    stream: cupy.cuda.Stream = cupy.cuda.get_current_stream()  # type: ignore (type not recognized)
     stream_handle = stream.ptr
 else:
     pass  # Defaults handled later
