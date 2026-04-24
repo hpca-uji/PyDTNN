@@ -4,7 +4,7 @@ from typing import Any, Generator
 import numpy as np
 from timeit import default_timer as timer
 
-from pympi import MPI
+from pydtnn import MPI
 from tqdm import tqdm
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.datasets.dataset import Dataset

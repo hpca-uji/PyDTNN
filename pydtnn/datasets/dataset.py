@@ -75,8 +75,8 @@ class Dataset:
             self._nsamples[Dataset.Part.TRAIN] -= self._nsamples[Dataset.Part.VAL]
 
         # self.real_input_shape = tuple(input_shape)
-        self.input_shape = tuple(input_shape)
-        self.output_shape = tuple(output_shape)
+        self.input_shape: ArrayShape = tuple(input_shape)
+        self.output_shape: ArrayShape = tuple(output_shape)
 
         if self.model.transform_crop:
             crop, size = self._calculate_crop(self.input_shape[1:])  # type: ignore (The cropped input shape will be a tuple[int, int])

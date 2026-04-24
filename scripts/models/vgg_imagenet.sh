@@ -17,7 +17,7 @@ pydtnn-benchmark \
   --normalize-offset=-0.449 \
   --normalize-scale=3.537 \
   --use-synthetic-data=False \
-  --tensor-format=NCHW \
+  --tensor-format=nchw \
   --batch-size=64 \
   --validation-split=0.2 \
   --num-epochs=10 \

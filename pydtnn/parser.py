@@ -132,10 +132,10 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
                           help="Only evaluate the model. Default: False.")
         self.add_argument('--weights-and-bias-filename', type=str, default=None,
                           help="Load weights and bias from file. Default: None.")
-        self.add_argument('--history-file', type=str, default=None,
+        self.add_argument('--history-file', type=str, default="",
                           help="Filename to save training loss and metrics.")
-        self.add_argument('--tensor-format', type=lambda s: str(s).upper(), default="NHWC",
-                          help="Data format to be used: 'NHWC' or 'NCHW'. Optionally, the 'AUTO' value sets 'NCHW' when cuDNN is available, 'NHWC' otherwise. Default: 'NHWC'.")
+        self.add_argument('--tensor-format', type=str, default="",
+                          help="Data format to be used: 'nhwc' or 'nchw'. If not defined value sets 'nchw' when cuDNN is available, 'nhwc' otherwise.")
         self.add_argument('--random-seed', type=int, default=57005,
                           help="Initial state of random number generator. Default: '57005'.")
         self.add_argument('--shared-tmp-memory', type=bool_lambda, default=False,

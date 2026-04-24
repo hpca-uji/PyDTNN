@@ -14,7 +14,7 @@ set -o nounset # Abort on undefined variables
 #-------------------------
 MODEL=${MODEL:-alexnet_cifar10}
 DATASET=${DATASET:-cifar10}
-TENSOR_FORMAT=${TENSOR_FORMAT:-NHWC}
+TENSOR_FORMAT=${TENSOR_FORMAT:-nhwc}
 case "${DATASET}" in
 cifar10)
   DATASET_TRAIN_PATH=${DATASET_TRAIN_PATH:-${HOME}/opt/hpca_pydtnn/data/cifar10}
