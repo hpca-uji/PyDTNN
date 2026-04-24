@@ -317,46 +317,46 @@ class TensorArray:
         return len(self.ary)
 
     def __add__(self, other):
-        return self.ary.__add__(other)
+        return self._view(self.ary.__add__(other))
 
     def __radd__(self, other):
-        return self.ary.__radd__(other)
+        return self._view(self.ary.__radd__(other))
 
     def __sub__(self, other):
-        return self.ary.__sub__(other)
+        return self._view(self.ary.__sub__(other))
 
     def __rsub__(self, other):
-        return self.ary.__rsub__(other)
+        return self._view(self.ary.__rsub__(other))
 
     def __iadd__(self, other):
-        return self.ary.__iadd__(other)
+        return self._view(self.ary.__iadd__(other))
 
     def __isub__(self, other):
-        return self.ary.__isub__(other)
+        return self._view(self.ary.__isub__(other))
 
     def __neg__(self, other):
-        return self.ary.__neg__(other)
+        return self._view(self.ary.__neg__(other))
 
     def __mul__(self, other):
-        return self.ary.__mul__(other)
+        return self._view(self.ary.__mul__(other))
 
     def __rmul__(self, other):
-        return self.ary.__rmul__(other)
+        return self._view(self.ary.__rmul__(other))
 
     def __truediv__(self, other):
-        return self.ary.__truediv__(other)
+        return self._view(self.ary.__truediv__(other))
 
     def __rtruediv__(self, other):
-        return self.ary.__rtruediv__(other)
+        return self._view(self.ary.__rtruediv__(other))
 
     def __pow__(self, other):
-        return self.ary.__pow__(other)
+        return self._view(self.ary.__pow__(other))
 
     def __rpow__(self, other):
-        return self.ary.__rpow__(other)
+        return self._view(self.ary.__rpow__(other))
 
     def __getitem__(self, index):
         return self.ary.__getitem__(index)
 
     def __abs__(self):
-        return self.ary.__abs__()
+        return self._view(self.ary.__abs__())
