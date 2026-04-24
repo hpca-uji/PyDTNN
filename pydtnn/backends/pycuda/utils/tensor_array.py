@@ -313,70 +313,70 @@ class TensorArray:
         except:  # noqa: E722
             pass
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.ary)
 
-    def __add__(self, other):
+    def __add__(self, other) -> "TensorArray":
         if isinstance(other, TensorArray):
             other = other.ary
         return self._view(self.ary.__add__(other))
 
-    def __radd__(self, other):
+    def __radd__(self, other) -> "TensorArray":
         if isinstance(other, TensorArray):
             other = other.ary
         return self._view(self.ary.__radd__(other))
 
-    def __sub__(self, other):
+    def __sub__(self, other) -> "TensorArray":
         if isinstance(other, TensorArray):
             other = other.ary
         return self._view(self.ary.__sub__(other))
 
-    def __rsub__(self, other):
+    def __rsub__(self, other) -> "TensorArray":
         if isinstance(other, TensorArray):
             other = other.ary
         return self._view(self.ary.__rsub__(other))
 
-    def __iadd__(self, other):
+    def __iadd__(self, other) -> "TensorArray":
         if isinstance(other, TensorArray):
             other = other.ary
         return self._view(self.ary.__iadd__(other))
 
-    def __isub__(self, other):
+    def __isub__(self, other) -> "TensorArray":
         if isinstance(other, TensorArray):
             other = other.ary
         return self._view(self.ary.__isub__(other))
 
-    def __neg__(self, other):
+    def __neg__(self, other) -> "TensorArray":
         if isinstance(other, TensorArray):
             other = other.ary
         return self._view(self.ary.__neg__(other))
 
-    def __mul__(self, other):
+    def __mul__(self, other) -> "TensorArray":
         if isinstance(other, TensorArray):
             other = other.ary
         return self._view(self.ary.__mul__(other))
 
-    def __rmul__(self, other):
+    def __rmul__(self, other) -> "TensorArray":
         if isinstance(other, TensorArray):
             other = other.ary
         return self._view(self.ary.__rmul__(other))
 
-    def __truediv__(self, other):
+    def __truediv__(self, other) -> "TensorArray":
         if isinstance(other, TensorArray):
             other = other.ary
         return self._view(self.ary.__truediv__(other))
 
-    def __rtruediv__(self, other):
+    def __rtruediv__(self, other) -> "TensorArray":
         if isinstance(other, TensorArray):
             other = other.ary
         return self._view(self.ary.__rtruediv__(other))
 
-    def __pow__(self, other):
+    def __pow__(self, other) -> "TensorArray":
         if isinstance(other, TensorArray):
             other = other.ary
         return self._view(self.ary.__pow__(other))
 
-    def __rpow__(self, other):
+    def __rpow__(self, other) -> "TensorArray":
         if isinstance(other, TensorArray):
             other = other.ary
         return self._view(self.ary.__rpow__(other))
@@ -384,5 +384,5 @@ class TensorArray:
     def __getitem__(self, index):
         return self.ary.__getitem__(index)
 
-    def __abs__(self):
+    def __abs__(self) -> "TensorArray":
         return self._view(self.ary.__abs__())
