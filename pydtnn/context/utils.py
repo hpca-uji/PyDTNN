@@ -36,8 +36,6 @@ LIMIT_THREADS_AND_BLOCKS = 1024
 
 
 class Util[T: Array](Base[T]):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
 
     def encode_shape(self, shape: ArrayShape) -> ArrayShape:
         """Transform the shape from `NCHW` order to `model.tensor_format` order (supports 4 or 3 dimensions)"""

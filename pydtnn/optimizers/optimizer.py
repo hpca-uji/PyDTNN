@@ -1,3 +1,5 @@
+import numpy as np
+
 from pydtnn.utils.constants import Array
 from pydtnn.utils import find_component
 from pydtnn.abstract.layerable import Layerable
@@ -18,8 +20,14 @@ class Optimizer[T: Array](Base):
 
     def _model_init(self, list_layers: list[Layerable[T]]) -> None:
         super()._model_init()
-        self.dtype = self.model.dtype
-        self.gpudirect = self.model.gpudirect
+
+    @property
+    def dtype(self) -> np.dtype:
+        return self.model.dtype
+
+    @property
+    def gpudirect(self) -> bool:
+        return self.model.gpudirect
 
     def update(self, layer: Layerable) -> None:
         raise NotImplementedError("method update of an Optimizer's child class is not implemented")

@@ -8,9 +8,6 @@ logger = logging.getLogger(__name__)
 
 class Show[T: Array](Layer[T]):
 
-    def __init__(self, **kwargs) -> None:
-        super().__init__(**kwargs)
-
     def _show_props(self) -> dict:
         props = {}
 

@@ -331,6 +331,8 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
             return boundaries
 
         if balanced:
+            assert self.model.comm, "Communicator need!"
+
             coo_topk = SparseMatrixCOO.from_dense_top_selection(acc, local_th)
 
             current_row = 0
@@ -341,7 +343,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
             boundaries = np.zeros(self.model.nprocs, dtype=np.int32)
             topk_per_proc = coo_topk.nnz // self.model.nprocs
             topk_per_row = np.zeros(total_rows, dtype=np.int32)
-            np.add.at(topk_per_row, rows, 1)
+            np.add.at(topk_per_row, rows, 1)  # type: ignore
 
             while current_proc < self.model.nprocs - 1:
                 if current_row < total_rows:
@@ -451,6 +453,8 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
         if self.model.nprocs == 1:
             return coo_topk
 
+        assert self.model.comm, "Communicator need!"
+
         if method == "collective_allreduce_then_slice":
             logger.warning("This reduce_topk method ('collective_allreduce_then_slice') should be used only in case of debugging for performance reasons.")
             warnings.warn("This reduce_topk method ('collective_allreduce_then_slice') should be used only in case of debugging for performance reasons.", RuntimeWarning)
@@ -539,6 +543,8 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
 
         if self.model.nprocs == 1:
             return local_data
+
+        assert self.model.comm, "Communicator need!"
 
         if input_format == "SparseMatrixCOO":
             gathered = self.model.comm.allgather(local_data.get_triplet())
