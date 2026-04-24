@@ -51,7 +51,7 @@ class Eval[T: Array](Sync[T]):
             else:
                 raise NotImplementedError("can not compute metrics non-blocking locally")
 
-        return _losses, loss_req
+        return _losses, loss_req  # type: ignore
 
     def _update_running_average(self, curr: np.ndarray, total: np.ndarray, count: int,
                                 batch_size: int, prefix="") -> tuple[np.ndarray, int, str]:
