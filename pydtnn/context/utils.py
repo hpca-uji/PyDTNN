@@ -7,7 +7,6 @@ from pydtnn import utils
 from pydtnn.context.base import Base
 from pydtnn.utils.constants import Array, ArrayShape
 from pydtnn.utils.tensor import decode_shape, encode_shape, encode_tensor, decode_tensor
-from pydtnn.utils.performance_models import allreduce_time
 
 import logging
 logger = logging.getLogger(__name__)
@@ -18,6 +17,14 @@ LIMIT_THREADS_AND_BLOCKS = 1024
 
 
 class Util[T: Array](Base[T]):
+
+    @property
+    def input_shape(self):
+        return self.layers[0].shape
+
+    @property
+    def output_shape(self):
+        return self.layers[-1].shape
 
     def encode_shape(self, shape: ArrayShape) -> ArrayShape:
         """Transform the shape from `NCHW` order to `model.tensor_format` order (supports 4 or 3 dimensions)"""

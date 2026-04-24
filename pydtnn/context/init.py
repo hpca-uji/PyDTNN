@@ -120,7 +120,6 @@ class Init[T: Array](Export[T]):
         # Load weights and bias
         if self.weights_and_bias_filename:
             self.load_weights_and_bias(self.weights_and_bias_filename)
-    # ----- __init__ ----- #
 
     def _tensor_init(self) -> None:
         """Setup tensor format"""
@@ -194,7 +193,6 @@ class Init[T: Array](Export[T]):
             warn(warn_text, RuntimeWarning)
 
         return crypt
-    # -----
 
     def _mpi_init(self) -> None:
         # Communication type
@@ -224,7 +222,6 @@ class Init[T: Array](Export[T]):
                 pass
             case _:
                 raise ValueError(f"MPI buffers option '{self.use_mpi_buffers}' not recognized.")
-    # ----- _mpi_init ----- #
 
     def _cudnn_init(self) -> None:
         self.cuda_threads = min(self.batch_size, LIMIT_THREADS_AND_BLOCKS)
@@ -274,24 +271,22 @@ class Init[T: Array](Export[T]):
         self.cublas_handle = cublas_handle
         self.stream = stream
         self.cudnn_dtype = cudnn_dtype
-    # ----- _cudnn_init ----- #
 
-    def _ensure_model_runable(self) -> None:
-        if not self.layers:
-            warn_text = "The model has no layers in it."
+    def _layers_init(self, model_name: str) -> None:
+        create_model = select_model(model_name)
+        input_shape = self.dataset.input_shape
+        output_shape = self.dataset.output_shape
+
+        # NOTE: Dataset is always in NCHW
+        # Change input_shape to model.tensor_format
+        if len(input_shape) != 3:
+            warn_text = f"Input layer does not have 3 dimensions ({input_shape}), it may cause issues!"
             logger.warning(warn_text)
             warn(warn_text, RuntimeWarning)
-        elif not self.dataset:
-            raise ValueError("There is no dataset and the model has layers.")
-        self._model_init()
+        else:
+            input_shape = format_reshape(input_shape, SampleFormat.CHW, self.tensor_format.as_sample())
 
-    @property
-    def input_shape(self):
-        return self.layers[0].shape
-
-    @property
-    def output_shape(self):
-        return self.layers[-1].shape
+        self.add_layers(create_model(input_shape, output_shape))
 
     def _model_init(self):
         if self._is_model_init:
@@ -344,19 +339,11 @@ class Init[T: Array](Export[T]):
         self.optimizer._post_init()
         # ----
 
-    def _layers_init(self, model_name: str) -> None:
-        create_model = select_model(model_name)
-        input_shape = self.dataset.input_shape
-        output_shape = self.dataset.output_shape
-
-        # NOTE: Dataset is always in NCHW
-        # Change input_shape to model.tensor_format
-        if len(input_shape) != 3:
-            warn_text = f"Input layer does not have 3 dimensions ({input_shape}), it may cause issues!"
+    def _ensure_model_runable(self) -> None:
+        if not self.layers:
+            warn_text = "The model has no layers in it."
             logger.warning(warn_text)
             warn(warn_text, RuntimeWarning)
-        else:
-            input_shape = format_reshape(input_shape, SampleFormat.CHW, self.tensor_format.as_sample())
-
-        self.add_layers(create_model(input_shape, output_shape))
-        # ----
+        elif not self.dataset:
+            raise ValueError("There is no dataset and the model has layers.")
+        self._model_init()
