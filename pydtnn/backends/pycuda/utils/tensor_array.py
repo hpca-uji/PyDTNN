@@ -224,7 +224,9 @@ class TensorArray:
 
     def reshape(self, shape, order="C") -> "TensorArray":
         """Reshape TensorArray"""
-        return self._view(self.ary.reshape(shape, order))
+        ta = self._view(self.ary.reshape(shape, order))
+        ta._desc_init()
+        return ta
 
     def squeeze(self, dtype=None) -> "TensorArray":
         """Squeeze TensorArray"""
