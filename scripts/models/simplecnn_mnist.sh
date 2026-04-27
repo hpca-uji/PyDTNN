@@ -32,6 +32,6 @@ pydtnn-benchmark \
   --parallel-data=False \
   --tracing=False \
   --profile=False \
-  --backend=cpu,gemm \
+  --backend=cpu \
   --enable-cudnn=False \
   --dtype=float32
