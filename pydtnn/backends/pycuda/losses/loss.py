@@ -28,10 +28,8 @@ class LossPycuda(Loss[TensorArray], BasePycuda):
         self.loss = gpuarray.zeros((self.model.batch_size,), self.model.dtype)
         dx_gpu = gpuarray.zeros(self.shape, self.model.dtype)
         self.dx = TensorArray(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
-        self.kernel = self.__init_gpu_kernel__()
-
         self.memory_used += self.dx.nbytes + self.loss.nbytes
 
-    def __init_gpu_kernel__(self) -> Function:
+    def _kernel_init(self) -> Function:
         self.defines_replaces = {"\"TYPE\"": DTYPE2CTYPE[self.model.dtype]}
         self.kernel = self._get_kernel()
