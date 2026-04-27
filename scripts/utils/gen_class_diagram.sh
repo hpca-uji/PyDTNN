@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 # Generate a SVG from class hierarchy
+SRC="${1:-.}"
+EXC="${2:-?}"
 
-grep -wR '^class' pydtnn |  # Find classes
-grep -v 'pydtnn/libs' |  # Exclude libs
+grep -wR '^class' "${SRC:?}" |  # Find classes
+grep -vP "${EXC:?}" |  # Exclude libs
 sed -E 's|.*class ||; s|\[[^]]+\]||g; s|\w+=||g; s|:||; s| ||g; s|\(|:|; s|\)||' |  # Parsable format
 sed -E 's|(\w+):(\w+),(.*)|\1:\2\n\1:\3|g' |  # Expand multiple inheritance (1)
 sed -E 's|(\w+):(\w+),(.*)|\1:\2\n\1:\3|g' |  # Expand multiple inheritance (2)
