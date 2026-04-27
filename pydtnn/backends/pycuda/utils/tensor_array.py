@@ -81,13 +81,13 @@ class TensorArray:
             return TensorArray.new_pair(shape=shape, dtype=dtype, tensor_format=tensor_format,
                                         cudnn_dtype=cudnn_dtype, tensor_type=tensor_type,
                                         desc=desc, gpudirect=gpudirect, cublas=cublas)
-
     # ---
 
     def __init__(self, gpu_arr: "gpuarray.GPUArray", tensor_format: TensorFormat, cudnn_dtype: int,
                  tensor_type: TensorType = TensorType.TENSOR, desc: int | None = None,
-                 gpudirect: bool = False, cublas: bool = False):
+                 gpudirect: bool = False, cublas: bool = False, cpu_shape: ArrayShape | None = None):
 
+        self.cpu_shape: ArrayShape = cpu_shape  # type: ignore (if it's None it will be set later)
         self.tensor_format = TensorFormat(tensor_format.lower())
         self.cudnn_dtype = cudnn_dtype
         self.tensor_type = tensor_type
@@ -145,7 +145,8 @@ class TensorArray:
             case _:
                 raise ValueError(f"The expected len shape are 1, 2, 3 or 4. Shape received: {len(gpu_arr.shape)}.")
 
-        self.shape_cpu = gpu_arr.shape
+        if self.cpu_shape is None:
+            self.cpu_shape = gpu_arr.shape
         self.ary = gpu_arr.reshape(shape)
     # ---
 
@@ -224,9 +225,7 @@ class TensorArray:
 
     def reshape(self, shape, order="C") -> "TensorArray":
         """Reshape TensorArray"""
-        ta = self._view(self.ary.reshape(shape, order))
-        ta._desc_init()
-        return ta
+        return self._view(self.ary.reshape(shape, order))
 
     def squeeze(self, dtype=None) -> "TensorArray":
         """Squeeze TensorArray"""
@@ -280,17 +279,24 @@ class TensorArray:
 
     def _view(self, ary):
         """TensorArray view"""
+
+        # Checkig if ary and self.ary are the same
+        # NOTE: This wouldn't work if "ary" is a sub-array that starts in a different base,
+        #       but, in that cases, it will only make an extra descriptor (but this is not a great problem).
+        # are_the_same = (ary.gpudata == self.ary.gpudata)
+        # NOTE: In some cases, it would be possible to share the descriptior but we don't have enought information to implementent this optimization.
+
         return TensorArray(gpu_arr=ary,
                            tensor_format=self.tensor_format,
                            cudnn_dtype=self.cudnn_dtype,
                            tensor_type=self.tensor_type,
                            gpudirect=self.gpudirect,
                            cublas=self.cublas,
-                           desc=self.desc)
+                           desc = None,  # desc=self.desc if are_the_same else None,
+                           cpu_shape=self.cpu_shape)
 
     def copy(self):
         """ NumPy-like copy. """
-        # FIXME: El descriptor no se recrea !!
         return copy.deepcopy(self)
 
     def __copy__(self):
