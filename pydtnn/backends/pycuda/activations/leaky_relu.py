@@ -24,7 +24,7 @@ class LeakyReluPycuda(LeakyRelu[TensorArray], ActivationPycuda):
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
         super()._model_init(prev_shape, x)
 
-        y_gpu = gpuarray.zeros(x.ary.shape, self.model.dtype)
+        y_gpu = gpuarray.zeros(x.shape, self.model.dtype)
         self.y = TensorArray(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
         mask_gpu = gpuarray.zeros((self.model.batch_size, *self.prev_shape), self.model.dtype)
@@ -59,10 +59,10 @@ class LeakyReluPycuda(LeakyRelu[TensorArray], ActivationPycuda):
 
         self.fwd_time = \
             im2col_time(m=self.ci, n=n, cpu_speed=self.model.cpu_speed,
-                        memory_bw=self.model.memory_bw, dtype=self.model.dtype)
+                        memory_bw=self.model.memory_bw, dtype=self.model.dtype)  # type: ignore (it's fine)
         self.bwd_time = \
             col2im_time(m=self.ci, n=n, cpu_speed=self.model.cpu_speed,
-                        memory_bw=self.model.memory_bw, dtype=self.model.dtype)
+                        memory_bw=self.model.memory_bw, dtype=self.model.dtype)  # type: ignore (it's fine)
 
     def forward(self, x: TensorArray) -> TensorArray:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)

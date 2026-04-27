@@ -42,4 +42,4 @@ class BinaryConfusionMatrixPycuda(BinaryConfusionMatrix[TensorArray], MetricPycu
                     grid=self.grid, block=self.block,
                     stream=self.model.stream)
 
-        return self.conf_matrix.ary.get()
+        return np.asarray(self.conf_matrix)

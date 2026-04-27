@@ -32,7 +32,7 @@ class SGDPycuda(SGD[TensorArray], OptimizerPycuda):
         # GPU Direct -
         self.defines_replaces: dict[str, str] = {"\"TYPE\"": DTYPE2CTYPE[self.model.dtype],
                                                  "NESTEROV_OPS": "NESTEROV_OPS" if self.nesterov else "NOT_NESTEROV"}
-        self.update_gpudirect = self._get_kernel(func_name_subfix="_gpu_direct")
+        self.update_gpudirect = self._get_kernel(func_name_subfix="_gpudirect")
         # ------------
 
     def _model_init(self, list_layers: list[LayerPycuda]) -> None:
@@ -45,7 +45,7 @@ class SGDPycuda(SGD[TensorArray], OptimizerPycuda):
                 self.context[layer.id] = dict[str, gpuarray.GPUArray]()
                 for w_ in list_grad_vars:
                     w = getattr(layer, w_)
-                    self.context[layer.id]["velocity_%s" % w_] = gpuarray.zeros_like(w.ary, dtype=w.ary.dtype)
+                    self.context[layer.id]["velocity_%s" % w_] = gpuarray.zeros(w.shape, dtype=w.dtype)
 
                     self.memory_used += self.context[layer.id]["velocity_%s" % w_].nbytes  # type: ignore (They are both "gpuarray" and not "int")
 
@@ -59,7 +59,7 @@ class SGDPycuda(SGD[TensorArray], OptimizerPycuda):
 
             if self.gpudirect:
                 n = self.get_batch_size(w)
-                self.update_gpudirect(w.ary.gpudata, dw.ptr_intp, velocity.gpudata,
+                self.update_gpudirect(w.gpudata, dw.ptr_intp, velocity.gpudata,
                                       np.float32(self.learning_rate), np.float32(self.decay),
                                       np.float32(self.momentum), np.int32(n),
                                       self.model.cuda_grid, block=self.model.cuda_block,

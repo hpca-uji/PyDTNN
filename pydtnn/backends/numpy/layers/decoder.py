@@ -71,24 +71,24 @@ class DecoderNumpy(Decoder[np.ndarray], AbstractBlockLayerNumpy):
         pass
 
     def flatten(self, x):
-        last_dim = x.ary.shape[-1]
+        last_dim = x.shape[-1]
         return x.reshape((int(np.prod(self.first_dims)), last_dim))
 
     def unflatten(self, x):
-        last_dim = x.ary.shape[-1]
+        last_dim = x.shape[-1]
         return x.reshape((*self.first_dims, last_dim))
 
     def forward(self, x, x_enc, mask=None):
         # Self Attention
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_MHA)
-        x_1 = self.multiheadattention.forward(x, x, x, mask)
+        x_1 = self.multiheadattention.forward(x, x, x, mask)  # type: ignore (multiheadattention has more parameters)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         # x_1 = self.dropout_1.forward(x_1)
         x_1 += x
         x_1 = self.layernormalization_1.forward(x_1)
         # Encoder-Decoder Attention
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_MHA)
-        x_2 = self.multiheadattention_enc.forward(x_1, x_enc, x_enc, mask)
+        x_2 = self.multiheadattention_enc.forward(x_1, x_enc, x_enc, mask)  # type: ignore (multiheadattention has more parameters)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         # x_2 = self.dropout_enc.forward(x_2)
         x_2 += x_1
@@ -112,7 +112,7 @@ class DecoderNumpy(Decoder[np.ndarray], AbstractBlockLayerNumpy):
         dx_2 = dx_1 + dx_2
         # Encoder-Decoder Attention
         dx_2 = self.layernormalization_enc.backward(dx_2)
-        # dx_3 = self.dropout_enc.backward(dx_2)
+        dx_3 = self.dropout_enc.backward(dx_2)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_MHA)
         dx_3, dx_4, dx_5 = self.multiheadattention_enc.backward(dx_3)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)

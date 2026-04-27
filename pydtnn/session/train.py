@@ -6,12 +6,12 @@ from tqdm import tqdm
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.datasets.dataset import Dataset
 from pydtnn.utils.constants import Array
-from pydtnn.context.utils import BAR_WIDTH
+from pydtnn.session.utils import BAR_WIDTH
 import numpy as np
 
 
 from pydtnn.schedulers.scheduler import select as select_scheduler
-from pydtnn.context.eval import Eval
+from pydtnn.session.eval import Eval
 from pydtnn import gpuarray, MPI
 from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_MDL_EVENT_enum
 import time
@@ -153,8 +153,7 @@ class Train[T: Array](Eval[T]):
                 dx = layer.backward(dx)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
-        if self.enable_cudnn:
-            assert self.stream
+        if self.stream:
             self.stream.synchronize()  # type: ignore
 
         # Gradient update (GU)
@@ -175,7 +174,7 @@ class Train[T: Array](Eval[T]):
 
         if self.enable_cudnn:
             for layer in self.layers:
-                if layer.grad_vars:
+                if layer.grad_vars and layer.stream_2:
                     layer.stream_2.synchronize()  # type: ignore
 
         # Schedulers end

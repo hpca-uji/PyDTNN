@@ -17,7 +17,7 @@ class Metric[T: Array](Base):
 
     def _model_init(self) -> None:
         super()._model_init()
-        self.shape = self.model._output_shape
+        self.shape = (self.model.batch_size, *self.model.output_shape)
 
     @abstractmethod
     def compute(self, y_pred: T, y_targ: T) -> float | np.ndarray:

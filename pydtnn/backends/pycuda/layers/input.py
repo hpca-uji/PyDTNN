@@ -44,8 +44,8 @@ class InputPycuda(Input[TensorArray], LayerPycuda):
             y_batch = np.asarray(y_batch, dtype=self.model.dtype, order="C")
 
             assert isinstance(self.y, TensorArray) and isinstance(self.model.y_batch, TensorArray)
-            self.y.ary.set(x_batch)
-            self.model.y_batch.ary.set(y_batch)
+            self.y.set(x_batch)
+            self.model.y_batch.set(y_batch)
             x, y_targ = self.model.layers[0].y, self.model.y_batch
         else:
             empty_x = gpuarray.zeros((1, *self.model.dataset.input_shape), self.model.dtype)[:0]
@@ -59,13 +59,13 @@ class InputPycuda(Input[TensorArray], LayerPycuda):
         return ctypes.c_void_p(int(self.ws))
 
     def checkConvolutionMemory(self, size) -> None:
-        if 0 < size.value < self.ws_size:
+        if size.value < self.ws_size:
             return
 
         if self.ws is not None:
             self.ws.free()
 
-        self.ws_size = size.value
+        self.ws_size = max(1, size.value)
         self.ws = drv.mem_alloc(self.ws_size)
 
     def getConvolutionWorkspacePtr(self) -> ctypes.c_void_p:

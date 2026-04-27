@@ -18,4 +18,4 @@ class CategoricalAccuracyPycuda(CategoricalAccuracy[TensorArray], MetricPycuda):
                     np.int32(self.model.batch_size), np.int32(self.shape[1]),
                     grid=self.grid, block=self.block,
                     stream=self.model.stream)
-        return gpuarray.sum(self.cost).get() * 100 / self.model.batch_size
+        return float(gpuarray.sum(self.cost).get()) * 100 / self.model.batch_size

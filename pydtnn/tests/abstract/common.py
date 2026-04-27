@@ -24,10 +24,8 @@ class Params:
         self.dtype: np.dtype = np.dtype(np.float32)
         self.tensor_format = TensorFormat.NHWC.upper()
         self.backend = "cpu"
-
-        # model_name = os.environ.get("PYDTNN_TEST_MODEL", "simplecnn")
-        # self.model_name = model_name
-
+        self.batch_size = 64
+        self.model_name: str = None  # type: ignore
         self.dataset_name = "synthetic"
         self.synthetic_train_samples = "50000"
         self.synthetic_test_samples = "10000"

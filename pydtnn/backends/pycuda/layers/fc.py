@@ -24,8 +24,8 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
     def _import_biases_db(self, key: str, value: Any) -> None:
         attribute = getattr(self, key)
 
-        cpu_ary = np.asarray(np.expand_dims(value, axis=0), dtype=self.model.dtype, order="C")
-        attribute.ary.set(cpu_ary)
+        cpu_ary = np.asarray(value, dtype=self.model.dtype, order="C")
+        attribute.set(cpu_ary)
         return
     # ---
 
@@ -40,10 +40,10 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
 
     def _export_biases_db(self, key: str) -> Any:
         value = getattr(self, key)
-        gpu_ary = value.ary
+        gpu_ary = value
         cpu_ary = gpu_ary.get()
 
-        return np.asarray(np.squeeze(cpu_ary, axis=0), dtype=np.float64, order="C").copy()
+        return np.asarray(cpu_ary, dtype=np.float64, order="C").copy()
     # ---
 
     def _export_prop(self, key: str) -> Any:
@@ -102,7 +102,7 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
         self.fwd_time = \
             matmul_time(m=self.model.batch_size, n=self.weights_cpu.shape[1], k=self.weights_cpu.shape[0],
                         cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw,
-                        dtype=self.model.dtype)
+                        dtype=self.model.dtype)  # type: ignore (it's fine)
         self.bwd_time = \
             matmul_time(m=self.weights_cpu.shape[0], n=self.weights_cpu.shape[1], k=self.model.batch_size,
                         cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw,
@@ -112,18 +112,18 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
                         dtype=self.model.dtype)  # type: ignore (This is correct)
 
     def forward(self, x: TensorArray) -> TensorArray:
-        m = x.ary.shape[0]
-        n = ldb = ldc = self.weights.ary.shape[1]
-        k = lda = x.ary.shape[1]
+        m = x.shape[0]
+        n = ldb = ldc = self.weights.shape[1]
+        k = lda = x.shape[1]
         trans_a, trans_b, alpha, beta = 'N', 'N', 1.0, 0.0
 
         # Compute a' = x @ weights
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
                                      self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUBLAS_MATMUL)
         self.matmul(self.model.cublas_handle, trans_b, trans_a, n, m, k, alpha,
-                    self.weights.ary.gpudata, ldb,
-                    x.ary.gpudata, lda, beta,
-                    self.y.ary.gpudata, ldc, self.model.dtype)
+                    self.weights.gpudata, ldb,
+                    x.gpudata, lda, beta,
+                    self.y.gpudata, ldc, self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.use_bias:
@@ -139,54 +139,54 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
 
     def backward(self, dy: TensorArray) -> TensorArray:
         # Compute dw
-        m = lda = self.x.ary.shape[1]
-        n = ldb = ldc = dy.ary.shape[1]
-        k = dy.ary.shape[0]
+        m = lda = self.x.shape[1]
+        n = ldb = ldc = dy.shape[1]
+        k = dy.shape[0]
         trans_a, trans_b, alpha, beta = 'T', 'N', 1.0, 0.0
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
                                      self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUBLAS_MATMUL_DW)
         self.matmul(self.model.cublas_handle, trans_b, trans_a, n, m, k, alpha,
-                    dy.ary.gpudata, ldb, self.x.ary.gpudata, lda, beta,
-                    self.dw.ptr_intp if self.model.gpudirect else self.dw.ary.gpudata, ldc, self.model.dtype)
+                    dy.gpudata, ldb, self.x.gpudata, lda, beta,
+                    self.dw.ptr_intp if self.model.gpudirect else self.dw.gpudata, ldc, self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         # DtoH dw when data parallelism and no GPU direct/NCCL is used
         if self.model.comm and not self.model.gpudirect and not self.model.enable_nccl:
             # self.model.stream.synchronize()
-            self.dw.ary.get_async(self.stream_2, self.dw_cpu)
+            self.dw.get_async(self.stream_2, self.dw_cpu)
 
         if self.use_bias:
             self.biases: TensorArray
             # Compute db
-            m = dy.ary.shape[0]
-            n = lda = dy.ary.shape[1]
+            m = dy.shape[0]
+            n = lda = dy.shape[1]
             trans_a, alpha, beta, inc_x, inc_y = 'N', 1.0, 0.0, 1, 1
 
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
                                          self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUBLAS_MATVEC_DB)
             self.matvec(self.model.cublas_handle, trans_a, n, m, alpha,
-                        dy.ary.gpudata, lda, self.one_vec_gpu.gpudata, inc_x, beta,
-                        self.db.ptr_intp if self.model.gpudirect else self.db.ary.gpudata,
+                        dy.gpudata, lda, self.one_vec_gpu.gpudata, inc_x, beta,
+                        self.db.ptr_intp if self.model.gpudirect else self.db.gpudata,
                         inc_y, self.model.dtype)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
             # DtoH db when data parallelism and no GPU direct/NCCL is used
             if self.model.comm and not self.model.gpudirect and not self.model.enable_nccl:
                 # self.model.stream.synchronize()
-                self.db.ary.get_async(self.stream_2, self.db_cpu)
+                self.db.get_async(self.stream_2, self.db_cpu)
 
         # Compute dx
-        m = dy.ary.shape[0]
-        n = ldc = self.weights.ary.shape[0]
-        k = lda = ldb = dy.ary.shape[1]
+        m = dy.shape[0]
+        n = ldc = self.weights.shape[0]
+        k = lda = ldb = dy.shape[1]
         trans_a, trans_b, alpha, beta = 'N', 'T', 1.0, 0.0
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
                                      self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUBLAS_MATMUL_DX)
         self.matmul(self.model.cublas_handle, trans_b, trans_a, n, m, k, alpha,
-                    self.weights.ary.gpudata, ldb,
-                    dy.ary.gpudata, lda, beta,
-                    self.dx.ary.gpudata, ldc, self.model.dtype)
+                    self.weights.gpudata, ldb,
+                    dy.gpudata, lda, beta,
+                    self.dx.gpudata, ldc, self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.dx

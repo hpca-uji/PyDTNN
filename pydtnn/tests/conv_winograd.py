@@ -49,7 +49,7 @@ class ConvWinogradTestCase(ConvCommonTestCase):
 
         x_c: np.ndarray = np.zeros(shape=(dim_n, dim_c), dtype=x.dtype)
 
-        im2row_nhwc_cython(x, x_c,
+        im2row_nhwc_cython(x, x_c,  # type: ignore
                            kh, kw, ho, wo,
                            vpadding, hpadding,
                            vstride, hstride,
@@ -85,7 +85,8 @@ class ConvWinogradTestCase(ConvCommonTestCase):
             vdilation,
             hdilation,
             debug=verbose_test(),
-            tensor_format=TensorFormat.NHWC).conv_winograd_nhwc(
+            tensor_format=TensorFormat.NHWC
+        ).conv_winograd_nhwc(
             weights,
             x,
             biases,
@@ -94,7 +95,8 @@ class ConvWinogradTestCase(ConvCommonTestCase):
             vstride,
             hstride,
             vdilation,
-            hdilation)
+            hdilation
+        )
 
     @staticmethod
     def _get_config() -> D:

@@ -41,12 +41,7 @@ class BatchNormalizationReluFuse(BatchNormalizationRelu[np.ndarray], BatchNormal
             x = x.reshape((-1, self.ci), copy=False)
 
         y: np.ndarray = self.y[:n, :]
-        bn_relu_inference_cython(x,
-                                 y.reshape((-1, self.ci), copy=False),
-                                 self.running_mean,
-                                 self.inv_std,
-                                 self.gamma,
-                                 self.beta)
+        bn_relu_inference_cython(x, y.reshape((-1, self.ci), copy=False), self.running_mean, self.inv_std, self.gamma, self.beta)  # type: ignore (it's fine)
 
         if self.spatial:
             y_shape = self.model.encode_shape((n, self.ci, self.hi, self.wi))

@@ -126,7 +126,7 @@ class ChestXRay(Dataset):
 
         for path, y in xy_filenames:
             src_path = self._src_filename[path]
-            with self._gzip_open(src_path) as g, tarfile.TarFile(fileobj=g) as t, t.extractfile(path) as fp:
+            with self._gzip_open(src_path) as g, tarfile.TarFile(fileobj=g) as t, t.extractfile(path) as fp:  # type: ignore
                 x = self._load_gray_image(fp)
 
             # Add N dimension

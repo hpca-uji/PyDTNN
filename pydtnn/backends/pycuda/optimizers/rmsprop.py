@@ -32,7 +32,7 @@ class RMSPropPycuda(RMSProp[TensorArray], OptimizerPycuda):
 
         # GPU DIRECT -
         self.defines_replaces: dict[str, str] = {"\"TYPE\"": DTYPE2CTYPE[self.model.dtype], "powf_or_pow": pow_func}
-        self.update_gpudirect = self._get_kernel(func_name_subfix="_gpu_direct")
+        self.update_gpudirect = self._get_kernel(func_name_subfix="_gpudirect")
         # -------------
 
     def _model_init(self, list_layers: list[LayerPycuda]) -> None:
@@ -45,7 +45,7 @@ class RMSPropPycuda(RMSProp[TensorArray], OptimizerPycuda):
                 self.context[layer.id] = dict[str, gpuarray.GPUArray]()
                 for w_ in list_grad_vars:
                     w = getattr(layer, w_)
-                    self.context[layer.id]["cache_%s" % w_] = gpuarray.zeros_like(w.ary, dtype=layer.model.dtype)
+                    self.context[layer.id]["cache_%s" % w_] = gpuarray.zeros(w.shape, dtype=layer.model.dtype)
 
                     self.memory_used += self.context[layer.id]["cache_%s" % w_].nbytes  # type: ignore (They are both "gpuarray" and not "int")
 

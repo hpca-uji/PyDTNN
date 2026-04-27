@@ -4,7 +4,7 @@ from pydtnn.backends.cython.utils.base import _npDT, _npDT_4Dims, _npDT_3Dims, _
 
 def relu_cython[T:_npDT](x: _npDT_1Dims[T],
                          max: _npDT_1Dims[T],
-                         mask: _np.ndarray[tuple[int], _np.int8]) -> None:
+                         mask: _np.ndarray[tuple[int], _np.dtype[_np.int8]]) -> None:
     """
     Args:
         x (npDT_1Dims): 1-dimensional input's array.
@@ -17,7 +17,7 @@ def relu_cython[T:_npDT](x: _npDT_1Dims[T],
 
 def capped_relu_cython[T:_npDT](x: _npDT_1Dims[T],
                                 max: _npDT_1Dims[T],
-                                mask: _np.ndarray[tuple[int], _np.int8],
+                                mask: _np.ndarray[tuple[int], _np.dtype[_np.int8]],
                                 cap: float) -> None:
     """
     ReLU function where the values above "cap"'s value are set as this value.

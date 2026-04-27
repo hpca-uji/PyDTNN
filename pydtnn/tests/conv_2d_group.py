@@ -60,7 +60,7 @@ class Conv2DGroupTestCase(Conv2DCommonTestCase):
         conv2d_pair.weights = conv2d.weights.copy()
         conv2d_pair.biases = conv2d.biases.copy()
 
-        return conv2d, chain
+        return conv2d, chain  # type: ignore
 
     @staticmethod
     def _set_state(layer: Conv2D, weights) -> None:

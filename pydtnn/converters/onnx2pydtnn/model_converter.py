@@ -4,7 +4,7 @@ from pydtnn.abstract.layerable import Layerable
 import numpy as np
 
 # Operations/transformations related
-import onnx
+import onnx  # type: ignore
 from pydtnn.model import Model as PyDTNN_Model
 import pydtnn.converters.onnx2pydtnn.constants as cons
 from pydtnn.layers.input import Input
@@ -21,7 +21,7 @@ from pydtnn.utils.tensor import TensorFormat
 # With _node being an element of onnx.ModelProto.graph.node:
 #   _node.input: inputs list. _node.output: outputs list. _node.attribute: list made by all the parameteres and values (they are "AttributeProto")
 
-def extract_shape(data: onnx.ValueInfoProto) -> np.shape:
+def extract_shape(data: onnx.ValueInfoProto) -> tuple[int]:
     # The shape of the inputs/ouputs is more or less a list quite hidden.
     #   NOTE: ONNX allows to have shapes of undefined value, e.g.: (N, 3, 224, 224),
     #       and, if it is not defined, that dimension is stored as 1. It's assumed that it is not relevant data and it will be removed, since "N" are the number of samples.
@@ -34,7 +34,7 @@ def extract_shape(data: onnx.ValueInfoProto) -> np.shape:
 # --- extract_shape --- #
 
 
-def get_relevant_data(model_graph: onnx.GraphProto) -> tuple[dict[str, np.shape], dict[str, np.shape], dict[str, np.ndarray]]:
+def get_relevant_data(model_graph: onnx.GraphProto) -> tuple[dict[str, tuple[int]], dict[str, tuple[int]], dict[str, np.ndarray]]:
 
     # onnx.numpy_helper.to_array() is a function that transforms onnx data into a ndarray (numpy's array)
 
@@ -138,14 +138,14 @@ def _get_and_put_layer(node: onnx.NodeProto, opset_version: int, operations: dic
         for operation in operations_to_remove:
             del operations[operation]
 
-    operations[info[cons.CONST_OUPTUS][0]] = (cons.switch_onnx_operation_to_pydtnn[node.op_type](info), info[cons.CONST_INPUTS])
+    operations[info[cons.CONST_OUPTUS][0]] = (cons.switch_onnx_operation_to_pydtnn(node.op_type)(info), info[cons.CONST_INPUTS])
 
     # return Nothing: the output is stored in the dictionary
 # --- END _get_and_put_layer --- #
 
 
-def get_layers(onnx_model: onnx.ModelProto, opset_version: int, inputs: dict[str, np.shape],
-               weights: dict[str, np.ndarray], outputs: dict[str, np.shape]) -> list[Layerable]:
+def get_layers(onnx_model: onnx.ModelProto, opset_version: int, inputs: dict[str, tuple[int]],
+               weights: dict[str, np.ndarray], outputs: dict[str, tuple[int]]) -> list[Layerable]:
 
     # TODO: meter otros parámetros que se puedan necesitar
     # operations = list()
@@ -167,9 +167,9 @@ def get_layers(onnx_model: onnx.ModelProto, opset_version: int, inputs: dict[str
     operations = {output_first_layer: (Input(shape=inputs[list(inputs.keys())[0]]), [None])}
 
     for i in range(num_operations - 1):
-        _get_and_put_layer(node=onnx_model.graph.node[i], opset_version=opset_version, operations=operations, weights=weights)
+        _get_and_put_layer(node=onnx_model.graph.node[i], opset_version=opset_version, operations=operations, weights=weights)  # type: ignore
         print("")  # TODO: Borrar
-    _get_and_put_layer(node=onnx_model.graph.node[-1], opset_version=opset_version, operations=operations, weights=weights, output=list(outputs.keys()))
+    _get_and_put_layer(node=onnx_model.graph.node[-1], opset_version=opset_version, operations=operations, weights=weights, output=list(outputs.keys()))  # type: ignore
 
     # The list of layers is returned.
     return list(map(lambda x: x[0], operations.values()))

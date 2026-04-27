@@ -16,6 +16,8 @@ class ModelCheckpoint(SchedulerWithLossOrMetric):
     ModelCheckpoint LRScheduler
     """
 
+    model: "Model"
+
     def __init__(self, loss_or_metric: str = "", epoch_save_frequency=1, verbose=True):
         super().__init__(loss_or_metric, verbose)
         self.epoch_save_frequency = epoch_save_frequency
@@ -25,7 +27,7 @@ class ModelCheckpoint(SchedulerWithLossOrMetric):
         self.filename: str | None = None
         self.last_filename: str | None = None
 
-    def on_epoch_end(self, train_loss: np.ndarray[float], val_loss: np.ndarray[float]) -> None:
+    def on_epoch_end(self, train_loss: np.ndarray, val_loss: np.ndarray) -> None:
         idx = self._get_idx()
         self.epoch_count += 1
         loss = val_loss if self.is_val_metric else train_loss

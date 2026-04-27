@@ -21,7 +21,7 @@ class WarmUp(Scheduler):
         self.init_lr = init_lr
         self.epoch_count: int = 0
 
-    def on_epoch_end(self, train_loss: ndarray[float], val_loss: ndarray[float]) -> None:
+    def on_epoch_end(self, train_loss: ndarray, val_loss: ndarray) -> None:
         if self.epoch_count < self.warmup_epochs:
             self.model.optimizer.learning_rate = self.base_lr + ((self.epoch_count + 1) / self.warmup_epochs) * (self.init_lr - self.base_lr)
             self.epoch_count += 1

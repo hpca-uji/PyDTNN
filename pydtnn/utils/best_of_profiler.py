@@ -39,7 +39,6 @@ class BestOfProfiler:
             logger.info(".")
 
     def print_results(self):
-        c = Console(force_terminal=True)
         #  From IBM OpenMP documentation: If you do not set OMP_NUM_THREADS, the number of processors available is the
         #  default value to form a new team for the first encountered parallel construct.
         import multiprocessing

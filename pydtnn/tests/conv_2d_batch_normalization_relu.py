@@ -62,7 +62,7 @@ class Conv2DBatchNormalizationReluTestCase(Conv2DCommonTestCase):
         fuse.weights = conv2d.weights.copy()
         fuse.biases = conv2d.biases.copy()
 
-        return chain, fuse
+        return chain, fuse  # type: ignore
 
     @staticmethod
     def _set_state(layer: Conv2D, weights) -> None:

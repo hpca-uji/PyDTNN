@@ -9,9 +9,9 @@ from pydtnn import MPI, drv, nccl, cudnn
 from pydtnn import hostname, ranks_per_node, num_gpus, nccl_comm, cudnn_handle, cublas_handle, context, stream, gpuarray, cublas
 
 from pydtnn.abstract.layerable import Layerable
-from pydtnn.context.base import Base
-from pydtnn.context.export import Export
-from pydtnn.context.utils import DEFAULT_BACH_SIZE, LIMIT_THREADS_AND_BLOCKS
+from pydtnn.session.base import Base
+from pydtnn.session.export import Export
+from pydtnn.session.utils import DEFAULT_BACH_SIZE, LIMIT_THREADS_AND_BLOCKS
 from pydtnn.libs.mpi.rc import proto as PROTOCOL
 from pydtnn.losses.loss import select as select_loss
 from pydtnn.metrics.metric import select as select_metric

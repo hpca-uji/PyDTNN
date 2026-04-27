@@ -2,9 +2,9 @@ from model_convertor import convert_model
 
 from typing import Any, Callable
 
-from torch.nn import Module as PyTorch_Model
-import torch.nn as nn
-import torch
+from torch.nn import Module as PyTorch_Model  # type: ignore
+import torch.nn as nn  # type: ignore
+import torch  # type: ignore
 
 from pydtnn.model import Model as PyDTNN_Model
 from pydtnn.abstract.layerable import Layerable
@@ -12,8 +12,8 @@ from pydtnn.abstract.layerable import Layerable
 
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 try:
-    import pycuda.gpuarray as gpuarray
-    from pydtnn.libs import cudnn as cudnn
+    import pycuda.gpuarray as gpuarray  # type: ignore
+    from pydtnn.libs import cudnn
 except BaseException:
     pass
 
@@ -175,7 +175,7 @@ def are_all_zeros(diff: np.ndarray) -> bool:
 
 
 def are_all_below_threshold(diff: np.ndarray, threshold: float = THRESHOLD) -> bool:
-    return np.all(diff < threshold)
+    return bool(np.all(diff < threshold))
 
 
 def forward_pydtnn_model(model: PyDTNN_Model, dataset: np.ndarray | TensorArray) -> np.ndarray | TensorArray:
@@ -186,7 +186,7 @@ def forward_pydtnn_model(model: PyDTNN_Model, dataset: np.ndarray | TensorArray)
         y = layer.forward(y)
 
     if y is None:
-        y: TensorArray = layer.y
+        y = layer.y
     # else: Nothing special.
     print(f"y | ({type(y)})")
 
@@ -207,14 +207,14 @@ def test_layers_gpu(model: PyDTNN_Model, dataset: np.ndarray) -> TensorArray:
         gpu_arr=gpuarray.zeros(shape=dataset.shape, dtype=dtype),
         tensor_format=model.tensor_format, cudnn_dtype=model.cudnn_dtype)
 
-    _dataset.ary.set(dataset)
-    print(f"_dataset: {_dataset} | type(_dataset): {type(_dataset)} | _dataset.ary.shape: {_dataset.ary.shape}")
+    _dataset.set(dataset)
+    print(f"_dataset: {_dataset} | type(_dataset): {type(_dataset)} | _dataset.shape: {_dataset.shape}")
 
     model.y_batch = _dataset
 
-    y: TensorArray | None = forward_pydtnn_model(model, _dataset)
+    y = forward_pydtnn_model(model, _dataset)
 
-    return y
+    return y  # type: ignore
 
 
 def test_layers(name: str, pytorch_model: TEST_PyTorch_Model, kwargs: dict[str, Any], input_shape: tuple[int, int, int],
@@ -249,10 +249,10 @@ def test_layers(name: str, pytorch_model: TEST_PyTorch_Model, kwargs: dict[str, 
     pytorch_state_dict = pytorch_model.layer.state_dict()
 
     pytorch_weights: None | torch.Tensor = pytorch_state_dict[PYTORCH_LAYER_WEIGHTS] if PYTORCH_LAYER_WEIGHTS in pytorch_state_dict else None
-    pydtnn_weights: None | np.ndarray | TensorArray = pydtnn_layer.weights
+    pydtnn_weights = pydtnn_layer.weights
 
     if isinstance(pydtnn_weights, TensorArray):
-        pydtnn_weights: np.ndarray = pydtnn_weights.ary.get()
+        pydtnn_weights: np.ndarray = pydtnn_weights.get()
 
     there_are_pytorch_weigths = pytorch_weights is not None
     there_are_pydtnn_weights = pydtnn_weights is not None
@@ -262,10 +262,10 @@ def test_layers(name: str, pytorch_model: TEST_PyTorch_Model, kwargs: dict[str, 
         print(f"weigths are all zeros: {are_all_zeros(pytorch_weights.cpu().detach().numpy() - pydtnn_weights)}")
 
     pytorch_biases: None | torch.Tensor = pytorch_state_dict[PYTORCH_LAYER_BIASES] if PYTORCH_LAYER_BIASES in pytorch_state_dict else None
-    pydtnn_biases: None | np.ndarray | TensorArray = pydtnn_layer.biases
+    pydtnn_biases = pydtnn_layer.biases
 
     if isinstance(pydtnn_weights, TensorArray):
-        pydtnn_biases: TensorArray = pydtnn_biases.ary.get()
+        pydtnn_biases: TensorArray = pydtnn_biases.get()
 
     there_are_pytorch_biases = pytorch_biases is not None
     there_are_pydtnn_biases = pydtnn_biases is not None
@@ -330,8 +330,8 @@ def test_add_and_concat(name: str, pytorch_model: TEST_PyTorch_Model, kwargs: di
 
     pytorch_output, _ = pytorch_model(torch_dataset)
     pytorch_output: torch.Tensor
-    pydtnn_model.dataset = dataset
-    pydtnn_output = forward_pydtnn_model(pydtnn_model, dataset)
+    # pydtnn_model.dataset = dataset  # FIXME: Paul dice que si la utiliza, MiguelA que no, revisar
+    pydtnn_output = forward_pydtnn_model(pydtnn_model, dataset)  # type: ignore
     pydtnn_output: np.ndarray
 
     pytorch_output = pytorch_output.detach().to("cpu").numpy()

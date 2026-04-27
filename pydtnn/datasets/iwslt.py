@@ -94,7 +94,7 @@ class IWSLT(Dataset):
         # pad = dictionary(pad).vector  # No hace falta si inicializamos a 0s
 
     def get_dictionary(self, language):
-        import spacy
+        import spacy  # type: ignore
         table = {
             "en": "en_core_web_md",
             "de": "de_core_news_md"
@@ -164,6 +164,12 @@ class IWSLT(Dataset):
         batch_size = self.model.batch_size
         rank = self.model.rank
 
+        if getattr(self, "src_embeddings", None):
+            pass
+        else:
+            self.src_embeddings = random.random((1000, 1, self.max_sentence, self.embedl)).astype(dtype=self.dtype)
+            self.tgt_embeddings = random.random((1000, 1, self.max_sentence, self.embedl)).astype(dtype=self.dtype)
+
         for i in range(self.train_nsamples // batch_size):
             # window = (i * batch_size + rank * batch_size, i * batch_size + (rank + 1) * batch_size)
             window = (0 * batch_size + rank * batch_size, 0 * batch_size + (rank + 1) * batch_size)
@@ -186,7 +192,7 @@ class IWSLT(Dataset):
             logger.error("Los archivos tienen un numero de muestras distintas, {} y {}".format(len(lines1), len(lines2)))
             return -1
 
-        file = open(self.file, "w")
+        file = open(destination_file, "w")
         for i in range(len(lines1)):
             line1 = lines1[i].replace("\n", "")
             line2 = lines2[i].replace("\n", "")

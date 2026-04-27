@@ -4,9 +4,9 @@ from pydtnn.backends.cython.utils.base import _npDT, _npDT_4Dims, _npDT_3Dims, _
 
 def argmax_cython[T: _npDT](x: _npDT_2Dims[T],
                             maxv: _npDT_1Dims[T],
-                            amax: _np.ndarray[tuple[int], _np.int32],
-                            rng: _np.ndarray[tuple[int], _np.int32],
-                            axis: int = 0) -> tuple[_npDT_1Dims[T:_np.int32], _npDT_1Dims[T:_np.int32]]:
+                            amax: _npDT_1Dims[_np.int32],
+                            rng: _npDT_1Dims[_np.int32],
+                            axis: int = 0) -> tuple[_npDT_1Dims[T], _npDT_1Dims[T]]:
     """
     Args:
         x (npDT_2Dims): A view 2 dimensional inptu's ndarray.

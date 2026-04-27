@@ -4,7 +4,7 @@ import os as _os
 
 
 try:
-    import pympi.rc as _rc
+    import pympi.rc as _rc  # type: ignore
 except Exception:
     _rc = None
 

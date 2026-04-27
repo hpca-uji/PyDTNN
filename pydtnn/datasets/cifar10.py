@@ -58,7 +58,7 @@ class CIFAR10(Dataset):
         with self._gzip_open(self._src_filename) as g:
             with tarfile.open(fileobj=g) as t:
                 for filename, offset, nsamples in self._offset2files(xy_filenames, IMAGES_PER_FILE, self._local_offset[part], self._local_nsamples[part]):
-                    with t.extractfile(filename) as f:
+                    with t.extractfile(filename) as f:  # type: ignore
                         x, y_classes = self._read_file(f, offset, nsamples)
                     x = np.divide(x, 255.0, dtype=self.model.dtype, casting="unsafe")
 

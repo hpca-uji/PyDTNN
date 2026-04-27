@@ -30,17 +30,17 @@ class ArctanhPycuda(Arctanh[TensorArray], ActivationPycuda):
             "datanh")
 
         # Activations y
-        y_gpu = gpuarray.zeros(x.ary.shape, self.model.dtype)
+        y_gpu = gpuarray.zeros(x.shape, self.model.dtype)
         self.y = TensorArray(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
         # Derivative dx
-        dx_gpu = gpuarray.zeros(x.ary.shape, self.model.dtype)
+        dx_gpu = gpuarray.zeros(x.shape, self.model.dtype)
         self.dx = TensorArray(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
         self.memory_used += self.y.nbytes + self.dx.nbytes
 
     def forward(self, x: TensorArray) -> TensorArray:
-        self.atanh(x.ary, self.y.ary, stream=self.model.stream)
+        self.atanh(x.ary, self.y, stream=self.model.stream)
         return self.y
 
     def backward(self, dy: TensorArray) -> TensorArray:

@@ -44,7 +44,7 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
 
         self.fwd_time = \
             matmul_time(m=self.co, n=(self.model.batch_size * self.ho * self.wo), k=(self.ci * self.kh * self.kw),
-                        cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw, dtype=self.model.dtype)
+                        cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw, dtype=self.model.dtype)  # type: ignore (It is correct.)
         self.bwd_time = \
             matmul_time(m=self.co, n=(self.ci * self.kh * self.kw), k=(self.model.batch_size * self.ho * self.wo),
                         cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw, dtype=self.model.dtype) + \
@@ -59,14 +59,14 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
             _drv = None
 
         # Derivative dw and derivative db
-        self.dw_cpu, self.dw = TensorArray.new(self.weights.ary.shape, self.model.dtype, tensor_format=self.model.tensor_format,
+        self.dw_cpu, self.dw = TensorArray.new(self.weights.shape, self.model.dtype, tensor_format=self.model.tensor_format,
                                                cudnn_dtype=self.model.cudnn_dtype, gpudirect=self.model.gpudirect,
                                                tensor_type=TensorArray.TensorType.FILTER, drv=_drv)
         self.memory_used += self.dw.nbytes
 
         if self.use_bias:
             self.biases: TensorArray
-            self.db_cpu, self.db = TensorArray.new(self.biases.ary.shape, self.model.dtype, tensor_format=self.model.tensor_format,
+            self.db_cpu, self.db = TensorArray.new(self.biases.shape, self.model.dtype, tensor_format=self.model.tensor_format,
                                                    cudnn_dtype=self.model.cudnn_dtype, gpudirect=self.model.gpudirect,
                                                    tensor_type=bias_tensor_type, drv=_drv)
             self.memory_used += self.db.nbytes

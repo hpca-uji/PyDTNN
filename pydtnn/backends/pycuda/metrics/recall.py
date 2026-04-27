@@ -29,4 +29,4 @@ class RecallPycuda(Recall[TensorArray], MetricPycuda):
                     grid=self.grid, block=self.block,
                     stream=self.model.stream)
 
-        return self.recall.ary.get()[0]
+        return float(self.recall.get())

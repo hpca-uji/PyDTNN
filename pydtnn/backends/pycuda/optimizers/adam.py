@@ -35,7 +35,7 @@ class AdamPycuda(Adam[TensorArray], OptimizerPycuda):
 
         # GPU DIRECT-
         self.defines_replaces: dict[str, str] = {"\"TYPE\"": DTYPE2CTYPE[self.model.dtype], "powf_or_pow": func_pow[self.model.dtype]}
-        self.update_gpudirect = self._get_kernel(func_name_subfix="_gpu_direct")
+        self.update_gpudirect = self._get_kernel(func_name_subfix="_gpudirect")
         # -----------
 
     def _model_init(self, list_layers: list[LayerPycuda]) -> None:
@@ -47,8 +47,8 @@ class AdamPycuda(Adam[TensorArray], OptimizerPycuda):
 
             for w_ in layer.grad_vars.keys():
                 w = getattr(layer, w_)
-                self.context[layer.id]["m_%s" % w_] = gpuarray.zeros_like(w.ary, dtype=layer.model.dtype)
-                self.context[layer.id]["v_%s" % w_] = gpuarray.zeros_like(w.ary, dtype=layer.model.dtype)
+                self.context[layer.id]["m_%s" % w_] = gpuarray.zeros(w.shape, dtype=layer.model.dtype)
+                self.context[layer.id]["v_%s" % w_] = gpuarray.zeros(w.shape, dtype=layer.model.dtype)
 
                 self.memory_used += self.context[layer.id]["m_%s" % w_].nbytes + self.context[layer.id]["v_%s" % w_].nbytes  # type: ignore (They are both "gpuarray" and not "int")
 
@@ -67,7 +67,7 @@ class AdamPycuda(Adam[TensorArray], OptimizerPycuda):
 
             if self.gpudirect:
                 n = self.get_batch_size(w)
-                self.update_gpudirect(w.ary.gpudata, dw.ptr_intp, m.gpudata, v.gpudata,
+                self.update_gpudirect(w.gpudata, dw.ptr_intp, m.gpudata, v.gpudata,
                                       np.float32(it), np.float32(self.learning_rate),
                                       np.float32(self.decay), np.float32(self.beta1),
                                       np.float32(self.beta2), np.float32(self.epsilon),

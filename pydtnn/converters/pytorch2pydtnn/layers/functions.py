@@ -35,24 +35,24 @@ def adaptive_avg_pool_2d(args: dict[str, str]) -> tuple[AveragePool2D, str]:
 
     dict_params = dict()
     # Example: torch.nn.functional.adaptive_avg_pool2d(relu, (1, 1)) | args = 'relu, (1, 1)'
-    params: list[str] = args[cm.PARAMETERS].split(cm.ARGS_SEPARATOR)
+    params: list = args[cm.PARAMETERS].split(cm.ARGS_SEPARATOR)
     # removing the input layer:
     dict_params["input"] = params.pop(0)  # Situation after operation: [] or ['number'] or ['(number', 'number)']
 
     # Getting the arguments:
     match len(params):
         case 0:
-            params = None
+            params = []
         case 1:
             param = int(params[0])
             params = [param, param]  # Only 1 argument implies the weight and height are the same.
         case greater_than_1:  # len must be always >= 0
             params = [int(param.replace('(', '').replace(')', '')) for param in params]
 
-    if params is not None:
+    if params:
         dict_params[cm.ARGUMENTS] = {cm.PYTORCH_OUTPUT_SIZE: params}
 
-    return (AdaptiveAveragePool2D(dict_params), dict_params["input"])
+    return (AdaptiveAveragePool2D(dict_params), dict_params["input"])  # type: ignore
 
 
 def add(args: dict[str, Any]) -> tuple[AdditionBlock, str]:
@@ -124,12 +124,12 @@ def flatten(args: dict[str, str]) -> tuple[Flatten, str]:
         match len(list_params):
             case 3:
                 var = list_params.pop().split("end_dim=")
-                dict_params["end_dim"] = int(var.pop())
+                dict_params["end_dim"] = int(var.pop())  # type: ignore
                 # // fall through
                 return switch(list_params, dict_params)
             case 2:
                 var = list_params.pop().split("start_dim=")
-                dict_params["start_dim"] = int(var.pop())
+                dict_params["start_dim"] = int(var.pop())  # type: ignore
                 # // fall through
                 return switch(list_params, dict_params)
             case 1:
@@ -142,7 +142,7 @@ def flatten(args: dict[str, str]) -> tuple[Flatten, str]:
     params = args[cm.PARAMETERS].strip()
     dict_params = switch(params.split(cm.ARGS_SEPARATOR))
 
-    return (Flatten(dict_params), dict_params["input"])
+    return (Flatten(**dict_params), dict_params["input"])  # type: ignore
 # ------------------ #
 
 # ------------------ #
@@ -208,12 +208,12 @@ def softmax(args: dict[str, Any]) -> tuple[Softmax, str]:
         match len(list_params):
             case 3:
                 var = list_params.pop().split("dim=")
-                dict_params["end_dim"] = int(var.pop())
+                dict_params["end_dim"] = int(var.pop())  # type: ignore
                 # // fall through
                 return switch(list_params, dict_params)
             case 2:
                 var = list_params.pop().split("dtype=")
-                dict_params["start_dim"] = int(var.pop())
+                dict_params["start_dim"] = int(var.pop())  # type: ignore
                 # // fall through
                 return switch(list_params, dict_params)
             case 1:
@@ -226,7 +226,7 @@ def softmax(args: dict[str, Any]) -> tuple[Softmax, str]:
     params = args[cm.PARAMETERS].strip()
     dict_params = switch(params.split(cm.ARGS_SEPARATOR))
 
-    return (activation.Softmax(**dict_params), dict_params["input"])
+    return (activation.Softmax(**dict_params), dict_params["input"])  # type: ignore
 
 
 def tanh(args: dict[str, Any]) -> tuple[Tanh, str]:

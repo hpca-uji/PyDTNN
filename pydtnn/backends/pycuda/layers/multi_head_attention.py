@@ -3,6 +3,7 @@ from pydtnn.layers.multi_head_attention import MultiHeadAttention
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.backends.pycuda.layers.layer import LayerPycuda
 import pycuda
+from pydtnn import drv
 from pycuda import gpuarray  # type: ignore
 from pydtnn.libs import cudnn as cudnn
 import numpy as np
@@ -19,7 +20,8 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
         self.grad_vars = {"weights": "dw"}
 
         # The next attributes will be initialized later
-        self.y = self.dx = None
+        self.y: TensorArray = None  # type: ignore
+        self.dx: TensorArray = None  # type: ignore
 
     def _model_init(self, prev_shape, x):
         super()._model_init(prev_shape, x)
@@ -85,7 +87,7 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
                           "CUDNN_MH_ATTN_Q_BIASES", "CUDNN_MH_ATTN_K_BIASES", "CUDNN_MH_ATTN_V_BIASES", "CUDNN_MH_ATTN_O_BIASES"]
         _weights = [self.q_weights_cpu, self.k_weights_cpu, self.v_weights_cpu, self.o_weights_cpu,
                     self.q_biases_cpu, self.k_biases_cpu, self.v_biases_cpu, self.o_biases_cpu]
-        pycuda.driver.memcpy_htod(self.weights.ptr_voidp.value, np.concatenate([w.flatten() for w in _weights]))
+        drv.memcpy_htod(self.weights.ptr_voidp.value, np.concatenate([w.flatten() for w in _weights]))
 
         # Memory Allocation for Outputs
         self.y = gpuarray.zeros((self.model.batch_size, self.beam, self.seq, self.embedl), self.model.dtype)
@@ -101,11 +103,11 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
         self.low_window_index = np.full(shape=(self.batch, self.beam, self.seq), fill_value=0, dtype=np.int32)
         self.high_window_index = np.full(shape=(self.batch, self.beam, self.seq), fill_value=self.seq, dtype=np.int32)
         # self.dev_seq_lengths_QO = np.full(shape=(self.batch*self.beam), fill_value=self.seq, dtype=np.int32)
-        self.dev_seq_lengths_QO = np.copy(self.y.seq_length_array)
-        self.dev_seq_lengths_QO = gpuarray.to_gpu(self.dev_seq_lengths_QO)
+        dev_seq_lengths_QO = np.copy(self.y.seq_length_array)
+        self.dev_seq_lengths_QO = gpuarray.to_gpu(dev_seq_lengths_QO)
         # self.dev_seq_lengths_KV = np.full(shape=(self.batch*self.beam), fill_value=self.seq, dtype=np.int32)
-        self.dev_seq_lengths_KV = np.copy(self.dkey.seq_length_array)
-        self.dev_seq_lengths_KV = gpuarray.to_gpu(self.dev_seq_lengths_KV)
+        dev_seq_lengths_KV = np.copy(self.dkey.seq_length_array)
+        self.dev_seq_lengths_KV = gpuarray.to_gpu(dev_seq_lengths_KV)
 
     def copy_weights(self):
         _weights_types = ["CUDNN_MH_ATTN_Q_WEIGHTS", "CUDNN_MH_ATTN_K_WEIGHTS", "CUDNN_MH_ATTN_V_WEIGHTS", "CUDNN_MH_ATTN_O_WEIGHTS",
@@ -113,7 +115,7 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
         _weights = [self.q_weights_cpu, self.k_weights_cpu, self.v_weights_cpu, self.o_weights_cpu,
                     self.q_biases_cpu, self.k_biases_cpu, self.v_biases_cpu, self.o_biases_cpu]
 
-        pycuda.driver.memcpy_htod(self.weights.ptr_voidp.value, np.concatenate([w.flatten() for w in _weights]))
+        drv.memcpy_htod(self.weights.ptr_voidp.value, np.concatenate([w.flatten() for w in _weights]))
         return
 
         for i in range(len(_weights)):
@@ -128,6 +130,7 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
         if True:  # self.model.mode == Model.Mode.TRAIN:
             self.query, self.key, self.value = query, key, value
             # return self.query
+            assert residuals
             cudnn.cudnnMultiHeadAttnForward(self.model.cudnn_handle, self.attn_desc,
                                             self.current_index, self.low_window_index, self.high_window_index,
                                             self.dev_seq_lengths_QO.ptr, self.dev_seq_lengths_KV.ptr,

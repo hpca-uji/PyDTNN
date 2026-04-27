@@ -9,7 +9,7 @@ import os as _os
 _pkg = _sys.path.pop(0)
 try:
     if _os.environ.get("PYDTNN_CUPY"):
-        import cupy as _module
+        import cupy as _module  # type: ignore
     else:
         import numpy as _module
 finally:

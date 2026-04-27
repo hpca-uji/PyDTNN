@@ -90,18 +90,18 @@ class ModelGpuTestCase(ModelCommonTestCase):
         x2 = [x1[0]]
         # Input layer
         layer = model2.layers[0]
-        self.set_data_to_ary(layer.y.ary, x1[0], layer)
+        self.set_data_to_ary(layer.y, x1[0], layer)
         out = layer.forward(layer.y)
-        x2.append(out.ary.get())
+        x2.append(out.get())
 
         # The rest of the layers
         for i, layer in enumerate(model2.layers[1:], 1):
             if verbose_test():
                 if verbose_test():
                     logger.info(layer)
-            self.set_data_to_ary(model2.layers[i - 1].y.ary, x1[i], layer)
+            self.set_data_to_ary(model2.layers[i - 1].y, x1[i], layer)
             out = layer.forward(model2.layers[i - 1].y)
-            x2.append(out.ary.get())
+            x2.append(out.get())
         return x2
 
     def do_model2_backward_pass(self, model2: Model, dx1: list[np.ndarray]) -> list[np.ndarray]:
@@ -111,14 +111,14 @@ class ModelGpuTestCase(ModelCommonTestCase):
         dx2 = [dx1[-1].copy()]
 
         layer = model2.layers[-1]
-        self.set_data_to_ary(model2.layers[-1].dx.ary, dx1[-1], layer)
+        self.set_data_to_ary(model2.layers[-1].dx, dx1[-1], layer)
         out = layer.backward(model2.layers[-1].dx)
-        dx2.insert(0, out.ary.get().copy())
+        dx2.insert(0, out.get().copy())
 
         for i, layer in reversed(list(enumerate(model2.layers))[:-1]):
             if verbose_test():
                 logger.info(layer)
-            self.set_data_to_ary(model2.layers[i + 1].dx.ary, dx1[i + 1], layer)
+            self.set_data_to_ary(model2.layers[i + 1].dx, dx1[i + 1], layer)
             out = layer.backward(model2.layers[i + 1].dx)
-            dx2.insert(0, out.ary.get().copy())
+            dx2.insert(0, out.get().copy())
         return dx2

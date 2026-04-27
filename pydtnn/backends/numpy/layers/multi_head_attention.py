@@ -106,7 +106,7 @@ class MultiHeadAttentionNumpy(MultiHeadAttention[np.ndarray], AbstractBlockLayer
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_MHA_MATMUL_QK)
-        score = self.mult_qkt.forward(query, self.transpose(key))
+        score = self.mult_qkt.forward(query, self.transpose(key))  # type: ignore (encoder has multiple parameters)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_MHA_SCALARDK)
@@ -119,7 +119,7 @@ class MultiHeadAttentionNumpy(MultiHeadAttention[np.ndarray], AbstractBlockLayer
         score = self.dropout.forward(score)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_MHA_MATMUL_SMV)
-        score = self.mult_smv.forward(score, value)
+        score = self.mult_smv.forward(score, value)  # type: ignore (encoder has multiple parameters)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_MHA_FC_O)

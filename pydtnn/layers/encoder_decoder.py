@@ -16,7 +16,7 @@ class EncoderDecoder[T: Array](AbstractBlockLayer[T]):
         self.dropout_rate = dropout_rate
         self.encoder = [None,]
         self.decoder = [None,]
-        self.paths = [self.encoder + self.decoder]
+        self.paths = [self.encoder + self.decoder]  # type: ignore
 
     def _model_init(self, prev_shape, x):
         super()._model_init(prev_shape, x)

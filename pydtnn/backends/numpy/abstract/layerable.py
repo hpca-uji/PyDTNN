@@ -30,7 +30,8 @@ class LayerableNumpy(Layerable[np.ndarray], BaseNumpy):
             dw_ = dw_ if gradient else w_
             dw = getattr(self, dw_)
             req = self.reqs_allred.pop(dw_, None)
-            if req is None: continue  # noqa: E701
+            if req is None:
+                continue  # noqa: E701
             dw = self.model._layer_reduce_wait(dw, req)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.LAYER_DECODE)
             dw = self.model._layer_reduce_decode(dw)

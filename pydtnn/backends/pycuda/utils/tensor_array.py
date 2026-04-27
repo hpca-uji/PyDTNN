@@ -141,7 +141,7 @@ class TensorArray:
                     case TensorFormat.NHWC:
                         raise NotImplementedError("Shape padding not implemented for 3-dim shape on NHWC")
             case 4:
-                pass  # exact
+                shape = gpu_arr.shape
             case _:
                 raise ValueError(f"The expected len shape are 1, 2, 3 or 4. Shape received: {len(gpu_arr.shape)}.")
 
@@ -164,16 +164,22 @@ class TensorArray:
         match self.tensor_type:
             case self.TensorType.TENSOR:
                 n, c, h, w = self._decode_shape(self.shape)
-                self.desc = cudnn.cudnnCreateTensorDescriptor()
+                desc = cudnn.cudnnCreateTensorDescriptor()
+                assert desc
+                self.desc = desc
                 cudnn.cudnnSetTensor4dDescriptor(self.desc, self.cudnn_tensor_format,
                                                  self.cudnn_dtype, n, c, h, w)
             case self.TensorType.FILTER:
                 n, c, h, w = self._decode_shape(self.shape)
-                self.desc = cudnn.cudnnCreateFilterDescriptor()
+                desc = cudnn.cudnnCreateFilterDescriptor()
+                assert desc
+                self.desc = desc
                 cudnn.cudnnSetFilter4dDescriptor(self.desc, self.cudnn_dtype,
                                                  self.cudnn_tensor_format, n, c, h, w)
             case self.TensorType.SEQ:
-                self.desc = cudnn.cudnnCreateSeqDataDescriptor()
+                desc = cudnn.cudnnCreateSeqDataDescriptor()
+                assert desc
+                self.desc = desc
                 dimA = np.array([0, 0, 0, 0], dtype=np.int32)
                 dimA[cudnn.cudnnSeqDataAxis["CUDNN_SEQDATA_BATCH_DIM"]] = self.shape[0]
                 dimA[cudnn.cudnnSeqDataAxis["CUDNN_SEQDATA_BEAM_DIM"]] = self.shape[1]
@@ -226,9 +232,9 @@ class TensorArray:
 
     def set(self, value: np.ndarray) -> None:
         """CPU to GPU with expand_dims"""
-        self.ary.reshape(self.shape_cpu).set(value)
+        self.ary.set(value.reshape(self.ary.shape))
 
-    def get(self):
+    def get(self, ary=None) -> np.ndarray:
         """GPU to CPU with squeeze"""
         value = self.ary.get()
 
@@ -256,11 +262,19 @@ class TensorArray:
                     case TensorFormat.NHWC:
                         raise NotImplementedError("Shape padding not implemented for 3-dim shape on NHWC")
             case 4:
-                pass  # exact
+                value = value
             case _:
                 raise ValueError(f"The expected len shape are 1, 2, 3 or 4. Shape received: {len(self.ary.shape)}.")
 
-        return value
+        if ary is None:
+            return value
+        else:
+            ary[:] = value
+            return None  # type: ignore
+
+    def __array__(self, dtype=None, *, copy=None):
+        """ NumPy cast helper """
+        return np.asarray(self.get(), dtype=dtype)
 
     def _view(self, ary):
         """TensorArray view"""
@@ -307,50 +321,76 @@ class TensorArray:
         except:  # noqa: E722
             pass
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.ary)
 
-    def __add__(other):
-        return self.ary.__add__(other)
+    def __add__(self, other) -> "TensorArray":
+        if isinstance(other, TensorArray):
+            other = other.ary
+        return self._view(self.ary.__add__(other))
 
-    def __radd__(other):
-        return self.ary.__radd__(other)
+    def __radd__(self, other) -> "TensorArray":
+        if isinstance(other, TensorArray):
+            other = other.ary
+        return self._view(self.ary.__radd__(other))
 
-    def __sub__(other):
-        return self.ary.__sub__(other)
+    def __sub__(self, other) -> "TensorArray":
+        if isinstance(other, TensorArray):
+            other = other.ary
+        return self._view(self.ary.__sub__(other))
 
-    def __rsub__(other):
-        return self.ary.__rsub__(other)
+    def __rsub__(self, other) -> "TensorArray":
+        if isinstance(other, TensorArray):
+            other = other.ary
+        return self._view(self.ary.__rsub__(other))
 
-    def __iadd__(other):
-        return self.ary.__iadd__(other)
+    def __iadd__(self, other) -> "TensorArray":
+        if isinstance(other, TensorArray):
+            other = other.ary
+        return self._view(self.ary.__iadd__(other))
 
-    def __isub__(other):
-        return self.ary.__isub__(other)
+    def __isub__(self, other) -> "TensorArray":
+        if isinstance(other, TensorArray):
+            other = other.ary
+        return self._view(self.ary.__isub__(other))
 
-    def __neg__(other):
-        return self.ary.__neg__(other)
+    def __neg__(self, other) -> "TensorArray":
+        if isinstance(other, TensorArray):
+            other = other.ary
+        return self._view(self.ary.__neg__(other))
 
-    def __mul__(other):
-        return self.ary.__mul__(other)
+    def __mul__(self, other) -> "TensorArray":
+        if isinstance(other, TensorArray):
+            other = other.ary
+        return self._view(self.ary.__mul__(other))
 
-    def __rmul__(other):
-        return self.ary.__rmul__(other)
+    def __rmul__(self, other) -> "TensorArray":
+        if isinstance(other, TensorArray):
+            other = other.ary
+        return self._view(self.ary.__rmul__(other))
 
-    def __truediv__(other):
-        return self.ary.__truediv__(other)
+    def __truediv__(self, other) -> "TensorArray":
+        if isinstance(other, TensorArray):
+            other = other.ary
+        return self._view(self.ary.__truediv__(other))
 
-    def __rtruediv__(other):
-        return self.ary.__rtruediv__(other)
+    def __rtruediv__(self, other) -> "TensorArray":
+        if isinstance(other, TensorArray):
+            other = other.ary
+        return self._view(self.ary.__rtruediv__(other))
 
-    def __pow__(other):
-        return self.ary.__pow__(other)
+    def __pow__(self, other) -> "TensorArray":
+        if isinstance(other, TensorArray):
+            other = other.ary
+        return self._view(self.ary.__pow__(other))
 
-    def __rpow__(other):
-        return self.ary.__rpow__(other)
+    def __rpow__(self, other) -> "TensorArray":
+        if isinstance(other, TensorArray):
+            other = other.ary
+        return self._view(self.ary.__rpow__(other))
 
-    def __getitem__(index):
+    def __getitem__(self, index):
         return self.ary.__getitem__(index)
 
-    def __abs__():
-        return self.ary.__abs__()
+    def __abs__(self) -> "TensorArray":
+        return self._view(self.ary.__abs__())

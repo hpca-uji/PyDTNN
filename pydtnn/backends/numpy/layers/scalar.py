@@ -16,8 +16,8 @@ class ScalarNumpy(Scalar[np.ndarray], LayerNumpy):
     def _model_init(self, prev_shape, x):
         super()._model_init(prev_shape, x)
         # Performance model
-        self.fwd_time = None  # Not yet
-        self.bwd_time = self.fwd_time
+        self.fwd_time: np.ndarray = None  # type: ignore # Not yet
+        self.bwd_time: np.ndarray = None  # type: ignore # Not yet
 
     def forward(self, x):
         return x * self.scale

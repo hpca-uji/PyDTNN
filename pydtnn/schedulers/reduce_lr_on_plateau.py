@@ -23,7 +23,7 @@ class ReduceLROnPlateau(SchedulerWithLossOrMetric):
         self.best_epoch: int = 0
         self.best_loss: float = np.inf * {True: -1, False: 1}["accuracy" in self.loss_or_metric]
 
-    def on_epoch_end(self, train_loss: np.ndarray[float], val_loss: np.ndarray[float]) -> None:
+    def on_epoch_end(self, train_loss: np.ndarray, val_loss: np.ndarray) -> None:
         idx = self._get_idx()
         self.epoch_count += 1
         loss = val_loss if self.is_val_metric else train_loss

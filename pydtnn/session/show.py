@@ -1,7 +1,7 @@
 import numpy as np
 
 from pydtnn import utils
-from pydtnn.context.layer import Layer
+from pydtnn.session.layer import Layer
 import logging
 
 from pydtnn.utils.constants import Array
@@ -154,8 +154,8 @@ class Show[T: Array](Layer[T]):
                 biases_size = 0 if (biases := layer.biases) is None else biases.size
                 if self.comm and weights_size > 0:
                     total_time += allreduce_time(weights_size + biases_size,
-                                                self.cpu_speed, self.network_bw, self.network_lat,
-                                                self.network_alg, self.nprocs, self.dtype)
+                                                 self.cpu_speed, self.network_bw, self.network_lat,
+                                                 self.network_alg, self.nprocs, self.dtype)
         else:
             total_time_iar: int = 0
             # Non-blocking MPI
@@ -166,8 +166,8 @@ class Show[T: Array](Layer[T]):
                 biases_size = 0 if (biases := layer.biases) is None else biases.size
                 if self.comm and weights_size > 0:
                     time_iar = allreduce_time(weights_size + biases_size,
-                                            self.cpu_speed, self.network_bw, self.network_lat,
-                                            self.network_alg, self.nprocs, self.dtype)
+                                              self.cpu_speed, self.network_bw, self.network_lat,
+                                              self.network_alg, self.nprocs, self.dtype)
                     total_time[3] += time_iar[3]
                     total_time_iar = max(total_time[0], total_time_iar) + time_iar[0]
 

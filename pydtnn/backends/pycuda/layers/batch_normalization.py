@@ -39,12 +39,12 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
         self.stream_2 = drv.Stream()
 
         # Activations y
-        y_gpu = gpuarray.zeros(x.ary.shape, self.model.dtype)
+        y_gpu = gpuarray.zeros(x.shape, self.model.dtype)
         self.y = TensorArray(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
         self.memory_used += self.y.nbytes
 
         # Derivative dx
-        dx_gpu = gpuarray.zeros(x.ary.shape, self.model.dtype)
+        dx_gpu = gpuarray.zeros(x.shape, self.model.dtype)
         self.dx = TensorArray(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
         self.memory_used += self.dx.nbytes
 
@@ -74,14 +74,14 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
         self.beta = TensorArray(beta_gpu, self.model.tensor_format, self.model.cudnn_dtype)
         self.memory_used += self.beta.nbytes
 
-        self.dgamma_cpu, self.dgamma = TensorArray.new(self.gamma.ary.shape, self.model.dtype,
+        self.dgamma_cpu, self.dgamma = TensorArray.new(self.gamma.shape, self.model.dtype,
                                                        tensor_format=self.model.tensor_format,
                                                        cudnn_dtype=self.model.cudnn_dtype,
                                                        gpudirect=self.model.gpudirect,
                                                        drv=(drv if self.model.gpudirect else None))
         self.memory_used += self.dgamma.nbytes
 
-        self.dbeta_cpu, self.dbeta = TensorArray.new(self.beta.ary.shape, self.model.dtype,
+        self.dbeta_cpu, self.dbeta = TensorArray.new(self.beta.shape, self.model.dtype,
                                                      tensor_format=self.model.tensor_format,
                                                      cudnn_dtype=self.model.cudnn_dtype,
                                                      gpudirect=self.model.gpudirect,
@@ -154,16 +154,16 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
         # DtoH dw when data parallelism and no GPU direct/NCCL is used
         if self.model.comm and not self.model.gpudirect and not self.model.enable_nccl:
             # self.model.stream.synchronize()
-            self.dgamma.ary.get_async(self.stream_2, self.dgamma_cpu)
-            self.dbeta.ary.get_async(self.stream_2, self.dbeta_cpu)
+            self.dgamma.get_async(self.stream_2, self.dgamma_cpu)
+            self.dbeta.get_async(self.stream_2, self.dbeta_cpu)
         return self.dx
     # -----
 
     def _export_gamma_beta(self, key: str) -> Any:
         value = getattr(self, key)
-        gpu_ary = value.ary
+        gpu_ary = value
         cpu_ary = gpu_ary.get()
-        return np.asarray(np.squeeze(cpu_ary, axis=(0, 2, 3)), dtype=np.float64, order="C").copy()
+        return np.asarray(cpu_ary, dtype=np.float64, order="C").copy()
     # ---
 
     def _export_prop(self, key: str) -> Any:
@@ -176,8 +176,8 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
 
     def _import_gamma_beta(self, key: str, value: Any) -> None:
         attribute = getattr(self, key)
-        cpu_ary = np.asarray(np.expand_dims(value, axis=(0, 2, 3)), dtype=self.model.dtype, order="C")
-        attribute.ary.set(cpu_ary)
+        cpu_ary = np.asarray(value, dtype=self.model.dtype, order="C")
+        attribute.set(cpu_ary)
         return
     # ---
 

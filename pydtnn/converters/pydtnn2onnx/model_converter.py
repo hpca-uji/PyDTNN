@@ -4,10 +4,10 @@ from pydtnn.abstract.layerable import Layerable
 import numpy as np
 
 # Operations/transformations related
-import onnx
+import onnx  # type: ignore
 from pydtnn.model import Model as PyDTNN_Model
-import pydtnn.converters.pydtnn2onnx.constants as cons
-from pydtnn.layers import Input
+import pydtnn.converters.pydtnn2onnx.constants as cons  # type: ignore
+from pydtnn.layers import Input  # type: ignore
 
 # ////////////////////////////////////////////////////
 # In order to made some parts of this code, I used other converors' code (specially the "onnx2pytorch" library)
@@ -20,7 +20,7 @@ from pydtnn.layers import Input
 #   _node.input: inputs list. _node.output: outputs list. _node.attribute: list made by all the parameteres and values (they are "AttributeProto")
 
 
-def extract_shape(data: onnx.ValueInfoProto) -> np.shape:
+def extract_shape(data: onnx.ValueInfoProto) -> tuple[int]:
     # The shape of the inputs/ouputs is more or less a list quite hidden.
     #   Note: ONNX allows to have shapes of undefined value, for example: (N, 3, 224, 224),
     #       and, if it is not defined, that dimension is stored as 0. I will assume that every loaded model has declared all theirs values.
@@ -33,7 +33,7 @@ def extract_shape(data: onnx.ValueInfoProto) -> np.shape:
 # --- extract_shape --- #
 
 
-def get_relevant_data(model_graph: onnx.GraphProto) -> tuple[dict[str, np.shape], dict[str, np.shape], dict[str, np.ndarray]]:
+def get_relevant_data(model_graph: onnx.GraphProto) -> tuple[dict[str, tuple[int]], dict[str, tuple[int]], dict[str, np.ndarray]]:
 
     # onnx.numpy_helper.to_array() is a function that transforms onnx data into a ndarray (numpy's array)
 
@@ -144,8 +144,8 @@ def _get_and_put_operation(node: onnx.NodeProto, opset_version: int, operations:
 # --- END _get_and_put_operation --- #
 
 
-def get_operations(onnx_model: onnx.ModelProto, opset_version: int, inputs: dict[str, np.shape],
-                   weights: dict[str, np.ndarray], outputs: dict[str, np.shape]) -> list[Layerable]:
+def get_operations(onnx_model: onnx.ModelProto, opset_version: int, inputs: dict[str, tuple[int]],
+                   weights: dict[str, np.ndarray], outputs: dict[str, tuple[int]]) -> list[Layerable]:
 
     # TODO: meter otros parámetros que se puedan necesitar
     # operations = list()
@@ -164,8 +164,8 @@ def get_operations(onnx_model: onnx.ModelProto, opset_version: int, inputs: dict
     operations = {output_first_layer: (Input(shape=inputs), [None])}
 
     for i in range(num_operations - 1):
-        _get_and_put_operation(node=onnx_model.graph.node[i], opset_version=opset_version, operations=operations, weights=weights)
-    _get_and_put_operation(node=onnx_model.graph.node[-1], opset_version=opset_version, operations=operations, weights=weights, output=list(outputs.keys()))
+        _get_and_put_operation(node=onnx_model.graph.node[i], opset_version=opset_version, operations=operations, weights=weights)  # type: ignore
+    _get_and_put_operation(node=onnx_model.graph.node[-1], opset_version=opset_version, operations=operations, weights=weights, output=list(outputs.keys()))  # type: ignore
 
     # The list of layers is returned.
     return list(map(lambda x: x[0], operations.values()))
@@ -192,7 +192,7 @@ def get_layers(pydtnn_model: PyDTNN_Model) -> list[onnx.NodeProto]:
 
 
 def convert_model(pydtnn_model: PyDTNN_Model, ir_version: int = 1, producer_name: str = "PyDTNN",
-                  producer_version: str = "", domain: str = "", model_version: int = "",
+                  producer_version: str = "", domain: str = "", model_version: int = 0,
                   doc_string: str = "https://github.com/hpca-uji/PyDTNN",
                   ) -> onnx.ModelProto:
 

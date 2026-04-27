@@ -52,7 +52,7 @@ def list_archive(root_path: Path) -> typing.Iterator[tuple[str, ...]]:
                 full_path = (*base_path, str(path))
 
                 if is_tar(path):
-                    sub_file = fp_stack.enter_context(tar.extractfile(member))
+                    sub_file = fp_stack.enter_context(tar.extractfile(member))  # type: ignore
                     sub_tar = fp_stack.enter_context(tarfile.open(fileobj=sub_file, mode="r:"))
                     stack.append((sub_tar, full_path))
                 else:
@@ -74,11 +74,11 @@ def load_archive(*paths: str) -> abc.Generator[typing.IO[bytes]]:
 
         # Intermediate: nested tars
         for fp in paths[1:-1]:
-            file = stack.enter_context(tar.extractfile(fp))
+            file = stack.enter_context(tar.extractfile(fp))  # type: ignore
             tar = stack.enter_context(tarfile.open(fileobj=file, mode="r:"))
 
         # Last: return
-        file = stack.enter_context(tar.extractfile(paths[-1]))
+        file = stack.enter_context(tar.extractfile(paths[-1]))  # type: ignore
         yield file
 
 
@@ -132,7 +132,7 @@ class ImageNet(Dataset):
     def _get_train_labels(self, path: Path) -> dict[int, int]:
         """Get label mappings from archive"""
         member = "ILSVRC2012_devkit_t12/data/meta.mat"
-        with tarfile.open(path) as tar, tar.extractfile(member) as fp:
+        with tarfile.open(path) as tar, tar.extractfile(member) as fp:  # type: ignore
             meta = loadmat(file_name=fp, squeeze_me=True)["synsets"]
         nums_children = list(zip(*meta))[4]
         meta = [meta[idx] for idx, num_children in enumerate(nums_children) if num_children == 0]
@@ -145,7 +145,7 @@ class ImageNet(Dataset):
     def _get_val_labels(self, path: Path) -> dict[int, int]:
         """Get label mappings from archive"""
         member = "ILSVRC2012_devkit_t12/data/ILSVRC2012_validation_ground_truth.txt"
-        with tarfile.open(path) as tar, tar.extractfile(member) as fp, io.TextIOWrapper(buffer=fp) as lines:
+        with tarfile.open(path) as tar, tar.extractfile(member) as fp, io.TextIOWrapper(buffer=fp) as lines:  # type: ignore
             return {
                 i: int(line)
                 for i, line in enumerate(lines, 1)

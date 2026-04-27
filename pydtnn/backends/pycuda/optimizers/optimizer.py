@@ -24,14 +24,7 @@ class OptimizerPycuda(Optimizer[TensorArray], BasePycuda):
         return np.int32(w.size)
         # return np.int32(np.prod(((w.shape))))
 
-    def _model_init(self, list_layers: list[Layerable[TensorArray]]) -> None:
-        super()._model_init(list_layers)
-        self._kernel_init()
-
-    def _kernel_init(self) -> Function:
-        pass
-
     def _dtoh_ary(self, layer: Layerable, w_gpu: TensorArray, w_cpu: np.ndarray) -> None:
         if self.model.comm and not self.model.gpudirect and not self.model.enable_nccl:
             # self.model.stream.synchronize()
-            w_gpu.ary.get_async(layer.stream_2, w_cpu)
+            w_gpu.get_async(layer.stream_2, w_cpu)

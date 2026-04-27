@@ -3,8 +3,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from pycuda.driver import Function, Module  # type: ignore
-    from pycuda.compiler import SourceModule  # type:ignore
-    import cupy as cp
+    import cupy as cp  # type: ignore
 
 type Abs_Module = "Module | cp.RawModule"
 type Abs_Function = "Function | cp.RawKernel"

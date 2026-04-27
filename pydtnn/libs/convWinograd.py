@@ -121,7 +121,7 @@ class ConvWinograd:
         # Parent layer
         if parent_layer is not None:
             self.get_parent_layer = weakref.ref(parent_layer)
-            self.evaluate_only = self.get_parent_layer().model.evaluate_only
+            self.evaluate_only = parent_layer.model.evaluate_only
             # enable_best_of = self.get_parent_layer().model.enable_best_of
         else:
             self.evaluate_only = True
@@ -236,13 +236,13 @@ class ConvWinograd:
                 getattr(self.__class__.lib_cw, f"conv_winograd_workspace_alloc_kernel")
         except AttributeError:
             logger.error(f"Winograd conv_winograd_workspace_alloc_pre/kernel routines not found.")
-            self.conv_winograd_workspace_alloc_pre = None
-            self.conv_winograd_workspace_alloc_kernel = None
 
         def winograd_workspace_alloc_pre(m, r, k, c):
             _u = ctypes.POINTER(ctypes.c_float)()
             self.conv_winograd_workspace_alloc_pre(ctypes.c_uint(m), ctypes.c_uint(r),
-                                                   ctypes.c_uint(k), ctypes.c_uint(c), ctypes.byref(_u))
+                                                   ctypes.c_uint(k), ctypes.c_uint(c),
+                                                   ctypes.byref(_u)  # type: ignore
+                                                   )
             return np.array([False]), _u
 
         def winograd_workspace_alloc_kernel(m, r, n, k, c, hi, wi, kh, kw, vpadding, hpadding):
@@ -251,7 +251,9 @@ class ConvWinograd:
             self.conv_winograd_workspace_alloc_kernel(ctypes.c_uint(m), ctypes.c_uint(r),
                                                       ctypes.c_uint(n), ctypes.c_uint(k), ctypes.c_uint(c),
                                                       ctypes.c_uint(hi), ctypes.c_uint(wi), ctypes.c_uint(kh), ctypes.c_uint(kw),
-                                                      ctypes.c_uint(vpadding), ctypes.c_uint(hpadding), ctypes.byref(_v), ctypes.byref(_m))
+                                                      ctypes.c_uint(vpadding), ctypes.c_uint(hpadding),
+                                                      ctypes.byref(_v), ctypes.byref(_m)  # type: ignore
+                                                      )
             return _v, _m
 
         self.cw_cache_pre = lambda args: winograd_workspace_alloc_pre(*args)  # MemoryCache
@@ -275,6 +277,21 @@ class ConvWinograd:
             ))
         else:
             setattr(self, f"conv_winograd_{self.tensor_format}", self.alternatives[r][0][1])
+
+    def conv_winograd_workspace_alloc_kernel(self, m: ctypes.c_uint, r: ctypes.c_uint,
+                                             n: ctypes.c_uint, k: ctypes.c_uint, c: ctypes.c_uint,
+                                             hi: ctypes.c_uint, wi: ctypes.c_uint, kh: ctypes.c_uint, kw: ctypes.c_uint,
+                                             vpadding: ctypes.c_uint, hpadding: ctypes.c_uint, _v: ctypes.c_void_p, _m: ctypes.c_void_p):
+        pass
+
+    def conv_winograd_workspace_alloc_pre(self, m: ctypes.c_uint, r: ctypes.c_uint, k: ctypes.c_uint, c: ctypes.c_uint, _u: ctypes.c_void_p):
+        pass
+
+    def conv_winograd_nchw(self, weights: np.ndarray, x: np.ndarray, biases: np.ndarray | None, vpadding: int, hpadding: int, vstride: int, hstride: int, vdilation: int, hdilation: int) -> np.ndarray:
+        raise NotImplementedError("Abstract method called!")
+
+    def conv_winograd_nhwc(self, weights: np.ndarray, x: np.ndarray, biases: np.ndarray | None, vpadding: int, hpadding: int, vstride: int, hstride: int, vdilation: int, hdilation: int) -> np.ndarray:
+        raise NotImplementedError("Abstract method called!")
 
     def encode_shape(self, shape):
         return encode_shape(shape, self.tensor_format)
@@ -318,11 +335,11 @@ class ConvWinograd:
         tile_w = math.ceil((wi + 2 * hpadding - t) / s) + 1
 
         y_shape = self.encode_shape((n, co, ho, wo))
-        y = self.y_cache[y_shape]
+        y = self.y_cache(y_shape)
         u = np.zeros((t, t, co, ci), self.dtype)                     # FIXME: self.u_cache[(t, t, co, ci)]  # Workspace for G * g * G^T
         v = np.zeros((t, t, ci, (n * tile_h * tile_w)), self.dtype)  # FIXME: self.v_cache[(t, t, ci, (n * tile_h * tile_w))]
         # m_= self.m_cache[(t, t, co, (n * tile_h * tile_w))]
-        d = self.d_cache[(t, t)]
+        d = self.d_cache((t, t))
 
         for k in range(co):
             for c in range(ci):
@@ -422,6 +439,10 @@ class ConvWinograd:
                         raise NotImplementedError(f"Unsupported tensor format {tensor_format}!")
 
             if bn:
+                assert running_mean
+                assert inv_std
+                assert gamma
+                assert beta
                 match self.tensor_format:
                     case TensorFormat.NCHW:
                         y[:, k, ...] = (((y[:, k, ...] - running_mean[k]) * inv_std[k]) * gamma[k]) + beta[k]
@@ -471,11 +492,11 @@ class ConvWinograd:
         ho = (hi + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
         wo = (wi + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
 
-        _weights_already_processed, _u, = self.cw_cache_pre[(m, r, co, ci)]
-        _v, _m = self.cw_cache_kernel[(m, r, n, co, ci, hi, wi, kh, kw, vpadding, hpadding)]
+        _weights_already_processed, _u, = self.cw_cache_pre((m, r, co, ci))
+        _v, _m = self.cw_cache_kernel((m, r, n, co, ci, hi, wi, kh, kw, vpadding, hpadding))
 
         y_shape = self.encode_shape((n, co, ho, wo))
-        y = self.y_cache[y_shape]
+        y = self.y_cache(y_shape)
 
         match self.tensor_format:
             case TensorFormat.NCHW:
@@ -518,16 +539,15 @@ def time_it_func(x: np.ndarray, w_c: np.ndarray, biases: np.ndarray,
                  ho: int, wo: int, kh: int, kw: int,
                  vpadding: int, hpadding: int, vstride: int, hstride: int,
                  vdilation: int, hdilation: int,
-                 ) -> int | float:
+                 ):
 
     res = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype=x.dtype)
-    im2row_nhwc_cython(x, res,
+    im2row_nhwc_cython(x, res,  # type: ignore
                        kh, kw, ho, wo,
                        vpadding, hpadding, vstride, hstride,
                        vdilation, hdilation)
     res = res @ w_c
     res += biases.reshape(b * ho * wo, kn)
-    return res
 
 
 def time_it_im2col(x: np.ndarray, w_c: np.ndarray, biases: np.ndarray,
@@ -535,32 +555,30 @@ def time_it_im2col(x: np.ndarray, w_c: np.ndarray, biases: np.ndarray,
                    ho: int, wo: int, kh: int, kw: int,
                    vpadding: int, hpadding: int, vstride: int, hstride: int,
                    vdilation: int, hdilation: int,
-                   ) -> int | float:
+                   ):
 
     res = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype=x.dtype)
-    im2col_nchw_cython(x, res,
+    im2col_nchw_cython(x, res,  # type: ignore
                        kh, kw, ho, wo,
                        vpadding, hpadding, vstride, hstride,
                        vdilation, hdilation)
     res = res @ w_c
     res += biases.reshape(b * ho * wo, kn)
-    return res
 
 
 def time_it_im2col_4_dims(x: np.ndarray, w_c: np.ndarray, biases: np.ndarray,
                           kk: int, ho: int, wo: int, kh: int, kw: int,
                           vpadding: int, hpadding: int, vstride: int, hstride: int,
                           vdilation: int, hdilation: int,
-                          ) -> int | float:
+                          ):
 
     res = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype=x.dtype)
-    im2col_nchw_cython(x, res,
+    im2col_nchw_cython(x, res,  # type: ignore
                        kh, kw, ho, wo,
                        vpadding, hpadding, vstride, hstride,
                        vdilation, hdilation)
     res = res @ w_c
     res += biases.reshape(kk, -1, ho, wo).transpose(1, 0, 2, 3)
-    return res
 
 
 def __usage_example__():
@@ -598,16 +616,15 @@ def __usage_example__():
     x = random.random((b, c, h, w)).astype(np.float32, order='C')
     biases = (np.ones((kn, b * ho * wo)) * 10).astype(np.float32, order='C')
     logger.info("Using conv_winograd NCHW to compute weights * x + biases...")
-    r = False
     conv_winograd = ConvWinograd(kh, kw, vstride, hstride, vdilation, hdilation, debug=False)
     conv_winograd_result_nchw = conv_winograd.conv_winograd_nchw(weights, x, biases_wg,
                                                                  vpadding=vpadding, hpadding=hpadding,
                                                                  vstride=vstride, hstride=hstride,
-                                                                 vdilation=vdilation, hdilation=hdilation, relu=r)
+                                                                 vdilation=vdilation, hdilation=hdilation)
     conv_winograd_t = timeit(lambda: conv_winograd.conv_winograd_nchw(weights, x, biases_wg,
                                                                       vpadding=vpadding, hpadding=hpadding,
                                                                       vstride=vstride, hstride=hstride,
-                                                                      vdilation=vdilation, hdilation=hdilation, relu=r),
+                                                                      vdilation=vdilation, hdilation=hdilation),
                              number=10) / 10
     logger.info("conv_winograd time: {:.4f}".format(conv_winograd_t))
     logger.info("Using im2col and mm NCHW ...")
@@ -626,17 +643,16 @@ def __usage_example__():
     x = random.random((b, h, w, c)).astype(np.float32, order='C')
     biases = (np.ones((b * ho * wo, kn)) * 10).astype(np.float32, order='C')
     logger.info("Using conv_winograd NHWC to compute weights * x + biases...")
-    r = False
     conv_winograd = ConvWinograd(kh, kw, vstride, hstride, vdilation, hdilation,
                                  tensor_format=TensorFormat.NHWC, debug=False)
     conv_winograd_result_nhwc = conv_winograd.conv_winograd_nhwc(weights, x, biases_wg,
                                                                  vpadding=vpadding, hpadding=hpadding,
                                                                  vstride=vstride, hstride=hstride,
-                                                                 vdilation=vdilation, hdilation=hdilation, relu=r)
+                                                                 vdilation=vdilation, hdilation=hdilation)
     conv_winograd_t = timeit(lambda: conv_winograd.conv_winograd_nhwc(weights, x, biases_wg,
                                                                       vpadding=vpadding, hpadding=hpadding,
                                                                       vstride=vstride, hstride=hstride,
-                                                                      vdilation=vdilation, hdilation=hdilation, relu=r),
+                                                                      vdilation=vdilation, hdilation=hdilation),
                              number=10) / 10
     logger.info("conv_winograd time: {:.4f}".format(conv_winograd_t))
     logger.info("Using im2col and mm NHWC ...")
@@ -650,9 +666,6 @@ def __usage_example__():
         lambda: time_it_func(x, w_c, biases, b, kn, ho, wo, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation),
         number=10) / 10
     logger.info("mm time: {:.4f}".format(mm_t))
-
-    if r:
-        im2col_mm_result_nhwc = np.maximum(im2col_mm_result_nhwc, 0)
 
     logger.info('\n'.join([f"Sum WINOGRAD NCHW: {conv_winograd_result_nchw.sum()} {conv_winograd_result_nchw.shape}",
                            f"Sum   IM2COL NCHW: {im2col_mm_result_nchw.sum()} {im2col_mm_result_nchw.shape}",
@@ -686,7 +699,7 @@ def __usage_example__():
                                 for tensor_fmt in [TensorFormat.NCHW, TensorFormat.NHWC]:
                                     conv_winograd = ConvWinograd(kh, kw, vstride, hstride, vdilation, hdilation,
                                                                  tensor_format=tensor_fmt, debug=False)
-                                    logger.info(f"{nn} {cc} {kk} {hh} {ww} {vpadding} {hpadding} {kh} {conv_winograd.tensor_format_str}")
+                                    logger.info(f"{nn} {cc} {kk} {hh} {ww} {vpadding} {hpadding} {kh} {conv_winograd.tensor_format}")
 
                                     biases_wg = (np.ones(kk) * 10).astype(np.float32, order='C')
                                     match tensor_fmt:
@@ -730,9 +743,10 @@ def __usage_example__():
                                             im2col_mm_result = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype=x.dtype)
                                             im2row_nhwc_cython(x, x_c,
                                                                kh, kw, ho, wo,
-                                                               vpadding, hpadding, vstride, hstride,
-                                                               vdilation, hdilation) @ w_c \
-                                                + biases
+                                                               vpadding, hpadding,
+                                                               vstride, hstride,
+                                                               vdilation, hdilation
+                                                               ) @ w_c + biases  # type: ignore  # FIXME: disabled?
                                             im2col_mm_result = im2col_mm_result.reshape(-1, ho, wo, kk)
                                             im2col_t = timeit(
                                                 lambda: time_it_func(x, w_c, biases, b, kn, ho, wo, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation),
@@ -756,10 +770,11 @@ def __usage_example__():
                                         case tensor_fmt:
                                             raise NotImplementedError(f"Unsupported tensor format {tensor_fmt}!")
 
-                                    logger.info(" conv_winograd time: {:.4f} ".format(conv_winograd_t), end="")
-                                    logger.info("mm time: {:.4f} ".format(im2col_t), end="")
-                                    logger.info("np.allclose:",
-                                                np.allclose(conv_winograd_result, im2col_mm_result, atol=1e-3), end="")
+                                    logger.info(
+                                        " conv_winograd time: {:.4f} ".format(conv_winograd_t) +
+                                        "mm time: {:.4f} ".format(im2col_t) +
+                                        "np.allclose: {}".format(np.allclose(conv_winograd_result, im2col_mm_result, atol=1e-3))
+                                    )
                                     # print(" np.sum:", np.max(np.abs(conv_winograd_result-im2col_mm_result)), end="")
                                     logger.info((" WINOGR", " IM2COL")[conv_winograd_t > im2col_t],
                                                 im2col_t / conv_winograd_t)

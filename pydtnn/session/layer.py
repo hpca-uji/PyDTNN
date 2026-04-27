@@ -2,7 +2,7 @@ from warnings import warn
 
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.activations.relu import Relu
-from pydtnn.context.utils import Util
+from pydtnn.session.utils import Util
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.utils.constants import Array
 

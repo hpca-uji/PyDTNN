@@ -70,6 +70,7 @@ class Base[T: Array]:
     dataset_percentage: float
     use_mpi_buffers: bool
     # enable_memory_cache: bool
+    enable_nccl: bool
     gpus_per_node: int
     weights_and_bias_filename: str
     learning_rate_scaling: bool

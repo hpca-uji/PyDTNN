@@ -19,7 +19,7 @@ class StopAtLoss(SchedulerWithLossOrMetric):
         super().__init__(loss_or_metric, verbose)
         self.threshold_value = threshold_value
 
-    def on_epoch_end(self, train_loss: ndarray[float], val_loss: ndarray[float]) -> None:
+    def on_epoch_end(self, train_loss: ndarray, val_loss: ndarray) -> None:
         idx = self._get_idx()
         self.epoch_count += 1
         loss = val_loss if self.is_val_metric else train_loss

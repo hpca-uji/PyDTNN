@@ -22,7 +22,7 @@ class AveragePool2DCython(AveragePool2DNumpy, AbstractPool2DLayerCython):
     ##############
 
     def _fwd_avg_pool_nchw(self, x: np.ndarray, y: np.ndarray) -> None:
-        average_pool_2d_fwd_nchw_cython(x, y,
+        average_pool_2d_fwd_nchw_cython(x, y,  # type: ignore
                                         self.kh, self.kw, self.ho, self.wo,
                                         self.hpadding, self.wpadding,
                                         self.hstride, self.wstride,
@@ -30,7 +30,7 @@ class AveragePool2DCython(AveragePool2DNumpy, AbstractPool2DLayerCython):
     # ----
 
     def _fwd_avg_pool_nhwc(self, x: np.ndarray, y: np.ndarray) -> None:
-        average_pool_2d_fwd_nhwc_cython(x, y,
+        average_pool_2d_fwd_nhwc_cython(x, y,  # type: ignore
                                         self.kh, self.kw, self.ho, self.wo,
                                         self.hpadding, self.wpadding,
                                         self.hstride, self.wstride,
@@ -38,7 +38,7 @@ class AveragePool2DCython(AveragePool2DNumpy, AbstractPool2DLayerCython):
     # ----
 
     def _bwd_avg_pool_nhwc(self, dx: np.ndarray, dy: np.ndarray) -> None:
-        average_pool_2d_bwd_nhwc_cython(dy, dx,
+        average_pool_2d_bwd_nhwc_cython(dy, dx,  # type: ignore
                                         dy.shape[0], self.hi, self.wi, self.ci,
                                         self.kh, self.kw, self.ho, self.wo,
                                         self.hpadding, self.wpadding,
@@ -47,7 +47,7 @@ class AveragePool2DCython(AveragePool2DNumpy, AbstractPool2DLayerCython):
     # ----
 
     def _bwd_avg_pool_nchw(self, dx: np.ndarray, dy: np.ndarray) -> None:
-        average_pool_2d_bwd_nchw_cython(dy, dx,
+        average_pool_2d_bwd_nchw_cython(dy, dx,  # type: ignore
                                         dy.shape[0], self.hi, self.wi, self.ci,
                                         self.kh, self.kw, self.ho, self.wo,
                                         self.hpadding, self.wpadding,
@@ -63,7 +63,7 @@ class AveragePool2DCython(AveragePool2DNumpy, AbstractPool2DLayerCython):
 
         x_rows: np.ndarray = np.zeros((x.shape[0] * self.ci * self.ho * self.wo, self.kh * self.kw), dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
-        im2row_1ch_nhwc_cython(x, x_rows,
+        im2row_1ch_nhwc_cython(x, x_rows,  # type: ignore
                                self.kh, self.kw, self.ho, self.wo,
                                self.hpadding, self.wpadding,
                                self.hstride, self.wstride, self.hdilation, self.wdilation)
@@ -76,7 +76,7 @@ class AveragePool2DCython(AveragePool2DNumpy, AbstractPool2DLayerCython):
         x_cols: np.ndarray = np.zeros((self.kh * self.kw, n * c * self.ho * self.wo), dtype=self.model.dtype)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
-        im2col_1ch_nchw_cython(x, x_cols,
+        im2col_1ch_nchw_cython(x, x_cols,  # type: ignore
                                self.kh, self.kw, self.ho, self.wo,
                                self.hpadding, self.wpadding,
                                self.hstride, self.wstride, self.hdilation, self.wdilation)
@@ -90,7 +90,7 @@ class AveragePool2DCython(AveragePool2DNumpy, AbstractPool2DLayerCython):
         dx: np.ndarray = np.zeros_like(dy, dtype=self.model.dtype)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM)
-        row2im_1ch_nhwc_cython(dy_rows, dx,
+        row2im_1ch_nhwc_cython(dy_rows, dx,  # type: ignore
                                dy.shape[0], self.hi, self.wi, self.ci,
                                self.kh, self.kw, self.ho, self.wo,
                                self.hpadding, self.wpadding,
@@ -105,7 +105,7 @@ class AveragePool2DCython(AveragePool2DNumpy, AbstractPool2DLayerCython):
         dx: np.ndarray = np.zeros((dy.shape[0], self.hi, self.wi, self.ci), dtype=self.model.dtype)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM)
-        col2im_1ch_nchw_cython(dy_cols, dx,
+        col2im_1ch_nchw_cython(dy_cols, dx,  # type: ignore
                                dy.shape[0], self.hi, self.wi, self.ci,
                                self.kh, self.kw, self.ho, self.wo,
                                self.hpadding, self.wpadding,

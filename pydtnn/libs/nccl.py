@@ -40,6 +40,7 @@ class NcclError(Exception):
         self.status = status
 
     def __str__(self):
+        assert _libnccl
         error = _libnccl.ncclGetErrorString(self.status)
         return f'{error}'
 
@@ -87,6 +88,7 @@ def ncclGetVersion():
     Get NCCL Version.
     """
     version = ctypes.c_int()
+    assert _libnccl
     _libnccl.ncclGetVersion(ctypes.byref(version))
     return version.value
 
@@ -108,6 +110,7 @@ def ncclGetUniqueId():
     """
 
     unique_id = NcclUniqueId()
+    assert _libnccl
     status = _libnccl.ncclGetUniqueId(ctypes.byref(unique_id))
     ncclCheckStatus(status)
     return unique_id
@@ -140,6 +143,7 @@ def ncclCommInitRank(nranks, comm_id, rank):
     """
 
     comm = ncclComm_t()
+    assert _libnccl
     status = _libnccl.ncclCommInitRank(ctypes.byref(comm), nranks, comm_id, rank)
     ncclCheckStatus(status)
     return comm
@@ -167,7 +171,8 @@ def ncclCommInitAll(dev_list):
     -------
     comm :
     """
-    comm = ncclComm_t() * len(dev_list)
+    comm = ncclComm_t() * len(dev_list)  # type: ignore
+    assert _libnccl
     status = _libnccl.ncclCommInitAll(ctypes.byref(comm), len(dev_list), dev_list)
     ncclCheckStatus(status)
     return comm.value
@@ -187,6 +192,7 @@ def ncclCommDestroy(comm):
     ----------
     comm :
     """
+    assert _libnccl
     status = _libnccl.ncclCommDestroy(comm)
     ncclCheckStatus(status)
 
@@ -205,6 +211,7 @@ def ncclCommAbort(comm):
     ----------
     comm :
     """
+    assert _libnccl
     status = _libnccl.ncclCommAbort(comm)
     ncclCheckStatus(status)
 
@@ -223,6 +230,7 @@ def ncclCommGetAsyncError(comm):
     comm :
     """
     async_error = ctypes.c_int()
+    assert _libnccl
     status = _libnccl.ncclCommGetAsyncError(comm, ctypes.byref(async_error))
     ncclCheckStatus(status)
     return async_error.value
@@ -247,6 +255,7 @@ def ncclCommCount(comm):
     """
 
     count = ctypes.c_int()
+    assert _libnccl
     status = _libnccl.ncclCommCount(comm, ctypes.byref(count))
     ncclCheckStatus(status)
     return count.value
@@ -271,6 +280,7 @@ def ncclCommCuDevice(comm):
     """
 
     device = ctypes.c_int()
+    assert _libnccl
     status = _libnccl.ncclCommCuDevice(comm, ctypes.byref(device))
     ncclCheckStatus(status)
     return device.value
@@ -295,6 +305,7 @@ def ncclCommUserRank(comm):
     """
 
     rank = ctypes.c_int()
+    assert _libnccl
     status = _libnccl.ncclCommUserRank(comm, ctypes.byref(rank))
     ncclCheckStatus(status)
     return rank.value
@@ -360,6 +371,7 @@ def ncclReduce(sendbuff, recvbuff, count, datatype, op, root, comm, stream):
 
     """
 
+    assert _libnccl
     status = _libnccl.ncclReduce(sendbuff, recvbuff, count,
                                  datatype.value, op.value, root, comm, stream)
     ncclCheckStatus(status)
@@ -389,6 +401,7 @@ def ncclBroadcast(sendbuff, recvbuff, count, datatype, root, comm, stream):
 
     """
 
+    assert _libnccl
     status = _libnccl.ncclBroadcast(sendbuff, recvbuff, count, datatype.value, root, comm, stream)
     ncclCheckStatus(status)
 
@@ -416,6 +429,7 @@ def ncclAllReduce(sendbuff, recvbuff, count, datatype, op, comm, stream):
 
     """
 
+    assert _libnccl
     status = _libnccl.ncclAllReduce(sendbuff, recvbuff, count,
                                     datatype.value, op.value, comm, stream)
     ncclCheckStatus(status)
@@ -448,6 +462,7 @@ def ncclReduceScatter(sendbuff, recvbuff, recvcount, datatype, comm, stream):
 
     """
 
+    assert _libnccl
     status = _libnccl.ncclReduceScatter(sendbuff, recvbuff, recvcount,
                                         datatype.value, comm, stream)
     ncclCheckStatus(status)
@@ -478,6 +493,7 @@ def ncclAllGather(sendbuff, recvbuff, sendcount, datatype, comm, stream):
 
     """
 
+    assert _libnccl
     status = _libnccl.ncclAllGather(sendbuff, recvbuff, sendcount,
                                     datatype.value, comm, stream)
     ncclCheckStatus(status)
@@ -510,6 +526,7 @@ def ncclSend(sendbuff, count, datatype, peer, comm, stream):
 
     """
 
+    assert _libnccl
     status = _libnccl.ncclSend(sendbuff, count, datatype.value, peer, comm, stream)
     ncclCheckStatus(status)
 
@@ -541,6 +558,7 @@ def ncclRecv(recvbuff, count, datatype, peer, comm, stream):
 
     """
 
+    assert _libnccl
     status = _libnccl.ncclRecv(recvbuff, count, datatype.value, peer, comm, stream)
     ncclCheckStatus(status)
 
@@ -561,6 +579,7 @@ def ncclGroupStart():
 
     """
 
+    assert _libnccl
     status = _libnccl.ncclGroupStart()
     ncclCheckStatus(status)
 
@@ -581,5 +600,6 @@ def ncclGroupEnd():
 
     """
 
+    assert _libnccl
     status = _libnccl.ncclGroupEnd()
     ncclCheckStatus(status)

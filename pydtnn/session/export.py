@@ -4,7 +4,7 @@ from warnings import warn
 
 import numpy as np
 
-from pydtnn.context.layer import Layer
+from pydtnn.session.layer import Layer
 from pydtnn.utils.constants import Array, Parameters
 logger = logging.getLogger(__name__)
 

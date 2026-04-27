@@ -24,7 +24,8 @@ class EncoderPycuda(AbstractBlockLayerPycuda, Encoder):
                        self.feedforward, self.dropout_2, self.layernormalization_2]]
 
         # The next attributes will be initialized later
-        self.y = self.dx = None
+        self.y: TensorArray = None  # type: ignore
+        self.dx: TensorArray = None  # type: ignore
 
     def _model_init(self, prev_shape, x):
         super()._model_init(prev_shape, x)
@@ -39,7 +40,7 @@ class EncoderPycuda(AbstractBlockLayerPycuda, Encoder):
             mask_enc_shape = ()
 
         self.shape = x_enc_shape
-        self.first_dims = x_enc.ary.shape[:-1]
+        self.first_dims = x_enc.shape[:-1]
 
         # Initialize all sublayers
         for layer in self.children:
@@ -77,18 +78,18 @@ class EncoderPycuda(AbstractBlockLayerPycuda, Encoder):
         pass
 
     def flatten(self, x):
-        last_dim = x.ary.shape[-1]
+        last_dim = x.shape[-1]
         return x.reshape((int(np.prod(self.first_dims)), last_dim))
 
     def unflatten(self, x):
-        last_dim = x.ary.shape[-1]
+        last_dim = x.shape[-1]
         return x.reshape((*self.first_dims, last_dim))
 
     def forward(self, x, mask=None):
         # self.model.test("Forward")
         alpha, beta = 1.0, 1.0
         # Self Attention
-        self.multiheadattention.forward(x, x, x, mask, x)
+        self.multiheadattention.forward(x, x, x, mask, x)  # type: ignore (multiheadattention uses more parameters)
         self.layernormalization_1.forward(self.multiheadattention.y)
         # self.layernormalization_1.forward(x)
 

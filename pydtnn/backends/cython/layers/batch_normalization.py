@@ -13,9 +13,9 @@ if TYPE_CHECKING:
 class BatchNormalizationCython(BatchNormalizationNumpy, LayerCython):
 
     def _training_fwd(self, x: np.ndarray, _mean: np.ndarray, _var: np.ndarray, y: np.ndarray) -> None:
-        bn_training_fwd_cython(x, y, self.xn, self.std, self.gamma, self.beta, _mean, _var, self.epsilon)
+        bn_training_fwd_cython(x, y, self.xn, self.std, self.gamma, self.beta, _mean, _var, self.epsilon)  # type: ignore
     # ---
 
     def _training_bwd(self, dx: np.ndarray, dy: np.ndarray) -> None:
-        bn_training_bwd_cython(dx, dy, self.xn, self.std, self.gamma, self.dgamma, self.dbeta)
+        bn_training_bwd_cython(dx, dy, self.xn, self.std, self.gamma, self.dgamma, self.dbeta)  # type: ignore
     # ---
