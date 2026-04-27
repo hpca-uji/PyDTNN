@@ -21,6 +21,7 @@ from pydtnn.utils.tensor import TensorFormat
 # With _node being an element of onnx.ModelProto.graph.node:
 #   _node.input: inputs list. _node.output: outputs list. _node.attribute: list made by all the parameteres and values (they are "AttributeProto")
 
+
 def extract_shape(data: onnx.ValueInfoProto) -> tuple[int]:
     # The shape of the inputs/ouputs is more or less a list quite hidden.
     #   NOTE: ONNX allows to have shapes of undefined value, e.g.: (N, 3, 224, 224),

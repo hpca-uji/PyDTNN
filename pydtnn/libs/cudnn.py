@@ -2058,6 +2058,7 @@ def cudnnSetPooling2dDescriptor(pooling_desc, mode, nan, window_height, window_w
                                                    vertical_stride, horizontal_stride)
     cudnnCheckStatus(status)
 
+
 _libcudnn.cudnnGetPooling2dDescriptor.restype = int
 _libcudnn.cudnnGetPooling2dDescriptor.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p,
                                                   ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p,
