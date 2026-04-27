@@ -141,7 +141,7 @@ class TensorArray:
                     case TensorFormat.NHWC:
                         raise NotImplementedError("Shape padding not implemented for 3-dim shape on NHWC")
             case 4:
-                pass  # exact
+                shape = gpu_arr.shape
             case _:
                 raise ValueError(f"The expected len shape are 1, 2, 3 or 4. Shape received: {len(gpu_arr.shape)}.")
 
