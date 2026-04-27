@@ -232,7 +232,7 @@ class TensorArray:
 
     def set(self, value: np.ndarray) -> None:
         """CPU to GPU with expand_dims"""
-        self.ary.reshape(self.shape_cpu).set(value)
+        self.ary.set(value.reshape(self.ary.shape))
 
     def get(self):
         """GPU to CPU with squeeze"""
