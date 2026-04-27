@@ -2,13 +2,16 @@
 PyDTNN convGemm module
 """
 
-from pydtnn.utils import load_library
-from pydtnn.backends.cython.utils.im2col_nchw_cython import im2col_nchw_cython
-import numpy as np
-import weakref
-import platform
 import ctypes
 import logging
+import platform
+import weakref
+
+import numpy as np
+
+from pydtnn.backends.cython.utils.im2col_nchw_cython import im2col_nchw_cython
+from pydtnn.utils import load_library
+
 logger = logging.getLogger(__name__)
 
 
@@ -403,6 +406,7 @@ def time_it_func(x: np.ndarray, w_c: np.ndarray, out: np.ndarray,
 def __usage_example__():
     # Imports for this usage example (not required otherwise)
     from timeit import timeit
+
     # Default parameters (1st layer AlexNet for Cifar10)
     b = 64  # Batch size
     c = 3  # Channels per layer

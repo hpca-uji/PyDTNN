@@ -1,16 +1,20 @@
-from pydtnn.utils.constants import ArrayShape, Parameters
+import logging
+from typing import Any
+
+import numpy as np
+import pycuda.driver as drv  # type: ignore
+from pycuda import gpuarray  # type: ignore
+
+from pydtnn.backends.pycuda.layers.layer import LayerPycuda
 from pydtnn.backends.pycuda.utils import matmul_gpu, matvec_gpu
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.libs import cudnn as cudnn
-from pydtnn.backends.pycuda.layers.layer import LayerPycuda
-from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
-from pydtnn.utils.performance_models import matmul_time
 from pydtnn.layers.fc import FC
-from pycuda import gpuarray  # type: ignore
-import pycuda.driver as drv  # type: ignore
-import numpy as np
-from typing import Any
-import logging
+from pydtnn.libs import cudnn as cudnn
+from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
+                                   PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
+from pydtnn.utils.constants import ArrayShape, Parameters
+from pydtnn.utils.performance_models import matmul_time
+
 logger = logging.getLogger(__name__)
 
 

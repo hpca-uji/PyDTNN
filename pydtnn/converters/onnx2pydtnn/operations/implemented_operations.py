@@ -2,12 +2,12 @@
 from typing import Any
 
 import numpy as np
-from pydtnn.abstract.layerable import Layerable
 
-# Functionality imports
-import pydtnn.layers as layer
 import pydtnn.activations as activation
 import pydtnn.converters.onnx2pydtnn.constants as cons
+# Functionality imports
+import pydtnn.layers as layer
+from pydtnn.abstract.layerable import Layerable
 
 # ========================= #
 
@@ -349,6 +349,7 @@ def Mul(info: dict[str, Any]) -> Layerable:
     # TODO: Move it to a file and do it in the right way.
 
     from numpy import multiply
+
     from pydtnn.layers.abstract.block_layer import AbstractBlockLayer
 
     class _Mul(AbstractBlockLayer):
@@ -424,6 +425,7 @@ def Unsqueeze(info: dict[str, Any]) -> Layerable:
     # TODO: Move it to a file and do it in the right way.
 
     from numpy import expand_dims
+
     from pydtnn.layers.abstract.block_layer import AbstractBlockLayer as Layer
 
     class _Unsqueeze(Layer):

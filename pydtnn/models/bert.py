@@ -15,6 +15,7 @@ Tensorflow parameters names:
 """
 
 from collections.abc import Sequence
+
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.layers.encoder import Encoder
 from pydtnn.layers.input import Input

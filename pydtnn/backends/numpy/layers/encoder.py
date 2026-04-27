@@ -1,13 +1,17 @@
-from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
-from pydtnn.layers.encoder import Encoder
-from pydtnn.layers.layer_normalization import LayerNormalization
-from pydtnn.layers.feed_forward import FeedForward
-from pydtnn.layers.dropout import Dropout
-from pydtnn.layers.multi_head_attention import MultiHeadAttention
-from pydtnn.backends.numpy.layers.abstract.block_layer import AbstractBlockLayerNumpy
-from typing import TYPE_CHECKING
-from pydtnn.libs import numpy as np
 import logging
+from typing import TYPE_CHECKING
+
+from pydtnn.backends.numpy.layers.abstract.block_layer import \
+    AbstractBlockLayerNumpy
+from pydtnn.layers.dropout import Dropout
+from pydtnn.layers.encoder import Encoder
+from pydtnn.layers.feed_forward import FeedForward
+from pydtnn.layers.layer_normalization import LayerNormalization
+from pydtnn.layers.multi_head_attention import MultiHeadAttention
+from pydtnn.libs import numpy as np
+from pydtnn.tracers.events import (PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS,
+                                   PYDTNN_OPS_EVENT_enum)
+
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:

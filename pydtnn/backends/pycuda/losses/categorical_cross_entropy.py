@@ -1,9 +1,12 @@
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.backends.pycuda.losses.loss import LossPycuda
-from pydtnn.losses.categorical_cross_entropy import CategoricalCrossEntropy
-from pycuda import gpuarray  # type: ignore
-import numpy as np
 import logging
+
+import numpy as np
+from pycuda import gpuarray  # type: ignore
+
+from pydtnn.backends.pycuda.losses.loss import LossPycuda
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.losses.categorical_cross_entropy import CategoricalCrossEntropy
+
 logger = logging.getLogger(__name__)
 
 

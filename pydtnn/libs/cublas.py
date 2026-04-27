@@ -9,19 +9,18 @@ Note: this module does not explicitly depend on PyCUDA.
 
 from __future__ import absolute_import
 
-import re
-import os
-import sys
-import warnings
+import atexit
 import ctypes
 import ctypes.util
-import atexit
-import numpy as np
-
+import os
+import re
+import sys
+import warnings
 from string import Template
 
-from pydtnn.libs import cuda
-from pydtnn.libs import utils
+import numpy as np
+
+from pydtnn.libs import cuda, utils
 
 # Load library:
 _linux_version_list = [11.0, 10.2, 10.1, 10.0, 9.2, 9.1, 9.0, 8.0, 7.5, 7.0, 6.5, 6.0, 5.5, 5.0, 4.0]

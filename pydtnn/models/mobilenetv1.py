@@ -1,4 +1,6 @@
 from collections.abc import Sequence
+
+from pydtnn.abstract.layerable import Layerable
 from pydtnn.activations.relu import Relu
 from pydtnn.activations.softmax import Softmax
 from pydtnn.layers.average_pool_2d import AveragePool2D
@@ -9,8 +11,8 @@ from pydtnn.layers.conv_2d_pointwise import Conv2DPointwise
 from pydtnn.layers.fc import FC
 from pydtnn.layers.flatten import Flatten
 from pydtnn.layers.input import Input
-from pydtnn.abstract.layerable import Layerable
 from pydtnn.utils.constants import ArrayShape
+
 # NOTE: PyDTNN follows PyTorch's definitions
 # NOTE: TensorFlow uses BatchNormalization with 1.001e-5 epsilon and 0.99 momentum
 # NOTE: TensorFlow uses AveragePool2D with (2, 2) pool shape

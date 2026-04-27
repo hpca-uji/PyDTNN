@@ -1,7 +1,9 @@
-import math
-from pydtnn.utils.constants import Array
-from pydtnn.layers.layer import Layer, LayerError
 import logging
+import math
+
+from pydtnn.layers.layer import Layer, LayerError
+from pydtnn.utils.constants import Array
+
 logger = logging.getLogger(__name__)
 
 

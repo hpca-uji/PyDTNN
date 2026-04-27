@@ -1,13 +1,17 @@
-from pydtnn.utils.tensor import TensorFormat
-import numpy as np
-from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
-from pydtnn.libs.convWinograd import ConvWinograd
-from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython
-from pydtnn.backends.cython.utils.im2col_nchw_cython import im2col_nchw_cython
 import logging
 
+import numpy as np
+
+from pydtnn.backends.cython.utils.im2col_nchw_cython import im2col_nchw_cython
+from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython
 from pydtnn.backends.numpy.layers.conv_2d import Conv2DNumpy
-from pydtnn.backends.winograd.layers.abstract.conv_2d import AbstractConv2DWinograd
+from pydtnn.backends.winograd.layers.abstract.conv_2d import \
+    AbstractConv2DWinograd
+from pydtnn.libs.convWinograd import ConvWinograd
+from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
+                                   PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
+from pydtnn.utils.tensor import TensorFormat
+
 logger = logging.getLogger(__name__)
 
 

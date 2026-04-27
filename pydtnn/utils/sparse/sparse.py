@@ -1,10 +1,12 @@
-from pydtnn.utils.sparse.sparse_cython import \
-    top_threshold_selection_dense_cython, \
-    top_threshold_selection_coo_cython, \
-    summ_coo_cython
-import numpy as np
-import warnings
 import logging
+import warnings
+
+import numpy as np
+
+from pydtnn.utils.sparse.sparse_cython import (
+    summ_coo_cython, top_threshold_selection_coo_cython,
+    top_threshold_selection_dense_cython)
+
 logger = logging.getLogger(__name__)
 
 

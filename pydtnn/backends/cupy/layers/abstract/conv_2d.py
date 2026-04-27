@@ -1,14 +1,15 @@
-from pydtnn.utils.constants import DTYPE2CTYPE
-from pydtnn.utils.constants import ArrayShape
-from pydtnn.backends.cupy.layers.layer import LayerCupy
+import logging
+from typing import TYPE_CHECKING
+
 import cupy as np
 from cupy.cuda import Stream  # type: ignore
-from typing import TYPE_CHECKING
-from pydtnn.libs import numpy as np
-import logging
 
+from pydtnn.backends.cupy.layers.layer import LayerCupy
 from pydtnn.backends.numpy.layers.abstract.conv_2d import AbstractConv2DNumpy
 from pydtnn.layers.abstract.conv_2d import AbstractConv2D
+from pydtnn.libs import numpy as np
+from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
+
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:

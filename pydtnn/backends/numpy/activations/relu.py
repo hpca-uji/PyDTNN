@@ -1,9 +1,11 @@
-from pydtnn.utils.constants import ArrayShape
-from pydtnn.backends.numpy.activations.activation import ActivationNumpy
-from pydtnn.activations.relu import Relu
-from typing import TYPE_CHECKING
-from pydtnn.libs import numpy as np
 import logging
+from typing import TYPE_CHECKING
+
+from pydtnn.activations.relu import Relu
+from pydtnn.backends.numpy.activations.activation import ActivationNumpy
+from pydtnn.libs import numpy as np
+from pydtnn.utils.constants import ArrayShape
+
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:

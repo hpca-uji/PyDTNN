@@ -1,12 +1,14 @@
+import logging
 import math
+from typing import TYPE_CHECKING
+
+from pydtnn.backends.numpy.layers.layer import LayerNumpy
+from pydtnn.layers.batch_normalization import BatchNormalization
+from pydtnn.libs import numpy as np
+from pydtnn.model import Model
 from pydtnn.utils.constants import ArrayShape, Parameters
 from pydtnn.utils.tensor import TensorFormat, format_transpose
-from pydtnn.backends.numpy.layers.layer import LayerNumpy
-from pydtnn.model import Model
-from pydtnn.layers.batch_normalization import BatchNormalization
-from typing import TYPE_CHECKING
-from pydtnn.libs import numpy as np
-import logging
+
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:

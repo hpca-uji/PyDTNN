@@ -1,6 +1,8 @@
-from pydtnn.utils.constants import Array
-from pydtnn.metrics.metric import Metric
 import logging
+
+from pydtnn.metrics.metric import Metric
+from pydtnn.utils.constants import Array
+
 logger = logging.getLogger(__name__)
 
 

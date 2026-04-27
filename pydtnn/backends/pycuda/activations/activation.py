@@ -1,8 +1,10 @@
+import logging
+
+from pydtnn.activations.activation import Activation
+from pydtnn.backends.pycuda.abstract.layerable import LayerablePycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.utils.constants import ArrayShape
-from pydtnn.backends.pycuda.abstract.layerable import LayerablePycuda
-from pydtnn.activations.activation import Activation
-import logging
+
 logger = logging.getLogger(__name__)
 
 

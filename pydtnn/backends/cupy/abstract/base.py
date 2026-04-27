@@ -1,6 +1,7 @@
+from cupy import RawKernel, RawModule  # type: ignore
+
 from pydtnn.backends.numpy.abstract.base import BaseNumpy
 from pydtnn.utils.uses_cuda import UsesCudaCode
-from cupy import RawKernel, RawModule  # type: ignore
 
 
 class BaseCupy(UsesCudaCode, BaseNumpy):

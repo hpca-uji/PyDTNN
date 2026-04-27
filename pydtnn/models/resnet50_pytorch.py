@@ -1,17 +1,17 @@
 from collections.abc import Sequence
 
+from pydtnn.abstract.layerable import Layerable
 from pydtnn.activations.relu import Relu
 from pydtnn.activations.softmax import Softmax
 from pydtnn.layers.adaptive_average_pool_2d import AdaptiveAveragePool2D
-from pydtnn.utils.initializers import he_uniform
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.fc import FC
 from pydtnn.layers.flatten import Flatten
 from pydtnn.layers.input import Input
-from pydtnn.abstract.layerable import Layerable
 from pydtnn.layers.max_pool_2d import MaxPool2D
 from pydtnn.utils.constants import ArrayShape
+from pydtnn.utils.initializers import he_uniform
 
 
 def resNet50(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:

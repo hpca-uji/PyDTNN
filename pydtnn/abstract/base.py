@@ -1,6 +1,6 @@
+import importlib
 import re
 import typing
-import importlib
 
 from pydtnn import utils
 from pydtnn.utils.constants import Array

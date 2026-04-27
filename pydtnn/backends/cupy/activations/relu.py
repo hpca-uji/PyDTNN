@@ -1,7 +1,9 @@
-from pydtnn.backends.cupy.activations.activation import ActivationCupy
-from pydtnn.libs import numpy as np
-from pydtnn.backends.numpy.activations.relu import ReluNumpy
 import logging
+
+from pydtnn.backends.cupy.activations.activation import ActivationCupy
+from pydtnn.backends.numpy.activations.relu import ReluNumpy
+from pydtnn.libs import numpy as np
+
 logger = logging.getLogger(__name__)
 
 

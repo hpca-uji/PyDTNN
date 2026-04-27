@@ -1,7 +1,9 @@
-from pydtnn.utils.constants import ArrayShape, Array
-from pydtnn.utils import find_component
-from pydtnn.abstract.layerable import Layerable
 import logging
+
+from pydtnn.abstract.layerable import Layerable
+from pydtnn.utils import find_component
+from pydtnn.utils.constants import Array, ArrayShape
+
 logger = logging.getLogger(__name__)
 
 

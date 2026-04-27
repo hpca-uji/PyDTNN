@@ -1,34 +1,43 @@
+import torch  # type: ignore
 from model_convertor import convert_model
+from torch.nn import CrossEntropyLoss  # type: ignore
+from torchmetrics import Accuracy, Metric  # type: ignore
+from torchvision.models import (alexnet, densenet121,  # type: ignore
+                                densenet169, densenet201, googlenet, resnet18,
+                                resnet34, resnet50, resnet101, resnet152,
+                                vgg11, vgg16, vgg19)
 
 from pydtnn.activations.softmax import Softmax
-from pydtnn.datasets.dataset import select as select_dataset
-from torchvision.models import vgg19, alexnet, densenet169, resnet50, googlenet  # type: ignore
-from torchvision.models import densenet121, densenet201, resnet18, resnet34, resnet101, resnet152, vgg11, vgg16  # type: ignore
-
-from torchmetrics import Accuracy, Metric  # type: ignore
-
 from pydtnn.datasets.dataset import Dataset
-
+from pydtnn.datasets.dataset import select as select_dataset
+from pydtnn.model import Model as PyDTNN_Model
+from pydtnn.models.alexnet_cifar10 import \
+    alexnet_cifar10 as pydtnn_alexnet_cifar10
+from pydtnn.models.densenet121_cifar10 import \
+    densenet121_cifar10 as pydtnn_densenet121_cifar10
+from pydtnn.models.densenet169_cifar10 import \
+    densenet169_cifar10 as pydtnn_densenet169_cifar10
+from pydtnn.models.densenet201_cifar10 import \
+    densenet201_cifar10 as pydtnn_densenet201_cifar10
+from pydtnn.models.inceptionv3_cifar10 import \
+    inceptionv3_cifar10 as pydtnn_inceptionv3_cifar10
+from pydtnn.models.resnet18_cifar10 import \
+    resnet18_cifar10 as pydtnn_resnet18_cifar10
+from pydtnn.models.resnet34_cifar10 import \
+    resnet34_cifar10 as pydtnn_resnet34_cifar10
+from pydtnn.models.resnet50_cifar10 import \
+    resnet50_cifar10 as pydtnn_resnet50_cifar10
+from pydtnn.models.resnet101_cifar10 import \
+    resnet101_cifar10 as pydtnn_resnet101_cifar10
+from pydtnn.models.resnet152_cifar10 import \
+    resnet152_cifar10 as pydtnn_resnet152_cifar10
 from pydtnn.models.vgg11 import vgg11 as pydtnn_vgg11
 from pydtnn.models.vgg16 import vgg16 as pydtnn_vgg16
-from pydtnn.models.vgg19_imagenet import vgg19_imagenet as pydtnn_vgg19_imagenet
-from pydtnn.models.alexnet_cifar10 import alexnet_cifar10 as pydtnn_alexnet_cifar10
-from pydtnn.models.densenet121_cifar10 import densenet121_cifar10 as pydtnn_densenet121_cifar10
-from pydtnn.models.densenet169_cifar10 import densenet169_cifar10 as pydtnn_densenet169_cifar10
-from pydtnn.models.densenet201_cifar10 import densenet201_cifar10 as pydtnn_densenet201_cifar10
-from pydtnn.models.resnet18_cifar10 import resnet18_cifar10 as pydtnn_resnet18_cifar10
-from pydtnn.models.resnet34_cifar10 import resnet34_cifar10 as pydtnn_resnet34_cifar10
-from pydtnn.models.resnet50_cifar10 import resnet50_cifar10 as pydtnn_resnet50_cifar10
-from pydtnn.models.resnet101_cifar10 import resnet101_cifar10 as pydtnn_resnet101_cifar10
-from pydtnn.models.resnet152_cifar10 import resnet152_cifar10 as pydtnn_resnet152_cifar10
-from pydtnn.models.inceptionv3_cifar10 import inceptionv3_cifar10 as pydtnn_inceptionv3_cifar10
+from pydtnn.models.vgg19_imagenet import \
+    vgg19_imagenet as pydtnn_vgg19_imagenet
 
-from pydtnn.model import Model as PyDTNN_Model
-from pydtnn.datasets.dataset import select as select_dataset
 # from pydtnn.utils.best_of import BestOf
 
-import torch  # type: ignore
-from torch.nn import CrossEntropyLoss  # type: ignore
 
 
 dict_test = {

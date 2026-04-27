@@ -1,6 +1,8 @@
-from pydtnn.utils import find_component
-from pydtnn.abstract.base import Base
 import logging
+
+from pydtnn.abstract.base import Base
+from pydtnn.utils import find_component
+
 # TODO: Check if this is what I want.
 logger = logging.getLogger(__name__)
 

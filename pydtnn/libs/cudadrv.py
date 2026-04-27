@@ -5,8 +5,8 @@
 Python interface to CUDA driver functions.
 """
 
-import sys
 import ctypes
+import sys
 
 # Load library:
 if 'linux' in sys.platform:

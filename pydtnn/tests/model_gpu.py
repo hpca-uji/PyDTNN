@@ -1,17 +1,20 @@
-from pydtnn.utils.tensor import TensorFormat, format_transpose
-from pydtnn.tests.abstract.common import verbose_test, Params
-from pydtnn.tests.abstract.model_common import ModelCommonTestCase
-from pydtnn.model import Model
-from pydtnn.layers.layer import LayerError
-from pydtnn.layers.conv_2d import Conv2D
-from pydtnn.layers.concatenation_block import ConcatenationBlock
-from pydtnn.layers.addition_block import AdditionBlock
+import logging
+import unittest
+
+import numpy as np
+import pycuda.gpuarray as gpuarray  # type: ignore
+
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-import pycuda.gpuarray as gpuarray  # type: ignore
-import numpy as np
-import unittest
-import logging
+from pydtnn.layers.addition_block import AdditionBlock
+from pydtnn.layers.concatenation_block import ConcatenationBlock
+from pydtnn.layers.conv_2d import Conv2D
+from pydtnn.layers.layer import LayerError
+from pydtnn.model import Model
+from pydtnn.tests.abstract.common import Params, verbose_test
+from pydtnn.tests.abstract.model_common import ModelCommonTestCase
+from pydtnn.utils.tensor import TensorFormat, format_transpose
+
 logger = logging.getLogger(__name__)
 
 

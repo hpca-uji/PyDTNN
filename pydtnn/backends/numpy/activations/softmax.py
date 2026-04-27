@@ -1,9 +1,11 @@
-import math
-from pydtnn.backends.numpy.activations.activation import ActivationNumpy
-from pydtnn.activations.softmax import Softmax
-from typing import TYPE_CHECKING
-from pydtnn.libs import numpy as np
 import logging
+import math
+from typing import TYPE_CHECKING
+
+from pydtnn.activations.softmax import Softmax
+from pydtnn.backends.numpy.activations.activation import ActivationNumpy
+from pydtnn.libs import numpy as np
+
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:

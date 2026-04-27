@@ -1,12 +1,14 @@
+import logging
 import math
 from typing import TYPE_CHECKING
+
+from pydtnn.backends.numpy.layers.layer import LayerNumpy
+from pydtnn.layers.abstract.pool_2d_layer import AbstractPool2DLayer
 from pydtnn.libs import numpy as np
 from pydtnn.utils.constants import ArrayShape
+from pydtnn.utils.performance_models import col2im_time, im2col_time
 from pydtnn.utils.tensor import TensorFormat
-from pydtnn.utils.performance_models import im2col_time, col2im_time
-from pydtnn.layers.abstract.pool_2d_layer import AbstractPool2DLayer
-from pydtnn.backends.numpy.layers.layer import LayerNumpy
-import logging
+
 logger = logging.getLogger(__name__)
 
 

@@ -1,9 +1,11 @@
-import math
-from pydtnn.metrics.kl_divergence_metric import KLDivergenceMetric
-from pydtnn.backends.numpy.metrics.metric import MetricNumpy
-from typing import TYPE_CHECKING
-from pydtnn.libs import numpy as np
 import logging
+import math
+from typing import TYPE_CHECKING
+
+from pydtnn.backends.numpy.metrics.metric import MetricNumpy
+from pydtnn.libs import numpy as np
+from pydtnn.metrics.kl_divergence_metric import KLDivergenceMetric
+
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:

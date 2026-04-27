@@ -1,11 +1,13 @@
-from typing import TYPE_CHECKING
-from pydtnn.tracers.tracer import Tracer
-from timeit import default_timer as timer
-from collections import defaultdict
 import atexit
-from types import ModuleType
-from pydtnn import utils
 import logging
+from collections import defaultdict
+from timeit import default_timer as timer
+from types import ModuleType
+from typing import TYPE_CHECKING
+
+from pydtnn import utils
+from pydtnn.tracers.tracer import Tracer
+
 logger = logging.getLogger(__name__)
 
 

@@ -1,13 +1,14 @@
 """Library test group"""
-from warnings import warn
 import logging
+from warnings import warn
+
 logger = logging.getLogger(__name__)
 
 
 # ConvGemm
 try:
-    from pydtnn.tests.conv_gemm import ConvGemmTestCase
     from pydtnn.tests.conv_2d_conv_gemm import Conv2DConvGemmTestCase
+    from pydtnn.tests.conv_gemm import ConvGemmTestCase
     from pydtnn.tests.model_conv_gemm import ModelConvGemmTestCase
 except Exception:
     logger.warning("ConvGemm not available, skiping tests!")

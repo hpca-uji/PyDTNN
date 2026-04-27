@@ -1,10 +1,13 @@
-from pydtnn.libs.mpi import MPI
-from pydtnn.utils import random
-from pydtnn.tests.conv_2d_conv_gemm import D, Conv2DConvGemmTestCase
-import numpy as np
 import itertools
-import time
 import logging
+import time
+
+import numpy as np
+
+from pydtnn.libs.mpi import MPI
+from pydtnn.tests.conv_2d_conv_gemm import Conv2DConvGemmTestCase, D
+from pydtnn.utils import random
+
 logger = logging.getLogger(__name__)
 
 

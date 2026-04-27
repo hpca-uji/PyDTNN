@@ -1,12 +1,15 @@
 import copy
+import logging
+
+import numpy as np
+import torch  # type: ignore
+
 import pydtnn.converters.pytorch2pydtnn.common as cm
+from pydtnn.abstract.layerable import Layerable
+from pydtnn.activations.activation import Activation
 from pydtnn.layers.input import Input
 from pydtnn.model import Model as PyDTNN_Model
-import torch  # type: ignore
-import numpy as np
-from pydtnn.activations.activation import Activation
-from pydtnn.abstract.layerable import Layerable
-import logging
+
 logger = logging.getLogger(__name__)
 
 # Typing related

@@ -1,17 +1,17 @@
 from collections.abc import Sequence
 
 from pydtnn.abstract.layerable import Layerable
-from pydtnn.layers.conv_2d_depthwise import Conv2DDepthwise
-from pydtnn.layers.conv_2d_pointwise import Conv2DPointwise
-from pydtnn.layers.input import Input
-from pydtnn.layers.conv_2d import Conv2D
-from pydtnn.layers.batch_normalization import BatchNormalization
-from pydtnn.layers.dropout import Dropout
-from pydtnn.layers.adaptive_average_pool_2d import AdaptiveAveragePool2D
-from pydtnn.layers.flatten import Flatten
-from pydtnn.layers.fc import FC
 from pydtnn.activations.relu6 import Relu6
 from pydtnn.activations.softmax import Softmax
+from pydtnn.layers.adaptive_average_pool_2d import AdaptiveAveragePool2D
+from pydtnn.layers.batch_normalization import BatchNormalization
+from pydtnn.layers.conv_2d import Conv2D
+from pydtnn.layers.conv_2d_depthwise import Conv2DDepthwise
+from pydtnn.layers.conv_2d_pointwise import Conv2DPointwise
+from pydtnn.layers.dropout import Dropout
+from pydtnn.layers.fc import FC
+from pydtnn.layers.flatten import Flatten
+from pydtnn.layers.input import Input
 from pydtnn.utils.constants import ArrayShape
 
 

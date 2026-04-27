@@ -1,7 +1,10 @@
-from numpy import ndarray
-from pydtnn.metrics.metric import Metric
-from pydtnn.backends.numpy.abstract.base import BaseNumpy
 import logging
+
+from numpy import ndarray
+
+from pydtnn.backends.numpy.abstract.base import BaseNumpy
+from pydtnn.metrics.metric import Metric
+
 logger = logging.getLogger(__name__)
 
 

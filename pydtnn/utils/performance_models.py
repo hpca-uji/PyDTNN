@@ -1,7 +1,10 @@
-from pydtnn.utils.constants import NetworkAlgEnum
-import numpy as np
-from math import ceil, log
 import logging
+from math import ceil, log
+
+import numpy as np
+
+from pydtnn.utils.constants import NetworkAlgEnum
+
 logger = logging.getLogger(__name__)
 
 

@@ -1,10 +1,12 @@
 from __future__ import annotations
-import numpy as np
-from enum import auto, StrEnum
 
 import logging
+from enum import StrEnum, auto
+
+import numpy as np
 
 from pydtnn.utils.constants import ArrayShape
+
 logger = logging.getLogger(__name__)
 
 

@@ -1,28 +1,27 @@
-from collections import abc
 import itertools
+import logging
+from collections import abc
 from typing import TYPE_CHECKING, Any
 from warnings import warn
 
 import numpy as np
 
-from pydtnn import MPI, drv, nccl, cudnn
-from pydtnn import hostname, ranks_per_node, num_gpus, nccl_comm, cudnn_handle, cublas_handle, context, stream, gpuarray, cublas
-
+from pydtnn import (MPI, context, cublas, cublas_handle, cudnn, cudnn_handle,
+                    drv, gpuarray, hostname, nccl, nccl_comm, num_gpus,
+                    ranks_per_node, stream)
 from pydtnn.abstract.layerable import Layerable
-from pydtnn.session.base import Base
-from pydtnn.session.export import Export
-from pydtnn.session.utils import DEFAULT_BACH_SIZE, LIMIT_THREADS_AND_BLOCKS
+from pydtnn.datasets.dataset import Dataset
+from pydtnn.datasets.dataset import select as select_dataset
 from pydtnn.libs.mpi.rc import proto as PROTOCOL
 from pydtnn.losses.loss import select as select_loss
 from pydtnn.metrics.metric import select as select_metric
+from pydtnn.models.model import select as select_model
 from pydtnn.optimizers.optimizer import select as select_optimizer
 from pydtnn.parser import PydtnnArgumentParser
+from pydtnn.session.base import Base
+from pydtnn.session.export import Export
+from pydtnn.session.utils import DEFAULT_BACH_SIZE, LIMIT_THREADS_AND_BLOCKS
 from pydtnn.utils.gpu import CudnnDataType
-from pydtnn.models.model import select as select_model
-from pydtnn.datasets.dataset import Dataset, select as select_dataset
-
-import logging
-
 from pydtnn.utils.memory_pool import PreallocMemory, PrivateMemory
 from pydtnn.utils.performance_counter import PerformanceCounter
 from pydtnn.utils.tensor import SampleFormat, TensorFormat, format_reshape
@@ -36,6 +35,7 @@ else:
         polyhe = None
 
 from pydtnn.utils.constants import Array
+
 logger = logging.getLogger(__name__)
 
 

@@ -1,8 +1,7 @@
 """Numpy module"""
 
-import sys as _sys
 import os as _os
-
+import sys as _sys
 
 # Select implementation
 # NOTE: Make sure global package is not confused with current package

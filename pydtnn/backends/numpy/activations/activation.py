@@ -1,8 +1,10 @@
+import logging
 from typing import TYPE_CHECKING
+
+from pydtnn.activations.activation import Activation
 from pydtnn.backends.numpy.abstract.layerable import LayerableNumpy
 from pydtnn.libs import numpy as np
-from pydtnn.activations.activation import Activation
-import logging
+
 logger = logging.getLogger(__name__)
 
 

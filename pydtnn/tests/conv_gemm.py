@@ -1,11 +1,14 @@
-from pydtnn.utils import print_with_header
-from pydtnn.tests.abstract.conv_common import ConvCommonTestCase
-from pydtnn.tests.abstract.common import verbose_test, D
-from pydtnn.libs.convGemm import ConvGemm
-from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython
-import numpy as np
 import inspect
 import logging
+
+import numpy as np
+
+from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython
+from pydtnn.libs.convGemm import ConvGemm
+from pydtnn.tests.abstract.common import D, verbose_test
+from pydtnn.tests.abstract.conv_common import ConvCommonTestCase
+from pydtnn.utils import print_with_header
+
 logger = logging.getLogger(__name__)
 
 

@@ -1,11 +1,15 @@
-import math
-from pydtnn.utils.tensor import TensorFormat, format_transpose
-from pydtnn.utils.constants import ArrayShape
-from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
-from pydtnn.backends.numpy.layers.abstract.conv_2d_standard import AbstractConv2DStandardNumpy
-from typing import TYPE_CHECKING
-from pydtnn.libs import numpy as np
 import logging
+import math
+from typing import TYPE_CHECKING
+
+from pydtnn.backends.numpy.layers.abstract.conv_2d_standard import \
+    AbstractConv2DStandardNumpy
+from pydtnn.libs import numpy as np
+from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
+                                   PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
+from pydtnn.utils.constants import ArrayShape
+from pydtnn.utils.tensor import TensorFormat, format_transpose
+
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:

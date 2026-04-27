@@ -1,9 +1,12 @@
-from pydtnn.utils.constants import DTYPE2CTYPE
+import logging
+
+from pycuda.driver import Function  # type: ignore
+
+from pydtnn.backends.pycuda.abstract.base import BasePycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.metrics.metric import Metric
-from pydtnn.backends.pycuda.abstract.base import BasePycuda
-from pycuda.driver import Function  # type: ignore
-import logging
+from pydtnn.utils.constants import DTYPE2CTYPE
+
 logger = logging.getLogger(__name__)
 
 

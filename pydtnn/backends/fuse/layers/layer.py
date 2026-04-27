@@ -1,9 +1,11 @@
 from __future__ import annotations
+
+import logging
+
 from pydtnn.layers.layer import Layer
 from pydtnn.utils import find_component
 from pydtnn.utils.constants import Array
 
-import logging
 logger = logging.getLogger(__name__)
 
 

@@ -1,10 +1,13 @@
-import math
-from pydtnn.datasets.dataset import Dataset
-import numpy as np
-from typing import IO, TYPE_CHECKING
 import itertools
-import os
 import logging
+import math
+import os
+from typing import IO, TYPE_CHECKING
+
+import numpy as np
+
+from pydtnn.datasets.dataset import Dataset
+
 logger = logging.getLogger(__name__)
 
 

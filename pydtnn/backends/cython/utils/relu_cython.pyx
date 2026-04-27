@@ -1,7 +1,10 @@
 import numpy as np
-cimport numpy as np
+
 cimport cython
+cimport numpy as np
+
 from cython.parallel import prange
+
 from pydtnn.backends.cython.utils.base cimport npDT
 
 __all__ = (

@@ -1,6 +1,9 @@
 cimport cython
+
 from cython.parallel import prange
+
 from libc.math cimport sqrt
+
 from pydtnn.backends.cython.utils.base cimport npDT
 
 __all__ = (

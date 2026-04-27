@@ -1,8 +1,12 @@
-from pydtnn.utils.best_of.best_of import BestOf
-from pydtnn.utils.transpose_cython import transpose_0231_ijk_cython, transpose_0231_ikj_cython
-import numpy as np
-from typing import Callable
 import logging
+from typing import Callable
+
+import numpy as np
+
+from pydtnn.utils.best_of.best_of import BestOf
+from pydtnn.utils.transpose_cython import (transpose_0231_ijk_cython,
+                                           transpose_0231_ikj_cython)
+
 logger = logging.getLogger(__name__)
 
 

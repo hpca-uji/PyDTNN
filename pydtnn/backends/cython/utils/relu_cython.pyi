@@ -1,6 +1,7 @@
 import numpy as _np
-from pydtnn.backends.cython.utils.base import _npDT, _npDT_4Dims, _npDT_3Dims, _npDT_2Dims, _npDT_1Dims
 
+from pydtnn.backends.cython.utils.base import (_npDT, _npDT_1Dims, _npDT_2Dims,
+                                               _npDT_3Dims, _npDT_4Dims)
 
 def relu_cython[T:_npDT](x: _npDT_1Dims[T],
                          max: _npDT_1Dims[T],

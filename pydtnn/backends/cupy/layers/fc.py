@@ -1,9 +1,12 @@
+import logging
+
 import numpy as np
 from cupy.cuda import Stream  # type: ignore
-from pydtnn.utils.constants import ArrayShape
-from pydtnn.backends.numpy.layers.fc import FCNumpy
+
 from pydtnn.backends.cupy.layers.layer import LayerCupy
-import logging
+from pydtnn.backends.numpy.layers.fc import FCNumpy
+from pydtnn.utils.constants import ArrayShape
+
 logger = logging.getLogger(__name__)
 
 

@@ -2,21 +2,23 @@
 # In this file must be implemented only the translation of PyTorch functions to its PyDTNN equivalent.
 # _______________________________________________________________________________________________________________
 
-from pydtnn.converters.pytorch2pydtnn.layers import activation
-import pydtnn.converters.pytorch2pydtnn.common as cm
-from pydtnn.activations.tanh import Tanh
-from pydtnn.activations.softmax import Softmax
-from pydtnn.activations.sigmoid import Sigmoid
-from pydtnn.activations.relu import Relu
-from pydtnn.activations.log import Log
-from pydtnn.layers.flatten import Flatten
-from pydtnn.layers.concatenation_block import ConcatenationBlock
-from pydtnn.layers.addition_block import AdditionBlock
-from pydtnn.layers.adaptive_average_pool_2d import AdaptiveAveragePool2D
-from pydtnn.layers.average_pool_2d import AveragePool2D
-from pydtnn.abstract.layerable import Layerable
-from typing import Any
 import logging
+from typing import Any
+
+import pydtnn.converters.pytorch2pydtnn.common as cm
+from pydtnn.abstract.layerable import Layerable
+from pydtnn.activations.log import Log
+from pydtnn.activations.relu import Relu
+from pydtnn.activations.sigmoid import Sigmoid
+from pydtnn.activations.softmax import Softmax
+from pydtnn.activations.tanh import Tanh
+from pydtnn.converters.pytorch2pydtnn.layers import activation
+from pydtnn.layers.adaptive_average_pool_2d import AdaptiveAveragePool2D
+from pydtnn.layers.addition_block import AdditionBlock
+from pydtnn.layers.average_pool_2d import AveragePool2D
+from pydtnn.layers.concatenation_block import ConcatenationBlock
+from pydtnn.layers.flatten import Flatten
+
 logger = logging.getLogger(__name__)
 
 # Typing related (or non important) imports

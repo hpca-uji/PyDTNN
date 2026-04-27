@@ -1,8 +1,10 @@
+import logging
+
 from pydtnn.backends.cython.activations.activation import ActivationCython
 from pydtnn.backends.cython.utils.relu_cython import relu_cython
-from pydtnn.libs import numpy as np
 from pydtnn.backends.numpy.activations.relu import ReluNumpy
-import logging
+from pydtnn.libs import numpy as np
+
 logger = logging.getLogger(__name__)
 
 

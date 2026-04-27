@@ -1,9 +1,11 @@
-import math
-from pydtnn.losses.categorical_cross_entropy import CategoricalCrossEntropy
-from pydtnn.backends.numpy.losses.loss import LossNumpy
-from typing import TYPE_CHECKING
-from pydtnn.libs import numpy as np
 import logging
+import math
+from typing import TYPE_CHECKING
+
+from pydtnn.backends.numpy.losses.loss import LossNumpy
+from pydtnn.libs import numpy as np
+from pydtnn.losses.categorical_cross_entropy import CategoricalCrossEntropy
+
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:

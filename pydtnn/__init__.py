@@ -1,12 +1,13 @@
 """PyDTNN environment initialization"""
 
+import atexit
+import logging
+import os
+import platform
+import subprocess
 from collections import Counter
 from types import ModuleType
-import subprocess
-import platform
-import atexit
-import os
-import logging
+
 logger = logging.getLogger(__name__)
 
 

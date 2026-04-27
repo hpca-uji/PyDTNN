@@ -1,8 +1,10 @@
-from pydtnn.losses.kl_divergence import KLDivergence
-from pydtnn.backends.numpy.losses.loss import LossNumpy
-from typing import TYPE_CHECKING
-from pydtnn.libs import numpy as np
 import logging
+from typing import TYPE_CHECKING
+
+from pydtnn.backends.numpy.losses.loss import LossNumpy
+from pydtnn.libs import numpy as np
+from pydtnn.losses.kl_divergence import KLDivergence
+
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:

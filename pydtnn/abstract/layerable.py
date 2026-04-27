@@ -1,16 +1,19 @@
 from __future__ import annotations
-from pydtnn.abstract.base import Base
-from pydtnn.utils.constants import Array, ArrayShape, Parameters
-from typing import TYPE_CHECKING, Any
-import numpy as np
 
 import logging
+from typing import TYPE_CHECKING, Any
+
+import numpy as np
+
+from pydtnn.abstract.base import Base
+from pydtnn.utils.constants import Array, ArrayShape, Parameters
+
 logger = logging.getLogger(__name__)
 
 
 if TYPE_CHECKING:
-    from pydtnn.model import Model
     from pydtnn.activations.activation import Activation
+    from pydtnn.model import Model
     from pydtnn.optimizers.optimizer import Optimizer
 
 

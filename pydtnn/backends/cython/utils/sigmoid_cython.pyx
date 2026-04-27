@@ -1,6 +1,8 @@
 cimport cython
-from cython.parallel import prange
+
 from cython.cimports.libc.math import exp
+from cython.parallel import prange
+
 from pydtnn.backends.cython.utils.base cimport npDT
 
 __all__ = (

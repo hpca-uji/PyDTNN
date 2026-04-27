@@ -1,6 +1,8 @@
-from pydtnn.backends.numpy.layers.conv_2d import Conv2DNumpy
-from pydtnn.backends.cython.layers.abstract.conv_2d import AbstractConv2DCython
 import logging
+
+from pydtnn.backends.cython.layers.abstract.conv_2d import AbstractConv2DCython
+from pydtnn.backends.numpy.layers.conv_2d import Conv2DNumpy
+
 logger = logging.getLogger(__name__)
 
 

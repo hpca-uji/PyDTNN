@@ -1,16 +1,20 @@
-from pydtnn.utils.tensor import TensorFormat, encode_shape, decode_shape
-from pydtnn.utils.constants import ArrayShape
-import numpy as np
-from enum import StrEnum, auto
 import copy
 import ctypes
 import logging
+from enum import StrEnum, auto
+
+import numpy as np
+
+from pydtnn.utils.constants import ArrayShape
+from pydtnn.utils.tensor import TensorFormat, decode_shape, encode_shape
+
 logger = logging.getLogger(__name__)
 
 
 try:
-    from pycuda import gpuarray  # type: ignore
     from pycuda import driver as pycuda_driver  # type: ignore
+    from pycuda import gpuarray  # type: ignore
+
     from pydtnn.libs import cudnn as cudnn
 except Exception:
     pass

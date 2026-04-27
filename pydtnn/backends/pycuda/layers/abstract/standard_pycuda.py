@@ -1,11 +1,15 @@
-from typing import Any, override
-from pydtnn.utils.tensor import TensorFormat, format_transpose
-from pydtnn.utils.constants import ArrayShape
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.backends.pycuda.layers.abstract.conv_2d import AbstractConv2DPycuda
-from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
-import numpy as np
 import logging
+from typing import Any, override
+
+import numpy as np
+
+from pydtnn.backends.pycuda.layers.abstract.conv_2d import AbstractConv2DPycuda
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
+                                   PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
+from pydtnn.utils.constants import ArrayShape
+from pydtnn.utils.tensor import TensorFormat, format_transpose
+
 logger = logging.getLogger(__name__)
 
 

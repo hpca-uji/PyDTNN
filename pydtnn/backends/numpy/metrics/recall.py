@@ -1,10 +1,13 @@
-import math
-from pydtnn.metrics.recall import Recall
-from pydtnn.backends.numpy.metrics.metric import MetricNumpy
-from pydtnn.backends.numpy.metrics.binary_confusion_matrix import BinaryConfusionMatrixNumpy
-from typing import TYPE_CHECKING
-from pydtnn.libs import numpy as np
 import logging
+import math
+from typing import TYPE_CHECKING
+
+from pydtnn.backends.numpy.metrics.binary_confusion_matrix import \
+    BinaryConfusionMatrixNumpy
+from pydtnn.backends.numpy.metrics.metric import MetricNumpy
+from pydtnn.libs import numpy as np
+from pydtnn.metrics.recall import Recall
+
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:

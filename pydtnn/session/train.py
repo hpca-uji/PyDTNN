@@ -1,23 +1,22 @@
-from collections.abc import Generator
 import enum
+import logging
+import time
+from collections.abc import Generator
 from timeit import default_timer as timer
 
+import numpy as np
 from tqdm import tqdm
+
+from pydtnn import MPI, gpuarray
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.datasets.dataset import Dataset
-from pydtnn.utils.constants import Array
-from pydtnn.session.utils import BAR_WIDTH
-import numpy as np
-
-
 from pydtnn.schedulers.scheduler import select as select_scheduler
 from pydtnn.session.eval import Eval
-from pydtnn import gpuarray, MPI
-from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_MDL_EVENT_enum
-import time
+from pydtnn.session.utils import BAR_WIDTH
+from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT,
+                                   PYDTNN_MDL_EVENTS, PYDTNN_MDL_EVENT_enum)
+from pydtnn.utils.constants import Array
 
-
-import logging
 logger = logging.getLogger(__name__)
 
 

@@ -1,13 +1,16 @@
-from pydtnn.utils.tensor import TensorFormat
-from pydtnn.utils import print_with_header
-from pydtnn.tests.abstract.conv_common import ConvCommonTestCase
-from pydtnn.tests.abstract.common import verbose_test, D
-from pydtnn.libs.convWinograd import ConvWinograd
-from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython
-import numpy as np
-import unittest
 import inspect
 import logging
+import unittest
+
+import numpy as np
+
+from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython
+from pydtnn.libs.convWinograd import ConvWinograd
+from pydtnn.tests.abstract.common import D, verbose_test
+from pydtnn.tests.abstract.conv_common import ConvCommonTestCase
+from pydtnn.utils import print_with_header
+from pydtnn.utils.tensor import TensorFormat
+
 logger = logging.getLogger(__name__)
 
 

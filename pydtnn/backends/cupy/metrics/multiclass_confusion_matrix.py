@@ -1,7 +1,11 @@
-import numpy as np
-from pydtnn.backends.numpy.metrics.multiclass_confusion_matrix import MulticlassConfusionMatrixNumpy
-from pydtnn.backends.cupy.metrics.metric import MetricCupy
 import logging
+
+import numpy as np
+
+from pydtnn.backends.cupy.metrics.metric import MetricCupy
+from pydtnn.backends.numpy.metrics.multiclass_confusion_matrix import \
+    MulticlassConfusionMatrixNumpy
+
 logger = logging.getLogger(__name__)
 
 

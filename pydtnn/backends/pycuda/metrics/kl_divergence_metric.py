@@ -1,9 +1,12 @@
-from pydtnn.backends.pycuda.metrics.metric import MetricPycuda
-from pydtnn.metrics.kl_divergence_metric import KLDivergenceMetric
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pycuda import gpuarray  # type: ignore
-import numpy as np
 import logging
+
+import numpy as np
+from pycuda import gpuarray  # type: ignore
+
+from pydtnn.backends.pycuda.metrics.metric import MetricPycuda
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.metrics.kl_divergence_metric import KLDivergenceMetric
+
 logger = logging.getLogger(__name__)
 
 

@@ -1,8 +1,11 @@
+import logging
+
+import numpy as np
+
+from pydtnn.backends.pycuda.metrics.metric import MetricPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.metrics.precision import Precision
-from pydtnn.backends.pycuda.metrics.metric import MetricPycuda
-import numpy as np
-import logging
+
 logger = logging.getLogger(__name__)
 
 

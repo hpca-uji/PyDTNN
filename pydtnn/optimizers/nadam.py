@@ -1,7 +1,9 @@
-from pydtnn.utils.constants import Array
-from pydtnn.optimizers.optimizer import Optimizer
-from typing import TYPE_CHECKING
 import logging
+from typing import TYPE_CHECKING
+
+from pydtnn.optimizers.optimizer import Optimizer
+from pydtnn.utils.constants import Array
+
 logger = logging.getLogger(__name__)
 
 

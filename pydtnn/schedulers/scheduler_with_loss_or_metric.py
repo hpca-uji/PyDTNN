@@ -1,6 +1,8 @@
-from pydtnn.schedulers.scheduler import Scheduler
-from typing import TYPE_CHECKING
 import logging
+from typing import TYPE_CHECKING
+
+from pydtnn.schedulers.scheduler import Scheduler
+
 logger = logging.getLogger(__name__)
 
 

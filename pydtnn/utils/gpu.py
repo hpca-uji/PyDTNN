@@ -1,7 +1,8 @@
 import enum
-import subprocess
-import re
 import logging
+import re
+import subprocess
+
 logger = logging.getLogger(__name__)
 
 

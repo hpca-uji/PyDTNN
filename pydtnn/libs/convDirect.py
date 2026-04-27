@@ -1,13 +1,16 @@
 """
 PyDTNN convDirect module
 """
-from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython
-from pydtnn.utils import load_library
-from pydtnn.utils.tensor import TensorFormat, encode_shape, decode_shape
-import numpy as np
-import weakref
 import ctypes
 import logging
+import weakref
+
+import numpy as np
+
+from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython
+from pydtnn.utils import load_library
+from pydtnn.utils.tensor import TensorFormat, decode_shape, encode_shape
+
 logger = logging.getLogger(__name__)
 
 
@@ -235,7 +238,9 @@ def time_it_func(x: np.ndarray, w_c: np.ndarray, out: np.ndarray,
 def __usage_example__():
     # Imports for this usage example (not required otherwise)
     from timeit import timeit
+
     from pydtnn.utils import random
+
     # Default parameters (1st layer AlexNet for Cifar10)
     b = 32  # Batch size
     c = 16  # Channels per layer

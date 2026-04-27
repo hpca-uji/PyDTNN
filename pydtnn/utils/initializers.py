@@ -2,14 +2,17 @@
 PyDTNN initializers
 """
 
+import logging
 import math
+from enum import StrEnum, auto
+from typing import Callable
+
+import numpy as np
+import scipy.stats as stats
+
 from pydtnn.utils import random
 from pydtnn.utils.constants import ArrayShape
-from typing import Callable
-from enum import StrEnum, auto
-import scipy.stats as stats
-import numpy as np
-import logging
+
 logger = logging.getLogger(__name__)
 
 

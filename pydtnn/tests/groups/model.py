@@ -1,9 +1,11 @@
 """Model test group"""
 
-from pydtnn.tests.model_tensor import ModelTensorTestCase
-from pydtnn.tests.model_dtype import ModelDTypeTestCase
-from warnings import warn
 import logging
+from warnings import warn
+
+from pydtnn.tests.model_dtype import ModelDTypeTestCase
+from pydtnn.tests.model_tensor import ModelTensorTestCase
+
 logger = logging.getLogger(__name__)
 
 

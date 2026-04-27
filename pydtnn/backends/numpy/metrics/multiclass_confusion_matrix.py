@@ -1,8 +1,11 @@
-from typing import TYPE_CHECKING
-from pydtnn.libs import numpy as np
-from pydtnn.metrics.multiclass_confusion_matrix import MulticlassConfusionMatrix
-from pydtnn.backends.numpy.metrics.metric import MetricNumpy
 import logging
+from typing import TYPE_CHECKING
+
+from pydtnn.backends.numpy.metrics.metric import MetricNumpy
+from pydtnn.libs import numpy as np
+from pydtnn.metrics.multiclass_confusion_matrix import \
+    MulticlassConfusionMatrix
+
 logger = logging.getLogger(__name__)
 
 

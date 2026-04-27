@@ -1,29 +1,31 @@
-from model_convertor import convert_model
-
 from typing import Any, Callable
 
-from torch.nn import Module as PyTorch_Model  # type: ignore
-import torch.nn as nn  # type: ignore
 import torch  # type: ignore
+import torch.nn as nn  # type: ignore
+from model_convertor import convert_model
+from torch.nn import Module as PyTorch_Model  # type: ignore
 
-from pydtnn.model import Model as PyDTNN_Model
 from pydtnn.abstract.layerable import Layerable
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.model import Model as PyDTNN_Model
+
 # from pydtnn.utils.best_of import BestOf
 
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 try:
     import pycuda.gpuarray as gpuarray  # type: ignore
+
     from pydtnn.libs import cudnn
 except BaseException:
     pass
 
 from copy import deepcopy
 from math import prod
+
 import numpy as np
-from pydtnn.converters.pytorch2pydtnn.common import TRANSPOSE_WEIGHTS_LAYERS
-from pydtnn.utils import random
 
 import pydtnn
+from pydtnn.converters.pytorch2pydtnn.common import TRANSPOSE_WEIGHTS_LAYERS
+from pydtnn.utils import random
 
 # CONSTANTS
 N = 100

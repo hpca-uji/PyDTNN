@@ -1,11 +1,13 @@
-import math
-from pydtnn.utils import random
-from pydtnn.model import Model
-from pydtnn.layers.dropout import Dropout
-from pydtnn.backends.numpy.layers.layer import LayerNumpy
-from typing import TYPE_CHECKING
-from pydtnn.libs import numpy as np
 import logging
+import math
+from typing import TYPE_CHECKING
+
+from pydtnn.backends.numpy.layers.layer import LayerNumpy
+from pydtnn.layers.dropout import Dropout
+from pydtnn.libs import numpy as np
+from pydtnn.model import Model
+from pydtnn.utils import random
+
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:

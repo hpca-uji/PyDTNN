@@ -1,7 +1,9 @@
-from pydtnn.tracers.simple_tracer import SimpleTracer
-from typing import TYPE_CHECKING
-from types import ModuleType
 import logging
+from types import ModuleType
+from typing import TYPE_CHECKING
+
+from pydtnn.tracers.simple_tracer import SimpleTracer
+
 logger = logging.getLogger(__name__)
 
 try:

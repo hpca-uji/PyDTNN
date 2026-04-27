@@ -1,16 +1,20 @@
-import math
-from pydtnn.utils.tensor import TensorFormat
-import numpy as np
-from pycuda.driver import Function   # type: ignore
-from pycuda.compiler import SourceModule   # type: ignore
-from pycuda import gpuarray   # type: ignore
-from pydtnn.utils.performance_models import im2col_time, col2im_time
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
-from pydtnn.utils.constants import DTYPE2CTYPE
-from pydtnn.backends.pycuda.layers.layer import LayerPycuda
-from pydtnn.layers.adaptive_average_pool_2d import AdaptiveAveragePool2D
 import logging
+import math
+
+import numpy as np
+from pycuda import gpuarray  # type: ignore
+from pycuda.compiler import SourceModule  # type: ignore
+from pycuda.driver import Function  # type: ignore
+
+from pydtnn.backends.pycuda.layers.layer import LayerPycuda
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.layers.adaptive_average_pool_2d import AdaptiveAveragePool2D
+from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
+                                   PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
+from pydtnn.utils.constants import DTYPE2CTYPE
+from pydtnn.utils.performance_models import col2im_time, im2col_time
+from pydtnn.utils.tensor import TensorFormat
+
 logger = logging.getLogger(__name__)
 
 

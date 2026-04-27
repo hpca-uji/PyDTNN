@@ -1,18 +1,21 @@
-import numpy as np
+import ctypes
+import logging
+import math
+import os
+import string
+import sys
+import threading
+import zipfile
 from collections.abc import Iterable
 from ctypes.util import find_library
 from importlib import import_module, resources
-from pydtnn import package_name
 from pathlib import PurePath
 from queue import Queue
-import threading
-import zipfile
-import ctypes
-import string
-import math
-import sys
-import os
-import logging
+
+import numpy as np
+
+from pydtnn import package_name
+
 logger = logging.getLogger(__name__)
 
 

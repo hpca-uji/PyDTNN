@@ -1,6 +1,8 @@
+import logging
+
 from pydtnn.backends.direct.layers.layer import LayerDirect
 from pydtnn.backends.numpy.layers.abstract.conv_2d import AbstractConv2DNumpy
-import logging
+
 logger = logging.getLogger(__name__)
 
 

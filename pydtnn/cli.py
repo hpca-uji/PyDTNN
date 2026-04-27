@@ -4,21 +4,23 @@
 PyDTNN Benchmark script
 """
 
+import cProfile
+import logging
+import logging.config
+import os
+import sys
+import time
+from contextlib import contextmanager, nullcontext
+from datetime import datetime
+from importlib import resources
+from pathlib import Path
+from traceback import TracebackException
+
 import numpy as np
 import yaml
-from contextlib import contextmanager, nullcontext
-from traceback import TracebackException
-from datetime import datetime
-from pathlib import Path
-from importlib import resources
-import logging.config
-import cProfile
-import time
-import sys
-import os
-import logging
 
 from pydtnn import utils
+
 logger = logging.getLogger(__name__)
 
 
@@ -77,8 +79,9 @@ def main():
     logging.config.dictConfig(log_conf)
 
     from pydtnn.model import Model
-    from pydtnn.utils import random
     from pydtnn.parser import PydtnnArgumentParser
+    from pydtnn.utils import random
+
     # from pydtnn.utils.best_of import BestOf
 
     # Parse options

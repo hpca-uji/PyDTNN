@@ -1,9 +1,12 @@
+import logging
+import os
+import platform
+
+import numpy as np
+
 from pydtnn.utils import print_with_header
 from pydtnn.utils.best_of.best_of import BestOf
-import numpy as np
-import platform
-import os
-import logging
+
 logger = logging.getLogger(__name__)
 
 

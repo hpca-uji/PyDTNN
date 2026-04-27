@@ -1,8 +1,9 @@
-import threading
 import functools
 import inspect
-import os
 import logging
+import os
+import threading
+
 logger = logging.getLogger(__name__)
 
 

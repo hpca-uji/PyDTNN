@@ -1,9 +1,10 @@
-from pydtnn.utils import get_code_from_file
 from typing import TYPE_CHECKING
 
+from pydtnn.utils import get_code_from_file
+
 if TYPE_CHECKING:
-    from pycuda.driver import Function, Module  # type: ignore
     import cupy as cp  # type: ignore
+    from pycuda.driver import Function, Module  # type: ignore
 
 type Abs_Module = "Module | cp.RawModule"
 type Abs_Function = "Function | cp.RawKernel"

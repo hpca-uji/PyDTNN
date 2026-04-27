@@ -1,19 +1,18 @@
+import logging
+import operator
+from collections import abc
+from functools import reduce
 from warnings import warn
 
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.activations.relu import Relu
-from pydtnn.session.utils import Util
+from pydtnn.backends.fuse.layers.layer import LayerFuse as FusedLayerMixIn
+from pydtnn.backends.fuse.layers.layer import select as select_fuse_layer
+from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.conv_2d import Conv2D
+from pydtnn.session.utils import Util
 from pydtnn.utils.constants import Array
 
-from pydtnn.backends.fuse.layers.layer import select as select_fuse_layer
-from pydtnn.backends.fuse.layers.layer import LayerFuse as FusedLayerMixIn
-from pydtnn.layers.batch_normalization import BatchNormalization
-from collections import abc
-from functools import reduce
-import operator
-
-import logging
 logger = logging.getLogger(__name__)
 
 

@@ -5,14 +5,13 @@
 Utility functions.
 """
 
-import sys
 import ctypes.util
 import os
 import re
-import subprocess
 import struct
-
+import subprocess
 import sys
+
 if sys.version_info < (3,):
     range = xrange
 
@@ -68,8 +67,9 @@ except ImportError:
 
 else:
     import ctypes
-    import elftools.elf.elffile as elffile  # type: ignore
+
     import elftools.construct.macros as macros  # type: ignore
+    import elftools.elf.elffile as elffile  # type: ignore
     import elftools.elf.structs as structs  # type: ignore
 
     def get_soname(filename):  # type: ignore

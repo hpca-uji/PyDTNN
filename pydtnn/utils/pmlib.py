@@ -1,12 +1,15 @@
 """
 Python interface to the PMLib library
 """
-from pydtnn.utils import load_library
-import numpy as np
-import functools
-import ctypes.util
 import ctypes
+import ctypes.util
+import functools
 import logging
+
+import numpy as np
+
+from pydtnn.utils import load_library
+
 logger = logging.getLogger(__name__)
 
 

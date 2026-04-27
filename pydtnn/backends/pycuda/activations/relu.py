@@ -1,10 +1,13 @@
-from pydtnn.utils.constants import ArrayShape
+import logging
+
+from pycuda import gpuarray  # type: ignore
+
+from pydtnn.activations.relu import Relu
+from pydtnn.backends.pycuda.activations.activation import ActivationPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.libs import cudnn as cudnn
-from pydtnn.backends.pycuda.activations.activation import ActivationPycuda
-from pydtnn.activations.relu import Relu
-from pycuda import gpuarray  # type: ignore
-import logging
+from pydtnn.utils.constants import ArrayShape
+
 logger = logging.getLogger(__name__)
 
 

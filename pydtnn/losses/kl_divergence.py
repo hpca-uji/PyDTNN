@@ -1,6 +1,8 @@
-from pydtnn.utils.constants import Array
-from pydtnn.losses.loss import Loss
 import logging
+
+from pydtnn.losses.loss import Loss
+from pydtnn.utils.constants import Array
+
 logger = logging.getLogger(__name__)
 
 

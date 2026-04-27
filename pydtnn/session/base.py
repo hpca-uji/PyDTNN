@@ -1,17 +1,19 @@
+import enum
+import logging
 from types import ModuleType
-from pydtnn import MPI_MODULE, Cudnn_Handle_Type, Cublas_Handle_Type
+from typing import TYPE_CHECKING, Any
+
+import numpy as np
+
+from pydtnn import MPI_MODULE, Cublas_Handle_Type, Cudnn_Handle_Type
 from pydtnn.abstract.layerable import Layerable
-from pydtnn.utils.memory_pool import PrivateMemory
-from pydtnn.utils.tensor import TensorFormat
-from pydtnn.utils.constants import Array, ArrayShape, NetworkAlgEnum
 from pydtnn.losses.loss import Loss
 from pydtnn.metrics.metric import Metric
-import enum
-from typing import TYPE_CHECKING, Any
-import numpy as np
-import logging
-
 from pydtnn.optimizers.optimizer import Optimizer
+from pydtnn.utils.constants import Array, ArrayShape, NetworkAlgEnum
+from pydtnn.utils.memory_pool import PrivateMemory
+from pydtnn.utils.tensor import TensorFormat
+
 logger = logging.getLogger(__name__)
 
 

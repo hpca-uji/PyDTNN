@@ -2,12 +2,14 @@
 # In this file must be implemented only the translation of PyTorch Pooling layers to its PyDTNN equivalent.
 # _______________________________________________________________________________________________________________
 
+import logging
+from typing import Any
+
 import pydtnn.converters.pytorch2pydtnn.common as cm
 from pydtnn.layers.adaptive_average_pool_2d import AdaptiveAveragePool2D
 from pydtnn.layers.average_pool_2d import AveragePool2D
 from pydtnn.layers.max_pool_2d import MaxPool2D
-from typing import Any
-import logging
+
 logger = logging.getLogger(__name__)
 
 # Typing related (or non important) imports

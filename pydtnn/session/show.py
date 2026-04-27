@@ -1,11 +1,12 @@
+import logging
+
 import numpy as np
 
 from pydtnn import utils
 from pydtnn.session.layer import Layer
-import logging
-
 from pydtnn.utils.constants import Array
 from pydtnn.utils.performance_models import allreduce_time
+
 logger = logging.getLogger(__name__)
 
 

@@ -1,7 +1,9 @@
-import numpy as np
-from enum import auto, StrEnum
-import typing
 import logging
+import typing
+from enum import StrEnum, auto
+
+import numpy as np
+
 logger = logging.getLogger(__name__)
 
 

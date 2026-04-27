@@ -1,20 +1,22 @@
-import numpy as np
-from pydtnn.abstract.layerable import Layerable
-from pydtnn.layers.conv_2d_depthwise import Conv2DDepthwise
-from pydtnn.layers.conv_2d_pointwise import Conv2DPointwise
-from pydtnn.model import Model
-from pydtnn.layers.input import Input
-from pydtnn.layers.layer import Layer
-from pydtnn.activations.leaky_relu import LeakyRelu
-from pydtnn.activations.relu6 import Relu6
 from copy import deepcopy
 
+import numpy as np
+
+from pydtnn.abstract.layerable import Layerable
+from pydtnn.activations.leaky_relu import LeakyRelu
+from pydtnn.activations.relu6 import Relu6
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.layers.conv_2d import Conv2D
+from pydtnn.layers.conv_2d_depthwise import Conv2DDepthwise
+from pydtnn.layers.conv_2d_pointwise import Conv2DPointwise
+from pydtnn.layers.input import Input
+from pydtnn.layers.layer import Layer
+from pydtnn.model import Model
 from pydtnn.utils import random
 
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 try:
     import pycuda.gpuarray as gpuarray  # type: ignore
+
     from pydtnn.libs import cudnn as cudnn
 except BaseException:
     pass

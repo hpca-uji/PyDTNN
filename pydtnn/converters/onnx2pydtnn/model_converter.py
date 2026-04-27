@@ -1,15 +1,15 @@
 # Typing related
 from typing import Any
-from pydtnn.abstract.layerable import Layerable
-import numpy as np
 
+import numpy as np
 # Operations/transformations related
 import onnx  # type: ignore
-from pydtnn.model import Model as PyDTNN_Model
-import pydtnn.converters.onnx2pydtnn.constants as cons
-from pydtnn.layers.input import Input
-from pydtnn.utils.tensor import TensorFormat
 
+import pydtnn.converters.onnx2pydtnn.constants as cons
+from pydtnn.abstract.layerable import Layerable
+from pydtnn.layers.input import Input
+from pydtnn.model import Model as PyDTNN_Model
+from pydtnn.utils.tensor import TensorFormat
 
 # ////////////////////////////////////////////////////
 # In order to made some parts of this code, I used other converors' code (specially the "onnx2pytorch" library)

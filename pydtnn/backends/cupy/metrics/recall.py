@@ -1,8 +1,10 @@
-from typing import TYPE_CHECKING
-from pydtnn.libs import numpy as np
-from pydtnn.backends.numpy.metrics.recall import RecallNumpy
-from pydtnn.backends.cupy.metrics.metric import MetricCupy
 import logging
+from typing import TYPE_CHECKING
+
+from pydtnn.backends.cupy.metrics.metric import MetricCupy
+from pydtnn.backends.numpy.metrics.recall import RecallNumpy
+from pydtnn.libs import numpy as np
+
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:

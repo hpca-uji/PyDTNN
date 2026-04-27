@@ -1,10 +1,13 @@
-from memray._memray import compute_statistics as memray_statistics  # type: ignore
-from pathlib import Path
-import tempfile
-import memray  # type: ignore
-import time
 import gc
 import logging
+import tempfile
+import time
+from pathlib import Path
+
+import memray  # type: ignore
+from memray._memray import \
+    compute_statistics as memray_statistics  # type: ignore
+
 logger = logging.getLogger(__name__)
 
 

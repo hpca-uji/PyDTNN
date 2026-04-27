@@ -1,8 +1,10 @@
+import logging
+from typing import TYPE_CHECKING
+
+from pydtnn.layers.layer import Layer
 from pydtnn.utils.constants import Array, ArrayShape, Parameters
 from pydtnn.utils.initializers import InitializerFunc, glorot_uniform, zeros
-from pydtnn.layers.layer import Layer
-from typing import TYPE_CHECKING
-import logging
+
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:

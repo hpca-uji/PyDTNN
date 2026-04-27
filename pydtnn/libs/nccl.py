@@ -2,11 +2,12 @@
 Python interface to the NVIDIA NCCL library
 """
 
-from enum import Enum
-import ctypes.util
 import ctypes
-import sys
+import ctypes.util
 import logging
+import sys
+from enum import Enum
+
 logger = logging.getLogger(__name__)
 
 

@@ -1,13 +1,14 @@
 # Typing related
 from typing import Any
-from pydtnn.abstract.layerable import Layerable
-import numpy as np
 
+import numpy as np
 # Operations/transformations related
 import onnx  # type: ignore
-from pydtnn.model import Model as PyDTNN_Model
+
 import pydtnn.converters.pydtnn2onnx.constants as cons  # type: ignore
+from pydtnn.abstract.layerable import Layerable
 from pydtnn.layers import Input  # type: ignore
+from pydtnn.model import Model as PyDTNN_Model
 
 # ////////////////////////////////////////////////////
 # In order to made some parts of this code, I used other converors' code (specially the "onnx2pytorch" library)

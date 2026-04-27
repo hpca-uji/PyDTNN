@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.layers.input import Input
 from pydtnn.layers.multi_head_attention import MultiHeadAttention

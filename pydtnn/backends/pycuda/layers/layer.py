@@ -1,12 +1,15 @@
-from pycuda import gpuarray  # type: ignore
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn import gpu_errors
+import logging
+
+import numpy as np
 from numpy import ndarray
+from pycuda import gpuarray  # type: ignore
+
+from pydtnn import gpu_errors
 from pydtnn.backends.pycuda.abstract.layerable import LayerablePycuda
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.layers.layer import Layer
 from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
-import numpy as np
-import logging
+
 logger = logging.getLogger(__name__)
 
 

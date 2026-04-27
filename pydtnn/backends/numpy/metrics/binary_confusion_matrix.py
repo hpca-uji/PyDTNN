@@ -1,8 +1,10 @@
+import logging
 from typing import TYPE_CHECKING
+
+from pydtnn.backends.numpy.metrics.metric import MetricNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.metrics.binary_confusion_matrix import BinaryConfusionMatrix
-from pydtnn.backends.numpy.metrics.metric import MetricNumpy
-import logging
+
 logger = logging.getLogger(__name__)
 
 

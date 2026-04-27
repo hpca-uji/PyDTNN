@@ -1,10 +1,15 @@
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.libs import cudnn as cudnn
-from pydtnn.tracers.events import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
-    PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
-from pydtnn.layers.addition_block import AdditionBlock
-from pydtnn.backends.pycuda.layers.abstract.block_layer import AbstractBlockLayerPycuda
 import logging
+
+from pydtnn.backends.pycuda.layers.abstract.block_layer import \
+    AbstractBlockLayerPycuda
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.layers.addition_block import AdditionBlock
+from pydtnn.libs import cudnn as cudnn
+from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT,
+                                   PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT,
+                                   PYDTNN_OPS_EVENTS, PYDTNN_MDL_EVENT_enum,
+                                   PYDTNN_OPS_EVENT_enum)
+
 logger = logging.getLogger(__name__)
 
 

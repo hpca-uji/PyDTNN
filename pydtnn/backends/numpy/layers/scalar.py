@@ -1,8 +1,10 @@
-from pydtnn.layers.scalar import Scalar
-from pydtnn.backends.numpy.layers.layer import LayerNumpy
-from typing import TYPE_CHECKING
-from pydtnn.libs import numpy as np
 import logging
+from typing import TYPE_CHECKING
+
+from pydtnn.backends.numpy.layers.layer import LayerNumpy
+from pydtnn.layers.scalar import Scalar
+from pydtnn.libs import numpy as np
+
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:

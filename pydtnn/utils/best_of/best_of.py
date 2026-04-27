@@ -1,16 +1,17 @@
-from rich.tree import Tree
-from rich.table import Table
-from rich.console import Console
-from rich import box
-import numpy as np
-from typing import Hashable, Callable, Union, Any, Optional
-from timeit import default_timer as timer
-from contextlib import suppress
-from collections import defaultdict
-from collections import abc
-import types
-import traceback
 import logging
+import traceback
+import types
+from collections import abc, defaultdict
+from contextlib import suppress
+from timeit import default_timer as timer
+from typing import Any, Callable, Hashable, Optional, Union
+
+import numpy as np
+from rich import box
+from rich.console import Console
+from rich.table import Table
+from rich.tree import Tree
+
 logger = logging.getLogger(__name__)
 
 

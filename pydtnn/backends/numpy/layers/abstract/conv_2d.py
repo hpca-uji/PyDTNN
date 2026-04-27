@@ -1,10 +1,12 @@
+import logging
 from typing import TYPE_CHECKING
+
+from pydtnn.backends.numpy.layers.layer import LayerNumpy
+from pydtnn.layers.abstract.conv_2d import AbstractConv2D
 from pydtnn.libs import numpy as np
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.performance_models import im2col_time, matmul_time
-from pydtnn.backends.numpy.layers.layer import LayerNumpy
-from pydtnn.layers.abstract.conv_2d import AbstractConv2D
-import logging
+
 logger = logging.getLogger(__name__)
 
 

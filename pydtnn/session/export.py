@@ -1,11 +1,12 @@
-from typing import Any
 import logging
+from typing import Any
 from warnings import warn
 
 import numpy as np
 
 from pydtnn.session.layer import Layer
 from pydtnn.utils.constants import Array, Parameters
+
 logger = logging.getLogger(__name__)
 
 

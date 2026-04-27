@@ -1,7 +1,10 @@
-from pydtnn.utils import load_library
-import numpy as np
 import ctypes
 import logging
+
+import numpy as np
+
+from pydtnn.utils import load_library
+
 logger = logging.getLogger(__name__)
 
 

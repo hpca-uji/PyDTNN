@@ -3,10 +3,11 @@
 Python interface to the NVIDIA cuDNN library
 """
 
-import ctypes.util
 import ctypes
-import sys
+import ctypes.util
 import logging
+import sys
+
 logger = logging.getLogger(__name__)
 
 

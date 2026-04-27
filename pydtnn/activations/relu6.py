@@ -1,6 +1,8 @@
-from pydtnn.utils.constants import ArrayShape, Array
-from pydtnn.activations.relu import Relu
 import logging
+
+from pydtnn.activations.relu import Relu
+from pydtnn.utils.constants import Array, ArrayShape
+
 logger = logging.getLogger(__name__)
 
 

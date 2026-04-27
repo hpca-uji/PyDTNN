@@ -1,6 +1,8 @@
-from pydtnn.backends.numpy.layers.layer import LayerNumpy
-from pydtnn.backends.direct.abstract.layerable import LayerableDirect
 import logging
+
+from pydtnn.backends.direct.abstract.layerable import LayerableDirect
+from pydtnn.backends.numpy.layers.layer import LayerNumpy
+
 logger = logging.getLogger(__name__)
 
 

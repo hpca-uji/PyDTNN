@@ -1,6 +1,8 @@
-from pydtnn.utils.constants import Array
-from pydtnn.layers.abstract.conv_2d import AbstractConv2D
 import logging
+
+from pydtnn.layers.abstract.conv_2d import AbstractConv2D
+from pydtnn.utils.constants import Array
+
 logger = logging.getLogger(__name__)
 
 

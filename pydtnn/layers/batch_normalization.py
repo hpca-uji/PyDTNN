@@ -1,9 +1,12 @@
-from pydtnn.utils.constants import Array, ArrayShape, Parameters
-from pydtnn.utils.initializers import zeros, ones
-from typing import Any, Callable
-from pydtnn.layers.layer import Layer
-import numpy as np
 import logging
+from typing import Any, Callable
+
+import numpy as np
+
+from pydtnn.layers.layer import Layer
+from pydtnn.utils.constants import Array, ArrayShape, Parameters
+from pydtnn.utils.initializers import ones, zeros
+
 logger = logging.getLogger(__name__)
 
 

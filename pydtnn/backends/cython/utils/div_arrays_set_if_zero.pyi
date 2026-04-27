@@ -1,6 +1,7 @@
 import numpy as _np
-from pydtnn.backends.cython.utils.base import _npDT, _npDT_4Dims, _npDT_3Dims, _npDT_2Dims, _npDT_1Dims
 
+from pydtnn.backends.cython.utils.base import (_npDT, _npDT_1Dims, _npDT_2Dims,
+                                               _npDT_3Dims, _npDT_4Dims)
 
 def div_arrays_set_if_zero[T: _npDT](dividend: _npDT_1Dims[T],
                                      divider: _npDT_1Dims[T],

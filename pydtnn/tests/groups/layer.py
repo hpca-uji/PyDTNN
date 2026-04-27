@@ -1,7 +1,8 @@
 """Layer test group"""
 
-from warnings import warn
 import logging
+from warnings import warn
+
 logger = logging.getLogger(__name__)
 
 

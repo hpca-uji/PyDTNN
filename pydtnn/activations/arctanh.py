@@ -1,6 +1,8 @@
-from pydtnn.utils.constants import Array
-from pydtnn.activations.activation import Activation
 import logging
+
+from pydtnn.activations.activation import Activation
+from pydtnn.utils.constants import Array
+
 logger = logging.getLogger(__name__)
 
 

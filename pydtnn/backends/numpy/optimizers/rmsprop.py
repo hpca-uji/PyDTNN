@@ -1,10 +1,12 @@
-import math
-from pydtnn.backends.numpy.layers.layer import LayerNumpy
-from pydtnn.optimizers.rmsprop import RMSProp
-from pydtnn.backends.numpy.optimizers.optimizer import OptimizerNumpy
-from typing import TYPE_CHECKING
-from pydtnn.libs import numpy as np
 import logging
+import math
+from typing import TYPE_CHECKING
+
+from pydtnn.backends.numpy.layers.layer import LayerNumpy
+from pydtnn.backends.numpy.optimizers.optimizer import OptimizerNumpy
+from pydtnn.libs import numpy as np
+from pydtnn.optimizers.rmsprop import RMSProp
+
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:

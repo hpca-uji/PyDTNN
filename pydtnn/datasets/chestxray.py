@@ -1,12 +1,15 @@
-from pydtnn.utils import random
-from pydtnn.datasets.dataset import Dataset
-from itertools import chain
 import csv
-import numpy as np
-from typing import TYPE_CHECKING
-import tarfile
-from pathlib import Path
 import logging
+import tarfile
+from itertools import chain
+from pathlib import Path
+from typing import TYPE_CHECKING
+
+import numpy as np
+
+from pydtnn.datasets.dataset import Dataset
+from pydtnn.utils import random
+
 logger = logging.getLogger(__name__)
 
 

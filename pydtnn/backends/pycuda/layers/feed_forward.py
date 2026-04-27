@@ -1,10 +1,13 @@
-from pydtnn.layers.feed_forward import FeedForward
+import logging
+
 from pydtnn.activations.relu import Relu
+from pydtnn.backends.pycuda.layers.abstract.block_layer import \
+    AbstractBlockLayerPycuda
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.layers.dropout import Dropout
 from pydtnn.layers.fc import FC
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.backends.pycuda.layers.abstract.block_layer import AbstractBlockLayerPycuda
-import logging
+from pydtnn.layers.feed_forward import FeedForward
+
 logger = logging.getLogger(__name__)
 
 

@@ -1,11 +1,14 @@
-from typing import TYPE_CHECKING
-from pydtnn.utils.pmlib import PMLib
-from pydtnn.tracers.simple_tracer import SimpleTracer
-import numpy as np
-from collections import defaultdict
-import time
-from types import ModuleType
 import logging
+import time
+from collections import defaultdict
+from types import ModuleType
+from typing import TYPE_CHECKING
+
+import numpy as np
+
+from pydtnn.tracers.simple_tracer import SimpleTracer
+from pydtnn.utils.pmlib import PMLib
+
 logger = logging.getLogger(__name__)
 
 

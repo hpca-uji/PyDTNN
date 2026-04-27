@@ -2,11 +2,13 @@
 # In this file must be implemented only the translation of PyTorch Linear layers to its PyDTNN equivalent.
 # _______________________________________________________________________________________________________________
 
+import logging
+from typing import Any
+
 # Typing related (or non important) imports
 import pydtnn.converters.pytorch2pydtnn.common as cm
 from pydtnn.layers.fc import FC
-from typing import Any
-import logging
+
 logger = logging.getLogger(__name__)
 
 

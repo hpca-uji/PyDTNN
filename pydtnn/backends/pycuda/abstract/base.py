@@ -1,8 +1,9 @@
+from pycuda.compiler import SourceModule  # type: ignore
+from pycuda.driver import Function  # type: ignore
+
 from pydtnn.abstract.base import Base
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.utils.uses_cuda import UsesCudaCode
-from pycuda.driver import Function  # type: ignore
-from pycuda.compiler import SourceModule  # type: ignore
 
 
 class BasePycuda(UsesCudaCode, Base[TensorArray]):

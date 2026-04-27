@@ -1,12 +1,13 @@
-import cupy as cp
-import numpy as np
-from pydtnn.libs import numpy as libnp
-from pydtnn.utils.constants import DTYPE2CTYPE
-from pydtnn.backends.numpy.activations.activation import ActivationNumpy
-from pydtnn.backends.cupy.abstract.layerable import LayerableCupy
 import logging
 
-from pydtnn.utils.constants import ArrayShape
+import cupy as cp
+import numpy as np
+
+from pydtnn.backends.cupy.abstract.layerable import LayerableCupy
+from pydtnn.backends.numpy.activations.activation import ActivationNumpy
+from pydtnn.libs import numpy as libnp
+from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
+
 logger = logging.getLogger(__name__)
 
 

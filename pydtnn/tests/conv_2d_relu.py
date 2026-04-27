@@ -1,16 +1,17 @@
+import logging
+import unittest
+
+from pydtnn.activations.relu import Relu
+from pydtnn.backends.fuse.layers.conv_2d_relu import Conv2DRelu
 from pydtnn.layers.abstract.conv_2d import AbstractConv2D
+from pydtnn.layers.concatenation_block import ConcatenationBlock
+from pydtnn.layers.conv_2d import Conv2D
+from pydtnn.model import Model
+from pydtnn.tests.abstract.common import D, Params
+from pydtnn.tests.abstract.conv_2d_common import Conv2DCommonTestCase
 from pydtnn.utils.initializers import glorot_uniform, zeros
 from pydtnn.utils.tensor import TensorFormat
-from pydtnn.tests.abstract.conv_2d_common import Conv2DCommonTestCase
-from pydtnn.tests.abstract.common import Params
-from pydtnn.tests.abstract.common import D
-from pydtnn.model import Model
-from pydtnn.backends.fuse.layers.conv_2d_relu import Conv2DRelu
-from pydtnn.layers.conv_2d import Conv2D
-from pydtnn.layers.concatenation_block import ConcatenationBlock
-from pydtnn.activations.relu import Relu
-import unittest
-import logging
+
 logger = logging.getLogger(__name__)
 
 

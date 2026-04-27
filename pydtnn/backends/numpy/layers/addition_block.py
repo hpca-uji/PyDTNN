@@ -1,10 +1,15 @@
-from typing import TYPE_CHECKING
-from pydtnn.libs import numpy as np
-from pydtnn.tracers.events import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
-    PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
-from pydtnn.layers.addition_block import AdditionBlock
-from pydtnn.backends.numpy.layers.abstract.block_layer import AbstractBlockLayerNumpy
 import logging
+from typing import TYPE_CHECKING
+
+from pydtnn.backends.numpy.layers.abstract.block_layer import \
+    AbstractBlockLayerNumpy
+from pydtnn.layers.addition_block import AdditionBlock
+from pydtnn.libs import numpy as np
+from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT,
+                                   PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT,
+                                   PYDTNN_OPS_EVENTS, PYDTNN_MDL_EVENT_enum,
+                                   PYDTNN_OPS_EVENT_enum)
+
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:

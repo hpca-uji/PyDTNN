@@ -1,7 +1,10 @@
-from pydtnn.utils.constants import Array
-from pydtnn.layers.layer import Layer
-import numpy as np
 import logging
+
+import numpy as np
+
+from pydtnn.layers.layer import Layer
+from pydtnn.utils.constants import Array
+
 logger = logging.getLogger(__name__)
 
 

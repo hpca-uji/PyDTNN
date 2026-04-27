@@ -1,13 +1,16 @@
-from pydtnn.utils.constants import DTYPE2CTYPE
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.backends.pycuda.layers.layer import LayerPycuda
-from pydtnn.optimizers.nadam import Nadam
-from pydtnn.backends.pycuda.optimizers.optimizer import OptimizerPycuda
-from pycuda.elementwise import ElementwiseKernel  # type: ignore
-from pycuda.compiler import SourceModule  # type: ignore
-from pycuda import gpuarray  # type: ignore
-import numpy as np
 import logging
+
+import numpy as np
+from pycuda import gpuarray  # type: ignore
+from pycuda.compiler import SourceModule  # type: ignore
+from pycuda.elementwise import ElementwiseKernel  # type: ignore
+
+from pydtnn.backends.pycuda.layers.layer import LayerPycuda
+from pydtnn.backends.pycuda.optimizers.optimizer import OptimizerPycuda
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.optimizers.nadam import Nadam
+from pydtnn.utils.constants import DTYPE2CTYPE
+
 logger = logging.getLogger(__name__)
 
 

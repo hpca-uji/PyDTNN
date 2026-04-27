@@ -1,10 +1,13 @@
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.backends.pycuda.layers.layer import LayerPycuda
-from pydtnn.layers.layer_normalization import LayerNormalization
-from pycuda.compiler import SourceModule  # type: ignore
-from pycuda import gpuarray  # type: ignore
-import numpy as np
 import logging
+
+import numpy as np
+from pycuda import gpuarray  # type: ignore
+from pycuda.compiler import SourceModule  # type: ignore
+
+from pydtnn.backends.pycuda.layers.layer import LayerPycuda
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.layers.layer_normalization import LayerNormalization
+
 logger = logging.getLogger(__name__)
 
 

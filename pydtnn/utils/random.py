@@ -1,7 +1,9 @@
-import numpy as np
+import logging
 import threading
 import weakref
-import logging
+
+import numpy as np
+
 logger = logging.getLogger(__name__)
 
 

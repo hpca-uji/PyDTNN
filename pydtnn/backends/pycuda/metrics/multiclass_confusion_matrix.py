@@ -1,8 +1,12 @@
-import numpy as np
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.metrics.multiclass_confusion_matrix import MulticlassConfusionMatrix
-from pydtnn.backends.pycuda.metrics.metric import MetricPycuda
 import logging
+
+import numpy as np
+
+from pydtnn.backends.pycuda.metrics.metric import MetricPycuda
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.metrics.multiclass_confusion_matrix import \
+    MulticlassConfusionMatrix
+
 logger = logging.getLogger(__name__)
 
 

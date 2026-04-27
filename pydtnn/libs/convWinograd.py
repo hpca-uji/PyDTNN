@@ -2,20 +2,23 @@
 PyDTNN convWinograd module
 """
 
-from pydtnn.utils.best_of.best_of import BestOf
-from pydtnn.utils import load_library
-from pydtnn.utils.tensor import TensorFormat, encode_shape, decode_shape
-from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython
-from pydtnn.backends.cython.utils.im2col_nchw_cython import im2col_nchw_cython
-import numpy as np
-from functools import partial
-from collections import defaultdict
-import weakref
-from warnings import warn
-import platform
-import math
 import ctypes
 import logging
+import math
+import platform
+import weakref
+from collections import defaultdict
+from functools import partial
+from warnings import warn
+
+import numpy as np
+
+from pydtnn.backends.cython.utils.im2col_nchw_cython import im2col_nchw_cython
+from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython
+from pydtnn.utils import load_library
+from pydtnn.utils.best_of.best_of import BestOf
+from pydtnn.utils.tensor import TensorFormat, decode_shape, encode_shape
+
 logger = logging.getLogger(__name__)
 
 
@@ -584,7 +587,9 @@ def time_it_im2col_4_dims(x: np.ndarray, w_c: np.ndarray, biases: np.ndarray,
 def __usage_example__():
     # Imports for this usage example (not required otherwise)
     from timeit import timeit
+
     from pydtnn.utils import random
+
     # Default parameters (1st layer AlexNet for Cifar10)
     b = 32  # Batch size
     c = 16  # Channels per layer

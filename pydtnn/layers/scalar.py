@@ -1,6 +1,8 @@
-from pydtnn.utils.constants import Array, ArrayShape
-from pydtnn.layers.layer import Layer
 import logging
+
+from pydtnn.layers.layer import Layer
+from pydtnn.utils.constants import Array, ArrayShape
+
 logger = logging.getLogger(__name__)
 
 

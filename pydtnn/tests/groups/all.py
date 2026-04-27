@@ -1,12 +1,17 @@
-from pydtnn.tests.model_tensor import ModelTensorTestCase
-from pydtnn.tests.model_dtype import ModelDTypeTestCase
-from pydtnn.tests.batch_normalization_relu import BatchNormalizationReluTestCase
-from pydtnn.tests.conv_2d_batch_normalization_relu import Conv2DBatchNormalizationReluTestCase
-from pydtnn.tests.conv_2d_batch_normalization import Conv2DBatchNormalizationTestCase
-from pydtnn.tests.conv_2d_relu import Conv2DReluTestCase
-from pydtnn.tests.conv_2d_group import Conv2DGroupTestCase
-from warnings import warn
 import logging
+from warnings import warn
+
+from pydtnn.tests.batch_normalization_relu import \
+    BatchNormalizationReluTestCase
+from pydtnn.tests.conv_2d_batch_normalization import \
+    Conv2DBatchNormalizationTestCase
+from pydtnn.tests.conv_2d_batch_normalization_relu import \
+    Conv2DBatchNormalizationReluTestCase
+from pydtnn.tests.conv_2d_group import Conv2DGroupTestCase
+from pydtnn.tests.conv_2d_relu import Conv2DReluTestCase
+from pydtnn.tests.model_dtype import ModelDTypeTestCase
+from pydtnn.tests.model_tensor import ModelTensorTestCase
+
 logger = logging.getLogger(__name__)
 
 
@@ -27,8 +32,8 @@ except Exception:
 
 # Libraries
 try:
-    from pydtnn.tests.conv_gemm import ConvGemmTestCase
     from pydtnn.tests.conv_2d_conv_gemm import Conv2DConvGemmTestCase
+    from pydtnn.tests.conv_gemm import ConvGemmTestCase
     from pydtnn.tests.model_conv_gemm import ModelConvGemmTestCase
 except Exception:
     warn("ConvGemm not available, skiping tests!")

@@ -1,9 +1,13 @@
-from pydtnn.backends.cython.utils.bn_training_cython import bn_training_bwd_cython, bn_training_fwd_cython
-from typing import TYPE_CHECKING
-from pydtnn.libs import numpy as np
-from pydtnn.backends.numpy.layers.batch_normalization import BatchNormalizationNumpy
-from pydtnn.backends.cython.layers.layer import LayerCython
 import logging
+from typing import TYPE_CHECKING
+
+from pydtnn.backends.cython.layers.layer import LayerCython
+from pydtnn.backends.cython.utils.bn_training_cython import (
+    bn_training_bwd_cython, bn_training_fwd_cython)
+from pydtnn.backends.numpy.layers.batch_normalization import \
+    BatchNormalizationNumpy
+from pydtnn.libs import numpy as np
+
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:

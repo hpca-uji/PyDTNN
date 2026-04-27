@@ -1,18 +1,19 @@
-from pydtnn.utils.initializers import glorot_uniform, zeros
-from pydtnn.utils.tensor import TensorFormat
-from pydtnn.tests.abstract.conv_2d_common import Conv2DCommonTestCase
-from pydtnn.tests.abstract.common import Params
-from pydtnn.tests.abstract.common import D
-from pydtnn.backends.numpy.layers.abstract.conv_2d import AbstractConv2DNumpy
-from pydtnn.model import Model
-from pydtnn.backends.fuse.layers.conv_2d_batch_normalization_relu import Conv2DBatchNormalizationRelu
-from pydtnn.layers.conv_2d import Conv2D
-from pydtnn.layers.concatenation_block import ConcatenationBlock
-from pydtnn.layers.batch_normalization import BatchNormalization
-from pydtnn.activations.relu import Relu
+import logging
 import unittest
 
-import logging
+from pydtnn.activations.relu import Relu
+from pydtnn.backends.fuse.layers.conv_2d_batch_normalization_relu import \
+    Conv2DBatchNormalizationRelu
+from pydtnn.backends.numpy.layers.abstract.conv_2d import AbstractConv2DNumpy
+from pydtnn.layers.batch_normalization import BatchNormalization
+from pydtnn.layers.concatenation_block import ConcatenationBlock
+from pydtnn.layers.conv_2d import Conv2D
+from pydtnn.model import Model
+from pydtnn.tests.abstract.common import D, Params
+from pydtnn.tests.abstract.conv_2d_common import Conv2DCommonTestCase
+from pydtnn.utils.initializers import glorot_uniform, zeros
+from pydtnn.utils.tensor import TensorFormat
+
 logger = logging.getLogger(__name__)
 
 

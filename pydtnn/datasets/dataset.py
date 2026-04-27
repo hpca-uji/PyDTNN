@@ -1,16 +1,20 @@
-from pydtnn.utils.constants import ArrayShape
-from pydtnn.utils import BackgroundGenerator, find_component, random
-from pydtnn.utils.tensor import ChannelFormat, SampleFormat, TensorFormat, format_transpose
-import rapidgzip
-from PIL import Image
-import numpy as np
-from enum import IntEnum
-from typing import TYPE_CHECKING, Generator, IO, Callable
 import functools
 import itertools
-import warnings
-from pathlib import Path
 import logging
+import warnings
+from enum import IntEnum
+from pathlib import Path
+from typing import IO, TYPE_CHECKING, Callable, Generator
+
+import numpy as np
+import rapidgzip
+from PIL import Image
+
+from pydtnn.utils import BackgroundGenerator, find_component, random
+from pydtnn.utils.constants import ArrayShape
+from pydtnn.utils.tensor import (ChannelFormat, SampleFormat, TensorFormat,
+                                 format_transpose)
+
 logger = logging.getLogger(__name__)
 
 

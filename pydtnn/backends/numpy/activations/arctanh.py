@@ -1,8 +1,10 @@
-from pydtnn.backends.numpy.activations.activation import ActivationNumpy
-from pydtnn.activations.arctanh import Arctanh
-from typing import TYPE_CHECKING
-from pydtnn.libs import numpy as np
 import logging
+from typing import TYPE_CHECKING
+
+from pydtnn.activations.arctanh import Arctanh
+from pydtnn.backends.numpy.activations.activation import ActivationNumpy
+from pydtnn.libs import numpy as np
+
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:

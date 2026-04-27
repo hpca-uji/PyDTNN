@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 
-from pydtnn.activations.relu import Relu
 from pydtnn.abstract.layerable import Layerable
+from pydtnn.activations.relu import Relu
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.fc import FC
 from pydtnn.layers.flatten import Flatten

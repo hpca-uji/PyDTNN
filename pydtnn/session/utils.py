@@ -1,14 +1,14 @@
+import logging
 from typing import Any
 
 import numpy as np
 
 from pydtnn import utils
-
 from pydtnn.session.base import Base
 from pydtnn.utils.constants import Array, ArrayShape
-from pydtnn.utils.tensor import decode_shape, encode_shape, encode_tensor, decode_tensor
+from pydtnn.utils.tensor import (decode_shape, decode_tensor, encode_shape,
+                                 encode_tensor)
 
-import logging
 logger = logging.getLogger(__name__)
 
 BAR_WIDTH = 140

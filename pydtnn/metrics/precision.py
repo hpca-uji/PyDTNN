@@ -1,7 +1,9 @@
-from pydtnn.utils.constants import Array
+import logging
+
 from pydtnn.metrics.binary_confusion_matrix import BinaryConfusionMatrix
 from pydtnn.metrics.metric import Metric
-import logging
+from pydtnn.utils.constants import Array
+
 logger = logging.getLogger(__name__)
 
 

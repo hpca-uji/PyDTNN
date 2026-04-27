@@ -1,7 +1,11 @@
-import numpy as np
-from pydtnn.backends.numpy.metrics.binary_confusion_matrix import BinaryConfusionMatrixNumpy
-from pydtnn.backends.cupy.metrics.metric import MetricCupy
 import logging
+
+import numpy as np
+
+from pydtnn.backends.cupy.metrics.metric import MetricCupy
+from pydtnn.backends.numpy.metrics.binary_confusion_matrix import \
+    BinaryConfusionMatrixNumpy
+
 logger = logging.getLogger(__name__)
 
 

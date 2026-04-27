@@ -1,8 +1,7 @@
 """Message Passing Interface"""
 
-import sys as _sys
 import os as _os
-
+import sys as _sys
 
 # Select implementation
 if _os.environ.get("PYMPI_PROTO"):
