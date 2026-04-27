@@ -27,4 +27,4 @@ class OptimizerPycuda(Optimizer[TensorArray], BasePycuda):
     def _dtoh_ary(self, layer: Layerable, w_gpu: TensorArray, w_cpu: np.ndarray) -> None:
         if self.model.comm and not self.model.gpudirect and not self.model.enable_nccl:
             # self.model.stream.synchronize()
-            w_gpu.ary.get_async(layer.stream_2, w_cpu)
+            w_gpu.get_async(layer.stream_2, w_cpu)

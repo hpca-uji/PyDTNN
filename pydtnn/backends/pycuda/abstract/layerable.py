@@ -48,7 +48,7 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
                 #
                 #     if self.model.rank in self.model.inter_ranks:
                 #         if not self.model.gpudirect:
-                #             dw.ary.get_async(self.stream_2, dw_cpu)
+                #             dw.get_async(self.stream_2, dw_cpu)
                 #
                 #         self.stream_2.synchronize()
                 #         req = self.model.inter_comm.Iallreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
@@ -105,7 +105,7 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
                 #         if self.model.rank in self.model.inter_ranks:
                 #             self.reqs_allred[dw_].wait()
                 #             if not self.model.gpudirect:
-                #                 dw.ary.set_async(dw_cpu, self.stream_2)
+                #                 dw.set_async(dw_cpu, self.stream_2)
                 #
                 #         nccl.ncclBroadcast(dw.ptr, dw.ptr, dw.size, self.model.nccl_type,
                 #                            root=0, comm=self.model.nccl_comm,
@@ -115,7 +115,7 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
                 dw_cpu = getattr(self, f"{dw_}_cpu")
 
                 # If there is no CUDA-aware MPI, copy data back to GPU
-                dw.ary.set_async(dw_cpu, self.stream_2)
+                dw.set_async(dw_cpu, self.stream_2)
 
     def reduce_weights_sync(self, gradient=True):
         # NOTE: Keep in sync with Layer
@@ -156,9 +156,9 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
                 #         if self.model.gpudirect:
                 #             self.model.inter_comm.Allreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
                 #         else:
-                #             dw_cpu = dw.ary.get()
+                #             dw_cpu = dw.get()
                 #             self.model.inter_comm.Allreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
-                #             dw.ary.set_async(dw_cpu, self.stream_2)
+                #             dw.set_async(dw_cpu, self.stream_2)
                 #
                 #     nccl.ncclBroadcast(dw.ptr, dw.ptr, dw.size, self.model.nccl_type,
                 #                        root=0, comm=self.model.nccl_comm,
@@ -190,4 +190,4 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
                 setattr(self, f"{dw_}_cpu", dw_cpu)
 
                 # If there is no CUDA-aware MPI, copy data back to GPU
-                dw.ary.set_async(dw_cpu, self.stream_2)
+                dw.set_async(dw_cpu, self.stream_2)
