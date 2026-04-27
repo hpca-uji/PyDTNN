@@ -32,12 +32,12 @@
 #endif
 
 
-__global__ void adaptive_avg_pool_fwd(TYPE* x, TYPE* y,
-                                      int n, int c, int h, int w,
-                                      int new_h, int new_w, int N,
-                                      int num_active_workers,
-                                      int num_ops_per_worker,
-                                      int num_ops_last_worker)
+__global__ void adaptive_average_pool_2d_fwd(TYPE* x, TYPE* y,
+                                             int n, int c, int h, int w,
+                                             int new_h, int new_w, int N,
+                                             int num_active_workers,
+                                             int num_ops_per_worker,
+                                             int num_ops_last_worker)
 {
     int idx, ops_remaining;
     int ni, ci, wi, hi, i, j;
@@ -94,12 +94,12 @@ __global__ void adaptive_avg_pool_fwd(TYPE* x, TYPE* y,
 
 ////
 
-__global__ void adaptive_avg_pool_bwd(TYPE* dx, TYPE* dy,
-                                      int n, int c, int h, int w,
-                                      int new_h, int new_w, int N,
-                                      int num_active_workers,
-                                      int num_ops_per_worker,
-                                      int num_ops_last_worker)
+__global__ void adaptive_average_pool_2d_bwd(TYPE* dx, TYPE* dy,
+                                             int n, int c, int h, int w,
+                                             int new_h, int new_w, int N,
+                                             int num_active_workers,
+                                             int num_ops_per_worker,
+                                             int num_ops_last_worker)
 {
     int idx, ops_remaining;
     int ni, ci, wi, hi, i, j;

@@ -288,6 +288,7 @@ class TensorArray:
 
     def copy(self):
         """ NumPy-like copy. """
+        # FIXME: El descriptor no se recrea !!
         return copy.deepcopy(self)
 
     def __copy__(self):
