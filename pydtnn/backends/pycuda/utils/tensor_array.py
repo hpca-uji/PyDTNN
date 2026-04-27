@@ -279,20 +279,14 @@ class TensorArray:
 
     def _view(self, ary):
         """TensorArray view"""
-
-        # Checkig if ary and self.ary are the same
-        # NOTE: This wouldn't work if "ary" is a sub-array that starts in a different base,
-        #       but, in that cases, it will only make an extra descriptor (but this is not a great problem).
-        # are_the_same = (ary.gpudata == self.ary.gpudata)
-        # NOTE (cont.): In some cases, it would be possible to share the descriptior but we don't have enought information to implementent this optimization.
-
+        # NOTE: In some cases, it would be possible to share the descriptor more aggressively, but we don't have enough information to decide when.
         return TensorArray(gpu_arr=ary,
                            tensor_format=self.tensor_format,
                            cudnn_dtype=self.cudnn_dtype,
                            tensor_type=self.tensor_type,
                            gpudirect=self.gpudirect,
                            cublas=self.cublas,
-                           desc=None,  # desc=self.desc if are_the_same else None,
+                           desc=self.desc if ary is self.ary else None,
                            cpu_shape=self.cpu_shape)
 
     def copy(self):
