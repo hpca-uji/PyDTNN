@@ -284,7 +284,7 @@ class TensorArray:
         # NOTE: This wouldn't work if "ary" is a sub-array that starts in a different base,
         #       but, in that cases, it will only make an extra descriptor (but this is not a great problem).
         # are_the_same = (ary.gpudata == self.ary.gpudata)
-        # NOTE: In some cases, it would be possible to share the descriptior but we don't have enought information to implementent this optimization.
+        # NOTE (cont.): In some cases, it would be possible to share the descriptior but we don't have enought information to implementent this optimization.
 
         return TensorArray(gpu_arr=ary,
                            tensor_format=self.tensor_format,
@@ -292,7 +292,7 @@ class TensorArray:
                            tensor_type=self.tensor_type,
                            gpudirect=self.gpudirect,
                            cublas=self.cublas,
-                           desc = None,  # desc=self.desc if are_the_same else None,
+                           desc=None,  # desc=self.desc if are_the_same else None,
                            cpu_shape=self.cpu_shape)
 
     def copy(self):
