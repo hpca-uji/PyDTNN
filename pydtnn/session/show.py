@@ -1,7 +1,7 @@
 import numpy as np
 
 from pydtnn import utils
-from pydtnn.context.layer import Layer
+from pydtnn.session.layer import Layer
 import logging
 
 from pydtnn.utils.constants import Array

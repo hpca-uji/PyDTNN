@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 if TYPE_CHECKING:
-    from pydtnn.context.layer import Layer as Model
+    from pydtnn.session.layer import Layer as Model
     from pydtnn.abstract.layerable import Layerable
 
 

@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 if TYPE_CHECKING:
-    from pydtnn.context.utils import Util as Model
+    from pydtnn.session.utils import Util as Model
 
 
 type TransformFunc = Callable[[np.ndarray, np.ndarray], tuple[np.ndarray, np.ndarray]]

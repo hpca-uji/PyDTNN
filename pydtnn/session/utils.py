@@ -4,7 +4,7 @@ import numpy as np
 
 from pydtnn import utils
 
-from pydtnn.context.base import Base
+from pydtnn.session.base import Base
 from pydtnn.utils.constants import Array, ArrayShape
 from pydtnn.utils.tensor import decode_shape, encode_shape, encode_tensor, decode_tensor
 

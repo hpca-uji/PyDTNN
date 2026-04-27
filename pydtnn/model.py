@@ -1,6 +1,6 @@
 
-from pydtnn.context.show import Show
-from pydtnn.context.train import Train
+from pydtnn.session.show import Show
+from pydtnn.session.train import Train
 from pydtnn.utils.constants import Array
 
 

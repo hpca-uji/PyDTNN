@@ -1,4 +1,4 @@
-from pydtnn.context.init import Init
+from pydtnn.session.init import Init
 from pydtnn.utils.constants import Array
 import numpy as np
 from pydtnn import MPI
