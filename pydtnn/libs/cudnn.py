@@ -2057,7 +2057,6 @@ def cudnnSetPooling2dDescriptor(pooling_desc, mode, nan, window_height, window_w
                                                    vertical_stride, horizontal_stride)
     cudnnCheckStatus(status)
 
-
 _libcudnn.cudnnGetPooling2dDescriptor.restype = int
 _libcudnn.cudnnGetPooling2dDescriptor.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p,
                                                   ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p,
@@ -2075,6 +2074,8 @@ def cudnnGetPooling2dDescriptor(pooling_desc):
     -------
     mode : cudnnPoolingMode
         Enumerant to specify the pooling mode.
+    maxpoolingNanOpt:
+        Enumerant to specify the Nan propagation mode.
     window_height : int
         Height of the pooling window.
     window_width : int
@@ -2087,9 +2088,11 @@ def cudnnGetPooling2dDescriptor(pooling_desc):
         Pooling vertical stride.
     horizontal_stride : int
         Pooling horizontal stride.
+    https://docs.nvidia.com/deeplearning/cudnn/backend/latest/api/cudnn-ops-library.html#cudnngetpooling2ddescriptor
     """
 
     mode = ctypes.c_int()
+    nan = ctypes.c_int()
     window_height = ctypes.c_int()
     window_width = ctypes.c_int()
     vertical_padding = ctypes.c_int()
@@ -2098,13 +2101,12 @@ def cudnnGetPooling2dDescriptor(pooling_desc):
     horizontal_stride = ctypes.c_int()
 
     assert _libcudnn
-    status = _libcudnn.cudnnGetPooling2dDescriptor(pooling_desc, ctypes.byref(mode), ctypes.byref(window_height),
-                                                   ctypes.byref(window_width), ctypes.byref(vertical_padding),
-                                                   ctypes.byref(horizontal_padding), ctypes.byref(vertical_stride),
-                                                   ctypes.byref(horizontal_stride))
+    status = _libcudnn.cudnnGetPooling2dDescriptor(pooling_desc, ctypes.byref(mode), ctypes.byref(nan),
+                                                   ctypes.byref(window_height), ctypes.byref(window_width),
+                                                   ctypes.byref(vertical_padding), ctypes.byref(horizontal_padding),
+                                                   ctypes.byref(vertical_stride), ctypes.byref(horizontal_stride))
     cudnnCheckStatus(status)
-
-    return mode.value, window_height.value, window_width.value, vertical_stride.value, horizontal_stride.value
+    return mode.value, nan.value, window_height.value, window_width.value, vertical_padding.value, horizontal_padding.value, vertical_stride.value, horizontal_stride.value,
 
 
 _libcudnn.cudnnDestroyPoolingDescriptor.restype = int
