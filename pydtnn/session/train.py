@@ -153,8 +153,7 @@ class Train[T: Array](Eval[T]):
                 dx = layer.backward(dx)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
-        if self.enable_cudnn:
-            assert self.stream
+        if self.stream:
             self.stream.synchronize()  # type: ignore
 
         # Gradient update (GU)
@@ -175,7 +174,7 @@ class Train[T: Array](Eval[T]):
 
         if self.enable_cudnn:
             for layer in self.layers:
-                if layer.grad_vars:
+                if layer.grad_vars and layer.stream_2:
                     layer.stream_2.synchronize()  # type: ignore
 
         # Schedulers end
