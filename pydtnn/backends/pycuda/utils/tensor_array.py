@@ -87,7 +87,6 @@ class TensorArray:
                  tensor_type: TensorType = TensorType.TENSOR, desc: int | None = None,
                  gpudirect: bool = False, cublas: bool = False, cpu_shape: ArrayShape | None = None):
 
-        self.cpu_shape: ArrayShape = cpu_shape  # type: ignore (if it's None it will be set later)
         self.tensor_format = TensorFormat(tensor_format.lower())
         self.cudnn_dtype = cudnn_dtype
         self.tensor_type = tensor_type
@@ -96,10 +95,11 @@ class TensorArray:
 
         # ---
         self.ary: gpuarray.GPUArray
-        self.desc: int = -1
+        self.desc: int = desc  # type: ignore (if it's None it will be set later)
+        self.cpu_shape: ArrayShape = cpu_shape  # type: ignore (if it's None it will be set later)
+        # ---
 
         self._set_ary(gpu_arr)
-
         if desc:
             self.desc = desc
         elif self.size > 0:
@@ -107,7 +107,7 @@ class TensorArray:
 
     @property
     def cudnn_tensor_format(self) -> int:
-        return cudnn.cudnnTensorFormat['CUDNN_TENSOR_' + self.tensor_format.upper()]
+        return cudnn.cudnnTensorFormat[f'CUDNN_TENSOR_{self.tensor_format.upper()}']
 
     def _encode_shape(self, shape):
         return encode_shape(shape, self.tensor_format)
@@ -139,7 +139,9 @@ class TensorArray:
                     case TensorFormat.NCHW:
                         shape = (gpu_arr.shape[0], 1, gpu_arr.shape[1], gpu_arr.shape[2])
                     case TensorFormat.NHWC:
-                        raise NotImplementedError("Shape padding not implemented for 3-dim shape on NHWC")
+                        shape = (gpu_arr.shape[0], gpu_arr.shape[1], gpu_arr.shape[2], 1)
+                    case tensor_format:
+                        raise NotImplementedError(f"Unsupported tensor format {tensor_format}!")
             case 4:
                 shape = gpu_arr.shape
             case _:
@@ -149,6 +151,17 @@ class TensorArray:
             self.cpu_shape = gpu_arr.shape
         self.ary = gpu_arr.reshape(shape)
     # ---
+
+    def __eq__(self, value: object) -> bool:
+        """Are tensor equal?"""
+        if not isinstance(value, TensorArray):
+            return False
+        return value.tensor_type == self.tensor_type and value.tensor_format == self.tensor_format and value.ary == self.ary
+
+    def __repr__(self) -> str:
+        """TensorArray representation"""
+        desc = hex(self.desc) if self.desc else self.desc
+        return f"<{self.__class__.__name__} type={self.tensor_type} format={self.tensor_format} at {desc}>"
 
     @property
     def ptr_voidp(self) -> ctypes.c_void_p:
