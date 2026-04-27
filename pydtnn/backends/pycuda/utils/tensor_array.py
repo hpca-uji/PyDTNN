@@ -234,7 +234,7 @@ class TensorArray:
         """CPU to GPU with expand_dims"""
         self.ary.set(value.reshape(self.ary.shape))
 
-    def get(self):
+    def get(self, ary=None):
         """GPU to CPU with squeeze"""
         value = self.ary.get()
 
@@ -262,11 +262,18 @@ class TensorArray:
                     case TensorFormat.NHWC:
                         raise NotImplementedError("Shape padding not implemented for 3-dim shape on NHWC")
             case 4:
-                pass  # exact
+                value = value
             case _:
                 raise ValueError(f"The expected len shape are 1, 2, 3 or 4. Shape received: {len(self.ary.shape)}.")
 
-        return value
+        if ary is None:
+            return value
+        else:
+            ary[:] = value
+
+    def __array__(self, dtype=None, *, copy=None):
+        """ NumPy cast helper """
+        return np.asarray(self.get(), dtype=dtype)
 
     def _view(self, ary):
         """TensorArray view"""

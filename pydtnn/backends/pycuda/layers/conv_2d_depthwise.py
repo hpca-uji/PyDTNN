@@ -179,11 +179,11 @@ class Conv2DDepthwisePycuda(AbstractConv2DPycuda):
 
         match self.model.tensor_format:
             case TensorFormat.NHWC:
-                gpu_ary = value.ary
+                gpu_ary = value
                 cpu_ary = gpu_ary.get()
                 return np.asarray(cpu_ary, dtype=np.float64, order="C").copy()
             case TensorFormat.NCHW:
-                gpu_ary = value.ary
+                gpu_ary = value
                 cpu_ary = gpu_ary.get()
                 return np.asarray(cpu_ary, dtype=np.float64, order="C").copy()
             case _:

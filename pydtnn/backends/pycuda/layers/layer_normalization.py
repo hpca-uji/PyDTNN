@@ -16,13 +16,13 @@ class LayerNormalizationPycuda(LayerNormalization[TensorArray], LayerPycuda):
         self.epsilon = np.float32(self.epsilon)
 
         # Shape same as x input
-        self.y = gpuarray.zeros(x.ary.shape, self.model.dtype)
+        self.y = gpuarray.zeros(x.shape, self.model.dtype)
         self.y = TensorArray(self.y, self.model.tensor_fmt, self.model.cudnn_dtype)
-        self.dx = gpuarray.zeros(x.ary.shape, self.model.dtype)
+        self.dx = gpuarray.zeros(x.shape, self.model.dtype)
         self.dx = TensorArray(self.dx, self.model.tensor_fmt, self.model.cudnn_dtype)
 
         # Shape same as x input, but batch = 1. For scaling at the end: output = scale * post_normalization + bias
-        gamma_shape = (int(np.prod([x.ary.shape[i] for i in self.axis])),)
+        gamma_shape = (int(np.prod([x.shape[i] for i in self.axis])),)
         gamma = gpuarray.to_gpu(np.full(gamma_shape, self.gamma_init_val, self.model.dtype))
         self.gamma: TensorArray = TensorArray(gamma, self.model.tensor_fmt, self.model.cudnn_dtype, tensor_type=TensorArray.TensorType.OTHER)
         beta = gpuarray.zeros(gamma_shape, self.model.dtype)
@@ -33,10 +33,10 @@ class LayerNormalizationPycuda(LayerNormalization[TensorArray], LayerPycuda):
         self.dbeta: TensorArray = TensorArray(dbeta, self.model.tensor_fmt, self.model.cudnn_dtype, tensor_type=TensorArray.TensorType.OTHER)
 
         # Shape same as x input, but last layer = 1. For mean computation across the normalization axis.
-        mean_shape = (int(np.prod(x.ary.shape) / np.prod([x.ary.shape[i] for i in self.axis])),)  # (*x.ary.shape[:-2], 1, 1)
+        mean_shape = (int(np.prod(x.shape) / np.prod([x.shape[i] for i in self.axis])),)  # (*x.shape[:-2], 1, 1)
         std = gpuarray.zeros(mean_shape, self.model.dtype)
         self.std: TensorArray = TensorArray(std, self.model.tensor_fmt, self.model.cudnn_dtype, tensor_type=TensorArray.TensorType.OTHER)
-        out_shape = x.ary.shape
+        out_shape = x.shape
         xn = gpuarray.zeros(out_shape, self.model.dtype)
         self.xn: TensorArray = TensorArray(xn, self.model.tensor_fmt, self.model.cudnn_dtype, tensor_type=TensorArray.TensorType.OTHER)
 
@@ -71,14 +71,14 @@ class LayerNormalizationPycuda(LayerNormalization[TensorArray], LayerPycuda):
                                      grid=(self.blocks_backward_weights, 1, 1), block=(self.threads_backward_weights, 1, 1),
                                      stream=self.model.stream)
 
-        # print(np.sum(self.beta.ary.get()), np.sum(self.dbeta.ary.get()))
+        # print(np.sum(self.beta.get()), np.sum(self.dbeta.get()))
         return self.dx
 
     def __init_kernels_gpu__(self):
 
         self.kernel_forward = self._fwd_kernel()
-        n = np.prod([self.y.ary.shape[i] for i in self.axis])
-        self.kernel_dim_params = (np.int32(np.prod(self.y.ary.shape) // n), np.int32(n))
+        n = np.prod([self.y.shape[i] for i in self.axis])
+        self.kernel_dim_params = (np.int32(np.prod(self.y.shape) // n), np.int32(n))
 
         self.kernel_backward = self._bwd_kernel()
         self.kernel_backward_weigths = self._get_kernel(func_name="layer_normalization_backward_weights")

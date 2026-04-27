@@ -45,7 +45,7 @@ class RMSPropPycuda(RMSProp[TensorArray], OptimizerPycuda):
                 self.context[layer.id] = dict[str, gpuarray.GPUArray]()
                 for w_ in list_grad_vars:
                     w = getattr(layer, w_)
-                    self.context[layer.id]["cache_%s" % w_] = gpuarray.zeros_like(w.ary, dtype=layer.model.dtype)
+                    self.context[layer.id]["cache_%s" % w_] = gpuarray.zeros(w.shape, dtype=layer.model.dtype)
 
                     self.memory_used += self.context[layer.id]["cache_%s" % w_].nbytes  # type: ignore (They are both "gpuarray" and not "int")
 

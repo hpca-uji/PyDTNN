@@ -52,7 +52,7 @@ class AbstractPool2DLayerPycuda(AbstractPool2DLayer[TensorArray], LayerPycuda):
         self.memory_used += self.y.nbytes
 
         # Derivative dx
-        dx_gpu = gpuarray.zeros(self.x.ary.shape, self.model.dtype)
+        dx_gpu = gpuarray.zeros(self.x.shape, self.model.dtype)
         self.dx = TensorArray(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
         self.memory_used += self.dx.nbytes
 

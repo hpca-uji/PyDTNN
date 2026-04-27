@@ -40,7 +40,7 @@ class EncoderPycuda(AbstractBlockLayerPycuda, Encoder):
             mask_enc_shape = ()
 
         self.shape = x_enc_shape
-        self.first_dims = x_enc.ary.shape[:-1]
+        self.first_dims = x_enc.shape[:-1]
 
         # Initialize all sublayers
         for layer in self.children:
@@ -78,11 +78,11 @@ class EncoderPycuda(AbstractBlockLayerPycuda, Encoder):
         pass
 
     def flatten(self, x):
-        last_dim = x.ary.shape[-1]
+        last_dim = x.shape[-1]
         return x.reshape((int(np.prod(self.first_dims)), last_dim))
 
     def unflatten(self, x):
-        last_dim = x.ary.shape[-1]
+        last_dim = x.shape[-1]
         return x.reshape((*self.first_dims, last_dim))
 
     def forward(self, x, mask=None):

@@ -44,8 +44,8 @@ class InputPycuda(Input[TensorArray], LayerPycuda):
             y_batch = np.asarray(y_batch, dtype=self.model.dtype, order="C")
 
             assert isinstance(self.y, TensorArray) and isinstance(self.model.y_batch, TensorArray)
-            self.y.ary.set(x_batch)
-            self.model.y_batch.ary.set(y_batch)
+            self.y.set(x_batch)
+            self.model.y_batch.set(y_batch)
             x, y_targ = self.model.layers[0].y, self.model.y_batch
         else:
             empty_x = gpuarray.zeros((1, *self.model.dataset.input_shape), self.model.dtype)[:0]

@@ -121,13 +121,13 @@ class Conv2DPointwisePycuda(AbstractConv2DPycuda):
             case TensorFormat.NHWC:
                 # NHWC's src: self.ci, self.co
                 # NCHW's dst: self.co, self.ci
-                gpu_ary = value.ary
+                gpu_ary = value
                 cpu_ary = gpu_ary.get()
                 return np.asarray(format_transpose(cpu_ary, "IO", "OI"), dtype=np.float64, order="C").copy()
             case TensorFormat.NCHW:
                 # NHWC's src: self.ci, self.co
                 # NCHW's dst: self.co, self.ci
-                gpu_ary = value.ary
+                gpu_ary = value
                 cpu_ary = gpu_ary.get()
                 return np.asarray(cpu_ary, dtype=np.float64, order="C").copy()
             case _:

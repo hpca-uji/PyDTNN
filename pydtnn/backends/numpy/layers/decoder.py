@@ -71,11 +71,11 @@ class DecoderNumpy(Decoder[np.ndarray], AbstractBlockLayerNumpy):
         pass
 
     def flatten(self, x):
-        last_dim = x.ary.shape[-1]
+        last_dim = x.shape[-1]
         return x.reshape((int(np.prod(self.first_dims)), last_dim))
 
     def unflatten(self, x):
-        last_dim = x.ary.shape[-1]
+        last_dim = x.shape[-1]
         return x.reshape((*self.first_dims, last_dim))
 
     def forward(self, x, x_enc, mask=None):

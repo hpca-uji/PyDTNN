@@ -101,7 +101,7 @@ def main():
             _dataset = TensorArray(
                 gpu_arr=gpuarray.zeros(shape=dataset.shape, dtype=KWARGS["dtype"]),
                 tensor_format=model.tensor_format, cudnn_dtype=model.cudnn_dtype)
-            _dataset.ary.set(dataset)
+            _dataset.set(dataset)
             x = _dataset
 
         num_layers = len(model.layers)

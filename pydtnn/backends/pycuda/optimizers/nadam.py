@@ -48,8 +48,8 @@ class NadamPycuda(Nadam[TensorArray], OptimizerPycuda):
 
             for w_ in layer.grad_vars.keys():
                 w = getattr(layer, w_)
-                self.context[layer.id]["m_%s" % w_] = gpuarray.zeros_like(w.ary, dtype=layer.model.dtype)
-                self.context[layer.id]["v_%s" % w_] = gpuarray.zeros_like(w.ary, dtype=layer.model.dtype)
+                self.context[layer.id]["m_%s" % w_] = gpuarray.zeros(w.shape, dtype=layer.model.dtype)
+                self.context[layer.id]["v_%s" % w_] = gpuarray.zeros(w.shape, dtype=layer.model.dtype)
 
                 self.memory_used += self.context[layer.id]["m_%s" % w_].nbytes + self.context[layer.id]["v_%s" % w_].nbytes  # type: ignore (They are both "gpuarray" and not "int")
 

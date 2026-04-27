@@ -43,4 +43,4 @@ class MulticlassConfusionMatrixPycuda(MulticlassConfusionMatrix[TensorArray], Me
                     num_classes, n,
                     grid=self.grid, block=self.block,
                     stream=self.model.stream)
-        return self.conf_matrix.ary.get()
+        return np.asarray(self.conf_matrix)

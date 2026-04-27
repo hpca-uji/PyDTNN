@@ -207,8 +207,8 @@ def test_layers_gpu(model: PyDTNN_Model, dataset: np.ndarray) -> TensorArray:
         gpu_arr=gpuarray.zeros(shape=dataset.shape, dtype=dtype),
         tensor_format=model.tensor_format, cudnn_dtype=model.cudnn_dtype)
 
-    _dataset.ary.set(dataset)
-    print(f"_dataset: {_dataset} | type(_dataset): {type(_dataset)} | _dataset.ary.shape: {_dataset.ary.shape}")
+    _dataset.set(dataset)
+    print(f"_dataset: {_dataset} | type(_dataset): {type(_dataset)} | _dataset.shape: {_dataset.shape}")
 
     model.y_batch = _dataset
 
@@ -252,7 +252,7 @@ def test_layers(name: str, pytorch_model: TEST_PyTorch_Model, kwargs: dict[str, 
     pydtnn_weights = pydtnn_layer.weights
 
     if isinstance(pydtnn_weights, TensorArray):
-        pydtnn_weights: np.ndarray = pydtnn_weights.ary.get()
+        pydtnn_weights: np.ndarray = pydtnn_weights.get()
 
     there_are_pytorch_weigths = pytorch_weights is not None
     there_are_pydtnn_weights = pydtnn_weights is not None
@@ -265,7 +265,7 @@ def test_layers(name: str, pytorch_model: TEST_PyTorch_Model, kwargs: dict[str, 
     pydtnn_biases = pydtnn_layer.biases
 
     if isinstance(pydtnn_weights, TensorArray):
-        pydtnn_biases: TensorArray = pydtnn_biases.ary.get()
+        pydtnn_biases: TensorArray = pydtnn_biases.get()
 
     there_are_pytorch_biases = pytorch_biases is not None
     there_are_pydtnn_biases = pydtnn_biases is not None
