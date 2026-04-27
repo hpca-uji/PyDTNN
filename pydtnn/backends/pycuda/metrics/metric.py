@@ -20,12 +20,9 @@ class MetricPycuda(Metric[TensorArray], BasePycuda):
 
     def _model_init(self) -> None:
         super()._model_init()
-        self.kernel = self._kernel_init()
-
         self.grid = self.model.cuda_grid
         self.block = self.model.cuda_block
 
     def _kernel_init(self) -> Function:
         self.defines_replaces = {"\"TYPE\"": DTYPE2CTYPE[self.model.dtype]}
         self.kernel = self._get_kernel()
-        return self.kernel
