@@ -30,4 +30,4 @@ class PrecisionPycuda(Precision[TensorArray], MetricPycuda):
                     grid=self.grid, block=self.block,
                     stream=self.model.stream)
 
-        return float(self.precision[0])
+        return float(self.precision.get())

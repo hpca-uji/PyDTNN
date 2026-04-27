@@ -234,7 +234,7 @@ class TensorArray:
         """CPU to GPU with expand_dims"""
         self.ary.set(value.reshape(self.ary.shape))
 
-    def get(self, ary=None):
+    def get(self, ary=None) -> np.ndarray:
         """GPU to CPU with squeeze"""
         value = self.ary.get()
 
@@ -270,6 +270,7 @@ class TensorArray:
             return value
         else:
             ary[:] = value
+            return None  # type: ignore
 
     def __array__(self, dtype=None, *, copy=None):
         """ NumPy cast helper """

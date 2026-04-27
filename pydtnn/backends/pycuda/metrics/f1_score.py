@@ -31,4 +31,4 @@ class F1ScorePycuda(F1Score[TensorArray], MetricPycuda):
                     grid=self.grid, block=self.block,
                     stream=self.model.stream)
 
-        return float(self.f1[0])
+        return float(self.f1.get())
