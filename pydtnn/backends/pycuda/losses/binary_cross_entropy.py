@@ -15,5 +15,5 @@ class BinaryCrossEntropyPycuda(LossPycuda, BinaryCrossEntropy[TensorArray]):
                     batch_size, self.shape[1], self.eps,
                     grid=self.grid, block=self.block,
                     stream=self.model.stream)
-        loss: float = -gpuarray.sum(self.loss[:batch_size]) / batch_size
+        loss: float = -float(gpuarray.sum(self.loss[:batch_size])[0]) / batch_size
         return loss, self.dx
