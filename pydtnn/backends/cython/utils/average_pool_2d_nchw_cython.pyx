@@ -95,7 +95,7 @@ def average_pool_2d_bwd_nchw_cython_alt(npDT[:,:,:,::1] dy,
                                         int hstride, int wstride,
                                         int hdilation, int wdilation) -> None:
     
-    cdef int nn, xx, yy, cc, ii, jj, _xx, _yy, items, hi, wi
+    cdef int nn, xx, yy, cc, ii, jj, _xx, _yy, items, hi, wi, x_x, x_y
 
     for nn in prange(n, nogil=True):
         for cc in range(c):
