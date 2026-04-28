@@ -303,7 +303,7 @@ class TensorArray:
                            tensor_type=self.tensor_type,
                            gpudirect=self.gpudirect,
                            cublas=self.cublas,
-                           desc=self.desc if ary is self.ary else None,
+                           desc=None,
                            cpu_shape=self.cpu_shape)
 
     def copy(self):
