@@ -164,7 +164,7 @@ class TensorArray:
 
     def __repr__(self) -> str:
         """TensorArray representation"""
-        desc = hex(self.desc) if self.desc else self.desc
+        desc = hex(self.desc) if self.desc else None
         return f"<{self.__class__.__name__} type={self.tensor_type} format={self.tensor_format} at {desc}>"
 
     @property
