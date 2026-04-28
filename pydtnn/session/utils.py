@@ -11,7 +11,7 @@ from pydtnn.utils.tensor import (decode_shape, decode_tensor, encode_shape,
 
 logger = logging.getLogger(__name__)
 
-BAR_WIDTH = 140
+BAR_WIDTH = 150
 DEFAULT_BACH_SIZE = 64
 LIMIT_THREADS_AND_BLOCKS = 1024
 
