@@ -4,13 +4,13 @@ from warnings import warn
 
 import numpy as np
 
-from pydtnn.session.layer import Layer
+from pydtnn.session.layers import Layers
 from pydtnn.utils.constants import Array, Parameters
 
 logger = logging.getLogger(__name__)
 
 
-class Export[T: Array](Layer[T]):
+class State[T: Array](Layers[T]):
     def export(self) -> dict[str, Any]:
         """Export model state"""
         data = {}
@@ -25,9 +25,9 @@ class Export[T: Array](Layer[T]):
 
         return data
 
-    def import_(self, data: "dict[str, Any] | Export") -> None:
+    def import_(self, data: "dict[str, Any] | State") -> None:
         """Import model state"""
-        if isinstance(data, Export):
+        if isinstance(data, State):
             data = data.export()
 
         model_name = str(data.get(Parameters.MODEL_NAME))

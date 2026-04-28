@@ -10,13 +10,13 @@ from pydtnn.backends.fuse.layers.layer import LayerFuse as FusedLayerMixIn
 from pydtnn.backends.fuse.layers.layer import select as select_fuse_layer
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.conv_2d import Conv2D
-from pydtnn.session.utils import Util
+from pydtnn.session.utils import Utils
 from pydtnn.utils.constants import Array
 
 logger = logging.getLogger(__name__)
 
 
-class Layer[T: Array](Util[T]):
+class Layers[T: Array](Utils[T]):
 
     def add(self, layer: Layerable[T]) -> None:
         layer._init_backend_with_model(self)

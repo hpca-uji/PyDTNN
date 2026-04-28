@@ -19,7 +19,7 @@ from pydtnn.models.model import select as select_model
 from pydtnn.optimizers.optimizer import select as select_optimizer
 from pydtnn.parser import PydtnnArgumentParser
 from pydtnn.session.base import Base
-from pydtnn.session.export import Export
+from pydtnn.session.state import State
 from pydtnn.session.utils import DEFAULT_BACH_SIZE, LIMIT_THREADS_AND_BLOCKS
 from pydtnn.utils.gpu import CudnnDataType
 from pydtnn.utils.memory_pool import PreallocMemory, PrivateMemory
@@ -39,7 +39,7 @@ from pydtnn.utils.constants import Array
 logger = logging.getLogger(__name__)
 
 
-class Init[T: Array](Export[T]):
+class Init[T: Array](State[T]):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

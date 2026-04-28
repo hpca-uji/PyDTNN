@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from pydtnn.abstract.layerable import Layerable
-    from pydtnn.session.layer import Layer as Model
+    from pydtnn.session.layers import Layers as Model
 
 
 class EventType:

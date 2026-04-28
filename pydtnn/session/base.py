@@ -71,6 +71,7 @@ class Base[T: Array]:
     initial_model_sync: bool
     dataset_percentage: float
     use_mpi_buffers: bool
+    blocking_mpi: bool
     # enable_memory_cache: bool
     enable_nccl: bool
     gpus_per_node: int
@@ -113,6 +114,8 @@ class Base[T: Array]:
 
     memory_cls: type[PrivateMemory]
     memory: PrivateMemory
+    memory_used: int
+    tmp_memory_used: int
 
     rank_weight: float
     comm_rank: int

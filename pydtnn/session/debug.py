@@ -3,14 +3,14 @@ import logging
 import numpy as np
 
 from pydtnn import utils
-from pydtnn.session.layer import Layer
+from pydtnn.session.layers import Layers
 from pydtnn.utils.constants import Array
 from pydtnn.utils.performance_models import allreduce_time
 
 logger = logging.getLogger(__name__)
 
 
-class Show[T: Array](Layer[T]):
+class Debug[T: Array](Layers[T]):
 
     def _show_props(self) -> dict:
         props = {}
