@@ -64,23 +64,33 @@
 ```
 ### Components
 ```
+│   ├── session
+│   │   ├── base.py    # typing interface
+│   │   ├── utils.py   # utility methods
+│   │   ├── layers.py  # layers management
+│   │   ├── state.py   # state management
+│   │   ├── init.py    # model initialization
+│   │   ├── sync.py    # model synchronization
+│   │   ├── debug.py   # debugging information
+│   │   ├── eval.py    # model inference
+│   │   └── train.py   # model training
 |   ├── abstract
-|   |   ├── base.py
-│   │   └── layerable.py
+|   |   ├── base.py       # every component
+│   │   └── layerable.py  # layer-like component
 │   ├── activations
 │   │   ├── activation.py  # base
 │   │   └── # each implementation
 │   ├── models
 │   │   ├── # each description
 │   ├── layers
-│   │   ├── abstract  # shared
-│   │   ├── layer.py  # base
+│   │   ├── abstract      # shared
+│   │   ├── layer.py      # base
 │   │   └── # each implementation
 │   ├── losses
-│   │   ├── loss.py  # base
+│   │   ├── loss.py       # base
 │   │   └── # each implementation
 │   ├── metrics
-│   │   ├── metric.py  # base
+│   │   ├── metric.py     # base
 │   │   └── # each implementation
 │   ├── schedulers
 │   │   ├── scheduler.py  # base
@@ -89,30 +99,20 @@
 │   │   ├── optimizer.py  # base
 │   │   └── # each implementation
 │   ├── backends
-│   │   ├── __init__.py  # base
-│   │   ├── numpy 
+│   │   ├── __init__.py   # base
+│   │   ├── # each implementation with whole components structure 
 │   │   ├── cython
 │   │   │   ├── # implementation
-│   │   │   └── utils  # pyx & pyi
-│   │   ├── # each implementation with whole components structure
+│   │   │   └── utils
+│   │   │       ├── # pyx & pyi files
+│   │   │       ├── base.pyi  # shared py interface
+│   │   │       └── base.pyd  # shared pyx interface
 │   │   └── pycuda
-│   │       ├── # implentation
-│   │       └── utils  # cu files
+│   │       ├── # implementation
+│   │       └── utils
+│   │           ├── # cu files
 │   │           ├── memory_allocation.py
 │   │           └── tensor_array.py
-```
-### Support modules
-```
-│   ├── session
-│   │   ├── base.py  # typing interface
-│   │   ├── utils.py # utility methods
-│   │   ├── layers.py  # layers management
-│   │   ├── state.py  # state management
-│   │   ├── init.py  # model initialization
-│   │   ├── sync.py  # model synchronization
-│   │   ├── debug.py  # debugging information
-│   │   ├── eval.py  # model inference
-│   │   └── train.py # model training
 │   ├── datasets
 │   │   ├── dataset.py  # base
 │   │   ├── archive.py
@@ -120,6 +120,9 @@
 │   │   ├── folder.py
 │   │   ├── synthetic.py
 │   │   └── # each implementation
+```
+### Support modules
+```
 │   ├── tracers
 │   │   ├── events.py
 │   │   ├── tracer.py
