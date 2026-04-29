@@ -175,11 +175,31 @@
 
 # Publishing
 Dependencies: `gcc patchelf` and `build twine auditwheel`  
-Ensure before publishing the working tree is public under `master`.  
 
+## Cleanup sources
 ```sh
+./scripts/utils/run_formatter.sh pydtnn
+git add .
+git commit -m 'format codebase'
+git push
+```
+
+## Publish sources
+```sh
+git checkout master
+git merge develop
+git checkout master
+```
+
+### Build distribution
+```sh
+rm -rf ./build/
 python -m build --outdir ./build/ --sdist
 python -m build --outdir ./build/wheel/ --wheel
 python -m auditwheel repair --wheel-dir ./build/ ./build/wheel/*.whl
+```
+
+### Publish distribution
+```sh
 python -m twine upload --repository pypi ./build/pydtnn-*
 ```

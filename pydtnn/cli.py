@@ -10,16 +10,15 @@ import logging.config
 import os
 import sys
 import time
-from contextlib import contextmanager, nullcontext
-from datetime import datetime
+from contextlib import nullcontext
 from importlib import resources
 from pathlib import Path
-from traceback import TracebackException
 
-import numpy as np
 import yaml
 
-from pydtnn import utils
+from pydtnn import timestamp, utils
+from pydtnn.utils.debug import traceback_context
+from pydtnn.utils.serial import NumpyYaml
 
 logger = logging.getLogger(__name__)
 
@@ -35,50 +34,6 @@ if os.environ.get("EXTRAE_ON", None) == "1":
 
     pyextrae.startTracing(TracingLibrary)
     Extrae_tracing = True
-
-timestamp = datetime.now().isoformat(timespec="seconds").replace(" ", "-").replace(":", "-").replace(".", "-")
-
-
-def show_options(params):
-    for arg in vars(params):
-        if arg != "comm":
-            logger.info(f'  {arg:31s}: {str(getattr(params, arg)):s}')
-            # print(f'  --{arg:s}={str(getattr(params, arg)):s} \\')
-
-
-def print_model_reports(model):
-    # Print performance counter report
-    model.perf_counter.print_report()
-    # Print BestOf report
-    # if model.enable_best_of:
-    #     BestOf.print_report()
-
-
-class HistoryDumper(yaml.SafeDumper):
-    def represent_dtype(self, data):
-        return self.represent_scalar('!np.type', repr(data))
-
-    def represent_ndarray(self, data):
-        return self.represent_scalar('!np.array', repr(data), style="|")
-
-
-HistoryDumper.add_representer(np.ndarray, HistoryDumper.represent_ndarray)
-HistoryDumper.add_representer(np.float64, HistoryDumper.represent_dtype)
-HistoryDumper.add_representer(np.float32, HistoryDumper.represent_dtype)
-HistoryDumper.add_representer(np.int64, HistoryDumper.represent_dtype)
-HistoryDumper.add_representer(np.int8, HistoryDumper.represent_dtype)
-
-
-@contextmanager
-def traceback_context():
-    try:
-        yield
-    except Exception as exc:
-        path = Path(f"traceback-{timestamp}.txt").resolve()
-        with Path(path).open(mode="w") as file:
-            TracebackException.from_exception(exc, capture_locals=True).print(file=file)
-        logger.info(f'Dumped traceback details to: {path}')
-        raise
 
 
 def main():
@@ -121,7 +76,7 @@ def main():
                 logger.info(f'Testing time: {total_time:5.4f} s')
                 logger.info(f'Testing throughput: {model.dataset.test_nsamples / total_time:5.4f} samples/s')
         if model.evaluate_only:
-            print_model_reports(model)
+            model.perf_counter.print_report()
             raise SystemExit(0)
     # Barrier
     if model.parallel_data:
@@ -163,12 +118,14 @@ def main():
     if model.history_file:
         history_file = utils.string_substitute(model.history_file, rank=model.comm_rank)
         if history_file != model.history_file or model.comm_rank == 0:
+            path = Path(history_file).resolve()
             events = []
             epochs = max(len(v) for v in history.values())
             for epoch in range(epochs):
                 events.append({"epoch": epoch} | {key: history[key][epoch] for key in history})
-            with open(history_file, "w") as f:
-                yaml.dump_all(events, f, HistoryDumper, allow_unicode=True, sort_keys=False)
+            with open(path, "w") as f:
+                yaml.dump_all(events, f, NumpyYaml, allow_unicode=True, sort_keys=False)
+            logger.info(f'Dumped metric history to: {path}')
     # Second (and last) evaluation
     if model.evaluate_on_train:
         if model.comm_rank == 0:
@@ -185,7 +142,7 @@ def main():
                 logger.info(f'Testing throughput: {model.dataset.test_nsamples / total_time:5.4f} samples/s')
     # Print model reports
     if model.comm_rank == 0:
-        print_model_reports(model)
+        model.perf_counter.print_report()
     # Barrier and finalize
     if model.comm is not None and model.MPI is not None:
         model.comm.Barrier()

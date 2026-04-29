@@ -3,6 +3,11 @@ import inspect
 import logging
 import os
 import threading
+from contextlib import contextmanager
+from pathlib import Path
+from traceback import TracebackException
+
+from pydtnn import timestamp
 
 logger = logging.getLogger(__name__)
 
@@ -59,3 +64,15 @@ def debug_func(func):
             return result
 
     return wrapper
+
+
+@contextmanager
+def traceback_context():
+    try:
+        yield
+    except Exception as exc:
+        path = Path(f"traceback-{timestamp}.log").resolve()
+        with path.open(mode="w") as file:
+            TracebackException.from_exception(exc, capture_locals=True).print(file=file)
+        logger.info(f'Dumped traceback details to: {path}')
+        raise

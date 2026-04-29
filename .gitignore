@@ -1,11 +1,11 @@
 /build/
 /.venv/
-/pydtnn.log
 __pycache__/
 
 *.c
 *.so
 *.idx
+*.log
 *.egg-info
 
 /vendor/*/

@@ -69,7 +69,7 @@ class Init[T: Array](State[T]):
         self.layer_id_generator: abc.Iterator[int] = iter(itertools.count())
 
         # Set current mode to unspecified
-        self.mode: Base.Mode = Base.Mode.UNSPECIFIED
+        self.mode: Base.Mode = None  # type: ignore # Base.Mode.UNSPECIFIED
 
         self.memory_cls = PreallocMemory if self.shared_tmp_memory else PrivateMemory
 

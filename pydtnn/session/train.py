@@ -253,7 +253,7 @@ class Train[T: Array](Eval[T]):
                 self.tensor_format, self.cudnn_dtype)
             self.y_batch = tensor_ary  # type: ignore
 
-        self.history = {lm: [] for lm in ([f"train_{m}" for m in self.loss_and_metrics] + [f"val_{m}" for m in self.loss_and_metrics])}
+        self.history = {lm: [] for lm in ([f"{Dataset.Part.TRAIN._name_.lower()}_{m}" for m in self.loss_and_metrics] + [f"{Dataset.Part.VAL._name_.lower()}_{m}" for m in self.loss_and_metrics])}
 
         self.comm_nsamples = list(zip(*self.comm.allgather(self.dataset._nsamples) if self.comm else [self.dataset._nsamples]))
 
@@ -290,12 +290,12 @@ class Train[T: Array](Eval[T]):
             train_total_loss, model_sync_count, train_sync_epoch, string = self._train_round(pbar=pbar, batch_generator=train_batch_generator,
                                                                                              model_sync_count=model_sync_count, batches_min=train_batches_min,
                                                                                              total_loss=train_total_loss, batch_count=train_batch_count,
-                                                                                             prev_string="", out_prefix="train_")
+                                                                                             prev_string="", out_prefix=f"{Dataset.Part.TRAIN._name_.lower()}_")
             sync_epoch = sync_epoch or train_sync_epoch
             train_string = string
 
             for c in range(len(self.loss_and_metrics)):
-                self.history["train_" + self.loss_and_metrics[c]].append(train_total_loss[c])
+                self.history[f"{Dataset.Part.TRAIN._name_.lower()}_" + self.loss_and_metrics[c]].append(train_total_loss[c])
 
             # ----------- #
             # --- VAL --- #
@@ -308,7 +308,7 @@ class Train[T: Array](Eval[T]):
 
             # if self.comm_rank == 0:  # All nodes must have history, not only the 0.
             for c in range(len(self.loss_and_metrics)):
-                self.history["val_" + self.loss_and_metrics[c]].append(val_total_loss[c])
+                self.history[f"{Dataset.Part.VAL._name_.lower()}_" + self.loss_and_metrics[c]].append(val_total_loss[c])
 
             for sched in self.schedulers:
                 sched.on_epoch_end(train_total_loss, val_total_loss)
@@ -322,10 +322,10 @@ class Train[T: Array](Eval[T]):
 
             for c in range(len(self.loss_and_metrics)):
                 if not self.loss_and_metrics_format[c]:
-                    logger.info(f"{self.loss_and_metrics[c]}: {train_total_loss[c]}")
+                    logger.info(f"{Dataset.Part.TRAIN._name_.lower()}_{self.loss_and_metrics[c]}: {train_total_loss[c]}")
             for c in range(len(self.loss_and_metrics)):
                 if not self.loss_and_metrics_format[c]:
-                    logger.info(f"val_{self.loss_and_metrics[c]}: {val_total_loss[c]}")
+                    logger.info(f"{Dataset.Part.VAL._name_.lower()}_{self.loss_and_metrics[c]}: {val_total_loss[c]}")
 
             if sync_epoch:
                 if self.comm is not None:
