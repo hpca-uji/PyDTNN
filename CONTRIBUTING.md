@@ -169,9 +169,10 @@
 ```
 
 # Planned
+- Add PyCUDA parameter quantization (operate on model.dtype, weights on model.param_dtype)
+- Update CuDNN to graph implementation
 - Fix NLP support
-- PyCUDA parameter quantization (operate on model.dtype, weights on model.param_dtype)
-- Model tensor parallelism (previously implemented on a prototype)
+- Add model tensor parallelism (previously implemented on a prototype)
 
 # Publishing
 Dependencies: `gcc patchelf` and `build twine auditwheel`  
