@@ -53,9 +53,10 @@ class Init[T: Array](State[T]):
         self.enable_cudnn = gpuarray is not None and drv is not None and cublas is not None
         self.gpudirect: bool = self.enable_gpudirect
         self.enable_nccl: bool = self.enable_nccl
-        self.dtype: np.dtype = np.dtype(self.dtype)
         self.memory: PrivateMemory = None  # type: ignore (it will be intialized later if "self.use_memory_pool" is True)
+        self.dtype: np.dtype = np.dtype(self.dtype)
         self.param_dtype: np.dtype = np.dtype(self.quantize_dtype) if self.quantize else self.dtype
+        #self.metrics_dtype: np.dtype = np.dtype(np.float32) if np.issubdtype(self.dtype, np.int32) else self.dtype
 
         self.nparams = 0
         self.memory_used = 0

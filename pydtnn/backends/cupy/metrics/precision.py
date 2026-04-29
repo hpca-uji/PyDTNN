@@ -16,9 +16,9 @@ class PrecisionCupy(PrecisionNumpy, MetricCupy):
     def _post_init(self) -> None:
         super()._post_init()
         with self.model.memory:
-            self.true_positives = self.model.memory.ndarray(self.temp_var_shape, dtype=np.float32)
-            self.false_positives = self.model.memory.ndarray(self.temp_var_shape, dtype=np.float32)
-            self.false_negatives = self.model.memory.ndarray(self.temp_var_shape, dtype=np.float32)
+            self.true_positives = self.model.memory.ndarray(self.temp_var_shape, dtype=self.dtype)
+            self.false_positives = self.model.memory.ndarray(self.temp_var_shape, dtype=self.dtype)
+            self.false_negatives = self.model.memory.ndarray(self.temp_var_shape, dtype=self.dtype)
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
         true_positives = self.true_positives

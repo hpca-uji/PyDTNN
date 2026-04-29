@@ -21,6 +21,7 @@ class Metric[T: Array](Base):
     def _model_init(self) -> None:
         super()._model_init()
         self.shape = (self.model.batch_size, *self.model.output_shape)
+        self.dtype: np.dtype = np.dtype(np.float32) if np.issubdtype(self.model.dtype, np.int32) else self.model.dtype
 
     @abstractmethod
     def compute(self, y_pred: T, y_targ: T) -> float | np.ndarray:
