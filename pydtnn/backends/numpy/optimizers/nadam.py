@@ -83,43 +83,43 @@ class NadamNumpy(Nadam[np.ndarray], OptimizerNumpy):
         if not (self.are_all_zeros(w) and self.are_all_zeros(dw) or self.are_all_zeros(m) or self.are_all_zeros(v)):
             # NOTE: The operations are unrolled in order to reduce the memory consumed by intermediate copies of the variables during the operations.
             # m = self.beta1 * m + (1 - self.beta1) * dw
-            np.multiply((1 - self.beta1), dw, dtype=self.dtype, out=mt_temp_dw)
+            np.multiply((1 - self.beta1), dw, dtype=self.model.dtype, out=mt_temp_dw)
 
-            np.multiply(m, self.beta1, dtype=self.dtype, out=m)
-            np.add(m, mt_temp_dw, dtype=self.dtype, out=m)
+            np.multiply(m, self.beta1, dtype=self.model.dtype, out=m)
+            np.add(m, mt_temp_dw, dtype=self.model.dtype, out=m)
 
             # v = self.beta2 * v + (1 - self.beta2) * dw ** 2
-            np.pow(dw, 2, dtype=self.dtype, out=mt_temp_dw)
-            np.multiply(mt_temp_dw, (1 - self.beta2), dtype=self.dtype, out=mt_temp_dw)
+            np.pow(dw, 2, dtype=self.model.dtype, out=mt_temp_dw)
+            np.multiply(mt_temp_dw, (1 - self.beta2), dtype=self.model.dtype, out=mt_temp_dw)
 
-            np.multiply(v, self.beta2, dtype=self.dtype, out=v)
-            np.add(v, mt_temp_dw, dtype=self.dtype, out=v)
+            np.multiply(v, self.beta2, dtype=self.model.dtype, out=v)
+            np.add(v, mt_temp_dw, dtype=self.model.dtype, out=v)
 
             # w -= self.learning_rate * (self.decay * w + (mt / np.sqrt(vt + epsilon))) ==>
             # w -= (self.learning_rate * self.decay * w) + (self.learning_rate * (mt / np.sqrt(vt + epsilon))))
 
             # w -= (self.learning_rate * self.decay * w)
-            np.multiply((self.learning_rate * self.decay), w, dtype=self.dtype, out=mt_temp_dw)
+            np.multiply((self.learning_rate * self.decay), w, dtype=self.model.dtype, out=mt_temp_dw)
 
-            np.subtract(w, mt_temp_dw, dtype=self.dtype, out=w)
+            np.subtract(w, mt_temp_dw, dtype=self.model.dtype, out=w)
 
             # (
             # NOTE: mt actually is "m / (1 - self.beta1 ** it)", the following formula is a small optimization to reduce operations:
             # mt = (m + (1 - self.beta1) * dw) / (1 - self.beta1 ** it)
-            np.multiply((1 - self.beta1), dw, dtype=self.dtype, out=mt_temp_dw)
-            np.divide(mt_temp_dw, ((1 - self.beta1 ** it)), dtype=self.dtype, out=mt_temp_dw)
-            np.add(m, mt_temp_dw, dtype=self.dtype, out=mt_temp_dw)
+            np.multiply((1 - self.beta1), dw, dtype=self.model.dtype, out=mt_temp_dw)
+            np.divide(mt_temp_dw, ((1 - self.beta1 ** it)), dtype=self.model.dtype, out=mt_temp_dw)
+            np.add(m, mt_temp_dw, dtype=self.model.dtype, out=mt_temp_dw)
             # )
 
             # (
             # vt = v / (1 - self.beta2 ** it)
-            np.divide(v, ((1 - self.beta2 ** it)), dtype=self.dtype, out=vt_temp_w)
+            np.divide(v, ((1 - self.beta2 ** it)), dtype=self.model.dtype, out=vt_temp_w)
             # )
 
             # w -= (self.learning_rate * (mt / np.sqrt(vt + epsilon))))
-            np.add(vt_temp_w, self.epsilon, dtype=self.dtype, out=vt_temp_w)
-            np.sqrt(vt_temp_w, dtype=self.dtype, out=vt_temp_w)
-            np.divide(mt_temp_dw, vt_temp_w, dtype=self.dtype, out=mt_temp_dw)
-            np.multiply(self.learning_rate, mt_temp_dw, dtype=self.dtype, out=mt_temp_dw)
-            np.subtract(w, mt_temp_dw, dtype=self.dtype, out=w)
+            np.add(vt_temp_w, self.epsilon, dtype=self.model.dtype, out=vt_temp_w)
+            np.sqrt(vt_temp_w, dtype=self.model.dtype, out=vt_temp_w)
+            np.divide(mt_temp_dw, vt_temp_w, dtype=self.model.dtype, out=mt_temp_dw)
+            np.multiply(self.learning_rate, mt_temp_dw, dtype=self.model.dtype, out=mt_temp_dw)
+            np.subtract(w, mt_temp_dw, dtype=self.model.dtype, out=w)
         # else: continue

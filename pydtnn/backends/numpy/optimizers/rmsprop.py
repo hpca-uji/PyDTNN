@@ -65,30 +65,23 @@ class RMSPropNumpy(RMSProp[np.ndarray], OptimizerNumpy):
                 # NOTE: The operations are unrolled in order to reduce the memory consumed by intermediate copies of the variables during the operations.
 
                 # cache = self.rho * cache + (1 - self.rho) * dw ** 2
-                np.multiply(cache, self.rho, out=cache,
-                            dtype=self.dtype)
-                np.power(dw, 2, dtype=self.dtype, out=temp)
-                np.multiply(temp, (1 - self.rho), out=temp,
-                            dtype=self.dtype)
-                np.add(cache, temp, out=cache,
-                       dtype=self.dtype)
+                np.multiply(cache, self.rho, dtype=self.model.dtype, out=cache)
+                np.power(dw, 2, dtype=self.model.dtype, out=temp)
+                np.multiply(temp, (1 - self.rho), dtype=self.model.dtype, out=temp)
+                np.add(cache, temp, dtype=self.model.dtype, out=cache)
 
                 # w -= self.learning_rate * (self.decay * w + (dw / np.sqrt(cache + self.epsilon))) ==>
                 # w -= (self.learning_rate * self.decay) * w + self.learning_rate * (dw / np.sqrt(cache + self.epsilon)))
 
                 # w -= (self.learning_rate * self.decay) * w
-                np.multiply((self.learning_rate * self.decay), w, dtype=self.dtype, out=temp)
-                np.subtract(w, temp, out=w,
-                            dtype=self.dtype)
+                np.multiply((self.learning_rate * self.decay), w, dtype=self.model.dtype, out=temp)
+                np.subtract(w, temp, dtype=self.model.dtype, out=w)
 
                 # w -= self.learning_rate * (dw / np.sqrt(cache + self.epsilon)))
-                np.add(cache, self.epsilon, dtype=self.dtype, out=temp)
-                np.sqrt(temp, out=temp,
-                        dtype=self.dtype)
-                np.divide(dw, temp, dtype=self.dtype, out=temp)
-                np.multiply(temp, self.learning_rate, out=temp,
-                            dtype=self.dtype)
-                np.subtract(w, temp, out=w,
-                            dtype=self.dtype)
+                np.add(cache, self.epsilon, dtype=self.model.dtype, out=temp)
+                np.sqrt(temp, dtype=self.model.dtype, out=temp)
+                np.divide(dw, temp, dtype=self.model.dtype, out=temp)
+                np.multiply(temp, self.learning_rate, dtype=self.model.dtype, out=temp)
+                np.subtract(w, temp, dtype=self.model.dtype, out=w)
             # else: continue
     # ----

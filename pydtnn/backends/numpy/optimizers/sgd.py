@@ -77,27 +77,22 @@ class SGDNumpy(SGD[np.ndarray], OptimizerNumpy):
 
                 # velocity = self.momentum * velocity + dw
 
-                np.multiply(velocity, self.momentum, out=velocity,
-                            dtype=self.dtype)
+                np.multiply(velocity, self.momentum, dtype=self.model.dtype, out=velocity)
                 np.add(velocity, dw, out=velocity,
-                       dtype=self.dtype)
+                       dtype=self.model.dtype)
 
                 # if self.nesterov:
                 #    w -= self.learning_rate * (self.decay * w + dw + self.momentum * velocity)
                 # else:
                 #    w -= self.learning_rate * (self.decay * w + velocity)
                 if self.nesterov:
-                    np.multiply(velocity, self.momentum, dtype=self.dtype, out=temp_v)
-                    np.add(temp_v, dw, out=temp_v,
-                           dtype=self.dtype)
+                    np.multiply(velocity, self.momentum, dtype=self.model.dtype, out=temp_v)
+                    np.add(temp_v, dw, dtype=self.model.dtype, out=temp_v)
                 else:
                     # np.copyto(temp_v, velocity)
                     temp_v[:] = velocity
-                np.multiply(w, self.decay, dtype=self.dtype, out=temp_w)
-                np.add(temp_w, temp_v, out=temp_w,
-                       dtype=self.dtype)
-                np.multiply(temp_w, self.learning_rate, out=temp_w,
-                            dtype=self.dtype)
-                np.subtract(w, temp_w, out=w,
-                            dtype=self.dtype)
+                np.multiply(w, self.decay, dtype=self.model.dtype, out=temp_w)
+                np.add(temp_w, temp_v, dtype=self.model.dtype, out=temp_w)
+                np.multiply(temp_w, self.learning_rate, dtype=self.model.dtype, out=temp_w)
+                np.subtract(w, temp_w, dtype=self.model.dtype, out=w)
             # else: continue
