@@ -1,6 +1,7 @@
 import atexit
 import logging
 from collections import defaultdict
+from pathlib import Path
 from timeit import default_timer as timer
 from types import ModuleType
 from typing import TYPE_CHECKING
@@ -80,9 +81,10 @@ class SimpleTracer(Tracer):
         if output_filename != self.output_filename or self.rank == 0:
             if len(self.pending_events):
                 logger.warning("Warning: finishing simple tracer while there are pending events to be marked as finished.")
-            logger.info(f"Writing simple tracer output to '{output_filename}'...")
+            path = Path(output_filename).resolve()
             with open(output_filename, 'w') as f:
                 f.write(self._output_header() + "\n")
                 for event_type_value, events in self.events.items():
                     for event_value in events.keys():
                         f.write(self._output_row(event_type_value, event_value) + "\n")
+            logger.info(f'Dumped tracer details to: {path}')

@@ -1,6 +1,7 @@
 """PyDTNN environment initialization"""
 
 import atexit
+from datetime import datetime
 import logging
 import os
 import platform
@@ -17,6 +18,7 @@ type Cublas_Handle_Type = int
 
 gpu_errors = []
 package_name = __name__
+timestamp = datetime.now().isoformat(timespec="seconds").replace(" ", "-").replace(":", "-").replace(".", "-")
 
 # OPTIONAL IMPORTS
 try:
@@ -51,7 +53,7 @@ else:
 
 try:
     from pydtnn.backends.pycuda.utils import tensor_array  # type: ignore
-    logger.debug(f"tensor_array available")
+    logger.debug("tensor_array available")
 except Exception as e:
     logger.debug(f"tensor_array not available\n{e}")
     tensor_array = None
@@ -59,7 +61,7 @@ except Exception as e:
 
 try:
     from pydtnn.libs import nccl as nccl  # type: ignore
-    logger.debug(f"nccl available")
+    logger.debug("nccl available")
 except Exception as e:
     logger.debug(f"nccl not available\n{e}")
     nccl = None
@@ -67,7 +69,7 @@ except Exception as e:
 
 try:
     from pydtnn.libs import cudnn as cudnn  # type: ignore
-    logger.debug(f"cudnn available")
+    logger.debug("cudnn available")
 except Exception as e:
     logger.debug(f"cudnn not available\n{e}")
     cudnn = None
@@ -75,7 +77,7 @@ except Exception as e:
 
 try:
     from pydtnn.libs import cublas  # type: ignore
-    logger.debug(f"cublas available")
+    logger.debug("cublas available")
 except Exception as e:
     logger.debug(f"cublas available\n{e}")
     cublas = None
