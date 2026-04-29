@@ -10,7 +10,6 @@
 
 #define TYPE "TYPE"
 
-
 __global__ void precision(TYPE *precision, int *cm, TYPE *local_precision, const int num_classes)
 {
     int label, idx, true_positive, false_positive, div;
@@ -28,11 +27,12 @@ __global__ void precision(TYPE *precision, int *cm, TYPE *local_precision, const
 
         (*(local_precision + idx)) += (TYPE) (div == 0 ? 0 : (true_positive / div));
     }
+    __syncthreads();
 
     // Accumulating the local values into the output's tensor.
     if (base_idx == 0)
     {
-        for(idx = 0; label < num_classes; label++)
+        for(idx = 1; idx < num_classes; idx++)
             (*local_precision) += *(local_precision + idx);
 
         (*precision) = (TYPE) ((*local_precision) / num_classes);

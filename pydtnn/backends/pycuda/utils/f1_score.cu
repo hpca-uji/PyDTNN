@@ -31,11 +31,12 @@ __global__ void f1_score(TYPE *f1, int *cm, TYPE *local_f1, const int num_classe
 
         (*(local_f1 + idx)) += (TYPE) (div == 0 ? 0 : (2 * true_positive / div));
     }
+    __syncthreads();
 
     // Accumulating the local values into the output's tensor.
     if (base_idx == 0)
     {
-        for(idx = 0; label < num_classes; label++)
+        for(idx = 1; idx < num_classes; idx++)
             (*local_f1) += *(local_f1 + idx);
 
         (*f1) = (TYPE) ((*local_f1) / num_classes);

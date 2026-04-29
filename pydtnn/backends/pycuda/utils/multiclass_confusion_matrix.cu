@@ -7,7 +7,7 @@
 
 __global__ void multiclass_confusion_matrix(TYPE *y_targ, TYPE *y_pred, int *cm, int *local_cm, const int num_classes, const int n)
 {
-    int idx, idx_i, i, j, target_class, predicted_class;
+    int idx, i, j, target_class, predicted_class;
 
     const int base_idx = blockIdx.x * blockDim.x + threadIdx.x;
     const int workers = blockDim.x * gridDim.x;
@@ -38,11 +38,11 @@ __global__ void multiclass_confusion_matrix(TYPE *y_targ, TYPE *y_pred, int *cm,
     // Accumulating the local values into the output's tensor.
     if (base_idx == 0)
     {
-        for(idx_i = 1; idx < n; idx ++)
+        for(idx = 1; idx < n; idx ++)
             for(i = 0; i < num_classes; i++)
                 for(j = 0; j < num_classes; j++)
         {
-            (*(SHIFT_POINTER_CM(cm, i, j, num_classes))) += (*(SHIFT_POINTER_LOCAL_CM(local_cm, idx_i, i, j, num_classes, num_classes)));
+            (*(SHIFT_POINTER_CM(cm, i, j, num_classes))) += (*(SHIFT_POINTER_LOCAL_CM(local_cm, idx, i, j, num_classes, num_classes)));
         }
     }
 }
