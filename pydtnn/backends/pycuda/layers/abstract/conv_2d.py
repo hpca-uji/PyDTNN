@@ -89,9 +89,9 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
 
         match self.model.tensor_format:
             case TensorFormat.NHWC:
-                return np.asarray(cpu_ary, dtype=np.float64, order="C").copy()
+                return np.asarray(cpu_ary, dtype=np.float64, order="C", copy=True)
             case TensorFormat.NCHW:
-                return np.asarray(cpu_ary, dtype=np.float64, order="C").copy()
+                return np.asarray(cpu_ary, dtype=np.float64, order="C", copy=True)
             case _:
                 return super()._export_prop(key)
     # ----
@@ -111,11 +111,11 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
 
         match self.model.tensor_format:
             case TensorFormat.NHWC:
-                cpu_ary = np.asarray(value, dtype=self.model.dtype, order="C")
+                cpu_ary = value  # TODO: REVISE
                 attribute.set(cpu_ary)
                 return
             case TensorFormat.NCHW:
-                cpu_ary = np.asarray(value, dtype=self.model.dtype, order="C")
+                cpu_ary = value
                 attribute.set(cpu_ary)
                 return
             # case _: (next return)

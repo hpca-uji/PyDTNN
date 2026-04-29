@@ -14,9 +14,9 @@ class PrecisionPycuda(Precision[TensorArray], MetricPycuda):
     def _model_init(self) -> None:
         super()._model_init()
         target_classes = self.model.output_shape[0]
-        self.precision = TensorArray.new_zeros(shape=(1, ), dtype=np.dtype(np.int32),
+        self.precision = TensorArray.new_zeros(shape=(1, ), dtype=self.model.dtype,
                                                tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
-        self.local_precision = TensorArray.new_zeros(shape=(target_classes, ), dtype=np.dtype(np.int32),
+        self.local_precision = TensorArray.new_zeros(shape=(target_classes, ), dtype=self.model.dtype,
                                                      tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
 
     def compute(self, y_pred: TensorArray, y_targ: TensorArray) -> float:

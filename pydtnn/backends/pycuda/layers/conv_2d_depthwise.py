@@ -180,32 +180,13 @@ class Conv2DDepthwisePycuda(AbstractConv2DPycuda):
     @override
     def _export_weights_dw(self, key: str) -> Any:
         value = getattr(self, key)
-
-        match self.model.tensor_format:
-            case TensorFormat.NHWC:
-                gpu_ary = value
-                cpu_ary = gpu_ary.get()
-                return np.asarray(cpu_ary, dtype=np.float64, order="C").copy()
-            case TensorFormat.NCHW:
-                gpu_ary = value
-                cpu_ary = gpu_ary.get()
-                return np.asarray(cpu_ary, dtype=np.float64, order="C").copy()
-            case _:
-                return super()._export_prop(key)
+        gpu_ary = value
+        cpu_ary = gpu_ary.get()
+        return np.asarray(cpu_ary, dtype=np.float64, order="C", copy=True)
     # ---
 
     @override
     def _import_weights_dw(self, key: str, value: Any) -> None:
         attribute = getattr(self, key)
-        match self.model.tensor_format:
-            case TensorFormat.NHWC:
-                cpu_ary = np.asarray(value, dtype=self.model.dtype, order="C")
-                attribute.set(cpu_ary)
-                return
-            case TensorFormat.NCHW:
-                cpu_ary = np.asarray(value, dtype=self.model.dtype, order="C")
-                attribute.set(cpu_ary)
-                return
-            case _:
-                return super()._import_prop(key, value)
+        attribute.set(value)
     # ---

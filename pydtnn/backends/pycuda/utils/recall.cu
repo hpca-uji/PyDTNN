@@ -26,11 +26,12 @@ __global__ void recall(TYPE *recall, int *cm, TYPE *local_recall, const int num_
 
         (*(local_recall + idx)) += (TYPE) (div == 0 ? 0 : (true_positive / div));
     }
+    __syncthreads();
 
     // Accumulating the local values into the output's tensor.
     if (base_idx == 0)
     {
-        for(idx = 0; label < num_classes; label++)
+        for(idx = 1; idx < num_classes; idx++)
             (*local_recall) += *(local_recall + idx);
 
         (*recall) = (TYPE) ((*local_recall) / num_classes);

@@ -26,7 +26,7 @@ class Conv2DPointwiseNumpy(Conv2DPointwise, AbstractConv2DNumpy):
             case TensorFormat.NHWC:
                 # NHWC's src: ci, co
                 # NCHW's dst: co, ci
-                return np.asarray(format_transpose(value, "IO", "OI"), dtype=np.float64, order="C").copy()
+                return np.asarray(format_transpose(value, "IO", "OI"), dtype=np.float64, order="C", copy=True)
         return super()._export_prop(key)
     # -----
 
@@ -39,7 +39,7 @@ class Conv2DPointwiseNumpy(Conv2DPointwise, AbstractConv2DNumpy):
                 # NCHW's src: co, ci
                 # NHWC's dst: ci, co
                 ary = getattr(self, key)
-                ary[:] = np.asarray(format_transpose(value, "OI", "IO"), dtype=self.model.dtype, order="C")
+                ary[:] = format_transpose(value, "OI", "IO")
                 return
         return super()._import_prop(key, value)
     # ------
