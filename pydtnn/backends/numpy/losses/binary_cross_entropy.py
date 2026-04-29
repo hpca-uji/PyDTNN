@@ -62,4 +62,4 @@ class BinaryCrossEntropyNumpy(BinaryCrossEntropy[np.ndarray], LossNumpy):
         np.add(div_y, neg_pred, out=div_y)
         np.divide(div_y, batch_size, out=dx)
 
-        return loss, np.asarray(dx, dtype=self.model.dtype, order="C")
+        return float(loss), np.asarray(dx, dtype=self.model.dtype, order="C")

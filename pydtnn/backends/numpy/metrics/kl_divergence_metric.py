@@ -37,5 +37,5 @@ class KLDivergenceMetricNumpy(KLDivergenceMetric[np.ndarray], MetricNumpy):
         np.multiply(y_pred, loss, out=loss)
         np.abs(loss, out=loss)
 
-        loss = float(np.sum(loss) / y_pred.shape[0])
-        return loss
+        loss = np.sum(loss) / y_pred.shape[0]
+        return float(loss)

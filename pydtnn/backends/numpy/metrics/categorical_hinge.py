@@ -56,6 +56,6 @@ class CategoricalHingeNumpy(CategoricalHinge[np.ndarray], MetricNumpy):
         np.add(neg, 1, out=neg, dtype=self.model.dtype)
         np.maximum(0.0, neg, out=pos_maxm)
 
-        maximum = float(np.mean(pos_maxm, axis=-1))
+        maximum = np.mean(pos_maxm, axis=-1)
 
-        return maximum
+        return float(maximum)

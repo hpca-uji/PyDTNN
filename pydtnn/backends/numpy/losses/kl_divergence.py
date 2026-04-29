@@ -34,5 +34,5 @@ class KLDivergenceNumpy(KLDivergence[np.ndarray], LossNumpy):
         np.log(dx, out=dx)
         np.divide(dx, batch_size, out=dx)
 
-        loss = float(np.sum(dx))
-        return loss, dx
+        loss = np.sum(dx)
+        return float(loss), dx

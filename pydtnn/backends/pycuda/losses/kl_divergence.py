@@ -22,5 +22,5 @@ class KLDivergencePycuda(KLDivergence[TensorArray], LossPycuda):
                     grid=self.grid, block=self.block,
                     stream=self.model.stream)
         # loss = gpuarray.sum(self.loss).get()
-        loss = float(gpuarray.sum(self.dx.ary).get())
-        return loss, self.dx
+        loss = gpuarray.sum(self.dx.ary).get()
+        return float(loss), self.dx

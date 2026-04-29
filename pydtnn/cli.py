@@ -55,11 +55,18 @@ def print_model_reports(model):
 
 
 class HistoryDumper(yaml.SafeDumper):
+    def represent_dtype(self, data):
+        return self.represent_scalar('!np.type', repr(data))
+
     def represent_ndarray(self, data):
-        return self.represent_scalar('!ndarray', repr(data), style="|")
+        return self.represent_scalar('!np.array', repr(data), style="|")
 
 
 HistoryDumper.add_representer(np.ndarray, HistoryDumper.represent_ndarray)
+HistoryDumper.add_representer(np.float64, HistoryDumper.represent_dtype)
+HistoryDumper.add_representer(np.float32, HistoryDumper.represent_dtype)
+HistoryDumper.add_representer(np.int64, HistoryDumper.represent_dtype)
+HistoryDumper.add_representer(np.int8, HistoryDumper.represent_dtype)
 
 
 @contextmanager
@@ -161,6 +168,7 @@ def main():
             for epoch in range(epochs):
                 events.append({"epoch": epoch} | {key: history[key][epoch] for key in history})
             with open(history_file, "w") as f:
+                breakpoint()
                 yaml.dump_all(events, f, HistoryDumper, allow_unicode=True, sort_keys=False)
     # Second (and last) evaluation
     if model.evaluate_on_train:

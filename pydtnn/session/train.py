@@ -253,7 +253,7 @@ class Train[T: Array](Eval[T]):
                 self.tensor_format, self.cudnn_dtype)
             self.y_batch = tensor_ary  # type: ignore
 
-        self.history = {lm: [] for lm in (self.loss_and_metrics + [f"val_{m}" for m in self.loss_and_metrics])}
+        self.history = {lm: [] for lm in ([f"train_{m}" for m in self.loss_and_metrics] + [f"val_{m}" for m in self.loss_and_metrics])}
 
         self.comm_nsamples = list(zip(*self.comm.allgather(self.dataset._nsamples) if self.comm else [self.dataset._nsamples]))
 
@@ -295,7 +295,7 @@ class Train[T: Array](Eval[T]):
             train_string = string
 
             for c in range(len(self.loss_and_metrics)):
-                self.history[self.loss_and_metrics[c]].append(train_total_loss[c])
+                self.history["train_" + self.loss_and_metrics[c]].append(train_total_loss[c])
 
             # ----------- #
             # --- VAL --- #
