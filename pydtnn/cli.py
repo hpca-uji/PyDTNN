@@ -168,7 +168,6 @@ def main():
             for epoch in range(epochs):
                 events.append({"epoch": epoch} | {key: history[key][epoch] for key in history})
             with open(history_file, "w") as f:
-                breakpoint()
                 yaml.dump_all(events, f, HistoryDumper, allow_unicode=True, sort_keys=False)
     # Second (and last) evaluation
     if model.evaluate_on_train:
