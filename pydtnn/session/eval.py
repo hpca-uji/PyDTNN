@@ -158,7 +158,7 @@ class Eval[T: Array](Sync[T]):
             toc = timer()
             delta = toc - tic
 
-            if out_prefix != "test_":
+            if out_prefix != f"{Dataset.Part.TEST._name_.lower()}_":
                 delta = -1
 
             if batch_size <= 0:
@@ -199,7 +199,7 @@ class Eval[T: Array](Sync[T]):
         self._evalutate_round(pbar=pbar, batch_generator=test_batch_generator,
                               model_sync_count=0, batches_min=test_batches_min,
                               total_loss=test_total_loss, batch_count=test_batch_count,
-                              out_prefix="test_")
+                              out_prefix=f"{Dataset.Part.TEST._name_.lower()}_")
 
         # Increment self._evaluate_round
         self._evaluate_round += 1

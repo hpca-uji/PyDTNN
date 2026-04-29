@@ -31,7 +31,6 @@ class Base[T: Array]:
     class Mode(enum.StrEnum):
         EVALUATE = enum.auto()
         TRAIN = enum.auto()
-        UNSPECIFIED = enum.auto()
     # ---
 
 # Explicit declaration of those model attributes that are referenced by other parts of PyDTNN
