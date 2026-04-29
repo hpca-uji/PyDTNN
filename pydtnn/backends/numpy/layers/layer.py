@@ -31,11 +31,11 @@ class LayerNumpy(Layer[np.ndarray], LayerableNumpy):
             return super()._export_prop(key)
 
         ary = getattr(self, key)
-        return np.asarray(ary, dtype=np.float64, order="C").copy()
+        return np.asarray(ary, dtype=np.float64, order="C", copy=True)
 
     def _import_prop(self, key: str, value) -> None:
         if key not in self._ary_prop:
             return super()._import_prop(key, value)
 
         ary = getattr(self, key)
-        ary[:] = np.asarray(value, dtype=self.model.dtype, order="C")
+        ary[:] = value

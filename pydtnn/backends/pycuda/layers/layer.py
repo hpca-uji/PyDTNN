@@ -58,7 +58,7 @@ class LayerPycuda(Layer[TensorArray], LayerablePycuda):
             return super()._export_prop(key)
 
         gpu_ary = getattr(self, key)
-        cpu_ary = np.asarray(gpu_ary.get(), dtype=np.float64, order="C").copy()
+        cpu_ary = np.asarray(gpu_ary.get(), dtype=np.float64, order="C", copy=True)
         return cpu_ary
 
     def _import_prop(self, key: str, value) -> None:
@@ -66,5 +66,5 @@ class LayerPycuda(Layer[TensorArray], LayerablePycuda):
             return super()._import_prop(key, value)
 
         gpu_ary = getattr(self, key)
-        cpu_ary = np.asarray(value.reshape(gpu_ary.shape), dtype=self.model.dtype, order="C")
+        cpu_ary = value
         gpu_ary.set(cpu_ary)

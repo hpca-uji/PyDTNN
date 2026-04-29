@@ -167,7 +167,7 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
         value = getattr(self, key)
         gpu_ary = value
         cpu_ary = gpu_ary.get()
-        return np.asarray(cpu_ary, dtype=np.float64, order="C").copy()
+        return np.asarray(cpu_ary, dtype=np.float64, order="C", copy=True)
     # ---
 
     def _export_prop(self, key: str) -> Any:
@@ -180,8 +180,7 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
 
     def _import_gamma_beta(self, key: str, value: Any) -> None:
         attribute = getattr(self, key)
-        cpu_ary = np.asarray(value, dtype=self.model.dtype, order="C")
-        attribute.set(cpu_ary)
+        attribute.set(value)
         return
     # ---
 
