@@ -188,7 +188,8 @@ git push
 ```sh
 git checkout master
 git merge develop
-git checkout master
+git push
+git checkout develop
 ```
 
 ### Build distribution
