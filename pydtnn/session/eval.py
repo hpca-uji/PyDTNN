@@ -117,7 +117,7 @@ class Eval[T: Array](Sync[T]):
                          batch_count: int,
                          terminate: bool = False,
                          prev_string: str = "",
-                         out_prefix: str = "") -> tuple[int, bool, str]:
+                         out_prefix: str = "") -> tuple[np.ndarray, int, bool, str]:
         """
         Return:
             tuple[model_sync_count (int), sync_epoch (bool)]
@@ -169,7 +169,7 @@ class Eval[T: Array](Sync[T]):
                                                                   batch_size=batch_size, output_prefix=out_prefix, delta=delta,
                                                                   prev_string=prev_string)
 
-        return (model_sync_count, sync_epoch, string)
+        return (total_loss, model_sync_count, sync_epoch, string)
     # -----
 
     def evaluate(self, bar_width=BAR_WIDTH):

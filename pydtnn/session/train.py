@@ -191,7 +191,7 @@ class Train[T: Array](Eval[T]):
                      batch_count: int,
                      terminate: bool = False,
                      prev_string: str = "",
-                     out_prefix: str = "") -> tuple[int, bool, str]:
+                     out_prefix: str = "") -> tuple[np.ndarray, int, bool, str]:
         sync_epoch = False
         string = ""
 
@@ -240,7 +240,7 @@ class Train[T: Array](Eval[T]):
                                                                   batch_size=batch_size, output_prefix=out_prefix, delta=delta,
                                                                   prev_string=prev_string)
 
-        return (model_sync_count, sync_epoch, string)
+        return (total_loss, model_sync_count, sync_epoch, string)
 
     def train(self, bar_width=BAR_WIDTH) -> dict[str, list[np.ndarray]]:
         self._ensure_model_runable()
@@ -287,10 +287,10 @@ class Train[T: Array](Eval[T]):
             # ------------- #
             # --- TRAIN --- #
             # ------------- #
-            model_sync_count, train_sync_epoch, string = self._train_round(pbar=pbar, batch_generator=train_batch_generator,
-                                                                           model_sync_count=model_sync_count, batches_min=train_batches_min,
-                                                                           total_loss=train_total_loss, batch_count=train_batch_count,
-                                                                           prev_string="", out_prefix="train_")
+            train_total_loss, model_sync_count, train_sync_epoch, string = self._train_round(pbar=pbar, batch_generator=train_batch_generator,
+                                                                                             model_sync_count=model_sync_count, batches_min=train_batches_min,
+                                                                                             total_loss=train_total_loss, batch_count=train_batch_count,
+                                                                                             prev_string="", out_prefix="train_")
             sync_epoch = sync_epoch or train_sync_epoch
             train_string = string
 
@@ -300,10 +300,10 @@ class Train[T: Array](Eval[T]):
             # ----------- #
             # --- VAL --- #
             # ----------- #
-            model_sync_count, val_sync_epoch, string = self._evalutate_round(pbar=pbar, batch_generator=val_batch_generator,
-                                                                             model_sync_count=model_sync_count, batches_min=val_batches_min,
-                                                                             total_loss=val_total_loss, batch_count=val_batch_count,
-                                                                             prev_string=f"{train_string}, ", out_prefix="val_")
+            val_total_loss, model_sync_count, val_sync_epoch, string = self._evalutate_round(pbar=pbar, batch_generator=val_batch_generator,
+                                                                                             model_sync_count=model_sync_count, batches_min=val_batches_min,
+                                                                                             total_loss=val_total_loss, batch_count=val_batch_count,
+                                                                                             prev_string=f"{train_string}, ", out_prefix="val_")
             sync_epoch = sync_epoch or val_sync_epoch
 
             # if self.comm_rank == 0:  # All nodes must have history, not only the 0.
