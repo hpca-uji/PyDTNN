@@ -16,7 +16,7 @@ from pathlib import Path
 
 import yaml
 
-from pydtnn import utils, timestamp
+from pydtnn import timestamp, utils
 from pydtnn.utils.debug import traceback_context
 from pydtnn.utils.serial import NumpyYaml
 
