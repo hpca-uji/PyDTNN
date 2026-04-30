@@ -96,16 +96,24 @@ class Eval[T: Array](Sync[T]):
     def _update_status(self, pbar: tqdm | None, batch_loss: np.ndarray, total_loss: np.ndarray,
                        batch_count: int, batch_size: int, output_prefix: str, delta: float = -1,
                        prev_string: str = "") -> tuple[np.ndarray, int, str]:
+
+        part = Dataset.Part[output_prefix.strip("_").upper()]
+
         # noinspection PyUnboundLocalVariable
         total_loss, batch_count, string = \
             self._update_running_average(batch_loss, total_loss, batch_count, batch_size, prefix=output_prefix)
 
+        match part:
+            case Dataset.Part.TRAIN:
+                self.perf_counter.add_training_time_and_batch_size(self._train_round, delta, batch_size)
+            case Dataset.Part.TEST:
+                self.perf_counter.add_testing_time_and_batch_size(self._evaluate_round, delta, batch_size)
+
         if self.comm_rank == 0:
             # noinspection PyUnboundLocalVariable
             pbar.set_postfix_str(s=f"{prev_string}{string}", refresh=True)  # type: ignore (Here is a 'tqdm', only is None in self.comm_rank != 0)
-            if delta >= 0:
+            if part != Dataset.Part.VAL:
                 pbar.update(batch_size)  # type: ignore (Here is a 'tqdm', only is None in self.comm_rank != 0)
-                self.perf_counter.add_testing_time_and_batch_size(self._evaluate_round, delta, batch_size)
 
         return total_loss, batch_count, string
     # ------
@@ -170,6 +178,8 @@ class Eval[T: Array](Sync[T]):
                                                                   batch_size=batch_size, output_prefix=out_prefix, delta=delta,
                                                                   prev_string=prev_string)
 
+        # Increment self._evaluate_round
+        self._evaluate_round += 1
         return (total_loss, model_sync_count, sync_epoch, string)
     # -----
 
@@ -201,9 +211,6 @@ class Eval[T: Array](Sync[T]):
                               model_sync_count=0, batches_min=test_batches_min,
                               total_loss=test_total_loss, batch_count=test_batch_count,
                               out_prefix=f"{Dataset.Part.TEST._name_.lower()}_")
-
-        # Increment self._evaluate_round
-        self._evaluate_round += 1
 
         if self.comm_rank == 0:
             pbar.close()  # type: ignore (Here is a 'tqdm', only is None in self.comm_rank != 0)

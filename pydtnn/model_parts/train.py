@@ -33,6 +33,7 @@ class Train[T: Array](Eval[T]):
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
+        self._training_round: int = 0
         # Synchronization parameters
         # NOTE: This parameter come from Parser.
         self.model_sync_algo = self.SyncAlgorithm(self.model_sync_algo)
@@ -240,6 +241,8 @@ class Train[T: Array](Eval[T]):
                                                                   batch_size=batch_size, output_prefix=out_prefix, delta=delta,
                                                                   prev_string=prev_string)
 
+        # Increment self._train_round
+        self._training_round += 1
         return (total_loss, model_sync_count, sync_epoch, string)
 
     def train(self, bar_width=BAR_WIDTH) -> dict[str, list[np.ndarray]]:
