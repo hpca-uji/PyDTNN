@@ -412,5 +412,10 @@ class TensorArray:
     def __getitem__(self, index):
         return self.ary.__getitem__(index)
 
+    def __setitem__(self, key, value):
+        if isinstance(value, TensorArray):
+            value = value.ary
+        return self.ary.__setitem__(key, value)
+
     def __abs__(self) -> "TensorArray":
         return self._view(self.ary.__abs__())
