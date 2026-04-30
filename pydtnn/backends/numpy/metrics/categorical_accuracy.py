@@ -19,7 +19,6 @@ class CategoricalAccuracyNumpy(CategoricalAccuracy[np.ndarray], MetricNumpy):
         self._argmax_shape = (self.model.batch_size, )
         self.tmp_memory_used = int(math.prod(self._argmax_shape)) * np.int32().itemsize
         self.memory_used += self.tmp_memory_used  # + arange_size = self.model.batch_size
-    # ----
 
     def _post_init(self) -> None:
         super()._post_init()

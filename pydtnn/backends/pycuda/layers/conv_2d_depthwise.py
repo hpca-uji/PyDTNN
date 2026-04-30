@@ -55,7 +55,6 @@ class Conv2DDepthwisePycuda(AbstractConv2DPycuda):
         self.fwd_func: Function = self._fwd_kernel()
         self.bwd_func: Function = self._bwd_kernel()
         self.bias_sum_fwd: Function = self._get_kernel(func_name="cuda_bias_sum_fwd_depthwise_conv")
-    # ----
 
     def _forward_depthwise_nchw(self, x: TensorArray) -> TensorArray:
         self.x = x
@@ -87,7 +86,6 @@ class Conv2DDepthwisePycuda(AbstractConv2DPycuda):
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return self.y
-    # ----
 
     def _forward_depthwise_nhwc(self, x: TensorArray) -> TensorArray:
         self.x = x
@@ -118,7 +116,6 @@ class Conv2DDepthwisePycuda(AbstractConv2DPycuda):
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return self.y
-    # ----
 
     def _backward_depthwise_nchw(self, dy: TensorArray) -> TensorArray:
 
@@ -147,7 +144,6 @@ class Conv2DDepthwisePycuda(AbstractConv2DPycuda):
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return self.dx
-    # -----
 
     def _backward_depthwise_nhwc(self, dy: TensorArray) -> TensorArray:
         n, h, w, c = dy.shape
@@ -175,7 +171,6 @@ class Conv2DDepthwisePycuda(AbstractConv2DPycuda):
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return self.dx
-    # -----
 
     @override
     def _export_weights_dw(self, key: str) -> Any:
@@ -183,10 +178,8 @@ class Conv2DDepthwisePycuda(AbstractConv2DPycuda):
         gpu_ary = value
         cpu_ary = gpu_ary.get()
         return np.asarray(cpu_ary, dtype=np.float64, order="C", copy=True)
-    # ---
 
     @override
     def _import_weights_dw(self, key: str, value: Any) -> None:
         attribute = getattr(self, key)
         attribute.set(value)
-    # ---

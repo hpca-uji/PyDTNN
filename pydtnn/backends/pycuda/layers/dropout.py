@@ -26,7 +26,6 @@ class DropoutPycuda(Dropout[TensorArray], LayerPycuda):
         self.space: TensorArray = None  # type: ignore
         self.states: TensorArray = None  # type: ignore
         self.drop_desc: int | None = None
-    # ----
 
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
         super()._model_init(prev_shape, x)

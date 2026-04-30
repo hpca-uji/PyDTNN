@@ -1,6 +1,4 @@
-# _______________________________________________________________________________________________________________
 # In this file must be implemented only the translation of PyTorch Convolutional layers to its PyDTNN equivalent.
-# _______________________________________________________________________________________________________________
 
 import logging
 from typing import Any
@@ -13,8 +11,6 @@ logger = logging.getLogger(__name__)
 
 
 # Functionality imports
-
-# ------------------ #
 
 
 def Conv2d(args: dict[str, Any]) -> _Conv2D:
@@ -31,7 +27,6 @@ def Conv2d(args: dict[str, Any]) -> _Conv2D:
     PYTORCH_OUPUT_CHANNELS = "out_channels"
     # PYTORCH_PADDING_MODE = "padding_mode" # STRING. Values: {"zeros", "reflect", "replicate", "circular"} | In PyDTNN "zeros" is the only implemented
     torch_dict_keys = [PYTORCH_KERNEL_SIZE, PYTORCH_STRIDE, PYTORCH_PADDING, PYTORCH_DILATION, PYTORCH_GROUPS, PYTORCH_BIAS, PYTORCH_OUPUT_CHANNELS]
-    # ---- #
 
     # PyDTNN attributes:
     PYDTNN_FILTER_SHAPE = "filter_shape"
@@ -44,7 +39,6 @@ def Conv2d(args: dict[str, Any]) -> _Conv2D:
     pydtnn_dict_keys = [PYDTNN_FILTER_SHAPE, PYDTNN_STRIDE, PYDTNN_PADDING, PYDTNN_DILATION, PYDTNN_NFILTERS, PYDTNN_USE_BIAS, PYDTNN_NFILTERS]
     # Not used: "activation" and "grouping"
     # Used, but in other place: "weights_initializer", "biases_initializer"
-    # ---- #
 
     layer_args = cm.prepare_pydtnn_arguments(arguments=args[cm.ARGUMENTS], torch_dict_keys=torch_dict_keys, pydtnn_dict_keys=pydtnn_dict_keys)
 

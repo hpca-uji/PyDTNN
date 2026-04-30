@@ -11,9 +11,7 @@ from pydtnn.layers.input import Input
 from pydtnn.model import Model as PyDTNN_Model
 from pydtnn.utils.tensor import TensorFormat
 
-# ////////////////////////////////////////////////////
 # In order to made some parts of this code, I used other converors' code (specially the "onnx2pytorch" library)
-# ////////////////////////////////////////////////////
 
 # Notes:
 # All the weights and the data related to the variables is stored in "model_graph.initializer"
@@ -32,7 +30,6 @@ def extract_shape(data: onnx.ValueInfoProto) -> tuple[int]:
     shape = [elem.dim_value for elem in data.type.tensor_type.shape.dim if elem.dim_value != 0]
     del shape[0]
     return tuple(shape)
-# --- extract_shape --- #
 
 
 def get_relevant_data(model_graph: onnx.GraphProto) -> tuple[dict[str, tuple[int]], dict[str, tuple[int]], dict[str, np.ndarray]]:
@@ -50,14 +47,12 @@ def get_relevant_data(model_graph: onnx.GraphProto) -> tuple[dict[str, tuple[int
     outputs_dict = {ouput.name: extract_shape(ouput) for ouput in model_graph.output}
 
     return (inputs_dict, outputs_dict, weights_dict)
-# --- END get_inputs_outputs_and_attributes_names --- #
 
 
 def extract_attributes(node: onnx.NodeProto) -> dict[str, Any]:
 
     return {attribute.name: onnx.helper.get_node_attr_value(node, attribute.name)
             for attribute in node.attribute}
-# --- END extract_attributes --- #
 
 
 def get_lists_operations_and_outputs(info: dict[str, Any], operations: dict[str, tuple[Layerable, list[str]]]) -> tuple[list[list[Layerable]], list[str]]:
@@ -86,8 +81,6 @@ def get_lists_operations_and_outputs(info: dict[str, Any], operations: dict[str,
     # Searching the first coincidence
 
     # Sets are not ordered by insertion ==> keep order with enumerate ==>
-    #   ==> braches have different sizes, then the same node may have different order in different branches ==>
-    #   ==> that's true from bottom to top, from top to bottom the "intersection layers" (the ones to be searched) should have the same position.
     enumerated_reversed_inputs = enumerate(list(dict_branch[info[cons.CONST_INPUTS][0]].keys())[::-1])
 
     coincidences = set(enumerated_reversed_inputs)
@@ -111,14 +104,12 @@ def get_lists_operations_and_outputs(info: dict[str, Any], operations: dict[str,
         lists_outputs.extend(outputs[:trimming_index])  # Remember: list of string
 
     return (lists_operations, lists_outputs)
-# --- END get_lists_operations_and_outputs --- #
 
 
 def get_actual_inputs(list_inputs: list[str], weights_names: list[str]) -> list[str]:
     # This function' objective is to remove non layer-to-layer onnx inputs (e.g.: the weigth [_weight], the bias [_bias], etc. ).
     #   To do that, only the inputs that end with the accepted ending remains.
     return list(filter(lambda _input: _input not in weights_names, list_inputs))
-# --- END get_actual_inputs --- #
 
 
 def _get_and_put_layer(node: onnx.NodeProto, opset_version: int, operations: dict[str, tuple[Layerable, list[str]]],
@@ -142,7 +133,6 @@ def _get_and_put_layer(node: onnx.NodeProto, opset_version: int, operations: dic
     operations[info[cons.CONST_OUPTUS][0]] = (cons.switch_onnx_operation_to_pydtnn(node.op_type)(info), info[cons.CONST_INPUTS])
 
     # return Nothing: the output is stored in the dictionary
-# --- END _get_and_put_layer --- #
 
 
 def get_layers(onnx_model: onnx.ModelProto, opset_version: int, inputs: dict[str, tuple[int]],
@@ -174,7 +164,6 @@ def get_layers(onnx_model: onnx.ModelProto, opset_version: int, inputs: dict[str
 
     # The list of layers is returned.
     return list(map(lambda x: x[0], operations.values()))
-# --- END get_layers --- #
 
 
 def load_layers(model: PyDTNN_Model, operations: list[Layerable]) -> None:
@@ -188,7 +177,6 @@ def load_layers(model: PyDTNN_Model, operations: list[Layerable]) -> None:
     print(f"Layers loaded")
 
     return  # None (No value is returned)
-# --- END load_layers --- #
 
 
 def convert_model(onnx_model: onnx.ModelProto, omm=None, non_blocking_mpi=False, enable_cudnn=False, enable_gpudirect=False,
@@ -220,4 +208,3 @@ def convert_model(onnx_model: onnx.ModelProto, omm=None, non_blocking_mpi=False,
     model.load_store_path(layers=model.layers, d=weights, mode="load")
 
     return model
-# --- END convert_model --- #

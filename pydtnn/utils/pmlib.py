@@ -78,9 +78,7 @@ class PMLib:
         if self._pmlib is None:
             self._pmlib = load_library("pmlib")
         self.verbose = verbose
-        # ----------------
         # Helper functions
-        # ----------------
         # int pm_set_server( char *ip, int port, server_t *pm_server);
         self._pmlib.pm_set_server.restype = int
         self._pmlib.pm_set_server.argtypes = [ctypes.c_char_p, ctypes.c_int, ctypes.POINTER(PMLibServer)]
@@ -107,17 +105,13 @@ class PMLib:
         # int pm_finalize_counter( counter_t *pm_counter );
         self._pmlib.pm_finalize_counter.restype = int
         self._pmlib.pm_finalize_counter.argtypes = [ctypes.POINTER(PMLibCounter)]
-        # -----------------------
         # Connect with the server
-        # -----------------------
         self.server = PMLibServer()
         self.lines = PMLibLines()
         self.counter = PMLibCounter()
         self.set_server(server_ip, port)
         self.create_lines("0-15")
-        # -----------------------
         # Class properties that will be initialized later
-        # -----------------------
         self.counter_start_time = None
         self.counter_end_time = None
         self.period = None

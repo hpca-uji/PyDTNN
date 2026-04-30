@@ -26,7 +26,6 @@ class Conv2DPycuda(AbstractConv2DPycuda):
                 self.weights_shape = (self.co, *self.filter_shape, self.ci)
             case _:
                 raise NotImplementedError(f"{self.model.tensor_format} format not implemented.")
-    # ---
 
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
         super()._model_init(prev_shape, x)
@@ -110,7 +109,6 @@ class Conv2DPycuda(AbstractConv2DPycuda):
         self.backward = self._backward_standard
 
         self.memory_used += (self.model.layers[0].getConvolutionWorkspaceSize() - base_conv_memory)
-    # -----
 
     def _forward_standard(self, x: TensorArray) -> TensorArray:
         alpha, beta = 1.0, 0.0
@@ -133,7 +131,6 @@ class Conv2DPycuda(AbstractConv2DPycuda):
                                  beta, self.y.desc, self.y.ptr_voidp)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.y
-    # -----
 
     def _backward_standard(self, dy: TensorArray) -> TensorArray:
         alpha, beta = 1.0, 0.0
@@ -174,7 +171,6 @@ class Conv2DPycuda(AbstractConv2DPycuda):
                                            self.dx.desc, self.dx.ptr_voidp)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.dx
-    # ----
 
     @override
     def _export_weights_dw(self, key: str) -> Any:
@@ -193,7 +189,6 @@ class Conv2DPycuda(AbstractConv2DPycuda):
                 return cpu_ary
             case tensor_format:
                 raise TypeError(f"Unsupported tensor format ({tensor_format})")
-    # ------
 
     @override
     def _import_weights_dw(self, key: str, value: Any) -> None:
@@ -211,4 +206,3 @@ class Conv2DPycuda(AbstractConv2DPycuda):
                 return
             case tensor_format:
                 raise TypeError(f"Unsupported tensor format ({tensor_format})")
-    # ---

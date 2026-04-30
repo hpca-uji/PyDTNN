@@ -123,7 +123,6 @@ class Namespace(argparse.Namespace):
         return "\n".join(lines)
 
 
-
 class ArgumentParser(argparse.ArgumentParser):
 
     def __init__(self):

@@ -22,7 +22,6 @@ class Conv2DDepthwiseCython(Conv2DDepthwiseNumpy, AbstractConv2DCupy, LayerCupy)
                                  "TENSOR_FORMAT": str(self.model.tensor_format)}
         self.fwd = self._fwd_kernel()
         self.bwd = self._bwd_kernel()
-        # ----
 
     def _conv_fwd_nhwc(self, x: np.ndarray, y: np.ndarray) -> None:
         self.fwd(self.model.cuda_grid,
@@ -33,7 +32,6 @@ class Conv2DDepthwiseCython(Conv2DDepthwiseNumpy, AbstractConv2DCupy, LayerCupy)
                   self.hpadding, self.wpadding,
                   self.hstride, self.wstride,
                   self.hdilation, self.wdilation))
-    # ----
 
     def _conv_fwd_nchw(self, x: np.ndarray, y: np.ndarray) -> None:
         self.fwd(self.model.cuda_grid,
@@ -44,7 +42,6 @@ class Conv2DDepthwiseCython(Conv2DDepthwiseNumpy, AbstractConv2DCupy, LayerCupy)
                   self.hpadding, self.wpadding,
                   self.hstride, self.wstride,
                   self.hdilation, self.wdilation))
-    # ----
 
     def _conv_bwd_nhwc(self, dx: np.ndarray, dy: np.ndarray) -> None:
         self.bwd(self.model.cuda_grid,
@@ -56,7 +53,6 @@ class Conv2DDepthwiseCython(Conv2DDepthwiseNumpy, AbstractConv2DCupy, LayerCupy)
                   self.hpadding, self.wpadding,
                   self.hstride, self.wstride,
                   self.hdilation, self.wdilation))
-    # ----
 
     def _conv_bwd_nchw(self, dx: np.ndarray, dy: np.ndarray) -> None:
         self.bwd(self.model.cuda_grid,
@@ -68,4 +64,3 @@ class Conv2DDepthwiseCython(Conv2DDepthwiseNumpy, AbstractConv2DCupy, LayerCupy)
                   self.hpadding, self.wpadding,
                   self.hstride, self.wstride,
                   self.hdilation, self.wdilation))
-    # ----

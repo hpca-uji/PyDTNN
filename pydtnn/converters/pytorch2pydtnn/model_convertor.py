@@ -33,7 +33,7 @@ def extract_layers_relations(model: torch.nn.Module) -> dict[str, tuple[str | to
     # {[output's variable name]: tuple([string with operation name or the layer object], [string with the args])}
     relations_dic = dict()
 
-    # -- CONSTANTS -- #
+    # -- CONSTANTS --
     BY_LINES = "\n"
     PSEUDO_INDENTATION = " "
     FIRST_LINE = "forward"
@@ -54,7 +54,6 @@ def extract_layers_relations(model: torch.nn.Module) -> dict[str, tuple[str | to
     TORCH_LAYER_REQ = "torch.nn.functional."
     TORCH_FUNC_REQ = "torch."
     PATTERNS = [TORCH_LAYER_REQ, TORCH_FUNC_REQ]  # NOTE: Order *IS* important.
-    # -- END CONSTANTS -- #
 
     for line in filter(lambda x: not (FIRST_LINE in x or LAST_LINE in x),
                        filter(lambda x: len(x) != 0,
@@ -87,9 +86,7 @@ def extract_layers_relations(model: torch.nn.Module) -> dict[str, tuple[str | to
                 # Cases: function or layer not defined at model's object's constructor
                 # TORCH_LAYER_REQ --> Case: layer not defined at model's object's constructor
                 # Example: "adaptive_avg_pool2d = torch.nn.functional.adaptive_avg_pool2d(relu, (1, 1))" ==>
-                # ==> operation = "torch.nn.functional.adaptive_avg_pool2d", args = "relu, (1, 1)"
                 # NOTE: The first argument is always a previous layer
-                # --
                 # TORCH_FUNC_REQ --> Case: function. Example: torch.cat()
                 _operation = operation.pop(0)  # _operation = something like "torch.cat"; operation= [arg1, arg2) arg3 etc.)] [list[str]]
                 args = PARAMETERS_BEGINING.join(operation)[:-1]  # _operation = "torch.cat"; operation= arg1 (arg2) arg3 etc. [str] | [:-1] to remove the final ")"
@@ -133,7 +130,6 @@ def convert_layers_and_set_weights_and_biases(input_shape: tuple[int, int, int],
     PYDTNN_WEIGHTS_INITIALIZER = "weights_initializer"
     PYDTNN_BIASES_INITIALIZER = "biases_initializer"
     # -
-    # -----
 
     # NOTE: There is no way to get the input shape from a PyTorch model due depends of the dataset ==> The input shape will be a parameter set by the user.
     layer_var_names = list(layers.keys())
@@ -162,7 +158,7 @@ def convert_layers_and_set_weights_and_biases(input_shape: tuple[int, int, int],
             args = {cm.ARGUMENTS: vars(layer)}  # NOTE: In this context, params are the input layers.
             converted_layer = cm.switch_pytorch_pydtnn(name)(args)
 
-            # -- Loading the weigths and the biases into the converted layer -- #
+            # -- Loading the weigths and the biases into the converted layer --
             state_dict = layer.state_dict()
             # There are layers without weight nor biases
             if LAYER_WEIGHTS in state_dict:
@@ -180,7 +176,6 @@ def convert_layers_and_set_weights_and_biases(input_shape: tuple[int, int, int],
                         # NOTE >>>> -a reference to the last layer weights- instead of a reference to their respective layer weights.
                         # NOTE >>>>> In this way "pytorch_weights" has the copy of "weights" values (that, as said before, is a reference to the layer's weights) of that iteration.
                         return pytorch_weights.astype(dtype=dtype, copy=False)
-                    # - END weights_initializer - #
                     setattr(converted_layer, PYDTNN_WEIGHTS_INITIALIZER, weights_initializer)
                 else:
                     # I'm pretty sure this case never happens (anyways, it's better to have it just in case).
@@ -194,13 +189,11 @@ def convert_layers_and_set_weights_and_biases(input_shape: tuple[int, int, int],
                     def biases_initializer(shape: tuple, dtype: np.ndarray, pytorch_biases: np.ndarray = biases, **kwargs_to_ignore) -> np.ndarray:
                         # NOTE [IMPORTANT]: See "weights_initializer" notes; the case of "pytorch_biases = biases" parameter is the same case as weights_initializer's "pytorch_weights = weights".
                         return pytorch_biases.astype(dtype=dtype, copy=False)
-                    # - END weights_initializer - #
                     setattr(converted_layer, PYDTNN_BIASES_INITIALIZER, biases_initializer)
                 else:
                     # As said before, I'm pretty sure this case never happens, but anyways, it's better to have it just in case.
                     converted_layer.biases = biases
             # else: Nothing special.
-            # -- END Loading the weigths and the biases into the converted layer -- #
 
             converted_layers[layer_var] = (converted_layer, params)
         else:  # is intance of string (the name of a function or an operation)

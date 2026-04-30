@@ -24,7 +24,6 @@ class Conv2DDepthwiseNumpy(AbstractConv2DNumpy, Conv2DDepthwise):
         self.co = self.ci
         # Setting weights
         self.weights_shape = (self.ci, *self.filter_shape)
-    # ---
 
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None):
         super()._model_init(prev_shape, x)

@@ -18,7 +18,6 @@ class F1ScorePycuda(F1Score[TensorArray], MetricPycuda):
                                         tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
         self.local_f1 = TensorArray.new_zeros(shape=(target_classes, ), dtype=self.model.dtype,
                                               tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
-    # ----
 
     def compute(self, y_pred: TensorArray, y_targ: TensorArray) -> float:
 

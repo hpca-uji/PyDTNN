@@ -8,7 +8,7 @@ __all__ = (
 )
 
 
-# --- FORWARD --- #
+# --- FORWARD ---
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -41,11 +41,9 @@ def depthwise_conv_nhwc_cython(npDT[:,:,:,::1] x,
                                 x_y = wstride * yy + wdilation * jj - wpadding
                                 if 0 <= x_y < w:
                                     res[nn, xx, yy, cc] += k[cc, ii, jj] * x[nn, x_x, x_y, cc]
-# =================== #
 
 
-# =================== #
-# ----- BACKWARD ---- #
+# ----- BACKWARD ----
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.initializedcheck(False)
@@ -86,4 +84,3 @@ def depthwise_conv_backward_nhwc_cython(npDT[:,:,:,::1] dy,
                                     dw[cc, ii, jj] = x[nn, x_x, x_y, cc] * val_dy
                                     dx[nn, x_x, x_y, cc] += val_k * val_dy
 
-# =================== #

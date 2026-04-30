@@ -1,6 +1,4 @@
-# _______________________________________________________________________________________________________________
 # In this file must be implemented only the translation of PyTorch Convolutional layers to its PyDTNN equivalent.
-# _______________________________________________________________________________________________________________
 
 import logging
 
@@ -11,8 +9,6 @@ logger = logging.getLogger(__name__)
 # Functionality imports
 # import pydtnn.converters.pytorch2pydtnn.common as cm
 
-# ------------------ #
-
 
 def Flatten(args: dict[str, str]) -> _Flatten:
     # https://pytorch.org/docs/stable/generated/torch.nn.Flatten.html#torch.nn.Flatten
@@ -20,10 +16,7 @@ def Flatten(args: dict[str, str]) -> _Flatten:
 
     # PyTorch attributes:
     # Not used: start_dim, end_dim (It's not used due the way the layer's initialization works in PyDTNN)
-    # ---- #
     # PyDTNN attributes: None
-    # ---- #
     not_used = args
 
     return _Flatten()
-# ------------------ #

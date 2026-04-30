@@ -39,7 +39,6 @@ class Conv2DWinograd(Conv2DNumpy, AbstractConv2DWinograd):
                 self.backward = self._backward_cw_nhwc
             case _:
                 raise NotImplementedError(f"{self.model.tensor_format} format not implemented.")
-        # ---
 
     def _forward_cw_nhwc(self, x: np.ndarray) -> np.ndarray:
         """Version of the forward function that uses the convWinograd library"""

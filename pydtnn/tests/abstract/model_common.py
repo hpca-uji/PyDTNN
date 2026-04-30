@@ -125,7 +125,6 @@ class ModelCommonTestCase(TestCase):
                f"\t{x1.mean()=}\n" \
                f"\t{x2.mean()=}\n" \
                f"\t{diff.mean()=}\n"
-    # ---
 
     def do_model1_forward_pass(self, model1: Model, x0: list[np.ndarray]) -> list[np.ndarray]:
         """

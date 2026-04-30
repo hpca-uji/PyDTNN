@@ -24,7 +24,6 @@ class ConcatenationBlockNumpy(ConcatenationBlock, AbstractBlockLayerNumpy):
         self.out_co: list[int] = None  # type: ignore
         self.idx_co: np.ndarray = None  # type: ignore
         self.concat_dim: int = None  # type: ignore
-    # ---
 
     def _model_init(self, prev_shape, x):
         super()._model_init(prev_shape, x)

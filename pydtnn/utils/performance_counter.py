@@ -15,9 +15,7 @@ class PerformanceCounter:
         self._batch_sizes_record = defaultdict(lambda: defaultdict(lambda: []))
         self._memory_record = defaultdict(lambda: defaultdict(lambda: []))
 
-    # -------------------------------
     #  Public methods and properties
-    # -------------------------------
 
     def add_training_time_and_batch_size(self, epoch, elapsed_time, batch_size):
         self._add_time_and_batch_size(self.TRAINING, epoch, elapsed_time, batch_size)
@@ -105,9 +103,7 @@ class PerformanceCounter:
         report = '\n'.join(_report)
         logger.info(report)
 
-    # -------------------------------
     #  Private methods
-    # -------------------------------
 
     def _add_time_and_batch_size(self, where, epoch, elapsed_time, batch_size):
         self._times_record[where][epoch].append(elapsed_time)

@@ -26,7 +26,6 @@ class PrecisionNumpy(Precision[np.ndarray], MetricNumpy):
         self.tmp_memory_used += int(2 * math.prod(self.temp_var_shape)) * np.float32().itemsize
         self.tmp_memory_used += int(1 * math.prod(self.temp_var_shape)) * np.bool_().itemsize
         self.memory_used += self.tmp_memory_used
-    # ----
 
     def _post_init(self) -> None:
         super()._post_init()

@@ -26,9 +26,8 @@ if TYPE_CHECKING:
 
 
 class MaxPool2DCython(MaxPool2DNumpy, AbstractPool2DLayerCython):
-    ##############
-    ### CYTHON ###
-    ##############
+
+    # CYTHON
 
     def _fwd_max_pool_nhwc(self, x: np.ndarray, y: np.ndarray) -> None:
         max_pool_2d_fwd_nhwc_cython(x, y, self.idx_max,  # type: ignore
@@ -37,7 +36,6 @@ class MaxPool2DCython(MaxPool2DNumpy, AbstractPool2DLayerCython):
                                     self.hstride, self.wstride,
                                     self.hdilation, self.wdilation,
                                     self.minval)
-    # ----
 
     def _fwd_max_pool_nchw(self, x: np.ndarray, y: np.ndarray) -> None:
         max_pool_2d_fwd_nchw_cython(x, y, self.idx_max,  # type: ignore
@@ -46,7 +44,6 @@ class MaxPool2DCython(MaxPool2DNumpy, AbstractPool2DLayerCython):
                                     self.hstride, self.wstride,
                                     self.hdilation, self.wdilation,
                                     self.minval)
-    # ----
 
     def _bwd_max_pool_nhwc(self, dx: np.ndarray, dy: np.ndarray) -> None:
         max_pool_2d_bwd_nhwc_cython(dy, self.idx_max, dx,  # type: ignore
@@ -54,7 +51,6 @@ class MaxPool2DCython(MaxPool2DNumpy, AbstractPool2DLayerCython):
                                     self.kh, self.kw, self.ho, self.wo,
                                     self.hpadding, self.wpadding,
                                     self.hstride, self.wstride, self.hdilation, self.wdilation)
-    # ----
 
     def _bwd_max_pool_nchw(self, dx: np.ndarray, dy: np.ndarray) -> None:
         max_pool_2d_bwd_nchw_cython(dy, self.idx_max, dx,  # type: ignore
@@ -62,11 +58,8 @@ class MaxPool2DCython(MaxPool2DNumpy, AbstractPool2DLayerCython):
                                     self.kh, self.kw, self.ho, self.wo,
                                     self.hpadding, self.wpadding,
                                     self.hstride, self.wstride, self.hdilation, self.wdilation)
-    # ----
 
-    ###########
-    ### I2C ###
-    ###########
+    # I2C
 
     def _forward_nhwc_i2c(self, x: np.ndarray) -> np.ndarray:
         y: np.ndarray = np.zeros((x.shape[0],), dtype=self.model.dtype)

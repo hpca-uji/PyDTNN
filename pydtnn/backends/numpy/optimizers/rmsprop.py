@@ -39,7 +39,6 @@ class RMSPropNumpy(RMSProp[np.ndarray], OptimizerNumpy):
 
         self.tmp_memory_used += self.model.memory_cls._total(*temp_memory_size)
         self.memory_used += self.tmp_memory_used
-    # ----
 
     def _post_init(self) -> None:
         super()._post_init()
@@ -50,8 +49,6 @@ class RMSPropNumpy(RMSProp[np.ndarray], OptimizerNumpy):
                         w_ = key.split("temp_")[-1]
                         w_shape = self.context[layer_id]["cache_%s" % w_].shape  # type: ignore (it is correct)
                         w_shape = self.context[layer_id][key] = self.model.memory.ndarray(w_shape, dtype=self.model.dtype)
-        # - end for
-    # ---
 
     def update(self, layer: LayerNumpy) -> None:
         for w_, dw_ in layer.grad_vars.items():
@@ -84,4 +81,3 @@ class RMSPropNumpy(RMSProp[np.ndarray], OptimizerNumpy):
                 np.multiply(temp, self.learning_rate, dtype=self.model.dtype, out=temp)
                 np.subtract(w, temp, dtype=self.model.dtype, out=w)
             # else: continue
-    # ----

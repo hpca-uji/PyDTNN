@@ -31,7 +31,6 @@ class Base[T: Array]:
     class Mode(enum.StrEnum):
         EVALUATE = enum.auto()
         TRAIN = enum.auto()
-    # ---
 
 # Explicit declaration of those model attributes that are referenced by other parts of PyDTNN
 #   NOTE: The following parameters come from "Parser"
@@ -107,7 +106,6 @@ class Base[T: Array]:
     quantize_dtype: np.dtype
     enable_cudnn: bool
     batch_size: int
-# ------------
     layers: list[Layerable]
     kwargs: dict[str, Any]
 

@@ -23,7 +23,6 @@ class Relu6Pycuda(Relu6[TensorArray], ActivationPycuda):
         super().__init__(*args, **kwargs)
         self.mask: TensorArray = None  # type: ignore
         self.y: TensorArray = None  # type: ignore
-    # ---
 
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
         super()._model_init(prev_shape, x)
@@ -43,7 +42,6 @@ class Relu6Pycuda(Relu6[TensorArray], ActivationPycuda):
         self.total_num_threads = np.int32(math.prod(self.grid) * math.prod(self.block))
 
         self.initialize_relu_2d_gpu(prev_shape)
-    # ----
 
     def forward(self, x: TensorArray) -> TensorArray:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)

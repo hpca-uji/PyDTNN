@@ -27,7 +27,6 @@ class Conv2DPointwisePycuda(AbstractConv2DPycuda):
                 self.weights_shape = (self.co, self.ci)
             case _:
                 raise NotImplementedError(f"{self.model.tensor_format} format not implemented.")
-        # --
 
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
         super()._model_init(prev_shape, x)
@@ -59,7 +58,6 @@ class Conv2DPointwisePycuda(AbstractConv2DPycuda):
         self.fwd_func: Function = self._fwd_kernel
         self.bwd_func: Function = self._fwd_kernel
         self.bias_sum_fwd: Function = self._get_kernel(func_name="cuda_bias_sum_fwd_pointwise_conv")
-    # ----
 
     def _forward_pointwise(self, x: TensorArray) -> TensorArray:
 
@@ -87,7 +85,6 @@ class Conv2DPointwisePycuda(AbstractConv2DPycuda):
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return self.y
-    # -----
 
     def _backward_pointwise(self, dy: TensorArray) -> TensorArray:
         n, c, h, w = self.model.decode_shape(dy.shape)  # type: ignore (it's okay)
@@ -115,7 +112,6 @@ class Conv2DPointwisePycuda(AbstractConv2DPycuda):
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return self.dx
-    # -----
 
     @override
     def _export_weights_dw(self, key: str) -> Any:
@@ -136,7 +132,6 @@ class Conv2DPointwisePycuda(AbstractConv2DPycuda):
                 return np.asarray(cpu_ary, dtype=np.float64, order="C", copy=True)
             case _:
                 return super()._export_prop(key)
-    # ------
 
     @override
     def _import_weights_dw(self, key: str, value: Any) -> None:
@@ -154,4 +149,3 @@ class Conv2DPointwisePycuda(AbstractConv2DPycuda):
                 return
             case _:
                 return super()._export_prop(key)
-    # ---

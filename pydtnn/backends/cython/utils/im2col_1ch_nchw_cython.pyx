@@ -8,7 +8,6 @@ __all__ = (
 )
 
 
-# --- im2col --- #
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.initializedcheck(False)
@@ -38,12 +37,9 @@ def im2col_1ch_nchw_cython(npDT[:,:,:,::1] x,
                                     col = nn * c * ho * wo + cc * ho * wo + xx * wo + yy
                                     cols[row, col] = x[nn, cc, x_x, x_y]
 
-# ================== #
 
 
-# ================== #
 
-# --- col2im --- #
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.initializedcheck(False)
@@ -71,4 +67,3 @@ def col2im_1ch_nchw_cython(npDT[:,::1] cols,
                                     col = nn * c * ho * wo + cc * ho * wo + xx * wo + yy
                                     x[nn, cc, x_x, x_y] += cols[row, col]
 
-# ================== #

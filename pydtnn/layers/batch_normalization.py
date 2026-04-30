@@ -44,7 +44,6 @@ class BatchNormalization[T: Array](Layer[T]):
         data[Parameters.RUNNING_VAR] = self._export_prop(Parameters.RUNNING_VAR)
 
         return data
-    # ---
 
     def import_(self, data: dict[str, Any]) -> None:
 

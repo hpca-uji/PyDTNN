@@ -45,13 +45,11 @@ class AbstractConv2D[T: Array](Layer[T]):
         self.ci = self.hi = self.wi = self.kh = self.kw = self.ho = self.wo = 0
         self.weights_shape: ArrayShape = None  # type: ignore
         # @warning: do not do this (affects the gpu version) self.forward = self.backward = None
-    # ---
 
     def _initializing_special_parameters(self):
         # NOTE: This method's objective is to define and change the value of some parameters defined before that are needed later in the initialization process,
         #   for example: "self.weights_shape" and, in non-standard cases, "self.co".
         pass
-    # ---
 
     def _model_init(self, prev_shape: ArrayShape, x: T | None):
         super()._model_init(prev_shape, x)
@@ -65,7 +63,6 @@ class AbstractConv2D[T: Array](Layer[T]):
 
         # NOTE: self.weights_shape must be defined in "self._initializing_special_parameters"
         self.nparams = int(math.prod(self.weights_shape) + (self.co if self.use_bias else 0))
-    # --
 
     def _show_props(self) -> dict:
         props = super()._show_props()

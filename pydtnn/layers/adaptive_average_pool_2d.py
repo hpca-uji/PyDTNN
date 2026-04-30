@@ -22,7 +22,6 @@ class AdaptiveAveragePool2D[T: Array](Layer):
 
         # This value will change in initialize:
         self.pooling_not_needed: bool = None  # type: ignore
-    # ---  END __init__ --- #
 
     def _model_init(self, prev_shape: ArrayShape, x: T | None) -> None:
         super()._model_init(prev_shape, x)
@@ -43,7 +42,6 @@ class AdaptiveAveragePool2D[T: Array](Layer):
 
         self.shape = self.model.encode_shape((self.co, self.ho, self.wo))
         self.n = math.prod(self.shape)
-    # - END initialize - #º
 
     @staticmethod
     def _index_first_element(index: int, dim_in: int, dim_out: int) -> int:

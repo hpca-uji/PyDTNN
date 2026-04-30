@@ -66,7 +66,6 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
         self.memory_used += self.temp_y_dx.nbytes
 
         self.memory_used += self.tmp_memory_used
-    # ---
 
     def get_rows(self, batch_size: int) -> np.ndarray:
         dim_n = batch_size * self.ho * self.wo

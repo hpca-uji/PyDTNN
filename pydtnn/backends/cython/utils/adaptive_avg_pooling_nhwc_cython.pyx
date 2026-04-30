@@ -16,10 +16,8 @@ cdef inline int index_last_element(int index, int dim_in, int dim_out) nogil:
     return ((((index + 1) * dim_in) + dim_out - 1) / dim_out)
 
 
-# =================== #
-# =================== #
 
-# --- FORWARD --- #
+# --- FORWARD ---
 
 @cython.cdivision(True)
 @cython.boundscheck(False)
@@ -61,10 +59,8 @@ def adaptive_avg_pooling_fwd_nhwc_cython(npDT[:,:,:,::1] x,
                     pooled_x[nn, hi, wi, cc] = add / elements
 
 
-# =================== #
-# =================== #
 
-# --- BACKWARD --- #
+# --- BACKWARD ---
 
 @cython.cdivision(True)
 @cython.boundscheck(False)

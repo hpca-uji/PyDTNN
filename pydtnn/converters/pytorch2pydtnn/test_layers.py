@@ -46,7 +46,6 @@ PYTORCH_LAYER_BIASES = "bias"
 SEED = 1234
 torch.manual_seed(SEED)
 random.seed(SEED)
-# ---
 
 THRESHOLD = 1e-4
 DTYPE = np.float32

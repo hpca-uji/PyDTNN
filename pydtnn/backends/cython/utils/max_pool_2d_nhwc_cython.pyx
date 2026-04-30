@@ -51,12 +51,10 @@ def max_pool_2d_fwd_nhwc_cython(npDT[:,:,:,::1] x,
                     
 
 
-# =================== #
-
-# =================== #
 
 
-# --- Backward --- #
+
+# --- Backward ---
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.initializedcheck(False)

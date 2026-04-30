@@ -8,7 +8,7 @@ __all__ = (
 )
 
 
-# --- FORWARD --- #
+# --- FORWARD ---
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.initializedcheck(False)
@@ -43,10 +43,8 @@ def average_pool_2d_fwd_nchw_cython(npDT[:,:,:,::1] x,
                                     items = items + 1
                     y[nn, cc, xx, yy] = <npDT> (accum / items)
 
-# =================== #
-# =================== #
 
-# --- BACKWARD --- #
+# --- BACKWARD ---
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.initializedcheck(False)

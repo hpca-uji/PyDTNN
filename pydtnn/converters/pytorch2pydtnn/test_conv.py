@@ -21,7 +21,7 @@ try:
 except BaseException:
     pass
 
-# Constants #
+# Constants
 TENSOR_FORMAT = "NCHW"  # "NCHW" # "NHWC" # "NCHW"
 N, C, H, W = 2, 2, 3, 3
 SHAPE = (C, H, W) if TENSOR_FORMAT == "NCHW" else (H, W, C)
@@ -45,7 +45,7 @@ KWARGS = {
     "optimizer_name": "adam",
 }
 
-# End Constants #
+# End Constants
 
 random.seed(SEED)
 

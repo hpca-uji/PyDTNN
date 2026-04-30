@@ -31,7 +31,6 @@ def bn_training_fwd_cython[T: _npDT](x: _npDT_2Dims[T],
         It's never used.
     """
     ...
-# ---
 
 
 def bn_training_bwd_cython[T: _npDT](dx: _npDT_2Dims[T],

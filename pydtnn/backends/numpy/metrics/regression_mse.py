@@ -19,7 +19,6 @@ class RegressionMSENumpy(RegressionMSE[np.ndarray], MetricNumpy):
 
         self.tmp_memory_used += int(math.prod(self.shape)) * self.model.dtype.itemsize
         self.memory_used += self.tmp_memory_used
-    # ----
 
     def _post_init(self) -> None:
         super()._post_init()
@@ -33,4 +32,3 @@ class RegressionMSENumpy(RegressionMSE[np.ndarray], MetricNumpy):
         np.subtract(y_targ, y_pred, dtype=self.model.dtype, out=diff)
         np.square(diff, out=diff, dtype=self.model.dtype, casting="unsafe")
         return float(diff.mean(dtype=self.model.dtype))
-    # ----

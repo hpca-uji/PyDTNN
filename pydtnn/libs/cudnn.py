@@ -1260,7 +1260,6 @@ def cudnnFindConvolutionForwardAlgorithm(handle, x_desc, w_desc, conv_desc, y_de
 #    This function returns the best algorithm to choose for the forward convolution
 #    depending on the criteria expressed in the cudnnConvolutionFwdPreference_t enumerant.
 #    Parameters
-#    ----------
 #    handle : cudnnHandle
 #        Handle to a previously created cuDNN context.
 #    src_desc : cudnnTensorDescriptor
@@ -1278,7 +1277,6 @@ def cudnnFindConvolutionForwardAlgorithm(handle, x_desc, w_desc, conv_desc, y_de
 #        The maximum amount of GPU memory the user is willing to use as a workspace
 #        when preference is CUDNN_CONVOLUTION_FWD_SPECIFY_WORKSPACE_LIMIT.
 #    Returns
-#    -------
 #    algo: cudnnConvolutionFwdAlgo
 #        Enumerant that specifies which convolution algorithm should be used to
 #        compute the results according to the specified preference.

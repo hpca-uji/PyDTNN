@@ -34,7 +34,6 @@ def pads_from_onnx_to_pydtnn(pads: list[int]) -> tuple[int, int]:  # -> list[tup
     print(f"_pads: {_pads}")  # TODO: Borrar
 
     return _pads[0]
-# --- END pads_from_onnx_to_pydtnn --- #
 
 
 def not_implemented(name: str) -> Callable:
@@ -42,7 +41,6 @@ def not_implemented(name: str) -> Callable:
     def _not_implemented(args: dict[str, Any]) -> None:
         raise NotImplementedError(f"Layer {name} not implemented - Args received:\n{args} ")
     return _not_implemented
-# --- END not_implemented --- #
 
 
 def switch_onnx_operation_to_pydtnn(name: str) -> Callable[[dict[str, Any]], Layerable]:
@@ -62,4 +60,3 @@ def switch_onnx_operation_to_pydtnn(name: str) -> Callable[[dict[str, Any]], Lay
         case "Unsqueeze": return Unsqueeze
         # Base case:
         case _: return not_implemented(name)
-# --- END switch_onnx_operation_to_pydtnn --- #

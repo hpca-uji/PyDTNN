@@ -1,6 +1,4 @@
-# _______________________________________________________________________________________________________________
 # In this file must be implemented only the translation of PyTorch Normalization layers to its PyDTNN equivalent.
-# _______________________________________________________________________________________________________________
 
 import logging
 from typing import Any
@@ -14,8 +12,6 @@ logger = logging.getLogger(__name__)
 
 # Functionality imports
 
-# ------------------ #
-
 
 def BatchNorm2d(args: dict[str, Any]) -> BatchNormalization:
     # https://pytorch.org/docs/stable/generated/torch.nn.BatchNorm2d.html#torch.nn.BatchNorm2d
@@ -26,7 +22,6 @@ def BatchNorm2d(args: dict[str, Any]) -> BatchNormalization:
     PYTORCH_MOMENTUM = "momentum"  # Float
 
     torch_dict_keys = [PYTORCH_MOMENTUM, PYTORCH_EPS]
-    # ---- #
 
     # PyDTNN attributes:
     # Not used: beta, gamma
@@ -34,7 +29,6 @@ def BatchNorm2d(args: dict[str, Any]) -> BatchNormalization:
     PYDTNN_EPSILON = "epsilon"
 
     pydtnn_dict_keys = [PYDTNN_MOMENTUM, PYDTNN_EPSILON]
-    # ---- #
 
     layer_args = cm.prepare_pydtnn_arguments(arguments=args[cm.ARGUMENTS], torch_dict_keys=torch_dict_keys, pydtnn_dict_keys=pydtnn_dict_keys)
 

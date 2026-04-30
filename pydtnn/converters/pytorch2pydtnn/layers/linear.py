@@ -1,6 +1,4 @@
-# _______________________________________________________________________________________________________________
 # In this file must be implemented only the translation of PyTorch Linear layers to its PyDTNN equivalent.
-# _______________________________________________________________________________________________________________
 
 import logging
 from typing import Any
@@ -15,7 +13,6 @@ logger = logging.getLogger(__name__)
 # Functionality imports
 
 
-# ------------------ #
 def Linear(args: dict[str, Any]) -> FC:
     # https://pytorch.org/docs/stable/generated/torch.nn.Linear.html#torch.nn.Linear
 
@@ -24,7 +21,6 @@ def Linear(args: dict[str, Any]) -> FC:
     PYTORCH_BIAS = "bias"
     PYTORCH_OUT_FEATURES = "out_features"
     torch_dict_keys = [PYTORCH_BIAS, PYTORCH_OUT_FEATURES]
-    # ---- #
 
     # PyDTNN attributes:
     # Not used: activation
@@ -32,7 +28,6 @@ def Linear(args: dict[str, Any]) -> FC:
     PYDTNN_BIAS = "use_bias"
     PYDTNN_SHAPE = "shape"
     pydtnn_dict_keys = [PYDTNN_BIAS, PYDTNN_SHAPE]
-    # ---- #
 
     layer_args = cm.prepare_pydtnn_arguments(arguments=args[cm.ARGUMENTS], torch_dict_keys=torch_dict_keys, pydtnn_dict_keys=pydtnn_dict_keys)
 

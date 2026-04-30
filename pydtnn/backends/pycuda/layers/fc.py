@@ -31,16 +31,14 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
         cpu_ary = value
         attribute.set(cpu_ary)
         return
-    # ---
 
     def _import_prop(self, key: str, value) -> None:
         match key:
             case Parameters.BIASES | Parameters.DB:
                 return self._import_biases_db(key, value)
-            #
+
             case _:
                 return super()._import_prop(key, value)
-    # -----
 
     def _export_biases_db(self, key: str) -> Any:
         value = getattr(self, key)
@@ -48,7 +46,6 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
         cpu_ary = gpu_ary.get()
 
         return np.asarray(cpu_ary, dtype=np.float64, order="C", copy=True)
-    # ---
 
     def _export_prop(self, key: str) -> Any:
         match key:

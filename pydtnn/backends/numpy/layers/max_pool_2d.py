@@ -31,7 +31,6 @@ class MaxPool2DNumpy(MaxPool2D[np.ndarray], AbstractPool2DLayerNumpy):
         # NOTE: This attribute only stores data, its value before the operation doesn't matter; it's initalized due avoid warnings in "LayerAndActivationBase.export".
         self._idx_max: np.ndarray = np.zeros(idx_max_shape, dtype=np.int32)
         self.memory_used += self._idx_max.nbytes
-    # ---
 
     def _fwd_max_pool_nhwc(self, x: np.ndarray, y: np.ndarray) -> None:
         for nn in range(x.shape[0]):
@@ -52,7 +51,6 @@ class MaxPool2DNumpy(MaxPool2D[np.ndarray], AbstractPool2DLayerNumpy):
                                             idx_maxval = ii * self.kw + jj
                         y[nn, xx, yy, cc] = maxval
                         self.idx_max[nn, xx, yy, cc] = idx_maxval
-    # ----
 
     def _fwd_max_pool_nchw(self, x: np.ndarray, y: np.ndarray) -> None:
         for nn in range(x.shape[0]):
@@ -73,7 +71,6 @@ class MaxPool2DNumpy(MaxPool2D[np.ndarray], AbstractPool2DLayerNumpy):
                                             idx_maxval = ii * self.kw + jj
                         y[nn, cc, xx, yy] = maxval
                         self.idx_max[nn, cc, xx, yy] = idx_maxval
-    # ----
 
     def _bwd_max_pool_nhwc(self, dx: np.ndarray, dy: np.ndarray) -> None:
         for nn in range(dy.shape[0]):
@@ -87,7 +84,6 @@ class MaxPool2DNumpy(MaxPool2D[np.ndarray], AbstractPool2DLayerNumpy):
                         x_y = self.wstride * yy + self.wdilation * jj - self.wpadding
                         if 0 <= x_x < self.ho and 0 <= x_y < self.wo:
                             dx[nn, x_x, x_y, cc] += dy[nn, xx, yy, cc]
-    # ----
 
     def _bwd_max_pool_nchw(self, dx: np.ndarray, dy: np.ndarray) -> None:
         for nn in range(dy.shape[0]):
@@ -101,7 +97,6 @@ class MaxPool2DNumpy(MaxPool2D[np.ndarray], AbstractPool2DLayerNumpy):
                         x_y = self.wstride * yy + self.wdilation * jj - self.wpadding
                         if 0 <= x_x < self.ho and 0 <= x_y < self.wo:
                             dx[nn, cc, x_x, x_y] += dy[nn, cc, xx, yy]
-    # ----
 
     def _forward_nhwc(self, x: np.ndarray) -> np.ndarray:
         # y:np.ndarray = self.y[:x.shape[0], :]
@@ -143,9 +138,7 @@ class MaxPool2DNumpy(MaxPool2D[np.ndarray], AbstractPool2DLayerNumpy):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return np.asarray(dx, dtype=self.model.dtype, order="C")
 
-    ##########
-    ## TEST ##
-    ##########
+    # TEST
 
     def max_pool(self, x: np.ndarray, y: np.ndarray, idx_maxval: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         x = np.pad(x, ((0, 0), (0, 0), (self.hpadding, self.hpadding), (self.wpadding, self.wpadding)), mode="constant")

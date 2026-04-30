@@ -1,6 +1,4 @@
-# _______________________________________________________________________________________________________________
 # In this file must be implemented only the translation of PyTorch Activations layers to its PyDTNN equivalent.
-# _______________________________________________________________________________________________________________
 
 import logging
 from typing import Any
@@ -20,7 +18,6 @@ logger = logging.getLogger(__name__)
 # Typing related (or non important) imports
 
 # Functionality imports
-# ------------------- #
 
 
 def Arctanh(args: dict[str, Any]) -> _Arctanh:

@@ -72,7 +72,6 @@ class UsesCudaCode[M: Abs_Module, F: Abs_Function]():
 
         return self._get_kernel_function(kernel=kernel, func_name=func_name,
                                          func_name_subfix=func_name_subfix)
-    # ----
 
     def _fwd_kernel(self, path_code: str | None = None,
                     code_file_name: str | None = None,
@@ -81,7 +80,6 @@ class UsesCudaCode[M: Abs_Module, F: Abs_Function]():
         return self._get_kernel(path_code, code_file_name,
                                 func_name, defines_replaces,
                                 func_name_subfix="_fwd")
-    # ----
 
     def _bwd_kernel(self, path_code: str | None = None,
                     code_file_name: str | None = None,
@@ -90,4 +88,3 @@ class UsesCudaCode[M: Abs_Module, F: Abs_Function]():
         return self._get_kernel(path_code, code_file_name,
                                 func_name, defines_replaces,
                                 func_name_subfix="_bwd")
-    # ----

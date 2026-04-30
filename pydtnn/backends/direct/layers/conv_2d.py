@@ -43,7 +43,6 @@ class Conv2DDirect(Conv2DNumpy, AbstractConv2DDirect):
             self.cd.append(ConvDirect(method, dtype=self.model.dtype, tensor_format=self.model.tensor_format, debug=self.debug, parent_layer=self))
             new(f"_forward_cd{n}_{self.model.tensor_format}", partial(self._forward_cd, n=n))
             new(f"_backward_cd{n}_{self.model.tensor_format}", partial(self._forward_cd, n=n))
-    # ----
 
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None):
         super()._model_init(prev_shape, x)
@@ -59,7 +58,6 @@ class Conv2DDirect(Conv2DNumpy, AbstractConv2DDirect):
 
         self.forward = getattr(self, f"_forward_cd{n}_{self.model.tensor_format}")
         self.backward = getattr(self, f"_backward_cd{n}_{self.model.tensor_format}")
-        # --
 
         out_shape = encode_shape((self.model.batch_size, self.co, self.ho, self.wo))
         self.out = np.zeros(out_shape, self.weights.dtype)
@@ -69,7 +67,6 @@ class Conv2DDirect(Conv2DNumpy, AbstractConv2DDirect):
         if self.use_bias:
             logger.warning(f"{self.__class__.__name__} never uses the biases.")
             warn(f"{self.__class__.__name__} never uses the biases.", RuntimeWarning)
-    # -----
 
     def _forward_cd(self, x: np.ndarray, n=0) -> np.ndarray:
         """Version of the forward function that uses the convDirect library"""

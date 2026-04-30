@@ -27,7 +27,6 @@ class TensorArray:
         FILTER = auto()
         SEQ = auto()
         OTHER = auto()
-    # ---  END EnumTensorType --- #
 
     @staticmethod
     def new_empty(shape: ArrayShape, dtype: np.dtype,
@@ -85,7 +84,6 @@ class TensorArray:
             return TensorArray.new_pair(shape=shape, dtype=dtype, tensor_format=tensor_format,
                                         cudnn_dtype=cudnn_dtype, tensor_type=tensor_type,
                                         desc=desc, gpudirect=gpudirect, cublas=cublas)
-    # ---
 
     def __init__(self, gpu_arr: "gpuarray.GPUArray", tensor_format: TensorFormat, cudnn_dtype: int,
                  tensor_type: TensorType = TensorType.TENSOR, desc: int | None = None,
@@ -97,11 +95,9 @@ class TensorArray:
         self.gpudirect = gpudirect
         self.cublas = cublas
 
-        # ---
         self.ary: gpuarray.GPUArray
         self.desc: int = desc  # type: ignore (if it's None it will be set later)
         self.cpu_shape: ArrayShape = cpu_shape  # type: ignore (if it's None it will be set later)
-        # ---
 
         self._set_ary(gpu_arr)
         if desc:
@@ -154,7 +150,6 @@ class TensorArray:
         if self.cpu_shape is None:
             self.cpu_shape = gpu_arr.shape
         self.ary = gpu_arr.reshape(shape)
-    # ---
 
     def __eq__(self, value: object) -> bool:
         """Are tensor equal?"""
@@ -219,7 +214,6 @@ class TensorArray:
 
             case tensor_type:
                 raise NotImplementedError(f"Tensor type not implemented! ({tensor_type})")
-    # ---
 
     def _del_desc(self) -> None:
         match self.tensor_type:
@@ -234,11 +228,9 @@ class TensorArray:
             case tensor_type:
                 raise NotImplementedError(f"Tensor type not implemented! ({tensor_type})")
         self.desc = -1
-    # ---
 
     def __getattr__(self, name):
         return getattr(self.ary, name)
-    # ---
 
     def reshape(self, shape, order="C") -> "TensorArray":
         """Reshape TensorArray"""
@@ -333,7 +325,6 @@ class TensorArray:
             del self.ary
         self.size = -1
         self.desc = -1
-    # ---
 
     def __del__(self) -> None:
         """Best effort finalizer"""

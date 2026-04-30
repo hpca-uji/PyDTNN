@@ -22,7 +22,6 @@ class RegressionMSEPycuda(RegressionMSE[TensorArray], MetricPycuda):
 
         self.local_res = TensorArray.new_zeros(shape=(n, *num_classes), dtype=np.dtype(self.model.dtype),
                                                tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
-    # ----
 
     def compute(self, y_pred: TensorArray, y_targ: TensorArray) -> float:
         n = y_pred.shape[0]

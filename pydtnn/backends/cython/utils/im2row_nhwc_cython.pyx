@@ -9,7 +9,6 @@ __all__ = (
 )
 
 
-# --- im2row --- #
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.initializedcheck(False)
@@ -63,13 +62,10 @@ def im2row_nhwc_cython(npDT[:,:,:,::1] x,
                                 
 
 
-# ========================================== #
 
 
-# ========================================== #
 
 
-# --- row2im --- #
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.initializedcheck(False)
@@ -145,4 +141,3 @@ def alt_row2im_nhwc_cython(npDT[:,::1] rows,
                                 row = nn * ho * wo + xx * wo + yy
                                 col = cc * kh * kw + ii * kw + jj
                                 dx[nn, x_x, x_y, cc] += rows[row, col]
-# ========================================== #

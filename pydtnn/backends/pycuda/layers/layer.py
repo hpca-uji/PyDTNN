@@ -47,7 +47,6 @@ class LayerPycuda(Layer[TensorArray], LayerablePycuda):
             "\"TYPE\"": DTYPE2CTYPE[self.model.dtype],
             "TENSOR_FORMAT": str(self.model.tensor_format)
         }
-    # ---
 
     @property
     def _ary_prop(self) -> set[str]:

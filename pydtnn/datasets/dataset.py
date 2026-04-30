@@ -524,7 +524,6 @@ class Dataset:
         new_data = self.model.encode_tensor(new_data)
 
         return new_data
-    # ---
 
     def _calculate_crop(self, size: tuple[int, int]) -> tuple[tuple[int, int, int, int], tuple[int, int]]:
         width, height = size
@@ -558,7 +557,6 @@ class Dataset:
         new_data = self.model.encode_tensor(new_data)
 
         return new_data
-    # ---
 
     def _load_rgb_image(self, fp: IO[bytes] | str) -> np.ndarray:
         """Transform a file-like (RGB image) to array (ndarray CHW uint8)"""
@@ -578,7 +576,6 @@ class Dataset:
             array = format_transpose(array, ChannelFormat.WH, ChannelFormat.HW)
             array = array[None, ...]
         return array
-    # ----
 
 
 def select(name: str) -> type[Dataset]:

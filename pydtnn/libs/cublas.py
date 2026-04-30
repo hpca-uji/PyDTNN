@@ -455,7 +455,7 @@ def cublasSetPointerMode(handle, mode):
     status = _libcublas.cublasSetPointerMode_v2(handle, mode)
     cublasCheckStatus(status)
 
-### BLAS Level 1 Functions ###
+# BLAS Level 1 Functions
 
 
 # ISAMAX, IDAMAX, ICAMAX, IZAMAX
@@ -2439,7 +2439,7 @@ cublasZswap.__doc__ = \
                          data='(np.random.rand(5)+1j*np.random.rand(5)).astype(np.complex128)',
                          func='cublasZswap')
 
-### BLAS Level 2 Functions ###
+# BLAS Level 2 Functions
 
 # SGBMV, DGVMV, CGBMV, ZGBMV
 _libcublas.cublasSgbmv_v2.restype = int
@@ -2605,7 +2605,6 @@ def cublasZgbmv(handle, trans, m, n, kl, ku, alpha, A, lda,
 #     or `op(A)` == `A.T`, and stores it in `y`.
 
 #     Parameters
-#     ----------
 #     trans : char
 #         If `upper(trans)` in `['T', 'C']`, assume that `A` is
 #         transposed.
@@ -2637,7 +2636,6 @@ def cublasZgbmv(handle, trans, m, n, kl, ku, alpha, A, lda,
 #         Spacing between elements of `y`. Must be nonzero.
 
 #     Examples
-#     --------
 #     >>> import pycuda.autoinit
 #     >>> import pycuda.gpuarray as gpuarray
 #     >>> import numpy as np
@@ -5812,7 +5810,7 @@ def cublasZher2k(handle, uplo, trans, n, k, alpha, A, lda, B, ldb, beta, C, ldc)
                                         int(C), ldc)
     cublasCheckStatus(status)
 
-### BLAS-like extension routines ###
+# BLAS-like extension routines
 
 
 # SGEAM, DGEAM, CGEAM, ZGEAM
@@ -6087,7 +6085,7 @@ cublasZgeam.__doc__ = _GEAM_doc.substitute(precision='double precision',
                                            c_data_2='alpha*np.conj(a).T+beta*b',
                                            func='cublasZgeam')
 
-### Batched routines ###
+# Batched routines
 
 # SgemmBatched, DgemmBatched
 if _cublas_version >= 5000:

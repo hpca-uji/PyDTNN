@@ -84,7 +84,6 @@ class ModelGpuTestCase(ModelCommonTestCase):
         except ValueError as e:
             raise ValueError(f"Output of model 1 {layer.name_with_id}"
                              f" is not ordered [x.strides: {data.strides}") from e
-    # ----
 
     def do_model2_forward_pass(self, model2: Model, x1: list[np.ndarray]) -> list[np.ndarray]:
         """

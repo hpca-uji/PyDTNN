@@ -81,7 +81,6 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
         msg = "This is a fake backward function. It must be masked on initialization by a _backward implementation."
         raise NotImplementedError(f"Conv2DPycuda backward: {msg}")
 
-
     def _export_weights_dw(self, key: str) -> Any:
         # NOTE: Every variant must implement their version of this method.
         # super()._export_prop(key)

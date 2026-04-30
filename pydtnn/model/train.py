@@ -10,9 +10,9 @@ from tqdm import tqdm
 from pydtnn import MPI, gpuarray
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.datasets.dataset import Dataset
-from pydtnn.schedulers.scheduler import select as select_scheduler
 from pydtnn.model.eval import Eval
 from pydtnn.model.utils import BAR_WIDTH
+from pydtnn.schedulers.scheduler import select as select_scheduler
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT,
                                    PYDTNN_MDL_EVENTS, PYDTNN_MDL_EVENT_enum)
 from pydtnn.utils.constants import Array
@@ -76,7 +76,6 @@ class Train[T: Array](Eval[T]):
         else:
             self._model_reduce_async(gradient)
             self._model_reduce_wait(gradient)
-    # -----
 
     def _compute_rank_weight(self, mask: list[int], part: Dataset.Part) -> float:
         match self.model_sync_participation:
@@ -115,7 +114,6 @@ class Train[T: Array](Eval[T]):
     #        pbar.set_postfix_str(s=f"{prev_string}{string}", refresh=True)
 
     #    return total_loss, batch_count
-    # ------
 
     def _train_batch(self, x_batch: np.ndarray, y_batch: np.ndarray, sync_model=True) -> np.ndarray:
         self.mode = Eval.Mode.TRAIN
@@ -182,7 +180,6 @@ class Train[T: Array](Eval[T]):
             sched.on_batch_end(self)
 
         return self.total_metrics
-    # -----
 
     def _train_round(self, pbar: tqdm | None,
                      batch_generator: Generator[tuple[np.ndarray, np.ndarray, int]],
@@ -287,9 +284,7 @@ class Train[T: Array](Eval[T]):
             for sched in self.schedulers:
                 sched.on_epoch_begin(self, self.rank)
 
-            # ------------- #
-            # --- TRAIN --- #
-            # ------------- #
+            # --- TRAIN ---
             train_total_loss, model_sync_count, train_sync_epoch, string = self._train_round(pbar=pbar, batch_generator=train_batch_generator,
                                                                                              model_sync_count=model_sync_count, batches_min=train_batches_min,
                                                                                              total_loss=train_total_loss, batch_count=train_batch_count,
@@ -300,9 +295,7 @@ class Train[T: Array](Eval[T]):
             for c in range(len(self.loss_and_metrics)):
                 self.history[f"{Dataset.Part.TRAIN._name_.lower()}_" + self.loss_and_metrics[c]].append(train_total_loss[c])
 
-            # ----------- #
-            # --- VAL --- #
-            # ----------- #
+            # --- VAL ---
             val_total_loss, model_sync_count, val_sync_epoch, string = self._evalutate_round(pbar=pbar, batch_generator=val_batch_generator,
                                                                                              model_sync_count=model_sync_count, batches_min=val_batches_min,
                                                                                              total_loss=val_total_loss, batch_count=val_batch_count,

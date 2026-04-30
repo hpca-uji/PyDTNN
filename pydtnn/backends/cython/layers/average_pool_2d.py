@@ -24,10 +24,8 @@ if TYPE_CHECKING:
 
 
 class AveragePool2DCython(AveragePool2DNumpy, AbstractPool2DLayerCython):
-    # ----
-    ##############
-    ### CYTHON ###
-    ##############
+
+    # CYTHON
 
     def _fwd_avg_pool_nchw(self, x: np.ndarray, y: np.ndarray) -> None:
         average_pool_2d_fwd_nchw_cython(x, y,  # type: ignore
@@ -35,7 +33,6 @@ class AveragePool2DCython(AveragePool2DNumpy, AbstractPool2DLayerCython):
                                         self.hpadding, self.wpadding,
                                         self.hstride, self.wstride,
                                         self.hdilation, self.wdilation)
-    # ----
 
     def _fwd_avg_pool_nhwc(self, x: np.ndarray, y: np.ndarray) -> None:
         average_pool_2d_fwd_nhwc_cython(x, y,  # type: ignore
@@ -43,7 +40,6 @@ class AveragePool2DCython(AveragePool2DNumpy, AbstractPool2DLayerCython):
                                         self.hpadding, self.wpadding,
                                         self.hstride, self.wstride,
                                         self.hdilation, self.wdilation)
-    # ----
 
     def _bwd_avg_pool_nhwc(self, dx: np.ndarray, dy: np.ndarray) -> None:
         average_pool_2d_bwd_nhwc_cython(dy, dx,  # type: ignore
@@ -52,7 +48,6 @@ class AveragePool2DCython(AveragePool2DNumpy, AbstractPool2DLayerCython):
                                         self.hpadding, self.wpadding,
                                         self.hstride, self.wstride,
                                         self.hdilation, self.wdilation)
-    # ----
 
     def _bwd_avg_pool_nchw(self, dx: np.ndarray, dy: np.ndarray) -> None:
         average_pool_2d_bwd_nchw_cython(dy, dx,  # type: ignore
@@ -61,11 +56,8 @@ class AveragePool2DCython(AveragePool2DNumpy, AbstractPool2DLayerCython):
                                         self.hpadding, self.wpadding,
                                         self.hstride, self.wstride,
                                         self.hdilation, self.wdilation)
-    # ----
 
-    #############
-    #### I2C ####
-    #############
+    # I2C
 
     def _forward_nhwc_i2c(self, x: np.ndarray) -> np.ndarray:
 

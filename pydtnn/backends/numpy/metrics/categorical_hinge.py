@@ -23,7 +23,6 @@ class CategoricalHingeNumpy(CategoricalHinge[np.ndarray], MetricNumpy):
         self.neg_shape = (self.model.batch_size, )
         self.tmp_memory_used += int(math.prod(self._pos_shape) + math.prod(self._neg_shape) + math.prod(self.pos_maxm_shape) + math.prod(self.neg_shape)) * self.model.dtype.itemsize
         self.memory_used += self.tmp_memory_used
-    # ----
 
     def _post_init(self) -> None:
         super()._post_init()

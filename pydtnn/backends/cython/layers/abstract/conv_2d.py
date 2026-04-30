@@ -23,14 +23,12 @@ class AbstractConv2DCython(AbstractConv2DNumpy, LayerCython):
                            self.kh, self.kw, self.ho, self.wo,
                            self.hpadding, self.wpadding,
                            self.hstride, self.wstride, self.hdilation, self.wdilation)
-        # -----------------
 
     def im2col(self, x: np.ndarray, x_cols: np.ndarray) -> None:
         im2col_nchw_cython(x, x_cols,  # type: ignore
                            self.kh, self.kw, self.ho, self.wo,
                            self.hpadding, self.wpadding,
                            self.hstride, self.wstride, self.hdilation, self.wdilation)
-        # -----------------
 
     def row2im(self, x_rows: np.ndarray, dx: np.ndarray) -> None:
         row2im_nhwc_cython(x_rows, dx,  # type: ignore
@@ -38,7 +36,6 @@ class AbstractConv2DCython(AbstractConv2DNumpy, LayerCython):
                            self.kh, self.kw, self.ho, self.wo,
                            self.hpadding, self.wpadding,
                            self.hstride, self.wstride, self.hdilation, self.wdilation)
-       # -----------------
 
     def col2im(self, x_cols: np.ndarray, dx: np.ndarray) -> None:
         col2im_nchw_cython(x_cols, dx,  # type: ignore
@@ -46,4 +43,3 @@ class AbstractConv2DCython(AbstractConv2DNumpy, LayerCython):
                            self.kh, self.kw, self.ho, self.wo,
                            self.hpadding, self.wpadding,
                            self.hstride, self.wstride, self.hdilation, self.wdilation)
-        # -----------------

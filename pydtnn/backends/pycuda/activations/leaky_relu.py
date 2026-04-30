@@ -43,7 +43,6 @@ class LeakyReluPycuda(LeakyRelu[TensorArray], ActivationPycuda):
         self.total_num_threads = np.int32(math.prod(self.grid) * math.prod(self.block))
 
         self.initialize_relu_2d_gpu(prev_shape)
-    # ---
 
     def initialize_relu_2d_gpu(self, prev_shape: ArrayShape) -> None:
         self.ci, self.hi, self.wi = self.model.decode_shape(prev_shape)

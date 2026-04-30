@@ -11,7 +11,7 @@ __all__ = (
     "bn_training_bwd_cython"
 )
 
-# --- FORWARD --- #
+# --- FORWARD ---
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.initializedcheck(False)
@@ -40,7 +40,7 @@ def bn_training_fwd_cython(npDT[:,::1] x,
     return None
 
 
-# --- BACKWARD --- #
+# --- BACKWARD ---
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.initializedcheck(False)
@@ -58,5 +58,4 @@ def bn_training_bwd_cython(npDT[:, ::1] dx,
         for j in range(dy.shape[1]):
             # dx = (self.gamma / (self.std * n)) * (n * dy - self.xn * self.dgamma - self.dbeta) 
             dx[i, j] = <npDT> ((gamma[j] / (std[j] * n)) * (n * dy[i, j] - xn[i, j] * dgamma[j] - dbeta[j]))
-# --- bn_training_bwd_cython --- #
 

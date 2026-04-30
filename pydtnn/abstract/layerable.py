@@ -185,4 +185,3 @@ class Layerable[T: Array](Base[T]):
 
         if Parameters.PATHS in data:
             self._import_prop(Parameters.PATHS, data[Parameters.PATHS])
-    # -----

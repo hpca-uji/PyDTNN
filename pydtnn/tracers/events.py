@@ -7,16 +7,11 @@ from enum import IntEnum, auto
 logger = logging.getLogger(__name__)
 
 
-# ========================== #
-# ========= COMMON ========= #
-# ========================== #
+# ========= COMMON =========
 PYDTNN_EVENT_FINISHED = 0
-# ========================== #
 
 
-# ============================ #
-# ==== PYDTNN_MODEL_EVENT ==== #
-# ============================ #
+# ==== PYDTNN_MODEL_EVENT ====
 class PYDTNN_MDL_EVENT_enum(IntEnum):
     FORWARD = auto()  # Originally: 1
     BACKWARD = auto()  # Originally: 2
@@ -27,11 +22,8 @@ class PYDTNN_MDL_EVENT_enum(IntEnum):
 
 PYDTNN_MDL_EVENT = 60000001
 PYDTNN_MDL_EVENTS = len(PYDTNN_MDL_EVENT_enum)
-# ============================ #
 
-# ================================ #
-# ==== PYDTNN_OPERATION_EVENT ==== #
-# ================================ #
+# ==== PYDTNN_OPERATION_EVENT ====
 
 
 class PYDTNN_OPS_EVENT_enum(IntEnum):
@@ -94,4 +86,3 @@ class PYDTNN_OPS_EVENT_enum(IntEnum):
 
 PYDTNN_OPS_EVENT = 60000002
 PYDTNN_OPS_EVENTS = len(PYDTNN_OPS_EVENT_enum)
-# ================================ #

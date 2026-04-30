@@ -95,7 +95,6 @@ else:
     nprocs = 1
     hostname = "localhost"
     ranks_per_node = {hostname: nprocs}
-# ---
 
 # INIT GPU
 try:
@@ -104,7 +103,6 @@ except (FileNotFoundError, subprocess.CalledProcessError):
     num_gpus = 0
 os.environ["CUDA_VISIBLE_DEVICES"] = str(rank % num_gpus) if num_gpus else ""
 supported_gpu = bool(num_gpus)
-# ---
 
 # INIT NCCL
 if nccl is not None and num_gpus > 0:
@@ -115,7 +113,6 @@ if nccl is not None and num_gpus > 0:
     atexit.register(lambda: nccl.ncclCommDestroy(nccl_comm))  # type: ignore
 else:
     nccl_comm = None  # type: ignore
-# ---
 
 # INIT CUPY
 if cupy is not None and drv is not None:
@@ -145,7 +142,6 @@ if cupy is None and drv is None:
     context = None  # type: ignore
     stream = None  # type: ignore
     stream_handle = None  # type: ignore
-# ---
 
 # INIT CUDNN
 if cudnn is not None and drv is not None:
@@ -154,7 +150,6 @@ if cudnn is not None and drv is not None:
     atexit.register(lambda: cudnn.cudnnDestroy(cudnn_handle))  # type: ignore
 else:
     cudnn_handle: Cudnn_Handle_Type = None  # type: ignore
-# ---
 
 # INIT CUBLAS
 if cublas is not None and device is not None:
@@ -162,14 +157,11 @@ if cublas is not None and device is not None:
     atexit.register(lambda: cublas.cublasDestroy(cublas_handle))  # type: ignore
 else:
     cublas_handle: Cublas_Handle_Type = None  # type: ignore
-# ---
 
 # SYNC CUDNN+CUDA
 if cudnn is not None and stream is not None:
     cudnn.cudnnSetStream(cudnn_handle, stream_handle)
-# ---
 
 # SYNC CUBLAS+CUDA
 if cublas is not None and stream is not None:
     cublas.cublasSetStream(cublas_handle, stream_handle)  # type: ignore
-# ---

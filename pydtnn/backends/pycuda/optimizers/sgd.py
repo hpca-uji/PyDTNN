@@ -30,13 +30,11 @@ class SGDPycuda(SGD[TensorArray], OptimizerPycuda):
         operations_gpu = "v[i] = momentum * v[i] + dw[i]; {nesterov_ops};".format(nesterov_ops=ops_gpu)
 
         self.update_kernel = ElementwiseKernel(parameters_gpu, operations_gpu, "SGD_kernel")
-        # ------------
 
         # GPU Direct -
         self.defines_replaces: dict[str, str] = {"\"TYPE\"": DTYPE2CTYPE[self.model.dtype],
                                                  "NESTEROV_OPS": "NESTEROV_OPS" if self.nesterov else "NOT_NESTEROV"}
         self.update_gpudirect = self._get_kernel(func_name_subfix="_gpudirect")
-        # ------------
 
     def _model_init(self, list_layers: list[LayerPycuda]) -> None:
         super()._model_init(list_layers)  # type: ignore (The type is correct: LayerPycuda extends LayerBase)

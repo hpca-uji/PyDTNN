@@ -80,7 +80,6 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
         self.tmp_memory_used += int(math.prod(self._mean_shape) + math.prod(self._var_shape) + math.prod(self.dy_xn_shape)) * self.model.dtype.itemsize
 
         self.memory_used += self.tmp_memory_used
-    # --
 
     def _post_init(self) -> None:
         super()._post_init()
@@ -110,7 +109,6 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
 
         self.std = np.asarray(self.std, dtype=self.model.dtype, order="C")
         self.xn = np.asarray(self.xn, dtype=self.model.dtype, order="C")
-    # ---
 
     def _training_bwd(self, dx: np.ndarray, dy: np.ndarray) -> None:
         n = dy.shape[0]
@@ -122,7 +120,6 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
         np.subtract(dy, self.xn, out=dy)
         np.subtract(dy, self.dbeta, out=dy)
         np.multiply(dx, dy, out=dx)
-    # ---
 
     def forward(self, x: np.ndarray) -> np.ndarray:
 

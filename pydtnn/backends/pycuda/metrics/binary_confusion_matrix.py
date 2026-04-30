@@ -20,7 +20,6 @@ class BinaryConfusionMatrixPycuda(BinaryConfusionMatrix[TensorArray], MetricPycu
                                                  tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
         self.local_cm = TensorArray.new_zeros(shape=(n, target_classes, 2, 2), dtype=np.dtype(np.int32),
                                               tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
-    # ----
 
     def compute(self, y_pred: TensorArray, y_targ: TensorArray) -> np.ndarray:
         """

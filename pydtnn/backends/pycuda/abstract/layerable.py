@@ -40,17 +40,17 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
                 #     nccl.ncclAllReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type,
                 #                        nccl.RedOp.Sum, comm=self.model.nccl_comm,
                 #                        stream=self.stream_2.handle)
-                #
+
                 # else:
                 #     # Hierarchical allreduce - Phase 1: ncclReduce + Iallreduce
                 #     nccl.ncclReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type,
                 #                     nccl.RedOp.Sum, root=0, comm=self.model.nccl_comm,
                 #                     stream=self.stream_2.handle)
-                #
+
                 #     if self.model.rank in self.model.inter_ranks:
                 #         if not self.model.gpudirect:
                 #             dw.get_async(self.stream_2, dw_cpu)
-                #
+
                 #         self.stream_2.synchronize()
                 #         req = self.model.inter_comm.Iallreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
 
@@ -107,7 +107,7 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
                 #             self.reqs_allred[dw_].wait()
                 #             if not self.model.gpudirect:
                 #                 dw.set_async(dw_cpu, self.stream_2)
-                #
+
                 #         nccl.ncclBroadcast(dw.ptr, dw.ptr, dw.size, self.model.nccl_type,
                 #                            root=0, comm=self.model.nccl_comm,
                 #                            stream=self.stream_2.handle)
@@ -151,7 +151,7 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
                 #     nccl.ncclReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type,
                 #                     nccl.RedOp.Sum, root=0, comm=self.model.nccl_comm,
                 #                     stream=self.stream_2.handle)
-                #
+
                 #     self.stream_2.synchronize()
                 #     if self.model.rank in self.model.inter_ranks:
                 #         if self.model.gpudirect:
@@ -160,7 +160,7 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
                 #             dw_cpu = dw.get()
                 #             self.model.inter_comm.Allreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
                 #             dw.set_async(dw_cpu, self.stream_2)
-                #
+
                 #     nccl.ncclBroadcast(dw.ptr, dw.ptr, dw.size, self.model.nccl_type,
                 #                        root=0, comm=self.model.nccl_comm,
                 #                        stream=self.stream_2.handle)

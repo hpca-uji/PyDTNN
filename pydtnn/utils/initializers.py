@@ -20,13 +20,11 @@ class DistributionModeEnum(StrEnum):
     FAN_IN = auto()
     FAN_OUT = auto()
     FAN_AVG = auto()
-# ---
 
 
 class ProbabilisticDistribution(StrEnum):
     UNIFORM = auto()
     NORMAL = auto()
-# ---
 
 
 # 0.879... = scipy.stats.truncnorm.std(a=-2, b=2, loc=0., scale=1.)

@@ -21,7 +21,6 @@ class KLDivergenceNumpy(KLDivergence[np.ndarray], LossNumpy):
         # loss = np.abs(y_targ * (np.log(np.abs(y_targ / (y_pred + self.eps)) + 1)))
         # loss = np.sum(loss) / y_pred.shape[0]
         # dx = - pred / target # Respecto a Target
-        # ----
 
         # dx = np.log(np.abs(y_targ/(y_pred + self.eps)) + 1)  # Respecto a prediction
         # dx = dx / batch_size

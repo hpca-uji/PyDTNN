@@ -9,11 +9,7 @@ import pydtnn.converters.onnx2pydtnn.constants as cons
 import pydtnn.layers as layer
 from pydtnn.abstract.layerable import Layerable
 
-# ========================= #
-
-# ===== #
-# = A = #
-# ===== #
+# = A =
 
 
 def Add(info: dict[str, Any]) -> Layerable:
@@ -24,7 +20,6 @@ def Add(info: dict[str, Any]) -> Layerable:
 
     from pydtnn.layers.addition_block import AdditionBlock
     return AdditionBlock(list_adding_nodes)
-# --- END Add --- #
 
 
 def AveragePool(info: dict[str, Any]) -> Layerable:
@@ -56,14 +51,9 @@ def AveragePool(info: dict[str, Any]) -> Layerable:
 
     from pydtnn.layers.average_pool_2d import AveragePool2D
     return AveragePool2D(**args)
-# --- END AveragePool --- #
-
-# ========================= #
 
 
-# ===== #
-# = B = #
-# ===== #
+# = B =
 
 def BatchNormalization(info: dict[str, Any]) -> Layerable:
     print(f"attributes: {info[cons.CONST_ATTRIBUTES]}")
@@ -85,14 +75,9 @@ def BatchNormalization(info: dict[str, Any]) -> Layerable:
 
     from pydtnn.layers.batch_normalization import BatchNormalization
     return BatchNormalization(**args)
-# --- END BatchNormalization --- #
-
-# ========================= #
 
 
-# ===== #
-# = C = #
-# ===== #
+# = C =
 
 def Concat(info: dict[str, Any]) -> Layerable:
     print(f"attributes: {info[cons.CONST_ATTRIBUTES]}")
@@ -105,7 +90,6 @@ def Concat(info: dict[str, Any]) -> Layerable:
 
     from pydtnn.layers.concatenation_block import ConcatenationBlock
     return ConcatenationBlock(list_concat_nodes)
-# --- END Concat --- #
 
 
 def Conv(info: dict[str, Any]) -> Layerable:
@@ -149,14 +133,9 @@ def Conv(info: dict[str, Any]) -> Layerable:
 
     from pydtnn.layers.conv_2d import Conv2D
     return Conv2D(**args)
-# --- END Conv --- #
-
-# ========================= #
 
 
-# ===== #
-# = D = #
-# ===== #
+# = D =
 
 def Dropout(info: dict[str, Any]) -> Layerable:
     print(f"attributes: {info[cons.CONST_ATTRIBUTES]}")
@@ -185,13 +164,9 @@ def Dropout(info: dict[str, Any]) -> Layerable:
 
     from pydtnn.layers.dropout import Dropout
     return Dropout(**args)
-# --- END Dropout --- #
 
-# ========================= #
 
-# ===== #
-# = F = #
-# ===== #
+# = F =
 
 
 def Flatten(info: dict[str, Any]) -> Layerable:
@@ -201,13 +176,9 @@ def Flatten(info: dict[str, Any]) -> Layerable:
     # ==> In PyDTNN the axis is always 1.
     from pydtnn.layers.flatten import Flatten
     return Flatten()
-# --- END Flatten --- #
 
-# ========================= #
 
-# ===== #
-# = G = #
-# ===== #
+# = G =
 
 
 def Gemm(info: dict[str, Any]) -> Layerable:
@@ -271,7 +242,6 @@ def Gemm(info: dict[str, Any]) -> Layerable:
     pseudo_gemm.forward = _mod_forward
 
     return pseudo_gemm
-# --- END Gemm --- #
 
 
 def GlobalAveragePool(info: dict[str, Any]) -> Layerable:
@@ -295,15 +265,9 @@ def GlobalAveragePool(info: dict[str, Any]) -> Layerable:
 
     from pydtnn.layers.average_pool_2d import AveragePool2D
     return AveragePool2D(**args)
-# --- END GlobalAveragePool --- #
 
 
-# ========================= #
-
-
-# ===== #
-# = M = #
-# ===== #
+# = M =
 
 def MaxPool(info: dict[str, Any]) -> Layerable:
     print("------")
@@ -340,7 +304,6 @@ def MaxPool(info: dict[str, Any]) -> Layerable:
 
     from pydtnn.layers.max_pool_2d import MaxPool2D
     return MaxPool2D(**args)
-# --- END MaxPool --- #
 
 
 def Mul(info: dict[str, Any]) -> Layerable:
@@ -357,7 +320,6 @@ def Mul(info: dict[str, Any]) -> Layerable:
             super().initialize_block_layer()
             assert all([o == self.out_shapes[0] for o in self.out_shapes])
             self.shape = self.out_shapes[0]
-        # - END initialize_block_layer - #
 
         def forward(self, x):
             x = [x] * len(self.paths)
@@ -369,7 +331,6 @@ def Mul(info: dict[str, Any]) -> Layerable:
                     # TODO: do it with Cython.
                     x[0] = multiply(x[0], x[i])
             return x[0]
-        # - END forward - #
 
         def backward(self, dy):
             dx = [dy] * len(self.paths)
@@ -380,33 +341,20 @@ def Mul(info: dict[str, Any]) -> Layerable:
                     # TODO: do it with Cython adn chekc if it's correct.
                     dx[0] = multiply(dx[0], dx[i])
             return dx[0]
-        # - END backward - #
-    # -- END _Mul -- #
 
     return _Mul(info[cons.CONST_listS_NODES])
-# --- END Mul --- #
-
-# ========================= #
 
 
-# ===== #
-# = R = #
-# ===== #
+# = R =
 
 def Relu(info: dict[str, Any]) -> Layerable:
     # ONNX info: https://onnx.ai/onnx/operators/onnx__Relu.html
     print(f"attributes: {info[cons.CONST_ATTRIBUTES]}")
     from pydtnn.activations.relu import Relu
     return Relu()
-# --- END Relu --- #
 
 
-# ========================= #
-
-
-# ===== #
-# = U = #
-# ===== #
+# = U =
 
 
 def Unsqueeze(info: dict[str, Any]) -> Layerable:
@@ -433,7 +381,6 @@ def Unsqueeze(info: dict[str, Any]) -> Layerable:
         def __init__(self, shape=(1,), axis=()):
             super().__init__(shape)
             self.axis = axis
-        # - END __init__ - #
 
         def _model_init(self, prev_shape, need_dx=False):
             super()._model_init(prev_shape, need_dx)
@@ -444,12 +391,8 @@ def Unsqueeze(info: dict[str, Any]) -> Layerable:
             super().initialize_block_layer()
             assert all([o == self.out_shapes[0] for o in self.out_shapes])
             self.shape = self.out_shapes[0]
-        # - END initialize_block_layer - #
 
         def forward(self, x):
             return expand_dims(x, axis=self.axis)
-    # -- END _Unsqueeze -- #
 
     return _Unsqueeze(**args)
-
-# --- END Unsqueeze --- #

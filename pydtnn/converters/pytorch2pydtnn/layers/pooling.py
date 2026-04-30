@@ -1,6 +1,4 @@
-# _______________________________________________________________________________________________________________
 # In this file must be implemented only the translation of PyTorch Pooling layers to its PyDTNN equivalent.
-# _______________________________________________________________________________________________________________
 
 import logging
 from typing import Any
@@ -16,9 +14,7 @@ logger = logging.getLogger(__name__)
 
 # Functionality imports
 
-# ------------------- #
-# ---- CONSTANTS ---- #
-# ------------------- #
+# ---- CONSTANTS ----
 
 # PyTorch:
 PYTORCH_KERNEL_SIZE = "kernel_size"  # INT or Tuple[INT, INT]
@@ -31,9 +27,6 @@ PYDTNN_POOL_SHAPE = "pool_shape"
 PYDTNN_STRIDE = "stride"
 PYDTNN_PADDING = "padding"
 PYDTNN_DILATION = "dilation"
-# ------------------- #
-
-# ------------------- #
 
 
 def MaxPool2d(args: dict[str, Any]) -> MaxPool2D:
@@ -42,11 +35,9 @@ def MaxPool2d(args: dict[str, Any]) -> MaxPool2D:
     # PyTorch attributes:
     # Not used: return_indices, ceil_mode
     torch_dict_keys = [PYTORCH_KERNEL_SIZE, PYTORCH_STRIDE, PYTORCH_PADDING, PYTORCH_DILATION]
-    # ---- #
 
     # PyDTNN attributes:
     pydtnn_dict_keys = [PYDTNN_POOL_SHAPE, PYDTNN_STRIDE, PYDTNN_PADDING, PYDTNN_DILATION]
-    # ---- #
 
     layer_args = cm.prepare_pydtnn_arguments(arguments=args[cm.ARGUMENTS], torch_dict_keys=torch_dict_keys, pydtnn_dict_keys=pydtnn_dict_keys)
 
@@ -66,11 +57,9 @@ def AvgPool2d(args: dict[str, Any]) -> AveragePool2D:
     # PyTorch attributes:
     # Not used: ceil_mode, count_include_pad, divisor_override
     torch_dict_keys = [PYTORCH_KERNEL_SIZE, PYTORCH_STRIDE, PYTORCH_PADDING, PYTORCH_DILATION]
-    # ---- #
 
     # PyDTNN attributes:
     pydtnn_dict_keys = [PYDTNN_POOL_SHAPE, PYDTNN_STRIDE, PYDTNN_PADDING, PYDTNN_DILATION]
-    # ---- #
 
     layer_args = cm.prepare_pydtnn_arguments(arguments=args[cm.ARGUMENTS], torch_dict_keys=torch_dict_keys, pydtnn_dict_keys=pydtnn_dict_keys)
 

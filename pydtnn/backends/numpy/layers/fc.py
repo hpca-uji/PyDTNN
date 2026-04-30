@@ -25,7 +25,6 @@ class FCNumpy(FC[np.ndarray], LayerNumpy):
         self.x: np.ndarray = None  # type: ignore
         self.dw: np.ndarray = None  # type: ignore
         self.db: np.ndarray = None  # type: ignore
-    # --
 
     def _model_init(self, prev_shape, x=None):
         super()._model_init(prev_shape, x)
@@ -63,7 +62,6 @@ class FCNumpy(FC[np.ndarray], LayerNumpy):
             matmul_time(m=self.model.batch_size, n=self.weights.shape[0], k=self.weights.shape[1],
                         cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw,
                         dtype=self.model.dtype)  # type: ignore (It works well.)
-    # ----
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         self.x = x
@@ -77,7 +75,6 @@ class FCNumpy(FC[np.ndarray], LayerNumpy):
             np.add(y, self.biases, out=y, dtype=self.model.dtype)
 
         return np.asarray(y, dtype=self.model.dtype, order="C")
-    # ---
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
 
@@ -97,4 +94,3 @@ class FCNumpy(FC[np.ndarray], LayerNumpy):
         np.matmul(dy, self.weights.T, out=dx, dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return np.asarray(dx, dtype=self.model.dtype, order="C")
-    # --

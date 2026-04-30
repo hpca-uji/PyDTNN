@@ -87,14 +87,12 @@ class Folder(Dataset):
         labels_and_images = [(class_name, path_image) for class_name, set_path_image in dict_class_file.items() for path_image in set_path_image]
 
         return (labels_and_images, num_classes, num_images)
-    # ---
 
     def _prepare_label(self, label: int, num_classes: ArrayShape) -> np.ndarray:
         """Transform class numer into class mask (ndarray 1D unit8)"""
         np_label = np.zeros(shape=num_classes, dtype=np.uint8)
         np_label[label] = 1
         return np_label
-    # ---
 
     @override
     def _actual_data_generator(self, part: Dataset.Part) -> Generator[tuple[np.ndarray, np.ndarray]]:

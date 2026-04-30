@@ -19,7 +19,6 @@ class RegressionMAENumpy(RegressionMAE[np.ndarray], MetricNumpy):
 
         self.tmp_memory_used += int(math.prod(self.shape)) * self.model.dtype.itemsize
         self.memory_used += self.tmp_memory_used
-    # ----
 
     def _post_init(self) -> None:
         super()._post_init()

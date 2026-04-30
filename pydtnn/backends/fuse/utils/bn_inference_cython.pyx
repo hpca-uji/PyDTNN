@@ -11,15 +11,14 @@ __all__ = (
     "bn_relu_inference_cython"
 )
 
-# --- COMMON --- #
+# --- COMMON ---
 ctypedef fused npDT:
     np.int8_t
     np.float32_t
     np.float64_t
     # NOTE: in order to extend the supported data types, add the new types here.
-# -- END npDT -- #
 
-# --- Base Batch Normalization --- #
+# --- Base Batch Normalization ---
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.initializedcheck(False)
@@ -35,12 +34,10 @@ def bn_inference_cython(npDT[:, ::1] x,
         for j in range(x.shape[1]):
             y[i, j] = <npDT> (gamma[j] * (x[i, j] - running_mean[j]) / std[j]) + beta[j]
 
-# ==================================== #
 
 
-# ==================================== #
 
-# --- NCHW Batch Normalization --- #
+# --- NCHW Batch Normalization ---
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.initializedcheck(False)
@@ -58,11 +55,9 @@ def bn_inference_nchw_cython(npDT[:, ::1] x,
                     y[i, j] = <npDT> (gamma[j] * (x[i, j] - running_mean[j]) / std[j]) + beta[j]
 
 
-# ==================================== #
 
 
 
-# ==================================== #
 
 
 @cython.boundscheck(False)

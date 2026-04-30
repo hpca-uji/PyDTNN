@@ -37,12 +37,10 @@ class Layers[T: Array](Utils[T]):
 
         if layer.act:
             self.add(layer.act())
-    # ---
 
     def add_layers(self, list_layers: abc.Sequence[Layerable[T]]) -> None:
         for layer in list_layers:
             self.add(layer)
-    # --- END add_layers ---
 
     def get_all_layers(self, from_layers: list[Layerable[T]] | None = None) -> list[Layerable[T]]:
         if from_layers is None:
@@ -70,7 +68,6 @@ class Layers[T: Array](Utils[T]):
             case _: pass  # else: layer_name = None
 
         return layer_name, [layer0, layer1, layer2]
-    # ----
 
     def _select_fusion_2(self, fused_layers: list) -> tuple[str | None, list[Layerable | FusedLayerMixIn | None]]:
         layer2 = fused_layers[-1] if len(fused_layers) > 0 else None
@@ -96,7 +93,6 @@ class Layers[T: Array](Utils[T]):
             case _: pass  # else: layer_name = None
 
         return layer_name, [layer1, layer2]
-    # ----
 
     def _layer_fusion(self, layers: list[Layerable], switch_fusion: abc.Callable) -> None:
         i = 0
@@ -129,7 +125,6 @@ class Layers[T: Array](Utils[T]):
                     layers.insert(start, new_curr_layer)
                     i -= len(layers_to_fuse)
             i += 1
-    # ------
 
     def _apply_layer_fusion(self):
         """ Apply layer fusion in a recursive manner """
@@ -139,4 +134,3 @@ class Layers[T: Array](Utils[T]):
             self.backend = f"layers:fuse;{self.backend}"
             self._layer_fusion(self.layers, self._select_fusion_3)
             self._layer_fusion(self.layers, self._select_fusion_2)
-    # ------

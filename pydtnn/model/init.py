@@ -15,14 +15,14 @@ from pydtnn.datasets.dataset import select as select_dataset
 from pydtnn.libs.mpi.rc import proto as PROTOCOL
 from pydtnn.losses.loss import select as select_loss
 from pydtnn.metrics.metric import select as select_metric
-from pydtnn.models.model import select as select_model
-from pydtnn.optimizers.optimizer import select as select_optimizer
-from pydtnn.utils.parser import ArgumentParser
 from pydtnn.model.base import Base
 from pydtnn.model.state import State
 from pydtnn.model.utils import DEFAULT_BACH_SIZE, LIMIT_THREADS_AND_BLOCKS
+from pydtnn.models.model import select as select_model
+from pydtnn.optimizers.optimizer import select as select_optimizer
 from pydtnn.utils.gpu import CudnnDataType
 from pydtnn.utils.memory_pool import PreallocMemory, PrivateMemory
+from pydtnn.utils.parser import ArgumentParser
 from pydtnn.utils.performance_counter import PerformanceCounter
 from pydtnn.utils.tensor import SampleFormat, TensorFormat, format_reshape
 
@@ -56,7 +56,7 @@ class Init[T: Array](State[T]):
         self.memory: PrivateMemory = None  # type: ignore (it will be intialized later if "self.use_memory_pool" is True)
         self.dtype: np.dtype = np.dtype(self.dtype)
         self.param_dtype: np.dtype = np.dtype(self.quantize_dtype) if self.quantize else self.dtype
-        #self.metrics_dtype: np.dtype = np.dtype(np.float32) if np.issubdtype(self.dtype, np.int32) else self.dtype
+        # self.metrics_dtype: np.dtype = np.dtype(np.float32) if np.issubdtype(self.dtype, np.int32) else self.dtype
 
         self.nparams = 0
         self.memory_used = 0
@@ -338,7 +338,6 @@ class Init[T: Array](State[T]):
 
         self.loss_func._post_init()
         self.optimizer._post_init()
-        # ----
 
     def _ensure_model_runable(self) -> None:
         if not self.layers:

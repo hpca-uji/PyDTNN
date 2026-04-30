@@ -352,7 +352,7 @@ class ConvWinograd:
         # 1.1) First alternative: padding first
         # x_padded = best_pad(x, vpadding, hpadding)
         # _, _, hi, wi = x_padded.shape
-        #
+
         # for c in range(ci):
         #     for b in range(n):
         #         for h in range(tile_h):

@@ -55,7 +55,7 @@ dict_test = {
     "googlenet": (googlenet, pydtnn_inceptionv3_cifar10, (524, 524, 3), "cifar10", {"num_classes": 5}, None),  # (299, 299, 3)
 }
 
-# ----- EXECUTION PARAMETERS ----- #
+# ----- EXECUTION PARAMETERS -----
 TEST = "densenet169"
 FIRST_PYTORCH = False
 OLD_FIRST = None
@@ -89,7 +89,6 @@ def get_model_layers(model: torch.nn.Module, name: str = "self") -> dict[str, to
                 _get_model_layers(model=module, name=".".join([name, nom]), dict_modules=dict_modules)
         else:
             dict_modules[name] = model
-    # -- END _get_model_layers--#
     dict_modules = {}
     _get_model_layers(model=model, name=name, dict_modules=dict_modules)
     return dict_modules
@@ -114,7 +113,6 @@ def pytorch_inference(model: torch.nn.Module, dataloader, loss_func: torch.nn.mo
                         print(f"\telem.size(): {elem.size()}")
                 else:
                     print(f"\tx[0].size(): {x[0].size()}")
-            # ----
 
             def print_post(module, args, output, *, name=n):
                 print(f"{name}:")
@@ -126,11 +124,9 @@ def pytorch_inference(model: torch.nn.Module, dataloader, loss_func: torch.nn.mo
                 else:
                     print(f"\toutput[0].size(): {output[0].size()}")
                     # print(f"\toutput[0]: {output[0]}")
-            # ----
 
             m.register_forward_pre_hook(print_pre)
             m.register_forward_hook(print_post)
-        # --------
 
     model.eval()
     with torch.no_grad():
@@ -193,7 +189,6 @@ def _pydtnn_inference(new_model, old_model, dataset, old_first=None):
         case not_old_model:  # old_first = None
             print("NEW model")
             pydtnn_inference(model=new_model, dataset=dataset)
-# -----------------------#
 
 
 def _pytorch_inference(pytorch_model, dataloader, kwargs, device):
@@ -217,7 +212,6 @@ def _pytorch_inference(pytorch_model, dataloader, kwargs, device):
                                     # ("AveragePrecision", AveragePrecision(task = task, num_classes = num_classes)),
                                     # ("F1Score", F1Score(task = task, num_classes = num_classes))
                                     ])
-# -----------------------#
 
 
 def pydtnn_training(model: PyDTNN_Model, dataset: Dataset, num_samples=64 * 2):

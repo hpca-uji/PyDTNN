@@ -11,7 +11,6 @@ __all__ = (
 )
 
 
-# --- im2col --- #
 
 # NOTE:
 # This code has been inspired from cthorey, see:
@@ -46,13 +45,9 @@ def im2col_nchw_cython(npDT[:,:,:,::1] x,
                                 cols[row, col] = x[nn, cc, x_x, x_y]
                             else:
                                 cols[row, col] = <npDT> 0.0
-# --- im2col_nchw_cython --- #
 
-# ================== #
 
-# ================== #
 
-# --- col2im --- #
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.initializedcheck(False)
@@ -114,12 +109,9 @@ def alt_col2im_nchw_cython(npDT[:,::1] cols,
                                 col = ((nn * ho) + xx) * wo + yy
                                 dx[nn, cc, x_x, x_y] += cols[row, col]
 
-# ================================== #
-
-# ================================== #
 
 
-# ---- im2col_nchw_3x3_cython_inner ---- #
+
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.initializedcheck(False)

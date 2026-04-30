@@ -25,7 +25,6 @@ class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
                 # self.weights_shape = (self.co, *self.filter_shape, self.ci)
             case _:
                 raise NotImplementedError(f"{self.model.tensor_format} format not implemented.")
-    # -----
 
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
         super()._model_init(prev_shape, x)
@@ -60,7 +59,6 @@ class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
         self.y = TensorArray.new_zeros((self.model.batch_size, *self.shape), self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype)
         self.dw = TensorArray.new_zeros(dw_shape, self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype)
         self.dx = TensorArray.new_zeros(self.x.ary.shape, self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype)
-    # -----
 
     @override
     def _export_weights_dw(self, key: str) -> Any:
@@ -75,7 +73,6 @@ class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
                 return np.asarray(format_transpose(cpu_ary, "IHWO", "OIHW"), dtype=np.float64, order="C", copy=True)
             case _:
                 return super()._export_prop(key)
-    # ------
 
     @override
     def _import_weights_dw(self, key: str, value: Any) -> None:
@@ -89,7 +86,6 @@ class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
                 return
             case _:
                 return super()._import_prop(key, value)
-    # ---
 
     def forward(self, x: TensorArray) -> TensorArray:
         # im2col / im2row
@@ -109,7 +105,6 @@ class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
                       )
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.y
-    # ---
 
     def backward(self, dy: TensorArray) -> TensorArray:
 
@@ -135,4 +130,3 @@ class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
                        )
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.dx
-    # ---

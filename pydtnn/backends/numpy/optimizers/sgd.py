@@ -40,7 +40,6 @@ class SGDNumpy(SGD[np.ndarray], OptimizerNumpy):
 
         self.tmp_memory_used += self.model.memory_cls._total(*temp_memory_size)
         self.memory_used += self.tmp_memory_used
-    # ---
 
     def _post_init(self) -> None:
         super()._post_init()
@@ -60,8 +59,6 @@ class SGDNumpy(SGD[np.ndarray], OptimizerNumpy):
 
                     w_shape = self.context[layer_id]["velocity_%s" % w_].shape  # type: ignore (it is correct)
                     w_shape = self.context[layer_id][key] = self.model.memory.ndarray(w_shape, dtype=self.model.dtype)
-        # - end for
-    # ---
 
     def update(self, layer: LayerNumpy) -> None:
         for w_, dw_ in layer.grad_vars.items():

@@ -17,9 +17,9 @@ class BestOfProfiler:
         self.best_method: BestOf = best_method
 
     def __call__(self, *args, **kwargs):
-        #
+
         # First run
-        #
+
         problem_size = self.best_method.get_problem_size(*args, **kwargs)
         logger.info(f"{problem_size}: First run (checking outputs)")
         outputs = []
@@ -31,9 +31,9 @@ class BestOfProfiler:
                     name_0 = self.best_method.alternatives[0][0]
                     name_i = self.best_method.alternatives[i][0]
                     assert np.allclose(outputs[0], outputs[-1]), f"{name_0} and {name_i} outputs differ"
-        #
+
         # Rest runs
-        #
+
         logger.info(f" \nNext runs (getting times)")
         for i in range(0, (self.best_method.total_rounds - 1) * self.best_method.total_alternatives):
             if self.best_method.best_method_has_been_found(*args, **kwargs):

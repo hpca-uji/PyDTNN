@@ -27,7 +27,6 @@ class AbstractConv2DCupy(AbstractConv2DNumpy, AbstractConv2D[np.ndarray], LayerC
         self._im2col = self._get_kernel(func_name="im2_row_col", defines_replaces={"\"TYPE\"": DTYPE2CTYPE[self.model.dtype], "TENSOR_FORMAT": self.model.tensor_format})
         self._row2im = self._get_kernel(func_name="row_col_2im", defines_replaces={"\"TYPE\"": DTYPE2CTYPE[self.model.dtype], "TENSOR_FORMAT": self.model.tensor_format})
         self._col2im = self._get_kernel(func_name="row_col_2im", defines_replaces={"\"TYPE\"": DTYPE2CTYPE[self.model.dtype], "TENSOR_FORMAT": self.model.tensor_format})
-        # ----
 
     def im2row(self, x: np.ndarray, x_rows: np.ndarray) -> None:
         # return super().im2row(x, x_rows)
@@ -39,7 +38,6 @@ class AbstractConv2DCupy(AbstractConv2DNumpy, AbstractConv2D[np.ndarray], LayerC
                       self.hpadding, self.wpadding,
                       self.hstride, self.wstride,
                       self.hdilation, self.wdilation))
-    # -----
 
     def row2im(self, x_rows: np.ndarray, dx: np.ndarray) -> None:
         # return super().im2row(x_rows, dx)
@@ -51,7 +49,6 @@ class AbstractConv2DCupy(AbstractConv2DNumpy, AbstractConv2D[np.ndarray], LayerC
                       self.hpadding, self.wpadding,
                       self.hstride, self.wstride,
                       self.hdilation, self.wdilation))
-    # -----
 
     def im2col(self, x: np.ndarray, x_cols: np.ndarray) -> None:
         # return super().im2col(x, x_cols)
@@ -63,7 +60,6 @@ class AbstractConv2DCupy(AbstractConv2DNumpy, AbstractConv2D[np.ndarray], LayerC
                       self.hpadding, self.wpadding,
                       self.hstride, self.wstride,
                       self.hdilation, self.wdilation))
-    # -----
 
     def col2im(self, x_cols: np.ndarray, dx: np.ndarray) -> None:
         # return super().im2row(x_cols, dx)
@@ -75,4 +71,3 @@ class AbstractConv2DCupy(AbstractConv2DNumpy, AbstractConv2D[np.ndarray], LayerC
                       self.hpadding, self.wpadding,
                       self.hstride, self.wstride,
                       self.hdilation, self.wdilation))
-    # -----

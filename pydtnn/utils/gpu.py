@@ -11,7 +11,6 @@ class CudnnDataType(enum.StrEnum):
     FLOAT32 = "CUDNN_DATA_FLOAT"
     INT8 = "CUDNN_DATA_INT8"
     INT32 = "CUDNN_DATA_INT32"
-# -----
 
 
 def get_gpu_memory_used() -> str:

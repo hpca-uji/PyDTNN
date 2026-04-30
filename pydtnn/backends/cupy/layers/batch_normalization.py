@@ -24,7 +24,6 @@ class BatchNormalizationCupy(BatchNormalizationNumpy, LayerCupy):
 
         self.fwd = self._fwd_kernel()
         self.bwd = self._bwd_kernel()
-        # ----
 
     def _training_fwd(self, x: np.ndarray, _mean: np.ndarray, _var: np.ndarray, y: np.ndarray) -> None:
         # return super()._training_bwd(dx, dy)
@@ -36,7 +35,6 @@ class BatchNormalizationCupy(BatchNormalizationNumpy, LayerCupy):
                   self.beta, _mean,
                   _var, self.epsilon,
                   dim_i, dim_j, x.size))
-    # ---
 
     def _training_bwd(self, dx: np.ndarray, dy: np.ndarray) -> None:
         # return super()._training_bwd(dx, dy)
@@ -47,4 +45,3 @@ class BatchNormalizationCupy(BatchNormalizationNumpy, LayerCupy):
                   self.std, self.gamma,
                   self.dgamma, self.dbeta,
                   dim_i, dim_j, dx.size))
-    # ---

@@ -28,7 +28,6 @@ class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], AbstractPool
         super().__init__(*args, **kwargs)
         # The following atributte will be initalized in "initalize"
         self.y: np.ndarray = None  # type: ignore
-    # -- END __init__ -- #
 
     # Method from AbstractPool2DLayerNumpy
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None):
@@ -61,7 +60,6 @@ class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], AbstractPool
         if self.pooling_not_needed:
             self._forward = (lambda x: x)
         # else: Nothing special.
-    # -- END initialize -- #
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         return self._forward(x)
@@ -87,7 +85,6 @@ class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], AbstractPool
                             for j in range(w_start, w_end):
                                 add += x[nn, cc, i, j]
                         y[nn, cc, hi, wi] = add / elements
-    # ----
 
     def _fwd_nhwc(self, x: np.ndarray, y: np.ndarray) -> None:
         for nn in range(x.shape[0]):
@@ -107,7 +104,6 @@ class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], AbstractPool
                             for j in range(w_start, w_end):
                                 add += x[nn, i, j, cc]
                         y[nn, hi, wi, cc] = add / elements
-    # ----
 
     def _bwd_nchw(self, dx: np.ndarray, dy: np.ndarray) -> None:
         for nn in range(dy.shape[0]):
@@ -125,7 +121,6 @@ class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], AbstractPool
                         for i in range(h_start, h_end):
                             for j in range(w_start, w_end):
                                 dx[nn, cc, i, j] += delta
-    # ----
 
     def _bwd_nhwc(self, dx: np.ndarray, dy: np.ndarray) -> None:
         for nn in range(dy.shape[0]):
@@ -143,7 +138,6 @@ class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], AbstractPool
                         for i in range(h_start, h_end):
                             for j in range(w_start, w_end):
                                 dx[nn, i, j, cc] += delta
-    # ----
 
     def _forward_nhwc(self, x: np.ndarray) -> np.ndarray:
         y: np.ndarray = np.ascontiguousarray(self.y[:x.shape[0], :], dtype=self.model.dtype)

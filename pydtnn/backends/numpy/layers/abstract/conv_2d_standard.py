@@ -24,7 +24,6 @@ class AbstractConv2DStandardNumpy(AbstractConv2DNumpy):
                 self.weights_shape = (self.ci, *self.filter_shape, self.co)
             case _:
                 raise NotImplementedError(f"{self.model.tensor_format} format not implemented.")
-    # ---
 
     def _export_weights_dw(self, key: str):
         value = getattr(self, key)
@@ -38,8 +37,6 @@ class AbstractConv2DStandardNumpy(AbstractConv2DNumpy):
                 return np.asarray(value, dtype=np.float64, order="C", copy=True)
             case tensor_format:
                 raise TypeError(f"Unsupported tensor format ({tensor_format})")
-
-    # -----
 
     def _import_weights_dw(self, key: str, value) -> None:
         ary = getattr(self, key)
@@ -55,4 +52,3 @@ class AbstractConv2DStandardNumpy(AbstractConv2DNumpy):
                 return
             case tensor_format:
                 raise TypeError(f"Unsupported tensor format ({tensor_format})")
-    # -----

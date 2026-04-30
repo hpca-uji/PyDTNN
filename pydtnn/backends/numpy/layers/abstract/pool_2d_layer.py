@@ -66,7 +66,6 @@ class AbstractPool2DLayerNumpy(AbstractPool2DLayer[np.ndarray], LayerNumpy):
             col2im_time(m=(self.kh * self.kw), n=(self.model.batch_size * self.ho * self.wo * self.ci),
                         cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw,
                         dtype=self.model.dtype)  # type: ignore (it's fine)
-    # ----
 
     def get_y(self, batch_size: int) -> np.ndarray:
         y_shape = self.model.encode_shape((batch_size, self.co, self.ho, self.wo))
@@ -87,7 +86,6 @@ class AbstractPool2DLayerNumpy(AbstractPool2DLayer[np.ndarray], LayerNumpy):
     def backward(self, dy: np.ndarray) -> np.ndarray:
         msg = """This is a fake backward function. It will be masked on initialization by _backward_i2c or _backward_cg"""
         raise NotImplementedError(f"Class \'AbstractPool2DLayerNumpy\'. Error: {msg}")
-    # ---
 
     def _forward_nchw(self, x: np.ndarray) -> np.ndarray:
         raise NotImplementedError(f"This is a fake method. {self} must implement _forward_nchw.")

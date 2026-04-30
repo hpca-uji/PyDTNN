@@ -23,14 +23,12 @@ class Conv2DDepthwiseCython(Conv2DDepthwiseNumpy, AbstractConv2DCython):
                                    self.ho, self.wo,
                                    self.hpadding, self.wpadding,
                                    self.hstride, self.wstride, self.hdilation, self.wdilation)
-    # ----
 
     def _conv_fwd_nchw(self, x: np.ndarray, y: np.ndarray) -> None:
         depthwise_conv_nchw_cython(x, self.weights, y,  # type: ignore
                                    self.ho, self.wo,
                                    self.hpadding, self.wpadding,
                                    self.hstride, self.wstride, self.hdilation, self.wdilation)
-    # ----
 
     def _conv_bwd_nhwc(self, dx: np.ndarray, dy: np.ndarray) -> None:
         depthwise_conv_backward_nhwc_cython(dy, self.x, self.weights,  # type: ignore
@@ -38,7 +36,6 @@ class Conv2DDepthwiseCython(Conv2DDepthwiseNumpy, AbstractConv2DCython):
                                             self.hpadding, self.wpadding,
                                             self.hstride, self.wstride,
                                             self.hdilation, self.wdilation)
-    # ----
 
     def _conv_bwd_nchw(self, dx: np.ndarray, dy: np.ndarray) -> None:
         depthwise_conv_backward_nchw_cython(dy, self.x, self.weights,  # type: ignore
@@ -46,4 +43,3 @@ class Conv2DDepthwiseCython(Conv2DDepthwiseNumpy, AbstractConv2DCython):
                                             self.hpadding, self.wpadding,
                                             self.hstride, self.wstride,
                                             self.hdilation, self.wdilation)
-    # ----

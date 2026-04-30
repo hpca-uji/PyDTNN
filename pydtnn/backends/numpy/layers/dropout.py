@@ -38,7 +38,6 @@ class DropoutNumpy(Dropout[np.ndarray], LayerNumpy):
             case _:
                 raise RuntimeError(f"Unexpected model mode \'{self.model.mode}\'.")
         return x
-    # ----
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
         np.multiply(dy, self.mask, out=dy, dtype=self.model.dtype)

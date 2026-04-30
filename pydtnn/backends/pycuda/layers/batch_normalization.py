@@ -113,7 +113,6 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
         self.nparams = self.gamma.size + self.beta.size + self.running_mean.size + self.running_var.size
 
         self.memory_used += self.gamma.nbytes
-    # ---
 
     def forward(self, x: TensorArray) -> TensorArray:
         alpha, beta = 1.0, 0.0
@@ -161,14 +160,12 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
             self.dgamma.get_async(self.stream_2, self.dgamma_cpu)
             self.dbeta.get_async(self.stream_2, self.dbeta_cpu)
         return self.dx
-    # -----
 
     def _export_gamma_beta(self, key: str) -> Any:
         value = getattr(self, key)
         gpu_ary = value
         cpu_ary = gpu_ary.get()
         return np.asarray(cpu_ary, dtype=np.float64, order="C", copy=True)
-    # ---
 
     def _export_prop(self, key: str) -> Any:
         match key:
@@ -176,13 +173,11 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
                 return self._export_gamma_beta(key)
             case _:
                 return super()._export_prop(key)
-    # ----
 
     def _import_gamma_beta(self, key: str, value: Any) -> None:
         attribute = getattr(self, key)
         attribute.set(value)
         return
-    # ---
 
     def _import_prop(self, key: str, value) -> None:
         match key:
@@ -190,4 +185,3 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
                 return self._import_gamma_beta(key, value)
             case _:
                 return super()._import_prop(key, value)
-    # -----

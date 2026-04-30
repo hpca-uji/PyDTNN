@@ -34,8 +34,6 @@ class Conv2DGemm(Conv2DNumpy, AbstractConv2DGemm):
                 self.backward = self._backward_cg_nhwc
             case _:
                 raise NotImplementedError(f"{self.model.tensor_format} format not implemented.")
-        # ---
-    # ----
 
     def _forward_cg_nhwc(self, x: np.ndarray) -> np.ndarray:
         """Version of the forward function that uses the convGemm library"""

@@ -368,9 +368,7 @@ class BestOf:
                 self._stages_times.pop(problem_size)
             # Return output
             return output
-        # ---
         # If all the children have found their best alternative, record this execution and evaluate the alternatives
-        # ---
         # Record execution time
         evolve = False
         round_increment = 1

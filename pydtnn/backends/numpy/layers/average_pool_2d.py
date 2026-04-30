@@ -15,7 +15,6 @@ if TYPE_CHECKING:
 
 
 class AveragePool2DNumpy(AveragePool2D[np.ndarray], AbstractPool2DLayerNumpy):
-    # ----
 
     def _fwd_avg_pool_nchw(self, x: np.ndarray, y: np.ndarray) -> None:
         for nn in range(x.shape[0]):
@@ -34,7 +33,6 @@ class AveragePool2DNumpy(AveragePool2D[np.ndarray], AbstractPool2DLayerNumpy):
                                         accum += x[nn, cc, x_x, x_y]
                                         items += 1
                         y[nn, cc, xx, yy] = (accum / items)
-    # ----
 
     def _fwd_avg_pool_nhwc(self, x: np.ndarray, y: np.ndarray) -> None:
         for nn in range(x.shape[0]):
@@ -53,7 +51,6 @@ class AveragePool2DNumpy(AveragePool2D[np.ndarray], AbstractPool2DLayerNumpy):
                                         accum += x[nn, x_x, x_y, cc]
                                         items += 1
                         y[nn, xx, yy, cc] = (accum / items)
-    # ----
 
     def _bwd_avg_pool_nhwc(self, dx: np.ndarray, dy: np.ndarray) -> None:
         for nn in range(dy.shape[0]):
@@ -78,7 +75,6 @@ class AveragePool2DNumpy(AveragePool2D[np.ndarray], AbstractPool2DLayerNumpy):
                                     x_y = self.wstride * yy + self.wdilation * jj - self.wpadding
                                     if 0 <= x_y < self.wi:
                                         dx[nn, x_x, x_y, cc] += avgval
-    # ----
 
     def _bwd_avg_pool_nchw(self, dx: np.ndarray, dy: np.ndarray) -> None:
         for nn in range(dy.shape[0]):
@@ -102,7 +98,6 @@ class AveragePool2DNumpy(AveragePool2D[np.ndarray], AbstractPool2DLayerNumpy):
                                     x_y = self.wstride * yy + self.wdilation * jj - self.wpadding
                                     if 0 <= x_y < self.wi:
                                         dx[nn, cc, x_x, x_y] += avgval
-    # ----
 
     def _forward_nchw(self, x: np.ndarray) -> np.ndarray:
         # y:np.ndarray = self.y[:x.shape[0], :]
@@ -111,7 +106,6 @@ class AveragePool2DNumpy(AveragePool2D[np.ndarray], AbstractPool2DLayerNumpy):
         self._fwd_avg_pool_nchw(x, y)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return np.asarray(y, dtype=self.model.dtype, order="C")
-    # -----
 
     def _forward_nhwc(self, x: np.ndarray) -> np.ndarray:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
@@ -120,7 +114,6 @@ class AveragePool2DNumpy(AveragePool2D[np.ndarray], AbstractPool2DLayerNumpy):
         self._fwd_avg_pool_nhwc(x, y)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return np.asarray(y, dtype=self.model.dtype, order="C")
-    # -----
 
     def _backward_nhwc(self, dy: np.ndarray) -> np.ndarray:
         # NOTE: It's necessary a new zero-initalized "dx" in every call since may be some values that are not re-set in the cython's function.
@@ -131,7 +124,6 @@ class AveragePool2DNumpy(AveragePool2D[np.ndarray], AbstractPool2DLayerNumpy):
         self._bwd_avg_pool_nhwc(dx, dy)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return np.asarray(dx, dtype=self.model.dtype, order="C")
-    # -----
 
     def _backward_nchw(self, dy: np.ndarray) -> np.ndarray:
         # NOTE: It's necessary a new zero-initalized "dx" in every call since may be some values that are not re-set in the cython's function.
@@ -142,4 +134,3 @@ class AveragePool2DNumpy(AveragePool2D[np.ndarray], AbstractPool2DLayerNumpy):
         self._bwd_avg_pool_nchw(dx, dy)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return np.asarray(dx, dtype=self.model.dtype, order="C")
-    # -----

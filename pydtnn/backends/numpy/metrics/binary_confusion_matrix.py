@@ -41,7 +41,6 @@ class BinaryConfusionMatrixNumpy(BinaryConfusionMatrix[np.ndarray], MetricNumpy)
         self.conf_matrix = np.zeros((target_classes, 2, 2), dtype=np.int32)
 
         self.memory_used += self.conf_matrix.nbytes
-    # ---
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> np.ndarray:
         """

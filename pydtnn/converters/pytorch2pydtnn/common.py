@@ -26,9 +26,7 @@ logger = logging.getLogger(__name__)
 # Functionality imports
 
 
-# ------------------- #
-# ---- CONSTANTS ---- #
-# ------------------- #
+# ---- CONSTANTS ----
 ARGUMENTS = "arguments"
 PARAMETERS = "parameters"
 LAYERS = "layers"
@@ -57,12 +55,8 @@ SPECIAL_CASES = ["torchvision_models_googlenet_GoogLeNetOutputs"]
 # -> torchvision_models_googlenet_GoogLeNetOutputs: is a "named tuple". If both aux layers exist and it is not expected their outputs, the actual output is only the FC's one.
 # END SPECIAL CASES
 
-# -- END CONSTANTS -- #
-# ------------------- #
 
-# ------------------- #
-# ---- FUNCTIONS ---- #
-# ------------------- #
+# ---- FUNCTIONS ----
 
 
 def not_implemented(name: str) -> Callable:
@@ -112,7 +106,6 @@ def switch_operation_symbols(op: str) -> str:
             not_implemented(op)("")
             op = "NOT_IMPLEMENTED"
     return op
-# --- switch_operation_symbols --- #
 
 
 def function_operation_to_pydtnn(name: str) -> Callable[[dict[str, Any]], tuple[Layerable, str]]:
@@ -148,7 +141,7 @@ def get_lists_operations_and_outputs(dict_layers: dict[str, tuple[Layerable, str
     # NOTE: It is assumed that the model will by a feed-forward network
     dict_branch = {}
 
-    # -- Making the "path" of layers for every input -- #
+    # -- Making the "path" of layers for every input --
 
     for inpt in layer_inputs:
         dict_branch[inpt] = dict()
@@ -161,7 +154,7 @@ def get_lists_operations_and_outputs(dict_layers: dict[str, tuple[Layerable, str
         # end while
     # end for
 
-    # -- Searching the first coincidence -- #
+    # -- Searching the first coincidence --
 
     # NOTE: This is the flow of my thougths regarding the approach:
     #  > Sets are not ordered by insertion ==> keep order with enumerate ==>
@@ -176,23 +169,21 @@ def get_lists_operations_and_outputs(dict_layers: dict[str, tuple[Layerable, str
     coincidences = [elem[1] for elem in sorted(coincidences, key=lambda x: -x[0])]
     new_previous_layer = coincidences[0]  # new_previous_layer = PyDTNN concat input
 
-    # -- Trimming the dict and storing the data to be returned -- #
+    # -- Trimming the dict and storing the data to be returned --
 
     lists_operations: list[list[Layerable]] = list()  # list of lists (one list per branch)
     lists_outputs: list[str] = list()  # list of strings (all branches in one list)
     for inpt in layer_inputs:
-        # - Trimming the dict - #
+        # - Trimming the dict -
         for coincidence in coincidences:
             del dict_branch[inpt][coincidence]
-        # ----
 
-        # - Setting the lists of operations and outputs - #
+        # - Setting the lists of operations and outputs -
         # NOTE: dict_branch[].values() is reversed ==> It is necesarry to unreverse the layer
         layers = list(dict_branch[inpt].values())[::-1]
         outputs = list(dict_branch[inpt].keys())
         lists_operations.append(layers)  # NOTE: Remember, this is a list of lists (one per branch)
         lists_outputs.extend(outputs)  # NOTE: Remember, this is a list of strings (all branches in one)
-        # ----
     # for inpt in layer_inputs end
     return (lists_operations, lists_outputs, new_previous_layer)
 
@@ -217,6 +208,3 @@ def get_equivalent_layer(params: list[str], dict_equivalent_layers: dict[str, st
             layer = dict_equivalent_layers[layer]
         equivalent_layers[layer] = None
     return list(equivalent_layers.keys())
-
-# -- END FUNCTIONS -- #
-# ------------------- #

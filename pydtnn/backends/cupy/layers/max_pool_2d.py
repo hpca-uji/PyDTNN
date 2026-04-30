@@ -20,7 +20,6 @@ class MaxPool2DCupy(MaxPool2DNumpy, AbstractPool2DLayerCupy, LayerCupy):
         super()._model_init(prev_shape, x)
         self.fwd_kernel = self._fwd_kernel()
         self.bwd_kernel = self._bwd_kernel()
-        # ----
 
     def _fwd_max_pool_nchw(self, x: np.ndarray, y: np.ndarray) -> None:
         self.fwd_kernel(self.model.cuda_grid,
@@ -32,7 +31,6 @@ class MaxPool2DCupy(MaxPool2DNumpy, AbstractPool2DLayerCupy, LayerCupy):
                          self.hstride, self.wstride,
                          self.hdilation, self.wdilation,
                          self.minval))
-    # ----
 
     def _fwd_max_pool_nhwc(self, x: np.ndarray, y: np.ndarray) -> None:
         self.fwd_kernel(self.model.cuda_grid,
@@ -44,7 +42,6 @@ class MaxPool2DCupy(MaxPool2DNumpy, AbstractPool2DLayerCupy, LayerCupy):
                          self.hstride, self.wstride,
                          self.hdilation, self.wdilation,
                          self.minval))
-    # ----
 
     def _bwd_max_pool_nchw(self, dx: np.ndarray, dy: np.ndarray) -> None:
         self.bwd_kernel(self.model.cuda_grid,
@@ -55,7 +52,6 @@ class MaxPool2DCupy(MaxPool2DNumpy, AbstractPool2DLayerCupy, LayerCupy):
                          self.hpadding, self.wpadding,
                          self.hstride, self.wstride,
                          self.hdilation, self.wdilation))
-    # ----
 
     def _bwd_max_pool_nhwc(self, dx: np.ndarray, dy: np.ndarray) -> None:
         self.bwd_kernel(self.model.cuda_grid,
@@ -66,4 +62,3 @@ class MaxPool2DCupy(MaxPool2DNumpy, AbstractPool2DLayerCupy, LayerCupy):
                          self.hpadding, self.wpadding,
                          self.hstride, self.wstride,
                          self.hdilation, self.wdilation))
-    # ----

@@ -116,7 +116,6 @@ class Eval[T: Array](Sync[T]):
                 pbar.update(batch_size)  # type: ignore (Here is a 'tqdm', only is None in self.comm_rank != 0)
 
         return total_loss, batch_count, string
-    # ------
 
     def _evalutate_round(self, pbar: tqdm | None,
                          batch_generator: Generator[tuple[np.ndarray, np.ndarray, int]],
@@ -181,7 +180,6 @@ class Eval[T: Array](Sync[T]):
         # Increment self._evaluate_round
         self._evaluate_round += 1
         return (total_loss, model_sync_count, sync_epoch, string)
-    # -----
 
     def evaluate(self, bar_width=BAR_WIDTH):
         self._ensure_model_runable()
@@ -220,7 +218,6 @@ class Eval[T: Array](Sync[T]):
         # End pipelines
         self._model_reduce_wait(gradient=True)
         self._model_reduce_wait(gradient=False)
-
 
     def calculate_time(self) -> np.ndarray:
         # Total elapsed_time, Comp elapsed_time, Memo elapsed_time, Net elapsed_time
