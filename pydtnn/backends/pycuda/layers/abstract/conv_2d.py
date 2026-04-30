@@ -25,7 +25,6 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
         self.bwd_dw_algo: int = None  # type: ignore
         self.bwd_dx_algo: int = None  # type: ignore
         self.conv_desc = None
-    # ----
 
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
         super()._model_init(prev_shape, x)
@@ -73,14 +72,21 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
                                                    cudnn_dtype=self.model.cudnn_dtype, gpudirect=self.model.gpudirect,
                                                    tensor_type=bias_tensor_type, drv=_drv)
             self.memory_used += self.db.nbytes
-    # ----
+
+    def forward(self, x: TensorArray) -> TensorArray:
+        msg = "This is a fake forward function. It must be masked on initialization by a _forward implementation."
+        raise NotImplementedError(f"Conv2DPycuda forward: {msg}")
+
+    def backward(self, dy: TensorArray) -> TensorArray:
+        msg = "This is a fake backward function. It must be masked on initialization by a _backward implementation."
+        raise NotImplementedError(f"Conv2DPycuda backward: {msg}")
+
 
     def _export_weights_dw(self, key: str) -> Any:
         # NOTE: Every variant must implement their version of this method.
         # super()._export_prop(key)
         msg = "This is a fake function. It must be overrided by the child classes."
-        raise NotImplementedError(f"Conv2DPycuda forward: {msg}")
-    # ----
+        raise NotImplementedError(f"Conv2DPycuda export: {msg}")
 
     def _export_biases_db(self, key: str) -> Any:
         value = getattr(self, key)
@@ -92,9 +98,8 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
                 return np.asarray(cpu_ary, dtype=np.float64, order="C", copy=True)
             case TensorFormat.NCHW:
                 return np.asarray(cpu_ary, dtype=np.float64, order="C", copy=True)
-            case _:
-                return super()._export_prop(key)
-    # ----
+            case tensor_format:
+                raise TypeError(f"Unsupported tensor format ({tensor_format})")
 
     def _export_prop(self, key: str) -> Any:
         match key:
@@ -104,30 +109,27 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
                 return self._export_biases_db(key)
             case _:
                 return super()._export_prop(key)
-    # ----
 
     def _import_biases_db(self, key: str, value: Any) -> None:
         attribute = getattr(self, key)
 
         match self.model.tensor_format:
             case TensorFormat.NHWC:
-                cpu_ary = value  # TODO: REVISE
+                cpu_ary = value
                 attribute.set(cpu_ary)
                 return
             case TensorFormat.NCHW:
                 cpu_ary = value
                 attribute.set(cpu_ary)
                 return
-            # case _: (next return)
-        return super()._import_prop(key, value)
-    # ----
+            case tensor_format:
+                raise TypeError(f"Unsupported tensor format ({tensor_format})")
 
     def _import_weights_dw(self, key: str, value: Any) -> None:
         # NOTE: Every variant must implement their version of this method.
         # super()._export_prop(key)
         msg = "This is a fake function. It must be overrided by the child classes"
         raise NotImplementedError(f"Conv2DPycuda forward: {msg}")
-    # ----
 
     def _import_prop(self, key: str, value) -> None:
         match key:
@@ -135,15 +137,5 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
                 return self._import_weights_dw(key, value)
             case Parameters.BIASES | Parameters.DB:
                 return self._import_biases_db(key, value)
-            #
             case _:
                 return super()._import_prop(key, value)
-    # ----
-
-    def forward(self, x: TensorArray) -> TensorArray:
-        msg = "This is a fake forward function. It must be masked on initialization by a _forward implementation."
-        raise NotImplementedError(f"Conv2DPycuda forward: {msg}")
-
-    def backward(self, dy: TensorArray) -> TensorArray:
-        msg = "This is a fake backward function. It must be masked on initialization by a _backward implementation."
-        raise NotImplementedError(f"Conv2DPycuda backward: {msg}")

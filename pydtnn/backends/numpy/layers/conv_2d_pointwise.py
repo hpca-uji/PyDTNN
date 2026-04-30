@@ -17,9 +17,7 @@ if TYPE_CHECKING:
 
 class Conv2DPointwiseNumpy(Conv2DPointwise, AbstractConv2DNumpy):
 
-    def _export_prop(self, key: str):
-        if key not in {Parameters.WEIGHTS, Parameters.DW}:
-            return super()._export_prop(key)
+    def _export_weights_dw(self, key: str):
         value = getattr(self, key)
 
         match self.model.tensor_format:
@@ -27,22 +25,25 @@ class Conv2DPointwiseNumpy(Conv2DPointwise, AbstractConv2DNumpy):
                 # NHWC's src: ci, co
                 # NCHW's dst: co, ci
                 return np.asarray(format_transpose(value, "IO", "OI"), dtype=np.float64, order="C", copy=True)
-        return super()._export_prop(key)
-    # -----
+            case TensorFormat.NCHW:
+                return np.asarray(value, dtype=np.float64, order="C", copy=True)
+            case tensor_format:
+                raise TypeError(f"Unsupported tensor format ({tensor_format})")
 
-    def _import_prop(self, key: str, value) -> None:
-        if key not in {Parameters.WEIGHTS, Parameters.DW}:
-            return super()._import_prop(key, value)
+    def _import_weights_dw(self, key: str, value) -> None:
+        ary = getattr(self, key)
 
         match self.model.tensor_format:
             case TensorFormat.NHWC:
                 # NCHW's src: co, ci
                 # NHWC's dst: ci, co
-                ary = getattr(self, key)
                 ary[:] = format_transpose(value, "OI", "IO")
                 return
-        return super()._import_prop(key, value)
-    # ------
+            case TensorFormat.NCHW:
+                ary[:] = value
+                return
+            case tensor_format:
+                raise TypeError(f"Unsupported tensor format ({tensor_format})")
 
     def _initializing_special_parameters(self):
         super()._initializing_special_parameters()
@@ -56,8 +57,6 @@ class Conv2DPointwiseNumpy(Conv2DPointwise, AbstractConv2DNumpy):
                 self.weights_shape = (self.ci, self.co)
             case _:
                 raise NotImplementedError(f"{self.model.tensor_format} format not implemented.")
-        # --
-    # ---
 
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
         super()._model_init(prev_shape, x)
@@ -68,7 +67,7 @@ class Conv2DPointwiseNumpy(Conv2DPointwise, AbstractConv2DNumpy):
             case TensorFormat.NHWC:
                 self.forward = self._forward_nhwc
                 self.backward = self._backward_nhwc
-        # --
+
         y_shape = self.model.encode_shape((self.model.batch_size, self.co, self.ho, self.wo))
         # NOTE: These attributes only store data, their values before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
         # self.dw (this one too, but it's initalized in Conv2DNumpy)
@@ -78,7 +77,6 @@ class Conv2DPointwiseNumpy(Conv2DPointwise, AbstractConv2DNumpy):
         if not self.model.evaluate_only:
             self.dx = np.zeros(shape=(self.ci, self.model.batch_size * self.hi * self.wi), dtype=self.model.dtype)
             self.memory_used += self.dx.nbytes
-    # ------
 
     def _forward_nhwc(self, x: np.ndarray) -> np.ndarray:
         self.x: np.ndarray = x
@@ -96,7 +94,6 @@ class Conv2DPointwiseNumpy(Conv2DPointwise, AbstractConv2DNumpy):
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return np.asarray(y, dtype=self.model.dtype, order="C")
-    # ----
 
     def _forward_nchw(self, x: np.ndarray) -> np.ndarray:
 
@@ -124,7 +121,6 @@ class Conv2DPointwiseNumpy(Conv2DPointwise, AbstractConv2DNumpy):
                    dtype=self.model.dtype)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return np.asarray(y, dtype=self.model.dtype, order="C")
-    # ----
 
     def _backward_nhwc(self, dy: np.ndarray) -> np.ndarray:
         _n, _h, _w, _c = dy.shape
@@ -159,7 +155,6 @@ class Conv2DPointwiseNumpy(Conv2DPointwise, AbstractConv2DNumpy):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return np.asarray(dx.reshape(x_shape), dtype=self.model.dtype, order="C")
-    # ----
 
     def _backward_nchw(self, dy: np.ndarray) -> np.ndarray:
         _n, _c, _h, _w = dy.shape
@@ -194,4 +189,3 @@ class Conv2DPointwiseNumpy(Conv2DPointwise, AbstractConv2DNumpy):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return np.asarray(dx.reshape(x_shape), dtype=self.model.dtype, order="C")
-    # ----

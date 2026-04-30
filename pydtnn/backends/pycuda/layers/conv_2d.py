@@ -191,8 +191,8 @@ class Conv2DPycuda(AbstractConv2DPycuda):
                 gpu_ary = value
                 cpu_ary = gpu_ary.get()
                 return cpu_ary
-            case _:
-                return super()._export_prop(key)
+            case tensor_format:
+                raise TypeError(f"Unsupported tensor format ({tensor_format})")
     # ------
 
     @override
@@ -209,6 +209,6 @@ class Conv2DPycuda(AbstractConv2DPycuda):
                 cpu_ary = value
                 attribute.set(cpu_ary)
                 return
-            case _:
-                return super()._import_prop(key, value)
+            case tensor_format:
+                raise TypeError(f"Unsupported tensor format ({tensor_format})")
     # ---

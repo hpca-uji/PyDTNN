@@ -26,9 +26,7 @@ class AbstractConv2DStandardNumpy(AbstractConv2DNumpy):
                 raise NotImplementedError(f"{self.model.tensor_format} format not implemented.")
     # ---
 
-    def _export_prop(self, key: str):
-        if key not in {Parameters.WEIGHTS, Parameters.DW}:
-            return super()._export_prop(key)
+    def _export_weights_dw(self, key: str):
         value = getattr(self, key)
 
         match self.model.tensor_format:
@@ -36,19 +34,25 @@ class AbstractConv2DStandardNumpy(AbstractConv2DNumpy):
                 # NHWC's src: ci, kh, kw, co
                 # NCHW's dst: co, ci, kh, kw
                 return np.asarray(format_transpose(value, "IHWO", "OIHW"), dtype=np.float64, order="C", copy=True)
-        return super()._export_prop(key)
+            case TensorFormat.NCHW:
+                return np.asarray(value, dtype=np.float64, order="C", copy=True)
+            case tensor_format:
+                raise TypeError(f"Unsupported tensor format ({tensor_format})")
+
     # -----
 
-    def _import_prop(self, key: str, value) -> None:
-        if key not in {Parameters.WEIGHTS, Parameters.DW}:
-            return super()._import_prop(key, value)
+    def _import_weights_dw(self, key: str, value) -> None:
+        ary = getattr(self, key)
 
         match self.model.tensor_format:
             case TensorFormat.NHWC:
                 # NCHW's src: co, ci, kh, kw
                 # NHWC's dst: ci, kh, kw, co
-                ary = getattr(self, key)
                 ary[:] = format_transpose(value, "OIHW", "IHWO")
                 return
-        return super()._import_prop(key, value)
+            case TensorFormat.NCHW:
+                ary[:] = value
+                return
+            case tensor_format:
+                raise TypeError(f"Unsupported tensor format ({tensor_format})")
     # -----

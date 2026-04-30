@@ -1,11 +1,12 @@
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from pydtnn.backends.numpy.layers.layer import LayerNumpy
 from pydtnn.layers.abstract.conv_2d import AbstractConv2D
 from pydtnn.libs import numpy as np
-from pydtnn.utils.constants import ArrayShape
+from pydtnn.utils.constants import ArrayShape, Parameters
 from pydtnn.utils.performance_models import im2col_time, matmul_time
+from pydtnn.utils.tensor import TensorFormat
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +24,6 @@ class AbstractConv2DNumpy(AbstractConv2D[np.ndarray], LayerNumpy):
         self.weights = None  # type: ignore
         self.fwd_time = None  # type: ignore
         self.bwd_time = None  # type: ignore
-    # ----
 
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
         super()._model_init(prev_shape, x)
@@ -60,12 +60,8 @@ class AbstractConv2DNumpy(AbstractConv2D[np.ndarray], LayerNumpy):
                                      k=self.co, cpu_speed=self.model.cpu_speed,
                                      memory_bw=self.model.memory_bw, dtype=self.model.dtype)
 
-##########################################################################################################################
-##########################################################################################################################
-#### TEST ####
-##############
-
     def col2im_alt(self, x: np.ndarray, x_rows: np.ndarray) -> np.ndarray:
+        # TEST IMPLEMENTATION
         x = np.pad(x, ((0, 0), (0, 0), (self.hpadding, self.hpadding), (self.wpadding, self.wpadding)), mode="constant")
         cols = list[np.ndarray]()
 
@@ -79,9 +75,6 @@ class AbstractConv2DNumpy(AbstractConv2D[np.ndarray], LayerNumpy):
                 col = x[:, :, h_start:h_end:self.hstride, w_start:w_end:self.wstride]
                 cols.append(col)
         return np.stack(cols, axis=2).reshape(x_rows.shape)
-
-##########################################################################################################################
-##########################################################################################################################
 
     def im2row(self, x: np.ndarray, x_rows: np.ndarray) -> None:
         n, _, _, _ = x.shape
@@ -99,7 +92,6 @@ class AbstractConv2DNumpy(AbstractConv2D[np.ndarray], LayerNumpy):
                                     x_rows[row, col] = x[nn, x_x, x_y, cc]
                                 else:
                                     x_rows[row, col] = 0.0
-    # -----
 
     def row2im(self, x_rows: np.ndarray, dx: np.ndarray) -> None:
         n, _, _, _ = dx.shape
@@ -116,7 +108,6 @@ class AbstractConv2DNumpy(AbstractConv2D[np.ndarray], LayerNumpy):
                                     if 0 <= x_y < self.wi:
                                         col = (cc * self.kh + ii) * self.kw + jj
                                         dx[nn, x_x, x_y, cc] += x_rows[row, col]
-    # -----
 
     def im2col(self, x: np.ndarray, x_cols: np.ndarray) -> None:
         n, _, _, _ = x.shape
@@ -135,7 +126,6 @@ class AbstractConv2DNumpy(AbstractConv2D[np.ndarray], LayerNumpy):
                                     x_cols[row, col] = x[nn, cc, x_x, x_y]
                                 else:
                                     x_cols[row, col] = 0.0
-    # -----
 
     def col2im(self, x_cols: np.ndarray, dx: np.ndarray) -> None:
         n, _, _, _ = dx.shape
@@ -152,7 +142,6 @@ class AbstractConv2DNumpy(AbstractConv2D[np.ndarray], LayerNumpy):
                                     col = (nn * self.ho + xx) * self.wo + yy
                                     if (0 <= x_y < self.wi):
                                         dx[nn, cc, x_x, x_y] = x_cols[row, col]
-    # -----
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         raise NotImplementedError("Use a real forward variant!")
@@ -166,3 +155,60 @@ class AbstractConv2DNumpy(AbstractConv2D[np.ndarray], LayerNumpy):
         # #l kn wo ho t kh kw ci wi hi"
         ci, hi, wi = self.model.decode_shape(self.prev_shape)
         print(self.id, self.co, self.wo, self.ho, self.model.batch_size, self.kh, self.kw, ci, wi, hi, sep="\t")
+
+    def _export_weights_dw(self, key: str) -> Any:
+        # NOTE: Every variant must implement their version of this method.
+        # super()._export_prop(key)
+        msg = "This is a fake function. It must be overrided by the child classes."
+        raise NotImplementedError(f"Conv2DNumpy export: {msg}")
+
+    def _export_biases_db(self, key: str) -> Any:
+        value = getattr(self, key)
+        cpu_ary = value
+
+        match self.model.tensor_format:
+            case TensorFormat.NHWC:
+                return np.asarray(cpu_ary, dtype=np.float64, order="C", copy=True)
+            case TensorFormat.NCHW:
+                return np.asarray(cpu_ary, dtype=np.float64, order="C", copy=True)
+            case tensor_format:
+                raise TypeError(f"Unsupported tensor format ({tensor_format})")
+
+    def _export_prop(self, key: str) -> Any:
+        match key:
+            case Parameters.WEIGHTS | Parameters.DW:
+                return self._export_weights_dw(key)
+            case Parameters.BIASES | Parameters.DB:
+                return self._export_biases_db(key)
+            case _:
+                return super()._export_prop(key)
+
+    def _import_biases_db(self, key: str, value: Any) -> None:
+        attribute = getattr(self, key)
+
+        match self.model.tensor_format:
+            case TensorFormat.NHWC:
+                cpu_ary = value
+                attribute[:] = cpu_ary
+                return
+            case TensorFormat.NCHW:
+                cpu_ary = value
+                attribute[:] = cpu_ary
+                return
+            case tensor_format:
+                raise TypeError(f"Unsupported tensor format ({tensor_format})")
+
+    def _import_weights_dw(self, key: str, value: Any) -> None:
+        # NOTE: Every variant must implement their version of this method.
+        # super()._export_prop(key)
+        msg = "This is a fake function. It must be overrided by the child classes"
+        raise NotImplementedError(f"Conv2DNumpy import: {msg}")
+
+    def _import_prop(self, key: str, value) -> None:
+        match key:
+            case Parameters.WEIGHTS | Parameters.DW:
+                return self._import_weights_dw(key, value)
+            case Parameters.BIASES | Parameters.DB:
+                return self._import_biases_db(key, value)
+            case _:
+                return super()._import_prop(key, value)
