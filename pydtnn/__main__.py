@@ -10,7 +10,6 @@ import logging.config
 import os
 import sys
 import time
-from contextlib import nullcontext
 from importlib import resources
 from pathlib import Path
 
@@ -19,6 +18,11 @@ import yaml
 from pydtnn import timestamp, utils
 from pydtnn.utils.debug import traceback_context
 from pydtnn.utils.serial import NumpyYaml
+from pydtnn.parser import PydtnnArgumentParser
+
+logger = logging.getLogger(__name__)
+log_conf = yaml.safe_load(resources.read_text("pydtnn", "logger.yaml"))
+logging.config.dictConfig(log_conf)
 
 
 ompi_stdout_rank = os.environ.get("OMPI_STDOUT_RANK", None)
@@ -34,36 +38,29 @@ if os.environ.get("EXTRAE_ON", None) == "1":
     Extrae_tracing = True
 
 
-def main() -> int | None:
-    log_conf = yaml.safe_load(resources.read_text("pydtnn", "logger.yaml"))
-    logging.config.dictConfig(log_conf)
-    logger = logging.getLogger(__name__)
-
-    from pydtnn.model import Model
-    from pydtnn.parser import PydtnnArgumentParser
-    from pydtnn.utils import random
-
-    # from pydtnn.utils.best_of import BestOf
-
-    # Parse options
+def _start() -> int:
     parser = PydtnnArgumentParser()
     config = parser.parse_args()
-    if not config.model_name:
-        logger.error("Model not defined!")
-        return 1
-    if not config.dataset_name:
-        logger.error("Dataset not defined!")
-        return 1
-    exc_tracer = traceback_context if config.traceback else nullcontext
+
+    # CLI defaults
+    config.model_name = config.model_name or "simplecnn"
+    config.dataset_name = config.dataset_name or "mnist"
+
+    with traceback_context():
+        return main(config)  # type: ignore
+
+
+def main(config):
     # Initialize random seed
+    from pydtnn.utils import random
     random.seed(config.random_seed)
     # Create model
-    with exc_tracer():
-        model = Model(**vars(config))
-        model._ensure_model_runable()
+    from pydtnn.model import Model
+    model = Model(**vars(config))
+    model._ensure_model_runable()
     # Print model
     if model.comm_rank == 0:
-        parser.print_args()
+        config.print()
         model.show_model()
         model.show_layers()
     # First (or unique) evaluation
@@ -71,8 +68,7 @@ def main() -> int | None:
         if model.comm_rank == 0:
             logger.info('**** Evaluating on test dataset...')
             t1 = time.time()
-        with exc_tracer():
-            _ = model.evaluate()
+        _ = model.evaluate()
         if model.comm_rank == 0:
             t2 = time.time()
             # noinspection PyUnboundLocalVariable
@@ -98,8 +94,7 @@ def main() -> int | None:
     # Training a model directly from a dataset
     # or alternatively, define any custom data
     # mode.dataset = CustomDataset(model, x, y)
-    with exc_tracer():
-        history = model.train()
+    history = model.train()
     # Barrier
     if model.parallel_data:
         assert model.comm
@@ -136,8 +131,7 @@ def main() -> int | None:
         if model.comm_rank == 0:
             logger.info('**** Evaluating on test dataset...')
             t1 = time.time()
-        with exc_tracer():
-            _ = model.evaluate()
+        _ = model.evaluate()
         if model.comm_rank == 0:
             t2 = time.time()
             # noinspection PyUnboundLocalVariable
@@ -156,4 +150,4 @@ def main() -> int | None:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(_start())

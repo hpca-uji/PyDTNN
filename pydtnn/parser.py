@@ -95,10 +95,7 @@ def _get_mpi_port():
         port = None
     return port
 
-# NOTE: with @cache it's not possible to extend the class.
 
-
-@cache  # <== Singleton
 class PydtnnArgumentParser(argparse.ArgumentParser):
     lines = []
 
@@ -425,11 +422,8 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
                     tab = " " * (length - len(option_string))
                     lines.append(f"{indent}{option_string}{tab}: {getattr(result, action.dest)}")
             lines.append('')
-            self.lines = lines
+        result.print = lambda: logger.info("\n".join(lines))
         return result
-
-    def print_args(self) -> None:
-        logger.info("\n".join(self.lines))
 
     def get_default_values(self) -> dict[str, Any]:
         return vars(self.parse_args([]))

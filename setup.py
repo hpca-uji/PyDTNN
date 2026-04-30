@@ -1,9 +1,17 @@
 from pathlib import Path
-
-from setuptools import setup, Extension
+from os import process_cpu_count
 
 import numpy
 from Cython.Build import cythonize
+from setuptools import setup, Extension
+from setuptools.command.build_ext import build_ext
+
+
+class BuildExt(build_ext):
+    def initialize_options(self):
+        super().initialize_options()
+        if self.parallel is None:
+            self.parallel = process_cpu_count()
 
 
 ext_modules = [
@@ -20,9 +28,11 @@ for pyx in Path("pydtnn").rglob("*.pyx"):
     ))
 
 setup(
+    cmdclass={"build_ext": BuildExt},
     ext_modules=cythonize(
         ext_modules,
         language_level=3,
+        nthreads=process_cpu_count(),
         shared_utility_qualified_name="pydtnn.utils._cyutility"
-    ),
+    )
 )
