@@ -294,7 +294,7 @@ class TensorArray:
         """ NumPy cast helper """
         return np.asarray(self.get(), dtype=dtype)
 
-    def _view(self, ary):
+    def _view(self, ary, keep_shape=True):
         """TensorArray view"""
         # NOTE: In some cases, it would be possible to share the descriptor more aggressively, but we don't have enough information to decide when.
         return TensorArray(gpu_arr=ary,
@@ -304,7 +304,7 @@ class TensorArray:
                            gpudirect=self.gpudirect,
                            cublas=self.cublas,
                            desc=None,
-                           cpu_shape=self.cpu_shape)
+                           cpu_shape=self.cpu_shape if keep_shape else None)
 
     def copy(self):
         """ NumPy-like copy. """
@@ -345,82 +345,70 @@ class TensorArray:
     def __len__(self) -> int:
         return len(self.ary)
 
-    def __add__(self, other) -> "TensorArray":
+    def _operable(self, other):
         if isinstance(other, TensorArray):
             other = other.ary
+        if hasattr(other, "dtype") and other.dtype != self.ary.dtype:
+            other = other.astype(self.ary.dtype)
+        return other
+
+    def __add__(self, other) -> "TensorArray":
+        other = self._operable(other)
         return self._view(self.ary.__add__(other))
 
     def __radd__(self, other) -> "TensorArray":
-        if isinstance(other, TensorArray):
-            other = other.ary
+        other = self._operable(other)
         return self._view(self.ary.__radd__(other))
 
     def __sub__(self, other) -> "TensorArray":
-        if isinstance(other, TensorArray):
-            other = other.ary
+        other = self._operable(other)
         return self._view(self.ary.__sub__(other))
 
     def __rsub__(self, other) -> "TensorArray":
-        if isinstance(other, TensorArray):
-            other = other.ary
+        other = self._operable(other)
         return self._view(self.ary.__rsub__(other))
 
     def __iadd__(self, other) -> "TensorArray":
-        if isinstance(other, TensorArray):
-            other = other.ary
+        other = self._operable(other)
         return self._view(self.ary.__iadd__(other))
 
     def __isub__(self, other) -> "TensorArray":
-        if isinstance(other, TensorArray):
-            other = other.ary
+        other = self._operable(other)
         return self._view(self.ary.__isub__(other))
 
     def __neg__(self, other) -> "TensorArray":
-        if isinstance(other, TensorArray):
-            other = other.ary
+        other = self._operable(other)
         return self._view(self.ary.__neg__(other))
 
     def __mul__(self, other) -> "TensorArray":
-        if isinstance(other, TensorArray):
-            other = other.ary
+        other = self._operable(other)
         return self._view(self.ary.__mul__(other))
 
     def __rmul__(self, other) -> "TensorArray":
-        if isinstance(other, TensorArray):
-            other = other.ary
+        other = self._operable(other)
         return self._view(self.ary.__rmul__(other))
 
     def __truediv__(self, other) -> "TensorArray":
-        if isinstance(other, TensorArray):
-            other = other.ary
+        other = self._operable(other)
         return self._view(self.ary.__truediv__(other))
 
     def __rtruediv__(self, other) -> "TensorArray":
-        if isinstance(other, TensorArray):
-            other = other.ary
+        other = self._operable(other)
         return self._view(self.ary.__rtruediv__(other))
 
     def __pow__(self, other) -> "TensorArray":
-        if isinstance(other, TensorArray):
-            other = other.ary
+        other = self._operable(other)
         return self._view(self.ary.__pow__(other))
 
     def __rpow__(self, other) -> "TensorArray":
-        if isinstance(other, TensorArray):
-            other = other.ary
+        other = self._operable(other)
         return self._view(self.ary.__rpow__(other))
 
     def __getitem__(self, index):
-        ary = self.ary.__getitem__(index)
-        value = self._view(ary)
-        value.cpu_shape = value.cpu_shape = ary.shape
-        return value
+        return self._view(self.ary.__getitem__(index), keep_shape=False)
 
     def __setitem__(self, key, value):
-        if isinstance(value, TensorArray):
-            value = value.ary
-        if hasattr(value, "dtype") and value.dtype != self.ary.dtype:
-            value = value.astype(self.ary.dtype)
+        value = self._operable(value)
         return self.ary.__setitem__(key, value)
 
     def __abs__(self) -> "TensorArray":
