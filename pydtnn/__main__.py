@@ -18,7 +18,7 @@ import yaml
 from pydtnn import timestamp, utils
 from pydtnn.utils.debug import traceback_context
 from pydtnn.utils.serial import NumpyYaml
-from pydtnn.utils.parser import PydtnnArgumentParser
+from pydtnn.utils.parser import ArgumentParser
 
 logger = logging.getLogger(__name__)
 log_conf = yaml.safe_load(resources.read_text("pydtnn", "logger.yaml"))
@@ -39,7 +39,7 @@ if os.environ.get("EXTRAE_ON", None) == "1":
 
 
 def _start() -> int:
-    parser = PydtnnArgumentParser()
+    parser = ArgumentParser()
     config = parser.parse_args()
 
     # CLI defaults
@@ -60,7 +60,7 @@ def main(config):
     model._ensure_model_runable()
     # Print model
     if model.comm_rank == 0:
-        config.print()
+        logger.info(str(config))
         model.show_model()
         model.show_layers()
     # First (or unique) evaluation

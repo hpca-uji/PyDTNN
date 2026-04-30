@@ -17,7 +17,7 @@ from pydtnn.losses.loss import select as select_loss
 from pydtnn.metrics.metric import select as select_metric
 from pydtnn.models.model import select as select_model
 from pydtnn.optimizers.optimizer import select as select_optimizer
-from pydtnn.utils.parser import PydtnnArgumentParser
+from pydtnn.utils.parser import ArgumentParser
 from pydtnn.model.base import Base
 from pydtnn.model.state import State
 from pydtnn.model.utils import DEFAULT_BACH_SIZE, LIMIT_THREADS_AND_BLOCKS
@@ -45,7 +45,7 @@ class Init[T: Array](State[T]):
         super().__init__(**kwargs)
 
         # Get default values from parser and update them from the received kwargs
-        self.kwargs: dict[str, Any] = PydtnnArgumentParser().get_default_values()
+        self.kwargs: dict[str, Any] = vars(ArgumentParser().parse_args([]))
         self.kwargs.update(kwargs)
 
         # Attributes related to the given arguments

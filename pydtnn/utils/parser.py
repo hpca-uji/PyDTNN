@@ -16,8 +16,7 @@ import argparse
 import logging
 import multiprocessing
 import os
-from functools import cache
-from typing import Any
+from typing import Sequence
 
 import numpy as np
 
@@ -96,8 +95,36 @@ def _get_mpi_port():
     return port
 
 
-class PydtnnArgumentParser(argparse.ArgumentParser):
-    lines = []
+class Namespace(argparse.Namespace):
+    def __str__(self) -> str:
+        lines = []
+        for group in self.groups:
+            indent = ""
+            length = 0
+            if group.title not in ('positional arguments', 'optional arguments'):
+                indent = "  "
+                lines.append("")
+                lines.append(group.title)
+                if group.description is not None:
+                    lines.append(group.description)
+            for action in group._group_actions:
+                if action.default == '==SUPPRESS==':
+                    continue
+                option_string = f"{action.option_strings[0].replace('--', '')}"
+                if len(option_string) > length:
+                    length = len(option_string)
+            for action in group._group_actions:
+                if action.default == '==SUPPRESS==':
+                    continue
+                option_string = f"{action.option_strings[0].replace('--', '')}"
+                tab = " " * (length - len(option_string))
+                lines.append(f"{indent}{option_string}{tab}: {getattr(self, action.dest)}")
+        lines.append('')
+        return "\n".join(lines)
+
+
+
+class ArgumentParser(argparse.ArgumentParser):
 
     def __init__(self):
         super().__init__(description=_desc, epilog=_epilogue)
@@ -386,8 +413,9 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
         _cm_group.add_argument('--mpi-server', type=str, default="", help=argparse.SUPPRESS)
         _cm_group.add_argument('--mpi-port', type=int, default=-1, help=argparse.SUPPRESS)
 
-    def parse_args(self, args=None, namespace=None):
+    def parse_args(self, args: Sequence[str] | None = None):
         # Call super.parse_args
+        namespace = Namespace()
         result = super().parse_args(args, namespace)
         # Add runtime data
         result.mpi_processes = _get_mpi_processes()
@@ -397,36 +425,5 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
         result.mpi_server = _get_mpi_server()
         result.mpi_port = _get_mpi_port()
         result.enable_cudnn = "AUTO"
-        # Populate self.lines (for self.print_args())
-        if len(self.lines) == 0:
-            lines = []
-            for action_group in self._action_groups:
-                indent = ""
-                length = 0
-                if action_group.title not in ('positional arguments', 'optional arguments'):
-                    indent = "  "
-                    lines.append("")
-                    lines.append(action_group.title)
-                    if action_group.description is not None:
-                        lines.append(action_group.description)
-                for action in action_group._group_actions:
-                    if action.default == '==SUPPRESS==':
-                        continue
-                    option_string = f"{action.option_strings[0].replace('--', '')}"
-                    if len(option_string) > length:
-                        length = len(option_string)
-                for action in action_group._group_actions:
-                    if action.default == '==SUPPRESS==':
-                        continue
-                    option_string = f"{action.option_strings[0].replace('--', '')}"
-                    tab = " " * (length - len(option_string))
-                    lines.append(f"{indent}{option_string}{tab}: {getattr(result, action.dest)}")
-            lines.append('')
-        result.print = lambda: logger.info("\n".join(lines))
+        result.groups = self._action_groups
         return result
-
-    def get_default_values(self) -> dict[str, Any]:
-        return vars(self.parse_args([]))
-
-    def to_dict(self) -> dict[str, Any]:
-        return vars(self.parse_args())

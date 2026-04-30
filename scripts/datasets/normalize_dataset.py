@@ -11,7 +11,7 @@ import numpy as np
 
 from pydtnn.model import Model
 from pydtnn.datasets.dataset import Dataset
-from pydtnn.utils.parser import PydtnnArgumentParser
+from pydtnn.utils.parser import ArgumentParser
 from pydtnn.utils.tensor import TensorFormat
 
 
@@ -54,8 +54,8 @@ def get_full_x(dataset: Dataset) -> abc.Iterable[np.ndarray]:
         yield x
 
 
-parser = PydtnnArgumentParser()
-args = {**parser.to_dict(), "tensor_format": TensorFormat.NCHW, "batch_size": 1, "augment_shuffle": False}
+parser = ArgumentParser()
+args = {**vars(parser.parse_args()), "tensor_format": TensorFormat.NCHW, "batch_size": 1, "augment_shuffle": False}
 model = Model(**args)
 
 dataset = get_full_x(model.dataset)
