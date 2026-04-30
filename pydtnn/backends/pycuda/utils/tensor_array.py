@@ -419,6 +419,8 @@ class TensorArray:
     def __setitem__(self, key, value):
         if isinstance(value, TensorArray):
             value = value.ary
+        if hasattr(value, "dtype") and value.dtype != self.ary.dtype:
+            value = value.astype(self.ary.dtype)
         return self.ary.__setitem__(key, value)
 
     def __abs__(self) -> "TensorArray":
