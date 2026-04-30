@@ -91,7 +91,7 @@ dev = [
 ]
 
 [project.scripts]
-pydtnn-benchmark = "pydtnn.cli:main"
+pydtnn-benchmark = "pydtnn.runner:main"
 
 [build-system]
 requires = [

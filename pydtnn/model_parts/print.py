@@ -1,7 +1,7 @@
 import logging
 
 from pydtnn import utils
-from pydtnn.model_context.layers import Layers
+from pydtnn.model_parts.layers import Layers
 from pydtnn.utils.constants import Array
 
 logger = logging.getLogger(__name__)

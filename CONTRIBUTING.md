@@ -58,7 +58,7 @@
 ```
 ├── pydtnn
 │   ├── logging.yaml
-│   ├── cli.py
+│   ├── runner.py
 │   ├── parser.py
 │   ├── model.py
 ```
