@@ -19,9 +19,10 @@ class Metric[T: Array](Base):
         self.eps = eps
 
     def _model_init(self) -> None:
+        self.dtype: np.dtype = np.dtype(np.float32) if np.issubdtype(self.model.dtype, np.int32) else self.model.dtype
+        # NOTE: self.dtype is necessary before calling super.
         super()._model_init()
         self.shape = (self.model.batch_size, *self.model.output_shape)
-        self.dtype: np.dtype = np.dtype(np.float32) if np.issubdtype(self.model.dtype, np.int32) else self.model.dtype
 
     @abstractmethod
     def compute(self, y_pred: T, y_targ: T) -> float | np.ndarray:
