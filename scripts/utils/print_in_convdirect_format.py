@@ -5,7 +5,7 @@ PyDTNN print in convdirect format script
 """
 
 from pydtnn.model import Model
-from pydtnn.parser import PydtnnArgumentParser
+from pydtnn.utils.parser import PydtnnArgumentParser
 
 # Parse options
 parser = PydtnnArgumentParser()

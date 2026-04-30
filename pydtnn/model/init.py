@@ -17,10 +17,10 @@ from pydtnn.losses.loss import select as select_loss
 from pydtnn.metrics.metric import select as select_metric
 from pydtnn.models.model import select as select_model
 from pydtnn.optimizers.optimizer import select as select_optimizer
-from pydtnn.parser import PydtnnArgumentParser
-from pydtnn.model_parts.base import Base
-from pydtnn.model_parts.state import State
-from pydtnn.model_parts.utils import DEFAULT_BACH_SIZE, LIMIT_THREADS_AND_BLOCKS
+from pydtnn.utils.parser import PydtnnArgumentParser
+from pydtnn.model.base import Base
+from pydtnn.model.state import State
+from pydtnn.model.utils import DEFAULT_BACH_SIZE, LIMIT_THREADS_AND_BLOCKS
 from pydtnn.utils.gpu import CudnnDataType
 from pydtnn.utils.memory_pool import PreallocMemory, PrivateMemory
 from pydtnn.utils.performance_counter import PerformanceCounter

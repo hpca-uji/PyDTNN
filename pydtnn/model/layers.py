@@ -10,7 +10,7 @@ from pydtnn.backends.fuse.layers.layer import LayerFuse as FusedLayerMixIn
 from pydtnn.backends.fuse.layers.layer import select as select_fuse_layer
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.conv_2d import Conv2D
-from pydtnn.model_parts.utils import Utils
+from pydtnn.model.utils import Utils
 from pydtnn.utils.constants import Array
 
 logger = logging.getLogger(__name__)

@@ -1,13 +1,13 @@
 import logging
 
 from pydtnn import utils
-from pydtnn.model_parts.layers import Layers
+from pydtnn.model.layers import Layers
 from pydtnn.utils.constants import Array
 
 logger = logging.getLogger(__name__)
 
 
-class Print[T: Array](Layers[T]):
+class Repr[T: Array](Layers[T]):
 
     def _show_props(self) -> dict:
         props = {}

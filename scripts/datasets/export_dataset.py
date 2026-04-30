@@ -5,7 +5,7 @@ Exports a PyDTNN dataset.
 """
 
 from pydtnn.model import Model
-from pydtnn.parser import PydtnnArgumentParser
+from pydtnn.utils.parser import PydtnnArgumentParser
 
 parser = PydtnnArgumentParser()
 parser.add_argument("--export-split-weights", type=str, default="")

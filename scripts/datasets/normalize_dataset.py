@@ -11,7 +11,7 @@ import numpy as np
 
 from pydtnn.model import Model
 from pydtnn.datasets.dataset import Dataset
-from pydtnn.parser import PydtnnArgumentParser
+from pydtnn.utils.parser import PydtnnArgumentParser
 from pydtnn.utils.tensor import TensorFormat
 
 

@@ -18,7 +18,7 @@ import yaml
 from pydtnn import timestamp, utils
 from pydtnn.utils.debug import traceback_context
 from pydtnn.utils.serial import NumpyYaml
-from pydtnn.parser import PydtnnArgumentParser
+from pydtnn.utils.parser import PydtnnArgumentParser
 
 logger = logging.getLogger(__name__)
 log_conf = yaml.safe_load(resources.read_text("pydtnn", "logger.yaml"))

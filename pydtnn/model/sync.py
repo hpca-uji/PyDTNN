@@ -3,7 +3,7 @@ import logging
 import numpy as np
 
 from pydtnn import MPI
-from pydtnn.model_parts.init import Init
+from pydtnn.model.init import Init
 from pydtnn.utils.constants import Array
 
 logger = logging.getLogger(__name__)
