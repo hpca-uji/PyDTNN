@@ -322,7 +322,8 @@ class TensorArray:
                           tensor_type=self.tensor_type,
                           gpudirect=self.gpudirect,
                           cublas=self.cublas,
-                          desc=-1)
+                          desc=-1,
+                          cpu_shape=self.cpu_shape)
         memo[id(self)] = obj
         return obj
 
@@ -410,7 +411,10 @@ class TensorArray:
         return self._view(self.ary.__rpow__(other))
 
     def __getitem__(self, index):
-        return self.ary.__getitem__(index)
+        ary = self.ary.__getitem__(index)
+        value = self._view(ary)
+        value.cpu_shape = value.cpu_shape = ary.shape
+        return value
 
     def __setitem__(self, key, value):
         if isinstance(value, TensorArray):
