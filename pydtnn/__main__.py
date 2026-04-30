@@ -20,8 +20,6 @@ from pydtnn import timestamp, utils
 from pydtnn.utils.debug import traceback_context
 from pydtnn.utils.serial import NumpyYaml
 
-logger = logging.getLogger(__name__)
-
 
 ompi_stdout_rank = os.environ.get("OMPI_STDOUT_RANK", None)
 if ompi_stdout_rank and os.environ.get("OMPI_COMM_WORLD_RANK", "0") != ompi_stdout_rank:
@@ -36,9 +34,10 @@ if os.environ.get("EXTRAE_ON", None) == "1":
     Extrae_tracing = True
 
 
-def main():
+def main() -> int | None:
     log_conf = yaml.safe_load(resources.read_text("pydtnn", "logger.yaml"))
     logging.config.dictConfig(log_conf)
+    logger = logging.getLogger(__name__)
 
     from pydtnn.model import Model
     from pydtnn.parser import PydtnnArgumentParser
@@ -49,6 +48,12 @@ def main():
     # Parse options
     parser = PydtnnArgumentParser()
     config = parser.parse_args()
+    if not config.model_name:
+        logger.error("Model not defined!")
+        return 1
+    if not config.dataset_name:
+        logger.error("Dataset not defined!")
+        return 1
     exc_tracer = traceback_context if config.traceback else nullcontext
     # Initialize random seed
     random.seed(config.random_seed)
@@ -151,4 +156,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

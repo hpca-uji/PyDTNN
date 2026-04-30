@@ -148,6 +148,8 @@ class Dataset:
 
         if plain.exists():
             return open(plain, mode="rb")
+        elif not path.exists():
+            raise FileNotFoundError(path)
         try:
             f = rapidgzip.RapidgzipFile(path, parallelization=1)
             if idx.exists():

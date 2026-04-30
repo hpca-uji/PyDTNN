@@ -1,6 +1,6 @@
 [project]
 name = "pydtnn"
-version = "3.7.3"
+version = "3.8.0"
 description = "Python Distributed Training of Neural Networks"
 readme = "README.md"
 license = "GPL-3.0-or-later"
@@ -91,7 +91,7 @@ dev = [
 ]
 
 [project.scripts]
-pydtnn-benchmark = "pydtnn.runner:main"
+pydtnn-benchmark = "pydtnn.__main__:main"
 
 [build-system]
 requires = [

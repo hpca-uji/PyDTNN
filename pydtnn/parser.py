@@ -40,13 +40,11 @@ def np_dtype(x):
     return getattr(np, x)
 
 
-_this_file_path = os.path.dirname(os.path.realpath(__file__))
-_scripts_path = os.path.join(_this_file_path, "scripts")
-_default_dataset_path = os.path.join(_this_file_path, "datasets/mnist")
+_default_dataset_path = "datasets/mnist"
 _desc = "Trains or evaluates a neural network using PyDTNN."
 _epilogue = f"""Example scripts that call this program for training
 and evaluating different neural network models with different datasets are
-available at: '{_scripts_path}'."""
+available at 'scripts'."""
 
 
 def _get_mpi_processes():
