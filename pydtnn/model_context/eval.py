@@ -9,11 +9,12 @@ from tqdm import tqdm
 from pydtnn import MPI, gpuarray
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.datasets.dataset import Dataset
-from pydtnn.session.sync import Sync
-from pydtnn.session.utils import BAR_WIDTH
+from pydtnn.model_context.sync import Sync
+from pydtnn.model_context.utils import BAR_WIDTH
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT,
                                    PYDTNN_MDL_EVENTS, PYDTNN_MDL_EVENT_enum)
 from pydtnn.utils.constants import Array
+from pydtnn.utils.performance_models import allreduce_time
 
 logger = logging.getLogger(__name__)
 
@@ -212,3 +213,45 @@ class Eval[T: Array](Sync[T]):
         # End pipelines
         self._model_reduce_wait(gradient=True)
         self._model_reduce_wait(gradient=False)
+
+
+    def calculate_time(self) -> np.ndarray:
+        # Total elapsed_time, Comp elapsed_time, Memo elapsed_time, Net elapsed_time
+        total_time: np.ndarray = np.zeros((4,), dtype=np.float32)
+
+        # Forward pass (FP)
+        for layer in self.layers:
+            total_time += layer.fwd_time
+
+        if self.blocking_mpi:
+            # Blocking MPI
+            # Back propagation. Gradient computation (GC) and weights update (WU)
+            for layer in self.layers:
+                total_time += layer.bwd_time
+
+            # Weight update (WU)
+            for layer in self.layers:
+                weights_size = 0 if (weights := layer.weights) is None else weights.size
+                biases_size = 0 if (biases := layer.biases) is None else biases.size
+                if self.comm and weights_size > 0:
+                    total_time += allreduce_time(weights_size + biases_size,
+                                                 self.cpu_speed, self.network_bw, self.network_lat,
+                                                 self.network_alg, self.nprocs, self.dtype)
+        else:
+            total_time_iar: int = 0
+            # Non-blocking MPI
+            # Back propagation. Gradient computation (GC) and weights update (WU)
+            for layer in self.layers:
+                total_time += layer.bwd_time
+                weights_size = 0 if (weights := layer.weights) is None else weights.size
+                biases_size = 0 if (biases := layer.biases) is None else biases.size
+                if self.comm and weights_size > 0:
+                    time_iar = allreduce_time(weights_size + biases_size,
+                                              self.cpu_speed, self.network_bw, self.network_lat,
+                                              self.network_alg, self.nprocs, self.dtype)
+                    total_time[3] += time_iar[3]
+                    total_time_iar = max(total_time[0], total_time_iar) + time_iar[0]
+
+            total_time[0] = max(total_time[0], total_time_iar)
+
+        return total_time

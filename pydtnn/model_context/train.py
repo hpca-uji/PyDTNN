@@ -11,8 +11,8 @@ from pydtnn import MPI, gpuarray
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.datasets.dataset import Dataset
 from pydtnn.schedulers.scheduler import select as select_scheduler
-from pydtnn.session.eval import Eval
-from pydtnn.session.utils import BAR_WIDTH
+from pydtnn.model_context.eval import Eval
+from pydtnn.model_context.utils import BAR_WIDTH
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT,
                                    PYDTNN_MDL_EVENTS, PYDTNN_MDL_EVENT_enum)
 from pydtnn.utils.constants import Array

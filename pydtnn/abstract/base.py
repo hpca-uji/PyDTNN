@@ -6,7 +6,7 @@ from pydtnn import utils
 from pydtnn.utils.constants import Array
 
 if typing.TYPE_CHECKING:
-    from pydtnn.session import base as model_module
+    from pydtnn.model_context import base as model_module
 
 
 class Base[T: Array]:
