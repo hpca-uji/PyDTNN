@@ -205,6 +205,10 @@ class Conv2DPycuda(AbstractConv2DPycuda):
                 cpu_ary = format_transpose(value, "OIHW", "IHWO")
                 attribute.set(cpu_ary)
                 return
+            case TensorFormat.NCHW:
+                cpu_ary = value
+                attribute.set(cpu_ary)
+                return
             case _:
                 return super()._import_prop(key, value)
     # ---
