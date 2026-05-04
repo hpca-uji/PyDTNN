@@ -1,6 +1,8 @@
+from collections.abc import Callable
+import functools
 from typing import TYPE_CHECKING
 
-from pydtnn.utils import get_code_from_file
+from pydtnn.utils import read_file
 
 if TYPE_CHECKING:
     import cupy as cp  # type: ignore
@@ -11,7 +13,6 @@ type Abs_Function = "Function | cp.RawKernel"
 
 
 class UsesCudaCode[M: Abs_Module, F: Abs_Function]():
-    cuda_compiler = "nvcc"
 
     def __init__(self, *args, **kwds) -> None:
         super().__init__(*args, **kwds)
@@ -50,9 +51,14 @@ class UsesCudaCode[M: Abs_Module, F: Abs_Function]():
 
         path_code = f"{path_code}/{code_file_name}"
 
-        return get_code_from_file(path_code, defines_replaces)
+        return read_file(path_code, defines_replaces)
 
-    def _get_module(self, code: str) -> M:
+    @staticmethod
+    @functools.cache
+    def _get_module(module, code):
+        return module(code)
+
+    def _cuda_kernel(self, code: str) -> M:
         raise NotImplementedError("This is a fake function that must be implemented by a child class.")
 
     def _get_kernel(self, path_code: str | None = None,
@@ -68,7 +74,7 @@ class UsesCudaCode[M: Abs_Module, F: Abs_Function]():
                               code_file_name=code_file_name,
                               defines_replaces=defines_replaces,
                               file_extension=file_extension)
-        kernel = self._get_module(code)
+        kernel = self._get_module(self._cuda_kernel, code)
 
         return self._get_kernel_function(kernel=kernel, func_name=func_name,
                                          func_name_subfix=func_name_subfix)

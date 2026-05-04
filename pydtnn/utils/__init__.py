@@ -169,20 +169,19 @@ def get_npz_shape(f):
     return shapes
 
 
-def get_code_from_file(path: str, replaces: dict[str, str] = dict()) -> str:
+def read_file(path: str, replaces: dict[str, str] = {}) -> str:
     """
     Args:
-        path (str): Path to the code's file.
-        replaces (dict[str, str] | None): A dictionary where the keys are the parts of code to replace and the values are the replacements, or None if there is nothing to replace.
-            NOTE: Remeber to add the ' \" ' if they are necessary (e.g.:{'\"TYPE\"': float} to substitude all the "TYPE" with float).
+        path (str): Path to the file.
+        replaces (dict[str, str] | None)
     Returns:
-       code (str): The code as a string (str).
+       file (str): The file as a string (str).
 
     """
 
-    code = resources.read_text(package_name, path)
+    text = resources.read_text(package_name, path)
     # "prepocessor" (replacing generic "defines" and other sections of code with the actual code)
     for rep in replaces.items():
-        code = code.replace(*rep)
+        text = text.replace(*rep)
 
-    return code
+    return text
