@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 import unittest
 
@@ -77,7 +79,7 @@ class ModelGpuTestCase(ModelCommonTestCase):
                     gpu_layer.biases = TensorArray(biases_gpu, gpu_layer.model.tensor_format,
                                                    gpu_layer.model.cudnn_dtype)
 
-    def set_data_to_ary(self, ary: "gpuarray",  # type: ignore
+    def set_data_to_ary(self, ary: gpuarray,  # type: ignore
                         data: np.ndarray, layer: Layerable) -> None:
         try:
             ary.set(data.copy())

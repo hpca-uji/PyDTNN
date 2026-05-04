@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -32,7 +34,7 @@ class MaskLang(Dataset):
     scale:  ???
     """
 
-    def __init__(self, model: "Model", preprocess=0, embedl=512, max_sentence=512, split_token="<translation>", force_test_as_validation=False, debug=False):
+    def __init__(self, model: Model, preprocess=0, embedl=512, max_sentence=512, split_token="<translation>", force_test_as_validation=False, debug=False):
 
         self.model = model
         self.num_preprocess = preprocess

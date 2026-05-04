@@ -35,7 +35,7 @@ class LogNumpy(Log[np.ndarray], ActivationNumpy):
                dtype=self.model.dtype)
         np.log(x, out=y,
                dtype=self.model.dtype)
-        # NOTE: Log propierty: "log(a / b) = log(a) - log(b)", and "log(1) = 0 ==>
+        # NOTE: Log propierty: "log(a / b) = log(a) - log(b)", and "log(1) = 0" ==> "log(a / b) = - log(b)"
         np.multiply(y, -1, out=y,
                     dtype=self.model.dtype)
         return y

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -31,7 +33,7 @@ class WarmUp(Scheduler):
             self.log(f"Setting learning rate to {self.model.optimizer.learning_rate:.8f}.")
 
     @classmethod
-    def from_model(cls, model: "Model") -> "WarmUp":
+    def from_model(cls, model: Model) -> WarmUp:
         return WarmUp(model.warm_up_epochs,
                       model.learning_rate / model.nprocs,
                       model.learning_rate)

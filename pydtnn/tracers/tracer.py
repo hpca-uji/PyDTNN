@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import abc
 import logging
 import resource
@@ -98,7 +100,7 @@ class Tracer(metaclass=PostInitCaller):
         """Actions that must be done if print memory usage is disabled"""
         setattr(self, "print_memory_usage", lambda *args, **kwargs: None)
 
-    def define_event_types(self, model: "Model"):
+    def define_event_types(self, model: Model):
         """Fake method, will be replaced by lambda: None or _define_event_types()"""
         pass
 
@@ -121,7 +123,7 @@ class Tracer(metaclass=PostInitCaller):
             all_layers += self._get_layers_recursively(layer.children)
         return all_layers
 
-    def _define_event_types(self, model: "Model"):
+    def _define_event_types(self, model: Model):
         """This method will be called only if tracing is enabled"""
         mdl_event = self.event_types[PYDTNN_MDL_EVENT]
         ops_event = self.event_types[PYDTNN_OPS_EVENT]

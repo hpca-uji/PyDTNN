@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -42,7 +44,7 @@ class ReduceLROnPlateau(SchedulerWithLossOrMetric):
             self.log(f"Metric {self.loss_or_metric} did not improve for {self.model.optimizer.learning_rate} epochs, setting learning rate to {self.patience:.8f}.")
 
     @classmethod
-    def from_model(cls, model: "Model") -> "ReduceLROnPlateau":
+    def from_model(cls, model: Model) -> ReduceLROnPlateau:
         return ReduceLROnPlateau(model.reduce_lr_on_plateau_metric,
                                  model.reduce_lr_on_plateau_factor,
                                  model.reduce_lr_on_plateau_patience,

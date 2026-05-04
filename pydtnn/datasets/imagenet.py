@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import copy
 import io
 import logging
@@ -105,7 +107,7 @@ class ImageNet(Dataset):
     scale:  +3.471
     """
 
-    def __init__(self, model: "Model", force_test_as_validation=False, debug=False):
+    def __init__(self, model: Model, force_test_as_validation=False, debug=False):
         super().__init__(model, TRAIN_NSAMPLES, TEST_NSAMPLES, INPUT_SHAPE, OUTPUT_SHAPE, force_test_as_validation=force_test_as_validation, debug=debug)
 
     def _get_label(self, code: int, labels: dict[int, int]) -> np.ndarray:

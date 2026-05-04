@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -33,6 +35,6 @@ class StopAtLoss(SchedulerWithLossOrMetric):
             self.log(f"Metric '{self.loss_or_metric}' reached threshold value {self.threshold_value}, stop training.")
 
     @classmethod
-    def from_model(cls, model: "Model") -> "StopAtLoss":
+    def from_model(cls, model: Model) -> StopAtLoss:
         return StopAtLoss(model.stop_at_loss_metric,
                           model.stop_at_loss_threshold)

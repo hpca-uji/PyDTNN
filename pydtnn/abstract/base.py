@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import importlib
 import re
 import typing
@@ -151,7 +153,7 @@ class Base[T: Array]:
         self._frontend = self
 
     # Base class
-    model: "model_module.Base"
+    model: model_module.Base
 
     @property
     def name(self) -> str:
@@ -196,13 +198,13 @@ class Base[T: Array]:
     def _post_init(self) -> None:
         pass
 
-    def _init_backend_with_model(self, model: "model_module.Base[T]") -> None:
+    def _init_backend_with_model(self, model: model_module.Base[T]) -> None:
         """Initialize backend and link a new model instance"""
         self.model = model  # Set on frontend
         self._init_backend()
         self.model = model  # Set on backend
 
     @classmethod
-    def from_model[I](cls: type[I], model: "model_module.Base[T]") -> T:
+    def from_model[I](cls: type[I], model: model_module.Base[T]) -> T:
         """Create object from a given model"""
         raise NotImplementedError("Use a concrete optimizer!")

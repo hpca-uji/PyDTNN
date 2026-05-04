@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -33,7 +35,7 @@ class RMSProp[T: Array](Optimizer[T]):
         return props
 
     @classmethod
-    def from_model(cls, model: "Model") -> "RMSProp":
+    def from_model(cls, model: Model) -> RMSProp:
         return RMSProp(learning_rate=model.learning_rate,
                        rho=model.optimizer_rho,
                        epsilon=model.optimizer_epsilon,

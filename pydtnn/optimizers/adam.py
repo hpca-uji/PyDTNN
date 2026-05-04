@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -35,7 +37,7 @@ class Adam[T: Array](Optimizer[T]):
         return props
 
     @classmethod
-    def from_model(cls, model: "Model") -> "Adam":
+    def from_model(cls, model: Model) -> Adam:
         return Adam(learning_rate=model.learning_rate,
                     beta1=model.optimizer_beta1,
                     beta2=model.optimizer_beta2,

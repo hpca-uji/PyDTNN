@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 from typing import TYPE_CHECKING
 from warnings import warn
@@ -56,7 +58,7 @@ class OkTopk[T: Array](Optimizer[T]):
             raise NotImplementedError("OkTopK optimizer does not support Federated Learing (unbalanced datasets)!")
 
     @classmethod
-    def from_model(cls, model: "Model") -> "OkTopk":
+    def from_model(cls, model: Model) -> OkTopk:
         return OkTopk(learning_rate=model.learning_rate,
                       momentum=model.optimizer_momentum,
                       tau=model.optimizer_tau,

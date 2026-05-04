@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -23,7 +25,7 @@ class Synthetic(Dataset):
     - `model.synthetic_output_shape` (coma separated)
     """
 
-    def __init__(self, model: "Model", force_test_as_validation=False, debug=False):
+    def __init__(self, model: Model, force_test_as_validation=False, debug=False):
         train_nsamples = int(model.synthetic_train_samples)
         test_nsamples = int(model.synthetic_test_samples)
         input_shape = tuple(map(int, model.synthetic_input_shape.split(",")))

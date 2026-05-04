@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import ctypes
 import logging
 import os
@@ -26,7 +28,7 @@ class ExtraeTracer(Tracer):
         super().enable_tracing()
         self.pyextrae = import_module('pyextrae.common.extrae')
 
-    def _define_event_types(self, model: "Model"):
+    def _define_event_types(self, model: Model):
         """This method will be called only if tracing is enabled"""
         super()._define_event_types(model)
         for event_type_value, event_type in self.event_types.items():

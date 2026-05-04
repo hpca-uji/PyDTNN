@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 import os
 import time
@@ -19,8 +21,7 @@ class ModelCheckpoint(SchedulerWithLossOrMetric):
     """
     ModelCheckpoint LRScheduler
     """
-
-    model: "Model"
+    model: Model
 
     def __init__(self, loss_or_metric: str = "", epoch_save_frequency=1, verbose=True):
         super().__init__(loss_or_metric, verbose)
@@ -49,6 +50,6 @@ class ModelCheckpoint(SchedulerWithLossOrMetric):
                 self.last_filename = self.filename
 
     @classmethod
-    def from_model(cls, model: "Model") -> "ModelCheckpoint":
+    def from_model(cls, model: Model) -> ModelCheckpoint:
         return ModelCheckpoint(model.model_checkpoint_metric,
                                model.model_checkpoint_save_freq)

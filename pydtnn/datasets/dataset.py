@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import functools
 import itertools
 import logging
@@ -39,7 +41,7 @@ class Dataset:
         VAL = 1
         TEST = 2
 
-    def __init__(self, model: "Model", train_nsamples: int = 0, test_nsamples: int = 0, input_shape: ArrayShape = (),
+    def __init__(self, model: Model, train_nsamples: int = 0, test_nsamples: int = 0, input_shape: ArrayShape = (),
                  output_shape: ArrayShape = (), force_test_as_validation=False, debug=False):
 
         if train_nsamples <= 0:

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import copy
 import logging
 import os
@@ -32,7 +34,7 @@ class Folder(Dataset):
     The Dataset is composed by img1 and img2, which belongs to the class A; img3, img4 and img5, which belong to class the class B; and img6, which belongs to class C.
     """
 
-    def __init__(self, model: "Model", force_test_as_validation=False, debug=False):
+    def __init__(self, model: Model, force_test_as_validation=False, debug=False):
         """
         Args:
             model (Model): Model's object.

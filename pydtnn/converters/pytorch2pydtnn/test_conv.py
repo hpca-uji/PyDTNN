@@ -34,7 +34,7 @@ DTYPE = np.float32
 KWARGS = {
     "model_name": None,
     "evaluate_only": True,
-    "parallel": "data",
+    "parallel_data": False,
     "tensor_format": TENSOR_FORMAT,
     "enable_cudnn": False,  # True,
     "omm": None,

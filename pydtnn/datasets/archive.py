@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 from functools import cached_property
 from typing import TYPE_CHECKING
@@ -26,7 +28,7 @@ class Archive(Dataset):
     Y must be in a NDArray with N (or more) and float64 dtype.
     """
 
-    def __init__(self, model: "Model", force_test_as_validation=False, debug=False):
+    def __init__(self, model: Model, force_test_as_validation=False, debug=False):
         shapes = get_npz_shape(model.dataset_path)
         x_train = shapes["x_train"]
         y_train = shapes["y_train"]

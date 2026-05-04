@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import copy
 import ctypes
 import logging
@@ -47,7 +49,7 @@ class TensorArray:
                            tensor_type=tensor_type, desc=desc, gpudirect=gpudirect, cublas=cublas)
 
     @staticmethod
-    def new_pair_gpudirect(drv: "pycuda_driver", shape: ArrayShape, dtype: np.dtype,
+    def new_pair_gpudirect(drv: pycuda_driver, shape: ArrayShape, dtype: np.dtype,
                            tensor_format: TensorFormat, cudnn_dtype: int,
                            tensor_type: TensorType = TensorType.TENSOR,
                            desc: int | None = None, gpudirect: bool = False, cublas: bool = False) -> tuple[np.ndarray, "TensorArray"]:
@@ -74,7 +76,7 @@ class TensorArray:
             tensor_format: TensorFormat, cudnn_dtype: int,
             tensor_type: TensorType = TensorType.TENSOR,
             desc: int | None = None, gpudirect: bool = False, cublas: bool = False,
-            drv: "pycuda_driver" = None) -> tuple[np.ndarray, "TensorArray"]:
+            drv: pycuda_driver = None) -> tuple[np.ndarray, TensorArray]:
         if drv is not None:
             return TensorArray.new_pair_gpudirect(drv=drv, shape=shape,
                                                   dtype=dtype, tensor_format=tensor_format,
@@ -85,7 +87,7 @@ class TensorArray:
                                         cudnn_dtype=cudnn_dtype, tensor_type=tensor_type,
                                         desc=desc, gpudirect=gpudirect, cublas=cublas)
 
-    def __init__(self, gpu_arr: "gpuarray.GPUArray", tensor_format: TensorFormat, cudnn_dtype: int,
+    def __init__(self, gpu_arr: gpuarray.GPUArray, tensor_format: TensorFormat, cudnn_dtype: int,
                  tensor_type: TensorType = TensorType.TENSOR, desc: int | None = None,
                  gpudirect: bool = False, cublas: bool = False, cpu_shape: ArrayShape | None = None):
 
@@ -115,7 +117,7 @@ class TensorArray:
     def _decode_shape(self, shape):
         return decode_shape(shape, self.tensor_format)
 
-    def _set_ary(self, gpu_arr: "gpuarray.GPUArray") -> None:
+    def _set_ary(self, gpu_arr: gpuarray.GPUArray) -> None:
         """Set backing gpu array"""
         match len(gpu_arr.shape):
             case 1:

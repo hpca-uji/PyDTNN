@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -33,7 +35,7 @@ class SGD[T: Array](Optimizer[T]):
         return props
 
     @classmethod
-    def from_model(cls, model: "Model") -> "SGD":
+    def from_model(cls, model: Model) -> SGD:
         return SGD(learning_rate=model.learning_rate,
                    momentum=model.optimizer_momentum,
                    nesterov=model.optimizer_nesterov,

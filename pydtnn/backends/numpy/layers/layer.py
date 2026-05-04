@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -20,7 +22,7 @@ class LayerNumpy(Layer[np.ndarray], LayerableNumpy):
     Extends a Layer class with the attributes and methods required by CPU Layers.
     """
 
-    model: "Model[np.ndarray]"
+    model: Model[np.ndarray]
 
     @property
     def _ary_prop(self) -> set[str]:

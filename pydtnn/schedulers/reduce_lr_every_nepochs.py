@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -30,7 +32,7 @@ class ReduceLREveryNEpochs(Scheduler):
             self.log(f"Setting learning rate to {self.model.optimizer.learning_rate:.8f}!")
 
     @classmethod
-    def from_model(cls, model: "Model") -> "ReduceLREveryNEpochs":
+    def from_model(cls, model: Model) -> ReduceLREveryNEpochs:
         return ReduceLREveryNEpochs(model.reduce_lr_every_nepochs_factor,
                                     model.reduce_lr_every_nepochs_nepochs,
                                     model.reduce_lr_every_nepochs_min_lr)

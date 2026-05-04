@@ -24,8 +24,11 @@
   ---
 - Keep `README.md` and `parser.py` in sync, any change in options must be reflected in both.
 
+  ---
+- Use `from __future__ import annotations` instead of string type annotations, it is more legible and will be default moving forward.
+
 # Knowledge
-- In components, `__init__` is used for model-agnostic configuration, and `_model_init` for model specific configuration and resource allocation.
+- In components, `__init__` is used for model-agnostic configuration, and `_model_init` for model specific configuration, and `_post_init` and resource allocation.
 
   ---
 - `--enable-gpudirect` moves data from CPU (`ndarray`) to GPU (`GPUArray`), requires `enable-cudnn`

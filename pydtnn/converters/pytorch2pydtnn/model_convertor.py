@@ -214,7 +214,7 @@ def convert_layers_and_set_weights_and_biases(input_shape: tuple[int, int, int],
 def check_kwargs_and_set_default(kwargs: dict) -> None:
 
     DICT_KWARGS_DEFAULT_VALUES = {
-        "tensor_format": "NCHW",  # NOTE: PyTorch's weight tensors only NCHW format.
+        "tensor_format": "nchw",  # NOTE: PyTorch's weight tensors only NCHW format.
         "model_name": None,  # NOTE: If it's not set to "None", it's possible that other neural network is loaded.
         "batch_size": 64,
         # Model object parameters:

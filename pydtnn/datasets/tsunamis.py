@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import copy
 import logging
 import math
@@ -34,7 +36,7 @@ class Tsunamis(Dataset):
     scale:  ???
     """
 
-    def __init__(self, model: "Model", force_test_as_validation=False, debug=False):
+    def __init__(self, model: Model, force_test_as_validation=False, debug=False):
         super().__init__(model, TRAIN_NSAMPLES, TEST_NSAMPLES, INPUT_SHAPE, OUTPUT_SHAPE, force_test_as_validation=force_test_as_validation, debug=debug)
 
     def _init_actual_data(self):

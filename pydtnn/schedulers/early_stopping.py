@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 import time
 from typing import TYPE_CHECKING
@@ -18,7 +20,7 @@ class EarlyStopping(SchedulerWithLossOrMetric):
     """
     EarlyStopping LRScheduler
     """
-    model: "Model"
+    model: Model
 
     def __init__(self, loss_or_metric="", patience=10, minimize=True, verbose=True):
         super().__init__(loss_or_metric, verbose)
@@ -50,7 +52,7 @@ class EarlyStopping(SchedulerWithLossOrMetric):
             self.log(f"Metric '{self.loss_or_metric}' did not improve for {self.patience} epochs, stop training.")
 
     @classmethod
-    def from_model(cls, model: "Model") -> "EarlyStopping":
+    def from_model(cls, model: Model) -> EarlyStopping:
         return EarlyStopping(model.early_stopping_metric,
                              model.early_stopping_patience,
                              model.early_stopping_minimize)

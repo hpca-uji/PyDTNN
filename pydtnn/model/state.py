@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 from typing import Any
 from warnings import warn
@@ -25,7 +27,7 @@ class State[T: Array](Layers[T]):
 
         return data
 
-    def import_(self, data: "dict[str, Any] | State") -> None:
+    def import_(self, data: dict[str, Any] | State) -> None:
         """Import model state"""
         if isinstance(data, State):
             data = data.export()

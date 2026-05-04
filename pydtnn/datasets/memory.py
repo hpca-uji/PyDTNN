@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 import operator
 import warnings
@@ -32,7 +34,7 @@ class Memory(Dataset):
     Y must be in a NDArray with N (or more) and `model.dtype` dtype.
     """
 
-    def __init__(self, model: "Model", x_train: np.ndarray, y_train: np.ndarray,
+    def __init__(self, model: Model, x_train: np.ndarray, y_train: np.ndarray,
                  x_test: np.ndarray | None = None, y_test: np.ndarray | None = None,
                  input_shape: ArrayShape | None = None, output_shape: ArrayShape | None = None,
                  force_test_as_validation=False, debug=False):
