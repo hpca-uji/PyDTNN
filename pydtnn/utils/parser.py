@@ -21,7 +21,9 @@ from typing import Sequence
 import numpy as np
 
 from pydtnn.utils import parse_bool as bool_lambda
+from pydtnn.utils.constants import NetworkAlgoEnum
 from pydtnn.utils.gpu import get_gpus_per_node
+from pydtnn.utils.tensor import TensorFormat
 
 logger = logging.getLogger(__name__)
 
@@ -398,7 +400,7 @@ class ArgumentParser(argparse.ArgumentParser):
         _pm_group.add_argument('--memory-bw', type=float, default=50e9, help=argparse.SUPPRESS)
         _pm_group.add_argument('--network-bw', type=float, default=1e9, help=argparse.SUPPRESS)
         _pm_group.add_argument('--network-lat', type=float, default=0.5e-6, help=argparse.SUPPRESS)
-        _pm_group.add_argument('--network-alg', type=str, default="vdg", choices=["bta", "vdg"], help=argparse.SUPPRESS)
+        _pm_group.add_argument('--network-algo', type=str, default="vdg", choices=["bta", "vdg"], help=argparse.SUPPRESS)
 
         # Add Runtime parallel execution options
         _re_group = self.add_argument_group("Runtime parallel execution options")

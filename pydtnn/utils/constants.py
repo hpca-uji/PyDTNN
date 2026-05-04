@@ -14,7 +14,7 @@ DTYPE2CTYPE: dict[np.dtype, str] = {
 }
 
 
-class NetworkAlgEnum(StrEnum):
+class NetworkAlgoEnum(StrEnum):
     BTA = auto()
     VDG = auto()
 

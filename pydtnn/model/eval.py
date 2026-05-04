@@ -240,7 +240,7 @@ class Eval[T: Array](Sync[T]):
                 if self.comm and weights_size > 0:
                     total_time += allreduce_time(weights_size + biases_size,
                                                  self.cpu_speed, self.network_bw, self.network_lat,
-                                                 self.network_alg, self.nprocs, self.dtype)
+                                                 self.network_algo, self.nprocs, self.dtype)
         else:
             total_time_iar: int = 0
             # Non-blocking MPI
@@ -252,7 +252,7 @@ class Eval[T: Array](Sync[T]):
                 if self.comm and weights_size > 0:
                     time_iar = allreduce_time(weights_size + biases_size,
                                               self.cpu_speed, self.network_bw, self.network_lat,
-                                              self.network_alg, self.nprocs, self.dtype)
+                                              self.network_algo, self.nprocs, self.dtype)
                     total_time[3] += time_iar[3]
                     total_time_iar = max(total_time[0], total_time_iar) + time_iar[0]
 
