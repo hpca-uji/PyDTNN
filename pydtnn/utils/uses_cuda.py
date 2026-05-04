@@ -1,5 +1,5 @@
-from collections.abc import Callable
 import functools
+from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from pydtnn.utils import read_file

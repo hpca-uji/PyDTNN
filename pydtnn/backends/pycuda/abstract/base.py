@@ -1,5 +1,5 @@
 from pycuda.compiler import SourceModule  # type: ignore
-from pycuda.driver import Module, Function  # type: ignore
+from pycuda.driver import Function, Module  # type: ignore
 
 from pydtnn.abstract.base import Base
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
