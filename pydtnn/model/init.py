@@ -125,7 +125,7 @@ class Init[T: Array](State[T]):
     def _tensor_init(self) -> None:
         """Setup tensor format"""
         if self.tensor_format:
-            tensor_format = TensorFormat(self.tensor_format)
+            tensor_format = TensorFormat(self.tensor_format.lower())
         elif self.enable_cudnn:
             tensor_format = TensorFormat.NCHW
         else:
