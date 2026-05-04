@@ -243,7 +243,7 @@ class Train[T: Array](Eval[T]):
         return (total_loss, model_sync_count, sync_epoch, string)
 
     def train(self, bar_width=BAR_WIDTH) -> dict[str, list[np.ndarray]]:
-        self._ensure_model_runable()
+        self._ensure_model_runnable()
 
         # If working with CUDA, self.y_batch must be in a GPU's data structure.
         if self.enable_cudnn and self.y_batch is None:

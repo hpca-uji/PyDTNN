@@ -339,7 +339,7 @@ class Init[T: Array](State[T]):
         self.loss_func._post_init()
         self.optimizer._post_init()
 
-    def _ensure_model_runable(self) -> None:
+    def _ensure_model_runnable(self) -> None:
         if not self.layers:
             warn_text = "The model has no layers in it."
             logger.warning(warn_text)

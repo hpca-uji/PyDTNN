@@ -182,7 +182,7 @@ class Eval[T: Array](Sync[T]):
         return (total_loss, model_sync_count, sync_epoch, string)
 
     def evaluate(self, bar_width=BAR_WIDTH):
-        self._ensure_model_runable()
+        self._ensure_model_runnable()
 
         if self.enable_cudnn and self.y_batch is None:
             assert gpuarray and self.cudnn_dtype

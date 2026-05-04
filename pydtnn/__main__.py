@@ -57,7 +57,7 @@ def main(config):
     # Create model
     from pydtnn.model import Model
     model = Model(**vars(config))
-    model._ensure_model_runable()
+    model._ensure_model_runnable()
     # Print model
     if model.comm_rank == 0:
         logger.info(str(config))
