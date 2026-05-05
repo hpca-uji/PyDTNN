@@ -55,8 +55,8 @@ class NadamPycuda(Nadam[TensorArray], OptimizerPycuda):
                 self.memory_used += self.context[layer.id]["m_%s" % w_].nbytes + self.context[layer.id]["v_%s" % w_].nbytes  # type: ignore (They are both "gpuarray" and not "int")
 
     def update(self, layer: LayerPycuda) -> None:
-        self.context[layer]["it"] += 1  # type: ignore (self.context[layer]["it"] is always an integer)
-        it: int = self.context[layer]["it"]  # type: ignore (self.context[layer]["it"] is always an integer)
+        self.context[layer.id]["it"] += 1  # type: ignore (self.context[layer]["it"] is always an integer)
+        it: int = self.context[layer.id]["it"]  # type: ignore (self.context[layer]["it"] is always an integer)
 
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
