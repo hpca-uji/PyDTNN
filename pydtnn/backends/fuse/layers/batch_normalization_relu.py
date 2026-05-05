@@ -2,13 +2,17 @@ import logging
 from typing import TYPE_CHECKING
 
 from pydtnn.backends.fuse.layers.layer import LayerFuse as FusedLayerMixIn
-from pydtnn.backends.fuse.utils.bn_inference_cython import \
-    bn_relu_inference_cython
-from pydtnn.backends.numpy.layers.batch_normalization import \
-    BatchNormalizationNumpy
+from pydtnn.backends.fuse.utils.bn_inference_cython import bn_relu_inference_cython
+from pydtnn.backends.numpy.layers.batch_normalization import BatchNormalizationNumpy
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.libs import numpy as np
 from pydtnn.utils.constants import Array, ArrayShape
+
+__all__ = (
+    "BatchNormalizationRelu",
+    "BatchNormalizationReluFuse",
+)
+
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +26,6 @@ class BatchNormalizationRelu[T: Array](FusedLayerMixIn[T], BatchNormalization[T]
 
 
 class BatchNormalizationReluFuse(BatchNormalizationRelu[np.ndarray], BatchNormalizationNumpy):
-
     # NOTE: The "__init__" method is being made (more or less) in Model (in _apply_layer_fusion) and in FusedLayerMixIn.
 
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None):

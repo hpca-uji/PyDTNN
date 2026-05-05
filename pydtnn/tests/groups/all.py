@@ -1,16 +1,31 @@
 import logging
 from warnings import warn
 
-from pydtnn.tests.batch_normalization_relu import \
-    BatchNormalizationReluTestCase
-from pydtnn.tests.conv_2d_batch_normalization import \
-    Conv2DBatchNormalizationTestCase
-from pydtnn.tests.conv_2d_batch_normalization_relu import \
-    Conv2DBatchNormalizationReluTestCase
+from pydtnn.tests.batch_normalization_relu import BatchNormalizationReluTestCase
+from pydtnn.tests.conv_2d_batch_normalization import Conv2DBatchNormalizationTestCase
+from pydtnn.tests.conv_2d_batch_normalization_relu import Conv2DBatchNormalizationReluTestCase
 from pydtnn.tests.conv_2d_group import Conv2DGroupTestCase
 from pydtnn.tests.conv_2d_relu import Conv2DReluTestCase
 from pydtnn.tests.model_dtype import ModelDTypeTestCase
 from pydtnn.tests.model_tensor import ModelTensorTestCase
+
+__all__ = (
+    "LayerPyTorchTestCase",
+    "BatchNormalizationReluTestCase",
+    "Conv2DReluTestCase",
+    "Conv2DBatchNormalizationTestCase",
+    "Conv2DBatchNormalizationReluTestCase",
+    "Conv2DGroupTestCase",
+    "ModelDTypeTestCase",
+    "ModelTensorTestCase",
+    "ModelGpuTestCase",
+    "Conv2DConvGemmTestCase",
+    "ConvGemmTestCase",
+    "ModelConvGemmTestCase",
+    "ConvWinogradTestCase",
+    "ConvDirectTestCase",
+)
+
 
 logger = logging.getLogger(__name__)
 
@@ -23,10 +38,17 @@ except Exception:
     warn("PyTorch not available, skiping tests!", ImportWarning)
 
 # Fused
+from pydtnn.tests.batch_normalization_relu import BatchNormalizationReluTestCase  # isort:skip
+from pydtnn.tests.conv_2d_relu import Conv2DReluTestCase  # isort:skip
+from pydtnn.tests.conv_2d_batch_normalization import Conv2DBatchNormalizationTestCase  # isort:skip
+from pydtnn.tests.conv_2d_batch_normalization_relu import Conv2DBatchNormalizationReluTestCase  # isort:skip
+from pydtnn.tests.conv_2d_group import Conv2DGroupTestCase
 
 # Models
+from pydtnn.tests.model_dtype import ModelDTypeTestCase  # isort:skip
+from pydtnn.tests.model_tensor import ModelTensorTestCase  # isort:skip
 try:
-    from pydtnn.tests.model_gpu import ModelGpuTestCase
+    from pydtnn.tests.model_gpu import ModelGpuTestCase  # isort:skip
 except Exception:
     warn("GPU not available, skiping tests!")
 

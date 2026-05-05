@@ -7,6 +7,8 @@ import typing
 from pydtnn import utils
 from pydtnn.utils.constants import Array
 
+__all__ = ("Base",)
+
 if typing.TYPE_CHECKING:
     from pydtnn.model import base as model_module
 
@@ -15,11 +17,7 @@ class Base[T: Array]:
     _backend: typing.Self
     _frontend: typing.Self
 
-    _map_backend = {
-        "all": "pydtnn",
-        "cpu": "numpy,cython",
-        "gpu": "pycuda"
-    }
+    _map_backend = {"all": "pydtnn", "cpu": "numpy,cython", "gpu": "pycuda"}
 
     def __new__(cls, *args, **kwds):
         # Save top-level constructor arguments
@@ -55,11 +53,7 @@ class Base[T: Array]:
         """
         groups = {}
 
-        spec = re.sub(
-            fr"\b({r"|".join(self._map_backend)})\b",
-            lambda match: self._map_backend[match.group()],
-            spec
-        )
+        spec = re.sub(rf"\b({r'|'.join(self._map_backend)})\b", lambda match: self._map_backend[match.group()], spec)
 
         for group in spec.split(";"):
             kv = group.split(":", 1)
@@ -73,10 +67,12 @@ class Base[T: Array]:
             for key in keys.split(","):
                 groups.setdefault(key, []).extend(reversed(values.split(",")))
 
-        return dict(sorted(
-            groups.items(),
-            key=lambda item: (-item[0].count("."), item[0]),
-        ))
+        return dict(
+            sorted(
+                groups.items(),
+                key=lambda item: (-item[0].count("."), item[0]),
+            )
+        )
 
     def _get_backend(self) -> typing.Any:
         """Get relevant backend class"""
@@ -185,10 +181,7 @@ class Base[T: Array]:
         props = self._show_props()
         name = props.pop("name")
 
-        props = " ".join(
-            f"{key}={value!r}"
-            for key, value in props.items()
-        )
+        props = " ".join(f"{key}={value!r}" for key, value in props.items())
 
         return f"<{name} {props}>" if props else f"<{name}>"
 

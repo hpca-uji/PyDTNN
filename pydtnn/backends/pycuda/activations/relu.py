@@ -8,11 +8,12 @@ from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.libs import cudnn as cudnn
 from pydtnn.utils.constants import ArrayShape
 
+__all__ = ("ReluPycuda",)
+
 logger = logging.getLogger(__name__)
 
 
 class ReluPycuda(Relu[TensorArray], ActivationPycuda):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.act_desc = None
@@ -22,8 +23,8 @@ class ReluPycuda(Relu[TensorArray], ActivationPycuda):
 
         self.act_desc = cudnn.cudnnCreateActivationDescriptor()
 
-        mode = cudnn.cudnnActivationMode['CUDNN_ACTIVATION_RELU']
-        nan = cudnn.cudnnNanPropagation['CUDNN_NOT_PROPAGATE_NAN']
+        mode = cudnn.cudnnActivationMode["CUDNN_ACTIVATION_RELU"]
+        nan = cudnn.cudnnNanPropagation["CUDNN_NOT_PROPAGATE_NAN"]
 
         # We set the maximum value to the relu to 0, which specifies the upper bound
         relu_ceiling = 0.0
@@ -41,16 +42,12 @@ class ReluPycuda(Relu[TensorArray], ActivationPycuda):
 
     def forward(self, x: TensorArray) -> TensorArray:
         alpha, beta = 1.0, 0.0
-        cudnn.cudnnActivationForward(self.model.cudnn_handle, self.act_desc, alpha,
-                                     x.desc, x.ptr_voidp, beta,
-                                     self.y.desc, self.y.ptr_voidp)
+        cudnn.cudnnActivationForward(self.model.cudnn_handle, self.act_desc, alpha, x.desc, x.ptr_voidp, beta, self.y.desc, self.y.ptr_voidp)
         return self.y
 
     def backward(self, dy: TensorArray) -> TensorArray:
         alpha, beta = 1.0, 0.0
-        cudnn.cudnnActivationBackward(self.model.cudnn_handle, self.act_desc, alpha,
-                                      self.y.desc, self.y.ptr_voidp,
-                                      dy.desc, dy.ptr_voidp,
-                                      self.x.desc, self.x.ptr_voidp, beta,
-                                      self.dx.desc, self.dx.ptr_voidp)
+        cudnn.cudnnActivationBackward(
+            self.model.cudnn_handle, self.act_desc, alpha, self.y.desc, self.y.ptr_voidp, dy.desc, dy.ptr_voidp, self.x.desc, self.x.ptr_voidp, beta, self.dx.desc, self.dx.ptr_voidp
+        )
         return self.dx

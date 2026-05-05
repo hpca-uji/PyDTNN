@@ -5,16 +5,16 @@ import numpy as np
 
 from pydtnn.backends.pycuda.layers.abstract.conv_2d import AbstractConv2DPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
-                                   PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
+from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import TensorFormat, format_transpose
+
+__all__ = ("AbstractConv2DStandardPycuda",)
 
 logger = logging.getLogger(__name__)
 
 
 class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
-
     def _initializing_special_parameters(self):
         match self.model.tensor_format:
             case TensorFormat.NCHW:
@@ -90,19 +90,33 @@ class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
     def forward(self, x: TensorArray) -> TensorArray:
         # im2col / im2row
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
-        self.im2_func(x.ary, self.weights.ary,
-                      self.im2_x.ary, self.y.ary,
-                      self.biases.ary,
-                      np.int32(self.dim_c), np.int32(self.dim_n),
-                      np.int32(self.model.batch_size), np.int32(self.ci), np.int32(self.hi), np.int32(self.wi),
-                      np.int32(self.co), np.int32(self.ho), np.int32(self.wo),
-                      np.int32(self.kh), np.int32(self.kw),
-                      np.int32(self.hpadding), np.int32(self.wpadding),
-                      np.int32(self.hstride), np.int32(self.wstride),
-                      np.int32(self.hdilation), np.int32(self.wdilation),
-                      grid=self.grid, block=self.block,
-                      stream=self.model.stream
-                      )
+        self.im2_func(
+            x.ary,
+            self.weights.ary,
+            self.im2_x.ary,
+            self.y.ary,
+            self.biases.ary,
+            np.int32(self.dim_c),
+            np.int32(self.dim_n),
+            np.int32(self.model.batch_size),
+            np.int32(self.ci),
+            np.int32(self.hi),
+            np.int32(self.wi),
+            np.int32(self.co),
+            np.int32(self.ho),
+            np.int32(self.wo),
+            np.int32(self.kh),
+            np.int32(self.kw),
+            np.int32(self.hpadding),
+            np.int32(self.wpadding),
+            np.int32(self.hstride),
+            np.int32(self.wstride),
+            np.int32(self.hdilation),
+            np.int32(self.wdilation),
+            grid=self.grid,
+            block=self.block,
+            stream=self.model.stream,
+        )
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.y
 
@@ -111,22 +125,34 @@ class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
         self.dx.fill(0)
         # im2col / im2row
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
-        self._2im_func(dy.ary,
-                       self.im2_x.ary,
-                       self.weights.ary,
-                       self.dw.ary,
-                       self.db.ary,
-                       self.dx.ary,
-                       self.x_2im_var.ary,
-                       np.int32(self.dim_c), np.int32(self.dim_n),
-                       np.int32(self.model.batch_size), np.int32(self.ci), np.int32(self.hi), np.int32(self.wi),
-                       np.int32(self.co), np.int32(self.ho), np.int32(self.wo),
-                       np.int32(self.kh), np.int32(self.kw),
-                       np.int32(self.hpadding), np.int32(self.wpadding),
-                       np.int32(self.hstride), np.int32(self.wstride),
-                       np.int32(self.hdilation), np.int32(self.wdilation),
-                       grid=self.grid, block=self.block,
-                       stream=self.model.stream
-                       )
+        self._2im_func(
+            dy.ary,
+            self.im2_x.ary,
+            self.weights.ary,
+            self.dw.ary,
+            self.db.ary,
+            self.dx.ary,
+            self.x_2im_var.ary,
+            np.int32(self.dim_c),
+            np.int32(self.dim_n),
+            np.int32(self.model.batch_size),
+            np.int32(self.ci),
+            np.int32(self.hi),
+            np.int32(self.wi),
+            np.int32(self.co),
+            np.int32(self.ho),
+            np.int32(self.wo),
+            np.int32(self.kh),
+            np.int32(self.kw),
+            np.int32(self.hpadding),
+            np.int32(self.wpadding),
+            np.int32(self.hstride),
+            np.int32(self.wstride),
+            np.int32(self.hdilation),
+            np.int32(self.wdilation),
+            grid=self.grid,
+            block=self.block,
+            stream=self.model.stream,
+        )
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.dx

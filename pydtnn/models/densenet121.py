@@ -13,6 +13,8 @@ from pydtnn.layers.input import Input
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.initializers import he_uniform
 
+__all__ = ("densenet121",)
+
 
 def densenet121(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
     model = list[Layerable]()
@@ -29,17 +31,19 @@ def densenet121(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[L
 
     for i, nblocks in enumerate(blocks):
         for j in range(nblocks):
-            _(ConcatenationBlock(
-                [
-                    BatchNormalization(),
-                    Relu(),
-                    Conv2D(nfilters=4 * growth_rate, filter_shape=(1, 1), use_bias=False,
-                           weights_initializer=he_uniform),
-                    BatchNormalization(),
-                    Relu(),
-                    Conv2D(nfilters=growth_rate, filter_shape=(3, 3), padding=1, use_bias=False,
-                           weights_initializer=he_uniform)
-                ], []))
+            _(
+                ConcatenationBlock(
+                    [
+                        BatchNormalization(),
+                        Relu(),
+                        Conv2D(nfilters=4 * growth_rate, filter_shape=(1, 1), use_bias=False, weights_initializer=he_uniform),
+                        BatchNormalization(),
+                        Relu(),
+                        Conv2D(nfilters=growth_rate, filter_shape=(3, 3), padding=1, use_bias=False, weights_initializer=he_uniform),
+                    ],
+                    [],
+                )
+            )
 
         num_planes += nblocks * growth_rate
 

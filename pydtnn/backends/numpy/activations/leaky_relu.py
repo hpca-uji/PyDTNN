@@ -5,6 +5,8 @@ from pydtnn.activations.leaky_relu import LeakyRelu
 from pydtnn.backends.numpy.activations.activation import ActivationNumpy
 from pydtnn.libs import numpy as np
 
+__all__ = ("LeakyReluNumpy",)
+
 logger = logging.getLogger(__name__)
 
 
@@ -13,7 +15,6 @@ if TYPE_CHECKING:
 
 
 class LeakyReluNumpy(LeakyRelu[np.ndarray], ActivationNumpy):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -26,10 +27,10 @@ class LeakyReluNumpy(LeakyRelu[np.ndarray], ActivationNumpy):
         self.memory_used += self._y.nbytes + self._mask.nbytes
 
     def forward(self, x: np.ndarray) -> np.ndarray:
-        self.y = self._y[:x.shape[0], :]
-        self.mask = self._mask[:x.shape[0], :]
+        self.y = self._y[: x.shape[0], :]
+        self.mask = self._mask[: x.shape[0], :]
 
-        negatives = (x < 0)
+        negatives = x < 0
 
         self.y[~negatives] = x
         self.y[negatives] = x * self.negative_slope

@@ -3,7 +3,6 @@ from collections.abc import Sequence
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.activations.relu import Relu
 from pydtnn.activations.softmax import Softmax
-from pydtnn.converters.pytorch2pydtnn.layers.functions import relu
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.fc import FC
 from pydtnn.layers.flatten import Flatten
@@ -11,6 +10,8 @@ from pydtnn.layers.input import Input
 from pydtnn.layers.max_pool_2d import MaxPool2D
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.initializers import he_uniform
+
+__all__ = ("vgg2",)
 
 
 def vgg2(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:

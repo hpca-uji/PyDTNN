@@ -18,7 +18,6 @@ def transpose_0231_ikj_cython[T](original: _npDT_4Dims[T], transposed: _npDT_4Di
         Nothing. The output is stored in "transposed"
     """
 
-
 def transpose_0231_ijk_cython[T](original: _npDT_4Dims[T], transposed: _npDT_4Dims[T]) -> None:
     """
     Transposes a 4D matrix from (0,1,2,3) to (0,2,3,1).
@@ -55,7 +54,6 @@ def transpose_0312_ijk_cython[T](original: _npDT_4Dims[T], transposed: _npDT_4Di
         Nothing. The output is stored in "transposed"
     """
 
-
 def transpose_1023_jik_cython[T](original: _npDT_4Dims[T], transposed: _npDT_4Dims[T]) -> None:
     """
     Transposes a 4D matrix from (0,1,2,3) to (1,0,2,3).
@@ -67,7 +65,6 @@ def transpose_1023_jik_cython[T](original: _npDT_4Dims[T], transposed: _npDT_4Di
     Returns:
         Nothing. The output is stored in "transposed"
     """
-
 
 def transpose_1023_ijk_cython[T](original: _npDT_4Dims[T], transposed: _npDT_4Dims[T]) -> None:
     """

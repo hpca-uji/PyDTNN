@@ -5,6 +5,8 @@ from pydtnn.backends.numpy.losses.loss import LossNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.losses.kl_divergence import KLDivergence
 
+__all__ = ("KLDivergenceNumpy",)
+
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
@@ -12,7 +14,6 @@ if TYPE_CHECKING:
 
 
 class KLDivergenceNumpy(KLDivergence[np.ndarray], LossNumpy):
-
     def _model_init(self) -> None:
         super()._model_init()
         self.memory_used += self.dx.nbytes
@@ -24,7 +25,7 @@ class KLDivergenceNumpy(KLDivergence[np.ndarray], LossNumpy):
 
         # dx = np.log(np.abs(y_targ/(y_pred + self.eps)) + 1)  # Respecto a prediction
         # dx = dx / batch_size
-        dx = self.dx[:y_targ[0]]
+        dx = self.dx[: y_targ[0]]
 
         np.add(y_pred, self.eps, out=dx)
         np.divide(y_targ, dx, out=dx)

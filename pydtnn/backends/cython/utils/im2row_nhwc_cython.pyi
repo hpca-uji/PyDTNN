@@ -1,14 +1,8 @@
-import numpy as _np
+from pydtnn.backends.cython.utils.base import _npDT, _npDT_2Dims, _npDT_4Dims
 
-from pydtnn.backends.cython.utils.base import (_npDT, _npDT_1Dims, _npDT_2Dims,
-                                               _npDT_3Dims, _npDT_4Dims)
-
-def im2row_nhwc_cython[T: _npDT](x: _npDT_4Dims[T],
-                                 rows: _npDT_2Dims[T],
-                                 kh: int, kw: int, ho: int, wo: int,
-                                 vpadding: int, hpadding: int,
-                                 vstride: int, hstride: int,
-                                 vdilation: int, hdilation: int) -> None:
+def im2row_nhwc_cython[T: _npDT](
+    x: _npDT_4Dims[T], rows: _npDT_2Dims[T], kh: int, kw: int, ho: int, wo: int, vpadding: int, hpadding: int, vstride: int, hstride: int, vdilation: int, hdilation: int
+) -> None:
     """
     Args:
         x (npDT_4Dims): The 4 dimensional array (the image).
@@ -27,14 +21,24 @@ def im2row_nhwc_cython[T: _npDT](x: _npDT_4Dims[T],
         Nothing. The output is sotred in "rows".
     """
 
-
-def row2im_nhwc_cython[T: _npDT](rows: _npDT_2Dims[T],
-                                 x: _npDT_4Dims[T],
-                                 n: int, h: int, w: int, c: int,
-                                 kh: int, kw: int, ho: int, wo: int,
-                                 vpadding: int, hpadding: int,
-                                 vstride: int, hstride: int,
-                                 vdilation: int, hdilation: int) -> None:
+def row2im_nhwc_cython[T: _npDT](
+    rows: _npDT_2Dims[T],
+    x: _npDT_4Dims[T],
+    n: int,
+    h: int,
+    w: int,
+    c: int,
+    kh: int,
+    kw: int,
+    ho: int,
+    wo: int,
+    vpadding: int,
+    hpadding: int,
+    vstride: int,
+    hstride: int,
+    vdilation: int,
+    hdilation: int,
+) -> None:
     """
     Args:
         rows (npDT_2Dims): The 2 dimensional array (the image).

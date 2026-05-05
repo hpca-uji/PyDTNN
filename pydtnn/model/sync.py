@@ -6,11 +6,12 @@ from pydtnn import MPI
 from pydtnn.model.init import Init
 from pydtnn.utils.constants import Array
 
+__all__ = ("Sync",)
+
 logger = logging.getLogger(__name__)
 
 
 class Sync[T: Array](Init[T]):
-
     def _layer_reduce_encode(self, data: np.ndarray):
         data *= self.rank_weight
 

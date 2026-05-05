@@ -7,6 +7,8 @@ from pydtnn.tests.abstract.common import Params
 from pydtnn.tests.abstract.model_common import ModelCommonTestCase
 from pydtnn.utils.tensor import TensorFormat
 
+__all__ = ("ModelConvGemmTestCase",)
+
 logger = logging.getLogger(__name__)
 
 
@@ -14,6 +16,7 @@ class ModelConvGemmTestCase(ModelCommonTestCase):
     """
     Tests that two models with different parameters lead to the same results
     """
+
     # NOTE: Delete parent test to prevent re-export and re-testing
     global ModelCommonTestCase
     del ModelCommonTestCase

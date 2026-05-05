@@ -3,13 +3,15 @@ import logging
 from pydtnn.layers.layer import Layer
 from pydtnn.utils.constants import Array, ArrayShape
 
+__all__ = ("Dropout",)
+
 logger = logging.getLogger(__name__)
 
 
 class Dropout[T: Array](Layer[T]):
     def __init__(self, rate=0.5):
         super().__init__()
-        self.rate = min(1., max(0., rate))
+        self.rate = min(1.0, max(0.0, rate))
 
     def _model_init(self, prev_shape: ArrayShape, x: T | None):
         super()._model_init(prev_shape, x)

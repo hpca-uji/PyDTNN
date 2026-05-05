@@ -3,22 +3,20 @@ import math
 
 import numpy as np
 from pycuda import gpuarray  # type: ignore
-from pycuda.compiler import SourceModule  # type: ignore
-from pycuda.driver import Function  # type: ignore
 
 from pydtnn.activations.relu6 import Relu6
 from pydtnn.backends.pycuda.activations.activation import ActivationPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.tracers.events import (PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS,
-                                   PYDTNN_OPS_EVENT_enum)
+from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
 from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
 from pydtnn.utils.performance_models import col2im_time, im2col_time
+
+__all__ = ("Relu6Pycuda",)
 
 logger = logging.getLogger(__name__)
 
 
 class Relu6Pycuda(Relu6[TensorArray], ActivationPycuda):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.mask: TensorArray = None  # type: ignore
@@ -35,7 +33,7 @@ class Relu6Pycuda(Relu6[TensorArray], ActivationPycuda):
 
         self.memory_used += self.y.nbytes + self.mask.nbytes
 
-        self.defines_replaces = {"\"TYPE\"": DTYPE2CTYPE[self.model.dtype]}
+        self.defines_replaces = {'"TYPE"': DTYPE2CTYPE[self.model.dtype]}
         self.cuda_fwd_func = self._fwd_kernel()
         self.cuda_bwd_func = self._bwd_kernel()
 
@@ -48,9 +46,7 @@ class Relu6Pycuda(Relu6[TensorArray], ActivationPycuda):
 
         n = np.int32(math.prod(x.shape))
 
-        self.cuda_fwd_func(x.ary, self.mask.ary, self.max.ary,
-                           np.float32(self.cap), self.total_num_threads, n,
-                           grid=self.grid, block=self.block, stream=self.model.stream)
+        self.cuda_fwd_func(x.ary, self.mask.ary, self.max.ary, np.float32(self.cap), self.total_num_threads, n, grid=self.grid, block=self.block, stream=self.model.stream)
 
         self.y: TensorArray = self.mask
 
@@ -63,10 +59,7 @@ class Relu6Pycuda(Relu6[TensorArray], ActivationPycuda):
 
         n = np.int32(math.prod(dy.shape))
 
-        self.cuda_bwd_func(self.dx.ary, dy.ary, self.mask.ary,
-                           self.total_num_threads, n,
-                           grid=self.grid, block=self.block,
-                           stream=self.model.stream)
+        self.cuda_bwd_func(self.dx.ary, dy.ary, self.mask.ary, self.total_num_threads, n, grid=self.grid, block=self.block, stream=self.model.stream)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         return self.dx
@@ -87,9 +80,5 @@ class Relu6Pycuda(Relu6[TensorArray], ActivationPycuda):
         dx_gpu = gpuarray.zeros((self.model.batch_size, *self.shape), self.model.dtype)
         self.dx = TensorArray(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
-        self.fwd_time = \
-            im2col_time(m=self.ci, n=n, cpu_speed=self.model.cpu_speed,
-                        memory_bw=self.model.memory_bw, dtype=self.model.dtype)  # type: ignore (it's fine)
-        self.bwd_time = \
-            col2im_time(m=self.ci, n=n, cpu_speed=self.model.cpu_speed,
-                        memory_bw=self.model.memory_bw, dtype=self.model.dtype)  # type: ignore (it's fine)
+        self.fwd_time = im2col_time(m=self.ci, n=n, cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw, dtype=self.model.dtype)  # type: ignore (it's fine)
+        self.bwd_time = col2im_time(m=self.ci, n=n, cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw, dtype=self.model.dtype)  # type: ignore (it's fine)

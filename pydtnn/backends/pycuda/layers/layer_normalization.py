@@ -2,11 +2,12 @@ import logging
 
 import numpy as np
 from pycuda import gpuarray  # type: ignore
-from pycuda.compiler import SourceModule  # type: ignore
 
 from pydtnn.backends.pycuda.layers.layer import LayerPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.layers.layer_normalization import LayerNormalization
+
+__all__ = ("LayerNormalizationPycuda",)
 
 logger = logging.getLogger(__name__)
 
@@ -51,28 +52,37 @@ class LayerNormalizationPycuda(LayerNormalization[TensorArray], LayerPycuda):
         self.blocks_backward_weights = int(max(self.kernel_dim_params[1], 1024) // self.threads_backward_weights + 1)
 
     def forward(self, x):
-        self.kernel_forward(x.ary, self.y.ary,
-                            self.xn.ary, self.std.ary,
-                            self.gamma.ary, self.beta.ary,
-                            self.epsilon,
-                            *self.kernel_dim_params,
-                            grid=(self.blocks, 1, 1), block=(self.threads, 1, 1),
-                            stream=self.model.stream)
+        self.kernel_forward(
+            x.ary,
+            self.y.ary,
+            self.xn.ary,
+            self.std.ary,
+            self.gamma.ary,
+            self.beta.ary,
+            self.epsilon,
+            *self.kernel_dim_params,
+            grid=(self.blocks, 1, 1),
+            block=(self.threads, 1, 1),
+            stream=self.model.stream,
+        )
         return self.y
 
     def backward(self, dy):
-        self.kernel_backward(dy.ary, self.dx.ary,
-                             self.xn.ary, self.std.ary,
-                             self.gamma.ary, self.epsilon,
-                             *self.kernel_dim_params,
-                             grid=(self.blocks, 1, 1), block=(self.threads, 1, 1),
-                             stream=self.model.stream)
+        self.kernel_backward(
+            dy.ary, self.dx.ary, self.xn.ary, self.std.ary, self.gamma.ary, self.epsilon, *self.kernel_dim_params, grid=(self.blocks, 1, 1), block=(self.threads, 1, 1), stream=self.model.stream
+        )
 
-        self.kernel_backward_weigths(dy.ary, self.xn.ary,
-                                     self.dgamma.ary, self.dbeta.ary, self.epsilon,
-                                     *self.kernel_dim_params,
-                                     grid=(self.blocks_backward_weights, 1, 1), block=(self.threads_backward_weights, 1, 1),
-                                     stream=self.model.stream)
+        self.kernel_backward_weigths(
+            dy.ary,
+            self.xn.ary,
+            self.dgamma.ary,
+            self.dbeta.ary,
+            self.epsilon,
+            *self.kernel_dim_params,
+            grid=(self.blocks_backward_weights, 1, 1),
+            block=(self.threads_backward_weights, 1, 1),
+            stream=self.model.stream,
+        )
 
         # print(np.sum(self.beta.get()), np.sum(self.dbeta.get()))
         return self.dx

@@ -5,6 +5,14 @@ import numpy as np
 
 from pydtnn.utils import load_library
 
+__all__ = (
+    "blis",
+    "matmul",
+    "matmul_blis",
+    "matmul_mkl",
+    "mkl",
+)
+
 logger = logging.getLogger(__name__)
 
 
@@ -48,17 +56,39 @@ def _matmul_xgemm(called_from, lib, a, b, c=None):
     alpha = 1.0
     beta = 0.0
     if a.dtype == np.float32:
-        lib.cblas_sgemm(ctypes.c_int(order), ctypes.c_int(trans_a), ctypes.c_int(trans_b),
-                        ctypes.c_int(m), ctypes.c_int(n), ctypes.c_int(k), ctypes.c_float(alpha),
-                        ctypes.c_void_p(a.ctypes.data), ctypes.c_int(lda),
-                        ctypes.c_void_p(b.ctypes.data), ctypes.c_int(ldb),
-                        ctypes.c_float(beta), ctypes.c_void_p(c.ctypes.data), ctypes.c_int(ldc))
+        lib.cblas_sgemm(
+            ctypes.c_int(order),
+            ctypes.c_int(trans_a),
+            ctypes.c_int(trans_b),
+            ctypes.c_int(m),
+            ctypes.c_int(n),
+            ctypes.c_int(k),
+            ctypes.c_float(alpha),
+            ctypes.c_void_p(a.ctypes.data),
+            ctypes.c_int(lda),
+            ctypes.c_void_p(b.ctypes.data),
+            ctypes.c_int(ldb),
+            ctypes.c_float(beta),
+            ctypes.c_void_p(c.ctypes.data),
+            ctypes.c_int(ldc),
+        )
     elif a.dtype == np.float64:
-        lib.cblas_dgemm(ctypes.c_int(order), ctypes.c_int(trans_a), ctypes.c_int(trans_b),
-                        ctypes.c_int(m), ctypes.c_int(n), ctypes.c_int(k), ctypes.c_double(alpha),
-                        ctypes.c_void_p(a.ctypes.data), ctypes.c_int(lda),
-                        ctypes.c_void_p(b.ctypes.data), ctypes.c_int(ldb),
-                        ctypes.c_double(beta), ctypes.c_void_p(c.ctypes.data), ctypes.c_int(ldc))
+        lib.cblas_dgemm(
+            ctypes.c_int(order),
+            ctypes.c_int(trans_a),
+            ctypes.c_int(trans_b),
+            ctypes.c_int(m),
+            ctypes.c_int(n),
+            ctypes.c_int(k),
+            ctypes.c_double(alpha),
+            ctypes.c_void_p(a.ctypes.data),
+            ctypes.c_int(lda),
+            ctypes.c_void_p(b.ctypes.data),
+            ctypes.c_int(ldb),
+            ctypes.c_double(beta),
+            ctypes.c_void_p(c.ctypes.data),
+            ctypes.c_int(ldc),
+        )
     else:
         raise TypeError(f"Type '{a.dtype}' not supported by {called_from}().")
     return c

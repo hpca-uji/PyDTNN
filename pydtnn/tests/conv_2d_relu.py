@@ -12,6 +12,8 @@ from pydtnn.tests.abstract.conv_2d_common import Conv2DCommonTestCase
 from pydtnn.utils.initializers import glorot_uniform, zeros
 from pydtnn.utils.tensor import TensorFormat
 
+__all__ = ("Conv2DReluTestCase",)
+
 logger = logging.getLogger(__name__)
 
 
@@ -22,6 +24,7 @@ class Conv2DReluTestCase(Conv2DCommonTestCase):
     """
     Tests that Conv2D+Relu leads to the same results than Conv2DRelu
     """
+
     # NOTE: Delete parent test to prevent re-export and re-testing
     global Conv2DCommonTestCase
     del Conv2DCommonTestCase
@@ -35,22 +38,24 @@ class Conv2DReluTestCase(Conv2DCommonTestCase):
         model = Model(**vars(params))
         model.mode = Model.Mode.TRAIN
 
-        conv2d = Conv2D(nfilters=d.kn, filter_shape=(d.kh, d.kw),
-                        padding=(d.vpadding, d.hpadding),
-                        stride=(d.vstride, d.hstride),
-                        dilation=(d.vdilation, d.hdilation),
-                        use_bias=True, weights_initializer=glorot_uniform, biases_initializer=zeros)
+        conv2d = Conv2D(
+            nfilters=d.kn,
+            filter_shape=(d.kh, d.kw),
+            padding=(d.vpadding, d.hpadding),
+            stride=(d.vstride, d.hstride),
+            dilation=(d.vdilation, d.hdilation),
+            use_bias=True,
+            weights_initializer=glorot_uniform,
+            biases_initializer=zeros,
+        )
 
         relu = Relu()
-        chain = ConcatenationBlock([
-            conv2d,
-            relu
-        ])
+        chain = ConcatenationBlock([conv2d, relu])
         shape = (d.c, d.h, d.w)
         chain._init_backend_with_model(model)
         chain._model_init(prev_shape=shape, x=None)
 
-        from_parent = (relu.__dict__ | conv2d.__dict__)
+        from_parent = relu.__dict__ | conv2d.__dict__
         fuse = Conv2DRelu(from_parent=from_parent)
         fuse.init_backend_with_model(model)
         fuse.__dict__.update(from_parent)

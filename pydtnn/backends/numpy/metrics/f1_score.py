@@ -2,11 +2,13 @@ import logging
 import math
 from typing import TYPE_CHECKING
 
-from pydtnn.backends.numpy.metrics.binary_confusion_matrix import \
-    BinaryConfusionMatrixNumpy
+from pydtnn.backends.numpy.metrics.binary_confusion_matrix import BinaryConfusionMatrixNumpy
 from pydtnn.backends.numpy.metrics.metric import MetricNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.metrics.f1_score import F1Score
+
+__all__ = ("F1ScoreNumpy",)
+
 
 logger = logging.getLogger(__name__)
 
@@ -15,14 +17,13 @@ if TYPE_CHECKING:
 
 
 class F1ScoreNumpy(F1Score[np.ndarray], MetricNumpy):
-
     conf_matrix_metric: BinaryConfusionMatrixNumpy
 
     def _model_init(self) -> None:
         super()._model_init()
         shape = self.shape[1]
 
-        self.temp_var_shape = (shape, )
+        self.temp_var_shape = (shape,)
         self.tmp_memory_used += int(3 * math.prod(self.temp_var_shape)) * np.float32().itemsize
         self.tmp_memory_used += int(1 * math.prod(self.temp_var_shape)) * np.bool_().itemsize
         self.memory_used += self.tmp_memory_used

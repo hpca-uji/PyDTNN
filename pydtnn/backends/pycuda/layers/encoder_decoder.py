@@ -1,12 +1,13 @@
 import logging
 
-from pydtnn.backends.pycuda.layers.abstract.block_layer import \
-    AbstractBlockLayerPycuda
+from pydtnn.backends.pycuda.layers.abstract.block_layer import AbstractBlockLayerPycuda
 from pydtnn.backends.pycuda.libs import libcudnn as cudnn  # type: ignore
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.layers.decoder import Decoder
 from pydtnn.layers.encoder import Encoder
 from pydtnn.layers.encoder_decoder import EncoderDecoder
+
+__all__ = ("EncoderDecoderPycuda",)
 
 logger = logging.getLogger(__name__)
 
@@ -71,9 +72,7 @@ class EncoderDecoderPycuda(AbstractBlockLayerPycuda, EncoderDecoder):
         dx_tgt, dx_enc = self.decoder[self.dec_layers - 1].backward(prev_dx)
         for i in range(self.dec_layers - 1, 0, -1):  # Decoding layers
             dx_tgt, dx_2 = self.decoder[i - 1].backward(dx_tgt)
-            cudnn.cudnnAddTensor(self.model.cudnn_handle,
-                                 alpha, dx_2.desc, dx_2.ptr,
-                                 beta, dx_enc.desc, dx_enc.ptr)  # dx_enc += dx2
+            cudnn.cudnnAddTensor(self.model.cudnn_handle, alpha, dx_2.desc, dx_2.ptr, beta, dx_enc.desc, dx_enc.ptr)  # dx_enc += dx2
         for i in range(self.enc_layers, 0, -1):  # Enconding layers
             dx_enc = self.encoder[i - 1].backward(dx_enc)
         if self.need_dx:

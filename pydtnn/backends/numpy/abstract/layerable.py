@@ -2,12 +2,12 @@ import numpy as np
 
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.backends.numpy.abstract.base import BaseNumpy
-from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
-                                   PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
+from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
+
+__all__ = ("LayerableNumpy",)
 
 
 class LayerableNumpy(Layerable[np.ndarray], BaseNumpy):
-
     def reduce_weights_async(self, gradient=True):
         # NOTE: Keep in sync with Layer
         if not self.model.comm:

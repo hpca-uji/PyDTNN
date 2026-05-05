@@ -3,17 +3,14 @@ import math
 
 import numpy as np
 from pycuda import gpuarray  # type: ignore
-from pycuda.compiler import SourceModule  # type: ignore
-from pycuda.driver import Function  # type: ignore
 
 from pydtnn.backends.pycuda.layers.layer import LayerPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.layers.adaptive_average_pool_2d import AdaptiveAveragePool2D
-from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
-                                   PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
-from pydtnn.utils.constants import DTYPE2CTYPE
+from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
 from pydtnn.utils.performance_models import col2im_time, im2col_time
-from pydtnn.utils.tensor import TensorFormat
+
+__all__ = ("AdaptiveAveragePool2DPycuda",)
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +19,6 @@ logger = logging.getLogger(__name__)
 
 
 class AdaptiveAveragePool2DPycuda(AdaptiveAveragePool2D[TensorArray], LayerPycuda):
-
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         # NOTE: Will be initalized later.
@@ -49,14 +45,10 @@ class AdaptiveAveragePool2DPycuda(AdaptiveAveragePool2D[TensorArray], LayerPycud
 
         self.memory_used += self.y.nbytes + self.dx.nbytes
 
-        self.fwd_time = \
-            im2col_time(m=self.co, n=(self.model.batch_size * self.ho * self.wo * self.ci),
-                        cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw,
-                        dtype=self.model.dtype)  # type: ignore (it's fine)
-        self.bwd_time = \
-            col2im_time(m=self.co, n=(self.model.batch_size * self.ho * self.wo * self.ci),
-                        cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw,
-                        dtype=self.model.dtype)  # type: ignore (it's fine)
+        self.fwd_time = im2col_time(m=self.co, n=(self.model.batch_size * self.ho * self.wo * self.ci), cpu_speed=self.model.cpu_speed,
+                                    memory_bw=self.model.memory_bw, dtype=self.model.dtype)  # type: ignore (it's fine)
+        self.bwd_time = col2im_time(m=self.co, n=(self.model.batch_size * self.ho * self.wo * self.ci), cpu_speed=self.model.cpu_speed,
+                                    memory_bw=self.model.memory_bw, dtype=self.model.dtype)  # type: ignore (it's fine)
 
     def forward(self, x: TensorArray) -> TensorArray:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
@@ -78,12 +70,23 @@ class AdaptiveAveragePool2DPycuda(AdaptiveAveragePool2D[TensorArray], LayerPycud
             num_ops_last_worker = np.int32(num_elements - (num_active_workers - 1) * num_ops_per_worker)
 
             # NOTE: Instead of a number, PyCuda's driver expects "numpy.number"
-            self.cuda_fwd_func(x.ary, self.y.ary,
-                               np.int32(n), np.int32(c), np.int32(h), np.int32(w),
-                               np.int32(self.ho), np.int32(self.wo), num_elements,
-                               num_active_workers, num_ops_per_worker, num_ops_last_worker,
-                               grid=self.grid, block=self.block,
-                               stream=self.model.stream)
+            self.cuda_fwd_func(
+                x.ary,
+                self.y.ary,
+                np.int32(n),
+                np.int32(c),
+                np.int32(h),
+                np.int32(w),
+                np.int32(self.ho),
+                np.int32(self.wo),
+                num_elements,
+                num_active_workers,
+                num_ops_per_worker,
+                num_ops_last_worker,
+                grid=self.grid,
+                block=self.block,
+                stream=self.model.stream,
+            )
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.y
@@ -101,12 +104,23 @@ class AdaptiveAveragePool2DPycuda(AdaptiveAveragePool2D[TensorArray], LayerPycud
         num_ops_last_worker = np.int32(num_elements - (num_active_workers - 1) * num_ops_per_worker)
         self.dx.fill(0)
 
-        self.cuda_bwd_func(self.dx.ary, self.y.ary,
-                           np.int32(n), np.int32(c), np.int32(h), np.int32(w),
-                           np.int32(self.ho), np.int32(self.wo), num_elements,
-                           num_active_workers, num_ops_per_worker, num_ops_last_worker,
-                           grid=self.grid, block=self.block,
-                           stream=self.model.stream)
+        self.cuda_bwd_func(
+            self.dx.ary,
+            self.y.ary,
+            np.int32(n),
+            np.int32(c),
+            np.int32(h),
+            np.int32(w),
+            np.int32(self.ho),
+            np.int32(self.wo),
+            num_elements,
+            num_active_workers,
+            num_ops_per_worker,
+            num_ops_last_worker,
+            grid=self.grid,
+            block=self.block,
+            stream=self.model.stream,
+        )
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.dx

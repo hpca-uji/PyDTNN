@@ -1,14 +1,12 @@
 import logging
 
-from pydtnn.backends.pycuda.layers.abstract.block_layer import \
-    AbstractBlockLayerPycuda
+from pydtnn.backends.pycuda.layers.abstract.block_layer import AbstractBlockLayerPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.layers.addition_block import AdditionBlock
 from pydtnn.libs import cudnn as cudnn
-from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT,
-                                   PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT,
-                                   PYDTNN_OPS_EVENTS, PYDTNN_MDL_EVENT_enum,
-                                   PYDTNN_OPS_EVENT_enum)
+from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
+
+__all__ = ("AdditionBlockPycuda",)
 
 logger = logging.getLogger(__name__)
 
@@ -27,11 +25,9 @@ class AdditionBlockPycuda(AdditionBlock[TensorArray], AbstractBlockLayerPycuda):
                 self.y = y_i
             else:
                 alpha, beta = 1.0, 1.0
-                self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
-                                             self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_ELTW_SUM)
+                self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_ELTW_SUM)
                 # noinspection PyUnboundLocalVariable
-                cudnn.cudnnAddTensor(self.model.cudnn_handle, alpha, y_i.desc,
-                                     y_i.ptr_voidp, beta, self.y.desc, self.y.ptr_voidp)
+                cudnn.cudnnAddTensor(self.model.cudnn_handle, alpha, y_i.desc, y_i.ptr_voidp, beta, self.y.desc, self.y.ptr_voidp)
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.y
 
@@ -46,10 +42,8 @@ class AdditionBlockPycuda(AdditionBlock[TensorArray], AbstractBlockLayerPycuda):
                 self.dx = dx_i
             else:
                 alpha, beta = 1.0, 1.0
-                self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
-                                             self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ELTW_SUM)
+                self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ELTW_SUM)
                 # noinspection PyUnboundLocalVariable
-                cudnn.cudnnAddTensor(self.model.cudnn_handle, alpha, dx_i.desc,
-                                     dx_i.ptr_voidp, beta, self.dx.desc, self.dx.ptr_voidp)
+                cudnn.cudnnAddTensor(self.model.cudnn_handle, alpha, dx_i.desc, dx_i.ptr_voidp, beta, self.dx.desc, self.dx.ptr_voidp)
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.dx

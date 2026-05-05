@@ -20,6 +20,18 @@ from pydtnn.utils.tensor import TensorFormat
 #   _node.input: inputs list. _node.output: outputs list. _node.attribute: list made by all the parameteres and values (they are "AttributeProto")
 
 
+__all__ = (
+    "convert_model",
+    "extract_attributes",
+    "extract_shape",
+    "get_actual_inputs",
+    "get_layers",
+    "get_lists_operations_and_outputs",
+    "get_relevant_data",
+    "load_layers",
+)
+
+
 def extract_shape(data: onnx.ValueInfoProto) -> tuple[int]:
     # The shape of the inputs/ouputs is more or less a list quite hidden.
     #   NOTE: ONNX allows to have shapes of undefined value, e.g.: (N, 3, 224, 224),
@@ -40,8 +52,7 @@ def get_relevant_data(model_graph: onnx.GraphProto) -> tuple[dict[str, tuple[int
     weights_dict = {node.name: onnx.numpy_helper.to_array(node) for node in model_graph.initializer}
 
     # Inputs dicionary. Key: input name. Value: the shape of the input.
-    inputs_dict = {_input.name: extract_shape(_input)
-                   for _input in model_graph.input if _input.name not in weights_dict.keys()}
+    inputs_dict = {_input.name: extract_shape(_input) for _input in model_graph.input if _input.name not in weights_dict.keys()}
 
     # Outputs dicionary. Key: output name. Value: the shape of the output.
     outputs_dict = {ouput.name: extract_shape(ouput) for ouput in model_graph.output}
@@ -51,8 +62,7 @@ def get_relevant_data(model_graph: onnx.GraphProto) -> tuple[dict[str, tuple[int
 
 def extract_attributes(node: onnx.NodeProto) -> dict[str, Any]:
 
-    return {attribute.name: onnx.helper.get_node_attr_value(node, attribute.name)
-            for attribute in node.attribute}
+    return {attribute.name: onnx.helper.get_node_attr_value(node, attribute.name) for attribute in node.attribute}
 
 
 def get_lists_operations_and_outputs(info: dict[str, Any], operations: dict[str, tuple[Layerable, list[str]]]) -> tuple[list[list[Layerable]], list[str]]:
@@ -99,7 +109,7 @@ def get_lists_operations_and_outputs(info: dict[str, Any], operations: dict[str,
         layers = [elem[0] for elem in _values]
         outputs = [elem[1] for elem in _values]
 
-        trimming_index = (layers.index(operations[coincidence][0]))
+        trimming_index = layers.index(operations[coincidence][0])
         lists_operations.append(layers[:trimming_index])  # Remember: list of lists
         lists_outputs.extend(outputs[:trimming_index])  # Remember: list of string
 
@@ -112,17 +122,16 @@ def get_actual_inputs(list_inputs: list[str], weights_names: list[str]) -> list[
     return list(filter(lambda _input: _input not in weights_names, list_inputs))
 
 
-def _get_and_put_layer(node: onnx.NodeProto, opset_version: int, operations: dict[str, tuple[Layerable, list[str]]],
-                       weights: dict[str, np.ndarray], output: list[str] | None = None) -> None:
+def _get_and_put_layer(node: onnx.NodeProto, opset_version: int, operations: dict[str, tuple[Layerable, list[str]]], weights: dict[str, np.ndarray], output: list[str] | None = None) -> None:
 
     info = {  # cons.CONST_NODE: node, # Refererence to the model itself (TODO: see if it's necessary. If not ==> delete)
-        cons.CONST_OPSET: opset_version,    # Version of the onnx operation
-        cons.CONST_INPUTS: get_actual_inputs(list_inputs=node.input, weights_names=list(weights.keys())),   # node's inputs names
-        cons.CONST_ALL_INPUTS: node.input,   # ALL node's inputs names (including weights and biases)
+        cons.CONST_OPSET: opset_version,  # Version of the onnx operation
+        cons.CONST_INPUTS: get_actual_inputs(list_inputs=node.input, weights_names=list(weights.keys())),  # node's inputs names
+        cons.CONST_ALL_INPUTS: node.input,  # ALL node's inputs names (including weights and biases)
         cons.CONST_OUPTUS: node.output if output is None else output,  # node's outputs names or the model's output (TODO: Check if a operation can have multiple outputs)
         cons.CONST_ATTRIBUTES: extract_attributes(node=node),  # dictionary with the node's attributes names and respective values (e.g. the shape of a kernel)
         cons.CONST_WEIGHTS: weights,
-        cons.CONST_PREV_LAYERS: operations
+        cons.CONST_PREV_LAYERS: operations,
     }
     if len(info[cons.CONST_INPUTS]) > 1:
         info[cons.CONST_listS_NODES], operations_to_remove = get_lists_operations_and_outputs(info, operations)
@@ -135,8 +144,7 @@ def _get_and_put_layer(node: onnx.NodeProto, opset_version: int, operations: dic
     # return Nothing: the output is stored in the dictionary
 
 
-def get_layers(onnx_model: onnx.ModelProto, opset_version: int, inputs: dict[str, tuple[int]],
-               weights: dict[str, np.ndarray], outputs: dict[str, tuple[int]]) -> list[Layerable]:
+def get_layers(onnx_model: onnx.ModelProto, opset_version: int, inputs: dict[str, tuple[int]], weights: dict[str, np.ndarray], outputs: dict[str, tuple[int]]) -> list[Layerable]:
 
     # TODO: meter otros parámetros que se puedan necesitar
     # operations = list()
@@ -174,20 +182,30 @@ def load_layers(model: PyDTNN_Model, operations: list[Layerable]) -> None:
         print(f"=> Layer shape pre-add: {operation.shape}")
         model.add(operation)
         print(f"=> Layer shape: {operation.shape}")
-    print(f"Layers loaded")
+    print("Layers loaded")
 
     return  # None (No value is returned)
 
 
-def convert_model(onnx_model: onnx.ModelProto, omm=None, non_blocking_mpi=False, enable_cudnn=False, enable_gpudirect=False,
-                  enable_nccl=False, dtype=np.float32, tracing=False, tracer_output="", **kwargs) -> PyDTNN_Model:
+def convert_model(
+    onnx_model: onnx.ModelProto, omm=None, non_blocking_mpi=False, enable_cudnn=False, enable_gpudirect=False, enable_nccl=False, dtype=np.float32, tracing=False, tracer_output="", **kwargs
+) -> PyDTNN_Model:
 
     if "tensor_format" not in kwargs:
         kwargs["tensor_format"] = TensorFormat.NHWC  # listTensorFormat.NCHW #listTensorFormat.NHWC
     # Output model.
     # NOTE: ¡¡¡¡IMPORTANT!!!!! Be sure that the "parser.model_name" from pydtnn.parser import parser is None!!!!!!!!.
-    model = PyDTNN_Model(omm=omm, non_blocking_mpi=non_blocking_mpi, enable_cudnn=enable_cudnn, enable_gpudirect=enable_gpudirect,
-                         enable_nccl=enable_nccl, dtype=dtype, tracing=tracing, tracer_output=tracer_output, **kwargs)
+    model = PyDTNN_Model(
+        omm=omm,
+        non_blocking_mpi=non_blocking_mpi,
+        enable_cudnn=enable_cudnn,
+        enable_gpudirect=enable_gpudirect,
+        enable_nccl=enable_nccl,
+        dtype=dtype,
+        tracing=tracing,
+        tracer_output=tracer_output,
+        **kwargs,
+    )
 
     print("TEST")
     print(model.layers)

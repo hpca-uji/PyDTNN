@@ -1,15 +1,8 @@
-import numpy as _np
+from pydtnn.backends.cython.utils.base import _npDT, _npDT_3Dims, _npDT_4Dims
 
-from pydtnn.backends.cython.utils.base import (_npDT, _npDT_1Dims, _npDT_2Dims,
-                                               _npDT_3Dims, _npDT_4Dims)
-
-def depthwise_conv_nhwc_cython[T: _npDT](x: _npDT_4Dims[T],
-                                         k: _npDT_3Dims[T],
-                                         res: _npDT_4Dims[T],
-                                         ho: int, wo: int,
-                                         vpadding: int, hpadding: int,
-                                         vstride: int, hstride: int,
-                                         vdilation: int, hdilation: int) -> None:
+def depthwise_conv_nhwc_cython[T: _npDT](
+    x: _npDT_4Dims[T], k: _npDT_3Dims[T], res: _npDT_4Dims[T], ho: int, wo: int, vpadding: int, hpadding: int, vstride: int, hstride: int, vdilation: int, hdilation: int
+) -> None:
     """
     Args:
         x (npDT_4Dims): The 4 dimensional input's ndarray.
@@ -28,15 +21,9 @@ def depthwise_conv_nhwc_cython[T: _npDT](x: _npDT_4Dims[T],
         Nothing. The value is stores in `res`.
     """
 
-
-def depthwise_conv_backward_nhwc_cython[T: _npDT](dy: _npDT_4Dims[T],
-                                                  x: _npDT_4Dims[T],
-                                                  k: _npDT_3Dims[T],
-                                                  dx: _npDT_4Dims[T],
-                                                  dw: _npDT_3Dims[T],
-                                                  vpadding: int, hpadding: int,
-                                                  vstride: int, hstride: int,
-                                                  vdilation: int, hdilation: int) -> None:
+def depthwise_conv_backward_nhwc_cython[T: _npDT](
+    dy: _npDT_4Dims[T], x: _npDT_4Dims[T], k: _npDT_3Dims[T], dx: _npDT_4Dims[T], dw: _npDT_3Dims[T], vpadding: int, hpadding: int, vstride: int, hstride: int, vdilation: int, hdilation: int
+) -> None:
     """
     Args:
         dy (npDT_4Dims): The 4 dimensional array that contains the gradient of the backward's input.

@@ -4,6 +4,8 @@ from collections import defaultdict
 
 import numpy as np
 
+__all__ = ("PerformanceCounter",)
+
 logger = logging.getLogger(__name__)
 
 
@@ -78,29 +80,24 @@ class PerformanceCounter:
             _report.append(" -------------------------------------")
             _report.append("| Performance counter training report |")
             _report.append(" -------------------------------------")
-            _report.append(f'Training time (from model): {self.training_time:5.4f} s')
-            _report.append(f'Training time per epoch (from model): '
-                           f'{self.training_time / self.num_epochs:5.4f} s')
-            _report.append(f'Training throughput (from model): {self.training_throughput:5.4f} samples/s')
-            _report.append(f'Training time (from model, estimated from last half of each epoch): '
-                           f'{self.training_time_estimated_from_last_half_of_each_epoch:5.4f} s')
-            _report.append(f'Training throughput (from model, from last half of each epoch): '
-                           f'{self.training_throughput_only_last_half_of_each_epoch:5.4f} samples/s')
-            _report.append(f'Training maximum memory allocated: '
-                           f'{self.training_maximum_memory / 1024:.2f} MiB')
-            _report.append(f'Training mean memory allocated: '
-                           f'{self.training_mean_memory / 1024:.2f} MiB')
+            _report.append(f"Training time (from model): {self.training_time:5.4f} s")
+            _report.append(f"Training time per epoch (from model): {self.training_time / self.num_epochs:5.4f} s")
+            _report.append(f"Training throughput (from model): {self.training_throughput:5.4f} samples/s")
+            _report.append(f"Training time (from model, estimated from last half of each epoch): {self.training_time_estimated_from_last_half_of_each_epoch:5.4f} s")
+            _report.append(f"Training throughput (from model, from last half of each epoch): {self.training_throughput_only_last_half_of_each_epoch:5.4f} samples/s")
+            _report.append(f"Training maximum memory allocated: {self.training_maximum_memory / 1024:.2f} MiB")
+            _report.append(f"Training mean memory allocated: {self.training_mean_memory / 1024:.2f} MiB")
 
         if self.num_evaluations > 0:
             _report.append(" ------------------------------------")
             _report.append("| Performance counter testing report |")
             _report.append(" ------------------------------------")
-            _report.append(f'Testing time (from model): {self.testing_time / self.num_evaluations:5.4f} s')
-            _report.append(f'Testing throughput (from model): {self.testing_throughput:5.4f} samples/s')
-            _report.append(f'Testing maximum memory allocated: {self.testing_maximum_memory / 1024:.2f} MiB')
-            _report.append(f'Testing mean memory allocated: {self.testing_mean_memory / 1024:.2f} MiB')
+            _report.append(f"Testing time (from model): {self.testing_time / self.num_evaluations:5.4f} s")
+            _report.append(f"Testing throughput (from model): {self.testing_throughput:5.4f} samples/s")
+            _report.append(f"Testing maximum memory allocated: {self.testing_maximum_memory / 1024:.2f} MiB")
+            _report.append(f"Testing mean memory allocated: {self.testing_mean_memory / 1024:.2f} MiB")
 
-        report = '\n'.join(_report)
+        report = "\n".join(_report)
         logger.info(report)
 
     #  Private methods
@@ -108,8 +105,7 @@ class PerformanceCounter:
     def _add_time_and_batch_size(self, where, epoch, elapsed_time, batch_size):
         self._times_record[where][epoch].append(elapsed_time)
         self._batch_sizes_record[where][epoch].append(batch_size)
-        mem = (resource.getrusage(resource.RUSAGE_SELF)[2]
-               + resource.getrusage(resource.RUSAGE_CHILDREN)[2])
+        mem = resource.getrusage(resource.RUSAGE_SELF)[2] + resource.getrusage(resource.RUSAGE_CHILDREN)[2]
         self._memory_record[where][epoch].append(mem)  # KiB in GNU/Linux
 
     def _time(self, where, last_half=False):
@@ -145,8 +141,7 @@ class PerformanceCounter:
 
     def _mean_memory(self, where):
         if where == self.TRAINING:
-            mean_memory_per_epoch = [np.mean(m_array)
-                                     for m_array in self._memory_record[where].values()]
+            mean_memory_per_epoch = [np.mean(m_array) for m_array in self._memory_record[where].values()]
             return np.mean(mean_memory_per_epoch)
         else:
             # Consider only the first evaluation

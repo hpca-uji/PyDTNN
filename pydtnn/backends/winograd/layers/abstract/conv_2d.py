@@ -3,6 +3,8 @@ import logging
 from pydtnn.backends.numpy.layers.abstract.conv_2d import AbstractConv2DNumpy
 from pydtnn.backends.winograd.layers.layer import LayerWinograd
 
+__all__ = ("AbstractConv2DWinograd",)
+
 logger = logging.getLogger(__name__)
 
 

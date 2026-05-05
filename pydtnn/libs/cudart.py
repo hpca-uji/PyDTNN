@@ -5,38 +5,133 @@
 Python interface to CUDA runtime functions.
 """
 
-import atexit
 import ctypes
-import platform
 import re
 import sys
-import warnings
 
 import numpy as np
 
 # Load library:
+__all__ = (
+    "POINTER",
+    "cuDoubleComplex",
+    "cuFloatComplex",
+    "cudaCheckStatus",
+    "cudaDriverGetVersion",
+    "cudaError",
+    "cudaErrorAssert",
+    "cudaErrorCudartUnloading",
+    "cudaErrorDeviceAlreadyInUse",
+    "cudaErrorDevicesUnavailable",
+    "cudaErrorDuplicateSurfaceName",
+    "cudaErrorDuplicateTextureName",
+    "cudaErrorDuplicateVariableName",
+    "cudaErrorECCUncorrectable",
+    "cudaErrorHardwareStackError",
+    "cudaErrorHostMemoryAlreadyRegistered",
+    "cudaErrorHostMemoryNotRegistered",
+    "cudaErrorIllegalAddress",
+    "cudaErrorIllegalInstruction",
+    "cudaErrorIncompatibleDriverContext",
+    "cudaErrorInitializationError",
+    "cudaErrorInsufficientDriver",
+    "cudaErrorInvalidAddressSpace",
+    "cudaErrorInvalidChannelDescriptor",
+    "cudaErrorInvalidConfiguration",
+    "cudaErrorInvalidDevice",
+    "cudaErrorInvalidDeviceFunction",
+    "cudaErrorInvalidDevicePointer",
+    "cudaErrorInvalidFilterSetting",
+    "cudaErrorInvalidGraphicsContext",
+    "cudaErrorInvalidHostPointer",
+    "cudaErrorInvalidKernelImage",
+    "cudaErrorInvalidMemcpyDirection",
+    "cudaErrorInvalidNormSetting",
+    "cudaErrorInvalidPc",
+    "cudaErrorInvalidPitchValue",
+    "cudaErrorInvalidPtx",
+    "cudaErrorInvalidResourceHandle",
+    "cudaErrorInvalidSurface",
+    "cudaErrorInvalidSymbol",
+    "cudaErrorInvalidTexture",
+    "cudaErrorInvalidTextureBinding",
+    "cudaErrorInvalidValue",
+    "cudaErrorLaunchFailure",
+    "cudaErrorLaunchFileScopedSurf",
+    "cudaErrorLaunchFileScopedTex",
+    "cudaErrorLaunchMaxDepthExceeded",
+    "cudaErrorLaunchOutOfResources",
+    "cudaErrorLaunchPendingCountExceeded",
+    "cudaErrorLaunchTimeout",
+    "cudaErrorMapBufferObjectFailed",
+    "cudaErrorMemoryAllocation",
+    "cudaErrorMemoryValueTooLarge",
+    "cudaErrorMisalignedAddress",
+    "cudaErrorMissingConfiguration",
+    "cudaErrorMixedDeviceExecution",
+    "cudaErrorNoDevice",
+    "cudaErrorNoKernelImageForDevice",
+    "cudaErrorNotPermitted",
+    "cudaErrorNotReady",
+    "cudaErrorNotSupported",
+    "cudaErrorNotYetImplemented",
+    "cudaErrorOperatingSystem",
+    "cudaErrorPeerAccessAlreadyEnabled",
+    "cudaErrorPeerAccessNotEnabled",
+    "cudaErrorPeerAccessUnsupported",
+    "cudaErrorPriorLaunchFailure",
+    "cudaErrorProfilerAlreadyStarted",
+    "cudaErrorProfilerAlreadyStopped",
+    "cudaErrorProfilerDisabled",
+    "cudaErrorProfilerNotInitialized",
+    "cudaErrorSetOnActiveProcess",
+    "cudaErrorSharedObjectInitFailed",
+    "cudaErrorSharedObjectSymbolNotFound",
+    "cudaErrorStartupFailure",
+    "cudaErrorSyncDepthExceeded",
+    "cudaErrorSynchronizationError",
+    "cudaErrorTextureFetchFailed",
+    "cudaErrorTextureNotBound",
+    "cudaErrorTooManyPeers",
+    "cudaErrorUnknown",
+    "cudaErrorUnmapBufferObjectFailed",
+    "cudaErrorUnsupportedLimit",
+    "cudaFree",
+    "cudaGetDevice",
+    "cudaGetErrorString",
+    "cudaMalloc",
+    "cudaMallocPitch",
+    "cudaMemGetInfo",
+    "cudaMemcpy_dtoh",
+    "cudaMemcpy_htod",
+    "cudaPointerAttributes",
+    "cudaPointerGetAttributes",
+    "cudaRuntimeGetVersion",
+    "cudaSetDevice",
+    "double2",
+    "float2",
+    "gpuarray_ptr",
+)
+
 _linux_version_list = [11.0, 10.2, 10.1, 10.0, 9.2, 9.1, 9.0, 8.0, 7.5, 7.0, 6.5, 6.0, 5.5, 5.0, 4.0]
 _win32_version_list = [110, 102, 101, 100, 92, 91, 90, 80, 75, 70, 65, 60, 55, 50, 40]
-if 'linux' in sys.platform:
-    _libcudart_libname_list = ['libcudart.so'] + \
-                              ['libcudart.so.%s' % v for v in _linux_version_list]
-elif sys.platform == 'darwin':
-    _libcudart_libname_list = ['libcudart.dylib']
-elif sys.platform == 'win32':
+if "linux" in sys.platform:
+    _libcudart_libname_list = ["libcudart.so"] + ["libcudart.so.%s" % v for v in _linux_version_list]
+elif sys.platform == "darwin":
+    _libcudart_libname_list = ["libcudart.dylib"]
+elif sys.platform == "win32":
     if sys.maxsize > 2**32:
-        _libcudart_libname_list = ['cudart.dll'] + \
-                                  ['cudart64_%s.dll' % v for v in _win32_version_list]
+        _libcudart_libname_list = ["cudart.dll"] + ["cudart64_%s.dll" % v for v in _win32_version_list]
     else:
-        _libcudart_libname_list = ['cudart.dll'] + \
-                                  ['cudart32_%s.dll' % v for v in _win32_version_list]
+        _libcudart_libname_list = ["cudart.dll"] + ["cudart32_%s.dll" % v for v in _win32_version_list]
 else:
-    raise RuntimeError('unsupported platform')
+    raise RuntimeError("unsupported platform")
 
 # Print understandable error message when library cannot be found:
 _libcudart = None
 for _libcudart_libname in _libcudart_libname_list:
     try:
-        if sys.platform == 'win32':
+        if sys.platform == "win32":
             _libcudart = ctypes.windll.LoadLibrary(_libcudart_libname)
         else:
             _libcudart = ctypes.cdll.LoadLibrary(_libcudart_libname)
@@ -45,7 +140,7 @@ for _libcudart_libname in _libcudart_libname_list:
     else:
         break
 if _libcudart is None:
-    raise OSError('CUDA runtime library not found')
+    raise OSError("CUDA runtime library not found")
 
 # Code adapted from PARRET:
 
@@ -63,23 +158,23 @@ def POINTER(obj):
 
     p = ctypes.POINTER(obj)
     if not isinstance(p.from_param, classmethod):
+
         def from_param(cls, x):
             if x is None:
                 return cls()
             else:
                 return x
+
         p.from_param = classmethod(from_param)
 
     return p
+
 
 # Classes corresponding to CUDA vector structures:
 
 
 class float2(ctypes.Structure):
-    _fields_ = [
-        ('x', ctypes.c_float),
-        ('y', ctypes.c_float)
-    ]
+    _fields_ = [("x", ctypes.c_float), ("y", ctypes.c_float)]
 
 
 class cuFloatComplex(float2):
@@ -89,10 +184,7 @@ class cuFloatComplex(float2):
 
 
 class double2(ctypes.Structure):
-    _fields_ = [
-        ('x', ctypes.c_double),
-        ('y', ctypes.c_double)
-    ]
+    _fields_ = [("x", ctypes.c_double), ("y", ctypes.c_double)]
 
 
 class cuDoubleComplex(double2):
@@ -133,7 +225,7 @@ def gpuarray_ptr(g):
     elif g.dtype == np.complex128:
         return ctypes.cast(addr, POINTER(cuDoubleComplex))
     else:
-        raise ValueError('unrecognized type')
+        raise ValueError("unrecognized type")
 
 
 _libcudart.cudaGetErrorString.restype = ctypes.c_char_p
@@ -162,12 +254,15 @@ def cudaGetErrorString(e):
     assert _libcudart
     return _libcudart.cudaGetErrorString(e)
 
+
 # Generic CUDA error:
 
 
 class cudaError(Exception):
     """CUDA error."""
+
     pass
+
 
 # Exceptions corresponding to various CUDA runtime errors:
 
@@ -636,7 +731,7 @@ cudaExceptions = {
     77: cudaErrorIllegalAddress,
     78: cudaErrorInvalidPtx,
     79: cudaErrorInvalidGraphicsContext,
-    127: cudaErrorStartupFailure
+    127: cudaErrorStartupFailure,
 }
 
 
@@ -661,15 +756,14 @@ def cudaCheckStatus(status):
         try:
             e = cudaExceptions[status]
         except KeyError:
-            raise cudaError('unknown CUDA error %s' % status)
+            raise cudaError("unknown CUDA error %s" % status)
         else:
             raise e
 
 
 # Memory allocation functions (adapted from pystream):
 _libcudart.cudaMalloc.restype = int
-_libcudart.cudaMalloc.argtypes = [ctypes.POINTER(ctypes.c_void_p),
-                                  ctypes.c_size_t]
+_libcudart.cudaMalloc.argtypes = [ctypes.POINTER(ctypes.c_void_p), ctypes.c_size_t]
 
 
 def cudaMalloc(count, ctype=None):
@@ -726,9 +820,7 @@ def cudaFree(ptr):
 
 
 _libcudart.cudaMallocPitch.restype = int
-_libcudart.cudaMallocPitch.argtypes = [ctypes.POINTER(ctypes.c_void_p),
-                                       ctypes.POINTER(ctypes.c_size_t),
-                                       ctypes.c_size_t, ctypes.c_size_t]
+_libcudart.cudaMallocPitch.argtypes = [ctypes.POINTER(ctypes.c_void_p), ctypes.POINTER(ctypes.c_size_t), ctypes.c_size_t, ctypes.c_size_t]
 
 
 def cudaMallocPitch(pitch, rows, cols, elesize):
@@ -758,9 +850,7 @@ def cudaMallocPitch(pitch, rows, cols, elesize):
 
     ptr = ctypes.c_void_p()
     assert _libcudart
-    status = _libcudart.cudaMallocPitch(ctypes.byref(ptr),
-                                        ctypes.c_size_t(pitch), cols * elesize,
-                                        rows)
+    status = _libcudart.cudaMallocPitch(ctypes.byref(ptr), ctypes.c_size_t(pitch), cols * elesize, rows)
     cudaCheckStatus(status)
     return ptr, pitch
 
@@ -773,8 +863,7 @@ cudaMemcpyDeviceToDevice = 3
 cudaMemcpyDefault = 4
 
 _libcudart.cudaMemcpy.restype = int
-_libcudart.cudaMemcpy.argtypes = [ctypes.c_void_p, ctypes.c_void_p,
-                                  ctypes.c_size_t, ctypes.c_int]
+_libcudart.cudaMemcpy.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_size_t, ctypes.c_int]
 
 
 def cudaMemcpy_htod(dst, src, count):
@@ -795,9 +884,7 @@ def cudaMemcpy_htod(dst, src, count):
     """
 
     assert _libcudart
-    status = _libcudart.cudaMemcpy(dst, src,
-                                   ctypes.c_size_t(count),
-                                   cudaMemcpyHostToDevice)
+    status = _libcudart.cudaMemcpy(dst, src, ctypes.c_size_t(count), cudaMemcpyHostToDevice)
     cudaCheckStatus(status)
 
 
@@ -819,15 +906,12 @@ def cudaMemcpy_dtoh(dst, src, count):
     """
 
     assert _libcudart
-    status = _libcudart.cudaMemcpy(dst, src,
-                                   ctypes.c_size_t(count),
-                                   cudaMemcpyDeviceToHost)
+    status = _libcudart.cudaMemcpy(dst, src, ctypes.c_size_t(count), cudaMemcpyDeviceToHost)
     cudaCheckStatus(status)
 
 
 _libcudart.cudaMemGetInfo.restype = int
-_libcudart.cudaMemGetInfo.argtypes = [ctypes.c_void_p,
-                                      ctypes.c_void_p]
+_libcudart.cudaMemGetInfo.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
 
 
 def cudaMemGetInfo():
@@ -846,8 +930,7 @@ def cudaMemGetInfo():
     free = ctypes.c_size_t()
     total = ctypes.c_size_t()
     assert _libcudart
-    status = _libcudart.cudaMemGetInfo(ctypes.byref(free),
-                                       ctypes.byref(total))
+    status = _libcudart.cudaMemGetInfo(ctypes.byref(free), ctypes.byref(total))
     cudaCheckStatus(status)
     return free.value, total.value
 
@@ -963,16 +1046,17 @@ class _cudart_version_req(object):
         self.vs = str(v)
         if isinstance(v, int):
             major = str(v)
-            minor = '0'
+            minor = "0"
         else:
-            match = re.search(r'(\d+)\.(\d+)', self.vs)
+            match = re.search(r"(\d+)\.(\d+)", self.vs)
             assert match
             major, minor = match.groups()
-        self.vi = int(major.ljust(len(major) + 1, '0') + minor.ljust(2, '0'))
+        self.vi = int(major.ljust(len(major) + 1, "0") + minor.ljust(2, "0"))
 
     def __call__(self, f):
         def f_new(*args, **kwargs):
-            raise NotImplementedError('CUDART ' + self.vs + ' required')
+            raise NotImplementedError("CUDART " + self.vs + " required")
+
         f_new.__doc__ = f.__doc__
 
         if _cudart_version >= self.vi:
@@ -987,17 +1071,11 @@ cudaMemoryTypeDevice = 2
 
 
 class cudaPointerAttributes(ctypes.Structure):
-    _fields_ = [
-        ('memoryType', ctypes.c_int),
-        ('device', ctypes.c_int),
-        ('devicePointer', ctypes.c_void_p),
-        ('hostPointer', ctypes.c_void_p)
-    ]
+    _fields_ = [("memoryType", ctypes.c_int), ("device", ctypes.c_int), ("devicePointer", ctypes.c_void_p), ("hostPointer", ctypes.c_void_p)]
 
 
 _libcudart.cudaPointerGetAttributes.restype = int
-_libcudart.cudaPointerGetAttributes.argtypes = [ctypes.c_void_p,
-                                                ctypes.c_void_p]
+_libcudart.cudaPointerGetAttributes.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
 
 
 def cudaPointerGetAttributes(ptr):

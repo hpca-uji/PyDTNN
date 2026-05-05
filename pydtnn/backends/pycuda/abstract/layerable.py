@@ -1,17 +1,17 @@
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.backends.pycuda.abstract.base import BasePycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
-                                   PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
+from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
 
 try:
     import pydtnn.libs.nccl as nccl
-except Exception as e:
-    pass
+except Exception:
+    nccl = None
+
+__all__ = ("LayerablePycuda",)
 
 
 class LayerablePycuda(Layerable[TensorArray], BasePycuda):
-
     def reduce_weights_async(self, gradient=True):
         # NOTE: Keep in sync with Layer
         if not self.model.comm:
@@ -31,9 +31,7 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
                 # self.model.stream.synchronize()
                 dw *= self.model.rank_weight
                 # TODO: self.model._encode_reduce
-                nccl.ncclAllReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type,
-                                   nccl.RedOp.Sum, comm=self.model.nccl_comm,
-                                   stream=self.stream_2.handle)
+                nccl.ncclAllReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type, nccl.RedOp.Sum, comm=self.model.nccl_comm, stream=self.stream_2.handle)
 
                 # # Hierarchical mode NCCL + MPI
                 # if len(self.model.inter_ranks) == 1:
@@ -55,7 +53,6 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
                 #         req = self.model.inter_comm.Iallreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
 
             else:  # Without NCCL
-
                 # We have asynchronously moved the dw and db to dw_cpu and db_cpu in stream_2
                 # so we need to synchronize stream_2 before performing Allreduce.
                 # In GPU direct we have to synchronize the main stream to ensure dw and db are ready.
@@ -133,9 +130,7 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
                 dw *= self.model.rank_weight
                 # TODO: self.model._encode_reduce
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.OPS_ALLREDUCE_DW)
-                nccl.ncclAllReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type,
-                                   nccl.RedOp.Sum, comm=self.model.nccl_comm,
-                                   stream=self.stream_2.handle)
+                nccl.ncclAllReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type, nccl.RedOp.Sum, comm=self.model.nccl_comm, stream=self.stream_2.handle)
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
                 # self.stream_2.synchronize()
                 # TODO: self.mode._decode_reduce
@@ -166,7 +161,6 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
                 #                        stream=self.stream_2.handle)
 
             else:  # Without NCCL
-
                 # We have asynchronously moved the dw and db to dw_cpu and db_cpu in stream_2
                 # so we need to synchronize stream_2 before performing Allreduce.
                 # In GPU direct, the main stream is already synchronized.

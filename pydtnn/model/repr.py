@@ -4,11 +4,12 @@ from pydtnn import utils
 from pydtnn.model.layers import Layers
 from pydtnn.utils.constants import Array
 
+__all__ = ("Repr",)
+
 logger = logging.getLogger(__name__)
 
 
 class Repr[T: Array](Layers[T]):
-
     def _show_props(self) -> dict:
         props = {}
 
@@ -63,19 +64,13 @@ class Repr[T: Array](Layers[T]):
         return props
 
     def __repr__(self) -> str:
-        props = " ".join(
-            f"{key}={value!r}"
-            for key, value in self._show_props().items()
-        )
+        props = " ".join(f"{key}={value!r}" for key, value in self._show_props().items())
 
         return f"<{self.__class__.__name__} {props}>"
 
     def show_layers(self) -> None:
         struct: dict[str, int] = {}
-        all_props = {
-            layer.id: layer._show_props()
-            for layer in self.get_all_layers()
-        }
+        all_props = {layer.id: layer._show_props() for layer in self.get_all_layers()}
 
         # Calculate headers and sizes
         for props in sorted(all_props.values(), key=lambda props: (-len(props), *props)):
@@ -97,8 +92,8 @@ class Repr[T: Array](Layers[T]):
         _show.append(sep)
         _show.append("")
         for header, size in struct.items():
-            _show[-1] += (f"|{header.replace('-', ' ').capitalize():^{size}s}")
-        _show[-1] += ("|")
+            _show[-1] += f"|{header.replace('-', ' ').capitalize():^{size}s}"
+        _show[-1] += "|"
 
         # Show layers
         top_layers = {layer.id for layer in self.layers}
@@ -108,10 +103,10 @@ class Repr[T: Array](Layers[T]):
             _show.append("")
             for header, size in struct.items():
                 value = props.get(header, "")
-                _show[-1] += (f"|{str(value):^{size}s}")
-            _show[-1] += ("|")
+                _show[-1] += f"|{str(value):^{size}s}"
+            _show[-1] += "|"
         _show.append(sep)
-        logger.info('\n'.join(_show))
+        logger.info("\n".join(_show))
 
     def show_model(self) -> None:
         key: str = "Model Summary"
@@ -120,7 +115,7 @@ class Repr[T: Array](Layers[T]):
         _show.append("=" * len(key))
         for key, value in self._show_props().items():
             _show.append(f"- {key.replace('-', ' ').capitalize()}: {value}")
-        logger.info('\n'.join(_show))
+        logger.info("\n".join(_show))
 
     def show(self) -> None:
         self.show_model()

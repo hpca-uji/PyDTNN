@@ -4,8 +4,9 @@ from typing import TYPE_CHECKING
 from pydtnn.backends.numpy.layers.layer import LayerNumpy
 from pydtnn.layers.flatten import Flatten
 from pydtnn.libs import numpy as np
-from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
-                                   PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
+from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
+
+__all__ = ("FlattenNumpy",)
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +16,6 @@ if TYPE_CHECKING:
 
 
 class FlattenNumpy(Flatten[np.ndarray], LayerNumpy):
-
     def forward(self, x: np.ndarray) -> np.ndarray:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_Y)
         y: np.ndarray = x.reshape((x.shape[0], *self.shape))

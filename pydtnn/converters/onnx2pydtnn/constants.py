@@ -1,8 +1,18 @@
 # ONNX operations:
-from typing import Callable
+from typing import Any, Callable
 
 from pydtnn.abstract.layerable import Layerable
-from pydtnn.converters.onnx2pydtnn.operations.implemented_operations import *
+from pydtnn.converters.onnx2pydtnn.operations.implemented_operations import Add, AveragePool, BatchNormalization, Concat, Conv, Dropout, Flatten, Gemm, GlobalAveragePool, MaxPool, Mul, Relu, Unsqueeze
+
+__all__ = (
+    "pads_from_onnx_to_pydtnn",
+    "switch_onnx_operation_to_pydtnn",
+)
+
+__all__ = (
+    "pads_from_onnx_to_pydtnn",
+    "switch_onnx_operation_to_pydtnn",
+)
 
 CONST_NODE = "node"
 CONST_OPSET = "opset_version"
@@ -40,23 +50,38 @@ def not_implemented(name: str) -> Callable:
     # Normal usage of this: switch_pytorch_pydtnn([not_implemented_layer_name])(args)
     def _not_implemented(args: dict[str, Any]) -> None:
         raise NotImplementedError(f"Layer {name} not implemented - Args received:\n{args} ")
+
     return _not_implemented
 
 
 def switch_onnx_operation_to_pydtnn(name: str) -> Callable[[dict[str, Any]], Layerable]:
     match name:
-        case "Add": return Add
-        case "AveragePool": return AveragePool
-        case "BatchNormalization": return BatchNormalization
-        case "Concat": return Concat
-        case "Conv": return Conv
-        case "Dropout": return Dropout
-        case "Flatten": return Flatten
-        case "Gemm": return Gemm
-        case "GlobalAveragePool": return GlobalAveragePool
-        case "MaxPool": return MaxPool
-        case "Mul": return Mul
-        case "Relu": return Relu
-        case "Unsqueeze": return Unsqueeze
+        case "Add":
+            return Add
+        case "AveragePool":
+            return AveragePool
+        case "BatchNormalization":
+            return BatchNormalization
+        case "Concat":
+            return Concat
+        case "Conv":
+            return Conv
+        case "Dropout":
+            return Dropout
+        case "Flatten":
+            return Flatten
+        case "Gemm":
+            return Gemm
+        case "GlobalAveragePool":
+            return GlobalAveragePool
+        case "MaxPool":
+            return MaxPool
+        case "Mul":
+            return Mul
+        case "Relu":
+            return Relu
+        case "Unsqueeze":
+            return Unsqueeze
         # Base case:
-        case _: return not_implemented(name)
+        case _:
+            return not_implemented(name)

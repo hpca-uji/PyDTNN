@@ -10,11 +10,12 @@ from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.libs import cudnn as cudnn
 from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
 
+__all__ = ("LogPycuda",)
+
 logger = logging.getLogger(__name__)
 
 
 class LogPycuda(Log[TensorArray], ActivationPycuda):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.log: ElementwiseKernel = None
@@ -26,14 +27,16 @@ class LogPycuda(Log[TensorArray], ActivationPycuda):
         self.log = ElementwiseKernel(
             "{T} *in, {T} *out".format(T=DTYPE2CTYPE[self.model.dtype]),
             "out[i] = {func_log}(1.0 / (1.0 + {func_exp}(-in[i])));".format(
-                func_log={np.dtype(np.float32): "logf", np.dtype(np.float64): "log"}[self.model.dtype],
-                func_exp={np.dtype(np.float32): "expf", np.dtype(np.float64): "exp"}[self.model.dtype]),
-            "log_Pycuda")
+                func_log={np.dtype(np.float32): "logf", np.dtype(np.float64): "log"}[self.model.dtype], func_exp={np.dtype(np.float32): "expf", np.dtype(np.float64): "exp"}[self.model.dtype]
+            ),
+            "log_Pycuda",
+        )
 
         self.dlog = ElementwiseKernel(
             "{T} *in, {T} *out".format(T=DTYPE2CTYPE[self.model.dtype]),
             "out[i] = 1.0 / (1.0 + {func}(in[i]));".format(func={np.dtype(np.float32): "expf", np.dtype(np.float64): "exp"}[self.model.dtype]),
-            "dlog_Pycuda")
+            "dlog_Pycuda",
+        )
 
         # Activations y
         y_gpu = gpuarray.zeros(x.shape, self.model.dtype)

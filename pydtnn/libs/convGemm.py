@@ -12,6 +12,8 @@ import numpy as np
 from pydtnn.backends.cython.utils.im2col_nchw_cython import im2col_nchw_cython
 from pydtnn.utils import load_library
 
+__all__ = ("ConvGemm",)
+
 logger = logging.getLogger(__name__)
 
 
@@ -95,19 +97,27 @@ class ConvGemm:
         except AttributeError:
             pass
 
-    def conv_gemm_nchw(self, weights: np.ndarray, x: np.ndarray,
-                       # res originaly was called "biases"
-                       out: np.ndarray | None = None,  # type: ignore
-                       vpadding=0, hpadding=0, vstride=1, hstride=1,
-                       vdilation=1, hdilation=1,
-                       # biases originaly was called "biases_vector"
-                       biases: np.ndarray | None = None,   # type: ignore
-                       trans=False,
-                       bn_running_mean: np.ndarray | None = None,  # type: ignore
-                       bn_inv_std: np.ndarray | None = None,  # type: ignore
-                       bn_gamma: np.ndarray | None = None,   # type: ignore
-                       bn_beta: np.ndarray | None = None,   # type: ignore
-                       relu=False):
+    def conv_gemm_nchw(
+        self,
+        weights: np.ndarray,
+        x: np.ndarray,
+        # res originaly was called "biases"
+        out: np.ndarray | None = None,  # type: ignore
+        vpadding=0,
+        hpadding=0,
+        vstride=1,
+        hstride=1,
+        vdilation=1,
+        hdilation=1,
+        # biases originaly was called "biases_vector"
+        biases: np.ndarray | None = None,  # type: ignore
+        trans=False,
+        bn_running_mean: np.ndarray | None = None,  # type: ignore
+        bn_inv_std: np.ndarray | None = None,  # type: ignore
+        bn_gamma: np.ndarray | None = None,  # type: ignore
+        bn_beta: np.ndarray | None = None,  # type: ignore
+        relu=False,
+    ):
         """
         Calls the appropriate convGemm function from libconvGemm.so to perform a
         matrix matrix multiplication with an implicit im2col.
@@ -182,43 +192,60 @@ class ConvGemm:
         bn_beta: np.ndarray
 
         # Check that dtype is the same on all the matrices
-        assert weights.dtype == x.dtype == out.dtype, \
-            "All the matrices must have the same type of data!"
-        assert weights.dtype == self.dtype, \
-            "The input matrices must have the same type of data as the one specified when " \
-            "this class was instantiated!"
+        assert weights.dtype == x.dtype == out.dtype, "All the matrices must have the same type of data!"
+        assert weights.dtype == self.dtype, "The input matrices must have the same type of data as the one specified when this class was instantiated!"
 
         # Call the appropriate convGemm function from libconvGemm
-        self.x_conv_gemm_nchw(ctypes.c_char(b'Y' if trans else b'N'),
-                              ctypes.c_int(b), ctypes.c_int(c), ctypes.c_int(h), ctypes.c_int(w),
-                              ctypes.c_int(kn), ctypes.c_int(kh), ctypes.c_int(kw),
-                              ctypes.c_int(vpadding), ctypes.c_int(hpadding),
-                              ctypes.c_int(vstride), ctypes.c_int(hstride),
-                              ctypes.c_int(vdilation), ctypes.c_int(hdilation),
-                              ctypes.c_void_p(weights.ctypes.data),
-                              ctypes.c_void_p(x.ctypes.data),
-                              ctypes.c_void_p(out.ctypes.data),
-                              ctypes.c_void_p(None if biases is None else biases.ctypes.data),
-                              ctypes.c_void_p(None if bn_running_mean is None else bn_running_mean.ctypes.data),
-                              ctypes.c_void_p(None if bn_inv_std is None else bn_inv_std.ctypes.data),
-                              ctypes.c_void_p(None if bn_gamma is None else bn_gamma.ctypes.data),
-                              ctypes.c_void_p(None if bn_beta is None else bn_beta.ctypes.data), ctypes.c_bool(relu),
-                              self.ac_pack, self.bc_pack)
+        self.x_conv_gemm_nchw(
+            ctypes.c_char(b"Y" if trans else b"N"),
+            ctypes.c_int(b),
+            ctypes.c_int(c),
+            ctypes.c_int(h),
+            ctypes.c_int(w),
+            ctypes.c_int(kn),
+            ctypes.c_int(kh),
+            ctypes.c_int(kw),
+            ctypes.c_int(vpadding),
+            ctypes.c_int(hpadding),
+            ctypes.c_int(vstride),
+            ctypes.c_int(hstride),
+            ctypes.c_int(vdilation),
+            ctypes.c_int(hdilation),
+            ctypes.c_void_p(weights.ctypes.data),
+            ctypes.c_void_p(x.ctypes.data),
+            ctypes.c_void_p(out.ctypes.data),
+            ctypes.c_void_p(None if biases is None else biases.ctypes.data),
+            ctypes.c_void_p(None if bn_running_mean is None else bn_running_mean.ctypes.data),
+            ctypes.c_void_p(None if bn_inv_std is None else bn_inv_std.ctypes.data),
+            ctypes.c_void_p(None if bn_gamma is None else bn_gamma.ctypes.data),
+            ctypes.c_void_p(None if bn_beta is None else bn_beta.ctypes.data),
+            ctypes.c_bool(relu),
+            self.ac_pack,
+            self.bc_pack,
+        )
 
         return out
 
     # TODO: Check for what is out used inside "x_conv_gemm_nhwc" (and set better varible names).
-    def conv_gemm_nhwc(self, weights: np.ndarray, x: np.ndarray,
-                       out: np.ndarray | None = None,  # type: ignore
-                       vpadding=0, hpadding=0, vstride=1, hstride=1,
-                       vdilation=1, hdilation=1,
-                       biases: np.ndarray | None = None,   # type: ignore
-                       trans=False,
-                       bn_running_mean: np.ndarray | None = None,  # type: ignore
-                       bn_inv_std: np.ndarray | None = None,  # type: ignore
-                       bn_gamma: np.ndarray | None = None,   # type: ignore
-                       bn_beta: np.ndarray | None = None,   # type: ignore
-                       relu=False):
+    def conv_gemm_nhwc(
+        self,
+        weights: np.ndarray,
+        x: np.ndarray,
+        out: np.ndarray | None = None,  # type: ignore
+        vpadding=0,
+        hpadding=0,
+        vstride=1,
+        hstride=1,
+        vdilation=1,
+        hdilation=1,
+        biases: np.ndarray | None = None,  # type: ignore
+        trans=False,
+        bn_running_mean: np.ndarray | None = None,  # type: ignore
+        bn_inv_std: np.ndarray | None = None,  # type: ignore
+        bn_gamma: np.ndarray | None = None,  # type: ignore
+        bn_beta: np.ndarray | None = None,  # type: ignore
+        relu=False,
+    ):
 
         # Get matrices dimensions
         b, h, w, c = x.shape
@@ -251,37 +278,41 @@ class ConvGemm:
         bn_beta: np.ndarray
 
         # Check that dtype is the same on all the matrices
-        assert weights.dtype == x.dtype == out.dtype, \
-            "All the matrices must have the same type of data!"
-        assert weights.dtype == self.dtype, \
-            "The input matrices must have the same type of data as the one specified when " \
-            "this class was instantiated!"
+        assert weights.dtype == x.dtype == out.dtype, "All the matrices must have the same type of data!"
+        assert weights.dtype == self.dtype, "The input matrices must have the same type of data as the one specified when this class was instantiated!"
 
         # Call the appropriate convGemm function from libconvGemm
-        self.x_conv_gemm_nhwc(ctypes.c_char(b'Y' if trans else b'N'),
-                              ctypes.c_int(b), ctypes.c_int(h), ctypes.c_int(w), ctypes.c_int(c),
-                              ctypes.c_int(kn), ctypes.c_int(kh), ctypes.c_int(kw),
-                              ctypes.c_int(vpadding), ctypes.c_int(hpadding),
-                              ctypes.c_int(vstride), ctypes.c_int(hstride),
-                              ctypes.c_int(vdilation), ctypes.c_int(hdilation),
-                              ctypes.c_void_p(weights.ctypes.data),
-                              ctypes.c_void_p(x.ctypes.data),
-                              ctypes.c_void_p(out.ctypes.data),
-                              ctypes.c_void_p(None if biases is None else biases.ctypes.data),
-                              ctypes.c_void_p(None if bn_running_mean is None else bn_running_mean.ctypes.data),
-                              ctypes.c_void_p(None if bn_inv_std is None else bn_inv_std.ctypes.data),
-                              ctypes.c_void_p(None if bn_gamma is None else bn_gamma.ctypes.data),
-                              ctypes.c_void_p(None if bn_beta is None else bn_beta.ctypes.data), ctypes.c_bool(relu),
-                              self.ac_pack, self.bc_pack)
+        self.x_conv_gemm_nhwc(
+            ctypes.c_char(b"Y" if trans else b"N"),
+            ctypes.c_int(b),
+            ctypes.c_int(h),
+            ctypes.c_int(w),
+            ctypes.c_int(c),
+            ctypes.c_int(kn),
+            ctypes.c_int(kh),
+            ctypes.c_int(kw),
+            ctypes.c_int(vpadding),
+            ctypes.c_int(hpadding),
+            ctypes.c_int(vstride),
+            ctypes.c_int(hstride),
+            ctypes.c_int(vdilation),
+            ctypes.c_int(hdilation),
+            ctypes.c_void_p(weights.ctypes.data),
+            ctypes.c_void_p(x.ctypes.data),
+            ctypes.c_void_p(out.ctypes.data),
+            ctypes.c_void_p(None if biases is None else biases.ctypes.data),
+            ctypes.c_void_p(None if bn_running_mean is None else bn_running_mean.ctypes.data),
+            ctypes.c_void_p(None if bn_inv_std is None else bn_inv_std.ctypes.data),
+            ctypes.c_void_p(None if bn_gamma is None else bn_gamma.ctypes.data),
+            ctypes.c_void_p(None if bn_beta is None else bn_beta.ctypes.data),
+            ctypes.c_bool(relu),
+            self.ac_pack,
+            self.bc_pack,
+        )
 
         return out
 
-    def deconv_gemm_nchw(self, weights: np.ndarray,
-                         dy: np.ndarray,
-                         dx: np.ndarray,
-                         vpadding=0, hpadding=0,
-                         vstride=1, hstride=1,
-                         vdilation=1, hdilation=1):
+    def deconv_gemm_nchw(self, weights: np.ndarray, dy: np.ndarray, dx: np.ndarray, vpadding=0, hpadding=0, vstride=1, hstride=1, vdilation=1, hdilation=1):
         """
         Calls the appropriate deconv_gemm function from libconvGemm.so to perform
         an inplace matrix matrix multiplication and deconvolution:
@@ -327,24 +358,30 @@ class ConvGemm:
         assert b == b2, "Different batch size!"
         assert ck == c, "Number of channels in weights and x should be the same!"
 
-        self.x_deconv_gemm_nchw(ctypes.c_int(b), ctypes.c_int(c), ctypes.c_int(h), ctypes.c_int(w),
-                                ctypes.c_int(kn), ctypes.c_int(kh), ctypes.c_int(kw),
-                                ctypes.c_int(vstride), ctypes.c_int(hstride),
-                                ctypes.c_int(vpadding), ctypes.c_int(hpadding),
-                                ctypes.c_int(vdilation), ctypes.c_int(hdilation),
-                                ctypes.c_void_p(weights.ctypes.data),
-                                ctypes.c_void_p(dy.ctypes.data),
-                                ctypes.c_void_p(dx.ctypes.data),
-                                self.ac_pack, self.bc_pack)
+        self.x_deconv_gemm_nchw(
+            ctypes.c_int(b),
+            ctypes.c_int(c),
+            ctypes.c_int(h),
+            ctypes.c_int(w),
+            ctypes.c_int(kn),
+            ctypes.c_int(kh),
+            ctypes.c_int(kw),
+            ctypes.c_int(vstride),
+            ctypes.c_int(hstride),
+            ctypes.c_int(vpadding),
+            ctypes.c_int(hpadding),
+            ctypes.c_int(vdilation),
+            ctypes.c_int(hdilation),
+            ctypes.c_void_p(weights.ctypes.data),
+            ctypes.c_void_p(dy.ctypes.data),
+            ctypes.c_void_p(dx.ctypes.data),
+            self.ac_pack,
+            self.bc_pack,
+        )
 
         return dx
 
-    def deconv_gemm_nhwc(self, weights: np.ndarray,
-                         dy: np.ndarray,
-                         dx: np.ndarray,
-                         vpadding=0, hpadding=0,
-                         vstride=1, hstride=1,
-                         vdilation=1, hdilation=1):
+    def deconv_gemm_nhwc(self, weights: np.ndarray, dy: np.ndarray, dx: np.ndarray, vpadding=0, hpadding=0, vstride=1, hstride=1, vdilation=1, hdilation=1):
 
         ck, kh, kw, kn = weights.shape
         b2, ho, wo, kn2 = dy.shape
@@ -353,14 +390,26 @@ class ConvGemm:
         assert b == b2, "Different batch size!"
         assert ck == c, "Number of channels in weights and x should be the same!"
 
-        self.x_deconv_gemm_nhwc(ctypes.c_int(b), ctypes.c_int(h), ctypes.c_int(w), ctypes.c_int(c),
-                                ctypes.c_int(kn), ctypes.c_int(kh), ctypes.c_int(kw),
-                                ctypes.c_int(vstride), ctypes.c_int(hstride),
-                                ctypes.c_int(vpadding), ctypes.c_int(hpadding),
-                                ctypes.c_int(vdilation), ctypes.c_int(hdilation),
-                                ctypes.c_void_p(weights.ctypes.data),
-                                ctypes.c_void_p(dy.ctypes.data), ctypes.c_void_p(dx.ctypes.data),
-                                self.ac_pack, self.bc_pack)
+        self.x_deconv_gemm_nhwc(
+            ctypes.c_int(b),
+            ctypes.c_int(h),
+            ctypes.c_int(w),
+            ctypes.c_int(c),
+            ctypes.c_int(kn),
+            ctypes.c_int(kh),
+            ctypes.c_int(kw),
+            ctypes.c_int(vstride),
+            ctypes.c_int(hstride),
+            ctypes.c_int(vpadding),
+            ctypes.c_int(hpadding),
+            ctypes.c_int(vdilation),
+            ctypes.c_int(hdilation),
+            ctypes.c_void_p(weights.ctypes.data),
+            ctypes.c_void_p(dy.ctypes.data),
+            ctypes.c_void_p(dx.ctypes.data),
+            self.ac_pack,
+            self.bc_pack,
+        )
 
         return dx
 
@@ -369,35 +418,57 @@ def __free__(pack):
     def find_msvcr():
         import re
         import sys
+
         exec_bytes = open(sys.executable, "rb").read()
         match = re.search("msvcr([0-9]+|t).dll", str(exec_bytes), re.IGNORECASE)
         assert match, "MSVCR not found!"
         return match.group(0)
 
-    if platform.system() == 'Windows':
+    if platform.system() == "Windows":
         libc = ctypes.cdll.LoadLibrary(find_msvcr())
-    elif platform.system() == 'Linux':
-        libc = ctypes.cdll.LoadLibrary('libc.so.6')
-    elif platform.system == 'Darwin':
-        libc = ctypes.cdll.LoadLibrary('libc.dylib')
+    elif platform.system() == "Linux":
+        libc = ctypes.cdll.LoadLibrary("libc.so.6")
+    elif platform.system == "Darwin":
+        libc = ctypes.cdll.LoadLibrary("libc.dylib")
     else:
         raise AssertionError("Don't know how to get to libc for a '{}' system".format(platform.system()))
     assert isinstance(pack, object)
     libc.free(pack)
 
 
-def time_it_func(x: np.ndarray, w_c: np.ndarray, out: np.ndarray,
-                 b: int, kn: int,
-                 ho: int, wo: int, kh: int, kw: int,
-                 vpadding: int, hpadding: int, vstride: int, hstride: int,
-                 vdilation: int, hdilation: int,
-                 ) -> int | float:
+def time_it_func(
+    x: np.ndarray,
+    w_c: np.ndarray,
+    out: np.ndarray,
+    b: int,
+    kn: int,
+    ho: int,
+    wo: int,
+    kh: int,
+    kw: int,
+    vpadding: int,
+    hpadding: int,
+    vstride: int,
+    hstride: int,
+    vdilation: int,
+    hdilation: int,
+) -> int | float:
 
     res = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype=x.dtype)
-    im2col_nchw_cython(x, res,  # type: ignore
-                       kh, kw, ho, wo,
-                       vpadding, hpadding, vstride, hstride,
-                       vdilation, hdilation)
+    im2col_nchw_cython(
+        x,
+        res,  # type: ignore
+        kh,
+        kw,
+        ho,
+        wo,
+        vpadding,
+        hpadding,
+        vstride,
+        hstride,
+        vdilation,
+        hdilation,
+    )
     res = res @ w_c
     res += out.reshape(b * ho * wo, kn)
     return res  # type: ignore
@@ -424,39 +495,43 @@ def __usage_example__():
     # Create weights, x, and out matrices from previous parameters. If no out
     # matrix is provided, a proper one filled with zeros will be automatically
     # created.
-    weights = np.zeros((kn, c, kh, kw)).astype(np.float32, order='C')
+    weights = np.zeros((kn, c, kh, kw)).astype(np.float32, order="C")
     weights[0][0][0][0] = 1.89
     weights[1][1][1][1] = 3.0
     weights[2][2][2][2] = 4.0
-    x = np.ones((b, c, h, w)).astype(np.float32, order='C')
+    x = np.ones((b, c, h, w)).astype(np.float32, order="C")
     ho = (h + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
     wo = (w + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
-    out = (np.ones((kn, b * ho * wo)) * 10).astype(np.float32, order='C')
+    out = (np.ones((kn, b * ho * wo)) * 10).astype(np.float32, order="C")
     logger.info("Using conv_gemm to compute alpha * weights * im2col(x) + beta * out...")
     conv_gemm = ConvGemm(debug=False)
-    conv_gemm_result = conv_gemm.conv_gemm_nchw(weights, x,
-                                                vpadding=vpadding, hpadding=hpadding,
-                                                vstride=vstride, hstride=hstride,
-                                                vdilation=vdilation, hdilation=hdilation,
-                                                out=out.reshape(kn, b, ho, wo))
-    logger.info('\n'.join([str(conv_gemm_result), f"Sum: {conv_gemm_result.sum()}", "", "Using im2col and mm..."]))
+    conv_gemm_result = conv_gemm.conv_gemm_nchw(
+        weights, x, vpadding=vpadding, hpadding=hpadding, vstride=vstride, hstride=hstride, vdilation=vdilation, hdilation=hdilation, out=out.reshape(kn, b, ho, wo)
+    )
+    logger.info("\n".join([str(conv_gemm_result), f"Sum: {conv_gemm_result.sum()}", "", "Using im2col and mm..."]))
     x_c = np.zeros((c * kh * kw, b * ho * wo))
-    im2col_nchw_cython(x, x_c,  # type: ignore
-                       kh, kw, ho, wo,
-                       vpadding, hpadding, vstride, hstride, vdilation, hdilation)
+    im2col_nchw_cython(
+        x,
+        x_c,  # type: ignore
+        kh,
+        kw,
+        ho,
+        wo,
+        vpadding,
+        hpadding,
+        vstride,
+        hstride,
+        vdilation,
+        hdilation,
+    )
     w_c = weights.reshape(kn, -1)
     im2col_mm_result = (w_c @ x_c + out).reshape(kn, b, ho, wo).transpose(1, 0, 2, 3)
-    logger.info('\n'.join([str(im2col_mm_result), f"Sum: {im2col_mm_result.sum()}", f"np.allclose: {np.allclose(conv_gemm_result, im2col_mm_result)}"]))
+    logger.info("\n".join([str(im2col_mm_result), f"Sum: {im2col_mm_result.sum()}", f"np.allclose: {np.allclose(conv_gemm_result, im2col_mm_result)}"]))
     # print(conv_gemm_result - im2col_mm_result)
     # Times
-    conv_gemm_t = timeit(lambda: conv_gemm.conv_gemm_nchw(weights, x,
-                                                          vpadding=vpadding, hpadding=hpadding,
-                                                          vstride=vstride, hstride=hstride,
-                                                          vdilation=vdilation, hdilation=hdilation),
-                         number=10) / 10
-    logger.info('\n'.join(["Times", "-----", "conv_gemm time: {:.4f}".format(conv_gemm_t)]))
-    im2col_t = timeit(lambda: time_it_func(x, w_c, out, b, kn, ho, wo, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation),
-                      number=10) / 10
+    conv_gemm_t = timeit(lambda: conv_gemm.conv_gemm_nchw(weights, x, vpadding=vpadding, hpadding=hpadding, vstride=vstride, hstride=hstride, vdilation=vdilation, hdilation=hdilation), number=10) / 10
+    logger.info("\n".join(["Times", "-----", "conv_gemm time: {:.4f}".format(conv_gemm_t)]))
+    im2col_t = timeit(lambda: time_it_func(x, w_c, out, b, kn, ho, wo, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation), number=10) / 10
     mm_t = timeit(lambda: w_c @ x_c + out, number=10) / 10
     logger.info("im2col+mm time: {:.4f}  (im2col: {:.4f}  mm: {:.4f}".format(im2col_t + mm_t, im2col_t, mm_t))
 

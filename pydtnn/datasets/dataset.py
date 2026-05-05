@@ -14,8 +14,12 @@ from PIL import Image
 
 from pydtnn.utils import BackgroundGenerator, find_component, random
 from pydtnn.utils.constants import ArrayShape
-from pydtnn.utils.tensor import (ChannelFormat, SampleFormat, TensorFormat,
-                                 format_transpose)
+from pydtnn.utils.tensor import ChannelFormat, SampleFormat, TensorFormat, format_transpose
+
+__all__ = (
+    "Dataset",
+    "select",
+)
 
 logger = logging.getLogger(__name__)
 
@@ -41,8 +45,7 @@ class Dataset:
         VAL = 1
         TEST = 2
 
-    def __init__(self, model: Model, train_nsamples: int = 0, test_nsamples: int = 0, input_shape: ArrayShape = (),
-                 output_shape: ArrayShape = (), force_test_as_validation=False, debug=False):
+    def __init__(self, model: Model, train_nsamples: int = 0, test_nsamples: int = 0, input_shape: ArrayShape = (), output_shape: ArrayShape = (), force_test_as_validation=False, debug=False):
 
         if train_nsamples <= 0:
             raise ValueError("Dataset has no training samples!")
@@ -75,9 +78,9 @@ class Dataset:
         if self.test_as_validation:
             self._nsamples[Dataset.Part.VAL] = self._nsamples[Dataset.Part.TEST]
         else:
-            self._nsamples[Dataset.Part.VAL] = min(self._nsamples[Dataset.Part.TRAIN] - self.model.nprocs,
-                                                   max(self.model.nprocs,
-                                                       int(self._nsamples[Dataset.Part.TRAIN] * self.model.validation_split)))
+            self._nsamples[Dataset.Part.VAL] = min(
+                self._nsamples[Dataset.Part.TRAIN] - self.model.nprocs, max(self.model.nprocs, int(self._nsamples[Dataset.Part.TRAIN] * self.model.validation_split))
+            )
             self._nsamples[Dataset.Part.TRAIN] -= self._nsamples[Dataset.Part.VAL]
 
         # self.real_input_shape = tuple(input_shape)
@@ -119,10 +122,7 @@ class Dataset:
         self._local_remaining_nsamples = [-1] * len(Dataset.Part)  # -1 is used to mark each part as not initialized
 
         for part in Dataset.Part.TRAIN, Dataset.Part.VAL, Dataset.Part.TEST:
-            (self._local_offset[part],
-             self._local_nsamples[part],
-             self._nsamples[part]
-             ) = self._compute_local_workload(self._nsamples[part])
+            (self._local_offset[part], self._local_nsamples[part], self._nsamples[part]) = self._compute_local_workload(self._nsamples[part])
 
         self.x_empty_batch = np.zeros(shape=self.model.encode_shape((0, *self.input_shape)), dtype=self.model.dtype)
         self.y_empty_batch = np.zeros(shape=(0, *self.output_shape), dtype=self.model.dtype)
@@ -191,14 +191,14 @@ class Dataset:
         offset = 0
         for i, (x_batch, y_batch, _) in enumerate(gen_train):
             n = x_batch.shape[0]
-            x_train[offset:offset + n] = self.model.decode_tensor(x_batch)
-            y_train[offset:offset + n] = y_batch
+            x_train[offset: offset + n] = self.model.decode_tensor(x_batch)
+            y_train[offset: offset + n] = y_batch
             offset += n
         offset = 0
         for i, (x_batch, y_batch, _) in enumerate(gen_test):
             n = x_batch.shape[0]
-            x_test[offset:offset + n] = self.model.decode_tensor(x_batch)
-            y_test[offset:offset + n] = y_batch
+            x_test[offset: offset + n] = self.model.decode_tensor(x_batch)
+            y_test[offset: offset + n] = y_batch
             offset += n
 
         return {
@@ -206,7 +206,7 @@ class Dataset:
             "x_train": x_train,
             "y_train": y_train,
             "x_test": x_test,
-            "y_test": y_test
+            "y_test": y_test,
         }
 
     def _export_split(self, data: dict[str, np.ndarray], split_weights: list[float] = [1]) -> Generator[dict[str, np.ndarray]]:
@@ -231,13 +231,7 @@ class Dataset:
 
         # Yield splits
         for x_train, y_train, x_test, y_test in zip(x_train, y_train, x_test, y_test):
-            yield {
-                **data,
-                "x_train": x_train,
-                "y_train": y_train,
-                "x_test": x_test,
-                "y_test": y_test
-            }
+            yield {**data, "x_train": x_train, "y_train": y_train, "x_test": x_test, "y_test": y_test}
 
     def export_archive(self, path: Path | None = None, split_weights: list[float] | None = None):
         """Export dataset to an archive"""
@@ -276,8 +270,7 @@ class Dataset:
         self._nsamples[Dataset.Part.TEST] = value
 
     def get_train_val_generator(self) -> tuple[Generator[tuple[np.ndarray, np.ndarray, int]], Generator[tuple[np.ndarray, np.ndarray, int]]]:
-        return (self._batch_generator(Dataset.Part.TRAIN),
-                self._batch_generator(Dataset.Part.VAL))
+        return (self._batch_generator(Dataset.Part.TRAIN), self._batch_generator(Dataset.Part.VAL))
 
     def get_test_generator(self) -> Generator[tuple[np.ndarray, np.ndarray, int]]:
         return self._batch_generator(Dataset.Part.TEST)
@@ -285,7 +278,7 @@ class Dataset:
     def _print_report(self):
         report = list[str]()
         if self.model.comm_rank == 0:
-            report.append(f"Initial nsamples:")
+            report.append("Initial nsamples:")
             report.append(f" train: {self._initial_nsamples[Dataset.Part.TRAIN]} ")
             report.append(f" val: {self._initial_nsamples[Dataset.Part.VAL]} ")
             report.append(f" test: {self._initial_nsamples[Dataset.Part.TEST]} ")
@@ -298,7 +291,7 @@ class Dataset:
             report.append(f" {desc[part]} local nsamples: {self._local_nsamples[part]}")
             report.append(f" {desc[part]} nsamples: {self._nsamples[part]}")
 
-        logger.info('\n'.join(report))
+        logger.info("\n".join(report))
 
     def _compute_local_workload(self, nsamples: int):
         """Computes the offset (in number of samples) and the number of samples for the current rank"""
@@ -373,6 +366,7 @@ class Dataset:
         @functools.wraps(func)
         def wrapper(x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
             return func(x), y
+
         return wrapper
 
     def _transform_data_generator(self, part: Part) -> Generator[tuple[np.ndarray, np.ndarray]]:
@@ -492,10 +486,10 @@ class Dataset:
             # batch[ri,...] = transform_resize(batch[ri,:,t[i]:b,l[i]:r], (ri.size,c,h,w))
             match self.model.tensor_format:
                 case TensorFormat.NCHW:
-                    data[ri, :, :t[i], :ll[i]] = 0.0
+                    data[ri, :, : t[i], : ll[i]] = 0.0
                     data[ri, :, b:, r:] = 0.0
                 case TensorFormat.NHWC:
-                    data[ri, :t[i], :ll[i], :] = 0.0
+                    data[ri, : t[i], : ll[i], :] = 0.0
                     data[ri, b:, r:, :] = 0.0
                 case _:
                     raise NotImplementedError(f"Dataset _do_crop_images is not implemented for {self.model.tensor_format} format.")

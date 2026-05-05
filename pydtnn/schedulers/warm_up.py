@@ -7,6 +7,8 @@ from numpy import ndarray
 
 from pydtnn.schedulers.scheduler import Scheduler
 
+__all__ = ("WarmUp",)
+
 logger = logging.getLogger(__name__)
 
 
@@ -34,6 +36,4 @@ class WarmUp(Scheduler):
 
     @classmethod
     def from_model(cls, model: Model) -> WarmUp:
-        return WarmUp(model.warm_up_epochs,
-                      model.learning_rate / model.nprocs,
-                      model.learning_rate)
+        return WarmUp(model.warm_up_epochs, model.learning_rate / model.nprocs, model.learning_rate)

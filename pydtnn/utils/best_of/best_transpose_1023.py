@@ -4,15 +4,21 @@ from typing import Callable
 import numpy as np
 
 from pydtnn.utils.best_of.best_of import BestOf
-from pydtnn.utils.transpose_cython import (transpose_1023_ijk_cython,
-                                           transpose_1023_jik_cython)
+from pydtnn.utils.transpose_cython import transpose_1023_ijk_cython, transpose_1023_jik_cython
+
+__all__ = (
+    "transpose_1023_ijk_cython_wrapper",
+    "transpose_1023_jik_cython_wrapper",
+    "transpose_1023_numpy",
+)
 
 logger = logging.getLogger(__name__)
 
 
-def transpose_1023_numpy(original: np.ndarray,
-                         transposed: np.ndarray | None = None  # type: ignore
-                         ) -> np.ndarray:
+def transpose_1023_numpy(
+    original: np.ndarray,
+    transposed: np.ndarray | None = None,  # type: ignore
+) -> np.ndarray:
     d0, d1, d2, d3 = original.shape
     if transposed is None:
         transposed: np.ndarray = np.empty((d1, d0, d2, d3), original.dtype)
@@ -20,9 +26,10 @@ def transpose_1023_numpy(original: np.ndarray,
     return transposed
 
 
-def transpose_1023_ijk_cython_wrapper(original: np.ndarray,
-                                      transposed: np.ndarray | None = None  # type: ignore
-                                      ) -> np.ndarray:
+def transpose_1023_ijk_cython_wrapper(
+    original: np.ndarray,
+    transposed: np.ndarray | None = None,  # type: ignore
+) -> np.ndarray:
     d0, d1, d2, d3 = original.shape
     if transposed is None:
         transposed: np.ndarray = np.empty((d1, d0, d2, d3), original.dtype)
@@ -30,9 +37,10 @@ def transpose_1023_ijk_cython_wrapper(original: np.ndarray,
     return transposed
 
 
-def transpose_1023_jik_cython_wrapper(original: np.ndarray,
-                                      transposed: np.ndarray | None = None  # type: ignore
-                                      ) -> np.ndarray:
+def transpose_1023_jik_cython_wrapper(
+    original: np.ndarray,
+    transposed: np.ndarray | None = None,  # type: ignore
+) -> np.ndarray:
     d0, d1, d2, d3 = original.shape
     if transposed is None:
         transposed: np.ndarray = np.empty((d1, d0, d2, d3), original.dtype)

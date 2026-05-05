@@ -14,6 +14,13 @@ from pydtnn.utils.constants import ArrayShape
 # NOTE: TensorFlow does not includes Dropout layers after final ReLUs
 
 
+__all__ = (
+    "vgg16",
+    "vgg6",
+    "vgg8",
+)
+
+
 def vgg16(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
     model = list[Layerable]()
     _ = model.append

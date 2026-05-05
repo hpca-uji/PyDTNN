@@ -1,15 +1,14 @@
 from __future__ import annotations
 
 import logging
-from functools import cached_property
 from typing import TYPE_CHECKING
 
 import numpy as np
-from numpy.lib.npyio import NpzFile
 
 from pydtnn.datasets.dataset import Dataset
 from pydtnn.utils import get_npz_shape
-from pydtnn.utils.constants import ArrayShape
+
+__all__ = ("Archive",)
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +40,7 @@ class Archive(Dataset):
         debug_str.append(f"y_train: {y_train}")
         debug_str.append(f"x_test: {x_test}")
         debug_str.append(f"y_test: {y_test}")
-        logger.debug('\n'.join(debug_str))
+        logger.debug("\n".join(debug_str))
 
         super().__init__(model, x_train[0], x_test[0], x_train[1:], y_train[1:], force_test_as_validation=force_test_as_validation, debug=debug)
 

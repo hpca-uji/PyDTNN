@@ -6,6 +6,8 @@ from pydtnn.layers.multiplication import Multiplication
 from pydtnn.libs import numpy as np
 from pydtnn.model import Model
 
+__all__ = ("MultiplicationNumpy",)
+
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:

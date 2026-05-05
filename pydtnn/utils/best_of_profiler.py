@@ -7,11 +7,12 @@ import numpy as np
 from pydtnn.utils import print_with_header
 from pydtnn.utils.best_of.best_of import BestOf
 
+__all__ = ("BestOfProfiler",)
+
 logger = logging.getLogger(__name__)
 
 
 class BestOfProfiler:
-
     def __init__(self, header, best_method):
         self.header = header
         self.best_method: BestOf = best_method
@@ -34,7 +35,7 @@ class BestOfProfiler:
 
         # Rest runs
 
-        logger.info(f" \nNext runs (getting times)")
+        logger.info(" \nNext runs (getting times)")
         for i in range(0, (self.best_method.total_rounds - 1) * self.best_method.total_alternatives):
             if self.best_method.best_method_has_been_found(*args, **kwargs):
                 break
@@ -45,6 +46,7 @@ class BestOfProfiler:
         #  From IBM OpenMP documentation: If you do not set OMP_NUM_THREADS, the number of processors available is the
         #  default value to form a new team for the first encountered parallel construct.
         import multiprocessing
+
         num_threads = os.environ.get("OMP_NUM_THREADS", multiprocessing.cpu_count())
         msg = "{}  {}  OMP_NUM_THREADS: {}".format(self.header, platform.node(), num_threads)
         print_with_header(msg)

@@ -20,6 +20,8 @@ from pydtnn.utils.debug import traceback_context
 from pydtnn.utils.parser import ArgumentParser
 from pydtnn.utils.serial import NumpyYaml
 
+__all__ = ("main",)
+
 logger = logging.getLogger(__name__)
 log_conf = yaml.safe_load(resources.read_text("pydtnn", "logger.yaml"))
 logging.config.dictConfig(log_conf)
@@ -53,9 +55,11 @@ def _start() -> int:
 def main(config):
     # Initialize random seed
     from pydtnn.utils import random
+
     random.seed(config.random_seed)
     # Create model
     from pydtnn.model import Model
+
     model = Model(**vars(config))
     model._ensure_model_runnable()
     # Print model
@@ -66,7 +70,7 @@ def main(config):
     # First (or unique) evaluation
     if model.evaluate_on_train or model.evaluate_only:
         if model.comm_rank == 0:
-            logger.info('**** Evaluating on test dataset...')
+            logger.info("**** Evaluating on test dataset...")
             t1 = time.time()
         _ = model.evaluate()
         if model.comm_rank == 0:
@@ -74,8 +78,8 @@ def main(config):
             # noinspection PyUnboundLocalVariable
             total_time = t2 - t1
             if model.evaluate_only:
-                logger.info(f'Testing time: {total_time:5.4f} s')
-                logger.info(f'Testing throughput: {model.dataset.test_nsamples / total_time:5.4f} samples/s')
+                logger.info(f"Testing time: {total_time:5.4f} s")
+                logger.info(f"Testing throughput: {model.dataset.test_nsamples / total_time:5.4f} samples/s")
         if model.evaluate_only:
             model.perf_counter.print_report()
             raise SystemExit(0)
@@ -86,7 +90,7 @@ def main(config):
     # Training
     if model.comm_rank == 0:
         # print('**** Model time: ', model.calculate_time())
-        logger.info('**** Training...')
+        logger.info("**** Training...")
         t1 = time.time()
         if model.profile:
             pr = cProfile.Profile()
@@ -105,15 +109,14 @@ def main(config):
             pr.disable()
             path = Path(f"profile-{timestamp}.stat").resolve()
             pr.dump_stats(path)
-            logger.info(f'Dumped profile stats to: {path}')
+            logger.info(f"Dumped profile stats to: {path}")
         t2 = time.time()
-        logger.info('**** Done...')
+        logger.info("**** Done...")
         total_time = t2 - t1
-        logger.info(f'Training and validation time: {total_time:5.4f} s')
+        logger.info(f"Training and validation time: {total_time:5.4f} s")
         if model.perf_counter.num_epochs > 0:
-            logger.info(f'Training and validation time per epoch: {total_time / model.perf_counter.num_epochs:5.4f} s')
-            logger.info(f'Training and validation throughput: '
-                        f'{(model.dataset.train_nsamples * model.perf_counter.num_epochs) / total_time:5.4f} samples/s')
+            logger.info(f"Training and validation time per epoch: {total_time / model.perf_counter.num_epochs:5.4f} s")
+            logger.info(f"Training and validation throughput: {(model.dataset.train_nsamples * model.perf_counter.num_epochs) / total_time:5.4f} samples/s")
     # Store history information
     if model.history_file:
         history_file = utils.string_substitute(model.history_file, rank=model.comm_rank)
@@ -125,11 +128,11 @@ def main(config):
                 events.append({"epoch": epoch} | {key: history[key][epoch] for key in history})
             with open(path, "w") as f:
                 yaml.dump_all(events, f, NumpyYaml, allow_unicode=True, sort_keys=False)
-            logger.info(f'Dumped metric history to: {path}')
+            logger.info(f"Dumped metric history to: {path}")
     # Second (and last) evaluation
     if model.evaluate_on_train:
         if model.comm_rank == 0:
-            logger.info('**** Evaluating on test dataset...')
+            logger.info("**** Evaluating on test dataset...")
             t1 = time.time()
         _ = model.evaluate()
         if model.comm_rank == 0:
@@ -137,8 +140,8 @@ def main(config):
             # noinspection PyUnboundLocalVariable
             total_time = t2 - t1
             if not model.evaluate_only:
-                logger.info(f'Testing time: {total_time:5.4f} s')
-                logger.info(f'Testing throughput: {model.dataset.test_nsamples / total_time:5.4f} samples/s')
+                logger.info(f"Testing time: {total_time:5.4f} s")
+                logger.info(f"Testing throughput: {model.dataset.test_nsamples / total_time:5.4f} samples/s")
     # Print model reports
     if model.comm_rank == 0:
         model.perf_counter.print_report()

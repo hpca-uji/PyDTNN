@@ -11,6 +11,8 @@ from pydtnn.datasets.dataset import Dataset
 from pydtnn.utils import random
 from pydtnn.utils.constants import ArrayShape
 
+__all__ = ("Folder",)
+
 logger = logging.getLogger(__name__)
 
 
@@ -60,13 +62,17 @@ class Folder(Dataset):
             raise ValueError(f"The number of train classes ({num_classes_train}) must be the same as the number of test classes {num_classes_test}.")
 
         input_shape = (3, 10, 10)  # synthetic
-        output_shape = (num_classes_train, )
+        output_shape = (num_classes_train,)
 
-        super().__init__(model=model, train_nsamples=self._nsamples[Dataset.Part.TRAIN],
-                         test_nsamples=self._nsamples[Dataset.Part.TEST],
-                         input_shape=input_shape, output_shape=output_shape,
-                         force_test_as_validation=force_test_as_validation,
-                         debug=debug)
+        super().__init__(
+            model=model,
+            train_nsamples=self._nsamples[Dataset.Part.TRAIN],
+            test_nsamples=self._nsamples[Dataset.Part.TEST],
+            input_shape=input_shape,
+            output_shape=output_shape,
+            force_test_as_validation=force_test_as_validation,
+            debug=debug,
+        )
 
         self.labels_and_images[Dataset.Part.VAL] = copy.copy(self.labels_and_images[Dataset.Part.TEST] if self.test_as_validation else self.labels_and_images[Dataset.Part.TRAIN])
 
@@ -84,7 +90,7 @@ class Folder(Dataset):
                 num_images += len(data_set)
 
         if len(dict_class_file.values()) == 0:
-            raise ValueError(f"There are no directories in \'{path}\'.")
+            raise ValueError(f"There are no directories in '{path}'.")
 
         labels_and_images = [(class_name, path_image) for class_name, set_path_image in dict_class_file.items() for path_image in set_path_image]
 
@@ -105,7 +111,7 @@ class Folder(Dataset):
         if part is Dataset.Part.TRAIN and self.model.augment_shuffle:
             random.shuffle(labels_and_images)
 
-        labels_and_images = labels_and_images[offset:offset + nsamples]
+        labels_and_images = labels_and_images[offset: offset + nsamples]
 
         for label, path_image in labels_and_images:
             x = self._load_rgb_image(path_image)

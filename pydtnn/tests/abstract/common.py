@@ -12,13 +12,20 @@ import numpy as np
 from pydtnn.utils import random
 from pydtnn.utils.tensor import TensorFormat
 
+__all__ = (
+    "D",
+    "Params",
+    "TestCase",
+    "verbose_test",
+)
+
 logger = logging.getLogger(__name__)
 
 
 # @warning: must be a function, don't use a @property decorator
 def verbose_test():
     """Returns True if unittest has been called with -v or --verbose options."""
-    return '-v' in sys.argv or '--verbose' in sys.argv
+    return "-v" in sys.argv or "--verbose" in sys.argv
 
 
 class Params:
@@ -48,8 +55,7 @@ class TestCase(unittest.TestCase):
 
 
 class D:
-    def __init__(self, b=1, c=1, h=128, w=100, kn=1, kh=16, kw=10, vpadding=1, hpadding=1,
-                 vstride=1, hstride=1, vdilation=1, hdilation=1):
+    def __init__(self, b=1, c=1, h=128, w=100, kn=1, kh=16, kw=10, vpadding=1, hpadding=1, vstride=1, hstride=1, vdilation=1, hdilation=1):
         self.b = b  # Batch size
         self.c = c  # Channels per layer
         self.h = h  # Layers height
@@ -106,7 +112,6 @@ alexnet_layers = [
 alexnet_backward_layers = []
 for layer in alexnet_layers:
     # w <- y (kn * b * ho * wo)
-    alexnet_backward_layers.append(D(layer.c, layer.b, layer.h, layer.w, layer.kn, layer.ho, layer.wo,
-                                     layer.vpadding, layer.hpadding, layer.vstride, layer.hstride))
+    alexnet_backward_layers.append(D(layer.c, layer.b, layer.h, layer.w, layer.kn, layer.ho, layer.wo, layer.vpadding, layer.hpadding, layer.vstride, layer.hstride))
 
 alexnet_all_layers = alexnet_layers + alexnet_backward_layers

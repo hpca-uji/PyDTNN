@@ -10,6 +10,8 @@ from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.layers.layer import Layer
 from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
 
+__all__ = ("LayerPycuda",)
+
 logger = logging.getLogger(__name__)
 
 
@@ -43,10 +45,7 @@ class LayerPycuda(Layer[TensorArray], LayerablePycuda):
         self.grid = self.model.cuda_grid
         self.block = self.model.cuda_block
 
-        self.defines_replaces = {
-            "\"TYPE\"": DTYPE2CTYPE[self.model.dtype],
-            "TENSOR_FORMAT": str(self.model.tensor_format)
-        }
+        self.defines_replaces = {'"TYPE"': DTYPE2CTYPE[self.model.dtype], "TENSOR_FORMAT": str(self.model.tensor_format)}
 
     @property
     def _ary_prop(self) -> set[str]:

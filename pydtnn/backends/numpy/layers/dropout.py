@@ -8,6 +8,8 @@ from pydtnn.libs import numpy as np
 from pydtnn.model import Model
 from pydtnn.utils import random
 
+__all__ = ("DropoutNumpy",)
+
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
@@ -15,7 +17,6 @@ if TYPE_CHECKING:
 
 
 class DropoutNumpy(Dropout[np.ndarray], LayerNumpy):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.mask: np.ndarray = None  # type: ignore (It will be initalized later.)
@@ -36,7 +37,7 @@ class DropoutNumpy(Dropout[np.ndarray], LayerNumpy):
             case Model.Mode.EVALUATE:
                 pass  # Just returns x.
             case _:
-                raise RuntimeError(f"Unexpected model mode \'{self.model.mode}\'.")
+                raise RuntimeError(f"Unexpected model mode '{self.model.mode}'.")
         return x
 
     def backward(self, dy: np.ndarray) -> np.ndarray:

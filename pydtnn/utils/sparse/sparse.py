@@ -3,9 +3,9 @@ import warnings
 
 import numpy as np
 
-from pydtnn.utils.sparse.sparse_cython import (
-    summ_coo_cython, top_threshold_selection_coo_cython,
-    top_threshold_selection_dense_cython)
+from pydtnn.utils.sparse.sparse_cython import summ_coo_cython, top_threshold_selection_coo_cython, top_threshold_selection_dense_cython
+
+__all__ = ("SparseMatrixCOO",)
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +42,7 @@ class SparseMatrixCOO:
             self.shape = shape
             self.nnz = len(self.data)
             self.has_canonical_format = True
-            assert (self._has_canonical_format())
+            assert self._has_canonical_format()
 
         else:
             # TODO: order arrays in canonical format
@@ -150,8 +150,8 @@ class SparseMatrixCOO:
         Returns:
             coo_sliced: (SparseMatrixCOO): A row-sliced sparse matrix of self
         """
-        start_index = np.searchsorted(self.row, row_start, side='left')
-        ending_index = np.searchsorted(self.row, row_end, side='left')
+        start_index = np.searchsorted(self.row, row_start, side="left")
+        ending_index = np.searchsorted(self.row, row_end, side="left")
 
         sliced_data = self.data[start_index:ending_index]
         sliced_row = self.row[start_index:ending_index]

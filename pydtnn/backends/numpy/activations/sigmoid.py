@@ -5,6 +5,8 @@ from pydtnn.activations.sigmoid import Sigmoid
 from pydtnn.backends.numpy.activations.activation import ActivationNumpy
 from pydtnn.libs import numpy as np
 
+__all__ = ("SigmoidNumpy",)
+
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
@@ -12,7 +14,6 @@ if TYPE_CHECKING:
 
 
 class SigmoidNumpy(Sigmoid[np.ndarray], ActivationNumpy):
-
     def _model_init(self, prev_shape, x=None):
         super()._model_init(prev_shape, x)
 
@@ -24,7 +25,7 @@ class SigmoidNumpy(Sigmoid[np.ndarray], ActivationNumpy):
         self.memory_used += self.dx.nbytes
 
     def forward(self, x: np.ndarray) -> np.ndarray:
-        self.y: np.ndarray = self._y[:x.shape[0], :]
+        self.y: np.ndarray = self._y[: x.shape[0], :]
         # y = (1 / ( 1 + exp(-1*x)))
         np.multiply(-1, x, out=self.y)
         np.exp(self.y, out=self.y)
@@ -33,7 +34,7 @@ class SigmoidNumpy(Sigmoid[np.ndarray], ActivationNumpy):
         return self.y
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
-        dx: np.ndarray = self.dx[:dy.shape[0], :]
+        dx: np.ndarray = self.dx[: dy.shape[0], :]
         # dx = dy * (y * (1 - y))
         np.subtract(1, self.y, out=dx)
         np.multiply(self.y, dx, out=dx)

@@ -9,6 +9,8 @@ from pydtnn.layers.input import Input
 from pydtnn.layers.max_pool_2d import MaxPool2D
 from pydtnn.utils.constants import ArrayShape
 
+__all__ = ("vgg_cyclone",)
+
 
 def vgg_cyclone(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
     model = list[Layerable]()

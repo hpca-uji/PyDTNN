@@ -3,6 +3,12 @@ import logging
 import re
 import subprocess
 
+__all__ = (
+    "CudnnDataType",
+    "get_gpu_memory_used",
+    "get_gpus_per_node",
+)
+
 logger = logging.getLogger(__name__)
 
 
@@ -26,7 +32,7 @@ def get_gpu_memory_used() -> str:
 
 def get_gpus_per_node() -> int:
     try:
-        gpus_per_node = subprocess.check_output(["nvidia-smi", "-L"]).count(b'UUID')
+        gpus_per_node = subprocess.check_output(["nvidia-smi", "-L"]).count(b"UUID")
     except (FileNotFoundError, subprocess.CalledProcessError):
         gpus_per_node = 0
     return gpus_per_node

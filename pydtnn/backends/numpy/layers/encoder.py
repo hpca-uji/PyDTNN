@@ -1,16 +1,17 @@
 import logging
 from typing import TYPE_CHECKING
 
-from pydtnn.backends.numpy.layers.abstract.block_layer import \
-    AbstractBlockLayerNumpy
+from pydtnn.backends.numpy.layers.abstract.block_layer import AbstractBlockLayerNumpy
 from pydtnn.layers.dropout import Dropout
 from pydtnn.layers.encoder import Encoder
 from pydtnn.layers.feed_forward import FeedForward
 from pydtnn.layers.layer_normalization import LayerNormalization
 from pydtnn.layers.multi_head_attention import MultiHeadAttention
 from pydtnn.libs import numpy as np
-from pydtnn.tracers.events import (PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS,
-                                   PYDTNN_OPS_EVENT_enum)
+from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
+
+__all__ = ("EncoderNumpy",)
+
 
 logger = logging.getLogger(__name__)
 
@@ -29,8 +30,7 @@ class EncoderNumpy(Encoder[np.ndarray], AbstractBlockLayerNumpy):
         self.layernormalization_2 = LayerNormalization(axis=(-1,))
         # self.paths = [[self.multiheadattention, self.dropout_1, self.layernormalization_1, self.feedforward,
         #                self.dropout_2, self.layernormalization_2]]
-        self.paths = [[self.multiheadattention, self.layernormalization_1, self.feedforward,
-                       self.dropout_2, self.layernormalization_2]]
+        self.paths = [[self.multiheadattention, self.layernormalization_1, self.feedforward, self.dropout_2, self.layernormalization_2]]
 
     def _model_init(self, prev_shape, x):
         super()._model_init(prev_shape, x)

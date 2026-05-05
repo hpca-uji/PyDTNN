@@ -8,6 +8,12 @@ from pydtnn.layers.adaptive_average_pool_2d import AdaptiveAveragePool2D
 from pydtnn.layers.average_pool_2d import AveragePool2D
 from pydtnn.layers.max_pool_2d import MaxPool2D
 
+__all__ = (
+    "AdaptiveAvgPool2d",
+    "AvgPool2d",
+    "MaxPool2d",
+)
+
 logger = logging.getLogger(__name__)
 
 # Typing related (or non important) imports

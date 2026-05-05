@@ -4,10 +4,11 @@ from typing import TYPE_CHECKING
 from pydtnn.backends.numpy.layers.abstract.conv_2d import AbstractConv2DNumpy
 from pydtnn.layers.conv_2d_pointwise import Conv2DPointwise
 from pydtnn.libs import numpy as np
-from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
-                                   PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
-from pydtnn.utils.constants import ArrayShape, Parameters
+from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
+from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import TensorFormat, format_transpose
+
+__all__ = ("Conv2DPointwiseNumpy",)
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +17,6 @@ if TYPE_CHECKING:
 
 
 class Conv2DPointwiseNumpy(Conv2DPointwise, AbstractConv2DNumpy):
-
     def _export_weights_dw(self, key: str):
         value = getattr(self, key)
 
@@ -81,16 +81,14 @@ class Conv2DPointwiseNumpy(Conv2DPointwise, AbstractConv2DNumpy):
     def _forward_nhwc(self, x: np.ndarray) -> np.ndarray:
         self.x: np.ndarray = x
 
-        y = self.y[:x.shape[0], :]
+        y = self.y[: x.shape[0], :]
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_POINTWISE_CONV)
-        np.matmul(x, self.weights, out=y,
-                  dtype=self.model.dtype)
+        np.matmul(x, self.weights, out=y, dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.use_bias:
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_SUM_BIASES)
-            np.add(y, self.biases.reshape((1, 1, 1, self.co)), out=y,
-                   dtype=self.model.dtype)
+            np.add(y, self.biases.reshape((1, 1, 1, self.co)), out=y, dtype=self.model.dtype)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return np.asarray(y, dtype=self.model.dtype, order="C")
@@ -99,16 +97,14 @@ class Conv2DPointwiseNumpy(Conv2DPointwise, AbstractConv2DNumpy):
 
         self.x: np.ndarray = x
 
-        y: np.ndarray = self.y[:x.shape[0], :]
+        y: np.ndarray = self.y[: x.shape[0], :]
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_TRANSPOSE_Y)
         y = format_transpose(y, TensorFormat.NCHW, TensorFormat.NHWC)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_POINTWISE_CONV)
-        np.matmul(format_transpose(x, TensorFormat.NCHW, TensorFormat.NHWC),
-                  self.weights.T, out=y,
-                  dtype=self.model.dtype)
+        np.matmul(format_transpose(x, TensorFormat.NCHW, TensorFormat.NHWC), self.weights.T, out=y, dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_TRANSPOSE_Y)
@@ -117,8 +113,7 @@ class Conv2DPointwiseNumpy(Conv2DPointwise, AbstractConv2DNumpy):
 
         if self.use_bias:
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_SUM_BIASES)
-            np.add(y, self.biases.reshape((1, self.co, 1, 1)), out=y,
-                   dtype=self.model.dtype)
+            np.add(y, self.biases.reshape((1, self.co, 1, 1)), out=y, dtype=self.model.dtype)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return np.asarray(y, dtype=self.model.dtype, order="C")
 
@@ -134,8 +129,7 @@ class Conv2DPointwiseNumpy(Conv2DPointwise, AbstractConv2DNumpy):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DW_MATMUL)
-        np.matmul(self.x, reshaped_dy, out=self.dw,
-                  dtype=self.model.dtype)
+        np.matmul(self.x, reshaped_dy, out=self.dw, dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.use_bias:
@@ -150,8 +144,7 @@ class Conv2DPointwiseNumpy(Conv2DPointwise, AbstractConv2DNumpy):
         reshaped_dy: np.ndarray = dy.reshape((self.co, -1))
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_MATMUL)
-        np.matmul(w, reshaped_dy, out=dx,
-                  dtype=self.model.dtype)
+        np.matmul(w, reshaped_dy, out=dx, dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return np.asarray(dx.reshape(x_shape), dtype=self.model.dtype, order="C")
@@ -168,8 +161,7 @@ class Conv2DPointwiseNumpy(Conv2DPointwise, AbstractConv2DNumpy):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DW_MATMUL)
-        np.matmul(self.x, reshaped_dy, out=self.dw.T,
-                  dtype=self.model.dtype)
+        np.matmul(self.x, reshaped_dy, out=self.dw.T, dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.use_bias:
@@ -184,8 +176,7 @@ class Conv2DPointwiseNumpy(Conv2DPointwise, AbstractConv2DNumpy):
         reshaped_dy: np.ndarray = dy.reshape((self.co, -1))
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_MATMUL)
-        np.matmul(w, reshaped_dy, out=dx,
-                  dtype=self.model.dtype)
+        np.matmul(w, reshaped_dy, out=dx, dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return np.asarray(dx.reshape(x_shape), dtype=self.model.dtype, order="C")

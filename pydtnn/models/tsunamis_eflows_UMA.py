@@ -13,6 +13,8 @@ from pydtnn.layers.max_pool_2d import MaxPool2D
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.initializers import he_uniform
 
+__all__ = ("tsunamis_eflows_UMA",)
+
 
 def tsunamis_eflows_UMA(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
     model = list[Layerable]()
@@ -22,28 +24,33 @@ def tsunamis_eflows_UMA(input_shape: ArrayShape, output_shape: ArrayShape) -> Se
     _(Conv2D(nfilters=32, filter_shape=(3, 3), padding=1, weights_initializer=he_uniform))
     _(Conv2D(nfilters=32, filter_shape=(3, 3), padding=1, weights_initializer=he_uniform))
 
-    UMA_blocks = [[32, 64, 64],
-                  [64, 128, 128],
-                  [128, 256, 256]]
+    UMA_blocks = [[32, 64, 64], [64, 128, 128], [128, 256, 256]]
 
     for n3x3, n3x3red, n2x2 in UMA_blocks:
-        _(ConcatenationBlock(
-            [Conv2D(nfilters=n3x3, filter_shape=(3, 3), padding=1, weights_initializer=he_uniform),
-             Conv2D(nfilters=n3x3red, filter_shape=(3, 3), padding=1, weights_initializer=he_uniform),
-             MaxPool2D(pool_shape=(3, 3), stride=2, padding=1)
-             ],
-            [Conv2D(nfilters=n2x2, filter_shape=(3, 3), padding=1, stride=2, weights_initializer=he_uniform)
-             ]))
+        _(
+            ConcatenationBlock(
+                [
+                    Conv2D(nfilters=n3x3, filter_shape=(3, 3), padding=1, weights_initializer=he_uniform),
+                    Conv2D(nfilters=n3x3red, filter_shape=(3, 3), padding=1, weights_initializer=he_uniform),
+                    MaxPool2D(pool_shape=(3, 3), stride=2, padding=1),
+                ],
+                [Conv2D(nfilters=n2x2, filter_shape=(3, 3), padding=1, stride=2, weights_initializer=he_uniform)],
+            )
+        )
 
-    UMA_dense_blocks = [[128, 256, 512],
-                        [128, 256, 512]]
+    UMA_dense_blocks = [[128, 256, 512], [128, 256, 512]]
 
     for n3x3, n3x3red, n3x3fin in UMA_dense_blocks:
-        _(ConcatenationBlock(
-            [Conv2D(nfilters=n3x3, filter_shape=(3, 3), padding=1, weights_initializer=he_uniform),
-             Conv2D(nfilters=n3x3red, filter_shape=(3, 3), padding=1, weights_initializer=he_uniform),
-             Conv2D(nfilters=n3x3fin, filter_shape=(3, 3), padding=1, weights_initializer=he_uniform)
-             ], []))
+        _(
+            ConcatenationBlock(
+                [
+                    Conv2D(nfilters=n3x3, filter_shape=(3, 3), padding=1, weights_initializer=he_uniform),
+                    Conv2D(nfilters=n3x3red, filter_shape=(3, 3), padding=1, weights_initializer=he_uniform),
+                    Conv2D(nfilters=n3x3fin, filter_shape=(3, 3), padding=1, weights_initializer=he_uniform),
+                ],
+                [],
+            )
+        )
 
     _(AveragePool2D(pool_shape=(10, 10), stride=1))  # Global average pooling 2D
     _(Flatten())

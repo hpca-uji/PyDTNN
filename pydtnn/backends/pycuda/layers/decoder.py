@@ -2,8 +2,7 @@ import logging
 
 import numpy as np
 
-from pydtnn.backends.pycuda.layers.abstract.block_layer import \
-    AbstractBlockLayerPycuda
+from pydtnn.backends.pycuda.layers.abstract.block_layer import AbstractBlockLayerPycuda
 from pydtnn.backends.pycuda.libs import libcudnn as cudnn  # type: ignore
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.layers.decoder import Decoder
@@ -11,6 +10,8 @@ from pydtnn.layers.dropout import Dropout
 from pydtnn.layers.feed_forward import FeedForward
 from pydtnn.layers.layer_normalization import LayerNormalization
 from pydtnn.layers.multi_head_attention import MultiHeadAttention
+
+__all__ = ("DecoderPycuda",)
 
 logger = logging.getLogger(__name__)
 
@@ -108,9 +109,7 @@ class DecoderPycuda(AbstractBlockLayerPycuda, Decoder):
         self.feedforward.forward(self.layernormalization_enc_y_flatten)
         self.dropout_2.forward(self.feedforward_y_unflatten)
         # y = dropout_2.y + layernormalization_enc.y
-        cudnn.cudnnAddTensor(self.model.cudnn_handle,
-                             alpha, self.layernormalization_enc.y.desc, self.layernormalization_enc.y.ptr,
-                             beta, self.dropout_2.y.desc, self.dropout_2.y.ptr)
+        cudnn.cudnnAddTensor(self.model.cudnn_handle, alpha, self.layernormalization_enc.y.desc, self.layernormalization_enc.y.ptr, beta, self.dropout_2.y.desc, self.dropout_2.y.ptr)
         self.layernormalization_2.forward(self.dropout_2.y)
         return self.y
 
@@ -123,36 +122,26 @@ class DecoderPycuda(AbstractBlockLayerPycuda, Decoder):
         self.feedforward.backward(self.dropout_2_dx_flatten)
 
         # dx = feedforward.dx + layernormalization_2.dx
-        cudnn.cudnnAddTensor(self.model.cudnn_handle,
-                             alpha, self.layernormalization_2.dx.desc, self.layernormalization_2.dx.ptr,
-                             beta, self.feedforward_dx_unflatten.desc, self.feedforward_dx_unflatten.ptr_voidp)
+        cudnn.cudnnAddTensor(
+            self.model.cudnn_handle, alpha, self.layernormalization_2.dx.desc, self.layernormalization_2.dx.ptr, beta, self.feedforward_dx_unflatten.desc, self.feedforward_dx_unflatten.ptr_voidp
+        )
 
         # Self Attention Encoder
         self.layernormalization_enc.backward(self.feedforward_dx_unflatten)
         self.multiheadattention_enc.backward(self.layernormalization_enc.dx)
         # dx_enc = multihead.dkey + multiheadattention.dvalue
-        cudnn.cudnnAddTensor(self.model.cudnn_handle,
-                             alpha, self.dx_enc.desc, self.multiheadattention_enc.dvalue.ptr,
-                             beta, self.dx_enc.desc, self.dx_enc.ptr_voidp)
+        cudnn.cudnnAddTensor(self.model.cudnn_handle, alpha, self.dx_enc.desc, self.multiheadattention_enc.dvalue.ptr, beta, self.dx_enc.desc, self.dx_enc.ptr_voidp)
         # dx = layernorm_enc.dx + multihead_enc.dquery
-        cudnn.cudnnAddTensor(self.model.cudnn_handle,
-                             alpha, self.dx_enc_dquery.desc, self.layernormalization_enc.dx.ptr,
-                             beta, self.dx_enc_dquery.desc, self.multiheadattention_enc.dquery.ptr)
+        cudnn.cudnnAddTensor(self.model.cudnn_handle, alpha, self.dx_enc_dquery.desc, self.layernormalization_enc.dx.ptr, beta, self.dx_enc_dquery.desc, self.multiheadattention_enc.dquery.ptr)
 
         # Self Attention
         self.layernormalization_1.backward(self.dx_enc_dquery)
         self.multiheadattention.backward(self.layernormalization_1.dx)
         # if self.need_dx:
         # dx = layernorm_1.dx + multihead.dquery + multihead.dkey + multihead.dvalue
-        cudnn.cudnnAddTensor(self.model.cudnn_handle,
-                             alpha, self.dx.desc, self.layernormalization_1.dx.ptr,
-                             beta, self.dx.desc, self.dx.ptr_voidp)
-        cudnn.cudnnAddTensor(self.model.cudnn_handle,
-                             alpha, self.dx.desc, self.multiheadattention.dkey.ptr,
-                             beta, self.dx.desc, self.dx.ptr_voidp)
-        cudnn.cudnnAddTensor(self.model.cudnn_handle,
-                             alpha, self.dx.desc, self.multiheadattention.dvalue.ptr,
-                             beta, self.dx.desc, self.dx.ptr_voidp)
+        cudnn.cudnnAddTensor(self.model.cudnn_handle, alpha, self.dx.desc, self.layernormalization_1.dx.ptr, beta, self.dx.desc, self.dx.ptr_voidp)
+        cudnn.cudnnAddTensor(self.model.cudnn_handle, alpha, self.dx.desc, self.multiheadattention.dkey.ptr, beta, self.dx.desc, self.dx.ptr_voidp)
+        cudnn.cudnnAddTensor(self.model.cudnn_handle, alpha, self.dx.desc, self.multiheadattention.dvalue.ptr, beta, self.dx.desc, self.dx.ptr_voidp)
         return self.dx, self.dx_enc
         # else:
         #     return self.dx_enc

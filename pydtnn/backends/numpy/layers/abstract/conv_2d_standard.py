@@ -3,8 +3,9 @@ from typing import TYPE_CHECKING
 
 from pydtnn.backends.numpy.layers.abstract.conv_2d import AbstractConv2DNumpy
 from pydtnn.libs import numpy as np
-from pydtnn.utils.constants import Parameters
 from pydtnn.utils.tensor import TensorFormat, format_transpose
+
+__all__ = ("AbstractConv2DStandardNumpy",)
 
 logger = logging.getLogger(__name__)
 

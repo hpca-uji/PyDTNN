@@ -1,9 +1,6 @@
-import numpy as _np
+from pydtnn.backends.cython.utils.base import _npDT, _npDT_1Dims
 
-from pydtnn.backends.cython.utils.base import (_npDT, _npDT_1Dims, _npDT_2Dims,
-                                               _npDT_3Dims, _npDT_4Dims)
-
-def log_fwd_cython[T:_npDT](x: _npDT_1Dims[T], y: _npDT_1Dims[T]) -> None:
+def log_fwd_cython[T: _npDT](x: _npDT_1Dims[T], y: _npDT_1Dims[T]) -> None:
     """
     Args:
         x (npDT_1Dims): 1-dimensional input's array.
@@ -12,8 +9,7 @@ def log_fwd_cython[T:_npDT](x: _npDT_1Dims[T], y: _npDT_1Dims[T]) -> None:
         Nothing. The output is stored in "y".
     """
 
-
-def log_bwd_cython[T:_npDT](dy: _npDT_1Dims[T], dx: _npDT_1Dims[T]) -> None:
+def log_bwd_cython[T: _npDT](dy: _npDT_1Dims[T], dx: _npDT_1Dims[T]) -> None:
     """
     Args:
         dy (npDT_1Dims): 1-dimensional input's array.

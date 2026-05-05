@@ -8,6 +8,8 @@ from pydtnn.abstract.layerable import Layerable
 from pydtnn.optimizers.optimizer import Optimizer
 from pydtnn.utils.constants import Array
 
+__all__ = ("OkTopk",)
+
 logger = logging.getLogger(__name__)
 
 
@@ -20,8 +22,7 @@ class OkTopk[T: Array](Optimizer[T]):
     SGD Ok-Topk Optimizer
     """
 
-    def __init__(self, learning_rate: float = 1e-2, momentum: float = 0.9,
-                 tau: int = 64, tau_prime: int = 32, density: float = 0.01, min_k_layer: int = 10):
+    def __init__(self, learning_rate: float = 1e-2, momentum: float = 0.9, tau: int = 64, tau_prime: int = 32, density: float = 0.01, min_k_layer: int = 10):
 
         super().__init__(learning_rate=learning_rate)
         self.momentum = momentum
@@ -59,8 +60,4 @@ class OkTopk[T: Array](Optimizer[T]):
 
     @classmethod
     def from_model(cls, model: Model) -> OkTopk:
-        return OkTopk(learning_rate=model.learning_rate,
-                      momentum=model.optimizer_momentum,
-                      tau=model.optimizer_tau,
-                      tau_prime=model.optimizer_tau_prime,
-                      density=model.optimizer_density)
+        return OkTopk(learning_rate=model.learning_rate, momentum=model.optimizer_momentum, tau=model.optimizer_tau, tau_prime=model.optimizer_tau_prime, density=model.optimizer_density)

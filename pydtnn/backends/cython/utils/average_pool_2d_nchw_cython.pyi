@@ -1,13 +1,8 @@
-import numpy as _np
+from pydtnn.backends.cython.utils.base import _npDT, _npDT_4Dims
 
-from pydtnn.backends.cython.utils.base import (_npDT, _npDT_1Dims, _npDT_2Dims,
-                                               _npDT_3Dims, _npDT_4Dims)
-
-def average_pool_2d_fwd_nchw_cython[T: _npDT](x: _npDT_4Dims[T], y: _npDT_4Dims[T],
-                                              kh: int, kw: int, ho: int, wo: int,
-                                              vpadding: int, hpadding: int,
-                                              vstride: int, hstride: int,
-                                              vdilation: int, hdilation: int) -> None:
+def average_pool_2d_fwd_nchw_cython[T: _npDT](
+    x: _npDT_4Dims[T], y: _npDT_4Dims[T], kh: int, kw: int, ho: int, wo: int, vpadding: int, hpadding: int, vstride: int, hstride: int, vdilation: int, hdilation: int
+) -> None:
     """
     Args:
         x (npDT_4Dims): The 4 dimensional input's ndarray.
@@ -27,14 +22,9 @@ def average_pool_2d_fwd_nchw_cython[T: _npDT](x: _npDT_4Dims[T], y: _npDT_4Dims[
         Nothing. Implictily the output is stored in "y".
     """
 
-
-def average_pool_2d_bwd_nchw_cython[T: _npDT](dy: _npDT_4Dims[T],
-                                              dx: _npDT_4Dims[T],
-                                              n: int, h: int, w: int, c: int,
-                                              kh: int, kw: int, ho: int, wo: int,
-                                              vpadding: int, hpadding: int,
-                                              vstride: int, hstride: int,
-                                              vdilation: int, hdilation: int) -> None:
+def average_pool_2d_bwd_nchw_cython[T: _npDT](
+    dy: _npDT_4Dims[T], dx: _npDT_4Dims[T], n: int, h: int, w: int, c: int, kh: int, kw: int, ho: int, wo: int, vpadding: int, hpadding: int, vstride: int, hstride: int, vdilation: int, hdilation: int
+) -> None:
     """
     Args:
         dy (npDT_4Dims): The 4 dimensional input's ndarray.

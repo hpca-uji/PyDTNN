@@ -8,6 +8,8 @@ import numpy as np
 from pydtnn.datasets.dataset import Dataset
 from pydtnn.utils import random
 
+__all__ = ("MaskLang",)
+
 logger = logging.getLogger(__name__)
 
 
@@ -84,10 +86,8 @@ class MaskLang(Dataset):
 
     def get_dictionary(self, language):
         import spacy  # type: ignore
-        table = {
-            "en": "en_core_web_md",
-            "de": "de_core_news_md"
-        }
+
+        table = {"en": "en_core_web_md", "de": "de_core_news_md"}
         if language in table:
             language = table[language]
         return spacy.load(language)
@@ -99,7 +99,7 @@ class MaskLang(Dataset):
             if self.model.augment_shuffle:
                 random.shuffle(s)
             self.train_nsamples = int(self.train_val_nsamples * (1 - val_split) // 1)
-            self.train_indices = s[:self.train_nsamples]
+            self.train_indices = s[: self.train_nsamples]
             self.val_indices = s[self.train_nsamples:]
             self.val_nsamples = len(self.val_indices)
             self.test_nsamples = self.val_nsamples
@@ -112,7 +112,7 @@ class MaskLang(Dataset):
             window = (i * batch_size + rank * batch_size, i * batch_size + (rank + 1) * batch_size)
             src_embeddings = np.zeros((batch_size, 1, self.max_sentence, self.embedl), dtype=self.dtype)
             tgt_embeddings = np.zeros((batch_size, 1, self.max_sentence, self.embedl), dtype=self.dtype)
-            for i, doc in enumerate(self.dictionary.pipe(self.lines[window[0]:window[1]])):
+            for i, doc in enumerate(self.dictionary.pipe(self.lines[window[0]: window[1]])):
                 mask = np.random.randint(0, len(doc))
                 for j, word in enumerate(doc):
                     if j > self.max_sentence:
@@ -132,8 +132,8 @@ class MaskLang(Dataset):
 
         for i in range(self.train_val_nsamples // batch_size):
             window = (i * batch_size + rank * batch_size, i * batch_size + (rank + 1) * batch_size)
-            x = self.src_embeddings[window[0]:window[1]]
-            y = self.tgt_embeddings[window[0]:window[1]]
+            x = self.src_embeddings[window[0]: window[1]]
+            y = self.tgt_embeddings[window[0]: window[1]]
             yield x, y
 
     def _synthetic_data_generator(self):
@@ -142,8 +142,8 @@ class MaskLang(Dataset):
 
         for i in range(self.train_val_nsamples // batch_size):
             window = (i * batch_size + rank * batch_size, i * batch_size + (rank + 1) * batch_size)
-            x = self.src_embeddings[window[0]:window[1]]
-            y = self.tgt_embeddings[window[0]:window[1]]
+            x = self.src_embeddings[window[0]: window[1]]
+            y = self.tgt_embeddings[window[0]: window[1]]
             yield x, y
 
     # === Preprocess ===
@@ -165,4 +165,5 @@ class MaskLang(Dataset):
                     self.src_embeddings[i, 0, j] = self.mask
                 else:
                     self.src_embeddings[i, 0, j] = word.vector
+
     # === Preprocess ===

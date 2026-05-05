@@ -6,6 +6,8 @@ from pydtnn.activations.softmax import Softmax
 from pydtnn.backends.numpy.activations.activation import ActivationNumpy
 from pydtnn.libs import numpy as np
 
+__all__ = ("SoftmaxNumpy",)
+
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
@@ -52,31 +54,25 @@ class SoftmaxNumpy(Softmax[np.ndarray], ActivationNumpy):
         # self.y = np.exp(x - np.max(x, axis=1, keepdims=True))
         # self.y /= np.sum(self.y, axis=1, keepdims=True)
         # return self.y
-        self.y = self._y[:x.shape[0], :]
-        max_x = self.max_x[:x.shape[0], :]
-        sum_y = self.sum_y[:x.shape[0], :]
+        self.y = self._y[: x.shape[0], :]
+        max_x = self.max_x[: x.shape[0], :]
+        sum_y = self.sum_y[: x.shape[0], :]
 
         np.max(x, axis=self.axis_dim, keepdims=True, out=max_x)
-        np.subtract(x, max_x, out=x,
-                    dtype=self.model.dtype)
-        np.exp(x, out=self.y,
-               dtype=self.model.dtype)
+        np.subtract(x, max_x, out=x, dtype=self.model.dtype)
+        np.exp(x, out=self.y, dtype=self.model.dtype)
         np.sum(self.y, axis=self.axis_dim, keepdims=True, out=sum_y)
-        np.divide(self.y, sum_y, out=self.y,
-                  dtype=self.model.dtype)
+        np.divide(self.y, sum_y, out=self.y, dtype=self.model.dtype)
         return self.y
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
         # return self.y * (dy - (dy * self.y).sum(axis=1, keepdims=True))
-        sum_dy = self.sum_dy[:dy.shape[0], :]
-        mul_dy = self.mul_dy[:dy.shape[0], :]
+        sum_dy = self.sum_dy[: dy.shape[0], :]
+        mul_dy = self.mul_dy[: dy.shape[0], :]
 
-        np.multiply(dy, self.y, out=mul_dy,
-                    dtype=self.model.dtype)
+        np.multiply(dy, self.y, out=mul_dy, dtype=self.model.dtype)
         mul_dy.sum(axis=self.axis_dim, keepdims=True, out=sum_dy)
-        np.subtract(dy, sum_dy, out=dy,
-                    dtype=self.model.dtype)
-        np.multiply(self.y, dy, out=dy,
-                    dtype=self.model.dtype)
+        np.subtract(dy, sum_dy, out=dy, dtype=self.model.dtype)
+        np.multiply(self.y, dy, out=dy, dtype=self.model.dtype)
 
         return dy

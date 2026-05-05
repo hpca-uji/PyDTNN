@@ -7,6 +7,8 @@ from pydtnn.backends.numpy.optimizers.optimizer import OptimizerNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.optimizers.sgd import SGD
 
+__all__ = ("SGDNumpy",)
+
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
@@ -14,7 +16,6 @@ if TYPE_CHECKING:
 
 
 class SGDNumpy(SGD[np.ndarray], OptimizerNumpy):
-
     def _model_init(self, list_layers: list[LayerNumpy]) -> None:
         super()._model_init(list_layers)  # type: ignore (it's the right type)
 
@@ -75,8 +76,7 @@ class SGDNumpy(SGD[np.ndarray], OptimizerNumpy):
                 # velocity = self.momentum * velocity + dw
 
                 np.multiply(velocity, self.momentum, dtype=self.model.dtype, out=velocity)
-                np.add(velocity, dw, out=velocity,
-                       dtype=self.model.dtype)
+                np.add(velocity, dw, out=velocity, dtype=self.model.dtype)
 
                 # if self.nesterov:
                 #    w -= self.learning_rate * (self.decay * w + dw + self.momentum * velocity)

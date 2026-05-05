@@ -9,6 +9,8 @@ import numpy as np
 from pydtnn.tracers.simple_tracer import SimpleTracer
 from pydtnn.utils.pmlib import PMLib
 
+__all__ = ("SimpleTracerPMLib",)
+
 logger = logging.getLogger(__name__)
 
 
@@ -16,6 +18,7 @@ if TYPE_CHECKING:
     from pympi.MPI import Comm as MPI_COMM  # type: ignore
 else:
     from types import ModuleType
+
     MPI_COMM = ModuleType
 
 
@@ -78,7 +81,7 @@ class SimpleTracerPMLib(SimpleTracer):
             super()._write_output()
             watts_filename = self.output_filename + ".watts"
             logger.info(f"Writing watts output to '{watts_filename}'...")
-            with open(watts_filename, 'w') as f:
+            with open(watts_filename, "w") as f:
                 header = "Time"
                 header += ";Watts"
                 assert self.pmlib.len_lines

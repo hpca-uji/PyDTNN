@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING
 from pydtnn.optimizers.optimizer import Optimizer
 from pydtnn.utils.constants import Array
 
+__all__ = ("RMSProp",)
+
 logger = logging.getLogger(__name__)
 
 
@@ -18,8 +20,7 @@ class RMSProp[T: Array](Optimizer[T]):
     RMSProp optimizer
     """
 
-    def __init__(self, learning_rate: float = 1e-2, rho: float = 0.9, epsilon: float = 1e-7,
-                 decay: float = 0.0):
+    def __init__(self, learning_rate: float = 1e-2, rho: float = 0.9, epsilon: float = 1e-7, decay: float = 0.0):
         super().__init__(learning_rate=learning_rate)
         self.rho = rho
         self.epsilon = epsilon
@@ -36,7 +37,4 @@ class RMSProp[T: Array](Optimizer[T]):
 
     @classmethod
     def from_model(cls, model: Model) -> RMSProp:
-        return RMSProp(learning_rate=model.learning_rate,
-                       rho=model.optimizer_rho,
-                       epsilon=model.optimizer_epsilon,
-                       decay=model.optimizer_decay)
+        return RMSProp(learning_rate=model.learning_rate, rho=model.optimizer_rho, epsilon=model.optimizer_epsilon, decay=model.optimizer_decay)

@@ -3,11 +3,12 @@ import logging
 from pydtnn.layers.layer import Layer
 from pydtnn.utils.constants import Array, ArrayShape
 
+__all__ = ("AbstractBlockLayer",)
+
 logger = logging.getLogger(__name__)
 
 
 class AbstractBlockLayer[T: Array](Layer[T]):
-
     def __init__(self, *args, **kwargs):
         super().__init__(**kwargs)
         self.paths = []

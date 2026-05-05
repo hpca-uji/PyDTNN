@@ -4,6 +4,8 @@ from pydtnn.abstract.layerable import Layerable
 from pydtnn.utils import find_component
 from pydtnn.utils.constants import ArrayShape
 
+__all__ = ("select",)
+
 
 def select(name: str) -> Callable[[ArrayShape, ArrayShape], Sequence[Layerable]]:
     assert __package__, "Package not found!"

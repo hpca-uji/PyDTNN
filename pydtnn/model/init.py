@@ -6,9 +6,7 @@ from warnings import warn
 
 import numpy as np
 
-from pydtnn import (MPI, context, cublas, cublas_handle, cudnn, cudnn_handle,
-                    drv, gpuarray, hostname, nccl, nccl_comm, num_gpus,
-                    ranks_per_node, stream)
+from pydtnn import MPI, context, cublas, cublas_handle, cudnn, cudnn_handle, drv, gpuarray, hostname, nccl, nccl_comm, num_gpus, ranks_per_node, stream
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.datasets.dataset import Dataset
 from pydtnn.datasets.dataset import select as select_dataset
@@ -36,11 +34,14 @@ else:
 
 from pydtnn.utils.constants import Array, NetworkAlgoEnum
 
+__all__ = ("Init",)
+
+__all__ = ("Init",)
+
 logger = logging.getLogger(__name__)
 
 
 class Init[T: Array](State[T]):
-
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
@@ -157,15 +158,19 @@ class Init[T: Array](State[T]):
         """Setup tracer"""
         if self.tracer_output == "":
             from pydtnn.tracers.extrae_tracer import ExtraeTracer
+
             tracer = ExtraeTracer(self.tracing)
         elif self.enable_cudnn:
             from pydtnn.tracers.simple_tracer_gpu import SimpleTracerPycuda
+
             tracer = SimpleTracerPycuda(self.tracing, self.tracer_output, self.comm)
         elif self.tracer_pmlib_device != "":
             from pydtnn.tracers.simple_tracer_pmlib import SimpleTracerPMLib
+
             tracer = SimpleTracerPMLib(self.tracing, self.tracer_output, self.comm, self.tracer_pmlib_server, self.tracer_pmlib_port, self.tracer_pmlib_device)
         else:
             from pydtnn.tracers.simple_tracer import SimpleTracer
+
             tracer = SimpleTracer(self.tracing, self.tracer_output, self.comm)
 
         self.tracer = tracer
@@ -176,11 +181,7 @@ class Init[T: Array](State[T]):
             raise RuntimeError("uHE is not avaliable, but is requiested!")
 
         backend = polyhe.Backend(encryption_name)
-        options = polyhe.Options(
-            slots=self.encryption_slots,
-            scale=self.encryption_scale,
-            security=self.encryption_security
-        )
+        options = polyhe.Options(slots=self.encryption_slots, scale=self.encryption_scale, security=self.encryption_security)
 
         if self.comm_rank == 0:
             crypt = polyhe.new(backend, options)
@@ -245,10 +246,7 @@ class Init[T: Array](State[T]):
             assert nccl is not None
             assert nccl_comm is not None
 
-            nccl_types = {np.float64: nccl.DataType.Float64,
-                          np.float32: nccl.DataType.Float32,
-                          np.int8: nccl.DataType.Int8,
-                          np.int32: nccl.DataType.Int32}
+            nccl_types = {np.float64: nccl.DataType.Float64, np.float32: nccl.DataType.Float32, np.int8: nccl.DataType.Int8, np.int32: nccl.DataType.Int32}
 
             nccl_type = nccl_types.get(self.dtype, nccl.DataType.Float32)
 
@@ -259,10 +257,7 @@ class Init[T: Array](State[T]):
 
         self.tracer.set_stream(stream)
 
-        cudnn_types = {np.float64: CudnnDataType.FLOAT64,
-                       np.float32: CudnnDataType.FLOAT32,
-                       np.int8: CudnnDataType.INT8,
-                       np.int32: CudnnDataType.INT32}
+        cudnn_types = {np.float64: CudnnDataType.FLOAT64, np.float32: CudnnDataType.FLOAT32, np.int8: CudnnDataType.INT8, np.int32: CudnnDataType.INT32}
 
         cudnn_type: str = cudnn_types.get(self.dtype, CudnnDataType.FLOAT32)
         cudnn_dtype: int = cudnn.cudnnDataType[cudnn_type]

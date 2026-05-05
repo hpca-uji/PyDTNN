@@ -6,22 +6,21 @@ from pydtnn.backends.pycuda.metrics.metric import MetricPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.metrics.regression_mae import RegressionMAE
 
+__all__ = ("RegressionMAEPycuda",)
+
 logger = logging.getLogger(__name__)
 
 
 class RegressionMAEPycuda(RegressionMAE[TensorArray], MetricPycuda):
-
     def _model_init(self) -> None:
         super()._model_init()
 
         n = self.model.batch_size
         num_classes = self.model.output_shape
 
-        self.res = TensorArray.new_zeros(shape=(1, ), dtype=np.dtype(self.model.dtype),
-                                         tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
+        self.res = TensorArray.new_zeros(shape=(1,), dtype=np.dtype(self.model.dtype), tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
 
-        self.local_res = TensorArray.new_zeros(shape=(n, *num_classes), dtype=np.dtype(self.model.dtype),
-                                               tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
+        self.local_res = TensorArray.new_zeros(shape=(n, *num_classes), dtype=np.dtype(self.model.dtype), tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
 
     def compute(self, y_pred: TensorArray, y_targ: TensorArray) -> float:
 
@@ -33,9 +32,5 @@ class RegressionMAEPycuda(RegressionMAE[TensorArray], MetricPycuda):
 
         n = np.int32(n)
         num_classes = np.int32(num_classes)
-        self.kernel(y_targ.ary, y_pred.ary,
-                    self.res.ary, self.local_res.ary,
-                    n, num_classes,
-                    grid=self.grid, block=self.block,
-                    stream=self.model.stream)
+        self.kernel(y_targ.ary, y_pred.ary, self.res.ary, self.local_res.ary, n, num_classes, grid=self.grid, block=self.block, stream=self.model.stream)
         return float(self.res.get())

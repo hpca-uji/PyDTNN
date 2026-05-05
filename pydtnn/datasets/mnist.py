@@ -10,6 +10,8 @@ import numpy as np
 
 from pydtnn.datasets.dataset import Dataset
 
+__all__ = ("MNIST",)
+
 logger = logging.getLogger(__name__)
 
 
@@ -43,16 +45,8 @@ class MNIST(Dataset):
         super().__init__(model, TRAIN_NSAMPLES, TEST_NSAMPLES, INPUT_SHAPE, OUTPUT_SHAPE, force_test_as_validation=force_test_as_validation, debug=debug)
 
     def _init_actual_data(self) -> None:
-        self._x_filename = [
-            os.path.join(self.model.dataset_path, "train-images-idx3-ubyte.gz"),
-            None,
-            os.path.join(self.model.dataset_path, "t10k-images-idx3-ubyte.gz")
-        ]
-        self._y_filename = [
-            os.path.join(self.model.dataset_path, "train-labels-idx1-ubyte.gz"),
-            None,
-            os.path.join(self.model.dataset_path, "t10k-labels-idx1-ubyte.gz")
-        ]
+        self._x_filename = [os.path.join(self.model.dataset_path, "train-images-idx3-ubyte.gz"), None, os.path.join(self.model.dataset_path, "t10k-images-idx3-ubyte.gz")]
+        self._y_filename = [os.path.join(self.model.dataset_path, "train-labels-idx1-ubyte.gz"), None, os.path.join(self.model.dataset_path, "t10k-labels-idx1-ubyte.gz")]
         if self.test_as_validation:
             self._x_filename[Dataset.Part.VAL] = self._x_filename[Dataset.Part.TEST]
             self._y_filename[Dataset.Part.VAL] = self._y_filename[Dataset.Part.TEST]

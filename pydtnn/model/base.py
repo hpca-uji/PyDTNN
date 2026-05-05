@@ -14,6 +14,8 @@ from pydtnn.utils.constants import Array, ArrayShape, NetworkAlgoEnum
 from pydtnn.utils.memory_pool import PrivateMemory
 from pydtnn.utils.tensor import TensorFormat
 
+__all__ = ("Base",)
+
 logger = logging.getLogger(__name__)
 
 
@@ -32,8 +34,8 @@ class Base[T: Array]:
         EVALUATE = enum.auto()
         TRAIN = enum.auto()
 
-# Explicit declaration of those model attributes that are referenced by other parts of PyDTNN
-#   NOTE: The following parameters come from "Parser"
+    # Explicit declaration of those model attributes that are referenced by other parts of PyDTNN
+    #   NOTE: The following parameters come from "Parser"
     backend: str
     tensor_format: TensorFormat
     steps_per_epoch: int

@@ -12,6 +12,8 @@ import numpy as np
 from pydtnn.datasets.dataset import Dataset
 from pydtnn.utils import random
 
+__all__ = ("Tsunamis",)
+
 logger = logging.getLogger(__name__)
 
 
@@ -41,11 +43,7 @@ class Tsunamis(Dataset):
 
     def _init_actual_data(self):
         self._src_filename = os.path.join(self.model.dataset_path, "tsunamis-binary.tar.gz")
-        self._xy_filenames = [
-            [os.path.join("tsunamis-batches-bin", f"data_batch_{x}.bin") for x in range(1, 6)],
-            [],
-            [os.path.join("tsunamis-batches-bin", "test_batch.bin")]
-        ]
+        self._xy_filenames = [[os.path.join("tsunamis-batches-bin", f"data_batch_{x}.bin") for x in range(1, 6)], [], [os.path.join("tsunamis-batches-bin", "test_batch.bin")]]
         self._xy_filenames[Dataset.Part.VAL] = copy.copy(self._xy_filenames[Dataset.Part.TEST] if self.test_as_validation else self._xy_filenames[Dataset.Part.TRAIN])
 
         # Pregenerate GZIP indexs

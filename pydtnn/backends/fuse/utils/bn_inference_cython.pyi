@@ -8,13 +8,7 @@ type _npDT_1Dims[T] = _np.ndarray[tuple[int], T]
 
 # TODO: Missing `bn_inference_nchw_cython`
 
-
-def bn_inference_cython[T: _npDT](x: _npDT_2Dims[T],
-                                  y: _npDT_2Dims[T],
-                                  running_mean: _npDT_1Dims[T],
-                                  std: _npDT_1Dims[T],
-                                  gamma: _npDT_1Dims[T],
-                                  beta: _npDT_1Dims[T]) -> None:
+def bn_inference_cython[T: _npDT](x: _npDT_2Dims[T], y: _npDT_2Dims[T], running_mean: _npDT_1Dims[T], std: _npDT_1Dims[T], gamma: _npDT_1Dims[T], beta: _npDT_1Dims[T]) -> None:
     """
     Args:
         x (npDT_2Dims): The 2 dimensional input's ndarray.
@@ -28,13 +22,7 @@ def bn_inference_cython[T: _npDT](x: _npDT_2Dims[T],
         Nothing. The output is stored in "y".
     """
 
-
-def bn_relu_inference_cython[T: _npDT](x: _npDT_2Dims[T],
-                                       y: _npDT_2Dims[T],
-                                       running_mean: _npDT_1Dims[T],
-                                       inv_std: _npDT_1Dims[T],
-                                       gamma: _npDT_1Dims[T],
-                                       beta: _npDT_1Dims[T]) -> None:
+def bn_relu_inference_cython[T: _npDT](x: _npDT_2Dims[T], y: _npDT_2Dims[T], running_mean: _npDT_1Dims[T], inv_std: _npDT_1Dims[T], gamma: _npDT_1Dims[T], beta: _npDT_1Dims[T]) -> None:
     """
     Args:
         x (npDT_2Dims): The 2 dimensional input's ndarray.

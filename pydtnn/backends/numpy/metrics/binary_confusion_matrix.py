@@ -5,6 +5,8 @@ from pydtnn.backends.numpy.metrics.metric import MetricNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.metrics.binary_confusion_matrix import BinaryConfusionMatrix
 
+__all__ = ("BinaryConfusionMatrixNumpy",)
+
 logger = logging.getLogger(__name__)
 
 
@@ -23,18 +25,17 @@ _dict_indexes = {
         # bool(y_targ[i, label])
         # i.e.: "is the target' value 1 (True) or 0 (False)?"
         True: TRUE_POSITIVE,
-        False: TRUE_NEGATIVE
+        False: TRUE_NEGATIVE,
     },
     False: {
         # bool(y_targ[i, label])
         True: FALSE_NEGATIVE,
-        False: FALSE_POSITIVE
-    }
+        False: FALSE_POSITIVE,
+    },
 }
 
 
 class BinaryConfusionMatrixNumpy(BinaryConfusionMatrix[np.ndarray], MetricNumpy):
-
     def _model_init(self) -> None:
         super()._model_init()
         _, target_classes = self.shape

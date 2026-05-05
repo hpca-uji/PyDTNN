@@ -19,6 +19,18 @@ from pydtnn.model import Model as PyDTNN_Model
 #   _node.input: inputs list. _node.output: outputs list. _node.attribute: list made by all the parameteres and values (they are "AttributeProto")
 
 
+__all__ = (
+    "convert_model",
+    "extract_attributes",
+    "extract_shape",
+    "get_actual_inputs",
+    "get_layers",
+    "get_lists_operations_and_outputs",
+    "get_operations",
+    "get_relevant_data",
+)
+
+
 def extract_shape(data: onnx.ValueInfoProto) -> tuple[int]:
     # The shape of the inputs/ouputs is more or less a list quite hidden.
     #   Note: ONNX allows to have shapes of undefined value, for example: (N, 3, 224, 224),
@@ -39,8 +51,7 @@ def get_relevant_data(model_graph: onnx.GraphProto) -> tuple[dict[str, tuple[int
     weights_dict = {node.name: onnx.numpy_helper.to_array(node) for node in model_graph.initializer}
 
     # Inputs dicionary. Key: input name. Value: the shape of the input.
-    inputs_dict = {_input.name: extract_shape(_input)
-                   for _input in model_graph.input if _input.name not in weights_dict.keys()}
+    inputs_dict = {_input.name: extract_shape(_input) for _input in model_graph.input if _input.name not in weights_dict.keys()}
 
     # Outputs dicionary. Key: output name. Value: the shape of the output.
     outputs_dict = {ouput.name: extract_shape(ouput) for ouput in model_graph.output}
@@ -50,8 +61,7 @@ def get_relevant_data(model_graph: onnx.GraphProto) -> tuple[dict[str, tuple[int
 
 def extract_attributes(node: onnx.NodeProto) -> dict[str, Any]:
 
-    return {attribute.name: onnx.helper.get_node_attr_value(node, attribute.name)
-            for attribute in node.attribute}
+    return {attribute.name: onnx.helper.get_node_attr_value(node, attribute.name) for attribute in node.attribute}
 
 
 def get_lists_operations_and_outputs(info: dict[str, Any], operations: dict[str, tuple[Layerable, list[str]]]) -> tuple[list[list[Layerable]], list[str]]:
@@ -98,7 +108,7 @@ def get_lists_operations_and_outputs(info: dict[str, Any], operations: dict[str,
         layers = [elem[0] for elem in _values]
         outputs = [elem[1] for elem in _values]
 
-        trimming_index = (layers.index(operations[coincidence][0]))
+        trimming_index = layers.index(operations[coincidence][0])
         lists_operations.append(layers[:trimming_index])  # Remember: list of lists
         lists_outputs.extend(outputs[:trimming_index])  # Remember: list of string
 
@@ -111,17 +121,16 @@ def get_actual_inputs(list_inputs: list[str], weights_names: list[str]) -> list[
     return list(filter(lambda _input: _input not in weights_names, list_inputs))
 
 
-def _get_and_put_operation(node: onnx.NodeProto, opset_version: int, operations: dict[str, tuple[Layerable, list[str]]],
-                           weights: dict[str, np.ndarray], output: list[str] | None = None) -> None:
+def _get_and_put_operation(node: onnx.NodeProto, opset_version: int, operations: dict[str, tuple[Layerable, list[str]]], weights: dict[str, np.ndarray], output: list[str] | None = None) -> None:
 
     info = {  # cons.CONST_NODE: node, # Refererence to the model itself (TODO: see if it's necessary. If not ==> delete)
-        cons.CONST_OPSET: opset_version,    # Version of the onnx operation
-        cons.CONST_INPUTS: get_actual_inputs(list_inputs=node.input, weights_names=list(weights.keys())),   # node's inputs names
-        cons.CONST_ALL_INPUTS: node.input,   # ALL node's inputs names (including weights and biases)
+        cons.CONST_OPSET: opset_version,  # Version of the onnx operation
+        cons.CONST_INPUTS: get_actual_inputs(list_inputs=node.input, weights_names=list(weights.keys())),  # node's inputs names
+        cons.CONST_ALL_INPUTS: node.input,  # ALL node's inputs names (including weights and biases)
         cons.CONST_OUPTUS: node.output if output is None else output,  # node's outputs names or the model's output (TODO: Check if a operation can have multiple outputs)
         cons.CONST_ATTRIBUTES: extract_attributes(node=node),  # dictionary with the node's attributes names and respective values (e.g. the shape of a kernel)
         cons.CONST_WEIGHTS: weights,
-        cons.CONST_PREV_LAYERS: operations
+        cons.CONST_PREV_LAYERS: operations,
     }
     if len(info[cons.CONST_INPUTS]) > 1:
         info[cons.CONST_listS_NODES], operations_to_remove = get_lists_operations_and_outputs(info, operations)
@@ -134,8 +143,7 @@ def _get_and_put_operation(node: onnx.NodeProto, opset_version: int, operations:
     # return Nothing: the output is stored in the dictionary
 
 
-def get_operations(onnx_model: onnx.ModelProto, opset_version: int, inputs: dict[str, tuple[int]],
-                   weights: dict[str, np.ndarray], outputs: dict[str, tuple[int]]) -> list[Layerable]:
+def get_operations(onnx_model: onnx.ModelProto, opset_version: int, inputs: dict[str, tuple[int]], weights: dict[str, np.ndarray], outputs: dict[str, tuple[int]]) -> list[Layerable]:
 
     # TODO: meter otros parámetros que se puedan necesitar
     # operations = list()
@@ -165,7 +173,6 @@ def get_layers(pydtnn_model: PyDTNN_Model) -> list[onnx.NodeProto]:
 
     node_list = list()
     for layer in pydtnn_model.layers:
-
         name, number_layer = cons.get_layer_name_and_id(str(layer))
         info = {
             cons.CONST_OP_NAME: name,
@@ -179,14 +186,18 @@ def get_layers(pydtnn_model: PyDTNN_Model) -> list[onnx.NodeProto]:
     return node_list
 
 
-def convert_model(pydtnn_model: PyDTNN_Model, ir_version: int = 1, producer_name: str = "PyDTNN",
-                  producer_version: str = "", domain: str = "", model_version: int = 0,
-                  doc_string: str = "https://github.com/hpca-uji/PyDTNN",
-                  ) -> onnx.ModelProto:
+def convert_model(
+    pydtnn_model: PyDTNN_Model,
+    ir_version: int = 1,
+    producer_name: str = "PyDTNN",
+    producer_version: str = "",
+    domain: str = "",
+    model_version: int = 0,
+    doc_string: str = "https://github.com/hpca-uji/PyDTNN",
+) -> onnx.ModelProto:
 
-    nodes = get_layers(pydtnn_model)
-
-    # TODO:
+    # TODO
+    # nodes = get_layers(pydtnn_model)
     model = onnx.helper.make_model()
 
     return model

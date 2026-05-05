@@ -1,8 +1,7 @@
 import logging
 import unittest
 
-from pydtnn.backends.fuse.layers.conv_2d_batch_normalization import \
-    Conv2DBatchNormalization
+from pydtnn.backends.fuse.layers.conv_2d_batch_normalization import Conv2DBatchNormalization
 from pydtnn.backends.numpy.layers.abstract.conv_2d import AbstractConv2DNumpy
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.concatenation_block import ConcatenationBlock
@@ -13,6 +12,9 @@ from pydtnn.tests.abstract.conv_2d_common import Conv2DCommonTestCase
 from pydtnn.utils.initializers import glorot_uniform, zeros
 from pydtnn.utils.tensor import TensorFormat
 
+__all__ = ("Conv2DBatchNormalizationTestCase",)
+
+
 logger = logging.getLogger(__name__)
 
 # TODO: MIRAR ESTO.
@@ -22,6 +24,7 @@ class Conv2DBatchNormalizationTestCase(Conv2DCommonTestCase):
     """
     Tests that Conv2D+BatchNormalization leads to the same results than Conv2DBatchNormalization
     """
+
     # NOTE: Delete parent test to prevent re-export and re-testing
     global Conv2DCommonTestCase
     del Conv2DCommonTestCase
@@ -35,16 +38,18 @@ class Conv2DBatchNormalizationTestCase(Conv2DCommonTestCase):
         model = Model(**vars(params))
         model.mode = Model.Mode.TRAIN
 
-        conv2d = Conv2D(nfilters=d.kn, filter_shape=(d.kh, d.kw),
-                        padding=(d.vpadding, d.hpadding),
-                        stride=(d.vstride, d.hstride),
-                        dilation=(d.vdilation, d.hdilation),
-                        use_bias=True, weights_initializer=glorot_uniform, biases_initializer=zeros)
+        conv2d = Conv2D(
+            nfilters=d.kn,
+            filter_shape=(d.kh, d.kw),
+            padding=(d.vpadding, d.hpadding),
+            stride=(d.vstride, d.hstride),
+            dilation=(d.vdilation, d.hdilation),
+            use_bias=True,
+            weights_initializer=glorot_uniform,
+            biases_initializer=zeros,
+        )
         bn = BatchNormalization()
-        chain = ConcatenationBlock([
-            conv2d,
-            bn
-        ])
+        chain = ConcatenationBlock([conv2d, bn])
         shape = (d.c, d.h, d.w)
         chain._init_backend_with_model(model)
         chain._model_init(prev_shape=shape, x=None)

@@ -1,8 +1,11 @@
 """
 Tracer events
 """
+
 import logging
 from enum import IntEnum, auto
+
+__all__ = ("PYDTNN_EVENT_FINISHED", "PYDTNN_MDL_EVENT_enum", "PYDTNN_MDL_EVENT", "PYDTNN_MDL_EVENTS", "PYDTNN_OPS_EVENT_enum", "PYDTNN_OPS_EVENT", "PYDTNN_OPS_EVENTS")
 
 logger = logging.getLogger(__name__)
 
@@ -78,7 +81,7 @@ class PYDTNN_OPS_EVENT_enum(IntEnum):
     FORWARD_MHA = auto()  # Orginally: 48
     FORWARD_FEEDFORWARD = auto()  # Orginally: 49
     BACKWARD_MHA = auto()  # Orginally: 50
-    BACKWARD_FEEDFORWARD = auto()   # Orginally: 51
+    BACKWARD_FEEDFORWARD = auto()  # Orginally: 51
     FORWARD_ADP_AVG_POOL = auto()  # Orginally: 39
     LAYER_ENCODE = auto()
     LAYER_DECODE = auto()

@@ -5,8 +5,9 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from pydtnn.schedulers.scheduler_with_loss_or_metric import \
-    SchedulerWithLossOrMetric
+from pydtnn.schedulers.scheduler_with_loss_or_metric import SchedulerWithLossOrMetric
+
+__all__ = ("ReduceLROnPlateau",)
 
 logger = logging.getLogger(__name__)
 
@@ -33,19 +34,14 @@ class ReduceLROnPlateau(SchedulerWithLossOrMetric):
         idx = self._get_idx()
         self.epoch_count += 1
         loss = val_loss if self.is_val_metric else train_loss
-        if ("accuracy" in self.loss_or_metric and loss[idx] > self.best_loss) or \
-                ("accuracy" not in self.loss_or_metric and loss[idx] < self.best_loss):
+        if ("accuracy" in self.loss_or_metric and loss[idx] > self.best_loss) or ("accuracy" not in self.loss_or_metric and loss[idx] < self.best_loss):
             self.best_loss = loss[idx]
             self.best_epoch = self.epoch_count
-        elif self.epoch_count - self.best_epoch >= self.patience \
-                and self.model.optimizer.learning_rate * self.factor >= self.min_lr:
+        elif self.epoch_count - self.best_epoch >= self.patience and self.model.optimizer.learning_rate * self.factor >= self.min_lr:
             self.model.optimizer.learning_rate *= self.factor
             self.best_epoch = self.epoch_count
             self.log(f"Metric {self.loss_or_metric} did not improve for {self.model.optimizer.learning_rate} epochs, setting learning rate to {self.patience:.8f}.")
 
     @classmethod
     def from_model(cls, model: Model) -> ReduceLROnPlateau:
-        return ReduceLROnPlateau(model.reduce_lr_on_plateau_metric,
-                                 model.reduce_lr_on_plateau_factor,
-                                 model.reduce_lr_on_plateau_patience,
-                                 model.reduce_lr_on_plateau_min_lr)
+        return ReduceLROnPlateau(model.reduce_lr_on_plateau_metric, model.reduce_lr_on_plateau_factor, model.reduce_lr_on_plateau_patience, model.reduce_lr_on_plateau_min_lr)

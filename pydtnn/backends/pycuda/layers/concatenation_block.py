@@ -3,23 +3,20 @@ import logging
 from pycuda import gpuarray  # type: ignore
 from pycuda.elementwise import ElementwiseKernel  # type: ignore
 
-from pydtnn.backends.pycuda.layers.abstract.block_layer import \
-    AbstractBlockLayerPycuda
+from pydtnn.backends.pycuda.layers.abstract.block_layer import AbstractBlockLayerPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.libs import cudnn as cudnn
-from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT,
-                                   PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT,
-                                   PYDTNN_OPS_EVENTS, PYDTNN_MDL_EVENT_enum,
-                                   PYDTNN_OPS_EVENT_enum)
+from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
 from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
 from pydtnn.utils.tensor import TensorFormat
+
+__all__ = ("ConcatenationBlockPycuda",)
 
 logger = logging.getLogger(__name__)
 
 
 class ConcatenationBlockPycuda(ConcatenationBlock[TensorArray], AbstractBlockLayerPycuda):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.concat: ElementwiseKernel = None
@@ -32,8 +29,8 @@ class ConcatenationBlockPycuda(ConcatenationBlock[TensorArray], AbstractBlockLay
         # @warning: super().initialize() calls self.initialize_block_layer() (don't call it again)
         self.concat = ElementwiseKernel(
             "{T} *dst, {T} *src, int N, int H, int W, int C, int first_c, int last_c".format(T=DTYPE2CTYPE[self.model.dtype]),
-            {TensorFormat.NHWC:
-                """int c_ = i % C;
+            {
+                TensorFormat.NHWC: """int c_ = i % C;
                    if (first_c <= c_ && c_ < last_c) {
                        int w_ = i / C % W;
                        int h_ = i / (W*C) % H;
@@ -42,8 +39,7 @@ class ConcatenationBlockPycuda(ConcatenationBlock[TensorArray], AbstractBlockLay
                        dst[i] = src[i_];
                    }
                 """,
-             TensorFormat.NCHW:
-                """int c_ = i / (H*W) % C;
+                TensorFormat.NCHW: """int c_ = i / (H*W) % C;
                    if (first_c <= c_ && c_ < last_c) {
                        int w_ = i % W;
                        int h_ = i / W % H;
@@ -51,13 +47,15 @@ class ConcatenationBlockPycuda(ConcatenationBlock[TensorArray], AbstractBlockLay
                        int i_ = n_ * (last_c-first_c) * H * W + (c_-first_c) * H * W + h_ * W + w_;
                        dst[i] = src[i_];
                    }
-                """}[self.model.tensor_format],
-            "concat")
+                """,
+            }[self.model.tensor_format],
+            "concat",
+        )
 
         self.split = ElementwiseKernel(
             "{T} *src, {T} *dst, int N, int H, int W, int C, int first_c, int last_c".format(T=DTYPE2CTYPE[self.model.dtype]),
-            {TensorFormat.NHWC:
-                """int c_ = i % C;
+            {
+                TensorFormat.NHWC: """int c_ = i % C;
                    if (first_c <= c_ && c_ < last_c) {
                        int w_ = i / C % W;
                        int h_ = i / (W*C) % H;
@@ -66,8 +64,7 @@ class ConcatenationBlockPycuda(ConcatenationBlock[TensorArray], AbstractBlockLay
                        dst[i_] = src[i];
                    }
                 """,
-             TensorFormat.NCHW:
-                """int c_ = i / (H*W) % C;
+                TensorFormat.NCHW: """int c_ = i / (H*W) % C;
                    if (first_c <= c_ && c_ < last_c) {
                        int w_ = i % W;
                        int h_ = i / W % H;
@@ -75,8 +72,10 @@ class ConcatenationBlockPycuda(ConcatenationBlock[TensorArray], AbstractBlockLay
                        int i_ = n_ * (last_c-first_c) * H * W + (c_-first_c) * H * W + h_ * W + w_;
                        dst[i_] = src[i];
                    }
-                """}[self.model.tensor_format],
-            "split")
+                """,
+            }[self.model.tensor_format],
+            "split",
+        )
 
         # Activations y
         y_gpu = gpuarray.zeros((self.model.batch_size, *self.shape), self.model.dtype)
@@ -99,16 +98,14 @@ class ConcatenationBlockPycuda(ConcatenationBlock[TensorArray], AbstractBlockLay
                 y_i = layer.forward(y_i)
                 self.model.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONCAT)
-            self.concat(self.y.ary, y_i.ary, self.model.batch_size, self.ho, self.wo, self.co,
-                        0 if i == 0 else self.idx_co[i - 1], self.idx_co[i])
+            self.concat(self.y.ary, y_i.ary, self.model.batch_size, self.ho, self.wo, self.co, 0 if i == 0 else self.idx_co[i - 1], self.idx_co[i])
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.y
 
     def backward(self, dy: TensorArray) -> TensorArray:
         for i, p in enumerate(self.paths):
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_SPLIT)
-            self.split(dy.ary, self.dy[i].ary, self.model.batch_size, self.ho, self.wo, self.co,
-                       0 if i == 0 else self.idx_co[i - 1], self.idx_co[i])
+            self.split(dy.ary, self.dy[i].ary, self.model.batch_size, self.ho, self.wo, self.co, 0 if i == 0 else self.idx_co[i - 1], self.idx_co[i])
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
             dx_i = self.dy[i]
             for layer in reversed(p):
@@ -119,9 +116,7 @@ class ConcatenationBlockPycuda(ConcatenationBlock[TensorArray], AbstractBlockLay
                 self.dx = dx_i
             else:
                 alpha, beta = 1.0, 1.0
-                self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
-                                             self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ELTW_SUM)
-                cudnn.cudnnAddTensor(self.model.cudnn_handle, alpha, dx_i.desc,
-                                     dx_i.ptr_voidp, beta, self.dx.desc, self.dx.ptr_voidp)
+                self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ELTW_SUM)
+                cudnn.cudnnAddTensor(self.model.cudnn_handle, alpha, dx_i.desc, dx_i.ptr_voidp, beta, self.dx.desc, self.dx.ptr_voidp)
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.dx

@@ -14,6 +14,8 @@ from pydtnn.layers.max_pool_2d import MaxPool2D
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.initializers import he_uniform
 
+__all__ = ("resnet50_imagenet",)
+
 
 def resnet50_imagenet(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
     model = list[Layerable]()
@@ -35,24 +37,21 @@ def resnet50_imagenet(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequ
         for r in range(res_blocks):
             if r > 0:
                 stride = 1
-            _(AdditionBlock(
-                [
-                    Conv2D(nfilters=n_filt, filter_shape=(1, 1), stride=1, weights_initializer=he_uniform),
-                    BatchNormalization(),
-                    Relu(),
-                    Conv2D(nfilters=n_filt, filter_shape=(3, 3), stride=stride, padding=1,
-                           weights_initializer=he_uniform),
-                    BatchNormalization(),
-                    Relu(),
-                    Conv2D(nfilters=n_filt * expansion, filter_shape=(1, 1), stride=1,
-                           weights_initializer=he_uniform),
-                    BatchNormalization()
-                ],
-                [
-                    Conv2D(nfilters=n_filt * expansion, filter_shape=(1, 1), stride=stride,
-                           weights_initializer=he_uniform),
-                    BatchNormalization()
-                ] if r == 0 or stride != 1 else []))
+            _(
+                AdditionBlock(
+                    [
+                        Conv2D(nfilters=n_filt, filter_shape=(1, 1), stride=1, weights_initializer=he_uniform),
+                        BatchNormalization(),
+                        Relu(),
+                        Conv2D(nfilters=n_filt, filter_shape=(3, 3), stride=stride, padding=1, weights_initializer=he_uniform),
+                        BatchNormalization(),
+                        Relu(),
+                        Conv2D(nfilters=n_filt * expansion, filter_shape=(1, 1), stride=1, weights_initializer=he_uniform),
+                        BatchNormalization(),
+                    ],
+                    [Conv2D(nfilters=n_filt * expansion, filter_shape=(1, 1), stride=stride, weights_initializer=he_uniform), BatchNormalization()] if r == 0 or stride != 1 else [],
+                )
+            )
             _(Relu())
 
     _(AveragePool2D(pool_shape=(0, 0)))  # Global average pooling 2D

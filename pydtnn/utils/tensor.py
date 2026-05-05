@@ -7,6 +7,18 @@ import numpy as np
 
 from pydtnn.utils.constants import ArrayShape
 
+__all__ = (
+    "ChannelFormat",
+    "SampleFormat",
+    "TensorFormat",
+    "decode_shape",
+    "decode_tensor",
+    "encode_shape",
+    "encode_tensor",
+    "format_reshape",
+    "format_transpose",
+)
+
 logger = logging.getLogger(__name__)
 
 

@@ -7,16 +7,16 @@ from pycuda.driver import Function  # type: ignore
 
 from pydtnn.backends.pycuda.layers.abstract.conv_2d import AbstractConv2DPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
-                                   PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
+from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import TensorFormat, format_transpose
+
+__all__ = ("Conv2DPointwisePycuda",)
 
 logger = logging.getLogger(__name__)
 
 
 class Conv2DPointwisePycuda(AbstractConv2DPycuda):
-
     def _initializing_special_parameters(self):
         self.kh = self.kw = 1
         # Setting weights
@@ -67,21 +67,29 @@ class Conv2DPointwisePycuda(AbstractConv2DPycuda):
         n, c, h, w = self.model.decode_shape(x.shape)  # type: ignore (it's okay)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
-        self.fwd_func(x.ary, self.weights.ary, self.y.ary,
-                      np.int32(n), np.int32(c), np.int32(h), np.int32(w),
-                      np.int32(self.co), self.total_num_threads,
-                      grid=self.grid, block=self.block, stream=self.model.stream)
+        self.fwd_func(
+            x.ary,
+            self.weights.ary,
+            self.y.ary,
+            np.int32(n),
+            np.int32(c),
+            np.int32(h),
+            np.int32(w),
+            np.int32(self.co),
+            self.total_num_threads,
+            grid=self.grid,
+            block=self.block,
+            stream=self.model.stream,
+        )
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.use_bias:
             self.biases: TensorArray
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN_SUM_BIASES)
-            self.bias_sum_fwd(x.ary, self.biases.ary,
-                              np.int32(n), np.int32(c), np.int32(h), np.int32(w),
-                              np.int32(n * c * h * w),
-                              self.total_num_threads,
-                              grid=self.grid, block=self.block, stream=self.model.stream)
+            self.bias_sum_fwd(
+                x.ary, self.biases.ary, np.int32(n), np.int32(c), np.int32(h), np.int32(w), np.int32(n * c * h * w), self.total_num_threads, grid=self.grid, block=self.block, stream=self.model.stream
+            )
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return self.y
@@ -91,24 +99,37 @@ class Conv2DPointwisePycuda(AbstractConv2DPycuda):
         self.dx.fill(0)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
-        self.fwd_func(dy.ary, self.x.ary, self.weights.ary,
-                      self.dx.ary, self.dw.ary,
-                      np.int32(self.hpadding), np.int32(self.wpadding),
-                      np.int32(self.hstride), np.int32(self.wstride),
-                      np.int32(self.hdilation), np.int32(self.wdilation),
-                      np.int32(n), np.int32(c), np.int32(h), np.int32(w),
-                      np.int32(self.kh), np.int32(self.kw), np.int32(self.ho), np.int32(self.wo),
-                      self.total_num_threads,
-                      grid=self.grid, block=self.block, stream=self.model.stream)
+        self.fwd_func(
+            dy.ary,
+            self.x.ary,
+            self.weights.ary,
+            self.dx.ary,
+            self.dw.ary,
+            np.int32(self.hpadding),
+            np.int32(self.wpadding),
+            np.int32(self.hstride),
+            np.int32(self.wstride),
+            np.int32(self.hdilation),
+            np.int32(self.wdilation),
+            np.int32(n),
+            np.int32(c),
+            np.int32(h),
+            np.int32(w),
+            np.int32(self.kh),
+            np.int32(self.kw),
+            np.int32(self.ho),
+            np.int32(self.wo),
+            self.total_num_threads,
+            grid=self.grid,
+            block=self.block,
+            stream=self.model.stream,
+        )
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.use_bias:
             self.biases: TensorArray
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DB)
-            self.bias_sum_bwd(dy.ary, self.db.ary,
-                              np.int32(c), np.int32(h), np.int32(w),
-                              np.int32(n * c * h * w), self.total_num_threads,
-                              grid=self.grid, block=self.block, stream=self.model.stream)
+            self.bias_sum_bwd(dy.ary, self.db.ary, np.int32(c), np.int32(h), np.int32(w), np.int32(n * c * h * w), self.total_num_threads, grid=self.grid, block=self.block, stream=self.model.stream)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return self.dx

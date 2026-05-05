@@ -23,9 +23,22 @@ from math import prod
 
 import numpy as np
 
-import pydtnn
 from pydtnn.converters.pytorch2pydtnn.common import TRANSPOSE_WEIGHTS_LAYERS
 from pydtnn.utils import random
+
+__all__ = (
+    "Addition_Test_PyTorch_Model",
+    "Concat_Test_PyTorch_Model",
+    "TEST_PyTorch_Model",
+    "are_all_below_threshold",
+    "are_all_zeros",
+    "forward_pydtnn_model",
+    "main",
+    "print_model_reports",
+    "test_add_and_concat",
+    "test_layers",
+    "test_layers_gpu",
+)
 
 # CONSTANTS
 N = 100
@@ -63,13 +76,10 @@ KWARGS = {
     "dtype": DTYPE,
     "tracing": False,
     "tracer_output": "",
-    "batch_size": N
+    "batch_size": N,
 }
 
-TYPES_DATA_CUDA = {np.float64: "CUDNN_DATA_DOUBLE",
-                   np.float32: "CUDNN_DATA_FLOAT",
-                   np.int8: "CUDNN_DATA_INT8",
-                   np.int32: "CUDNN_DATA_INT32"}
+TYPES_DATA_CUDA = {np.float64: "CUDNN_DATA_DOUBLE", np.float32: "CUDNN_DATA_FLOAT", np.int8: "CUDNN_DATA_INT8", np.int32: "CUDNN_DATA_INT32"}
 
 DICT_SUPPORTED_LAYERS: dict[str, tuple[nn.Module, float]] = {
     # Activations:
@@ -107,7 +117,6 @@ def print_model_reports(model: PyDTNN_Model):
 
 
 class TEST_PyTorch_Model(PyTorch_Model):
-
     def __init__(self, layer):
         super().__init__()
         self.layer = layer
@@ -118,7 +127,6 @@ class TEST_PyTorch_Model(PyTorch_Model):
 
 
 class Addition_Test_PyTorch_Model(PyTorch_Model):
-
     def __init__(self):
         super().__init__()
         self.op0: nn.Module = DICT_SUPPORTED_LAYERS["AdaptiveAvgPool2d"][0]
@@ -142,7 +150,6 @@ class Addition_Test_PyTorch_Model(PyTorch_Model):
 
 
 class Concat_Test_PyTorch_Model(PyTorch_Model):
-
     def __init__(self):
         super().__init__()
         self.op0: nn.Module = DICT_SUPPORTED_LAYERS["AdaptiveAvgPool2d"][0]
@@ -196,17 +203,15 @@ def forward_pydtnn_model(model: PyDTNN_Model, dataset: np.ndarray | TensorArray)
 
 def test_layers_gpu(model: PyDTNN_Model, dataset: np.ndarray) -> TensorArray:
 
-    print(f"test_layers_gpu - model")
+    print("test_layers_gpu - model")
     model.show()
-    print(f"test_layers_gpu - model\n========")
+    print("test_layers_gpu - model\n========")
     print(f"model.dtype: {model.dtype}")
 
     print(f"TYPES_DATA_CUDA[model.dtype]: {TYPES_DATA_CUDA[model.dtype]}")
     dtype = model.dtype
     model.cudnn_dtype = cudnn.cudnnDataType[TYPES_DATA_CUDA[model.dtype]]
-    _dataset = TensorArray(
-        gpu_arr=gpuarray.zeros(shape=dataset.shape, dtype=dtype),
-        tensor_format=model.tensor_format, cudnn_dtype=model.cudnn_dtype)
+    _dataset = TensorArray(gpu_arr=gpuarray.zeros(shape=dataset.shape, dtype=dtype), tensor_format=model.tensor_format, cudnn_dtype=model.cudnn_dtype)
 
     _dataset.set(dataset)
     print(f"_dataset: {_dataset} | type(_dataset): {type(_dataset)} | _dataset.shape: {_dataset.shape}")
@@ -218,16 +223,22 @@ def test_layers_gpu(model: PyDTNN_Model, dataset: np.ndarray) -> TensorArray:
     return y  # type: ignore
 
 
-def test_layers(name: str, pytorch_model: TEST_PyTorch_Model, kwargs: dict[str, Any], input_shape: tuple[int, int, int],
-                device: torch.device, dataset: np.ndarray, threshold: float, function_to_test_layers: Callable) -> None:
+def test_layers(
+    name: str,
+    pytorch_model: TEST_PyTorch_Model,
+    kwargs: dict[str, Any],
+    input_shape: tuple[int, int, int],
+    device: torch.device,
+    dataset: np.ndarray,
+    threshold: float,
+    function_to_test_layers: Callable,
+) -> None:
 
     print(pytorch_model)
 
     print("=======================\n== Converted version ==\n=======================")
 
-    new_model: PyDTNN_Model = convert_model(model=pytorch_model, input_shape=input_shape,
-                                            default_output_activation_layer=None,
-                                            is_input_shape_in_format=True, **kwargs)
+    new_model: PyDTNN_Model = convert_model(model=pytorch_model, input_shape=input_shape, default_output_activation_layer=None, is_input_shape_in_format=True, **kwargs)
 
     new_model.mode = PyDTNN_Model.Mode.TRAIN
     # new_model.show()
@@ -266,7 +277,7 @@ def test_layers(name: str, pytorch_model: TEST_PyTorch_Model, kwargs: dict[str, 
     pydtnn_biases = pydtnn_layer.biases
 
     if isinstance(pydtnn_weights, TensorArray):
-        pydtnn_biases: TensorArray = pydtnn_biases.get()
+        pydtnn_biases: TensorArray = pydtnn_biases.get()  # type: ignore
 
     there_are_pytorch_biases = pytorch_biases is not None
     there_are_pydtnn_biases = pydtnn_biases is not None
@@ -302,8 +313,9 @@ def test_layers(name: str, pytorch_model: TEST_PyTorch_Model, kwargs: dict[str, 
     print("=========================================\n")
 
 
-def test_add_and_concat(name: str, pytorch_model: TEST_PyTorch_Model, kwargs: dict[str, Any], input_shape: tuple[int, int, int],
-                        device: torch.device, dataset: np.ndarray, threshold: float = THRESHOLD) -> None:
+def test_add_and_concat(
+    name: str, pytorch_model: TEST_PyTorch_Model, kwargs: dict[str, Any], input_shape: tuple[int, int, int], device: torch.device, dataset: np.ndarray, threshold: float = THRESHOLD
+) -> None:
 
     print(pytorch_model)
 
@@ -315,9 +327,7 @@ def test_add_and_concat(name: str, pytorch_model: TEST_PyTorch_Model, kwargs: di
 
     print("-----\n")
 
-    pydtnn_model: PyDTNN_Model = convert_model(model=pytorch_model, input_shape=input_shape,
-                                               default_output_activation_layer=None,
-                                               is_input_shape_in_format=True, **kwargs)
+    pydtnn_model: PyDTNN_Model = convert_model(model=pytorch_model, input_shape=input_shape, default_output_activation_layer=None, is_input_shape_in_format=True, **kwargs)
 
     # pydtnn_model.mode = ModelModeEnum.EVALUATE
     # pydtnn_model.show()
@@ -358,7 +368,7 @@ def main():
     kwargs = KWARGS
     quarter_elements = prod((N, *SHAPE)) / 4
 
-    device = torch.device("cpu") if kwargs["enable_cudnn"] == False else torch.device("cuda")
+    device = torch.device("cuda") if kwargs["enable_cudnn"] else torch.device("cpu")
     dataset_p = np.arange(quarter_elements, dtype=DTYPE) / 3
     dataset_p_int = np.arange(quarter_elements, dtype=DTYPE)
     dataset_n = np.arange(quarter_elements, dtype=DTYPE) * (-1 / 3)
@@ -366,7 +376,7 @@ def main():
 
     dataset = np.concat([dataset_p, dataset_p_int, dataset_n, dataset_n_int]).reshape((N, *SHAPE))
 
-    function_to_test_layers = (test_layers_gpu if device.type == "cuda" else forward_pydtnn_model)
+    function_to_test_layers = test_layers_gpu if device.type == "cuda" else forward_pydtnn_model
     for name in DICT_SUPPORTED_LAYERS.keys():
         layer, threshold = DICT_SUPPORTED_LAYERS[name]
         model = TEST_PyTorch_Model(layer)
@@ -375,16 +385,14 @@ def main():
         print(f"{dataset.min()=}")
         print(f"{dataset.max()=}\n")
 
-        test_layers(name=name, pytorch_model=model, kwargs=kwargs, input_shape=SHAPE,
-                    device=device, dataset=np.copy(dataset), threshold=threshold,
-                    function_to_test_layers=function_to_test_layers
-                    )
+        test_layers(name=name, pytorch_model=model, kwargs=kwargs, input_shape=SHAPE, device=device, dataset=np.copy(dataset), threshold=threshold, function_to_test_layers=function_to_test_layers)
 
     print("\n\n\n========================\n TESTING ADD AND CONCAT \n========================")
 
-    for name, model in [("Addition", Addition_Test_PyTorch_Model()),
-                        ("Concat", Concat_Test_PyTorch_Model()),
-                        ]:
+    for name, model in [
+        ("Addition", Addition_Test_PyTorch_Model()),
+        ("Concat", Concat_Test_PyTorch_Model()),
+    ]:
         print(f"Testing: {name}")
         test_add_and_concat(name=name, pytorch_model=model, kwargs=kwargs, input_shape=SHAPE, device=device, dataset=deepcopy(dataset))
 

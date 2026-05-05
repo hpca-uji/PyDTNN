@@ -7,10 +7,11 @@ from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.layers.abstract.pool_2d_layer import AbstractPool2DLayer
 from pydtnn.layers.layer import ParameterException
 from pydtnn.libs import cudnn as cudnn
-from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
-                                   PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
+from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.performance_models import col2im_time, im2col_time
+
+__all__ = ("AbstractPool2DLayerPycuda",)
 
 logger = logging.getLogger(__name__)
 
@@ -40,12 +41,10 @@ class AbstractPool2DLayerPycuda(AbstractPool2DLayer[TensorArray], LayerPycuda):
         if not (self.hdilation == 1 and self.wdilation == 1):
             raise ParameterException(f"cuDNN does not support dilated pooling. vdilation: {self.hdilation}, hdilation: {self.wdilation}")
 
-        nan_prop = cudnn.cudnnNanPropagation['CUDNN_NOT_PROPAGATE_NAN']
+        nan_prop = cudnn.cudnnNanPropagation["CUDNN_NOT_PROPAGATE_NAN"]
 
         self.pool_desc = cudnn.cudnnCreatePoolingDescriptor()
-        cudnn.cudnnSetPooling2dDescriptor(self.pool_desc, pool_mode, nan_prop,
-                                          self.kh, self.kw, self.hpadding, self.wpadding,
-                                          self.hstride, self.wstride)
+        cudnn.cudnnSetPooling2dDescriptor(self.pool_desc, pool_mode, nan_prop, self.kh, self.kw, self.hpadding, self.wpadding, self.hstride, self.wstride)
         # Get output dimensions
         _, _, self.ho, self.wo = cudnn.cudnnGetPooling2dForwardOutputDim(self.pool_desc, x.desc)
         self.shape = self.model.encode_shape((self.co, self.ho, self.wo))
@@ -60,21 +59,17 @@ class AbstractPool2DLayerPycuda(AbstractPool2DLayer[TensorArray], LayerPycuda):
         self.dx = TensorArray(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
         self.memory_used += self.dx.nbytes
 
-        self.fwd_time = \
-            im2col_time(m=(self.kh * self.kw), n=(self.model.batch_size * self.ho * self.wo * self.ci),
-                        cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw,
-                        dtype=self.model.dtype)  # type: ignore (it's fine)
-        self.bwd_time = \
-            col2im_time(m=(self.kh * self.kw), n=(self.model.batch_size * self.ho * self.wo * self.ci),
-                        cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw,
-                        dtype=self.model.dtype)  # type: ignore (it's fine)
+        self.fwd_time = im2col_time(
+            m=(self.kh * self.kw), n=(self.model.batch_size * self.ho * self.wo * self.ci), cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw, dtype=self.model.dtype
+        )  # type: ignore (it's fine)
+        self.bwd_time = col2im_time(
+            m=(self.kh * self.kw), n=(self.model.batch_size * self.ho * self.wo * self.ci), cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw, dtype=self.model.dtype
+        )  # type: ignore (it's fine)
 
     def forward(self, x: TensorArray) -> TensorArray:
         alpha, beta = 1.0, 0.0
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
-        cudnn.cudnnPoolingForward(self.model.cudnn_handle, self.pool_desc, alpha,
-                                  x.desc, x.ptr_voidp, beta,
-                                  self.y.desc, self.y.ptr_voidp)
+        cudnn.cudnnPoolingForward(self.model.cudnn_handle, self.pool_desc, alpha, x.desc, x.ptr_voidp, beta, self.y.desc, self.y.ptr_voidp)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.y
 
@@ -82,10 +77,8 @@ class AbstractPool2DLayerPycuda(AbstractPool2DLayer[TensorArray], LayerPycuda):
         alpha, beta = 1.0, 0.0
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
         # Compute dx
-        cudnn.cudnnPoolingBackward(self.model.cudnn_handle, self.pool_desc, alpha,
-                                   self.y.desc, self.y.ptr_voidp,
-                                   dy.desc, dy.ptr_voidp,
-                                   self.x.desc, self.x.ptr_voidp,
-                                   beta, self.dx.desc, self.dx.ptr_voidp)
+        cudnn.cudnnPoolingBackward(
+            self.model.cudnn_handle, self.pool_desc, alpha, self.y.desc, self.y.ptr_voidp, dy.desc, dy.ptr_voidp, self.x.desc, self.x.ptr_voidp, beta, self.dx.desc, self.dx.ptr_voidp
+        )
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.dx

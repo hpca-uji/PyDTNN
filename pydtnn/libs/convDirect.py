@@ -1,6 +1,7 @@
 """
 PyDTNN convDirect module
 """
+
 import ctypes
 import logging
 import weakref
@@ -10,6 +11,8 @@ import numpy as np
 from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython
 from pydtnn.utils import load_library
 from pydtnn.utils.tensor import TensorFormat, decode_shape, encode_shape
+
+__all__ = ("ConvDirect",)
 
 logger = logging.getLogger(__name__)
 
@@ -50,8 +53,7 @@ class ConvDirect:
     def _set_methods(self, method_name):
         return
 
-    def __init__(self, method_name, dtype: np.dtype = np.dtype(np.float32), tensor_format=TensorFormat.NHWC,
-                 debug=False, parent_layer=None):
+    def __init__(self, method_name, dtype: np.dtype = np.dtype(np.float32), tensor_format=TensorFormat.NHWC, debug=False, parent_layer=None):
         """
         Loads the libconvDirect.so library.
 
@@ -91,14 +93,9 @@ class ConvDirect:
         self._YT = ctypes.POINTER(ctypes.c_float)()
 
         try:
-            [self._conv_direct_pre,
-             self._conv_direct_kernel,
-             self._conv_direct_post] = [getattr(self.__class__.lib_cd, method_name + suffix)
-                                        for suffix in ('_pre', '_kernel', '_post')]
+            [self._conv_direct_pre, self._conv_direct_kernel, self._conv_direct_post] = [getattr(self.__class__.lib_cd, method_name + suffix) for suffix in ("_pre", "_kernel", "_post")]
         except AttributeError as exc:
-            raise NotImplementedError("Error: Method '{}' not supported by convDirect library.\n"
-                                      "       Run convDirect_info to see the convDirect supported methods."
-                                      "".format(method_name)) from exc
+            raise NotImplementedError("Error: Method '{}' not supported by convDirect library.\n       Run convDirect_info to see the convDirect supported methods.".format(method_name)) from exc
 
         self._reuse_processed_weights = False
         if self.evaluate_only and method_name.find("convdirect_block_blis") == 0:
@@ -111,14 +108,25 @@ class ConvDirect:
     def decode_shape(self, shape):
         return decode_shape(shape, self.tensor_format)
 
-    def conv_direct(self, weights: np.ndarray, x: np.ndarray,
-                    # NOTE: "out" originally was called "biases"
-                    out: np.ndarray | None = None,  # type: ignore
-                    vpadding=0, hpadding=0,
-                    vstride=1, hstride=1,
-                    vdilation=1, hdilation=1,
-                    relu=False, bn=False, running_mean=None,
-                    inv_std=None, gamma=None, beta=None):
+    def conv_direct(
+        self,
+        weights: np.ndarray,
+        x: np.ndarray,
+        # NOTE: "out" originally was called "biases"
+        out: np.ndarray | None = None,  # type: ignore
+        vpadding=0,
+        hpadding=0,
+        vstride=1,
+        hstride=1,
+        vdilation=1,
+        hdilation=1,
+        relu=False,
+        bn=False,
+        running_mean=None,
+        inv_std=None,
+        gamma=None,
+        beta=None,
+    ):
 
         n, ci, hi, wi = self.decode_shape(x.shape)
 
@@ -164,15 +172,21 @@ class ConvDirect:
             #     DTYPE **DT,               \
             #     DTYPE **FT,               \
             #     DTYPE **YT
-            self._conv_direct_pre(ctypes.c_int(t), ctypes.c_int(Co), ctypes.c_int(Ci),
-                                  ctypes.c_int(Ho), ctypes.c_int(Wo),
-                                  ctypes.c_int(Hf), ctypes.c_int(Wf),
-                                  ctypes.c_void_p(x.ctypes.data),
-                                  ctypes.c_void_p(weights.ctypes.data),
-                                  ctypes.c_void_p(out.ctypes.data),
-                                  ctypes.byref(self._DT),
-                                  ctypes.byref(self._FT),
-                                  ctypes.byref(self._YT))
+            self._conv_direct_pre(
+                ctypes.c_int(t),
+                ctypes.c_int(Co),
+                ctypes.c_int(Ci),
+                ctypes.c_int(Ho),
+                ctypes.c_int(Wo),
+                ctypes.c_int(Hf),
+                ctypes.c_int(Wf),
+                ctypes.c_void_p(x.ctypes.data),
+                ctypes.c_void_p(weights.ctypes.data),
+                ctypes.c_void_p(out.ctypes.data),
+                ctypes.byref(self._DT),
+                ctypes.byref(self._FT),
+                ctypes.byref(self._YT),
+            )
             self._weights_already_processed = True
 
         # #define CONVDIRECT_KERNEL_PARAMS  \
@@ -187,17 +201,26 @@ class ConvDirect:
         #     const DTYPE *FT,              \
         #     DTYPE beta,                   \
         #     DTYPE *YT
-        self._conv_direct_kernel(ctypes.c_int(t), ctypes.c_int(Co), ctypes.c_int(Ci),
-                                 ctypes.c_int(Ho), ctypes.c_int(Wo),
-                                 ctypes.c_int(Hf), ctypes.c_int(Wf),
-                                 ctypes.c_int(vpadding), ctypes.c_int(hpadding),
-                                 ctypes.c_int(vstride), ctypes.c_int(hstride),
-                                 ctypes.c_int(vdilation), ctypes.c_int(hdilation),
-                                 ctypes.c_float(1.0),
-                                 self._DT,
-                                 self._FT,
-                                 ctypes.c_float(1.0),
-                                 self._YT)
+        self._conv_direct_kernel(
+            ctypes.c_int(t),
+            ctypes.c_int(Co),
+            ctypes.c_int(Ci),
+            ctypes.c_int(Ho),
+            ctypes.c_int(Wo),
+            ctypes.c_int(Hf),
+            ctypes.c_int(Wf),
+            ctypes.c_int(vpadding),
+            ctypes.c_int(hpadding),
+            ctypes.c_int(vstride),
+            ctypes.c_int(hstride),
+            ctypes.c_int(vdilation),
+            ctypes.c_int(hdilation),
+            ctypes.c_float(1.0),
+            self._DT,
+            self._FT,
+            ctypes.c_float(1.0),
+            self._YT,
+        )
 
         if not self._reuse_processed_weights:
             # #define CONVDIRECT_POST_PARAMS \
@@ -208,28 +231,55 @@ class ConvDirect:
             #     DTYPE **FT,                \
             #     DTYPE **YT,                \
             #     DTYPE *Y
-            self._conv_direct_post(ctypes.c_int(t), ctypes.c_int(Co), ctypes.c_int(Ci),
-                                   ctypes.c_int(Ho), ctypes.c_int(Wo),
-                                   ctypes.c_int(Hf), ctypes.c_int(Wf),
-                                   ctypes.c_float(1.0),
-                                   ctypes.byref(self._DT),
-                                   ctypes.byref(self._FT),
-                                   ctypes.byref(self._YT),
-                                   ctypes.c_void_p(out.ctypes.data))
+            self._conv_direct_post(
+                ctypes.c_int(t),
+                ctypes.c_int(Co),
+                ctypes.c_int(Ci),
+                ctypes.c_int(Ho),
+                ctypes.c_int(Wo),
+                ctypes.c_int(Hf),
+                ctypes.c_int(Wf),
+                ctypes.c_float(1.0),
+                ctypes.byref(self._DT),
+                ctypes.byref(self._FT),
+                ctypes.byref(self._YT),
+                ctypes.c_void_p(out.ctypes.data),
+            )
         return out
 
 
-def time_it_func(x: np.ndarray, w_c: np.ndarray, out: np.ndarray,
-                 b: int, kn: int,
-                 ho: int, wo: int, kh: int, kw: int,
-                 vpadding: int, hpadding: int, vstride: int, hstride: int,
-                 vdilation: int, hdilation: int,
-                 ) -> int | float:
+def time_it_func(
+    x: np.ndarray,
+    w_c: np.ndarray,
+    out: np.ndarray,
+    b: int,
+    kn: int,
+    ho: int,
+    wo: int,
+    kh: int,
+    kw: int,
+    vpadding: int,
+    hpadding: int,
+    vstride: int,
+    hstride: int,
+    vdilation: int,
+    hdilation: int,
+) -> int | float:
     res = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype=x.dtype)
-    im2row_nhwc_cython(x, res,  # type: ignore
-                       kh, kw, ho, wo,
-                       vpadding, hpadding, vstride, hstride,
-                       vdilation, hdilation)
+    im2row_nhwc_cython(
+        x,
+        res,  # type: ignore
+        kh,
+        kw,
+        ho,
+        wo,
+        vpadding,
+        hpadding,
+        vstride,
+        hstride,
+        vdilation,
+        hdilation,
+    )
     res = res @ w_c
     res += out.reshape(b * ho * wo, kn)
     return res  # type: ignore
@@ -266,9 +316,9 @@ def __usage_example__():
     wo = (w + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
 
     # NCHW --------------------------
-    weights = random.random((c, kh, kw, kn)).astype(np.float32, order='C')
-    x = random.random((b, h, w, c)).astype(np.float32, order='C')
-    out = (np.ones((b, ho, wo, kn)) * 10).astype(np.float32, order='C')
+    weights = random.random((c, kh, kw, kn)).astype(np.float32, order="C")
+    x = random.random((b, h, w, c)).astype(np.float32, order="C")
+    out = (np.ones((b, ho, wo, kn)) * 10).astype(np.float32, order="C")
 
     logger.info("Using conv_direct to compute weights * x + out...")
     # conv_direct = ConvDirect("convdirect_im2row_nhwc_default")
@@ -276,26 +326,17 @@ def __usage_example__():
     # conv_direct = ConvDirect("convdirect_conv_gemm_nhwc_default")
     # from ipdb import launch_ipdb_on_exception
     # with launch_ipdb_on_exception():
-    conv_direct_result = conv_direct.conv_direct(weights, x, out,
-                                                 vpadding=vpadding, hpadding=hpadding,
-                                                 vstride=vstride, hstride=hstride,
-                                                 vdilation=vdilation, hdilation=hdilation)
-    conv_direct_t = timeit(lambda: conv_direct.conv_direct(weights, x, out,
-                                                           vpadding=vpadding, hpadding=hpadding,
-                                                           vstride=vstride, hstride=hstride,
-                                                           vdilation=vdilation, hdilation=hdilation),
-                           number=10) / 10
+    conv_direct_result = conv_direct.conv_direct(weights, x, out, vpadding=vpadding, hpadding=hpadding, vstride=vstride, hstride=hstride, vdilation=vdilation, hdilation=hdilation)
+    conv_direct_t = (
+        timeit(lambda: conv_direct.conv_direct(weights, x, out, vpadding=vpadding, hpadding=hpadding, vstride=vstride, hstride=hstride, vdilation=vdilation, hdilation=hdilation), number=10) / 10
+    )
     logger.info("Using im2col and mm NHWC ...")
 
     x_c = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype=x.dtype)
-    im2row_nhwc_cython(x, x_c,
-                       kh, kw, ho, wo,
-                       vpadding, hpadding, vstride, hstride, vdilation, hdilation)
+    im2row_nhwc_cython(x, x_c, kh, kw, ho, wo, vpadding, hpadding, vstride, hstride, vdilation, hdilation)
     w_c = weights.reshape(-1, kn)
     im2col_mm_result_nhwc = (x_c @ w_c + out.reshape(b * ho * wo, kn)).reshape(-1, ho, wo, kn)
-    mm_t = timeit(
-        lambda: time_it_func(x, w_c, out, b, kn, ho, wo, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation),
-        number=10) / 10
+    mm_t = timeit(lambda: time_it_func(x, w_c, out, b, kn, ho, wo, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation), number=10) / 10
 
     logger.info("conv_direct time: {:.4f}".format(conv_direct_t))
     logger.info("im2row + mm time: {:.4f}".format(mm_t))

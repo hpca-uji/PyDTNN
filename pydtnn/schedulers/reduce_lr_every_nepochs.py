@@ -7,6 +7,8 @@ from numpy import ndarray
 
 from pydtnn.schedulers.scheduler import Scheduler
 
+__all__ = ("ReduceLREveryNEpochs",)
+
 logger = logging.getLogger(__name__)
 
 
@@ -33,6 +35,4 @@ class ReduceLREveryNEpochs(Scheduler):
 
     @classmethod
     def from_model(cls, model: Model) -> ReduceLREveryNEpochs:
-        return ReduceLREveryNEpochs(model.reduce_lr_every_nepochs_factor,
-                                    model.reduce_lr_every_nepochs_nepochs,
-                                    model.reduce_lr_every_nepochs_min_lr)
+        return ReduceLREveryNEpochs(model.reduce_lr_every_nepochs_factor, model.reduce_lr_every_nepochs_nepochs, model.reduce_lr_every_nepochs_min_lr)

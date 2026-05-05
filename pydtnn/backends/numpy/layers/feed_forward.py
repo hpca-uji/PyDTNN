@@ -2,12 +2,13 @@ import logging
 from typing import TYPE_CHECKING
 
 from pydtnn.activations.relu import Relu
-from pydtnn.backends.numpy.layers.abstract.block_layer import \
-    AbstractBlockLayerNumpy
+from pydtnn.backends.numpy.layers.abstract.block_layer import AbstractBlockLayerNumpy
 from pydtnn.layers.dropout import Dropout
 from pydtnn.layers.fc import FC
 from pydtnn.layers.feed_forward import FeedForward
 from pydtnn.libs import numpy as np
+
+__all__ = ("FeedForwardNumpy",)
 
 logger = logging.getLogger(__name__)
 

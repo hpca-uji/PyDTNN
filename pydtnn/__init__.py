@@ -9,6 +9,38 @@ from collections import Counter
 from datetime import datetime
 from types import ModuleType
 
+__all__ = (
+    "MPI_MODULE",
+    "Cudnn_Handle_Type",
+    "Cublas_Handle_Type",
+    "gpu_errors",
+    "package_name",
+    "timestamp",
+    "MPI",
+    "cupy",
+    "pycuda",
+    "drv",
+    "gpuarray",
+    "stream",
+    "has_drv",
+    "tensor_array",
+    "nccl",
+    "cudnn",
+    "cublas",
+    "rank",
+    "nprocs",
+    "hostname",
+    "ranks_per_node",
+    "num_gpus",
+    "supported_gpu",
+    "nccl_comm",
+    "context",
+    "stream",
+    "stream_handle",
+    "cudnn_handle",
+    "cublas_handle",
+)
+
 logger = logging.getLogger(__name__)
 
 
@@ -28,6 +60,7 @@ except Exception:
 
 try:
     import cupy  # type: ignore
+
     logger.debug("Cupy available")
 except Exception as e:
     logger.debug(f"Cupy not available\n{e}")
@@ -36,8 +69,11 @@ except Exception as e:
 
 try:
     import pycuda  # type: ignore
+
     logger.debug("PyCuda available")
+
     import pycuda.driver as drv  # type: ignore
+
     logger.debug("drv available")
 except Exception as e:
     logger.debug(f"PyCuda or drv not available\n{e}")
@@ -49,10 +85,12 @@ except Exception as e:
     has_drv = False
 else:
     import pycuda.gpuarray as gpuarray  # type: ignore
+
     has_drv = True
 
 try:
     from pydtnn.backends.pycuda.utils import tensor_array  # type: ignore
+
     logger.debug("tensor_array available")
 except Exception as e:
     logger.debug(f"tensor_array not available\n{e}")
@@ -61,6 +99,7 @@ except Exception as e:
 
 try:
     from pydtnn.libs import nccl as nccl  # type: ignore
+
     logger.debug("nccl available")
 except Exception as e:
     logger.debug(f"nccl not available\n{e}")
@@ -69,6 +108,7 @@ except Exception as e:
 
 try:
     from pydtnn.libs import cudnn as cudnn  # type: ignore
+
     logger.debug("cudnn available")
 except Exception as e:
     logger.debug(f"cudnn not available\n{e}")
@@ -77,6 +117,7 @@ except Exception as e:
 
 try:
     from pydtnn.libs import cublas  # type: ignore
+
     logger.debug("cublas available")
 except Exception as e:
     logger.debug(f"cublas available\n{e}")
@@ -98,7 +139,7 @@ else:
 
 # INIT GPU
 try:
-    num_gpus = subprocess.check_output(["nvidia-smi", "-L"]).count(b'UUID')
+    num_gpus = subprocess.check_output(["nvidia-smi", "-L"]).count(b"UUID")
 except (FileNotFoundError, subprocess.CalledProcessError):
     num_gpus = 0
 os.environ["CUDA_VISIBLE_DEVICES"] = str(rank % num_gpus) if num_gpus else ""

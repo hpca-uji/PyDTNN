@@ -5,6 +5,8 @@ from pydtnn.backends.numpy.layers.layer import LayerNumpy
 from pydtnn.layers.layer_normalization import LayerNormalization
 from pydtnn.libs import numpy as np
 
+__all__ = ("LayerNormalizationNumpy",)
+
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
@@ -15,8 +17,8 @@ class LayerNormalizationNumpy(LayerNormalization[np.ndarray], LayerNumpy):
     def forward(self, x: np.ndarray) -> np.ndarray:
         # TODO: Check how to initialize this parameters outside (in the initalization layer)
         mu = np.mean(x, axis=self.axis, keepdims=True)
-        xc = (x - mu)
-        var = np.mean(xc ** 2, axis=self.axis, keepdims=True)
+        xc = x - mu
+        var = np.mean(xc**2, axis=self.axis, keepdims=True)
 
         # self.std = np.sqrt(var + self.epsilon)
         self.std: np.ndarray = np.add(var, self.epsilon)

@@ -4,11 +4,15 @@ from pydtnn.abstract.layerable import Layerable
 from pydtnn.utils import find_component
 from pydtnn.utils.constants import Array, ArrayShape
 
+__all__ = (
+    "Activation",
+    "select",
+)
+
 logger = logging.getLogger(__name__)
 
 
 class Activation[T: Array](Layerable[T]):
-
     def __init__(self, shape: ArrayShape = (1,)):
         super().__init__(shape)
 

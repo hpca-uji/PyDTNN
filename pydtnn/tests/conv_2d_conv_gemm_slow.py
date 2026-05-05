@@ -8,6 +8,8 @@ from pydtnn.libs.mpi import MPI
 from pydtnn.tests.conv_2d_conv_gemm import Conv2DConvGemmTestCase, D
 from pydtnn.utils import random
 
+__all__ = ("Conv2DConvGemmSlowTestCase",)
+
 logger = logging.getLogger(__name__)
 
 
@@ -15,6 +17,7 @@ class Conv2DConvGemmSlowTestCase(Conv2DConvGemmTestCase):
     """
     Tests that Conv2D with conv_gemm leads to the same results than Conv2d with mm and i2c.T (exhaustive version)
     """
+
     # NOTE: Delete parent test to prevent re-export and re-testing
     global Conv2DConvGemmTestCase
     del Conv2DConvGemmTestCase
@@ -22,40 +25,46 @@ class Conv2DConvGemmSlowTestCase(Conv2DConvGemmTestCase):
     random.seed(0)  # type: ignore
     dtype = np.float32
 
-    R = list(itertools.product(
-        range(1, 4),   # kn
-        range(1, 4),   # b
-        range(8, 11),  # c
-        range(8, 11),  # h
-        range(8, 11),  # w
-        range(2, 12),  # kh
-        range(2, 12),  # kw
-        range(0, 4),   # vp
-        range(0, 4),   # hp
-        range(1, 4),   # vs
-        range(1, 4)    # hs
-    ))
+    R = list(
+        itertools.product(
+            range(1, 4),  # kn
+            range(1, 4),  # b
+            range(8, 11),  # c
+            range(8, 11),  # h
+            range(8, 11),  # w
+            range(2, 12),  # kh
+            range(2, 12),  # kw
+            range(0, 4),  # vp
+            range(0, 4),  # hp
+            range(1, 4),  # vs
+            range(1, 4),  # hs
+        )
+    )
 
-    X = random.random((
-        4,   # b
-        11,  # c
-        11,  # h
-        11   # w
-    )).astype(dtype)
+    X = random.random(
+        (
+            4,  # b
+            11,  # c
+            11,  # h
+            11,  # w
+        )
+    ).astype(dtype)
 
-    W = random.random((
-        4,   # kn
-        11,  # c
-        11,  # kh
-        11,  # kw
-    )).astype(dtype)
+    W = random.random(
+        (
+            4,  # kn
+            11,  # c
+            11,  # kh
+            11,  # kw
+        )
+    ).astype(dtype)
 
     def test_forward_backward_multiple_params(self):
         """Tests that different input matrices, paddings and strides, lead to the same solution"""
         start = time.time()
 
         comm = MPI.COMM_WORLD
-        batch = self.R[comm.rank::comm.size]
+        batch = self.R[comm.rank:: comm.size]
 
         for i, params in enumerate(batch):
             self._test_forward_backward_multiple_params(*params)
@@ -79,13 +88,10 @@ class Conv2DConvGemmSlowTestCase(Conv2DConvGemmTestCase):
             return
 
         if d.b != 1 or d.c != 1:
-            x = self.X[:d.b, :d.c, :d.h, :d.w].copy(order="C")
+            x = self.X[: d.b, : d.c, : d.h, : d.w].copy(order="C")
         else:
-            x = np.concatenate([
-                np.arange(b := (i + 1) * 100, b + d.w, dtype=np.float32)
-                for i in range(d.h)
-            ]).reshape((d.b, d.c, d.h, d.w))
+            x = np.concatenate([np.arange(b := (i + 1) * 100, b + d.w, dtype=np.float32) for i in range(d.h)]).reshape((d.b, d.c, d.h, d.w))
 
-        weights = self.W[:d.kn, :d.c, :d.kh, :d.kw].copy(order="C")
+        weights = self.W[: d.kn, : d.c, : d.kh, : d.kw].copy(order="C")
 
         self._test_forward_backward(d, x, weights)

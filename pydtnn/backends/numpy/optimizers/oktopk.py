@@ -3,14 +3,14 @@ import warnings
 from typing import TYPE_CHECKING
 
 from pydtnn.abstract.layerable import Layerable
-from pydtnn.backends.cython.utils.oktopk_utils_cython import (
-    compute_dense_acc_cython, intersect_2d_indexes_cython,
-    reset_residuals_cython, update_sparsed_weights_cython,
-    update_sparsed_weights_mv_cython)
+from pydtnn.backends.cython.utils.oktopk_utils_cython import (compute_dense_acc_cython, intersect_2d_indexes_cython, reset_residuals_cython,
+                                                              update_sparsed_weights_cython, update_sparsed_weights_mv_cython)
 from pydtnn.backends.numpy.optimizers.optimizer import OptimizerNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.optimizers.oktopk import OkTopk
 from pydtnn.utils.sparse.sparse import SparseMatrixCOO
+
+__all__ = ("OkTopkNumpy",)
 
 logger = logging.getLogger(__name__)
 
@@ -126,7 +126,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
             return np.zeros_like(acc)
 
         if method == "cython":
-            assert (self._has_canonical_format(indexes))
+            assert self._has_canonical_format(indexes)
             return reset_residuals_cython(acc, indexes[0], indexes[1])
 
         if method == "numpy":
@@ -499,8 +499,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
                 # recv_req = self.model.comm.irecv(source=receive_from)
                 # self.model.comm.send(coo_region_partial_sum[region_to_send], dest=destination)
                 # coo_region_partial_sum[region_to_recv] += recv_req.wait()
-                coo_region_partial_sum[region_to_recv] += self.model.comm.sendrecv(coo_region_partial_sum[region_to_send],
-                                                                                   dest=destination, source=receive_from)
+                coo_region_partial_sum[region_to_recv] += self.model.comm.sendrecv(coo_region_partial_sum[region_to_send], dest=destination, source=receive_from)
 
             return coo_region_partial_sum[self.model.rank]
 

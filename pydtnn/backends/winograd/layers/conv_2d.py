@@ -5,18 +5,17 @@ import numpy as np
 from pydtnn.backends.cython.utils.im2col_nchw_cython import im2col_nchw_cython
 from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython
 from pydtnn.backends.numpy.layers.conv_2d import Conv2DNumpy
-from pydtnn.backends.winograd.layers.abstract.conv_2d import \
-    AbstractConv2DWinograd
+from pydtnn.backends.winograd.layers.abstract.conv_2d import AbstractConv2DWinograd
 from pydtnn.libs.convWinograd import ConvWinograd
-from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
-                                   PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
+from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
 from pydtnn.utils.tensor import TensorFormat
+
+__all__ = ("Conv2DWinograd",)
 
 logger = logging.getLogger(__name__)
 
 
 class Conv2DWinograd(Conv2DNumpy, AbstractConv2DWinograd):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # convWinograd related attributes (will be initialized in initialize())
@@ -25,10 +24,9 @@ class Conv2DWinograd(Conv2DNumpy, AbstractConv2DWinograd):
     def _model_init(self, prev_shape, x: np.ndarray | None = None):
         super()._model_init(prev_shape, x)
         # ConvWinograd parameters
-        self.cw = ConvWinograd(self.kh, self.kw, self.hstride, self.wstride,
-                               self.hdilation, self.wdilation,
-                               dtype=self.model.dtype, tensor_format=self.model.tensor_format,
-                               debug=self.debug, parent_layer=self)
+        self.cw = ConvWinograd(
+            self.kh, self.kw, self.hstride, self.wstride, self.hdilation, self.wdilation, dtype=self.model.dtype, tensor_format=self.model.tensor_format, debug=self.debug, parent_layer=self
+        )
 
         match self.model.tensor_format:
             case TensorFormat.NCHW:
@@ -46,10 +44,17 @@ class Conv2DWinograd(Conv2DNumpy, AbstractConv2DWinograd):
         self.cw_x = x
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVWINOGRAD)
-        y: np.ndarray = self.cw.conv_winograd_nhwc(np.asarray(self.weights, dtype=self.model.dtype), x, biases=np.asarray(self.biases, dtype=self.model.dtype),
-                                                   vpadding=self.hpadding, hpadding=self.wpadding,
-                                                   vstride=self.hstride, hstride=self.wstride,
-                                                   vdilation=self.hdilation, hdilation=self.wdilation)
+        y: np.ndarray = self.cw.conv_winograd_nhwc(
+            np.asarray(self.weights, dtype=self.model.dtype),
+            x,
+            biases=np.asarray(self.biases, dtype=self.model.dtype),
+            vpadding=self.hpadding,
+            hpadding=self.wpadding,
+            vstride=self.hstride,
+            hstride=self.wstride,
+            vdilation=self.hdilation,
+            hdilation=self.wdilation,
+        )
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return y
 
@@ -59,10 +64,17 @@ class Conv2DWinograd(Conv2DNumpy, AbstractConv2DWinograd):
         self.cw_x = x
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVWINOGRAD)
-        y: np.ndarray = self.cw.conv_winograd_nchw(np.asarray(self.weights, dtype=self.model.dtype), x, biases=np.asarray(self.biases, dtype=self.model.dtype),
-                                                   vpadding=self.hpadding, hpadding=self.wpadding,
-                                                   vstride=self.hstride, hstride=self.wstride,
-                                                   vdilation=self.hdilation, hdilation=self.wdilation)
+        y: np.ndarray = self.cw.conv_winograd_nchw(
+            np.asarray(self.weights, dtype=self.model.dtype),
+            x,
+            biases=np.asarray(self.biases, dtype=self.model.dtype),
+            vpadding=self.hpadding,
+            hpadding=self.wpadding,
+            vstride=self.hstride,
+            hstride=self.wstride,
+            vdilation=self.hdilation,
+            hdilation=self.wdilation,
+        )
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return y
 
@@ -72,10 +84,20 @@ class Conv2DWinograd(Conv2DNumpy, AbstractConv2DWinograd):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_IM2COL)
 
         self.x_rows = np.zeros(((dy.shape[0] * self.ho * self.wo), (self.ci * self.kh * self.kw)), dtype=self.model.dtype)
-        im2row_nhwc_cython(self.cw_x, self.x_rows,  # type: ignore
-                           self.kh, self.kw, self.ho, self.wo,
-                           self.hpadding, self.wpadding,
-                           self.hstride, self.wstride, self.hdilation, self.wdilation)
+        im2row_nhwc_cython(
+            self.cw_x,
+            self.x_rows,  # type: ignore
+            self.kh,
+            self.kw,
+            self.ho,
+            self.wo,
+            self.hpadding,
+            self.wpadding,
+            self.hstride,
+            self.wstride,
+            self.hdilation,
+            self.wdilation,
+        )
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return self._backward_i2c_nhwc(dy)
@@ -85,12 +107,20 @@ class Conv2DWinograd(Conv2DNumpy, AbstractConv2DWinograd):
         n, c, _, _ = dy.shape
         self.x_cols = np.zeros((c * self.kh * self.kw, n * self.ho * self.wo))
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_IM2COL)
-        im2col_nchw_cython(self.cw_x, self.x_cols,  # type: ignore
-                           self.kh, self.kw,
-                           self.ho, self.wo,
-                           self.hpadding, self.wpadding,
-                           self.hstride, self.wstride,
-                           self.hdilation, self.wdilation)
+        im2col_nchw_cython(
+            self.cw_x,
+            self.x_cols,  # type: ignore
+            self.kh,
+            self.kw,
+            self.ho,
+            self.wo,
+            self.hpadding,
+            self.wpadding,
+            self.hstride,
+            self.wstride,
+            self.hdilation,
+            self.wdilation,
+        )
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return self._backward_i2c_nchw(dy)

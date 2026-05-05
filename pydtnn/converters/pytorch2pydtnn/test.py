@@ -2,42 +2,36 @@ import torch  # type: ignore
 from model_convertor import convert_model
 from torch.nn import CrossEntropyLoss  # type: ignore
 from torchmetrics import Accuracy, Metric  # type: ignore
-from torchvision.models import (alexnet, densenet121,  # type: ignore
-                                densenet169, densenet201, googlenet, resnet18,
-                                resnet34, resnet50, resnet101, resnet152,
-                                vgg11, vgg16, vgg19)
+from torchvision.models import alexnet, densenet121, densenet169, densenet201, googlenet, resnet18, resnet34, resnet50, resnet101, resnet152, vgg11, vgg16, vgg19  # type: ignore
 
 from pydtnn.activations.softmax import Softmax
 from pydtnn.datasets.dataset import Dataset
 from pydtnn.datasets.dataset import select as select_dataset
 from pydtnn.model import Model as PyDTNN_Model
-from pydtnn.models.alexnet_cifar10 import \
-    alexnet_cifar10 as pydtnn_alexnet_cifar10
-from pydtnn.models.densenet121_cifar10 import \
-    densenet121_cifar10 as pydtnn_densenet121_cifar10
-from pydtnn.models.densenet169_cifar10 import \
-    densenet169_cifar10 as pydtnn_densenet169_cifar10
-from pydtnn.models.densenet201_cifar10 import \
-    densenet201_cifar10 as pydtnn_densenet201_cifar10
-from pydtnn.models.inceptionv3_cifar10 import \
-    inceptionv3_cifar10 as pydtnn_inceptionv3_cifar10
-from pydtnn.models.resnet18_cifar10 import \
-    resnet18_cifar10 as pydtnn_resnet18_cifar10
-from pydtnn.models.resnet34_cifar10 import \
-    resnet34_cifar10 as pydtnn_resnet34_cifar10
-from pydtnn.models.resnet50_cifar10 import \
-    resnet50_cifar10 as pydtnn_resnet50_cifar10
-from pydtnn.models.resnet101_cifar10 import \
-    resnet101_cifar10 as pydtnn_resnet101_cifar10
-from pydtnn.models.resnet152_cifar10 import \
-    resnet152_cifar10 as pydtnn_resnet152_cifar10
+from pydtnn.models.alexnet_cifar10 import alexnet_cifar10 as pydtnn_alexnet_cifar10
+from pydtnn.models.densenet121_cifar10 import densenet121_cifar10 as pydtnn_densenet121_cifar10
+from pydtnn.models.densenet169_cifar10 import densenet169_cifar10 as pydtnn_densenet169_cifar10
+from pydtnn.models.densenet201_cifar10 import densenet201_cifar10 as pydtnn_densenet201_cifar10
+from pydtnn.models.inceptionv3_cifar10 import inceptionv3_cifar10 as pydtnn_inceptionv3_cifar10
+from pydtnn.models.resnet18_cifar10 import resnet18_cifar10 as pydtnn_resnet18_cifar10
+from pydtnn.models.resnet34_cifar10 import resnet34_cifar10 as pydtnn_resnet34_cifar10
+from pydtnn.models.resnet50_cifar10 import resnet50_cifar10 as pydtnn_resnet50_cifar10
+from pydtnn.models.resnet101_cifar10 import resnet101_cifar10 as pydtnn_resnet101_cifar10
+from pydtnn.models.resnet152_cifar10 import resnet152_cifar10 as pydtnn_resnet152_cifar10
 from pydtnn.models.vgg11 import vgg11 as pydtnn_vgg11
 from pydtnn.models.vgg16 import vgg16 as pydtnn_vgg16
-from pydtnn.models.vgg19_imagenet import \
-    vgg19_imagenet as pydtnn_vgg19_imagenet
+from pydtnn.models.vgg19_imagenet import vgg19_imagenet as pydtnn_vgg19_imagenet
 
 # from pydtnn.utils.best_of import BestOf
 
+__all__ = (
+    "get_model_layers",
+    "main",
+    "print_model_reports",
+    "pydtnn_inference",
+    "pydtnn_training",
+    "pytorch_inference",
+)
 
 dict_test = {
     "vgg11": (vgg11, pydtnn_vgg11, (524, 524, 3), "cifar10", {"num_classes": 5}, None),  # (224, 224, 3)
@@ -89,6 +83,7 @@ def get_model_layers(model: torch.nn.Module, name: str = "self") -> dict[str, to
                 _get_model_layers(model=module, name=".".join([name, nom]), dict_modules=dict_modules)
         else:
             dict_modules[name] = model
+
     dict_modules = {}
     _get_model_layers(model=model, name=name, dict_modules=dict_modules)
     return dict_modules
@@ -130,7 +125,6 @@ def pytorch_inference(model: torch.nn.Module, dataloader, loss_func: torch.nn.mo
 
     model.eval()
     with torch.no_grad():
-
         for inputs, labels, _ in dataloader:
             inputs = torch.Tensor(inputs).to(device)
             labels = torch.Tensor(labels).to(device)
@@ -186,7 +180,7 @@ def _pydtnn_inference(new_model, old_model, dataset, old_first=None):
             pydtnn_inference(model=new_model, dataset=dataset)
             print("OLD model")
             pydtnn_inference(model=old_model, dataset=dataset)
-        case not_old_model:  # old_first = None
+        case _:  # old_first = None
             print("NEW model")
             pydtnn_inference(model=new_model, dataset=dataset)
 
@@ -206,12 +200,18 @@ def _pytorch_inference(pytorch_model, dataloader, kwargs, device):
 
     task = "binary"
     num_classes = 10
-    pytorch_inference(model=pytorch_model, dataloader=dataloader, loss_func=loss, device=device,
-                      metrics_list=[("Accuracy", Accuracy(task=task, num_classes=num_classes)),
-                                    # ("AUROC", AUROC(task = task, num_classes = num_classes)),
-                                    # ("AveragePrecision", AveragePrecision(task = task, num_classes = num_classes)),
-                                    # ("F1Score", F1Score(task = task, num_classes = num_classes))
-                                    ])
+    pytorch_inference(
+        model=pytorch_model,
+        dataloader=dataloader,
+        loss_func=loss,
+        device=device,
+        metrics_list=[
+            ("Accuracy", Accuracy(task=task, num_classes=num_classes)),
+            # ("AUROC", AUROC(task = task, num_classes = num_classes)),
+            # ("AveragePrecision", AveragePrecision(task = task, num_classes = num_classes)),
+            # ("F1Score", F1Score(task = task, num_classes = num_classes))
+        ],
+    )
 
 
 def pydtnn_training(model: PyDTNN_Model, dataset: Dataset, num_samples=64 * 2):
@@ -240,7 +240,10 @@ def main():
         weight = f"{WEIGHTS_PATH}model_{test}.pth"
         weight = torch.load(weight, weights_only=True, map_location=torch.device(device))
 
-        pytorch_model.load_state_dict(weight, strict=False,)
+        pytorch_model.load_state_dict(
+            weight,
+            strict=False,
+        )
 
     print("====================")
     print("== PyDTNN version ==")
@@ -271,8 +274,7 @@ def main():
     print("== Converted version ==")
     print("=======================")
 
-    new_model = convert_model(model=pytorch_model, input_shape=shape,
-                              default_output_activation_layer=Softmax(), **kwargs)
+    new_model = convert_model(model=pytorch_model, input_shape=shape, default_output_activation_layer=Softmax(), **kwargs)
 
     print("=====================")
     print("=== MODEL CREATED ===")

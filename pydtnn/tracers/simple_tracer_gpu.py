@@ -2,20 +2,20 @@ import logging
 from types import ModuleType
 from typing import TYPE_CHECKING
 
+import pycuda.driver as drv  # type: ignore
+
 from pydtnn.tracers.simple_tracer import SimpleTracer
 
-logger = logging.getLogger(__name__)
+__all__ = ("SimpleTracerPycuda",)
 
-try:
-    import pycuda.driver as drv  # type: ignore
-except Exception as e:
-    pass
+logger = logging.getLogger(__name__)
 
 
 if TYPE_CHECKING:
     from pympi.MPI import Comm as MPI_COMM  # type: ignore
 else:
     from types import ModuleType
+
     MPI_COMM = ModuleType
 
 

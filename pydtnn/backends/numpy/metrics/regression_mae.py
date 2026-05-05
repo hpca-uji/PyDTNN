@@ -6,6 +6,8 @@ from pydtnn.backends.numpy.metrics.metric import MetricNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.metrics.regression_mae import RegressionMAE
 
+__all__ = ("RegressionMAENumpy",)
+
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
@@ -13,7 +15,6 @@ if TYPE_CHECKING:
 
 
 class RegressionMAENumpy(RegressionMAE[np.ndarray], MetricNumpy):
-
     def _model_init(self) -> None:
         super()._model_init()
 
@@ -27,7 +28,7 @@ class RegressionMAENumpy(RegressionMAE[np.ndarray], MetricNumpy):
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
         y_targ = np.asarray(y_targ, dtype=self.model.dtype, order="C")
-        diff = self.diff[:y_pred.shape[0]]
+        diff = self.diff[: y_pred.shape[0]]
         # return np.sum(np.absolute(y_targ - y_pred))
         np.subtract(y_targ, y_pred, dtype=self.model.dtype, out=diff)
         np.absolute(diff, out=diff, dtype=self.model.dtype, casting="unsafe")

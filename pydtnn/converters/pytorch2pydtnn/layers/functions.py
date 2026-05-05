@@ -17,6 +17,18 @@ from pydtnn.layers.average_pool_2d import AveragePool2D
 from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.flatten import Flatten
 
+__all__ = (
+    "adaptive_avg_pool_2d",
+    "add",
+    "concat",
+    "flatten",
+    "log",
+    "relu",
+    "sigmoid",
+    "softmax",
+    "tanh",
+)
+
 logger = logging.getLogger(__name__)
 
 # Typing related (or non important) imports
@@ -44,8 +56,8 @@ def adaptive_avg_pool_2d(args: dict[str, str]) -> tuple[AveragePool2D, str]:
         case 1:
             param = int(params[0])
             params = [param, param]  # Only 1 argument implies the weight and height are the same.
-        case greater_than_1:  # len must be always >= 0
-            params = [int(param.replace('(', '').replace(')', '')) for param in params]
+        case _:  # len must be always >= 0
+            params = [int(param.replace("(", "").replace(")", "")) for param in params]
 
     if params:
         dict_params[cm.ARGUMENTS] = {cm.PYTORCH_OUTPUT_SIZE: params}
@@ -133,10 +145,12 @@ def flatten(args: dict[str, str]) -> tuple[Flatten, str]:
                 return switch(list_params, dict_params)
             case _:
                 return dict_params
+
     params = args[cm.PARAMETERS].strip()
     dict_params = switch(params.split(cm.ARGS_SEPARATOR))
 
     return (Flatten(**dict_params), dict_params["input"])  # type: ignore
+
 
 # --- Activations --
 
@@ -210,6 +224,7 @@ def softmax(args: dict[str, Any]) -> tuple[Softmax, str]:
                 return switch(list_params, dict_params)
             case _:
                 return dict_params
+
     params = args[cm.PARAMETERS].strip()
     dict_params = switch(params.split(cm.ARGS_SEPARATOR))
 

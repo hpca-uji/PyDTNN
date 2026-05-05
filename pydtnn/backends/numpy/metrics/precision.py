@@ -2,11 +2,12 @@ import logging
 import math
 from typing import TYPE_CHECKING
 
-from pydtnn.backends.numpy.metrics.binary_confusion_matrix import \
-    BinaryConfusionMatrixNumpy
+from pydtnn.backends.numpy.metrics.binary_confusion_matrix import BinaryConfusionMatrixNumpy
 from pydtnn.backends.numpy.metrics.metric import MetricNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.metrics.precision import Precision
+
+__all__ = ("PrecisionNumpy",)
 
 logger = logging.getLogger(__name__)
 
@@ -17,12 +18,11 @@ if TYPE_CHECKING:
 
 
 class PrecisionNumpy(Precision[np.ndarray], MetricNumpy):
-
     conf_matrix_metric: BinaryConfusionMatrixNumpy
 
     def _model_init(self) -> None:
         super()._model_init()
-        self.temp_var_shape = (self.shape[1], )
+        self.temp_var_shape = (self.shape[1],)
         self.tmp_memory_used += int(2 * math.prod(self.temp_var_shape)) * np.float32().itemsize
         self.tmp_memory_used += int(1 * math.prod(self.temp_var_shape)) * np.bool_().itemsize
         self.memory_used += self.tmp_memory_used

@@ -1,4 +1,4 @@
-from collections.abc import Iterable, Sequence
+from collections.abc import Sequence
 
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.activations.relu import Relu
@@ -11,6 +11,8 @@ from pydtnn.layers.input import Input
 from pydtnn.layers.max_pool_2d import MaxPool2D
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.initializers import he_uniform
+
+__all__ = ("vgg19",)
 
 
 def vgg19(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:

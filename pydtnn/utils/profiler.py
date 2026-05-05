@@ -5,8 +5,13 @@ import time
 from pathlib import Path
 
 import memray  # type: ignore
-from memray._memray import \
-    compute_statistics as memray_statistics  # type: ignore
+from memray._memray import compute_statistics as memray_statistics  # type: ignore
+
+__all__ = (
+    "MemoryProfiler",
+    "Profiler",
+    "TimeProfiler",
+)
 
 logger = logging.getLogger(__name__)
 

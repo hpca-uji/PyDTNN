@@ -1,7 +1,6 @@
 from collections.abc import Sequence
 
 from pydtnn.abstract.layerable import Layerable
-from pydtnn.activations.relu import Relu
 from pydtnn.activations.relu6 import Relu6
 from pydtnn.activations.softmax import Softmax
 from pydtnn.layers.average_pool_2d import AveragePool2D
@@ -16,6 +15,9 @@ from pydtnn.layers.input import Input
 from pydtnn.utils.constants import ArrayShape
 
 # NOTE: TensorFlow uses AveragePool2D with (2, 2) pool shape
+
+
+__all__ = ("mobileNet",)
 
 
 def mobileNet(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:

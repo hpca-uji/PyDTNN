@@ -5,6 +5,8 @@ from pydtnn.backends.cupy.metrics.metric import MetricCupy
 from pydtnn.backends.numpy.metrics.recall import RecallNumpy
 from pydtnn.libs import numpy as np
 
+__all__ = ("RecallCupy",)
+
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
@@ -12,7 +14,6 @@ if TYPE_CHECKING:
 
 
 class RecallCupy(RecallNumpy, MetricCupy):
-
     def _post_init(self) -> None:
         super()._post_init()
         with self.model.memory:

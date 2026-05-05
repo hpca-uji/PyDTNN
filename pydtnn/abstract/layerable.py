@@ -8,6 +8,8 @@ import numpy as np
 from pydtnn.abstract.base import Base
 from pydtnn.utils.constants import Array, ArrayShape, Parameters
 
+__all__ = ("Layerable",)
+
 logger = logging.getLogger(__name__)
 
 
@@ -53,7 +55,7 @@ class Layerable[T: Array](Base[T]):
 
     @property
     def _id_prefix(self) -> str:
-        prefix = ''
+        prefix = ""
         if self.id is not None and self.model is not None:
             try:
                 model__last_layer = self.model.layers[-1]
@@ -94,10 +96,7 @@ class Layerable[T: Array](Base[T]):
         props["output"] = self.shape
 
         if len(self.paths) > 0:
-            props["paths"] = ", ".join(
-                f"{path[0].id}-{path[-1].id}" if path else "Empty"
-                for path in self.paths
-            )
+            props["paths"] = ", ".join(f"{path[0].id}-{path[-1].id}" if path else "Empty" for path in self.paths)
 
         if self.weights is not None:
             props["weights"] = self.weights.shape
@@ -143,10 +142,7 @@ class Layerable[T: Array](Base[T]):
     def _export_prop(self, key: str):
         match key:
             case Parameters.PATHS:
-                return [
-                    [layer.export() for layer in path]
-                    for path in self.paths
-                ]
+                return [[layer.export() for layer in path] for path in self.paths]
 
             case _:
                 return getattr(self, key, None)

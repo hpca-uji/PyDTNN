@@ -6,6 +6,8 @@ from pydtnn.backends.numpy.activations.activation import ActivationNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.utils.constants import ArrayShape
 
+__all__ = ("ReluNumpy",)
+
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
@@ -13,7 +15,6 @@ if TYPE_CHECKING:
 
 
 class ReluNumpy(Relu[np.ndarray], ActivationNumpy):
-
     def __init__(self, shape: ArrayShape = (1,)):
         super().__init__(shape)
         self.mask: np.ndarray = None  # type: ignore (will be initalized in "initialize")
@@ -28,8 +29,8 @@ class ReluNumpy(Relu[np.ndarray], ActivationNumpy):
         self.memory_used += self._mask.nbytes
 
     def forward(self, x: np.ndarray) -> np.ndarray:
-        self.y = self._y[:x.shape[0], :]
-        self.mask = self._mask[:x.shape[0], :]
+        self.y = self._y[: x.shape[0], :]
+        self.mask = self._mask[: x.shape[0], :]
 
         np.clip(x, 0, None, out=self.y)
         np.greater(x, 0, out=self.mask)

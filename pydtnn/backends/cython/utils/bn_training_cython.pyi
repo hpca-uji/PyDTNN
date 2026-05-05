@@ -1,17 +1,8 @@
-import numpy as _np
+from pydtnn.backends.cython.utils.base import _npDT, _npDT_1Dims, _npDT_2Dims
 
-from pydtnn.backends.cython.utils.base import (_npDT, _npDT_1Dims, _npDT_2Dims,
-                                               _npDT_3Dims, _npDT_4Dims)
-
-def bn_training_fwd_cython[T: _npDT](x: _npDT_2Dims[T],
-                                     y: _npDT_2Dims[T],
-                                     xn: _npDT_2Dims[T],
-                                     std: _npDT_1Dims[T],
-                                     gamma: _npDT_1Dims[T],
-                                     beta: _npDT_1Dims[T],
-                                     mean: _npDT_1Dims[T],
-                                     var: _npDT_1Dims[T],
-                                     eps: float) -> None:
+def bn_training_fwd_cython[T: _npDT](
+    x: _npDT_2Dims[T], y: _npDT_2Dims[T], xn: _npDT_2Dims[T], std: _npDT_1Dims[T], gamma: _npDT_1Dims[T], beta: _npDT_1Dims[T], mean: _npDT_1Dims[T], var: _npDT_1Dims[T], eps: float
+) -> None:
     """
     Args:
         x (npDT_2Dims): The input.
@@ -32,14 +23,7 @@ def bn_training_fwd_cython[T: _npDT](x: _npDT_2Dims[T],
     """
     ...
 
-
-def bn_training_bwd_cython[T: _npDT](dx: _npDT_2Dims[T],
-                                     dy: _npDT_2Dims[T],
-                                     xn: _npDT_2Dims[T],
-                                     std: _npDT_1Dims[T],
-                                     gamma: _npDT_1Dims[T],
-                                     dgamma: _npDT_1Dims[T],
-                                     dbeta: _npDT_1Dims[T]) -> None:
+def bn_training_bwd_cython[T: _npDT](dx: _npDT_2Dims[T], dy: _npDT_2Dims[T], xn: _npDT_2Dims[T], std: _npDT_1Dims[T], gamma: _npDT_1Dims[T], dgamma: _npDT_1Dims[T], dbeta: _npDT_1Dims[T]) -> None:
     """
     Args:
         dx (npDT_2Dims): The 2 dimensional array that contains the gradient of the input forward's (that is the output).

@@ -13,15 +13,15 @@ from pydtnn.datasets.dataset import Dataset
 from pydtnn.model.eval import Eval
 from pydtnn.model.utils import BAR_WIDTH
 from pydtnn.schedulers.scheduler import select as select_scheduler
-from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT,
-                                   PYDTNN_MDL_EVENTS, PYDTNN_MDL_EVENT_enum)
+from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_MDL_EVENT_enum
 from pydtnn.utils.constants import Array
+
+__all__ = ("Train",)
 
 logger = logging.getLogger(__name__)
 
 
 class Train[T: Array](Eval[T]):
-
     class SyncParticipation(enum.StrEnum):
         ALL = enum.auto()
         AVAIL2ALL = enum.auto()
@@ -41,10 +41,7 @@ class Train[T: Array](Eval[T]):
         # NOTE: This parameter come from Parser.
         self.model_sync_participation = self.SyncParticipation(self.kwargs["model_sync_participation"])
 
-        self.schedulers = [
-            select_scheduler(scheduler_name).from_model(self)
-            for scheduler_name in filter(None, self.schedulers_names.split(","))
-        ]
+        self.schedulers = [select_scheduler(scheduler_name).from_model(self) for scheduler_name in filter(None, self.schedulers_names.split(","))]
         for scheduler in self.schedulers:
             scheduler.model = self
 
@@ -159,7 +156,6 @@ class Train[T: Array](Eval[T]):
             self._weight_update(gradient=True, blocking=self.blocking_mpi, pipeline=self.parallel_pipeline)
 
         if has_batch or sync_model:
-
             # Optimizer
             for layer in self.layers:
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.UPDATE_DW)
@@ -181,15 +177,18 @@ class Train[T: Array](Eval[T]):
 
         return self.total_metrics
 
-    def _train_round(self, pbar: tqdm | None,
-                     batch_generator: Generator[tuple[np.ndarray, np.ndarray, int]],
-                     model_sync_count: int,
-                     batches_min: float,
-                     total_loss: np.ndarray,
-                     batch_count: int,
-                     terminate: bool = False,
-                     prev_string: str = "",
-                     out_prefix: str = "") -> tuple[np.ndarray, int, bool, str]:
+    def _train_round(
+        self,
+        pbar: tqdm | None,
+        batch_generator: Generator[tuple[np.ndarray, np.ndarray, int]],
+        model_sync_count: int,
+        batches_min: float,
+        total_loss: np.ndarray,
+        batch_count: int,
+        terminate: bool = False,
+        prev_string: str = "",
+        out_prefix: str = "",
+    ) -> tuple[np.ndarray, int, bool, str]:
         sync_epoch = False
         string = ""
 
@@ -230,13 +229,12 @@ class Train[T: Array](Eval[T]):
 
             if local_batch_size <= 0:
                 if self.comm_rank == 0:
-                    pbar.set_postfix_str(s=f"{string}, waiting…", refresh=True)   # type: ignore (Here is a 'tqdm', only is None in self.comm_rank != 0)
+                    pbar.set_postfix_str(s=f"{string}, waiting…", refresh=True)  # type: ignore (Here is a 'tqdm', only is None in self.comm_rank != 0)
                 continue
 
-            total_loss, batch_count, string = self._update_status(pbar=pbar, batch_loss=train_batch_loss,
-                                                                  total_loss=total_loss, batch_count=batch_count,
-                                                                  batch_size=batch_size, output_prefix=out_prefix, delta=delta,
-                                                                  prev_string=prev_string)
+            total_loss, batch_count, string = self._update_status(
+                pbar=pbar, batch_loss=train_batch_loss, total_loss=total_loss, batch_count=batch_count, batch_size=batch_size, output_prefix=out_prefix, delta=delta, prev_string=prev_string
+            )
 
         # Increment self._train_round
         self._training_round += 1
@@ -248,9 +246,7 @@ class Train[T: Array](Eval[T]):
         # If working with CUDA, self.y_batch must be in a GPU's data structure.
         if self.enable_cudnn and self.y_batch is None:
             assert gpuarray and self.cudnn_dtype
-            tensor_ary = TensorArray(
-                gpuarray.empty((self.batch_size, *self.layers[-1].shape), self.dtype),
-                self.tensor_format, self.cudnn_dtype)
+            tensor_ary = TensorArray(gpuarray.empty((self.batch_size, *self.layers[-1].shape), self.dtype), self.tensor_format, self.cudnn_dtype)
             self.y_batch = tensor_ary  # type: ignore
 
         self.history = {lm: [] for lm in ([f"{Dataset.Part.TRAIN._name_.lower()}_{m}" for m in self.loss_and_metrics] + [f"{Dataset.Part.VAL._name_.lower()}_{m}" for m in self.loss_and_metrics])}
@@ -275,9 +271,7 @@ class Train[T: Array](Eval[T]):
                 string = ""
                 fmt = "%%%dd" % (len(str(self.num_epochs)))
                 epoch_string = "Epoch %s/%s" % (fmt, fmt)
-                pbar = tqdm(total=self.dataset.train_nsamples, ncols=bar_width,
-                            ascii=" ▁▂▃▄▅▆▇█", smoothing=0.3,
-                            desc=epoch_string % (epoch + 1, self.num_epochs), unit=" samples")
+                pbar = tqdm(total=self.dataset.train_nsamples, ncols=bar_width, ascii=" ▁▂▃▄▅▆▇█", smoothing=0.3, desc=epoch_string % (epoch + 1, self.num_epochs), unit=" samples")
             else:
                 pbar = None
 
@@ -285,10 +279,16 @@ class Train[T: Array](Eval[T]):
                 sched.on_epoch_begin(self, self.rank)
 
             # --- TRAIN ---
-            train_total_loss, model_sync_count, train_sync_epoch, string = self._train_round(pbar=pbar, batch_generator=train_batch_generator,
-                                                                                             model_sync_count=model_sync_count, batches_min=train_batches_min,
-                                                                                             total_loss=train_total_loss, batch_count=train_batch_count,
-                                                                                             prev_string="", out_prefix=f"{Dataset.Part.TRAIN._name_.lower()}_")
+            train_total_loss, model_sync_count, train_sync_epoch, string = self._train_round(
+                pbar=pbar,
+                batch_generator=train_batch_generator,
+                model_sync_count=model_sync_count,
+                batches_min=train_batches_min,
+                total_loss=train_total_loss,
+                batch_count=train_batch_count,
+                prev_string="",
+                out_prefix=f"{Dataset.Part.TRAIN._name_.lower()}_",
+            )
             sync_epoch = sync_epoch or train_sync_epoch
             train_string = string
 
@@ -296,10 +296,16 @@ class Train[T: Array](Eval[T]):
                 self.history[f"{Dataset.Part.TRAIN._name_.lower()}_" + self.loss_and_metrics[c]].append(train_total_loss[c])
 
             # --- VAL ---
-            val_total_loss, model_sync_count, val_sync_epoch, string = self._evalutate_round(pbar=pbar, batch_generator=val_batch_generator,
-                                                                                             model_sync_count=model_sync_count, batches_min=val_batches_min,
-                                                                                             total_loss=val_total_loss, batch_count=val_batch_count,
-                                                                                             prev_string=f"{train_string}, ", out_prefix="val_")
+            val_total_loss, model_sync_count, val_sync_epoch, string = self._evalutate_round(
+                pbar=pbar,
+                batch_generator=val_batch_generator,
+                model_sync_count=model_sync_count,
+                batches_min=val_batches_min,
+                total_loss=val_total_loss,
+                batch_count=val_batch_count,
+                prev_string=f"{train_string}, ",
+                out_prefix="val_",
+            )
             sync_epoch = sync_epoch or val_sync_epoch
 
             # if self.comm_rank == 0:  # All nodes must have history, not only the 0.
@@ -314,7 +320,7 @@ class Train[T: Array](Eval[T]):
             if self.comm_rank == 0:
                 pbar.close()  # type: ignore (Here is a 'tqdm', only is None in self.comm_rank != 0)
                 # Sleep for half a second to allow pbar to write its output before returning
-                time.sleep(.5)
+                time.sleep(0.5)
 
             for c in range(len(self.loss_and_metrics)):
                 if not self.loss_and_metrics_format[c]:

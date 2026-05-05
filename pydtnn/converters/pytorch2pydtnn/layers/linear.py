@@ -7,6 +7,8 @@ from typing import Any
 import pydtnn.converters.pytorch2pydtnn.common as cm
 from pydtnn.layers.fc import FC
 
+__all__ = ("Linear",)
+
 logger = logging.getLogger(__name__)
 
 
@@ -33,6 +35,6 @@ def Linear(args: dict[str, Any]) -> FC:
 
     # PyDTNN expects the shape as a tuple instead of an int.
     if PYDTNN_SHAPE in layer_args and isinstance(layer_args[PYDTNN_SHAPE], int):
-        layer_args[PYDTNN_SHAPE] = (layer_args[PYDTNN_SHAPE], )
+        layer_args[PYDTNN_SHAPE] = (layer_args[PYDTNN_SHAPE],)
 
     return FC(**layer_args)

@@ -4,11 +4,12 @@ import math
 from pydtnn.layers.layer import Layer, LayerError
 from pydtnn.utils.constants import Array, ArrayShape
 
+__all__ = ("AdaptiveAveragePool2D",)
+
 logger = logging.getLogger(__name__)
 
 
 class AdaptiveAveragePool2D[T: Array](Layer):
-
     # This layer will calculate the pool shape and the stride from the output shape (passed as parameter) and the previous layer shape.
 
     # output_shape:
@@ -45,8 +46,8 @@ class AdaptiveAveragePool2D[T: Array](Layer):
 
     @staticmethod
     def _index_first_element(index: int, dim_in: int, dim_out: int) -> int:
-        return ((index * dim_in) // dim_out)
+        return (index * dim_in) // dim_out
 
     @staticmethod
     def _index_last_element(index: int, dim_in: int, dim_out: int) -> int:
-        return ((((index + 1) * dim_in) + dim_out - 1) // dim_out)
+        return (((index + 1) * dim_in) + dim_out - 1) // dim_out

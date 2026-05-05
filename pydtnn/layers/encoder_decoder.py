@@ -3,6 +3,8 @@ import logging
 from pydtnn.layers.abstract.block_layer import AbstractBlockLayer
 from pydtnn.utils.constants import Array
 
+__all__ = ("EncoderDecoder",)
+
 logger = logging.getLogger(__name__)
 
 
@@ -16,8 +18,12 @@ class EncoderDecoder[T: Array](AbstractBlockLayer[T]):
         self.d_k = d_k
         self.d_ff = d_ff
         self.dropout_rate = dropout_rate
-        self.encoder = [None,]
-        self.decoder = [None,]
+        self.encoder = [
+            None,
+        ]
+        self.decoder = [
+            None,
+        ]
         self.paths = [self.encoder + self.decoder]  # type: ignore
 
     def _model_init(self, prev_shape, x):
