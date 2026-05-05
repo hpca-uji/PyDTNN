@@ -8,4 +8,5 @@ __all__ = ("AbstractConv2DDirect",)
 logger = logging.getLogger(__name__)
 
 
-class AbstractConv2DDirect(AbstractConv2DNumpy, LayerDirect): ...
+class AbstractConv2DDirect(AbstractConv2DNumpy, LayerDirect):
+    ...

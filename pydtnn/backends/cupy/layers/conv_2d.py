@@ -9,4 +9,5 @@ __all__ = ("Conv2DCupy",)
 logger = logging.getLogger(__name__)
 
 
-class Conv2DCupy(Conv2DNumpy, AbstractConv2DCupy, LayerCupy): ...
+class Conv2DCupy(Conv2DNumpy, AbstractConv2DCupy, LayerCupy):
+    ...

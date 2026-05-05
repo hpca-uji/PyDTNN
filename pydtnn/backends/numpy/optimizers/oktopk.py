@@ -3,13 +3,8 @@ import warnings
 from typing import TYPE_CHECKING
 
 from pydtnn.abstract.layerable import Layerable
-from pydtnn.backends.cython.utils.oktopk_utils_cython import (
-    compute_dense_acc_cython,
-    intersect_2d_indexes_cython,
-    reset_residuals_cython,
-    update_sparsed_weights_cython,
-    update_sparsed_weights_mv_cython,
-)
+from pydtnn.backends.cython.utils.oktopk_utils_cython import (compute_dense_acc_cython, intersect_2d_indexes_cython, reset_residuals_cython,
+                                                              update_sparsed_weights_cython, update_sparsed_weights_mv_cython)
 from pydtnn.backends.numpy.optimizers.optimizer import OptimizerNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.optimizers.oktopk import OkTopk

@@ -409,7 +409,7 @@ class ConvWinograd:
                         #   X  X  X
                         #   0  0  0
                         if fh + oh < t:
-                            d[fh + oh :, ...] = 0
+                            d[fh + oh:, ...] = 0
 
                         #   0  0  0
                         #   0  X  X

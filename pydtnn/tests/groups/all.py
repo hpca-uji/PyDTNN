@@ -1,14 +1,6 @@
 import logging
 from warnings import warn
 
-from pydtnn.tests.batch_normalization_relu import BatchNormalizationReluTestCase
-from pydtnn.tests.conv_2d_batch_normalization import Conv2DBatchNormalizationTestCase
-from pydtnn.tests.conv_2d_batch_normalization_relu import Conv2DBatchNormalizationReluTestCase
-from pydtnn.tests.conv_2d_group import Conv2DGroupTestCase
-from pydtnn.tests.conv_2d_relu import Conv2DReluTestCase
-from pydtnn.tests.model_dtype import ModelDTypeTestCase
-from pydtnn.tests.model_tensor import ModelTensorTestCase
-
 __all__ = (
     "LayerPyTorchTestCase",
     "BatchNormalizationReluTestCase",

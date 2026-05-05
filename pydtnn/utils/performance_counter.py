@@ -119,7 +119,7 @@ class PerformanceCounter:
         else:
             records_per_epoch = []
             for array in arrays:
-                array_last_half = array[len(array) // 2 :]
+                array_last_half = array[len(array) // 2:]
                 if len(array_last_half) > 0:
                     records_per_epoch.append(np.sum(array_last_half) * len(array) / len(array_last_half))
         return np.sum(records_per_epoch)
