@@ -112,7 +112,7 @@ else:
         assert dynamic
         entsize = dynamic["sh_entsize"]
         for k in range(dynamic["sh_size"] // entsize):
-            result = st.parse(dynamic.data()[k * entsize : (k + 1) * entsize])
+            result = st.parse(dynamic.data()[k * entsize: (k + 1) * entsize])
 
             # The following value for the SONAME tag is specified in elf.h:
             if result.d_tag == 14:

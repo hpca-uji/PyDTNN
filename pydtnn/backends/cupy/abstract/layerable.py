@@ -4,4 +4,5 @@ from pydtnn.backends.numpy.abstract.layerable import LayerableNumpy
 __all__ = ("LayerableCupy",)
 
 
-class LayerableCupy(LayerableNumpy, BaseCupy): ...
+class LayerableCupy(LayerableNumpy, BaseCupy):
+    ...

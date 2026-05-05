@@ -14,4 +14,5 @@ if TYPE_CHECKING:
     import numpy as np
 
 
-class ActivationNumpy(Activation[np.ndarray], LayerableNumpy): ...
+class ActivationNumpy(Activation[np.ndarray], LayerableNumpy):
+    ...

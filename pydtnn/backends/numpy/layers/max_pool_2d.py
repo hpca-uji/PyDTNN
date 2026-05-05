@@ -149,7 +149,7 @@ class MaxPool2DNumpy(MaxPool2D[np.ndarray], AbstractPool2DLayerNumpy):
                 h_end = h_start + self.hstride * self.ho
                 w_end = w_start + self.wstride * self.wo
 
-                _x = x[:, :, h_start : h_end : self.hstride, w_start : w_end : self.wstride]
+                _x = x[:, :, h_start: h_end: self.hstride, w_start: w_end: self.wstride]
                 max_val: np.ndarray = np.max(_x, axis=(2, 3))
                 _idx_maxval: np.ndarray = np.argmax(np.argmax(_x, axis=3), axis=2)
 

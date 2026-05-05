@@ -70,7 +70,7 @@ class AbstractConv2DNumpy(AbstractConv2D[np.ndarray], LayerNumpy):
                 h_end = h_start + self.hstride * self.ho
                 w_end = w_start + self.wstride * self.wo
 
-                col = x[:, :, h_start : h_end : self.hstride, w_start : w_end : self.wstride]
+                col = x[:, :, h_start: h_end: self.hstride, w_start: w_end: self.wstride]
                 cols.append(col)
         return np.stack(cols, axis=2).reshape(x_rows.shape)
 

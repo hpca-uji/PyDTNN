@@ -186,7 +186,7 @@ class ImageNet(Dataset):
         if part is Dataset.Part.TRAIN and self.model.augment_shuffle:
             random.shuffle(xy_filenames)  # type: ignore (numpy shuffle's typing wasn't well defined.)
 
-        xy_filenames = xy_filenames[offset : offset + nsamples]
+        xy_filenames = xy_filenames[offset: offset + nsamples]
 
         for path, y in xy_filenames:
             with load_archive(*path) as fp:

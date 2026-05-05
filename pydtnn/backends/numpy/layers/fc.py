@@ -50,10 +50,25 @@ class FCNumpy(FC[np.ndarray], LayerNumpy):
                 self.memory_used += self.db.nbytes
 
         # Performance model
-        self.fwd_time = matmul_time(m=self.model.batch_size, n=self.weights.shape[1], k=self.weights.shape[0], cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw, dtype=self.model.dtype)  # type: ignore (it's fine)
-        self.bwd_time = matmul_time(
-            m=self.weights.shape[0], n=self.weights.shape[1], k=self.model.batch_size, cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw, dtype=self.model.dtype
-        ) + matmul_time(m=self.model.batch_size, n=self.weights.shape[0], k=self.weights.shape[1], cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw, dtype=self.model.dtype)  # type: ignore (It works well.)
+        self.fwd_time = matmul_time(
+            m=self.model.batch_size,
+            n=self.weights.shape[1],
+            k=self.weights.shape[0],
+            cpu_speed=self.model.cpu_speed,
+            memory_bw=self.model.memory_bw,
+            dtype=self.model.dtype)  # type: ignore (it's fine)
+        self.bwd_time = matmul_time(m=self.weights.shape[0],
+                                    n=self.weights.shape[1],
+                                    k=self.model.batch_size,
+                                    cpu_speed=self.model.cpu_speed,
+                                    memory_bw=self.model.memory_bw,
+                                    dtype=self.model.dtype) + \
+                        matmul_time(m=self.model.batch_size,
+                                    n=self.weights.shape[0],
+                                    k=self.weights.shape[1],
+                                    cpu_speed=self.model.cpu_speed,
+                                    memory_bw=self.model.memory_bw,
+                                    dtype=self.model.dtype)  # type: ignore (It works well.)
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         self.x = x

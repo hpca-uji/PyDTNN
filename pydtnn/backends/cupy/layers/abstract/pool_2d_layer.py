@@ -7,4 +7,5 @@ from pydtnn.layers.abstract.pool_2d_layer import AbstractPool2DLayer
 __all__ = ("AbstractPool2DLayerCupy",)
 
 
-class AbstractPool2DLayerCupy(AbstractPool2DLayerNumpy, AbstractPool2DLayer[np.ndarray], LayerCupy): ...
+class AbstractPool2DLayerCupy(AbstractPool2DLayerNumpy, AbstractPool2DLayer[np.ndarray], LayerCupy):
+    ...

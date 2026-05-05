@@ -1295,7 +1295,7 @@ def cudnnFindConvolutionForwardAlgorithm(handle, x_desc, w_desc, conv_desc, y_de
         handle, x_desc, w_desc, conv_desc, y_desc, ctypes.c_int(requested_algo_count), ctypes.byref(returned_algo_count), ctypes.cast(perf_results, ctypes.POINTER(CudnnConvolutionFwdAlgoPerf))
     )
     cudnnCheckStatus(status)
-    return perf_results[0 : returned_algo_count.value]
+    return perf_results[0: returned_algo_count.value]
 
 
 # _libcudnn.cudnnGetConvolutionForwardAlgorithm.restype = int
@@ -1574,7 +1574,7 @@ def cudnnFindConvolutionBackwardDataAlgorithm(handle, w_desc, dy_desc, conv_desc
         handle, w_desc, dy_desc, conv_desc, dx_desc, ctypes.c_int(requested_algo_count), ctypes.byref(returned_algo_count), ctypes.cast(perf_results, ctypes.POINTER(CudnnConvolutionBwdDataAlgoPerf))
     )
     cudnnCheckStatus(status)
-    return perf_results[0 : returned_algo_count.value]
+    return perf_results[0: returned_algo_count.value]
 
 
 # _libcudnn.cudnnGetConvolutionBackwardDataAlgorithm.restype = int
@@ -1684,7 +1684,7 @@ def cudnnFindConvolutionBackwardFilterAlgorithm(handle, x_desc, dy_desc, conv_de
         handle, x_desc, dy_desc, conv_desc, dw_desc, ctypes.c_int(requested_algo_count), ctypes.byref(returned_algo_count), ctypes.cast(perf_results, ctypes.POINTER(CudnnConvolutionBwdFilterAlgoPerf))
     )
     cudnnCheckStatus(status)
-    return perf_results[0 : returned_algo_count.value]
+    return perf_results[0: returned_algo_count.value]
 
 
 # _libcudnn.cudnnGetConvolutionBackwardFilterAlgorithm.restype = int

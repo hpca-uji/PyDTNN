@@ -4,4 +4,5 @@ from pydtnn.backends.numpy.abstract.layerable import LayerableNumpy
 __all__ = ("LayerableGemm",)
 
 
-class LayerableGemm(LayerableNumpy, BaseGemm): ...
+class LayerableGemm(LayerableNumpy, BaseGemm):
+    ...

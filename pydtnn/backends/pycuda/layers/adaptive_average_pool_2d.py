@@ -45,8 +45,10 @@ class AdaptiveAveragePool2DPycuda(AdaptiveAveragePool2D[TensorArray], LayerPycud
 
         self.memory_used += self.y.nbytes + self.dx.nbytes
 
-        self.fwd_time = im2col_time(m=self.co, n=(self.model.batch_size * self.ho * self.wo * self.ci), cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw, dtype=self.model.dtype)  # type: ignore (it's fine)
-        self.bwd_time = col2im_time(m=self.co, n=(self.model.batch_size * self.ho * self.wo * self.ci), cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw, dtype=self.model.dtype)  # type: ignore (it's fine)
+        self.fwd_time = im2col_time(m=self.co, n=(self.model.batch_size * self.ho * self.wo * self.ci), cpu_speed=self.model.cpu_speed,
+                                    memory_bw=self.model.memory_bw, dtype=self.model.dtype)  # type: ignore (it's fine)
+        self.bwd_time = col2im_time(m=self.co, n=(self.model.batch_size * self.ho * self.wo * self.ci), cpu_speed=self.model.cpu_speed,
+                                    memory_bw=self.model.memory_bw, dtype=self.model.dtype)  # type: ignore (it's fine)
 
     def forward(self, x: TensorArray) -> TensorArray:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)

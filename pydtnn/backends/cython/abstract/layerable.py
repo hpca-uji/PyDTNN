@@ -4,4 +4,5 @@ from pydtnn.backends.numpy.abstract.layerable import LayerableNumpy
 __all__ = ("LayerableCython",)
 
 
-class LayerableCython(LayerableNumpy, BaseCython): ...
+class LayerableCython(LayerableNumpy, BaseCython):
+    ...

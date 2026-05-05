@@ -8,4 +8,5 @@ __all__ = ("LayerCython",)
 logger = logging.getLogger(__name__)
 
 
-class LayerCython(LayerNumpy, LayerableCython): ...
+class LayerCython(LayerNumpy, LayerableCython):
+    ...

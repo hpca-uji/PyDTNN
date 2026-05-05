@@ -64,7 +64,7 @@ class Conv2DConvGemmSlowTestCase(Conv2DConvGemmTestCase):
         start = time.time()
 
         comm = MPI.COMM_WORLD
-        batch = self.R[comm.rank :: comm.size]
+        batch = self.R[comm.rank:: comm.size]
 
         for i, params in enumerate(batch):
             self._test_forward_backward_multiple_params(*params)

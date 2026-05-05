@@ -243,5 +243,5 @@ class PMLib:
             # Integrate the energy between next_sample_from_start and previous_sample_from_end
             elapsed_time = self.times[previous_sample_from_end] - self.times[next_sample_from_start]
             if elapsed_time > 0:
-                joules += np.mean(self.watts[:, next_sample_from_start : previous_sample_from_end + 1], axis=1) * elapsed_time
+                joules += np.mean(self.watts[:, next_sample_from_start: previous_sample_from_end + 1], axis=1) * elapsed_time
         return joules

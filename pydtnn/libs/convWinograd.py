@@ -393,9 +393,9 @@ class ConvWinograd:
                         if hh < hh + oh and ww < ww + ow:
                             match self.tensor_format:
                                 case TensorFormat.NCHW:
-                                    d[fh : fh + oh, fw : fw + ow] = x[b, c, hh : hh + oh, ww : ww + ow]
+                                    d[fh: fh + oh, fw: fw + ow] = x[b, c, hh: hh + oh, ww: ww + ow]
                                 case TensorFormat.NHWC:
-                                    d[fh : fh + oh, fw : fw + ow] = x[b, hh : hh + oh, ww : ww + ow, c]
+                                    d[fh: fh + oh, fw: fw + ow] = x[b, hh: hh + oh, ww: ww + ow, c]
                                 case tensor_format:
                                     raise NotImplementedError(f"Unsupported tensor format {tensor_format}!")
 
@@ -409,19 +409,19 @@ class ConvWinograd:
                         #   X  X  X
                         #   0  0  0
                         if fh + oh < t:
-                            d[fh + oh :, ...] = 0
+                            d[fh + oh:, ...] = 0
 
                         #   0  0  0
                         #   0  X  X
                         #   0  0  0
                         if 0 <= fw:
-                            d[fh : fh + oh, :fw] = 0
+                            d[fh: fh + oh, :fw] = 0
 
                         #   0  0  0
                         #   0  X  0
                         #   0  0  0
                         if fw + ow < t:
-                            d[fh : fh + oh, fw + ow :] = 0
+                            d[fh: fh + oh, fw + ow:] = 0
 
                         v[..., c, b * tile_h * tile_w + h * tile_w + w] = (bt @ d) @ bt.T
 
@@ -441,9 +441,9 @@ class ConvWinograd:
                         hh, ww = h * s, w * s
                         match self.tensor_format:
                             case TensorFormat.NCHW:
-                                y[b, k, hh : hh + m, ww : ww + m] = z[: min(m, ho - hh), : min(m, wo - ww)]
+                                y[b, k, hh: hh + m, ww: ww + m] = z[: min(m, ho - hh), : min(m, wo - ww)]
                             case TensorFormat.NHWC:
-                                y[b, hh : hh + m, ww : ww + m, k] = z[: min(m, ho - hh), : min(m, wo - ww)]
+                                y[b, hh: hh + m, ww: ww + m, k] = z[: min(m, ho - hh), : min(m, wo - ww)]
                             case tensor_format:
                                 raise NotImplementedError(f"Unsupported tensor format {tensor_format}!")
 

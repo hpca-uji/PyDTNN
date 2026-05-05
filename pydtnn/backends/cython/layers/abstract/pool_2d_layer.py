@@ -4,4 +4,5 @@ from pydtnn.backends.numpy.layers.abstract.pool_2d_layer import AbstractPool2DLa
 __all__ = ("AbstractPool2DLayerCython",)
 
 
-class AbstractPool2DLayerCython(AbstractPool2DLayerNumpy, LayerCython): ...
+class AbstractPool2DLayerCython(AbstractPool2DLayerNumpy, LayerCython):
+    ...
