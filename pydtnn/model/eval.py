@@ -196,7 +196,7 @@ class Eval[T: Array](Sync[T]):
         test_batch_generator = self.dataset.get_test_generator()
 
         if self.comm_rank == 0:
-            test_total_loss, test_batch_count = np.zeros(len(self.loss_and_metrics)), 0
+            test_total_loss, test_batch_count = np.zeros(len(self.loss_and_metrics), np.float32), 0
             pbar = tqdm(total=self.dataset.test_nsamples, ncols=bar_width, ascii=" ▁▂▃▄▅▆▇█", smoothing=0.3, desc="Testing", unit=" samples")
         else:
             pbar = None
