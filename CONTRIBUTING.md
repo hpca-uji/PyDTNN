@@ -63,23 +63,23 @@
 ## Python package
 ```
 ├── pydtnn
+│   ├── __main__.py
+│   ├── __init__.py
 │   ├── logging.yaml
-│   ├── runner.py
-│   ├── parser.py
-│   ├── model.py
 ```
 ### Components
 ```
-│   ├── session
-│   │   ├── base.py    # typing interface
-│   │   ├── utils.py   # utility methods
-│   │   ├── layers.py  # layers management
-│   │   ├── state.py   # state management
-│   │   ├── init.py    # initialization
-│   │   ├── sync.py    # synchronization
-│   │   ├── repr.py    # representation
-│   │   ├── eval.py    # model inference
-│   │   └── train.py   # model training
+│   ├── model
+│   │   ├── __init__.py  # usable models
+│   │   ├── base.py      # typing interface
+│   │   ├── utils.py     # utility methods
+│   │   ├── layers.py    # layers management
+│   │   ├── state.py     # state management
+│   │   ├── init.py      # initialization
+│   │   ├── sync.py      # synchronization
+│   │   ├── repr.py      # representation
+│   │   ├── eval.py      # model inference
+│   │   └── train.py     # model training
 |   ├── abstract
 |   |   ├── base.py       # every component
 │   │   └── layerable.py  # layer-like component
@@ -146,6 +146,7 @@
 │   │   ├── # bindings to libraries
 │   │   └── utils.py
 │   └── utils
+│       ├── parser.py
 │       ├── constants.py
 │       ├── initializers.py
 │       ├── debug.py
