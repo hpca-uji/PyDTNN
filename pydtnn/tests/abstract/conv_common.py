@@ -76,8 +76,8 @@ class ConvCommonTestCase(TestCase):
         d = self._get_config()
         weights = random.random((d.c, d.kh, d.kw, d.kn)).astype(np.float32, order='C')
         x = random.random((d.b, d.h, d.w, d.c)).astype(np.float32, order='C')
-        ho = (d.h + 2 * d.vpadding - d.vdilation * (d.kh - 1) - 1) // d.vstride + 1
-        wo = (d.w + 2 * d.hpadding - d.hdilation * (d.kw - 1) - 1) // d.hstride + 1
+        # ho = (d.h + 2 * d.vpadding - d.vdilation * (d.kh - 1) - 1) // d.vstride + 1
+        # wo = (d.w + 2 * d.hpadding - d.hdilation * (d.kw - 1) - 1) // d.hstride + 1
         # biases = random.random((d.b, ho, wo, d.kn)).astype(np.float32, order='C')
         biases = random.random((d.kn, )).astype(np.float32, order='C')
         test_result, ref_result = self._compute_both(weights, x, biases=biases,

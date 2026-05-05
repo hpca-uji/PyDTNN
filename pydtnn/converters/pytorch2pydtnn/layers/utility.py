@@ -21,6 +21,6 @@ def Flatten(args: dict[str, str]) -> _Flatten:
     # PyTorch attributes:
     # Not used: start_dim, end_dim (It's not used due the way the layer's initialization works in PyDTNN)
     # PyDTNN attributes: None
-    not_used = args
+    # not_used = args
 
     return _Flatten()

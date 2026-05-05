@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 
 def Arctanh(args: dict[str, Any]) -> _Arctanh:
     # NOTE: There is no equivalent in PyTorch
-    not_used = args
+    # not_used = args
     return _Arctanh()
 
 
@@ -46,14 +46,14 @@ def LogSigmoid(args: dict[str, Any]) -> _Log:
 def ReLU(args: dict[str, Any]) -> _Relu:
     # https://pytorch.org/docs/stable/generated/torch.nn.ReLU.html#torch.nn.ReLU
     # Not used Pytorch's parameters: inplace.
-    not_used = args
+    # not_used = args
     return _Relu()
 
 
 def ReLU6(args: dict[str, Any]) -> _Relu:
     # https://pytorch.org/docs/stable/generated/torch.nn.ReLU.html#torch.nn.ReLU
     # Not used Pytorch's parameters: inplace.
-    not_used = args
+    # not_used = args
 
     # NOTE: max_val. A interal PyTorch variable that seems to set the cap.
 
@@ -74,18 +74,18 @@ def LeakyReLU(args: dict[str, Any]) -> _Relu:
 
 def Sigmoid(args: dict[str, Any]) -> _Sigmoid:
     # https://pytorch.org/docs/stable/generated/torch.nn.Sigmoid.html#torch.nn.Sigmoid
-    not_used = args
+    # not_used = args
     return _Sigmoid()
 
 
 def Softmax(args: dict[str, Any]) -> _Softmax:
     # https://pytorch.org/docs/stable/generated/torch.nn.Softmax.html#torch.nn.Softmax
     # Not used Pytorch's parameters: dim.
-    not_used = args
+    # not_used = args
     return _Softmax()
 
 
 def Tanh(args: dict[str, Any]) -> _Tanh:
     # https://pytorch.org/docs/stable/generated/torch.nn.Tanh.html#torch.nn.Tanh
-    not_used = args
+    # not_used = args
     return _Tanh()

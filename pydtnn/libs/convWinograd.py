@@ -481,8 +481,8 @@ class ConvWinograd:
             case tensor_format:
                 raise NotImplementedError(f"Unsupported tensor format {tensor_format}!")
 
-        t = m + r - 1  # Winograd sliding window size t x t
-        s = m  # Winograd sliding window stride: t - (r - 1) = m
+        # t = m + r - 1  # Winograd sliding window size t x t
+        # s = m  # Winograd sliding window stride: t - (r - 1) = m
 
         if (kh, kw) != (r, r):
             raise ValueError(f"Kernel size {kh}x{kw} not supported by this version of Winograd, "

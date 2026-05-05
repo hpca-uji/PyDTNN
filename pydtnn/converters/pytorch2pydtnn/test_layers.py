@@ -371,7 +371,7 @@ def main():
     kwargs = KWARGS
     quarter_elements = prod((N, *SHAPE)) / 4
 
-    device = torch.device("cpu") if kwargs["enable_cudnn"] == False else torch.device("cuda")
+    device = torch.device("cuda") if kwargs["enable_cudnn"] else torch.device("cpu")
     dataset_p = np.arange(quarter_elements, dtype=DTYPE) / 3
     dataset_p_int = np.arange(quarter_elements, dtype=DTYPE)
     dataset_n = np.arange(quarter_elements, dtype=DTYPE) * (-1 / 3)

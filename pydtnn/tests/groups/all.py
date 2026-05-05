@@ -31,17 +31,17 @@ except Exception:
     warn("PyTorch not available, skiping tests!", ImportWarning)
 
 # Fused
-from pydtnn.tests.batch_normalization_relu import BatchNormalizationReluTestCase  # isort:skip
-from pydtnn.tests.conv_2d_relu import Conv2DReluTestCase  # isort:skip
-from pydtnn.tests.conv_2d_batch_normalization import Conv2DBatchNormalizationTestCase  # isort:skip
-from pydtnn.tests.conv_2d_batch_normalization_relu import Conv2DBatchNormalizationReluTestCase  # isort:skip
-from pydtnn.tests.conv_2d_group import Conv2DGroupTestCase
+from pydtnn.tests.batch_normalization_relu import BatchNormalizationReluTestCase  # isort:skip  # noqa: E402
+from pydtnn.tests.conv_2d_relu import Conv2DReluTestCase  # isort:skip  # noqa: E402
+from pydtnn.tests.conv_2d_batch_normalization import Conv2DBatchNormalizationTestCase  # isort:skip  # noqa: E402
+from pydtnn.tests.conv_2d_batch_normalization_relu import Conv2DBatchNormalizationReluTestCase  # isort:skip  # noqa: E402
+from pydtnn.tests.conv_2d_group import Conv2DGroupTestCase  # isort:skip  # noqa: E402
 
 # Models
-from pydtnn.tests.model_dtype import ModelDTypeTestCase  # isort:skip
-from pydtnn.tests.model_tensor import ModelTensorTestCase  # isort:skip
+from pydtnn.tests.model_dtype import ModelDTypeTestCase  # isort:skip  # noqa: E402
+from pydtnn.tests.model_tensor import ModelTensorTestCase  # isort:skip  # noqa: E402
 try:
-    from pydtnn.tests.model_gpu import ModelGpuTestCase  # isort:skip
+    from pydtnn.tests.model_gpu import ModelGpuTestCase  # isort:skip  # noqa: E402
 except Exception:
     warn("GPU not available, skiping tests!")
 

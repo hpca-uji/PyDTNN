@@ -180,7 +180,7 @@ def _pydtnn_inference(new_model, old_model, dataset, old_first=None):
             pydtnn_inference(model=new_model, dataset=dataset)
             print("OLD model")
             pydtnn_inference(model=old_model, dataset=dataset)
-        case not_old_model:  # old_first = None
+        case _:  # old_first = None
             print("NEW model")
             pydtnn_inference(model=new_model, dataset=dataset)
 

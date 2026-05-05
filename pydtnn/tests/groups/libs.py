@@ -2,6 +2,14 @@
 import logging
 from warnings import warn
 
+__all__ = (
+    "Conv2DConvGemmTestCase",
+    "ConvGemmTestCase",
+    "ModelConvGemmTestCase",
+    "ConvWinogradTestCase",
+    "ConvDirectTestCase"
+)
+
 logger = logging.getLogger(__name__)
 
 

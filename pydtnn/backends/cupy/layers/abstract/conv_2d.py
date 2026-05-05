@@ -7,7 +7,7 @@ from cupy.cuda import Stream  # type: ignore
 from pydtnn.backends.cupy.layers.layer import LayerCupy
 from pydtnn.backends.numpy.layers.abstract.conv_2d import AbstractConv2DNumpy
 from pydtnn.layers.abstract.conv_2d import AbstractConv2D
-from pydtnn.libs import numpy as np
+
 from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
 
 __all__ = (

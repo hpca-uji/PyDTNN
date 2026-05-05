@@ -80,21 +80,17 @@ class Layers[T: Array](Utils[T]):
         layer_name = None
 
         match (layer1, layer2):
-            case (FusedLayerMixIn(), _): pass  # else: layer_name = None
-            # else: layer_name = None
+            case (FusedLayerMixIn(), _): pass
             case (Conv2D(), BatchNormalization()):
                 if self.enable_fused_conv_bn:
                     layer_name = "conv_2d_batch_normalization"
-                # else: layer_name = None
             case (Conv2D(), Relu()):
                 if self.enable_fused_conv_relu:
                     layer_name = "conv_2d_relu"
-                # else: layer_name = None
             case (BatchNormalization(), Relu()):
                 if self.enable_fused_bn_relu:
                     layer_name = "batch_normalization_relu"
-                # else: layer_name = None
-            case _: pass  # else: layer_name = None
+            case _: pass
 
         return layer_name, [layer1, layer2]
 

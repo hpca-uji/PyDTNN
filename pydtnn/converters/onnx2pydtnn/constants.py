@@ -2,8 +2,7 @@
 from typing import Any, Callable
 
 from pydtnn.abstract.layerable import Layerable
-from pydtnn.converters.onnx2pydtnn.operations.implemented_operations import *
-
+from pydtnn.converters.onnx2pydtnn.operations.implemented_operations import Add, AveragePool, BatchNormalization, Concat, Conv, Dropout, Flatten, Gemm, GlobalAveragePool, MaxPool, Mul, Relu, Unsqueeze
 __all__ = (
     "pads_from_onnx_to_pydtnn",
     "switch_onnx_operation_to_pydtnn",

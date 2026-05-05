@@ -17,11 +17,11 @@ __all__ = (
     "find_lib_path",
 )
 
-if sys.version_info < (3,):
-    range = xrange
-
 try:
-    import elftools  # type: ignore
+    import elftools.construct.macros as macros  # type: ignore
+    import elftools.elf.elffile as elffile  # type: ignore
+    import elftools.elf.structs as structs  # type: ignore
+
 except ImportError:
     import re
 
@@ -72,10 +72,6 @@ except ImportError:
 
 else:
     import ctypes
-
-    import elftools.construct.macros as macros  # type: ignore
-    import elftools.elf.elffile as elffile  # type: ignore
-    import elftools.elf.structs as structs  # type: ignore
 
     def get_soname(filename):  # type: ignore
         """

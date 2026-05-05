@@ -196,9 +196,8 @@ def convert_model(pydtnn_model: PyDTNN_Model, ir_version: int = 1, producer_name
                   doc_string: str = "https://github.com/hpca-uji/PyDTNN",
                   ) -> onnx.ModelProto:
 
-    nodes = get_layers(pydtnn_model)
-
-    # TODO:
+    # TODO
+    # nodes = get_layers(pydtnn_model)
     model = onnx.helper.make_model()
 
     return model

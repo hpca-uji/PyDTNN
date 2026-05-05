@@ -70,7 +70,7 @@ def allreduce_time(elems: int, cpu_speed: float, network_bw: float, network_lat:
         case _:
             raise ValueError(f"network_alg ({network_alg}) not in {list(NetworkAlgEnum)}")
     # print("allreduce_time; s; %8d; t; %8.8f" % (elems, time))
-    return np.array([time, 0, 0, time], dtype=np.float32)
+    return np.array([time, comp_time, 0, time - comp_time], dtype=np.float32)
 
 
 def reduce_time(elems: int, cpu_speed: float, network_bw: float, network_lat: float,

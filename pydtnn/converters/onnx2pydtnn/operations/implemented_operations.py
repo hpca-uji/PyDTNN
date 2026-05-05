@@ -155,7 +155,7 @@ def Conv(info: dict[str, Any]) -> Layerable:
 def Dropout(info: dict[str, Any]) -> Layerable:
     print(f"attributes: {info[cons.CONST_ATTRIBUTES]}")
     # Onnx attributes names from: https://onnx.ai/onnx/operators/onnx__Dropout.html#l-onnx-doc-dropout
-    ONNX_SEED = "seed"  # TODO: Check if the random seed it's important. If it is, check how to set it.
+    # TODO: ONNX_SEED = "seed"
     # PyDTNN attributes names from Dropout class.
     PYDTNN_RATE = "rate"
 
@@ -315,7 +315,7 @@ def MaxPool(info: dict[str, Any]) -> Layerable:
 
     for k in args.keys():
         print(f"args[{k}]: {type(args[k])} | {args[k]}")
-        a = args[k]
+        # a = args[k]
 
     from pydtnn.layers.max_pool_2d import MaxPool2D
     return MaxPool2D(**args)

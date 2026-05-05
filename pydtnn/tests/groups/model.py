@@ -3,11 +3,16 @@
 import logging
 from warnings import warn
 
-from pydtnn.tests.model_dtype import ModelDTypeTestCase
-from pydtnn.tests.model_tensor import ModelTensorTestCase
+__all__ = (
+    "ModelDTypeTestCase",
+    "ModelTensorTestCase",
+    "ModelGpuTestCase"
+)
 
 logger = logging.getLogger(__name__)
 
+from pydtnn.tests.model_dtype import ModelDTypeTestCase  # isort:skip  # noqa: E402
+from pydtnn.tests.model_tensor import ModelTensorTestCase  # isort:skip  # noqa: E402
 
 try:
     from pydtnn.tests.model_gpu import ModelGpuTestCase

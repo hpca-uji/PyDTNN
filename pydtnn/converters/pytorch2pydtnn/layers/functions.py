@@ -56,7 +56,7 @@ def adaptive_avg_pool_2d(args: dict[str, str]) -> tuple[AveragePool2D, str]:
         case 1:
             param = int(params[0])
             params = [param, param]  # Only 1 argument implies the weight and height are the same.
-        case greater_than_1:  # len must be always >= 0
+        case _:  # len must be always >= 0
             params = [int(param.replace('(', '').replace(')', '')) for param in params]
 
     if params:
