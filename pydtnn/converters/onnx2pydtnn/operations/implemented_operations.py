@@ -3,10 +3,8 @@ from typing import Any
 
 import numpy as np
 
-import pydtnn.activations as activation
 import pydtnn.converters.onnx2pydtnn.constants as cons
 # Functionality imports
-import pydtnn.layers as layer
 from pydtnn.abstract.layerable import Layerable
 
 # = A =

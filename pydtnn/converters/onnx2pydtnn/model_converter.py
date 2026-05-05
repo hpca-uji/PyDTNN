@@ -186,7 +186,7 @@ def load_layers(model: PyDTNN_Model, operations: list[Layerable]) -> None:
         print(f"=> Layer shape pre-add: {operation.shape}")
         model.add(operation)
         print(f"=> Layer shape: {operation.shape}")
-    print(f"Layers loaded")
+    print("Layers loaded")
 
     return  # None (No value is returned)
 

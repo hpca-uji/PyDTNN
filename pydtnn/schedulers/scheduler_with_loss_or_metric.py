@@ -1,5 +1,4 @@
 import logging
-from typing import TYPE_CHECKING
 
 from pydtnn.schedulers.scheduler import Scheduler
 
@@ -8,10 +7,6 @@ __all__ = (
 )
 
 logger = logging.getLogger(__name__)
-
-
-if TYPE_CHECKING:
-    from pydtnn.model import Model
 
 
 class SchedulerWithLossOrMetric(Scheduler):

@@ -179,7 +179,7 @@ class ModelCommonTestCase(TestCase):
         assert len(x1) == len(x2), "x1 and x2 should have the same length"
         if verbose_test():
             print()
-            print(f"Comparing outputs of both models...")
+            print("Comparing outputs of both models...")
         for i, layer in enumerate(model1.layers, 1):
             # Skip test on layers that behave randomly
             if not isinstance(layer, Dropout):
@@ -202,7 +202,7 @@ class ModelCommonTestCase(TestCase):
                 i = i + min_dx
                 print(f"{i} - {dx2[i].shape=}")
 
-            print(f"\nComparing dx of both models...")
+            print("\nComparing dx of both models...")
         for i, layer in enumerate(model2.layers, 0):
             # Skip test on layers that behave randomly
             if not isinstance(layer, Dropout):

@@ -10,7 +10,6 @@ from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.conv_2d_depthwise import Conv2DDepthwise
 from pydtnn.layers.conv_2d_pointwise import Conv2DPointwise
 from pydtnn.layers.input import Input
-from pydtnn.layers.layer import Layer
 from pydtnn.model import Model
 from pydtnn.utils import random
 

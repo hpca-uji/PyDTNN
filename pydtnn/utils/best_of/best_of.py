@@ -1,6 +1,5 @@
 import logging
 import traceback
-import types
 from collections import abc, defaultdict
 from contextlib import suppress
 from timeit import default_timer as timer

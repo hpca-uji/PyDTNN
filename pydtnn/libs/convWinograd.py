@@ -238,11 +238,11 @@ class ConvWinograd:
 
         try:
             self.conv_winograd_workspace_alloc_pre = \
-                getattr(self.__class__.lib_cw, f"conv_winograd_workspace_alloc_pre")
+                getattr(self.__class__.lib_cw, "conv_winograd_workspace_alloc_pre")
             self.conv_winograd_workspace_alloc_kernel = \
-                getattr(self.__class__.lib_cw, f"conv_winograd_workspace_alloc_kernel")
+                getattr(self.__class__.lib_cw, "conv_winograd_workspace_alloc_kernel")
         except AttributeError:
-            logger.error(f"Winograd conv_winograd_workspace_alloc_pre/kernel routines not found.")
+            logger.error("Winograd conv_winograd_workspace_alloc_pre/kernel routines not found.")
 
         def winograd_workspace_alloc_pre(m, r, k, c):
             _u = ctypes.POINTER(ctypes.c_float)()

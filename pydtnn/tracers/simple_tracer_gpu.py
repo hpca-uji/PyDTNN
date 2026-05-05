@@ -10,11 +10,7 @@ __all__ = (
 
 logger = logging.getLogger(__name__)
 
-try:
-    import pycuda.driver as drv  # type: ignore
-except Exception as e:
-    pass
-
+import pycuda.driver as drv  # type: ignore
 
 if TYPE_CHECKING:
     from pympi.MPI import Comm as MPI_COMM  # type: ignore

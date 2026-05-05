@@ -23,7 +23,6 @@ from math import prod
 
 import numpy as np
 
-import pydtnn
 from pydtnn.converters.pytorch2pydtnn.common import TRANSPOSE_WEIGHTS_LAYERS
 from pydtnn.utils import random
 
@@ -210,9 +209,9 @@ def forward_pydtnn_model(model: PyDTNN_Model, dataset: np.ndarray | TensorArray)
 
 def test_layers_gpu(model: PyDTNN_Model, dataset: np.ndarray) -> TensorArray:
 
-    print(f"test_layers_gpu - model")
+    print("test_layers_gpu - model")
     model.show()
-    print(f"test_layers_gpu - model\n========")
+    print("test_layers_gpu - model\n========")
     print(f"model.dtype: {model.dtype}")
 
     print(f"TYPES_DATA_CUDA[model.dtype]: {TYPES_DATA_CUDA[model.dtype]}")

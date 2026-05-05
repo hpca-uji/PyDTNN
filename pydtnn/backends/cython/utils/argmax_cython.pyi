@@ -1,6 +1,6 @@
 import numpy as _np
 
-from pydtnn.backends.cython.utils.base import _npDT, _npDT_1Dims, _npDT_2Dims, _npDT_3Dims, _npDT_4Dims
+from pydtnn.backends.cython.utils.base import _npDT, _npDT_1Dims, _npDT_2Dims
 
 def argmax_cython[T: _npDT](x: _npDT_2Dims[T],
                             maxv: _npDT_1Dims[T],

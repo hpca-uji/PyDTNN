@@ -5,8 +5,8 @@ from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT, PYDTN
 
 try:
     import pydtnn.libs.nccl as nccl
-except Exception as e:
-    pass
+except Exception:
+    nccl = None
 
 __all__ = (
     "LayerablePycuda",
