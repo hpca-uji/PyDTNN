@@ -14,9 +14,7 @@ from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT, PYDTN
 from pydtnn.utils.constants import ArrayShape, Parameters
 from pydtnn.utils.performance_models import matmul_time
 
-__all__ = (
-    "FCPycuda",
-)
+__all__ = ("FCPycuda",)
 
 logger = logging.getLogger(__name__)
 
@@ -110,12 +108,7 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
 
         self.fwd_time = self.bwd_time = 0
         self.fwd_time += matmul_time(
-            m=self.model.batch_size,
-            n=self.weights_cpu.shape[1],
-            k=self.weights_cpu.shape[0],
-            cpu_speed=self.model.cpu_speed,
-            memory_bw=self.model.memory_bw,
-            dtype=self.model.dtype
+            m=self.model.batch_size, n=self.weights_cpu.shape[1], k=self.weights_cpu.shape[0], cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw, dtype=self.model.dtype
         )  # type: ignore (it's fine)
         self.bwd_time = matmul_time(m=self.weights_cpu.shape[0],
                                     n=self.weights_cpu.shape[1],

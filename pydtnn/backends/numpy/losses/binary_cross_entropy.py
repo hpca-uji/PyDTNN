@@ -6,9 +6,7 @@ from pydtnn.backends.numpy.losses.loss import LossNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.losses.binary_cross_entropy import BinaryCrossEntropy
 
-__all__ = (
-    "BinaryCrossEntropyNumpy",
-)
+__all__ = ("BinaryCrossEntropyNumpy",)
 
 logger = logging.getLogger(__name__)
 

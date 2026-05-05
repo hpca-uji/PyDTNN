@@ -72,12 +72,12 @@ __all__ = (
     "cuPointerGetAttribute",
 )
 
-if 'linux' in sys.platform:
-    _libcuda_libname_list = ['libcuda.so']
-elif sys.platform == 'darwin':
-    _libcuda_libname_list = ['libcuda.dylib']
-elif sys.platform == 'win32':
-    _libcuda_libname_list = ['cuda.dll', 'nvcuda.dll']
+if "linux" in sys.platform:
+    _libcuda_libname_list = ["libcuda.so"]
+elif sys.platform == "darwin":
+    _libcuda_libname_list = ["libcuda.dylib"]
+elif sys.platform == "win32":
+    _libcuda_libname_list = ["cuda.dll", "nvcuda.dll"]
 else:
     raise RuntimeError("unsupported platform")
 

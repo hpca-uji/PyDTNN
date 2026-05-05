@@ -8,9 +8,7 @@ from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.libs import cudnn as cudnn
 from pydtnn.utils.constants import ArrayShape
 
-__all__ = (
-    "TanhPycuda",
-)
+__all__ = ("TanhPycuda",)
 
 logger = logging.getLogger(__name__)
 

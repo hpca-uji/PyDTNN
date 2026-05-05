@@ -12,9 +12,7 @@ from pydtnn.libs import numpy as np
 from pydtnn.model import Model
 from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
 
-__all__ = (
-    "MaxPool2DCython",
-)
+__all__ = ("MaxPool2DCython",)
 
 
 logger = logging.getLogger(__name__)

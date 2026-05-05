@@ -7,9 +7,7 @@ from pydtnn.backends.numpy.layers.max_pool_2d import MaxPool2DNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.utils.constants import ArrayShape
 
-__all__ = (
-    "MaxPool2DCupy",
-)
+__all__ = ("MaxPool2DCupy",)
 
 
 logger = logging.getLogger(__name__)

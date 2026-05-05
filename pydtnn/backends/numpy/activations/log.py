@@ -5,9 +5,7 @@ from pydtnn.activations.log import Log
 from pydtnn.backends.numpy.activations.activation import ActivationNumpy
 from pydtnn.libs import numpy as np
 
-__all__ = (
-    "LogNumpy",
-)
+__all__ = ("LogNumpy",)
 
 logger = logging.getLogger(__name__)
 

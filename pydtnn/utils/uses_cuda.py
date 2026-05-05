@@ -3,9 +3,7 @@ from typing import TYPE_CHECKING
 
 from pydtnn.utils import read_file
 
-__all__ = (
-    "UsesCudaCode",
-)
+__all__ = ("UsesCudaCode",)
 
 if TYPE_CHECKING:
     import cupy as cp  # type: ignore

@@ -8,9 +8,7 @@ from pydtnn.backends.numpy.activations.activation import ActivationNumpy
 from pydtnn.libs import numpy as libnp
 from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
 
-__all__ = (
-    "ActivationCupy",
-)
+__all__ = ("ActivationCupy",)
 
 logger = logging.getLogger(__name__)
 

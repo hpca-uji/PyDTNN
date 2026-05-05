@@ -3,9 +3,7 @@ import logging
 from pydtnn.layers.abstract.block_layer import AbstractBlockLayer
 from pydtnn.utils.constants import Array
 
-__all__ = (
-    "EncoderDecoder",
-)
+__all__ = ("EncoderDecoder",)
 
 logger = logging.getLogger(__name__)
 

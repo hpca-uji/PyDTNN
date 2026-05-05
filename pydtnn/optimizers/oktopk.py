@@ -8,9 +8,7 @@ from pydtnn.abstract.layerable import Layerable
 from pydtnn.optimizers.optimizer import Optimizer
 from pydtnn.utils.constants import Array
 
-__all__ = (
-    "OkTopk",
-)
+__all__ = ("OkTopk",)
 
 logger = logging.getLogger(__name__)
 

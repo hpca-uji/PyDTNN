@@ -10,9 +10,7 @@ import numpy as np
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import TensorFormat, decode_shape, encode_shape
 
-__all__ = (
-    "TensorArray",
-)
+__all__ = ("TensorArray",)
 
 logger = logging.getLogger(__name__)
 

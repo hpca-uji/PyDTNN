@@ -10,9 +10,7 @@ from pydtnn.tests.abstract.common import D, Params
 from pydtnn.tests.abstract.conv_2d_common import Conv2DCommonTestCase
 from pydtnn.utils.tensor import TensorFormat
 
-__all__ = (
-    "BatchNormalizationReluTestCase",
-)
+__all__ = ("BatchNormalizationReluTestCase",)
 
 logger = logging.getLogger(__name__)
 

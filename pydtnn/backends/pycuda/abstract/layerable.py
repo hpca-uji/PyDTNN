@@ -8,9 +8,7 @@ try:
 except Exception:
     nccl = None
 
-__all__ = (
-    "LayerablePycuda",
-)
+__all__ = ("LayerablePycuda",)
 
 
 class LayerablePycuda(Layerable[TensorArray], BasePycuda):

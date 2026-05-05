@@ -12,9 +12,7 @@ import numpy as np
 from pydtnn.datasets.dataset import Dataset
 from pydtnn.utils import random
 
-__all__ = (
-    "Tsunamis",
-)
+__all__ = ("Tsunamis",)
 
 logger = logging.getLogger(__name__)
 

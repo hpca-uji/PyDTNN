@@ -14,9 +14,7 @@ from pydtnn.utils.constants import Array, ArrayShape, NetworkAlgoEnum
 from pydtnn.utils.memory_pool import PrivateMemory
 from pydtnn.utils.tensor import TensorFormat
 
-__all__ = (
-    "Base",
-)
+__all__ = ("Base",)
 
 logger = logging.getLogger(__name__)
 

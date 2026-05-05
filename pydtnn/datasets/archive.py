@@ -8,9 +8,7 @@ import numpy as np
 from pydtnn.datasets.dataset import Dataset
 from pydtnn.utils import get_npz_shape
 
-__all__ = (
-    "Archive",
-)
+__all__ = ("Archive",)
 
 logger = logging.getLogger(__name__)
 

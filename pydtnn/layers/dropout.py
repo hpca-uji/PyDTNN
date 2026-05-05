@@ -3,9 +3,7 @@ import logging
 from pydtnn.layers.layer import Layer
 from pydtnn.utils.constants import Array, ArrayShape
 
-__all__ = (
-    "Dropout",
-)
+__all__ = ("Dropout",)
 
 logger = logging.getLogger(__name__)
 

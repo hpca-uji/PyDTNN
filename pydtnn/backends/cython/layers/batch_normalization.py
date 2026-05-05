@@ -6,9 +6,7 @@ from pydtnn.backends.cython.utils.bn_training_cython import bn_training_bwd_cyth
 from pydtnn.backends.numpy.layers.batch_normalization import BatchNormalizationNumpy
 from pydtnn.libs import numpy as np
 
-__all__ = (
-    "BatchNormalizationCython",
-)
+__all__ = ("BatchNormalizationCython",)
 
 logger = logging.getLogger(__name__)
 

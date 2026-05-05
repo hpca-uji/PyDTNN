@@ -11,9 +11,7 @@ from pydtnn.datasets.dataset import Dataset
 from pydtnn.utils import random
 from pydtnn.utils.constants import ArrayShape
 
-__all__ = (
-    "Folder",
-)
+__all__ = ("Folder",)
 
 logger = logging.getLogger(__name__)
 

@@ -1,7 +1,6 @@
-
 from pydtnn.backends.cython.utils.base import _npDT, _npDT_1Dims
 
-def sigmoid_fwd_cython[T:_npDT](x: _npDT_1Dims[T], y: _npDT_1Dims[T]) -> None:
+def sigmoid_fwd_cython[T: _npDT](x: _npDT_1Dims[T], y: _npDT_1Dims[T]) -> None:
     """
     Args:
         x (npDT_1Dims): 1-dimensional input's array.

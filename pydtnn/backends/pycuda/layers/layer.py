@@ -10,9 +10,7 @@ from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.layers.layer import Layer
 from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
 
-__all__ = (
-    "LayerPycuda",
-)
+__all__ = ("LayerPycuda",)
 
 logger = logging.getLogger(__name__)
 

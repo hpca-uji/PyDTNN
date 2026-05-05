@@ -10,9 +10,7 @@ from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.optimizers.sgd import SGD
 from pydtnn.utils.constants import DTYPE2CTYPE
 
-__all__ = (
-    "SGDPycuda",
-)
+__all__ = ("SGDPycuda",)
 
 logger = logging.getLogger(__name__)
 

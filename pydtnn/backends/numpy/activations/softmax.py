@@ -6,9 +6,7 @@ from pydtnn.activations.softmax import Softmax
 from pydtnn.backends.numpy.activations.activation import ActivationNumpy
 from pydtnn.libs import numpy as np
 
-__all__ = (
-    "SoftmaxNumpy",
-)
+__all__ = ("SoftmaxNumpy",)
 
 logger = logging.getLogger(__name__)
 

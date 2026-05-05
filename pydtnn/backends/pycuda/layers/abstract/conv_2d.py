@@ -12,9 +12,7 @@ from pydtnn.utils.constants import ArrayShape, Parameters
 from pydtnn.utils.performance_models import matmul_time
 from pydtnn.utils.tensor import TensorFormat
 
-__all__ = (
-    "AbstractConv2DPycuda",
-)
+__all__ = ("AbstractConv2DPycuda",)
 
 logger = logging.getLogger(__name__)
 

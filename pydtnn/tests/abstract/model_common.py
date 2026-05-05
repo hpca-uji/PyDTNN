@@ -18,9 +18,7 @@ from pydtnn.tests.abstract.common import Params, TestCase, verbose_test
 from pydtnn.utils import print_with_header, random
 from pydtnn.utils.tensor import TensorFormat
 
-__all__ = (
-    "ModelCommonTestCase",
-)
+__all__ = ("ModelCommonTestCase",)
 
 logger = logging.getLogger(__name__)
 

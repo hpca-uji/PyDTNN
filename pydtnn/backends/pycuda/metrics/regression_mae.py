@@ -6,9 +6,7 @@ from pydtnn.backends.pycuda.metrics.metric import MetricPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.metrics.regression_mae import RegressionMAE
 
-__all__ = (
-    "RegressionMAEPycuda",
-)
+__all__ = ("RegressionMAEPycuda",)
 
 logger = logging.getLogger(__name__)
 

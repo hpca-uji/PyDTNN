@@ -16,9 +16,7 @@ from pydtnn.schedulers.scheduler import select as select_scheduler
 from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_MDL_EVENT_enum
 from pydtnn.utils.constants import Array
 
-__all__ = (
-    "Train",
-)
+__all__ = ("Train",)
 
 logger = logging.getLogger(__name__)
 

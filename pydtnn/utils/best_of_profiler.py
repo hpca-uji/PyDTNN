@@ -7,9 +7,7 @@ import numpy as np
 from pydtnn.utils import print_with_header
 from pydtnn.utils.best_of.best_of import BestOf
 
-__all__ = (
-    "BestOfProfiler",
-)
+__all__ = ("BestOfProfiler",)
 
 logger = logging.getLogger(__name__)
 

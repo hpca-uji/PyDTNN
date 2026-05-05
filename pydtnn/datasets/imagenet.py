@@ -16,9 +16,7 @@ from scipy.io import loadmat
 from pydtnn.datasets.dataset import Dataset
 from pydtnn.utils import random
 
-__all__ = (
-    "ImageNet",
-)
+__all__ = ("ImageNet",)
 
 logger = logging.getLogger(__name__)
 

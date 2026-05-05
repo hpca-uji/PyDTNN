@@ -10,9 +10,7 @@ from pydtnn.libs.convWinograd import ConvWinograd
 from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
 from pydtnn.utils.tensor import TensorFormat
 
-__all__ = (
-    "Conv2DWinograd",
-)
+__all__ = ("Conv2DWinograd",)
 
 logger = logging.getLogger(__name__)
 

@@ -9,9 +9,7 @@ from pydtnn.backends.numpy.layers.abstract.conv_2d import AbstractConv2DNumpy
 from pydtnn.layers.abstract.conv_2d import AbstractConv2D
 from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
 
-__all__ = (
-    "AbstractConv2DCupy",
-)
+__all__ = ("AbstractConv2DCupy",)
 
 logger = logging.getLogger(__name__)
 

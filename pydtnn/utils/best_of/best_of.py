@@ -11,9 +11,7 @@ from rich.console import Console
 from rich.table import Table
 from rich.tree import Tree
 
-__all__ = (
-    "BestOf",
-)
+__all__ = ("BestOf",)
 
 logger = logging.getLogger(__name__)
 

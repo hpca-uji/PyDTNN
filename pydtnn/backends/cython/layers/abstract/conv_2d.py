@@ -7,9 +7,7 @@ from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython, 
 from pydtnn.backends.numpy.layers.abstract.conv_2d import AbstractConv2DNumpy
 from pydtnn.libs import numpy as np
 
-__all__ = (
-    "AbstractConv2DCython",
-)
+__all__ = ("AbstractConv2DCython",)
 
 logger = logging.getLogger(__name__)
 

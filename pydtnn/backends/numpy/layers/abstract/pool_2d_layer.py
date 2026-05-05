@@ -9,9 +9,7 @@ from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.performance_models import col2im_time, im2col_time
 from pydtnn.utils.tensor import TensorFormat
 
-__all__ = (
-    "AbstractPool2DLayerNumpy",
-)
+__all__ = ("AbstractPool2DLayerNumpy",)
 
 logger = logging.getLogger(__name__)
 

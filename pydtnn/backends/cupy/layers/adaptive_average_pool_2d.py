@@ -7,9 +7,7 @@ from pydtnn.backends.numpy.layers.adaptive_average_pool_2d import AdaptiveAverag
 from pydtnn.libs import numpy as np
 from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
 
-__all__ = (
-    "AdaptiveAveragePool2DCupy",
-)
+__all__ = ("AdaptiveAveragePool2DCupy",)
 
 
 logger = logging.getLogger(__name__)

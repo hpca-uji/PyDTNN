@@ -10,9 +10,7 @@ from pydtnn.libs import numpy as np
 from pydtnn.optimizers.oktopk import OkTopk
 from pydtnn.utils.sparse.sparse import SparseMatrixCOO
 
-__all__ = (
-    "OkTopkNumpy",
-)
+__all__ = ("OkTopkNumpy",)
 
 logger = logging.getLogger(__name__)
 

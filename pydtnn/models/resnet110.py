@@ -13,9 +13,7 @@ from pydtnn.layers.input import Input
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.initializers import he_uniform
 
-__all__ = (
-    "resnet110",
-)
+__all__ = ("resnet110",)
 
 
 def resnet110(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:

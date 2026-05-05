@@ -34,9 +34,7 @@ else:
 
 from pydtnn.utils.constants import Array, NetworkAlgoEnum
 
-__all__ = (
-    "Init",
-)
+__all__ = ("Init",)
 
 __all__ = ("Init",)
 

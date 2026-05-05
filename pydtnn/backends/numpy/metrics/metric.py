@@ -5,9 +5,7 @@ from numpy import ndarray
 from pydtnn.backends.numpy.abstract.base import BaseNumpy
 from pydtnn.metrics.metric import Metric
 
-__all__ = (
-    "MetricNumpy",
-)
+__all__ = ("MetricNumpy",)
 
 logger = logging.getLogger(__name__)
 

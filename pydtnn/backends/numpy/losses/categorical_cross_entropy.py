@@ -6,9 +6,7 @@ from pydtnn.backends.numpy.losses.loss import LossNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.losses.categorical_cross_entropy import CategoricalCrossEntropy
 
-__all__ = (
-    "CategoricalCrossEntropyNumpy",
-)
+__all__ = ("CategoricalCrossEntropyNumpy",)
 
 logger = logging.getLogger(__name__)
 

@@ -4,9 +4,7 @@ from pydtnn import utils
 from pydtnn.model.layers import Layers
 from pydtnn.utils.constants import Array
 
-__all__ = (
-    "Repr",
-)
+__all__ = ("Repr",)
 
 logger = logging.getLogger(__name__)
 

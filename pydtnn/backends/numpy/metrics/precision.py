@@ -7,9 +7,7 @@ from pydtnn.backends.numpy.metrics.metric import MetricNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.metrics.precision import Precision
 
-__all__ = (
-    "PrecisionNumpy",
-)
+__all__ = ("PrecisionNumpy",)
 
 logger = logging.getLogger(__name__)
 

@@ -7,9 +7,7 @@ from pydtnn.layers.layer import Layer
 from pydtnn.utils.constants import Array, ArrayShape, Parameters
 from pydtnn.utils.initializers import InitializerFunc, glorot_uniform, zeros
 
-__all__ = (
-    "FC",
-)
+__all__ = ("FC",)
 
 logger = logging.getLogger(__name__)
 

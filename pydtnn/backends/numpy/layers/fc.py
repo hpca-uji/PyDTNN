@@ -7,9 +7,7 @@ from pydtnn.libs import numpy as np
 from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
 from pydtnn.utils.performance_models import matmul_time
 
-__all__ = (
-    "FCNumpy",
-)
+__all__ = ("FCNumpy",)
 
 logger = logging.getLogger(__name__)
 
@@ -53,29 +51,19 @@ class FCNumpy(FC[np.ndarray], LayerNumpy):
 
         # Performance model
         self.fwd_time = self.bwd_time = 0
-        self.fwd_time += matmul_time(
-            m=self.model.batch_size,
-            n=self.weights.shape[1],
-            k=self.weights.shape[0],
-            cpu_speed=self.model.cpu_speed,
-            memory_bw=self.model.memory_bw,
-            dtype=self.model.dtype
-        )  # type: ignore (it's fine)
-        self.bwd_time += matmul_time(
-            m=self.weights.shape[0],
-            n=self.weights.shape[1],
-            k=self.model.batch_size,
-            cpu_speed=self.model.cpu_speed,
-            memory_bw=self.model.memory_bw,
-            dtype=self.model.dtype)
-        self.bwd_time += matmul_time(
-            m=self.model.batch_size,
-            n=self.weights.shape[0],
-            k=self.weights.shape[1],
-            cpu_speed=self.model.cpu_speed,
-            memory_bw=self.model.memory_bw,
-            dtype=self.model.dtype
-        )  # type: ignore (It works well.)
+        self.fwd_time += matmul_time(m=self.model.batch_size,
+                                     n=self.weights.shape[1],
+                                     k=self.weights.shape[0],
+                                     cpu_speed=self.model.cpu_speed,
+                                     memory_bw=self.model.memory_bw,
+                                     dtype=self.model.dtype)  # type: ignore (it's fine)
+        self.bwd_time += matmul_time(m=self.weights.shape[0], n=self.weights.shape[1], k=self.model.batch_size, cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw, dtype=self.model.dtype)
+        self.bwd_time += matmul_time(m=self.model.batch_size,
+                                     n=self.weights.shape[0],
+                                     k=self.weights.shape[1],
+                                     cpu_speed=self.model.cpu_speed,
+                                     memory_bw=self.model.memory_bw,
+                                     dtype=self.model.dtype)  # type: ignore (It works well.)
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         self.x = x

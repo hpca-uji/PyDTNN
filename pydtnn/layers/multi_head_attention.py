@@ -4,9 +4,7 @@ from pydtnn.layers.abstract.block_layer import AbstractBlockLayer
 from pydtnn.utils import initializers
 from pydtnn.utils.constants import Array
 
-__all__ = (
-    "MultiHeadAttention",
-)
+__all__ = ("MultiHeadAttention",)
 
 logger = logging.getLogger(__name__)
 

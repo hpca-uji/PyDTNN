@@ -19,9 +19,7 @@ from pydtnn.utils import load_library
 from pydtnn.utils.best_of.best_of import BestOf
 from pydtnn.utils.tensor import TensorFormat, decode_shape, encode_shape
 
-__all__ = (
-    "ConvWinograd",
-)
+__all__ = ("ConvWinograd",)
 
 logger = logging.getLogger(__name__)
 
@@ -208,10 +206,8 @@ class ConvWinograd:
             raise NotImplementedError(f"Winograd not implemented for kernel {kh}x{kw}")
 
         try:
-            self.conv_winograd_workspace_alloc_pre = \
-                getattr(self.__class__.lib_cw, "conv_winograd_workspace_alloc_pre")
-            self.conv_winograd_workspace_alloc_kernel = \
-                getattr(self.__class__.lib_cw, "conv_winograd_workspace_alloc_kernel")
+            self.conv_winograd_workspace_alloc_pre = getattr(self.__class__.lib_cw, "conv_winograd_workspace_alloc_pre")
+            self.conv_winograd_workspace_alloc_kernel = getattr(self.__class__.lib_cw, "conv_winograd_workspace_alloc_kernel")
         except AttributeError:
             logger.error("Winograd conv_winograd_workspace_alloc_pre/kernel routines not found.")
 

@@ -20,9 +20,7 @@ try:
 except BaseException:
     pass
 
-__all__ = (
-    "main",
-)
+__all__ = ("main",)
 
 # Constants
 TENSOR_FORMAT = "NCHW"  # "NCHW" # "NHWC" # "NCHW"

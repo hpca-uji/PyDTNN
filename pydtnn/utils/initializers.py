@@ -13,19 +13,7 @@ import scipy.stats as stats
 from pydtnn.utils import random
 from pydtnn.utils.constants import ArrayShape
 
-__all__ = (
-    "DistributionModeEnum",
-    "ProbabilisticDistribution",
-    "glorot_normal",
-    "glorot_uniform",
-    "he_normal",
-    "he_uniform",
-    "lecun_normal",
-    "lecun_uniform",
-    "ones",
-    "zeros",
-    "InitializerFunc"
-)
+__all__ = ("DistributionModeEnum", "ProbabilisticDistribution", "glorot_normal", "glorot_uniform", "he_normal", "he_uniform", "lecun_normal", "lecun_uniform", "ones", "zeros", "InitializerFunc")
 
 logger = logging.getLogger(__name__)
 

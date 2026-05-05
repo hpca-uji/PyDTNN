@@ -7,9 +7,7 @@ from pydtnn.backends.numpy.metrics.metric import MetricNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.metrics.recall import Recall
 
-__all__ = (
-    "RecallNumpy",
-)
+__all__ = ("RecallNumpy",)
 
 logger = logging.getLogger(__name__)
 

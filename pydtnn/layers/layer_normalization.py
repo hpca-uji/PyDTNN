@@ -5,9 +5,7 @@ import numpy as np
 from pydtnn.layers.layer import Layer
 from pydtnn.utils.constants import Array
 
-__all__ = (
-    "LayerNormalization",
-)
+__all__ = ("LayerNormalization",)
 
 logger = logging.getLogger(__name__)
 

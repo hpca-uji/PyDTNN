@@ -8,9 +8,7 @@ from pydtnn.libs.mpi import MPI
 from pydtnn.tests.conv_2d_conv_gemm import Conv2DConvGemmTestCase, D
 from pydtnn.utils import random
 
-__all__ = (
-    "Conv2DConvGemmSlowTestCase",
-)
+__all__ = ("Conv2DConvGemmSlowTestCase",)
 
 logger = logging.getLogger(__name__)
 

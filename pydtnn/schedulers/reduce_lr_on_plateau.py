@@ -7,9 +7,7 @@ import numpy as np
 
 from pydtnn.schedulers.scheduler_with_loss_or_metric import SchedulerWithLossOrMetric
 
-__all__ = (
-    "ReduceLROnPlateau",
-)
+__all__ = ("ReduceLROnPlateau",)
 
 logger = logging.getLogger(__name__)
 

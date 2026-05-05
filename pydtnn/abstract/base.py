@@ -7,9 +7,7 @@ import typing
 from pydtnn import utils
 from pydtnn.utils.constants import Array
 
-__all__ = (
-    "Base",
-)
+__all__ = ("Base",)
 
 if typing.TYPE_CHECKING:
     from pydtnn.model import base as model_module

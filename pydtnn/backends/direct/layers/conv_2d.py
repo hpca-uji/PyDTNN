@@ -11,9 +11,7 @@ from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT, PYDTN
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import encode_shape
 
-__all__ = (
-    "Conv2DDirect",
-)
+__all__ = ("Conv2DDirect",)
 
 logger = logging.getLogger(__name__)
 

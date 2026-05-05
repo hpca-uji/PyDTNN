@@ -4,9 +4,7 @@ from pydtnn.backends.cupy.activations.activation import ActivationCupy
 from pydtnn.backends.numpy.activations.relu6 import Relu6Numpy
 from pydtnn.libs import numpy as np
 
-__all__ = (
-    "Relu6Cupy",
-)
+__all__ = ("Relu6Cupy",)
 
 logger = logging.getLogger(__name__)
 

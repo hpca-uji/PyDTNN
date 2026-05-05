@@ -10,9 +10,7 @@ from pydtnn.layers.adaptive_average_pool_2d import AdaptiveAveragePool2D
 from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
 from pydtnn.utils.performance_models import col2im_time, im2col_time
 
-__all__ = (
-    "AdaptiveAveragePool2DPycuda",
-)
+__all__ = ("AdaptiveAveragePool2DPycuda",)
 
 logger = logging.getLogger(__name__)
 

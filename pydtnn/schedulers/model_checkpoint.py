@@ -9,9 +9,7 @@ import numpy as np
 
 from pydtnn.schedulers.scheduler_with_loss_or_metric import SchedulerWithLossOrMetric
 
-__all__ = (
-    "ModelCheckpoint",
-)
+__all__ = ("ModelCheckpoint",)
 
 logger = logging.getLogger(__name__)
 

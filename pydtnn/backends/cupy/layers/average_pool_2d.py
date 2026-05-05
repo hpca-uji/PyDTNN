@@ -7,9 +7,7 @@ from pydtnn.backends.numpy.layers.average_pool_2d import AveragePool2DNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
 
-__all__ = (
-    "AveragePool2DCupy",
-)
+__all__ = ("AveragePool2DCupy",)
 
 
 logger = logging.getLogger(__name__)

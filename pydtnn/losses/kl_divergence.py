@@ -3,9 +3,7 @@ import logging
 from pydtnn.losses.loss import Loss
 from pydtnn.utils.constants import Array
 
-__all__ = (
-    "KLDivergence",
-)
+__all__ = ("KLDivergence",)
 
 logger = logging.getLogger(__name__)
 

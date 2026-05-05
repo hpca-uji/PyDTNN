@@ -5,9 +5,7 @@ from pydtnn.backends.numpy.abstract.base import BaseNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.losses.loss import Loss
 
-__all__ = (
-    "LossNumpy",
-)
+__all__ = ("LossNumpy",)
 
 logger = logging.getLogger(__name__)
 

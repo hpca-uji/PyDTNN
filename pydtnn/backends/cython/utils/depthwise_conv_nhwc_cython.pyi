@@ -1,13 +1,8 @@
-
 from pydtnn.backends.cython.utils.base import _npDT, _npDT_3Dims, _npDT_4Dims
 
-def depthwise_conv_nhwc_cython[T: _npDT](x: _npDT_4Dims[T],
-                                         k: _npDT_3Dims[T],
-                                         res: _npDT_4Dims[T],
-                                         ho: int, wo: int,
-                                         vpadding: int, hpadding: int,
-                                         vstride: int, hstride: int,
-                                         vdilation: int, hdilation: int) -> None:
+def depthwise_conv_nhwc_cython[T: _npDT](
+    x: _npDT_4Dims[T], k: _npDT_3Dims[T], res: _npDT_4Dims[T], ho: int, wo: int, vpadding: int, hpadding: int, vstride: int, hstride: int, vdilation: int, hdilation: int
+) -> None:
     """
     Args:
         x (npDT_4Dims): The 4 dimensional input's ndarray.

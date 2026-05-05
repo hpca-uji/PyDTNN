@@ -15,9 +15,7 @@ from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDTN
 from pydtnn.utils.constants import Array
 from pydtnn.utils.performance_models import allreduce_time
 
-__all__ = (
-    "Eval",
-)
+__all__ = ("Eval",)
 
 logger = logging.getLogger(__name__)
 
@@ -241,9 +239,7 @@ class Eval[T: Array](Sync[T]):
                 weights_size = 0 if (weights := layer.weights) is None else weights.size
                 biases_size = 0 if (biases := layer.biases) is None else biases.size
                 if self.comm and weights_size > 0:
-                    total_time += allreduce_time(weights_size + biases_size,
-                                                 self.cpu_speed, self.network_bw, self.network_lat,
-                                                 self.network_algo, self.nprocs, self.dtype)
+                    total_time += allreduce_time(weights_size + biases_size, self.cpu_speed, self.network_bw, self.network_lat, self.network_algo, self.nprocs, self.dtype)
         else:
             total_time_iar: int = 0
             # Non-blocking MPI
@@ -253,9 +249,7 @@ class Eval[T: Array](Sync[T]):
                 weights_size = 0 if (weights := layer.weights) is None else weights.size
                 biases_size = 0 if (biases := layer.biases) is None else biases.size
                 if self.comm and weights_size > 0:
-                    time_iar = allreduce_time(weights_size + biases_size,
-                                              self.cpu_speed, self.network_bw, self.network_lat,
-                                              self.network_algo, self.nprocs, self.dtype)
+                    time_iar = allreduce_time(weights_size + biases_size, self.cpu_speed, self.network_bw, self.network_lat, self.network_algo, self.nprocs, self.dtype)
                     total_time[3] += time_iar[3]
                     total_time_iar = max(total_time[0], total_time_iar) + time_iar[0]
 

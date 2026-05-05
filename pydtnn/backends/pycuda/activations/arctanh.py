@@ -9,9 +9,7 @@ from pydtnn.backends.pycuda.activations.activation import ActivationPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
 
-__all__ = (
-    "ArctanhPycuda",
-)
+__all__ = ("ArctanhPycuda",)
 
 logger = logging.getLogger(__name__)
 

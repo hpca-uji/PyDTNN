@@ -6,9 +6,7 @@ from pydtnn.layers.addition_block import AdditionBlock
 from pydtnn.libs import cudnn as cudnn
 from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
 
-__all__ = (
-    "AdditionBlockPycuda",
-)
+__all__ = ("AdditionBlockPycuda",)
 
 logger = logging.getLogger(__name__)
 

@@ -8,9 +8,7 @@ from pydtnn.backends.numpy.layers.layer import LayerNumpy
 from pydtnn.libs import numpy as libnp
 from pydtnn.utils.constants import ArrayShape
 
-__all__ = (
-    "LayerCupy",
-)
+__all__ = ("LayerCupy",)
 
 logger = logging.getLogger(__name__)
 

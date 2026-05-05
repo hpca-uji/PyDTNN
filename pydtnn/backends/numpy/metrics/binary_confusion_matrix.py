@@ -5,9 +5,7 @@ from pydtnn.backends.numpy.metrics.metric import MetricNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.metrics.binary_confusion_matrix import BinaryConfusionMatrix
 
-__all__ = (
-    "BinaryConfusionMatrixNumpy",
-)
+__all__ = ("BinaryConfusionMatrixNumpy",)
 
 logger = logging.getLogger(__name__)
 

@@ -11,9 +11,7 @@ from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OP
 from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
 from pydtnn.utils.performance_models import col2im_time, im2col_time
 
-__all__ = (
-    "LeakyReluPycuda",
-)
+__all__ = ("LeakyReluPycuda",)
 
 logger = logging.getLogger(__name__)
 
