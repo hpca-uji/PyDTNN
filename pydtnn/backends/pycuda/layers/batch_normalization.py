@@ -10,11 +10,10 @@ from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.libs import cudnn as cudnn
 from pydtnn.model import Model
-from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
-                                   PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
+from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
 from pydtnn.utils.constants import ArrayShape, Parameters
 
-__all__=(
+__all__ = (
     "BatchNormalizationPycuda",
 )
 

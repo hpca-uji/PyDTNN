@@ -6,9 +6,7 @@ from warnings import warn
 
 import numpy as np
 
-from pydtnn import (MPI, context, cublas, cublas_handle, cudnn, cudnn_handle,
-                    drv, gpuarray, hostname, nccl, nccl_comm, num_gpus,
-                    ranks_per_node, stream)
+from pydtnn import MPI, context, cublas, cublas_handle, cudnn, cudnn_handle, drv, gpuarray, hostname, nccl, nccl_comm, num_gpus, ranks_per_node, stream
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.datasets.dataset import Dataset
 from pydtnn.datasets.dataset import select as select_dataset
@@ -36,7 +34,7 @@ else:
 
 from pydtnn.utils.constants import Array
 
-__all__=(
+__all__ = (
     "Init",
 )
 

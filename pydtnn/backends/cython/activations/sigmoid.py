@@ -1,12 +1,11 @@
 import logging
 
 from pydtnn.backends.cython.activations.activation import ActivationCython
-from pydtnn.backends.cython.utils.sigmoid_cython import (sigmoid_bwd_cython,
-                                                         sigmoid_fwd_cython)
+from pydtnn.backends.cython.utils.sigmoid_cython import sigmoid_bwd_cython, sigmoid_fwd_cython
 from pydtnn.backends.numpy.activations.sigmoid import SigmoidNumpy
 from pydtnn.libs import numpy as np
 
-__all__=(
+__all__ = (
     "SigmoidCython",
 )
 

@@ -9,12 +9,11 @@ from pycuda.driver import Function  # type: ignore
 from pydtnn.activations.leaky_relu import LeakyRelu
 from pydtnn.backends.pycuda.activations.activation import ActivationPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.tracers.events import (PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS,
-                                   PYDTNN_OPS_EVENT_enum)
+from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
 from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
 from pydtnn.utils.performance_models import col2im_time, im2col_time
 
-__all__=(
+__all__ = (
     "LeakyReluPycuda",
 )
 

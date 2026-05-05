@@ -3,10 +3,9 @@ import logging
 from pydtnn.backends.pycuda.layers.layer import LayerPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.layers.flatten import Flatten
-from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
-                                   PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
+from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
 
-__all__=(
+__all__ = (
     "FlattenPycuda",
 )
 

@@ -21,7 +21,6 @@ from pydtnn.layers.encoder import Encoder
 from pydtnn.layers.input import Input
 from pydtnn.utils.constants import ArrayShape
 
-
 __all__ = (
     "bert",
 )

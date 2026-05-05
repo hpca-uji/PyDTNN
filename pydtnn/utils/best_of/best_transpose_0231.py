@@ -4,8 +4,7 @@ from typing import Callable
 import numpy as np
 
 from pydtnn.utils.best_of.best_of import BestOf
-from pydtnn.utils.transpose_cython import (transpose_0231_ijk_cython,
-                                           transpose_0231_ikj_cython)
+from pydtnn.utils.transpose_cython import transpose_0231_ijk_cython, transpose_0231_ikj_cython
 
 __all__ = (
     "transpose_0231_ijk_cython_wrapper",

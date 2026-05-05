@@ -10,12 +10,11 @@ from pydtnn.backends.pycuda.utils import matmul_gpu, matvec_gpu
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.layers.fc import FC
 from pydtnn.libs import cudnn as cudnn
-from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
-                                   PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
+from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
 from pydtnn.utils.constants import ArrayShape, Parameters
 from pydtnn.utils.performance_models import matmul_time
 
-__all__=(
+__all__ = (
     "FCPycuda",
 )
 

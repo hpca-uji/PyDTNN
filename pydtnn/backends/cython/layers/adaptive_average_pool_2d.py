@@ -1,14 +1,11 @@
-from pydtnn.libs import numpy as np
-from pydtnn.backends.numpy.layers.adaptive_average_pool_2d import \
-    AdaptiveAveragePool2DNumpy
-from pydtnn.backends.cython.utils.adaptive_avg_pooling_nhwc_cython import (
-    adaptive_avg_pooling_bwd_nhwc_cython, adaptive_avg_pooling_fwd_nhwc_cython)
-from pydtnn.backends.cython.utils.adaptive_avg_pooling_nchw_cython import (
-    adaptive_avg_pooling_bwd_nchw_cython, adaptive_avg_pooling_fwd_nchw_cython)
 import logging
 from typing import TYPE_CHECKING
 
 from pydtnn.backends.cython.layers.abstract.pool_2d_layer import AbstractPool2DLayerCython
+from pydtnn.backends.cython.utils.adaptive_avg_pooling_nchw_cython import adaptive_avg_pooling_bwd_nchw_cython, adaptive_avg_pooling_fwd_nchw_cython
+from pydtnn.backends.cython.utils.adaptive_avg_pooling_nhwc_cython import adaptive_avg_pooling_bwd_nhwc_cython, adaptive_avg_pooling_fwd_nhwc_cython
+from pydtnn.backends.numpy.layers.adaptive_average_pool_2d import AdaptiveAveragePool2DNumpy
+from pydtnn.libs import numpy as np
 
 __all__ = (
     "AdaptiveAveragePool2DCython",

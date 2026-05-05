@@ -8,7 +8,6 @@ from pydtnn.layers.encoder_decoder import EncoderDecoder
 from pydtnn.layers.input import Input
 from pydtnn.utils.constants import ArrayShape
 
-
 __all__ = (
     "iwslt",
 )

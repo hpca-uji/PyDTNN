@@ -2,24 +2,16 @@ import logging
 from typing import Any, Callable
 
 from pydtnn.abstract.layerable import Layerable
-from pydtnn.converters.pytorch2pydtnn.layers.activation import (LeakyReLU,
-                                                                LogSigmoid,
-                                                                ReLU, ReLU6,
-                                                                Sigmoid,
-                                                                Softmax, Tanh)
+from pydtnn.converters.pytorch2pydtnn.layers.activation import LeakyReLU, LogSigmoid, ReLU, ReLU6, Sigmoid, Softmax, Tanh
 from pydtnn.converters.pytorch2pydtnn.layers.convolutional import Conv2d
 from pydtnn.converters.pytorch2pydtnn.layers.dropout import Dropout
-from pydtnn.converters.pytorch2pydtnn.layers.functions import (
-    adaptive_avg_pool_2d, add, concat, flatten, log, relu, sigmoid, softmax,
-    tanh)
+from pydtnn.converters.pytorch2pydtnn.layers.functions import adaptive_avg_pool_2d, add, concat, flatten, log, relu, sigmoid, softmax, tanh
 from pydtnn.converters.pytorch2pydtnn.layers.linear import Linear
 from pydtnn.converters.pytorch2pydtnn.layers.normalization import BatchNorm2d
-from pydtnn.converters.pytorch2pydtnn.layers.pooling import (AdaptiveAvgPool2d,
-                                                             AvgPool2d,
-                                                             MaxPool2d)
+from pydtnn.converters.pytorch2pydtnn.layers.pooling import AdaptiveAvgPool2d, AvgPool2d, MaxPool2d
 from pydtnn.converters.pytorch2pydtnn.layers.utility import Flatten
 
-__all__=(
+__all__ = (
     "function_operation_to_pydtnn",
     "get_equivalent_layer",
     "get_lists_operations_and_outputs",

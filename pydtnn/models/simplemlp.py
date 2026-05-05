@@ -8,7 +8,6 @@ from pydtnn.layers.flatten import Flatten
 from pydtnn.layers.input import Input
 from pydtnn.utils.constants import ArrayShape
 
-
 __all__ = (
     "simplemlp",
 )

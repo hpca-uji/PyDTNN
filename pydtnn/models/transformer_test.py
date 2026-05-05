@@ -5,7 +5,6 @@ from pydtnn.layers.input import Input
 from pydtnn.layers.multi_head_attention import MultiHeadAttention
 from pydtnn.utils.constants import ArrayShape
 
-
 __all__ = (
     "transformer_test",
 )
