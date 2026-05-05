@@ -4,5 +4,4 @@ from pydtnn.backends.winograd.abstract.base import BaseWinograd
 __all__ = ("LayerableWinograd",)
 
 
-class LayerableWinograd(LayerableNumpy, BaseWinograd):
-    ...
+class LayerableWinograd(LayerableNumpy, BaseWinograd): ...

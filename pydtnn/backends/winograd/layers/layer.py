@@ -8,5 +8,4 @@ __all__ = ("LayerWinograd",)
 logger = logging.getLogger(__name__)
 
 
-class LayerWinograd(LayerNumpy, LayerableWinograd):
-    ...
+class LayerWinograd(LayerNumpy, LayerableWinograd): ...

@@ -8,5 +8,4 @@ __all__ = ("LayerGemm",)
 logger = logging.getLogger(__name__)
 
 
-class LayerGemm(LayerNumpy, LayerableGemm):
-    ...
+class LayerGemm(LayerNumpy, LayerableGemm): ...

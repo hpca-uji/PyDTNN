@@ -3,11 +3,7 @@
 import logging
 from warnings import warn
 
-__all__ = (
-    "ModelDTypeTestCase",
-    "ModelTensorTestCase",
-    "ModelGpuTestCase"
-)
+__all__ = ("ModelDTypeTestCase", "ModelTensorTestCase", "ModelGpuTestCase")
 
 logger = logging.getLogger(__name__)
 

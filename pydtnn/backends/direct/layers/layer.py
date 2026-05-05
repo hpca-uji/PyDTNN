@@ -8,5 +8,4 @@ __all__ = ("LayerDirect",)
 logger = logging.getLogger(__name__)
 
 
-class LayerDirect(LayerNumpy, LayerableDirect):
-    ...
+class LayerDirect(LayerNumpy, LayerableDirect): ...

@@ -3,9 +3,7 @@
 import logging
 from warnings import warn
 
-__all__ = (
-    "LayerPyTorchTestCase",
-)
+__all__ = ("LayerPyTorchTestCase",)
 
 logger = logging.getLogger(__name__)
 

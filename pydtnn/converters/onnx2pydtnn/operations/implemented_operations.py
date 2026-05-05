@@ -4,6 +4,7 @@ from typing import Any
 import numpy as np
 
 import pydtnn.converters.onnx2pydtnn.constants as cons
+
 # Functionality imports
 from pydtnn.abstract.layerable import Layerable
 

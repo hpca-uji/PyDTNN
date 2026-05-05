@@ -8,5 +8,4 @@ __all__ = ("AbstractConv2DWinograd",)
 logger = logging.getLogger(__name__)
 
 
-class AbstractConv2DWinograd(AbstractConv2DNumpy, LayerWinograd):
-    ...
+class AbstractConv2DWinograd(AbstractConv2DNumpy, LayerWinograd): ...

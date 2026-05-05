@@ -47,6 +47,7 @@ from pydtnn.tests.conv_2d_group import Conv2DGroupTestCase  # isort:skip  # noqa
 # Models
 from pydtnn.tests.model_dtype import ModelDTypeTestCase  # isort:skip  # noqa: E402
 from pydtnn.tests.model_tensor import ModelTensorTestCase  # isort:skip  # noqa: E402
+
 try:
     from pydtnn.tests.model_gpu import ModelGpuTestCase  # isort:skip  # noqa: E402
 except Exception:

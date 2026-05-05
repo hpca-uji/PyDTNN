@@ -2,6 +2,7 @@
 from typing import Any
 
 import numpy as np
+
 # Operations/transformations related
 import onnx  # type: ignore
 

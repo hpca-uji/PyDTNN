@@ -2,12 +2,7 @@
 
 import logging
 
-__all__ = (
-    "BatchNormalizationReluTestCase",
-    "Conv2DBatchNormalizationTestCase",
-    "Conv2DBatchNormalizationReluTestCase",
-    "Conv2DReluTestCase"
-)
+__all__ = ("BatchNormalizationReluTestCase", "Conv2DBatchNormalizationTestCase", "Conv2DBatchNormalizationReluTestCase", "Conv2DReluTestCase")
 
 logger = logging.getLogger(__name__)
 

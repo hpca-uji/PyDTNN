@@ -8,5 +8,4 @@ __all__ = ("AbstractConv2DGemm",)
 logger = logging.getLogger(__name__)
 
 
-class AbstractConv2DGemm(AbstractConv2DNumpy, LayerGemm):
-    ...
+class AbstractConv2DGemm(AbstractConv2DNumpy, LayerGemm): ...

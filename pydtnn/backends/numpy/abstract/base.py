@@ -5,5 +5,4 @@ from pydtnn.abstract.base import Base
 __all__ = ("BaseNumpy",)
 
 
-class BaseNumpy(Base[np.ndarray]):
-    ...
+class BaseNumpy(Base[np.ndarray]): ...

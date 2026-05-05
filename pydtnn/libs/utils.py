@@ -14,7 +14,7 @@ import sys
 
 __all__ = (
     "get_soname",
-    "find_lib_path",
+    "find_lib_path"
 )
 
 try:

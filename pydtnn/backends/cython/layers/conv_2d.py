@@ -8,5 +8,4 @@ __all__ = ("Conv2DCython",)
 logger = logging.getLogger(__name__)
 
 
-class Conv2DCython(Conv2DNumpy, AbstractConv2DCython):
-    ...
+class Conv2DCython(Conv2DNumpy, AbstractConv2DCython): ...

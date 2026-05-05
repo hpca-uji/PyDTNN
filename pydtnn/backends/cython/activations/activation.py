@@ -8,5 +8,4 @@ __all__ = ("ActivationCython",)
 logger = logging.getLogger(__name__)
 
 
-class ActivationCython(ActivationNumpy, LayerableCython):
-    ...
+class ActivationCython(ActivationNumpy, LayerableCython): ...
