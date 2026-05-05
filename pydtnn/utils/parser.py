@@ -171,7 +171,7 @@ class ArgumentParser(argparse.ArgumentParser):
 
         # Synchronization options
         _sy_group = self.add_argument_group("Synchronization options")
-        _sy_group.add_argument('--shared-storage', default=True, type=bool_lambda,
+        _sy_group.add_argument('--shared-data', default=True, type=bool_lambda,
                                help="If 'True' ranks assume they share the file system. Default: True.")
         _sy_group.add_argument(
             '--model-sync-freq',

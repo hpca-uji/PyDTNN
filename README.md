@@ -156,7 +156,7 @@ The PyDTNN framework comes with a utility launcher called
     `NHWC` otherwise. Default: `NHWC`.
   - `--random-seed`: Initial state of random number generator. Default: `57005`.
   - `--shared-tmp-memory`: Allows to use a common memory pool for all the temporary data structures.
-  - `--shared-storage`: If `True` ranks assume they share the file
+  - `--shared-data`: If `True` ranks assume they share the file
     system. Default: `True`.
   - `--model-sync-freq`: Number of batches between model synchronization.
     The `0` value synchronizes gradients every batch. Positive values
@@ -389,7 +389,7 @@ $ mpirun -np 12 \
   num_epochs                     : 50
   evaluate                       : True
   weights_and_bias_filename      : None
-  shared_storage                 : True
+  shared_data                 : True
   history_file                   : None
   optimizer                      : adam
   learning_rate                  : 0.01
@@ -599,7 +599,7 @@ $ pydtnn-benchmark \
   evaluate_only                  : True
   weights_and_bias_filename      : vgg16-weights-nhwc.npz
   history_file                   : None
-  shared_storage                 : False
+  shared_data                 : False
   enable_fused_bn_relu           : False
   enable_fused_conv_relu         : False
   enable_fused_conv_bn           : False

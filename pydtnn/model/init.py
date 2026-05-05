@@ -212,7 +212,7 @@ class Init[T: Array](State[T]):
         if self.comm:
             self.comm_rank = self.comm.Get_rank()
             self.comm_size = self.comm.Get_size()
-            if self.shared_storage:
+            if self.shared_data:
                 self.rank = self.comm_rank
                 self.nprocs = self.comm_size
 

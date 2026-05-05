@@ -57,7 +57,7 @@ class Base[T: Array]:
     history_file: str
     model_sync_min_avail: int
     dataset_name: str
-    shared_storage: bool
+    shared_data: bool
     encryption_name: str
     augment_flip: float
     augment_crop_size: int

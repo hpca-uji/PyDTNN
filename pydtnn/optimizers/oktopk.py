@@ -54,7 +54,7 @@ class OkTopk[T: Array](Optimizer[T]):
         if self.model.model_sync_freq >= 0:
             warn("Optimizer does model sync but global model sync is also enabled!", RuntimeWarning)
 
-        if not self.model.shared_storage:
+        if not self.model.shared_data:
             raise NotImplementedError("OkTopK optimizer does not support Federated Learing (unbalanced datasets)!")
 
     @classmethod
