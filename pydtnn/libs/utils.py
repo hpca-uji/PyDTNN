@@ -12,10 +12,7 @@ import struct
 import subprocess
 import sys
 
-__all__ = (
-    "get_soname",
-    "find_lib_path"
-)
+__all__ = ("get_soname", "find_lib_path")
 
 try:
     import elftools.construct.macros as macros  # type: ignore
