@@ -6,9 +6,7 @@ from pydtnn.backends.numpy.metrics.metric import MetricNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.metrics.categorical_hinge import CategoricalHinge
 
-__all__ = (
-    "CategoricalHingeNumpy",
-)
+__all__ = ("CategoricalHingeNumpy",)
 
 logger = logging.getLogger(__name__)
 
@@ -17,14 +15,13 @@ if TYPE_CHECKING:
 
 
 class CategoricalHingeNumpy(CategoricalHinge[np.ndarray], MetricNumpy):
-
     def _model_init(self) -> None:
         super()._model_init()
 
         self._pos_shape = self.shape
         self._neg_shape = self.shape
-        self.pos_maxm_shape = (self.model.batch_size, )
-        self.neg_shape = (self.model.batch_size, )
+        self.pos_maxm_shape = (self.model.batch_size,)
+        self.neg_shape = (self.model.batch_size,)
         self.tmp_memory_used += int(math.prod(self._pos_shape) + math.prod(self._neg_shape) + math.prod(self.pos_maxm_shape) + math.prod(self.neg_shape)) * self.model.dtype.itemsize
         self.memory_used += self.tmp_memory_used
 

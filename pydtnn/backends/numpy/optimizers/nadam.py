@@ -7,9 +7,7 @@ from pydtnn.backends.numpy.optimizers.optimizer import OptimizerNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.optimizers.nadam import Nadam
 
-__all__ = (
-    "NadamNumpy",
-)
+__all__ = ("NadamNumpy",)
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +16,6 @@ if TYPE_CHECKING:
 
 
 class NadamNumpy(Nadam[np.ndarray], OptimizerNumpy):
-
     def _model_init(self, list_layers: list[LayerNumpy]) -> None:
         super()._model_init(list_layers)  # type: ignore (it is the right type)
 
@@ -108,13 +105,13 @@ class NadamNumpy(Nadam[np.ndarray], OptimizerNumpy):
             # NOTE: mt actually is "m / (1 - self.beta1 ** it)", the following formula is a small optimization to reduce operations:
             # mt = (m + (1 - self.beta1) * dw) / (1 - self.beta1 ** it)
             np.multiply((1 - self.beta1), dw, dtype=self.model.dtype, out=mt_temp_dw)
-            np.divide(mt_temp_dw, ((1 - self.beta1 ** it)), dtype=self.model.dtype, out=mt_temp_dw)
+            np.divide(mt_temp_dw, (1 - self.beta1**it), dtype=self.model.dtype, out=mt_temp_dw)
             np.add(m, mt_temp_dw, dtype=self.model.dtype, out=mt_temp_dw)
             # )
 
             # (
             # vt = v / (1 - self.beta2 ** it)
-            np.divide(v, ((1 - self.beta2 ** it)), dtype=self.model.dtype, out=vt_temp_w)
+            np.divide(v, (1 - self.beta2**it), dtype=self.model.dtype, out=vt_temp_w)
             # )
 
             # w -= (self.learning_rate * (mt / np.sqrt(vt + epsilon))))

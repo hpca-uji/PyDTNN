@@ -13,9 +13,7 @@ from pydtnn.layers.max_pool_2d import MaxPool2D
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.initializers import he_uniform
 
-__all__ = (
-    "vgg16bn",
-)
+__all__ = ("vgg16bn",)
 
 
 def vgg16bn(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:

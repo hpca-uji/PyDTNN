@@ -8,9 +8,7 @@ from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT, PYDTN
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import TensorFormat, format_transpose
 
-__all__ = (
-    "Conv2DNumpy",
-)
+__all__ = ("Conv2DNumpy",)
 
 
 logger = logging.getLogger(__name__)
@@ -20,7 +18,6 @@ if TYPE_CHECKING:
 
 
 class Conv2DNumpy(AbstractConv2DStandardNumpy):
-
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
         super()._model_init(prev_shape, x)
 
@@ -41,8 +38,8 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
                 self._x_cr_shape = (dim_n, self.dim_c)
                 _dw_shape = (self.dim_c, self.co)
             case _:
-                self._x_cr_shape = (None, )
-                _dw_shape = (None, )
+                self._x_cr_shape = (None,)
+                _dw_shape = (None,)
                 raise NotImplementedError(f"{self.model.tensor_format} format not implemented.")
         # -
 
@@ -60,11 +57,11 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
 
         self.dx_shape_size = int(math.prod(self.dx_shape))
         # NOTE: These attributes only store data, their values before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
-        self.temp_c_r = np.zeros(shape=(math.prod(self._x_cr_shape), ), dtype=self.model.dtype)
+        self.temp_c_r = np.zeros(shape=(math.prod(self._x_cr_shape),), dtype=self.model.dtype)
         # self.temp_c_r_dx: Temporal array where the forward and batckward's cols/rows are stored
         self.memory_used += self.temp_c_r.nbytes
 
-        self.temp_y_dx = np.zeros(shape=(max(self.y_size, self.dx_shape_size), ), dtype=self.model.dtype)
+        self.temp_y_dx = np.zeros(shape=(max(self.y_size, self.dx_shape_size),), dtype=self.model.dtype)
         # self.temp_y_bc_br: Temporal array where the y and backward's cols/rows values are stored.
         self.memory_used += self.temp_y_dx.nbytes
 
@@ -73,27 +70,27 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
     def get_rows(self, batch_size: int) -> np.ndarray:
         dim_n = batch_size * self.ho * self.wo
         shape = (dim_n, self.dim_c)
-        x_rows: np.ndarray = self.temp_c_r[:math.prod(shape)]
+        x_rows: np.ndarray = self.temp_c_r[: math.prod(shape)]
         x_rows = x_rows.reshape(shape)
         return np.ascontiguousarray(x_rows, dtype=self.model.dtype)
 
     def get_cols(self, batch_size: int) -> np.ndarray:
         dim_n = batch_size * self.ho * self.wo
         shape = (self.dim_c, dim_n)
-        x_cols: np.ndarray = self.temp_c_r[:math.prod(shape)]
+        x_cols: np.ndarray = self.temp_c_r[: math.prod(shape)]
         x_cols = x_cols.reshape(shape)
         return np.ascontiguousarray(x_cols, dtype=self.model.dtype)
 
     def get_y(self, batch_size: int) -> np.ndarray:
         dim_n = batch_size * self.ho * self.wo
         shape = (dim_n, self.co)
-        y: np.ndarray = self.temp_y_dx[:math.prod(shape)]
+        y: np.ndarray = self.temp_y_dx[: math.prod(shape)]
         y = y.reshape(shape)
         return np.ascontiguousarray(y, dtype=self.model.dtype)
 
     def get_dx(self, batch_size: int) -> np.ndarray:
         shape = self.model.encode_shape((batch_size, self.ci, self.hi, self.wi))
-        dx: np.ndarray = self.temp_y_dx[:math.prod(shape)]
+        dx: np.ndarray = self.temp_y_dx[: math.prod(shape)]
         dx = dx.reshape(shape)
         return np.ascontiguousarray(dx, dtype=self.model.dtype)
 
@@ -117,8 +114,7 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_MATMUL)
-        np.matmul(x_rows, w_cols, out=y,
-                  dtype=self.model.dtype)
+        np.matmul(x_rows, w_cols, out=y, dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.use_bias:
@@ -153,8 +149,7 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_MATMUL)
-        np.matmul(w_rows, x_cols, out=y.T,
-                  dtype=self.model.dtype)
+        np.matmul(w_rows, x_cols, out=y.T, dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.use_bias:
@@ -226,8 +221,7 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
 
         # Weigths gradient
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DW_MATMUL)
-        np.matmul(dy_rows, self.x_cols.T, out=self.dw,
-                  dtype=self.model.dtype)
+        np.matmul(dy_rows, self.x_cols.T, out=self.dw, dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         cols = self.get_cols(dy.shape[0])  # NOTE: cols shares the memory with self.x_cols
@@ -249,8 +243,7 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_MATMUL)
-        np.matmul(w_cols, dy_rows, out=cols,
-                  dtype=self.model.dtype, order='C')
+        np.matmul(w_cols, dy_rows, out=cols, dtype=self.model.dtype, order="C")
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         dx: np.ndarray = self.get_dx(dy.shape[0])

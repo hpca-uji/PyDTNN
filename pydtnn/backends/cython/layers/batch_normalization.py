@@ -6,9 +6,7 @@ from pydtnn.backends.cython.utils.bn_training_cython import bn_training_bwd_cyth
 from pydtnn.backends.numpy.layers.batch_normalization import BatchNormalizationNumpy
 from pydtnn.libs import numpy as np
 
-__all__ = (
-    "BatchNormalizationCython",
-)
+__all__ = ("BatchNormalizationCython",)
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +15,6 @@ if TYPE_CHECKING:
 
 
 class BatchNormalizationCython(BatchNormalizationNumpy, LayerCython):
-
     def _training_fwd(self, x: np.ndarray, _mean: np.ndarray, _var: np.ndarray, y: np.ndarray) -> None:
         bn_training_fwd_cython(x, y, self.xn, self.std, self.gamma, self.beta, _mean, _var, self.epsilon)  # type: ignore
 

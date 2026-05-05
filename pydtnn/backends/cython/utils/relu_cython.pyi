@@ -2,9 +2,7 @@ import numpy as _np
 
 from pydtnn.backends.cython.utils.base import _npDT, _npDT_1Dims
 
-def relu_cython[T:_npDT](x: _npDT_1Dims[T],
-                         max: _npDT_1Dims[T],
-                         mask: _np.ndarray[tuple[int], _np.dtype[_np.int8]]) -> None:
+def relu_cython[T: _npDT](x: _npDT_1Dims[T], max: _npDT_1Dims[T], mask: _np.ndarray[tuple[int], _np.dtype[_np.int8]]) -> None:
     """
     Args:
         x (npDT_1Dims): 1-dimensional input's array.
@@ -14,11 +12,7 @@ def relu_cython[T:_npDT](x: _npDT_1Dims[T],
         Nothing. The output is stored in "max" and "mask".
     """
 
-
-def capped_relu_cython[T:_npDT](x: _npDT_1Dims[T],
-                                max: _npDT_1Dims[T],
-                                mask: _np.ndarray[tuple[int], _np.dtype[_np.int8]],
-                                cap: float) -> None:
+def capped_relu_cython[T: _npDT](x: _npDT_1Dims[T], max: _npDT_1Dims[T], mask: _np.ndarray[tuple[int], _np.dtype[_np.int8]], cap: float) -> None:
     """
     ReLU function where the values above "cap"'s value are set as this value.
 
@@ -33,11 +27,7 @@ def capped_relu_cython[T:_npDT](x: _npDT_1Dims[T],
         Nothing. The output is stored in "max" and "mask".
     """
 
-
-def leaky_relu_cython[T:_npDT](x: _npDT_1Dims[T],
-                               max: _npDT_1Dims[T],
-                               mask: _npDT_1Dims[T],
-                               negative_slope: float) -> None:
+def leaky_relu_cython[T: _npDT](x: _npDT_1Dims[T], max: _npDT_1Dims[T], mask: _npDT_1Dims[T], negative_slope: float) -> None:
     """
     Args:
         x (npDT_1Dims): 1-dimensional input's array.

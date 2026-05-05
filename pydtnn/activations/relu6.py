@@ -3,9 +3,7 @@ import logging
 from pydtnn.activations.relu import Relu
 from pydtnn.utils.constants import Array, ArrayShape
 
-__all__ = (
-    "Relu6",
-)
+__all__ = ("Relu6",)
 
 logger = logging.getLogger(__name__)
 

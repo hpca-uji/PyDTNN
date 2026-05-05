@@ -1,9 +1,6 @@
 from pydtnn.backends.numpy.abstract.base import BaseNumpy
 
-__all__ = (
-    "BaseGemm",
-)
+__all__ = ("BaseGemm",)
 
 
-class BaseGemm(BaseNumpy):
-    ...
+class BaseGemm(BaseNumpy): ...

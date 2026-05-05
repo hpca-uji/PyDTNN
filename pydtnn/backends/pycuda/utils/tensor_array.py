@@ -10,9 +10,7 @@ import numpy as np
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import TensorFormat, decode_shape, encode_shape
 
-__all__ = (
-    "TensorArray",
-)
+__all__ = ("TensorArray",)
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +25,6 @@ except Exception:
 
 
 class TensorArray:
-
     class TensorType(StrEnum):
         TENSOR = auto()
         FILTER = auto()
@@ -35,65 +32,97 @@ class TensorArray:
         OTHER = auto()
 
     @staticmethod
-    def new_empty(shape: ArrayShape, dtype: np.dtype,
-                  tensor_format: TensorFormat, cudnn_dtype: int,
-                  tensor_type: TensorType = TensorType.TENSOR, desc: int | None = None,
-                  gpudirect: bool = False, cublas: bool = False):
+    def new_empty(
+        shape: ArrayShape,
+        dtype: np.dtype,
+        tensor_format: TensorFormat,
+        cudnn_dtype: int,
+        tensor_type: TensorType = TensorType.TENSOR,
+        desc: int | None = None,
+        gpudirect: bool = False,
+        cublas: bool = False,
+    ):
         gpu_arr = gpuarray.empty(shape, dtype)
-        return TensorArray(gpu_arr=gpu_arr, tensor_format=tensor_format, cudnn_dtype=cudnn_dtype,
-                           tensor_type=tensor_type, desc=desc, gpudirect=gpudirect, cublas=cublas)
+        return TensorArray(gpu_arr=gpu_arr, tensor_format=tensor_format, cudnn_dtype=cudnn_dtype, tensor_type=tensor_type, desc=desc, gpudirect=gpudirect, cublas=cublas)
 
     @staticmethod
-    def new_zeros(shape: ArrayShape, dtype: np.dtype,
-                  tensor_format: TensorFormat, cudnn_dtype: int,
-                  tensor_type: TensorType = TensorType.TENSOR, desc: int | None = None,
-                  gpudirect: bool = False, cublas: bool = False):
+    def new_zeros(
+        shape: ArrayShape,
+        dtype: np.dtype,
+        tensor_format: TensorFormat,
+        cudnn_dtype: int,
+        tensor_type: TensorType = TensorType.TENSOR,
+        desc: int | None = None,
+        gpudirect: bool = False,
+        cublas: bool = False,
+    ):
         gpu_arr = gpuarray.zeros(shape, dtype)
-        return TensorArray(gpu_arr=gpu_arr, tensor_format=tensor_format, cudnn_dtype=cudnn_dtype,
-                           tensor_type=tensor_type, desc=desc, gpudirect=gpudirect, cublas=cublas)
+        return TensorArray(gpu_arr=gpu_arr, tensor_format=tensor_format, cudnn_dtype=cudnn_dtype, tensor_type=tensor_type, desc=desc, gpudirect=gpudirect, cublas=cublas)
 
     @staticmethod
-    def new_pair_gpudirect(drv: pycuda_driver, shape: ArrayShape, dtype: np.dtype,
-                           tensor_format: TensorFormat, cudnn_dtype: int,
-                           tensor_type: TensorType = TensorType.TENSOR,
-                           desc: int | None = None, gpudirect: bool = False, cublas: bool = False) -> tuple[np.ndarray, "TensorArray"]:
+    def new_pair_gpudirect(
+        drv: pycuda_driver,
+        shape: ArrayShape,
+        dtype: np.dtype,
+        tensor_format: TensorFormat,
+        cudnn_dtype: int,
+        tensor_type: TensorType = TensorType.TENSOR,
+        desc: int | None = None,
+        gpudirect: bool = False,
+        cublas: bool = False,
+    ) -> tuple[np.ndarray, "TensorArray"]:
         x_cpu = drv.aligned_zeros(shape, dtype)
         x_gpu = drv.register_host_memory(x_cpu, flags=drv.mem_host_register_flags.DEVICEMAP)
 
-        x_gpu = TensorArray(x_gpu, tensor_format=tensor_format, cudnn_dtype=cudnn_dtype, tensor_type=tensor_type,
-                            desc=desc, gpudirect=gpudirect, cublas=cublas)
+        x_gpu = TensorArray(x_gpu, tensor_format=tensor_format, cudnn_dtype=cudnn_dtype, tensor_type=tensor_type, desc=desc, gpudirect=gpudirect, cublas=cublas)
         return (x_cpu, x_gpu)
 
     @staticmethod
-    def new_pair(shape: ArrayShape, dtype: np.dtype,
-                 tensor_format: TensorFormat, cudnn_dtype: int,
-                 tensor_type: TensorType = TensorType.TENSOR,
-                 desc: int | None = None, gpudirect: bool = False, cublas: bool = False) -> tuple[np.ndarray, "TensorArray"]:
+    def new_pair(
+        shape: ArrayShape,
+        dtype: np.dtype,
+        tensor_format: TensorFormat,
+        cudnn_dtype: int,
+        tensor_type: TensorType = TensorType.TENSOR,
+        desc: int | None = None,
+        gpudirect: bool = False,
+        cublas: bool = False,
+    ) -> tuple[np.ndarray, "TensorArray"]:
         x_cpu = np.zeros(shape, dtype)
         x_gpu = gpuarray.zeros(shape, dtype)
-        x_gpu = TensorArray(x_gpu, tensor_format=tensor_format, cudnn_dtype=cudnn_dtype, tensor_type=tensor_type,
-                            desc=desc, gpudirect=gpudirect, cublas=cublas)
+        x_gpu = TensorArray(x_gpu, tensor_format=tensor_format, cudnn_dtype=cudnn_dtype, tensor_type=tensor_type, desc=desc, gpudirect=gpudirect, cublas=cublas)
         return (x_cpu, x_gpu)
 
     @staticmethod
-    def new(shape: ArrayShape, dtype: np.dtype,
-            tensor_format: TensorFormat, cudnn_dtype: int,
-            tensor_type: TensorType = TensorType.TENSOR,
-            desc: int | None = None, gpudirect: bool = False, cublas: bool = False,
-            drv: pycuda_driver = None) -> tuple[np.ndarray, TensorArray]:
+    def new(
+        shape: ArrayShape,
+        dtype: np.dtype,
+        tensor_format: TensorFormat,
+        cudnn_dtype: int,
+        tensor_type: TensorType = TensorType.TENSOR,
+        desc: int | None = None,
+        gpudirect: bool = False,
+        cublas: bool = False,
+        drv: pycuda_driver = None,
+    ) -> tuple[np.ndarray, TensorArray]:
         if drv is not None:
-            return TensorArray.new_pair_gpudirect(drv=drv, shape=shape,
-                                                  dtype=dtype, tensor_format=tensor_format,
-                                                  cudnn_dtype=cudnn_dtype, tensor_type=tensor_type,
-                                                  desc=desc, gpudirect=gpudirect, cublas=cublas)
+            return TensorArray.new_pair_gpudirect(
+                drv=drv, shape=shape, dtype=dtype, tensor_format=tensor_format, cudnn_dtype=cudnn_dtype, tensor_type=tensor_type, desc=desc, gpudirect=gpudirect, cublas=cublas
+            )
         else:
-            return TensorArray.new_pair(shape=shape, dtype=dtype, tensor_format=tensor_format,
-                                        cudnn_dtype=cudnn_dtype, tensor_type=tensor_type,
-                                        desc=desc, gpudirect=gpudirect, cublas=cublas)
+            return TensorArray.new_pair(shape=shape, dtype=dtype, tensor_format=tensor_format, cudnn_dtype=cudnn_dtype, tensor_type=tensor_type, desc=desc, gpudirect=gpudirect, cublas=cublas)
 
-    def __init__(self, gpu_arr: gpuarray.GPUArray, tensor_format: TensorFormat, cudnn_dtype: int,
-                 tensor_type: TensorType = TensorType.TENSOR, desc: int | None = None,
-                 gpudirect: bool = False, cublas: bool = False, cpu_shape: ArrayShape | None = None):
+    def __init__(
+        self,
+        gpu_arr: gpuarray.GPUArray,
+        tensor_format: TensorFormat,
+        cudnn_dtype: int,
+        tensor_type: TensorType = TensorType.TENSOR,
+        desc: int | None = None,
+        gpudirect: bool = False,
+        cublas: bool = False,
+        cpu_shape: ArrayShape | None = None,
+    ):
 
         self.tensor_format = TensorFormat(tensor_format.lower())
         self.cudnn_dtype = cudnn_dtype
@@ -113,7 +142,7 @@ class TensorArray:
 
     @property
     def cudnn_tensor_format(self) -> int:
-        return cudnn.cudnnTensorFormat[f'CUDNN_TENSOR_{self.tensor_format.upper()}']
+        return cudnn.cudnnTensorFormat[f"CUDNN_TENSOR_{self.tensor_format.upper()}"]
 
     def _encode_shape(self, shape):
         return encode_shape(shape, self.tensor_format)
@@ -186,15 +215,13 @@ class TensorArray:
                 desc = cudnn.cudnnCreateTensorDescriptor()
                 assert desc
                 self.desc = desc
-                cudnn.cudnnSetTensor4dDescriptor(self.desc, self.cudnn_tensor_format,
-                                                 self.cudnn_dtype, n, c, h, w)
+                cudnn.cudnnSetTensor4dDescriptor(self.desc, self.cudnn_tensor_format, self.cudnn_dtype, n, c, h, w)
             case self.TensorType.FILTER:
                 n, c, h, w = self._decode_shape(self.shape)
                 desc = cudnn.cudnnCreateFilterDescriptor()
                 assert desc
                 self.desc = desc
-                cudnn.cudnnSetFilter4dDescriptor(self.desc, self.cudnn_dtype,
-                                                 self.cudnn_tensor_format, n, c, h, w)
+                cudnn.cudnnSetFilter4dDescriptor(self.desc, self.cudnn_dtype, self.cudnn_tensor_format, n, c, h, w)
             case self.TensorType.SEQ:
                 desc = cudnn.cudnnCreateSeqDataDescriptor()
                 assert desc
@@ -211,10 +238,7 @@ class TensorArray:
                 axes[3] = cudnn.cudnnSeqDataAxis["CUDNN_SEQDATA_VECT_DIM"]
                 self.seq_length_array = np.full(shape=(self.shape[0] * self.shape[1]), fill_value=self.shape[-2], dtype=np.int32)
                 # print(self.shape, dimA, axes, len(seq_length_array))
-                cudnn.cudnnSetSeqDataDescriptor(self.desc, self.cudnn_dtype,
-                                                np.int32(4), dimA, axes,
-                                                np.int32(len(self.seq_length_array)), self.seq_length_array,
-                                                None)
+                cudnn.cudnnSetSeqDataDescriptor(self.desc, self.cudnn_dtype, np.int32(4), dimA, axes, np.int32(len(self.seq_length_array)), self.seq_length_array, None)
             case self.TensorType.OTHER:
                 pass  # do nothing.
 
@@ -289,23 +313,25 @@ class TensorArray:
             return None  # type: ignore
 
     def __array__(self, dtype=None, *, copy=None):
-        """ NumPy cast helper """
+        """NumPy cast helper"""
         return np.asarray(self.get(), dtype=dtype)
 
     def _view(self, ary, keep_shape=True):
         """TensorArray view"""
         # NOTE: In some cases, it would be possible to share the descriptor more aggressively, but we don't have enough information to decide when.
-        return TensorArray(gpu_arr=ary,
-                           tensor_format=self.tensor_format,
-                           cudnn_dtype=self.cudnn_dtype,
-                           tensor_type=self.tensor_type,
-                           gpudirect=self.gpudirect,
-                           cublas=self.cublas,
-                           desc=None,
-                           cpu_shape=self.cpu_shape if keep_shape else None)
+        return TensorArray(
+            gpu_arr=ary,
+            tensor_format=self.tensor_format,
+            cudnn_dtype=self.cudnn_dtype,
+            tensor_type=self.tensor_type,
+            gpudirect=self.gpudirect,
+            cublas=self.cublas,
+            desc=None,
+            cpu_shape=self.cpu_shape if keep_shape else None,
+        )
 
     def copy(self):
-        """ NumPy-like copy. """
+        """NumPy-like copy."""
         return copy.deepcopy(self)
 
     def __copy__(self):
@@ -314,14 +340,16 @@ class TensorArray:
 
     def __deepcopy__(self, memo: dict):
         """Deep copy"""
-        obj = TensorArray(gpu_arr=copy.deepcopy(self.ary, memo),
-                          tensor_format=self.tensor_format,
-                          cudnn_dtype=self.cudnn_dtype,
-                          tensor_type=self.tensor_type,
-                          gpudirect=self.gpudirect,
-                          cublas=self.cublas,
-                          desc=-1,
-                          cpu_shape=self.cpu_shape)
+        obj = TensorArray(
+            gpu_arr=copy.deepcopy(self.ary, memo),
+            tensor_format=self.tensor_format,
+            cudnn_dtype=self.cudnn_dtype,
+            tensor_type=self.tensor_type,
+            gpudirect=self.gpudirect,
+            cublas=self.cublas,
+            desc=-1,
+            cpu_shape=self.cpu_shape,
+        )
         memo[id(self)] = obj
         return obj
 

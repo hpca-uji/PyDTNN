@@ -10,9 +10,7 @@ from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.layers.input import Input
 from pydtnn.utils.constants import ArrayShape
 
-__all__ = (
-    "InputPycuda",
-)
+__all__ = ("InputPycuda",)
 
 logger = logging.getLogger(__name__)
 
@@ -43,8 +41,8 @@ class InputPycuda(Input[TensorArray], LayerPycuda):
             if local_batch_size != self.model.batch_size:
                 # NOTE: if x_batch is empty (local_batch_size == 0), this will mean the end of the loop where this function is called.
                 num_repetitions = np.ceil(self.model.batch_size / local_batch_size)
-                x_batch = np.repeat(x_batch, num_repetitions, axis=0)[:self.model.batch_size]
-                y_batch = np.repeat(y_batch, num_repetitions, axis=0)[:self.model.batch_size]
+                x_batch = np.repeat(x_batch, num_repetitions, axis=0)[: self.model.batch_size]
+                y_batch = np.repeat(y_batch, num_repetitions, axis=0)[: self.model.batch_size]
             # else: The batch has the right shape ==> Nothing to do.
 
             x_batch = np.asarray(x_batch, dtype=self.model.dtype, order="C")

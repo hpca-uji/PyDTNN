@@ -1,8 +1,6 @@
 import logging
 
-__all__ = (
-    "MemoryCache",
-)
+__all__ = ("MemoryCache",)
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +17,7 @@ class MemoryCache(dict):
       already stored values and will not store the next ones.
 
     """
+
     _preserve_values = True
 
     def __init__(self, default_factory=None, **kwargs):
@@ -40,6 +39,7 @@ class MemoryCache(dict):
         if not update:
             return
         import gc
+
         for obj in gc.get_objects():
             if isinstance(obj, cls):
                 obj.clear()

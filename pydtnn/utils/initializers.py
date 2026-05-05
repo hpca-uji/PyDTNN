@@ -13,19 +13,7 @@ import scipy.stats as stats
 from pydtnn.utils import random
 from pydtnn.utils.constants import ArrayShape
 
-__all__ = (
-    "DistributionModeEnum",
-    "ProbabilisticDistribution",
-    "glorot_normal",
-    "glorot_uniform",
-    "he_normal",
-    "he_uniform",
-    "lecun_normal",
-    "lecun_uniform",
-    "ones",
-    "zeros",
-    "InitializerFunc"
-)
+__all__ = ("DistributionModeEnum", "ProbabilisticDistribution", "glorot_normal", "glorot_uniform", "he_normal", "he_uniform", "lecun_normal", "lecun_uniform", "ones", "zeros", "InitializerFunc")
 
 logger = logging.getLogger(__name__)
 
@@ -57,19 +45,18 @@ def _compute_fans(shape: ArrayShape) -> tuple[int, int]:
     return fan_in, fan_out
 
 
-def _generate_distribution(shape: ArrayShape, scale: float, mode: DistributionModeEnum,
-                           distribution: ProbabilisticDistribution, dtype: np.dtype) -> np.ndarray:
+def _generate_distribution(shape: ArrayShape, scale: float, mode: DistributionModeEnum, distribution: ProbabilisticDistribution, dtype: np.dtype) -> np.ndarray:
     fan_in, fan_out = _compute_fans(shape)
 
     match mode:
         case DistributionModeEnum.FAN_IN:
-            scale /= max(1., fan_in)
+            scale /= max(1.0, fan_in)
         case DistributionModeEnum.FAN_OUT:
-            scale /= max(1., fan_out)
+            scale /= max(1.0, fan_out)
         case DistributionModeEnum.FAN_AVG:
-            scale /= max(1., float(fan_in + fan_out) / 2)
+            scale /= max(1.0, float(fan_in + fan_out) / 2)
         case _:
-            raise NotImplementedError(f"mode: \'{mode}\' not implemented")
+            raise NotImplementedError(f"mode: '{mode}' not implemented")
 
     match distribution:
         case ProbabilisticDistribution.NORMAL:
@@ -77,16 +64,15 @@ def _generate_distribution(shape: ArrayShape, scale: float, mode: DistributionMo
             # Truncated normal distribution [-2*stddev, 2*stddev]
             x = stats.truncnorm(-2 * stddev, 2 * stddev, loc=0, scale=stddev).rvs(shape).astype(dtype, copy=False)
         case ProbabilisticDistribution.UNIFORM:
-            limit = np.sqrt(3. * scale)
+            limit = np.sqrt(3.0 * scale)
             x = random.uniform(-limit, limit, shape).astype(dtype, copy=False)
         case _:
-            raise NotImplementedError(f"distribution: \'{distribution}\' not implemented")
+            raise NotImplementedError(f"distribution: '{distribution}' not implemented")
     return x
 
 
 def glorot_uniform(shape: ArrayShape, dtype: np.dtype) -> np.ndarray:
-    return _generate_distribution(shape, 1.0, DistributionModeEnum.FAN_AVG,
-                                  ProbabilisticDistribution.UNIFORM, dtype)
+    return _generate_distribution(shape, 1.0, DistributionModeEnum.FAN_AVG, ProbabilisticDistribution.UNIFORM, dtype)
 
 
 def glorot_normal(shape: ArrayShape, dtype: np.dtype) -> np.ndarray:

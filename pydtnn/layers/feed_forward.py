@@ -3,9 +3,7 @@ import logging
 from pydtnn.layers.abstract.block_layer import AbstractBlockLayer
 from pydtnn.utils.constants import Array, ArrayShape
 
-__all__ = (
-    "FeedForward",
-)
+__all__ = ("FeedForward",)
 
 logger = logging.getLogger(__name__)
 

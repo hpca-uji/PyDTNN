@@ -8,9 +8,7 @@ import numpy as np
 from pydtnn.datasets.dataset import Dataset
 from pydtnn.utils import random
 
-__all__ = (
-    "IWSLT",
-)
+__all__ = ("IWSLT",)
 
 logger = logging.getLogger(__name__)
 
@@ -104,10 +102,8 @@ class IWSLT(Dataset):
 
     def get_dictionary(self, language):
         import spacy  # type: ignore
-        table = {
-            "en": "en_core_web_md",
-            "de": "de_core_news_md"
-        }
+
+        table = {"en": "en_core_web_md", "de": "de_core_news_md"}
         if language in table:
             language = table[language]
         return spacy.load(language)
@@ -119,8 +115,8 @@ class IWSLT(Dataset):
             if self.model.augment_shuffle:
                 random.shuffle(s)
             self.train_nsamples = int(self.train_val_nsamples * (1 - val_split) // 1)
-            self.train_indices = s[:self.train_nsamples]
-            self.val_indices = s[self.train_nsamples:]
+            self.train_indices = s[: self.train_nsamples]
+            self.val_indices = s[self.train_nsamples :]
             self.val_nsamples = len(self.val_indices)
             self.test_nsamples = self.val_nsamples
             # Make test partition
@@ -156,14 +152,14 @@ class IWSLT(Dataset):
             tgt_embeddings = np.zeros((batch_size, self.max_sentence, self.embedl), dtype=np.float32)
             src_mask = np.zeros((batch_size, 1, self.max_sentence), dtype=bool)
             tgt_mask = np.zeros((batch_size, self.max_sentence, self.max_sentence), dtype=bool)
-            for i, doc in enumerate(self.dictionary1.pipe(lines1[window[0]:window[1]])):
+            for i, doc in enumerate(self.dictionary1.pipe(lines1[window[0] : window[1]])):
                 for j, word in enumerate(doc):
                     src_embeddings[i, j] = word.vector
                     src_mask[i, 0, j] = 1
-            for i, doc in enumerate(self.dictionary2.pipe(lines2[window[0]:window[1]])):
+            for i, doc in enumerate(self.dictionary2.pipe(lines2[window[0] : window[1]])):
                 for j, word in enumerate(doc):
                     tgt_embeddings[i, j] = word.vector
-                    tgt_mask[i, j, 0:j + 1] = [1] * (j + 1)
+                    tgt_mask[i, j, 0 : j + 1] = [1] * (j + 1)
 
             x = [src_embeddings, src_mask, tgt_embeddings, tgt_mask]
             y = tgt_embeddings
@@ -184,8 +180,8 @@ class IWSLT(Dataset):
             window = (0 * batch_size + rank * batch_size, 0 * batch_size + (rank + 1) * batch_size)
             # x = [self.src_embeddings[window[0]:window[1]], self.src_mask[window[0]:window[1]], self.tgt_embeddings[window[0]:window[1]], self.tgt_mask[window[0]:window[1]]]
             # y = self.tgt_embeddings[window[0]:window[1]]
-            x = [self.src_embeddings[window[0]:window[1]], self.tgt_embeddings[window[0]:window[1]]]
-            y = self.tgt_embeddings[window[0]:window[1]]
+            x = [self.src_embeddings[window[0] : window[1]], self.tgt_embeddings[window[0] : window[1]]]
+            y = self.tgt_embeddings[window[0] : window[1]]
             yield x, y
 
     # === Preprocess ===
@@ -221,4 +217,5 @@ class IWSLT(Dataset):
         file.close()
         nlines_out = len(lines)
         logger.info("{} lines in, {} lines out".format(nlines_in, nlines_out))
+
     # === Preprocess ===

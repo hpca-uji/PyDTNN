@@ -16,9 +16,7 @@ from scipy.io import loadmat
 from pydtnn.datasets.dataset import Dataset
 from pydtnn.utils import random
 
-__all__ = (
-    "ImageNet",
-)
+__all__ = ("ImageNet",)
 
 logger = logging.getLogger(__name__)
 
@@ -146,19 +144,13 @@ class ImageNet(Dataset):
         nums_children = list(zip(*meta))[4]
         meta = [meta[idx] for idx, num_children in enumerate(nums_children) if num_children == 0]
         labels, codes, class_name = list(zip(*meta))[:3]
-        return {
-            int(code.lstrip("n")): int(label)
-            for code, label in zip(codes, labels)
-        }
+        return {int(code.lstrip("n")): int(label) for code, label in zip(codes, labels)}
 
     def _get_val_labels(self, path: Path) -> dict[int, int]:
         """Get label mappings from archive"""
         member = "ILSVRC2012_devkit_t12/data/ILSVRC2012_validation_ground_truth.txt"
         with tarfile.open(path) as tar, tar.extractfile(member) as fp, io.TextIOWrapper(buffer=fp) as lines:  # type: ignore
-            return {
-                i: int(line)
-                for i, line in enumerate(lines, 1)
-            }
+            return {i: int(line) for i, line in enumerate(lines, 1)}
 
     def _init_actual_data(self):
         if not self.model.transform_resize:
@@ -173,28 +165,18 @@ class ImageNet(Dataset):
         if len(train_lables) != OUTPUT_SHAPE[0]:
             raise ValueError(f"Mismatch class shape (got: {len(train_lables)}, expect: {OUTPUT_SHAPE[0]})")
 
-        train_xy = [
-            (path, self._get_label(self._get_train_code(path[-1]), train_lables))
-            for path in list_archive(train)
-        ]
+        train_xy = [(path, self._get_label(self._get_train_code(path[-1]), train_lables)) for path in list_archive(train)]
 
         if len(train_xy) != TRAIN_NSAMPLES:
             raise ValueError(f"Mismatch train samples (got: {len(train_xy)}, expect: {TRAIN_NSAMPLES})")
 
         val_lables = self._get_val_labels(meta)
-        val_xy = [
-            (path, self._get_label(self._get_val_code(path[-1]), val_lables))
-            for path in list_archive(test)
-        ]
+        val_xy = [(path, self._get_label(self._get_val_code(path[-1]), val_lables)) for path in list_archive(test)]
 
         if len(val_lables) != TEST_NSAMPLES:
             raise ValueError(f"Mismatch test samples (got: {len(val_lables)}, expect: {TEST_NSAMPLES})")
 
-        self._xy_filenames = [
-            train_xy,
-            copy.copy(val_xy if self.test_as_validation else train_xy),
-            val_xy
-        ]
+        self._xy_filenames = [train_xy, copy.copy(val_xy if self.test_as_validation else train_xy), val_xy]
 
     def _actual_data_generator(self, part):
         offset = self._local_offset[part]
@@ -204,7 +186,7 @@ class ImageNet(Dataset):
         if part is Dataset.Part.TRAIN and self.model.augment_shuffle:
             random.shuffle(xy_filenames)  # type: ignore (numpy shuffle's typing wasn't well defined.)
 
-        xy_filenames = xy_filenames[offset:offset + nsamples]
+        xy_filenames = xy_filenames[offset : offset + nsamples]
 
         for path, y in xy_filenames:
             with load_archive(*path) as fp:

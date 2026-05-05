@@ -1,12 +1,8 @@
-
 from pydtnn.backends.cython.utils.base import _npDT, _npDT_2Dims, _npDT_4Dims
 
-def im2col_nchw_cython[T: _npDT](x: _npDT_4Dims[T],
-                                 cols: _npDT_2Dims[T],
-                                 kh: int, kw: int, ho: int, wo: int,
-                                 vpadding: int, hpadding: int,
-                                 vstride: int, hstride: int,
-                                 vdilation: int, hdilation: int) -> None:
+def im2col_nchw_cython[T: _npDT](
+    x: _npDT_4Dims[T], cols: _npDT_2Dims[T], kh: int, kw: int, ho: int, wo: int, vpadding: int, hpadding: int, vstride: int, hstride: int, vdilation: int, hdilation: int
+) -> None:
     """
     Args:
         x (npDT_4Dims): The 4 dimensional array (the image).
@@ -25,14 +21,24 @@ def im2col_nchw_cython[T: _npDT](x: _npDT_4Dims[T],
         Nothing. The output is stored in "cols".
     """
 
-
-def col2im_nchw_cython[T: _npDT](cols: _npDT_2Dims[T],
-                                 dx: _npDT_4Dims[T],
-                                 n: int, c: int, h: int, w: int,
-                                 kh: int, kw: int, ho: int, wo: int,
-                                 vpadding: int, hpadding: int,
-                                 vstride: int, hstride: int,
-                                 vdilation: int, hdilation: int) -> None:
+def col2im_nchw_cython[T: _npDT](
+    cols: _npDT_2Dims[T],
+    dx: _npDT_4Dims[T],
+    n: int,
+    c: int,
+    h: int,
+    w: int,
+    kh: int,
+    kw: int,
+    ho: int,
+    wo: int,
+    vpadding: int,
+    hpadding: int,
+    vstride: int,
+    hstride: int,
+    vdilation: int,
+    hdilation: int,
+) -> None:
     """
     Args:
         cols (npDT_2Dims): The 2 dimensional array (the image as columns).

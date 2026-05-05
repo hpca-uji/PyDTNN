@@ -4,9 +4,7 @@ import weakref
 
 import numpy as np
 
-__all__ = (
-    "SafeGenerator",
-)
+__all__ = ("SafeGenerator",)
 
 logger = logging.getLogger(__name__)
 

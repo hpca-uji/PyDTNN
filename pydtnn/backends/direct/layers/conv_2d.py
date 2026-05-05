@@ -11,15 +11,12 @@ from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT, PYDTN
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import encode_shape
 
-__all__ = (
-    "Conv2DDirect",
-)
+__all__ = ("Conv2DDirect",)
 
 logger = logging.getLogger(__name__)
 
 
 class Conv2DDirect(Conv2DNumpy, AbstractConv2DDirect):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # convDirect related attributes (will be initialized in initialize())
@@ -39,7 +36,7 @@ class Conv2DDirect(Conv2DNumpy, AbstractConv2DDirect):
             f"convdirect_block_{self.model.tensor_format}_default",
             f"convdirect_im2row_{self.model.tensor_format}_default",
             f"convdirect_block_blis_{self.model.tensor_format}_blis",
-            f"convdirect_conv_gemm_{self.model.tensor_format}_default"
+            f"convdirect_conv_gemm_{self.model.tensor_format}_default",
         ]
 
         for n, method in enumerate(self._algos):
@@ -75,10 +72,17 @@ class Conv2DDirect(Conv2DNumpy, AbstractConv2DDirect):
         """Version of the forward function that uses the convDirect library"""
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVDIRECT)
-        y = self.cd[n].conv_direct(np.asarray(self.weights, dtype=self.model.dtype), x, self.out,
-                                   vpadding=self.hpadding, hpadding=self.wpadding,
-                                   vstride=self.hstride, hstride=self.wstride,
-                                   vdilation=self.hdilation, hdilation=self.wdilation)
+        y = self.cd[n].conv_direct(
+            np.asarray(self.weights, dtype=self.model.dtype),
+            x,
+            self.out,
+            vpadding=self.hpadding,
+            hpadding=self.wpadding,
+            vstride=self.hstride,
+            hstride=self.wstride,
+            vdilation=self.hdilation,
+            hdilation=self.wdilation,
+        )
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return y
 

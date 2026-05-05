@@ -9,9 +9,7 @@ from typing import TYPE_CHECKING
 from pydtnn import utils
 from pydtnn.tracers.tracer import Tracer
 
-__all__ = (
-    "SimpleTracer",
-)
+__all__ = ("SimpleTracer",)
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +18,7 @@ if TYPE_CHECKING:
     from pympi.MPI import Comm as MPI_COMM  # type: ignore
 else:
     from types import ModuleType
+
     MPI_COMM = ModuleType
 
 
@@ -86,9 +85,9 @@ class SimpleTracer(Tracer):
             if len(self.pending_events):
                 logger.warning("Warning: finishing simple tracer while there are pending events to be marked as finished.")
             path = Path(output_filename).resolve()
-            with open(output_filename, 'w') as f:
+            with open(output_filename, "w") as f:
                 f.write(self._output_header() + "\n")
                 for event_type_value, events in self.events.items():
                     for event_value in events.keys():
                         f.write(self._output_row(event_type_value, event_value) + "\n")
-            logger.info(f'Dumped tracer details to: {path}')
+            logger.info(f"Dumped tracer details to: {path}")

@@ -8,15 +8,12 @@ from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.libs import cudnn as cudnn
 from pydtnn.utils.constants import ArrayShape
 
-__all__ = (
-    "SigmoidPycuda",
-)
+__all__ = ("SigmoidPycuda",)
 
 logger = logging.getLogger(__name__)
 
 
 class SigmoidPycuda(Sigmoid[TensorArray], ActivationPycuda):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.act_desc = None
@@ -26,8 +23,8 @@ class SigmoidPycuda(Sigmoid[TensorArray], ActivationPycuda):
 
         self.act_desc = cudnn.cudnnCreateActivationDescriptor()
 
-        mode = cudnn.cudnnActivationMode['CUDNN_ACTIVATION_SIGMOID']
-        nan = cudnn.cudnnNanPropagation['CUDNN_NOT_PROPAGATE_NAN']
+        mode = cudnn.cudnnActivationMode["CUDNN_ACTIVATION_SIGMOID"]
+        nan = cudnn.cudnnNanPropagation["CUDNN_NOT_PROPAGATE_NAN"]
         cudnn.cudnnSetActivationDescriptor(self.act_desc, mode, nan, 0.0)
 
         # Activations a
@@ -42,16 +39,12 @@ class SigmoidPycuda(Sigmoid[TensorArray], ActivationPycuda):
 
     def forward(self, x: TensorArray) -> TensorArray:
         alpha, beta = 1.0, 0.0
-        cudnn.cudnnActivationForward(self.model.cudnn_handle, self.act_desc, alpha,
-                                     x.desc, x.ptr_voidp, beta,
-                                     self.y.desc, self.y.ptr_voidp)
+        cudnn.cudnnActivationForward(self.model.cudnn_handle, self.act_desc, alpha, x.desc, x.ptr_voidp, beta, self.y.desc, self.y.ptr_voidp)
         return self.y
 
     def backward(self, dy: TensorArray) -> TensorArray:
         alpha, beta = 1.0, 0.0
-        cudnn.cudnnActivationBackward(self.model.cudnn_handle, self.act_desc, alpha,
-                                      self.y.desc, self.y.ptr_voidp,
-                                      dy.desc, dy.ptr_voidp,
-                                      self.x.desc, self.x.ptr_voidp, beta,
-                                      self.dx.desc, self.dx.ptr_voidp)
+        cudnn.cudnnActivationBackward(
+            self.model.cudnn_handle, self.act_desc, alpha, self.y.desc, self.y.ptr_voidp, dy.desc, dy.ptr_voidp, self.x.desc, self.x.ptr_voidp, beta, self.dx.desc, self.dx.ptr_voidp
+        )
         return self.dx

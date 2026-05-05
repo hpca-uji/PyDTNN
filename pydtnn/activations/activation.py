@@ -13,7 +13,6 @@ logger = logging.getLogger(__name__)
 
 
 class Activation[T: Array](Layerable[T]):
-
     def __init__(self, shape: ArrayShape = (1,)):
         super().__init__(shape)
 

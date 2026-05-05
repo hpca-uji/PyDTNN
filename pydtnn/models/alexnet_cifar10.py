@@ -11,9 +11,7 @@ from pydtnn.layers.input import Input
 from pydtnn.layers.max_pool_2d import MaxPool2D
 from pydtnn.utils.constants import ArrayShape
 
-__all__ = (
-    "alexnet_cifar10",
-)
+__all__ = ("alexnet_cifar10",)
 
 
 def alexnet_cifar10(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:

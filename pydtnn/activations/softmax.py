@@ -3,9 +3,7 @@ import logging
 from pydtnn.activations.activation import Activation
 from pydtnn.utils.constants import Array, ArrayShape
 
-__all__ = (
-    "Softmax",
-)
+__all__ = ("Softmax",)
 
 logger = logging.getLogger(__name__)
 

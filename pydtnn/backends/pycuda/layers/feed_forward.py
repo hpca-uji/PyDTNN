@@ -7,9 +7,7 @@ from pydtnn.layers.dropout import Dropout
 from pydtnn.layers.fc import FC
 from pydtnn.layers.feed_forward import FeedForward
 
-__all__ = (
-    "FeedForwardPycuda",
-)
+__all__ = ("FeedForwardPycuda",)
 
 logger = logging.getLogger(__name__)
 

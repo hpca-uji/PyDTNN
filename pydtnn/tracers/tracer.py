@@ -37,8 +37,7 @@ class EventType:
         try:
             description = self._events[item]
         except KeyError:
-            sys.stderr.write(f"SimpleTracer warning: No event with code '{item}' "
-                             f"in the '{self.name}' type of events.\n")
+            sys.stderr.write(f"SimpleTracer warning: No event with code '{item}' in the '{self.name}' type of events.\n")
             return f"Unknown code {self.name}"
         return description
 
@@ -136,11 +135,10 @@ class Tracer(metaclass=PostInitCaller):
         mdl_constants = [(event._name_, event._value_) for event in PYDTNN_MDL_EVENT_enum]
         ops_constants = [(event._name_, event._value_) for event in PYDTNN_OPS_EVENT_enum]
         for layer in model.get_all_layers():
-            for (name, val) in mdl_constants:
+            for name, val in mdl_constants:
                 mdl_event[layer.id * PYDTNN_MDL_EVENTS + val] = f"{layer.name_with_id}_{name.lower()}"
-            for (name, val) in ops_constants:
-                ops_event[
-                    layer.id * PYDTNN_OPS_EVENTS + val] = f"{layer.id:03}_{layer.name}_{name.lower()}"
+            for name, val in ops_constants:
+                ops_event[layer.id * PYDTNN_OPS_EVENTS + val] = f"{layer.id:03}_{layer.name}_{name.lower()}"
 
     @abc.abstractmethod
     def _emit_event(self, evt_type: int, evt_val: int, stream=None):

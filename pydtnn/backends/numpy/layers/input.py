@@ -5,9 +5,7 @@ from pydtnn.backends.numpy.layers.layer import LayerNumpy
 from pydtnn.layers.input import Input
 from pydtnn.libs import numpy as np
 
-__all__ = (
-    "InputNumpy",
-)
+__all__ = ("InputNumpy",)
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +14,6 @@ if TYPE_CHECKING:
 
 
 class InputNumpy(Input[np.ndarray], LayerNumpy):
-
     def forward(self, x: np.ndarray) -> np.ndarray:
         return np.asarray(x, dtype=self.model.dtype, order="C")
 

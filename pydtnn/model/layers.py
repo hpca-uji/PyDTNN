@@ -13,15 +13,12 @@ from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.model.utils import Utils
 from pydtnn.utils.constants import Array
 
-__all__ = (
-    "Layers",
-)
+__all__ = ("Layers",)
 
 logger = logging.getLogger(__name__)
 
 
 class Layers[T: Array](Utils[T]):
-
     def add(self, layer: Layerable[T]) -> None:
         layer._init_backend_with_model(self)
 
@@ -64,12 +61,14 @@ class Layers[T: Array](Utils[T]):
         layer_name = None
 
         match (layer0, layer1, layer2):
-            case (_, FusedLayerMixIn(), _): pass  # else: layer_name = None
+            case (_, FusedLayerMixIn(), _):
+                pass  # else: layer_name = None
             case (Conv2D(), BatchNormalization(), Relu()):
                 if self.enable_fused_conv_bn_relu:
                     layer_name = "conv_2d_batch_normalization_relu"
                 # else: layer_name = None
-            case _: pass  # else: layer_name = None
+            case _:
+                pass  # else: layer_name = None
 
         return layer_name, [layer0, layer1, layer2]
 
@@ -80,7 +79,8 @@ class Layers[T: Array](Utils[T]):
         layer_name = None
 
         match (layer1, layer2):
-            case (FusedLayerMixIn(), _): pass
+            case (FusedLayerMixIn(), _):
+                pass
             case (Conv2D(), BatchNormalization()):
                 if self.enable_fused_conv_bn:
                     layer_name = "conv_2d_batch_normalization"
@@ -90,7 +90,8 @@ class Layers[T: Array](Utils[T]):
             case (BatchNormalization(), Relu()):
                 if self.enable_fused_bn_relu:
                     layer_name = "batch_normalization_relu"
-            case _: pass
+            case _:
+                pass
 
         return layer_name, [layer1, layer2]
 
@@ -121,13 +122,13 @@ class Layers[T: Array](Utils[T]):
                     warn(warn_text, RuntimeWarning)
                 else:
                     start = i - len(layers_to_fuse)
-                    del layers[start: i]
+                    del layers[start:i]
                     layers.insert(start, new_curr_layer)
                     i -= len(layers_to_fuse)
             i += 1
 
     def _apply_layer_fusion(self):
-        """ Apply layer fusion in a recursive manner """
+        """Apply layer fusion in a recursive manner"""
 
         if not self.enable_cudnn and any([self.enable_fused_bn_relu, self.enable_fused_conv_relu, self.enable_fused_conv_bn, self.enable_fused_conv_bn_relu]):
             # NOTE: 1st the 3 layers fusion, then the rest:

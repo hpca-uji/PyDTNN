@@ -8,9 +8,7 @@ from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT, PYDTN
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import TensorFormat
 
-__all__ = (
-    "Conv2DDepthwiseNumpy",
-)
+__all__ = ("Conv2DDepthwiseNumpy",)
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +18,6 @@ if TYPE_CHECKING:
 
 
 class Conv2DDepthwiseNumpy(AbstractConv2DNumpy, Conv2DDepthwise):
-
     def _initializing_special_parameters(self):
         super()._initializing_special_parameters()
         # Setting other parameters
@@ -120,10 +117,10 @@ class Conv2DDepthwiseNumpy(AbstractConv2DNumpy, Conv2DDepthwise):
                                         dx[nn, cc, x_x, x_y] += val_k * val_dy
 
     def _forward_nhwc(self, x: np.ndarray) -> np.ndarray:
-        """ Version of the forward that perform a depthwise convolution"""
+        """Version of the forward that perform a depthwise convolution"""
 
         self.x = x
-        y: np.ndarray = np.ascontiguousarray(self._y[:x.shape[0], ], dtype=self.model.dtype)
+        y: np.ndarray = np.ascontiguousarray(self._y[: x.shape[0],], dtype=self.model.dtype)
         y.fill(0)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_DEPTHWISE_CONV)
@@ -134,8 +131,7 @@ class Conv2DDepthwiseNumpy(AbstractConv2DNumpy, Conv2DDepthwise):
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_SUM_BIASES)
             y: np.ndarray = y.reshape((self.co, -1))
             for i in range(self.co):
-                np.add(y[i], self.biases[i], out=y[i],
-                       dtype=self.model.dtype)
+                np.add(y[i], self.biases[i], out=y[i], dtype=self.model.dtype)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_Y)
@@ -145,9 +141,9 @@ class Conv2DDepthwiseNumpy(AbstractConv2DNumpy, Conv2DDepthwise):
         return np.asarray(y, dtype=self.model.dtype, order="C")
 
     def _forward_nchw(self, x: np.ndarray) -> np.ndarray:
-        """ Version of the forward that perform a depthwise convolution"""
+        """Version of the forward that perform a depthwise convolution"""
         self.x = x
-        y: np.ndarray = np.ascontiguousarray(self._y[:x.shape[0], ], dtype=self.model.dtype)
+        y: np.ndarray = np.ascontiguousarray(self._y[: x.shape[0],], dtype=self.model.dtype)
         y.fill(0)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_DEPTHWISE_CONV)
@@ -158,8 +154,7 @@ class Conv2DDepthwiseNumpy(AbstractConv2DNumpy, Conv2DDepthwise):
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_SUM_BIASES)
             y: np.ndarray = y.reshape((self.co, -1))
             for i in range(self.co):
-                np.add(y[i], self.biases[i], out=y[i],
-                       dtype=self.model.dtype)
+                np.add(y[i], self.biases[i], out=y[i], dtype=self.model.dtype)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_Y)
@@ -170,7 +165,7 @@ class Conv2DDepthwiseNumpy(AbstractConv2DNumpy, Conv2DDepthwise):
 
     def _backward_nhwc(self, dy: np.ndarray) -> np.ndarray:
 
-        dx: np.ndarray = np.ascontiguousarray(self.dx[:dy.shape[0], ], dtype=self.model.dtype)
+        dx: np.ndarray = np.ascontiguousarray(self.dx[: dy.shape[0],], dtype=self.model.dtype)
         dx.fill(0)
 
         self._conv_bwd_nhwc(dx, dy)
@@ -184,7 +179,7 @@ class Conv2DDepthwiseNumpy(AbstractConv2DNumpy, Conv2DDepthwise):
 
     def _backward_nchw(self, dy: np.ndarray) -> np.ndarray:
 
-        dx: np.ndarray = np.ascontiguousarray(self.dx[:dy.shape[0], ], dtype=self.model.dtype)
+        dx: np.ndarray = np.ascontiguousarray(self.dx[: dy.shape[0],], dtype=self.model.dtype)
         dx.fill(0)
 
         self._conv_bwd_nhwc(dx, dy)

@@ -29,8 +29,8 @@ TEST_NSAMPLES = 25596
 INPUT_SHAPE = (1, 1024, 1024)
 OUTPUT_SHAPE = (15,)
 
-CSV_DELIMETER = ','
-CSV_LABELS_DELIMETER = '|'
+CSV_DELIMETER = ","
+CSV_LABELS_DELIMETER = "|"
 CSV_IMAGES_FIELD = "Image Index"
 CSV_LABELS_FIELD = "Finding Labels"
 type Class = np.ndarray
@@ -132,7 +132,7 @@ class ChestXRay(Dataset):
         if part is Dataset.Part.TRAIN and self.model.augment_shuffle:
             random.shuffle(xy_filenames)  # type: ignore (numpy shuffle's typing wasn't well defined.)
 
-        xy_filenames = xy_filenames[offset:offset + nsamples]
+        xy_filenames = xy_filenames[offset : offset + nsamples]
 
         for path, y in xy_filenames:
             src_path = self._src_filename[path]

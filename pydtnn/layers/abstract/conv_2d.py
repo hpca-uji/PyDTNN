@@ -6,9 +6,7 @@ from pydtnn.layers.layer import Layer
 from pydtnn.utils.constants import Array, ArrayShape, Parameters
 from pydtnn.utils.initializers import InitializerFunc, glorot_uniform, zeros
 
-__all__ = (
-    "AbstractConv2D",
-)
+__all__ = ("AbstractConv2D",)
 
 logger = logging.getLogger(__name__)
 
@@ -18,15 +16,18 @@ if TYPE_CHECKING:
 
 
 class AbstractConv2D[T: Array](Layer[T]):
-    def __init__(self, nfilters: int = 1,
-                 filter_shape: tuple[int, int] | int = (3, 3),
-                 padding: tuple[int, int] | int = 0,
-                 stride: tuple[int, int] | int = 1,
-                 dilation: tuple[int, int] | int = 1,
-                 activation: Optional[type["Activation"]] = None,
-                 use_bias=True,
-                 weights_initializer: InitializerFunc = glorot_uniform,
-                 biases_initializer: InitializerFunc = zeros):
+    def __init__(
+        self,
+        nfilters: int = 1,
+        filter_shape: tuple[int, int] | int = (3, 3),
+        padding: tuple[int, int] | int = 0,
+        stride: tuple[int, int] | int = 1,
+        dilation: tuple[int, int] | int = 1,
+        activation: Optional[type["Activation"]] = None,
+        use_bias=True,
+        weights_initializer: InitializerFunc = glorot_uniform,
+        biases_initializer: InitializerFunc = zeros,
+    ):
 
         super().__init__()
         self.co = nfilters

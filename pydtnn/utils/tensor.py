@@ -112,7 +112,7 @@ def encode_shape(shape: ArrayShape, format: str = TensorFormat.NCHW) -> ArraySha
     Returns:
         (ArrayShape): `shape` with encoded order.
     """
-    return format_reshape(shape, TensorFormat.NCHW[-len(shape):], format[-len(shape):])
+    return format_reshape(shape, TensorFormat.NCHW[-len(shape) :], format[-len(shape) :])
 
 
 def decode_shape(shape: ArrayShape, format: str = TensorFormat.NCHW) -> ArrayShape:
@@ -125,7 +125,7 @@ def decode_shape(shape: ArrayShape, format: str = TensorFormat.NCHW) -> ArraySha
     Returns:
         (ArrayShape): `shape` with `NCHW` order.
     """
-    return format_reshape(shape, format[-len(shape):], TensorFormat.NCHW[-len(shape):])
+    return format_reshape(shape, format[-len(shape) :], TensorFormat.NCHW[-len(shape) :])
 
 
 def encode_tensor(data: np.ndarray, format: str = TensorFormat.NCHW) -> np.ndarray:
@@ -138,7 +138,7 @@ def encode_tensor(data: np.ndarray, format: str = TensorFormat.NCHW) -> np.ndarr
     Returns:
         (np.ndarray): `data` with encoded order.
     """
-    return format_transpose(data, TensorFormat.NCHW[-len(data.shape):], format[-len(data.shape):])
+    return format_transpose(data, TensorFormat.NCHW[-len(data.shape) :], format[-len(data.shape) :])
 
 
 def decode_tensor(data: np.ndarray, format: str = TensorFormat.NCHW) -> np.ndarray:
@@ -151,4 +151,4 @@ def decode_tensor(data: np.ndarray, format: str = TensorFormat.NCHW) -> np.ndarr
     Returns:
         (np.ndarray): `data` with `NCHW` order.
     """
-    return format_transpose(data, format[-len(data.shape):], TensorFormat.NCHW[-len(data.shape):])
+    return format_transpose(data, format[-len(data.shape) :], TensorFormat.NCHW[-len(data.shape) :])

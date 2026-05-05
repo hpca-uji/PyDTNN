@@ -8,9 +8,7 @@ from pydtnn.utils.constants import ArrayShape, Parameters
 from pydtnn.utils.performance_models import im2col_time, matmul_time
 from pydtnn.utils.tensor import TensorFormat
 
-__all__ = (
-    "AbstractConv2DNumpy",
-)
+__all__ = ("AbstractConv2DNumpy",)
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +18,6 @@ if TYPE_CHECKING:
 
 
 class AbstractConv2DNumpy(AbstractConv2D[np.ndarray], LayerNumpy):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # More parameters initialized in initialize()
@@ -49,20 +46,17 @@ class AbstractConv2DNumpy(AbstractConv2D[np.ndarray], LayerNumpy):
             self.memory_used += self.dw.nbytes
 
         # Performance models
-        self.fwd_time = \
-            im2col_time(m=(self.ci * self.kh * self.kw), n=(self.model.batch_size * self.ho * self.wo),
-                        cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw,
-                        dtype=self.model.dtype) + \
-            matmul_time(m=self.co, n=(self.model.batch_size * self.ho * self.wo), k=(self.ci * self.kh * self.kw),
-                        cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw,
-                        dtype=self.model.dtype)  # type: ignore (It works well.)
-        self.bwd_time = \
-            matmul_time(m=self.co, n=(self.ci * self.kh * self.kw), k=(self.model.batch_size * self.ho * self.wo),
-                        cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw,
-                        dtype=self.model.dtype)  # type: ignore (It works well.)
-        self.bwd_time += matmul_time(m=(self.ci * self.kh * self.kw), n=(self.model.batch_size * self.ho * self.wo),
-                                     k=self.co, cpu_speed=self.model.cpu_speed,
-                                     memory_bw=self.model.memory_bw, dtype=self.model.dtype)
+        self.fwd_time = im2col_time(
+            m=(self.ci * self.kh * self.kw), n=(self.model.batch_size * self.ho * self.wo), cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw, dtype=self.model.dtype
+        ) + matmul_time(
+            m=self.co, n=(self.model.batch_size * self.ho * self.wo), k=(self.ci * self.kh * self.kw), cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw, dtype=self.model.dtype
+        )  # type: ignore (It works well.)
+        self.bwd_time = matmul_time(
+            m=self.co, n=(self.ci * self.kh * self.kw), k=(self.model.batch_size * self.ho * self.wo), cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw, dtype=self.model.dtype
+        )  # type: ignore (It works well.)
+        self.bwd_time += matmul_time(
+            m=(self.ci * self.kh * self.kw), n=(self.model.batch_size * self.ho * self.wo), k=self.co, cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw, dtype=self.model.dtype
+        )
 
     def col2im_alt(self, x: np.ndarray, x_rows: np.ndarray) -> np.ndarray:
         # TEST IMPLEMENTATION
@@ -76,7 +70,7 @@ class AbstractConv2DNumpy(AbstractConv2D[np.ndarray], LayerNumpy):
                 h_end = h_start + self.hstride * self.ho
                 w_end = w_start + self.wstride * self.wo
 
-                col = x[:, :, h_start:h_end:self.hstride, w_start:w_end:self.wstride]
+                col = x[:, :, h_start : h_end : self.hstride, w_start : w_end : self.wstride]
                 cols.append(col)
         return np.stack(cols, axis=2).reshape(x_rows.shape)
 
@@ -140,11 +134,11 @@ class AbstractConv2DNumpy(AbstractConv2D[np.ndarray], LayerNumpy):
                     for nn in range(n):
                         for xx in range(self.ho):
                             x_x = self.hstride * xx + self.hdilation * ii - self.hpadding
-                            if (0 <= x_x < self.hi):
+                            if 0 <= x_x < self.hi:
                                 for yy in range(self.wo):
                                     x_y = self.wstride * yy + self.wdilation * jj - self.wpadding
                                     col = (nn * self.ho + xx) * self.wo + yy
-                                    if (0 <= x_y < self.wi):
+                                    if 0 <= x_y < self.wi:
                                         dx[nn, cc, x_x, x_y] = x_cols[row, col]
 
     def forward(self, x: np.ndarray) -> np.ndarray:

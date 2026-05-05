@@ -57,7 +57,7 @@ def adaptive_avg_pool_2d(args: dict[str, str]) -> tuple[AveragePool2D, str]:
             param = int(params[0])
             params = [param, param]  # Only 1 argument implies the weight and height are the same.
         case _:  # len must be always >= 0
-            params = [int(param.replace('(', '').replace(')', '')) for param in params]
+            params = [int(param.replace("(", "").replace(")", "")) for param in params]
 
     if params:
         dict_params[cm.ARGUMENTS] = {cm.PYTORCH_OUTPUT_SIZE: params}
@@ -145,10 +145,12 @@ def flatten(args: dict[str, str]) -> tuple[Flatten, str]:
                 return switch(list_params, dict_params)
             case _:
                 return dict_params
+
     params = args[cm.PARAMETERS].strip()
     dict_params = switch(params.split(cm.ARGS_SEPARATOR))
 
     return (Flatten(**dict_params), dict_params["input"])  # type: ignore
+
 
 # --- Activations --
 
@@ -222,6 +224,7 @@ def softmax(args: dict[str, Any]) -> tuple[Softmax, str]:
                 return switch(list_params, dict_params)
             case _:
                 return dict_params
+
     params = args[cm.PARAMETERS].strip()
     dict_params = switch(params.split(cm.ARGS_SEPARATOR))
 

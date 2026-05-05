@@ -20,9 +20,7 @@ try:
 except BaseException:
     pass
 
-__all__ = (
-    "main",
-)
+__all__ = ("main",)
 
 # Constants
 TENSOR_FORMAT = "NCHW"  # "NCHW" # "NHWC" # "NCHW"
@@ -72,7 +70,7 @@ def main():
         ("=============\n==== I2C ====\n=============", model_I2C),
         ("=============\n= POINTWISE =\n=============", model_POINT),
         ("=============\n= DEPTHWISE =\n=============", model_DEPTH),
-        ("=============\n= LEAKY RELU =\n=============", model_RELU)
+        ("=============\n= LEAKY RELU =\n=============", model_RELU),
     ]
 
     for _, model in models:
@@ -103,9 +101,7 @@ def main():
 
         x = deepcopy(dataset)
         if KWARGS["enable_cudnn"]:
-            _dataset = TensorArray(
-                gpu_arr=gpuarray.zeros(shape=dataset.shape, dtype=KWARGS["dtype"]),
-                tensor_format=model.tensor_format, cudnn_dtype=model.cudnn_dtype)
+            _dataset = TensorArray(gpu_arr=gpuarray.zeros(shape=dataset.shape, dtype=KWARGS["dtype"]), tensor_format=model.tensor_format, cudnn_dtype=model.cudnn_dtype)
             _dataset.set(dataset)
             x = _dataset
 

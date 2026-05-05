@@ -9,9 +9,7 @@ import numpy as np
 from pydtnn.model.layers import Layers
 from pydtnn.utils.constants import Array, Parameters
 
-__all__ = (
-    "State",
-)
+__all__ = ("State",)
 
 logger = logging.getLogger(__name__)
 
@@ -24,10 +22,7 @@ class State[T: Array](Layers[T]):
         if self.model_name is not None:
             data[Parameters.MODEL_NAME] = self.model_name
 
-        data[Parameters.LAYERS] = [
-            layer.export()
-            for layer in self.layers
-        ]
+        data[Parameters.LAYERS] = [layer.export() for layer in self.layers]
 
         return data
 

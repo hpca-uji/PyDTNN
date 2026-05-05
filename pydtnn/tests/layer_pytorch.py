@@ -58,7 +58,7 @@ numpy_to_torch_dtype_dict = {
     np.float32: torch.float32,
     np.float64: torch.float64,
     np.complex64: torch.complex64,
-    np.complex128: torch.complex128
+    np.complex128: torch.complex128,
 }
 
 # setting random seed
@@ -91,7 +91,7 @@ CONV2D_PADDING = 0
 CONV2D_STRIDE = 1
 CONV2D_DILATION = 1
 
-FC_OUPUT_SHAPE = (4, )
+FC_OUPUT_SHAPE = (4,)
 LINEAR_OUTPUT = FC_OUPUT_SHAPE[0]
 
 MAX_POOL_SHAPE = (2, 2)
@@ -126,13 +126,11 @@ class TorchAdditionBlock(torch.nn.Module):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.block1 = torch.nn.Sequential(
-            torch.nn.Conv2d(in_channels=CONV2D_IN_C_TORCH, out_channels=CONV2D_N_FILTERS, kernel_size=CONV2D_FILTER_SHAPE, padding=CONV2D_PADDING,
-                            stride=CONV2D_STRIDE, dilation=CONV2D_DILATION),
-            torch.nn.BatchNorm2d(CONV2D_N_FILTERS, eps=BATCH_NORMALIZATION_EPSILON, momentum=BATCH_NORMALIZATION_MOMENTUM_TORCH)
+            torch.nn.Conv2d(in_channels=CONV2D_IN_C_TORCH, out_channels=CONV2D_N_FILTERS, kernel_size=CONV2D_FILTER_SHAPE, padding=CONV2D_PADDING, stride=CONV2D_STRIDE, dilation=CONV2D_DILATION),
+            torch.nn.BatchNorm2d(CONV2D_N_FILTERS, eps=BATCH_NORMALIZATION_EPSILON, momentum=BATCH_NORMALIZATION_MOMENTUM_TORCH),
         )
         self.block2 = torch.nn.Sequential(
-            torch.nn.Conv2d(in_channels=CONV2D_IN_C_TORCH, out_channels=CONV2D_N_FILTERS, kernel_size=CONV2D_FILTER_SHAPE, padding=CONV2D_PADDING,
-                            stride=CONV2D_STRIDE, dilation=CONV2D_DILATION)
+            torch.nn.Conv2d(in_channels=CONV2D_IN_C_TORCH, out_channels=CONV2D_N_FILTERS, kernel_size=CONV2D_FILTER_SHAPE, padding=CONV2D_PADDING, stride=CONV2D_STRIDE, dilation=CONV2D_DILATION)
         )
 
     def forward(self, x):
@@ -146,13 +144,11 @@ class TorchConcatenationBlock(torch.nn.Module):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.block1 = torch.nn.Sequential(
-            torch.nn.Conv2d(in_channels=CONV2D_IN_C_TORCH, out_channels=CONV2D_N_FILTERS, kernel_size=CONV2D_FILTER_SHAPE, padding=CONV2D_PADDING,
-                            stride=CONV2D_STRIDE, dilation=CONV2D_DILATION),
-            torch.nn.BatchNorm2d(CONV2D_N_FILTERS, eps=BATCH_NORMALIZATION_EPSILON, momentum=BATCH_NORMALIZATION_MOMENTUM_TORCH)
+            torch.nn.Conv2d(in_channels=CONV2D_IN_C_TORCH, out_channels=CONV2D_N_FILTERS, kernel_size=CONV2D_FILTER_SHAPE, padding=CONV2D_PADDING, stride=CONV2D_STRIDE, dilation=CONV2D_DILATION),
+            torch.nn.BatchNorm2d(CONV2D_N_FILTERS, eps=BATCH_NORMALIZATION_EPSILON, momentum=BATCH_NORMALIZATION_MOMENTUM_TORCH),
         )
         self.block2 = torch.nn.Sequential(
-            torch.nn.Conv2d(in_channels=CONV2D_IN_C_TORCH, out_channels=CONV2D_N_FILTERS, kernel_size=CONV2D_FILTER_SHAPE, padding=CONV2D_PADDING,
-                            stride=CONV2D_STRIDE, dilation=CONV2D_DILATION)
+            torch.nn.Conv2d(in_channels=CONV2D_IN_C_TORCH, out_channels=CONV2D_N_FILTERS, kernel_size=CONV2D_FILTER_SHAPE, padding=CONV2D_PADDING, stride=CONV2D_STRIDE, dilation=CONV2D_DILATION)
         )
 
     def forward(self, x):
@@ -193,7 +189,6 @@ class ParamsLayerPytorch(Params):
 
 
 class LayerPyTorchTestCase(TestCase):
-
     params = ParamsLayerPytorch()
 
     def setUp(self) -> None:
@@ -203,8 +198,7 @@ class LayerPyTorchTestCase(TestCase):
     # Initialization methods
 
     @staticmethod
-    def get_test_data(no_zeros=False, normalize=True, positives_and_negatives=True,
-                      shape_with_elements=(params.batch_size, *params.shape), dtype=params.dtype) -> np.ndarray:
+    def get_test_data(no_zeros=False, normalize=True, positives_and_negatives=True, shape_with_elements=(params.batch_size, *params.shape), dtype=params.dtype) -> np.ndarray:
         num_elems = math.prod(shape_with_elements) // 4
 
         x_1 = np.arange(num_elems)
@@ -287,7 +281,7 @@ class LayerPyTorchTestCase(TestCase):
     def do_test(self, _x: np.ndarray, pydtnn_model: Model, torch_model: torch.nn.Module, name_test: str, rtol=1e-6, atol=1e-6) -> None:
         self.copy_grad_vars(pydtnn_model, torch_model)
 
-        num_elems = (len("Testing: ") + len(name_test))
+        num_elems = len("Testing: ") + len(name_test)
         if verbose_test():
             logger.info(f"\n\n{'=' * num_elems}\nTesting: {name_test}\n{'=' * num_elems}")
 
@@ -337,8 +331,7 @@ class LayerPyTorchTestCase(TestCase):
         self.do_test(_x=_x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="AveragePool2D")
 
     def test_BatchNormalization(self):
-        pydtnn_layers = [BatchNormalization(gamma=BATCH_NORMALIZATION_GAMMA, beta=BATCH_NORMALIZATION_BETA, epsilon=BATCH_NORMALIZATION_EPSILON,
-                                            momentum=BATCH_NORMALIZATION_MOMENTUM_PYDTNN)]
+        pydtnn_layers = [BatchNormalization(gamma=BATCH_NORMALIZATION_GAMMA, beta=BATCH_NORMALIZATION_BETA, epsilon=BATCH_NORMALIZATION_EPSILON, momentum=BATCH_NORMALIZATION_MOMENTUM_PYDTNN)]
         torch_model = torch.nn.BatchNorm2d(BATCH_NORMALIZATION_NUM_FEATURES, eps=BATCH_NORMALIZATION_EPSILON, momentum=BATCH_NORMALIZATION_MOMENTUM_TORCH, affine=False)
         pydtnn_model = LayerPyTorchTestCase.initialize_pydtnn_model(pydtnn_layers, params=self.params)  # type: ignore
 
@@ -347,8 +340,9 @@ class LayerPyTorchTestCase(TestCase):
 
     def test_Conv2D(self):
         pydtnn_layers = [Conv2D(nfilters=CONV2D_N_FILTERS, filter_shape=CONV2D_FILTER_SHAPE, padding=CONV2D_PADDING, stride=CONV2D_STRIDE, dilation=CONV2D_DILATION)]
-        torch_model = torch.nn.Conv2d(in_channels=CONV2D_IN_C_TORCH, out_channels=CONV2D_N_FILTERS, kernel_size=CONV2D_FILTER_SHAPE,
-                                      padding=CONV2D_PADDING, stride=CONV2D_STRIDE, dilation=CONV2D_DILATION)
+        torch_model = torch.nn.Conv2d(
+            in_channels=CONV2D_IN_C_TORCH, out_channels=CONV2D_N_FILTERS, kernel_size=CONV2D_FILTER_SHAPE, padding=CONV2D_PADDING, stride=CONV2D_STRIDE, dilation=CONV2D_DILATION
+        )
         pydtnn_model = LayerPyTorchTestCase.initialize_pydtnn_model(pydtnn_layers, params=self.params)  # type: ignore
         _x = LayerPyTorchTestCase.get_test_data()
         self.do_test(_x=_x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="Conv2D")
@@ -385,15 +379,13 @@ class LayerPyTorchTestCase(TestCase):
     def test_AdditionBlock(self):
         pydtnn_layers = [
             AdditionBlock(
-                [Conv2D(nfilters=CONV2D_N_FILTERS, filter_shape=CONV2D_FILTER_SHAPE,
-                        padding=CONV2D_PADDING, stride=CONV2D_STRIDE, dilation=CONV2D_DILATION),
-                 BatchNormalization(gamma=BATCH_NORMALIZATION_GAMMA, beta=BATCH_NORMALIZATION_BETA, epsilon=BATCH_NORMALIZATION_EPSILON, momentum=BATCH_NORMALIZATION_MOMENTUM_PYDTNN)
-                 ],
-
-                [Conv2D(nfilters=CONV2D_N_FILTERS, filter_shape=CONV2D_FILTER_SHAPE,
-                        padding=CONV2D_PADDING, stride=CONV2D_STRIDE, dilation=CONV2D_DILATION)
-                 ]
-            )]
+                [
+                    Conv2D(nfilters=CONV2D_N_FILTERS, filter_shape=CONV2D_FILTER_SHAPE, padding=CONV2D_PADDING, stride=CONV2D_STRIDE, dilation=CONV2D_DILATION),
+                    BatchNormalization(gamma=BATCH_NORMALIZATION_GAMMA, beta=BATCH_NORMALIZATION_BETA, epsilon=BATCH_NORMALIZATION_EPSILON, momentum=BATCH_NORMALIZATION_MOMENTUM_PYDTNN),
+                ],
+                [Conv2D(nfilters=CONV2D_N_FILTERS, filter_shape=CONV2D_FILTER_SHAPE, padding=CONV2D_PADDING, stride=CONV2D_STRIDE, dilation=CONV2D_DILATION)],
+            )
+        ]
 
         torch_model = TorchAdditionBlock()
         pydtnn_model = LayerPyTorchTestCase.initialize_pydtnn_model(pydtnn_layers, params=self.params)  # type: ignore
@@ -403,15 +395,13 @@ class LayerPyTorchTestCase(TestCase):
     def test_ConcatenationBlock(self):
         pydtnn_layers = [
             ConcatenationBlock(
-                [Conv2D(nfilters=CONV2D_N_FILTERS, filter_shape=CONV2D_FILTER_SHAPE,
-                        padding=CONV2D_PADDING, stride=CONV2D_STRIDE, dilation=CONV2D_DILATION),
-                 BatchNormalization(gamma=BATCH_NORMALIZATION_GAMMA, beta=BATCH_NORMALIZATION_BETA, epsilon=BATCH_NORMALIZATION_EPSILON, momentum=BATCH_NORMALIZATION_MOMENTUM_PYDTNN)
-                 ],
-
-                [Conv2D(nfilters=CONV2D_N_FILTERS, filter_shape=CONV2D_FILTER_SHAPE,
-                        padding=CONV2D_PADDING, stride=CONV2D_STRIDE, dilation=CONV2D_DILATION)
-                 ]
-            )]
+                [
+                    Conv2D(nfilters=CONV2D_N_FILTERS, filter_shape=CONV2D_FILTER_SHAPE, padding=CONV2D_PADDING, stride=CONV2D_STRIDE, dilation=CONV2D_DILATION),
+                    BatchNormalization(gamma=BATCH_NORMALIZATION_GAMMA, beta=BATCH_NORMALIZATION_BETA, epsilon=BATCH_NORMALIZATION_EPSILON, momentum=BATCH_NORMALIZATION_MOMENTUM_PYDTNN),
+                ],
+                [Conv2D(nfilters=CONV2D_N_FILTERS, filter_shape=CONV2D_FILTER_SHAPE, padding=CONV2D_PADDING, stride=CONV2D_STRIDE, dilation=CONV2D_DILATION)],
+            )
+        ]
         torch_model = TorchConcatenationBlock()
         pydtnn_model = LayerPyTorchTestCase.initialize_pydtnn_model(pydtnn_layers, params=self.params)  # type: ignore
         _x = LayerPyTorchTestCase.get_test_data()

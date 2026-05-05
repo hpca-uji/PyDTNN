@@ -21,9 +21,7 @@ from pydtnn.layers.encoder import Encoder
 from pydtnn.layers.input import Input
 from pydtnn.utils.constants import ArrayShape
 
-__all__ = (
-    "bert",
-)
+__all__ = ("bert",)
 
 
 def bert(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
@@ -40,6 +38,7 @@ def bert(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerabl
         _(Encoder(embedl=embedl, d_k=64, heads=8, d_ff=2048, dropout_rate=0.1))
 
     return model
+
 
 # def create_bert(model):
 #     n_encoders = 3

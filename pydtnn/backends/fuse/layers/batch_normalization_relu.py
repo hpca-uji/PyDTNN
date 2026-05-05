@@ -26,7 +26,6 @@ class BatchNormalizationRelu[T: Array](FusedLayerMixIn[T], BatchNormalization[T]
 
 
 class BatchNormalizationReluFuse(BatchNormalizationRelu[np.ndarray], BatchNormalizationNumpy):
-
     # NOTE: The "__init__" method is being made (more or less) in Model (in _apply_layer_fusion) and in FusedLayerMixIn.
 
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None):

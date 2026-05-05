@@ -9,16 +9,13 @@ from pydtnn.model import Model
 from pydtnn.utils.best_of.best_of import BestOf
 from pydtnn.utils.constants import ArrayShape
 
-__all__ = (
-    "BestOfVariant",
-)
+__all__ = ("BestOfVariant",)
 
 logger = logging.getLogger(__name__)
 
 
 # FIXME: Broken since Conv2D to backend support
 class BestOfVariant(Conv2DWinogradNumpy, Conv2DDirectNumpy):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # best_of related attributes (will be initialized in initialize())
@@ -57,24 +54,18 @@ class BestOfVariant(Conv2DWinogradNumpy, Conv2DDirectNumpy):
             self._best_fw = BestOf(
                 name="Conv2DNumpy only forward",
                 alternatives=alternatives_fw,
-                get_problem_size=lambda *args: tuple(args[0].shape) + tuple(args[0].weights.shape)
-                + (args[0].vstride,
-                   args[0].hstride,
-                   args[0].vdilation,
-                   args[0].hdilation),
+                get_problem_size=lambda *args: tuple(args[0].shape) + tuple(args[0].weights.shape) + (args[0].vstride, args[0].hstride, args[0].vdilation, args[0].hdilation),
             )
             self._best_fw_bw_pipeline = BestOf(
                 name="Conv2DNumpy forward backward",
                 alternatives=alternatives_fw_bw_pipeline,
-                get_problem_size=lambda *args: tuple(args[0].shape) + tuple(args[0].weights.shape)
-                + (args[0].vpadding, args[0].hpadding,
-                   args[0].vstride, args[0].hstride,
-                   args[0].vdilation, args[0].hdilation),
+                get_problem_size=lambda *args: (
+                    tuple(args[0].shape) + tuple(args[0].weights.shape) + (args[0].vpadding, args[0].hpadding, args[0].vstride, args[0].hstride, args[0].vdilation, args[0].hdilation)
+                ),
             )
 
     def _get_class_forward_and_backward(self, variant) -> List[Callable]:
-        return [getattr(self.__class__, f'_forward_{variant}_{self.model.tensor_format}'),
-                getattr(self.__class__, f'_backward_{variant}_{self.model.tensor_format}')]
+        return [getattr(self.__class__, f"_forward_{variant}_{self.model.tensor_format}"), getattr(self.__class__, f"_backward_{variant}_{self.model.tensor_format}")]
 
     def _fw_bw_best_of(self, stage, x_or_y):
         match self.model.mode:

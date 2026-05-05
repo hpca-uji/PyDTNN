@@ -5,9 +5,7 @@ from pydtnn.activations.log import Log
 from pydtnn.backends.numpy.activations.activation import ActivationNumpy
 from pydtnn.libs import numpy as np
 
-__all__ = (
-    "LogNumpy",
-)
+__all__ = ("LogNumpy",)
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +14,6 @@ if TYPE_CHECKING:
 
 
 class LogNumpy(Log[np.ndarray], ActivationNumpy):
-
     def _model_init(self, prev_shape, x=None):
         super()._model_init(prev_shape, x)
         # NOTE: These attributes only store data, their value before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
@@ -29,19 +26,14 @@ class LogNumpy(Log[np.ndarray], ActivationNumpy):
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         # def forward(self, x: np.ndarray) -> np.ndarray:
-        y = self.y[:x.shape[0], :]
+        y = self.y[: x.shape[0], :]
         # y = np.log(1 / (1 + np.exp(-x)))
-        np.multiply(x, -1, out=x,
-                    dtype=self.model.dtype)
-        np.exp(x, out=x,
-               dtype=self.model.dtype)
-        np.add(x, 1, out=x,
-               dtype=self.model.dtype)
-        np.log(x, out=y,
-               dtype=self.model.dtype)
+        np.multiply(x, -1, out=x, dtype=self.model.dtype)
+        np.exp(x, out=x, dtype=self.model.dtype)
+        np.add(x, 1, out=x, dtype=self.model.dtype)
+        np.log(x, out=y, dtype=self.model.dtype)
         # NOTE: Log propierty: "log(a / b) = log(a) - log(b)", and "log(1) = 0" ==> "log(a / b) = - log(b)"
-        np.multiply(y, -1, out=y,
-                    dtype=self.model.dtype)
+        np.multiply(y, -1, out=y, dtype=self.model.dtype)
         return y
 
     def backward(self, dy: np.ndarray) -> np.ndarray:

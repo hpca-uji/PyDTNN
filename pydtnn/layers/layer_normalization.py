@@ -5,19 +5,16 @@ import numpy as np
 from pydtnn.layers.layer import Layer
 from pydtnn.utils.constants import Array
 
-__all__ = (
-    "LayerNormalization",
-)
+__all__ = ("LayerNormalization",)
 
 logger = logging.getLogger(__name__)
 
 
 # https://melfm.github.io/posts/2018-08-Understanding-Normalization/
 
+
 class LayerNormalization[T: Array](Layer[T]):
-    def __init__(self, axis=(-2, -1), beta: float = 0.0, gamma: float = 1.0,
-                 epsilon: float = 1e-5,
-                 sync_stats: bool = False):
+    def __init__(self, axis=(-2, -1), beta: float = 0.0, gamma: float = 1.0, epsilon: float = 1e-5, sync_stats: bool = False):
         super().__init__()
         if type(axis) is not tuple:
             self.axis = (axis,)

@@ -7,9 +7,7 @@ import numpy as np
 
 from pydtnn.datasets.dataset import Dataset
 
-__all__ = (
-    "Synthetic",
-)
+__all__ = ("Synthetic",)
 
 logger = logging.getLogger(__name__)
 
@@ -35,13 +33,9 @@ class Synthetic(Dataset):
         input_shape = tuple(map(int, model.synthetic_input_shape.split(",")))
         output_shape = tuple(map(int, model.synthetic_output_shape.split(",")))
 
-        super().__init__(model,
-                         train_nsamples=train_nsamples,
-                         test_nsamples=test_nsamples,
-                         input_shape=input_shape,
-                         output_shape=output_shape,
-                         force_test_as_validation=force_test_as_validation,
-                         debug=debug)
+        super().__init__(
+            model, train_nsamples=train_nsamples, test_nsamples=test_nsamples, input_shape=input_shape, output_shape=output_shape, force_test_as_validation=force_test_as_validation, debug=debug
+        )
 
     def _init_actual_data(self):
         self._x: list[np.ndarray] = [np.empty((0,)) for part in Dataset.Part]

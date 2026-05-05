@@ -4,6 +4,7 @@ from typing import Any
 import numpy as np
 
 import pydtnn.converters.onnx2pydtnn.constants as cons
+
 # Functionality imports
 from pydtnn.abstract.layerable import Layerable
 
@@ -34,6 +35,7 @@ def Add(info: dict[str, Any]) -> Layerable:
     list_adding_nodes = info[cons.CONST_listS_NODES]
 
     from pydtnn.layers.addition_block import AdditionBlock
+
     return AdditionBlock(list_adding_nodes)
 
 
@@ -65,10 +67,12 @@ def AveragePool(info: dict[str, Any]) -> Layerable:
         args[PYDTNN_STRIDE] = dict_attributes[ONNX_STRIDES]
 
     from pydtnn.layers.average_pool_2d import AveragePool2D
+
     return AveragePool2D(**args)
 
 
 # = B =
+
 
 def BatchNormalization(info: dict[str, Any]) -> Layerable:
     print(f"attributes: {info[cons.CONST_ATTRIBUTES]}")
@@ -89,10 +93,12 @@ def BatchNormalization(info: dict[str, Any]) -> Layerable:
         args[PYDTNN_MOMENTUM] = dict_attributes[ONNX_MOMENTUM]
 
     from pydtnn.layers.batch_normalization import BatchNormalization
+
     return BatchNormalization(**args)
 
 
 # = C =
+
 
 def Concat(info: dict[str, Any]) -> Layerable:
     print(f"attributes: {info[cons.CONST_ATTRIBUTES]}")
@@ -104,6 +110,7 @@ def Concat(info: dict[str, Any]) -> Layerable:
     list_concat_nodes = info[cons.CONST_listS_NODES]
 
     from pydtnn.layers.concatenation_block import ConcatenationBlock
+
     return ConcatenationBlock(list_concat_nodes)
 
 
@@ -147,10 +154,12 @@ def Conv(info: dict[str, Any]) -> Layerable:
         print(f"args[{k}]: {type(args[k])} | {args[k]}")
 
     from pydtnn.layers.conv_2d import Conv2D
+
     return Conv2D(**args)
 
 
 # = D =
+
 
 def Dropout(info: dict[str, Any]) -> Layerable:
     print(f"attributes: {info[cons.CONST_ATTRIBUTES]}")
@@ -178,6 +187,7 @@ def Dropout(info: dict[str, Any]) -> Layerable:
     print(f"==> args: {args}")
 
     from pydtnn.layers.dropout import Dropout
+
     return Dropout(**args)
 
 
@@ -190,6 +200,7 @@ def Flatten(info: dict[str, Any]) -> Layerable:
     # It has one attribute (axis), but there is no equivalence in PyDTNN.
     # ==> In PyDTNN the axis is always 1.
     from pydtnn.layers.flatten import Flatten
+
     return Flatten()
 
 
@@ -226,6 +237,7 @@ def Gemm(info: dict[str, Any]) -> Layerable:
 
     # TODO: make this programming terrorism into an actual class or classes
     from pydtnn.layers.fc import FC
+
     pseudo_gemm = FC()
 
     _other_inputs = set(enumerate(info[cons.CONST_ALL_INPUTS])) - set(enumerate(info[cons.CONST_INPUTS]))
@@ -279,10 +291,12 @@ def GlobalAveragePool(info: dict[str, Any]) -> Layerable:
     args[PYDTNN_STRIDE] = 1
 
     from pydtnn.layers.average_pool_2d import AveragePool2D
+
     return AveragePool2D(**args)
 
 
 # = M =
+
 
 def MaxPool(info: dict[str, Any]) -> Layerable:
     print("------")
@@ -318,6 +332,7 @@ def MaxPool(info: dict[str, Any]) -> Layerable:
         # a = args[k]
 
     from pydtnn.layers.max_pool_2d import MaxPool2D
+
     return MaxPool2D(**args)
 
 
@@ -362,10 +377,12 @@ def Mul(info: dict[str, Any]) -> Layerable:
 
 # = R =
 
+
 def Relu(info: dict[str, Any]) -> Layerable:
     # ONNX info: https://onnx.ai/onnx/operators/onnx__Relu.html
     print(f"attributes: {info[cons.CONST_ATTRIBUTES]}")
     from pydtnn.activations.relu import Relu
+
     return Relu()
 
 
@@ -392,7 +409,6 @@ def Unsqueeze(info: dict[str, Any]) -> Layerable:
     from pydtnn.layers.abstract.block_layer import AbstractBlockLayer as Layer
 
     class _Unsqueeze(Layer):
-
         def __init__(self, shape=(1,), axis=()):
             super().__init__(shape)
             self.axis = axis

@@ -38,7 +38,7 @@ __all__ = (
     "stream",
     "stream_handle",
     "cudnn_handle",
-    "cublas_handle"
+    "cublas_handle",
 )
 
 logger = logging.getLogger(__name__)
@@ -60,6 +60,7 @@ except Exception:
 
 try:
     import cupy  # type: ignore
+
     logger.debug("Cupy available")
 except Exception as e:
     logger.debug(f"Cupy not available\n{e}")
@@ -68,8 +69,11 @@ except Exception as e:
 
 try:
     import pycuda  # type: ignore
+
     logger.debug("PyCuda available")
+
     import pycuda.driver as drv  # type: ignore
+
     logger.debug("drv available")
 except Exception as e:
     logger.debug(f"PyCuda or drv not available\n{e}")
@@ -81,10 +85,12 @@ except Exception as e:
     has_drv = False
 else:
     import pycuda.gpuarray as gpuarray  # type: ignore
+
     has_drv = True
 
 try:
     from pydtnn.backends.pycuda.utils import tensor_array  # type: ignore
+
     logger.debug("tensor_array available")
 except Exception as e:
     logger.debug(f"tensor_array not available\n{e}")
@@ -93,6 +99,7 @@ except Exception as e:
 
 try:
     from pydtnn.libs import nccl as nccl  # type: ignore
+
     logger.debug("nccl available")
 except Exception as e:
     logger.debug(f"nccl not available\n{e}")
@@ -101,6 +108,7 @@ except Exception as e:
 
 try:
     from pydtnn.libs import cudnn as cudnn  # type: ignore
+
     logger.debug("cudnn available")
 except Exception as e:
     logger.debug(f"cudnn not available\n{e}")
@@ -109,6 +117,7 @@ except Exception as e:
 
 try:
     from pydtnn.libs import cublas  # type: ignore
+
     logger.debug("cublas available")
 except Exception as e:
     logger.debug(f"cublas available\n{e}")
@@ -130,7 +139,7 @@ else:
 
 # INIT GPU
 try:
-    num_gpus = subprocess.check_output(["nvidia-smi", "-L"]).count(b'UUID')
+    num_gpus = subprocess.check_output(["nvidia-smi", "-L"]).count(b"UUID")
 except (FileNotFoundError, subprocess.CalledProcessError):
     num_gpus = 0
 os.environ["CUDA_VISIBLE_DEVICES"] = str(rank % num_gpus) if num_gpus else ""

@@ -39,14 +39,14 @@ __all__ = (
 logger = logging.getLogger(__name__)
 
 
-if sys.platform in ('linux2', 'linux'):
-    _libnccl_libname_list = ['libnccl.so']
-elif sys.platform == 'darwin':
-    _libnccl_libname_list = ['libnccl.dylib']
-elif sys.platform == 'win32':
-    _libnccl_libname_list = ['libnccl.dll']
+if sys.platform in ("linux2", "linux"):
+    _libnccl_libname_list = ["libnccl.so"]
+elif sys.platform == "darwin":
+    _libnccl_libname_list = ["libnccl.dylib"]
+elif sys.platform == "win32":
+    _libnccl_libname_list = ["libnccl.dll"]
 else:
-    raise NotImplementedError('PyDTNN NCCL: current platform is not yet supported!')
+    raise NotImplementedError("PyDTNN NCCL: current platform is not yet supported!")
 
 _libnccl = None
 for _libnccl_libname in _libnccl_libname_list:
@@ -57,7 +57,7 @@ for _libnccl_libname in _libnccl_libname_list:
     else:
         break
 if _libnccl is None:
-    raise OSError('NCCL library not found')
+    raise OSError("NCCL library not found")
 
 # NCCL error
 _libnccl.ncclGetErrorString.restype = ctypes.c_char_p
@@ -71,7 +71,7 @@ class NcclError(Exception):
     def __str__(self):
         assert _libnccl
         error = _libnccl.ncclGetErrorString(self.status)
-        return f'{error}'
+        return f"{error}"
 
 
 def ncclCheckStatus(status):
@@ -147,8 +147,7 @@ def ncclGetUniqueId():
 
 # ncclResult_t  ncclCommInitRank(ncclComm_t* comm, int nranks, NcclUniqueId comm_id, int rank);
 _libnccl.ncclCommInitRank.restype = int
-_libnccl.ncclCommInitRank.argtypes = [ctypes.POINTER(ncclComm_t), ctypes.c_int,
-                                      NcclUniqueId, ctypes.c_int]
+_libnccl.ncclCommInitRank.argtypes = [ctypes.POINTER(ncclComm_t), ctypes.c_int, NcclUniqueId, ctypes.c_int]
 
 
 def ncclCommInitRank(nranks, comm_id, rank):
@@ -378,9 +377,7 @@ class DataType(Enum):
 # ncclResult_t  ncclReduce(const void* sendbuff, void* recvbuff, size_t count, ncclDataType_t datatype,
 #     ncclRedOp_t op, int root, ncclComm_t comm, cudaStream_t stream);
 _libnccl.ncclReduce.restype = int
-_libnccl.ncclReduce.argtypes = [ctypes.c_void_p, ctypes.c_void_p,
-                                ctypes.c_ulong, ctypes.c_int, ctypes.c_int, ctypes.c_int,
-                                ncclComm_t, ctypes.c_void_p]
+_libnccl.ncclReduce.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_ulong, ctypes.c_int, ctypes.c_int, ctypes.c_int, ncclComm_t, ctypes.c_void_p]
 
 
 def ncclReduce(sendbuff, recvbuff, count, datatype, op, root, comm, stream):
@@ -401,17 +398,14 @@ def ncclReduce(sendbuff, recvbuff, count, datatype, op, root, comm, stream):
     """
 
     assert _libnccl
-    status = _libnccl.ncclReduce(sendbuff, recvbuff, count,
-                                 datatype.value, op.value, root, comm, stream)
+    status = _libnccl.ncclReduce(sendbuff, recvbuff, count, datatype.value, op.value, root, comm, stream)
     ncclCheckStatus(status)
 
 
 # ncclResult_t  ncclBroadcast(const void* sendbuff, void* recvbuff, size_t count, ncclDataType_t datatype, int root,
 #     ncclComm_t comm, cudaStream_t stream);
 _libnccl.ncclBroadcast.restype = int
-_libnccl.ncclBroadcast.argtypes = [ctypes.c_void_p, ctypes.c_void_p,
-                                   ctypes.c_ulong, ctypes.c_int, ctypes.c_int,
-                                   ncclComm_t, ctypes.c_void_p]
+_libnccl.ncclBroadcast.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_ulong, ctypes.c_int, ctypes.c_int, ncclComm_t, ctypes.c_void_p]
 
 
 def ncclBroadcast(sendbuff, recvbuff, count, datatype, root, comm, stream):
@@ -438,9 +432,7 @@ def ncclBroadcast(sendbuff, recvbuff, count, datatype, root, comm, stream):
 # ncclResult_t  ncclAllReduce(const void* sendbuff, void* recvbuff, size_t count,
 #     ncclDataType_t datatype, ncclRedOp_t op, ncclComm_t comm, cudaStream_t stream);
 _libnccl.ncclAllReduce.restype = int
-_libnccl.ncclAllReduce.argtypes = [ctypes.c_void_p, ctypes.c_void_p,
-                                   ctypes.c_ulong, ctypes.c_int, ctypes.c_int,
-                                   ncclComm_t, ctypes.c_void_p]
+_libnccl.ncclAllReduce.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_ulong, ctypes.c_int, ctypes.c_int, ncclComm_t, ctypes.c_void_p]
 
 
 def ncclAllReduce(sendbuff, recvbuff, count, datatype, op, comm, stream):
@@ -459,8 +451,7 @@ def ncclAllReduce(sendbuff, recvbuff, count, datatype, op, comm, stream):
     """
 
     assert _libnccl
-    status = _libnccl.ncclAllReduce(sendbuff, recvbuff, count,
-                                    datatype.value, op.value, comm, stream)
+    status = _libnccl.ncclAllReduce(sendbuff, recvbuff, count, datatype.value, op.value, comm, stream)
     ncclCheckStatus(status)
 
 
@@ -468,9 +459,7 @@ def ncclAllReduce(sendbuff, recvbuff, count, datatype, op, comm, stream):
 #     size_t recvcount, ncclDataType_t datatype, ncclRedOp_t op, ncclComm_t comm,
 #     cudaStream_t stream);
 _libnccl.ncclReduceScatter.restype = int
-_libnccl.ncclReduceScatter.argtypes = [ctypes.c_void_p, ctypes.c_void_p,
-                                       ctypes.c_ulong, ctypes.c_int,
-                                       ncclComm_t, ctypes.c_void_p]
+_libnccl.ncclReduceScatter.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_ulong, ctypes.c_int, ncclComm_t, ctypes.c_void_p]
 
 
 def ncclReduceScatter(sendbuff, recvbuff, recvcount, datatype, comm, stream):
@@ -492,17 +481,14 @@ def ncclReduceScatter(sendbuff, recvbuff, recvcount, datatype, comm, stream):
     """
 
     assert _libnccl
-    status = _libnccl.ncclReduceScatter(sendbuff, recvbuff, recvcount,
-                                        datatype.value, comm, stream)
+    status = _libnccl.ncclReduceScatter(sendbuff, recvbuff, recvcount, datatype.value, comm, stream)
     ncclCheckStatus(status)
 
 
 # ncclResult_t  ncclAllGather(const void* sendbuff, void* recvbuff, size_t sendcount,
 #     ncclDataType_t datatype, ncclComm_t comm, cudaStream_t stream);
 _libnccl.ncclAllGather.restype = int
-_libnccl.ncclAllGather.argtypes = [ctypes.c_void_p, ctypes.c_void_p,
-                                   ctypes.c_ulong, ctypes.c_int,
-                                   ncclComm_t, ctypes.c_void_p]
+_libnccl.ncclAllGather.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_ulong, ctypes.c_int, ncclComm_t, ctypes.c_void_p]
 
 
 def ncclAllGather(sendbuff, recvbuff, sendcount, datatype, comm, stream):
@@ -523,17 +509,14 @@ def ncclAllGather(sendbuff, recvbuff, sendcount, datatype, comm, stream):
     """
 
     assert _libnccl
-    status = _libnccl.ncclAllGather(sendbuff, recvbuff, sendcount,
-                                    datatype.value, comm, stream)
+    status = _libnccl.ncclAllGather(sendbuff, recvbuff, sendcount, datatype.value, comm, stream)
     ncclCheckStatus(status)
 
 
 # ncclResult_t  ncclSend(const void* sendbuff, size_t count, ncclDataType_t datatype, int peer,
 #     ncclComm_t comm, cudaStream_t stream);
 _libnccl.ncclSend.restype = int
-_libnccl.ncclSend.argtypes = [ctypes.c_void_p,
-                              ctypes.c_ulong, ctypes.c_int, ctypes.c_int,
-                              ncclComm_t, ctypes.c_void_p]
+_libnccl.ncclSend.argtypes = [ctypes.c_void_p, ctypes.c_ulong, ctypes.c_int, ctypes.c_int, ncclComm_t, ctypes.c_void_p]
 
 
 def ncclSend(sendbuff, count, datatype, peer, comm, stream):
@@ -563,9 +546,7 @@ def ncclSend(sendbuff, count, datatype, peer, comm, stream):
 # ncclResult_t  ncclRecv(void* recvbuff, size_t count, ncclDataType_t datatype, int peer,
 #    ncclComm_t comm, cudaStream_t stream);
 _libnccl.ncclRecv.restype = int
-_libnccl.ncclRecv.argtypes = [ctypes.c_void_p,
-                              ctypes.c_int, ctypes.c_int, ctypes.c_int,
-                              ncclComm_t, ctypes.c_void_p]
+_libnccl.ncclRecv.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_int, ctypes.c_int, ncclComm_t, ctypes.c_void_p]
 
 
 def ncclRecv(recvbuff, count, datatype, peer, comm, stream):

@@ -1,6 +1,7 @@
 """
 PyDTNN Layer base class
 """
+
 import logging
 
 from pydtnn.abstract.layerable import Layerable

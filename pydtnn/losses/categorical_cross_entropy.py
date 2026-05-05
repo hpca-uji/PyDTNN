@@ -3,9 +3,7 @@ import logging
 from pydtnn.losses.loss import Loss
 from pydtnn.utils.constants import Array
 
-__all__ = (
-    "CategoricalCrossEntropy",
-)
+__all__ = ("CategoricalCrossEntropy",)
 
 logger = logging.getLogger(__name__)
 

@@ -5,9 +5,7 @@ from pydtnn.backends.cupy.metrics.metric import MetricCupy
 from pydtnn.backends.numpy.metrics.precision import PrecisionNumpy
 from pydtnn.libs import numpy as np
 
-__all__ = (
-    "PrecisionCupy",
-)
+__all__ = ("PrecisionCupy",)
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +14,6 @@ if TYPE_CHECKING:
 
 
 class PrecisionCupy(PrecisionNumpy, MetricCupy):
-
     def _post_init(self) -> None:
         super()._post_init()
         with self.model.memory:

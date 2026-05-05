@@ -11,15 +11,12 @@ from pydtnn.libs import cudnn as cudnn
 from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
 from pydtnn.utils.constants import ArrayShape
 
-__all__ = (
-    "DropoutPycuda",
-)
+__all__ = ("DropoutPycuda",)
 
 logger = logging.getLogger(__name__)
 
 
 class DropoutPycuda(Dropout[TensorArray], LayerPycuda):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -56,24 +53,17 @@ class DropoutPycuda(Dropout[TensorArray], LayerPycuda):
 
         self.drop_desc = cudnn.cudnnCreateDropoutDescriptor()
 
-        cudnn.cudnnSetDropoutDescriptor(self.drop_desc, self.model.cudnn_handle, self.rate,
-                                        self.states.ptr_voidp, self.states_size, seed=0)
+        cudnn.cudnnSetDropoutDescriptor(self.drop_desc, self.model.cudnn_handle, self.rate, self.states.ptr_voidp, self.states_size, seed=0)
 
     def forward(self, x: TensorArray) -> TensorArray:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
-        cudnn.cudnnDropoutForward(self.model.cudnn_handle, self.drop_desc,
-                                  x.desc, x.ptr_voidp,
-                                  self.y.desc, self.y.ptr_voidp,
-                                  self.space.ptr_voidp, self.space_size.value)
+        cudnn.cudnnDropoutForward(self.model.cudnn_handle, self.drop_desc, x.desc, x.ptr_voidp, self.y.desc, self.y.ptr_voidp, self.space.ptr_voidp, self.space_size.value)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.y
 
     def backward(self, dy: TensorArray) -> TensorArray:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
         # Compute dx
-        cudnn.cudnnDropoutBackward(self.model.cudnn_handle, self.drop_desc,
-                                   dy.desc, dy.ptr_voidp,
-                                   self.dx.desc, self.dx.ptr_voidp,
-                                   self.space.ptr_voidp, self.space_size.value)
+        cudnn.cudnnDropoutBackward(self.model.cudnn_handle, self.drop_desc, dy.desc, dy.ptr_voidp, self.dx.desc, self.dx.ptr_voidp, self.space.ptr_voidp, self.space_size.value)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.dx

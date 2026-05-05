@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 class Metric[T: Array](Base):
     format = ""
-    order = 0   # No need of special order.
+    order = 0  # No need of special order.
 
     def __init__(self, eps=1e-8):
         super().__init__()

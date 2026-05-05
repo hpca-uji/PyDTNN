@@ -11,9 +11,7 @@ from pydtnn.datasets.dataset import Dataset
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import TensorFormat
 
-__all__ = (
-    "Memory",
-)
+__all__ = ("Memory",)
 
 logger = logging.getLogger(__name__)
 
@@ -21,10 +19,7 @@ logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from pydtnn.model import Model
 
-TENSOR_ASSERT = {
-    TensorFormat.NCHW: operator.lt,
-    TensorFormat.NHWC: operator.gt
-}
+TENSOR_ASSERT = {TensorFormat.NCHW: operator.lt, TensorFormat.NHWC: operator.gt}
 
 
 class Memory(Dataset):
@@ -38,10 +33,18 @@ class Memory(Dataset):
     Y must be in a NDArray with N (or more) and `model.dtype` dtype.
     """
 
-    def __init__(self, model: Model, x_train: np.ndarray, y_train: np.ndarray,
-                 x_test: np.ndarray | None = None, y_test: np.ndarray | None = None,
-                 input_shape: ArrayShape | None = None, output_shape: ArrayShape | None = None,
-                 force_test_as_validation=False, debug=False):
+    def __init__(
+        self,
+        model: Model,
+        x_train: np.ndarray,
+        y_train: np.ndarray,
+        x_test: np.ndarray | None = None,
+        y_test: np.ndarray | None = None,
+        input_shape: ArrayShape | None = None,
+        output_shape: ArrayShape | None = None,
+        force_test_as_validation=False,
+        debug=False,
+    ):
         if x_test is None or y_test is None:
             if x_test is None and y_test is None:
                 x_test = x_train
@@ -79,13 +82,7 @@ class Memory(Dataset):
         self.__x_source.append(x_test)
         self.__y_source.append(y_test)
 
-        super().__init__(model,
-                         x_train.shape[0],
-                         x_test.shape[0],
-                         input_shape,
-                         output_shape,
-                         force_test_as_validation=force_test_as_validation,
-                         debug=debug)
+        super().__init__(model, x_train.shape[0], x_test.shape[0], input_shape, output_shape, force_test_as_validation=force_test_as_validation, debug=debug)
 
     def _init_actual_data(self):
         for part in Dataset.Part:

@@ -4,23 +4,13 @@ from enum import StrEnum, auto
 
 import numpy as np
 
-__all__ = (
-    "Components",
-    "NetworkAlgEnum",
-    "Parameters",
-    "ArrayShape",
-    "DTYPE2CTYPE",
-    "Array"
-)
+__all__ = ("Components", "NetworkAlgEnum", "Parameters", "ArrayShape", "DTYPE2CTYPE", "Array")
 
 logger = logging.getLogger(__name__)
 
 
 type ArrayShape = tuple[int, ...]
-DTYPE2CTYPE: dict[np.dtype, str] = {
-    np.dtype(np.float32): "float",
-    np.dtype(np.float64): "double"
-}
+DTYPE2CTYPE: dict[np.dtype, str] = {np.dtype(np.float32): "float", np.dtype(np.float64): "double"}
 
 
 class NetworkAlgEnum(StrEnum):

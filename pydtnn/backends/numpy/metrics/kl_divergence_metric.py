@@ -6,9 +6,7 @@ from pydtnn.backends.numpy.metrics.metric import MetricNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.metrics.kl_divergence_metric import KLDivergenceMetric
 
-__all__ = (
-    "KLDivergenceMetricNumpy",
-)
+__all__ = ("KLDivergenceMetricNumpy",)
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +15,6 @@ if TYPE_CHECKING:
 
 
 class KLDivergenceMetricNumpy(KLDivergenceMetric[np.ndarray], MetricNumpy):
-
     def _model_init(self) -> None:
         super()._model_init()
 
@@ -31,7 +28,7 @@ class KLDivergenceMetricNumpy(KLDivergenceMetric[np.ndarray], MetricNumpy):
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
         y_targ = np.asarray(y_targ, dtype=self.model.dtype, order="C")
-        loss = self.loss[:y_pred.shape[0]]
+        loss = self.loss[: y_pred.shape[0]]
         # loss = np.abs(y_pred * np.log(np.abs(y_pred / (y_targ + eps) + eps)))
         np.add(y_targ, self.eps, out=loss)
         np.divide(y_pred, loss, out=loss)

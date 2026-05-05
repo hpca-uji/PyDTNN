@@ -6,9 +6,7 @@ from typing import Any
 import pydtnn.converters.pytorch2pydtnn.common as cm
 from pydtnn.layers.batch_normalization import BatchNormalization
 
-__all__ = (
-    "BatchNorm2d",
-)
+__all__ = ("BatchNorm2d",)
 
 logger = logging.getLogger(__name__)
 

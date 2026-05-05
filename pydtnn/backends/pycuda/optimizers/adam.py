@@ -10,9 +10,7 @@ from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.optimizers.adam import Adam
 from pydtnn.utils.constants import DTYPE2CTYPE
 
-__all__ = (
-    "AdamPycuda",
-)
+__all__ = ("AdamPycuda",)
 
 logger = logging.getLogger(__name__)
 
@@ -29,8 +27,7 @@ class AdamPycuda(Adam[TensorArray], OptimizerPycuda):
         func_pow = {np.dtype(np.float32): "powf", np.dtype(np.float64): "pow"}
 
         # --- GPU ---
-        parameters_gpu = "{T} *w, {T} *dw, {T} *m, {T} *v, float it, " \
-                         "float lr, float decay, float beta1, float beta2, float epsilon".format(T=DTYPE2CTYPE[self.model.dtype])
+        parameters_gpu = "{T} *w, {T} *dw, {T} *m, {T} *v, float it, float lr, float decay, float beta1, float beta2, float epsilon".format(T=DTYPE2CTYPE[self.model.dtype])
         operations_gpu = """
             m[i] = beta1 * m[i] + (1 - beta1) * dw[i];
             v[i] = beta2 * v[i] + (1 - beta2) * {func}(dw[i], 2);
@@ -40,7 +37,7 @@ class AdamPycuda(Adam[TensorArray], OptimizerPycuda):
         self.update_kernel = ElementwiseKernel(parameters_gpu, operations_gpu, "Adam_kernel")
 
         # GPU DIRECT-
-        self.defines_replaces: dict[str, str] = {"\"TYPE\"": DTYPE2CTYPE[self.model.dtype], "powf_or_pow": func_pow[self.model.dtype]}
+        self.defines_replaces: dict[str, str] = {'"TYPE"': DTYPE2CTYPE[self.model.dtype], "powf_or_pow": func_pow[self.model.dtype]}
         self.update_gpudirect = self._get_kernel(func_name_subfix="_gpudirect")
 
     def _model_init(self, list_layers: list[LayerPycuda]) -> None:
@@ -72,17 +69,34 @@ class AdamPycuda(Adam[TensorArray], OptimizerPycuda):
 
             if self.gpudirect:
                 n = self.get_batch_size(w)
-                self.update_gpudirect(w.gpudata, dw.ptr_intp, m.gpudata, v.gpudata,
-                                      np.float32(it), np.float32(self.learning_rate),
-                                      np.float32(self.decay), np.float32(self.beta1),
-                                      np.float32(self.beta2), np.float32(self.epsilon),
-                                      np.int32(n),
-                                      self.model.cuda_grid, block=self.model.cuda_block,
-                                      stream=layer.stream_2)
+                self.update_gpudirect(
+                    w.gpudata,
+                    dw.ptr_intp,
+                    m.gpudata,
+                    v.gpudata,
+                    np.float32(it),
+                    np.float32(self.learning_rate),
+                    np.float32(self.decay),
+                    np.float32(self.beta1),
+                    np.float32(self.beta2),
+                    np.float32(self.epsilon),
+                    np.int32(n),
+                    self.model.cuda_grid,
+                    block=self.model.cuda_block,
+                    stream=layer.stream_2,
+                )
             else:
-                self.update_kernel(w.ary, dw.ary, m, v,
-                                   np.float32(it), np.float32(self.learning_rate),
-                                   np.float32(self.decay), np.float32(self.beta1),
-                                   np.float32(self.beta2), np.float32(self.epsilon),
-                                   stream=layer.stream_2)
+                self.update_kernel(
+                    w.ary,
+                    dw.ary,
+                    m,
+                    v,
+                    np.float32(it),
+                    np.float32(self.learning_rate),
+                    np.float32(self.decay),
+                    np.float32(self.beta1),
+                    np.float32(self.beta2),
+                    np.float32(self.epsilon),
+                    stream=layer.stream_2,
+                )
             self._dtoh_ary(layer=layer, w_gpu=w, w_cpu=getattr(layer, f"{w_}_cpu"))

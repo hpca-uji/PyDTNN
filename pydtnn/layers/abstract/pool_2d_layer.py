@@ -4,17 +4,13 @@ import math
 from pydtnn.layers.layer import Layer, LayerError
 from pydtnn.utils.constants import Array
 
-__all__ = (
-    "AbstractPool2DLayer",
-)
+__all__ = ("AbstractPool2DLayer",)
 
 logger = logging.getLogger(__name__)
 
 
 class AbstractPool2DLayer[T: Array](Layer[T]):
-
-    def __init__(self, pool_shape: tuple[int, int] | int = (2, 2), padding: tuple[int, int] | int = 0,
-                 stride: tuple[int, int] | int = 1, dilation: tuple[int, int] | int = 1):
+    def __init__(self, pool_shape: tuple[int, int] | int = (2, 2), padding: tuple[int, int] | int = 0, stride: tuple[int, int] | int = 1, dilation: tuple[int, int] | int = 1):
         super().__init__()
         self.pool_shape = (pool_shape, pool_shape) if isinstance(pool_shape, int) else pool_shape
         self.padding = padding

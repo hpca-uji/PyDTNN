@@ -6,9 +6,7 @@ from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.libs import numpy as np
 from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
 
-__all__ = (
-    "ConcatenationBlockNumpy",
-)
+__all__ = ("ConcatenationBlockNumpy",)
 
 
 logger = logging.getLogger(__name__)
@@ -18,7 +16,6 @@ if TYPE_CHECKING:
 
 
 class ConcatenationBlockNumpy(ConcatenationBlock, AbstractBlockLayerNumpy):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # The next attributes will be initialized later
@@ -35,7 +32,7 @@ class ConcatenationBlockNumpy(ConcatenationBlock, AbstractBlockLayerNumpy):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_REPLICATE)
         _x: list[np.ndarray] = [np.zeros((0,))] * len(self.paths)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        y = self.y[:x.shape[0], :]
+        y = self.y[: x.shape[0], :]
 
         for i, p in enumerate(self.paths):
             x_forward = x
@@ -71,7 +68,6 @@ class ConcatenationBlockNumpy(ConcatenationBlock, AbstractBlockLayerNumpy):
                 self.model.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ELTW_SUM)
-            np.add(dx[0], dx[i], out=dx[0],
-                   dtype=self.model.dtype)
+            np.add(dx[0], dx[i], out=dx[0], dtype=self.model.dtype)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return np.asarray(dx[0], dtype=self.model.dtype, order="C")

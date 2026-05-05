@@ -8,9 +8,7 @@ from pydtnn.tests.abstract.common import D, TestCase, verbose_test
 from pydtnn.utils import print_with_header, random
 from pydtnn.utils.tensor import TensorFormat, format_transpose
 
-__all__ = (
-    "Conv2DCommonTestCase",
-)
+__all__ = ("Conv2DCommonTestCase",)
 
 logger = logging.getLogger(__name__)
 
@@ -28,41 +26,40 @@ class Conv2DCommonTestCase[T: Conv2D](TestCase):
     def _set_state(layer: Conv2D, weights) -> None:
         layer.weights = weights.copy()
 
-    x_2x4 = np.array([[[[1, 2, 4, 8],
-                        [16, 32, 64, 128]]]]).astype(np.float32, order='C')
+    x_2x4 = np.array([[[[1, 2, 4, 8], [16, 32, 64, 128]]]]).astype(np.float32, order="C")
 
-    x_4x4 = np.array([[[[1, 2, 4, 8],
-                        [16, 32, 64, 128],
-                        [1, 2, 4, 8],
-                        [16, 32, 64, 128]]]]).astype(np.float32, order='C')
+    x_4x4 = np.array([[[[1, 2, 4, 8], [16, 32, 64, 128], [1, 2, 4, 8], [16, 32, 64, 128]]]]).astype(np.float32, order="C")
 
-    x_4x8 = np.array([[[[1, 2, 4, 8, 9, 10, 11, 12],
-                        [16, 32, 64, 128, 129, 130, 131, 132],
-                        [1, 2, 4, 8, 9, 10, 11, 12],
-                        [16, 32, 64, 128, 129, 130, 131, 132]]]]).astype(np.float32, order='C')
+    x_4x8 = np.array([[[[1, 2, 4, 8, 9, 10, 11, 12], [16, 32, 64, 128, 129, 130, 131, 132], [1, 2, 4, 8, 9, 10, 11, 12], [16, 32, 64, 128, 129, 130, 131, 132]]]]).astype(np.float32, order="C")
 
-    x_8x8 = np.array([[[[11, 12, 13, 14, 15, 16, 17, 18],
-                        [21, 22, 23, 24, 25, 26, 27, 28],
-                        [31, 32, 33, 34, 35, 36, 37, 38],
-                        [41, 42, 43, 44, 45, 46, 47, 48],
-                        [51, 52, 53, 54, 55, 56, 57, 58],
-                        [61, 62, 63, 64, 65, 66, 67, 68],
-                        [71, 72, 73, 74, 75, 76, 77, 78],
-                        [81, 82, 83, 84, 85, 86, 87, 88]]]]).astype(np.float32, order='C')
+    x_8x8 = np.array(
+        [
+            [
+                [
+                    [11, 12, 13, 14, 15, 16, 17, 18],
+                    [21, 22, 23, 24, 25, 26, 27, 28],
+                    [31, 32, 33, 34, 35, 36, 37, 38],
+                    [41, 42, 43, 44, 45, 46, 47, 48],
+                    [51, 52, 53, 54, 55, 56, 57, 58],
+                    [61, 62, 63, 64, 65, 66, 67, 68],
+                    [71, 72, 73, 74, 75, 76, 77, 78],
+                    [81, 82, 83, 84, 85, 86, 87, 88],
+                ]
+            ]
+        ]
+    ).astype(np.float32, order="C")
 
-    w_1x1 = np.array([[[[1]]]]).astype(np.float32, order='C')
+    w_1x1 = np.array([[[[1]]]]).astype(np.float32, order="C")
 
-    w_1x2 = np.array([[[[1, 1]]]]).astype(np.float32, order='C')
+    w_1x2 = np.array([[[[1, 1]]]]).astype(np.float32, order="C")
 
-    w_2x2 = np.array([[[[1, 1],
-                        [1, 1]]]]).astype(np.float32, order='C')
+    w_2x2 = np.array([[[[1, 1], [1, 1]]]]).astype(np.float32, order="C")
 
-    w_3x3 = np.array([[[[1, 1, 1],
-                        [1, 1, 1],
-                        [1, 1, 1]]]]).astype(np.float32, order='C')
+    w_3x3 = np.array([[[[1, 1, 1], [1, 1, 1], [1, 1, 1]]]]).astype(np.float32, order="C")
 
     def _test_forward_backward(self, d: D, x: np.ndarray, weights: np.ndarray, print_times=False):
         from timeit import timeit
+
         conv2d_ref, conv2d_test = self._get_layers(d)
         x = conv2d_ref.model.encode_tensor(x).copy()
         if conv2d_ref.model.tensor_format is TensorFormat.NHWC:
@@ -72,7 +69,7 @@ class Conv2DCommonTestCase[T: Conv2D](TestCase):
         # Forward pass
         y_ref = conv2d_ref.forward(x)
         y_test = conv2d_test.forward(x)
-        dy = random.random((d.b, d.kn, d.ho, d.wo)).astype(np.float32, order='C')
+        dy = random.random((d.b, d.kn, d.ho, d.wo)).astype(np.float32, order="C")
         if conv2d_ref.model.tensor_format is TensorFormat.NHWC:
             dy = format_transpose(dy, "NCHW", "NHWC").copy()
         # Backward pass
@@ -112,8 +109,7 @@ class Conv2DCommonTestCase[T: Conv2D](TestCase):
                 print("         +-------+--------+")
                 print("backward | {:.3f} | {:.3f} |".format(backward_ref_t, backward_test_t))
                 print("         +-------+--------+")
-                print("           {:.3f}   {:.3f}  ".format(forward_ref_t + backward_ref_t,
-                                                            forward_test_t + backward_test_t))
+                print("           {:.3f}   {:.3f}  ".format(forward_ref_t + backward_ref_t, forward_test_t + backward_test_t))
         # self.assertTrue(np.allclose(y_ref, y_test, rtol=1e-5, atol=1e-6), f"y matrices differ")
         self.assertTrue(np.allclose(y_ref, y_test), "y matrices differ")
         self.assertTrue(dw_allclose, "dw matrices differ")
@@ -125,7 +121,7 @@ class Conv2DCommonTestCase[T: Conv2D](TestCase):
         """
         d = D()
         conv2d_ref, conv2d_test = self._get_layers(d)
-        x = random.random((d.b, d.c, d.h, d.w)).astype(np.float32, order='C')
+        x = random.random((d.b, d.c, d.h, d.w)).astype(np.float32, order="C")
         x = conv2d_ref.model.encode_tensor(x).copy()
         y_ref = conv2d_ref.forward(x)
         y_test = conv2d_test.forward(x)
@@ -143,8 +139,8 @@ class Conv2DCommonTestCase[T: Conv2D](TestCase):
         Test that the default parameters lead to the same solution on the backward step
         """
         d = D()
-        x = random.random((d.b, d.c, d.h, d.w)).astype(np.float32, order='C')
-        weights = random.random((d.kn, d.c, d.kh, d.kw)).astype(np.float32, order='C')
+        x = random.random((d.b, d.c, d.h, d.w)).astype(np.float32, order="C")
+        weights = random.random((d.kn, d.c, d.kh, d.kw)).astype(np.float32, order="C")
         self._test_forward_backward(d, x, weights)
 
     def test_forward_backward_handmade_array(self):
@@ -261,8 +257,8 @@ class Conv2DCommonTestCase[T: Conv2D](TestCase):
         d.vpadding, d.hpadding = (1, 1)
         d.vstride, d.hstride = (2, 2)
         d.vdilation, d.hdilation = (1, 1)
-        x = random.random((d.b, d.c, d.h, d.w)).astype(np.float32, order='C')
-        weights = random.random((d.kn, d.c, d.kh, d.kw)).astype(np.float32, order='C')
+        x = random.random((d.b, d.c, d.h, d.w)).astype(np.float32, order="C")
+        weights = random.random((d.kn, d.c, d.kh, d.kw)).astype(np.float32, order="C")
         self._test_forward_backward(d, x, weights, print_times=True)
 
     def test_forward_backward_alexnet_imagenet_first_conv2d(self):
@@ -276,6 +272,6 @@ class Conv2DCommonTestCase[T: Conv2D](TestCase):
         d.vpadding, d.hpadding = (1, 1)
         d.vstride, d.hstride = (4, 4)
         d.vdilation, d.hdilation = (1, 1)
-        x = random.random((d.b, d.c, d.h, d.w)).astype(np.float32, order='C')
-        weights = random.random((d.kn, d.c, d.kh, d.kw)).astype(np.float32, order='C')
+        x = random.random((d.b, d.c, d.h, d.w)).astype(np.float32, order="C")
+        weights = random.random((d.kn, d.c, d.kh, d.kw)).astype(np.float32, order="C")
         self._test_forward_backward(d, x, weights, print_times=True)

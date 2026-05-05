@@ -10,9 +10,7 @@ from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.optimizers.sgd import SGD
 from pydtnn.utils.constants import DTYPE2CTYPE
 
-__all__ = (
-    "SGDPycuda",
-)
+__all__ = ("SGDPycuda",)
 
 logger = logging.getLogger(__name__)
 
@@ -28,15 +26,13 @@ class SGDPycuda(SGD[TensorArray], OptimizerPycuda):
     def _kernel_init(self) -> None:
         # --- GPU ---
         parameters_gpu = "{T} *w, {T} * dw, {T} * v, float lr, float decay, float momentum".format(T=DTYPE2CTYPE[self.model.dtype])
-        ops_gpu = {True: "w[i] -= lr * (decay * w[i] + dw[i] + momentum * v[i])",
-                   False: "w[i] -= lr * (decay * w[i] + v[i])"}[self.nesterov]
+        ops_gpu = {True: "w[i] -= lr * (decay * w[i] + dw[i] + momentum * v[i])", False: "w[i] -= lr * (decay * w[i] + v[i])"}[self.nesterov]
         operations_gpu = "v[i] = momentum * v[i] + dw[i]; {nesterov_ops};".format(nesterov_ops=ops_gpu)
 
         self.update_kernel = ElementwiseKernel(parameters_gpu, operations_gpu, "SGD_kernel")
 
         # GPU Direct -
-        self.defines_replaces: dict[str, str] = {"\"TYPE\"": DTYPE2CTYPE[self.model.dtype],
-                                                 "NESTEROV_OPS": "NESTEROV_OPS" if self.nesterov else "NOT_NESTEROV"}
+        self.defines_replaces: dict[str, str] = {'"TYPE"': DTYPE2CTYPE[self.model.dtype], "NESTEROV_OPS": "NESTEROV_OPS" if self.nesterov else "NOT_NESTEROV"}
         self.update_gpudirect = self._get_kernel(func_name_subfix="_gpudirect")
 
     def _model_init(self, list_layers: list[LayerPycuda]) -> None:
@@ -63,14 +59,19 @@ class SGDPycuda(SGD[TensorArray], OptimizerPycuda):
 
             if self.gpudirect:
                 n = self.get_batch_size(w)
-                self.update_gpudirect(w.gpudata, dw.ptr_intp, velocity.gpudata,
-                                      np.float32(self.learning_rate), np.float32(self.decay),
-                                      np.float32(self.momentum), np.int32(n),
-                                      self.model.cuda_grid, block=self.model.cuda_block,
-                                      stream=layer.stream_2)
+                self.update_gpudirect(
+                    w.gpudata,
+                    dw.ptr_intp,
+                    velocity.gpudata,
+                    np.float32(self.learning_rate),
+                    np.float32(self.decay),
+                    np.float32(self.momentum),
+                    np.int32(n),
+                    self.model.cuda_grid,
+                    block=self.model.cuda_block,
+                    stream=layer.stream_2,
+                )
             else:
                 n = np.int32(np.prod(w.shape))
-                self.update_kernel(w.ary, dw.ary, velocity, np.float32(self.learning_rate),
-                                   np.float32(self.decay), np.float32(self.momentum),
-                                   stream=layer.stream_2)
+                self.update_kernel(w.ary, dw.ary, velocity, np.float32(self.learning_rate), np.float32(self.decay), np.float32(self.momentum), stream=layer.stream_2)
             self._dtoh_ary(layer=layer, w_gpu=w, w_cpu=getattr(layer, f"{w_}_cpu"))

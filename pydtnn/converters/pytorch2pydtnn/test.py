@@ -83,6 +83,7 @@ def get_model_layers(model: torch.nn.Module, name: str = "self") -> dict[str, to
                 _get_model_layers(model=module, name=".".join([name, nom]), dict_modules=dict_modules)
         else:
             dict_modules[name] = model
+
     dict_modules = {}
     _get_model_layers(model=model, name=name, dict_modules=dict_modules)
     return dict_modules
@@ -124,7 +125,6 @@ def pytorch_inference(model: torch.nn.Module, dataloader, loss_func: torch.nn.mo
 
     model.eval()
     with torch.no_grad():
-
         for inputs, labels, _ in dataloader:
             inputs = torch.Tensor(inputs).to(device)
             labels = torch.Tensor(labels).to(device)
@@ -200,12 +200,18 @@ def _pytorch_inference(pytorch_model, dataloader, kwargs, device):
 
     task = "binary"
     num_classes = 10
-    pytorch_inference(model=pytorch_model, dataloader=dataloader, loss_func=loss, device=device,
-                      metrics_list=[("Accuracy", Accuracy(task=task, num_classes=num_classes)),
-                                    # ("AUROC", AUROC(task = task, num_classes = num_classes)),
-                                    # ("AveragePrecision", AveragePrecision(task = task, num_classes = num_classes)),
-                                    # ("F1Score", F1Score(task = task, num_classes = num_classes))
-                                    ])
+    pytorch_inference(
+        model=pytorch_model,
+        dataloader=dataloader,
+        loss_func=loss,
+        device=device,
+        metrics_list=[
+            ("Accuracy", Accuracy(task=task, num_classes=num_classes)),
+            # ("AUROC", AUROC(task = task, num_classes = num_classes)),
+            # ("AveragePrecision", AveragePrecision(task = task, num_classes = num_classes)),
+            # ("F1Score", F1Score(task = task, num_classes = num_classes))
+        ],
+    )
 
 
 def pydtnn_training(model: PyDTNN_Model, dataset: Dataset, num_samples=64 * 2):
@@ -234,7 +240,10 @@ def main():
         weight = f"{WEIGHTS_PATH}model_{test}.pth"
         weight = torch.load(weight, weights_only=True, map_location=torch.device(device))
 
-        pytorch_model.load_state_dict(weight, strict=False,)
+        pytorch_model.load_state_dict(
+            weight,
+            strict=False,
+        )
 
     print("====================")
     print("== PyDTNN version ==")
@@ -265,8 +274,7 @@ def main():
     print("== Converted version ==")
     print("=======================")
 
-    new_model = convert_model(model=pytorch_model, input_shape=shape,
-                              default_output_activation_layer=Softmax(), **kwargs)
+    new_model = convert_model(model=pytorch_model, input_shape=shape, default_output_activation_layer=Softmax(), **kwargs)
 
     print("=====================")
     print("=== MODEL CREATED ===")

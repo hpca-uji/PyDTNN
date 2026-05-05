@@ -72,20 +72,20 @@ __all__ = (
     "cuPointerGetAttribute",
 )
 
-if 'linux' in sys.platform:
-    _libcuda_libname_list = ['libcuda.so']
-elif sys.platform == 'darwin':
-    _libcuda_libname_list = ['libcuda.dylib']
-elif sys.platform == 'win32':
-    _libcuda_libname_list = ['cuda.dll', 'nvcuda.dll']
+if "linux" in sys.platform:
+    _libcuda_libname_list = ["libcuda.so"]
+elif sys.platform == "darwin":
+    _libcuda_libname_list = ["libcuda.dylib"]
+elif sys.platform == "win32":
+    _libcuda_libname_list = ["cuda.dll", "nvcuda.dll"]
 else:
-    raise RuntimeError('unsupported platform')
+    raise RuntimeError("unsupported platform")
 
 # Print understandable error message when library cannot be found:
 _libcuda = None
 for _libcuda_libname in _libcuda_libname_list:
     try:
-        if sys.platform == 'win32':
+        if sys.platform == "win32":
             _libcuda = ctypes.windll.LoadLibrary(_libcuda_libname)
         else:
             _libcuda = ctypes.cdll.LoadLibrary(_libcuda_libname)
@@ -94,13 +94,14 @@ for _libcuda_libname in _libcuda_libname_list:
     else:
         break
 if _libcuda is None:
-    raise OSError('CUDA driver library not found')
+    raise OSError("CUDA driver library not found")
 
 # Exceptions corresponding to various CUDA driver errors:
 
 
 class CUDA_ERROR(Exception):
     """CUDA error."""
+
     pass
 
 
@@ -389,7 +390,7 @@ CUDA_EXCEPTIONS = {
     719: CUDA_ERROR_LAUNCH_FAILED,
     800: CUDA_ERROR_NOT_PERMITTED,
     801: CUDA_ERROR_NOT_SUPPORTED,
-    999: CUDA_ERROR_UNKNOWN
+    999: CUDA_ERROR_UNKNOWN,
 }
 
 
@@ -425,9 +426,7 @@ CU_POINTER_ATTRIBUTE_DEVICE_POINTER = 3
 CU_POINTER_ATTRIBUTE_HOST_POINTER = 4
 
 _libcuda.cuPointerGetAttribute.restype = int
-_libcuda.cuPointerGetAttribute.argtypes = [ctypes.c_void_p,
-                                           ctypes.c_int,
-                                           ctypes.c_uint]
+_libcuda.cuPointerGetAttribute.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_uint]
 
 
 def cuPointerGetAttribute(attribute, ptr):

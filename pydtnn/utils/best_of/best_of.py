@@ -11,9 +11,7 @@ from rich.console import Console
 from rich.table import Table
 from rich.tree import Tree
 
-__all__ = (
-    "BestOf",
-)
+__all__ = ("BestOf",)
 
 logger = logging.getLogger(__name__)
 
@@ -26,8 +24,7 @@ class _BestOfExecution:
     _names = defaultdict(lambda: 0)
     _longest_name = 0
 
-    def __init__(self, best_of: Optional['BestOf'], execution_id: Optional[Hashable],
-                 parent: Optional['_BestOfExecution']):
+    def __init__(self, best_of: Optional["BestOf"], execution_id: Optional[Hashable], parent: Optional["_BestOfExecution"]):
         self.best_of = best_of
         self.execution_id = execution_id
         self.parent = parent
@@ -95,8 +92,7 @@ class _BestOfExecution:
         assert self.best_of
         count = [0] * len(self.best_of.alternatives)
         # Get best_idx for this execution problem sizes
-        best_idx = dict((k, self.best_of.best_idx[k])
-                        for k in self.problem_sizes.keys() if k in self.best_of.best_idx)
+        best_idx = dict((k, self.best_of.best_idx[k]) for k in self.problem_sizes.keys() if k in self.best_of.best_idx)
         for idx in best_idx.values():
             count[idx] += 1
         parts = []
@@ -125,7 +121,7 @@ class _BestOfExecution:
         return speedup / total
 
     @staticmethod
-    def _walk_nodes(node: '_BestOfExecution', tree: Tree):
+    def _walk_nodes(node: "_BestOfExecution", tree: Tree):
         for child in node.children:
             txt = f"{child.name:{_BestOfExecution._longest_name}s}   {child.summary}"
             max_speedup = child.max_speedup
@@ -180,13 +176,15 @@ class BestOf:
     _current_parents: list[_BestOfExecution] = [_BestOfExecution(best_of=None, execution_id=None, parent=None)]
     _root: _BestOfExecution = _current_parents[0]
 
-    def __init__(self,
-                 name: str,
-                 alternatives: list[tuple[str, Union[Callable, list[Callable]]]],
-                 get_problem_size: Callable[..., Hashable],
-                 rounds: int = 10,
-                 pruning_speedup: float = 10.0,
-                 prune_after_round: int = 4):
+    def __init__(
+        self,
+        name: str,
+        alternatives: list[tuple[str, Union[Callable, list[Callable]]]],
+        get_problem_size: Callable[..., Hashable],
+        rounds: int = 10,
+        pruning_speedup: float = 10.0,
+        prune_after_round: int = 4,
+    ):
         # Check parameters constraints
         assert rounds >= 1, "Rounds must be greater or equal to one."
         assert pruning_speedup > 1, "Pruning speedup must be greater than one."
@@ -196,17 +194,13 @@ class BestOf:
             stages = 1
         if stages == 1:
             for a in alternatives:
-                assert isinstance(a[1], abc.Callable), \
-                    f"Expected a function for the '{a[0]}' alternative, got a '{type(a[1])}'."
+                assert isinstance(a[1], abc.Callable), f"Expected a function for the '{a[0]}' alternative, got a '{type(a[1])}'."
         else:
             for a in alternatives:
-                assert isinstance(a[1], abc.Sequence), \
-                    f"Expected a list with the methods to be called for each stage of the '{a[0]}' pipeline."
-                assert len(a[1]) == stages, \
-                    f"Expected {stages} methods for the '{a[0]}' pipeline, received {len(a[1])}."
+                assert isinstance(a[1], abc.Sequence), f"Expected a list with the methods to be called for each stage of the '{a[0]}' pipeline."
+                assert len(a[1]) == stages, f"Expected {stages} methods for the '{a[0]}' pipeline, received {len(a[1])}."
                 for i, m in enumerate(a[1]):
-                    assert isinstance(m, abc.Callable), \
-                        f"Expected a function for stage {i} of the '{a[0]}' pipeline alternative."
+                    assert isinstance(m, abc.Callable), f"Expected a function for stage {i} of the '{a[0]}' pipeline alternative."
         # Assign its initial value to each property
         self.name = name
         self.alternatives = alternatives
@@ -216,7 +210,7 @@ class BestOf:
         self.prune_after_round = prune_after_round
         self.pruning_speedup = pruning_speedup
         self.best_idx = defaultdict(lambda: -1)
-        self.best_name = defaultdict(lambda: 'None')
+        self.best_name = defaultdict(lambda: "None")
         self.best_method: dict[Any, Callable] = defaultdict(lambda: None)  # type: ignore
         self.best_pipeline: dict[Any, list[Callable]] = defaultdict(lambda: None)  # type: ignore
         self.total_alternatives = len(self.alternatives)
@@ -267,6 +261,7 @@ class BestOf:
         if not update:
             return
         import gc
+
         for obj in gc.get_objects():
             if isinstance(obj, cls):
                 obj._set_instance_call()
@@ -295,8 +290,7 @@ class BestOf:
             # Get stage and remove stage argument from args
             args = list(args)  # Convert args to a list (so that its first element can be removed)
             stage = int(args.pop(0))
-            assert stage < self.stages, \
-                f"The stage number ({stage}) must be less than the specified number of stages ({self.stages})."
+            assert stage < self.stages, f"The stage number ({stage}) must be less than the specified number of stages ({self.stages})."
             return self.alternatives[0][1][stage](*args, **kwargs)  # type: ignore
 
     def __call_best__(self, *args, **kwargs):
@@ -333,8 +327,7 @@ class BestOf:
         # Get stage
         args = list(args)  # Convert args to a list (so that its first element can be removed if in a pipeline)
         stage = int(args.pop(0)) if self.stages > 1 else 0
-        assert stage < self.stages, \
-            f"The stage number ({stage}) must be less than the specified number of stages ({self.stages})."
+        assert stage < self.stages, f"The stage number ({stage}) must be less than the specified number of stages ({self.stages})."
         # Get problem size and current execution
         problem_size: Any = self.get_problem_size(*args, **kwargs)
         # If best method has been already found, call it and return
@@ -389,8 +382,7 @@ class BestOf:
             #  * all the stages have been executed the same number of times,
             #  * they have been executed at least once, and
             #  * stage elapsed times have been recorded at least once.
-            stages_that_met_previous_conditions = [1 for i, x in enumerate(stages_executions)
-                                                   if x == stages_executions[0] >= 1 and len(stages_times[i]) >= 1]
+            stages_that_met_previous_conditions = [1 for i, x in enumerate(stages_executions) if x == stages_executions[0] >= 1 and len(stages_times[i]) >= 1]
             if stage == self.stages - 1 and len(stages_that_met_previous_conditions) == self.stages:
                 medians_per_stage = [np.median(x) for x in stages_times]
                 pipeline_elapsed_time = np.sum(medians_per_stage)

@@ -11,9 +11,7 @@ from pydtnn.layers.feed_forward import FeedForward
 from pydtnn.layers.layer_normalization import LayerNormalization
 from pydtnn.layers.multi_head_attention import MultiHeadAttention
 
-__all__ = (
-    "EncoderPycuda",
-)
+__all__ = ("EncoderPycuda",)
 
 
 logger = logging.getLogger(__name__)
@@ -28,8 +26,7 @@ class EncoderPycuda(AbstractBlockLayerPycuda, Encoder):
         self.feedforward = FeedForward(shape=(self.embedl,), d_ff=self.d_ff, dropout_rate=self.dropout_rate)
         self.dropout_2 = Dropout(rate=self.dropout_rate)
         self.layernormalization_2 = LayerNormalization(axis=(3,))
-        self.paths = [[self.multiheadattention, self.layernormalization_1,
-                       self.feedforward, self.dropout_2, self.layernormalization_2]]
+        self.paths = [[self.multiheadattention, self.layernormalization_1, self.feedforward, self.dropout_2, self.layernormalization_2]]
 
         # The next attributes will be initialized later
         self.y: TensorArray = None  # type: ignore
@@ -105,9 +102,9 @@ class EncoderPycuda(AbstractBlockLayerPycuda, Encoder):
         self.feedforward.forward(self.layernormalization_1_y_flatten)
         self.dropout_2.forward(self.feedforward_y_unflatten)
         # y = dropout_2.y + layernormalization_1.y
-        cudnn.cudnnAddTensor(self.model.cudnn_handle,
-                             alpha, self.feedforward_y_unflatten.desc, self.layernormalization_1.y.ptr,
-                             beta, self.feedforward_y_unflatten.desc, self.feedforward_y_unflatten.ptr_voidp)
+        cudnn.cudnnAddTensor(
+            self.model.cudnn_handle, alpha, self.feedforward_y_unflatten.desc, self.layernormalization_1.y.ptr, beta, self.feedforward_y_unflatten.desc, self.feedforward_y_unflatten.ptr_voidp
+        )
 
         self.layernormalization_2.forward(self.feedforward_y_unflatten)
         return self.y
@@ -122,9 +119,9 @@ class EncoderPycuda(AbstractBlockLayerPycuda, Encoder):
         self.feedforward.backward(self.dropout_2_dx_flatten)
 
         # dx = feedforward.dx + layernormalization_2.dx
-        cudnn.cudnnAddTensor(self.model.cudnn_handle,
-                             alpha, self.feedforward_dx_unflatten.desc, self.layernormalization_2.dx.ptr,
-                             beta, self.feedforward_dx_unflatten.desc, self.feedforward_dx_unflatten.ptr_voidp)
+        cudnn.cudnnAddTensor(
+            self.model.cudnn_handle, alpha, self.feedforward_dx_unflatten.desc, self.layernormalization_2.dx.ptr, beta, self.feedforward_dx_unflatten.desc, self.feedforward_dx_unflatten.ptr_voidp
+        )
 
         # Self Attention
         self.layernormalization_1.backward(self.feedforward_dx_unflatten)
@@ -132,13 +129,7 @@ class EncoderPycuda(AbstractBlockLayerPycuda, Encoder):
         self.multiheadattention.backward(self.layernormalization_1.dx)
         # if self.need_dx:
         # dx = layernorm_1.dx + multihead.dquery + multihead.dkey + multihead.dvalue
-        cudnn.cudnnAddTensor(self.model.cudnn_handle,
-                             alpha, self.dx.desc, self.layernormalization_1.dx.ptr,
-                             beta, self.dx.desc, self.dx.ptr_voidp)
-        cudnn.cudnnAddTensor(self.model.cudnn_handle,
-                             alpha, self.dx.desc, self.multiheadattention.dkey.ptr,
-                             beta, self.dx.desc, self.dx.ptr_voidp)
-        cudnn.cudnnAddTensor(self.model.cudnn_handle,
-                             alpha, self.dx.desc, self.multiheadattention.dvalue.ptr,
-                             beta, self.dx.desc, self.dx.ptr_voidp)
+        cudnn.cudnnAddTensor(self.model.cudnn_handle, alpha, self.dx.desc, self.layernormalization_1.dx.ptr, beta, self.dx.desc, self.dx.ptr_voidp)
+        cudnn.cudnnAddTensor(self.model.cudnn_handle, alpha, self.dx.desc, self.multiheadattention.dkey.ptr, beta, self.dx.desc, self.dx.ptr_voidp)
+        cudnn.cudnnAddTensor(self.model.cudnn_handle, alpha, self.dx.desc, self.multiheadattention.dvalue.ptr, beta, self.dx.desc, self.dx.ptr_voidp)
         return self.dx

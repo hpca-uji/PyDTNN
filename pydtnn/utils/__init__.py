@@ -68,13 +68,13 @@ def print_with_header(header: str, to_be_printed=None) -> None:
     to_print.append(f"# {header}")
     if to_be_printed is not None:
         to_print.append(to_be_printed)
-    info_to_print = '\n'.join(to_print)
+    info_to_print = "\n".join(to_print)
     logger.info(info_to_print)
 
 
 def parse_bool(x) -> bool:
     """Returns True if value is a user truthy value"""
-    return str(x).lower() in {'true', '1', 'yes', 'y', 't'}
+    return str(x).lower() in {"true", "1", "yes", "y", "t"}
 
 
 def string_substitute(template: str, /, **mappings) -> str:
@@ -102,6 +102,7 @@ def convert_size_bytes(size_bytes: int) -> str:
 
 def find_component(package: str, name: str):
     """Find a file+class combo inside a package (with normalization)"""
+
     def normalize(text: str) -> str:
         return text.lower().replace("_", "")
 
@@ -137,24 +138,26 @@ def load_library(name: str):
     """
     path = find_library(name)
     if path is None:
-        if sys.platform in ('linux2', 'linux'):
+        if sys.platform in ("linux2", "linux"):
             full_name = f"lib{name}.so"
-        elif sys.platform == 'darwin':
+        elif sys.platform == "darwin":
             full_name = f"lib{name}.dylib"
-        elif sys.platform == 'win32':
+        elif sys.platform == "win32":
             full_name = f"lib{name}.dll"
         else:
             raise NotImplementedError(f"Trying to load '{name}' library, but platform '{sys.platform}' is not yet supported!")
 
-        for current_path in os.environ.get('LD_LIBRARY_PATH', '').split(':'):
+        for current_path in os.environ.get("LD_LIBRARY_PATH", "").split(":"):
             if os.path.exists(os.path.join(current_path, full_name)):
                 path = os.path.join(current_path, full_name)
                 break
         else:
             # Didn't find the library
-            raise ImportError(f"Library '{full_name}' could not be found. Please add its path to LD_LIBRARY_PATH "
-                              f"using 'export LD_LIBRARY_PATH={name.upper()}_LIB_PATH:$LD_LIBRARY_PATH' and "
-                              f"then call this application again.")
+            raise ImportError(
+                f"Library '{full_name}' could not be found. Please add its path to LD_LIBRARY_PATH "
+                f"using 'export LD_LIBRARY_PATH={name.upper()}_LIB_PATH:$LD_LIBRARY_PATH' and "
+                f"then call this application again."
+            )
     return ctypes.CDLL(path)
 
 
@@ -162,7 +165,7 @@ def get_npz_shape(f):
     """Get NPZ member shapes without loading the archive"""
     shapes = {}
 
-    with zipfile.ZipFile(f, 'r') as z:
+    with zipfile.ZipFile(f, "r") as z:
         for name in z.namelist():
             stem = PurePath(name).stem
 

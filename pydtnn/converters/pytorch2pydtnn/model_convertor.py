@@ -51,9 +51,9 @@ def extract_layers_relations(model: torch.nn.Module) -> dict[str, tuple[str | to
     SEPARATOR_ASSIGNATION = " = "
     PARAMETERS_BEGINING = "("
     PARAMETER_ENDING = ")"
-    LIST_START = '['
-    LIST_SEPARATOR = ','
-    LIST_END = ']'
+    LIST_START = "["
+    LIST_SEPARATOR = ","
+    LIST_END = "]"
     OPERATION_SEPARATOR = " "  # It is expected that the operator is always between spaces (example: "a + b").
 
     MODEL_LAYER_REQ = "self"
@@ -63,10 +63,7 @@ def extract_layers_relations(model: torch.nn.Module) -> dict[str, tuple[str | to
     TORCH_FUNC_REQ = "torch."
     PATTERNS = [TORCH_LAYER_REQ, TORCH_FUNC_REQ]  # NOTE: Order *IS* important.
 
-    for line in filter(lambda x: not (FIRST_LINE in x or LAST_LINE in x),
-                       filter(lambda x: len(x) != 0,
-                              [elem.lstrip(PSEUDO_INDENTATION) for elem in graph.code.split(BY_LINES)])):
-
+    for line in filter(lambda x: not (FIRST_LINE in x or LAST_LINE in x), filter(lambda x: len(x) != 0, [elem.lstrip(PSEUDO_INDENTATION) for elem in graph.code.split(BY_LINES)])):
         # NOTE: seems that there are situations that the line does not have the value.
         line = line.split(SEPARATOR_FUNCTION_VALUE)[0]  # [line, debug's input's value]
         operation = line.split(SEPARATOR_ASSIGNATION)  # [output, function+args]
@@ -116,7 +113,7 @@ def extract_layers_relations(model: torch.nn.Module) -> dict[str, tuple[str | to
             #   Also it is asumed that there will be only one operator.
             operation = operation[0].split(OPERATION_SEPARATOR)
             op = operation.pop(1)  # '0:layer1_2_bn3, 1:+, 2:layer1_1_relu_2
-            args = ''.join([LIST_START, LIST_SEPARATOR.join(operation), LIST_END])  # '[layer1_2_bn3, layer1_1_relu_2]'
+            args = "".join([LIST_START, LIST_SEPARATOR.join(operation), LIST_END])  # '[layer1_2_bn3, layer1_1_relu_2]'
             # args now has the same format as other functions.
             func = cm.switch_operation_symbols(op)
         relations_dic[output_var] = (func, args)
@@ -176,6 +173,7 @@ def convert_layers_and_set_weights_and_biases(input_shape: tuple[int, int, int],
                 weights = weights.T if name in cm.TRANSPOSE_WEIGHTS_LAYERS else weights
 
                 if hasattr(converted_layer, PYDTNN_WEIGHTS_INITIALIZER):
+
                     def weights_initializer(shape: tuple, dtype: np.ndarray, pytorch_weights: np.ndarray = weights, **kwargs_to_ignore) -> np.ndarray:
                         # NOTE [IMPORTANT]: Regarding "pytorch_weights = weights".
                         # NOTE > If "weights" are directly set as the returned value (return weights), for some reason the return will be a reference to "weights"
@@ -184,6 +182,7 @@ def convert_layers_and_set_weights_and_biases(input_shape: tuple[int, int, int],
                         # NOTE >>>> -a reference to the last layer weights- instead of a reference to their respective layer weights.
                         # NOTE >>>>> In this way "pytorch_weights" has the copy of "weights" values (that, as said before, is a reference to the layer's weights) of that iteration.
                         return pytorch_weights.astype(dtype=dtype, copy=False)
+
                     setattr(converted_layer, PYDTNN_WEIGHTS_INITIALIZER, weights_initializer)
                 else:
                     # I'm pretty sure this case never happens (anyways, it's better to have it just in case).
@@ -194,9 +193,11 @@ def convert_layers_and_set_weights_and_biases(input_shape: tuple[int, int, int],
                 biases = copy.deepcopy(state_dict[LAYER_BIASES].cpu().detach().numpy())
                 biases = biases.T if name in cm.TRANSPOSE_WEIGHTS_LAYERS else biases
                 if hasattr(converted_layer, PYDTNN_BIASES_INITIALIZER):
+
                     def biases_initializer(shape: tuple, dtype: np.ndarray, pytorch_biases: np.ndarray = biases, **kwargs_to_ignore) -> np.ndarray:
                         # NOTE [IMPORTANT]: See "weights_initializer" notes; the case of "pytorch_biases = biases" parameter is the same case as weights_initializer's "pytorch_weights = weights".
                         return pytorch_biases.astype(dtype=dtype, copy=False)
+
                     setattr(converted_layer, PYDTNN_BIASES_INITIALIZER, biases_initializer)
                 else:
                     # As said before, I'm pretty sure this case never happens, but anyways, it's better to have it just in case.
@@ -206,10 +207,7 @@ def convert_layers_and_set_weights_and_biases(input_shape: tuple[int, int, int],
             converted_layers[layer_var] = (converted_layer, params)
         else:  # is intance of string (the name of a function or an operation)
             # Here, params are the input layers and other arguments.
-            args = {cm.PARAMETERS: params,
-                    cm.LAYERS: converted_layers,
-                    cm.EQUIVALENT_LAYERS: dict_equivalent_layer,
-                    cm.OPERATION_VAR: operation_variable}
+            args = {cm.PARAMETERS: params, cm.LAYERS: converted_layers, cm.EQUIVALENT_LAYERS: dict_equivalent_layer, cm.OPERATION_VAR: operation_variable}
 
             converted_layers[operation_variable] = cm.function_operation_to_pydtnn(operation)(args)
             # NOTE: Remember, originally these were functions, then they does not have weights nor biases.
@@ -241,8 +239,7 @@ def check_kwargs_and_set_default(kwargs: dict) -> None:
             kwargs[k] = DICT_KWARGS_DEFAULT_VALUES[k]
 
 
-def convert_model(model: torch.nn.Module, input_shape: tuple[int, int, int],
-                  default_output_activation_layer: Activation | None = None, **kwargs) -> PyDTNN_Model:
+def convert_model(model: torch.nn.Module, input_shape: tuple[int, int, int], default_output_activation_layer: Activation | None = None, **kwargs) -> PyDTNN_Model:
     # "default_output_activation_layer" parameter: if there is no activation layer at the end, the one in this parameter is added to the converted model.
     check_kwargs_and_set_default(kwargs)
 

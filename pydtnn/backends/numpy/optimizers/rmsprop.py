@@ -7,9 +7,7 @@ from pydtnn.backends.numpy.optimizers.optimizer import OptimizerNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.optimizers.rmsprop import RMSProp
 
-__all__ = (
-    "RMSPropNumpy",
-)
+__all__ = ("RMSPropNumpy",)
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +16,6 @@ if TYPE_CHECKING:
 
 
 class RMSPropNumpy(RMSProp[np.ndarray], OptimizerNumpy):
-
     def _model_init(self, list_layers: list[LayerNumpy]) -> None:
         super()._model_init(list_layers)  # type: ignore (it is the right type)
 

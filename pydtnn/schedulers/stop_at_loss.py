@@ -7,9 +7,7 @@ from numpy import ndarray
 
 from pydtnn.schedulers.scheduler_with_loss_or_metric import SchedulerWithLossOrMetric
 
-__all__ = (
-    "StopAtLoss",
-)
+__all__ = ("StopAtLoss",)
 
 logger = logging.getLogger(__name__)
 
@@ -32,12 +30,10 @@ class StopAtLoss(SchedulerWithLossOrMetric):
         idx = self._get_idx()
         self.epoch_count += 1
         loss = val_loss if self.is_val_metric else train_loss
-        if ("accuracy" in self.loss_or_metric and loss[idx] > self.threshold_value) or \
-                ("accuracy" not in self.loss_or_metric and loss[idx] < self.threshold_value):
+        if ("accuracy" in self.loss_or_metric and loss[idx] > self.threshold_value) or ("accuracy" not in self.loss_or_metric and loss[idx] < self.threshold_value):
             self.stop_training = True
             self.log(f"Metric '{self.loss_or_metric}' reached threshold value {self.threshold_value}, stop training.")
 
     @classmethod
     def from_model(cls, model: Model) -> StopAtLoss:
-        return StopAtLoss(model.stop_at_loss_metric,
-                          model.stop_at_loss_threshold)
+        return StopAtLoss(model.stop_at_loss_metric, model.stop_at_loss_threshold)

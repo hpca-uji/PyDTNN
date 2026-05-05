@@ -7,9 +7,7 @@ from pydtnn.backends.numpy.metrics.metric import MetricNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.metrics.recall import Recall
 
-__all__ = (
-    "RecallNumpy",
-)
+__all__ = ("RecallNumpy",)
 
 logger = logging.getLogger(__name__)
 
@@ -20,12 +18,11 @@ if TYPE_CHECKING:
 
 
 class RecallNumpy(Recall[np.ndarray], MetricNumpy):
-
     conf_matrix_metric: BinaryConfusionMatrixNumpy
 
     def _model_init(self) -> None:
         super()._model_init()
-        self.temp_var_shape = (self.shape[1], )
+        self.temp_var_shape = (self.shape[1],)
         self.tmp_memory_used += int(2 * math.prod(self.temp_var_shape)) * np.float32().itemsize
         self.tmp_memory_used += int(1 * math.prod(self.temp_var_shape)) * np.bool_().itemsize
         self.memory_used += self.tmp_memory_used

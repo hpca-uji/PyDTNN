@@ -18,9 +18,7 @@ from pydtnn.tests.abstract.common import Params, TestCase, verbose_test
 from pydtnn.utils import print_with_header, random
 from pydtnn.utils.tensor import TensorFormat
 
-__all__ = (
-    "ModelCommonTestCase",
-)
+__all__ = ("ModelCommonTestCase",)
 
 logger = logging.getLogger(__name__)
 
@@ -113,22 +111,24 @@ class ModelCommonTestCase(TestCase):
 
     def print_stats(self, x1: np.ndarray, x2: np.ndarray, rtol: float, atol: float) -> str:
         diff = x1 - x2
-        return '\n' \
-               f"\t{rtol=}\n"\
-               f"\t{atol=}\n"\
-               f"\tmax_diff={np.max(np.abs(diff))}\n" \
-               f"\t{x1.max()=}\n" \
-               f"\t{x2.max()=}\n" \
-               f"\t{diff.max()=}\n" \
-               f"\t{x1.min()=}\n" \
-               f"\t{x2.min()=}\n" \
-               f"\t{diff.min()=}\n" \
-               f"\t{x1.std()=}\n" \
-               f"\t{x2.std()=}\n" \
-               f"\t{diff.std()=}\n" \
-               f"\t{x1.mean()=}\n" \
-               f"\t{x2.mean()=}\n" \
-               f"\t{diff.mean()=}\n"
+        return (
+            "\n"
+            f"\t{rtol=}\n"
+            f"\t{atol=}\n"
+            f"\tmax_diff={np.max(np.abs(diff))}\n"
+            f"\t{x1.max()=}\n"
+            f"\t{x2.max()=}\n"
+            f"\t{diff.max()=}\n"
+            f"\t{x1.min()=}\n"
+            f"\t{x2.min()=}\n"
+            f"\t{diff.min()=}\n"
+            f"\t{x1.std()=}\n"
+            f"\t{x2.std()=}\n"
+            f"\t{diff.std()=}\n"
+            f"\t{x1.mean()=}\n"
+            f"\t{x2.mean()=}\n"
+            f"\t{diff.mean()=}\n"
+        )
 
     def do_model1_forward_pass(self, model1: Model, x0: list[np.ndarray]) -> list[np.ndarray]:
         """
@@ -184,9 +184,7 @@ class ModelCommonTestCase(TestCase):
             # Skip test on layers that behave randomly
             if not isinstance(layer, Dropout):
                 rtol, atol = self.get_tolerance(layer)
-                self.assertTrue(np.allclose(x1[i], x2[i], rtol=rtol, atol=atol),
-                                f"Forward result from layers {layer.name_with_id} differ"
-                                f" ({self.print_stats(x1[i], x2[i], rtol, atol)})")
+                self.assertTrue(np.allclose(x1[i], x2[i], rtol=rtol, atol=atol), f"Forward result from layers {layer.name_with_id} differ ({self.print_stats(x1[i], x2[i], rtol, atol)})")
 
     def compare_backward(self, model1: Model, dx1: list[np.ndarray], model2: Model, dx2: list[np.ndarray]):
         assert len(dx1) == len(dx2), f"dx1 and dx2 should have the same length {len(dx1)=}, {len(dx2)=}"
@@ -210,13 +208,10 @@ class ModelCommonTestCase(TestCase):
                 if dx1[i].shape == dx2[i].shape:
                     allclose = np.allclose(dx1[i], dx2[i], rtol=rtol, atol=atol)
                 else:
-                    warnings.warn(f"dx shape on both models for {layer.name_with_id} differ:"
-                                  f" [dx1.shape: {dx1[i].shape}, dx2.shape: {dx2[i].shape}]")
+                    warnings.warn(f"dx shape on both models for {layer.name_with_id} differ: [dx1.shape: {dx1[i].shape}, dx2.shape: {dx2[i].shape}]")
                     # Try flattening both
                     allclose = np.allclose(dx1[i].flatten(), dx2[i].flatten(), rtol=rtol, atol=atol)
-                self.assertTrue(allclose,
-                                f"Backward result from layer {layer.name_with_id} differ"
-                                f" ({self.print_stats(dx1[i], dx2[i], rtol, atol)})")
+                self.assertTrue(allclose, f"Backward result from layer {layer.name_with_id} differ ({self.print_stats(dx1[i], dx2[i], rtol, atol)})")
 
     def do_test_model(self, model_name: str):
         """
@@ -231,7 +226,7 @@ class ModelCommonTestCase(TestCase):
         model2.mode = Model.Mode.TRAIN
         self.copy_weights_and_biases(model1, model2)
 
-        x = [np.asarray(random.random((model1.batch_size, *model1.layers[0].shape)), dtype=model1.dtype, order='C').copy()]
+        x = [np.asarray(random.random((model1.batch_size, *model1.layers[0].shape)), dtype=model1.dtype, order="C").copy()]
 
         if verbose_test():
             print()

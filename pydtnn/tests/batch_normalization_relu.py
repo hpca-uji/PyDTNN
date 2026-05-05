@@ -10,9 +10,7 @@ from pydtnn.tests.abstract.common import D, Params
 from pydtnn.tests.abstract.conv_2d_common import Conv2DCommonTestCase
 from pydtnn.utils.tensor import TensorFormat
 
-__all__ = (
-    "BatchNormalizationReluTestCase",
-)
+__all__ = ("BatchNormalizationReluTestCase",)
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +22,7 @@ class BatchNormalizationReluTestCase(Conv2DCommonTestCase):
     """
     Tests that BatchNormalization+Relu leads to the same results than BatchNormalizationRelu
     """
+
     # NOTE: Delete parent test to prevent re-export and re-testing
     global Conv2DCommonTestCase
     del Conv2DCommonTestCase
@@ -39,10 +38,7 @@ class BatchNormalizationReluTestCase(Conv2DCommonTestCase):
 
         bn = BatchNormalization()
         relu = Relu()
-        chain = ConcatenationBlock([
-            bn,
-            relu
-        ])
+        chain = ConcatenationBlock([bn, relu])
         shape = (d.c, d.h, d.w)
         chain._init_backend_with_model(model)
         chain._model_init(prev_shape=shape, x=None)

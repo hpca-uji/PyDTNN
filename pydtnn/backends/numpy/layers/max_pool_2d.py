@@ -7,9 +7,7 @@ from pydtnn.libs import numpy as np
 from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
 from pydtnn.utils.constants import ArrayShape
 
-__all__ = (
-    "MaxPool2DNumpy",
-)
+__all__ = ("MaxPool2DNumpy",)
 
 
 logger = logging.getLogger(__name__)
@@ -19,7 +17,6 @@ if TYPE_CHECKING:
 
 
 class MaxPool2DNumpy(MaxPool2D[np.ndarray], AbstractPool2DLayerNumpy):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # The following attribute will be intialized later.
@@ -104,7 +101,7 @@ class MaxPool2DNumpy(MaxPool2D[np.ndarray], AbstractPool2DLayerNumpy):
     def _forward_nhwc(self, x: np.ndarray) -> np.ndarray:
         # y:np.ndarray = self.y[:x.shape[0], :]
         y = self.get_y(x.shape[0])
-        self.idx_max: np.ndarray = self._idx_max[:x.shape[0], :]
+        self.idx_max: np.ndarray = self._idx_max[: x.shape[0], :]
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
         self._fwd_max_pool_nhwc(x, y)
@@ -114,7 +111,7 @@ class MaxPool2DNumpy(MaxPool2D[np.ndarray], AbstractPool2DLayerNumpy):
     def _forward_nchw(self, x: np.ndarray) -> np.ndarray:
         # y:np.ndarray = self.y[:x.shape[0], :]
         y = self.get_y(x.shape[0])
-        self.idx_max = self._idx_max[:x.shape[0], :]
+        self.idx_max = self._idx_max[: x.shape[0], :]
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
         self._fwd_max_pool_nchw(x, y)
@@ -152,7 +149,7 @@ class MaxPool2DNumpy(MaxPool2D[np.ndarray], AbstractPool2DLayerNumpy):
                 h_end = h_start + self.hstride * self.ho
                 w_end = w_start + self.wstride * self.wo
 
-                _x = x[:, :, h_start:h_end:self.hstride, w_start:w_end:self.wstride]
+                _x = x[:, :, h_start : h_end : self.hstride, w_start : w_end : self.wstride]
                 max_val: np.ndarray = np.max(_x, axis=(2, 3))
                 _idx_maxval: np.ndarray = np.argmax(np.argmax(_x, axis=3), axis=2)
 

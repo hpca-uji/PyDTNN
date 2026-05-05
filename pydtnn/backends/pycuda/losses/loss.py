@@ -8,15 +8,12 @@ from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.losses.loss import Loss
 from pydtnn.utils.constants import DTYPE2CTYPE
 
-__all__ = (
-    "LossPycuda",
-)
+__all__ = ("LossPycuda",)
 
 logger = logging.getLogger(__name__)
 
 
 class LossPycuda(Loss[TensorArray], BasePycuda):
-
     """
     Extends a Loss class with the attributes and methods required by GPU Losses.
     """
@@ -38,5 +35,5 @@ class LossPycuda(Loss[TensorArray], BasePycuda):
         self.memory_used += self.dx.nbytes + self.loss.nbytes
 
     def _kernel_init(self) -> Function:
-        self.defines_replaces = {"\"TYPE\"": DTYPE2CTYPE[self.model.dtype]}
+        self.defines_replaces = {'"TYPE"': DTYPE2CTYPE[self.model.dtype]}
         self.kernel = self._get_kernel()

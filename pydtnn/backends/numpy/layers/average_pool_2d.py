@@ -6,9 +6,7 @@ from pydtnn.layers.average_pool_2d import AveragePool2D
 from pydtnn.libs import numpy as np
 from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
 
-__all__ = (
-    "AveragePool2DNumpy",
-)
+__all__ = ("AveragePool2DNumpy",)
 
 
 logger = logging.getLogger(__name__)
@@ -18,7 +16,6 @@ if TYPE_CHECKING:
 
 
 class AveragePool2DNumpy(AveragePool2D[np.ndarray], AbstractPool2DLayerNumpy):
-
     def _fwd_avg_pool_nchw(self, x: np.ndarray, y: np.ndarray) -> None:
         for nn in range(x.shape[0]):
             for cc in range(self.ci):
@@ -35,7 +32,7 @@ class AveragePool2DNumpy(AveragePool2D[np.ndarray], AbstractPool2DLayerNumpy):
                                     if 0 <= x_y < self.wi:
                                         accum += x[nn, cc, x_x, x_y]
                                         items += 1
-                        y[nn, cc, xx, yy] = (accum / items)
+                        y[nn, cc, xx, yy] = accum / items
 
     def _fwd_avg_pool_nhwc(self, x: np.ndarray, y: np.ndarray) -> None:
         for nn in range(x.shape[0]):
@@ -53,7 +50,7 @@ class AveragePool2DNumpy(AveragePool2D[np.ndarray], AbstractPool2DLayerNumpy):
                                     if 0 <= x_y < self.wi:
                                         accum += x[nn, x_x, x_y, cc]
                                         items += 1
-                        y[nn, xx, yy, cc] = (accum / items)
+                        y[nn, xx, yy, cc] = accum / items
 
     def _bwd_avg_pool_nhwc(self, dx: np.ndarray, dy: np.ndarray) -> None:
         for nn in range(dy.shape[0]):

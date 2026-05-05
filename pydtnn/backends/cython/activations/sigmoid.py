@@ -5,23 +5,18 @@ from pydtnn.backends.cython.utils.sigmoid_cython import sigmoid_bwd_cython, sigm
 from pydtnn.backends.numpy.activations.sigmoid import SigmoidNumpy
 from pydtnn.libs import numpy as np
 
-__all__ = (
-    "SigmoidCython",
-)
+__all__ = ("SigmoidCython",)
 
 logger = logging.getLogger(__name__)
 
 
 class SigmoidCython(SigmoidNumpy, ActivationCython):
-
     def forward(self, x: np.ndarray) -> np.ndarray:
-        self.y: np.ndarray = self._y[:x.shape[0], :]
+        self.y: np.ndarray = self._y[: x.shape[0], :]
         sigmoid_fwd_cython(x.reshape(-1, copy=False), self.y.reshape(-1, copy=False))
         return self.y
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
-        dx: np.ndarray = self.dx[:dy.shape[0], :]
-        sigmoid_bwd_cython(dy.reshape(-1, copy=False),
-                           self.y.reshape(-1, copy=False),
-                           dx.reshape(-1, copy=False))
+        dx: np.ndarray = self.dx[: dy.shape[0], :]
+        sigmoid_bwd_cython(dy.reshape(-1, copy=False), self.y.reshape(-1, copy=False), dx.reshape(-1, copy=False))
         return dx

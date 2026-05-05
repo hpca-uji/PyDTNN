@@ -12,11 +12,7 @@ if _rc:
 
 
 # Redefine backend
-proto = (
-    proto
-    if (proto := _os.environ.get("PYMPI_PROTO"))
-    else None
-)
+proto = proto if (proto := _os.environ.get("PYMPI_PROTO")) else None
 
 
 def __getattr__(key):

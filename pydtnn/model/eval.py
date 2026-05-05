@@ -15,15 +15,12 @@ from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDTN
 from pydtnn.utils.constants import Array
 from pydtnn.utils.performance_models import allreduce_time
 
-__all__ = (
-    "Eval",
-)
+__all__ = ("Eval",)
 
 logger = logging.getLogger(__name__)
 
 
 class Eval[T: Array](Sync[T]):
-
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         # Private attributes
@@ -56,8 +53,7 @@ class Eval[T: Array](Sync[T]):
 
         return _losses, loss_req  # type: ignore
 
-    def _update_running_average(self, curr: np.ndarray, total: np.ndarray, count: int,
-                                batch_size: int, prefix="") -> tuple[np.ndarray, int, str]:
+    def _update_running_average(self, curr: np.ndarray, total: np.ndarray, count: int, batch_size: int, prefix="") -> tuple[np.ndarray, int, str]:
         string = ""
         total = ((curr * batch_size) + (total * count)) / (count + batch_size)
         for c in range(len(self.loss_and_metrics)):
@@ -96,15 +92,14 @@ class Eval[T: Array](Sync[T]):
 
         return self.total_metrics
 
-    def _update_status(self, pbar: tqdm | None, batch_loss: np.ndarray, total_loss: np.ndarray,
-                       batch_count: int, batch_size: int, output_prefix: str, delta: float = -1,
-                       prev_string: str = "") -> tuple[np.ndarray, int, str]:
+    def _update_status(
+        self, pbar: tqdm | None, batch_loss: np.ndarray, total_loss: np.ndarray, batch_count: int, batch_size: int, output_prefix: str, delta: float = -1, prev_string: str = ""
+    ) -> tuple[np.ndarray, int, str]:
 
         part = Dataset.Part[output_prefix.strip("_").upper()]
 
         # noinspection PyUnboundLocalVariable
-        total_loss, batch_count, string = \
-            self._update_running_average(batch_loss, total_loss, batch_count, batch_size, prefix=output_prefix)
+        total_loss, batch_count, string = self._update_running_average(batch_loss, total_loss, batch_count, batch_size, prefix=output_prefix)
 
         match part:
             case Dataset.Part.TRAIN:
@@ -120,15 +115,18 @@ class Eval[T: Array](Sync[T]):
 
         return total_loss, batch_count, string
 
-    def _evalutate_round(self, pbar: tqdm | None,
-                         batch_generator: Generator[tuple[np.ndarray, np.ndarray, int]],
-                         model_sync_count: int,
-                         batches_min: float,
-                         total_loss: np.ndarray,
-                         batch_count: int,
-                         terminate: bool = False,
-                         prev_string: str = "",
-                         out_prefix: str = "") -> tuple[np.ndarray, int, bool, str]:
+    def _evalutate_round(
+        self,
+        pbar: tqdm | None,
+        batch_generator: Generator[tuple[np.ndarray, np.ndarray, int]],
+        model_sync_count: int,
+        batches_min: float,
+        total_loss: np.ndarray,
+        batch_count: int,
+        terminate: bool = False,
+        prev_string: str = "",
+        out_prefix: str = "",
+    ) -> tuple[np.ndarray, int, bool, str]:
         """
         Return:
             tuple[model_sync_count (int), sync_epoch (bool)]
@@ -175,10 +173,9 @@ class Eval[T: Array](Sync[T]):
             if batch_size <= 0:
                 continue
 
-            total_loss, batch_count, string = self._update_status(pbar=pbar, batch_loss=test_batch_loss,
-                                                                  total_loss=total_loss, batch_count=batch_count,
-                                                                  batch_size=batch_size, output_prefix=out_prefix, delta=delta,
-                                                                  prev_string=prev_string)
+            total_loss, batch_count, string = self._update_status(
+                pbar=pbar, batch_loss=test_batch_loss, total_loss=total_loss, batch_count=batch_count, batch_size=batch_size, output_prefix=out_prefix, delta=delta, prev_string=prev_string
+            )
 
         # Increment self._evaluate_round
         self._evaluate_round += 1
@@ -189,9 +186,7 @@ class Eval[T: Array](Sync[T]):
 
         if self.enable_cudnn and self.y_batch is None:
             assert gpuarray and self.cudnn_dtype
-            tensor_ary = TensorArray(
-                gpuarray.empty((self.batch_size, *self.layers[-1].shape), self.dtype),
-                self.tensor_format, self.cudnn_dtype)
+            tensor_ary = TensorArray(gpuarray.empty((self.batch_size, *self.layers[-1].shape), self.dtype), self.tensor_format, self.cudnn_dtype)
             self.y_batch = tensor_ary  # type: ignore
 
         self.comm_nsamples = list(zip(*self.comm.allgather(self.dataset._nsamples) if self.comm else [self.dataset._nsamples]))
@@ -202,21 +197,24 @@ class Eval[T: Array](Sync[T]):
 
         if self.comm_rank == 0:
             test_total_loss, test_batch_count = np.zeros(len(self.loss_and_metrics)), 0
-            pbar = tqdm(total=self.dataset.test_nsamples, ncols=bar_width,
-                        ascii=" ▁▂▃▄▅▆▇█", smoothing=0.3,
-                        desc="Testing", unit=" samples")
+            pbar = tqdm(total=self.dataset.test_nsamples, ncols=bar_width, ascii=" ▁▂▃▄▅▆▇█", smoothing=0.3, desc="Testing", unit=" samples")
         else:
             pbar = None
 
-        self._evalutate_round(pbar=pbar, batch_generator=test_batch_generator,
-                              model_sync_count=0, batches_min=test_batches_min,
-                              total_loss=test_total_loss, batch_count=test_batch_count,
-                              out_prefix=f"{Dataset.Part.TEST._name_.lower()}_")
+        self._evalutate_round(
+            pbar=pbar,
+            batch_generator=test_batch_generator,
+            model_sync_count=0,
+            batches_min=test_batches_min,
+            total_loss=test_total_loss,
+            batch_count=test_batch_count,
+            out_prefix=f"{Dataset.Part.TEST._name_.lower()}_",
+        )
 
         if self.comm_rank == 0:
             pbar.close()  # type: ignore (Here is a 'tqdm', only is None in self.comm_rank != 0)
             # Sleep for half a second to allow pbar to write its output before returning
-            time.sleep(.5)
+            time.sleep(0.5)
 
         # End pipelines
         self._model_reduce_wait(gradient=True)
@@ -241,9 +239,7 @@ class Eval[T: Array](Sync[T]):
                 weights_size = 0 if (weights := layer.weights) is None else weights.size
                 biases_size = 0 if (biases := layer.biases) is None else biases.size
                 if self.comm and weights_size > 0:
-                    total_time += allreduce_time(weights_size + biases_size,
-                                                 self.cpu_speed, self.network_bw, self.network_lat,
-                                                 self.network_alg, self.nprocs, self.dtype)
+                    total_time += allreduce_time(weights_size + biases_size, self.cpu_speed, self.network_bw, self.network_lat, self.network_alg, self.nprocs, self.dtype)
         else:
             total_time_iar: int = 0
             # Non-blocking MPI
@@ -253,9 +249,7 @@ class Eval[T: Array](Sync[T]):
                 weights_size = 0 if (weights := layer.weights) is None else weights.size
                 biases_size = 0 if (biases := layer.biases) is None else biases.size
                 if self.comm and weights_size > 0:
-                    time_iar = allreduce_time(weights_size + biases_size,
-                                              self.cpu_speed, self.network_bw, self.network_lat,
-                                              self.network_alg, self.nprocs, self.dtype)
+                    time_iar = allreduce_time(weights_size + biases_size, self.cpu_speed, self.network_bw, self.network_lat, self.network_alg, self.nprocs, self.dtype)
                     total_time[3] += time_iar[3]
                     total_time_iar = max(total_time[0], total_time_iar) + time_iar[0]
 

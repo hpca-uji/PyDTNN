@@ -9,15 +9,12 @@ from pydtnn.backends.pycuda.activations.activation import ActivationPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
 
-__all__ = (
-    "ArctanhPycuda",
-)
+__all__ = ("ArctanhPycuda",)
 
 logger = logging.getLogger(__name__)
 
 
 class ArctanhPycuda(Arctanh[TensorArray], ActivationPycuda):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.atanh: ElementwiseKernel = None
@@ -29,12 +26,14 @@ class ArctanhPycuda(Arctanh[TensorArray], ActivationPycuda):
         self.atanh = ElementwiseKernel(
             "{T} *in, {T} *out".format(T=DTYPE2CTYPE[self.model.dtype]),
             "out[i] = {func}(in[i]);".format(func={np.dtype(np.float32): "atanhf", np.dtype(np.float64): "atanh"}[self.model.dtype]),
-            "k_atanh")
+            "k_atanh",
+        )
 
         self.datanh = ElementwiseKernel(
             "{T} *in, {T} *out".format(T=DTYPE2CTYPE[self.model.dtype]),
             "out[i] = 1.0 / (1.0 + {func}(in[i], 2));".format(func={np.dtype(np.float32): "powf", np.dtype(np.float64): "pow"}[self.model.dtype]),
-            "datanh")
+            "datanh",
+        )
 
         # Activations y
         y_gpu = gpuarray.zeros(x.shape, self.model.dtype)

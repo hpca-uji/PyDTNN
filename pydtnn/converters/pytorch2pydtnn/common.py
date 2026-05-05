@@ -50,7 +50,7 @@ SOFTMAX = "softmax"
 SIGMOID = "sigmoid"
 LOG_SIGMOID = "logsigmoid"
 
-ARGS_SEPARATOR = ','
+ARGS_SEPARATOR = ","
 PYTORCH_OUTPUT_SIZE = "output_size"
 
 SPECIAL_CASES = ["torchvision_models_googlenet_GoogLeNetOutputs"]
@@ -66,6 +66,7 @@ def not_implemented(name: str) -> Callable:
     # Normal usage of this: switch_pytorch_pydtnn([not_implemented_layer_name])(args)
     def _not_implemented(args: dict[str, Any]) -> None:
         raise NotImplementedError(f"Layer {name} not implemented - Args received:\n{args} ")
+
     return _not_implemented
 
 
@@ -77,27 +78,45 @@ def switch_pytorch_pydtnn(name: str) -> Callable[[dict[str, Any]], Layerable]:
     # NOTE: name is the result of torch.nn.[layer]._get_name();
     #   if PyTorch change their layer's names, then it's necessary to change the names here.
     match name:
-        case "AdaptiveAvgPool2d": return AdaptiveAvgPool2d
-        case "AvgPool2d": return AvgPool2d
-        case "BatchNorm2d": return BatchNorm2d
-        case "Conv2d": return Conv2d
-        case "Dropout": return Dropout
-        case "Linear": return Linear
-        case "MaxPool2d": return MaxPool2d
-        case "ReLU": return ReLU
-        case "ReLU6": return ReLU6
-        case "LeakyReLU": return LeakyReLU
-        case "LogSigmoid": return LogSigmoid
-        case "Sigmoid": return Sigmoid
-        case "Softmax": return Softmax
-        case "Tanh": return Tanh
-        case "Flatten": return Flatten
+        case "AdaptiveAvgPool2d":
+            return AdaptiveAvgPool2d
+        case "AvgPool2d":
+            return AvgPool2d
+        case "BatchNorm2d":
+            return BatchNorm2d
+        case "Conv2d":
+            return Conv2d
+        case "Dropout":
+            return Dropout
+        case "Linear":
+            return Linear
+        case "MaxPool2d":
+            return MaxPool2d
+        case "ReLU":
+            return ReLU
+        case "ReLU6":
+            return ReLU6
+        case "LeakyReLU":
+            return LeakyReLU
+        case "LogSigmoid":
+            return LogSigmoid
+        case "Sigmoid":
+            return Sigmoid
+        case "Softmax":
+            return Softmax
+        case "Tanh":
+            return Tanh
+        case "Flatten":
+            return Flatten
 
         # Not actual PyTorch layers (are torch functions):
-        case "Add": return add  # type: ignore  # Possible FIXME: if the constants ADD values are changed, change the case in order to have the same value.
-        case "Concat": return concat  # type: ignore  # Possible FIXME: if the constants CONCAT values are changed, change the case in order to have the same value.
+        case "Add":
+            return add  # type: ignore  # Possible FIXME: if the constants ADD values are changed, change the case in order to have the same value.
+        case "Concat":
+            return concat  # type: ignore  # Possible FIXME: if the constants CONCAT values are changed, change the case in order to have the same value.
         # Base case:
-        case _: return not_implemented(name)
+        case _:
+            return not_implemented(name)
 
 
 def switch_operation_symbols(op: str) -> str:
@@ -193,8 +212,9 @@ def get_lists_operations_and_outputs(dict_layers: dict[str, tuple[Layerable, str
 
 def separate_function_params(params: str) -> list[str]:
     # Example: '[layer1_0_bn3,layer1_0_downsample_1]'
-    params = params.replace('[', '').replace(']', '')  # Removing non-useful characters
-    return [param.strip() for param in params.split(',')]  # Removing spaces
+    params = params.replace("[", "").replace("]", "")  # Removing non-useful characters
+    return [param.strip() for param in params.split(",")]  # Removing spaces
+
 
 # NOTE: This coversor does *not* work in the cases like the following:
 # A, B, C, D, E are layers, D and E are layers like concatenation or addition layers.

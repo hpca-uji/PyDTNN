@@ -16,9 +16,7 @@ from pydtnn.tests.abstract.common import Params, verbose_test
 from pydtnn.tests.abstract.model_common import ModelCommonTestCase
 from pydtnn.utils.tensor import TensorFormat, format_transpose
 
-__all__ = (
-    "ModelTensorTestCase",
-)
+__all__ = ("ModelTensorTestCase",)
 
 logger = logging.getLogger(__name__)
 
@@ -85,9 +83,7 @@ class ModelTensorTestCase(ModelCommonTestCase):
                 x1_i = self.nhwc2nchw(x1[i])
                 rtol, atol = self.get_tolerance(layer)
                 allclose = np.allclose(x1_i, x2[i], rtol=rtol, atol=atol)
-                self.assertTrue(allclose,
-                                f"Forward result from layers {layer.name_with_id} differ"
-                                f" ({self.print_stats(x1_i, x2[i], rtol, atol)})")
+                self.assertTrue(allclose, f"Forward result from layers {layer.name_with_id} differ ({self.print_stats(x1_i, x2[i], rtol, atol)})")
 
     def compare_backward(self, model1: Model, dx1, model2: Model, dx2):
         assert len(dx1) == len(dx2), "dx1 and dx2 should have the same length"
@@ -100,17 +96,12 @@ class ModelTensorTestCase(ModelCommonTestCase):
                     # layer.dw: np.ndarray
                     transposed_dw = format_transpose(layer.dw, "OIHW", "IHWO")
                     if transposed_dw.shape == model1.layers[i].dw.shape:
-                        allclose = np.allclose(transposed_dw, model1.layers[i].dw, rtol=rtol,
-                                               atol=atol)
-                        self.assertTrue(allclose,
-                                        f"Backward dw from layer {layer.name_with_id} differ"
-                                        f" ({self.print_stats(transposed_dw, model1.layers[i].dw, rtol, atol)})")
+                        allclose = np.allclose(transposed_dw, model1.layers[i].dw, rtol=rtol, atol=atol)
+                        self.assertTrue(allclose, f"Backward dw from layer {layer.name_with_id} differ ({self.print_stats(transposed_dw, model1.layers[i].dw, rtol, atol)})")
                 else:
                     if layer.dw.shape == model1.layers[i].dw.shape:
                         allclose = np.allclose(layer.dw, model1.layers[i].dw, rtol=rtol, atol=atol)
-                        self.assertTrue(allclose,
-                                        f"Backward dw from layer {layer.name_with_id} differ"
-                                        f" ({self.print_stats(layer.dw, model1.layers[i].dw, rtol, atol)})")
+                        self.assertTrue(allclose, f"Backward dw from layer {layer.name_with_id} differ ({self.print_stats(layer.dw, model1.layers[i].dw, rtol, atol)})")
         if verbose_test():
             logger.info("\nComparing db of both models...")
         for i, layer in reversed(list(enumerate(model2.layers, 0))):
@@ -118,9 +109,7 @@ class ModelTensorTestCase(ModelCommonTestCase):
                 rtol, atol = self.get_tolerance(layer)
                 # layer.db:np.ndarray
                 allclose = np.allclose(layer.db, model1.layers[i].db, rtol=rtol, atol=atol)
-                self.assertTrue(allclose,
-                                f"Backward db from layer {layer.name_with_id} differ"
-                                f" ({self.print_stats(layer.db, model1.layers[i].db, rtol, atol)})")
+                self.assertTrue(allclose, f"Backward db from layer {layer.name_with_id} differ ({self.print_stats(layer.db, model1.layers[i].db, rtol, atol)})")
         if verbose_test():
             logger.info("\nComparing dx of both models...")
         for i, layer in reversed(list(enumerate(model2.layers, 0))):
@@ -131,10 +120,7 @@ class ModelTensorTestCase(ModelCommonTestCase):
                 if dx1_i.shape == dx2[i].shape:
                     allclose = np.allclose(dx1_i, dx2[i], rtol=rtol, atol=atol)
                 else:
-                    warnings.warn(f"dx shape on both models for {layer.name_with_id} differ:"
-                                  f" [dx1.shape: {dx1[i].shape}, dx2.shape: {dx2[i].shape}]")
+                    warnings.warn(f"dx shape on both models for {layer.name_with_id} differ: [dx1.shape: {dx1[i].shape}, dx2.shape: {dx2[i].shape}]")
                     # Try flattening both
                     allclose = np.allclose(dx1_i.flatten(), dx2[i].flatten(), rtol=rtol, atol=atol)
-                self.assertTrue(allclose,
-                                f"Backward result from layer {layer.name_with_id} differ"
-                                f" ({self.print_stats(dx1_i, dx2[i], rtol, atol)})")
+                self.assertTrue(allclose, f"Backward result from layer {layer.name_with_id} differ ({self.print_stats(dx1_i, dx2[i], rtol, atol)})")
