@@ -7,6 +7,10 @@ from pydtnn.backends.pycuda.losses.loss import LossPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.losses.kl_divergence import KLDivergence
 
+__all__ = (
+    "KLDivergencePycuda",
+)
+
 logger = logging.getLogger(__name__)
 
 

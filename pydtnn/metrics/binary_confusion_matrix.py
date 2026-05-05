@@ -3,6 +3,10 @@ import logging
 from pydtnn.metrics.confusion_matrix import ConfusionMatrix
 from pydtnn.utils.constants import Array
 
+__all__ = (
+    "BinaryConfusionMatrix",
+)
+
 logger = logging.getLogger(__name__)
 
 

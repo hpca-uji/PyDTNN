@@ -8,6 +8,10 @@ from pydtnn.backends.cupy.layers.layer import LayerCupy
 from pydtnn.backends.numpy.layers.conv_2d import Conv2DNumpy
 from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
 
+__all__ = (
+    "Conv2DCupy",
+)
+
 logger = logging.getLogger(__name__)
 
 

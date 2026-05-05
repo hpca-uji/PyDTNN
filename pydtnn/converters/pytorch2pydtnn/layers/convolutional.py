@@ -7,6 +7,10 @@ from typing import Any
 import pydtnn.converters.pytorch2pydtnn.common as cm
 from pydtnn.layers.conv_2d import Conv2D as _Conv2D
 
+__all__ = (
+    "Conv2d",
+)
+
 logger = logging.getLogger(__name__)
 
 

@@ -7,8 +7,13 @@ from pydtnn.backends.numpy.layers.conv_2d import Conv2DNumpy
 from pydtnn.libs.convGemm import ConvGemm
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
                                    PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
+
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import TensorFormat
+
+__all__=(
+    "Conv2DGemm",
+)
 
 logger = logging.getLogger(__name__)
 

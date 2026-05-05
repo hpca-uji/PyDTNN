@@ -4,6 +4,10 @@ import math
 from pydtnn.layers.layer import Layer, LayerError
 from pydtnn.utils.constants import Array
 
+__all__ = (
+    "AbstractPool2DLayer",
+)
+
 logger = logging.getLogger(__name__)
 
 

@@ -7,6 +7,10 @@ from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.metrics.metric import Metric
 from pydtnn.utils.constants import DTYPE2CTYPE
 
+__all__ = (
+    "MetricPycuda",
+)
+
 logger = logging.getLogger(__name__)
 
 

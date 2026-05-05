@@ -8,6 +8,10 @@ from pydtnn.backends.numpy.layers.batch_normalization import \
     BatchNormalizationNumpy
 from pydtnn.libs import numpy as np
 
+__all__=(
+    "BatchNormalizationCython",
+)
+
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:

@@ -11,6 +11,10 @@ from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.optimizers.rmsprop import RMSProp
 from pydtnn.utils.constants import DTYPE2CTYPE
 
+__all__ = (
+    "RMSPropPycuda",
+)
+
 logger = logging.getLogger(__name__)
 
 

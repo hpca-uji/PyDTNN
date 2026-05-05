@@ -4,6 +4,11 @@ from pydtnn.abstract.base import Base
 from pydtnn.utils import find_component
 from pydtnn.utils.constants import Array
 
+__all__ = (
+    "Loss",
+    "select",
+)
+
 logger = logging.getLogger(__name__)
 
 

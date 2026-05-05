@@ -10,6 +10,10 @@ from pydtnn.layers.abstract.conv_2d import AbstractConv2D
 from pydtnn.libs import numpy as np
 from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
 
+__all__ = (
+    "AbstractConv2DCupy",
+)
+
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:

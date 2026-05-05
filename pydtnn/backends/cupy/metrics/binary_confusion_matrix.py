@@ -3,8 +3,12 @@ import logging
 import numpy as np
 
 from pydtnn.backends.cupy.metrics.metric import MetricCupy
-from pydtnn.backends.numpy.metrics.binary_confusion_matrix import \
-    BinaryConfusionMatrixNumpy
+from pydtnn.backends.numpy.metrics.binary_confusion_matrix import BinaryConfusionMatrixNumpy
+
+__all__ = (
+    "BinaryConfusionMatrixCupy",
+)
+
 
 logger = logging.getLogger(__name__)
 

@@ -10,6 +10,14 @@ from pydtnn.activations.activation import Activation
 from pydtnn.layers.input import Input
 from pydtnn.model import Model as PyDTNN_Model
 
+__all__ = (
+    "check_kwargs_and_set_default",
+    "convert_layers_and_set_weights_and_biases",
+    "convert_model",
+    "extract_layers_relations",
+    "load_layers",
+)
+
 logger = logging.getLogger(__name__)
 
 # Typing related

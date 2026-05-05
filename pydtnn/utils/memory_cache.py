@@ -1,5 +1,9 @@
 import logging
 
+__all__ = (
+    "MemoryCache",
+)
+
 logger = logging.getLogger(__name__)
 
 

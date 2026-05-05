@@ -17,6 +17,18 @@ from pydtnn.layers.average_pool_2d import AveragePool2D
 from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.flatten import Flatten
 
+__all__ = (
+    "adaptive_avg_pool_2d",
+    "add",
+    "concat",
+    "flatten",
+    "log",
+    "relu",
+    "sigmoid",
+    "softmax",
+    "tanh",
+)
+
 logger = logging.getLogger(__name__)
 
 # Typing related (or non important) imports

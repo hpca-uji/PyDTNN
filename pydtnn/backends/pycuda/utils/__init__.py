@@ -6,6 +6,11 @@ import logging
 
 import numpy as np
 
+__all__ = (
+    "matmul_gpu",
+    "matvec_gpu",
+)
+
 logger = logging.getLogger(__name__)
 
 try:

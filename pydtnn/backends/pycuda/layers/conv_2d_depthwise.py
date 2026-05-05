@@ -12,6 +12,10 @@ from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import TensorFormat
 
+__all__=(
+    "Conv2DDepthwisePycuda",
+)
+
 logger = logging.getLogger(__name__)
 
 

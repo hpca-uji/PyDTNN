@@ -3,6 +3,12 @@ import logging
 import re
 import subprocess
 
+__all__ = (
+    "CudnnDataType",
+    "get_gpu_memory_used",
+    "get_gpus_per_node",
+)
+
 logger = logging.getLogger(__name__)
 
 

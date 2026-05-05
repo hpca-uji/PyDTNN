@@ -5,6 +5,10 @@ from pydtnn.activations.activation import Activation
 from pydtnn.backends.numpy.abstract.layerable import LayerableNumpy
 from pydtnn.libs import numpy as np
 
+__all__ = (
+    "ActivationNumpy",
+)
+
 logger = logging.getLogger(__name__)
 
 

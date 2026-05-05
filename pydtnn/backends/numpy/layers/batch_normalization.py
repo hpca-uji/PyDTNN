@@ -9,6 +9,10 @@ from pydtnn.model import Model
 from pydtnn.utils.constants import ArrayShape, Parameters
 from pydtnn.utils.tensor import TensorFormat, format_transpose
 
+__all__ = (
+    "BatchNormalizationNumpy",
+)
+
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:

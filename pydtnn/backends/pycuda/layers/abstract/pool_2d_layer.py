@@ -12,6 +12,10 @@ from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.performance_models import col2im_time, im2col_time
 
+__all__=(
+    "AbstractPool2DLayerPycuda",
+)
+
 logger = logging.getLogger(__name__)
 
 

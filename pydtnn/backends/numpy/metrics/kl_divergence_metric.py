@@ -6,6 +6,10 @@ from pydtnn.backends.numpy.metrics.metric import MetricNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.metrics.kl_divergence_metric import KLDivergenceMetric
 
+__all__ = (
+    "KLDivergenceMetricNumpy",
+)
+
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:

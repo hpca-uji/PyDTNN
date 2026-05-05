@@ -11,6 +11,10 @@ from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.layers.multi_head_attention import MultiHeadAttention
 from pydtnn.libs import cudnn as cudnn
 
+__all__ = (
+    "MultiHeadAttentionPycuda",
+)
+
 logger = logging.getLogger(__name__)
 
 

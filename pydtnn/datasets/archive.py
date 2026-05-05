@@ -11,6 +11,10 @@ from pydtnn.datasets.dataset import Dataset
 from pydtnn.utils import get_npz_shape
 from pydtnn.utils.constants import ArrayShape
 
+__all__ = (
+    "Archive",
+)
+
 logger = logging.getLogger(__name__)
 
 

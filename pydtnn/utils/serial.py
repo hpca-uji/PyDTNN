@@ -2,6 +2,11 @@ import numpy as np
 import yaml
 
 
+__all__ = (
+    "NumpyYaml",
+)
+
+
 class NumpyYaml(yaml.SafeDumper):
     def represent_dtype(self, data):
         return self.represent_scalar('!np.type', repr(data))

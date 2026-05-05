@@ -9,6 +9,10 @@ import numpy as np
 from pydtnn.model.layers import Layers
 from pydtnn.utils.constants import Array, Parameters
 
+__all__ = (
+    "State",
+)
+
 logger = logging.getLogger(__name__)
 
 

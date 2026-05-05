@@ -36,6 +36,10 @@ else:
 
 from pydtnn.utils.constants import Array, NetworkAlgoEnum
 
+__all__=(
+    "Init",
+)
+
 logger = logging.getLogger(__name__)
 
 

@@ -5,6 +5,10 @@ from pydtnn.backends.cupy.metrics.metric import MetricCupy
 from pydtnn.backends.numpy.metrics.f1_score import F1ScoreNumpy
 from pydtnn.libs import numpy as np
 
+__all__ = (
+    "F1ScoreCupy",
+)
+
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:

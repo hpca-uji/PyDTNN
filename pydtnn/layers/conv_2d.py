@@ -7,6 +7,10 @@ from pydtnn.layers.layer import Layer
 from pydtnn.utils.constants import Array, ArrayShape, Parameters
 from pydtnn.utils.initializers import InitializerFunc, glorot_uniform, zeros
 
+__all__ = (
+    "Conv2D",
+)
+
 logger = logging.getLogger(__name__)
 
 

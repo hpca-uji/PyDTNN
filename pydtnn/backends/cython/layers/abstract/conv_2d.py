@@ -9,6 +9,10 @@ from pydtnn.backends.cython.utils.im2row_nhwc_cython import (  # , alt_row2im_nh
 from pydtnn.backends.numpy.layers.abstract.conv_2d import AbstractConv2DNumpy
 from pydtnn.libs import numpy as np
 
+__all__=(
+    "AbstractConv2DCython",
+)
+
 logger = logging.getLogger(__name__)
 
 

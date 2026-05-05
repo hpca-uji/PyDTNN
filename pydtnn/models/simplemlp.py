@@ -9,6 +9,11 @@ from pydtnn.layers.input import Input
 from pydtnn.utils.constants import ArrayShape
 
 
+__all__ = (
+    "simplemlp",
+)
+
+
 def simplemlp(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
     model = list[Layerable]()
     _ = model.append

@@ -15,6 +15,10 @@ from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
 from pydtnn.utils.constants import ArrayShape, Parameters
 from pydtnn.utils.performance_models import matmul_time
 
+__all__=(
+    "FCPycuda",
+)
+
 logger = logging.getLogger(__name__)
 
 

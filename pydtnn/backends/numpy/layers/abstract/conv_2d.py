@@ -8,6 +8,10 @@ from pydtnn.utils.constants import ArrayShape, Parameters
 from pydtnn.utils.performance_models import im2col_time, matmul_time
 from pydtnn.utils.tensor import TensorFormat
 
+__all__ = (
+    "AbstractConv2DNumpy",
+)
+
 logger = logging.getLogger(__name__)
 
 

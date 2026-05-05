@@ -14,6 +14,11 @@ from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.initializers import he_uniform
 
 
+__all__ = (
+    "densenet_cifar10",
+)
+
+
 def densenet_cifar10(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
     model = list[Layerable]()
     _ = model.append

@@ -14,6 +14,11 @@ from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.initializers import he_uniform
 
 
+__all__ = (
+    "resnet32",
+)
+
+
 def resnet32(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
     model = list[Layerable]()
     _ = model.append

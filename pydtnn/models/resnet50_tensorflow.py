@@ -20,6 +20,11 @@ from pydtnn.utils.initializers import he_uniform
 # NOTE: TensorFlow uses FC with 1024 shape
 
 
+__all__ = (
+    "resNet50",
+)
+
+
 def resNet50(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
     model = list[Layerable]()
     _ = model.append

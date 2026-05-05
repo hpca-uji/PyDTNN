@@ -3,6 +3,10 @@ from typing import TYPE_CHECKING
 
 from pydtnn.utils import read_file
 
+__all__ = (
+    "UsesCudaCode",
+)
+
 if TYPE_CHECKING:
     import cupy as cp  # type: ignore
     from pycuda.driver import Function, Module  # type: ignore
