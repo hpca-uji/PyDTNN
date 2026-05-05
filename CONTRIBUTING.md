@@ -12,10 +12,10 @@
 - Cython's `.pyx` can be included anywhere, but must be accompanied by a `.pyi` typing interface.
 
   ---
-- Use `pydtnn.utils.random` for random number generation. Other generators are not multi-thread aware.
+- Use `pydtnn.utils.random` for random number generation, other generators are not multi-thread aware.
 
   ---
-- Each CUDA kernel must have a unique name. Duplicate names will cause incorrect kernel resolution.
+- Each CUDA kernel must have a unique name, duplicate names will cause incorrect kernel resolution.
 
   ---
 - Test all changes across backends (CPU, GPU, etc.), changes in base classes may introduce backend-specific issues.
@@ -26,6 +26,9 @@
 
   ---
 - Use `from __future__ import annotations` instead of string type annotations, it is more legible and will be default moving forward.
+
+  ---
+- If model or components structure changes, update the `Structure` section of this document accordingly.
 
 # Knowledge
 - In components, `__init__` is used for model-agnostic configuration, and `_model_init` for model specific configuration, and `_post_init` and resource allocation.
@@ -72,9 +75,9 @@
 │   │   ├── utils.py   # utility methods
 │   │   ├── layers.py  # layers management
 │   │   ├── state.py   # state management
-│   │   ├── init.py    # model initialization
-│   │   ├── sync.py    # model synchronization
-│   │   ├── debug.py   # debugging information
+│   │   ├── init.py    # initialization
+│   │   ├── sync.py    # synchronization
+│   │   ├── repr.py    # representation
 │   │   ├── eval.py    # model inference
 │   │   └── train.py   # model training
 |   ├── abstract
