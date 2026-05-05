@@ -5,7 +5,9 @@ from pydtnn.backends.numpy.layers.layer import LayerNumpy
 from pydtnn.layers.input import Input
 from pydtnn.libs import numpy as np
 
-__all__ = ("InputNumpy",)
+__all__ = (
+    "InputNumpy",
+)
 
 logger = logging.getLogger(__name__)
 

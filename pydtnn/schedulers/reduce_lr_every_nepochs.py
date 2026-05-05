@@ -7,7 +7,9 @@ from numpy import ndarray
 
 from pydtnn.schedulers.scheduler import Scheduler
 
-__all__ = ("ReduceLREveryNEpochs",)
+__all__ = (
+    "ReduceLREveryNEpochs",
+)
 
 logger = logging.getLogger(__name__)
 

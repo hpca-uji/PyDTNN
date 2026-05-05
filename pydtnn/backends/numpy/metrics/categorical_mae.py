@@ -6,7 +6,9 @@ from pydtnn.backends.numpy.metrics.metric import MetricNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.metrics.categorical_mae import CategoricalMAE
 
-__all__ = ("CategoricalMAENumpy",)
+__all__ = (
+    "CategoricalMAENumpy",
+)
 
 logger = logging.getLogger(__name__)
 

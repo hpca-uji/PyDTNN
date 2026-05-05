@@ -12,7 +12,9 @@ from pydtnn.libs import numpy as np
 from pydtnn.model import Model
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
 
-__all__ = ("MultiHeadAttentionNumpy",)
+__all__ = (
+    "MultiHeadAttentionNumpy",
+)
 
 
 logger = logging.getLogger(__name__)
@@ -22,19 +24,21 @@ if TYPE_CHECKING:
 
 
 class MultiHeadAttentionNumpy(MultiHeadAttention[np.ndarray], AbstractBlockLayerNumpy):
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.FC_q = FC(shape=(self.heads * self.d_k,))  # Dim: embedl x heads*d_k
         self.FC_k = FC(shape=(self.heads * self.d_k,))  # Dim: embedl x heads*d_k
         self.FC_v = FC(shape=(self.heads * self.d_k,))  # Dim: embedl x heads*d_k
-        self.FC_o = FC(shape=(self.embedl,))  # Dim: heads*d_k x embedl
+        self.FC_o = FC(shape=(self.embedl,))   # Dim: heads*d_k x embedl
         self.mult_qkt = Multiplication()
         self.scalar_dk = Scalar(1.0 / np.sqrt(self.d_k))
         self.softmax = Softmax()
         self.dropout = Dropout(rate=self.dropout_rate)
         self.mult_smv = Multiplication()
         self.mult_o = Multiplication()
-        self.paths = [[self.FC_q, self.FC_k, self.FC_v, self.mult_qkt, self.scalar_dk, self.FC_o, self.softmax, self.dropout, self.mult_smv, self.mult_o]]
+        self.paths = [[self.FC_q, self.FC_k, self.FC_v, self.mult_qkt, self.scalar_dk, self.FC_o,
+                       self.softmax, self.dropout, self.mult_smv, self.mult_o]]
 
         # The next attributes will be initialized later
         self.mask = None
@@ -59,22 +63,8 @@ class MultiHeadAttentionNumpy(MultiHeadAttention[np.ndarray], AbstractBlockLayer
         self.mult_qkt._model_init(prev_shape=(1,), x=self.FC_v.y)
         self.scalar_dk._model_init(prev_shape=(1,), x=self.mult_qkt.y)
         self.FC_o._model_init(prev_shape=(self.heads * self.d_k,), x=self.scalar_dk.y)
-        self.softmax._model_init(
-            prev_shape=(
-                self.heads,
-                seq,
-                seq,
-            ),
-            x=self.FC_o.y,
-        )
-        self.dropout._model_init(
-            prev_shape=(
-                self.heads,
-                seq,
-                seq,
-            ),
-            x=self.softmax.y,
-        )
+        self.softmax._model_init(prev_shape=(self.heads, seq, seq,), x=self.FC_o.y)
+        self.dropout._model_init(prev_shape=(self.heads, seq, seq,), x=self.softmax.y)
         self.mult_smv._model_init(prev_shape=(1,), x=self.dropout.y)
         self.mult_o._model_init(prev_shape=(1,), x=self.mult_smv.y)
 

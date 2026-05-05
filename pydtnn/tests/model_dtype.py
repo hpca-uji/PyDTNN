@@ -8,7 +8,9 @@ from pydtnn.model import Model
 from pydtnn.tests.abstract.common import Params
 from pydtnn.tests.abstract.model_common import ModelCommonTestCase
 
-__all__ = ("ModelDTypeTestCase",)
+__all__ = (
+    "ModelDTypeTestCase",
+)
 
 logger = logging.getLogger(__name__)
 

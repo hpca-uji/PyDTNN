@@ -7,7 +7,9 @@ from pydtnn.backends.numpy.layers.encoder import Encoder
 from pydtnn.layers.encoder_decoder import EncoderDecoder
 from pydtnn.libs import numpy as np
 
-__all__ = ("EncoderDecoderNumpy",)
+__all__ = (
+    "EncoderDecoderNumpy",
+)
 
 
 logger = logging.getLogger(__name__)

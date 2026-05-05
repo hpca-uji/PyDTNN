@@ -1,8 +1,11 @@
+
 from pydtnn.backends.cython.utils.base import _npDT, _npDT_4Dims
 
-def average_pool_2d_fwd_nchw_cython[T: _npDT](
-    x: _npDT_4Dims[T], y: _npDT_4Dims[T], kh: int, kw: int, ho: int, wo: int, vpadding: int, hpadding: int, vstride: int, hstride: int, vdilation: int, hdilation: int
-) -> None:
+def average_pool_2d_fwd_nchw_cython[T: _npDT](x: _npDT_4Dims[T], y: _npDT_4Dims[T],
+                                              kh: int, kw: int, ho: int, wo: int,
+                                              vpadding: int, hpadding: int,
+                                              vstride: int, hstride: int,
+                                              vdilation: int, hdilation: int) -> None:
     """
     Args:
         x (npDT_4Dims): The 4 dimensional input's ndarray.

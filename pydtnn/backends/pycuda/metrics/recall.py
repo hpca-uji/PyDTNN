@@ -6,7 +6,9 @@ from pydtnn.backends.pycuda.metrics.metric import MetricPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.metrics.recall import Recall
 
-__all__ = ("RecallPycuda",)
+__all__ = (
+    "RecallPycuda",
+)
 
 logger = logging.getLogger(__name__)
 

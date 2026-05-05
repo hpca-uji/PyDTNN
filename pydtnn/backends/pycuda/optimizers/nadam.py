@@ -10,7 +10,9 @@ from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.optimizers.nadam import Nadam
 from pydtnn.utils.constants import DTYPE2CTYPE
 
-__all__ = ("NadamPycuda",)
+__all__ = (
+    "NadamPycuda",
+)
 
 logger = logging.getLogger(__name__)
 

@@ -8,7 +8,9 @@ from pydtnn.libs import numpy as np
 from pydtnn.model import Model
 from pydtnn.utils import random
 
-__all__ = ("DropoutNumpy",)
+__all__ = (
+    "DropoutNumpy",
+)
 
 logger = logging.getLogger(__name__)
 

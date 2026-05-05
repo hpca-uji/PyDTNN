@@ -5,7 +5,15 @@ Tracer events
 import logging
 from enum import IntEnum, auto
 
-__all__ = ("PYDTNN_EVENT_FINISHED", "PYDTNN_MDL_EVENT_enum", "PYDTNN_MDL_EVENT", "PYDTNN_MDL_EVENTS", "PYDTNN_OPS_EVENT_enum", "PYDTNN_OPS_EVENT", "PYDTNN_OPS_EVENTS")
+__all__ = (
+    "PYDTNN_EVENT_FINISHED",
+    "PYDTNN_MDL_EVENT_enum",
+    "PYDTNN_MDL_EVENT",
+    "PYDTNN_MDL_EVENTS",
+    "PYDTNN_OPS_EVENT_enum",
+    "PYDTNN_OPS_EVENT",
+    "PYDTNN_OPS_EVENTS"
+)
 
 logger = logging.getLogger(__name__)
 

@@ -22,7 +22,16 @@ from typing import Sequence
 import numpy as np
 
 from pydtnn.utils import parse_bool as bool_lambda
+from pydtnn.utils.constants import NetworkAlgoEnum
 from pydtnn.utils.gpu import get_gpus_per_node
+from pydtnn.utils.tensor import TensorFormat
+
+__all__ = (
+    "ArgumentParser",
+    "Namespace",
+    "factor",
+    "np_dtype",
+)
 
 __all__ = (
     "ArgumentParser",
@@ -169,7 +178,8 @@ class ArgumentParser(argparse.ArgumentParser):
 
         # Synchronization options
         _sy_group = self.add_argument_group("Synchronization options")
-        _sy_group.add_argument("--shared-storage", default=True, type=bool_lambda, help="If 'True' ranks assume they share the file system. Default: True.")
+        _sy_group.add_argument('--shared-data', default=True, type=bool_lambda,
+                               help="If 'True' ranks assume they share the file system. Default: True.")
         _sy_group.add_argument(
             "--model-sync-freq",
             type=int,
@@ -342,11 +352,11 @@ class ArgumentParser(argparse.ArgumentParser):
 
         # Performance modeling options
         _pm_group = self.add_argument_group("Performance modeling options")
-        _pm_group.add_argument("--cpu-speed", type=float, default=4e12, help=argparse.SUPPRESS)
-        _pm_group.add_argument("--memory-bw", type=float, default=50e9, help=argparse.SUPPRESS)
-        _pm_group.add_argument("--network-bw", type=float, default=1e9, help=argparse.SUPPRESS)
-        _pm_group.add_argument("--network-lat", type=float, default=0.5e-6, help=argparse.SUPPRESS)
-        _pm_group.add_argument("--network-alg", type=str, default="vdg", choices=["bta", "vdg"], help=argparse.SUPPRESS)
+        _pm_group.add_argument('--cpu-speed', type=float, default=4e12, help=argparse.SUPPRESS)
+        _pm_group.add_argument('--memory-bw', type=float, default=50e9, help=argparse.SUPPRESS)
+        _pm_group.add_argument('--network-bw', type=float, default=1e9, help=argparse.SUPPRESS)
+        _pm_group.add_argument('--network-lat', type=float, default=0.5e-6, help=argparse.SUPPRESS)
+        _pm_group.add_argument('--network-algo', type=str, default="vdg", choices=["bta", "vdg"], help=argparse.SUPPRESS)
 
         # Add Runtime parallel execution options
         _re_group = self.add_argument_group("Runtime parallel execution options")

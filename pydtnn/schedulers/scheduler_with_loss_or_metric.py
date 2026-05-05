@@ -2,7 +2,9 @@ import logging
 
 from pydtnn.schedulers.scheduler import Scheduler
 
-__all__ = ("SchedulerWithLossOrMetric",)
+__all__ = (
+    "SchedulerWithLossOrMetric",
+)
 
 logger = logging.getLogger(__name__)
 

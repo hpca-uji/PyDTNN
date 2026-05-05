@@ -6,7 +6,9 @@ from pydtnn.backends.numpy.metrics.metric import MetricNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.metrics.categorical_hinge import CategoricalHinge
 
-__all__ = ("CategoricalHingeNumpy",)
+__all__ = (
+    "CategoricalHingeNumpy",
+)
 
 logger = logging.getLogger(__name__)
 

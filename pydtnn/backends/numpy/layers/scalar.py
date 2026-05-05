@@ -5,7 +5,9 @@ from pydtnn.backends.numpy.layers.layer import LayerNumpy
 from pydtnn.layers.scalar import Scalar
 from pydtnn.libs import numpy as np
 
-__all__ = ("ScalarNumpy",)
+__all__ = (
+    "ScalarNumpy",
+)
 
 logger = logging.getLogger(__name__)
 

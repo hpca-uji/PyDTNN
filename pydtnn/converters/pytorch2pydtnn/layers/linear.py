@@ -7,7 +7,9 @@ from typing import Any
 import pydtnn.converters.pytorch2pydtnn.common as cm
 from pydtnn.layers.fc import FC
 
-__all__ = ("Linear",)
+__all__ = (
+    "Linear",
+)
 
 logger = logging.getLogger(__name__)
 

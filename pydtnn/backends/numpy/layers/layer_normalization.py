@@ -5,7 +5,9 @@ from pydtnn.backends.numpy.layers.layer import LayerNumpy
 from pydtnn.layers.layer_normalization import LayerNormalization
 from pydtnn.libs import numpy as np
 
-__all__ = ("LayerNormalizationNumpy",)
+__all__ = (
+    "LayerNormalizationNumpy",
+)
 
 logger = logging.getLogger(__name__)
 

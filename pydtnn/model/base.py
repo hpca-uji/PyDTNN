@@ -10,11 +10,13 @@ from pydtnn.abstract.layerable import Layerable
 from pydtnn.losses.loss import Loss
 from pydtnn.metrics.metric import Metric
 from pydtnn.optimizers.optimizer import Optimizer
-from pydtnn.utils.constants import Array, ArrayShape, NetworkAlgEnum
+from pydtnn.utils.constants import Array, ArrayShape, NetworkAlgoEnum
 from pydtnn.utils.memory_pool import PrivateMemory
 from pydtnn.utils.tensor import TensorFormat
 
-__all__ = ("Base",)
+__all__ = (
+    "Base",
+)
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +45,7 @@ class Base[T: Array]:
     memory_bw: float
     network_bw: float
     network_lat: float
-    network_alg: NetworkAlgEnum
+    network_algo: NetworkAlgoEnum
     loss_func_name: str
     num_epochs: int
     model_sync_freq: int
@@ -59,7 +61,7 @@ class Base[T: Array]:
     history_file: str
     model_sync_min_avail: int
     dataset_name: str
-    shared_storage: bool
+    shared_data: bool
     encryption_name: str
     augment_flip: float
     augment_crop_size: int

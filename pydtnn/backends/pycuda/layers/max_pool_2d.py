@@ -6,7 +6,9 @@ from pydtnn.layers.max_pool_2d import MaxPool2D
 from pydtnn.libs import cudnn as cudnn
 from pydtnn.utils.constants import ArrayShape
 
-__all__ = ("MaxPool2DPycuda",)
+__all__ = (
+    "MaxPool2DPycuda",
+)
 
 logger = logging.getLogger(__name__)
 

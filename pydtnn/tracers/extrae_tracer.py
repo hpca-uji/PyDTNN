@@ -8,7 +8,9 @@ from typing import TYPE_CHECKING
 
 from pydtnn.tracers.tracer import Tracer
 
-__all__ = ("ExtraeTracer",)
+__all__ = (
+    "ExtraeTracer",
+)
 
 logger = logging.getLogger(__name__)
 

@@ -7,7 +7,9 @@ from pydtnn.backends.numpy.abstract.layerable import LayerableNumpy
 from pydtnn.layers.layer import Layer
 from pydtnn.libs import numpy as np
 
-__all__ = ("LayerNumpy",)
+__all__ = (
+    "LayerNumpy",
+)
 
 logger = logging.getLogger(__name__)
 

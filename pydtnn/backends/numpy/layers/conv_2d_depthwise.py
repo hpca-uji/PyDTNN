@@ -8,7 +8,9 @@ from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT, PYDTN
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import TensorFormat
 
-__all__ = ("Conv2DDepthwiseNumpy",)
+__all__ = (
+    "Conv2DDepthwiseNumpy",
+)
 
 logger = logging.getLogger(__name__)
 

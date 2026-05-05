@@ -10,7 +10,9 @@ from pydtnn.layers.multi_head_attention import MultiHeadAttention
 from pydtnn.libs import numpy as np
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
 
-__all__ = ("DecoderNumpy",)
+__all__ = (
+    "DecoderNumpy",
+)
 
 
 logger = logging.getLogger(__name__)
@@ -33,7 +35,8 @@ class DecoderNumpy(Decoder[np.ndarray], AbstractBlockLayerNumpy):
         self.layernormalization_2 = LayerNormalization(axis=(1, 2))
         # self.paths = [[self.multiheadattention, self.dropout_1, self.layernormalization_1, self.multiheadattention_enc,
         #                self.dropout_enc, self.layernormalization_enc, self.feedforward, self.dropout_2, self.layernormalization_2]]
-        self.paths = [[self.multiheadattention, self.layernormalization_1, self.multiheadattention_enc, self.layernormalization_enc, self.feedforward, self.dropout_2, self.layernormalization_2]]
+        self.paths = [[self.multiheadattention, self.layernormalization_1, self.multiheadattention_enc,
+                       self.layernormalization_enc, self.feedforward, self.dropout_2, self.layernormalization_2]]
 
     def _model_init(self, prev_shape, x):
         super()._model_init(prev_shape, x)

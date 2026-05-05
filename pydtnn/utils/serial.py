@@ -1,7 +1,9 @@
 import numpy as np
 import yaml
 
-__all__ = ("NumpyYaml",)
+__all__ = (
+    "NumpyYaml",
+)
 
 
 class NumpyYaml(yaml.SafeDumper):

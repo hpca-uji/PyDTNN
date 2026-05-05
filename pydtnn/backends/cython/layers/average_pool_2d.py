@@ -10,7 +10,9 @@ from pydtnn.backends.numpy.layers.average_pool_2d import AveragePool2DNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
 
-__all__ = ("AveragePool2DCython",)
+__all__ = (
+    "AveragePool2DCython",
+)
 
 
 logger = logging.getLogger(__name__)

@@ -1,8 +1,15 @@
+
 from pydtnn.backends.cython.utils.base import _npDT, _npDT_1Dims, _npDT_2Dims
 
-def bn_training_fwd_cython[T: _npDT](
-    x: _npDT_2Dims[T], y: _npDT_2Dims[T], xn: _npDT_2Dims[T], std: _npDT_1Dims[T], gamma: _npDT_1Dims[T], beta: _npDT_1Dims[T], mean: _npDT_1Dims[T], var: _npDT_1Dims[T], eps: float
-) -> None:
+def bn_training_fwd_cython[T: _npDT](x: _npDT_2Dims[T],
+                                     y: _npDT_2Dims[T],
+                                     xn: _npDT_2Dims[T],
+                                     std: _npDT_1Dims[T],
+                                     gamma: _npDT_1Dims[T],
+                                     beta: _npDT_1Dims[T],
+                                     mean: _npDT_1Dims[T],
+                                     var: _npDT_1Dims[T],
+                                     eps: float) -> None:
     """
     Args:
         x (npDT_2Dims): The input.

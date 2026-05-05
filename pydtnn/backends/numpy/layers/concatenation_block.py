@@ -6,7 +6,9 @@ from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.libs import numpy as np
 from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
 
-__all__ = ("ConcatenationBlockNumpy",)
+__all__ = (
+    "ConcatenationBlockNumpy",
+)
 
 
 logger = logging.getLogger(__name__)

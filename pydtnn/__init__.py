@@ -38,7 +38,7 @@ __all__ = (
     "stream",
     "stream_handle",
     "cudnn_handle",
-    "cublas_handle",
+    "cublas_handle"
 )
 
 logger = logging.getLogger(__name__)

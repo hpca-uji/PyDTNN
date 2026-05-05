@@ -7,7 +7,9 @@ from pydtnn.backends.numpy.metrics.metric import MetricNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.metrics.f1_score import F1Score
 
-__all__ = ("F1ScoreNumpy",)
+__all__ = (
+    "F1ScoreNumpy",
+)
 
 
 logger = logging.getLogger(__name__)

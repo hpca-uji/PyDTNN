@@ -6,7 +6,9 @@ from typing import TYPE_CHECKING
 from pydtnn.optimizers.optimizer import Optimizer
 from pydtnn.utils.constants import Array
 
-__all__ = ("SGD",)
+__all__ = (
+    "SGD",
+)
 
 logger = logging.getLogger(__name__)
 

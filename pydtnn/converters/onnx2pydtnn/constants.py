@@ -9,6 +9,11 @@ __all__ = (
     "switch_onnx_operation_to_pydtnn",
 )
 
+__all__ = (
+    "pads_from_onnx_to_pydtnn",
+    "switch_onnx_operation_to_pydtnn",
+)
+
 CONST_NODE = "node"
 CONST_OPSET = "opset_version"
 CONST_OUPTUS = "outputs"

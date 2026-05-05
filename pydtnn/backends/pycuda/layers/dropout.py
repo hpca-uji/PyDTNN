@@ -11,7 +11,9 @@ from pydtnn.libs import cudnn as cudnn
 from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
 from pydtnn.utils.constants import ArrayShape
 
-__all__ = ("DropoutPycuda",)
+__all__ = (
+    "DropoutPycuda",
+)
 
 logger = logging.getLogger(__name__)
 

@@ -5,7 +5,9 @@ from pydtnn.backends.numpy.abstract.base import BaseNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.optimizers.optimizer import Optimizer
 
-__all__ = ("OptimizerNumpy",)
+__all__ = (
+    "OptimizerNumpy",
+)
 
 logger = logging.getLogger(__name__)
 

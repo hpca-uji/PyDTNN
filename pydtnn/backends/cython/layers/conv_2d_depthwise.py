@@ -7,7 +7,9 @@ from pydtnn.backends.cython.utils.depthwise_conv_nhwc_cython import depthwise_co
 from pydtnn.backends.numpy.layers.conv_2d_depthwise import Conv2DDepthwiseNumpy
 from pydtnn.libs import numpy as np
 
-__all__ = ("Conv2DDepthwiseCython",)
+__all__ = (
+    "Conv2DDepthwiseCython",
+)
 
 logger = logging.getLogger(__name__)
 

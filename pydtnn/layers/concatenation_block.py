@@ -7,7 +7,9 @@ from pydtnn.layers.layer import LayerError
 from pydtnn.utils.constants import Array, ArrayShape
 from pydtnn.utils.tensor import TensorFormat
 
-__all__ = ("ConcatenationBlock",)
+__all__ = (
+    "ConcatenationBlock",
+)
 
 logger = logging.getLogger(__name__)
 

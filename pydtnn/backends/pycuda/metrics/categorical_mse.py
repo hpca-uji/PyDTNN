@@ -6,7 +6,9 @@ from pydtnn.backends.pycuda.metrics.metric import MetricPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.metrics.categorical_mse import CategoricalMSE
 
-__all__ = ("CategoricalMSEPycuda",)
+__all__ = (
+    "CategoricalMSEPycuda",
+)
 
 logger = logging.getLogger(__name__)
 

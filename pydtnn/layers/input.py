@@ -3,7 +3,9 @@ import logging
 from pydtnn.layers.layer import Layer
 from pydtnn.utils.constants import Array
 
-__all__ = ("Input",)
+__all__ = (
+    "Input",
+)
 
 logger = logging.getLogger(__name__)
 

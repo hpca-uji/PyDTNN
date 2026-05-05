@@ -6,10 +6,13 @@ import pycuda.driver as drv  # type: ignore
 
 from pydtnn.tracers.simple_tracer import SimpleTracer
 
-__all__ = ("SimpleTracerPycuda",)
+__all__ = (
+    "SimpleTracerPycuda",
+)
 
 logger = logging.getLogger(__name__)
 
+import pycuda.driver as drv  # type: ignore
 
 if TYPE_CHECKING:
     from pympi.MPI import Comm as MPI_COMM  # type: ignore

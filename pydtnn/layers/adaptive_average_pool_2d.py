@@ -4,7 +4,9 @@ import math
 from pydtnn.layers.layer import Layer, LayerError
 from pydtnn.utils.constants import Array, ArrayShape
 
-__all__ = ("AdaptiveAveragePool2D",)
+__all__ = (
+    "AdaptiveAveragePool2D",
+)
 
 logger = logging.getLogger(__name__)
 

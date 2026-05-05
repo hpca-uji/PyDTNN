@@ -11,7 +11,9 @@ from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDTN
 from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
 from pydtnn.utils.tensor import TensorFormat
 
-__all__ = ("ConcatenationBlockPycuda",)
+__all__ = (
+    "ConcatenationBlockPycuda",
+)
 
 logger = logging.getLogger(__name__)
 

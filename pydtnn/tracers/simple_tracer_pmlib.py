@@ -9,7 +9,9 @@ import numpy as np
 from pydtnn.tracers.simple_tracer import SimpleTracer
 from pydtnn.utils.pmlib import PMLib
 
-__all__ = ("SimpleTracerPMLib",)
+__all__ = (
+    "SimpleTracerPMLib",
+)
 
 logger = logging.getLogger(__name__)
 

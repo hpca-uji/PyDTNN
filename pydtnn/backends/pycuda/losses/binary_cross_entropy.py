@@ -6,7 +6,9 @@ from pydtnn.backends.pycuda.losses.loss import LossPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.losses.binary_cross_entropy import BinaryCrossEntropy
 
-__all__ = ("BinaryCrossEntropyPycuda",)
+__all__ = (
+    "BinaryCrossEntropyPycuda",
+)
 
 logger = logging.getLogger(__name__)
 

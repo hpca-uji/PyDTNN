@@ -12,7 +12,9 @@ import numpy as np
 from pydtnn.datasets.dataset import Dataset
 from pydtnn.utils import random
 
-__all__ = ("CIFAR10",)
+__all__ = (
+    "CIFAR10",
+)
 
 logger = logging.getLogger(__name__)
 

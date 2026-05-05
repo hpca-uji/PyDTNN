@@ -17,6 +17,9 @@ __all__ = (
     "find_lib_path",
 )
 
+if sys.version_info < (3,):
+    range = xrange
+
 try:
     import elftools.construct.macros as macros  # type: ignore
     import elftools.elf.elffile as elffile  # type: ignore
@@ -96,23 +99,27 @@ else:
         """
 
         Struct = structs.Struct  # type: ignore
-        stream = open(filename, "rb")
+        stream = open(filename, 'rb')
         f = elffile.ELFFile(stream)
         dynamic = f.get_section_by_name(".dynamic")
         dynstr = f.get_section_by_name(".dynstr")
 
         # Handle libraries built for different machine architectures:
-        if f.header["e_machine"] == "EM_X86_64":
-            st = Struct("Elf64_Dyn", macros.ULInt64("d_tag"), macros.ULInt64("d_val"))
-        elif f.header["e_machine"] == "EM_386":
-            st = Struct("Elf32_Dyn", macros.ULInt32("d_tag"), macros.ULInt32("d_val"))
+        if f.header['e_machine'] == 'EM_X86_64':
+            st = Struct('Elf64_Dyn',
+                        macros.ULInt64('d_tag'),
+                        macros.ULInt64('d_val'))
+        elif f.header['e_machine'] == 'EM_386':
+            st = Struct('Elf32_Dyn',
+                        macros.ULInt32('d_tag'),
+                        macros.ULInt32('d_val'))
         else:
             raise RuntimeError("unsupported machine architecture")
 
         assert dynamic
-        entsize = dynamic["sh_entsize"]
-        for k in range(dynamic["sh_size"] // entsize):
-            result = st.parse(dynamic.data()[k * entsize: (k + 1) * entsize])
+        entsize = dynamic['sh_entsize']
+        for k in range(dynamic['sh_size'] // entsize):
+            result = st.parse(dynamic.data()[k * entsize:(k + 1) * entsize])
 
             # The following value for the SONAME tag is specified in elf.h:
             if result.d_tag == 14:

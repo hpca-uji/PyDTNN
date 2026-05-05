@@ -13,7 +13,9 @@ from pydtnn.model import Model
 from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
 from pydtnn.utils.constants import ArrayShape, Parameters
 
-__all__ = ("BatchNormalizationPycuda",)
+__all__ = (
+    "BatchNormalizationPycuda",
+)
 
 logger = logging.getLogger(__name__)
 

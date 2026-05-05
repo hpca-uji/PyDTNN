@@ -14,7 +14,9 @@ from pydtnn.layers.flatten import Flatten
 from pydtnn.layers.input import Input
 from pydtnn.utils.constants import ArrayShape
 
-__all__ = ("mobileNet",)
+__all__ = (
+    "mobileNet",
+)
 
 
 def mobileNet(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:

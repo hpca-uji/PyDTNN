@@ -10,7 +10,9 @@ from pydtnn.layers.multi_head_attention import MultiHeadAttention
 from pydtnn.libs import numpy as np
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
 
-__all__ = ("EncoderNumpy",)
+__all__ = (
+    "EncoderNumpy",
+)
 
 
 logger = logging.getLogger(__name__)
@@ -30,19 +32,20 @@ class EncoderNumpy(Encoder[np.ndarray], AbstractBlockLayerNumpy):
         self.layernormalization_2 = LayerNormalization(axis=(-1,))
         # self.paths = [[self.multiheadattention, self.dropout_1, self.layernormalization_1, self.feedforward,
         #                self.dropout_2, self.layernormalization_2]]
-        self.paths = [[self.multiheadattention, self.layernormalization_1, self.feedforward, self.dropout_2, self.layernormalization_2]]
+        self.paths = [[self.multiheadattention, self.layernormalization_1, self.feedforward,
+                       self.dropout_2, self.layernormalization_2]]
 
     def _model_init(self, prev_shape, x):
         super()._model_init(prev_shape, x)
         self.y = x
         if type(prev_shape[-1]) is tuple:
             x_enc, mask_enc = x if x else (None, None)
-            x_enc_shape, mask_enc_shape = prev_shape  # noqa: F841
+            x_enc_shape, mask_enc_shape = prev_shape
         else:
             x_enc = x if x else None
             x_enc_shape = prev_shape
             mask_enc = None
-            mask_enc_shape = ()  # noqa: F841
+            mask_enc_shape = ()
 
         self.shape = x_enc_shape
         self.first_dims = x_enc_shape[:-1]

@@ -6,7 +6,9 @@ from pydtnn.backends.pycuda.metrics.metric import MetricPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.metrics.f1_score import F1Score
 
-__all__ = ("F1ScorePycuda",)
+__all__ = (
+    "F1ScorePycuda",
+)
 
 logger = logging.getLogger(__name__)
 

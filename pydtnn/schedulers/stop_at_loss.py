@@ -7,7 +7,9 @@ from numpy import ndarray
 
 from pydtnn.schedulers.scheduler_with_loss_or_metric import SchedulerWithLossOrMetric
 
-__all__ = ("StopAtLoss",)
+__all__ = (
+    "StopAtLoss",
+)
 
 logger = logging.getLogger(__name__)
 

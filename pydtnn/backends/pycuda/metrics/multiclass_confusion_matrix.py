@@ -6,7 +6,9 @@ from pydtnn.backends.pycuda.metrics.metric import MetricPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.metrics.multiclass_confusion_matrix import MulticlassConfusionMatrix
 
-__all__ = ("MulticlassConfusionMatrixPycuda",)
+__all__ = (
+    "MulticlassConfusionMatrixPycuda",
+)
 
 logger = logging.getLogger(__name__)
 

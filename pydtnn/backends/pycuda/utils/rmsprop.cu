@@ -8,7 +8,7 @@
     #define POW FLOAT64_POW
 #endif
 */
-#define POW "powf_or_pow" 
+#define POW powf_or_pow
 // "substitude this with the right function"
 
 __global__ void rmsprop_gpudirect(TYPE *w, TYPE *dw, TYPE *cache,

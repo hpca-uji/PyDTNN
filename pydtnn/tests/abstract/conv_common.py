@@ -7,7 +7,9 @@ from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython
 from pydtnn.tests.abstract.common import D, TestCase, alexnet_layers, verbose_test
 from pydtnn.utils import print_with_header, random
 
-__all__ = ("ConvCommonTestCase",)
+__all__ = (
+    "ConvCommonTestCase",
+)
 
 logger = logging.getLogger(__name__)
 

@@ -12,7 +12,9 @@ from pydtnn.tests.abstract.conv_2d_common import Conv2DCommonTestCase
 from pydtnn.utils.initializers import glorot_uniform, zeros
 from pydtnn.utils.tensor import TensorFormat
 
-__all__ = ("Conv2DBatchNormalizationTestCase",)
+__all__ = (
+    "Conv2DBatchNormalizationTestCase",
+)
 
 
 logger = logging.getLogger(__name__)

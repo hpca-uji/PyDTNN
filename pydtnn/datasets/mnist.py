@@ -10,7 +10,9 @@ import numpy as np
 
 from pydtnn.datasets.dataset import Dataset
 
-__all__ = ("MNIST",)
+__all__ = (
+    "MNIST",
+)
 
 logger = logging.getLogger(__name__)
 

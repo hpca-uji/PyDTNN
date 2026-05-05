@@ -4,7 +4,9 @@ import logging
 
 from pydtnn.layers.flatten import Flatten as _Flatten
 
-__all__ = ("Flatten",)
+__all__ = (
+    "Flatten",
+)
 
 logger = logging.getLogger(__name__)
 

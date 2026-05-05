@@ -4,7 +4,9 @@ from collections import defaultdict
 
 import numpy as np
 
-__all__ = ("PerformanceCounter",)
+__all__ = (
+    "PerformanceCounter",
+)
 
 logger = logging.getLogger(__name__)
 

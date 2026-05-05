@@ -7,7 +7,9 @@ from pydtnn.backends.pycuda.metrics.metric import MetricPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.metrics.categorical_accuracy import CategoricalAccuracy
 
-__all__ = ("CategoricalAccuracyPycuda",)
+__all__ = (
+    "CategoricalAccuracyPycuda",
+)
 
 logger = logging.getLogger(__name__)
 

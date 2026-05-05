@@ -5,7 +5,9 @@ from pydtnn.backends.cupy.metrics.metric import MetricCupy
 from pydtnn.backends.numpy.metrics.recall import RecallNumpy
 from pydtnn.libs import numpy as np
 
-__all__ = ("RecallCupy",)
+__all__ = (
+    "RecallCupy",
+)
 
 logger = logging.getLogger(__name__)
 

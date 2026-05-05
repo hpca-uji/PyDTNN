@@ -4,7 +4,9 @@ from pydtnn.metrics.binary_confusion_matrix import BinaryConfusionMatrix
 from pydtnn.metrics.metric import Metric
 from pydtnn.utils.constants import Array
 
-__all__ = ("Precision",)
+__all__ = (
+    "Precision",
+)
 
 logger = logging.getLogger(__name__)
 

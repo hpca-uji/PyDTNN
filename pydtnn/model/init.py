@@ -32,7 +32,11 @@ else:
     except Exception:
         polyhe = None
 
-from pydtnn.utils.constants import Array
+from pydtnn.utils.constants import Array, NetworkAlgoEnum
+
+__all__ = (
+    "Init",
+)
 
 __all__ = ("Init",)
 
@@ -55,6 +59,7 @@ class Init[T: Array](State[T]):
         self.memory: PrivateMemory = None  # type: ignore (it will be intialized later if "self.use_memory_pool" is True)
         self.dtype: np.dtype = np.dtype(self.dtype)
         self.param_dtype: np.dtype = np.dtype(self.quantize_dtype) if self.quantize else self.dtype
+        self.network_algo = NetworkAlgoEnum(self.network_algo.lower())
         # self.metrics_dtype: np.dtype = np.dtype(np.float32) if np.issubdtype(self.dtype, np.int32) else self.dtype
 
         self.nparams = 0
@@ -124,7 +129,7 @@ class Init[T: Array](State[T]):
     def _tensor_init(self) -> None:
         """Setup tensor format"""
         if self.tensor_format:
-            tensor_format = TensorFormat(self.tensor_format)
+            tensor_format = TensorFormat(self.tensor_format.lower())
         elif self.enable_cudnn:
             tensor_format = TensorFormat.NCHW
         else:
@@ -210,7 +215,7 @@ class Init[T: Array](State[T]):
         if self.comm:
             self.comm_rank = self.comm.Get_rank()
             self.comm_size = self.comm.Get_size()
-            if self.shared_storage:
+            if self.shared_data:
                 self.rank = self.comm_rank
                 self.nprocs = self.comm_size
 

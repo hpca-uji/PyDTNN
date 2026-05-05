@@ -7,7 +7,9 @@ from numpy import ndarray
 
 from pydtnn.schedulers.scheduler import Scheduler
 
-__all__ = ("WarmUp",)
+__all__ = (
+    "WarmUp",
+)
 
 logger = logging.getLogger(__name__)
 

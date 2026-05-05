@@ -7,7 +7,9 @@ from pydtnn.layers.layer import Layer
 from pydtnn.utils.constants import Array, ArrayShape, Parameters
 from pydtnn.utils.initializers import ones, zeros
 
-__all__ = ("BatchNormalization",)
+__all__ = (
+    "BatchNormalization",
+)
 
 logger = logging.getLogger(__name__)
 

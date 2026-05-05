@@ -8,7 +8,9 @@ from pydtnn.layers.fc import FC
 from pydtnn.layers.feed_forward import FeedForward
 from pydtnn.libs import numpy as np
 
-__all__ = ("FeedForwardNumpy",)
+__all__ = (
+    "FeedForwardNumpy",
+)
 
 logger = logging.getLogger(__name__)
 

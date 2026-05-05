@@ -6,7 +6,9 @@ from pydtnn import MPI
 from pydtnn.model.init import Init
 from pydtnn.utils.constants import Array
 
-__all__ = ("Sync",)
+__all__ = (
+    "Sync",
+)
 
 logger = logging.getLogger(__name__)
 

@@ -7,7 +7,9 @@ from typing import Any
 import pydtnn.converters.pytorch2pydtnn.common as cm
 from pydtnn.layers.dropout import Dropout as _Dropout
 
-__all__ = ("Dropout",)
+__all__ = (
+    "Dropout",
+)
 
 logger = logging.getLogger(__name__)
 

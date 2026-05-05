@@ -5,7 +5,9 @@ from pydtnn.backends.cython.utils.log_activation_cython import log_bwd_cython, l
 from pydtnn.backends.numpy.activations.log import LogNumpy
 from pydtnn.libs import numpy as np
 
-__all__ = ("LogCython",)
+__all__ = (
+    "LogCython",
+)
 
 logger = logging.getLogger(__name__)
 

@@ -20,7 +20,9 @@ from pydtnn.utils.constants import ArrayShape
 # NOTE: TensorFlow uses LeakyReLU
 
 
-__all__ = ("mobileNet",)
+__all__ = (
+    "mobileNet",
+)
 
 
 def mobileNet(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:

@@ -16,7 +16,9 @@ from pydtnn.tests.abstract.common import Params, verbose_test
 from pydtnn.tests.abstract.model_common import ModelCommonTestCase
 from pydtnn.utils.tensor import TensorFormat, format_transpose
 
-__all__ = ("ModelTensorTestCase",)
+__all__ = (
+    "ModelTensorTestCase",
+)
 
 logger = logging.getLogger(__name__)
 

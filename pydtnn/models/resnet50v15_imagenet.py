@@ -14,7 +14,9 @@ from pydtnn.layers.max_pool_2d import MaxPool2D
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.initializers import he_uniform
 
-__all__ = ("resnet50v15_imagenet",)
+__all__ = (
+    "resnet50v15_imagenet",
+)
 
 
 def resnet50v15_imagenet(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:

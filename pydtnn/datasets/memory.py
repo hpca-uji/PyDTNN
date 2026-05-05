@@ -11,7 +11,9 @@ from pydtnn.datasets.dataset import Dataset
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import TensorFormat
 
-__all__ = ("Memory",)
+__all__ = (
+    "Memory",
+)
 
 logger = logging.getLogger(__name__)
 

@@ -8,7 +8,9 @@ import numpy as np
 from pydtnn.datasets.dataset import Dataset
 from pydtnn.utils import random
 
-__all__ = ("IWSLT",)
+__all__ = (
+    "IWSLT",
+)
 
 logger = logging.getLogger(__name__)
 

@@ -6,7 +6,9 @@ from pydtnn.backends.numpy.metrics.metric import MetricNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.metrics.categorical_accuracy import CategoricalAccuracy
 
-__all__ = ("CategoricalAccuracyNumpy",)
+__all__ = (
+    "CategoricalAccuracyNumpy",
+)
 
 logger = logging.getLogger(__name__)
 

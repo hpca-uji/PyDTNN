@@ -7,7 +7,9 @@ from pydtnn.backends.cython.utils.adaptive_avg_pooling_nhwc_cython import adapti
 from pydtnn.backends.numpy.layers.adaptive_average_pool_2d import AdaptiveAveragePool2DNumpy
 from pydtnn.libs import numpy as np
 
-__all__ = ("AdaptiveAveragePool2DCython",)
+__all__ = (
+    "AdaptiveAveragePool2DCython",
+)
 
 
 logger = logging.getLogger(__name__)

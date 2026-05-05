@@ -2,7 +2,9 @@ import logging
 
 from pydtnn.backends.numpy.metrics.metric import MetricNumpy
 
-__all__ = ("MetricCupy",)
+__all__ = (
+    "MetricCupy",
+)
 
 logger = logging.getLogger(__name__)
 

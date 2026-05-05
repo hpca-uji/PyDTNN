@@ -6,7 +6,9 @@ from pydtnn.layers.average_pool_2d import AveragePool2D
 from pydtnn.libs import cudnn as cudnn
 from pydtnn.utils.constants import ArrayShape
 
-__all__ = ("AveragePool2DPycuda",)
+__all__ = (
+    "AveragePool2DPycuda",
+)
 
 logger = logging.getLogger(__name__)
 

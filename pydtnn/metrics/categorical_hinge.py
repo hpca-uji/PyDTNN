@@ -3,7 +3,9 @@ import logging
 from pydtnn.metrics.metric import Metric
 from pydtnn.utils.constants import Array
 
-__all__ = ("CategoricalHinge",)
+__all__ = (
+    "CategoricalHinge",
+)
 
 logger = logging.getLogger(__name__)
 

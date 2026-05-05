@@ -7,7 +7,9 @@ from pydtnn.backends.pycuda.losses.loss import LossPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.losses.categorical_cross_entropy import CategoricalCrossEntropy
 
-__all__ = ("CategoricalCrossEntropyPycuda",)
+__all__ = (
+    "CategoricalCrossEntropyPycuda",
+)
 
 logger = logging.getLogger(__name__)
 

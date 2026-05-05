@@ -5,7 +5,9 @@ from pydtnn.activations.leaky_relu import LeakyRelu
 from pydtnn.backends.numpy.activations.activation import ActivationNumpy
 from pydtnn.libs import numpy as np
 
-__all__ = ("LeakyReluNumpy",)
+__all__ = (
+    "LeakyReluNumpy",
+)
 
 logger = logging.getLogger(__name__)
 

@@ -9,7 +9,9 @@ from pydtnn.model import Model
 from pydtnn.utils.best_of.best_of import BestOf
 from pydtnn.utils.constants import ArrayShape
 
-__all__ = ("BestOfVariant",)
+__all__ = (
+    "BestOfVariant",
+)
 
 logger = logging.getLogger(__name__)
 

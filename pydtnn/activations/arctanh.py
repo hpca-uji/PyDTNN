@@ -3,7 +3,9 @@ import logging
 from pydtnn.activations.activation import Activation
 from pydtnn.utils.constants import Array
 
-__all__ = ("Arctanh",)
+__all__ = (
+    "Arctanh",
+)
 
 logger = logging.getLogger(__name__)
 
