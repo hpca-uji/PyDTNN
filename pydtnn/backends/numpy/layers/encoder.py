@@ -37,12 +37,12 @@ class EncoderNumpy(Encoder[np.ndarray], AbstractBlockLayerNumpy):
         self.y = x
         if type(prev_shape[-1]) is tuple:
             x_enc, mask_enc = x if x else (None, None)
-            x_enc_shape, mask_enc_shape = prev_shape
+            x_enc_shape, mask_enc_shape = prev_shape  # noqa: F841
         else:
             x_enc = x if x else None
             x_enc_shape = prev_shape
             mask_enc = None
-            mask_enc_shape = ()
+            mask_enc_shape = ()  # noqa: F841
 
         self.shape = x_enc_shape
         self.first_dims = x_enc_shape[:-1]

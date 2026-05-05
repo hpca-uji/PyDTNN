@@ -100,7 +100,7 @@ class EncoderPycuda(AbstractBlockLayerPycuda, Encoder):
 
         # Feed Forward
         self.feedforward.forward(self.layernormalization_1_y_flatten)
-        y2 = self.dropout_2.forward(self.feedforward_y_unflatten)
+        self.dropout_2.forward(self.feedforward_y_unflatten)
         # y = dropout_2.y + layernormalization_1.y
         cudnn.cudnnAddTensor(
             self.model.cudnn_handle, alpha, self.feedforward_y_unflatten.desc, self.layernormalization_1.y.ptr, beta, self.feedforward_y_unflatten.desc, self.feedforward_y_unflatten.ptr_voidp
