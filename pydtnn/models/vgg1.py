@@ -11,7 +11,6 @@ from pydtnn.layers.max_pool_2d import MaxPool2D
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.initializers import he_uniform
 
-
 __all__ = (
     "vgg1",
 )

@@ -1,7 +1,6 @@
 import numpy as np
 import yaml
 
-
 __all__ = (
     "NumpyYaml",
 )

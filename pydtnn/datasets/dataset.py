@@ -14,10 +14,9 @@ from PIL import Image
 
 from pydtnn.utils import BackgroundGenerator, find_component, random
 from pydtnn.utils.constants import ArrayShape
-from pydtnn.utils.tensor import (ChannelFormat, SampleFormat, TensorFormat,
-                                 format_transpose)
+from pydtnn.utils.tensor import ChannelFormat, SampleFormat, TensorFormat, format_transpose
 
-__all__=(
+__all__ = (
     "Dataset",
     "select",
 )

@@ -13,11 +13,10 @@ from pydtnn.datasets.dataset import Dataset
 from pydtnn.model.eval import Eval
 from pydtnn.model.utils import BAR_WIDTH
 from pydtnn.schedulers.scheduler import select as select_scheduler
-from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT,
-                                   PYDTNN_MDL_EVENTS, PYDTNN_MDL_EVENT_enum)
+from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_MDL_EVENT_enum
 from pydtnn.utils.constants import Array
 
-__all__=(
+__all__ = (
     "Train",
 )
 

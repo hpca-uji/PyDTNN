@@ -1,11 +1,11 @@
-from pydtnn.metrics.precision import Precision
-from pydtnn.libs import numpy as np
-from pydtnn.backends.numpy.metrics.metric import MetricNumpy
 import logging
 import math
 from typing import TYPE_CHECKING
 
 from pydtnn.backends.numpy.metrics.binary_confusion_matrix import BinaryConfusionMatrixNumpy
+from pydtnn.backends.numpy.metrics.metric import MetricNumpy
+from pydtnn.libs import numpy as np
+from pydtnn.metrics.precision import Precision
 
 __all__ = (
     "PrecisionNumpy",

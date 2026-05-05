@@ -110,12 +110,12 @@ else:
         # Handle libraries built for different machine architectures:
         if f.header['e_machine'] == 'EM_X86_64':
             st = Struct('Elf64_Dyn',
-                                macros.ULInt64('d_tag'),
-                                macros.ULInt64('d_val'))
+                        macros.ULInt64('d_tag'),
+                        macros.ULInt64('d_val'))
         elif f.header['e_machine'] == 'EM_386':
             st = Struct('Elf32_Dyn',
-                                macros.ULInt32('d_tag'),
-                                macros.ULInt32('d_val'))
+                        macros.ULInt32('d_tag'),
+                        macros.ULInt32('d_val'))
         else:
             raise RuntimeError('unsupported machine architecture')
 

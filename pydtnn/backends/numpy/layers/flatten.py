@@ -4,10 +4,9 @@ from typing import TYPE_CHECKING
 from pydtnn.backends.numpy.layers.layer import LayerNumpy
 from pydtnn.layers.flatten import Flatten
 from pydtnn.libs import numpy as np
-from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
-                                   PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
+from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
 
-__all__=(
+__all__ = (
     "FlattenNumpy",
 )
 

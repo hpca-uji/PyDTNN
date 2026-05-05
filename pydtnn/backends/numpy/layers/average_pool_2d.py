@@ -1,11 +1,10 @@
-from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
-                                   PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
-from pydtnn.libs import numpy as np
-from pydtnn.layers.average_pool_2d import AveragePool2D
 import logging
 from typing import TYPE_CHECKING
 
 from pydtnn.backends.numpy.layers.abstract.pool_2d_layer import AbstractPool2DLayerNumpy
+from pydtnn.layers.average_pool_2d import AveragePool2D
+from pydtnn.libs import numpy as np
+from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
 
 __all__ = (
     "AveragePool2DNumpy",

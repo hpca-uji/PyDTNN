@@ -4,7 +4,6 @@ from pydtnn.abstract.layerable import Layerable
 from pydtnn.utils import find_component
 from pydtnn.utils.constants import ArrayShape
 
-
 __all__ = (
     "select",
 )
