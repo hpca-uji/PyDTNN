@@ -37,12 +37,12 @@ class EncoderPycuda(AbstractBlockLayerPycuda, Encoder):
         self.y = x
         if type(x) is tuple:
             x_enc, mask_enc = x
-            x_enc_shape, mask_enc_shape = prev_shape
+            x_enc_shape, mask_enc_shape = prev_shape  # noqa: F841
         else:
             x_enc = x
             x_enc_shape = prev_shape
             mask_enc = None
-            mask_enc_shape = ()
+            mask_enc_shape = ()  # noqa: F841
 
         self.shape = x_enc_shape
         self.first_dims = x_enc.shape[:-1]

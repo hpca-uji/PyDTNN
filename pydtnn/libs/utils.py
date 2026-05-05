@@ -17,9 +17,6 @@ __all__ = (
     "find_lib_path",
 )
 
-if sys.version_info < (3,):
-    range = xrange
-
 try:
     import elftools.construct.macros as macros  # type: ignore
     import elftools.elf.elffile as elffile  # type: ignore
