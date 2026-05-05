@@ -24,6 +24,7 @@ __all__ = (
     "lecun_uniform",
     "ones",
     "zeros",
+    "InitializerFunc"
 )
 
 logger = logging.getLogger(__name__)

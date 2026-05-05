@@ -8,6 +8,9 @@ __all__ = (
     "Components",
     "NetworkAlgEnum",
     "Parameters",
+    "ArrayShape",
+    "DTYPE2CTYPE",
+    "Array"
 )
 
 logger = logging.getLogger(__name__)
