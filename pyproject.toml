@@ -77,7 +77,6 @@ pypi = [
     "twine>=6.2.0"
 ]
 dev = [
-    "autopep8>=2.3.1",
     "flake8>=7.1.1",
     "flake8-docstrings>=1.7.0",
     "mccabe>=0.7.0",
@@ -86,8 +85,12 @@ dev = [
     "pycodestyle>=2.12.1",
     "pydocstyle>=6.3.0",
     "pyflakes>=3.2.0",
+]
+format = [
+    "autopep8>=2.3.1",
     "absolufy-imports>=0.3.1",
-    "isort>=8.0.0"
+    "isort>=8.0.0",
+    "ruff>=0.15.12"
 ]
 
 [project.scripts]
