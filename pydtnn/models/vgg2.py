@@ -3,7 +3,6 @@ from collections.abc import Sequence
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.activations.relu import Relu
 from pydtnn.activations.softmax import Softmax
-from pydtnn.converters.pytorch2pydtnn.layers.functions import relu
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.fc import FC
 from pydtnn.layers.flatten import Flatten

@@ -1,15 +1,12 @@
 from __future__ import annotations
 
 import logging
-from functools import cached_property
 from typing import TYPE_CHECKING
 
 import numpy as np
-from numpy.lib.npyio import NpzFile
 
 from pydtnn.datasets.dataset import Dataset
 from pydtnn.utils import get_npz_shape
-from pydtnn.utils.constants import ArrayShape
 
 __all__ = (
     "Archive",

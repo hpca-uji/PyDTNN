@@ -289,7 +289,7 @@ class Dataset:
     def _print_report(self):
         report = list[str]()
         if self.model.comm_rank == 0:
-            report.append(f"Initial nsamples:")
+            report.append("Initial nsamples:")
             report.append(f" train: {self._initial_nsamples[Dataset.Part.TRAIN]} ")
             report.append(f" val: {self._initial_nsamples[Dataset.Part.VAL]} ")
             report.append(f" test: {self._initial_nsamples[Dataset.Part.TEST]} ")

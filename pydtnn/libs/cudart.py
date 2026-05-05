@@ -5,12 +5,9 @@
 Python interface to CUDA runtime functions.
 """
 
-import atexit
 import ctypes
-import platform
 import re
 import sys
-import warnings
 
 import numpy as np
 

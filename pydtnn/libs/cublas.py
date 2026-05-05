@@ -9,13 +9,10 @@ Note: this module does not explicitly depend on PyCUDA.
 
 from __future__ import absolute_import
 
-import atexit
 import ctypes
 import ctypes.util
-import os
 import re
 import sys
-import warnings
 from string import Template
 
 import numpy as np

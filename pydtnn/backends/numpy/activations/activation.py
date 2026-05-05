@@ -12,10 +12,6 @@ __all__ = (
 logger = logging.getLogger(__name__)
 
 
-try:
-    from pydtnn.libs.mpi import MPI
-except Exception:
-    pass
 if TYPE_CHECKING:
     import numpy as np
 

@@ -48,7 +48,7 @@ def np_dtype(x):
 
 _default_dataset_path = "datasets/mnist"
 _desc = "Trains or evaluates a neural network using PyDTNN."
-_epilogue = f"""Example scripts that call this program for training
+_epilogue = """Example scripts that call this program for training
 and evaluating different neural network models with different datasets are
 available at 'scripts'."""
 
@@ -97,7 +97,7 @@ def _get_mpi_server():
 def _get_mpi_port():
     try:
         from pydtnn.libs.mpi.rc import port
-    except Exception as e:
+    except Exception:
         port = None
     return port
 

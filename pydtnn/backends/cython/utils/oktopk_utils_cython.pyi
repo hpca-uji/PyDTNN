@@ -1,6 +1,6 @@
 import numpy as _np
 
-from pydtnn.backends.cython.utils.base import _npDT, _npDT_1Dims, _npDT_2Dims, _npDT_3Dims, _npDT_4Dims
+from pydtnn.backends.cython.utils.base import _npDT_1Dims, _npDT_2Dims
 
 def compute_dense_acc_cython(residuals: _npDT_2Dims[_np.float32],
                              dw: _npDT_2Dims[_np.float32],

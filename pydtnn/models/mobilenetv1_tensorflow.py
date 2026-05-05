@@ -1,7 +1,6 @@
 from collections.abc import Sequence
 
 from pydtnn.abstract.layerable import Layerable
-from pydtnn.activations.relu import Relu
 from pydtnn.activations.relu6 import Relu6
 from pydtnn.activations.softmax import Softmax
 from pydtnn.layers.average_pool_2d import AveragePool2D

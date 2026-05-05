@@ -38,7 +38,7 @@ class BestOfProfiler:
 
         # Rest runs
 
-        logger.info(f" \nNext runs (getting times)")
+        logger.info(" \nNext runs (getting times)")
         for i in range(0, (self.best_method.total_rounds - 1) * self.best_method.total_alternatives):
             if self.best_method.best_method_has_been_found(*args, **kwargs):
                 break

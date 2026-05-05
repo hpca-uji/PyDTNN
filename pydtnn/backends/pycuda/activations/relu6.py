@@ -3,8 +3,6 @@ import math
 
 import numpy as np
 from pycuda import gpuarray  # type: ignore
-from pycuda.compiler import SourceModule  # type: ignore
-from pycuda.driver import Function  # type: ignore
 
 from pydtnn.activations.relu6 import Relu6
 from pydtnn.backends.pycuda.activations.activation import ActivationPycuda

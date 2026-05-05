@@ -73,24 +73,6 @@ def allreduce_time(elems: int, cpu_speed: float, network_bw: float, network_lat:
     return np.array([time, 0, 0, time], dtype=np.float32)
 
 
-def scatter_time(  # type: ignore (override)
-        elems: int, cpu_speed: float, network_bw: float, network_lat: float,
-        network_alg: str, nprocs: int, dtype: type | np.dtype) -> np.ndarray[tuple[int, int, int, int], np.dtype[np.float32]]:
-    bfp = np.dtype(dtype).itemsize
-    time = 0
-    match network_alg:
-        case NetworkAlgEnum.BTA:
-            time = ceil(log(nprocs, 2)) * network_lat + \
-                ((nprocs - 1) / nprocs) * ((elems * bfp * 8.0) / network_bw)
-        case NetworkAlgEnum.VDG:
-            time = log(nprocs, 2) * network_lat + \
-                ((nprocs - 1) / nprocs) * ((elems * bfp * 8.0) / network_bw)
-        case _:
-            raise ValueError(f"network_alg ({network_alg}) not in {list(NetworkAlgEnum)}")
-    # print("scatter_time; s; %8d; t; %8.8f" % (elems, time))
-    return np.array([time, 0, 0, time], dtype=np.float32)
-
-
 def reduce_time(elems: int, cpu_speed: float, network_bw: float, network_lat: float,
                 network_alg: str, nprocs: int, dtype: type | np.dtype) -> np.ndarray[tuple[int, int, int, int], np.dtype[np.float32]]:
     bfp = np.dtype(dtype).itemsize

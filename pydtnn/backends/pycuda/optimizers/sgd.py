@@ -2,7 +2,6 @@ import logging
 
 import numpy as np
 from pycuda import gpuarray  # type: ignore
-from pycuda.compiler import SourceModule  # type: ignore
 from pycuda.elementwise import ElementwiseKernel  # type: ignore
 
 from pydtnn.backends.pycuda.layers.layer import LayerPycuda
