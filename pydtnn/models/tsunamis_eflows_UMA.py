@@ -14,6 +14,11 @@ from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.initializers import he_uniform
 
 
+__all__ = (
+    "tsunamis_eflows_UMA",
+)
+
+
 def tsunamis_eflows_UMA(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
     model = list[Layerable]()
     _ = model.append

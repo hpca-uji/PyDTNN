@@ -7,7 +7,12 @@ from pydtnn.libs import numpy as np
 from pydtnn.model import Model
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
                                    PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
+
 from pydtnn.utils.performance_models import matmul_time
+
+__all__=(
+    "FCNumpy",
+)
 
 logger = logging.getLogger(__name__)
 

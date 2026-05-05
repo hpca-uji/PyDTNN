@@ -3,6 +3,10 @@ import logging
 from pydtnn.activations.relu import Relu
 from pydtnn.utils.constants import Array, ArrayShape
 
+__all__ = (
+    "LeakyRelu",
+)
+
 logger = logging.getLogger(__name__)
 
 

@@ -4,6 +4,10 @@ from pydtnn.backends.cupy.activations.activation import ActivationCupy
 from pydtnn.backends.numpy.activations.relu import ReluNumpy
 from pydtnn.libs import numpy as np
 
+__all__ = (
+    "ReluCupy",
+)
+
 logger = logging.getLogger(__name__)
 
 

@@ -9,6 +9,10 @@ from pydtnn.utils.constants import Array, ArrayShape
 from pydtnn.utils.tensor import (decode_shape, decode_tensor, encode_shape,
                                  encode_tensor)
 
+__all__=(
+    "Utils",
+)
+
 logger = logging.getLogger(__name__)
 
 BAR_WIDTH = 150

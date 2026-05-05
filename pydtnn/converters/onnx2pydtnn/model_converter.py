@@ -20,6 +20,18 @@ from pydtnn.utils.tensor import TensorFormat
 #   _node.input: inputs list. _node.output: outputs list. _node.attribute: list made by all the parameteres and values (they are "AttributeProto")
 
 
+__all__ = (
+    "convert_model",
+    "extract_attributes",
+    "extract_shape",
+    "get_actual_inputs",
+    "get_layers",
+    "get_lists_operations_and_outputs",
+    "get_relevant_data",
+    "load_layers",
+)
+
+
 def extract_shape(data: onnx.ValueInfoProto) -> tuple[int]:
     # The shape of the inputs/ouputs is more or less a list quite hidden.
     #   NOTE: ONNX allows to have shapes of undefined value, e.g.: (N, 3, 224, 224),

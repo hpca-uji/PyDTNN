@@ -10,6 +10,10 @@ from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.optimizers.adam import Adam
 from pydtnn.utils.constants import DTYPE2CTYPE
 
+__all__ = (
+    "AdamPycuda",
+)
+
 logger = logging.getLogger(__name__)
 
 

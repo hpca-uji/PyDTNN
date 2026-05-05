@@ -6,6 +6,10 @@ from pydtnn.backends.numpy.activations.activation import ActivationNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.utils.constants import ArrayShape
 
+__all__ = (
+    "ReluNumpy",
+)
+
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:

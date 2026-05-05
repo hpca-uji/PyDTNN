@@ -11,6 +11,10 @@ from pydtnn.tests.abstract.conv_common import ConvCommonTestCase
 from pydtnn.utils import print_with_header
 from pydtnn.utils.tensor import TensorFormat
 
+__all__ = (
+    "ConvWinogradTestCase",
+)
+
 logger = logging.getLogger(__name__)
 
 

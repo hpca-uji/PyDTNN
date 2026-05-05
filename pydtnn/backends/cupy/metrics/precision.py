@@ -5,6 +5,10 @@ from pydtnn.backends.cupy.metrics.metric import MetricCupy
 from pydtnn.backends.numpy.metrics.precision import PrecisionNumpy
 from pydtnn.libs import numpy as np
 
+__all__ = (
+    "PrecisionCupy",
+)
+
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:

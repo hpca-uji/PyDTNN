@@ -4,6 +4,10 @@ import math
 from pydtnn.layers.layer import Layer
 from pydtnn.utils.constants import Array, ArrayShape
 
+__all__ = (
+    "Flatten",
+)
+
 logger = logging.getLogger(__name__)
 
 

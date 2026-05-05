@@ -6,8 +6,11 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from pydtnn.schedulers.scheduler_with_loss_or_metric import \
-    SchedulerWithLossOrMetric
+from pydtnn.schedulers.scheduler_with_loss_or_metric import SchedulerWithLossOrMetric
+
+__all__ = (
+    "EarlyStopping",
+)
 
 logger = logging.getLogger(__name__)
 

@@ -22,6 +22,11 @@ from pydtnn.layers.input import Input
 from pydtnn.utils.constants import ArrayShape
 
 
+__all__ = (
+    "bert",
+)
+
+
 def bert(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
     """Bert-Medium"""
     model = list[Layerable]()

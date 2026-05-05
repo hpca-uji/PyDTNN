@@ -3,6 +3,10 @@ import logging
 from pydtnn.layers.layer import Layer
 from pydtnn.utils.constants import Array, ArrayShape
 
+__all__ = (
+    "AbstractBlockLayer",
+)
+
 logger = logging.getLogger(__name__)
 
 

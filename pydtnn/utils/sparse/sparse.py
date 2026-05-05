@@ -7,6 +7,10 @@ from pydtnn.utils.sparse.sparse_cython import (
     summ_coo_cython, top_threshold_selection_coo_cython,
     top_threshold_selection_dense_cython)
 
+__all__=(
+    "SparseMatrixCOO",
+)
+
 logger = logging.getLogger(__name__)
 
 

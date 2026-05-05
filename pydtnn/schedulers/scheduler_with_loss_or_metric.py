@@ -3,6 +3,10 @@ from typing import TYPE_CHECKING
 
 from pydtnn.schedulers.scheduler import Scheduler
 
+__all__ = (
+    "SchedulerWithLossOrMetric",
+)
+
 logger = logging.getLogger(__name__)
 
 

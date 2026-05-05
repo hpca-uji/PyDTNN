@@ -36,6 +36,10 @@ else:
 
 from pydtnn.utils.constants import Array
 
+__all__=(
+    "Init",
+)
+
 logger = logging.getLogger(__name__)
 
 

@@ -6,6 +6,10 @@ from pydtnn.backends.pycuda.metrics.metric import MetricPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.metrics.precision import Precision
 
+__all__ = (
+    "PrecisionPycuda",
+)
+
 logger = logging.getLogger(__name__)
 
 

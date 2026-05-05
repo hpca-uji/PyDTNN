@@ -19,6 +19,18 @@ from pydtnn.model import Model as PyDTNN_Model
 #   _node.input: inputs list. _node.output: outputs list. _node.attribute: list made by all the parameteres and values (they are "AttributeProto")
 
 
+__all__ = (
+    "convert_model",
+    "extract_attributes",
+    "extract_shape",
+    "get_actual_inputs",
+    "get_layers",
+    "get_lists_operations_and_outputs",
+    "get_operations",
+    "get_relevant_data",
+)
+
+
 def extract_shape(data: onnx.ValueInfoProto) -> tuple[int]:
     # The shape of the inputs/ouputs is more or less a list quite hidden.
     #   Note: ONNX allows to have shapes of undefined value, for example: (N, 3, 224, 224),

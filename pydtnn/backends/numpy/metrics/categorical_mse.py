@@ -6,6 +6,10 @@ from pydtnn.backends.numpy.metrics.metric import MetricNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.metrics.categorical_mse import CategoricalMSE
 
+__all__ = (
+    "CategoricalMSENumpy",
+)
+
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:

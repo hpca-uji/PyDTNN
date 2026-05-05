@@ -27,6 +27,20 @@ import pydtnn
 from pydtnn.converters.pytorch2pydtnn.common import TRANSPOSE_WEIGHTS_LAYERS
 from pydtnn.utils import random
 
+__all__ = (
+    "Addition_Test_PyTorch_Model",
+    "Concat_Test_PyTorch_Model",
+    "TEST_PyTorch_Model",
+    "are_all_below_threshold",
+    "are_all_zeros",
+    "forward_pydtnn_model",
+    "main",
+    "print_model_reports",
+    "test_add_and_concat",
+    "test_layers",
+    "test_layers_gpu",
+)
+
 # CONSTANTS
 N = 100
 SHAPE = (3, 20, 20)  # NCHW
@@ -266,7 +280,7 @@ def test_layers(name: str, pytorch_model: TEST_PyTorch_Model, kwargs: dict[str, 
     pydtnn_biases = pydtnn_layer.biases
 
     if isinstance(pydtnn_weights, TensorArray):
-        pydtnn_biases: TensorArray = pydtnn_biases.get()
+        pydtnn_biases: TensorArray = pydtnn_biases.get()  # type: ignore
 
     there_are_pytorch_biases = pytorch_biases is not None
     there_are_pydtnn_biases = pydtnn_biases is not None

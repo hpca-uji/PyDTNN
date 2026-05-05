@@ -7,6 +7,10 @@ import numpy as np
 
 from pydtnn.datasets.dataset import Dataset
 
+__all__ = (
+    "Synthetic",
+)
+
 logger = logging.getLogger(__name__)
 
 

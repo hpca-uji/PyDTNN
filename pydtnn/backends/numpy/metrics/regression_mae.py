@@ -6,6 +6,10 @@ from pydtnn.backends.numpy.metrics.metric import MetricNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.metrics.regression_mae import RegressionMAE
 
+__all__ = (
+    "RegressionMAENumpy",
+)
+
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:

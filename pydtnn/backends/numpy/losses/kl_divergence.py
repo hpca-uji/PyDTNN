@@ -5,6 +5,10 @@ from pydtnn.backends.numpy.losses.loss import LossNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.losses.kl_divergence import KLDivergence
 
+__all__ = (
+    "KLDivergenceNumpy",
+)
+
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:

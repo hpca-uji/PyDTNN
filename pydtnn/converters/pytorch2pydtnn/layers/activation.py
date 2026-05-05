@@ -13,6 +13,17 @@ from pydtnn.activations.sigmoid import Sigmoid as _Sigmoid
 from pydtnn.activations.softmax import Softmax as _Softmax
 from pydtnn.activations.tanh import Tanh as _Tanh
 
+__all__ = (
+    "Arctanh",
+    "LeakyReLU",
+    "LogSigmoid",
+    "ReLU",
+    "ReLU6",
+    "Sigmoid",
+    "Softmax",
+    "Tanh",
+)
+
 logger = logging.getLogger(__name__)
 
 # Typing related (or non important) imports

@@ -7,6 +7,10 @@ from pydtnn.backends.pycuda.metrics.metric import MetricPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.metrics.kl_divergence_metric import KLDivergenceMetric
 
+__all__ = (
+    "KLDivergenceMetricPycuda",
+)
+
 logger = logging.getLogger(__name__)
 
 

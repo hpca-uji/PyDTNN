@@ -7,6 +7,10 @@ from pydtnn.tests.abstract.common import Params
 from pydtnn.tests.abstract.model_common import ModelCommonTestCase
 from pydtnn.utils.tensor import TensorFormat
 
+__all__ = (
+    "ModelConvGemmTestCase",
+)
+
 logger = logging.getLogger(__name__)
 
 

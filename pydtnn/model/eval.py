@@ -16,6 +16,10 @@ from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT,
 from pydtnn.utils.constants import Array
 from pydtnn.utils.performance_models import allreduce_time
 
+__all__=(
+    "Eval",
+)
+
 logger = logging.getLogger(__name__)
 
 

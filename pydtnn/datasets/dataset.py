@@ -17,6 +17,11 @@ from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import (ChannelFormat, SampleFormat, TensorFormat,
                                  format_transpose)
 
+__all__=(
+    "Dataset",
+    "select",
+)
+
 logger = logging.getLogger(__name__)
 
 

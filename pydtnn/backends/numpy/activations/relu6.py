@@ -5,6 +5,10 @@ from pydtnn.activations.relu6 import Relu6
 from pydtnn.backends.numpy.activations.activation import ActivationNumpy
 from pydtnn.libs import numpy as np
 
+__all__ = (
+    "Relu6Numpy",
+)
+
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:

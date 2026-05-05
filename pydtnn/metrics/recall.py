@@ -4,6 +4,10 @@ from pydtnn.metrics.binary_confusion_matrix import BinaryConfusionMatrix
 from pydtnn.metrics.metric import Metric
 from pydtnn.utils.constants import Array
 
+__all__ = (
+    "Recall",
+)
+
 logger = logging.getLogger(__name__)
 
 

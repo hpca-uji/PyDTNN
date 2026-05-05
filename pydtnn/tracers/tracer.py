@@ -12,6 +12,13 @@ from pydtnn.tracers.events import (PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS,
                                    PYDTNN_OPS_EVENT_enum)
 from pydtnn.utils import find_component
 
+__all__ = (
+    "EventType",
+    "PostInitCaller",
+    "Tracer",
+    "select",
+)
+
 logger = logging.getLogger(__name__)
 
 

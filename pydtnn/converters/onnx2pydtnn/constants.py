@@ -1,8 +1,13 @@
 # ONNX operations:
-from typing import Callable
+from typing import Any, Callable
 
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.converters.onnx2pydtnn.operations.implemented_operations import *
+
+__all__ = (
+    "pads_from_onnx_to_pydtnn",
+    "switch_onnx_operation_to_pydtnn",
+)
 
 CONST_NODE = "node"
 CONST_OPSET = "opset_version"

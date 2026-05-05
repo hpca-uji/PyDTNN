@@ -3,6 +3,10 @@ import logging
 from pydtnn.metrics.metric import Metric
 from pydtnn.utils.constants import Array
 
+__all__ = (
+    "CategoricalMSE",
+)
+
 logger = logging.getLogger(__name__)
 
 

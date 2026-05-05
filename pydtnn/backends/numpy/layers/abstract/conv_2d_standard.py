@@ -6,6 +6,10 @@ from pydtnn.libs import numpy as np
 from pydtnn.utils.constants import Parameters
 from pydtnn.utils.tensor import TensorFormat, format_transpose
 
+__all__ = (
+    "AbstractConv2DStandardNumpy",
+)
+
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:

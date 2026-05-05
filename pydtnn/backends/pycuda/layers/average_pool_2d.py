@@ -1,11 +1,14 @@
+from pydtnn.utils.constants import ArrayShape
+from pydtnn.libs import cudnn as cudnn
+from pydtnn.layers.average_pool_2d import AveragePool2D
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 import logging
 
-from pydtnn.backends.pycuda.layers.abstract.pool_2d_layer import \
-    AbstractPool2DLayerPycuda
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.layers.average_pool_2d import AveragePool2D
-from pydtnn.libs import cudnn as cudnn
-from pydtnn.utils.constants import ArrayShape
+from pydtnn.backends.pycuda.layers.abstract.pool_2d_layer import AbstractPool2DLayerPycuda
+
+__all__ = (
+    "AveragePool2DPycuda",
+)
 
 logger = logging.getLogger(__name__)
 

@@ -15,6 +15,10 @@ from pydtnn.utils.constants import DTYPE2CTYPE
 from pydtnn.utils.performance_models import col2im_time, im2col_time
 from pydtnn.utils.tensor import TensorFormat
 
+__all__=(
+    "AdaptiveAveragePool2DPycuda",
+)
+
 logger = logging.getLogger(__name__)
 
 

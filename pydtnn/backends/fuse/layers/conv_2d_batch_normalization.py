@@ -1,17 +1,22 @@
+from pydtnn.utils.constants import Array, ArrayShape, Parameters
+from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
+                                   PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
+from pydtnn.libs import numpy as np
+from pydtnn.layers.conv_2d import Conv2D
+from pydtnn.layers.batch_normalization import BatchNormalization
+from pydtnn.backends.numpy.layers.batch_normalization import \
+    BatchNormalizationNumpy
 import logging
 from typing import TYPE_CHECKING
 
 from pydtnn.backends.fuse.layers.layer import LayerFuse as FusedLayerMixIn
-from pydtnn.backends.numpy.layers.abstract.conv_2d_standard import \
-    AbstractConv2DStandardNumpy
-from pydtnn.backends.numpy.layers.batch_normalization import \
-    BatchNormalizationNumpy
-from pydtnn.layers.batch_normalization import BatchNormalization
-from pydtnn.layers.conv_2d import Conv2D
-from pydtnn.libs import numpy as np
-from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
-                                   PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
-from pydtnn.utils.constants import Array, ArrayShape, Parameters
+from pydtnn.backends.numpy.layers.abstract.conv_2d_standard import AbstractConv2DStandardNumpy
+
+__all__ = (
+    "Conv2DBatchNormalization",
+    "Conv2DBatchNormalizationFuse",
+)
+
 
 logger = logging.getLogger(__name__)
 

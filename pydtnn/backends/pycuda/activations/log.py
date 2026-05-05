@@ -10,6 +10,10 @@ from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.libs import cudnn as cudnn
 from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
 
+__all__ = (
+    "LogPycuda",
+)
+
 logger = logging.getLogger(__name__)
 
 

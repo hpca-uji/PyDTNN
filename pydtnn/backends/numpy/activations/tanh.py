@@ -5,6 +5,10 @@ from pydtnn.activations.tanh import Tanh
 from pydtnn.backends.numpy.activations.activation import ActivationNumpy
 from pydtnn.libs import numpy as np
 
+__all__ = (
+    "TanhNumpy",
+)
+
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:

@@ -38,6 +38,14 @@ from pydtnn.models.vgg19_imagenet import \
 
 # from pydtnn.utils.best_of import BestOf
 
+__all__=(
+    "get_model_layers",
+    "main",
+    "print_model_reports",
+    "pydtnn_inference",
+    "pydtnn_training",
+    "pytorch_inference",
+)
 
 dict_test = {
     "vgg11": (vgg11, pydtnn_vgg11, (524, 524, 3), "cifar10", {"num_classes": 5}, None),  # (224, 224, 3)

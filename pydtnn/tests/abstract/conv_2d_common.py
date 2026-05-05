@@ -8,6 +8,10 @@ from pydtnn.tests.abstract.common import D, TestCase, verbose_test
 from pydtnn.utils import print_with_header, random
 from pydtnn.utils.tensor import TensorFormat, format_transpose
 
+__all__ = (
+    "Conv2DCommonTestCase",
+)
+
 logger = logging.getLogger(__name__)
 
 

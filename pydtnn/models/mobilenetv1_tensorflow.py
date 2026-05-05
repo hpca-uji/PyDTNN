@@ -18,6 +18,11 @@ from pydtnn.utils.constants import ArrayShape
 # NOTE: TensorFlow uses AveragePool2D with (2, 2) pool shape
 
 
+__all__ = (
+    "mobileNet",
+)
+
+
 def mobileNet(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
     first_filters = 32
 

@@ -1,12 +1,16 @@
+from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
 import logging
 from typing import TYPE_CHECKING
 
 from cupy.cuda import Stream  # type: ignore
 
 from pydtnn.backends.cupy.layers.layer import LayerCupy
-from pydtnn.backends.numpy.layers.batch_normalization import \
-    BatchNormalizationNumpy
-from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
+from pydtnn.backends.numpy.layers.batch_normalization import BatchNormalizationNumpy
+
+__all__ = (
+    "BatchNormalizationCupy",
+)
+
 
 logger = logging.getLogger(__name__)
 

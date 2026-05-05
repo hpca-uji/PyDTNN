@@ -19,6 +19,17 @@ from pydtnn.converters.pytorch2pydtnn.layers.pooling import (AdaptiveAvgPool2d,
                                                              MaxPool2d)
 from pydtnn.converters.pytorch2pydtnn.layers.utility import Flatten
 
+__all__=(
+    "function_operation_to_pydtnn",
+    "get_equivalent_layer",
+    "get_lists_operations_and_outputs",
+    "not_implemented",
+    "prepare_pydtnn_arguments",
+    "separate_function_params",
+    "switch_operation_symbols",
+    "switch_pytorch_pydtnn",
+)
+
 logger = logging.getLogger(__name__)
 
 # Typing related (or non important) imports

@@ -7,6 +7,10 @@ from pydtnn.backends.numpy.optimizers.optimizer import OptimizerNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.optimizers.adam import Adam
 
+__all__ = (
+    "AdamNumpy",
+)
+
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:

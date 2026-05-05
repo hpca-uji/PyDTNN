@@ -5,6 +5,10 @@ from pydtnn.activations.arctanh import Arctanh
 from pydtnn.backends.numpy.activations.activation import ActivationNumpy
 from pydtnn.libs import numpy as np
 
+__all__ = (
+    "ArctanhNumpy",
+)
+
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:

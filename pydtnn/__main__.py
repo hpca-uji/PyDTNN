@@ -20,6 +20,10 @@ from pydtnn.utils.debug import traceback_context
 from pydtnn.utils.parser import ArgumentParser
 from pydtnn.utils.serial import NumpyYaml
 
+__all__ = (
+    "main",
+)
+
 logger = logging.getLogger(__name__)
 log_conf = yaml.safe_load(resources.read_text("pydtnn", "logger.yaml"))
 logging.config.dictConfig(log_conf)

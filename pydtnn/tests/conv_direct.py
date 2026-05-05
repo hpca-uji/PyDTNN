@@ -10,6 +10,10 @@ from pydtnn.tests.abstract.common import verbose_test
 from pydtnn.tests.abstract.conv_common import ConvCommonTestCase
 from pydtnn.utils import print_with_header
 
+__all__ = (
+    "ConvDirectTestCase",
+)
+
 logger = logging.getLogger(__name__)
 
 

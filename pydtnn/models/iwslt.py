@@ -9,6 +9,11 @@ from pydtnn.layers.input import Input
 from pydtnn.utils.constants import ArrayShape
 
 
+__all__ = (
+    "iwslt",
+)
+
+
 def iwslt(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
     model = list[Layerable]()
     _ = model.append

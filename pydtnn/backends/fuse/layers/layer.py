@@ -6,6 +6,11 @@ from pydtnn.layers.layer import Layer
 from pydtnn.utils import find_component
 from pydtnn.utils.constants import Array
 
+__all__ = (
+    "LayerFuse",
+    "select",
+)
+
 logger = logging.getLogger(__name__)
 
 

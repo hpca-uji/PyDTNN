@@ -4,10 +4,15 @@ from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
                                    PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
 
+
 try:
     import pydtnn.libs.nccl as nccl
 except Exception as e:
     pass
+
+__all__=(
+    "LayerablePycuda",
+)
 
 
 class LayerablePycuda(Layerable[TensorArray], BasePycuda):

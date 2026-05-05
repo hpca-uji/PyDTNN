@@ -6,6 +6,10 @@ from pydtnn.backends.cython.utils.sigmoid_cython import (sigmoid_bwd_cython,
 from pydtnn.backends.numpy.activations.sigmoid import SigmoidNumpy
 from pydtnn.libs import numpy as np
 
+__all__=(
+    "SigmoidCython",
+)
+
 logger = logging.getLogger(__name__)
 
 

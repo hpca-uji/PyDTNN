@@ -10,4 +10,4 @@ EXPR='\s+#+$' && find "${SRC:?}" "${PYS[@]}" -exec grep -qEe "${EXPR:?}" '{}' ';
 EXPR='^\s*#\s*[_=/-]+\s*(end|END)\b' && find "${SRC:?}" "${PYS[@]}" -exec grep -qEe "${EXPR:?}" '{}' ';' -exec sed -Ei "/${EXPR:?}/d" '{}' ';'
 EXPR='^\s*#\s*[_=/-]{2,}[^A-Z]*$' && find "${SRC:?}" "${PYS[@]}" -exec grep -qEe "${EXPR:?}" '{}' ';' -exec sed -Ei "/${EXPR:?}/d" '{}' ';'
 autopep8 -iaaar --max-line-length "${MAX_LINE_LENGTH:?}" "${SRC:?}"
-isort -q "${SRC:?}"
+isort -qe "${SRC:?}"

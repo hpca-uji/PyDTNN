@@ -4,6 +4,10 @@ from typing import TYPE_CHECKING
 
 from pydtnn.tracers.simple_tracer import SimpleTracer
 
+__all__ = (
+    "SimpleTracerPycuda",
+)
+
 logger = logging.getLogger(__name__)
 
 try:
