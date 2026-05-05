@@ -97,7 +97,7 @@ def BatchNormalization(info: dict[str, Any]) -> Layerable:
 def Concat(info: dict[str, Any]) -> Layerable:
     print(f"attributes: {info[cons.CONST_ATTRIBUTES]}")
     # Onnx attributes names from: https://onnx.ai/onnx/operators/onnx__Concat.html#l-onnx-doc-concat
-    ONNX_AXIS = "axis"
+    # TODO: ONNX_AXIS = "axis"
     # There are no PyDTNN attributes names from ConcatenationBlock class.
 
     # TODO: Check if this class is correct

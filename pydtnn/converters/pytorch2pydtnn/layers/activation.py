@@ -39,7 +39,7 @@ def Arctanh(args: dict[str, Any]) -> _Arctanh:
 
 def LogSigmoid(args: dict[str, Any]) -> _Log:
     # https://pytorch.org/docs/stable/generated/torch.nn.LogSigmoid.html#torch.nn.LogSigmoid
-    not_used = args
+    # not_used = args
     return _Log()
 
 
