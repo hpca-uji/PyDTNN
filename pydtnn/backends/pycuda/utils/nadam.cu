@@ -8,10 +8,10 @@
     #define POW FLOAT64_POW
 #endif
 */
-#define POW "powf_or_pow"
+#define POW powf_or_pow
 // "substitude the previous define with the right function"
 
-__global__ void nadam_gpu_direct(TYPE *w, TYPE *dw, TYPE *m, TYPE *v,
+__global__ void nadam_gpudirect(TYPE *w, TYPE *dw, TYPE *m, TYPE *v,
                                  float it, float lr, float decay,
                                  float beta1, float beta2, float epsilon, int N)
 {{
