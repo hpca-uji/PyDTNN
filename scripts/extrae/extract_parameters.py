@@ -69,33 +69,32 @@ SCRIPT_PATH = pathlib.Path(__file__).parent.absolute()
 def get_opts():
     """Read command line options."""
     global VERBOSE
-    optlist, args = getopt.getopt(sys.argv[1:],
-                                  'hv',
-                                  ['VERBOSE', 'help'])
+    optlist, args = getopt.getopt(sys.argv[1:], "hv", ["VERBOSE", "help"])
     for opt, arg in optlist:
-        if opt in ('-h', '--help'):
+        if opt in ("-h", "--help"):
             my_help()
             sys.exit()
-        elif opt in ('-v', '--verbosity'):
+        elif opt in ("-v", "--verbosity"):
             VERBOSE = 1
 
 
 def extract_parameters():
-    models_files = {'alexnet_cifar10': 'run_alexnet_cifar10.sh',
-                    'alexnet_imagenet': 'run_alexnet_imagenet.sh',
-                    'vgg16_cifar10': 'run_vgg_cifar10.sh',
-                    'vgg16_imagenet': 'run_vgg_imagenet.sh',
-                    'resnet34_cifar10': 'run_resnet_cifar10.sh',
-                    'resnet34_imagenet': 'run_resnet_imagenet.sh',
-                    'resnet50_cifar10': 'run_resnet_cifar10.sh',
-                    'resnet50_imagenet': 'run_resnet_imagenet.sh',
-                    'resnet50v15_cifar10': 'run_resnet_cifar10.sh',
-                    'resnet50v15_imagenet': 'run_resnet_imagenet.sh',
-                    'densenet121_cifar10': 'run_densenet_cifar10.sh',
-                    'densenet121_imagenet': 'run_densenet_imagenet.sh',
-                    'googlenet_cifar10': 'run_inception_cifar10.sh',
-                    'googlenet_imagenet': 'run_inception_imagenet.sh',
-                    }
+    models_files = {
+        "alexnet_cifar10": "run_alexnet_cifar10.sh",
+        "alexnet_imagenet": "run_alexnet_imagenet.sh",
+        "vgg16_cifar10": "run_vgg_cifar10.sh",
+        "vgg16_imagenet": "run_vgg_imagenet.sh",
+        "resnet34_cifar10": "run_resnet_cifar10.sh",
+        "resnet34_imagenet": "run_resnet_imagenet.sh",
+        "resnet50_cifar10": "run_resnet_cifar10.sh",
+        "resnet50_imagenet": "run_resnet_imagenet.sh",
+        "resnet50v15_cifar10": "run_resnet_cifar10.sh",
+        "resnet50v15_imagenet": "run_resnet_imagenet.sh",
+        "densenet121_cifar10": "run_densenet_cifar10.sh",
+        "densenet121_imagenet": "run_densenet_imagenet.sh",
+        "googlenet_cifar10": "run_inception_cifar10.sh",
+        "googlenet_imagenet": "run_inception_imagenet.sh",
+    }
     parameters_with_short_values = defaultdict(lambda: defaultdict(lambda: ""))
     parameters_with_long_values = defaultdict(lambda: defaultdict(lambda: ""))
     # Manually overwritten parameters
@@ -122,7 +121,7 @@ def extract_parameters():
     ignore_parameters = ("dataset_path", "parallel_data", "parallel_pipeline", "history_file")
     # Extract the parameters
     for model, file in models_files.items():
-        with open(os.path.join(SCRIPT_PATH, file), 'r') as f:
+        with open(os.path.join(SCRIPT_PATH, file), "r") as f:
             wait_for_it = True
             for line in f.readlines():
                 if wait_for_it:
@@ -166,10 +165,11 @@ def extract_parameters():
     param_keys.sort()
     for param in param_keys:
         value_for = parameters_with_short_values[param]
-        row = [param, ]
+        row = [
+            param,
+        ]
         for model in models_files.keys():
-            if parameters_overwritten[param][model] != "-" \
-                    and value_for[model] != parameters_overwritten[param][model]:
+            if parameters_overwritten[param][model] != "-" and value_for[model] != parameters_overwritten[param][model]:
                 row.append(f"[bold]*{parameters_overwritten[param][model]}")
             else:
                 row.append(value_for[model])
@@ -184,10 +184,11 @@ def extract_parameters():
         c.print(t)
         print()
     for param, value_for in parameters_with_short_values.items():
-        row = [param, ]
+        row = [
+            param,
+        ]
         for model in models_files.keys():
-            if parameters_overwritten[param][model] != "-" \
-                    and value_for[model] != parameters_overwritten[param][model]:
+            if parameters_overwritten[param][model] != "-" and value_for[model] != parameters_overwritten[param][model]:
                 row.append(f"{parameters_overwritten[param][model]}")
             else:
                 row.append(value_for[model])

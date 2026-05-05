@@ -9,8 +9,8 @@ from collections import abc
 
 import numpy as np
 
-from pydtnn.model import Model
 from pydtnn.datasets.dataset import Dataset
+from pydtnn.model import Model
 from pydtnn.utils.parser import ArgumentParser
 from pydtnn.utils.tensor import TensorFormat
 
@@ -45,11 +45,7 @@ def compute_stats(iterator: abc.Iterable[np.ndarray]) -> tuple[float, float]:
 
 
 def get_full_x(dataset: Dataset) -> abc.Iterable[np.ndarray]:
-    xy = itertools.chain(
-        dataset._data_generator(Dataset.Part.TRAIN),
-        dataset._data_generator(Dataset.Part.VAL),
-        dataset._data_generator(Dataset.Part.TEST)
-    )
+    xy = itertools.chain(dataset._data_generator(Dataset.Part.TRAIN), dataset._data_generator(Dataset.Part.VAL), dataset._data_generator(Dataset.Part.TEST))
     for x, y in xy:
         yield x
 

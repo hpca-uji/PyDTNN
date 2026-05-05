@@ -1,9 +1,9 @@
 import numpy as np
 from tenseal import sealapi
 
-slots = 2 ** 12
+slots = 2**12
 poly_degree = slots * 2
-scale = 2 ** 40
+scale = 2**40
 level = sealapi.SEC_LEVEL_TYPE.TC128
 
 modulus = sealapi.CoeffModulus.BFVDefault(poly_degree, level)

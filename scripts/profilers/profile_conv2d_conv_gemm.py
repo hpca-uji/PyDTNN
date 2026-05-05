@@ -80,16 +80,28 @@ def get_conv2d_layers(d: D) -> tuple[Conv2D, Conv2D]:
     params_gc = deepcopy(params)
     params_gc.backend = "cpu;conv_2d:gemm"
     model_cg = Model(**vars(params_gc))
-    conv2d_i2c = Conv2D(nfilters=d.kn, filter_shape=(d.kh, d.kw),
-                        padding=(d.vpadding, d.hpadding),
-                        stride=(d.vstride, d.hstride), dilation=(d.vdilation, d.hdilation),
-                        use_bias=True, weights_initializer="glorot_uniform", biases_initializer="zeros")
+    conv2d_i2c = Conv2D(
+        nfilters=d.kn,
+        filter_shape=(d.kh, d.kw),
+        padding=(d.vpadding, d.hpadding),
+        stride=(d.vstride, d.hstride),
+        dilation=(d.vdilation, d.hdilation),
+        use_bias=True,
+        weights_initializer="glorot_uniform",
+        biases_initializer="zeros",
+    )
     conv2d_i2c._init_backend_with_model(model_i2c)
     conv2d_i2c.debug = True
-    conv2d_cg = Conv2D(nfilters=d.kn, filter_shape=(d.kh, d.kw),
-                       padding=(d.vpadding, d.hpadding),
-                       stride=(d.vstride, d.hstride), dilation=(d.vdilation, d.hdilation),
-                       use_bias=True, weights_initializer="glorot_uniform", biases_initializer="zeros")
+    conv2d_cg = Conv2D(
+        nfilters=d.kn,
+        filter_shape=(d.kh, d.kw),
+        padding=(d.vpadding, d.hpadding),
+        stride=(d.vstride, d.hstride),
+        dilation=(d.vdilation, d.hdilation),
+        use_bias=True,
+        weights_initializer="glorot_uniform",
+        biases_initializer="zeros",
+    )
     conv2d_cg._init_backend_with_model(model_cg)
     conv2d_cg.debug = True
     for layer in (conv2d_i2c, conv2d_cg):
@@ -132,7 +144,7 @@ class PerfTestConv2DConvGemm:
         profiler.dump_stats("forward_cg.prof")
         print()
 
-        dy = random.random((d.b, d.kn, d.ho, d.wo)).astype(np.float32, order='C')
+        dy = random.random((d.b, d.kn, d.ho, d.wo)).astype(np.float32, order="C")
 
         # Backward i2c
         print("Backward I2C")
@@ -172,7 +184,7 @@ class PerfTestConv2DConvGemm:
         y_cg = conv2d_cg.forward(x)
         toc = time.perf_counter()
         print(f"cg forward: {toc - tic:0.4f} s")
-        dy = random.random((d.b, d.kn, d.ho, d.wo)).astype(np.float32, order='C')
+        dy = random.random((d.b, d.kn, d.ho, d.wo)).astype(np.float32, order="C")
         # i2c backward
         tic = time.perf_counter()
         dx_i2c = conv2d_i2c.backward(dy)
@@ -199,8 +211,8 @@ class PerfTestConv2DConvGemm:
         d.vpadding, d.hpadding = (1, 1)
         d.vstride, d.hstride = (2, 2)
         d.vdilation, d.hdilation = (1, 1)
-        x = random.random((d.b, d.c, d.h, d.w)).astype(np.float32, order='C')
-        weights = random.random((d.kn, d.c, d.kh, d.kw)).astype(np.float32, order='C')
+        x = random.random((d.b, d.c, d.h, d.w)).astype(np.float32, order="C")
+        weights = random.random((d.kn, d.c, d.kh, d.kw)).astype(np.float32, order="C")
         self._test_forward_backward(d, x, weights, print_times=True)
 
     def test_forward_backward_alexnet_cifar10_second_conv2d(self):
@@ -212,8 +224,8 @@ class PerfTestConv2DConvGemm:
         d.vpadding, d.hpadding = (1, 1)
         d.vstride, d.hstride = (1, 1)
         d.vdilation, d.hdilation = (1, 1)
-        x = random.random((d.b, d.c, d.h, d.w)).astype(np.float32, order='C')
-        weights = random.random((d.kn, d.c, d.kh, d.kw)).astype(np.float32, order='C')
+        x = random.random((d.b, d.c, d.h, d.w)).astype(np.float32, order="C")
+        weights = random.random((d.kn, d.c, d.kh, d.kw)).astype(np.float32, order="C")
         self._test_forward_backward(d, x, weights, print_times=True)
 
     def test_forward_backward_alexnet_cifar10_third_conv2d(self):
@@ -225,8 +237,8 @@ class PerfTestConv2DConvGemm:
         d.vpadding, d.hpadding = (1, 1)
         d.vstride, d.hstride = (1, 1)
         d.vdilation, d.hdilation = (1, 1)
-        x = random.random((d.b, d.c, d.h, d.w)).astype(np.float32, order='C')
-        weights = random.random((d.kn, d.c, d.kh, d.kw)).astype(np.float32, order='C')
+        x = random.random((d.b, d.c, d.h, d.w)).astype(np.float32, order="C")
+        weights = random.random((d.kn, d.c, d.kh, d.kw)).astype(np.float32, order="C")
         self._test_forward_backward(d, x, weights, print_times=True)
 
     def test_forward_backward_alexnet_imagenet_first_conv2d(self):
@@ -240,8 +252,8 @@ class PerfTestConv2DConvGemm:
         d.vpadding, d.hpadding = (0, 0)
         d.vstride, d.hstride = (4, 4)
         d.vdilation, d.hdilation = (1, 1)
-        x = random.random((d.b, d.c, d.h, d.w)).astype(np.float32, order='C')
-        weights = random.random((d.kn, d.c, d.kh, d.kw)).astype(np.float32, order='C')
+        x = random.random((d.b, d.c, d.h, d.w)).astype(np.float32, order="C")
+        weights = random.random((d.kn, d.c, d.kh, d.kw)).astype(np.float32, order="C")
         self._test_forward_backward(d, x, weights, print_times=True)
 
 

@@ -16,7 +16,6 @@ model = Model(**vars(parser.parse_args()))
 model.print_in_convdirect_format()
 
 # Examples
-# --------
 
 # Print the layers of ResNet50v15 for ImageNet in convdirect input format:
 # pydtnn/scripts/print_in_convdirect_format.py --model=resnet50v15_imagenet

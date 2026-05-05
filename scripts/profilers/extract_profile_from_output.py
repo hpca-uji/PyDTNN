@@ -6,20 +6,19 @@ Given an output file from pydtnn_benchmark.py with the profile option
 activated, prints a csv file with the profile information.
 """
 
-###########################################################################
-# IMPORTS                                                                 #
-###########################################################################
+import getopt
+import gzip
+import pathlib
+#
+# IMPORTS
+#
 import re
 import sys
-import getopt
-import pathlib
-import gzip
-import tempfile
 
 
-###########################################################################
-# MISCELLANEOUS FUNCTIONS                                                 #
-###########################################################################
+#
+# MISCELLANEOUS FUNCTIONS
+#
 def my_help():
     """Print the the command line usage help."""
     print("""Usage: extract_profile_from_output.py [OPTION]... FILE
@@ -55,14 +54,12 @@ SCRIPT_PATH = pathlib.Path(__file__).parent.absolute()
 def get_opts():
     """Read command line options."""
     global INPUT_FILE_NAME, VERBOSE
-    optlist, args = getopt.getopt(sys.argv[1:],
-                                  'hv',
-                                  ['VERBOSE', 'help'])
+    optlist, args = getopt.getopt(sys.argv[1:], "hv", ["VERBOSE", "help"])
     for opt, arg in optlist:
-        if opt in ('-h', '--help'):
+        if opt in ("-h", "--help"):
             my_help()
             raise SystemExit()
-        elif opt in ('-v', '--verbosity'):
+        elif opt in ("-v", "--verbosity"):
             VERBOSE = 1
     # Check required arguments
     if len(args) == 0:
@@ -71,9 +68,9 @@ def get_opts():
     INPUT_FILE_NAME = args[0]
 
 
-###########################################################################
-# APPLICATION SPECIFIC FUNCTIONS                                          #
-###########################################################################
+#
+# APPLICATION SPECIFIC FUNCTIONS
+#
 def print_profile_from_file(file):
     """Do print the profile part from file."""
     first_line_re = re.compile("ncalls *tottime")
@@ -96,7 +93,7 @@ def print_profile():
             print_profile_from_file(file)
     else:
         file_open = open if INPUT_FILE_NAME[-3:] != ".gz" else gzip.open
-        with file_open(INPUT_FILE_NAME, 'rt') as file:
+        with file_open(INPUT_FILE_NAME, "rt") as file:
             print_profile_from_file(file)
 
 

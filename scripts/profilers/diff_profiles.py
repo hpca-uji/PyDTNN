@@ -6,19 +6,19 @@ Given two profiles extracted with extract_profile_from_output, prints the
 differences between them.
 """
 
-###########################################################################
-# IMPORTS                                                                 #
-###########################################################################
+#
+# IMPORTS
+#
 import getopt
 import gzip
 import pathlib
 import sys
-from prettytable import PrettyTable, MSWORD_FRIENDLY, PLAIN_COLUMNS
 
+from prettytable import PLAIN_COLUMNS, PrettyTable
 
-###########################################################################
-# MISCELLANEOUS FUNCTIONS                                                 #
-###########################################################################
+#
+# MISCELLANEOUS FUNCTIONS
+#
 
 
 def my_help():
@@ -56,14 +56,12 @@ SCRIPT_PATH = pathlib.Path(__file__).parent.absolute()
 def get_opts():
     """Read command line options."""
     global INPUT_FILE_NAME, VERBOSE
-    optlist, args = getopt.getopt(sys.argv[1:],
-                                  'hv',
-                                  ['VERBOSE', 'help'])
+    optlist, args = getopt.getopt(sys.argv[1:], "hv", ["VERBOSE", "help"])
     for opt, arg in optlist:
-        if opt in ('-h', '--help'):
+        if opt in ("-h", "--help"):
             my_help()
             raise SystemExit()
-        elif opt in ('-v', '--verbosity'):
+        elif opt in ("-v", "--verbosity"):
             VERBOSE = 1
     # Check required arguments
     if len(args) < 2:
@@ -73,9 +71,9 @@ def get_opts():
     INPUT_FILE_NAME.append(args[1])
 
 
-###########################################################################
-# APPLICATION SPECIFIC FUNCTIONS                                          #
-###########################################################################
+#
+# APPLICATION SPECIFIC FUNCTIONS
+#
 def file_to_dict(file):
     """Convert the CSV file to a dict."""
     _dict = {}
@@ -83,7 +81,7 @@ def file_to_dict(file):
     # ncalls, tottime, percall, cumtime, percall, filename:lineno(function)
     file.readline()  # Ignore header
     for line in file.readlines():
-        values = line.split(',', 5)
+        values = line.split(",", 5)
         for i in range(5):
             try:
                 values[i] = int(values[i])
@@ -93,8 +91,8 @@ def file_to_dict(file):
                 except ValueError:
                     pass
         # Remove part of the path from values[5]
-        splat_by_slash = values[5].split('/')
-        values[5] = '/'.join(splat_by_slash[-3:])
+        splat_by_slash = values[5].split("/")
+        values[5] = "/".join(splat_by_slash[-3:])
         _dict[values[5]] = values[0:5]
         total_time += values[1]
     return _dict, total_time
@@ -107,14 +105,14 @@ def do_diff():
     print(f"Comparing '{INPUT_FILE_NAME[0]}' with '{INPUT_FILE_NAME[1]}'...\n")
     for i in range(2):
         file_open = open if INPUT_FILE_NAME[i][-3:] != ".gz" else gzip.open
-        with file_open(INPUT_FILE_NAME[i], 'rt') as file:
+        with file_open(INPUT_FILE_NAME[i], "rt") as file:
             _dict, _total_time = file_to_dict(file)
             data.append(_dict)
             total_times.append(_total_time)
-    t = PrettyTable(['ncalls', 'tottime', 'percall', 'cumtime', 'percall2', 'filename:lineno(function)'])
+    t = PrettyTable(["ncalls", "tottime", "percall", "cumtime", "percall2", "filename:lineno(function)"])
     t.set_style(PLAIN_COLUMNS)
     t.align = "r"
-    t.align['filename:lineno(function)'] = "l"
+    t.align["filename:lineno(function)"] = "l"
     t.sortby = "tottime"
     t.reversesort = True
     common_keys = []
@@ -128,8 +126,8 @@ def do_diff():
                 values = []
                 for x, y in zip(values1, values2):
                     if isinstance(x, type(y)) == str:
-                        x0, x1 = x.split('/')
-                        y0, y1 = y.split('/')
+                        x0, x1 = x.split("/")
+                        y0, y1 = y.split("/")
                         # values.append(f"{int(x0)-int(y0)}/{int(x1)-int(y1)}")
                         values.append(int(x0) - int(y0))  # PrettyTable sort does not work with the previous version
                     else:

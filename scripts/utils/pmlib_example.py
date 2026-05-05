@@ -64,10 +64,7 @@ def print_joules(start_time, end_time):
     print()
 
 
-for pairs in [
-    (pmlib.times[0], pmlib.times[-1]),
-    (pmlib.times[0] + 0.25, pmlib.times[0] + 0.3)
-]:
+for pairs in [(pmlib.times[0], pmlib.times[-1]), (pmlib.times[0] + 0.25, pmlib.times[0] + 0.3)]:
     print_joules(pairs[0], pairs[1])
 
 # Must be done AFTER integrating the energy (the watts array will be lost if not explicitly copied)

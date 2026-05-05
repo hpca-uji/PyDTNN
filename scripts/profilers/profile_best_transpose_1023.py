@@ -5,10 +5,10 @@ For running the tests run:
     python best_conv2d_transpose_0231.py
 """
 
-from pydtnn.utils.best_of_profiler import BestOfProfiler
 from pydtnn.tests.abstract.common import alexnet_layers
-from pydtnn.utils.best_of.best_transpose_1023 import best_transpose_1023
 from pydtnn.utils import random
+from pydtnn.utils.best_of.best_transpose_1023 import best_transpose_1023
+from pydtnn.utils.best_of_profiler import BestOfProfiler
 
 
 def main():

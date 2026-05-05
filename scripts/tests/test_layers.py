@@ -1,5 +1,10 @@
 # import memray
 
+from time import time
+from typing import TYPE_CHECKING
+
+import numpy as np
+
 from pydtnn.activations.activation import Activation
 from pydtnn.layers.addition_block import AdditionBlock
 from pydtnn.layers.batch_normalization import BatchNormalization
@@ -15,18 +20,14 @@ from pydtnn.optimizers.optimizer import Optimizer
 from pydtnn.optimizers.sgd import SGD
 from pydtnn.utils import random
 
-import numpy as np
-from time import time
-
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import pycuda.gpuarray as gpuarray
+
 from pydtnn.backends.gpu import TensorGPU
 
 # setting random seed
 SEED = 1234
 random.seed(SEED)
-# ---
 
 N = 100
 C = 3
@@ -49,7 +50,7 @@ KWARGS = {
     "dtype": np.float32,
     "tracing": False,
     "tracer_output": "",
-    "batch_size": N
+    "batch_size": N,
 }
 
 ignore_model = Model(**KWARGS)
@@ -65,9 +66,7 @@ list_layers = [
     # ("FC",FC()),
     # ("Flatten",Flatten()),
     # ("MaxPool2D",MaxPool2D()),
-    # -----
     # ("BatchNormalizationRelu",BatchNormalizationRelu()),
-
 ]
 list_activations = [
     # ("Sigmoid", Sigmoid()),
@@ -107,7 +106,7 @@ def test_keras(_x: np.ndarray):
     print(f"x_pydtnn.min:\t{x_pydtnn.min()}")
 
     print(f"x_pydtnn:\n{x_pydtnn}")
-# ---
+
 
 def test_layers_activations(_x: np.ndarray, opt: Optimizer) -> None:
     # Testing Layers and activations:
@@ -163,7 +162,7 @@ def test_layers_activations(_x: np.ndarray, opt: Optimizer) -> None:
             print(f"Backward time mean: {t_backward / NUM_REPETITIONS:2f} s")
             print(f"Optimizer time mean: {t_opt / NUM_REPETITIONS:2f} s")
 
-            print(f"------------")
+            print("------------")
 
 
 def test_add_concat(_x: np.ndarray, opt: Optimizer) -> None:
@@ -214,7 +213,7 @@ def test_add_concat(_x: np.ndarray, opt: Optimizer) -> None:
         print(f"Backward time: {t_backward / NUM_REPETITIONS:2f} s")
         print(f"Optimizer time: {t_opt / NUM_REPETITIONS:2f} s")
 
-        print(f"------------")
+        print("------------")
 
 
 def main():

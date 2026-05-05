@@ -37,8 +37,6 @@ def remove_existing_all(lines, tree):
 def find_insert_position(lines):
     insert_idx = 0
 
-
-
     while insert_idx < len(lines):
         stripped = lines[insert_idx].strip()
 
@@ -49,7 +47,7 @@ def find_insert_position(lines):
         # Skip docstring
         elif lines and lines[insert_idx].lstrip().startswith(('"""', "'''")):
             quote = lines[insert_idx].lstrip()[:3]
-            for i in range(insert_idx+1, len(lines)):
+            for i in range(insert_idx + 1, len(lines)):
                 if lines[i].strip().endswith(quote):
                     insert_idx = i + 1
                     break
