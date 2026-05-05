@@ -344,139 +344,256 @@ $ mpirun -np 12 \
       --dtype=float32
 
 
-**** simplecnn model...
-+-------+--------------------------+---------+---------------+-------------------+------------------------+
-| Layer |           Type           | #Params | Output shape  |   Weights shape   |       Parameters       |
-+-------+--------------------------+---------+---------------+-------------------+------------------------+
-|   0   |          Input           |    0    |  (1, 28, 28)  |                   |                        |
-+-------+--------------------------+---------+---------------+-------------------+------------------------+
-|   1   |          Conv2D          |   40    |  (4, 28, 28)  |   (4, 1, 3, 3)    |padd=(1,1), stride=(1,1)|
-+-------+--------------------------+---------+---------------+-------------------+------------------------+
-|   2   |          Conv2D          |   148   |  (4, 28, 28)  |   (4, 4, 3, 3)    |padd=(1,1), stride=(1,1)|
-+-------+--------------------------+---------+---------------+-------------------+------------------------+
-|   3   |        MaxPool2D         |    0    |  (4, 14, 14)  |      (2, 2)       |padd=(0,0), stride=(2,2)|
-+-------+--------------------------+---------+---------------+-------------------+------------------------+
-|   4   |         Flatten          |    0    |    (784,)     |                   |                        |
-+-------+--------------------------+---------+---------------+-------------------+------------------------+
-|   5   |            FC            | 100480  |    (128,)     |    (784, 128)     |                        |
-+-------+--------------------------+---------+---------------+-------------------+------------------------+
-|   6   |           Relu           |    0    |    (128,)     |                   |                        |
-+-------+--------------------------+---------+---------------+-------------------+------------------------+
-|   7   |         Dropout          |    0    |    (128,)     |                   |       rate=0.50        |
-+-------+--------------------------+---------+---------------+-------------------+------------------------+
-|   8   |            FC            |  1290   |     (10,)     |     (128, 10)     |                        |
-+-------+--------------------------+---------+---------------+-------------------+------------------------+
-|   9   |         Softmax          |    0    |     (10,)     |                   |                        |
-+-------+--------------------------+---------+---------------+-------------------+------------------------+
-|             Total parameters       101958    398.27 KBytes                                              |
-+-------+--------------------------+---------+---------------+-------------------+------------------------+
-**** Loading mnist dataset...
-**** Parameters:
-  model                          : simplecnn
-  dataset                        : mnist
-  dataset_train_path             : datasets/mnist
-  dataset_test_path              : datasets/mnist
-  test_as_validation             : False
-  augment_flip                    : True
-  augment_flip               : 0.5
-  augment_crop                    : False
-  augment_crop_size               : 16
-  augment_crop               : 0.5
-  batch_size                     : 64
-  global_batch_size              : None
-  validation_split               : 0.2
-  steps_per_epoch                : 0
-  num_epochs                     : 50
-  evaluate                       : True
-  weights_and_bias_filename      : None
-  shared_data                 : True
-  history_file                   : None
-  optimizer                      : adam
-  learning_rate                  : 0.01
-  learning_rate_scaling          : True
-  momentum                       : 0.9
-  decay                          : 0.0
-  nesterov                       : False
-  beta1                          : 0.99
-  beta2                          : 0.999
-  epsilon                        : 1e-07
-  rho                            : 0.9
-  loss_func                      : categorical_cross_entropy
-  metrics                        : categorical_accuracy
-  schedulers                  : warm_up,reduce_lr_every_nepochs
-  warm_up_epochs                 : 5
-  early_stopping_metric          : val_categorical_cross_entropy
-  early_stopping_patience        : 20
-  reduce_lr_on_plateau_metric    : val_categorical_cross_entropy
-  reduce_lr_on_plateau_factor    : 0.1
-  reduce_lr_on_plateau_patience  : 5
-  reduce_lr_on_plateau_min_lr    : 0
-  reduce_lr_every_nepochs_factor : 0.5
-  reduce_lr_every_nepochs_nepochs: 30
-  reduce_lr_every_nepochs_min_lr : 0.001
-  stop_at_loss_metric            : val_accuracy
-  stop_at_loss_threshold         : 0
-  model_checkpoint_metric        : val_categorical_cross_entropy
-  model_checkpoint_save_freq     : 2
-  mpi_processes                  : 12
-  threads_per_process            : 4
-  parallel                       : data
-  non_blocking_mpi               : False
-  tracing                        : False
-  profile                        : False
-  gpus_per_node                  : 0
-  enable_conv_gemm               : False
-  enable_cudnn                     : False
-  enable_gpudirect               : False
-  enable_nccl                    : False
-  dtype                          : float32
-**** Evaluating on test dataset...
-Testing: 100%|████████████████████| 10000/10000 [00:00<00:00, 29732.29 samples/s, test_acc: 12.50%, test_cro: 2.3008704]
-**** Training...
-Epoch  1/50: 100%|████████████████| 48000/48000 [00:04<00:00, 11184.77 samples/s, acc: 71.35%, cro: 1.2238941, val_acc: 88.49%, val_cro: 0.4369879]
-Epoch  2/50: 100%|████████████████| 48000/48000 [00:04<00:00, 10691.66 samples/s, acc: 88.87%, cro: 0.4051699, val_acc: 91.10%, val_cro: 0.3070377]
-Epoch  3/50: 100%|████████████████| 48000/48000 [00:04<00:00, 10617.42 samples/s, acc: 90.98%, cro: 0.3086980, val_acc: 92.56%, val_cro: 0.2624177]
-Epoch  4/50: 100%|████████████████| 48000/48000 [00:04<00:00, 10874.49 samples/s, acc: 92.43%, cro: 0.2576146, val_acc: 93.83%, val_cro: 0.2232232]
-Epoch  5/50: 100%|████████████████| 48000/48000 [00:04<00:00, 10451.37 samples/s, acc: 93.48%, cro: 0.2159374, val_acc: 94.76%, val_cro: 0.1868786]
-Epoch  6/50: 100%|████████████████| 48000/48000 [00:04<00:00, 10756.92 samples/s, acc: 94.81%, cro: 0.1748247, val_acc: 95.63%, val_cro: 0.1544418]
-Epoch  7/50: 100%|████████████████| 48000/48000 [00:04<00:00, 10901.69 samples/s, acc: 95.77%, cro: 0.1417673, val_acc: 96.25%, val_cro: 0.1331401]
-Epoch  8/50: 100%|████████████████| 48000/48000 [00:04<00:00, 11046.87 samples/s, acc: 96.55%, cro: 0.1164078, val_acc: 96.80%, val_cro: 0.1134956]
-Epoch  9/50: 100%|████████████████| 48000/48000 [00:04<00:00, 10944.06 samples/s, acc: 97.05%, cro: 0.0992564, val_acc: 96.98%, val_cro: 0.1033213]
-Epoch 10/50: 100%|████████████████| 48000/48000 [00:04<00:00, 11017.46 samples/s, acc: 97.48%, cro: 0.0866701, val_acc: 97.28%, val_cro: 0.0972526]
-Epoch 11/50: 100%|████████████████| 48000/48000 [00:04<00:00, 10871.28 samples/s, acc: 97.67%, cro: 0.0769905, val_acc: 97.58%, val_cro: 0.0862264]
-Epoch 12/50: 100%|████████████████| 48000/48000 [00:04<00:00, 10982.79 samples/s, acc: 97.99%, cro: 0.0682642, val_acc: 97.55%, val_cro: 0.0828536]
-Epoch 13/50: 100%|████████████████| 48000/48000 [00:04<00:00, 11115.45 samples/s, acc: 98.16%, cro: 0.0616423, val_acc: 97.77%, val_cro: 0.0782390]
-Epoch 14/50: 100%|████████████████| 48000/48000 [00:04<00:00, 10783.11 samples/s, acc: 98.30%, cro: 0.0562393, val_acc: 97.91%, val_cro: 0.0716845]
-Epoch 15/50: 100%|████████████████| 48000/48000 [00:04<00:00, 10642.71 samples/s, acc: 98.49%, cro: 0.0515601, val_acc: 97.93%, val_cro: 0.0696817]
-Epoch 16/50: 100%|████████████████| 48000/48000 [00:04<00:00, 10643.74 samples/s, acc: 98.62%, cro: 0.0468920, val_acc: 97.98%, val_cro: 0.0688842]
-Epoch 17/50: 100%|████████████████| 48000/48000 [00:04<00:00, 10726.90 samples/s, acc: 98.70%, cro: 0.0434075, val_acc: 98.10%, val_cro: 0.0675637]
-Epoch 18/50: 100%|████████████████| 48000/48000 [00:04<00:00, 10558.22 samples/s, acc: 98.71%, cro: 0.0424472, val_acc: 98.25%, val_cro: 0.0641221]
-Epoch 19/50: 100%|████████████████| 48000/48000 [00:04<00:00, 10809.42 samples/s, acc: 98.86%, cro: 0.0382850, val_acc: 98.19%, val_cro: 0.0646157]
-Epoch 20/50: 100%|████████████████| 48000/48000 [00:04<00:00, 10712.11 samples/s, acc: 98.95%, cro: 0.0348660, val_acc: 98.25%, val_cro: 0.0617139]
-Epoch 21/50: 100%|████████████████| 48000/48000 [00:04<00:00, 11068.46 samples/s, acc: 99.05%, cro: 0.0323043, val_acc: 98.14%, val_cro: 0.0658118]
-Epoch 22/50: 100%|████████████████| 48000/48000 [00:04<00:00, 11436.88 samples/s, acc: 99.06%, cro: 0.0306285, val_acc: 98.17%, val_cro: 0.0648578]
-Epoch 23/50: 100%|████████████████| 48000/48000 [00:04<00:00, 11093.08 samples/s, acc: 99.17%, cro: 0.0282567, val_acc: 98.22%, val_cro: 0.0661603]
-Epoch 24/50: 100%|████████████████| 48000/48000 [00:04<00:00, 11058.23 samples/s, acc: 99.14%, cro: 0.0275220, val_acc: 98.28%, val_cro: 0.0638472]
-Epoch 25/50: 100%|████████████████| 48000/48000 [00:04<00:00, 11362.12 samples/s, acc: 99.27%, cro: 0.0242397, val_acc: 98.32%, val_cro: 0.0616558]
-Epoch 26/50: 100%|████████████████| 48000/48000 [00:04<00:00, 10929.57 samples/s, acc: 99.33%, cro: 0.0228250, val_acc: 98.41%, val_cro: 0.0614293]
-Epoch 27/50: 100%|████████████████| 48000/48000 [00:04<00:00, 10582.72 samples/s, acc: 99.33%, cro: 0.0218627, val_acc: 98.30%, val_cro: 0.0647660]
-Epoch 28/50: 100%|████████████████| 48000/48000 [00:04<00:00, 11540.73 samples/s, acc: 99.40%, cro: 0.0202375, val_acc: 98.31%, val_cro: 0.0653990]
-Epoch 29/50: 100%|████████████████| 48000/48000 [00:04<00:00, 11089.71 samples/s, acc: 99.47%, cro: 0.0187735, val_acc: 98.33%, val_cro: 0.0642570]
-Epoch 30/50: 100%|████████████████| 48000/48000 [00:04<00:00, 11112.27 samples/s, acc: 99.51%, cro: 0.0166023, val_acc: 98.40%, val_cro: 0.0630408]
-Epoch 31/50: 100%|████████████████| 48000/48000 [00:04<00:00, 11004.81 samples/s, acc: 99.56%, cro: 0.0154129, val_acc: 98.24%, val_cro: 0.0669048]
-LRScheduler ReduceLROnPlateau: metric val_categorical_cross_entropy did not improve for 5 epochs, setting learning rate to 0.01000000
-Epoch 32/50: 100%|████████████████| 48000/48000 [00:04<00:00, 11015.29 samples/s, acc: 99.70%, cro: 0.0122010, val_acc: 98.39%, val_cro: 0.0635789]
-Epoch 33/50: 100%|████████████████| 48000/48000 [00:04<00:00, 11166.31 samples/s, acc: 99.74%, cro: 0.0111252, val_acc: 98.44%, val_cro: 0.0624000]
-Epoch 34/50: 100%|████████████████| 48000/48000 [00:04<00:00, 11112.63 samples/s, acc: 99.74%, cro: 0.0108013, val_acc: 98.44%, val_cro: 0.0627380]
-Epoch 35/50: 100%|████████████████| 48000/48000 [00:04<00:00, 10914.84 samples/s, acc: 99.76%, cro: 0.0105415, val_acc: 98.47%, val_cro: 0.0627000]
-Epoch 36/50: 100%|████████████████| 48000/48000 [00:04<00:00, 11017.57 samples/s, acc: 99.76%, cro: 0.0103665, val_acc: 98.50%, val_cro: 0.0628462]
-LRScheduler EarlyStopping: metric val_categorical_cross_entropy did not improve for 10 epochs, stop training!
-LRScheduler ReduceLROnPlateau: metric val_categorical_cross_entropy did not improve for 5 epochs, setting learning rate to 0.00100000
-**** Done...
-Time: 173.59 s
-Throughput: 17282.50 samples/s
-**** Evaluating on test dataset...
-Testing: 100%|███████████████████| 10000/10000 [00:00<00:00, 28720.12 samples/s, test_acc: 100.00%, test_cro: 0.0000443]
+[pydtnn.__main__] [INFO]: 
+options
+  model                    : simplecnn
+  backend                  : gpu
+  batch-size               : 64
+  global-batch-size        : None
+  dtype                    : <class 'numpy.float32'>
+  quantize                 : False
+  quantize-dtype           : <class 'numpy.float16'>
+  num-epochs               : 50
+  steps-per-epoch          : 0.0
+  evaluate                 : False
+  evaluate-only            : False
+  weights-and-bias-filename: None
+  history-file             : 
+  tensor-format            : 
+  random-seed              : 57005
+  shared-tmp-memory        : False
+
+Synchronization options
+  shared-data             : True
+  model-sync-freq         : 0
+  model-sync-algo         : avg
+  model-sync-participation: all
+  model-sync-min-avail    : 0
+  initial-model-sync      : True
+  final-model-sync        : True
+  model-sync-quantize     : False
+  model-sync-dtype        : <class 'numpy.float16'>
+
+Dataset options
+  dataset                : mnist
+  dataset-percentage     : 0.0
+  dataset-path           : datasets/mnist
+  dataset-lang           : en
+  dataset-lang2          : de
+  synthetic-train-samples: 1000
+  synthetic-test-samples : 100
+  synthetic-input-shape  : 3,32,32
+  synthetic-output-shape : 10
+  test-as-validation     : False
+  validation-split       : 0.2
+  augment-shuffle        : True
+  augment-flip           : 0.0
+  augment-crop           : 0.0
+  augment-crop-size      : 16
+  transform-crop         : False
+  transform-crop-perc    : 0.8
+  transform-resize       : False
+  transform-resize-size  : 16
+  normalize              : False
+  normalize-offset       : -0.45
+  normalize-scale        : 3.75
+
+Optimization options
+  enable-fused-bn-relu     : False
+  enable-fused-conv-relu   : False
+  enable-fused-conv-bn     : False
+  enable-fused-conv-bn-relu: False
+
+Convolution options
+  conv-direct-method: 
+
+Optimizer options
+  optimizer            : sgd
+  learning-rate        : 0.01
+  learning-rate-scaling: False
+  optimizer-momentum   : 0.9
+  optimizer-decay      : 0.0
+  optimizer-nesterov   : False
+  optimizer-beta1      : 0.99
+  optimizer-beta2      : 0.999
+  optimizer-epsilon    : 1e-07
+  optimizer-rho        : 0.9
+  optimizer-tau        : 64
+  optimizer-tau-prime  : 32
+  optimizer-density    : 0.01
+  loss-func            : categorical_cross_entropy
+  metrics              : categorical_accuracy
+
+Schedulers options
+  schedulers                     : warm_up,reduce_lr_every_nepochs
+  warm-up-epochs                 : 5
+  early-stopping-metric          : val_categorical_cross_entropy
+  early-stopping-patience        : 20
+  early-stopping-minimize        : True
+  reduce-lr-on-plateau-metric    : val_categorical_cross_entropy
+  reduce-lr-on-plateau-factor    : 0.1
+  reduce-lr-on-plateau-patience  : 5
+  reduce-lr-on-plateau-min-lr    : 0
+  reduce-lr-every-nepochs-factor : 0.5
+  reduce-lr-every-nepochs-nepochs: 30
+  reduce-lr-every-nepochs-min-lr : 0.001
+  stop-at-loss-metric            : val_accuracy
+  stop-at-loss-threshold         : 0
+  model-checkpoint-metric        : val_categorical_cross_entropy
+  model-checkpoint-save-freq     : 2
+
+Parallel execution options
+  parallel-data             : False
+  parallel-pipeline         : False
+  use-blocking-mpi          : True
+  use-mpi-buffers           : None
+  enable-cudnn              : AUTO
+  enable-gpudirect          : False
+  enable-nccl               : False
+  enable-cudnn-auto-conv-alg: True
+
+Encryption options
+  encryption         : 
+  encryption-slots   : 13
+  encryption-scale   : 40
+  encryption-security: 128
+
+Tracing options
+  tracing            : False
+  tracer-output      : 
+  tracer-pmlib-server: 127.0.0.1
+  tracer-pmlib-port  : 6526
+  tracer-pmlib-device: 
+  profile            : False
+  traceback          : False
+
+Performance modeling options
+  cpu-speed   : 4000000000000.0
+  memory-bw   : 50000000000.0
+  network-bw  : 1000000000.0
+  network-lat : 5e-07
+  network-algo: vdg
+
+Runtime parallel execution options
+  mpi-processes      : 1
+  threads-per-process: 16
+  gpus-per-node      : 2
+
+Communication options
+  mpi-protocol: native
+  mpi-server  : 127.0.0.1
+  mpi-port    : 61642
+
+[pydtnn.model.repr] [INFO]: 
+Model Summary
+=============
+- Name: simplecnn
+- Dataset: mnist
+- Params: 808824
+- Memory: 21.19MB
+- Optimizer memory: 790.85KB
+- Loss memory: 2.75KB
+- Metrics memory: 0B
+- Input: (1, 28, 28)
+- Output: (10,)
+- Batch size: 64
+- Layers: 12
+[pydtnn.model.repr] [INFO]: 
++----+-----------+---------+---------+--------+-------------+-------------+-------------------+---------+--------+----------+--------+
+| Id |   Name    | Backend | Memory  | Params |    Input    |   Output    |      Weights      | Padding | Stride | Dilation |  Pool  |
++----+-----------+---------+---------+--------+-------------+-------------+-------------------+---------+--------+----------+--------+
+| 0  |   Input   | pycuda  | 196.0KB |        |             | (1, 28, 28) |                   |         |        |          |        |
++----+-----------+---------+---------+--------+-------------+-------------+-------------------+---------+--------+----------+--------+
+| 1  |  Conv2D   | pycuda  | 3.11MB  |   40   | (1, 28, 28) | (4, 28, 28) |   (4, 1, 3, 3)    | (1, 1)  | (1, 1) |  (1, 1)  |        |
++----+-----------+---------+---------+--------+-------------+-------------+-------------------+---------+--------+----------+--------+
+| 2  |   Relu    | pycuda  | 1.53MB  |        | (4, 28, 28) | (4, 28, 28) |                   |         |        |          |        |
++----+-----------+---------+---------+--------+-------------+-------------+-------------------+---------+--------+----------+--------+
+| 3  |  Conv2D   | pycuda  |  2.3MB  |  296   | (4, 28, 28) | (8, 28, 28) |   (8, 4, 3, 3)    | (1, 1)  | (1, 1) |  (1, 1)  |        |
++----+-----------+---------+---------+--------+-------------+-------------+-------------------+---------+--------+----------+--------+
+| 4  |   Relu    | pycuda  | 3.06MB  |        | (8, 28, 28) | (8, 28, 28) |                   |         |        |          |        |
++----+-----------+---------+---------+--------+-------------+-------------+-------------------+---------+--------+----------+--------+
+| 5  | MaxPool2D | pycuda  | 1.91MB  |        | (8, 28, 28) | (8, 14, 14) |                   | (0, 0)  | (2, 2) |  (1, 1)  | (2, 2) |
++----+-----------+---------+---------+--------+-------------+-------------+-------------------+---------+--------+----------+--------+
+| 6  |  Flatten  | pycuda  |         |        | (8, 14, 14) |   (1568,)   |                   |         |        |          |        |
++----+-----------+---------+---------+--------+-------------+-------------+-------------------+---------+--------+----------+--------+
+| 7  |    FC     | pycuda  | 1.95MB  | 803328 |   (1568,)   |   (128,)    | (1568, 128, 1, 1) |         |        |          |        |
++----+-----------+---------+---------+--------+-------------+-------------+-------------------+---------+--------+----------+--------+
+| 8  |   Relu    | pycuda  | 64.0KB  |        |   (128,)    |   (128,)    |                   |         |        |          |        |
++----+-----------+---------+---------+--------+-------------+-------------+-------------------+---------+--------+----------+--------+
+| 9  |  Dropout  | pycuda  | 6.25MB  |        |   (128,)    |   (128,)    |                   |         |        |          |        |
++----+-----------+---------+---------+--------+-------------+-------------+-------------------+---------+--------+----------+--------+
+| 10 |    FC     | pycuda  | 44.83KB |  5160  |   (128,)    |    (10,)    |  (128, 10, 1, 1)  |         |        |          |        |
++----+-----------+---------+---------+--------+-------------+-------------+-------------------+---------+--------+----------+--------+
+| 11 |  Softmax  | pycuda  |  5.0KB  |        |    (10,)    |    (10,)    |                   |         |        |          |        |
++----+-----------+---------+---------+--------+-------------+-------------+-------------------+---------+--------+----------+--------+
+[pydtnn.__main__] [INFO]: **** Training...
+Epoch  1/50: 100%|████████| 48000/48000 [00:13<00:00, 3455.71 samples/s, train_cce: 1.1184705, train_acc: 62.32%, val_cce: 0.7023183, val_acc: 77.95%]
+Epoch  2/50: 100%|████████| 48000/48000 [00:12<00:00, 3752.62 samples/s, train_cce: 0.6748989, train_acc: 78.77%, val_cce: 0.5968420, val_acc: 81.47%]
+Epoch  3/50: 100%|████████| 48000/48000 [00:12<00:00, 3809.99 samples/s, train_cce: 0.5856293, train_acc: 81.59%, val_cce: 0.5133920, val_acc: 83.88%]
+Epoch  4/50: 100%|████████| 48000/48000 [00:13<00:00, 3598.30 samples/s, train_cce: 0.5017195, train_acc: 84.08%, val_cce: 0.4584806, val_acc: 85.58%]
+Epoch  5/50: 100%|████████| 48000/48000 [00:13<00:00, 3666.76 samples/s, train_cce: 0.4397651, train_acc: 86.20%, val_cce: 0.4184231, val_acc: 86.84%]
+Epoch  6/50: 100%|████████| 48000/48000 [00:13<00:00, 3453.78 samples/s, train_cce: 0.4097258, train_acc: 86.96%, val_cce: 0.3892847, val_acc: 87.96%]
+Epoch  7/50: 100%|████████| 48000/48000 [00:13<00:00, 3458.85 samples/s, train_cce: 0.3888468, train_acc: 87.68%, val_cce: 0.3704451, val_acc: 88.19%]
+Epoch  8/50: 100%|████████| 48000/48000 [00:13<00:00, 3662.07 samples/s, train_cce: 0.3821366, train_acc: 87.90%, val_cce: 0.3650805, val_acc: 88.22%]
+Epoch  9/50: 100%|████████| 48000/48000 [00:12<00:00, 3802.80 samples/s, train_cce: 0.3780845, train_acc: 88.06%, val_cce: 0.3555509, val_acc: 88.73%]
+Epoch 10/50: 100%|████████| 48000/48000 [00:14<00:00, 3404.88 samples/s, train_cce: 0.3715006, train_acc: 87.95%, val_cce: 0.3681258, val_acc: 88.07%]
+Epoch 11/50: 100%|████████| 48000/48000 [00:13<00:00, 3579.19 samples/s, train_cce: 0.3639101, train_acc: 88.19%, val_cce: 0.3594698, val_acc: 88.51%]
+Epoch 12/50: 100%|████████| 48000/48000 [00:13<00:00, 3546.87 samples/s, train_cce: 0.3627393, train_acc: 88.31%, val_cce: 0.3599054, val_acc: 88.11%]
+Epoch 13/50: 100%|████████| 48000/48000 [00:13<00:00, 3634.02 samples/s, train_cce: 0.3599829, train_acc: 88.59%, val_cce: 0.3425802, val_acc: 89.25%]
+Epoch 14/50: 100%|████████| 48000/48000 [00:13<00:00, 3542.70 samples/s, train_cce: 0.3640404, train_acc: 88.40%, val_cce: 0.3528128, val_acc: 88.71%]
+Epoch 15/50: 100%|████████| 48000/48000 [00:13<00:00, 3505.95 samples/s, train_cce: 0.3599551, train_acc: 88.48%, val_cce: 0.3551110, val_acc: 88.88%]
+Epoch 16/50: 100%|████████| 48000/48000 [00:12<00:00, 3711.92 samples/s, train_cce: 0.3572799, train_acc: 88.57%, val_cce: 0.3349612, val_acc: 89.40%]
+Epoch 17/50: 100%|████████| 48000/48000 [00:13<00:00, 3575.03 samples/s, train_cce: 0.3551838, train_acc: 88.65%, val_cce: 0.3405531, val_acc: 89.38%]
+Epoch 18/50: 100%|████████| 48000/48000 [00:13<00:00, 3624.12 samples/s, train_cce: 0.3534711, train_acc: 88.79%, val_cce: 0.3470441, val_acc: 89.01%]
+Epoch 19/50: 100%|████████| 48000/48000 [00:13<00:00, 3442.18 samples/s, train_cce: 0.3484907, train_acc: 88.92%, val_cce: 0.3311701, val_acc: 89.67%]
+Epoch 20/50: 100%|████████| 48000/48000 [00:14<00:00, 3423.23 samples/s, train_cce: 0.3441238, train_acc: 88.95%, val_cce: 0.3360619, val_acc: 89.24%]
+Epoch 21/50: 100%|████████| 48000/48000 [00:13<00:00, 3587.19 samples/s, train_cce: 0.3479733, train_acc: 88.88%, val_cce: 0.3403825, val_acc: 89.65%]
+Epoch 22/50: 100%|████████| 48000/48000 [00:13<00:00, 3546.39 samples/s, train_cce: 0.3463119, train_acc: 88.89%, val_cce: 0.3362577, val_acc: 89.77%]
+Epoch 23/50: 100%|████████| 48000/48000 [00:13<00:00, 3506.51 samples/s, train_cce: 0.3460476, train_acc: 88.86%, val_cce: 0.3373249, val_acc: 89.10%]
+Epoch 24/50: 100%|████████| 48000/48000 [00:12<00:00, 3708.42 samples/s, train_cce: 0.3435737, train_acc: 89.05%, val_cce: 0.3395897, val_acc: 89.25%]
+Epoch 25/50: 100%|████████| 48000/48000 [00:13<00:00, 3525.08 samples/s, train_cce: 0.3438735, train_acc: 89.26%, val_cce: 0.3333109, val_acc: 89.50%]
+Epoch 26/50: 100%|████████| 48000/48000 [00:13<00:00, 3566.45 samples/s, train_cce: 0.3414197, train_acc: 89.10%, val_cce: 0.3265650, val_acc: 89.43%]
+Epoch 27/50: 100%|████████| 48000/48000 [00:13<00:00, 3579.69 samples/s, train_cce: 0.3437447, train_acc: 89.01%, val_cce: 0.3319236, val_acc: 89.57%]
+Epoch 28/50: 100%|████████| 48000/48000 [00:13<00:00, 3590.92 samples/s, train_cce: 0.3387754, train_acc: 89.22%, val_cce: 0.3345976, val_acc: 89.70%]
+Epoch 29/50: 100%|████████| 48000/48000 [00:13<00:00, 3481.79 samples/s, train_cce: 0.3417804, train_acc: 89.12%, val_cce: 0.3417696, val_acc: 89.32%]
+Epoch 30/50: 100%|███████| 48000/48000 [00:13<00:00, 24522.59 samples/s, train_cce: 0.3385290, train_acc: 89.17%, val_cce: 0.3353500, val_acc: 89.52%]
+[pydtnn.schedulers.scheduler] [INFO]: Scheduler ReduceLREveryNEpochs: Setting learning rate to 0.00500000!
+Epoch 30/50: 100%|████████| 48000/48000 [00:13<00:00, 3596.27 samples/s, train_cce: 0.3385290, train_acc: 89.17%, val_cce: 0.3353500, val_acc: 89.52%]
+Epoch 31/50: 100%|████████| 48000/48000 [00:13<00:00, 3543.55 samples/s, train_cce: 0.3262158, train_acc: 89.56%, val_cce: 0.3149563, val_acc: 90.25%]
+Epoch 32/50: 100%|████████| 48000/48000 [00:13<00:00, 3496.25 samples/s, train_cce: 0.3222284, train_acc: 89.81%, val_cce: 0.3056272, val_acc: 90.32%]
+Epoch 33/50: 100%|████████| 48000/48000 [00:12<00:00, 3705.79 samples/s, train_cce: 0.3210438, train_acc: 89.67%, val_cce: 0.3245406, val_acc: 89.61%]
+Epoch 34/50: 100%|████████| 48000/48000 [00:12<00:00, 3820.55 samples/s, train_cce: 0.3233700, train_acc: 89.63%, val_cce: 0.3098261, val_acc: 90.35%]
+Epoch 35/50: 100%|████████| 48000/48000 [00:13<00:00, 3568.94 samples/s, train_cce: 0.3225272, train_acc: 89.76%, val_cce: 0.3156418, val_acc: 90.00%]
+Epoch 36/50: 100%|████████| 48000/48000 [00:13<00:00, 3583.64 samples/s, train_cce: 0.3222091, train_acc: 89.83%, val_cce: 0.3227611, val_acc: 89.84%]
+Epoch 37/50: 100%|████████| 48000/48000 [00:13<00:00, 3689.22 samples/s, train_cce: 0.3263476, train_acc: 89.64%, val_cce: 0.3303543, val_acc: 89.53%]
+Epoch 38/50: 100%|████████| 48000/48000 [00:12<00:00, 3818.57 samples/s, train_cce: 0.3201116, train_acc: 89.90%, val_cce: 0.3213890, val_acc: 90.01%]
+Epoch 39/50: 100%|████████| 48000/48000 [00:13<00:00, 3457.16 samples/s, train_cce: 0.3255080, train_acc: 89.51%, val_cce: 0.3159171, val_acc: 90.02%]
+Epoch 40/50: 100%|████████| 48000/48000 [00:13<00:00, 3548.30 samples/s, train_cce: 0.3240053, train_acc: 89.63%, val_cce: 0.3084729, val_acc: 90.22%]
+Epoch 41/50: 100%|████████| 48000/48000 [00:13<00:00, 3508.52 samples/s, train_cce: 0.3220426, train_acc: 89.73%, val_cce: 0.3169541, val_acc: 89.98%]
+Epoch 42/50: 100%|████████| 48000/48000 [00:13<00:00, 3622.97 samples/s, train_cce: 0.3210119, train_acc: 89.58%, val_cce: 0.3271742, val_acc: 89.85%]
+Epoch 43/50: 100%|████████| 48000/48000 [00:12<00:00, 3744.07 samples/s, train_cce: 0.3192258, train_acc: 89.86%, val_cce: 0.3215209, val_acc: 89.89%]
+Epoch 44/50: 100%|████████| 48000/48000 [00:12<00:00, 3809.49 samples/s, train_cce: 0.3244888, train_acc: 89.55%, val_cce: 0.3067044, val_acc: 90.12%]
+Epoch 45/50: 100%|████████| 48000/48000 [00:13<00:00, 3626.12 samples/s, train_cce: 0.3195171, train_acc: 89.81%, val_cce: 0.3191177, val_acc: 90.17%]
+Epoch 46/50: 100%|████████| 48000/48000 [00:13<00:00, 3568.72 samples/s, train_cce: 0.3168551, train_acc: 89.89%, val_cce: 0.3225888, val_acc: 89.83%]
+Epoch 47/50: 100%|████████| 48000/48000 [00:13<00:00, 3486.95 samples/s, train_cce: 0.3193468, train_acc: 89.84%, val_cce: 0.3129438, val_acc: 90.23%]
+Epoch 48/50: 100%|████████| 48000/48000 [00:12<00:00, 3708.50 samples/s, train_cce: 0.3167030, train_acc: 89.94%, val_cce: 0.3166687, val_acc: 90.21%]
+Epoch 49/50: 100%|████████| 48000/48000 [00:12<00:00, 3741.18 samples/s, train_cce: 0.3168798, train_acc: 89.89%, val_cce: 0.3169060, val_acc: 90.00%]
+Epoch 50/50: 100%|████████| 48000/48000 [00:12<00:00, 3755.39 samples/s, train_cce: 0.3211099, train_acc: 89.83%, val_cce: 0.3139842, val_acc: 90.19%]
+[pydtnn.__main__] [INFO]: **** Done...
+[pydtnn.__main__] [INFO]: Training and validation time: 691.9629 s
+[pydtnn.__main__] [INFO]: Training and validation time per epoch: 691.9629 s
+[pydtnn.__main__] [INFO]: Training and validation throughput: 69.3679 samples/s
+[pydtnn.utils.performance_counter] [INFO]: 
+ -------------------------------------
+| Performance counter training report |
+ -------------------------------------
+Training time (from model): 60.6756 s
+Training time per epoch (from model): 60.6756 s
+Training throughput (from model): 39554.6417 samples/s
+Training time (from model, estimated from last half of each epoch): 59.9202 s
+Training throughput (from model, from last half of each epoch): 40053.2911 samples/s
+Training maximum memory allocated: 7590.83 MiB
+Training mean memory allocated: 5222.03 MiB
 ```
 
 ## Example: inference of the VGG16 CNN for the CIFAR-10 dataset
