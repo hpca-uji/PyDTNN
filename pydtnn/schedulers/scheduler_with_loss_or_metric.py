@@ -17,7 +17,7 @@ class SchedulerWithLossOrMetric(Scheduler):
         # NOTE: loss_or_metric default value is "val_accuracy" in Parser.
         super().__init__(verbose)
         type, metric = loss_or_metric.split("_", 1)
-        self.is_val_metric: bool = ("val" == type)
+        self.is_val_metric: bool = "val" == type
         self.loss_or_metric = metric
         self.compare = operator.lt if "accuracy" in self.loss_or_metric else operator.gt
 

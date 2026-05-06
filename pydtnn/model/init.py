@@ -218,7 +218,7 @@ class Init[T: Array](State[T]):
         # Communication method
         match self.use_mpi_buffers:
             case None:
-                self.use_mpi_buffers = (PROTOCOL is None)
+                self.use_mpi_buffers = PROTOCOL is None
             case bool():
                 pass
             case _:

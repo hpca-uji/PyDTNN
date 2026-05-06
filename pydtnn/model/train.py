@@ -13,7 +13,8 @@ from pydtnn.datasets.dataset import Dataset
 from pydtnn.layers.input import Input
 from pydtnn.model.eval import Eval
 from pydtnn.model.utils import BAR_WIDTH
-from pydtnn.schedulers.scheduler import Scheduler, select as select_scheduler
+from pydtnn.schedulers.scheduler import Scheduler
+from pydtnn.schedulers.scheduler import select as select_scheduler
 from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_MDL_EVENT_enum
 from pydtnn.utils.constants import Array
 
@@ -121,7 +122,7 @@ class Train[T: Array](Eval[T]):
             sched.on_batch_begin()
 
         self.real_batch_size = x_batch.shape[0]
-        inpt_layer: Input[T] = self.layers[0]  #type: ignore (casting to the right type)
+        inpt_layer: Input[T] = self.layers[0]  # type: ignore (casting to the right type)
         x, y_targ = inpt_layer._sync_x_y(x_batch, y_batch)
 
         has_batch = x_batch.shape[0] > 0

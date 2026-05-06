@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import logging
-import time
 import operator
+import time
 from typing import TYPE_CHECKING
 
 import numpy as np

@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-import os
 import ast
+import os
 import time
-from warnings import warn
 from pathlib import Path
+from warnings import warn
 
 from openai import OpenAI
-
 
 MODEL = "gpt-4o-mini"
 client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
@@ -15,7 +14,7 @@ client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 def should_process_file(code: str) -> bool:
     try:
         tree = ast.parse(code)
-    except:
+    except SyntaxError:
         return False
 
     # Docstring de módulo
@@ -30,11 +29,12 @@ def should_process_file(code: str) -> bool:
 
     return False
 
+
 def is_valid_python(code: str) -> bool:
     try:
         ast.parse(code)
         return True
-    except:
+    except SyntaxError:
         return False
 
 
@@ -133,4 +133,3 @@ if __name__ == "__main__":
         process_project(root)
     else:
         process_file(root)
-

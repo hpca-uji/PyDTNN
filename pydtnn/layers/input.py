@@ -15,5 +15,4 @@ class Input[T: Array](Layer[T]):
         super().__init__(shape)
 
     def _sync_x_y(self, x_batch: np.ndarray, y_batch: np.ndarray) -> tuple[T, T]:
-        return (x_batch , y_batch)  # type: ignore (It's fine)
-        
+        return (x_batch, y_batch)  # type: ignore (It's fine)

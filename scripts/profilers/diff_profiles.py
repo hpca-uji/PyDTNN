@@ -125,7 +125,7 @@ def do_diff():
             except TypeError:
                 values = []
                 for x, y in zip(values1, values2):
-                    if isinstance(x, type(y)) == str:
+                    if isinstance(x, str):
                         x0, x1 = x.split("/")
                         y0, y1 = y.split("/")
                         # values.append(f"{int(x0)-int(y0)}/{int(x1)-int(y1)}")

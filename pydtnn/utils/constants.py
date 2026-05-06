@@ -4,7 +4,7 @@ from enum import StrEnum, auto
 
 import numpy as np
 
-__all__ = ("Components", "NetworkAlgEnum", "Parameters", "ArrayShape", "DTYPE2CTYPE", "Array")
+__all__ = ("Components", "NetworkAlgoEnum", "Parameters", "ArrayShape", "DTYPE2CTYPE", "Array")
 
 logger = logging.getLogger(__name__)
 

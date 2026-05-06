@@ -94,7 +94,6 @@ def process_file(path: Path, replace=False):
     print(f"Updated {path}")
 
 
-
 def process_project(root: Path, name="*.py", replace=False):
     for path in root.rglob(name):
         process_file(path, replace)

@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env -S bash -x
 # Generate a SVG from class hierarchy
 set -e; set -o pipefail
 SRC="${1:-.}"
