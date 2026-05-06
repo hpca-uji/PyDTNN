@@ -152,7 +152,7 @@ class AbstractConv2DNumpy(AbstractConv2D[np.ndarray], LayerNumpy):
             return
         # #l kn wo ho t kh kw ci wi hi"
         ci, hi, wi = self.model.decode_shape(self.prev_shape)
-        print(self.id, self.co, self.wo, self.ho, self.model.batch_size, self.kh, self.kw, ci, wi, hi, sep="\t")
+        logger.info("\t".join(map(str, [self.id, self.co, self.wo, self.ho, self.model.batch_size, self.kh, self.kw, ci, wi, hi])))
 
     def _export_weights_dw(self, key: str) -> Any:
         # NOTE: Every variant must implement their version of this method.

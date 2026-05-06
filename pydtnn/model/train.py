@@ -10,9 +10,10 @@ from tqdm import tqdm
 from pydtnn import MPI, gpuarray
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.datasets.dataset import Dataset
+from pydtnn.layers.input import Input
 from pydtnn.model.eval import Eval
 from pydtnn.model.utils import BAR_WIDTH
-from pydtnn.schedulers.scheduler import select as select_scheduler
+from pydtnn.schedulers.scheduler import Scheduler, select as select_scheduler
 from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_MDL_EVENT_enum
 from pydtnn.utils.constants import Array
 
@@ -41,7 +42,7 @@ class Train[T: Array](Eval[T]):
         # NOTE: This parameter come from Parser.
         self.model_sync_participation = self.SyncParticipation(self.kwargs["model_sync_participation"])
 
-        self.schedulers = [select_scheduler(scheduler_name).from_model(self) for scheduler_name in filter(None, self.schedulers_names.split(","))]
+        self.schedulers: list[Scheduler] = [select_scheduler(scheduler_name).from_model(self) for scheduler_name in filter(None, self.schedulers_names.split(","))]
         for scheduler in self.schedulers:
             scheduler.model = self
 
@@ -120,7 +121,8 @@ class Train[T: Array](Eval[T]):
             sched.on_batch_begin()
 
         self.real_batch_size = x_batch.shape[0]
-        x, y_targ = self.layers[0]._sync_x_y(x_batch, y_batch)
+        inpt_layer: Input[T] = self.layers[0]  #type: ignore (casting to the right type)
+        x, y_targ = inpt_layer._sync_x_y(x_batch, y_batch)
 
         has_batch = x_batch.shape[0] > 0
 

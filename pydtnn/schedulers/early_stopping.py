@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import time
+import operator
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -29,16 +30,18 @@ class EarlyStopping(SchedulerWithLossOrMetric):
         self.patience = patience
         self.minimize = minimize
         self.best_epoch: int = 0
-        self.best_loss: float = np.inf * {True: -1, False: 1}[not self.minimize]
+        self.best_loss_or_metric: float = np.inf * {True: -1, False: 1}[not self.minimize]
         self.best_weights_filename: str | None = None
         self.time: str = time.strftime("%Y%m%d")
+        self.compare = operator.lt if self.minimize else operator.gt
 
-    def on_epoch_end(self, train_loss: np.ndarray, val_loss: np.ndarray) -> None:
+    def on_epoch_end(self, train_loss_or_metrics: np.ndarray, val_loss_or_metrics: np.ndarray) -> None:
         idx = self._get_idx()
         self.epoch_count += 1
-        loss = val_loss if self.is_val_metric else train_loss
-        if (not self.minimize and loss[idx] > self.best_loss) or (self.minimize and loss[idx] < self.best_loss):
-            self.best_loss = loss[idx]
+        loss_or_metrics = val_loss_or_metrics if self.is_val_metric else train_loss_or_metrics
+
+        if self.compare(loss_or_metrics[idx], self.best_loss_or_metric):
+            self.best_loss_or_metric = loss_or_metrics[idx]
             self.best_epoch = self.epoch_count
             # Save weights + bias
             if not self.best_weights_filename:
@@ -50,6 +53,7 @@ class EarlyStopping(SchedulerWithLossOrMetric):
             assert self.best_weights_filename
             self.model.load_weights_and_bias(self.best_weights_filename)
             self.log(f"Metric '{self.loss_or_metric}' did not improve for {self.patience} epochs, stop training.")
+        # else: do nothing.
 
     @classmethod
     def from_model(cls, model: Model) -> EarlyStopping:

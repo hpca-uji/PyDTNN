@@ -30,7 +30,7 @@ class StopAtLoss(SchedulerWithLossOrMetric):
         idx = self._get_idx()
         self.epoch_count += 1
         loss = val_loss if self.is_val_metric else train_loss
-        if ("accuracy" in self.loss_or_metric and loss[idx] > self.threshold_value) or ("accuracy" not in self.loss_or_metric and loss[idx] < self.threshold_value):
+        if self.compare(loss[idx], self.threshold_value):
             self.stop_training = True
             self.log(f"Metric '{self.loss_or_metric}' reached threshold value {self.threshold_value}, stop training.")
 

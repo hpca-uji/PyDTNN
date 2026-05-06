@@ -38,7 +38,8 @@ class ModelCheckpoint(SchedulerWithLossOrMetric):
         idx = self._get_idx()
         self.epoch_count += 1
         loss = val_loss if self.is_val_metric else train_loss
-        if ("accuracy" in self.loss_or_metric and loss[idx] > self.best_loss) or ("accuracy" not in self.loss_or_metric and loss[idx] < self.best_loss):
+        
+        if self.compare(loss[idx], self.best_loss):
             self.best_loss = loss[idx]
             self.best_epoch = self.epoch_count
             if self.epoch_count % self.epoch_save_frequency == 0:

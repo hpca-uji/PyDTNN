@@ -218,7 +218,7 @@ class Init[T: Array](State[T]):
         # Communication method
         match self.use_mpi_buffers:
             case None:
-                self.use_mpi_buffers = PROTOCOL is None
+                self.use_mpi_buffers = (PROTOCOL is None)
             case bool():
                 pass
             case _:
@@ -298,8 +298,9 @@ class Init[T: Array](State[T]):
         self.memory_used += self.loss_func.memory_used
         temp_memory_size.append(self.loss_func.tmp_memory_used)
 
-        self.metrics_funcs = [select_metric(m)() for m in self.metrics_list]
-        self.metrics_funcs.sort(key=lambda metric: metric.order)
+        metrics = [(m, select_metric(m)()) for m in self.metrics_list]
+        metrics.sort(key=lambda metric: metric[1].order)
+        self.metrics_list, self.metrics_funcs = map(list, zip(*metrics))
 
         for metric in self.metrics_funcs:
             metric._init_backend_with_model(self)
