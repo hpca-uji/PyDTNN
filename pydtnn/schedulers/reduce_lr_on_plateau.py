@@ -40,7 +40,7 @@ class ReduceLROnPlateau(SchedulerWithLossOrMetric):
         elif self.epoch_count - self.best_epoch >= self.patience and self.model.optimizer.learning_rate * self.factor >= self.min_lr:
             self.model.optimizer.learning_rate *= self.factor
             self.best_epoch = self.epoch_count
-            self.log(f"Metric {self.loss_or_metric} did not improve for {self.model.optimizer.learning_rate} epochs, setting learning rate to {self.patience:.8f}.")
+            self.log(f"Metric {self.loss_or_metric} did not improve for {self.patience} epochs, setting learning rate to {self.model.optimizer.learning_rate:.8f}.")
 
     @classmethod
     def from_model(cls, model: Model) -> ReduceLROnPlateau:
