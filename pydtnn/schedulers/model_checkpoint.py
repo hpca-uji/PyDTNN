@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import logging
 import os
-import time
 from typing import TYPE_CHECKING
 
 import numpy as np
 
+from pydtnn import timestamp
 from pydtnn.schedulers.scheduler_with_loss_or_metric import SchedulerWithLossOrMetric
 
 __all__ = ("ModelCheckpoint",)
@@ -42,8 +42,8 @@ class ModelCheckpoint(SchedulerWithLossOrMetric):
         if self.compare(loss[idx], self.best_loss):
             self.best_loss = loss[idx]
             self.best_epoch = self.epoch_count
-            if self.epoch_count % self.epoch_save_frequency == 0:
-                self.filename = "./model-{}-epoch-{}-{}.npz".format(self.model.model_name, self.epoch_count, time.strftime("%Y%m%d"))
+            if (self.epoch_count % self.epoch_save_frequency) == 0:
+                self.filename = f"./model-{self.model.model_name}-epoch-{self.epoch_count}-{timestamp}.npz"
                 self.model.store_weights_and_bias(self.filename)
                 self.log(f"Saving model weights and bias in '{self.filename}'.")
                 if self.model.comm_rank == 0 and self.last_filename is not None:

@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import logging
 import operator
-import time
 from typing import TYPE_CHECKING
 
 import numpy as np
 
+from pydtnn import timestamp
 from pydtnn.schedulers.scheduler_with_loss_or_metric import SchedulerWithLossOrMetric
 
 __all__ = ("EarlyStopping",)
@@ -32,7 +32,6 @@ class EarlyStopping(SchedulerWithLossOrMetric):
         self.best_epoch: int = 0
         self.best_loss_or_metric: float = np.inf * {True: -1, False: 1}[not self.minimize]
         self.best_weights_filename: str | None = None
-        self.time: str = time.strftime("%Y%m%d")
         self.compare = operator.lt if self.minimize else operator.gt
 
     def on_epoch_end(self, train_loss_or_metrics: np.ndarray, val_loss_or_metrics: np.ndarray) -> None:
@@ -45,7 +44,7 @@ class EarlyStopping(SchedulerWithLossOrMetric):
             self.best_epoch = self.epoch_count
             # Save weights + bias
             if not self.best_weights_filename:
-                self.best_weights_filename = "./model-{}-weights-rank_{}-{}.npz".format(self.model.model_name, self.model.comm_rank, self.time)
+                self.best_weights_filename = f"./model-{self.model.model_name}-weights-rank_{self.model.comm_rank}-{timestamp}.npz"
             self.model.store_weights_and_bias(self.best_weights_filename, compress=False)
         elif (self.epoch_count - self.best_epoch) >= self.patience:
             self.stop_training = True
