@@ -50,7 +50,7 @@ class FCNumpy(FC[np.ndarray], LayerNumpy):
                 self.memory_used += self.db.nbytes
 
         # Performance model
-        self.fwd_time = self.bwd_time = 0
+        self.fwd_time = self.bwd_time = np.zeros((4,), dtype=np.float32)
         self.fwd_time += matmul_time(m=self.model.batch_size,
                                      n=self.weights.shape[1],
                                      k=self.weights.shape[0],

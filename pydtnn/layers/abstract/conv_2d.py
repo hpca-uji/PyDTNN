@@ -49,6 +49,8 @@ class AbstractConv2D[T: Array](Layer[T]):
         # The following attributes will be initialized later
         self.ci = self.hi = self.wi = self.kh = self.kw = self.ho = self.wo = 0
         self.weights_shape: ArrayShape = None  # type: ignore
+        self.dw: T = None # type: ignore
+        self.db: T = None # type: ignore
         # @warning: do not do this (affects the gpu version) self.forward = self.backward = None
 
     def _initializing_special_parameters(self):
