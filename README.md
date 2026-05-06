@@ -294,7 +294,7 @@ The PyDTNN framework comes with a utility launcher called
   - `--enable-nccl`: Enable the use of the `NCCL` library for collective
     communications on GPUs. This option can only be set when cuDNN is available.
     Default: `False`.
-  - `--enable-cudnn-auto-conv-alg`: Let `cuDNN` to select the best
+  - `--enable-cudnn-auto-conv-algo`: Let `cuDNN` to select the best
     performing convolution algorithm. Default: `True`.
 - Encryption parameters:
   - `--encryption`: Encryption library: `tenseal`, `openfhe`, `None`. Default `None`.
@@ -771,7 +771,7 @@ $ pydtnn-benchmark \
   enable_cudnn                     : False
   enable_gpudirect               : False
   enable_nccl                    : False
-  enable_cudnn_auto_conv_alg     : True
+  enable_cudnn_auto_conv_algo     : True
   tracing                        : True
   tracer_output                  : prueba.trc
   profile                        : False

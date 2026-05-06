@@ -328,7 +328,7 @@ class ArgumentParser(argparse.ArgumentParser):
             default=False,
             help="Enable the use of the NCCL library for collective communications on GPUs. This option can only be set when cuDNN is available. Default. False.",
         )
-        _pe_group.add_argument("--enable-cudnn-auto-conv-alg", type=bool_lambda, default=True, help="Let cuDNN to select the best performing convolution algorithm. Default: True.")
+        _pe_group.add_argument("--enable-cudnn-auto-conv-algo", type=bool_lambda, default=True, help="Let cuDNN to select the best performing convolution algorithm. Default: True.")
 
         # Encryption options
         _cy_group = self.add_argument_group("Encryption options")

@@ -54,7 +54,7 @@ pydtnn-benchmark \
   --backend="cpu;conv_2d:winograd" \
   --enable-cudnn=False \
   --enable-best-of=False \
-  --enable-cudnn-auto-conv-alg=False \
+  --enable-cudnn-auto-conv-algo=False \
   --enable-gpudirect=False \
   --history-file="results/result_vgg3dobn.history" \
   --dtype=float32

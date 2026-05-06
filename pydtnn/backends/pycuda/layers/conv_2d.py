@@ -62,12 +62,12 @@ class Conv2DPycuda(AbstractConv2DPycuda):
         _, _, _ho, _wo = cudnn.cudnnGetConvolution2dForwardOutputDim(self.conv_desc, x.desc, self.weights.desc)
         assert self.ho == _ho and self.wo == _wo, "cuDNN output sizes differ from expected ones!"
 
-        # Set to 20 the number of requested algorithms for enable_cudnn_auto_conv_alg
+        # Set to 20 the number of requested algorithms for enable_cudnn_auto_conv_algo
         req_algs = 20
 
         self.fwd_algo = (
             cudnn.cudnnFindConvolutionForwardAlgorithm(self.model.cudnn_handle, x.desc, self.weights.desc, self.conv_desc, self.y.desc, req_algs)[0].algo
-            if self.model.enable_cudnn_auto_conv_alg
+            if self.model.enable_cudnn_auto_conv_algo
             else cudnn.cudnnConvolutionFwdAlgo["CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_PRECOMP_GEMM"]
         )
 
@@ -78,7 +78,7 @@ class Conv2DPycuda(AbstractConv2DPycuda):
 
         self.bwd_dw_algo = (
             cudnn.cudnnFindConvolutionBackwardFilterAlgorithm(self.model.cudnn_handle, x.desc, self.y.desc, self.conv_desc, self.weights.desc, req_algs)[0].algo
-            if self.model.enable_cudnn_auto_conv_alg
+            if self.model.enable_cudnn_auto_conv_algo
             else cudnn.cudnnConvolutionBwdFilterAlgo["CUDNN_CONVOLUTION_BWD_FILTER_ALGO_1"]
         )
 
@@ -87,7 +87,7 @@ class Conv2DPycuda(AbstractConv2DPycuda):
 
         self.bwd_dx_algo = (
             cudnn.cudnnFindConvolutionBackwardDataAlgorithm(self.model.cudnn_handle, self.weights.desc, self.y.desc, self.conv_desc, x.desc, req_algs)[0].algo
-            if self.model.enable_cudnn_auto_conv_alg
+            if self.model.enable_cudnn_auto_conv_algo
             else cudnn.cudnnConvolutionBwdDataAlgo["CUDNN_CONVOLUTION_BWD_DATA_ALGO_1"]
         )
 
