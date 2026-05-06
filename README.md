@@ -148,7 +148,7 @@ The PyDTNN framework comes with a utility launcher called
   - `--evaluate`: Evaluate the model before and after training the
     model. Default: `False`.
   - `--evaluate-only`: Only evaluate the model. Default: `False`.
-  - `--weights-and-bias-filename`: Load weights and bias from file.
+  - `--model-state-filename`: Load weights and bias from file.
     Default: `None`.
   - `--history-file`: Filename to save training loss and metrics.
   - `--tensor-format`: Data format to be used: `NHWC` or `NCHW`.
@@ -357,7 +357,7 @@ options
   steps-per-epoch          : 0.0
   evaluate                 : False
   evaluate-only            : False
-  weights-and-bias-filename: None
+  model-state-filename: None
   history-file             : 
   tensor-format            : 
   random-seed              : 57005
@@ -608,7 +608,7 @@ $ pydtnn-benchmark \
     --evaluate-only=True \
     --batch-size=64 \
     --validation-split=0.2 \
-    --weights-and-bias-filename=vgg16-weights-nhwc.npz \
+    --model-state-filename=vgg16-weights-nhwc.npz \
     --tracing=False \
     --profile=False \
     --enable-cudnn=True \
@@ -714,7 +714,7 @@ $ pydtnn-benchmark \
   steps_per_epoch                : 0
   evaluate_on_train              : True
   evaluate_only                  : True
-  weights_and_bias_filename      : vgg16-weights-nhwc.npz
+  model_state_filename      : vgg16-weights-nhwc.npz
   history_file                   : None
   shared_data                 : False
   enable_fused_bn_relu           : False

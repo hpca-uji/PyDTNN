@@ -44,7 +44,7 @@ class ModelCheckpoint(SchedulerWithLossOrMetric):
             self.best_epoch = self.epoch_count
             if (self.epoch_count % self.epoch_save_frequency) == 0:
                 self.filename = f"./model-{self.model.model_name}-epoch-{self.epoch_count}-{timestamp}.npz"
-                self.model.store_weights_and_bias(self.filename)
+                self.model.save_model_state(self.filename)
                 self.log(f"Saving model weights and bias in '{self.filename}'.")
                 if self.model.comm_rank == 0 and self.last_filename is not None:
                     os.remove(self.last_filename)

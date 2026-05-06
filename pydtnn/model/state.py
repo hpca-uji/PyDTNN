@@ -40,7 +40,7 @@ class State[T: Array](Layers[T]):
         for layer, data in zip(self.layers, data[Parameters.LAYERS]):
             layer.import_(data)  # type: ignore (It is the right data type.)
 
-    def load_weights_and_bias(self, filename: str) -> None:
+    def load_model_state(self, filename: str) -> None:
         """
         ARGS:
             filename: Path to the file with the weights and biases to load.
@@ -48,7 +48,7 @@ class State[T: Array](Layers[T]):
         with np.load(filename, allow_pickle=True) as data:
             self.import_(data)
 
-    def store_weights_and_bias(self, filename: str, compress=True) -> None:
+    def save_model_state(self, filename: str, compress=True) -> None:
         """
         ARGS:
             filename: Path to the file were the weights and biases will be stored.

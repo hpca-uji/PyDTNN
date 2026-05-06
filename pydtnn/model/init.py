@@ -331,8 +331,8 @@ class Init[T: Array](State[T]):
         self.optimizer._post_init()
         
         # Load weights and bias
-        if self.weights_and_bias_filename:
-            self.load_weights_and_bias(self.weights_and_bias_filename)
+        if self.model_state_filename:
+            self.load_model_state(self.model_state_filename)
 
     def _ensure_model_runnable(self) -> None:
         if not self.layers:

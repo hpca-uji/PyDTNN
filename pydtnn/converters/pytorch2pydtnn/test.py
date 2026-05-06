@@ -287,7 +287,7 @@ def main():
     if weight is not None:
         output_path = f"{OUTPUT_PATH}model_{test}.pth"
         print(f"{output_path=}")
-        new_model.store_weights_and_bias(output_path)
+        new_model.save_model_state(output_path)
 
     print("======================\n")
 

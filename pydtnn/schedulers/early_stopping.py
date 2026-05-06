@@ -45,12 +45,12 @@ class EarlyStopping(SchedulerWithLossOrMetric):
             # Save weights + bias
             if not self.best_weights_filename:
                 self.best_weights_filename = f"./model-{self.model.model_name}-weights-rank_{self.model.comm_rank}-{timestamp}.npz"
-            self.model.store_weights_and_bias(self.best_weights_filename, compress=False)
+            self.model.save_model_state(self.best_weights_filename, compress=False)
         elif (self.epoch_count - self.best_epoch) >= self.patience:
             self.stop_training = True
             # Restore weights + bias
             assert self.best_weights_filename
-            self.model.load_weights_and_bias(self.best_weights_filename)
+            self.model.load_model_state(self.best_weights_filename)
             self.log(f"Metric '{self.loss_or_metric}' did not improve for {self.patience} epochs, stop training.")
         # else: do nothing.
 

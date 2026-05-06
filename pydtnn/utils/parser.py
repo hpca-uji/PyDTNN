@@ -168,7 +168,7 @@ class ArgumentParser(argparse.ArgumentParser):
         self.add_argument("--steps-per-epoch", type=float, default=0, help="Trims the training data depending on the given number of steps per epoch. Default: 0, i.e., do not trim.")
         self.add_argument("--evaluate", dest="evaluate_on_train", default=False, type=bool_lambda, help="Evaluate the model before and after training the model. Default: False.")
         self.add_argument("--evaluate-only", default=False, type=bool_lambda, help="Only evaluate the model. Default: False.")
-        self.add_argument("--weights-and-bias-filename", type=str, default=None, help="Load weights and bias from file. Default: None.")
+        self.add_argument("--model-state-filename", type=str, default=None, help="Load weights and bias from file. Default: None.")
         self.add_argument("--history-file", type=str, default="", help="Filename to save training loss and metrics.")
         self.add_argument("--tensor-format", type=str, default="", help="Data format to be used: 'nhwc' or 'nchw'. If not defined value sets 'nchw' when cuDNN is available, 'nhwc' otherwise.")
         self.add_argument("--random-seed", type=int, default=57005, help="Initial state of random number generator. Default: '57005'.")

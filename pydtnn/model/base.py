@@ -75,7 +75,7 @@ class Base[T: Array]:
     # enable_memory_cache: bool
     enable_nccl: bool
     gpus_per_node: int
-    weights_and_bias_filename: str
+    model_state_filename: str
     learning_rate_scaling: bool
     metrics: str
     use_memory_pool: bool
