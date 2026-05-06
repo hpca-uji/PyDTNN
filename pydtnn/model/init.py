@@ -329,7 +329,7 @@ class Init[T: Array](State[T]):
 
         self.loss_func._post_init()
         self.optimizer._post_init()
-        
+
         # Load weights and bias
         if self.model_state_filename:
             self.load_model_state(self.model_state_filename)
