@@ -118,10 +118,6 @@ class Init[T: Array](State[T]):
         if model_name := self.kwargs.get("model_name"):
             self._layers_init(model_name)
 
-        # Load weights and bias
-        if self.weights_and_bias_filename:
-            self.load_weights_and_bias(self.weights_and_bias_filename)
-
     def _tensor_init(self) -> None:
         """Setup tensor format"""
         if self.tensor_format:
@@ -333,6 +329,10 @@ class Init[T: Array](State[T]):
 
         self.loss_func._post_init()
         self.optimizer._post_init()
+        
+        # Load weights and bias
+        if self.weights_and_bias_filename:
+            self.load_weights_and_bias(self.weights_and_bias_filename)
 
     def _ensure_model_runnable(self) -> None:
         if not self.layers:

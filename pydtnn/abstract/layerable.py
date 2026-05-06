@@ -162,9 +162,10 @@ class Layerable[T: Array](Base[T]):
 
         data[Parameters.CANONICAL_NAME] = self._export_prop(Parameters.CANONICAL_NAME)
 
-        for key, value in self.grad_vars.items():
-            data[key] = self._export_prop(key)
-            data[value] = self._export_prop(value)
+        for var, dvar in self.grad_vars.items():
+            data[var] = self._export_prop(var)
+            if not self.model.evaluate_only:
+                data[dvar] = self._export_prop(dvar)
 
         if self.paths:
             data[Parameters.PATHS] = self._export_prop(Parameters.PATHS)
@@ -175,9 +176,10 @@ class Layerable[T: Array](Base[T]):
         if data[Parameters.CANONICAL_NAME] != self.canonical_name:
             raise TypeError(f"self type must be the same as the stored data type  (self: {self.canonical_name}, stored: {data[Parameters.CANONICAL_NAME]})")
 
-        for key, value in self.grad_vars.items():
-            self._import_prop(key, data[key])
-            self._import_prop(value, data[value])
+        for var, dvar in self.grad_vars.items():
+            self._import_prop(var, data[var])
+            if not self.model.evaluate_only:
+                self._import_prop(dvar, data[dvar])
 
         if Parameters.PATHS in data:
             self._import_prop(Parameters.PATHS, data[Parameters.PATHS])
