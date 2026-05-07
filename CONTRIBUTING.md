@@ -29,6 +29,7 @@
 
   ---
 - If model or components structure changes, update the `Structure` section of this document accordingly.
+- If the Model components or components hierarchy structure changes, update the model's `__init__` diagram.
 
 # Knowledge
 - In components, `__init__` is used for model-agnostic configuration, and `_model_init` for model specific configuration, and `_post_init` and resource allocation.

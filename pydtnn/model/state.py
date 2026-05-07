@@ -6,7 +6,7 @@ from warnings import warn
 
 import numpy as np
 
-from pydtnn.model.layers import Layers
+from pydtnn.model.init import Init
 from pydtnn.utils.constants import Array, Parameters
 
 __all__ = ("State",)
@@ -14,7 +14,15 @@ __all__ = ("State",)
 logger = logging.getLogger(__name__)
 
 
-class State[T: Array](Layers[T]):
+class State[T: Array](Init[T]):
+
+    def _model_init(self) -> None:
+        super()._model_init()
+        # Load weights and bias 
+        if self.model_state_filename:
+            self.load_model_state(self.model_state_filename)
+
+
     def export(self) -> dict[str, Any]:
         """Export model state"""
         data = {}

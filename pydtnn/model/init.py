@@ -14,7 +14,7 @@ from pydtnn.libs.mpi.rc import proto as PROTOCOL
 from pydtnn.losses.loss import select as select_loss
 from pydtnn.metrics.metric import select as select_metric
 from pydtnn.model.base import Base
-from pydtnn.model.state import State
+from pydtnn.model.layers import Layers
 from pydtnn.model.utils import DEFAULT_BACH_SIZE, LIMIT_THREADS_AND_BLOCKS
 from pydtnn.models.model import select as select_model
 from pydtnn.optimizers.optimizer import select as select_optimizer
@@ -39,7 +39,7 @@ __all__ = ("Init",)
 logger = logging.getLogger(__name__)
 
 
-class Init[T: Array](State[T]):
+class Init[T: Array](Layers[T]):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
@@ -279,7 +279,7 @@ class Init[T: Array](State[T]):
 
         self.add_layers(create_model(input_shape, output_shape))
 
-    def _model_init(self):
+    def _model_init(self) -> None:
         if self._is_model_init:
             return
         self._is_model_init = True
@@ -329,10 +329,6 @@ class Init[T: Array](State[T]):
 
         self.loss_func._post_init()
         self.optimizer._post_init()
-
-        # Load weights and bias
-        if self.model_state_filename:
-            self.load_model_state(self.model_state_filename)
 
     def _ensure_model_runnable(self) -> None:
         if not self.layers:
