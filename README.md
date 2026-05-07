@@ -343,8 +343,6 @@ $ mpirun -np 12 \
       --backend=gpu \
       --dtype=float32
 
-
-[pydtnn.__main__] [INFO]: 
 options
   model                    : simplecnn
   backend                  : gpu
@@ -484,7 +482,6 @@ Communication options
   mpi-server  : 127.0.0.1
   mpi-port    : 61642
 
-[pydtnn.model.repr] [INFO]: 
 Model Summary
 =============
 - Name: simplecnn
@@ -498,7 +495,7 @@ Model Summary
 - Output: (10,)
 - Batch size: 64
 - Layers: 12
-[pydtnn.model.repr] [INFO]: 
+
 +----+-----------+---------+---------+--------+-------------+-------------+-------------------+---------+--------+----------+--------+
 | Id |   Name    | Backend | Memory  | Params |    Input    |   Output    |      Weights      | Padding | Stride | Dilation |  Pool  |
 +----+-----------+---------+---------+--------+-------------+-------------+-------------------+---------+--------+----------+--------+
@@ -526,7 +523,8 @@ Model Summary
 +----+-----------+---------+---------+--------+-------------+-------------+-------------------+---------+--------+----------+--------+
 | 11 |  Softmax  | pycuda  |  5.0KB  |        |    (10,)    |    (10,)    |                   |         |        |          |        |
 +----+-----------+---------+---------+--------+-------------+-------------+-------------------+---------+--------+----------+--------+
-[pydtnn.__main__] [INFO]: **** Training...
+
+**** Training...
 Epoch  1/50: 100%|████████| 48000/48000 [00:13<00:00, 3455.71 samples/s, train_cce: 1.1184705, train_acc: 62.32%, val_cce: 0.7023183, val_acc: 77.95%]
 Epoch  2/50: 100%|████████| 48000/48000 [00:12<00:00, 3752.62 samples/s, train_cce: 0.6748989, train_acc: 78.77%, val_cce: 0.5968420, val_acc: 81.47%]
 Epoch  3/50: 100%|████████| 48000/48000 [00:12<00:00, 3809.99 samples/s, train_cce: 0.5856293, train_acc: 81.59%, val_cce: 0.5133920, val_acc: 83.88%]
@@ -557,7 +555,7 @@ Epoch 27/50: 100%|████████| 48000/48000 [00:13<00:00, 3579.69 sa
 Epoch 28/50: 100%|████████| 48000/48000 [00:13<00:00, 3590.92 samples/s, train_cce: 0.3387754, train_acc: 89.22%, val_cce: 0.3345976, val_acc: 89.70%]
 Epoch 29/50: 100%|████████| 48000/48000 [00:13<00:00, 3481.79 samples/s, train_cce: 0.3417804, train_acc: 89.12%, val_cce: 0.3417696, val_acc: 89.32%]
 Epoch 30/50: 100%|███████| 48000/48000 [00:13<00:00, 24522.59 samples/s, train_cce: 0.3385290, train_acc: 89.17%, val_cce: 0.3353500, val_acc: 89.52%]
-[pydtnn.schedulers.scheduler] [INFO]: Scheduler ReduceLREveryNEpochs: Setting learning rate to 0.00500000!
+Scheduler ReduceLREveryNEpochs: Setting learning rate to 0.00500000!
 Epoch 30/50: 100%|████████| 48000/48000 [00:13<00:00, 3596.27 samples/s, train_cce: 0.3385290, train_acc: 89.17%, val_cce: 0.3353500, val_acc: 89.52%]
 Epoch 31/50: 100%|████████| 48000/48000 [00:13<00:00, 3543.55 samples/s, train_cce: 0.3262158, train_acc: 89.56%, val_cce: 0.3149563, val_acc: 90.25%]
 Epoch 32/50: 100%|████████| 48000/48000 [00:13<00:00, 3496.25 samples/s, train_cce: 0.3222284, train_acc: 89.81%, val_cce: 0.3056272, val_acc: 90.32%]
@@ -579,11 +577,12 @@ Epoch 47/50: 100%|████████| 48000/48000 [00:13<00:00, 3486.95 sa
 Epoch 48/50: 100%|████████| 48000/48000 [00:12<00:00, 3708.50 samples/s, train_cce: 0.3167030, train_acc: 89.94%, val_cce: 0.3166687, val_acc: 90.21%]
 Epoch 49/50: 100%|████████| 48000/48000 [00:12<00:00, 3741.18 samples/s, train_cce: 0.3168798, train_acc: 89.89%, val_cce: 0.3169060, val_acc: 90.00%]
 Epoch 50/50: 100%|████████| 48000/48000 [00:12<00:00, 3755.39 samples/s, train_cce: 0.3211099, train_acc: 89.83%, val_cce: 0.3139842, val_acc: 90.19%]
-[pydtnn.__main__] [INFO]: **** Done...
-[pydtnn.__main__] [INFO]: Training and validation time: 691.9629 s
-[pydtnn.__main__] [INFO]: Training and validation time per epoch: 691.9629 s
-[pydtnn.__main__] [INFO]: Training and validation throughput: 69.3679 samples/s
-[pydtnn.utils.performance_counter] [INFO]: 
+
+**** Done...
+Training and validation time: 691.9629 s
+Training and validation time per epoch: 691.9629 s
+Training and validation throughput: 69.3679 samples/s
+
  -------------------------------------
 | Performance counter training report |
  -------------------------------------
@@ -615,8 +614,6 @@ $ pydtnn-benchmark \
     --backend=gpu \
     --dtype=float32
 
-
-[pydtnn.__main__] [INFO]: 
 options
   model                    : vgg16_cifar10
   backend                  : cpu
@@ -756,7 +753,6 @@ Communication options
   mpi-server  : 127.0.0.1
   mpi-port    : 61642
 
-[pydtnn.model.repr] [INFO]: 
 Model Summary
 =============
 - Name: vgg16_cifar10
@@ -770,7 +766,7 @@ Model Summary
 - Output: (10,)
 - Batch size: 64
 - Layers: 41
-[pydtnn.model.repr] [INFO]: 
+
 +----+-----------+---------+---------------------+----------+---------------+---------------+------------------+---------+--------+----------+--------+
 | Id |   Name    | Backend |       Memory        |  Params  |     Input     |    Output     |     Weights      | Padding | Stride | Dilation |  Pool  |
 +----+-----------+---------+---------------------+----------+---------------+---------------+------------------+---------+--------+----------+--------+
@@ -856,11 +852,12 @@ Model Summary
 +----+-----------+---------+---------------------+----------+---------------+---------------+------------------+---------+--------+----------+--------+
 | 40 |  Softmax  |  numpy  | 5.75KB (3.25KB tmp) |          |     (10,)     |     (10,)     |                  |         |        |          |        |
 +----+-----------+---------+---------------------+----------+---------------+---------------+------------------+---------+--------+----------+--------+
-[pydtnn.__main__] [INFO]: **** Evaluating on test dataset...
+
+**** Evaluating on test dataset...
 Testing: 100%|████████████████████████████████████████████████████| 10000/10000 [00:28<00:00, 346.26 samples/s, test_cce: 0.7342598, test_acc: 77.91%]
-[pydtnn.__main__] [INFO]: Testing time: 29.3891 s
-[pydtnn.__main__] [INFO]: Testing throughput: 340.2627 samples/s
-[pydtnn.utils.performance_counter] [INFO]: 
+Testing time: 29.3891 s
+Testing throughput: 340.2627 samples/s
+
  ------------------------------------
 | Performance counter testing report |
  ------------------------------------
