@@ -12,6 +12,7 @@ from pydtnn.datasets.dataset import Dataset
 from pydtnn.model.sync import Sync
 from pydtnn.model.utils import BAR_WIDTH
 from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_MDL_EVENT_enum
+from pydtnn.utils import TqdmLogger
 from pydtnn.utils.constants import Array
 from pydtnn.utils.performance_models import allreduce_time
 
@@ -197,7 +198,7 @@ class Eval[T: Array](Sync[T]):
 
         if self.comm_rank == 0:
             test_total_loss, test_batch_count = np.zeros(len(self.loss_and_metrics), np.float32), 0
-            pbar = tqdm(total=self.dataset.test_nsamples, ncols=bar_width, ascii=" ▁▂▃▄▅▆▇█", smoothing=0.3, desc="Testing", unit=" samples")
+            pbar = tqdm(file=TqdmLogger(), total=self.dataset.test_nsamples, ncols=bar_width, ascii=" ▁▂▃▄▅▆▇█", smoothing=0.3, desc="Testing", unit=" samples")
         else:
             pbar = None
 

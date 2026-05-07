@@ -201,3 +201,9 @@ def read_file(path: str, replaces: dict[str, str] = {}) -> str:
         text = text.replace(*rep)
 
     return text
+
+
+class TqdmLogger:
+    def write(self, s: str) -> int:
+        logger.info(s.replace("\r", "\x1b[F"))
+        return len(s)

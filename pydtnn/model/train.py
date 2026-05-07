@@ -16,6 +16,7 @@ from pydtnn.model.utils import BAR_WIDTH
 from pydtnn.schedulers.scheduler import Scheduler
 from pydtnn.schedulers.scheduler import select as select_scheduler
 from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_MDL_EVENT_enum
+from pydtnn.utils import TqdmLogger
 from pydtnn.utils.constants import Array
 
 __all__ = ("Train",)
@@ -274,7 +275,7 @@ class Train[T: Array](Eval[T]):
                 string = ""
                 fmt = "%%%dd" % (len(str(self.num_epochs)))
                 epoch_string = "Epoch %s/%s" % (fmt, fmt)
-                pbar = tqdm(total=self.dataset.train_nsamples, ncols=bar_width, ascii=" ▁▂▃▄▅▆▇█", smoothing=0.3, desc=epoch_string % (epoch + 1, self.num_epochs), unit=" samples")
+                pbar = tqdm(file=TqdmLogger(), total=self.dataset.train_nsamples, ncols=bar_width, ascii=" ▁▂▃▄▅▆▇█", smoothing=0.3, desc=epoch_string % (epoch + 1, self.num_epochs), unit=" samples")
             else:
                 pbar = None
 

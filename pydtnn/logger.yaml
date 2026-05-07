@@ -7,7 +7,7 @@ formatters:
 handlers:
   console:
     class: logging.StreamHandler
-    formatter: precise
+    formatter: brief
     stream: ext://sys.stderr
   file:
     class: logging.FileHandler

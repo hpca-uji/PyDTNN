@@ -116,6 +116,8 @@ class Base[T: Array]:
     memory_used: int
     tmp_memory_used: int
 
+    _is_model_init: bool
+
     rank_weight: float
     comm_rank: int
     comm_size: int
