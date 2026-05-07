@@ -1,6 +1,6 @@
 [project]
 name = "pydtnn"
-version = "3.8.5"
+version = "3.8.6"
 description = "Python Distributed Training of Neural Networks"
 readme = "README.md"
 license = "GPL-3.0-or-later"
