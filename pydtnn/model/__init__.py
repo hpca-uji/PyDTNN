@@ -10,7 +10,7 @@ class Model[T: Array](Train[T], State[T], Repr[T]):
     """
     # PyDTNN model
 
-    ## Hierarchy structure diagram:
+    # Hierarchy structure diagram:
     ```
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
     ┃ Base ─ Utils ┬ Layers ┬ Init ─ Sync ─ Eval ─ Train ┬ Model ┃

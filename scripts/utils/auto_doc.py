@@ -7,8 +7,12 @@ from warnings import warn
 
 from openai import OpenAI
 
-MODEL = "gpt-4o-mini"
-client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+config = {
+    "model": "gemini-3.1-flash-lite-preview",
+    "reasoning_effort": "minimal",
+    "temperature": 0.1,
+}
+client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"), base_url="https://generativelanguage.googleapis.com/v1beta/openai/")
 
 
 def should_process_file(code: str) -> bool:
@@ -75,9 +79,8 @@ Code:
 """
 
     response = client.chat.completions.create(
-        model=MODEL,
+        **config,
         messages=[{"role": "user", "content": prompt}],
-        temperature=0.1,
     )
 
     content = response.choices[0].message.content or code
