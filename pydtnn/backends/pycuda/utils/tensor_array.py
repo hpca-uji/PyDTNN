@@ -274,6 +274,10 @@ class TensorArray:
         """CPU to GPU with expand_dims"""
         self.ary.set(np.asarray(value.reshape(self.ary.shape), dtype=self.ary.dtype))
 
+    def set_async(self, value: np.ndarray, stream=None) -> None:
+        """CPU to GPU with expand_dims"""
+        self.ary.set_async(np.asarray(value.reshape(self.ary.shape), dtype=self.ary.dtype), stream=stream)
+
     def get(self, ary=None) -> np.ndarray:
         """GPU to CPU with squeeze"""
         value = self.ary.get()
@@ -311,6 +315,16 @@ class TensorArray:
         else:
             ary[:] = value
             return None  # type: ignore
+
+    def get_async(self, stream=None, ary=None):
+        """GPU to CPU with squeeze"""
+        if ary is None:
+            raise ValueError("Destination must be defined!")
+        if not hasattr(ary, "dtype"):
+            raise TypeError("Destination must be a array!")
+        if ary.dtype != self.ary.dtype:
+            raise TypeError("Destination must be same dtype!")
+        self.ary.get_async(stream, ary=ary.reshape(self.ary.shape))
 
     def __array__(self, dtype=None, *, copy=None):
         """NumPy cast helper"""
