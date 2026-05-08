@@ -881,6 +881,10 @@ The main contributors to PyDTNN are:
 - Jose Ignacio Mestre Miravet ([jmiravet@uji.es](mailto:jmiravet@uji.es))
 - Enrique Salvador Quintana Ortí ([quintana@uji.es](mailto:quintana@uji.es))
 
+Other colaborators of the project:
+- Pau San Juan ([p.sanjuan@upv.es](p.sanjuan@upv.es))
+- Pedro Alonso-Jordá ([palonso@uji.es](mailto:palonso@uji.es))
+
 If you have questions or comments about PyDTNN, please contact:
 - Manuel Francisco Dolz Zaragozá ([dolzm@uji.es](mailto:dolzm@uji.es))
 
