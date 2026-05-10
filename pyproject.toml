@@ -58,7 +58,7 @@ gpu = [
 ]
 mpi = [
     "mpi4py>=4.1.0",
-    "pympi>=1.4.0"
+    "pympi>=1.4.6"
 ]
 fhe = [
     "polyhe>=1.0.0"
