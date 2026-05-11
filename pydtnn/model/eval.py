@@ -192,12 +192,11 @@ class Eval[T: Array](Sync[T]):
 
         self.comm_nsamples = list(zip(*self.comm.allgather(self.dataset._nsamples) if self.comm else [self.dataset._nsamples]))
 
-        test_batches_min: float = min(self.comm_nsamples[Dataset.Part.TEST]) / (self.batch_size * self.nprocs)
-
         test_batch_generator = self.dataset.get_test_generator()
+        test_batches_min: float = min(self.comm_nsamples[Dataset.Part.TEST]) / (self.batch_size * self.nprocs)
+        test_total_loss, test_batch_count = np.zeros(len(self.loss_and_metrics), np.float32), 0
 
         if self.comm_rank == 0:
-            test_total_loss, test_batch_count = np.zeros(len(self.loss_and_metrics), np.float32), 0
             pbar = tqdm(file=TqdmLogger(), total=self.dataset.test_nsamples, ncols=bar_width, ascii=" ▁▂▃▄▅▆▇█", smoothing=0.3, desc="Testing", unit=" samples")
         else:
             pbar = None
