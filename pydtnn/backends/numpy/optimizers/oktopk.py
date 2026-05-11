@@ -29,6 +29,12 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
     def _model_init(self, list_layers: list[Layerable]) -> None:
         super()._model_init(list_layers)
 
+        self.iterations: dict[int, int]
+        self.all_local_th: dict[int, dict[str, np.ndarray]]
+        self.all_global_th: dict[int, dict[str, np.ndarray]]
+        self.all_residuals: dict[int, dict[str, np.ndarray]]
+        self.all_boundaries: dict[int, dict[str, np.ndarray]]
+
         for layer in list_layers:
             self.iterations[layer.id] = 0
             self.all_local_th[layer.id] = {dw_: None for dw_ in layer.grad_vars.values()}
@@ -36,10 +42,12 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
             self.all_residuals[layer.id] = {dw_: None for dw_ in layer.grad_vars.values()}
             self.all_boundaries[layer.id] = {dw_: None for dw_ in layer.grad_vars.values()}
 
-    def update(self, layer):
+    def update(self, layer: Layerable):
         for w_, dw_ in layer.grad_vars.items():
             # Get layer weights and gradients
             w, dw = getattr(layer, w_), getattr(layer, dw_)
+            w: np.ndarray
+            dw: np.ndarray
 
             # Reshape dw to 2D matrix
             self.dw_original_shape = dw.shape
@@ -77,7 +85,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
 
         self.iterations[layer.id] += 1
 
-    def _compute_acc(self, residuals, dw, learning_rate, method="cython"):
+    def _compute_acc(self, residuals: np.ndarray, dw: np.ndarray, learning_rate: float, method="cython") -> np.ndarray:
         """
         Compute acc, where: acc = residuals + (learning_rate * dw)
 
@@ -104,7 +112,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
 
         raise NotImplementedError(f"Method '{method}' not implemented")
 
-    def _reset_residuals(self, acc, indexes, method="cython"):
+    def _reset_residuals(self, acc: np.ndarray, indexes: tuple[np.ndarray, np.ndarray], method="cython") -> np.ndarray:
         """
         Update residuals: set zero value if it is in indexes, else acc value is set.
         If density is 100% and some gradients are zero, scipy will be removing those indexes even if no sparsity is applied.
@@ -136,7 +144,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
 
         raise NotImplementedError(f"Method '{method}' not implemented")
 
-    def _update_weights(self, layer, w_type, w, coo_u, method="cython"):
+    def _update_weights(self, layer: Layerable, w_type: str, w: np.ndarray, coo_u: SparseMatrixCOO, method="cython") -> None:
         """
         Update weights: w -= (u / self.model.nprocs)
         and set to weight layer attribute: setattr(layer, w_type, w)
@@ -208,7 +216,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
             """Use only for debugging purposes"""
             logger.warning("This method should be used only in case of debugging for performance reasons.")
             warnings.warn("This method should be used only in case of debugging for performance reasons.", RuntimeWarning)
-
+            
             dw = coo_u.toarray()
             if len(self.dw_original_shape) != 2:
                 dw = dw.reshape(self.dw_original_shape)
@@ -221,7 +229,8 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
 
         raise NotImplementedError(f"Method '{method}' not implemented")
 
-    def _ok_sparse_allreduce(self, acc, t, k, space_repartition_t, thresholds_re_evaluation_t):
+    def _ok_sparse_allreduce(self, acc: np.ndarray, t: int, k: int, space_repartition_t: int, 
+                             thresholds_re_evaluation_t: int) -> tuple[SparseMatrixCOO, tuple[np.ndarray, np.ndarray]]:
         """
         Performs the Ok-Topk sparse allreduce operation.
         This method executes the Ok-Topk sparse allreduce algorithm, which
@@ -259,7 +268,8 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
         indexes = self._intersect_indexes(local_topk_indexes, global_topk_indexes)
         return coo_u, indexes
 
-    def _th_re_evaluate(self, matrix, k, input_format=None, method="numpy_sort"):
+    def _th_re_evaluate(self, matrix: np.ndarray | SparseMatrixCOO, k: int, input_format: str | None=None, 
+                        method="numpy_sort") -> float:
         """
         Return the absolute gradient threshold for a given matrix.
 
@@ -307,7 +317,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
 
         raise NotImplementedError(f"Method '{method}' with format '{input_format}' not implemented")
 
-    def _space_repartition(self, acc, local_th, balanced=True):
+    def _space_repartition(self, acc: np.ndarray, local_th:float, balanced=True) -> np.ndarray:
         """
         Returns the boundaries of the regions of the gradient matrix for the split and reduce phase.
 
@@ -326,6 +336,8 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
 
         self._show_message_only_once(f"In '_space_repartition', balanced = '{balanced}' is being used")
 
+        output = None
+
         if not balanced:
             boundaries = np.zeros(self.model.nprocs, dtype=np.int32)
             total_rows = self.dw_original_shape[0]
@@ -333,9 +345,9 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
             for i in range(0, self.model.nprocs - 1):
                 boundaries[i] = block_size * (i + 1)
             boundaries[self.model.nprocs - 1] = total_rows
-            return boundaries
 
-        if balanced:
+            output = boundaries
+        else:
             assert self.model.comm, "Communicator need!"
 
             coo_topk = SparseMatrixCOO.from_dense_top_selection(acc, local_th)
@@ -364,10 +376,11 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
             boundaries[self.model.nprocs - 1] = total_rows
 
             global_boundaries = self.model.comm.allreduce(boundaries, op=MPI.SUM) // self.model.nprocs
+            output = global_boundaries
 
-            return global_boundaries
+        return output
 
-    def _split_and_reduce(self, acc, local_th, boundaries):
+    def _split_and_reduce(self, acc: np.ndarray, local_th: float, boundaries: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """
         First main phase of ok_sparse_allreduce.
         Split the gradients into partitions and reduce them by selecting top-k values.
@@ -388,7 +401,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
         coo_reduced_region_topk = self._reduce_topk(coo_topk, boundaries)
         return coo_reduced_region_topk, coo_topk.get_indexes()
 
-    def _balance_and_allgather(self, coo_reduced_region_topk, global_th):
+    def _balance_and_allgather(self, coo_reduced_region_topk: SparseMatrixCOO, global_th: float) -> tuple[np.ndarray, np.ndarray]:
         """
         Second main phase of ok_sparse_allreduce.
         Performs the allgather of the coo_reduced_region_topk values among workers.
@@ -416,7 +429,8 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
         coo_allgather_topk = self._allgather(coo_reduced_region_global_topk)
         return coo_allgather_topk, coo_reduced_region_global_topk.get_indexes()
 
-    def _intersect_indexes(self, local_indexes, global_indexes):
+    def _intersect_indexes(self, local_indexes: tuple[np.ndarray, np.ndarray],
+                           global_indexes: tuple[np.ndarray, np.ndarray]) -> tuple[np.ndarray, np.ndarray]:
         """
         Calculates the intersection of two sets of indices of 2D.
         The assertion statement is only executed when the script is not run in optimized mode (python3 -O script.py).
@@ -441,7 +455,8 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
         global_rows, global_cols = global_indexes
         return intersect_2d_indexes_cython(local_rows, local_cols, global_rows, global_cols)
 
-    def _reduce_topk(self, coo_topk, boundaries, method="p2p_region_wise_reduce_destination_rotation_and_bucketing"):
+    def _reduce_topk(self, coo_topk: SparseMatrixCOO, boundaries: np.ndarray,
+                     method="p2p_region_wise_reduce_destination_rotation_and_bucketing") -> SparseMatrixCOO:
         """
         Reduce the topk elements in regions defined by boundaries.
 
@@ -534,7 +549,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
 
         raise NotImplementedError(f"Method '{method}' not implemented")
 
-    def _allgather(self, local_data, input_format="SparseMatrixCOO"):
+    def _allgather(self, local_data: np.ndarray | SparseMatrixCOO, input_format="SparseMatrixCOO") -> np.ndarray | SparseMatrixCOO:
         """
         Gathers data from all processes.
 
@@ -564,7 +579,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
 
         raise NotImplementedError(f"Input format '{input_format}' not implemented")
 
-    def _show_message_only_once(self, message):
+    def _show_message_only_once(self, message: str) -> None:
         """
         Show information messages only once to assess the selected functions are being used.
 
@@ -578,7 +593,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
                 self.info_messages.add(message)
                 logger.info(message)
 
-    def _has_canonical_format(self, indexes):
+    def _has_canonical_format(self, indexes: tuple[np.ndarray, np.ndarray]) -> bool:
         """
         Check if indexes follows the COO canonical format:
             - Indexes are sorted by row and then by column
