@@ -12,6 +12,10 @@ from pydtnn.utils.best_of_profiler import BestOfProfiler
 
 
 def main():
+    """
+    Executes performance profiling for the best_transpose_0312 implementation
+    across all defined AlexNet layers and prints the results.
+    """
     layers = alexnet_layers
     bop = BestOfProfiler("Transpose 0312 comparison", best_transpose_0312)
     for layer in layers:

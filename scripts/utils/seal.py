@@ -1,3 +1,11 @@
+"""
+Utility module for PyDTNN providing TenSEAL homomorphic encryption primitives.
+
+This module initializes the CKKS encryption scheme parameters, context, and
+cryptographic keys required for performing homomorphic operations on encrypted
+data tensors.
+"""
+
 import numpy as np
 from tenseal import sealapi
 

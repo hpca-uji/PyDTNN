@@ -23,6 +23,8 @@ from pydtnn.utils import random
 
 
 class D:
+    """Container for Conv2D layer configuration parameters."""
+
     def __init__(self):
         """Default parameters"""
         self.b = 1  # Batch size
@@ -41,13 +43,16 @@ class D:
 
     @property
     def ho(self):
+        """Calculates output height."""
         return (self.h + 2 * self.vpadding - self.vdilation * (self.kh - 1) - 1) // self.vstride + 1
 
     @property
     def wo(self):
+        """Calculates output width."""
         return (self.w + 2 * self.hpadding - self.hdilation * (self.kw - 1) - 1) // self.hstride + 1
 
     def __repr__(self):
+        """Returns string representation of parameters."""
         return f"""\
 x, weights, and y parameters:
   (b, c, h, w)    = {self.b} {self.c} {self.h} {self.w}
@@ -60,6 +65,7 @@ x, weights, and y parameters:
 
 
 def _print_with_header(header, to_be_printed=None):
+    """Prints a formatted header and optional content."""
     print()
     print("-" * (len(header) + 2))
     print(" {}".format(header))
@@ -69,10 +75,13 @@ def _print_with_header(header, to_be_printed=None):
 
 
 class Params:
+    """Configuration object for model initialization."""
+
     pass
 
 
 def get_conv2d_layers(d: D) -> tuple[Conv2D, Conv2D]:
+    """Initializes and returns im2col and convGemm Conv2D layers."""
     params = Params()
     params.batch_size = d.b
     params.backend = "cpu"
@@ -118,6 +127,7 @@ class PerfTestConv2DConvGemm:
     """
 
     def _test_forward_backward(self, d, x, weights, print_times=False):
+        """Executes forward and backward passes and profiles performance."""
         conv2d_i2c, conv2d_cg = get_conv2d_layers(d)
         conv2d_i2c.weights = weights.copy()
         conv2d_cg.weights = weights.copy()
@@ -268,15 +278,3 @@ if __name__ == "__main__":
         print("Alexnet for Cifar10")
         print("===================")
         c.test_forward_backward_alexnet_cifar10_first_conv2d()
-        # print()
-        # print("Alexnet for Imagenet")
-        # print("====================")
-        # c.test_forward_backward_alexnet_imagenet_first_conv2d()
-        # print()
-        # print("Alexnet for Cifar10 2n layer")
-        # print("============================")
-        # c.test_forward_backward_alexnet_cifar10_second_conv2d()
-        # print()
-        # print("Alexnet for Cifar10 3rd layer")
-        # print("=============================")
-        # c.test_forward_backward_alexnet_cifar10_third_conv2d()

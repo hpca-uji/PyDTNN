@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-Exports a PyDTNN dataset.
+Provides utilities to calculate normalization statistics for PyDTNN datasets.
 """
 
 import itertools
@@ -16,7 +16,15 @@ from pydtnn.utils.tensor import TensorFormat
 
 
 def compute_stats(iterator: abc.Iterable[np.ndarray]) -> tuple[float, float]:
-    """Compute mean and standard diviation of batches"""
+    """
+    Compute mean and standard deviation of batches using Welford's online algorithm.
+
+    Args:
+        iterator: An iterable yielding numpy arrays representing data batches.
+
+    Returns:
+        A tuple containing the global mean and standard deviation as floats.
+    """
     n_total = 0
     mean = 0.0
     M2 = 0.0
@@ -45,6 +53,15 @@ def compute_stats(iterator: abc.Iterable[np.ndarray]) -> tuple[float, float]:
 
 
 def get_full_x(dataset: Dataset) -> abc.Iterable[np.ndarray]:
+    """
+    Extracts input features from all partitions of the provided dataset.
+
+    Args:
+        dataset: The PyDTNN dataset instance to extract features from.
+
+    Yields:
+        Numpy arrays containing the input features (x) from the dataset.
+    """
     xy = itertools.chain(dataset._data_generator(Dataset.Part.TRAIN), dataset._data_generator(Dataset.Part.VAL), dataset._data_generator(Dataset.Part.TEST))
     for x, y in xy:
         yield x

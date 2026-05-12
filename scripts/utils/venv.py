@@ -1,6 +1,13 @@
 #!/usr/bin/env python3
 # setup venv and pip remotely
 
+"""
+Utility script to bootstrap a Python virtual environment and install pip.
+
+This module automates the creation of a virtual environment and the manual
+installation of pip using the official bootstrap script.
+"""
+
 import argparse
 import shlex
 import subprocess
@@ -15,6 +22,13 @@ sys.path.pop(0)
 
 
 def main():
+    """
+    Execute the virtual environment setup process.
+
+    Parses command-line arguments to determine the target directory,
+    creates a virtual environment, downloads and installs pip, and
+    outputs the activation command.
+    """
     # meta
     name = Path(__file__).name
     desc = Path(__file__).read_text().splitlines()[1]
