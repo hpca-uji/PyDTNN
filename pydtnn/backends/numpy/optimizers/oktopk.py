@@ -7,8 +7,7 @@ import warnings
 from typing import TYPE_CHECKING
 
 from pydtnn.abstract.layerable import Layerable
-from pydtnn.backends.cython.utils.oktopk_utils_cython import (compute_dense_acc_cython, intersect_2d_indexes_cython, reset_residuals_cython,
-                                                              update_sparsed_weights_cython, update_sparsed_weights_mv_cython)
+from pydtnn.backends.cython.utils.oktopk_utils_cython import intersect_2d_indexes_cython
 from pydtnn.backends.numpy.optimizers.optimizer import OptimizerNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.optimizers.oktopk import OkTopk
@@ -202,7 +201,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
             logger.warning("This method should be used only in case of debugging for performance reasons.")
             warnings.warn("This method should be used only in case of debugging for performance reasons.", RuntimeWarning)
 
-            dw = coo_u.toarray()
+            dw = coo_u.to_dense()
             if len(self.dw_original_shape) != 2:
                 dw = dw.reshape(self.dw_original_shape)
             velocity = getattr(layer, "velocity_%s" % w_type, np.zeros_like(w, dtype=layer.model.dtype))
@@ -437,7 +436,36 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
 
         local_rows, local_cols = local_indexes
         global_rows, global_cols = global_indexes
-        return intersect_2d_indexes_cython(local_rows, local_cols, global_rows, global_cols)
+        
+        count = 0
+        i_local = 0
+        i_global = 0
+        max_size = min(len(local_rows), len(global_rows))
+        intersected_rows = np.zeros(max_size, dtype=np.int32)
+        intersected_cols = np.zeros(max_size, dtype=np.int32)
+
+        while i_local < len(local_rows) and i_global < len(global_rows):
+            local_row = local_rows[i_local]
+            global_row = global_rows[i_global]
+            if local_row < global_row:
+                i_local += 1
+            elif local_row > global_row:
+                i_global += 1
+            else:
+                local_col = local_cols[i_local]
+                global_col = global_cols[i_global]
+                if local_col < global_col:
+                    i_local += 1
+                elif local_col > global_col:
+                    i_global += 1
+                else:
+                    intersected_rows[count] = local_row
+                    intersected_cols[count] = local_col
+                    i_global += 1
+                    i_local += 1
+                    count += 1
+
+        return intersected_rows[:count], intersected_cols[:count]
 
     # TODO: Move this to different methods.
     def _reduce_topk(self, coo_topk: SparseMatrixCOO, boundaries: np.ndarray,
