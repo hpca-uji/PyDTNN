@@ -33,31 +33,37 @@ _N_LINE_BITS = 128
 
 class PMLibServer(ctypes.Structure):
     """Structure representing a PMLib server connection configuration."""
+
     _fields_ = [("server_ip", ctypes.c_char * _SERVER_IP_LEN), ("port", ctypes.c_int)]
 
 
 class PMLibLines(ctypes.Structure):
     """Structure representing a set of lines for power measurement."""
+
     _fields_ = [("__bits", ctypes.c_char * _LINE_SETSIZE)]
 
 
 class PMLibMeasures(ctypes.Structure):
     """Structure containing power measurement data."""
+
     _fields_ = [("watts_size", ctypes.c_int), ("watts_sets_size", ctypes.c_int), ("watts_sets", ctypes.POINTER(ctypes.c_int)), ("watts", ctypes.POINTER(ctypes.c_double)), ("lines_len", ctypes.c_int)]
 
 
 class PMLibMeasuresWT(ctypes.Structure):
     """Structure containing power measurement data with timing information."""
+
     _fields_ = [("next_timing", ctypes.c_int), ("timing", ctypes.POINTER(ctypes.c_double)), ("energy", PMLibMeasures)]
 
 
 class PMLibCounter(ctypes.Structure):
     """Structure representing a power measurement counter."""
+
     _fields_ = [("sock", ctypes.c_int), ("aggregate", ctypes.c_int), ("lines", PMLibLines), ("num_lines", ctypes.c_int), ("interval", ctypes.c_int), ("measures", ctypes.POINTER(PMLibMeasuresWT))]
 
 
 class PMLibException(Exception):
     """Exception raised for errors occurring within the PMLib interface."""
+
     def __init__(self, error):
         """Initialize the exception with an error message."""
         self.error = error
@@ -74,6 +80,7 @@ def check_pmlib_returned_status(func):
     It checks if the return status is non-zero, indicating an error.
     If an error occurs, it raises a PMLibException.
     """
+
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         """Wrapper function to execute the decorated function and check its status."""
@@ -93,6 +100,7 @@ class PMLib:
     defining measurement lines, creating and managing counters, and
     retrieving measurement data.
     """
+
     _pmlib = None
 
     def __init__(self, server_ip, port, verbose=False):

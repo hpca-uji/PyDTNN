@@ -1,4 +1,5 @@
 """Binary Cross Entropy loss implementation for the NumPy backend."""
+
 import logging
 import math
 from typing import TYPE_CHECKING

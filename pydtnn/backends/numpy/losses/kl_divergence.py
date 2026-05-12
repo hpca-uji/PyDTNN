@@ -1,6 +1,7 @@
 """
 Numpy backend implementation of the Kullback-Leibler Divergence loss.
 """
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -20,6 +21,7 @@ class KLDivergenceNumpy(KLDivergence[np.ndarray], LossNumpy):
     """
     Numpy-based implementation of the KL Divergence loss function.
     """
+
     def _model_init(self) -> None:
         """
         Initializes the model and updates memory usage tracking.

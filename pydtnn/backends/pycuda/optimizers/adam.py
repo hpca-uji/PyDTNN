@@ -1,6 +1,7 @@
 """
 PyDTNN PyCUDA Adam optimizer implementation.
 """
+
 import logging
 
 import numpy as np

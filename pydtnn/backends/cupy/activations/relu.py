@@ -1,6 +1,7 @@
 """
 CuPy implementation of the Rectified Linear Unit (ReLU) activation function.
 """
+
 import logging
 
 from pydtnn.backends.cupy.activations.activation import ActivationCupy
@@ -16,6 +17,7 @@ class ReluCupy(ReluNumpy, ActivationCupy):
     """
     ReLU activation layer implemented for CuPy backends.
     """
+
     def _model_init(self, prev_shape, x=None):
         """
         Initialize the layer model parameters.

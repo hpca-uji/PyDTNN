@@ -1,6 +1,7 @@
 """
 Flatten layer for reshaping multi-dimensional input tensors into a 1D vector.
 """
+
 import logging
 import math
 
@@ -16,6 +17,7 @@ class Flatten[T: Array](Layer[T]):
     """
     A layer that flattens the input tensor into a single dimension.
     """
+
     def _model_init(self, prev_shape: ArrayShape, x: T | None):
         """
         Initializes the layer shape based on the product of the input dimensions.

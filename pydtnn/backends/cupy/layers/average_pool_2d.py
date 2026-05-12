@@ -1,4 +1,5 @@
 """CuPy implementation of the 2D average pooling layer."""
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -20,6 +21,7 @@ if TYPE_CHECKING:
 
 class AveragePool2DCupy(AveragePool2DNumpy, AbstractPool2DLayerCupy, LayerCupy):
     """CuPy-accelerated 2D average pooling layer."""
+
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
         """Initialize model parameters and CUDA kernels."""
         super()._model_init(prev_shape, x)

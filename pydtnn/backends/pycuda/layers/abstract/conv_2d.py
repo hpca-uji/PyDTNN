@@ -1,6 +1,7 @@
 """
 PyCUDA backend implementation for 2D Convolutional layers.
 """
+
 import logging
 from typing import Any
 
@@ -24,6 +25,7 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
     """
     Abstract base class for 2D Convolutional layers using the PyCUDA backend.
     """
+
     def __init__(self, *args, **kwargs):
         """
         Initializes the abstract PyCUDA 2D convolution layer.

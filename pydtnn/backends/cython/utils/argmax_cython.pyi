@@ -1,6 +1,7 @@
 """
 Cython-accelerated argmax utility functions for PyDTNN.
 """
+
 import numpy as _np
 
 from pydtnn.backends.cython.utils.base import _npDT, _npDT_1Dims, _npDT_2Dims

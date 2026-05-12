@@ -22,6 +22,7 @@ class LayerFuse[T: Array](Layer):
     """
     Base class for fused layers, allowing initialization from existing layer states.
     """
+
     def __init__(self, *args, **kwargs):
         """
         Initializes the fused layer, optionally inheriting state from a parent layer.

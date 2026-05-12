@@ -1,6 +1,7 @@
 """
 Unit tests for the Conv2D and BatchNormalization fusion layer.
 """
+
 import logging
 import unittest
 

@@ -1,4 +1,5 @@
 """Max pooling 2D layer implementation using Cython backends."""
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -25,6 +26,7 @@ if TYPE_CHECKING:
 
 class MaxPool2DCython(MaxPool2DNumpy, AbstractPool2DLayerCython):
     """Cython implementation of the 2D max pooling layer."""
+
     # CYTHON
 
     def _fwd_max_pool_nhwc(self, x: np.ndarray, y: np.ndarray) -> None:

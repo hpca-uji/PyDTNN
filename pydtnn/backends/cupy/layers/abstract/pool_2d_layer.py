@@ -1,6 +1,7 @@
 """
 CuPy implementation of 2D pooling layers for the PyDTNN framework.
 """
+
 import numpy as np
 
 from pydtnn.backends.cupy.layers.layer import LayerCupy
@@ -14,4 +15,5 @@ class AbstractPool2DLayerCupy(AbstractPool2DLayerNumpy, AbstractPool2DLayer[np.n
     """
     Abstract base class for 2D pooling layers using the CuPy backend.
     """
+
     ...

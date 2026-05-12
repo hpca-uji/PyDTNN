@@ -1,4 +1,5 @@
 """CuPy implementation of the Precision metric."""
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -16,6 +17,7 @@ if TYPE_CHECKING:
 
 class PrecisionCupy(PrecisionNumpy, MetricCupy):
     """Precision metric implementation using CuPy backend."""
+
     def _post_init(self) -> None:
         """Initializes metric buffers on the GPU device."""
         super()._post_init()

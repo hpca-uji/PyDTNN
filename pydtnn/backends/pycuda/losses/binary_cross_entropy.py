@@ -1,6 +1,7 @@
 """
 PyCUDA implementation of the Binary Cross Entropy loss function.
 """
+
 import logging
 
 from pycuda import gpuarray  # type: ignore
@@ -18,6 +19,7 @@ class BinaryCrossEntropyPycuda(LossPycuda, BinaryCrossEntropy[TensorArray]):
     """
     PyCUDA-accelerated Binary Cross Entropy loss implementation.
     """
+
     def compute(self, y_pred: TensorArray, y_targ: TensorArray, batch_size: int) -> tuple[float, TensorArray]:
         """
         Computes the binary cross entropy loss and its gradient on the GPU.

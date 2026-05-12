@@ -1,6 +1,7 @@
 """
 DenseNet implementation for CIFAR-10 dataset.
 """
+
 from collections.abc import Sequence
 
 from pydtnn.abstract.layerable import Layerable

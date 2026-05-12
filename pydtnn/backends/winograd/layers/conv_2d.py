@@ -1,4 +1,5 @@
 """Winograd-based 2D convolution layer implementation."""
+
 import logging
 
 import numpy as np
@@ -18,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 class Conv2DWinograd(Conv2DNumpy, AbstractConv2DWinograd):
     """2D Convolution layer utilizing Winograd algorithm for optimized computation."""
+
     def __init__(self, *args, **kwargs):
         """Initialize the Winograd convolution layer."""
         super().__init__(*args, **kwargs)

@@ -1,6 +1,7 @@
 """
 Numpy backend implementation of the Log activation function.
 """
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -20,6 +21,7 @@ class LogNumpy(Log[np.ndarray], ActivationNumpy):
     """
     Numpy-based Log activation layer.
     """
+
     def _model_init(self, prev_shape, x=None):
         """
         Initialize layer buffers and memory tracking.

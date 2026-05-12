@@ -1,6 +1,7 @@
 """
 PyCUDA implementation of a 2D pointwise convolution layer.
 """
+
 import logging
 from typing import Any, override
 
@@ -23,6 +24,7 @@ class Conv2DPointwisePycuda(AbstractConv2DPycuda):
     """
     PyCUDA-accelerated 2D pointwise convolution layer (1x1 kernel).
     """
+
     def _initializing_special_parameters(self):
         """
         Initializes kernel dimensions and weight shapes for pointwise convolution.

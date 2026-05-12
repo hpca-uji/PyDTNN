@@ -1,6 +1,7 @@
 """
 Test suite for the BatchNormalizationRelu fused layer implementation.
 """
+
 import logging
 import unittest
 

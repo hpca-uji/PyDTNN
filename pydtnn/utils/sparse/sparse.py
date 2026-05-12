@@ -4,6 +4,7 @@ Sparse matrix utilities for the PyDTNN framework.
 This module provides the SparseMatrixCOO class, which implements a Coordinate (COO)
 sparse matrix format optimized for performance using Cython-backed operations.
 """
+
 import logging
 import warnings
 

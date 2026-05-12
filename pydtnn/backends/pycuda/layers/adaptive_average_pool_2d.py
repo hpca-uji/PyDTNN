@@ -1,4 +1,5 @@
 """PyCUDA implementation of the Adaptive Average Pooling 2D layer."""
+
 import logging
 import math
 
@@ -21,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 class AdaptiveAveragePool2DPycuda(AdaptiveAveragePool2D[TensorArray], LayerPycuda):
     """PyCUDA-accelerated Adaptive Average Pooling 2D layer."""
+
     def __init__(self, *args, **kwargs) -> None:
         """Initialize the AdaptiveAveragePool2DPycuda layer."""
         super().__init__(*args, **kwargs)

@@ -4,6 +4,7 @@ Tensor utility module for PyDTNN.
 Provides format definitions and transformation helpers for multi-dimensional arrays
 used within the framework.
 """
+
 from __future__ import annotations
 
 import logging
@@ -31,6 +32,7 @@ logger = logging.getLogger(__name__)
 # Formats
 class ChannelFormat(StrEnum):
     """Enumeration of 2D spatial channel formats."""
+
     HW = auto()
     WH = auto()
 
@@ -44,6 +46,7 @@ class ChannelFormat(StrEnum):
 
 class SampleFormat(StrEnum):
     """Enumeration of 3D sample formats."""
+
     CHW = auto()
     HWC = auto()
     WHC = auto()
@@ -62,6 +65,7 @@ class SampleFormat(StrEnum):
 
 class TensorFormat(StrEnum):
     """Enumeration of 4D tensor formats."""
+
     NCHW = auto()
     NHWC = auto()
 

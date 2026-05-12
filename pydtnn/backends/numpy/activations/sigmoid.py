@@ -1,4 +1,5 @@
 """NumPy backend implementation of the Sigmoid activation function."""
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -16,6 +17,7 @@ if TYPE_CHECKING:
 
 class SigmoidNumpy(Sigmoid[np.ndarray], ActivationNumpy):
     """NumPy-based Sigmoid activation layer."""
+
     def _model_init(self, prev_shape, x=None):
         """Initialize layer buffers and memory tracking."""
         super()._model_init(prev_shape, x)

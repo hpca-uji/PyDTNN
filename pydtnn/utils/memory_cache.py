@@ -4,6 +4,7 @@ Memory cache utility for PyDTNN.
 Provides a dictionary-like structure with a factory function for missing keys
 and global cache control mechanisms.
 """
+
 import logging
 
 __all__ = ("MemoryCache",)

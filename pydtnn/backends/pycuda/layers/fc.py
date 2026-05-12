@@ -1,4 +1,5 @@
 """PyCUDA implementation of the Fully Connected (FC) layer."""
+
 import logging
 from typing import Any
 
@@ -22,6 +23,7 @@ logger = logging.getLogger(__name__)
 
 class FCPycuda(FC[TensorArray], LayerPycuda):
     """Fully connected layer implementation for PyCUDA backend."""
+
     def __init__(self, *args, **kwargs):
         """Initialize the FCPycuda layer."""
         super().__init__(*args, **kwargs)

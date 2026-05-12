@@ -18,6 +18,7 @@ class Precision[T: Array](Metric[T]):
     Precision is defined as the ratio of true positives to the sum of true
     positives and false positives.
     """
+
     order = BinaryConfusionMatrix.order + 1
     conf_matrix_metric: BinaryConfusionMatrix[T] = None  # type: ignore
     format = "prec: %.4f"

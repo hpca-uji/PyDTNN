@@ -1,4 +1,5 @@
 """NumPy backend implementation of the 2D Max Pooling layer."""
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -19,6 +20,7 @@ if TYPE_CHECKING:
 
 class MaxPool2DNumpy(MaxPool2D[np.ndarray], AbstractPool2DLayerNumpy):
     """NumPy-based 2D Max Pooling layer implementation."""
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # The following attribute will be intialized later.

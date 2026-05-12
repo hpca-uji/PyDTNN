@@ -4,6 +4,7 @@ Evaluation module for PyDTNN models.
 This module provides the Eval class, which handles model evaluation,
 metric computation, and performance tracking during the testing phase.
 """
+
 import logging
 import time
 from timeit import default_timer as timer
@@ -34,6 +35,7 @@ class Eval[T: Array](Sync[T]):
     Extends Sync to provide evaluation-specific synchronization and
     metric aggregation across distributed processes.
     """
+
     def __init__(self, **kwargs) -> None:
         """Initializes the Eval instance."""
         super().__init__(**kwargs)

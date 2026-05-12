@@ -167,7 +167,6 @@ class ConvGemm:
             __free__(self.ac_pack)
             __free__(self.bc_pack)
         except AttributeError:
-            # __free__ might not be defined or accessible in some contexts
             pass
 
     def conv_gemm_nchw(
@@ -293,8 +292,8 @@ class ConvGemm:
             # This branch seems to be for transposed convolution logic, but the method name is conv_gemm_nchw.
             # Assuming 'trans' might be used for backward pass or specific GEMM configurations.
             assert out is not None, "If using the transposed convGemm, the out matrix must be supplied"
-            kn, ck, kh, kw = out.shape # Assuming out shape is (kn, b, ho, wo) for transposed
-            bw, knw, ho, wo = weights.shape # Assuming weights shape is (c, kn, kh, kw) for transposed
+            kn, ck, kh, kw = out.shape  # Assuming out shape is (kn, b, ho, wo) for transposed
+            bw, knw, ho, wo = weights.shape  # Assuming weights shape is (c, kn, kh, kw) for transposed
             assert kn == knw, "Number of filters must be the same!"
             assert b == bw, "Batch size must be the same!"
         assert ck == c, "Number of channels in weights and x should be the same!"
@@ -463,8 +462,8 @@ class ConvGemm:
             # This branch seems to be for transposed convolution logic, but the method name is conv_gemm_nhwc.
             # Assuming 'trans' might be used for backward pass or specific GEMM configurations.
             assert out is not None, "If using the transposed convGemm, the output matrix must be supplied"
-            ck, kh, kw, kn = out.shape # Assuming out shape is (ho, wo, kn) for transposed
-            bw, ho, wo, knw = weights.shape # Assuming weights shape is (h, w, c, kn) for transposed
+            ck, kh, kw, kn = out.shape  # Assuming out shape is (ho, wo, kn) for transposed
+            bw, ho, wo, knw = weights.shape  # Assuming weights shape is (h, w, c, kn) for transposed
             assert kn == knw, "Number of filters must be the same!"
             assert b == bw, "Batch size must be the same!"
         assert ck == c, "Number of channels in weights and x should be the same!"
@@ -694,6 +693,7 @@ def __free__(pack):
     AssertionError
         If the operating system is not supported or if `libc` cannot be found.
     """
+
     def find_msvcr():
         import re
         import sys

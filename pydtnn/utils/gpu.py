@@ -1,4 +1,5 @@
 """Utilities for GPU management and hardware information retrieval."""
+
 import enum
 import logging
 import re
@@ -15,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 class CudnnDataType(enum.StrEnum):
     """Enumeration of supported cuDNN data types."""
+
     FLOAT64 = "CUDNN_DATA_DOUBLE"
     FLOAT32 = "CUDNN_DATA_FLOAT"
     INT8 = "CUDNN_DATA_INT8"

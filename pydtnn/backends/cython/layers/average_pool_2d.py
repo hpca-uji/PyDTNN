@@ -1,4 +1,5 @@
 """Average pooling 2D layer implementation using Cython backends."""
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -23,6 +24,7 @@ if TYPE_CHECKING:
 
 class AveragePool2DCython(AveragePool2DNumpy, AbstractPool2DLayerCython):
     """Cython implementation of the 2D average pooling layer."""
+
     # CYTHON
 
     def _fwd_avg_pool_nchw(self, x: np.ndarray, y: np.ndarray) -> None:

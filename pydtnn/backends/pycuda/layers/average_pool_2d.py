@@ -1,6 +1,7 @@
 """
 PyCUDA implementation of the 2D Average Pooling layer.
 """
+
 import logging
 
 from pydtnn.backends.pycuda.layers.abstract.pool_2d_layer import AbstractPool2DLayerPycuda
@@ -18,6 +19,7 @@ class AveragePool2DPycuda(AveragePool2D[TensorArray], AbstractPool2DLayerPycuda)
     """
     PyCUDA-accelerated 2D Average Pooling layer.
     """
+
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
         """
         Initializes the pooling layer parameters and cuDNN descriptors.

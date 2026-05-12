@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python
 # Source: https://github.com/lebedov/scikit-cuda
 
@@ -590,6 +589,7 @@ class _cublas_version_req(object):
             The original function if the CUBLAS version requirement is met,
             otherwise a placeholder function that raises `NotImplementedError`.
         """
+
         def f_new(*args, **kwargs):
             raise NotImplementedError("CUBLAS " + self.vs + " required")
 
@@ -5311,6 +5311,7 @@ def cublasStrmm(handle, side, uplo, trans, diag, m, n, alpha, A, lda, B, ldb, C,
     )
     cublasCheckStatus(status)
 
+
 cublasStrmm.__doc__ = _TRMM_doc.substitute(a_type="numpy.float32")
 
 _libcublas.cublasDtrmm_v2.restype = int
@@ -5339,6 +5340,7 @@ def cublasDtrmm(handle, side, uplo, trans, diag, m, n, alpha, A, lda, B, ldb, C,
         handle, _CUBLAS_SIDE_MODE[side], _CUBLAS_FILL_MODE[uplo], _CUBLAS_OP[trans], _CUBLAS_DIAG[diag], m, n, ctypes.byref(ctypes.c_double(alpha)), int(A), lda, int(B), ldb, int(C), ldc
     )
     cublasCheckStatus(status)
+
 
 cublasDtrmm.__doc__ = _TRMM_doc.substitute(a_type="numpy.float64")
 
@@ -5378,9 +5380,10 @@ def cublasCtrmm(handle, side, uplo, trans, diag, m, n, alpha, A, lda, B, ldb, C,
         int(B),
         ldb,
         int(C),
-        ldc
+        ldc,
     )
     cublasCheckStatus(status)
+
 
 cublasCtrmm.__doc__ = _TRMM_doc.substitute(a_type="numpy.complex64")
 
@@ -5423,6 +5426,7 @@ def cublasZtrmm(handle, side, uplo, trans, diag, m, n, alpha, A, lda, B, ldb, C,
         ldc,
     )
     cublasCheckStatus(status)
+
 
 cublasZtrmm.__doc__ = _TRMM_doc.substitute(a_type="numpy.complex128")
 
@@ -5505,6 +5509,7 @@ def cublasStrsm(handle, side, uplo, trans, diag, m, n, alpha, A, lda, B, ldb):
     )
     cublasCheckStatus(status)
 
+
 cublasStrsm.__doc__ = _TRSM_doc.substitute(a_type="numpy.float32")
 
 _libcublas.cublasDtrsm_v2.restype = int
@@ -5531,6 +5536,7 @@ def cublasDtrsm(handle, side, uplo, trans, diag, m, n, alpha, A, lda, B, ldb):
         handle, _CUBLAS_SIDE_MODE[side], _CUBLAS_FILL_MODE[uplo], _CUBLAS_OP[trans], _CUBLAS_DIAG[diag], m, n, ctypes.byref(ctypes.c_double(alpha)), int(A), lda, int(B), ldb
     )
     cublasCheckStatus(status)
+
 
 cublasDtrsm.__doc__ = _TRSM_doc.substitute(a_type="numpy.float64")
 
@@ -5559,6 +5565,7 @@ def cublasCtrsm(handle, side, uplo, trans, diag, m, n, alpha, A, lda, B, ldb):
     )
     cublasCheckStatus(status)
 
+
 cublasCtrsm.__doc__ = _TRSM_doc.substitute(a_type="numpy.complex64")
 
 _libcublas.cublasZtrsm_v2.restype = int
@@ -5585,6 +5592,7 @@ def cublasZtrsm(handle, side, uplo, trans, diag, m, n, alpha, A, lda, B, ldb):
         handle, _CUBLAS_SIDE_MODE[side], _CUBLAS_FILL_MODE[uplo], _CUBLAS_OP[trans], _CUBLAS_DIAG[diag], m, n, ctypes.byref(cuda.cuDoubleComplex(alpha.real, alpha.imag)), int(A), lda, int(B), ldb
     )
     cublasCheckStatus(status)
+
 
 cublasZtrsm.__doc__ = _TRSM_doc.substitute(a_type="numpy.complex128")
 
@@ -5678,6 +5686,7 @@ def cublasChemm(handle, side, uplo, m, n, alpha, A, lda, B, ldb, beta, C, ldc):
     )
     cublasCheckStatus(status)
 
+
 cublasChemm.__doc__ = _HEMM_doc.substitute(a_type="numpy.complex64")
 
 _libcublas.cublasZhemm_v2.restype = int
@@ -5717,6 +5726,7 @@ def cublasZhemm(handle, side, uplo, m, n, alpha, A, lda, B, ldb, beta, C, ldc):
         ldc,
     )
     cublasCheckStatus(status)
+
 
 cublasZhemm.__doc__ = _HEMM_doc.substitute(a_type="numpy.complex128")
 
@@ -5787,6 +5797,7 @@ def cublasCherk(handle, uplo, trans, n, k, alpha, A, lda, beta, C, ldc):
     status = _libcublas.cublasCherk_v2(handle, _CUBLAS_FILL_MODE[uplo], _CUBLAS_OP[trans], n, k, ctypes.byref(ctypes.c_float(alpha)), int(A), lda, ctypes.byref(ctypes.c_float(beta)), int(C), ldc)
     cublasCheckStatus(status)
 
+
 cublasCherk.__doc__ = _HERK_doc.substitute(scalar_type="numpy.float32")
 
 _libcublas.cublasZherk_v2.restype = int
@@ -5810,6 +5821,7 @@ def cublasZherk(handle, uplo, trans, n, k, alpha, A, lda, beta, C, ldc):
     assert _libcublas
     status = _libcublas.cublasZherk_v2(handle, _CUBLAS_FILL_MODE[uplo], _CUBLAS_OP[trans], n, k, ctypes.byref(ctypes.c_double(alpha)), int(A), lda, ctypes.byref(ctypes.c_double(beta)), int(C), ldc)
     cublasCheckStatus(status)
+
 
 cublasZherk.__doc__ = _HERK_doc.substitute(scalar_type="numpy.float64")
 
@@ -5900,6 +5912,7 @@ def cublasCher2k(handle, uplo, trans, n, k, alpha, A, lda, B, ldb, beta, C, ldc)
     )
     cublasCheckStatus(status)
 
+
 cublasCher2k.__doc__ = _HER2K_doc.substitute(
     alpha_type="numpy.complex64",
     beta_type="numpy.float32",
@@ -5942,6 +5955,7 @@ def cublasZher2k(handle, uplo, trans, n, k, alpha, A, lda, B, ldb, beta, C, ldc)
         ldc,
     )
     cublasCheckStatus(status)
+
 
 cublasZher2k.__doc__ = _HER2K_doc.substitute(
     alpha_type="numpy.complex128",
@@ -6303,6 +6317,7 @@ def cublasSgemmBatched(handle, transa, transb, m, n, k, alpha, A, lda, B, ldb, b
     )
     cublasCheckStatus(status)
 
+
 cublasSgemmBatched.__doc__ = _GEMM_BATCHED_doc.substitute(
     precision="single precision",
     real="real",
@@ -6339,6 +6354,7 @@ def cublasDgemmBatched(handle, transa, transb, m, n, k, alpha, A, lda, B, ldb, b
         handle, _CUBLAS_OP[transa], _CUBLAS_OP[transb], m, n, k, ctypes.byref(ctypes.c_double(alpha)), int(A), lda, int(B), ldb, ctypes.byref(ctypes.c_double(beta)), int(C), ldc, batchCount
     )
     cublasCheckStatus(status)
+
 
 cublasDgemmBatched.__doc__ = _GEMM_BATCHED_doc.substitute(
     precision="double precision",
@@ -6391,6 +6407,7 @@ def cublasCgemmBatched(handle, transa, transb, m, n, k, alpha, A, lda, B, ldb, b
     )
     cublasCheckStatus(status)
 
+
 cublasCgemmBatched.__doc__ = _GEMM_BATCHED_doc.substitute(
     precision="single precision",
     real="complex",
@@ -6441,6 +6458,7 @@ def cublasZgemmBatched(handle, transa, transb, m, n, k, alpha, A, lda, B, ldb, b
         batchCount,
     )
     cublasCheckStatus(status)
+
 
 cublasZgemmBatched.__doc__ = _GEMM_BATCHED_doc.substitute(
     precision="double precision",
@@ -6527,6 +6545,7 @@ def cublasStrsmBatched(handle, side, uplo, trans, diag, m, n, alpha, A, lda, B, 
     )
     cublasCheckStatus(status)
 
+
 cublasStrsmBatched.__doc__ = _TRSM_BATCHED_doc.substitute(
     precision="single precision",
     real="real",
@@ -6561,6 +6580,7 @@ def cublasDtrsmBatched(handle, side, uplo, trans, diag, m, n, alpha, A, lda, B, 
         handle, _CUBLAS_SIDE_MODE[side], _CUBLAS_FILL_MODE[uplo], _CUBLAS_OP[trans], _CUBLAS_DIAG[diag], m, n, ctypes.byref(ctypes.c_double(alpha)), int(A), lda, int(B), ldb, batchCount
     )
     cublasCheckStatus(status)
+
 
 cublasDtrsmBatched.__doc__ = _TRSM_BATCHED_doc.substitute(
     precision="double precision",
@@ -6615,6 +6635,7 @@ def cublasSgetrfBatched(handle, n, A, lda, P, info, batchSize):
     status = _libcublas.cublasSgetrfBatched(handle, n, int(A), lda, int(P), int(info), batchSize)
     cublasCheckStatus(status)
 
+
 cublasSgetrfBatched.__doc__ = _GETRF_BATCHED_doc.substitute(
     precision="single precision",
     real="real",
@@ -6632,6 +6653,7 @@ def cublasDgetrfBatched(handle, n, A, lda, P, info, batchSize):
     assert _libcublas
     status = _libcublas.cublasDgetrfBatched(handle, n, int(A), lda, int(P), int(info), batchSize)
     cublasCheckStatus(status)
+
 
 cublasDgetrfBatched.__doc__ = _GETRF_BATCHED_doc.substitute(
     precision="double precision",
@@ -6651,6 +6673,7 @@ def cublasCgetrfBatched(handle, n, A, lda, P, info, batchSize):
     status = _libcublas.cublasCgetrfBatched(handle, n, int(A), lda, int(P), int(info), batchSize)
     cublasCheckStatus(status)
 
+
 cublasCgetrfBatched.__doc__ = _GETRF_BATCHED_doc.substitute(
     precision="single precision",
     real="complex",
@@ -6668,6 +6691,7 @@ def cublasZgetrfBatched(handle, n, A, lda, P, info, batchSize):
     assert _libcublas
     status = _libcublas.cublasZgetrfBatched(handle, n, int(A), lda, int(P), int(info), batchSize)
     cublasCheckStatus(status)
+
 
 cublasZgetrfBatched.__doc__ = _GETRF_BATCHED_doc.substitute(
     precision="double precision",
@@ -6739,6 +6763,7 @@ def cublasSgetrsBatched(handle, trans, n, nrhs, Aarray, lda, devIpiv, Barray, ld
     status = _libcublas.cublasSgetrsBatched(handle, _CUBLAS_OP[trans], n, nrhs, int(Aarray), lda, int(devIpiv), int(Barray), ldb, info, batchSize)
     cublasCheckStatus(status)
 
+
 cublasSgetrsBatched.__doc__ = _GETRS_BATCHED_doc.substitute(
     precision="single precision",
     real="real",
@@ -6768,6 +6793,7 @@ def cublasDgetrsBatched(handle, trans, n, nrhs, Aarray, lda, devIpiv, Barray, ld
     assert _libcublas
     status = _libcublas.cublasDgetrsBatched(handle, _CUBLAS_OP[trans], n, nrhs, int(Aarray), lda, int(devIpiv), int(Barray), ldb, info, batchSize)
     cublasCheckStatus(status)
+
 
 cublasDgetrsBatched.__doc__ = _GETRS_BATCHED_doc.substitute(
     precision="double precision",
@@ -6799,6 +6825,7 @@ def cublasCgetrsBatched(handle, trans, n, nrhs, Aarray, lda, devIpiv, Barray, ld
     status = _libcublas.cublasCgetrsBatched(handle, _CUBLAS_OP[trans], n, nrhs, int(Aarray), lda, int(devIpiv), int(Barray), ldb, info, batchSize)
     cublasCheckStatus(status)
 
+
 cublasCgetrsBatched.__doc__ = _GETRS_BATCHED_doc.substitute(
     precision="single precision",
     real="complex",
@@ -6828,6 +6855,7 @@ def cublasZgetrsBatched(handle, trans, n, nrhs, Aarray, lda, devIpiv, Barray, ld
     assert _libcublas
     status = _libcublas.cublasZgetrsBatched(handle, _CUBLAS_OP[trans], n, nrhs, int(Aarray), lda, int(devIpiv), int(Barray), ldb, info, batchSize)
     cublasCheckStatus(status)
+
 
 cublasZgetrsBatched.__doc__ = _GETRS_BATCHED_doc.substitute(
     precision="double precision",
@@ -6886,6 +6914,7 @@ def cublasSgetriBatched(handle, n, A, lda, P, C, ldc, info, batchSize):
     status = _libcublas.cublasSgetriBatched(handle, n, int(A), lda, int(P), int(C), ldc, int(info), batchSize)
     cublasCheckStatus(status)
 
+
 cublasSgetriBatched.__doc__ = _GETRI_BATCHED_doc.substitute(
     precision="single precision",
     real="real",
@@ -6904,6 +6933,7 @@ def cublasDgetriBatched(handle, n, A, lda, P, C, ldc, info, batchSize):
     assert _libcublas
     status = _libcublas.cublasDgetriBatched(handle, n, int(A), lda, int(P), int(C), ldc, int(info), batchSize)
     cublasCheckStatus(status)
+
 
 cublasDgetriBatched.__doc__ = _GETRI_BATCHED_doc.substitute(
     precision="double precision",
@@ -6924,6 +6954,7 @@ def cublasCgetriBatched(handle, n, A, lda, P, C, ldc, info, batchSize):
     status = _libcublas.cublasCgetriBatched(handle, n, int(A), lda, int(P), int(C), ldc, int(info), batchSize)
     cublasCheckStatus(status)
 
+
 cublasCgetriBatched.__doc__ = _GETRI_BATCHED_doc.substitute(
     precision="single precision",
     real="complex",
@@ -6942,6 +6973,7 @@ def cublasZgetriBatched(handle, n, A, lda, P, C, ldc, info, batchSize):
     assert _libcublas
     status = _libcublas.cublasZgetriBatched(handle, n, int(A), lda, int(P), int(C), ldc, int(info), batchSize)
     cublasCheckStatus(status)
+
 
 cublasZgetriBatched.__doc__ = _GETRI_BATCHED_doc.substitute(
     precision="double precision",
@@ -7017,10 +7049,12 @@ def cublasSgelsBatched(handle, trans, m, n, nrhs, Aarray, lda, Carray, ldc, info
     status = _libcublas.cublasSgelsBatched(handle, _CUBLAS_OP[trans], m, n, nrhs, int(Aarray), lda, int(Carray), ldc, info, int(devInfoArray), batchSize)
     cublasCheckStatus(status)
 
+
 cublasSgelsBatched.__doc__ = _GELS_BATCHED_doc.substitute(
     precision="single precision",
     real="real",
 )
+
 
 @_cublas_version_req(5.0)
 def cublasDgelsBatched(handle, trans, m, n, nrhs, Aarray, lda, Carray, ldc, info, devInfoArray, batchSize):
@@ -7030,10 +7064,12 @@ def cublasDgelsBatched(handle, trans, m, n, nrhs, Aarray, lda, Carray, ldc, info
     status = _libcublas.cublasDgelsBatched(handle, _CUBLAS_OP[trans], m, n, nrhs, int(Aarray), lda, int(Carray), ldc, info, int(devInfoArray), batchSize)
     cublasCheckStatus(status)
 
+
 cublasDgelsBatched.__doc__ = _GELS_BATCHED_doc.substitute(
     precision="double precision",
     real="real",
 )
+
 
 @_cublas_version_req(5.0)
 def cublasCgelsBatched(handle, trans, m, n, nrhs, Aarray, lda, Carray, ldc, info, devInfoArray, batchSize):
@@ -7043,10 +7079,12 @@ def cublasCgelsBatched(handle, trans, m, n, nrhs, Aarray, lda, Carray, ldc, info
     status = _libcublas.cublasCgelsBatched(handle, _CUBLAS_OP[trans], m, n, nrhs, int(Aarray), lda, int(Carray), ldc, info, int(devInfoArray), batchSize)
     cublasCheckStatus(status)
 
+
 cublasCgelsBatched.__doc__ = _GELS_BATCHED_doc.substitute(
     precision="single precision",
     real="complex",
 )
+
 
 @_cublas_version_req(5.0)
 def cublasZgelsBatched(handle, trans, m, n, nrhs, Aarray, lda, Carray, ldc, info, devInfoArray, batchSize):
@@ -7055,6 +7093,7 @@ def cublasZgelsBatched(handle, trans, m, n, nrhs, Aarray, lda, Carray, ldc, info
     assert _libcublas
     status = _libcublas.cublasZgelsBatched(handle, _CUBLAS_OP[trans], m, n, nrhs, int(Aarray), lda, int(Carray), ldc, info, int(devInfoArray), batchSize)
     cublasCheckStatus(status)
+
 
 cublasZgelsBatched.__doc__ = _GELS_BATCHED_doc.substitute(
     precision="double precision",
@@ -7121,6 +7160,7 @@ _DGMM_doc = Template(
 """
 )
 
+
 @_cublas_version_req(5.0)
 def cublasSdgmm(handle, side, m, n, A, lda, x, incx, C, ldc):
     """Multiplies a matrix with a diagonal matrix."""
@@ -7129,10 +7169,12 @@ def cublasSdgmm(handle, side, m, n, A, lda, x, incx, C, ldc):
     status = _libcublas.cublasSdgmm(handle, _CUBLAS_SIDE_MODE[side], m, n, int(A), lda, int(x), incx, int(C), ldc)
     cublasCheckStatus(status)
 
+
 cublasSdgmm.__doc__ = _DGMM_doc.substitute(
     precision="single precision",
     real="real",
 )
+
 
 @_cublas_version_req(5.0)
 def cublasDdgmm(handle, side, m, n, A, lda, x, incx, C, ldc):
@@ -7142,10 +7184,12 @@ def cublasDdgmm(handle, side, m, n, A, lda, x, incx, C, ldc):
     status = _libcublas.cublasDdgmm(handle, _CUBLAS_SIDE_MODE[side], m, n, int(A), lda, int(x), incx, int(C), ldc)
     cublasCheckStatus(status)
 
+
 cublasDdgmm.__doc__ = _DGMM_doc.substitute(
     precision="double precision",
     real="real",
 )
+
 
 @_cublas_version_req(5.0)
 def cublasCdgmm(handle, side, m, n, A, lda, x, incx, C, ldc):
@@ -7155,10 +7199,12 @@ def cublasCdgmm(handle, side, m, n, A, lda, x, incx, C, ldc):
     status = _libcublas.cublasCdgmm(handle, _CUBLAS_SIDE_MODE[side], m, n, int(A), lda, int(x), incx, int(C), ldc)
     cublasCheckStatus(status)
 
+
 cublasCdgmm.__doc__ = _DGMM_doc.substitute(
     precision="single precision",
     real="complex",
 )
+
 
 @_cublas_version_req(5.0)
 def cublasZdgmm(handle, side, m, n, A, lda, x, incx, C, ldc):
@@ -7167,6 +7213,7 @@ def cublasZdgmm(handle, side, m, n, A, lda, x, incx, C, ldc):
     assert _libcublas
     status = _libcublas.cublasZdgmm(handle, _CUBLAS_SIDE_MODE[side], m, n, int(A), lda, int(x), incx, int(C), ldc)
     cublasCheckStatus(status)
+
 
 cublasZdgmm.__doc__ = _DGMM_doc.substitute(
     precision="double precision",
@@ -7278,11 +7325,13 @@ def cublasSgemmStridedBatched(handle, transa, transb, m, n, k, alpha, A, lda, st
     )
     cublasCheckStatus(status)
 
+
 cublasSgemmStridedBatched.__doc__ = _GEMM_STRIDED_BATCHED_doc.substitute(
     precision="single precision",
     real="real",
     num_type="numpy.float32",
 )
+
 
 @_cublas_version_req(8.0)
 def cublasDgemmStridedBatched(handle, transa, transb, m, n, k, alpha, A, lda, strideA, B, ldb, strideB, beta, C, ldc, strideC, batchCount):
@@ -7311,11 +7360,13 @@ def cublasDgemmStridedBatched(handle, transa, transb, m, n, k, alpha, A, lda, st
     )
     cublasCheckStatus(status)
 
+
 cublasDgemmStridedBatched.__doc__ = _GEMM_STRIDED_BATCHED_doc.substitute(
     precision="double precision",
     real="real",
     num_type="numpy.float64",
 )
+
 
 @_cublas_version_req(8.0)
 def cublasCgemmStridedBatched(handle, transa, transb, m, n, k, alpha, A, lda, strideA, B, ldb, strideB, beta, C, ldc, strideC, batchCount):
@@ -7344,11 +7395,13 @@ def cublasCgemmStridedBatched(handle, transa, transb, m, n, k, alpha, A, lda, st
     )
     cublasCheckStatus(status)
 
+
 cublasCgemmStridedBatched.__doc__ = _GEMM_STRIDED_BATCHED_doc.substitute(
     precision="single precision",
     real="complex",
     num_type="numpy.complex64",
 )
+
 
 @_cublas_version_req(8.0)
 def cublasZgemmStridedBatched(handle, transa, transb, m, n, k, alpha, A, lda, strideA, B, ldb, strideB, beta, C, ldc, strideC, batchCount):
@@ -7376,6 +7429,7 @@ def cublasZgemmStridedBatched(handle, transa, transb, m, n, k, alpha, A, lda, st
         batchCount,
     )
     cublasCheckStatus(status)
+
 
 cublasZgemmStridedBatched.__doc__ = _GEMM_STRIDED_BATCHED_doc.substitute(
     precision="double precision",

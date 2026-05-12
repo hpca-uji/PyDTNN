@@ -1,6 +1,7 @@
 """
 Categorical accuracy metric implementation for PyDTNN.
 """
+
 import logging
 
 from pydtnn.metrics.metric import Metric
@@ -15,4 +16,5 @@ class CategoricalAccuracy[T: Array](Metric[T]):
     """
     Metric to calculate the categorical accuracy of model predictions.
     """
+
     format = "acc: %5.2f%%"

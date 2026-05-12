@@ -1,6 +1,7 @@
 """
 Test suite for direct convolution implementation in PyDTNN.
 """
+
 import inspect
 import logging
 from unittest import SkipTest

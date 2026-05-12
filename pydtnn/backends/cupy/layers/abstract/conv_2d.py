@@ -1,4 +1,5 @@
 """CuPy implementation of abstract 2D convolution layers."""
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -20,6 +21,7 @@ if TYPE_CHECKING:
 
 class AbstractConv2DCupy(AbstractConv2DNumpy, AbstractConv2D[np.ndarray], LayerCupy):
     """Abstract base class for 2D convolution layers using CuPy backend."""
+
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
         """Initialize model parameters and CUDA kernels."""
         super()._model_init(prev_shape, x)

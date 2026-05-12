@@ -1,6 +1,7 @@
 """
 Common utilities and mapping functions for converting PyTorch models to PyDTNN.
 """
+
 import logging
 from typing import Any, Callable
 
@@ -75,6 +76,7 @@ def not_implemented(name: str) -> Callable:
     Returns:
         A callable that raises an exception.
     """
+
     # Normal usage of this: switch_pytorch_pydtnn([not_implemented_layer_name])(args)
     def _not_implemented(args: dict[str, Any]) -> None:
         raise NotImplementedError(f"Layer {name} not implemented - Args received:\n{args} ")

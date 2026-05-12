@@ -1,6 +1,7 @@
 """
 MobileNetV1 implementation for PyDTNN using TensorFlow-style architecture.
 """
+
 from collections.abc import Sequence
 
 from pydtnn.abstract.layerable import Layerable

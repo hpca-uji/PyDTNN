@@ -1,6 +1,7 @@
 """
 Categorical Mean Squared Error metric implementation for the NumPy backend.
 """
+
 import logging
 import math
 from typing import TYPE_CHECKING
@@ -21,6 +22,7 @@ class CategoricalMSENumpy(CategoricalMSE[np.ndarray], MetricNumpy):
     """
     NumPy implementation of the Categorical Mean Squared Error metric.
     """
+
     def _model_init(self) -> None:
         """
         Initializes model-specific parameters and memory tracking for the metric.

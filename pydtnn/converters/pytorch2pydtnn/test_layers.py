@@ -5,6 +5,7 @@ This module provides utilities and test suites to verify that PyTorch layers
 are correctly converted to PyDTNN layers by comparing their forward pass outputs
 and internal state parameters against defined precision thresholds.
 """
+
 from typing import Any, Callable
 
 import torch  # type: ignore
@@ -125,6 +126,7 @@ def print_model_reports(model: PyDTNN_Model):
 
 class TEST_PyTorch_Model(PyTorch_Model):
     """A wrapper class for PyTorch models to facilitate testing individual layers."""
+
     def __init__(self, layer):
         super().__init__()
         self.layer = layer
@@ -136,6 +138,7 @@ class TEST_PyTorch_Model(PyTorch_Model):
 
 class Addition_Test_PyTorch_Model(PyTorch_Model):
     """A PyTorch model containing addition operations for testing conversion logic."""
+
     def __init__(self):
         super().__init__()
         self.op0: nn.Module = DICT_SUPPORTED_LAYERS["AdaptiveAvgPool2d"][0]
@@ -160,6 +163,7 @@ class Addition_Test_PyTorch_Model(PyTorch_Model):
 
 class Concat_Test_PyTorch_Model(PyTorch_Model):
     """A PyTorch model containing concatenation operations for testing conversion logic."""
+
     def __init__(self):
         super().__init__()
         self.op0: nn.Module = DICT_SUPPORTED_LAYERS["AdaptiveAvgPool2d"][0]

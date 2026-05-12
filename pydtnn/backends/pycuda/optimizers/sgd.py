@@ -1,6 +1,7 @@
 """
 PyCUDA implementation of the Stochastic Gradient Descent (SGD) optimizer.
 """
+
 import logging
 
 import numpy as np

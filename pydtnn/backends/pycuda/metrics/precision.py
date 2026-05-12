@@ -1,6 +1,7 @@
 """
 PyCUDA implementation of the Precision metric for PyDTNN.
 """
+
 import logging
 
 import numpy as np
@@ -18,6 +19,7 @@ class PrecisionPycuda(Precision[TensorArray], MetricPycuda):
     """
     Precision metric implementation using PyCUDA for GPU acceleration.
     """
+
     def _model_init(self) -> None:
         """
         Initializes the precision and local precision buffers on the GPU.

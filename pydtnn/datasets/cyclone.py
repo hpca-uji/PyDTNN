@@ -1,8 +1,8 @@
-from __future__ import annotations
-
 """
 Cyclone dataset implementation for the PyDTNN framework.
 """
+
+from __future__ import annotations
 
 import copy
 import logging

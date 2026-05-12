@@ -1,6 +1,7 @@
 """
 Cython-accelerated abstract base class for 2D convolution layers.
 """
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -23,6 +24,7 @@ class AbstractConv2DCython(AbstractConv2DNumpy, LayerCython):
     """
     Abstract base class for 2D convolution layers using Cython backends.
     """
+
     def im2row(self, x: np.ndarray, x_rows: np.ndarray) -> None:
         """
         Transform input image to row format using Cython implementation.

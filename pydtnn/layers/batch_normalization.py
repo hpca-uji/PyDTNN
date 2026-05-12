@@ -1,4 +1,5 @@
 """Batch normalization layer implementation for PyDTNN."""
+
 import logging
 from typing import Any, Callable
 
@@ -17,6 +18,7 @@ class BatchNormalization[T: Array](Layer[T]):
     """
     Batch Normalization layer that normalizes the inputs to have zero mean and unit variance.
     """
+
     def __init__(self, beta=0.0, gamma=1.0, momentum=0.9, epsilon=1e-5, moving_mean_initializer: Callable = zeros, moving_variance_initializer: Callable = ones, sync_stats=False):
         """
         Initializes the BatchNormalization layer.

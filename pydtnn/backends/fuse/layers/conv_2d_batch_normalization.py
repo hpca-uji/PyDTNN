@@ -1,6 +1,7 @@
 """
 Module for fused 2D Convolution and Batch Normalization layers.
 """
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -30,6 +31,7 @@ class Conv2DBatchNormalization[T: Array](FusedLayerMixIn[T], Conv2D[T], BatchNor
     """
     Base class for fused 2D Convolution and Batch Normalization layers.
     """
+
     pass
 
 
@@ -37,6 +39,7 @@ class Conv2DBatchNormalizationFuse(Conv2DBatchNormalization[np.ndarray], Abstrac
     """
     Numpy-based implementation of fused 2D Convolution and Batch Normalization.
     """
+
     @property
     def _ary_prop(self) -> set[str]:
         """

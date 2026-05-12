@@ -1,6 +1,7 @@
 """
 Warm-up learning rate scheduler module for PyDTNN.
 """
+
 from __future__ import annotations
 
 import logging

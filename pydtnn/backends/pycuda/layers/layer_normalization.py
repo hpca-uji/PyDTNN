@@ -1,4 +1,5 @@
 """PyCUDA implementation of the Layer Normalization layer."""
+
 import logging
 
 import numpy as np
@@ -15,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 class LayerNormalizationPycuda(LayerNormalization[TensorArray], LayerPycuda):
     """PyCUDA-accelerated Layer Normalization layer."""
+
     def _model_init(self, prev_shape, x):
         """Initialize layer parameters and GPU buffers."""
         super()._model_init(prev_shape, x)

@@ -1,6 +1,7 @@
 """
 Hyperbolic tangent activation function module.
 """
+
 import logging
 
 from pydtnn.activations.activation import Activation
@@ -15,4 +16,5 @@ class Tanh[T: Array](Activation[T]):
     """
     Hyperbolic tangent activation layer.
     """
+
     pass

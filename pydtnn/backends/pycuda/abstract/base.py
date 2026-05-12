@@ -1,6 +1,7 @@
 """
 PyDTNN PyCUDA backend abstract base module.
 """
+
 from pycuda.compiler import SourceModule  # type: ignore
 from pycuda.driver import Function, Module  # type: ignore
 
@@ -15,6 +16,7 @@ class BasePycuda(UsesCudaCode[Module, Function], Base[TensorArray]):
     """
     Abstract base class for PyCUDA-based operations in PyDTNN.
     """
+
     _cuda_kernel = SourceModule
 
     def _model_init(self) -> None:

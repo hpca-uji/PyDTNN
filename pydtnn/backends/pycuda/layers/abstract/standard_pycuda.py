@@ -1,4 +1,5 @@
 """Standard PyCUDA implementation for 2D convolution layers."""
+
 import logging
 from typing import Any, override
 
@@ -17,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
     """Abstract base class for standard PyCUDA 2D convolution layers."""
+
     def _initializing_special_parameters(self):
         """Initialize layer-specific weight shapes based on tensor format."""
         match self.model.tensor_format:

@@ -1,6 +1,7 @@
 """
 Reduce learning rate when a metric has stopped improving.
 """
+
 from __future__ import annotations
 
 import logging

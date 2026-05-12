@@ -1,6 +1,7 @@
 """
 Multi-head attention layer implementation for the NumPy backend.
 """
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -28,6 +29,7 @@ class MultiHeadAttentionNumpy(MultiHeadAttention[np.ndarray], AbstractBlockLayer
     """
     NumPy implementation of the Multi-Head Attention mechanism.
     """
+
     def __init__(self, *args, **kwargs):
         """
         Initializes the MultiHeadAttentionNumpy layer with required sublayers.

@@ -1,6 +1,7 @@
 """
 Cython-accelerated batch normalization training utilities for PyDTNN.
 """
+
 from pydtnn.backends.cython.utils.base import _npDT, _npDT_1Dims, _npDT_2Dims
 
 def bn_training_fwd_cython[T: _npDT](

@@ -1,6 +1,7 @@
 """
 NumPy backend implementation of the Layer Normalization layer.
 """
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -20,6 +21,7 @@ class LayerNormalizationNumpy(LayerNormalization[np.ndarray], LayerNumpy):
     """
     NumPy implementation of Layer Normalization.
     """
+
     def forward(self, x: np.ndarray) -> np.ndarray:
         """
         Performs the forward pass of layer normalization.

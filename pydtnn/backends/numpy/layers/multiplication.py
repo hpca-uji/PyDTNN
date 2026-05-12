@@ -1,6 +1,7 @@
 """
 Numpy backend implementation of the Multiplication layer.
 """
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -21,6 +22,7 @@ class MultiplicationNumpy(Multiplication[np.ndarray], LayerNumpy):
     """
     Numpy-based multiplication layer for matrix operations.
     """
+
     def __init__(self, *args, **kwargs):
         """
         Initialize the MultiplicationNumpy layer.

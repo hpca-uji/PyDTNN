@@ -1,6 +1,7 @@
 """
 PyCUDA backend implementation for loss functions.
 """
+
 import logging
 
 from pycuda import gpuarray  # type: ignore

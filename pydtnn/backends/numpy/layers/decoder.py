@@ -1,6 +1,7 @@
 """
 Decoder layer implementation for the NumPy backend.
 """
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -26,6 +27,7 @@ class DecoderNumpy(Decoder[np.ndarray], AbstractBlockLayerNumpy):
     """
     NumPy implementation of the Transformer Decoder block.
     """
+
     def __init__(self, *args, **kwargs):
         """
         Initializes the DecoderNumpy layer with sub-layers.

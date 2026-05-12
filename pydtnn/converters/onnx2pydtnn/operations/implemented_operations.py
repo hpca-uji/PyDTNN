@@ -451,6 +451,7 @@ def Mul(info: dict[str, Any]) -> Layerable:
         """
         Internal multiplication block layer implementation.
         """
+
         def initialize_block_layer(self):
             super().initialize_block_layer()
             assert all([o == self.out_shapes[0] for o in self.out_shapes])
@@ -535,6 +536,7 @@ def Unsqueeze(info: dict[str, Any]) -> Layerable:
         """
         Internal unsqueeze layer implementation.
         """
+
         def __init__(self, shape=(1,), axis=()):
             super().__init__(shape)
             self.axis = axis

@@ -1,6 +1,7 @@
 """
 Profiler utility for benchmarking and validating multiple implementation alternatives.
 """
+
 import logging
 import os
 import platform
@@ -19,6 +20,7 @@ class BestOfProfiler:
     """
     Profiler class to evaluate and compare performance of multiple method alternatives.
     """
+
     def __init__(self, header, best_method):
         """
         Initialize the profiler.

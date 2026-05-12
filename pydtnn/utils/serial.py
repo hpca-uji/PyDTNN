@@ -1,6 +1,7 @@
 """
 Utilities for serializing NumPy objects to YAML format.
 """
+
 import numpy as np
 import yaml
 
@@ -11,6 +12,7 @@ class NumpyYaml(yaml.SafeDumper):
     """
     Custom YAML dumper that supports serialization of NumPy arrays and data types.
     """
+
     def represent_dtype(self, data):
         """
         Represent a NumPy data type as a YAML scalar.

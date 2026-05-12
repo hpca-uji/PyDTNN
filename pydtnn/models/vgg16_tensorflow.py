@@ -1,4 +1,5 @@
 """VGG model architectures implemented using TensorFlow-style configurations."""
+
 from collections.abc import Sequence
 
 from pydtnn.abstract.layerable import Layerable

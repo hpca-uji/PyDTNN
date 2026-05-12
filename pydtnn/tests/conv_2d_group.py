@@ -1,6 +1,7 @@
 """
 Test suite for verifying grouped 2D convolution operations in PyDTNN.
 """
+
 import logging
 
 from pydtnn.backends.numpy.layers.abstract.conv_2d import AbstractConv2DNumpy

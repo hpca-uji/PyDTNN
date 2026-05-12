@@ -1,6 +1,7 @@
 """
 PyCUDA backend implementation for activation layers.
 """
+
 import logging
 
 from pydtnn.activations.activation import Activation

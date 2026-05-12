@@ -1,6 +1,7 @@
 """
 Module for the OkTopk optimizer implementation using NumPy.
 """
+
 import logging
 import warnings
 from typing import TYPE_CHECKING
@@ -32,6 +33,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
     """
     NumPy-based implementation of the OkTopk optimizer for distributed training.
     """
+
     def _model_init(self, list_layers: list[Layerable]) -> None:
         """
         Initializes model-specific structures for the optimizer.
@@ -234,7 +236,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
             """Use only for debugging purposes"""
             logger.warning("This method should be used only in case of debugging for performance reasons.")
             warnings.warn("This method should be used only in case of debugging for performance reasons.", RuntimeWarning)
-            
+
             dw = coo_u.toarray()
             if len(self.dw_original_shape) != 2:
                 dw = dw.reshape(self.dw_original_shape)
@@ -247,8 +249,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
 
         raise NotImplementedError(f"Method '{method}' not implemented")
 
-    def _ok_sparse_allreduce(self, acc: np.ndarray, t: int, k: int, space_repartition_t: int, 
-                             thresholds_re_evaluation_t: int) -> tuple[SparseMatrixCOO, tuple[np.ndarray, np.ndarray]]:
+    def _ok_sparse_allreduce(self, acc: np.ndarray, t: int, k: int, space_repartition_t: int, thresholds_re_evaluation_t: int) -> tuple[SparseMatrixCOO, tuple[np.ndarray, np.ndarray]]:
         """
         Performs the Ok-Topk sparse allreduce operation.
         This method executes the Ok-Topk sparse allreduce algorithm, which
@@ -286,8 +287,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
         indexes = self._intersect_indexes(local_topk_indexes, global_topk_indexes)
         return coo_u, indexes
 
-    def _th_re_evaluate(self, matrix: np.ndarray | SparseMatrixCOO, k: int, input_format: str | None=None, 
-                        method="numpy_sort") -> float:
+    def _th_re_evaluate(self, matrix: np.ndarray | SparseMatrixCOO, k: int, input_format: str | None = None, method="numpy_sort") -> float:
         """
         Return the absolute gradient threshold for a given matrix.
 
@@ -335,7 +335,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
 
         raise NotImplementedError(f"Method '{method}' with format '{input_format}' not implemented")
 
-    def _space_repartition(self, acc: np.ndarray, local_th:float, balanced=True) -> np.ndarray:
+    def _space_repartition(self, acc: np.ndarray, local_th: float, balanced=True) -> np.ndarray:
         """
         Returns the boundaries of the regions of the gradient matrix for the split and reduce phase.
 
@@ -447,8 +447,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
         coo_allgather_topk = self._allgather(coo_reduced_region_global_topk)
         return coo_allgather_topk, coo_reduced_region_global_topk.get_indexes()
 
-    def _intersect_indexes(self, local_indexes: tuple[np.ndarray, np.ndarray],
-                           global_indexes: tuple[np.ndarray, np.ndarray]) -> tuple[np.ndarray, np.ndarray]:
+    def _intersect_indexes(self, local_indexes: tuple[np.ndarray, np.ndarray], global_indexes: tuple[np.ndarray, np.ndarray]) -> tuple[np.ndarray, np.ndarray]:
         """
         Calculates the intersection of two sets of indices of 2D.
         The assertion statement is only executed when the script is not run in optimized mode (python3 -O script.py).
@@ -473,8 +472,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
         global_rows, global_cols = global_indexes
         return intersect_2d_indexes_cython(local_rows, local_cols, global_rows, global_cols)
 
-    def _reduce_topk(self, coo_topk: SparseMatrixCOO, boundaries: np.ndarray,
-                     method="p2p_region_wise_reduce_destination_rotation_and_bucketing") -> SparseMatrixCOO:
+    def _reduce_topk(self, coo_topk: SparseMatrixCOO, boundaries: np.ndarray, method="p2p_region_wise_reduce_destination_rotation_and_bucketing") -> SparseMatrixCOO:
         """
         Reduce the topk elements in regions defined by boundaries.
 

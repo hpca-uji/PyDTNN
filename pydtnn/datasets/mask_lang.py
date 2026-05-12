@@ -1,6 +1,7 @@
 """
 Masked Language Model dataset implementation for PyDTNN.
 """
+
 from __future__ import annotations
 
 import logging

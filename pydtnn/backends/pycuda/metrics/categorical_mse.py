@@ -1,6 +1,7 @@
 """
 PyCUDA implementation of the Categorical Mean Squared Error metric.
 """
+
 import logging
 
 import numpy as np
@@ -18,6 +19,7 @@ class CategoricalMSEPycuda(CategoricalMSE[TensorArray], MetricPycuda):
     """
     Categorical Mean Squared Error metric implementation for PyCUDA backends.
     """
+
     def _model_init(self) -> None:
         """
         Initializes the internal buffers for result storage on the GPU.

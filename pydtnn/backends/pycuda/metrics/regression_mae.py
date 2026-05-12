@@ -1,4 +1,5 @@
 """PyCUDA implementation of the Mean Absolute Error (MAE) regression metric."""
+
 import logging
 
 import numpy as np
@@ -14,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 class RegressionMAEPycuda(RegressionMAE[TensorArray], MetricPycuda):
     """PyCUDA-accelerated Mean Absolute Error metric for regression tasks."""
+
     def _model_init(self) -> None:
         """Initializes the metric buffers and internal state for PyCUDA execution."""
         super()._model_init()

@@ -1,4 +1,5 @@
 """ResNet-1202 model architecture implementation for PyDTNN."""
+
 from collections.abc import Sequence
 
 from pydtnn.abstract.layerable import Layerable

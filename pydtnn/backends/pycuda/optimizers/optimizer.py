@@ -1,6 +1,7 @@
 """
 PyCUDA implementation of the base Optimizer class for PyDTNN.
 """
+
 import logging
 
 import numpy as np

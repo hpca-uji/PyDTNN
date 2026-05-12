@@ -1,4 +1,5 @@
 """Categorical hinge metric implementation for the NumPy backend."""
+
 import logging
 import math
 from typing import TYPE_CHECKING

@@ -1,6 +1,7 @@
 """
 CuPy backend abstract base module for PyDTNN.
 """
+
 import functools
 
 from cupy import RawKernel, RawModule  # type: ignore
@@ -16,4 +17,5 @@ class BaseCupy(UsesCudaCode[RawModule, RawKernel], BaseNumpy):
     Abstract base class for CuPy-based operations, integrating CUDA kernel
     compilation capabilities with NumPy-compatible backend logic.
     """
+
     _cuda_kernel = functools.partial(RawModule, backend="nvcc")

@@ -1,6 +1,7 @@
 """
 Numpy backend implementation for loss functions.
 """
+
 import logging
 from typing import TYPE_CHECKING
 

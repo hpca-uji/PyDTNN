@@ -1,6 +1,7 @@
 """
 Module for handling archived datasets stored in NPZ format.
 """
+
 from __future__ import annotations
 
 import logging

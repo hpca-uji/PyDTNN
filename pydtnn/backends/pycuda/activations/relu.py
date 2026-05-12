@@ -1,4 +1,5 @@
 """PyCUDA backend implementation for the ReLU activation layer."""
+
 import logging
 
 from pycuda import gpuarray  # type: ignore
@@ -16,6 +17,7 @@ logger = logging.getLogger(__name__)
 
 class ReluPycuda(Relu[TensorArray], ActivationPycuda):
     """ReLU activation layer implementation using PyCUDA and cuDNN."""
+
     def __init__(self, *args, **kwargs):
         """Initialize the ReLU PyCUDA layer."""
         super().__init__(*args, **kwargs)

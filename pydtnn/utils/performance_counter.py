@@ -1,4 +1,5 @@
 """Performance monitoring utilities for tracking training and testing metrics."""
+
 import logging
 import resource
 from collections import defaultdict
@@ -12,6 +13,7 @@ logger = logging.getLogger(__name__)
 
 class PerformanceCounter:
     """Tracks and reports performance metrics including time, throughput, and memory usage."""
+
     TRAINING, TESTING = range(2)
 
     def __init__(self):

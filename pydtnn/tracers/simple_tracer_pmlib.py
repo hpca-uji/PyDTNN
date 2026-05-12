@@ -1,6 +1,7 @@
 """
 Tracer implementation for PyDTNN that integrates with PMLib for power monitoring.
 """
+
 import logging
 import time
 from collections import defaultdict

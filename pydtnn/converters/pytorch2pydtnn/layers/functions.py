@@ -1,5 +1,5 @@
 """
-This module provides translation functions to convert PyTorch functional operations 
+This module provides translation functions to convert PyTorch functional operations
 into their corresponding PyDTNN layer implementations.
 """
 

@@ -1,6 +1,7 @@
 """
 PyDTNN PyCUDA Nadam optimizer implementation.
 """
+
 import logging
 
 import numpy as np

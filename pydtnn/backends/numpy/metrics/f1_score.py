@@ -1,6 +1,7 @@
 """
 Numpy implementation of the F1 Score metric for the PyDTNN framework.
 """
+
 import logging
 import math
 from typing import TYPE_CHECKING
@@ -23,6 +24,7 @@ class F1ScoreNumpy(F1Score[np.ndarray], MetricNumpy):
     """
     Numpy-based F1 Score metric calculation.
     """
+
     conf_matrix_metric: BinaryConfusionMatrixNumpy
 
     def _model_init(self) -> None:

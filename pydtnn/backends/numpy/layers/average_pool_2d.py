@@ -1,6 +1,7 @@
 """
 NumPy backend implementation for 2D Average Pooling layers.
 """
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -22,6 +23,7 @@ class AveragePool2DNumpy(AveragePool2D[np.ndarray], AbstractPool2DLayerNumpy):
     """
     NumPy implementation of the 2D Average Pooling layer.
     """
+
     def _fwd_avg_pool_nchw(self, x: np.ndarray, y: np.ndarray) -> None:
         """
         Performs forward average pooling for NCHW input format.

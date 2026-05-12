@@ -1,9 +1,8 @@
-
-from __future__ import annotations
-
 """
 Module for managing the state of PyDTNN models, including serialization and initialization.
 """
+
+from __future__ import annotations
 
 import logging
 from typing import Any
@@ -27,6 +26,7 @@ class State[T: Array](Init[T]):
     to a dictionary or file, and to import state from such sources. It also integrates
     with the initialization process to load pre-trained states.
     """
+
     def _model_init(self) -> None:
         """
         Initializes the model and loads state from a file if specified.

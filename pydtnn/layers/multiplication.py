@@ -1,6 +1,7 @@
 """
 Multiplication layer module for PyDTNN.
 """
+
 import logging
 
 from pydtnn.layers.layer import Layer
@@ -15,4 +16,5 @@ class Multiplication[T: Array](Layer[T]):
     """
     Layer that performs element-wise multiplication of input tensors.
     """
+
     pass

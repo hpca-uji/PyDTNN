@@ -1,6 +1,7 @@
 """
 CuPy backend implementation for neural network layers.
 """
+
 import logging
 
 import cupy as cp
@@ -20,6 +21,7 @@ class LayerCupy(LayerNumpy, LayerableCupy):
     """
     Base class for layers using the CuPy backend.
     """
+
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None):
         """
         Initialize the layer model parameters and verify backend compatibility.

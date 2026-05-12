@@ -1,6 +1,7 @@
 """
 PyDTNN model module providing the base Model class for the framework.
 """
+
 from pydtnn.model.repr import Repr
 from pydtnn.model.state import State
 from pydtnn.model.train import Train

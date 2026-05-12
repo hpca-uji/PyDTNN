@@ -1,6 +1,7 @@
 """
 Feed-forward neural network layer implementation for the PyDTNN framework.
 """
+
 import logging
 
 from pydtnn.layers.abstract.block_layer import AbstractBlockLayer
@@ -20,6 +21,7 @@ class FeedForward[T: Array](AbstractBlockLayer[T]):
         d_ff (int): The dimensionality of the hidden feed-forward layer.
         dropout_rate (float): The dropout probability applied to the hidden layer.
     """
+
     def __init__(self, shape: ArrayShape = (1,), d_ff: int = 256, dropout_rate: float = 0.5):
         """
         Initializes the FeedForward layer.

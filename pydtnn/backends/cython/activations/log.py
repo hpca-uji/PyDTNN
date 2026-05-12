@@ -1,6 +1,7 @@
 """
 Cython implementation of the Logarithmic activation function.
 """
+
 import logging
 
 from pydtnn.backends.cython.activations.activation import ActivationCython
@@ -17,6 +18,7 @@ class LogCython(LogNumpy, ActivationCython):
     """
     Cython-accelerated Logarithmic activation layer.
     """
+
     def forward(self, x: np.ndarray) -> np.ndarray:
         """
         Computes the forward pass using Cython optimization.

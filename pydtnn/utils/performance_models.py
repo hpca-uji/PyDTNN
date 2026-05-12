@@ -1,4 +1,5 @@
 """Performance modeling utilities for PyDTNN."""
+
 import logging
 from math import ceil, log
 

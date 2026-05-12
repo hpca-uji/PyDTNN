@@ -1,6 +1,7 @@
 """
 Numpy backend implementation for Mean Absolute Error (MAE) regression metric.
 """
+
 import logging
 import math
 from typing import TYPE_CHECKING
@@ -21,6 +22,7 @@ class RegressionMAENumpy(RegressionMAE[np.ndarray], MetricNumpy):
     """
     Numpy-based implementation of the Mean Absolute Error metric.
     """
+
     def _model_init(self) -> None:
         """
         Initializes model memory requirements for the MAE calculation.

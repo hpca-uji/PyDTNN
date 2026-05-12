@@ -1,4 +1,5 @@
 """Cython-accelerated ReLU6 activation implementation."""
+
 import logging
 
 from pydtnn.backends.cython.activations.activation import ActivationCython
@@ -13,6 +14,7 @@ logger = logging.getLogger(__name__)
 
 class Relu6Cython(Relu6Numpy, ActivationCython):
     """Cython implementation of the ReLU6 activation function."""
+
     def forward(self, x: np.ndarray) -> np.ndarray:
         """
         Perform the forward pass using Cython-optimized capped ReLU.

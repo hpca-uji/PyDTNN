@@ -1,6 +1,7 @@
 """
 NumPy backend implementation of the Batch Normalization layer.
 """
+
 import logging
 import math
 from typing import TYPE_CHECKING
@@ -24,6 +25,7 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
     """
     NumPy-based Batch Normalization layer implementation.
     """
+
     @property
     def _ary_prop(self) -> set[str]:
         """

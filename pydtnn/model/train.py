@@ -2,6 +2,7 @@
 Training module for the PyDTNN framework, providing functionality for model training,
 synchronization, and epoch-based execution.
 """
+
 import enum
 import logging
 import time
@@ -33,13 +34,16 @@ class Train[T: Array](Eval[T]):
     Handles the training process for a model, including weight synchronization,
     gradient updates, and training loop management.
     """
+
     class SyncParticipation(enum.StrEnum):
         """Defines strategies for node participation in model synchronization."""
+
         ALL = enum.auto()
         AVAIL2ALL = enum.auto()
 
     class SyncAlgorithm(enum.StrEnum):
         """Defines algorithms for weight aggregation during synchronization."""
+
         AVG = enum.auto()
         WAVG = enum.auto()
         INVAVG = enum.auto()

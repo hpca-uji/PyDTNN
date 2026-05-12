@@ -1,6 +1,7 @@
 """
 PyCUDA implementation of the Categorical Cross-Entropy loss function.
 """
+
 import logging
 
 import numpy as np
@@ -19,6 +20,7 @@ class CategoricalCrossEntropyPycuda(LossPycuda, CategoricalCrossEntropy[TensorAr
     """
     Categorical Cross-Entropy loss implementation for PyCUDA backends.
     """
+
     def compute(self, y_pred: TensorArray, y_targ: TensorArray, batch_size: int) -> tuple[float, TensorArray]:
         """
         Computes the categorical cross-entropy loss and gradients on the GPU.

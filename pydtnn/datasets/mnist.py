@@ -1,6 +1,7 @@
 """
 MNIST dataset implementation for PyDTNN.
 """
+
 from __future__ import annotations
 
 import itertools

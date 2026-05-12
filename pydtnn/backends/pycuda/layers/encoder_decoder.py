@@ -1,4 +1,5 @@
 """PyCUDA implementation of the Encoder-Decoder architecture."""
+
 import logging
 
 from pydtnn.backends.pycuda.layers.abstract.block_layer import AbstractBlockLayerPycuda
@@ -15,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 class EncoderDecoderPycuda(AbstractBlockLayerPycuda, EncoderDecoder):
     """PyCUDA-accelerated Encoder-Decoder block layer."""
+
     def __init__(self, *args, **kwargs):
         """Initializes the EncoderDecoderPycuda layer with PyCUDA-specific sublayers."""
         super().__init__(*args, **kwargs)

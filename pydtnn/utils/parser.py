@@ -117,6 +117,7 @@ def _get_mpi_port():
 
 class Namespace(argparse.Namespace):
     """Custom namespace for storing parsed arguments and group information."""
+
     def __str__(self) -> str:
         """Returns a formatted string representation of the namespace arguments."""
         lines = []
@@ -147,6 +148,7 @@ class Namespace(argparse.Namespace):
 
 class ArgumentParser(argparse.ArgumentParser):
     """Custom argument parser for PyDTNN configuration."""
+
     def __init__(self):
         """Initializes the parser with all supported PyDTNN configuration arguments."""
         super().__init__(description=_desc, epilog=_epilogue)

@@ -1,6 +1,7 @@
 """
 Module for defining base activation layer functionality and component selection.
 """
+
 import logging
 
 from pydtnn.abstract.layerable import Layerable
@@ -19,6 +20,7 @@ class Activation[T: Array](Layerable[T]):
     """
     Base class for all activation layers in the PyDTNN framework.
     """
+
     def __init__(self, shape: ArrayShape = (1,)):
         """
         Initializes the activation layer with a specified shape.

@@ -1,4 +1,5 @@
 """VGG11 with Batch Normalization model architecture implementation."""
+
 from collections.abc import Sequence
 
 from pydtnn.abstract.layerable import Layerable

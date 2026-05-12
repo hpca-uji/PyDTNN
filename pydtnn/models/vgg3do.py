@@ -1,6 +1,7 @@
 """
 VGG-style 3-block deep neural network architecture implementation.
 """
+
 from collections.abc import Sequence
 
 from pydtnn.abstract.layerable import Layerable

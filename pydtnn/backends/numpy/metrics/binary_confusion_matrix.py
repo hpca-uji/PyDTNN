@@ -1,6 +1,7 @@
 """
 Numpy backend implementation for binary confusion matrix metrics.
 """
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -42,6 +43,7 @@ class BinaryConfusionMatrixNumpy(BinaryConfusionMatrix[np.ndarray], MetricNumpy)
     """
     Numpy-based implementation of the binary confusion matrix metric.
     """
+
     def _model_init(self) -> None:
         """
         Initializes the confusion matrix buffer.

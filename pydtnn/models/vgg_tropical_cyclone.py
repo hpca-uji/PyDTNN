@@ -1,6 +1,7 @@
 """
 VGG-style neural network architecture for tropical cyclone intensity estimation.
 """
+
 from collections.abc import Sequence
 
 from pydtnn.abstract.layerable import Layerable

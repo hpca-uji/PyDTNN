@@ -1,6 +1,7 @@
 """
 Numpy-based optimizer implementation for the PyDTNN framework.
 """
+
 import logging
 from typing import TYPE_CHECKING
 

@@ -1,8 +1,8 @@
-from __future__ import annotations
-
 """
 Adam optimizer implementation for the PyDTNN framework.
 """
+
+from __future__ import annotations
 
 import logging
 from typing import TYPE_CHECKING

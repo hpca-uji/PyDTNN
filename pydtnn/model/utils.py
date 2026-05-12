@@ -1,6 +1,7 @@
 """
 Utility module for PyDTNN model operations, providing shape and tensor format transformations.
 """
+
 import logging
 from typing import Any
 
@@ -24,6 +25,7 @@ class Utils[T: Array](Base[T]):
     """
     Base utility class for model operations, handling tensor format conversions and configuration access.
     """
+
     @property
     def input_shape(self):
         """Returns the shape of the first layer."""

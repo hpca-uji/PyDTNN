@@ -1,4 +1,5 @@
 """Module providing the abstract base class for 2D pooling layers using NumPy."""
+
 import logging
 import math
 from typing import TYPE_CHECKING
@@ -21,6 +22,7 @@ if TYPE_CHECKING:
 
 class AbstractPool2DLayerNumpy(AbstractPool2DLayer[np.ndarray], LayerNumpy):
     """Abstract base class for 2D pooling layers implemented with NumPy."""
+
     def __init__(self, *args, **kwargs):
         """Initialize the 2D pooling layer."""
         super().__init__(*args, **kwargs)

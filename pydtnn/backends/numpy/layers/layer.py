@@ -1,8 +1,8 @@
-from __future__ import annotations
-
 """
 Provides the base class for NumPy-based neural network layers in PyDTNN.
 """
+
+from __future__ import annotations
 
 import logging
 from typing import TYPE_CHECKING

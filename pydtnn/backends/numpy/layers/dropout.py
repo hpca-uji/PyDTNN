@@ -1,6 +1,7 @@
 """
 Numpy backend implementation of the Dropout layer.
 """
+
 import logging
 import math
 from typing import TYPE_CHECKING
@@ -23,6 +24,7 @@ class DropoutNumpy(Dropout[np.ndarray], LayerNumpy):
     """
     Numpy-based Dropout layer implementation.
     """
+
     def __init__(self, *args, **kwargs):
         """
         Initializes the DropoutNumpy layer.

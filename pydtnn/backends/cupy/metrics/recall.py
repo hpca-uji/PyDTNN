@@ -1,4 +1,5 @@
 """CuPy implementation of the Recall metric."""
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -16,6 +17,7 @@ if TYPE_CHECKING:
 
 class RecallCupy(RecallNumpy, MetricCupy):
     """Recall metric implementation using CuPy backend."""
+
     def _post_init(self) -> None:
         """Initialize metric buffers on the device."""
         super()._post_init()

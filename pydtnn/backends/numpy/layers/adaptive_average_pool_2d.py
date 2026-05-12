@@ -1,4 +1,5 @@
 """Numpy backend implementation for Adaptive Average Pooling 2D layer."""
+
 import logging
 from typing import TYPE_CHECKING
 

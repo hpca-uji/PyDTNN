@@ -1,6 +1,7 @@
 """
 PyDTNN PyCUDA backend layer implementation.
 """
+
 import logging
 
 import numpy as np

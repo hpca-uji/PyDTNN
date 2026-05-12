@@ -1,6 +1,7 @@
 """
 Abstract base class for standard 2D convolution layers using NumPy backend.
 """
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -18,7 +19,7 @@ if TYPE_CHECKING:
 
 class AbstractConv2DStandardNumpy(AbstractConv2DNumpy):
     """
-    Base class for standard 2D convolution layers implementing weight shape 
+    Base class for standard 2D convolution layers implementing weight shape
     initialization and format-aware weight export/import.
     """
 

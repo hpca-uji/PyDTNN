@@ -1,6 +1,7 @@
 """
 Numpy backend implementation of the Recall metric.
 """
+
 import logging
 import math
 from typing import TYPE_CHECKING
@@ -24,6 +25,7 @@ class RecallNumpy(Recall[np.ndarray], MetricNumpy):
     """
     Numpy implementation of the Recall metric for binary classification.
     """
+
     conf_matrix_metric: BinaryConfusionMatrixNumpy
 
     def _model_init(self) -> None:

@@ -15,8 +15,9 @@ logger = logging.getLogger(__name__)
 class LayerGemm(LayerNumpy, LayerableGemm):
     """
     Base class for layers utilizing General Matrix Multiply (GEMM) operations.
-    
-    Inherits from LayerNumpy for standard array operations and LayerableGemm 
+
+    Inherits from LayerNumpy for standard array operations and LayerableGemm
     for GEMM-specific interface requirements.
     """
+
     ...

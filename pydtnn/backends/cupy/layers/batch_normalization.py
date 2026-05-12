@@ -1,4 +1,5 @@
 """CuPy implementation of the Batch Normalization layer."""
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -19,6 +20,7 @@ if TYPE_CHECKING:
 
 class BatchNormalizationCupy(BatchNormalizationNumpy, LayerCupy):
     """CuPy-accelerated Batch Normalization layer."""
+
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
         """Initialize model parameters and CUDA kernels."""
         super()._model_init(prev_shape, x)

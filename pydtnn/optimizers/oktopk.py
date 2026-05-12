@@ -1,6 +1,7 @@
 """
 Ok-Topk optimizer implementation for distributed training.
 """
+
 from __future__ import annotations
 
 import logging

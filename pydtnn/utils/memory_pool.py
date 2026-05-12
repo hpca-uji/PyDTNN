@@ -1,4 +1,5 @@
 """Memory management utilities for preallocating and managing tensor buffers."""
+
 import logging
 import math
 
@@ -15,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 class PrivateMemory:
     """Base class for managing private memory allocations."""
+
     def __init__(self, size: int) -> None:
         """Initialize private memory with a fixed capacity."""
         self._capacity: int = size
@@ -40,6 +42,7 @@ class PrivateMemory:
 
 class PreallocMemory(PrivateMemory):
     """Memory pool implementation using a preallocated buffer."""
+
     def __init__(self, size: int) -> None:
         """Initialize preallocated memory buffer."""
         super().__init__(size)

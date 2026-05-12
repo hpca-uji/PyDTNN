@@ -1,4 +1,5 @@
 """PyCUDA backend implementation for the Softmax activation layer."""
+
 import logging
 
 from pycuda import gpuarray  # type: ignore
@@ -16,6 +17,7 @@ logger = logging.getLogger(__name__)
 
 class SoftmaxPycuda(Softmax[TensorArray], ActivationPycuda):
     """PyCUDA-accelerated Softmax activation layer using cuDNN."""
+
     def __init__(self, *args, **kwargs):
         """Initialize the SoftmaxPycuda layer."""
         super().__init__(*args, **kwargs)

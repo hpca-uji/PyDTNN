@@ -17,6 +17,7 @@ PYDTNN_EVENT_FINISHED = 0
 # ==== PYDTNN_MODEL_EVENT ====
 class PYDTNN_MDL_EVENT_enum(IntEnum):
     """Enumeration of model-level tracer events."""
+
     FORWARD = auto()  # Originally: 1
     BACKWARD = auto()  # Originally: 2
     ALLREDUCE_DW = auto()  # Originally: 3
@@ -32,6 +33,7 @@ PYDTNN_MDL_EVENTS = len(PYDTNN_MDL_EVENT_enum)
 
 class PYDTNN_OPS_EVENT_enum(IntEnum):
     """Enumeration of operation-level tracer events."""
+
     OPS_ALLREDUCE_DW = auto()  # Orginally: 1
     BACKWARD_CONVGEMM = auto()  # Orginally: 2
     BACKWARD_CUBLAS_MATMUL_DW = auto()  # Orginally: 3

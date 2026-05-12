@@ -1,6 +1,7 @@
 """
 PyCUDA implementation of abstract block layers for the PyDTNN framework.
 """
+
 import logging
 
 from pydtnn.backends.pycuda.layers.layer import LayerPycuda
@@ -16,4 +17,5 @@ class AbstractBlockLayerPycuda(AbstractBlockLayer[TensorArray], LayerPycuda):
     """
     Base class for PyCUDA-accelerated block layers.
     """
+
     pass

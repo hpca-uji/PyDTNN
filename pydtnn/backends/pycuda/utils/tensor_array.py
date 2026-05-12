@@ -1,6 +1,7 @@
 """
 TensorArray module for managing GPU-resident tensors with cuDNN descriptors.
 """
+
 from __future__ import annotations
 
 import copy
@@ -31,8 +32,10 @@ class TensorArray:
     """
     Wrapper class for GPU arrays that integrates with cuDNN descriptors.
     """
+
     class TensorType(StrEnum):
         """Enumeration of supported tensor types."""
+
         TENSOR = auto()
         FILTER = auto()
         SEQ = auto()

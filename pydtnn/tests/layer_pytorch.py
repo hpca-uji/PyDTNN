@@ -4,6 +4,7 @@ PyDTNN PyTorch layer compatibility test suite.
 This module provides unit tests to verify the numerical equivalence between
 PyDTNN layers and their corresponding PyTorch implementations.
 """
+
 import logging
 import math
 from unittest import skip
@@ -120,6 +121,7 @@ GRAD_EQUIVALENCES: dict[str, str] = {
 
 class TorchArcTanH(torch.nn.Module):
     """PyTorch implementation of the Arctanh activation function."""
+
     def __init__(self, *args, **kwargs):
         """Initializes the Arctanh module."""
         super().__init__(*args, **kwargs)
@@ -133,6 +135,7 @@ class TorchArcTanH(torch.nn.Module):
 
 class TorchAdditionBlock(torch.nn.Module):
     """PyTorch model representing an addition block for testing."""
+
     def __init__(self, *args, **kwargs):
         """Initializes the addition block with two parallel convolutional paths."""
         super().__init__(*args, **kwargs)
@@ -154,6 +157,7 @@ class TorchAdditionBlock(torch.nn.Module):
 
 class TorchConcatenationBlock(torch.nn.Module):
     """PyTorch model representing a concatenation block for testing."""
+
     def __init__(self, *args, **kwargs):
         """Initializes the concatenation block with two parallel convolutional paths."""
         super().__init__(*args, **kwargs)
@@ -175,6 +179,7 @@ class TorchConcatenationBlock(torch.nn.Module):
 
 class D:
     """Data dimensions container for test configurations."""
+
     def __init__(self, b=N, c=C, h=H, w=W):
         """Initializes dimensions with batch size, channels, height, and width."""
         self.b = b  # Batch size
@@ -185,6 +190,7 @@ class D:
 
 class ParamsLayerPytorch(Params):
     """Configuration parameters for PyTorch layer tests."""
+
     def __init__(self, d=D()) -> None:
         """Initializes test parameters based on provided dimensions."""
         super().__init__()
@@ -210,6 +216,7 @@ class ParamsLayerPytorch(Params):
 
 class LayerPyTorchTestCase(TestCase):
     """Base test case class for verifying PyDTNN layers against PyTorch."""
+
     params = ParamsLayerPytorch()
 
     def setUp(self) -> None:

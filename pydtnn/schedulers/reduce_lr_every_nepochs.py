@@ -1,6 +1,7 @@
 """
 Module for the ReduceLREveryNEpochs learning rate scheduler.
 """
+
 from __future__ import annotations
 
 import logging

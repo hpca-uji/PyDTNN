@@ -1,6 +1,7 @@
 """
 CuPy implementation of Fully Connected layers for the PyDTNN framework.
 """
+
 import logging
 
 import numpy as np
@@ -19,6 +20,7 @@ class FCCupy(FCNumpy, LayerCupy):
     """
     Fully connected layer implementation using CuPy for GPU acceleration.
     """
+
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
         """
         Initializes the layer parameters and allocates a dedicated CUDA stream.

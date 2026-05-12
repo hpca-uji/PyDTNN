@@ -1,4 +1,5 @@
 """Base module for PyDTNN abstract components."""
+
 from __future__ import annotations
 
 import importlib
@@ -18,6 +19,7 @@ class Base[T: Array]:
     """
     Abstract base class for PyDTNN components that supports backend dispatching.
     """
+
     _backend: typing.Self
     _frontend: typing.Self
 

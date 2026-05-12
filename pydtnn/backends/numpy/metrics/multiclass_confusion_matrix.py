@@ -1,6 +1,7 @@
 """
 Numpy backend implementation for multiclass confusion matrix calculation.
 """
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -22,6 +23,7 @@ class MulticlassConfusionMatrixNumpy(MulticlassConfusionMatrix[np.ndarray], Metr
     """
     Numpy-based multiclass confusion matrix metric.
     """
+
     def _model_init(self) -> None:
         """
         Initializes the confusion matrix buffer based on model output shape.

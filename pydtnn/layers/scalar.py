@@ -1,6 +1,7 @@
 """
 Scalar layer implementation for PyDTNN.
 """
+
 import logging
 
 from pydtnn.layers.layer import Layer
@@ -15,6 +16,7 @@ class Scalar[T: Array](Layer[T]):
     """
     A layer that applies a scalar scaling factor to the input.
     """
+
     def __init__(self, shape: ArrayShape = (1,), scale: float = 1.0):
         """
         Initializes the Scalar layer.

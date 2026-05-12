@@ -1,6 +1,7 @@
 """
 Module for handling datasets organized in a folder-based structure.
 """
+
 from __future__ import annotations
 
 import copy
@@ -87,7 +88,7 @@ class Folder(Dataset):
             path (str): Root directory path containing class subfolders.
 
         Returns:
-            tuple: A tuple containing the list of (class_index, file_path) pairs, 
+            tuple: A tuple containing the list of (class_index, file_path) pairs,
                    the total number of classes, and the total number of images.
         """
         dict_class_file = dict[ClassName, set[DataPath]]()

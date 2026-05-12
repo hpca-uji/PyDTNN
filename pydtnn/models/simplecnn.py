@@ -1,6 +1,7 @@
 """
 Module for defining a standard simple convolutional neural network architecture.
 """
+
 from collections.abc import Sequence
 
 from pydtnn.abstract.layerable import Layerable

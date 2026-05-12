@@ -1,4 +1,5 @@
 """Numpy implementation of the Stochastic Gradient Descent (SGD) optimizer."""
+
 import logging
 import math
 from typing import TYPE_CHECKING
@@ -18,6 +19,7 @@ if TYPE_CHECKING:
 
 class SGDNumpy(SGD[np.ndarray], OptimizerNumpy):
     """Numpy-specific implementation of the SGD optimizer."""
+
     def _model_init(self, list_layers: list[LayerNumpy]) -> None:
         """Initializes optimizer state and memory buffers for layers."""
         super()._model_init(list_layers)  # type: ignore (it's the right type)

@@ -1,6 +1,7 @@
 """
 PyDTNN tracer module for monitoring model execution and memory usage.
 """
+
 from __future__ import annotations
 
 import abc
@@ -86,6 +87,7 @@ class PostInitCaller(type):
     """
     Metaclass that triggers __post_init__ after object instantiation.
     """
+
     def __call__(cls, *args, **kwargs):
         """
         Create an instance and call its __post_init__ method.

@@ -1,6 +1,7 @@
 """
 CuPy implementation of 2D Convolutional layers for the PyDTNN framework.
 """
+
 import logging
 
 from pydtnn.backends.cupy.layers.abstract.conv_2d import AbstractConv2DCupy
@@ -16,4 +17,5 @@ class Conv2DCupy(Conv2DNumpy, AbstractConv2DCupy, LayerCupy):
     """
     2D Convolutional layer implementation using CuPy for GPU acceleration.
     """
+
     ...

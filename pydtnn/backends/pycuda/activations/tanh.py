@@ -1,4 +1,5 @@
 """PyCUDA backend implementation for the Tanh activation function."""
+
 import logging
 
 from pycuda import gpuarray  # type: ignore
@@ -16,6 +17,7 @@ logger = logging.getLogger(__name__)
 
 class TanhPycuda(Tanh[TensorArray], ActivationPycuda):
     """PyCUDA implementation of the Tanh activation layer using cuDNN."""
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.act_desc = None

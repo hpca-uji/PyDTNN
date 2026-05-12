@@ -1,6 +1,7 @@
 """
 Winograd-based 2D convolution abstract layer implementation.
 """
+
 import logging
 
 from pydtnn.backends.numpy.layers.abstract.conv_2d import AbstractConv2DNumpy
@@ -15,4 +16,5 @@ class AbstractConv2DWinograd(AbstractConv2DNumpy, LayerWinograd):
     """
     Abstract base class for 2D convolution layers utilizing the Winograd algorithm.
     """
+
     ...

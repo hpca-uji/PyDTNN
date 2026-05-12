@@ -1,6 +1,7 @@
 """
 Synthetic dataset module for generating random data for model training and testing.
 """
+
 from __future__ import annotations
 
 import logging

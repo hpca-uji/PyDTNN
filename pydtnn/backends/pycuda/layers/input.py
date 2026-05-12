@@ -1,4 +1,5 @@
 """PyCUDA implementation of the Input layer for the PyDTNN framework."""
+
 import ctypes
 import logging
 
@@ -18,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 class InputPycuda(Input[TensorArray], LayerPycuda):
     """PyCUDA-specific implementation of the Input layer."""
+
     ws_size = 0
     ws: drv.DeviceAllocation = None
 

@@ -1,6 +1,7 @@
 """
 Recall metric implementation for binary classification tasks.
 """
+
 import logging
 
 from pydtnn.metrics.binary_confusion_matrix import BinaryConfusionMatrix
@@ -16,6 +17,7 @@ class Recall[T: Array](Metric[T]):
     """
     Calculates the recall score based on a binary confusion matrix.
     """
+
     order = BinaryConfusionMatrix.order + 1
     conf_matrix_metric: BinaryConfusionMatrix = None  # type: ignore
     format = "rec: %.4f"

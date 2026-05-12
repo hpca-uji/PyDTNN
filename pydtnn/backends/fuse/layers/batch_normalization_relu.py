@@ -1,6 +1,7 @@
 """
 Fused Batch Normalization and ReLU layer implementation for PyDTNN.
 """
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -28,6 +29,7 @@ class BatchNormalizationRelu[T: Array](FusedLayerMixIn[T], BatchNormalization[T]
     """
     Abstract base class for fused Batch Normalization and ReLU layers.
     """
+
     pass
 
 
@@ -35,6 +37,7 @@ class BatchNormalizationReluFuse(BatchNormalizationRelu[np.ndarray], BatchNormal
     """
     Numpy-based implementation of fused Batch Normalization and ReLU for inference.
     """
+
     # NOTE: The "__init__" method is being made (more or less) in Model (in _apply_layer_fusion) and in FusedLayerMixIn.
 
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None):

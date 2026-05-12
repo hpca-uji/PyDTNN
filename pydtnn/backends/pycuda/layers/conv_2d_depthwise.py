@@ -1,4 +1,5 @@
 """PyCUDA implementation of Depthwise 2D Convolution layer."""
+
 import logging
 from typing import Any, override
 
@@ -19,6 +20,7 @@ logger = logging.getLogger(__name__)
 
 class Conv2DDepthwisePycuda(AbstractConv2DPycuda):
     """Depthwise 2D Convolution layer implementation for PyCUDA backend."""
+
     def _initializing_special_parameters(self):
         """Initialize layer-specific parameters and weight shapes."""
         # Setting other parameters

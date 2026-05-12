@@ -1,4 +1,5 @@
 """Fully connected layer implementation for PyDTNN."""
+
 from __future__ import annotations
 
 import logging
@@ -18,6 +19,7 @@ if TYPE_CHECKING:
 
 class FC[T: Array](Layer[T]):
     """Fully connected (dense) layer."""
+
     def __init__(
         self, shape: ArrayShape = (1,), activation: type[Activation] | None = None, use_bias=True, weights_initializer: InitializerFunc = glorot_uniform, biases_initializer: InitializerFunc = zeros
     ):

@@ -1,9 +1,8 @@
-
-from __future__ import annotations
-
 """
 Module providing the base Layerable class for defining neural network layers.
 """
+
+from __future__ import annotations
 
 import logging
 from typing import TYPE_CHECKING, Any
@@ -38,6 +37,7 @@ class Layerable[T: Array](Base[T]):
     including shape, parameters, forward/backward pass methods, and
     mechanisms for model integration and state export/import.
     """
+
     def __init__(self, shape: ArrayShape = ()) -> None:
         """
         Initialize the layer with an optional output shape.

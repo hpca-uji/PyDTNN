@@ -1,6 +1,7 @@
 """
 Unit tests for Winograd convolution implementation in PyDTNN.
 """
+
 import inspect
 import logging
 import unittest

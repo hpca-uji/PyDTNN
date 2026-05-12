@@ -5,6 +5,7 @@ This module provides the EarlyStopping class, which monitors model performance
 during training and terminates the process if no improvement is observed
 within a specified number of epochs.
 """
+
 from __future__ import annotations
 
 import logging

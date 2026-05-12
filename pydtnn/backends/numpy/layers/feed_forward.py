@@ -1,6 +1,7 @@
 """
 Numpy backend implementation of the FeedForward layer.
 """
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -23,6 +24,7 @@ class FeedForwardNumpy(FeedForward[np.ndarray], AbstractBlockLayerNumpy):
     """
     Numpy-based FeedForward layer implementation.
     """
+
     def __init__(self, *args, **kwargs):
         """
         Initializes the FeedForwardNumpy layer with sublayers.

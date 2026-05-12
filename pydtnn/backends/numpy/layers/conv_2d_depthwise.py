@@ -1,4 +1,5 @@
 """Numpy backend implementation for 2D depthwise convolution layers."""
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -20,6 +21,7 @@ if TYPE_CHECKING:
 
 class Conv2DDepthwiseNumpy(AbstractConv2DNumpy, Conv2DDepthwise):
     """Numpy-based implementation of a 2D depthwise convolution layer."""
+
     def _initializing_special_parameters(self):
         """Initialize layer-specific parameters for depthwise convolution."""
         super()._initializing_special_parameters()

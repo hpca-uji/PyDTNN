@@ -1,6 +1,7 @@
 """
 ReLU6 activation module for PyDTNN.
 """
+
 import logging
 
 from pydtnn.activations.relu import Relu
@@ -18,6 +19,7 @@ class Relu6[T: Array](Relu[T]):
     """
     Capped ReLU activation layer that limits the output to a specified maximum value.
     """
+
     # NOTE: This is a ReLU6 *iif* cap is 6, but it's more interesting a implementation where the user have the freedom to choose their cap.
     def __init__(self, shape: ArrayShape = (1,), cap: float = 6.0):
         """

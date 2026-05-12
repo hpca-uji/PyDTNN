@@ -1,6 +1,7 @@
 """
 Log activation module for PyDTNN.
 """
+
 import logging
 
 from pydtnn.activations.activation import Activation
@@ -15,5 +16,6 @@ class Log[T: Array](Activation[T]):
     """
     LogSigmoid activation function implementation.
     """
+
     # NOTE: It is a LogSigmoid activation
     pass

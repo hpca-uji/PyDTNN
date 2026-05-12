@@ -1,4 +1,5 @@
 """NumPy backend implementation of the ReLU6 activation function."""
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -16,6 +17,7 @@ if TYPE_CHECKING:
 
 class Relu6Numpy(Relu6[np.ndarray], ActivationNumpy):
     """NumPy implementation of the ReLU6 activation layer."""
+
     def __init__(self, *args, **kwargs):
         """Initialize the Relu6Numpy layer."""
         super().__init__(*args, **kwargs)

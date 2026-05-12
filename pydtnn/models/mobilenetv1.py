@@ -1,6 +1,7 @@
 """
 MobileNetV1 architecture implementation for PyDTNN.
 """
+
 from collections.abc import Sequence
 
 from pydtnn.abstract.layerable import Layerable

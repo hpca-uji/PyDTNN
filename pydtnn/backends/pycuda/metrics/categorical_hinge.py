@@ -1,4 +1,5 @@
 """PyCUDA implementation of the categorical hinge metric."""
+
 import logging
 
 import numpy as np
@@ -14,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 class CategoricalHingePycuda(CategoricalHinge[TensorArray], MetricPycuda):
     """Categorical hinge metric implementation for PyCUDA backends."""
+
     def _model_init(self) -> None:
         """Initializes the metric buffers on the GPU."""
         super()._model_init()

@@ -1,6 +1,7 @@
 """
 PyDTNN PyCUDA backend implementation for 2D pooling layers.
 """
+
 import logging
 
 from pycuda import gpuarray  # type: ignore

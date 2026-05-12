@@ -1,6 +1,7 @@
 """
 ResNet50 architecture implementation compatible with TensorFlow specifications.
 """
+
 from collections.abc import Sequence
 
 from pydtnn.abstract.layerable import Layerable

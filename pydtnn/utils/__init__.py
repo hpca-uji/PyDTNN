@@ -1,4 +1,5 @@
 """Utility functions and classes for the PyDTNN framework."""
+
 import ctypes
 import logging
 import math
@@ -211,6 +212,7 @@ def read_file(path: str, replaces: dict[str, str] = {}) -> str:
 
 class TqdmLogger:
     """Logger wrapper to redirect tqdm output to the logging system."""
+
     def write(self, s: str) -> int:
         """Write string to the logger."""
         logger.info(s.replace("\r", "\x1b[F"))

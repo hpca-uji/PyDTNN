@@ -1,6 +1,7 @@
 """
 Winograd backend implementation for neural network layers.
 """
+
 import logging
 
 from pydtnn.backends.numpy.layers.layer import LayerNumpy
@@ -15,4 +16,5 @@ class LayerWinograd(LayerNumpy, LayerableWinograd):
     """
     Base class for layers utilizing Winograd convolution algorithms.
     """
+
     ...

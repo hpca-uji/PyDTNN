@@ -1,6 +1,7 @@
 """
 Softmax activation module for PyDTNN.
 """
+
 import logging
 
 from pydtnn.activations.activation import Activation
@@ -15,6 +16,7 @@ class Softmax[T: Array](Activation[T]):
     """
     Softmax activation layer that computes the normalized exponential of the input.
     """
+
     def __init__(self, shape: ArrayShape = (1,), axis: int = 1):
         """
         Initializes the Softmax layer.

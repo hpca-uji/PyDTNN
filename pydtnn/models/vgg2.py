@@ -1,6 +1,7 @@
 """
 VGG-style convolutional neural network architecture implementation.
 """
+
 from collections.abc import Sequence
 
 from pydtnn.abstract.layerable import Layerable

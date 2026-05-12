@@ -1,4 +1,5 @@
 """PyCUDA implementation of the Batch Normalization layer."""
+
 import logging
 from typing import Any
 
@@ -21,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
     """PyCUDA-accelerated Batch Normalization layer using cuDNN."""
+
     @property
     def _ary_prop(self) -> set[str]:
         """Returns the set of parameter names that are stored as TensorArrays."""

@@ -1,4 +1,5 @@
 """PyCUDA backend implementation for the Leaky ReLU activation layer."""
+
 import logging
 import math
 
@@ -19,6 +20,7 @@ logger = logging.getLogger(__name__)
 
 class LeakyReluPycuda(LeakyRelu[TensorArray], ActivationPycuda):
     """PyCUDA-accelerated Leaky ReLU activation layer."""
+
     def __init__(self, *args, **kwargs):
         """Initialize the LeakyReluPycuda layer."""
         super().__init__(*args, **kwargs)

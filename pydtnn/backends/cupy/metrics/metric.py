@@ -1,6 +1,7 @@
 """
 CuPy-based metric implementations for the PyDTNN framework.
 """
+
 import logging
 
 from pydtnn.backends.numpy.metrics.metric import MetricNumpy

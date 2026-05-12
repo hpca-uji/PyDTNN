@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 
 class DistributionModeEnum(StrEnum):
     """Enum for determining how fan-in and fan-out are used to scale weights."""
+
     FAN_IN = auto()
     FAN_OUT = auto()
     FAN_AVG = auto()
@@ -27,6 +28,7 @@ class DistributionModeEnum(StrEnum):
 
 class ProbabilisticDistribution(StrEnum):
     """Enum for selecting the type of probability distribution for initialization."""
+
     UNIFORM = auto()
     NORMAL = auto()
 

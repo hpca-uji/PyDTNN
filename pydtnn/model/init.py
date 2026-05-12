@@ -2,6 +2,7 @@
 Initialization module for the PyDTNN framework, providing the core Init class
 to configure models, hardware backends, and training environments.
 """
+
 import itertools
 import logging
 from collections import abc
@@ -46,14 +47,15 @@ logger = logging.getLogger(__name__)
 class Init[T: Array](Layers[T]):
     """
     Main initialization class for PyDTNN models.
-    
+
     Handles configuration of hardware backends (CUDA/MPI), memory management,
     dataset loading, and model layer construction.
     """
+
     def __init__(self, **kwargs):
         """
         Initializes the model environment and configuration.
-        
+
         Args:
             **kwargs: Configuration arguments to override default parser settings.
         """
@@ -148,7 +150,7 @@ class Init[T: Array](Layers[T]):
     def _batch_init(self, default: int = DEFAULT_BACH_SIZE) -> None:
         """
         Configures the batch size for training.
-        
+
         Args:
             default: Default batch size if none is provided.
         """
@@ -193,7 +195,7 @@ class Init[T: Array](Layers[T]):
     def _crypt_init(self, encryption_name: str) -> "polyhe.Context":
         """
         Initializes the homomorphic encryption context.
-        
+
         Args:
             encryption_name: Name of the encryption backend to use.
         """
@@ -294,7 +296,7 @@ class Init[T: Array](Layers[T]):
     def _layers_init(self, model_name: str) -> None:
         """
         Initializes model layers from a predefined model name.
-        
+
         Args:
             model_name: Name of the model architecture to instantiate.
         """

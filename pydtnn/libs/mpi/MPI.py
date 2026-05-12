@@ -1,7 +1,7 @@
 """Message Passing Interface"""
 
-import os as _os
 import sys as _sys
+
 from pydtnn.libs.mpi import rc as _rc
 
 # Select implementation

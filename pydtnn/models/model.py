@@ -1,6 +1,7 @@
 """
 Module for model selection and component retrieval within the PyDTNN framework.
 """
+
 from collections.abc import Callable, Sequence
 
 from pydtnn.abstract.layerable import Layerable

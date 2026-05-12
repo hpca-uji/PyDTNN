@@ -1,4 +1,5 @@
 """NumPy backend implementation of the Softmax activation function."""
+
 import logging
 import math
 from typing import TYPE_CHECKING
@@ -17,6 +18,7 @@ if TYPE_CHECKING:
 
 class SoftmaxNumpy(Softmax[np.ndarray], ActivationNumpy):
     """NumPy-based Softmax activation layer."""
+
     def _model_init(self, prev_shape, x=None):
         """Initialize model parameters and allocate memory for temporary buffers."""
         super()._model_init(prev_shape, x)

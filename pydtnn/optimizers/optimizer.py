@@ -4,6 +4,7 @@ Optimizer module for PyDTNN.
 This module provides the base class for all optimization algorithms and a utility
 function to dynamically select optimizers by name.
 """
+
 import logging
 
 import numpy as np

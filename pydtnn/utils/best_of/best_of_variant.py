@@ -1,4 +1,5 @@
 """Module providing the BestOfVariant class for dynamic convolution implementation selection."""
+
 import logging
 from typing import Callable, List
 
@@ -21,6 +22,7 @@ class BestOfVariant(Conv2DWinogradNumpy, Conv2DDirectNumpy):
     A convolution layer variant that dynamically selects the most efficient implementation
     at runtime based on performance profiling.
     """
+
     def __init__(self, *args, **kwargs):
         """Initializes the BestOfVariant layer with default attributes."""
         super().__init__(*args, **kwargs)

@@ -1,6 +1,7 @@
 """
 Cython-based activation layer implementations for the PyDTNN framework.
 """
+
 import logging
 
 from pydtnn.backends.cython.abstract.layerable import LayerableCython
@@ -15,4 +16,5 @@ class ActivationCython(ActivationNumpy, LayerableCython):
     """
     Base class for Cython-accelerated activation layers.
     """
+
     ...

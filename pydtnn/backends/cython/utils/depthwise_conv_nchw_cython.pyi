@@ -1,6 +1,7 @@
 """
 Cython-accelerated depthwise convolution utilities for NCHW data format.
 """
+
 from pydtnn.backends.cython.utils.base import _npDT, _npDT_3Dims, _npDT_4Dims
 
 def depthwise_conv_nchw_cython[T: _npDT](

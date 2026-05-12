@@ -1,6 +1,7 @@
 """
 Module for the StopAtLoss scheduler, which terminates training based on loss or metric thresholds.
 """
+
 from __future__ import annotations
 
 import logging

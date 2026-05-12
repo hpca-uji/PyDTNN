@@ -1,6 +1,7 @@
 """
 Module for the Tsunamis Eflows UMA model architecture.
 """
+
 from collections.abc import Sequence
 
 from pydtnn.abstract.layerable import Layerable

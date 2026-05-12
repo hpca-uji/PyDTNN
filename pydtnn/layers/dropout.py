@@ -1,6 +1,7 @@
 """
 Dropout layer implementation for PyDTNN.
 """
+
 import logging
 
 from pydtnn.layers.layer import Layer
@@ -15,6 +16,7 @@ class Dropout[T: Array](Layer[T]):
     """
     A layer that randomly sets input units to 0 with a frequency of rate during training.
     """
+
     def __init__(self, rate=0.5):
         """
         Initializes the Dropout layer.

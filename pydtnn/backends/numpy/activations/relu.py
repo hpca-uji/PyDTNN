@@ -1,4 +1,5 @@
 """NumPy backend implementation of the Rectified Linear Unit (ReLU) activation function."""
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -17,6 +18,7 @@ if TYPE_CHECKING:
 
 class ReluNumpy(Relu[np.ndarray], ActivationNumpy):
     """NumPy-based ReLU activation layer."""
+
     def __init__(self, shape: ArrayShape = (1,)):
         """Initializes the ReLU layer with a specific shape."""
         super().__init__(shape)

@@ -1,6 +1,7 @@
 """
 Utilities for profiling performance and memory usage in PyDTNN.
 """
+
 import gc
 import logging
 import tempfile
@@ -21,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 class Profiler:
     """Base class for performance and resource profiling."""
+
     def __init__(self):
         """Initialize the profiler with an empty list of events."""
         self.events = []
@@ -45,6 +47,7 @@ class Profiler:
 
 class TimeProfiler(Profiler):
     """Profiler for measuring execution time."""
+
     def start(self):
         """Record the start time."""
         self._start_time = time.perf_counter()
@@ -58,6 +61,7 @@ class TimeProfiler(Profiler):
 
 class MemoryProfiler(Profiler):
     """Profiler for measuring peak memory usage."""
+
     def start(self):
         """Initialize memory tracking."""
         self._tmp = tempfile.mktemp()

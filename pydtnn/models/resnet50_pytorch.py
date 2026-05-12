@@ -1,6 +1,7 @@
 """
 ResNet50 model implementation for the PyDTNN framework.
 """
+
 from collections.abc import Sequence
 
 from pydtnn.abstract.layerable import Layerable

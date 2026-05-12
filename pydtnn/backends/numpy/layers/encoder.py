@@ -1,6 +1,7 @@
 """
 Numpy backend implementation of the Transformer Encoder layer.
 """
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -26,6 +27,7 @@ class EncoderNumpy(Encoder[np.ndarray], AbstractBlockLayerNumpy):
     """
     Numpy-based implementation of the Transformer Encoder layer.
     """
+
     def __init__(self, *args, **kwargs):
         """
         Initializes the EncoderNumpy layer with sub-layers.

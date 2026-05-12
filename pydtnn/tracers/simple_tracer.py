@@ -1,6 +1,7 @@
 """
 Simple tracer implementation for PyDTNN.
 """
+
 import atexit
 import logging
 from collections import defaultdict

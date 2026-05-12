@@ -1,4 +1,5 @@
 """CuPy implementation of the 2D Max Pooling layer."""
+
 import logging
 from typing import TYPE_CHECKING
 

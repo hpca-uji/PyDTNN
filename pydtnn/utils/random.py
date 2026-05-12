@@ -1,4 +1,5 @@
 """Thread-safe random number generation utilities for PyDTNN."""
+
 import logging
 import threading
 import weakref
@@ -12,6 +13,7 @@ logger = logging.getLogger(__name__)
 
 class SafeGenerator:
     """Provides a thread-local wrapper around numpy random generators."""
+
     def __init__(self, seed=0) -> None:
         """Initialize the generator with a base seed."""
         self._generators = weakref.WeakKeyDictionary[threading.Thread, np.random.Generator]()

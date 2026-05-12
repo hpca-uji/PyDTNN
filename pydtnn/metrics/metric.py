@@ -4,6 +4,7 @@ Metric module for PyDTNN.
 This module provides the base class for defining evaluation metrics and a utility
 function for dynamically selecting metric implementations.
 """
+
 import logging
 from abc import abstractmethod
 
@@ -30,6 +31,7 @@ class Metric[T: Array](Base):
         order (int): Execution order priority.
         eps (float): Small epsilon value for numerical stability.
     """
+
     format = ""
     order = 0  # No need of special order.
 

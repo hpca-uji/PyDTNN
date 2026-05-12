@@ -1,4 +1,5 @@
 """Numpy backend implementation of the Arctanh activation function."""
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -16,6 +17,7 @@ if TYPE_CHECKING:
 
 class ArctanhNumpy(Arctanh[np.ndarray], ActivationNumpy):
     """Numpy-based Arctanh activation layer."""
+
     def __init__(self, *args, **kwargs):
         """Initialize the ArctanhNumpy layer."""
         super().__init__(*args, **kwargs)

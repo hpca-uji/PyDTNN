@@ -24,6 +24,7 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
     """
     PyCUDA implementation of the Multi-Head Attention layer using cuDNN.
     """
+
     def __init__(self, *args, **kwargs):
         """
         Initializes the MultiHeadAttentionPycuda layer.

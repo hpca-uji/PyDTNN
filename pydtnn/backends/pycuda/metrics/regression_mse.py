@@ -1,6 +1,7 @@
 """
 PyCUDA implementation of the Mean Squared Error (MSE) regression metric.
 """
+
 import logging
 
 import numpy as np
@@ -18,6 +19,7 @@ class RegressionMSEPycuda(RegressionMSE[TensorArray], MetricPycuda):
     """
     PyCUDA-accelerated Mean Squared Error metric for regression tasks.
     """
+
     def _model_init(self) -> None:
         """
         Initializes internal buffers for MSE computation on the GPU.

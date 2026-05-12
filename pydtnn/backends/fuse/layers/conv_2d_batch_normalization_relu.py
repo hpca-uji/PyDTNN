@@ -1,4 +1,5 @@
 """Fused layer implementation for Conv2D, BatchNormalization, and ReLU operations."""
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -26,11 +27,13 @@ if TYPE_CHECKING:
 
 class Conv2DBatchNormalizationRelu[T: Array](FusedLayerMixIn[T], Conv2D[T], BatchNormalization[T]):
     """Base class for fused Conv2D, BatchNormalization, and ReLU layers."""
+
     pass
 
 
 class Conv2DBatchNormalizationReluFuse(Conv2DBatchNormalizationRelu[np.ndarray], AbstractConv2DStandardNumpy):
     """Numpy backend implementation for fused Conv2D, BatchNormalization, and ReLU."""
+
     @property
     def _ary_prop(self) -> set[str]:
         """Returns the set of array properties required for this fused layer."""

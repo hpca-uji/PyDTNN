@@ -1,6 +1,7 @@
 """
 PyCUDA implementation of the binary confusion matrix metric.
 """
+
 import logging
 
 import numpy as np
@@ -18,6 +19,7 @@ class BinaryConfusionMatrixPycuda(BinaryConfusionMatrix[TensorArray], MetricPycu
     """
     PyCUDA-accelerated binary confusion matrix calculation.
     """
+
     def _model_init(self) -> None:
         """
         Initializes the confusion matrix buffers on the GPU.

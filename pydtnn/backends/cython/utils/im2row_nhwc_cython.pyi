@@ -1,6 +1,7 @@
 """
 Cython-accelerated utilities for image-to-row and row-to-image transformations in NHWC format.
 """
+
 from pydtnn.backends.cython.utils.base import _npDT, _npDT_2Dims, _npDT_4Dims
 
 def im2row_nhwc_cython[T: _npDT](

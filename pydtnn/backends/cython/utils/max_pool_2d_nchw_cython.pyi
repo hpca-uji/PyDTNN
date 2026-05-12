@@ -1,4 +1,5 @@
 """Cython-accelerated 2D Max Pooling operations for NCHW data format."""
+
 import numpy as _np
 
 from pydtnn.backends.cython.utils.base import _npDT, _npDT_4Dims

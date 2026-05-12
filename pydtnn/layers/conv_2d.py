@@ -1,6 +1,7 @@
 """
 2D Convolutional layer implementation for the PyDTNN framework.
 """
+
 import logging
 
 from pydtnn.layers.abstract.conv_2d import AbstractConv2D
@@ -15,4 +16,5 @@ class Conv2D[T: Array](AbstractConv2D[T]):
     """
     Standard 2D convolutional layer that performs cross-correlation over input tensors.
     """
+
     ...

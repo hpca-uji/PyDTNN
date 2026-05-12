@@ -1,11 +1,11 @@
-from __future__ import annotations
-
 """
 PyDTNN Tsunami Dataset Module.
 
 This module provides the Tsunamis dataset class, which is designed to load
 and process tsunami simulation data for machine learning tasks.
 """
+
+from __future__ import annotations
 
 import copy
 import logging

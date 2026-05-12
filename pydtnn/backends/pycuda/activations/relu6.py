@@ -1,4 +1,5 @@
 """PyCUDA implementation of the ReLU6 activation function."""
+
 import logging
 import math
 
@@ -19,6 +20,7 @@ logger = logging.getLogger(__name__)
 
 class Relu6Pycuda(Relu6[TensorArray], ActivationPycuda):
     """PyCUDA-accelerated ReLU6 activation layer."""
+
     def __init__(self, *args, **kwargs):
         """Initialize the Relu6Pycuda layer."""
         super().__init__(*args, **kwargs)

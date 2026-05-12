@@ -1,6 +1,7 @@
 """
 F1-Score metric implementation for binary classification tasks.
 """
+
 import logging
 
 from pydtnn.metrics.binary_confusion_matrix import BinaryConfusionMatrix
@@ -16,6 +17,7 @@ class F1Score[T: Array](Metric[T]):
     """
     Computes the F1-score based on a BinaryConfusionMatrix.
     """
+
     order = BinaryConfusionMatrix.order + 1
     conf_matrix_metric: BinaryConfusionMatrix = None  # type: ignore
     format = "f1: %.4f"

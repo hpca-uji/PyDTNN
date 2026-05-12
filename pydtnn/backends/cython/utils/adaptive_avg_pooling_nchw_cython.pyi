@@ -1,6 +1,7 @@
 """
 Cython-accelerated adaptive average pooling utilities for NCHW tensor layouts.
 """
+
 from pydtnn.backends.cython.utils.base import _npDT, _npDT_4Dims
 
 def adaptive_avg_pooling_fwd_nchw_cython[T: _npDT](x: _npDT_4Dims[T], pooled_x: _npDT_4Dims[T]) -> None:

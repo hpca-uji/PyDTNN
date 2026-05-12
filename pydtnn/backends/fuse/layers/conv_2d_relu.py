@@ -1,6 +1,7 @@
 """
 Fused 2D Convolution and ReLU layer implementation.
 """
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -31,6 +32,7 @@ class Conv2DRelu[T: Array](FusedLayerMixIn[T], Conv2D[T]):
     """
     Base class for 2D Convolution layers with fused ReLU activation.
     """
+
     pass
 
 
@@ -38,6 +40,7 @@ class Conv2DReluFuse(Conv2DRelu[np.ndarray], AbstractConv2DStandardNumpy):
     """
     Numpy-based implementation of a fused 2D Convolution and ReLU layer.
     """
+
     # NOTE: The "__init__" method is being made (more or less) in Model (in _apply_layer_fusion) and in FusedLayerMixIn.
 
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:

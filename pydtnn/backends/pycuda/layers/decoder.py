@@ -1,6 +1,7 @@
 """
 PyCUDA implementation of the Transformer Decoder block.
 """
+
 import logging
 
 import numpy as np
@@ -23,6 +24,7 @@ class DecoderPycuda(AbstractBlockLayerPycuda, Decoder):
     """
     PyCUDA-accelerated Transformer Decoder layer.
     """
+
     def __init__(self, *args, **kwargs):
         """
         Initializes the DecoderPycuda layer with sub-layers and internal buffers.

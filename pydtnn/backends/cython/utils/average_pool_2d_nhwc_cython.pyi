@@ -1,4 +1,5 @@
 """Cython-accelerated 2D average pooling utilities for NHWC data layout."""
+
 from pydtnn.backends.cython.utils.base import _npDT, _npDT_4Dims
 
 def average_pool_2d_fwd_nhwc_cython[T: _npDT](

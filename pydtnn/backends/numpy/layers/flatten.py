@@ -1,6 +1,7 @@
 """
 Numpy backend implementation of the Flatten layer.
 """
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -22,6 +23,7 @@ class FlattenNumpy(Flatten[np.ndarray], LayerNumpy):
     """
     Numpy-based Flatten layer implementation.
     """
+
     def forward(self, x: np.ndarray) -> np.ndarray:
         """
         Flattens the input tensor while preserving the batch dimension.

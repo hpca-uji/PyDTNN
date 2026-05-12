@@ -1,6 +1,7 @@
 """
 PyCUDA implementation of the Recall metric for PyDTNN.
 """
+
 import logging
 
 import numpy as np
@@ -18,6 +19,7 @@ class RecallPycuda(Recall[TensorArray], MetricPycuda):
     """
     Recall metric implementation using PyCUDA for GPU acceleration.
     """
+
     def _model_init(self) -> None:
         """
         Initializes the internal buffers for recall calculation on the GPU.

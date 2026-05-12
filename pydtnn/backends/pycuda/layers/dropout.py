@@ -1,4 +1,5 @@
 """PyCUDA implementation of the Dropout layer for the PyDTNN framework."""
+
 import ctypes
 import logging
 
@@ -19,6 +20,7 @@ logger = logging.getLogger(__name__)
 
 class DropoutPycuda(Dropout[TensorArray], LayerPycuda):
     """PyCUDA-accelerated Dropout layer using cuDNN."""
+
     def __init__(self, *args, **kwargs):
         """Initializes the DropoutPycuda layer."""
         super().__init__(*args, **kwargs)

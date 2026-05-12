@@ -1,4 +1,5 @@
 """PyCUDA backend implementation of the Sigmoid activation function."""
+
 import logging
 
 from pycuda import gpuarray  # type:ignore
@@ -16,6 +17,7 @@ logger = logging.getLogger(__name__)
 
 class SigmoidPycuda(Sigmoid[TensorArray], ActivationPycuda):
     """PyCUDA-accelerated Sigmoid activation layer."""
+
     def __init__(self, *args, **kwargs):
         """Initialize the SigmoidPycuda layer."""
         super().__init__(*args, **kwargs)

@@ -1,4 +1,5 @@
 """PyCUDA implementation of the Transformer Encoder layer."""
+
 import logging
 
 import numpy as np
@@ -20,6 +21,7 @@ logger = logging.getLogger(__name__)
 
 class EncoderPycuda(AbstractBlockLayerPycuda, Encoder):
     """PyCUDA-accelerated Transformer Encoder layer."""
+
     def __init__(self, *args, **kwargs):
         """Initializes the EncoderPycuda layer with sub-layers and placeholders."""
         super().__init__(*args, **kwargs)

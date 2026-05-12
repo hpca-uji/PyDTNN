@@ -1,6 +1,7 @@
 """
 RMSProp optimizer implementation for the PyDTNN framework.
 """
+
 from __future__ import annotations
 
 import logging

@@ -1,6 +1,7 @@
 """
 CuPy implementation of the ReLU6 activation function.
 """
+
 import logging
 
 from pydtnn.backends.cupy.activations.activation import ActivationCupy
@@ -16,6 +17,7 @@ class Relu6Cupy(Relu6Numpy, ActivationCupy):
     """
     ReLU6 activation layer implemented using CuPy for GPU acceleration.
     """
+
     def _model_init(self, prev_shape, x=None):
         """
         Initialize the layer parameters and buffers.

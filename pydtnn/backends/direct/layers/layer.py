@@ -1,6 +1,7 @@
 """
 Direct backend implementation for neural network layers.
 """
+
 import logging
 
 from pydtnn.backends.direct.abstract.layerable import LayerableDirect
@@ -16,4 +17,5 @@ class LayerDirect(LayerNumpy, LayerableDirect):
     Base class for layers using the direct backend, inheriting from both
     Numpy-based layer implementations and direct backend abstractions.
     """
+
     ...

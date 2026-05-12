@@ -1,4 +1,5 @@
 """PyCUDA backend implementation for the Log activation function."""
+
 import logging
 
 import numpy as np
@@ -18,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 class LogPycuda(Log[TensorArray], ActivationPycuda):
     """PyCUDA implementation of the Log activation layer."""
+
     def __init__(self, *args, **kwargs):
         """Initialize the LogPycuda layer."""
         super().__init__(*args, **kwargs)

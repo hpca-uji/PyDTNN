@@ -1,6 +1,7 @@
 """
 Numpy implementation of the Encoder-Decoder architecture.
 """
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -23,6 +24,7 @@ class EncoderDecoderNumpy(EncoderDecoder[np.ndarray], AbstractBlockLayerNumpy):
     """
     Numpy-based Encoder-Decoder block layer.
     """
+
     def __init__(self, *args, **kwargs):
         """
         Initializes the EncoderDecoderNumpy layer with encoder and decoder stacks.

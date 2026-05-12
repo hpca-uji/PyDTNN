@@ -1,4 +1,5 @@
 """Cython implementation of the Sigmoid activation function."""
+
 import logging
 
 from pydtnn.backends.cython.activations.activation import ActivationCython
@@ -13,6 +14,7 @@ logger = logging.getLogger(__name__)
 
 class SigmoidCython(SigmoidNumpy, ActivationCython):
     """Cython-accelerated Sigmoid activation layer."""
+
     def forward(self, x: np.ndarray) -> np.ndarray:
         """
         Compute the forward pass of the Sigmoid activation.

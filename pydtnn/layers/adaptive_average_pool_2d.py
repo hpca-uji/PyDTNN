@@ -1,6 +1,7 @@
 """
 Adaptive Average Pooling 2D layer implementation for PyDTNN.
 """
+
 import logging
 import math
 
@@ -18,6 +19,7 @@ class AdaptiveAveragePool2D[T: Array](Layer):
 
     The output size is fixed to the provided output_shape, regardless of the input size.
     """
+
     # This layer will calculate the pool shape and the stride from the output shape (passed as parameter) and the previous layer shape.
     # output_shape:
     #  -> None: if the output shape is equal to the input

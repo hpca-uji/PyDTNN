@@ -2,6 +2,7 @@
 Module for automatic selection of the best performing algorithm or pipeline
 based on problem size.
 """
+
 import logging
 import traceback
 from collections import abc, defaultdict

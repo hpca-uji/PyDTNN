@@ -1,6 +1,7 @@
 """
 Numpy implementation of the Adam optimizer.
 """
+
 import logging
 import math
 from typing import TYPE_CHECKING
@@ -22,6 +23,7 @@ class AdamNumpy(Adam[np.ndarray], OptimizerNumpy):
     """
     Numpy-based Adam optimizer implementation.
     """
+
     def _model_init(self, list_layers: list[LayerNumpy]) -> None:
         """
         Initializes the optimizer state for the given layers.

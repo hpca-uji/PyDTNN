@@ -1,6 +1,7 @@
 """
 Sigmoid activation function module for PyDTNN.
 """
+
 import logging
 
 from pydtnn.activations.activation import Activation
@@ -15,4 +16,5 @@ class Sigmoid[T: Array](Activation[T]):
     """
     Sigmoid activation layer that squashes input values into the range (0, 1).
     """
+
     pass

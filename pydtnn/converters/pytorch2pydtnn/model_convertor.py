@@ -1,6 +1,7 @@
 """
 Module for converting PyTorch models to PyDTNN models.
 """
+
 import copy
 import logging
 

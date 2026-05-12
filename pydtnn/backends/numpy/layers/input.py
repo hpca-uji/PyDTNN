@@ -1,6 +1,7 @@
 """
 Numpy backend implementation for the Input layer.
 """
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -20,6 +21,7 @@ class InputNumpy(Input[np.ndarray], LayerNumpy):
     """
     Numpy-based input layer for handling data ingestion and type casting.
     """
+
     def forward(self, x: np.ndarray) -> np.ndarray:
         """
         Passes the input through, ensuring it matches the model's dtype and memory layout.

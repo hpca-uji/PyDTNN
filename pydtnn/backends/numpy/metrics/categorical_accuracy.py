@@ -1,6 +1,7 @@
 """
 Numpy backend implementation of the categorical accuracy metric.
 """
+
 import logging
 import math
 from typing import TYPE_CHECKING
@@ -21,6 +22,7 @@ class CategoricalAccuracyNumpy(CategoricalAccuracy[np.ndarray], MetricNumpy):
     """
     Numpy-based implementation of categorical accuracy.
     """
+
     def _model_init(self) -> None:
         """
         Initializes model-specific parameters and calculates memory usage.

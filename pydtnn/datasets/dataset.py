@@ -4,6 +4,7 @@ Dataset module for PyDTNN.
 Provides the base Dataset class and utility functions for managing,
 transforming, and generating data batches for machine learning models.
 """
+
 from __future__ import annotations
 
 import functools
@@ -520,6 +521,7 @@ class Dataset:
             A new function that accepts (x, y) and applies `func` to `x`,
             returning the transformed `x` and the original `y`.
         """
+
         @functools.wraps(func)
         def wrapper(x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
             return func(x), y

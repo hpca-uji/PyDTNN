@@ -1,6 +1,3 @@
-
-from __future__ import annotations
-
 """
 Module for managing model checkpointing during training.
 
@@ -8,6 +5,8 @@ This module provides the `ModelCheckpoint` class, a scheduler designed to
 automatically save the state of a machine learning model at regular intervals
 or when a monitored performance metric (like loss or accuracy) improves.
 """
+
+from __future__ import annotations
 
 import logging
 import os

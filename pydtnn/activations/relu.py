@@ -1,4 +1,5 @@
 """Rectified Linear Unit (ReLU) activation function module."""
+
 import logging
 
 from pydtnn.activations.activation import Activation
@@ -11,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 class Relu[T: Array](Activation[T]):
     """Rectified Linear Unit activation layer."""
+
     def __init__(self, shape: ArrayShape = (1,)):
         """Initializes the ReLU layer with a given shape.
 

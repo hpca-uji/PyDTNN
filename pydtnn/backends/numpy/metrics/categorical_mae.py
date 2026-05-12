@@ -1,6 +1,7 @@
 """
 Numpy backend implementation of the Categorical Mean Absolute Error metric.
 """
+
 import logging
 import math
 from typing import TYPE_CHECKING
@@ -21,6 +22,7 @@ class CategoricalMAENumpy(CategoricalMAE[np.ndarray], MetricNumpy):
     """
     Numpy-based implementation of Categorical Mean Absolute Error.
     """
+
     def _model_init(self) -> None:
         """
         Initializes model parameters and calculates memory requirements.

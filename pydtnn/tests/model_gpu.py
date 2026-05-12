@@ -1,8 +1,8 @@
-from __future__ import annotations
-
 """
 Module for testing PyDTNN model consistency between CPU and GPU backends.
 """
+
+from __future__ import annotations
 
 import logging
 import unittest

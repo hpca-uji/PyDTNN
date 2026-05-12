@@ -1,6 +1,7 @@
 """
 Numpy backend implementation for the ConcatenationBlock layer.
 """
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -22,6 +23,7 @@ class ConcatenationBlockNumpy(ConcatenationBlock, AbstractBlockLayerNumpy):
     """
     Numpy-based implementation of a concatenation block layer.
     """
+
     def __init__(self, *args, **kwargs):
         """
         Initializes the ConcatenationBlockNumpy instance.

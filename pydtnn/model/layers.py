@@ -1,6 +1,7 @@
 """
 Module providing the Layers management class for the PyDTNN framework.
 """
+
 import logging
 import operator
 from collections import abc
@@ -25,6 +26,7 @@ class Layers[T: Array](Utils[T]):
     """
     Manages the collection and lifecycle of neural network layers.
     """
+
     def add(self, layer: Layerable[T]) -> None:
         """
         Adds a layer to the model and initializes its backend and parameters.

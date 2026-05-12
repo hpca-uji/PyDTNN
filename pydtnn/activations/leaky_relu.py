@@ -1,4 +1,5 @@
 """Leaky ReLU activation layer implementation."""
+
 import logging
 
 from pydtnn.activations.relu import Relu
@@ -11,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 class LeakyRelu[T: Array](Relu[T]):
     """Leaky Rectified Linear Unit activation layer."""
+
     def __init__(self, shape: ArrayShape = (1,), negative_slope: float = 0.01):
         """Initializes the LeakyRelu layer.
 

@@ -1,6 +1,7 @@
 """
 Kullback-Leibler divergence metric implementation for the NumPy backend.
 """
+
 import logging
 import math
 from typing import TYPE_CHECKING
@@ -21,6 +22,7 @@ class KLDivergenceMetricNumpy(KLDivergenceMetric[np.ndarray], MetricNumpy):
     """
     NumPy implementation of the KL Divergence metric.
     """
+
     def _model_init(self) -> None:
         """
         Initializes model-specific memory requirements for the metric.

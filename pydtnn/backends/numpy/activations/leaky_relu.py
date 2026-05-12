@@ -1,6 +1,7 @@
 """
 NumPy backend implementation of the Leaky ReLU activation function.
 """
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -21,6 +22,7 @@ class LeakyReluNumpy(LeakyRelu[np.ndarray], ActivationNumpy):
     """
     NumPy-based Leaky ReLU activation layer.
     """
+
     def __init__(self, *args, **kwargs):
         """
         Initialize the LeakyReluNumpy layer.

@@ -1,6 +1,7 @@
 """
 Numpy backend implementation for scalar multiplication layers.
 """
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -20,6 +21,7 @@ class ScalarNumpy(Scalar[np.ndarray], LayerNumpy):
     """
     Numpy-based scalar multiplication layer.
     """
+
     def __init__(self, *args, **kwargs):
         """
         Initialize the ScalarNumpy layer.

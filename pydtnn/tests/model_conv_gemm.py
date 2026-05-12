@@ -1,6 +1,7 @@
 """
 Tests for verifying the equivalence of convolution implementations using Im2Col+MM versus ConvGemm.
 """
+
 import logging
 import unittest
 

@@ -1,6 +1,7 @@
 """
 PyCUDA implementation of the Kullback-Leibler divergence metric.
 """
+
 import logging
 
 import numpy as np
@@ -19,6 +20,7 @@ class KLDivergenceMetricPycuda(KLDivergenceMetric[TensorArray], MetricPycuda):
     """
     Computes the Kullback-Leibler divergence between predictions and targets using PyCUDA.
     """
+
     def compute(self, y_pred: TensorArray, y_targ: TensorArray) -> float:
         """
         Calculates the KL divergence metric on the GPU.

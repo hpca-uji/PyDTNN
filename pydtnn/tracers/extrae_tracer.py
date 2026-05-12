@@ -1,8 +1,8 @@
-from __future__ import annotations
-
 """
 Extrae tracer implementation for PyDTNN.
 """
+
+from __future__ import annotations
 
 import ctypes
 import logging

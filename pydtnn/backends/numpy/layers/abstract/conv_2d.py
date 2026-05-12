@@ -1,4 +1,5 @@
 """Module providing the NumPy backend implementation for 2D convolution layers."""
+
 import logging
 from typing import TYPE_CHECKING, Any
 
@@ -20,6 +21,7 @@ if TYPE_CHECKING:
 
 class AbstractConv2DNumpy(AbstractConv2D[np.ndarray], LayerNumpy):
     """Abstract base class for 2D convolution layers using the NumPy backend."""
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # More parameters initialized in initialize()

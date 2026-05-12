@@ -175,11 +175,13 @@ def POINTER(obj):
 
 class float2(ctypes.Structure):
     """CUDA float2 structure."""
+
     _fields_ = [("x", ctypes.c_float), ("y", ctypes.c_float)]
 
 
 class cuFloatComplex(float2):
     """CUDA cuFloatComplex structure."""
+
     @property
     def value(self):
         return complex(self.x, self.y)
@@ -187,11 +189,13 @@ class cuFloatComplex(float2):
 
 class double2(ctypes.Structure):
     """CUDA double2 structure."""
+
     _fields_ = [("x", ctypes.c_double), ("y", ctypes.c_double)]
 
 
 class cuDoubleComplex(double2):
     """CUDA cuDoubleComplex structure."""
+
     @property
     def value(self):
         return complex(self.x, self.y)
@@ -1092,6 +1096,7 @@ cudaMemoryTypeDevice = 2
 
 class cudaPointerAttributes(ctypes.Structure):
     """CUDA pointer attributes structure."""
+
     _fields_ = [("memoryType", ctypes.c_int), ("device", ctypes.c_int), ("devicePointer", ctypes.c_void_p), ("hostPointer", ctypes.c_void_p)]
 
 

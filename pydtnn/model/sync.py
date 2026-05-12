@@ -1,6 +1,7 @@
 """
 Module for handling distributed synchronization operations in PyDTNN.
 """
+
 import logging
 
 import numpy as np
@@ -19,6 +20,7 @@ class Sync[T: Array](Init[T]):
     Base class for distributed synchronization operations, providing methods for
     encoding, decoding, and performing collective communication reductions.
     """
+
     def _layer_reduce_encode(self, data: np.ndarray):
         """
         Prepares data for reduction by applying weights, quantization, and encryption.

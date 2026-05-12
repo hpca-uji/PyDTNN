@@ -4,6 +4,7 @@ Loss module for PyDTNN.
 Provides the base class for loss functions and utility functions for selecting
 loss implementations.
 """
+
 import logging
 
 from pydtnn.abstract.base import Base
@@ -26,6 +27,7 @@ class Loss[T: Array](Base):
         eps (float): Small value to prevent numerical instability.
         format (str): Format string for loss representation.
     """
+
     format = ""
 
     def __init__(self, eps=1e-8):

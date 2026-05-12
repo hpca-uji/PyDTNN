@@ -1,6 +1,7 @@
 """
 NumPy backend implementation of the Tanh activation function.
 """
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -20,6 +21,7 @@ class TanhNumpy(Tanh[np.ndarray], ActivationNumpy):
     """
     NumPy-based Tanh activation layer.
     """
+
     def _model_init(self, prev_shape, x=None):
         """
         Initialize the layer model and allocate memory for the output buffer.

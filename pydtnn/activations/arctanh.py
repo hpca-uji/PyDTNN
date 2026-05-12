@@ -1,6 +1,7 @@
 """
 Module providing the Arctanh activation function for the PyDTNN framework.
 """
+
 import logging
 
 from pydtnn.activations.activation import Activation
@@ -15,4 +16,5 @@ class Arctanh[T: Array](Activation[T]):
     """
     Arctanh activation layer that computes the inverse hyperbolic tangent of the input.
     """
+
     pass

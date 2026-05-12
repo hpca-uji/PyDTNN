@@ -1,6 +1,7 @@
 """
 Test suite for verifying PyTorch to PyDTNN model conversion and inference parity.
 """
+
 import torch  # type: ignore
 from model_convertor import convert_model
 from torch.nn import CrossEntropyLoss  # type: ignore
@@ -80,6 +81,7 @@ def get_model_layers(model: torch.nn.Module, name: str = "self") -> dict[str, to
     """
     Recursively extracts all leaf modules from a PyTorch model.
     """
+
     def _get_model_layers(model: torch.nn.Module, name: str, dict_modules: dict[str, torch.nn.Module]):
         """
         Internal recursive helper to traverse model children.

@@ -1,4 +1,5 @@
 """CuPy backend implementation for 2D depthwise convolution layers."""
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -19,6 +20,7 @@ if TYPE_CHECKING:
 
 class Conv2DDepthwiseCython(Conv2DDepthwiseNumpy, AbstractConv2DCupy, LayerCupy):
     """CuPy-accelerated 2D depthwise convolution layer."""
+
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
         """Initialize model parameters and compile CUDA kernels."""
         super()._model_init(prev_shape, x)

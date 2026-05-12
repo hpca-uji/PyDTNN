@@ -1,6 +1,7 @@
 """
 PyCUDA implementation of the Categorical Mean Absolute Error metric.
 """
+
 import logging
 
 import numpy as np
@@ -18,6 +19,7 @@ class CategoricalMAEPycuda(CategoricalMAE[TensorArray], MetricPycuda):
     """
     Categorical Mean Absolute Error metric implemented for PyCUDA backends.
     """
+
     def _model_init(self) -> None:
         """
         Initializes the PyCUDA-specific buffers for metric calculation.

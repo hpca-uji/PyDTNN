@@ -1,6 +1,7 @@
 """
 PyCUDA implementation of metric calculations for the PyDTNN framework.
 """
+
 import logging
 
 from pycuda.driver import Function  # type: ignore

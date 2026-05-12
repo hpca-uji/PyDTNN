@@ -1,4 +1,5 @@
 """PyCUDA backend implementation for the Arctanh activation function."""
+
 import logging
 
 import numpy as np
@@ -17,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 class ArctanhPycuda(Arctanh[TensorArray], ActivationPycuda):
     """PyCUDA implementation of the Arctanh activation layer."""
+
     def __init__(self, *args, **kwargs):
         """Initialize the ArctanhPycuda layer."""
         super().__init__(*args, **kwargs)

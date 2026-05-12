@@ -1,6 +1,7 @@
 """
 CuPy implementation of the F1-score metric for the PyDTNN framework.
 """
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -20,6 +21,7 @@ class F1ScoreCupy(F1ScoreNumpy, MetricCupy):
     """
     F1-score metric implementation using CuPy for GPU-accelerated computation.
     """
+
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
         """
         Computes the F1-score based on the confusion matrix statistics.

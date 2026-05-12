@@ -1,6 +1,7 @@
 """
 NumPy backend implementation for pointwise 2D convolution layers.
 """
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -23,6 +24,7 @@ class Conv2DPointwiseNumpy(Conv2DPointwise, AbstractConv2DNumpy):
     """
     NumPy-based implementation of a pointwise 2D convolution layer.
     """
+
     def _export_weights_dw(self, key: str):
         """
         Exports weights or gradients to a standard format based on the model's tensor format.

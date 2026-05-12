@@ -1,4 +1,5 @@
 """Direct convolution layer implementation using the convDirect library."""
+
 import logging
 from functools import partial
 from warnings import warn
@@ -19,6 +20,7 @@ logger = logging.getLogger(__name__)
 
 class Conv2DDirect(Conv2DNumpy, AbstractConv2DDirect):
     """2D Convolution layer utilizing the direct convolution backend."""
+
     def __init__(self, *args, **kwargs):
         """Initialize the Conv2DDirect layer."""
         super().__init__(*args, **kwargs)

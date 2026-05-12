@@ -1,6 +1,7 @@
 """
 Module for testing and defining transformer-based model architectures within the PyDTNN framework.
 """
+
 from collections.abc import Sequence
 
 from pydtnn.abstract.layerable import Layerable

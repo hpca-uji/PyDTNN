@@ -1,6 +1,7 @@
 """
 RMSProp optimizer implementation for PyCUDA backend.
 """
+
 import logging
 
 import numpy as np

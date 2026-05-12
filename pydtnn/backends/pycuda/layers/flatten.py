@@ -1,4 +1,5 @@
 """PyCUDA implementation of the Flatten layer."""
+
 import logging
 
 from pydtnn.backends.pycuda.layers.layer import LayerPycuda
@@ -13,6 +14,7 @@ logger = logging.getLogger(__name__)
 
 class FlattenPycuda(Flatten[TensorArray], LayerPycuda):
     """PyCUDA-accelerated Flatten layer implementation."""
+
     def _model_init(self, prev_shape, x):
         """Initialize layer parameters and output reference."""
         super()._model_init(prev_shape, x)

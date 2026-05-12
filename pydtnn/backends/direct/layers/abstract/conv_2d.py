@@ -1,6 +1,7 @@
 """
 Abstract base class for 2D convolution layers in the direct backend.
 """
+
 import logging
 
 from pydtnn.backends.direct.layers.layer import LayerDirect
@@ -15,4 +16,5 @@ class AbstractConv2DDirect(AbstractConv2DNumpy, LayerDirect):
     """
     Base class for 2D convolution layers implementing the direct backend interface.
     """
+
     ...

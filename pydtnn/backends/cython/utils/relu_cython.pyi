@@ -1,6 +1,7 @@
 """
 Cython-accelerated ReLU activation function implementations for PyDTNN.
 """
+
 import numpy as _np
 
 from pydtnn.backends.cython.utils.base import _npDT, _npDT_1Dims

@@ -1,6 +1,7 @@
 """
 Cython implementation of the 2D adaptive average pooling layer.
 """
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -24,6 +25,7 @@ class AdaptiveAveragePool2DCython(AdaptiveAveragePool2DNumpy, AbstractPool2DLaye
     """
     Cython-accelerated 2D adaptive average pooling layer.
     """
+
     def _fwd_nhwc(self, x: np.ndarray, y: np.ndarray) -> None:
         """
         Performs forward pass for NHWC layout using Cython.

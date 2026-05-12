@@ -1,6 +1,7 @@
 """
 GPU-accelerated implementation of the SimpleTracer using PyCUDA.
 """
+
 import logging
 from types import ModuleType
 from typing import TYPE_CHECKING

@@ -68,6 +68,7 @@ class NcclError(Exception):
     """
     Custom exception for NCCL errors.
     """
+
     def __init__(self, status):
         """
         Initializes NcclError with the NCCL status code.
@@ -109,6 +110,7 @@ class NcclUniqueId(ctypes.Structure):
     """
     Represents a unique identifier for NCCL communicators.
     """
+
     _fields_ = [("internal", ctypes.c_char * NCCL_UNIQUE_ID_BYTES)]
 
 
@@ -116,6 +118,7 @@ class NcclComm(ctypes.Structure):
     """
     Represents an NCCL communicator.
     """
+
     pass
 
 
@@ -404,6 +407,7 @@ class RedOp(Enum):
     """
     Enumeration for NCCL reduction operations.
     """
+
     Sum = 0
     Prod = 1
     Max = 2
@@ -416,6 +420,7 @@ class DataType(Enum):
     """
     Enumeration for NCCL data types.
     """
+
     Int8 = Char = 0
     Uint8 = 1
     Int32 = Int = 2
