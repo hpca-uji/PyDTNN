@@ -1,11 +1,14 @@
+"""
+Cython-accelerated implementation of the OkTopk optimizer for PyDTNN.
+"""
+
 import logging
-from typing import TYPE_CHECKING
 import warnings
+from typing import TYPE_CHECKING
 
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.backends.cython.optimizers.optimizer import OptimizerCython
-from pydtnn.backends.cython.utils.oktopk_utils_cython import (compute_dense_acc_cython, intersect_2d_indexes_cython, reset_residuals_cython,
-                                                              update_sparsed_weights_cython, update_sparsed_weights_mv_cython)
+from pydtnn.backends.cython.utils.oktopk_utils_cython import compute_dense_acc_cython, reset_residuals_cython, update_sparsed_weights_cython, update_sparsed_weights_mv_cython
 from pydtnn.backends.numpy.optimizers.oktopk import OkTopkNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.utils.sparse.sparse import SparseMatrixCOO
@@ -20,8 +23,18 @@ if TYPE_CHECKING:
 
 
 class OkTopkCython(OkTopkNumpy, OptimizerCython):
+    """
+    Cython-optimized version of the OkTopk optimizer, inheriting from both
+    the NumPy implementation and the Cython optimizer base class.
+    """
 
     def _model_init(self, list_layers: list[Layerable]) -> None:
+        """
+        Initialize the model layers and configure the Cython weight update method.
+
+        Args:
+            list_layers: List of layers to be optimized.
+        """
         super()._model_init(list_layers)
         self._update_weights_method = "cython"
         # method (string, optional): The method to use for updating the weights. It can be 'cython' or 'numpy'. Default is 'cython'.
@@ -32,7 +45,7 @@ class OkTopkCython(OkTopkNumpy, OptimizerCython):
             case "cython_with_vel_and_momentum":
                 self._update_weights = self._update_weights_with_vel_and_momentum
             case _:
-                NotImplementedError(f"The weights update is not implemented for \"{self._update_weights_method}\" method.")
+                NotImplementedError(f'The weights update is not implemented for "{self._update_weights_method}" method.')
 
     def _compute_acc(self, residuals: np.ndarray, dw: np.ndarray, learning_rate: float) -> np.ndarray:
         """
@@ -50,10 +63,9 @@ class OkTopkCython(OkTopkNumpy, OptimizerCython):
             acc (np.array): 2D dense matrix with the updated residuals
         """
 
-        self._show_message_only_once(f"\n\nIn '_compute_acc', the method that it is being used is 'cython'")
+        self._show_message_only_once("\n\nIn '_compute_acc', the method that it is being used is 'cython'")
 
         return compute_dense_acc_cython(residuals, dw, learning_rate)
-
 
     def _reset_residuals(self, acc: np.ndarray, indexes: tuple[np.ndarray, np.ndarray]) -> np.ndarray:
         """
@@ -71,14 +83,14 @@ class OkTopkCython(OkTopkNumpy, OptimizerCython):
             residuals (np.array): which is the same as acc with the values in indexes set to zero.
         """
 
-        self._show_message_only_once(f"In '_reset_residuals', the method that it is being used is 'cython'")
+        self._show_message_only_once("In '_reset_residuals', the method that it is being used is 'cython'")
 
         if self.density == 1:
             return np.zeros_like(acc)
         else:
             assert self._has_canonical_format(indexes)
             return reset_residuals_cython(acc, indexes[0], indexes[1])
-    
+
     def _update_weights(self, layer: Layerable, w_type: str, w: np.ndarray, coo_u: SparseMatrixCOO) -> None:
         """
         Update weights: w -= (u / self.model.nprocs)
@@ -96,6 +108,15 @@ class OkTopkCython(OkTopkNumpy, OptimizerCython):
         raise NotImplementedError("This is a fake method that must be replaced with the right one.")
 
     def _update_weights_cython(self, layer: Layerable, w_type: str, w: np.ndarray, coo_u: SparseMatrixCOO) -> None:
+        """
+        Perform weight updates using Cython-accelerated sparse operations.
+
+        Args:
+            layer: The layer object to update.
+            w_type: The attribute name of the weights.
+            w: The dense weight matrix.
+            coo_u: The sparse gradient update matrix.
+        """
 
         self._show_message_only_once(f"In '_update_weights', the method that it is being used is '{self._update_weights_method}'")
 
@@ -107,6 +128,15 @@ class OkTopkCython(OkTopkNumpy, OptimizerCython):
         setattr(layer, w_type, w)
 
     def _update_weights_with_vel_and_momentum(self, layer: Layerable, w_type: str, w: np.ndarray, coo_u: SparseMatrixCOO) -> None:
+        """
+        Perform weight updates with velocity and momentum using Cython-accelerated operations.
+
+        Args:
+            layer: The layer object to update.
+            w_type: The attribute name of the weights.
+            w: The dense weight matrix.
+            coo_u: The sparse gradient update matrix.
+        """
 
         self._show_message_only_once(f"In '_update_weights', the method that it is being used is '{self._update_weights_method}'")
 
