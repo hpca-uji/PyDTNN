@@ -1,3 +1,6 @@
+"""
+Cython-accelerated batch normalization inference utilities for PyDTNN.
+"""
 import numpy as _np
 
 type _npDT = _np.int8 | _np.float32 | _np.float64
@@ -10,6 +13,8 @@ type _npDT_1Dims[T] = _np.ndarray[tuple[int], T]
 
 def bn_inference_cython[T: _npDT](x: _npDT_2Dims[T], y: _npDT_2Dims[T], running_mean: _npDT_1Dims[T], std: _npDT_1Dims[T], gamma: _npDT_1Dims[T], beta: _npDT_1Dims[T]) -> None:
     """
+    Performs batch normalization inference on 2D input data using Cython.
+
     Args:
         x (npDT_2Dims): The 2 dimensional input's ndarray.
         y (npDT_2Dims): The 2 dimensional outputs's ndarray.
@@ -24,6 +29,8 @@ def bn_inference_cython[T: _npDT](x: _npDT_2Dims[T], y: _npDT_2Dims[T], running_
 
 def bn_relu_inference_cython[T: _npDT](x: _npDT_2Dims[T], y: _npDT_2Dims[T], running_mean: _npDT_1Dims[T], inv_std: _npDT_1Dims[T], gamma: _npDT_1Dims[T], beta: _npDT_1Dims[T]) -> None:
     """
+    Performs fused batch normalization and ReLU activation inference on 2D input data using Cython.
+
     Args:
         x (npDT_2Dims): The 2 dimensional input's ndarray.
         y (npDT_2Dims): The 2 dimensional output's ndarray.

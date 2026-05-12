@@ -1,3 +1,6 @@
+"""
+Numpy backend implementation of the Recall metric.
+"""
 import logging
 import math
 from typing import TYPE_CHECKING
@@ -18,9 +21,15 @@ if TYPE_CHECKING:
 
 
 class RecallNumpy(Recall[np.ndarray], MetricNumpy):
+    """
+    Numpy implementation of the Recall metric for binary classification.
+    """
     conf_matrix_metric: BinaryConfusionMatrixNumpy
 
     def _model_init(self) -> None:
+        """
+        Initializes model-specific parameters and calculates memory requirements.
+        """
         super()._model_init()
         self.temp_var_shape = (self.shape[1],)
         self.tmp_memory_used += int(2 * math.prod(self.temp_var_shape)) * np.float32().itemsize
@@ -28,6 +37,9 @@ class RecallNumpy(Recall[np.ndarray], MetricNumpy):
         self.memory_used += self.tmp_memory_used
 
     def _post_init(self) -> None:
+        """
+        Allocates memory for internal buffers after model initialization.
+        """
         super()._post_init()
         with self.model.memory:
             self.true_positives = self.model.memory.ndarray(self.temp_var_shape, dtype=np.float32)
@@ -35,6 +47,16 @@ class RecallNumpy(Recall[np.ndarray], MetricNumpy):
             self.are_zeros = self.model.memory.ndarray(self.temp_var_shape, dtype=np.bool_)
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
+        """
+        Computes the recall score based on predicted and target values.
+
+        Args:
+            y_pred: Predicted values.
+            y_targ: Target ground truth values.
+
+        Returns:
+            The average recall score.
+        """
         true_positives = self.true_positives
         false_negatives = self.false_negatives
         are_zeros = self.are_zeros

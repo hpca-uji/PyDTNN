@@ -1,4 +1,6 @@
-# In this file must be implemented only the translation of PyTorch Convolutional layers to its PyDTNN equivalent.
+"""
+This module provides utilities for converting PyTorch convolutional layers to their PyDTNN equivalents.
+"""
 
 import logging
 
@@ -13,6 +15,15 @@ logger = logging.getLogger(__name__)
 
 
 def Flatten(args: dict[str, str]) -> _Flatten:
+    """
+    Converts a PyTorch Flatten layer to a PyDTNN Flatten layer.
+
+    Args:
+        args: A dictionary containing the configuration arguments from the PyTorch layer.
+
+    Returns:
+        An initialized PyDTNN Flatten layer instance.
+    """
     # https://pytorch.org/docs/stable/generated/torch.nn.Flatten.html#torch.nn.Flatten
     # torch.nn.Flatten(start_dim=1, end_dim=-1)
 

@@ -1,3 +1,9 @@
+"""
+Optimizer module for PyDTNN.
+
+This module provides the base class for all optimization algorithms and a utility
+function to dynamically select optimizers by name.
+"""
 import logging
 
 import numpy as np
@@ -17,29 +23,75 @@ logger = logging.getLogger(__name__)
 
 class Optimizer[T: Array](Base):
     """
-    Optimizer abstract base class
+    Optimizer abstract base class for updating model parameters.
+
+    Attributes:
+        learning_rate (float): The step size used for parameter updates.
+        context (dict): Internal state storage for optimizer-specific parameters.
     """
 
     def __init__(self, learning_rate: float = 1e-2):
+        """
+        Initializes the optimizer with a learning rate.
+
+        Args:
+            learning_rate (float): The learning rate for the optimizer.
+        """
         super().__init__()
         self.learning_rate: float = learning_rate
         self.context = dict[int, dict[str, int | T]]()
 
     def _model_init(self, list_layers: list[Layerable[T]]) -> None:
+        """
+        Initializes the optimizer with the model layers.
+
+        Args:
+            list_layers (list[Layerable[T]]): List of layers to be optimized.
+        """
         super()._model_init()
 
     @property
     def dtype(self) -> np.dtype:
+        """
+        Returns the data type of the model parameters.
+
+        Returns:
+            np.dtype: The numpy data type.
+        """
         return self.model.dtype
 
     @property
     def gpudirect(self) -> bool:
+        """
+        Checks if the model supports GPU direct operations.
+
+        Returns:
+            bool: True if GPU direct is enabled, False otherwise.
+        """
         return self.model.gpudirect
 
     def update(self, layer: Layerable) -> None:
+        """
+        Updates the parameters of the given layer.
+
+        Args:
+            layer (Layerable): The layer to update.
+
+        Raises:
+            NotImplementedError: If the method is not implemented by the subclass.
+        """
         raise NotImplementedError("method update of an Optimizer's child class is not implemented")
 
 
 def select(name: str) -> type[Optimizer]:
+    """
+    Selects an optimizer class by its name.
+
+    Args:
+        name (str): The name of the optimizer class to retrieve.
+
+    Returns:
+        type[Optimizer]: The requested optimizer class.
+    """
     assert __package__, "Package not found!"
     return find_component(__package__, name)

@@ -62,6 +62,7 @@ available at 'scripts'."""
 
 
 def _get_mpi_processes():
+    """Returns the number of MPI processes from the environment."""
     try:
         from pympi import MPI  # type: ignore
     except Exception:
@@ -72,6 +73,7 @@ def _get_mpi_processes():
 
 
 def _get_threads_per_process():
+    """Returns the number of OpenMP threads per process."""
     #  From IBM OpenMP documentation: If you do not set OMP_NUM_THREADS, the number of processors available is the
     #  default value to form a new team for the first encountered parallel construct.
     threads_per_process = os.environ.get("OMP_NUM_THREADS", multiprocessing.cpu_count())
@@ -79,6 +81,7 @@ def _get_threads_per_process():
 
 
 def _get_mpi_protocol():
+    """Returns the MPI communication protocol string."""
     try:
         from pydtnn.libs.mpi.rc import proto as PROTOCOL
         from pydtnn.libs.mpi.rc import ssl as SSL
@@ -95,6 +98,7 @@ def _get_mpi_protocol():
 
 
 def _get_mpi_server():
+    """Returns the MPI server address."""
     try:
         from pydtnn.libs.mpi.rc import addr
     except Exception:
@@ -103,6 +107,7 @@ def _get_mpi_server():
 
 
 def _get_mpi_port():
+    """Returns the MPI port number."""
     try:
         from pydtnn.libs.mpi.rc import port
     except Exception:
@@ -111,7 +116,9 @@ def _get_mpi_port():
 
 
 class Namespace(argparse.Namespace):
+    """Custom namespace for storing parsed arguments and group information."""
     def __str__(self) -> str:
+        """Returns a formatted string representation of the namespace arguments."""
         lines = []
         for group in self.groups:
             indent = ""
@@ -139,7 +146,9 @@ class Namespace(argparse.Namespace):
 
 
 class ArgumentParser(argparse.ArgumentParser):
+    """Custom argument parser for PyDTNN configuration."""
     def __init__(self):
+        """Initializes the parser with all supported PyDTNN configuration arguments."""
         super().__init__(description=_desc, epilog=_epilogue)
         # Parser and the supported arguments with their default values
         # (argparse.SUPPRESS is used to avoid showing them on the message)
@@ -229,10 +238,6 @@ class ArgumentParser(argparse.ArgumentParser):
 
         # Optimization options
         _oo_group = self.add_argument_group("Optimization options")
-        # _oo_group.add_argument('--enable-best-of', type=bool_lambda, default=False,
-        #                        help="Enable the BestOf auto-tuner.")
-        # _oo_group.add_argument('--enable-memory-cache', type=bool_lambda, default=True,
-        #                        help="Enable the memory cache module to use persistent memory.")
         _oo_group.add_argument("--enable-fused-bn-relu", type=bool_lambda, default=False, help="Fuse BatchNormalization and Relu layers. True if specified.")
         _oo_group.add_argument("--enable-fused-conv-relu", type=bool_lambda, default=False, help="Fuse Conv2D and Relu layers. True if specified.")
         _oo_group.add_argument("--enable-fused-conv-bn", type=bool_lambda, default=False, help="Fuse Conv2D and BatchNormalization layers. True if specified.")
@@ -241,8 +246,6 @@ class ArgumentParser(argparse.ArgumentParser):
         # Convolution methods
         _cm_group = self.add_argument_group("Convolution options")
         _cm_group.add_argument("--conv-direct-method", type=str, default="", help="ConvDirect algorithm to use in Conv2D layers. Default: 'convdirect_original_{tensor_format}_default'")
-        # _cm_group.add_argument('--conv-direct-methods-for-best-of', type=str, default="",
-        #                        help="ConvDirect modules to compare in 'best_of' option if specified.")
 
         # Optimizer options
         _op_group = self.add_argument_group("Optimizer options")
@@ -368,6 +371,7 @@ class ArgumentParser(argparse.ArgumentParser):
         _cm_group.add_argument("--mpi-port", type=int, default=-1, help=argparse.SUPPRESS)
 
     def parse_args(self, args: Sequence[str] | None = None):
+        """Parses command line arguments and injects runtime environment data."""
         # Call super.parse_args
         namespace = Namespace()
         result = super().parse_args(args, namespace)

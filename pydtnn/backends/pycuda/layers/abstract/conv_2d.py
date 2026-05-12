@@ -1,3 +1,6 @@
+"""
+PyCUDA backend implementation for 2D Convolutional layers.
+"""
 import logging
 from typing import Any
 
@@ -18,7 +21,13 @@ logger = logging.getLogger(__name__)
 
 
 class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
+    """
+    Abstract base class for 2D Convolutional layers using the PyCUDA backend.
+    """
     def __init__(self, *args, **kwargs):
+        """
+        Initializes the abstract PyCUDA 2D convolution layer.
+        """
         super().__init__(*args, **kwargs)
 
         # The following attributes will be initalized later.
@@ -28,6 +37,13 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
         self.conv_desc = None
 
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
+        """
+        Initializes model parameters, GPU memory, and performance metrics.
+
+        Args:
+            prev_shape: The shape of the input tensor.
+            x: The input tensor array.
+        """
         super()._model_init(prev_shape, x)
 
         self.stream_2 = drv.Stream()
@@ -81,20 +97,44 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
             self.memory_used += self.db.nbytes
 
     def forward(self, x: TensorArray) -> TensorArray:
+        """
+        Performs the forward pass. Must be implemented by subclasses.
+
+        Args:
+            x: Input tensor.
+        """
         msg = "This is a fake forward function. It must be masked on initialization by a _forward implementation."
         raise NotImplementedError(f"Conv2DPycuda forward: {msg}")
 
     def backward(self, dy: TensorArray) -> TensorArray:
+        """
+        Performs the backward pass. Must be implemented by subclasses.
+
+        Args:
+            dy: Gradient of the output.
+        """
         msg = "This is a fake backward function. It must be masked on initialization by a _backward implementation."
         raise NotImplementedError(f"Conv2DPycuda backward: {msg}")
 
     def _export_weights_dw(self, key: str) -> Any:
+        """
+        Exports weights or gradients of weights. Must be implemented by subclasses.
+
+        Args:
+            key: The parameter key to export.
+        """
         # NOTE: Every variant must implement their version of this method.
         # super()._export_prop(key)
         msg = "This is a fake function. It must be overrided by the child classes."
         raise NotImplementedError(f"Conv2DPycuda export: {msg}")
 
     def _export_biases_db(self, key: str) -> Any:
+        """
+        Exports biases or gradients of biases to CPU.
+
+        Args:
+            key: The parameter key to export.
+        """
         value = getattr(self, key)
         gpu_ary = value.ary
         cpu_ary = gpu_ary.get()
@@ -108,6 +148,12 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
                 raise TypeError(f"Unsupported tensor format ({tensor_format})")
 
     def _export_prop(self, key: str) -> Any:
+        """
+        Routes property export requests to the appropriate handler.
+
+        Args:
+            key: The parameter key to export.
+        """
         match key:
             case Parameters.WEIGHTS | Parameters.DW:
                 return self._export_weights_dw(key)
@@ -117,6 +163,13 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
                 return super()._export_prop(key)
 
     def _import_biases_db(self, key: str, value: Any) -> None:
+        """
+        Imports biases or gradients of biases from CPU.
+
+        Args:
+            key: The parameter key to import.
+            value: The data to import.
+        """
         attribute = getattr(self, key)
 
         match self.model.tensor_format:
@@ -132,12 +185,26 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
                 raise TypeError(f"Unsupported tensor format ({tensor_format})")
 
     def _import_weights_dw(self, key: str, value: Any) -> None:
+        """
+        Imports weights or gradients of weights. Must be implemented by subclasses.
+
+        Args:
+            key: The parameter key to import.
+            value: The data to import.
+        """
         # NOTE: Every variant must implement their version of this method.
         # super()._export_prop(key)
         msg = "This is a fake function. It must be overrided by the child classes"
         raise NotImplementedError(f"Conv2DPycuda forward: {msg}")
 
     def _import_prop(self, key: str, value) -> None:
+        """
+        Routes property import requests to the appropriate handler.
+
+        Args:
+            key: The parameter key to import.
+            value: The data to import.
+        """
         match key:
             case Parameters.WEIGHTS | Parameters.DW:
                 return self._import_weights_dw(key, value)

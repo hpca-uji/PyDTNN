@@ -1,3 +1,6 @@
+"""
+ResNet-50 v1.5 implementation for ImageNet classification.
+"""
 from collections.abc import Sequence
 
 from pydtnn.abstract.layerable import Layerable
@@ -18,12 +21,21 @@ __all__ = ("resnet50v15_imagenet",)
 
 
 def resnet50v15_imagenet(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
+    """
+    Constructs a ResNet-50 v1.5 model architecture.
+
+    This implementation follows the v1.5 variant where downsampling is performed
+    by the 3x3 convolution layer within the residual blocks.
+
+    Args:
+        input_shape: The shape of the input tensor.
+        output_shape: The shape of the output tensor.
+
+    Returns:
+        A sequence of layers representing the ResNet-50 v1.5 model.
+    """
     model = list[Layerable]()
     _ = model.append
-
-    """
-    This is the v1.5 because in the blocks where downsampling is required, the 3x3 convolution uses stride=2
-    """
 
     _(Input(shape=input_shape))
     _(Conv2D(nfilters=64, filter_shape=(3, 3), stride=1, padding=1, weights_initializer=he_uniform))

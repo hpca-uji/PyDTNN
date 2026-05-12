@@ -1,3 +1,4 @@
+"""NumPy backend implementation of the Softmax activation function."""
 import logging
 import math
 from typing import TYPE_CHECKING
@@ -15,7 +16,9 @@ if TYPE_CHECKING:
 
 
 class SoftmaxNumpy(Softmax[np.ndarray], ActivationNumpy):
+    """NumPy-based Softmax activation layer."""
     def _model_init(self, prev_shape, x=None):
+        """Initialize model parameters and allocate memory for temporary buffers."""
         super()._model_init(prev_shape, x)
         self.y: np.ndarray
 
@@ -43,6 +46,7 @@ class SoftmaxNumpy(Softmax[np.ndarray], ActivationNumpy):
         self.memory_used += self.tmp_memory_used
 
     def _post_init(self):
+        """Allocate memory buffers after model initialization."""
         super()._post_init()
         with self.model.memory:
             self.max_x = self.model.memory.ndarray(self.temp_shape, dtype=self.model.dtype)
@@ -51,6 +55,7 @@ class SoftmaxNumpy(Softmax[np.ndarray], ActivationNumpy):
             self.sum_dy = self.model.memory.ndarray(self.sum_dy_shape, dtype=self.model.dtype)
 
     def forward(self, x: np.ndarray) -> np.ndarray:
+        """Perform the forward pass of the Softmax activation."""
         # self.y = np.exp(x - np.max(x, axis=1, keepdims=True))
         # self.y /= np.sum(self.y, axis=1, keepdims=True)
         # return self.y
@@ -66,6 +71,7 @@ class SoftmaxNumpy(Softmax[np.ndarray], ActivationNumpy):
         return self.y
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
+        """Perform the backward pass of the Softmax activation."""
         # return self.y * (dy - (dy * self.y).sum(axis=1, keepdims=True))
         sum_dy = self.sum_dy[: dy.shape[0], :]
         mul_dy = self.mul_dy[: dy.shape[0], :]

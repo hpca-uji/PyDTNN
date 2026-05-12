@@ -1,3 +1,6 @@
+"""
+Numpy backend implementation for binary confusion matrix metrics.
+"""
 import logging
 from typing import TYPE_CHECKING
 
@@ -36,7 +39,13 @@ _dict_indexes = {
 
 
 class BinaryConfusionMatrixNumpy(BinaryConfusionMatrix[np.ndarray], MetricNumpy):
+    """
+    Numpy-based implementation of the binary confusion matrix metric.
+    """
     def _model_init(self) -> None:
+        """
+        Initializes the confusion matrix buffer.
+        """
         super()._model_init()
         _, target_classes = self.shape
         self.conf_matrix = np.zeros((target_classes, 2, 2), dtype=np.int32)
@@ -66,13 +75,25 @@ class BinaryConfusionMatrixNumpy(BinaryConfusionMatrix[np.ndarray], MetricNumpy)
         return self.conf_matrix
 
     def get_true_positives(self):
+        """
+        Returns the count of true positives for each label.
+        """
         return self.conf_matrix[:, *TRUE_POSITIVE]
 
     def get_true_negatives(self):
+        """
+        Returns the count of true negatives for each label.
+        """
         return self.conf_matrix[:, *TRUE_NEGATIVE]
 
     def get_false_positives(self):
+        """
+        Returns the count of false positives for each label.
+        """
         return self.conf_matrix[:, *FALSE_NEGATIVE]
 
     def get_false_negatives(self):
+        """
+        Returns the count of false negatives for each label.
+        """
         return self.conf_matrix[:, *FALSE_POSITIVE]

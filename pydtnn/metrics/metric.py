@@ -1,3 +1,9 @@
+"""
+Metric module for PyDTNN.
+
+This module provides the base class for defining evaluation metrics and a utility
+function for dynamically selecting metric implementations.
+"""
 import logging
 from abc import abstractmethod
 
@@ -16,14 +22,31 @@ logger = logging.getLogger(__name__)
 
 
 class Metric[T: Array](Base):
+    """
+    Abstract base class for all evaluation metrics in PyDTNN.
+
+    Attributes:
+        format (str): String format for metric display.
+        order (int): Execution order priority.
+        eps (float): Small epsilon value for numerical stability.
+    """
     format = ""
     order = 0  # No need of special order.
 
     def __init__(self, eps=1e-8):
+        """
+        Initializes the metric with a stability constant.
+
+        Args:
+            eps (float): Epsilon value to prevent division by zero or log errors.
+        """
         super().__init__()
         self.eps = eps
 
     def _model_init(self) -> None:
+        """
+        Initializes metric-specific properties based on the associated model.
+        """
         self.dtype: np.dtype = np.dtype(np.float32) if np.issubdtype(self.model.dtype, np.int32) else self.model.dtype
         # NOTE: self.dtype is necessary before calling super.
         super()._model_init()
@@ -31,9 +54,28 @@ class Metric[T: Array](Base):
 
     @abstractmethod
     def compute(self, y_pred: T, y_targ: T) -> float | np.ndarray:
+        """
+        Computes the metric value given predictions and targets.
+
+        Args:
+            y_pred (T): Predicted values from the model.
+            y_targ (T): Ground truth target values.
+
+        Returns:
+            float | np.ndarray: The computed metric result.
+        """
         pass
 
 
 def select(name: str) -> type[Metric]:
+    """
+    Retrieves a metric class by its name from the metrics package.
+
+    Args:
+        name (str): The name of the metric class to retrieve.
+
+    Returns:
+        type[Metric]: The requested metric class.
+    """
     assert __package__, "Package not found!"
     return find_component(__package__, name)

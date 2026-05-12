@@ -1,3 +1,6 @@
+"""
+Utilities for performing 0231 tensor transposition using various optimized backends.
+"""
 import logging
 from typing import Callable
 
@@ -19,6 +22,16 @@ def transpose_0231_numpy(
     original: np.ndarray,
     transposed: np.ndarray | None = None,  # type: ignore
 ) -> np.ndarray:
+    """
+    Perform 0231 transposition using NumPy's transpose method.
+
+    Args:
+        original: The input 4D array.
+        transposed: Optional pre-allocated output array.
+
+    Returns:
+        The transposed array.
+    """
     d0, d1, d2, d3 = original.shape
     if transposed is None:
         transposed: np.ndarray = np.empty((d0, d2, d3, d1), original.dtype)
@@ -30,6 +43,16 @@ def transpose_0231_ijk_cython_wrapper(
     original: np.ndarray,
     transposed: np.ndarray | None = None,  # type: ignore
 ) -> np.ndarray:
+    """
+    Perform 0231 transposition using Cython implementation with ijk loop order.
+
+    Args:
+        original: The input 4D array.
+        transposed: Optional pre-allocated output array.
+
+    Returns:
+        The transposed array.
+    """
     d0, d1, d2, d3 = original.shape
     if transposed is None:
         transposed: np.ndarray = np.empty((d0, d2, d3, d1), original.dtype)
@@ -41,6 +64,16 @@ def transpose_0231_ikj_cython_wrapper(
     original: np.ndarray,
     transposed: np.ndarray | None = None,  # type: ignore
 ) -> np.ndarray:
+    """
+    Perform 0231 transposition using Cython implementation with ikj loop order.
+
+    Args:
+        original: The input 4D array.
+        transposed: Optional pre-allocated output array.
+
+    Returns:
+        The transposed array.
+    """
     d0, d1, d2, d3 = original.shape
     if transposed is None:
         transposed: np.ndarray = np.empty((d0, d2, d3, d1), original.dtype)

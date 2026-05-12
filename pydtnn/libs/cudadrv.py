@@ -106,230 +106,344 @@ class CUDA_ERROR(Exception):
 
 
 class CUDA_ERROR_INVALID_VALUE(CUDA_ERROR):
+    """CUDA error: Invalid value."""
+
     pass
 
 
 class CUDA_ERROR_OUT_OF_MEMORY(CUDA_ERROR):
+    """CUDA error: Out of memory."""
+
     pass
 
 
 class CUDA_ERROR_NOT_INITIALIZED(CUDA_ERROR):
+    """CUDA error: Not initialized."""
+
     pass
 
 
 class CUDA_ERROR_DEINITIALIZED(CUDA_ERROR):
+    """CUDA error: Deinitialized."""
+
     pass
 
 
 class CUDA_ERROR_PROFILER_DISABLED(CUDA_ERROR):
+    """CUDA error: Profiler disabled."""
+
     pass
 
 
 class CUDA_ERROR_PROFILER_NOT_INITIALIZED(CUDA_ERROR):
+    """CUDA error: Profiler not initialized."""
+
     pass
 
 
 class CUDA_ERROR_PROFILER_ALREADY_STARTED(CUDA_ERROR):
+    """CUDA error: Profiler already started."""
+
     pass
 
 
 class CUDA_ERROR_PROFILER_ALREADY_STOPPED(CUDA_ERROR):
+    """CUDA error: Profiler already stopped."""
+
     pass
 
 
 class CUDA_ERROR_NO_DEVICE(CUDA_ERROR):
+    """CUDA error: No device."""
+
     pass
 
 
 class CUDA_ERROR_INVALID_DEVICE(CUDA_ERROR):
+    """CUDA error: Invalid device."""
+
     pass
 
 
 class CUDA_ERROR_INVALID_IMAGE(CUDA_ERROR):
+    """CUDA error: Invalid image."""
+
     pass
 
 
 class CUDA_ERROR_INVALID_CONTEXT(CUDA_ERROR):
+    """CUDA error: Invalid context."""
+
     pass
 
 
 class CUDA_ERROR_CONTEXT_ALREADY_CURRENT(CUDA_ERROR):
+    """CUDA error: Context already current."""
+
     pass
 
 
 class CUDA_ERROR_MAP_FAILED(CUDA_ERROR):
+    """CUDA error: Map failed."""
+
     pass
 
 
 class CUDA_ERROR_UNMAP_FAILED(CUDA_ERROR):
+    """CUDA error: Unmap failed."""
+
     pass
 
 
 class CUDA_ERROR_ARRAY_IS_MAPPED(CUDA_ERROR):
+    """CUDA error: Array is mapped."""
+
     pass
 
 
 class CUDA_ERROR_ALREADY_MAPPED(CUDA_ERROR):
+    """CUDA error: Already mapped."""
+
     pass
 
 
 class CUDA_ERROR_NO_BINARY_FOR_GPU(CUDA_ERROR):
+    """CUDA error: No binary for GPU."""
+
     pass
 
 
 class CUDA_ERROR_ALREADY_ACQUIRED(CUDA_ERROR):
+    """CUDA error: Already acquired."""
+
     pass
 
 
 class CUDA_ERROR_NOT_MAPPED(CUDA_ERROR):
+    """CUDA error: Not mapped."""
+
     pass
 
 
 class CUDA_ERROR_NOT_MAPPED_AS_ARRAY(CUDA_ERROR):
+    """CUDA error: Not mapped as array."""
+
     pass
 
 
 class CUDA_ERROR_NOT_MAPPED_AS_POINTER(CUDA_ERROR):
+    """CUDA error: Not mapped as pointer."""
+
     pass
 
 
 class CUDA_ERROR_ECC_UNCORRECTABLE(CUDA_ERROR):
+    """CUDA error: ECC uncorrectable."""
+
     pass
 
 
 class CUDA_ERROR_UNSUPPORTED_LIMIT(CUDA_ERROR):
+    """CUDA error: Unsupported limit."""
+
     pass
 
 
 class CUDA_ERROR_CONTEXT_ALREADY_IN_USE(CUDA_ERROR):
+    """CUDA error: Context already in use."""
+
     pass
 
 
 class CUDA_ERROR_PEER_ACCESS_UNSUPPORTED(CUDA_ERROR):
+    """CUDA error: Peer access unsupported."""
+
     pass
 
 
 class CUDA_ERROR_INVALID_PTX(CUDA_ERROR):
+    """CUDA error: Invalid PTX."""
+
     pass
 
 
 class CUDA_ERROR_INVALID_GRAPHICS_CONTEXT(CUDA_ERROR):
+    """CUDA error: Invalid graphics context."""
+
     pass
 
 
 class CUDA_ERROR_INVALID_SOURCE(CUDA_ERROR):
+    """CUDA error: Invalid source."""
+
     pass
 
 
 class CUDA_ERROR_FILE_NOT_FOUND(CUDA_ERROR):
+    """CUDA error: File not found."""
+
     pass
 
 
 class CUDA_ERROR_SHARED_OBJECT_SYMBOL_NOT_FOUND(CUDA_ERROR):
+    """CUDA error: Shared object symbol not found."""
+
     pass
 
 
 class CUDA_ERROR_SHARED_OBJECT_INIT_FAILED(CUDA_ERROR):
+    """CUDA error: Shared object init failed."""
+
     pass
 
 
 class CUDA_ERROR_OPERATING_SYSTEM(CUDA_ERROR):
+    """CUDA error: Operating system."""
+
     pass
 
 
 class CUDA_ERROR_INVALID_HANDLE(CUDA_ERROR):
+    """CUDA error: Invalid handle."""
+
     pass
 
 
 class CUDA_ERROR_NOT_FOUND(CUDA_ERROR):
+    """CUDA error: Not found."""
+
     pass
 
 
 class CUDA_ERROR_NOT_READY(CUDA_ERROR):
+    """CUDA error: Not ready."""
+
     pass
 
 
 class CUDA_ERROR_ILLEGAL_ADDRESS(CUDA_ERROR):
+    """CUDA error: Illegal address."""
+
     pass
 
 
 class CUDA_ERROR_LAUNCH_OUT_OF_RESOURCES(CUDA_ERROR):
+    """CUDA error: Launch out of resources."""
+
     pass
 
 
 class CUDA_ERROR_LAUNCH_TIMEOUT(CUDA_ERROR):
+    """CUDA error: Launch timeout."""
+
     pass
 
 
 class CUDA_ERROR_LAUNCH_INCOMPATIBLE_TEXTURING(CUDA_ERROR):
+    """CUDA error: Launch incompatible texturing."""
+
     pass
 
 
 class CUDA_ERROR_PEER_ACCESS_ALREADY_ENABLED(CUDA_ERROR):
+    """CUDA error: Peer access already enabled."""
+
     pass
 
 
 class CUDA_ERROR_PEER_ACCESS_NOT_ENABLED(CUDA_ERROR):
+    """CUDA error: Peer access not enabled."""
+
     pass
 
 
 class CUDA_ERROR_PRIMARY_CONTEXT_ACTIVE(CUDA_ERROR):
+    """CUDA error: Primary context active."""
+
     pass
 
 
 class CUDA_ERROR_CONTEXT_IS_DESTROYED(CUDA_ERROR):
+    """CUDA error: Context is destroyed."""
+
     pass
 
 
 class CUDA_ERROR_ASSERT(CUDA_ERROR):
+    """CUDA error: Assert."""
+
     pass
 
 
 class CUDA_ERROR_TOO_MANY_PEERS(CUDA_ERROR):
+    """CUDA error: Too many peers."""
+
     pass
 
 
 class CUDA_ERROR_HOST_MEMORY_ALREADY_REGISTERED(CUDA_ERROR):
+    """CUDA error: Host memory already registered."""
+
     pass
 
 
 class CUDA_ERROR_HOST_MEMORY_NOT_REGISTERED(CUDA_ERROR):
+    """CUDA error: Host memory not registered."""
+
     pass
 
 
 class CUDA_ERROR_HARDWARE_STACK_ERROR(CUDA_ERROR):
+    """CUDA error: Hardware stack error."""
+
     pass
 
 
 class CUDA_ERROR_ILLEGAL_INSTRUCTION(CUDA_ERROR):
+    """CUDA error: Illegal instruction."""
+
     pass
 
 
 class CUDA_ERROR_MISALIGNED_ADDRESS(CUDA_ERROR):
+    """CUDA error: Misaligned address."""
+
     pass
 
 
 class CUDA_ERROR_INVALID_ADDRESS_SPACE(CUDA_ERROR):
+    """CUDA error: Invalid address space."""
+
     pass
 
 
 class CUDA_ERROR_INVALID_PC(CUDA_ERROR):
+    """CUDA error: Invalid PC."""
+
     pass
 
 
 class CUDA_ERROR_LAUNCH_FAILED(CUDA_ERROR):
+    """CUDA error: Launch failed."""
+
     pass
 
 
 class CUDA_ERROR_NOT_PERMITTED(CUDA_ERROR):
+    """CUDA error: Not permitted."""
+
     pass
 
 
 class CUDA_ERROR_NOT_SUPPORTED(CUDA_ERROR):
+    """CUDA error: Not supported."""
+
     pass
 
 
 class CUDA_ERROR_UNKNOWN(CUDA_ERROR):
+    """CUDA error: Unknown."""
+
     pass
 
 
@@ -430,6 +544,28 @@ _libcuda.cuPointerGetAttribute.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes
 
 
 def cuPointerGetAttribute(attribute, ptr):
+    """
+    Get a pointer attribute.
+
+    Retrieves a specific attribute of a CUDA pointer.
+
+    Parameters
+    ----------
+    attribute : int
+        The attribute to query (e.g., CU_POINTER_ATTRIBUTE_CONTEXT).
+    ptr : int
+        The pointer to query.
+
+    Returns
+    -------
+    ctypes.c_void_p
+        The value of the requested attribute.
+
+    Raises
+    ------
+    CUDA_ERROR
+        If the CUDA driver call fails.
+    """
     data = ctypes.c_void_p()
     assert _libcuda
     status = _libcuda.cuPointerGetAttribute(data, attribute, ptr)

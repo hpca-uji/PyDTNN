@@ -1,3 +1,7 @@
+"""
+Module for automatic selection of the best performing algorithm or pipeline
+based on problem size.
+"""
 import logging
 import traceback
 from collections import abc, defaultdict
@@ -18,13 +22,16 @@ logger = logging.getLogger(__name__)
 
 class _BestOfExecution:
     """
-    BestOf execution object
+    Tracks the execution state and hierarchy of BestOf calls.
     """
 
     _names = defaultdict(lambda: 0)
     _longest_name = 0
 
     def __init__(self, best_of: Optional["BestOf"], execution_id: Optional[Hashable], parent: Optional["_BestOfExecution"]):
+        """
+        Initializes an execution node in the BestOf hierarchy.
+        """
         self.best_of = best_of
         self.execution_id = execution_id
         self.parent = parent
@@ -45,14 +52,17 @@ class _BestOfExecution:
         self._current_problem_size = None
 
     def __repr__(self):
+        """Returns the name of the execution node."""
         return self.name
 
     def block_parent(self):
+        """Blocks the parent execution node until this node completes."""
         assert self.parent
         if not self.parent._is_root:
             self.parent._blocked_by[self.parent._current_problem_size][self] = 50
 
     def unblock_parent(self):
+        """Unblocks the parent execution node."""
         assert self.parent
         if not self.parent._is_root:
             with suppress(KeyError):
@@ -80,15 +90,18 @@ class _BestOfExecution:
         return len(self._blocked_by[self._current_problem_size]) > 0
 
     def set_problem_size(self, problem_size):
+        """Sets the current problem size for this execution node."""
         self._current_problem_size = problem_size
         self.problem_sizes[problem_size] += 1
 
     def print_as_table(self, time_format="6.4f"):
+        """Prints the performance table for this execution node."""
         assert self.best_of
         self.best_of.print_as_table(execution=self, time_format=time_format)
 
     @property
     def summary(self):
+        """Returns a summary string of the best alternative distribution."""
         assert self.best_of
         count = [0] * len(self.best_of.alternatives)
         # Get best_idx for this execution problem sizes
@@ -106,6 +119,7 @@ class _BestOfExecution:
 
     @property
     def max_speedup(self):
+        """Calculates the weighted average speedup for this execution node."""
         # Get the obtained speedups for this execution problem sizes
         assert self.best_of
         all_speedups = self.best_of.speedups()
@@ -122,6 +136,7 @@ class _BestOfExecution:
 
     @staticmethod
     def _walk_nodes(node: "_BestOfExecution", tree: Tree):
+        """Recursively builds the execution tree for reporting."""
         for child in node.children:
             txt = f"{child.name:{_BestOfExecution._longest_name}s}   {child.summary}"
             max_speedup = child.max_speedup
@@ -131,6 +146,7 @@ class _BestOfExecution:
             _BestOfExecution._walk_nodes(child, branch)
 
     def print_report(self):
+        """Prints the hierarchical execution report."""
         tree = Tree("BestOf execution graph")
         _BestOfExecution._walk_nodes(self, tree)
         c = Console(force_terminal=True, width=120)
@@ -140,6 +156,7 @@ class _BestOfExecution:
 
     @property
     def _is_root(self):
+        """Checks if this node is the root of the execution tree."""
         return self.parent is None
 
 
@@ -185,6 +202,9 @@ class BestOf:
         pruning_speedup: float = 10.0,
         prune_after_round: int = 4,
     ):
+        """
+        Initializes the BestOf selector.
+        """
         # Check parameters constraints
         assert rounds >= 1, "Rounds must be greater or equal to one."
         assert pruning_speedup > 1, "Pruning speedup must be greater than one."
@@ -242,6 +262,7 @@ class BestOf:
         return v
 
     def _register(self, execution_id) -> _BestOfExecution:
+        """Registers a new execution node."""
         current_parent = self._current_parents[-1]
         if execution_id in self._executions:
             for execution in self._executions[execution_id]:
@@ -267,6 +288,7 @@ class BestOf:
                 obj._set_instance_call()
 
     def _set_instance_call(self):
+        """Configures the instance call method based on the current mode."""
         if self.__class__._use_first_alternative:
             setattr(self, "__call__", self.__call_first_alternative__)
         else:
@@ -433,10 +455,12 @@ class BestOf:
         return output
 
     def best_method_has_been_found(self, *args, **kwargs):
+        """Checks if the best method has been identified for the given problem size."""
         problem_size: Hashable = self.get_problem_size(*args, **kwargs)
         return problem_size in self.best_idx.keys()
 
     def medians(self):
+        """Calculates the median execution times for each alternative per problem size."""
         out = {}
         for problem_size, times in self._times.items():
             medians = []
@@ -449,6 +473,7 @@ class BestOf:
         return out
 
     def speedups(self):
+        """Calculates the speedup of the best alternative relative to others."""
         out = {}
         medians = self.medians()
         for problem_size, times in self._times.items():
@@ -458,6 +483,7 @@ class BestOf:
         return out
 
     def print_as_table(self, execution=None, time_format="6.4f"):
+        """Prints a performance table for the current BestOf instance."""
         c = Console(force_terminal=True, width=100)
         caption = self.name if execution is None else execution.name
         t = Table(box=box.HORIZONTALS, show_header=True, header_style="blue", caption=caption)
@@ -489,16 +515,19 @@ class BestOf:
 
     @staticmethod
     def _walk_nodes_and_print_as_table(node: _BestOfExecution):
+        """Recursively prints tables for all execution nodes."""
         for child in node.children:
             child.print_as_table()
             BestOf._walk_nodes_and_print_as_table(child)
 
     @staticmethod
     def print_tables():
+        """Prints performance tables for the entire execution tree."""
         BestOf._walk_nodes_and_print_as_table(BestOf._root)
 
     @staticmethod
     def print_report():
+        """Prints the full execution report and tables."""
         BestOf._root.print_report()
         BestOf.print_tables()
 

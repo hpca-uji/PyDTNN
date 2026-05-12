@@ -1,3 +1,6 @@
+"""
+DenseNet201 model architecture implementation for PyDTNN.
+"""
 from collections.abc import Sequence
 
 from pydtnn.abstract.layerable import Layerable
@@ -17,6 +20,16 @@ __all__ = ("densenet201",)
 
 
 def densenet201(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
+    """
+    Constructs a DenseNet201 model architecture.
+
+    Args:
+        input_shape: The shape of the input tensor.
+        output_shape: The shape of the output tensor.
+
+    Returns:
+        A sequence of layers representing the DenseNet201 model.
+    """
     model = list[Layerable]()
     _ = model.append
 

@@ -1,3 +1,4 @@
+"""Concatenation block layer for PyDTNN."""
 import logging
 
 import numpy as np
@@ -17,7 +18,9 @@ CONCAT_DIM_NHWC = -1
 
 
 class ConcatenationBlock[T: Array](AbstractBlockLayer[T]):
+    """Layer that concatenates multiple input tensors along the channel dimension."""
     def _model_init(self, prev_shape, x=None):
+        """Initialize the concatenation block layer parameters and output shape."""
         super()._model_init(prev_shape, x)
 
         match self.model.tensor_format:

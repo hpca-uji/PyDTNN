@@ -1,3 +1,6 @@
+"""
+MobileNetV2 implementation for the PyDTNN framework.
+"""
 from collections.abc import Sequence
 
 from pydtnn.abstract.layerable import Layerable
@@ -18,6 +21,16 @@ __all__ = ("mobileNet",)
 
 
 def mobileNet(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
+    """
+    Constructs a MobileNetV2 architecture sequence.
+
+    Args:
+        input_shape: The shape of the input tensor.
+        output_shape: The shape of the output tensor.
+
+    Returns:
+        A sequence of Layerable objects representing the model.
+    """
     first_filters = 32
     last_channel = 1280
 

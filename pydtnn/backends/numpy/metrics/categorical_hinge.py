@@ -1,3 +1,4 @@
+"""Categorical hinge metric implementation for the NumPy backend."""
 import logging
 import math
 from typing import TYPE_CHECKING
@@ -15,7 +16,10 @@ if TYPE_CHECKING:
 
 
 class CategoricalHingeNumpy(CategoricalHinge[np.ndarray], MetricNumpy):
+    """NumPy implementation of the categorical hinge metric."""
+
     def _model_init(self) -> None:
+        """Initialize model-specific parameters and memory requirements."""
         super()._model_init()
 
         self._pos_shape = self.shape
@@ -26,6 +30,7 @@ class CategoricalHingeNumpy(CategoricalHinge[np.ndarray], MetricNumpy):
         self.memory_used += self.tmp_memory_used
 
     def _post_init(self) -> None:
+        """Allocate memory buffers for metric computation."""
         super()._post_init()
         with self.model.memory:
             self._pos = self.model.memory.ndarray(self._pos_shape, dtype=self.model.dtype)
@@ -34,6 +39,15 @@ class CategoricalHingeNumpy(CategoricalHinge[np.ndarray], MetricNumpy):
             self.neg = self.model.memory.ndarray(self.neg_shape, dtype=self.model.dtype)
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
+        """Compute the categorical hinge loss between predictions and targets.
+
+        Args:
+            y_pred: Predicted values.
+            y_targ: Ground truth values.
+
+        Returns:
+            The computed categorical hinge loss as a float.
+        """
         y_targ = np.asarray(y_targ, dtype=self.model.dtype, order="C")
         _pos: np.ndarray = self._pos[: y_pred.shape[0]]
         _neg: np.ndarray = self._neg[: y_pred.shape[0]]

@@ -1,3 +1,6 @@
+"""
+Test suite for verifying PyTorch to PyDTNN model conversion and inference parity.
+"""
 import torch  # type: ignore
 from model_convertor import convert_model
 from torch.nn import CrossEntropyLoss  # type: ignore
@@ -74,9 +77,13 @@ KWARGS = {
 
 
 def get_model_layers(model: torch.nn.Module, name: str = "self") -> dict[str, torch.nn.Module]:
-    # Recursive function to get the models without containers modules.
+    """
+    Recursively extracts all leaf modules from a PyTorch model.
+    """
     def _get_model_layers(model: torch.nn.Module, name: str, dict_modules: dict[str, torch.nn.Module]):
-        # The recursive function.
+        """
+        Internal recursive helper to traverse model children.
+        """
         children = list(model.named_children())
         if len(children) > 0:
             for nom, module in children:
@@ -90,6 +97,9 @@ def get_model_layers(model: torch.nn.Module, name: str = "self") -> dict[str, to
 
 
 def pytorch_inference(model: torch.nn.Module, dataloader, loss_func: torch.nn.modules.loss._Loss, device: torch.device, metrics_list: list) -> None:
+    """
+    Runs inference on a PyTorch model and evaluates metrics.
+    """
 
     outputs_list = list()
     labels_list = list()
@@ -148,6 +158,9 @@ def pytorch_inference(model: torch.nn.Module, dataloader, loss_func: torch.nn.mo
 
 
 def print_model_reports(model):
+    """
+    Prints performance reports for the given PyDTNN model.
+    """
     # Print performance counter report
     model.perf_counter.print_report()
     # Print BestOf report
@@ -157,6 +170,9 @@ def print_model_reports(model):
 
 
 def pydtnn_inference(model: PyDTNN_Model, metrics_list=None, dataset=None) -> None:
+    """
+    Runs inference on a PyDTNN model and prints reports.
+    """
     metrics_list = [f for f in model.metrics.replace(" ", "").split(",")] if metrics_list is None else metrics_list
     model.dataset = dataset if dataset is not None else model.dataset
     model.show()
@@ -165,6 +181,9 @@ def pydtnn_inference(model: PyDTNN_Model, metrics_list=None, dataset=None) -> No
 
 
 def _pydtnn_inference(new_model, old_model, dataset, old_first=None):
+    """
+    Internal helper to manage inference order between PyDTNN models.
+    """
     print("-------------------")
     print(" PyDTNN's inference")
     print("-------------------")
@@ -186,6 +205,9 @@ def _pydtnn_inference(new_model, old_model, dataset, old_first=None):
 
 
 def _pytorch_inference(pytorch_model, dataloader, kwargs, device):
+    """
+    Internal helper to configure and run PyTorch inference.
+    """
     print("-------------------")
     print("Pytorch's inference")
     print("-------------------")
@@ -215,6 +237,9 @@ def _pytorch_inference(pytorch_model, dataloader, kwargs, device):
 
 
 def pydtnn_training(model: PyDTNN_Model, dataset: Dataset, num_samples=64 * 2):
+    """
+    Executes training on a PyDTNN model.
+    """
 
     # history = model.train(x_train=dataset._x[DatasetEnum.TRAIN][:num_samples], x_val=dataset._x[VAL][:num_samples],
     #                      y_train=dataset._y[DatasetEnum.TRAIN][:num_samples], y_val=dataset._y[VAL][:num_samples])
@@ -223,6 +248,9 @@ def pydtnn_training(model: PyDTNN_Model, dataset: Dataset, num_samples=64 * 2):
 
 
 def main():
+    """
+    Main entry point for the conversion and testing pipeline.
+    """
     test = TEST
 
     pytorch_model, create_pydtnn_model, shape, dataset, args, weight = dict_test[test]

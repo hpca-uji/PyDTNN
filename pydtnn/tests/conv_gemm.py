@@ -1,3 +1,6 @@
+"""
+Test suite for verifying the correctness of the ConvGemm implementation.
+"""
 import inspect
 import logging
 
@@ -27,6 +30,12 @@ class ConvGemmTestCase(ConvCommonTestCase):
     def _compute_both(
         cls, weights: np.ndarray, x: np.ndarray, biases: np.ndarray | None = None, vpadding=0, hpadding=0, vstride=1, hstride=1, vdilation=1, hdilation=1
     ) -> tuple[np.ndarray, np.ndarray]:
+        """
+        Computes convolution results using both ConvGemm and im2row + matrix multiplication for comparison.
+
+        Returns:
+            A tuple containing the ConvGemm result and the im2row matrix multiplication result.
+        """
         c, kh, kw, kn = weights.shape
         # b, c, h, w = x.shape
         cg_biases = biases.copy() if biases is not None else None
@@ -75,8 +84,14 @@ class ConvGemmTestCase(ConvCommonTestCase):
 
     @staticmethod
     def _get_config() -> D:
+        """
+        Returns the configuration dictionary for the test case.
+        """
         return D()
 
     @staticmethod
     def _compute(weights: np.ndarray, x: np.ndarray, biases: np.ndarray | None = None, kh=1, kw=1, vpadding=0, hpadding=0, vstride=1, hstride=1, vdilation=1, hdilation=1):
+        """
+        Executes the ConvGemm operation for the given inputs.
+        """
         return ConvGemm(debug=False).conv_gemm_nhwc(weights, x, None, vpadding, hpadding, vstride, hstride, vdilation, hdilation, biases)

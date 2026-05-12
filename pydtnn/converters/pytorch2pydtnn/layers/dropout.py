@@ -1,5 +1,9 @@
 # In this file must be implemented only the translation of PyTorch Dropout layers to its PyDTNN equivalent.
 
+"""
+Module for converting PyTorch Dropout layers to PyDTNN Dropout layers.
+"""
+
 import logging
 from typing import Any
 
@@ -16,6 +20,15 @@ logger = logging.getLogger(__name__)
 
 
 def Dropout(args: dict[str, Any]) -> _Dropout:
+    """
+    Converts a PyTorch Dropout layer configuration to a PyDTNN Dropout layer.
+
+    Args:
+        args: A dictionary containing the PyTorch layer configuration.
+
+    Returns:
+        An instance of the PyDTNN Dropout layer.
+    """
     # https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html#torch.nn.Dropout
 
     # PyTorch attributes:

@@ -174,20 +174,24 @@ def POINTER(obj):
 
 
 class float2(ctypes.Structure):
+    """CUDA float2 structure."""
     _fields_ = [("x", ctypes.c_float), ("y", ctypes.c_float)]
 
 
 class cuFloatComplex(float2):
+    """CUDA cuFloatComplex structure."""
     @property
     def value(self):
         return complex(self.x, self.y)
 
 
 class double2(ctypes.Structure):
+    """CUDA double2 structure."""
     _fields_ = [("x", ctypes.c_double), ("y", ctypes.c_double)]
 
 
 class cuDoubleComplex(double2):
+    """CUDA cuDoubleComplex structure."""
     @property
     def value(self):
         return complex(self.x, self.y)
@@ -197,6 +201,20 @@ def gpuarray_ptr(g):
     """
     Return ctypes pointer to data in GPUAarray object.
 
+    Parameters
+    ----------
+    g : gpuarray.GPUArray
+        GPUArray object.
+
+    Returns
+    -------
+    ptr : ctypes pointer
+        Pointer to the GPUArray's data.
+
+    Raises
+    ------
+    ValueError
+        If the GPUArray's dtype is not recognized.
     """
 
     addr = int(g.gpudata)
@@ -259,7 +277,7 @@ def cudaGetErrorString(e):
 
 
 class cudaError(Exception):
-    """CUDA error."""
+    """Base class for CUDA runtime errors."""
 
     pass
 
@@ -845,6 +863,8 @@ def cudaMallocPitch(pitch, rows, cols, elesize):
     -------
     ptr : ctypes pointer
         Pointer to allocated device memory.
+    pitch : int
+        The pitch of the allocated memory.
 
     """
 
@@ -1071,6 +1091,7 @@ cudaMemoryTypeDevice = 2
 
 
 class cudaPointerAttributes(ctypes.Structure):
+    """CUDA pointer attributes structure."""
     _fields_ = [("memoryType", ctypes.c_int), ("device", ctypes.c_int), ("devicePointer", ctypes.c_void_p), ("hostPointer", ctypes.c_void_p)]
 
 

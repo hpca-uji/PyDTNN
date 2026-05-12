@@ -1,3 +1,6 @@
+"""
+PyCUDA backend implementation for loss functions.
+"""
 import logging
 
 from pycuda import gpuarray  # type: ignore
@@ -19,12 +22,21 @@ class LossPycuda(Loss[TensorArray], BasePycuda):
     """
 
     def __init__(self, eps=1e-8):
+        """
+        Initializes the PyCUDA loss base class.
+
+        Args:
+            eps (float): Small value to prevent division by zero.
+        """
         super().__init__(eps)
         # NOTE: The following attributes will be initialized later.
         self.grid = None
         self.block = None
 
     def _model_init(self) -> None:
+        """
+        Initializes GPU memory buffers and model-dependent parameters.
+        """
         super()._model_init()
         # NOTE: the model must be executed before this one.
         self.grid = self.model.cuda_grid
@@ -35,5 +47,11 @@ class LossPycuda(Loss[TensorArray], BasePycuda):
         self.memory_used += self.dx.nbytes + self.loss.nbytes
 
     def _kernel_init(self) -> Function:
+        """
+        Prepares kernel definitions and retrieves the compiled CUDA function.
+
+        Returns:
+            Function: The compiled PyCUDA kernel function.
+        """
         self.defines_replaces = {'"TYPE"': DTYPE2CTYPE[self.model.dtype]}
         self.kernel = self._get_kernel()

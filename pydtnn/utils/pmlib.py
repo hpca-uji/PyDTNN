@@ -32,36 +32,51 @@ _N_LINE_BITS = 128
 
 
 class PMLibServer(ctypes.Structure):
+    """Structure representing a PMLib server connection configuration."""
     _fields_ = [("server_ip", ctypes.c_char * _SERVER_IP_LEN), ("port", ctypes.c_int)]
 
 
 class PMLibLines(ctypes.Structure):
+    """Structure representing a set of lines for power measurement."""
     _fields_ = [("__bits", ctypes.c_char * _LINE_SETSIZE)]
 
 
 class PMLibMeasures(ctypes.Structure):
+    """Structure containing power measurement data."""
     _fields_ = [("watts_size", ctypes.c_int), ("watts_sets_size", ctypes.c_int), ("watts_sets", ctypes.POINTER(ctypes.c_int)), ("watts", ctypes.POINTER(ctypes.c_double)), ("lines_len", ctypes.c_int)]
 
 
 class PMLibMeasuresWT(ctypes.Structure):
+    """Structure containing power measurement data with timing information."""
     _fields_ = [("next_timing", ctypes.c_int), ("timing", ctypes.POINTER(ctypes.c_double)), ("energy", PMLibMeasures)]
 
 
 class PMLibCounter(ctypes.Structure):
+    """Structure representing a power measurement counter."""
     _fields_ = [("sock", ctypes.c_int), ("aggregate", ctypes.c_int), ("lines", PMLibLines), ("num_lines", ctypes.c_int), ("interval", ctypes.c_int), ("measures", ctypes.POINTER(PMLibMeasuresWT))]
 
 
 class PMLibException(Exception):
+    """Exception raised for errors occurring within the PMLib interface."""
     def __init__(self, error):
+        """Initialize the exception with an error message."""
         self.error = error
 
     def __str__(self):
+        """Return the string representation of the exception."""
         return f"{self.error}"
 
 
 def check_pmlib_returned_status(func):
+    """Decorator to check the return status of PMLib C functions.
+
+    This decorator wraps a function that calls a PMLib C function.
+    It checks if the return status is non-zero, indicating an error.
+    If an error occurs, it raises a PMLibException.
+    """
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
+        """Wrapper function to execute the decorated function and check its status."""
         status = func(*args, **kwargs)
         if status != 0:
             raise PMLibException(f"Call to '{func.__name__}' failed!") from None
@@ -71,9 +86,27 @@ def check_pmlib_returned_status(func):
 
 
 class PMLib:
+    """Interface class for interacting with the PMLib library.
+
+    This class provides a Python wrapper around the PMLib C library,
+    enabling power measurement operations such as setting up servers,
+    defining measurement lines, creating and managing counters, and
+    retrieving measurement data.
+    """
     _pmlib = None
 
     def __init__(self, server_ip, port, verbose=False):
+        """Initialize the PMLib interface with server details.
+
+        Loads the PMLib shared library and sets up the connection parameters
+        for the power measurement server. It also initializes internal
+        structures and helper functions for interacting with the C library.
+
+        Args:
+            server_ip (str): The IP address of the power measurement server.
+            port (int): The port number of the power measurement server.
+            verbose (bool, optional): If True, enables verbose logging. Defaults to False.
+        """
         if self._pmlib is None:
             self._pmlib = load_library("pmlib")
         self.verbose = verbose
@@ -119,58 +152,168 @@ class PMLib:
         self.watts = None
 
     def info(self, msg):
+        """Log informational messages if verbose mode is enabled.
+
+        Args:
+            msg (str): The message to log.
+        """
         if self.verbose is True:
             logger.info("[PMLib]:", msg)
 
     @check_pmlib_returned_status
     def set_server(self, server_ip, port):
+        """Configure the server connection.
+
+        Sets the IP address and port for the PMLib server.
+
+        Args:
+            server_ip (str): The IP address of the server.
+            port (int): The port number of the server.
+
+        Returns:
+            None: If the operation is successful.
+
+        Raises:
+            PMLibException: If the underlying C function call fails.
+        """
         self.info("Setting server...")
         assert self._pmlib
         return self._pmlib.pm_set_server(server_ip.encode("utf-8"), port, ctypes.byref(self.server))
 
     @check_pmlib_returned_status
     def create_lines(self, lines_string):
+        """Define the lines to be monitored.
+
+        Parses a string representing the lines to be measured and configures
+        the internal `PMLibLines` structure.
+
+        Args:
+            lines_string (str): A string specifying the lines, e.g., "0-15".
+
+        Returns:
+            None: If the operation is successful.
+
+        Raises:
+            PMLibException: If the underlying C function call fails.
+        """
         self.info("Setting lines...")
         assert self._pmlib
         return self._pmlib.pm_set_lines(lines_string.encode("utf-8"), ctypes.byref(self.lines))
 
     @check_pmlib_returned_status
     def create_counter(self, counter_string, aggregate=0, interval=0):
+        """Initialize a power measurement counter.
+
+        Creates a counter object in the PMLib library, associated with a
+        specific ID, lines, aggregation mode, and interval.
+
+        Args:
+            counter_string (str): A unique identifier string for the counter.
+            aggregate (int, optional): Whether to aggregate measurements. Defaults to 0.
+            interval (int, optional): The sampling interval in seconds. Defaults to 0.
+
+        Returns:
+            None: If the operation is successful.
+
+        Raises:
+            PMLibException: If the underlying C function call fails.
+        """
         self.info("Creating counter...")
         assert self._pmlib
         return self._pmlib.pm_create_counter(counter_string.encode("utf-8"), self.lines, aggregate, interval, self.server, ctypes.byref(self.counter))
 
     @check_pmlib_returned_status
     def start_counter(self):
+        """Start the power measurement counter.
+
+        Begins the data acquisition process for the configured counter.
+
+        Returns:
+            None: If the operation is successful.
+
+        Raises:
+            PMLibException: If the underlying C function call fails.
+        """
         self.info("Starting counter...")
         assert self._pmlib
         return self._pmlib.pm_start_counter(ctypes.byref(self.counter))
 
     @check_pmlib_returned_status
     def stop_counter(self):
+        """Stop the power measurement counter.
+
+        Halts the data acquisition process for the configured counter.
+
+        Returns:
+            None: If the operation is successful.
+
+        Raises:
+            PMLibException: If the underlying C function call fails.
+        """
         self.info("Stopping counter...")
         assert self._pmlib
         return self._pmlib.pm_stop_counter(ctypes.byref(self.counter))
 
     @check_pmlib_returned_status
     def _get_counter_data(self):
+        """Internal method to fetch raw counter data from the library.
+
+        Retrieves the latest measurement data from the PMLib counter.
+
+        Returns:
+            None: If the operation is successful.
+
+        Raises:
+            PMLibException: If the underlying C function call fails.
+        """
         self.info("Getting counter data...")
         assert self._pmlib
         return self._pmlib.pm_get_counter_data(ctypes.byref(self.counter))
 
     @check_pmlib_returned_status
     def print_data_text(self, output_string, set_value):
+        """Export counter data to a text file.
+
+        Saves the current counter data to a specified text file.
+
+        Args:
+            output_string (str): The name of the output file.
+            set_value (int): An integer representing the set to export.
+
+        Returns:
+            None: If the operation is successful.
+
+        Raises:
+            PMLibException: If the underlying C function call fails.
+        """
         self.info(f"Writing data to '{output_string}' file...")
         assert self._pmlib
         return self._pmlib.pm_print_data_text(output_string.encode("utf-8"), self.counter, self.lines, set_value)
 
     @check_pmlib_returned_status
     def finalize_counter(self):
+        """Finalize and clean up the counter resources.
+
+        Releases resources associated with the PMLib counter.
+
+        Returns:
+            None: If the operation is successful.
+
+        Raises:
+            PMLibException: If the underlying C function call fails.
+        """
         self.info("Finalizing counter...")
         assert self._pmlib
         return self._pmlib.pm_finalize_counter(ctypes.byref(self.counter))
 
     def get_counter_data(self):
+        """Fetch, parse, and store counter data into numpy arrays.
+
+        Retrieves raw data from the PMLib counter, parses it into time series
+        of power measurements (Watts) and timestamps, and stores them as
+        NumPy arrays in class attributes. It also calculates derived properties
+        like the number of lines, samples, and the time period.
+        """
         self._get_counter_data()
         self.counter_start_time, self.counter_end_time = np.ctypeslib.as_array((ctypes.c_double * 2).from_address(ctypes.addressof(self.counter.measures.contents.timing.contents)))
         self.len_lines = 1 if self.counter.aggregate == 1 else self.counter.measures.contents.energy.lines_len
@@ -186,21 +329,74 @@ class PMLib:
             self.len_lines += 1
 
     def _next_sample_from_start(self, start_time):
+        """Calculate the index of the next sample relative to start_time.
+
+        Determines the index of the sample in the `self.times` array that
+        corresponds to or is immediately after the given `start_time`.
+
+        Args:
+            start_time (float): The reference start time.
+
+        Returns:
+            int: The index of the next sample.
+        """
         assert self.len_samples
         assert self.times
         return min(self.len_samples - 1, int((start_time - self.times[0]) / self.period) + 1)
 
     def _previous_sample_from_end(self, end_time):
+        """Calculate the index of the previous sample relative to end_time.
+
+        Determines the index of the sample in the `self.times` array that
+        corresponds to or is immediately before the given `end_time`.
+
+        Args:
+            end_time (float): The reference end time.
+
+        Returns:
+            int: The index of the previous sample.
+        """
         assert self.times
         return max(0, int(np.ceil((end_time - self.times[0]) / self.period)) - 1)
 
     def get_number_of_intermediate_samples(self, start_time, end_time):
+        """Return the count of samples between the given time range.
+
+        Calculates the number of discrete time samples that fall strictly
+        between the `start_time` and `end_time`.
+
+        Args:
+            start_time (float): The start of the time range.
+            end_time (float): The end of the time range.
+
+        Returns:
+            int: The number of intermediate samples.
+        """
         # Next and previous samples from start_time and end_time, respectively
         next_sample_from_start = self._next_sample_from_start(start_time)
         previous_sample_from_end = self._previous_sample_from_end(end_time)
         return max(0, previous_sample_from_end + 1 - next_sample_from_start)
 
     def get_joules(self, start_time, end_time, debug=False):
+        """Calculate total energy in Joules for a specified time interval.
+
+        Integrates the power measurements (Watts) over the given time interval
+        (`start_time` to `end_time`) to compute the total energy consumed in Joules.
+        It handles interpolation for partial samples at the interval boundaries.
+
+        Args:
+            start_time (float): The start of the time interval (in seconds).
+            end_time (float): The end of the time interval (in seconds).
+            debug (bool, optional): If True, enables debug logging. Defaults to False.
+
+        Returns:
+            np.ndarray: A NumPy array containing the total energy in Joules for
+                        each line (including the aggregated sum if applicable).
+
+        Raises:
+            ValueError: If `start_time` is not less than `end_time`, or if the
+                        given times are outside the range of recorded data.
+        """
         # Check boundaries
         assert self.times
         if start_time >= end_time:

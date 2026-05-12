@@ -1,3 +1,6 @@
+"""
+VGG-style 3-block deep neural network architecture implementation.
+"""
 from collections.abc import Sequence
 
 from pydtnn.abstract.layerable import Layerable
@@ -16,6 +19,16 @@ __all__ = ("vgg3do",)
 
 
 def vgg3do(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
+    """
+    Constructs a VGG-style neural network with three convolutional blocks.
+
+    Args:
+        input_shape: The shape of the input data.
+        output_shape: The shape of the output layer.
+
+    Returns:
+        A sequence of layers forming the VGG3DO model.
+    """
     model = list[Layerable]()
     _ = model.append
 

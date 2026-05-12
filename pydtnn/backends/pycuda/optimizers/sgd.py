@@ -1,3 +1,6 @@
+"""
+PyCUDA implementation of the Stochastic Gradient Descent (SGD) optimizer.
+"""
 import logging
 
 import numpy as np
@@ -17,13 +20,25 @@ logger = logging.getLogger(__name__)
 
 class SGDPycuda(SGD[TensorArray], OptimizerPycuda):
     """
-    SGDPycuda optimizer
+    PyCUDA-accelerated Stochastic Gradient Descent optimizer.
     """
 
     def __init__(self, learning_rate=1e-2, momentum=0.9, nesterov=False, decay=0.0):
+        """
+        Initializes the SGDPycuda optimizer.
+
+        Args:
+            learning_rate (float): Step size for parameter updates.
+            momentum (float): Momentum factor.
+            nesterov (bool): Whether to use Nesterov momentum.
+            decay (float): Weight decay factor.
+        """
         super().__init__(learning_rate, momentum, nesterov, decay)
 
     def _kernel_init(self) -> None:
+        """
+        Initializes the PyCUDA elementwise kernels for parameter updates.
+        """
         # --- GPU ---
         parameters_gpu = "{T} *w, {T} * dw, {T} * v, float lr, float decay, float momentum".format(T=DTYPE2CTYPE[self.model.dtype])
         ops_gpu = {True: "w[i] -= lr * (decay * w[i] + dw[i] + momentum * v[i])", False: "w[i] -= lr * (decay * w[i] + v[i])"}[self.nesterov]
@@ -36,6 +51,12 @@ class SGDPycuda(SGD[TensorArray], OptimizerPycuda):
         self.update_gpudirect = self._get_kernel(func_name_subfix="_gpudirect")
 
     def _model_init(self, list_layers: list[LayerPycuda]) -> None:
+        """
+        Initializes optimizer state (velocity buffers) for each layer.
+
+        Args:
+            list_layers (list[LayerPycuda]): List of layers to track.
+        """
         super()._model_init(list_layers)  # type: ignore (The type is correct: LayerPycuda extends LayerBase)
 
         for layer in list_layers:
@@ -50,6 +71,12 @@ class SGDPycuda(SGD[TensorArray], OptimizerPycuda):
                     self.memory_used += self.context[layer.id]["velocity_%s" % w_].nbytes  # type: ignore (They are both "gpuarray" and not "int")
 
     def update(self, layer: LayerPycuda):
+        """
+        Performs a single optimization step on the provided layer.
+
+        Args:
+            layer (LayerPycuda): The layer to update.
+        """
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
             velocity = self.context[layer.id]["velocity_%s" % w_]

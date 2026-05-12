@@ -1,3 +1,4 @@
+"""Nadam optimizer implementation for the NumPy backend."""
 import logging
 import math
 from typing import TYPE_CHECKING
@@ -16,7 +17,10 @@ if TYPE_CHECKING:
 
 
 class NadamNumpy(Nadam[np.ndarray], OptimizerNumpy):
+    """Nadam optimizer implementation using NumPy arrays."""
+
     def _model_init(self, list_layers: list[LayerNumpy]) -> None:
+        """Initialize optimizer state and memory buffers for each layer."""
         super()._model_init(list_layers)  # type: ignore (it is the right type)
 
         temp_memory_size = []
@@ -44,6 +48,7 @@ class NadamNumpy(Nadam[np.ndarray], OptimizerNumpy):
         self.memory_used += self.tmp_memory_used
 
     def _post_init(self) -> None:
+        """Allocate temporary memory buffers after model initialization."""
         super()._post_init()
         for layer_id in self.context.keys():
             with self.model.memory:
@@ -63,6 +68,7 @@ class NadamNumpy(Nadam[np.ndarray], OptimizerNumpy):
                     w_shape = self.context[layer_id][key] = self.model.memory.ndarray(w_shape, dtype=self.model.dtype)
 
     def update(self, layer: LayerNumpy) -> None:
+        """Perform a single Nadam optimization step for the given layer."""
         self.context[layer.id]["it"] += 1
         it: int = self.context[layer.id]["it"]  # type: ignore
 

@@ -1,3 +1,6 @@
+"""
+RMSProp optimizer implementation for PyCUDA backend.
+"""
 import logging
 
 import numpy as np
@@ -17,13 +20,25 @@ logger = logging.getLogger(__name__)
 
 class RMSPropPycuda(RMSProp[TensorArray], OptimizerPycuda):
     """
-    RMSPropPycuda Optimizer
+    RMSProp optimizer implementation using PyCUDA for GPU acceleration.
     """
 
     def __init__(self, learning_rate=1e-2, rho=0.9, epsilon=1e-7, decay=0.0):
+        """
+        Initialize the RMSPropPycuda optimizer.
+
+        Args:
+            learning_rate (float): Step size for parameter updates.
+            rho (float): Discounting factor for the history of squared gradients.
+            epsilon (float): Small value to prevent division by zero.
+            decay (float): Weight decay coefficient.
+        """
         super().__init__(learning_rate, rho, epsilon, decay)
 
     def _kernel_init(self) -> None:
+        """
+        Initialize the PyCUDA ElementwiseKernels for parameter updates.
+        """
         pow_func = {np.dtype(np.float32): "powf", np.dtype(np.float64): "pow"}[self.model.dtype]
 
         # --- GPU ---
@@ -37,6 +52,12 @@ class RMSPropPycuda(RMSProp[TensorArray], OptimizerPycuda):
         self.update_gpudirect = self._get_kernel(func_name_subfix="_gpudirect")
 
     def _model_init(self, list_layers: list[LayerPycuda]) -> None:
+        """
+        Initialize optimizer state buffers for each layer.
+
+        Args:
+            list_layers (list[LayerPycuda]): List of layers to track.
+        """
         super()._model_init(list_layers)  # type: ignore (The type is correct: LayerPycuda extends LayerBase)
 
         for layer in list_layers:
@@ -51,6 +72,12 @@ class RMSPropPycuda(RMSProp[TensorArray], OptimizerPycuda):
                     self.memory_used += self.context[layer.id]["cache_%s" % w_].nbytes  # type: ignore (They are both "gpuarray" and not "int")
 
     def update(self, layer: LayerPycuda):
+        """
+        Perform a single optimization step for the given layer.
+
+        Args:
+            layer (LayerPycuda): The layer to update.
+        """
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
             cache = self.context[layer.id]["cache_%s" % w_]

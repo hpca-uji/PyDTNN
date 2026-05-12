@@ -1,3 +1,4 @@
+"""Base module for PyDTNN abstract components."""
 from __future__ import annotations
 
 import importlib
@@ -14,22 +15,34 @@ if typing.TYPE_CHECKING:
 
 
 class Base[T: Array]:
+    """
+    Abstract base class for PyDTNN components that supports backend dispatching.
+    """
     _backend: typing.Self
     _frontend: typing.Self
 
     _map_backend = {"all": "pydtnn", "cpu": "numpy,cython", "gpu": "pycuda"}
 
     def __new__(cls, *args, **kwds):
+        """
+        Create a new instance and store constructor arguments for backend initialization.
+        """
         # Save top-level constructor arguments
         self = super().__new__(cls)
         self._new_backend = (args, kwds)  # type: ignore
         return self
 
     def __init__(self) -> None:
+        """
+        Initialize memory tracking attributes.
+        """
         self.memory_used: int = 0
         self.tmp_memory_used: int = 0
 
     def __getattribute__(self, name: str):
+        """
+        Proxy attribute access to the backend instance if available.
+        """
         ref = "_backend"
 
         # Get backend
@@ -102,6 +115,9 @@ class Base[T: Array]:
         raise ValueError(f"Backend not found for {self} with {spec}")
 
     def __setattr__(self, name: str, value) -> None:
+        """
+        Proxy attribute setting to the backend instance if available.
+        """
         ref = "_backend"
 
         # Get backend
@@ -114,6 +130,9 @@ class Base[T: Array]:
             setattr(backend, name, value)
 
     def __delattr__(self, name: str) -> None:
+        """
+        Proxy attribute deletion to the backend instance if available.
+        """
         ref = "_backend"
 
         # Get backend
@@ -153,14 +172,17 @@ class Base[T: Array]:
 
     @property
     def name(self) -> str:
+        """Return the class name of the current instance."""
         return type(self).__name__
 
     @property
     def canonical_name(self) -> str:
+        """Return the class name of the frontend instance."""
         self = getattr(self, "_frontend", self)
         return type(self).__name__
 
     def _show_props(self) -> dict:
+        """Return a dictionary of properties for representation."""
         props = {}
 
         props["name"] = self.canonical_name
@@ -178,6 +200,7 @@ class Base[T: Array]:
         return props
 
     def __repr__(self) -> str:
+        """Return a string representation of the object."""
         props = self._show_props()
         name = props.pop("name")
 
@@ -186,9 +209,11 @@ class Base[T: Array]:
         return f"<{name} {props}>" if props else f"<{name}>"
 
     def _model_init(self) -> None:
+        """Hook for model initialization."""
         pass
 
     def _post_init(self) -> None:
+        """Hook for post-initialization logic."""
         pass
 
     def _init_backend_with_model(self, model: model_module.Base[T]) -> None:

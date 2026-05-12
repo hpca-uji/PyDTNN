@@ -1,3 +1,6 @@
+"""
+Numpy implementation of the Adam optimizer.
+"""
 import logging
 import math
 from typing import TYPE_CHECKING
@@ -16,7 +19,13 @@ if TYPE_CHECKING:
 
 
 class AdamNumpy(Adam[np.ndarray], OptimizerNumpy):
+    """
+    Numpy-based Adam optimizer implementation.
+    """
     def _model_init(self, list_layers: list[LayerNumpy]) -> None:
+        """
+        Initializes the optimizer state for the given layers.
+        """
         super()._model_init(list_layers)  # type: ignore (it is the right type)
 
         temp_memory_size = []
@@ -46,6 +55,9 @@ class AdamNumpy(Adam[np.ndarray], OptimizerNumpy):
         self.memory_used += self.tmp_memory_used
 
     def _post_init(self) -> None:
+        """
+        Allocates temporary memory buffers for optimization steps.
+        """
         super()._post_init()
         for layer_id in self.context.keys():
             with self.model.memory:
@@ -65,6 +77,9 @@ class AdamNumpy(Adam[np.ndarray], OptimizerNumpy):
                     w_shape = self.context[layer_id][key] = self.model.memory.ndarray(w_shape, dtype=self.model.dtype)
 
     def update(self, layer: LayerNumpy) -> None:
+        """
+        Performs a single optimization step for the given layer.
+        """
         self.context[layer.id]["it"] += 1
         it: int = self.context[layer.id]["it"]  # type: ignore
 

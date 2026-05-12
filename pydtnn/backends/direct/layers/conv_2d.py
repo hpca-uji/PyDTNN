@@ -1,3 +1,4 @@
+"""Direct convolution layer implementation using the convDirect library."""
 import logging
 from functools import partial
 from warnings import warn
@@ -17,13 +18,15 @@ logger = logging.getLogger(__name__)
 
 
 class Conv2DDirect(Conv2DNumpy, AbstractConv2DDirect):
+    """2D Convolution layer utilizing the direct convolution backend."""
     def __init__(self, *args, **kwargs):
+        """Initialize the Conv2DDirect layer."""
         super().__init__(*args, **kwargs)
         # convDirect related attributes (will be initialized in initialize())
         self.cd = []
 
     def _algo_init(self):
-        """Add the different forward and backward methods to the class"""
+        """Add the different forward and backward methods to the class."""
 
         def new(name, func):
             func.__name__ = name
@@ -45,6 +48,7 @@ class Conv2DDirect(Conv2DNumpy, AbstractConv2DDirect):
             new(f"_backward_cd{n}_{self.model.tensor_format}", partial(self._forward_cd, n=n))
 
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None):
+        """Initialize model parameters and select the convolution algorithm."""
         super()._model_init(prev_shape, x)
         self._algo_init()
 
@@ -69,7 +73,7 @@ class Conv2DDirect(Conv2DNumpy, AbstractConv2DDirect):
             warn(f"{self.__class__.__name__} never uses the biases.", RuntimeWarning)
 
     def _forward_cd(self, x: np.ndarray, n=0) -> np.ndarray:
-        """Version of the forward function that uses the convDirect library"""
+        """Execute the forward pass using the convDirect library."""
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVDIRECT)
         y = self.cd[n].conv_direct(
@@ -87,4 +91,5 @@ class Conv2DDirect(Conv2DNumpy, AbstractConv2DDirect):
         return y
 
     def _backward_cd(self, y: np.ndarray, n=0) -> np.ndarray:
+        """Execute the backward pass using the convDirect library."""
         raise RuntimeError("Backward not implemented yet!")

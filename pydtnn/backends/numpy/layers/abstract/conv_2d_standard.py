@@ -1,3 +1,6 @@
+"""
+Abstract base class for standard 2D convolution layers using NumPy backend.
+"""
 import logging
 from typing import TYPE_CHECKING
 
@@ -14,9 +17,15 @@ if TYPE_CHECKING:
 
 
 class AbstractConv2DStandardNumpy(AbstractConv2DNumpy):
-    # NOTE: This is an abstract class.
+    """
+    Base class for standard 2D convolution layers implementing weight shape 
+    initialization and format-aware weight export/import.
+    """
 
     def _initializing_special_parameters(self):
+        """
+        Initializes weight shapes based on the configured tensor format.
+        """
         super()._initializing_special_parameters()
         match self.model.tensor_format:
             case TensorFormat.NCHW:
@@ -27,6 +36,15 @@ class AbstractConv2DStandardNumpy(AbstractConv2DNumpy):
                 raise NotImplementedError(f"{self.model.tensor_format} format not implemented.")
 
     def _export_weights_dw(self, key: str):
+        """
+        Exports weights to NCHW format, transposing if necessary.
+
+        Args:
+            key: The attribute name of the weights to export.
+
+        Returns:
+            A NumPy array containing the weights in NCHW format.
+        """
         value = getattr(self, key)
 
         match self.model.tensor_format:
@@ -40,6 +58,13 @@ class AbstractConv2DStandardNumpy(AbstractConv2DNumpy):
                 raise TypeError(f"Unsupported tensor format ({tensor_format})")
 
     def _import_weights_dw(self, key: str, value) -> None:
+        """
+        Imports weights into the layer, transposing from NCHW if necessary.
+
+        Args:
+            key: The attribute name of the weights to update.
+            value: The weight array to import.
+        """
         ary = getattr(self, key)
 
         match self.model.tensor_format:

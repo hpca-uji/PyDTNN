@@ -1,3 +1,4 @@
+"""CuPy implementation of abstract 2D convolution layers."""
 import logging
 from typing import TYPE_CHECKING
 
@@ -18,7 +19,9 @@ if TYPE_CHECKING:
 
 
 class AbstractConv2DCupy(AbstractConv2DNumpy, AbstractConv2D[np.ndarray], LayerCupy):
+    """Abstract base class for 2D convolution layers using CuPy backend."""
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
+        """Initialize model parameters and CUDA kernels."""
         super()._model_init(prev_shape, x)
 
         self.stream_2 = Stream()
@@ -29,6 +32,7 @@ class AbstractConv2DCupy(AbstractConv2DNumpy, AbstractConv2D[np.ndarray], LayerC
         self._col2im = self._get_kernel(func_name="row_col_2im", defines_replaces={'"TYPE"': DTYPE2CTYPE[self.model.dtype], "TENSOR_FORMAT": self.model.tensor_format})
 
     def im2row(self, x: np.ndarray, x_rows: np.ndarray) -> None:
+        """Perform im2row transformation on GPU."""
         # return super().im2row(x, x_rows)
         self._im2row(
             self.model.cuda_grid,
@@ -37,6 +41,7 @@ class AbstractConv2DCupy(AbstractConv2DNumpy, AbstractConv2D[np.ndarray], LayerC
         )
 
     def row2im(self, x_rows: np.ndarray, dx: np.ndarray) -> None:
+        """Perform row2im transformation on GPU."""
         # return super().im2row(x_rows, dx)
         self._row2im(
             self.model.cuda_grid,
@@ -45,6 +50,7 @@ class AbstractConv2DCupy(AbstractConv2DNumpy, AbstractConv2D[np.ndarray], LayerC
         )
 
     def im2col(self, x: np.ndarray, x_cols: np.ndarray) -> None:
+        """Perform im2col transformation on GPU."""
         # return super().im2col(x, x_cols)
         self._im2row(
             self.model.cuda_grid,
@@ -53,6 +59,7 @@ class AbstractConv2DCupy(AbstractConv2DNumpy, AbstractConv2D[np.ndarray], LayerC
         )
 
     def col2im(self, x_cols: np.ndarray, dx: np.ndarray) -> None:
+        """Perform col2im transformation on GPU."""
         # return super().im2row(x_cols, dx)
         self._col2im(
             self.model.cuda_grid,

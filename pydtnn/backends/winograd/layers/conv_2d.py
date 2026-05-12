@@ -1,3 +1,4 @@
+"""Winograd-based 2D convolution layer implementation."""
 import logging
 
 import numpy as np
@@ -16,12 +17,15 @@ logger = logging.getLogger(__name__)
 
 
 class Conv2DWinograd(Conv2DNumpy, AbstractConv2DWinograd):
+    """2D Convolution layer utilizing Winograd algorithm for optimized computation."""
     def __init__(self, *args, **kwargs):
+        """Initialize the Winograd convolution layer."""
         super().__init__(*args, **kwargs)
         # convWinograd related attributes (will be initialized in initialize())
         self.cw: ConvWinograd = None  # type: ignore
 
     def _model_init(self, prev_shape, x: np.ndarray | None = None):
+        """Initialize model parameters and select backend implementation based on tensor format."""
         super()._model_init(prev_shape, x)
         # ConvWinograd parameters
         self.cw = ConvWinograd(
@@ -39,7 +43,7 @@ class Conv2DWinograd(Conv2DNumpy, AbstractConv2DWinograd):
                 raise NotImplementedError(f"{self.model.tensor_format} format not implemented.")
 
     def _forward_cw_nhwc(self, x: np.ndarray) -> np.ndarray:
-        """Version of the forward function that uses the convWinograd library"""
+        """Perform forward pass using Winograd algorithm for NHWC format."""
 
         self.cw_x = x
 
@@ -59,7 +63,7 @@ class Conv2DWinograd(Conv2DNumpy, AbstractConv2DWinograd):
         return y
 
     def _forward_cw_nchw(self, x: np.ndarray) -> np.ndarray:
-        """Version of the forward function that uses the convWinograd library"""
+        """Perform forward pass using Winograd algorithm for NCHW format."""
 
         self.cw_x = x
 
@@ -79,7 +83,7 @@ class Conv2DWinograd(Conv2DNumpy, AbstractConv2DWinograd):
         return y
 
     def _backward_cw_nhwc(self, dy: np.ndarray) -> np.ndarray:
-        """Version of the backward function that uses the convWinograd library"""
+        """Perform backward pass using im2row transformation for NHWC format."""
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_IM2COL)
 
@@ -103,7 +107,7 @@ class Conv2DWinograd(Conv2DNumpy, AbstractConv2DWinograd):
         return self._backward_i2c_nhwc(dy)
 
     def _backward_cw_nchw(self, dy: np.ndarray) -> np.ndarray:
-        """Version of the backward function that uses the convWinograd library"""
+        """Perform backward pass using im2col transformation for NCHW format."""
         n, c, _, _ = dy.shape
         self.x_cols = np.zeros((c * self.kh * self.kw, n * self.ho * self.wo))
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_IM2COL)

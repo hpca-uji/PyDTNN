@@ -1,3 +1,6 @@
+"""
+Numpy backend implementation of the FeedForward layer.
+"""
 import logging
 from typing import TYPE_CHECKING
 
@@ -17,7 +20,13 @@ if TYPE_CHECKING:
 
 
 class FeedForwardNumpy(FeedForward[np.ndarray], AbstractBlockLayerNumpy):
+    """
+    Numpy-based FeedForward layer implementation.
+    """
     def __init__(self, *args, **kwargs):
+        """
+        Initializes the FeedForwardNumpy layer with sublayers.
+        """
         super().__init__(*args, **kwargs)
         self.FC_1 = FC(shape=(self.d_ff,))
         self.relu = Relu()
@@ -26,6 +35,9 @@ class FeedForwardNumpy(FeedForward[np.ndarray], AbstractBlockLayerNumpy):
         self.paths = [[self.FC_1, self.relu, self.dropout, self.FC_2]]
 
     def _model_init(self, prev_shape, x):
+        """
+        Initializes sublayers and model parameters.
+        """
         super()._model_init(prev_shape, x)
 
         # Initialize all sublayers
@@ -46,9 +58,15 @@ class FeedForwardNumpy(FeedForward[np.ndarray], AbstractBlockLayerNumpy):
             self.nparams += layer.nparams
 
     def initialize_block_layer(self):
+        """
+        Initializes the block layer components.
+        """
         pass
 
     def forward(self, x):
+        """
+        Performs the forward pass through the feed-forward network.
+        """
         x = self.FC_1.forward(x)
         x = self.relu.forward(x)
         x = self.dropout.forward(x)
@@ -56,6 +74,9 @@ class FeedForwardNumpy(FeedForward[np.ndarray], AbstractBlockLayerNumpy):
         return x
 
     def backward(self, dy):
+        """
+        Performs the backward pass through the feed-forward network.
+        """
         dx = self.FC_2.backward(dy)
         dx = self.dropout.backward(dx)
         dx = self.relu.backward(dx)

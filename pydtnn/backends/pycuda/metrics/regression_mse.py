@@ -1,3 +1,6 @@
+"""
+PyCUDA implementation of the Mean Squared Error (MSE) regression metric.
+"""
 import logging
 
 import numpy as np
@@ -12,7 +15,13 @@ logger = logging.getLogger(__name__)
 
 
 class RegressionMSEPycuda(RegressionMSE[TensorArray], MetricPycuda):
+    """
+    PyCUDA-accelerated Mean Squared Error metric for regression tasks.
+    """
     def _model_init(self) -> None:
+        """
+        Initializes internal buffers for MSE computation on the GPU.
+        """
         super()._model_init()
 
         n = self.model.batch_size
@@ -23,6 +32,16 @@ class RegressionMSEPycuda(RegressionMSE[TensorArray], MetricPycuda):
         self.local_res = TensorArray.new_zeros(shape=(n, *num_classes), dtype=np.dtype(self.model.dtype), tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
 
     def compute(self, y_pred: TensorArray, y_targ: TensorArray) -> float:
+        """
+        Computes the Mean Squared Error between predictions and targets.
+
+        Args:
+            y_pred: Predicted values.
+            y_targ: Ground truth values.
+
+        Returns:
+            The calculated MSE as a float.
+        """
         n = y_pred.shape[0]
         num_classes = y_pred.shape[1]
 

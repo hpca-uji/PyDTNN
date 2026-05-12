@@ -1,3 +1,4 @@
+"""PyCUDA implementation of the Adaptive Average Pooling 2D layer."""
 import logging
 import math
 
@@ -19,12 +20,15 @@ logger = logging.getLogger(__name__)
 
 
 class AdaptiveAveragePool2DPycuda(AdaptiveAveragePool2D[TensorArray], LayerPycuda):
+    """PyCUDA-accelerated Adaptive Average Pooling 2D layer."""
     def __init__(self, *args, **kwargs) -> None:
+        """Initialize the AdaptiveAveragePool2DPycuda layer."""
         super().__init__(*args, **kwargs)
         # NOTE: Will be initalized later.
         self.y = None  # type: ignore
 
     def _model_init(self, prev_shape, x: TensorArray) -> None:
+        """Initialize model parameters and CUDA kernels."""
         super()._model_init(prev_shape, x)
 
         self.cuda_fwd_func = self._fwd_kernel()
@@ -33,6 +37,7 @@ class AdaptiveAveragePool2DPycuda(AdaptiveAveragePool2D[TensorArray], LayerPycud
         self.initialize_pool_2d_gpu(prev_shape, x)
 
     def initialize_pool_2d_gpu(self, prev_shape, x):
+        """Allocate GPU memory and initialize performance metrics for the pooling layer."""
         self.ci, self.hi, self.wi = self.model.decode_shape(prev_shape)
         self.shape = self.model.encode_shape((self.co, self.ho, self.wo))
         pooling_shape = self.model.encode_shape((self.co, self.ho, self.wo))
@@ -51,6 +56,7 @@ class AdaptiveAveragePool2DPycuda(AdaptiveAveragePool2D[TensorArray], LayerPycud
                                     memory_bw=self.model.memory_bw, dtype=self.model.dtype)  # type: ignore (it's fine)
 
     def forward(self, x: TensorArray) -> TensorArray:
+        """Perform the forward pass of the adaptive average pooling operation."""
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
 
         if self.pooling_not_needed:
@@ -92,6 +98,7 @@ class AdaptiveAveragePool2DPycuda(AdaptiveAveragePool2D[TensorArray], LayerPycud
         return self.y
 
     def backward(self, dy: TensorArray) -> TensorArray:
+        """Perform the backward pass of the adaptive average pooling operation."""
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
         n, c, h, w = self.model.decode_shape(dy.shape)
 

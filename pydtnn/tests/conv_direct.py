@@ -1,3 +1,6 @@
+"""
+Test suite for direct convolution implementation in PyDTNN.
+"""
 import inspect
 import logging
 from unittest import SkipTest
@@ -28,6 +31,12 @@ class ConvDirectTestCase(ConvCommonTestCase):
     def _compute_both(
         cls, weights: np.ndarray, x: np.ndarray, biases: np.ndarray | None = None, vpadding=0, hpadding=0, vstride=1, hstride=1, vdilation=1, hdilation=1
     ) -> tuple[np.ndarray, np.ndarray]:
+        """
+        Computes convolution results using both direct implementation and im2row matrix multiplication for comparison.
+
+        Returns:
+            A tuple containing the direct convolution result and the im2row matrix multiplication result.
+        """
         c, kh, kw, kn = weights.shape
         # b, c, h, w = x.shape
         cg_biases = biases.copy() if biases is not None else None
@@ -76,6 +85,12 @@ class ConvDirectTestCase(ConvCommonTestCase):
 
     @staticmethod
     def _compute(weights: np.ndarray, x: np.ndarray, biases: np.ndarray | None = None, kh=1, kw=1, vpadding=0, hpadding=0, vstride=1, hstride=1, vdilation=1, hdilation=1):
+        """
+        Executes the direct convolution operation using the ConvDirect library.
+
+        Raises:
+            SkipTest: If biases are provided, as the current direct implementation does not support them.
+        """
         if biases is not None:
             raise SkipTest("Direct does not support biases")
         return ConvDirect(method_name="convdirect_original_nhwc_default", debug=False).conv_direct(weights, x, None, vpadding, hpadding, vstride, hstride, vdilation, hdilation)

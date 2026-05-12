@@ -1,3 +1,6 @@
+"""
+Profiler utility for benchmarking and validating multiple implementation alternatives.
+"""
 import logging
 import os
 import platform
@@ -13,11 +16,28 @@ logger = logging.getLogger(__name__)
 
 
 class BestOfProfiler:
+    """
+    Profiler class to evaluate and compare performance of multiple method alternatives.
+    """
     def __init__(self, header, best_method):
+        """
+        Initialize the profiler.
+
+        Args:
+            header (str): Header string for output reporting.
+            best_method (BestOf): The BestOf instance containing alternatives to profile.
+        """
         self.header = header
         self.best_method: BestOf = best_method
 
     def __call__(self, *args, **kwargs):
+        """
+        Execute the profiling process, including output validation and timing runs.
+
+        Args:
+            *args: Positional arguments passed to the methods.
+            **kwargs: Keyword arguments passed to the methods.
+        """
 
         # First run
 
@@ -43,6 +63,9 @@ class BestOfProfiler:
             logger.info(".")
 
     def print_results(self):
+        """
+        Print the profiling results and system configuration to the console.
+        """
         #  From IBM OpenMP documentation: If you do not set OMP_NUM_THREADS, the number of processors available is the
         #  default value to form a new team for the first encountered parallel construct.
         import multiprocessing

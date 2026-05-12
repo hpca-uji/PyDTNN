@@ -1,3 +1,6 @@
+"""
+Module for handling archived datasets stored in NPZ format.
+"""
 from __future__ import annotations
 
 import logging
@@ -28,6 +31,14 @@ class Archive(Dataset):
     """
 
     def __init__(self, model: Model, force_test_as_validation=False, debug=False):
+        """
+        Initialize the Archive dataset by inspecting the NPZ file structure.
+
+        Args:
+            model: The model instance associated with this dataset.
+            force_test_as_validation: Whether to use test data as validation data.
+            debug: Enable debug logging.
+        """
         shapes = get_npz_shape(model.dataset_path)
         x_train = shapes["x_train"]
         y_train = shapes["y_train"]
@@ -45,6 +56,9 @@ class Archive(Dataset):
         super().__init__(model, x_train[0], x_test[0], x_train[1:], y_train[1:], force_test_as_validation=force_test_as_validation, debug=debug)
 
     def _ensure_data_init(self):
+        """
+        Lazy load and process dataset from disk if not already initialized.
+        """
         if len(self._x[Dataset.Part.TRAIN]):
             return
 
@@ -82,5 +96,11 @@ class Archive(Dataset):
         self._y[Dataset.Part.VAL] = y_test if self.test_as_validation else y_train
 
     def _actual_data_generator(self, part: Dataset.Part):
+        """
+        Generator that yields data batches for a specific dataset part.
+
+        Args:
+            part: The dataset partition to generate data from.
+        """
         self._ensure_data_init()
         yield from super()._actual_data_generator(part)

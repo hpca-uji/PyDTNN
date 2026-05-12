@@ -1,3 +1,6 @@
+"""
+Module providing the Layers management class for the PyDTNN framework.
+"""
 import logging
 import operator
 from collections import abc
@@ -19,7 +22,13 @@ logger = logging.getLogger(__name__)
 
 
 class Layers[T: Array](Utils[T]):
+    """
+    Manages the collection and lifecycle of neural network layers.
+    """
     def add(self, layer: Layerable[T]) -> None:
+        """
+        Adds a layer to the model and initializes its backend and parameters.
+        """
         layer._init_backend_with_model(self)
 
         if self.layers:
@@ -40,10 +49,16 @@ class Layers[T: Array](Utils[T]):
             self.add(layer.act())
 
     def add_layers(self, list_layers: abc.Sequence[Layerable[T]]) -> None:
+        """
+        Adds a sequence of layers to the model.
+        """
         for layer in list_layers:
             self.add(layer)
 
     def get_all_layers(self, from_layers: list[Layerable[T]] | None = None) -> list[Layerable[T]]:
+        """
+        Recursively retrieves all layers, including nested children.
+        """
         if from_layers is None:
             from_layers = self.layers
         this_recursion_layers = []
@@ -54,6 +69,9 @@ class Layers[T: Array](Utils[T]):
         return this_recursion_layers
 
     def _select_fusion_3(self, fused_layers: list) -> tuple[str | None, list[Layerable | FusedLayerMixIn | None]]:
+        """
+        Identifies potential 3-layer fusion patterns.
+        """
         layer2 = fused_layers[-1] if len(fused_layers) > 0 else None
         layer1 = fused_layers[-2] if len(fused_layers) > 1 else None
         layer0 = fused_layers[-3] if len(fused_layers) > 2 else None
@@ -73,6 +91,9 @@ class Layers[T: Array](Utils[T]):
         return layer_name, [layer0, layer1, layer2]
 
     def _select_fusion_2(self, fused_layers: list) -> tuple[str | None, list[Layerable | FusedLayerMixIn | None]]:
+        """
+        Identifies potential 2-layer fusion patterns.
+        """
         layer2 = fused_layers[-1] if len(fused_layers) > 0 else None
         layer1 = fused_layers[-2] if len(fused_layers) > 1 else None
 
@@ -96,6 +117,9 @@ class Layers[T: Array](Utils[T]):
         return layer_name, [layer1, layer2]
 
     def _layer_fusion(self, layers: list[Layerable], switch_fusion: abc.Callable) -> None:
+        """
+        Performs layer fusion on the provided list using a specific fusion strategy.
+        """
         i = 0
         while i < len(layers):
             curr_layer = layers[i]

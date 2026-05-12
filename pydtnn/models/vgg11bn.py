@@ -1,3 +1,4 @@
+"""VGG11 with Batch Normalization model architecture implementation."""
 from collections.abc import Sequence
 
 from pydtnn.abstract.layerable import Layerable
@@ -17,6 +18,16 @@ __all__ = ("vgg11bn",)
 
 
 def vgg11bn(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
+    """
+    Constructs a VGG11 architecture with Batch Normalization layers.
+
+    Args:
+        input_shape: The shape of the input data.
+        output_shape: The shape of the output layer.
+
+    Returns:
+        A sequence of layers representing the VGG11-BN model.
+    """
     model = list[Layerable]()
     _ = model.append
 

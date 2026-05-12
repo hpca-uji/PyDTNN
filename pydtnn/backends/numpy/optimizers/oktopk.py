@@ -1,3 +1,6 @@
+"""
+Module for the OkTopk optimizer implementation using NumPy.
+"""
 import logging
 import warnings
 from typing import TYPE_CHECKING
@@ -26,7 +29,16 @@ except (ImportError, ModuleNotFoundError):
 
 
 class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
+    """
+    NumPy-based implementation of the OkTopk optimizer for distributed training.
+    """
     def _model_init(self, list_layers: list[Layerable]) -> None:
+        """
+        Initializes model-specific structures for the optimizer.
+
+        Args:
+            list_layers: List of layers to be optimized.
+        """
         super()._model_init(list_layers)
 
         self.iterations: dict[int, int]
@@ -43,6 +55,12 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
             self.all_boundaries[layer.id] = {dw_: None for dw_ in layer.grad_vars.values()}
 
     def update(self, layer: Layerable):
+        """
+        Performs the optimization update step for a given layer.
+
+        Args:
+            layer: The layer to update.
+        """
         for w_, dw_ in layer.grad_vars.items():
             # Get layer weights and gradients
             w, dw = getattr(layer, w_), getattr(layer, dw_)

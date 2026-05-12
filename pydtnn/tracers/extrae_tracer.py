@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+"""
+Extrae tracer implementation for PyDTNN.
+"""
+
 import ctypes
 import logging
 import os
@@ -19,19 +23,33 @@ if TYPE_CHECKING:
 
 class ExtraeTracer(Tracer):
     """
-    ExtraTracer
+    Tracer implementation using the Extrae instrumentation library.
     """
 
     def __init__(self, tracing: bool):
+        """
+        Initialize the Extrae tracer.
+
+        Args:
+            tracing: Whether tracing is enabled.
+        """
         super().__init__(tracing)
         self.pyextrae = None  # Declared here, will be initialized on enable_tracing()
 
     def enable_tracing(self):
+        """
+        Enable tracing and load the pyextrae module.
+        """
         super().enable_tracing()
         self.pyextrae = import_module("pyextrae.common.extrae")
 
     def _define_event_types(self, model: Model):
-        """This method will be called only if tracing is enabled"""
+        """
+        Define event types in Extrae.
+
+        Args:
+            model: The model instance to extract event types from.
+        """
         super()._define_event_types(model)
         for event_type_value, event_type in self.event_types.items():
             description = event_type.name
@@ -51,11 +69,25 @@ class ExtraeTracer(Tracer):
             )
 
     def _emit_event(self, evt_type: int, val: int, stream=None):
-        """This method will be called only if tracing is enabled"""
+        """
+        Emit a single event to Extrae.
+
+        Args:
+            evt_type: The event type identifier.
+            val: The event value.
+            stream: Optional stream identifier.
+        """
         assert self.pyextrae
         self.pyextrae.eventandcounters(evt_type, val)
 
     def _emit_nevent(self, evt: int, val: int, stream=None):
-        """This method will be called only if tracing is enabled"""
+        """
+        Emit a nested event to Extrae.
+
+        Args:
+            evt: The event type identifier.
+            val: The event value.
+            stream: Optional stream identifier.
+        """
         assert self.pyextrae
         self.pyextrae.neventandcounters(evt, val)

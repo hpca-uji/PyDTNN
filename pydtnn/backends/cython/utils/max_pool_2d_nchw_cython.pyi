@@ -1,3 +1,4 @@
+"""Cython-accelerated 2D Max Pooling operations for NCHW data format."""
 import numpy as _np
 
 from pydtnn.backends.cython.utils.base import _npDT, _npDT_4Dims
@@ -19,6 +20,8 @@ def max_pool_2d_fwd_nchw_cython[T: _npDT](
     minval: _npDT | int | float,
 ) -> None:
     """
+    Performs forward 2D max pooling on NCHW input using Cython.
+
     Args:
         x (npDT_4Dims): 4-dimensinal array where the input data is stored.
         y (npDT_4Dims): 4-dimensinal array where the output data will be stored.
@@ -58,6 +61,8 @@ def max_pool_2d_bwd_nchw_cython[T: _npDT](
     hdilation: int,
 ) -> None:
     """
+    Performs backward 2D max pooling on NCHW input using Cython.
+
     Args:
         dy (npDT_4Dims): 4-dimensinal array where the input data will be stored.
         idx_max (np.ndarray[tuple[int, int, int, int], np.int32]): 4-dimensinal array where the index of the maximum values will be stored.

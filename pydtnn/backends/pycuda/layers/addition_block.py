@@ -1,3 +1,4 @@
+"""PyCUDA implementation of the AdditionBlock layer."""
 import logging
 
 from pydtnn.backends.pycuda.layers.abstract.block_layer import AbstractBlockLayerPycuda
@@ -12,9 +13,19 @@ logger = logging.getLogger(__name__)
 
 
 class AdditionBlockPycuda(AdditionBlock[TensorArray], AbstractBlockLayerPycuda):
+    """PyCUDA-accelerated addition block layer for parallel path summation."""
     y: TensorArray
 
     def forward(self, x: TensorArray) -> TensorArray:
+        """
+        Performs the forward pass by summing outputs from multiple parallel paths.
+
+        Args:
+            x: Input TensorArray.
+
+        Returns:
+            The summed output TensorArray.
+        """
         for i, p in enumerate(self.paths):
             y_i = x
             for layer in p:
@@ -32,6 +43,15 @@ class AdditionBlockPycuda(AdditionBlock[TensorArray], AbstractBlockLayerPycuda):
         return self.y
 
     def backward(self, dy: TensorArray) -> TensorArray:
+        """
+        Performs the backward pass by propagating gradients through parallel paths.
+
+        Args:
+            dy: Gradient of the output TensorArray.
+
+        Returns:
+            The accumulated gradient TensorArray.
+        """
         for i, p in enumerate(self.paths):
             dx_i = dy
             for layer in reversed(p):

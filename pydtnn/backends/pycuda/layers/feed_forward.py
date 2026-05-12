@@ -1,3 +1,5 @@
+"""PyCUDA implementation of the FeedForward layer for the PyDTNN framework."""
+
 import logging
 
 from pydtnn.activations.relu import Relu
@@ -13,7 +15,10 @@ logger = logging.getLogger(__name__)
 
 
 class FeedForwardPycuda(FeedForward[TensorArray], AbstractBlockLayerPycuda):
+    """PyCUDA-accelerated FeedForward layer implementation."""
+
     def __init__(self, *args, **kwargs):
+        """Initialize the FeedForwardPycuda layer with sublayers."""
         super().__init__(*args, **kwargs)
         self.FC_1 = FC(shape=(self.d_ff,), use_bias=False)
         self.relu = Relu()
@@ -26,6 +31,7 @@ class FeedForwardPycuda(FeedForward[TensorArray], AbstractBlockLayerPycuda):
         self.dx: TensorArray = None  # type: ignore
 
     def _model_init(self, prev_shape, x):
+        """Initialize model parameters and sublayers for the PyCUDA backend."""
         super()._model_init(prev_shape, x)
         self.shape = prev_shape
 
@@ -47,10 +53,12 @@ class FeedForwardPycuda(FeedForward[TensorArray], AbstractBlockLayerPycuda):
             self.nparams += layer.nparams
 
     def initialize_block_layer(self):
+        """Initialize block-specific configurations."""
         pass
 
     # Need to flatten and unflatten after the operation in order to maintain the shape it recieves from pre and post layers
     def forward(self, x):
+        """Perform the forward pass through the feed-forward network."""
         self.FC_1.forward(x)
         self.relu.forward(self.FC_1.y)
         self.dropout.forward(self.relu.y)
@@ -58,6 +66,7 @@ class FeedForwardPycuda(FeedForward[TensorArray], AbstractBlockLayerPycuda):
         return self.y
 
     def backward(self, dy):
+        """Perform the backward pass through the feed-forward network."""
         self.FC_2.backward(dy)
         self.dropout.backward(self.FC_2.dx)
         self.relu.backward(self.dropout.dx)

@@ -1,3 +1,4 @@
+"""Utility functions and classes for the PyDTNN framework."""
 import ctypes
 import logging
 import math
@@ -36,6 +37,7 @@ class BackgroundGenerator[T](threading.Thread):
     """Decorate a iterable to use a separate thread for compute"""
 
     def __init__(self, generator: Iterable[T], max_prefetch=0):
+        """Initialize the background generator thread."""
         super().__init__()
         self.queue = Queue(max_prefetch)
         self.generator = generator
@@ -44,12 +46,14 @@ class BackgroundGenerator[T](threading.Thread):
         self.start()
 
     def run(self):
+        """Run the generator in a background thread."""
         for item in self.generator:
             self.queue.put(item)
         for _ in range(threading.active_count()):
             self.queue.put(self)
 
     def __next__(self) -> T:
+        """Retrieve the next item from the queue."""
         if self.done:
             raise StopIteration()
         next_item = self.queue.get()
@@ -59,6 +63,7 @@ class BackgroundGenerator[T](threading.Thread):
         return next_item
 
     def __iter__(self):
+        """Return the iterator object."""
         return self
 
 
@@ -104,6 +109,7 @@ def find_component(package: str, name: str):
     """Find a file+class combo inside a package (with normalization)"""
 
     def normalize(text: str) -> str:
+        """Normalize string by lowercasing and removing underscores."""
         return text.lower().replace("_", "")
 
     try:
@@ -204,6 +210,8 @@ def read_file(path: str, replaces: dict[str, str] = {}) -> str:
 
 
 class TqdmLogger:
+    """Logger wrapper to redirect tqdm output to the logging system."""
     def write(self, s: str) -> int:
+        """Write string to the logger."""
         logger.info(s.replace("\r", "\x1b[F"))
         return len(s)

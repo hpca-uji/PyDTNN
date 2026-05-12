@@ -1,3 +1,6 @@
+"""
+CIFAR-10 dataset implementation for PyDTNN.
+"""
 from __future__ import annotations
 
 import copy
@@ -42,9 +45,20 @@ class CIFAR10(Dataset):
     """
 
     def __init__(self, model: Model, force_test_as_validation=False, debug=False):
+        """
+        Initialize the CIFAR10 dataset.
+
+        Args:
+            model: The model instance associated with the dataset.
+            force_test_as_validation: Whether to use the test set as validation.
+            debug: Whether to enable debug mode.
+        """
         super().__init__(model, TRAIN_NSAMPLES, TEST_NSAMPLES, INPUT_SHAPE, OUTPUT_SHAPE, force_test_as_validation=force_test_as_validation, debug=debug)
 
     def _init_actual_data(self):
+        """
+        Initialize file paths and verify dataset archive.
+        """
         self._src_filename = os.path.join(self.model.dataset_path, "cifar-10-binary.tar.gz")
         self._xy_filenames = [[os.path.join("cifar-10-batches-bin", f"data_batch_{x}.bin") for x in range(1, 6)], [], [os.path.join("cifar-10-batches-bin", "test_batch.bin")]]
         self._xy_filenames[Dataset.Part.VAL] = copy.copy(self._xy_filenames[Dataset.Part.TEST] if self.test_as_validation else self._xy_filenames[Dataset.Part.TRAIN])
@@ -53,6 +67,15 @@ class CIFAR10(Dataset):
         self._gzip_open(self._src_filename).close()
 
     def _actual_data_generator(self, part: Dataset.Part):
+        """
+        Generate batches of data for the specified dataset part.
+
+        Args:
+            part: The dataset partition (TRAIN, VAL, or TEST).
+
+        Yields:
+            A tuple of (input_tensor, target_tensor).
+        """
         xy_filenames = self._xy_filenames[part]
 
         if part is Dataset.Part.TRAIN and self.model.augment_shuffle:
@@ -73,6 +96,17 @@ class CIFAR10(Dataset):
                     yield x, y
 
     def _read_file(self, f, offset, nsamples):
+        """
+        Read raw binary data from the CIFAR-10 file format.
+
+        Args:
+            f: File-like object.
+            offset: Number of samples to skip.
+            nsamples: Number of samples to read.
+
+        Returns:
+            A tuple of (images, labels).
+        """
         chunk_size = math.prod(INPUT_SHAPE) + 1
         f.seek(offset * chunk_size)
         im = np.frombuffer(f.read(nsamples * chunk_size), dtype=np.uint8).reshape(nsamples, chunk_size)

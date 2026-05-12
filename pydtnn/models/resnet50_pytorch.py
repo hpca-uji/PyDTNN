@@ -1,3 +1,6 @@
+"""
+ResNet50 model implementation for the PyDTNN framework.
+"""
 from collections.abc import Sequence
 
 from pydtnn.abstract.layerable import Layerable
@@ -17,6 +20,16 @@ __all__ = ("resNet50",)
 
 
 def resNet50(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
+    """
+    Constructs a ResNet50 architecture.
+
+    Args:
+        input_shape: The shape of the input data.
+        output_shape: The shape of the output layer.
+
+    Returns:
+        A sequence of layers forming the ResNet50 model.
+    """
     model = list[Layerable]()
     _ = model.append
     _(Input(shape=input_shape))

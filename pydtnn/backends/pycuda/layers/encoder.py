@@ -1,3 +1,4 @@
+"""PyCUDA implementation of the Transformer Encoder layer."""
 import logging
 
 import numpy as np
@@ -18,7 +19,9 @@ logger = logging.getLogger(__name__)
 
 
 class EncoderPycuda(AbstractBlockLayerPycuda, Encoder):
+    """PyCUDA-accelerated Transformer Encoder layer."""
     def __init__(self, *args, **kwargs):
+        """Initializes the EncoderPycuda layer with sub-layers and placeholders."""
         super().__init__(*args, **kwargs)
         self.multiheadattention = MultiHeadAttention(embedl=self.embedl, d_k=self.d_k, heads=self.heads, dropout_rate=self.dropout_rate)
         # self.dropout_1 = Dropout(rate=self.dropout_rate)
@@ -33,6 +36,7 @@ class EncoderPycuda(AbstractBlockLayerPycuda, Encoder):
         self.dx: TensorArray = None  # type: ignore
 
     def _model_init(self, prev_shape, x):
+        """Initializes the backend model and sub-layers with input shapes."""
         super()._model_init(prev_shape, x)
         self.y = x
         if type(x) is tuple:
@@ -80,17 +84,21 @@ class EncoderPycuda(AbstractBlockLayerPycuda, Encoder):
             self.nparams += layer.nparams
 
     def initialize_block_layer(self):
+        """Placeholder for block layer initialization."""
         pass
 
     def flatten(self, x):
+        """Flattens the input tensor to 2D."""
         last_dim = x.shape[-1]
         return x.reshape((int(np.prod(self.first_dims)), last_dim))
 
     def unflatten(self, x):
+        """Restores the input tensor to its original dimensions."""
         last_dim = x.shape[-1]
         return x.reshape((*self.first_dims, last_dim))
 
     def forward(self, x, mask=None):
+        """Performs the forward pass through the encoder block."""
         # self.model.test("Forward")
         alpha, beta = 1.0, 1.0
         # Self Attention
@@ -110,6 +118,7 @@ class EncoderPycuda(AbstractBlockLayerPycuda, Encoder):
         return self.y
 
     def backward(self, dy):
+        """Performs the backward pass through the encoder block."""
         # self.model.test("Backward")
         alpha, beta = 1.0, 1.0
         # Feed Forward

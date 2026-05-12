@@ -1,3 +1,7 @@
+"""
+Module for converting PyDTNN models to ONNX format and vice versa.
+"""
+
 # Typing related
 from typing import Any
 
@@ -32,6 +36,15 @@ __all__ = (
 
 
 def extract_shape(data: onnx.ValueInfoProto) -> tuple[int]:
+    """
+    Extracts the shape dimensions from an ONNX ValueInfoProto object.
+
+    Args:
+        data: The ONNX ValueInfoProto containing shape information.
+
+    Returns:
+        A tuple of integers representing the tensor dimensions.
+    """
     # The shape of the inputs/ouputs is more or less a list quite hidden.
     #   Note: ONNX allows to have shapes of undefined value, for example: (N, 3, 224, 224),
     #       and, if it is not defined, that dimension is stored as 0. I will assume that every loaded model has declared all theirs values.
@@ -44,6 +57,15 @@ def extract_shape(data: onnx.ValueInfoProto) -> tuple[int]:
 
 
 def get_relevant_data(model_graph: onnx.GraphProto) -> tuple[dict[str, tuple[int]], dict[str, tuple[int]], dict[str, np.ndarray]]:
+    """
+    Extracts weights, inputs, and outputs information from an ONNX graph.
+
+    Args:
+        model_graph: The ONNX GraphProto to extract data from.
+
+    Returns:
+        A tuple containing the inputs dictionary, outputs dictionary, and weights dictionary.
+    """
 
     # onnx.numpy_helper.to_array() is a function that transforms onnx data into a ndarray (numpy's array)
 
@@ -60,11 +82,30 @@ def get_relevant_data(model_graph: onnx.GraphProto) -> tuple[dict[str, tuple[int
 
 
 def extract_attributes(node: onnx.NodeProto) -> dict[str, Any]:
+    """
+    Extracts attributes from an ONNX node.
+
+    Args:
+        node: The ONNX NodeProto to extract attributes from.
+
+    Returns:
+        A dictionary mapping attribute names to their values.
+    """
 
     return {attribute.name: onnx.helper.get_node_attr_value(node, attribute.name) for attribute in node.attribute}
 
 
 def get_lists_operations_and_outputs(info: dict[str, Any], operations: dict[str, tuple[Layerable, list[str]]]) -> tuple[list[list[Layerable]], list[str]]:
+    """
+    Determines the sequence of operations and outputs for a feed-forward network.
+
+    Args:
+        info: Dictionary containing model information.
+        operations: Dictionary mapping output names to operations and their inputs.
+
+    Returns:
+        A tuple containing a list of operation lists and a list of output names.
+    """
 
     # NOTE: It is assumed that the model will by a feed-forward netowork
     dict_branch = {}
@@ -116,12 +157,32 @@ def get_lists_operations_and_outputs(info: dict[str, Any], operations: dict[str,
 
 
 def get_actual_inputs(list_inputs: list[str], weights_names: list[str]) -> list[str]:
+    """
+    Filters out weight and bias names from a list of ONNX inputs.
+
+    Args:
+        list_inputs: List of input names.
+        weights_names: List of weight names to exclude.
+
+    Returns:
+        A filtered list of input names.
+    """
     # This function' objective is to remove non layer-to-layer onnx inputs (e.g.: the weigth [_weight], the bias [_bias], etc. ).
     #   To do that, only the inputs that end with the accepted ending remains.
     return list(filter(lambda _input: _input not in weights_names, list_inputs))
 
 
 def _get_and_put_operation(node: onnx.NodeProto, opset_version: int, operations: dict[str, tuple[Layerable, list[str]]], weights: dict[str, np.ndarray], output: list[str] | None = None) -> None:
+    """
+    Processes an ONNX node and adds the corresponding PyDTNN operation to the operations dictionary.
+
+    Args:
+        node: The ONNX node to process.
+        opset_version: The ONNX opset version.
+        operations: The dictionary of existing operations.
+        weights: The dictionary of model weights.
+        output: Optional list of output names.
+    """
 
     info = {  # cons.CONST_NODE: node, # Refererence to the model itself (TODO: see if it's necessary. If not ==> delete)
         cons.CONST_OPSET: opset_version,  # Version of the onnx operation
@@ -144,6 +205,19 @@ def _get_and_put_operation(node: onnx.NodeProto, opset_version: int, operations:
 
 
 def get_operations(onnx_model: onnx.ModelProto, opset_version: int, inputs: dict[str, tuple[int]], weights: dict[str, np.ndarray], outputs: dict[str, tuple[int]]) -> list[Layerable]:
+    """
+    Converts an ONNX model graph into a list of PyDTNN layers.
+
+    Args:
+        onnx_model: The ONNX model to convert.
+        opset_version: The ONNX opset version.
+        inputs: Dictionary of input shapes.
+        weights: Dictionary of model weights.
+        outputs: Dictionary of output shapes.
+
+    Returns:
+        A list of PyDTNN Layerable objects.
+    """
 
     # TODO: meter otros parámetros que se puedan necesitar
     # operations = list()
@@ -170,6 +244,15 @@ def get_operations(onnx_model: onnx.ModelProto, opset_version: int, inputs: dict
 
 
 def get_layers(pydtnn_model: PyDTNN_Model) -> list[onnx.NodeProto]:
+    """
+    Converts PyDTNN layers into a list of ONNX nodes.
+
+    Args:
+        pydtnn_model: The PyDTNN model to convert.
+
+    Returns:
+        A list of ONNX NodeProto objects.
+    """
 
     node_list = list()
     for layer in pydtnn_model.layers:
@@ -195,6 +278,21 @@ def convert_model(
     model_version: int = 0,
     doc_string: str = "https://github.com/hpca-uji/PyDTNN",
 ) -> onnx.ModelProto:
+    """
+    Converts a PyDTNN model to an ONNX ModelProto.
+
+    Args:
+        pydtnn_model: The PyDTNN model to convert.
+        ir_version: The ONNX IR version.
+        producer_name: The name of the producer.
+        producer_version: The version of the producer.
+        domain: The domain of the model.
+        model_version: The version of the model.
+        doc_string: Documentation string for the model.
+
+    Returns:
+        An ONNX ModelProto object.
+    """
 
     # TODO
     # nodes = get_layers(pydtnn_model)

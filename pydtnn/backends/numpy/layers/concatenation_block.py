@@ -1,3 +1,6 @@
+"""
+Numpy backend implementation for the ConcatenationBlock layer.
+"""
 import logging
 from typing import TYPE_CHECKING
 
@@ -16,7 +19,13 @@ if TYPE_CHECKING:
 
 
 class ConcatenationBlockNumpy(ConcatenationBlock, AbstractBlockLayerNumpy):
+    """
+    Numpy-based implementation of a concatenation block layer.
+    """
     def __init__(self, *args, **kwargs):
+        """
+        Initializes the ConcatenationBlockNumpy instance.
+        """
         super().__init__(*args, **kwargs)
         # The next attributes will be initialized later
         self.out_co: list[int] = None  # type: ignore
@@ -24,11 +33,17 @@ class ConcatenationBlockNumpy(ConcatenationBlock, AbstractBlockLayerNumpy):
         self.concat_dim: int = None  # type: ignore
 
     def _model_init(self, prev_shape, x):
+        """
+        Initializes model-specific buffers and memory tracking.
+        """
         super()._model_init(prev_shape, x)
         self.y: np.ndarray = np.zeros((self.model.batch_size, *self.shape), dtype=self.model.dtype)
         self.memory_used += self.y.nbytes
 
     def forward(self, x: np.ndarray) -> np.ndarray:
+        """
+        Performs the forward pass by concatenating outputs from multiple paths.
+        """
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_REPLICATE)
         _x: list[np.ndarray] = [np.zeros((0,))] * len(self.paths)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
@@ -48,6 +63,9 @@ class ConcatenationBlockNumpy(ConcatenationBlock, AbstractBlockLayerNumpy):
         return np.asarray(y, dtype=self.model.dtype, order="C")
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
+        """
+        Performs the backward pass by splitting gradients and propagating through paths.
+        """
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_SPLIT)
         dx: list[np.ndarray] = np.split(dy, self.idx_co[:-1], axis=self.concat_dim)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)

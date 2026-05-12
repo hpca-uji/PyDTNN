@@ -1,3 +1,4 @@
+"""Fused layer implementation for Conv2D, BatchNormalization, and ReLU operations."""
 import logging
 from typing import TYPE_CHECKING
 
@@ -24,17 +25,21 @@ if TYPE_CHECKING:
 
 
 class Conv2DBatchNormalizationRelu[T: Array](FusedLayerMixIn[T], Conv2D[T], BatchNormalization[T]):
+    """Base class for fused Conv2D, BatchNormalization, and ReLU layers."""
     pass
 
 
 class Conv2DBatchNormalizationReluFuse(Conv2DBatchNormalizationRelu[np.ndarray], AbstractConv2DStandardNumpy):
+    """Numpy backend implementation for fused Conv2D, BatchNormalization, and ReLU."""
     @property
     def _ary_prop(self) -> set[str]:
+        """Returns the set of array properties required for this fused layer."""
         return {Parameters.RUNNING_MEAN, Parameters.RUNNING_VAR, *super()._ary_prop}
 
     # NOTE: The "__init__" method is being made (more or less) in Model (in _apply_layer_fusion) and in FusedLayerMixIn.
 
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
+        """Initializes layer parameters and selects the appropriate forward pass implementation."""
         super()._model_init(prev_shape, x)
 
         self.inv_std = BatchNormalizationNumpy.get_inv_std(self.running_var, self.epsilon, self.model.dtype)
@@ -112,4 +117,5 @@ class Conv2DBatchNormalizationReluFuse(Conv2DBatchNormalizationRelu[np.ndarray],
         return np.asarray(res, dtype=self.model.dtype, order="C")
 
     def _backward(self, dy: np.ndarray) -> np.ndarray:
+        """Raises NotImplementedError as backward pass is not supported for this fused layer."""
         raise NotImplementedError("Use a real backwards variant!")

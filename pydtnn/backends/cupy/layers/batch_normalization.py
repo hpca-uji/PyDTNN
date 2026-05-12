@@ -1,3 +1,4 @@
+"""CuPy implementation of the Batch Normalization layer."""
 import logging
 from typing import TYPE_CHECKING
 
@@ -17,7 +18,9 @@ if TYPE_CHECKING:
 
 
 class BatchNormalizationCupy(BatchNormalizationNumpy, LayerCupy):
+    """CuPy-accelerated Batch Normalization layer."""
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
+        """Initialize model parameters and CUDA kernels."""
         super()._model_init(prev_shape, x)
 
         self.stream_2 = Stream()
@@ -27,11 +30,13 @@ class BatchNormalizationCupy(BatchNormalizationNumpy, LayerCupy):
         self.bwd = self._bwd_kernel()
 
     def _training_fwd(self, x: np.ndarray, _mean: np.ndarray, _var: np.ndarray, y: np.ndarray) -> None:
+        """Execute the forward pass on GPU."""
         # return super()._training_bwd(dx, dy)
         dim_i, dim_j = x.shape
         self.fwd(self.model.cuda_grid, self.model.cuda_block, (x, y, self.xn, self.std, self.gamma, self.beta, _mean, _var, self.epsilon, dim_i, dim_j, x.size))
 
     def _training_bwd(self, dx: np.ndarray, dy: np.ndarray) -> None:
+        """Execute the backward pass on GPU."""
         # return super()._training_bwd(dx, dy)
         dim_i, dim_j = dx.shape
         self.bwd(self.model.cuda_grid, self.model.cuda_block, (dx, dy, self.xn, self.std, self.gamma, self.dgamma, self.dbeta, dim_i, dim_j, dx.size))

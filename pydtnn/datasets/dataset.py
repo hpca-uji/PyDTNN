@@ -1,3 +1,9 @@
+"""
+Dataset module for PyDTNN.
+
+Provides the base Dataset class and utility functions for managing,
+transforming, and generating data batches for machine learning models.
+"""
 from __future__ import annotations
 
 import functools
@@ -33,6 +39,12 @@ type TransformFunc = Callable[[np.ndarray, np.ndarray], tuple[np.ndarray, np.nda
 
 class Dataset:
     """
+    Base class for handling datasets in PyDTNN.
+
+    This class provides a framework for loading, transforming, and batching data
+    for machine learning models. It supports various data augmentation techniques,
+    normalization, and distributed data loading.
+
     NOTE
     - input_shape is expected to be in NCHW format
     - data_generator() is expected to be in model.dtype, normalized to [0, 1]
@@ -41,11 +53,29 @@ class Dataset:
     """
 
     class Part(IntEnum):
+        """Enum representing the dataset partition."""
+
         TRAIN = 0
         VAL = 1
         TEST = 2
 
     def __init__(self, model: Model, train_nsamples: int = 0, test_nsamples: int = 0, input_shape: ArrayShape = (), output_shape: ArrayShape = (), force_test_as_validation=False, debug=False):
+        """
+        Initialize the dataset with model configuration and sample parameters.
+
+        Args:
+            model: The model instance, providing configuration like batch size,
+                   dtype, tensor format, and data paths.
+            train_nsamples: The total number of samples intended for training.
+            test_nsamples: The total number of samples intended for testing.
+            input_shape: The shape of a single input sample (excluding batch size),
+                         expected in NCHW format (Channels, Height, Width).
+            output_shape: The shape of a single output sample (excluding batch size).
+            force_test_as_validation: If True, the test set will be used as the
+                                      validation set.
+            debug: If True, print detailed reports about dataset configuration
+                   and workload distribution.
+        """
 
         if train_nsamples <= 0:
             raise ValueError("Dataset has no training samples!")
@@ -139,10 +169,26 @@ class Dataset:
 
     @property
     def name(self) -> str:
+        """Return the class name of the dataset."""
         return type(self).__name__
 
     def _gzip_open(self, filename: str) -> IO[bytes]:
-        """Open a gZIP file (creating or loading seek table)"""
+        """
+        Open a gZIP file.
+
+        This method handles opening gZIP files, creating or loading their
+        seek tables for efficient random access.
+
+        Args:
+            filename: The path to the gZIP file.
+
+        Returns:
+            A file-like object opened in binary read mode.
+
+        Raises:
+            FileNotFoundError: If the specified file does not exist.
+            Exception: If there's an error during rapidgzip file operations.
+        """
         path = Path(filename)
         plain = path.with_suffix("")
         idx = path.with_suffix(f"{path.suffix}.idx")
@@ -166,7 +212,16 @@ class Dataset:
             return f
 
     def export(self) -> dict[str, np.ndarray]:
-        """Export dataset"""
+        """
+        Export dataset to a dictionary of numpy arrays.
+
+        This method reconstructs the entire dataset (or specified partitions)
+        into numpy arrays, which can then be saved or further processed.
+
+        Returns:
+            A dictionary containing the dataset splits ('x_train', 'y_train',
+            'x_test', 'y_test') as numpy arrays.
+        """
 
         # Data generators
         gen_train = BackgroundGenerator(self._actual_batch_generator(Dataset.Part.TRAIN), max_prefetch=1)
@@ -210,7 +265,21 @@ class Dataset:
         }
 
     def _export_split(self, data: dict[str, np.ndarray], split_weights: list[float] = [1]) -> Generator[dict[str, np.ndarray]]:
-        """Generate export data splits"""
+        """
+        Generate export data splits based on weights.
+
+        This method takes exported dataset data and splits it into multiple
+        subsets according to the provided weights.
+
+        Args:
+            data: A dictionary containing the dataset splits ('x_train', 'y_train',
+                  'x_test', 'y_test').
+            split_weights: A list of weights defining how to split the data.
+                           The sum of weights determines the total proportion.
+
+        Yields:
+            Dictionaries, each representing a split subset of the dataset.
+        """
 
         # Get data
         x_train = data["x_train"]
@@ -234,7 +303,18 @@ class Dataset:
             yield {**data, "x_train": x_train, "y_train": y_train, "x_test": x_test, "y_test": y_test}
 
     def export_archive(self, path: Path | None = None, split_weights: list[float] | None = None):
-        """Export dataset to an archive"""
+        """
+        Export dataset to an archive file.
+
+        The dataset is exported to a compressed NumPy archive (.npz).
+        Optionally, the dataset can be split into multiple archives based on weights.
+
+        Args:
+            path: The directory path where the archive(s) will be saved.
+                  Defaults to `self.model.dataset_path`.
+            split_weights: If provided, the dataset will be split into multiple
+                           archives based on these weights.
+        """
         data = self.export()
         path = path if path else Path(self.model.dataset_path)
 
@@ -247,35 +327,59 @@ class Dataset:
 
     @property
     def train_nsamples(self):
+        """Get number of training samples."""
         return self._nsamples[Dataset.Part.TRAIN]
 
     @train_nsamples.setter
     def train_nsamples(self, value):
+        """Set number of training samples."""
         self._nsamples[Dataset.Part.TRAIN] = value
 
     @property
     def val_nsamples(self):
+        """Get number of validation samples."""
         return self._nsamples[Dataset.Part.VAL]
 
     @val_nsamples.setter
     def val_nsamples(self, value):
+        """Set number of validation samples."""
         self._nsamples[Dataset.Part.VAL] = value
 
     @property
     def test_nsamples(self):
+        """Get number of test samples."""
         return self._nsamples[Dataset.Part.TEST]
 
     @test_nsamples.setter
     def test_nsamples(self, value):
+        """Set number of test samples."""
         self._nsamples[Dataset.Part.TEST] = value
 
     def get_train_val_generator(self) -> tuple[Generator[tuple[np.ndarray, np.ndarray, int]], Generator[tuple[np.ndarray, np.ndarray, int]]]:
+        """
+        Return generators for training and validation sets.
+
+        These generators yield batches of data suitable for training and
+        validation loops.
+
+        Returns:
+            A tuple containing two generators: (training_generator, validation_generator).
+        """
         return (self._batch_generator(Dataset.Part.TRAIN), self._batch_generator(Dataset.Part.VAL))
 
     def get_test_generator(self) -> Generator[tuple[np.ndarray, np.ndarray, int]]:
+        """
+        Return generator for test set.
+
+        This generator yields batches of data suitable for testing.
+
+        Returns:
+            A generator yielding test data batches.
+        """
         return self._batch_generator(Dataset.Part.TEST)
 
     def _print_report(self):
+        """Print a summary report of the dataset configuration."""
         report = list[str]()
         if self.model.comm_rank == 0:
             report.append("Initial nsamples:")
@@ -294,7 +398,23 @@ class Dataset:
         logger.info("\n".join(report))
 
     def _compute_local_workload(self, nsamples: int):
-        """Computes the offset (in number of samples) and the number of samples for the current rank"""
+        """
+        Computes the offset and number of samples for the current rank.
+
+        This method distributes the total number of samples for a given partition
+        among all available processes (ranks) based on the model's configuration
+        (batch size, number of processes, steps per epoch, etc.).
+
+        Args:
+            nsamples: The total number of samples for the partition.
+
+        Returns:
+            A tuple containing:
+            - local_offset: The starting index of samples for this rank.
+            - local_nsamples: The number of samples assigned to this rank.
+            - nsamples: The effective total number of samples after adjustments
+                        (e.g., for steps_per_epoch).
+        """
 
         # Reduce nsamples according to steps per epoch
         global_batch_size = self.model.batch_size * self.model.nprocs
@@ -327,18 +447,22 @@ class Dataset:
 
     @staticmethod
     def _nchw2nhwc(x: np.ndarray) -> np.ndarray:
+        """Convert NCHW tensor to NHWC."""
         return format_transpose(x, TensorFormat.NCHW, TensorFormat.NHWC)
 
     @staticmethod
     def _nhwc2nchw(x: np.ndarray) -> np.ndarray:
+        """Convert NHWC tensor to NCHW."""
         return format_transpose(x, TensorFormat.NHWC, TensorFormat.NCHW)
 
     @staticmethod
     def _chw2hwc(x: np.ndarray) -> np.ndarray:
+        """Convert CHW sample to HWC."""
         return format_transpose(x, SampleFormat.CHW, SampleFormat.HWC)
 
     @staticmethod
     def _hwc2chw(x: np.ndarray) -> np.ndarray:
+        """Convert HWC sample to CHW."""
         return format_transpose(x, SampleFormat.HWC, SampleFormat.CHW)
 
     @staticmethod
@@ -348,6 +472,23 @@ class Dataset:
 
     @staticmethod
     def _offset2files(filenames: list[str], images_per_file: int, local_offset: int, local_nsamples: int) -> list[tuple[str, int, int]]:
+        """
+        Map local offset and sample count to specific files.
+
+        Given a list of filenames, the number of samples per file, a local offset,
+        and a local sample count, this method determines which files and which
+        ranges within those files contain the required samples.
+
+        Args:
+            filenames: A list of filenames.
+            images_per_file: The number of samples contained in each file.
+            local_offset: The starting sample index for the current request.
+            local_nsamples: The total number of samples to retrieve.
+
+        Returns:
+            A list of tuples, where each tuple contains:
+            (filename, offset_in_file, num_samples_from_file).
+        """
         i = local_offset // images_per_file
         offset_in_file = local_offset - i * images_per_file
         output = []
@@ -359,10 +500,26 @@ class Dataset:
         return output
 
     def _actual_data_generator(self, part: Part) -> Generator[tuple[np.ndarray, np.ndarray]]:
+        """Yield raw data from the dataset partition."""
         yield self._x[part], self._y[part]
 
     @staticmethod
     def _x_transformer_adaptor(func: Callable[[np.ndarray], np.ndarray]) -> TransformFunc:
+        """
+        Adapt a single-input transformation function to the (x, y) signature.
+
+        This utility function wraps a transformation that operates only on the
+        input data (x) so that it can be used within the dataset's transformation
+        pipeline, which expects functions that take (x, y) and return (x, y).
+
+        Args:
+            func: The transformation function that takes a single numpy array (x)
+                  and returns a transformed numpy array.
+
+        Returns:
+            A new function that accepts (x, y) and applies `func` to `x`,
+            returning the transformed `x` and the original `y`.
+        """
         @functools.wraps(func)
         def wrapper(x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
             return func(x), y
@@ -370,6 +527,18 @@ class Dataset:
         return wrapper
 
     def _transform_data_generator(self, part: Part) -> Generator[tuple[np.ndarray, np.ndarray]]:
+        """
+        Yield transformed data from the dataset partition.
+
+        This generator applies all registered transformations for a given dataset
+        partition to the raw data before yielding it.
+
+        Args:
+            part: The dataset partition (TRAIN, VAL, or TEST) to generate data from.
+
+        Yields:
+            Tuples of transformed input (x) and output (y) data.
+        """
         for x, y in self._data_generator(part):
             x, y = x.copy(), y.copy()
             for transformation in self._transformations[part]:
@@ -377,6 +546,20 @@ class Dataset:
             yield x, y
 
     def _actual_batch_generator(self, part: Part) -> Generator[tuple[np.ndarray, np.ndarray, int]]:
+        """
+        Generate batches of data for the specified partition.
+
+        This method orchestrates the creation of batches from the transformed data.
+        It handles accumulating samples into batches of the specified size and
+        yields them along with the effective global batch size for that yield.
+
+        Args:
+            part: The dataset partition (TRAIN, VAL, or TEST) to generate batches from.
+
+        Yields:
+            Tuples of (x_batch, y_batch, effective_global_batch_size).
+        """
+
         # NOTE: global_batch_size should be MPI.reduce(x_local_batch.shape[0])
         # However to avoid communications per batch, we assume all process have our x_local_batch.shape[0]
 
@@ -427,7 +610,6 @@ class Dataset:
                 batch_online.append((x_extra, y_extra))
                 batch_size += extra_size
 
-            # while (tenemos datos) and ((tenemos un batch completo) or (es el ultimo batch del dataset)):
             while (x_data.shape[0] > 0) and ((x_data.shape[0] >= local_batch_size) or (local_batch_size >= nsamples)):
                 x_batch, x_data = x_data[:local_batch_size], x_data[local_batch_size:]
                 y_batch, y_data = y_data[:local_batch_size], y_data[local_batch_size:]
@@ -437,6 +619,18 @@ class Dataset:
                 nsamples -= global_batch_size
 
     def _batch_generator(self, part: Part) -> Generator[tuple[np.ndarray, np.ndarray, int]]:
+        """
+        Yield batches with background prefetching.
+
+        This method wraps the actual batch generator with a `BackgroundGenerator`
+        to enable prefetching of batches, improving data loading performance.
+
+        Args:
+            part: The dataset partition (TRAIN, VAL, or TEST) to generate batches from.
+
+        Yields:
+            Tuples of (x_batch, y_batch, effective_global_batch_size), prefetched.
+        """
         yield from BackgroundGenerator(self._actual_batch_generator(part), max_prefetch=1)
         # NOTE: The following infinite loop provides of empty batches
         #       if there are asked more batches than actually are.
@@ -444,11 +638,38 @@ class Dataset:
             yield self.x_empty_batch, self.y_empty_batch, 0
 
     def _do_normalize(self, data: np.ndarray) -> np.ndarray:
+        """
+        Normalize data using model parameters.
+
+        Applies offset and scaling defined in `self.model.normalize_offset`
+        and `self.model.normalize_scale` to the input data.
+
+        Args:
+            data: The input numpy array to normalize.
+
+        Returns:
+            The normalized numpy array.
+        """
         np.add(data, self.model.normalize_offset, out=data)
         np.multiply(data, self.model.normalize_scale, out=data)
         return data
 
     def _do_flip_images(self, data: np.ndarray) -> np.ndarray:
+        """
+        Apply random horizontal flip augmentation to images.
+
+        Randomly flips a portion of the images horizontally based on the
+        `self.model.augment_flip` parameter.
+
+        Args:
+            data: The input numpy array (batch of images).
+
+        Returns:
+            The array with some images potentially flipped horizontally.
+
+        Raises:
+            NotImplementedError: If the `self.model.tensor_format` is not supported.
+        """
         n = data.shape[0]
         match self.model.tensor_format:
             case TensorFormat.NCHW:
@@ -466,6 +687,19 @@ class Dataset:
         return data
 
     def _do_augment_shuffle(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        """
+        Shuffle samples within a batch.
+
+        Randomly shuffles the order of samples (and their corresponding labels)
+        within a given batch. This is a form of data augmentation.
+
+        Args:
+            x: The input data batch.
+            y: The corresponding label batch.
+
+        Returns:
+            A tuple containing the shuffled input data and label batches.
+        """
         idx = np.arange(x.shape[0])
         random.shuffle(idx)
         x[:] = x[idx]
@@ -473,6 +707,22 @@ class Dataset:
         return x, y
 
     def _do_augment_crop(self, data: np.ndarray) -> np.ndarray:
+        """
+        Apply random crop augmentation.
+
+        Randomly crops a portion of the images in the batch. The crop size and
+        the percentage of images to crop are determined by model parameters.
+        Pads the cropped area with zeros.
+
+        Args:
+            data: The input numpy array (batch of images).
+
+        Returns:
+            The array with some images randomly cropped.
+
+        Raises:
+            NotImplementedError: If the `self.model.tensor_format` is not supported.
+        """
         n, c, h, w = self.model.decode_shape(data.shape)
         crop_size = min(self.model.augment_crop_size, h, w)
         limit = min(n, int(n * self.model.augment_crop))
@@ -483,7 +733,6 @@ class Dataset:
         ll = random.integers(0, w - crop_size, (limit,))
         for i, ri in enumerate(s):
             b, r = t[i] + crop_size, ll[i] + crop_size
-            # batch[ri,...] = transform_resize(batch[ri,:,t[i]:b,l[i]:r], (ri.size,c,h,w))
             match self.model.tensor_format:
                 case TensorFormat.NCHW:
                     data[ri, :, : t[i], : ll[i]] = 0.0
@@ -498,6 +747,18 @@ class Dataset:
         return data
 
     def _do_transform_resize(self, data: np.ndarray) -> np.ndarray:
+        """
+        Resize images using PIL.
+
+        Resizes images in the batch to a fixed size specified by
+        `self.model.transform_resize_size`. Uses PIL for image resizing.
+
+        Args:
+            data: The input numpy array (batch of images).
+
+        Returns:
+            The array with images resized.
+        """
         data = self.model.decode_tensor(data)
 
         size = (self.model.transform_resize_size, self.model.transform_resize_size)
@@ -522,6 +783,23 @@ class Dataset:
         return new_data
 
     def _calculate_crop(self, size: tuple[int, int]) -> tuple[tuple[int, int, int, int], tuple[int, int]]:
+        """
+        Calculate crop coordinates and resulting size.
+
+        Determines the bounding box for a center crop based on the
+        `self.model.transform_crop_perc` parameter, and calculates the
+        resulting dimensions after cropping.
+
+        Args:
+            size: The original (width, height) of the image.
+
+        Returns:
+            A tuple containing:
+            - crop: A tuple (x_offset, y_offset, width - x_offset, height - y_offset)
+                    representing the crop box.
+            - size: A tuple (new_width, new_height) representing the dimensions
+                    after cropping.
+        """
         width, height = size
         frame_fraction = (1 - self.model.transform_crop_perc) / 2
         x_offset, y_offset = round(width * frame_fraction), round(height * frame_fraction)
@@ -530,6 +808,18 @@ class Dataset:
         return (crop, size)
 
     def _do_transform_crop(self, data: np.ndarray) -> np.ndarray:
+        """
+        Apply center crop transformation.
+
+        Performs a center crop on the images in the batch according to the
+        calculated crop box and size. Uses PIL for the cropping operation.
+
+        Args:
+            data: The input numpy array (batch of images).
+
+        Returns:
+            The array with images center-cropped.
+        """
         data = self.model.decode_tensor(data)
 
         size = data.shape[2:4]
@@ -555,7 +845,18 @@ class Dataset:
         return new_data
 
     def _load_rgb_image(self, fp: IO[bytes] | str) -> np.ndarray:
-        """Transform a file-like (RGB image) to array (ndarray CHW uint8)"""
+        """
+        Transform a file-like object (RGB image) to a numpy array.
+
+        Opens an image file, converts it to RGB format, and returns it as a
+        numpy array with shape (C, H, W) and dtype uint8.
+
+        Args:
+            fp: A file-like object or a string path to the image file.
+
+        Returns:
+            A numpy array representing the RGB image in CHW format.
+        """
         with Image.open(fp=fp) as image:
             image = image.convert("RGB")
             array = np.asarray(image, order="C")
@@ -564,7 +865,18 @@ class Dataset:
         return array
 
     def _load_gray_image(self, fp: IO[bytes] | str) -> np.ndarray:
-        """Transform a file-like (gray-scale image) to array (ndarray CHW uint8)"""
+        """
+        Transform a file-like object (gray-scale image) to a numpy array.
+
+        Opens an image file, converts it to grayscale ('L' mode), and returns
+        it as a numpy array with shape (1, H, W) and dtype uint8.
+
+        Args:
+            fp: A file-like object or a string path to the image file.
+
+        Returns:
+            A numpy array representing the grayscale image in CHW format.
+        """
         with Image.open(fp=fp) as image:
             image = image.convert("L")
             array = np.asarray(image, order="C")
@@ -575,5 +887,20 @@ class Dataset:
 
 
 def select(name: str) -> type[Dataset]:
+    """
+    Select a dataset class by name.
+
+    This function dynamically imports and returns a dataset class based on its
+    string name. It searches within the current package for the specified class.
+
+    Args:
+        name: The string name of the dataset class to select.
+
+    Returns:
+        The dataset class type.
+
+    Raises:
+        AssertionError: If the package context cannot be determined.
+    """
     assert __package__, "Package not found!"
     return find_component(__package__, name)

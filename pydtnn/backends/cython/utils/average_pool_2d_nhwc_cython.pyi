@@ -1,9 +1,12 @@
+"""Cython-accelerated 2D average pooling utilities for NHWC data layout."""
 from pydtnn.backends.cython.utils.base import _npDT, _npDT_4Dims
 
 def average_pool_2d_fwd_nhwc_cython[T: _npDT](
     x: _npDT_4Dims[T], y: _npDT_4Dims[T], kh: int, kw: int, ho: int, wo: int, vpadding: int, hpadding: int, vstride: int, hstride: int, vdilation: int, hdilation: int
 ) -> None:
     """
+    Performs forward 2D average pooling on NHWC input data using Cython.
+
     Args:
         x (npDT_4Dims): The 4 dimensional input's ndarray.
         y (npDT_4Dims): The 4 dimensional output's ndarray.(the output's data is stored in this parameter).
@@ -26,6 +29,8 @@ def average_pool_2d_bwd_nhwc_cython[T: _npDT](
     dy: _npDT_4Dims[T], dx: _npDT_4Dims[T], n: int, h: int, w: int, c: int, kh: int, kw: int, ho: int, wo: int, vpadding: int, hpadding: int, vstride: int, hstride: int, vdilation: int, hdilation: int
 ) -> None:
     """
+    Performs backward 2D average pooling on NHWC input data using Cython.
+
     Args:
         dy (npDT_4Dims): The 4 dimensional input's ndarray.
         dx (npDT_4Dims): The 4 dimensional output's ndarray. (the output's data will be stored in this parameter). Note: All values in this parameter should be 0.

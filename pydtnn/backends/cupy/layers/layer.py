@@ -1,3 +1,6 @@
+"""
+CuPy backend implementation for neural network layers.
+"""
 import logging
 
 import cupy as cp
@@ -14,7 +17,17 @@ logger = logging.getLogger(__name__)
 
 
 class LayerCupy(LayerNumpy, LayerableCupy):
+    """
+    Base class for layers using the CuPy backend.
+    """
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None):
+        """
+        Initialize the layer model parameters and verify backend compatibility.
+
+        Args:
+            prev_shape: The shape of the input data from the previous layer.
+            x: Optional input data for initialization.
+        """
         super()._model_init(prev_shape, x)
 
         if libnp != cp:  # type: ignore (It's possible to do this operation)

@@ -1,3 +1,4 @@
+"""PyCUDA implementation of the Dropout layer for the PyDTNN framework."""
 import ctypes
 import logging
 
@@ -17,7 +18,9 @@ logger = logging.getLogger(__name__)
 
 
 class DropoutPycuda(Dropout[TensorArray], LayerPycuda):
+    """PyCUDA-accelerated Dropout layer using cuDNN."""
     def __init__(self, *args, **kwargs):
+        """Initializes the DropoutPycuda layer."""
         super().__init__(*args, **kwargs)
 
         # The following values will be initalized later:
@@ -28,6 +31,7 @@ class DropoutPycuda(Dropout[TensorArray], LayerPycuda):
         self.drop_desc: int | None = None
 
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
+        """Initializes cuDNN descriptors and memory buffers for dropout operations."""
         super()._model_init(prev_shape, x)
 
         # Activations y
@@ -56,12 +60,14 @@ class DropoutPycuda(Dropout[TensorArray], LayerPycuda):
         cudnn.cudnnSetDropoutDescriptor(self.drop_desc, self.model.cudnn_handle, self.rate, self.states.ptr_voidp, self.states_size, seed=0)
 
     def forward(self, x: TensorArray) -> TensorArray:
+        """Performs the forward pass of the dropout layer."""
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
         cudnn.cudnnDropoutForward(self.model.cudnn_handle, self.drop_desc, x.desc, x.ptr_voidp, self.y.desc, self.y.ptr_voidp, self.space.ptr_voidp, self.space_size.value)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.y
 
     def backward(self, dy: TensorArray) -> TensorArray:
+        """Performs the backward pass of the dropout layer."""
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
         # Compute dx
         cudnn.cudnnDropoutBackward(self.model.cudnn_handle, self.drop_desc, dy.desc, dy.ptr_voidp, self.dx.desc, self.dx.ptr_voidp, self.space.ptr_voidp, self.space_size.value)

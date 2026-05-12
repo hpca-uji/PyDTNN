@@ -1,3 +1,6 @@
+"""
+Tests for verifying model behavior and consistency across different data types.
+"""
 import logging
 import unittest
 
@@ -27,6 +30,19 @@ class ModelDTypeTestCase(ModelCommonTestCase):
     model2_desc = "using float64"
 
     def get_model2(self, model_name: str, overwrite_params: dict | None = None) -> Model:
+        """
+        Constructs and returns a model instance configured with float64 precision.
+
+        Args:
+            model_name: The name of the model to instantiate.
+            overwrite_params: Optional dictionary of parameters to override defaults.
+
+        Returns:
+            A Model instance configured for float64.
+
+        Raises:
+            unittest.SkipTest: If the model is incompatible with the dataset.
+        """
         # CPU model with float64
         params = Params()
         # Begin of params configuration

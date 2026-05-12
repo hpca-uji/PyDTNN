@@ -1,9 +1,13 @@
+"""Cython-accelerated image-to-column and column-to-image utilities for NCHW format."""
+
 from pydtnn.backends.cython.utils.base import _npDT, _npDT_2Dims, _npDT_4Dims
 
 def im2col_1ch_nchw_cython[T: _npDT](
     x: _npDT_4Dims[T], cols: _npDT_2Dims[T], kh: int, kw: int, ho: int, wo: int, vpadding: int, hpadding: int, vstride: int, hstride: int, vdilation: int, hdilation: int
 ) -> None:
     """
+    Perform im2col transformation for a single channel NCHW input using Cython.
+
     Args:
         x (npDT_4Dims): The 4 dimensional array (the image).
         cols (npDT_2Dims): The 2 dimensional array where the image as columns is stored.
@@ -40,9 +44,15 @@ def col2im_1ch_nchw_cython[T: _npDT](
     hdilation: int,
 ) -> None:
     """
+    Perform col2im transformation for a single channel NCHW output using Cython.
+
     Args:
         cols (npDT_2Dims): The 2 dimensional array.
         x (npDT_4Dims): The 4 dimensional array where the output image is stored.
+        n (int): Batch size.
+        h (int): Input height.
+        w (int): Input width.
+        c (int): Number of channels.
         kh (int): Kernel's heigth.
         kw (int): Kernel's width.
         ho (int): Output's heigth.

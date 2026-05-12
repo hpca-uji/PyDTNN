@@ -1,3 +1,5 @@
+"""Provides representation and visualization utilities for PyDTNN models."""
+
 import logging
 
 from pydtnn import utils
@@ -10,7 +12,14 @@ logger = logging.getLogger(__name__)
 
 
 class Repr[T: Array](Layers[T]):
+    """Mixin class providing string representation and summary visualization for models."""
+
     def _show_props(self) -> dict:
+        """Collects model properties for representation and summary.
+
+        Returns:
+            dict: A dictionary containing model metadata and resource usage.
+        """
         props = {}
 
         if self.model_name:
@@ -64,11 +73,13 @@ class Repr[T: Array](Layers[T]):
         return props
 
     def __repr__(self) -> str:
+        """Returns a concise string representation of the model instance."""
         props = " ".join(f"{key}={value!r}" for key, value in self._show_props().items())
 
         return f"<{self.__class__.__name__} {props}>"
 
     def show_layers(self) -> None:
+        """Logs a formatted table of all layers and their properties to the logger."""
         struct: dict[str, int] = {}
         all_props = {layer.id: layer._show_props() for layer in self.get_all_layers()}
 
@@ -109,6 +120,7 @@ class Repr[T: Array](Layers[T]):
         logger.info("\n".join(_show))
 
     def show_model(self) -> None:
+        """Logs a summary of the model configuration to the logger."""
         key: str = "Model Summary"
         _show = [""]
         _show.append(key)
@@ -118,10 +130,12 @@ class Repr[T: Array](Layers[T]):
         logger.info("\n".join(_show))
 
     def show(self) -> None:
+        """Displays both the model summary and the detailed layer table."""
         self.show_model()
         self.show_layers()
 
     def print_in_convdirect_format(self) -> None:
+        """Logs layer information formatted for ConvDirect compatibility."""
         line = "#l\tkn\two\tho\tt\tkh\tkw\tci\twi\thi"
         logger.info(line)
         for layer in self.layers:

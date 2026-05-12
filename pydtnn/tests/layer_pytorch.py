@@ -1,3 +1,9 @@
+"""
+PyDTNN PyTorch layer compatibility test suite.
+
+This module provides unit tests to verify the numerical equivalence between
+PyDTNN layers and their corresponding PyTorch implementations.
+"""
 import logging
 import math
 from unittest import skip
@@ -113,17 +119,22 @@ GRAD_EQUIVALENCES: dict[str, str] = {
 
 
 class TorchArcTanH(torch.nn.Module):
+    """PyTorch implementation of the Arctanh activation function."""
     def __init__(self, *args, **kwargs):
+        """Initializes the Arctanh module."""
         super().__init__(*args, **kwargs)
         self.arc_tanh = torch.atanh
 
     def forward(self, x):
+        """Applies the Arctanh activation."""
         x = self.arc_tanh(x)
         return x
 
 
 class TorchAdditionBlock(torch.nn.Module):
+    """PyTorch model representing an addition block for testing."""
     def __init__(self, *args, **kwargs):
+        """Initializes the addition block with two parallel convolutional paths."""
         super().__init__(*args, **kwargs)
         self.block1 = torch.nn.Sequential(
             torch.nn.Conv2d(in_channels=CONV2D_IN_C_TORCH, out_channels=CONV2D_N_FILTERS, kernel_size=CONV2D_FILTER_SHAPE, padding=CONV2D_PADDING, stride=CONV2D_STRIDE, dilation=CONV2D_DILATION),
@@ -134,6 +145,7 @@ class TorchAdditionBlock(torch.nn.Module):
         )
 
     def forward(self, x):
+        """Computes the sum of the two block outputs."""
         x1 = self.block1(x)
         x2 = self.block2(x)
         x = x1 + x2
@@ -141,7 +153,9 @@ class TorchAdditionBlock(torch.nn.Module):
 
 
 class TorchConcatenationBlock(torch.nn.Module):
+    """PyTorch model representing a concatenation block for testing."""
     def __init__(self, *args, **kwargs):
+        """Initializes the concatenation block with two parallel convolutional paths."""
         super().__init__(*args, **kwargs)
         self.block1 = torch.nn.Sequential(
             torch.nn.Conv2d(in_channels=CONV2D_IN_C_TORCH, out_channels=CONV2D_N_FILTERS, kernel_size=CONV2D_FILTER_SHAPE, padding=CONV2D_PADDING, stride=CONV2D_STRIDE, dilation=CONV2D_DILATION),
@@ -152,6 +166,7 @@ class TorchConcatenationBlock(torch.nn.Module):
         )
 
     def forward(self, x):
+        """Computes the concatenation of the two block outputs along the channel dimension."""
         x1 = self.block1(x)
         x2 = self.block2(x)
         x = torch.cat([x1, x2], dim=1)
@@ -159,7 +174,9 @@ class TorchConcatenationBlock(torch.nn.Module):
 
 
 class D:
+    """Data dimensions container for test configurations."""
     def __init__(self, b=N, c=C, h=H, w=W):
+        """Initializes dimensions with batch size, channels, height, and width."""
         self.b = b  # Batch size
         self.c = c  # Channels per layer
         self.h = h  # Layers height
@@ -167,7 +184,9 @@ class D:
 
 
 class ParamsLayerPytorch(Params):
+    """Configuration parameters for PyTorch layer tests."""
     def __init__(self, d=D()) -> None:
+        """Initializes test parameters based on provided dimensions."""
         super().__init__()
         self.batch_size = d.b
         self.backend = "cpu"
@@ -185,13 +204,16 @@ class ParamsLayerPytorch(Params):
         self.dtype = np.dtype(self.dtype)
 
     def asdict(self):
+        """Returns the parameters as a dictionary."""
         return self.__dict__
 
 
 class LayerPyTorchTestCase(TestCase):
+    """Base test case class for verifying PyDTNN layers against PyTorch."""
     params = ParamsLayerPytorch()
 
     def setUp(self) -> None:
+        """Sets up the test environment."""
         super().setUp()
         torch.manual_seed(0)
 
@@ -199,6 +221,7 @@ class LayerPyTorchTestCase(TestCase):
 
     @staticmethod
     def get_test_data(no_zeros=False, normalize=True, positives_and_negatives=True, shape_with_elements=(params.batch_size, *params.shape), dtype=params.dtype) -> np.ndarray:
+        """Generates synthetic test data for layer verification."""
         num_elems = math.prod(shape_with_elements) // 4
 
         x_1 = np.arange(num_elems)
@@ -228,6 +251,7 @@ class LayerPyTorchTestCase(TestCase):
 
     @staticmethod
     def initialize_pydtnn_model(list_layers: list[Layerable], params=params) -> Model:
+        """Initializes a PyDTNN model with the provided layers."""
         model = Model(**params.asdict())
         model.add(Input(params.shape))
         model.add_layers(list_layers)
@@ -236,12 +260,14 @@ class LayerPyTorchTestCase(TestCase):
         return model
 
     def _copy_grad_vars(self, grad: np.ndarray, grad_var: str, torch_layer: torch.nn.Module) -> None:
+        """Copies gradient variables from PyDTNN to PyTorch layers."""
         if grad is not None:
             torch_grad_var = GRAD_EQUIVALENCES[grad_var]
             torch_grad = getattr(torch_layer, torch_grad_var)
             torch_grad.copy_(torch.from_numpy(grad.copy()).to(torch.device("cpu")).float())
 
     def copy_grad_vars(self, pydtnn_model: Model, torch_model: torch.nn.Module) -> None:
+        """Synchronizes model parameters between PyDTNN and PyTorch."""
         layers = pydtnn_model.get_all_layers().copy()
 
         if isinstance(layers[0], Input):
@@ -279,6 +305,7 @@ class LayerPyTorchTestCase(TestCase):
                             self._copy_grad_vars(grad, grad_var, torch_layer)
 
     def do_test(self, _x: np.ndarray, pydtnn_model: Model, torch_model: torch.nn.Module, name_test: str, rtol=1e-6, atol=1e-6) -> None:
+        """Executes the comparison test between PyDTNN and PyTorch."""
         self.copy_grad_vars(pydtnn_model, torch_model)
 
         num_elems = len("Testing: ") + len(name_test)
@@ -316,6 +343,7 @@ class LayerPyTorchTestCase(TestCase):
     # Unitary Test methods
 
     def test_AdaptiveAveragePool2D(self):
+        """Tests AdaptiveAveragePool2D layer."""
         pydtnn_layers = [AdaptiveAveragePool2D(output_shape=ADAPTIVE_AVG_POOL_OUTPUT_SIZE)]
         torch_model = torch.nn.AdaptiveAvgPool2d(output_size=ADAPTIVE_AVG_POOL_OUTPUT_SIZE)
         pydtnn_model = LayerPyTorchTestCase.initialize_pydtnn_model(pydtnn_layers, params=self.params)  # type: ignore
@@ -324,6 +352,7 @@ class LayerPyTorchTestCase(TestCase):
         self.do_test(_x=_x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="AdaptiveAveragePool2D", rtol=1e-4, atol=1e-3)
 
     def test_AveragePool2D(self):
+        """Tests AveragePool2D layer."""
         pydtnn_layers = [AveragePool2D(pool_shape=AVG_POOL_SHAPE, padding=AVG_POOL_PADDING, stride=AVG_POOL_STRIDE)]
         torch_model = torch.nn.AvgPool2d(kernel_size=AVG_POOL_SHAPE, padding=AVG_POOL_PADDING, stride=AVG_POOL_STRIDE)
         pydtnn_model = LayerPyTorchTestCase.initialize_pydtnn_model(pydtnn_layers, params=self.params)  # type: ignore
@@ -331,6 +360,7 @@ class LayerPyTorchTestCase(TestCase):
         self.do_test(_x=_x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="AveragePool2D")
 
     def test_BatchNormalization(self):
+        """Tests BatchNormalization layer."""
         pydtnn_layers = [BatchNormalization(gamma=BATCH_NORMALIZATION_GAMMA, beta=BATCH_NORMALIZATION_BETA, epsilon=BATCH_NORMALIZATION_EPSILON, momentum=BATCH_NORMALIZATION_MOMENTUM_PYDTNN)]
         torch_model = torch.nn.BatchNorm2d(BATCH_NORMALIZATION_NUM_FEATURES, eps=BATCH_NORMALIZATION_EPSILON, momentum=BATCH_NORMALIZATION_MOMENTUM_TORCH, affine=False)
         pydtnn_model = LayerPyTorchTestCase.initialize_pydtnn_model(pydtnn_layers, params=self.params)  # type: ignore
@@ -339,6 +369,7 @@ class LayerPyTorchTestCase(TestCase):
         self.do_test(_x=_x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="BatchNormalization", rtol=1e0, atol=1e0)
 
     def test_Conv2D(self):
+        """Tests Conv2D layer."""
         pydtnn_layers = [Conv2D(nfilters=CONV2D_N_FILTERS, filter_shape=CONV2D_FILTER_SHAPE, padding=CONV2D_PADDING, stride=CONV2D_STRIDE, dilation=CONV2D_DILATION)]
         torch_model = torch.nn.Conv2d(
             in_channels=CONV2D_IN_C_TORCH, out_channels=CONV2D_N_FILTERS, kernel_size=CONV2D_FILTER_SHAPE, padding=CONV2D_PADDING, stride=CONV2D_STRIDE, dilation=CONV2D_DILATION
@@ -349,6 +380,7 @@ class LayerPyTorchTestCase(TestCase):
 
     @skip(reason="Dropout makes a random mask, then it can not be compared due both PyTorch and PyDTNN create different masks.")
     def test_Dropout(self):
+        """Tests Dropout layer."""
         pydtnn_layers = [Dropout()]
         torch_model = torch.nn.Dropout()
         pydtnn_model = LayerPyTorchTestCase.initialize_pydtnn_model(pydtnn_layers, params=self.params)  # type: ignore
@@ -356,6 +388,7 @@ class LayerPyTorchTestCase(TestCase):
         self.do_test(_x=_x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="Dropout")
 
     def test_Flatten(self):
+        """Tests Flatten layer."""
         pydtnn_layers = [Flatten()]
         torch_model = torch.nn.Flatten()
         pydtnn_model = LayerPyTorchTestCase.initialize_pydtnn_model(pydtnn_layers, params=self.params)  # type: ignore
@@ -363,6 +396,7 @@ class LayerPyTorchTestCase(TestCase):
         self.do_test(_x=_x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="Flatten")
 
     def test_FC(self):
+        """Tests Fully Connected (FC) layer."""
         pydtnn_layers = [Flatten(), FC(shape=FC_OUPUT_SHAPE)]
         torch_model = torch.nn.Sequential(torch.nn.Flatten(), torch.nn.Linear(in_features=math.prod(self.params.shape), out_features=LINEAR_OUTPUT))
         pydtnn_model = LayerPyTorchTestCase.initialize_pydtnn_model(pydtnn_layers, params=self.params)
@@ -370,6 +404,7 @@ class LayerPyTorchTestCase(TestCase):
         self.do_test(_x=_x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="FC", rtol=1e-5, atol=1e-5)
 
     def test_MaxPool2D(self):
+        """Tests MaxPool2D layer."""
         pydtnn_layers = [MaxPool2D(pool_shape=MAX_POOL_SHAPE, padding=MAX_POOL_PADDING, stride=MAX_POOL_STRIDE, dilation=MAX_POOL_DILATION)]
         torch_model = torch.nn.MaxPool2d(kernel_size=MAX_POOL_SHAPE, padding=MAX_POOL_PADDING, stride=MAX_POOL_STRIDE, dilation=MAX_POOL_DILATION)
         pydtnn_model = LayerPyTorchTestCase.initialize_pydtnn_model(pydtnn_layers, params=self.params)  # type: ignore
@@ -377,6 +412,7 @@ class LayerPyTorchTestCase(TestCase):
         self.do_test(_x=_x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="MaxPool2D")
 
     def test_AdditionBlock(self):
+        """Tests AdditionBlock layer."""
         pydtnn_layers = [
             AdditionBlock(
                 [
@@ -393,6 +429,7 @@ class LayerPyTorchTestCase(TestCase):
         self.do_test(_x=_x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="AdditionBlock", rtol=2, atol=2)
 
     def test_ConcatenationBlock(self):
+        """Tests ConcatenationBlock layer."""
         pydtnn_layers = [
             ConcatenationBlock(
                 [
@@ -408,6 +445,7 @@ class LayerPyTorchTestCase(TestCase):
         self.do_test(_x=_x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="ConcatenationBlock", rtol=2, atol=2)
 
     def test_Sigmoid(self):
+        """Tests Sigmoid activation."""
         pydtnn_layers = [Sigmoid()]
         torch_model = torch.nn.Sigmoid()
         pydtnn_model = LayerPyTorchTestCase.initialize_pydtnn_model(pydtnn_layers, params=self.params)  # type: ignore
@@ -415,6 +453,7 @@ class LayerPyTorchTestCase(TestCase):
         self.do_test(_x=_x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="Sigmoid")
 
     def test_Relu(self):
+        """Tests Relu activation."""
         pydtnn_layers = [Relu()]
         torch_model = torch.nn.ReLU()
         pydtnn_model = LayerPyTorchTestCase.initialize_pydtnn_model(pydtnn_layers, params=self.params)  # type: ignore
@@ -422,6 +461,7 @@ class LayerPyTorchTestCase(TestCase):
         self.do_test(_x=_x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="Relu")
 
     def test_Relu6(self):
+        """Tests Relu6 activation."""
         pydtnn_layers = [Relu6()]
         torch_model = torch.nn.ReLU6()
         pydtnn_model = LayerPyTorchTestCase.initialize_pydtnn_model(pydtnn_layers, params=self.params)  # type: ignore
@@ -429,6 +469,7 @@ class LayerPyTorchTestCase(TestCase):
         self.do_test(_x=_x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="Relu6")
 
     def test_LeakyRelu(self):
+        """Tests LeakyRelu activation."""
         pydtnn_layers = [LeakyRelu()]
         torch_model = torch.nn.LeakyReLU()
         pydtnn_model = LayerPyTorchTestCase.initialize_pydtnn_model(pydtnn_layers, params=self.params)  # type: ignore
@@ -436,6 +477,7 @@ class LayerPyTorchTestCase(TestCase):
         self.do_test(_x=_x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="LeakyRelu")
 
     def test_Tanh(self):
+        """Tests Tanh activation."""
         pydtnn_layers = [Tanh()]
         torch_model = torch.nn.Tanh()
         pydtnn_model = LayerPyTorchTestCase.initialize_pydtnn_model(pydtnn_layers, params=self.params)  # type: ignore
@@ -443,6 +485,7 @@ class LayerPyTorchTestCase(TestCase):
         self.do_test(_x=_x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="Tanh")
 
     def test_Arctanh(self):
+        """Tests Arctanh activation."""
         # NOTE: Domain ArcTanH: Real numbers between "]-1, 1["
         pydtnn_layers = [Arctanh()]
         torch_model = TorchArcTanH()
@@ -451,6 +494,7 @@ class LayerPyTorchTestCase(TestCase):
         self.do_test(_x=_x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="Arctanh")
 
     def test_Log(self):
+        """Tests Log activation."""
         pydtnn_layers = [Log()]
         torch_model = torch.nn.LogSigmoid()
         pydtnn_model = LayerPyTorchTestCase.initialize_pydtnn_model(pydtnn_layers, params=self.params)  # type: ignore
@@ -459,6 +503,7 @@ class LayerPyTorchTestCase(TestCase):
         self.do_test(_x=_x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="Log")
 
     def test_Softmax(self):
+        """Tests Softmax activation."""
         pydtnn_layers = [Softmax()]
         torch_model = torch.nn.Softmax(dim=1)
         pydtnn_model = LayerPyTorchTestCase.initialize_pydtnn_model(pydtnn_layers, params=self.params)  # type: ignore

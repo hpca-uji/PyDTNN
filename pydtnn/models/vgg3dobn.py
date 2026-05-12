@@ -1,3 +1,5 @@
+"""VGG-style 3D-like convolutional neural network architecture with Batch Normalization."""
+
 from collections.abc import Sequence
 
 from pydtnn.abstract.layerable import Layerable
@@ -17,6 +19,15 @@ __all__ = ("vgg3dobn",)
 
 
 def vgg3dobn(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
+    """Constructs a VGG-style CNN architecture with Batch Normalization layers.
+
+    Args:
+        input_shape: The shape of the input data.
+        output_shape: The shape of the output layer.
+
+    Returns:
+        A sequence of layers forming the VGG-style model.
+    """
     model = list[Layerable]()
     _ = model.append
 

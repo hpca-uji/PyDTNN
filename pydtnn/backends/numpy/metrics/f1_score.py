@@ -1,3 +1,6 @@
+"""
+Numpy implementation of the F1 Score metric for the PyDTNN framework.
+"""
 import logging
 import math
 from typing import TYPE_CHECKING
@@ -17,9 +20,15 @@ if TYPE_CHECKING:
 
 
 class F1ScoreNumpy(F1Score[np.ndarray], MetricNumpy):
+    """
+    Numpy-based F1 Score metric calculation.
+    """
     conf_matrix_metric: BinaryConfusionMatrixNumpy
 
     def _model_init(self) -> None:
+        """
+        Initializes model memory requirements for F1 score calculation.
+        """
         super()._model_init()
         shape = self.shape[1]
 
@@ -29,6 +38,9 @@ class F1ScoreNumpy(F1Score[np.ndarray], MetricNumpy):
         self.memory_used += self.tmp_memory_used
 
     def _post_init(self) -> None:
+        """
+        Allocates memory for intermediate buffers used during computation.
+        """
         super()._post_init()
         with self.model.memory:
             self.true_positives = self.model.memory.ndarray(self.temp_var_shape, dtype=np.float32)
@@ -37,6 +49,16 @@ class F1ScoreNumpy(F1Score[np.ndarray], MetricNumpy):
             self.are_zeros = self.model.memory.ndarray(self.temp_var_shape, dtype=np.bool_)
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
+        """
+        Computes the F1 score based on confusion matrix statistics.
+
+        Args:
+            y_pred: Predicted labels.
+            y_targ: Target labels.
+
+        Returns:
+            The average F1 score across classes.
+        """
         true_positives = self.true_positives
         false_positives = self.false_positives
         false_negatives = self.false_negatives

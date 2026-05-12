@@ -1,3 +1,7 @@
+"""
+Initialization module for the PyDTNN framework, providing the core Init class
+to configure models, hardware backends, and training environments.
+"""
 import itertools
 import logging
 from collections import abc
@@ -40,7 +44,19 @@ logger = logging.getLogger(__name__)
 
 
 class Init[T: Array](Layers[T]):
+    """
+    Main initialization class for PyDTNN models.
+    
+    Handles configuration of hardware backends (CUDA/MPI), memory management,
+    dataset loading, and model layer construction.
+    """
     def __init__(self, **kwargs):
+        """
+        Initializes the model environment and configuration.
+        
+        Args:
+            **kwargs: Configuration arguments to override default parser settings.
+        """
         super().__init__(**kwargs)
 
         # Get default values from parser and update them from the received kwargs
@@ -119,7 +135,7 @@ class Init[T: Array](Layers[T]):
             self._layers_init(model_name)
 
     def _tensor_init(self) -> None:
-        """Setup tensor format"""
+        """Configures the tensor format based on hardware capabilities."""
         if self.tensor_format:
             tensor_format = TensorFormat(self.tensor_format.lower())
         elif self.enable_cudnn:
@@ -130,7 +146,12 @@ class Init[T: Array](Layers[T]):
         self.tensor_format = tensor_format
 
     def _batch_init(self, default: int = DEFAULT_BACH_SIZE) -> None:
-        """Setup batch size"""
+        """
+        Configures the batch size for training.
+        
+        Args:
+            default: Default batch size if none is provided.
+        """
         if self.batch_size and self.global_batch_size:
             raise ValueError("Can not define 'local_batch_size' and 'global_batch_size' simultaneously")
         elif self.global_batch_size:
@@ -149,7 +170,7 @@ class Init[T: Array](Layers[T]):
         self.batch_size = batch_size
 
     def _tracer_init(self) -> None:
-        """Setup tracer"""
+        """Initializes the performance tracing mechanism."""
         if self.tracer_output == "":
             from pydtnn.tracers.extrae_tracer import ExtraeTracer
 
@@ -170,7 +191,12 @@ class Init[T: Array](Layers[T]):
         self.tracer = tracer
 
     def _crypt_init(self, encryption_name: str) -> "polyhe.Context":
-        """Initialize encryption context"""
+        """
+        Initializes the homomorphic encryption context.
+        
+        Args:
+            encryption_name: Name of the encryption backend to use.
+        """
         if polyhe is None:
             raise RuntimeError("uHE is not avaliable, but is requiested!")
 
@@ -192,6 +218,7 @@ class Init[T: Array](Layers[T]):
         return crypt
 
     def _mpi_init(self) -> None:
+        """Initializes MPI communication settings and process ranks."""
         # Communication type
         if self.parallel_data or self.parallel_pipeline:
             if not MPI:
@@ -221,6 +248,7 @@ class Init[T: Array](Layers[T]):
                 raise ValueError(f"MPI buffers option '{self.use_mpi_buffers}' not recognized.")
 
     def _cudnn_init(self) -> None:
+        """Initializes CUDA, cuDNN, and NCCL backend handles."""
         self.cuda_threads = min(self.batch_size, LIMIT_THREADS_AND_BLOCKS)
         self.cuda_blocks = (max(self.batch_size, LIMIT_THREADS_AND_BLOCKS) // self.cuda_threads) + 1
         # NOTE: Seems that in PyDTNN, usually the ".x" (blockIdx.x, threadIdx.x, ...) is the only dimension used.
@@ -264,6 +292,12 @@ class Init[T: Array](Layers[T]):
         self.cudnn_dtype = cudnn_dtype
 
     def _layers_init(self, model_name: str) -> None:
+        """
+        Initializes model layers from a predefined model name.
+        
+        Args:
+            model_name: Name of the model architecture to instantiate.
+        """
         create_model = select_model(model_name)
         input_shape = self.dataset.input_shape
         output_shape = self.dataset.output_shape
@@ -280,6 +314,7 @@ class Init[T: Array](Layers[T]):
         self.add_layers(create_model(input_shape, output_shape))
 
     def _model_init(self) -> None:
+        """Finalizes model initialization, including memory allocation and component setup."""
         if self._is_model_init:
             return
         self._is_model_init = True
@@ -331,6 +366,7 @@ class Init[T: Array](Layers[T]):
         self.optimizer._post_init()
 
     def _ensure_model_runnable(self) -> None:
+        """Validates that the model is ready for execution."""
         if not self.layers:
             warn_text = "The model has no layers in it."
             logger.warning(warn_text)

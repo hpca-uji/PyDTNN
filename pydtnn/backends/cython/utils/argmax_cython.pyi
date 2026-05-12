@@ -1,9 +1,14 @@
+"""
+Cython-accelerated argmax utility functions for PyDTNN.
+"""
 import numpy as _np
 
 from pydtnn.backends.cython.utils.base import _npDT, _npDT_1Dims, _npDT_2Dims
 
 def argmax_cython[T: _npDT](x: _npDT_2Dims[T], maxv: _npDT_1Dims[T], amax: _npDT_1Dims[_np.int32], rng: _npDT_1Dims[_np.int32], axis: int = 0) -> tuple[_npDT_1Dims[T], _npDT_1Dims[T]]:
     """
+    Computes the argmax of a 2D array along a specified axis using Cython.
+
     Args:
         x (npDT_2Dims): A view 2 dimensional inptu's ndarray.
         maxv (npDT_1Dims): A view to a ndarray of one of the npDT's types where the max values' will be stored.

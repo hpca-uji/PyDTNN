@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+"""
+Provides the base class for NumPy-based neural network layers in PyDTNN.
+"""
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -28,9 +32,15 @@ class LayerNumpy(Layer[np.ndarray], LayerableNumpy):
 
     @property
     def _ary_prop(self) -> set[str]:
+        """
+        Returns a set of attribute names representing array-based properties.
+        """
         return {*self.grad_vars.keys(), *self.grad_vars.values()}
 
     def _export_prop(self, key: str):
+        """
+        Exports a property as a NumPy array.
+        """
         if key not in self._ary_prop:
             return super()._export_prop(key)
 
@@ -38,6 +48,9 @@ class LayerNumpy(Layer[np.ndarray], LayerableNumpy):
         return np.asarray(ary, dtype=np.float64, order="C", copy=True)
 
     def _import_prop(self, key: str, value) -> None:
+        """
+        Imports a value into an existing NumPy array property.
+        """
         if key not in self._ary_prop:
             return super()._import_prop(key, value)
 

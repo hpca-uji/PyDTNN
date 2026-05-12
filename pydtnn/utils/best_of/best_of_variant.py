@@ -1,3 +1,4 @@
+"""Module providing the BestOfVariant class for dynamic convolution implementation selection."""
 import logging
 from typing import Callable, List
 
@@ -16,7 +17,12 @@ logger = logging.getLogger(__name__)
 
 # FIXME: Broken since Conv2D to backend support
 class BestOfVariant(Conv2DWinogradNumpy, Conv2DDirectNumpy):
+    """
+    A convolution layer variant that dynamically selects the most efficient implementation
+    at runtime based on performance profiling.
+    """
     def __init__(self, *args, **kwargs):
+        """Initializes the BestOfVariant layer with default attributes."""
         super().__init__(*args, **kwargs)
         # best_of related attributes (will be initialized in initialize())
         self._best_fw: BestOf = None  # type: ignore
@@ -25,6 +31,13 @@ class BestOfVariant(Conv2DWinogradNumpy, Conv2DDirectNumpy):
         self.variant = None
 
     def initialize(self, prev_shape: ArrayShape, x: np.ndarray | None = None):
+        """
+        Initializes the layer and configures the BestOf selectors for forward and backward passes.
+
+        Args:
+            prev_shape: The shape of the input tensor.
+            x: Optional input data for initialization.
+        """
         super().initialize(prev_shape, x)
         if self.model.enable_best_of:
             # Set variant to 'best_of' and set alternatives to only forward, and forward backward best_ofs
@@ -65,9 +78,25 @@ class BestOfVariant(Conv2DWinogradNumpy, Conv2DDirectNumpy):
             )
 
     def _get_class_forward_and_backward(self, variant) -> List[Callable]:
+        """
+        Retrieves the forward and backward method references for a given variant.
+
+        Args:
+            variant: The identifier of the convolution variant.
+
+        Returns:
+            A list containing the forward and backward callable methods.
+        """
         return [getattr(self.__class__, f"_forward_{variant}_{self.model.tensor_format}"), getattr(self.__class__, f"_backward_{variant}_{self.model.tensor_format}")]
 
     def _fw_bw_best_of(self, stage, x_or_y):
+        """
+        Executes the best performing implementation for the specified stage.
+
+        Args:
+            stage: The stage index (0 for forward, 1 for backward).
+            x_or_y: The input tensor for forward or gradient tensor for backward.
+        """
         match self.model.mode:
             case Model.Mode.TRAIN:
                 return self._best_fw_bw_pipeline(stage, self, x_or_y)
@@ -77,13 +106,17 @@ class BestOfVariant(Conv2DWinogradNumpy, Conv2DDirectNumpy):
                 raise RuntimeError("Conv2D BestOf variant requires Model.mode to be set to ModelModeEnum.EVALUATE or ModelModeEnum.TRAIN")
 
     def _forward_best_of_nhwc(self, x):
+        """Performs forward pass using the best variant for NHWC format."""
         return self._fw_bw_best_of(0, x)
 
     def _forward_best_of_nchw(self, x):
+        """Performs forward pass using the best variant for NCHW format."""
         return self._fw_bw_best_of(0, x)
 
     def _backward_best_of_nhwc(self, y):
+        """Performs backward pass using the best variant for NHWC format."""
         return self._fw_bw_best_of(1, y)
 
     def _backward_best_of_nchw(self, y):
+        """Performs backward pass using the best variant for NCHW format."""
         return self._fw_bw_best_of(1, y)

@@ -1,3 +1,6 @@
+"""
+Numpy backend implementation for Mean Squared Error regression metric.
+"""
 import logging
 import math
 from typing import TYPE_CHECKING
@@ -15,18 +18,37 @@ if TYPE_CHECKING:
 
 
 class RegressionMSENumpy(RegressionMSE[np.ndarray], MetricNumpy):
+    """
+    Numpy-based implementation of the Mean Squared Error metric.
+    """
     def _model_init(self) -> None:
+        """
+        Initializes model-specific memory requirements for the metric.
+        """
         super()._model_init()
 
         self.tmp_memory_used += int(math.prod(self.shape)) * self.model.dtype.itemsize
         self.memory_used += self.tmp_memory_used
 
     def _post_init(self) -> None:
+        """
+        Allocates memory buffers for difference calculations after model initialization.
+        """
         super()._post_init()
         with self.model.memory:
             self.diff = self.model.memory.ndarray(self.shape, dtype=self.model.dtype)
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
+        """
+        Computes the Mean Squared Error between predicted and target values.
+
+        Args:
+            y_pred: Predicted values.
+            y_targ: Target ground truth values.
+
+        Returns:
+            The calculated MSE as a float.
+        """
         y_targ = np.asarray(y_targ, dtype=self.model.dtype, order="C")
         diff = self.diff[: y_pred.shape[0]]
         # return np.square(y_targ - y_pred).mean()

@@ -1,3 +1,4 @@
+"""PyCUDA backend implementation for the Softmax activation layer."""
 import logging
 
 from pycuda import gpuarray  # type: ignore
@@ -14,12 +15,15 @@ logger = logging.getLogger(__name__)
 
 
 class SoftmaxPycuda(Softmax[TensorArray], ActivationPycuda):
+    """PyCUDA-accelerated Softmax activation layer using cuDNN."""
     def __init__(self, *args, **kwargs):
+        """Initialize the SoftmaxPycuda layer."""
         super().__init__(*args, **kwargs)
         self.mode = None
         self.algo = None
 
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
+        """Initialize layer buffers and cuDNN parameters."""
         super()._model_init(prev_shape, x)
 
         self.mode = cudnn.cudnnSoftmaxMode["CUDNN_SOFTMAX_MODE_INSTANCE"]
@@ -36,11 +40,13 @@ class SoftmaxPycuda(Softmax[TensorArray], ActivationPycuda):
         self.memory_used += self.y.nbytes + self.dx.nbytes
 
     def forward(self, x: TensorArray) -> TensorArray:
+        """Perform the forward pass using cuDNN."""
         alpha, beta = 1.0, 0.0
         cudnn.cudnnSoftmaxForward(self.model.cudnn_handle, self.algo, self.mode, alpha, x.desc, x.ptr_voidp, beta, self.y.desc, self.y.ptr_voidp)
         return self.y
 
     def backward(self, dy: TensorArray) -> TensorArray:
+        """Perform the backward pass using cuDNN."""
         alpha, beta = 1.0, 0.0
         cudnn.cudnnSoftmaxBackward(self.model.cudnn_handle, self.algo, self.mode, alpha, self.y.desc, self.y.ptr_voidp, dy.desc, dy.ptr_voidp, beta, self.dx.desc, self.dx.ptr_voidp)
         return self.dx

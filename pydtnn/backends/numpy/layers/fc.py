@@ -1,3 +1,4 @@
+"""NumPy backend implementation of the Fully Connected (FC) layer."""
 import logging
 from typing import TYPE_CHECKING
 
@@ -16,9 +17,11 @@ if TYPE_CHECKING:
 
 
 class FCNumpy(FC[np.ndarray], LayerNumpy):
+    """Fully connected layer implementation using NumPy."""
     biases: np.ndarray
 
     def __init__(self, *args, **kwargs):
+        """Initialize the FCNumpy layer."""
         super().__init__(*args, **kwargs)
         # The following attributes will be initalized in "initalize"
         self.x: np.ndarray = None  # type: ignore
@@ -26,6 +29,7 @@ class FCNumpy(FC[np.ndarray], LayerNumpy):
         self.db: np.ndarray = None  # type: ignore
 
     def _model_init(self, prev_shape, x=None):
+        """Initialize layer parameters, buffers, and performance models."""
         super()._model_init(prev_shape, x)
         self.weights = np.asarray(self.weights_initializer(self.weights_shape, self.model.param_dtype), order="C")
         self.nparams += self.weights.size
@@ -66,6 +70,7 @@ class FCNumpy(FC[np.ndarray], LayerNumpy):
                                      dtype=self.model.dtype)  # type: ignore (It works well.)
 
     def forward(self, x: np.ndarray) -> np.ndarray:
+        """Perform the forward pass of the FC layer."""
         self.x = x
         y = np.ascontiguousarray(self.y[: x.shape[0], :], dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_MATMUL)
@@ -79,6 +84,7 @@ class FCNumpy(FC[np.ndarray], LayerNumpy):
         return np.asarray(y, dtype=self.model.dtype, order="C")
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
+        """Perform the backward pass of the FC layer."""
 
         # self.model.mode = ModelModeEnum.TRAIN is asumed from this point.
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DW_MATMUL)

@@ -1,3 +1,10 @@
+"""
+Module for testing PyTorch layer conversion to PyDTNN format.
+
+This module provides utilities and test suites to verify that PyTorch layers
+are correctly converted to PyDTNN layers by comparing their forward pass outputs
+and internal state parameters against defined precision thresholds.
+"""
 from typing import Any, Callable
 
 import torch  # type: ignore
@@ -108,7 +115,7 @@ DICT_SUPPORTED_LAYERS: dict[str, tuple[nn.Module, float]] = {
 
 
 def print_model_reports(model: PyDTNN_Model):
-    # Print performance counter report
+    """Prints performance reports for the given PyDTNN model."""
     model.perf_counter.print_report()
     # Print BestOf report
     # if model.enable_best_of:
@@ -117,6 +124,7 @@ def print_model_reports(model: PyDTNN_Model):
 
 
 class TEST_PyTorch_Model(PyTorch_Model):
+    """A wrapper class for PyTorch models to facilitate testing individual layers."""
     def __init__(self, layer):
         super().__init__()
         self.layer = layer
@@ -127,6 +135,7 @@ class TEST_PyTorch_Model(PyTorch_Model):
 
 
 class Addition_Test_PyTorch_Model(PyTorch_Model):
+    """A PyTorch model containing addition operations for testing conversion logic."""
     def __init__(self):
         super().__init__()
         self.op0: nn.Module = DICT_SUPPORTED_LAYERS["AdaptiveAvgPool2d"][0]
@@ -150,6 +159,7 @@ class Addition_Test_PyTorch_Model(PyTorch_Model):
 
 
 class Concat_Test_PyTorch_Model(PyTorch_Model):
+    """A PyTorch model containing concatenation operations for testing conversion logic."""
     def __init__(self):
         super().__init__()
         self.op0: nn.Module = DICT_SUPPORTED_LAYERS["AdaptiveAvgPool2d"][0]
@@ -179,14 +189,17 @@ class Concat_Test_PyTorch_Model(PyTorch_Model):
 
 
 def are_all_zeros(diff: np.ndarray) -> bool:
+    """Checks if all elements in the provided array are zero."""
     return not diff.any()
 
 
 def are_all_below_threshold(diff: np.ndarray, threshold: float = THRESHOLD) -> bool:
+    """Checks if all elements in the array are below a specified threshold."""
     return bool(np.all(diff < threshold))
 
 
 def forward_pydtnn_model(model: PyDTNN_Model, dataset: np.ndarray | TensorArray) -> np.ndarray | TensorArray:
+    """Performs a forward pass through a PyDTNN model, skipping the input layer."""
     y: np.ndarray | TensorArray = dataset
 
     for i in range(1, len(model.layers)):  # NOTE - Remember: Layer 0 is the Input layer and it's ignored
@@ -202,7 +215,7 @@ def forward_pydtnn_model(model: PyDTNN_Model, dataset: np.ndarray | TensorArray)
 
 
 def test_layers_gpu(model: PyDTNN_Model, dataset: np.ndarray) -> TensorArray:
-
+    """Executes a forward pass on a PyDTNN model using GPU acceleration."""
     print("test_layers_gpu - model")
     model.show()
     print("test_layers_gpu - model\n========")
@@ -233,7 +246,7 @@ def test_layers(
     threshold: float,
     function_to_test_layers: Callable,
 ) -> None:
-
+    """Tests a single layer by comparing PyTorch and PyDTNN outputs."""
     print(pytorch_model)
 
     print("=======================\n== Converted version ==\n=======================")
@@ -316,7 +329,7 @@ def test_layers(
 def test_add_and_concat(
     name: str, pytorch_model: TEST_PyTorch_Model, kwargs: dict[str, Any], input_shape: tuple[int, int, int], device: torch.device, dataset: np.ndarray, threshold: float = THRESHOLD
 ) -> None:
-
+    """Tests complex models involving addition and concatenation operations."""
     print(pytorch_model)
 
     print("=======================\n== Converted version ==\n=======================")
@@ -364,7 +377,7 @@ def test_add_and_concat(
 
 
 def main():
-
+    """Main entry point for running the layer conversion test suite."""
     kwargs = KWARGS
     quarter_elements = prod((N, *SHAPE)) / 4
 

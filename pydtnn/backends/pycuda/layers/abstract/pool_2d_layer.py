@@ -1,3 +1,6 @@
+"""
+PyDTNN PyCUDA backend implementation for 2D pooling layers.
+"""
 import logging
 
 from pycuda import gpuarray  # type: ignore
@@ -22,6 +25,9 @@ class AbstractPool2DLayerPycuda(AbstractPool2DLayer[TensorArray], LayerPycuda):
     """
 
     def __init__(self, *args, **kwargs):
+        """
+        Initializes the abstract PyCUDA 2D pooling layer.
+        """
         super().__init__(*args, **kwargs)
         # The following attributes will be initalized later.
         self.pool_desc = None  # TODO: set CDNN descripor type
@@ -36,6 +42,14 @@ class AbstractPool2DLayerPycuda(AbstractPool2DLayer[TensorArray], LayerPycuda):
         self.wo: int = None  # type: ignore
 
     def initialize_pool_2d_gpu(self, prev_shape: ArrayShape, x: TensorArray, pool_mode: int) -> None:
+        """
+        Initializes cuDNN pooling descriptors and allocates GPU memory for forward and backward passes.
+
+        Args:
+            prev_shape: The shape of the input tensor.
+            x: The input TensorArray.
+            pool_mode: The cuDNN pooling mode constant.
+        """
         # pool_mode comes from cudnn.CudnnPoolingMode
 
         if not (self.hdilation == 1 and self.wdilation == 1):
@@ -67,6 +81,15 @@ class AbstractPool2DLayerPycuda(AbstractPool2DLayer[TensorArray], LayerPycuda):
         )  # type: ignore (it's fine)
 
     def forward(self, x: TensorArray) -> TensorArray:
+        """
+        Performs the forward pass using cuDNN pooling.
+
+        Args:
+            x: Input TensorArray.
+
+        Returns:
+            The output TensorArray after pooling.
+        """
         alpha, beta = 1.0, 0.0
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
         cudnn.cudnnPoolingForward(self.model.cudnn_handle, self.pool_desc, alpha, x.desc, x.ptr_voidp, beta, self.y.desc, self.y.ptr_voidp)
@@ -74,6 +97,15 @@ class AbstractPool2DLayerPycuda(AbstractPool2DLayer[TensorArray], LayerPycuda):
         return self.y
 
     def backward(self, dy: TensorArray) -> TensorArray:
+        """
+        Performs the backward pass using cuDNN pooling.
+
+        Args:
+            dy: Gradient of the loss with respect to the output.
+
+        Returns:
+            The gradient of the loss with respect to the input.
+        """
         alpha, beta = 1.0, 0.0
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
         # Compute dx

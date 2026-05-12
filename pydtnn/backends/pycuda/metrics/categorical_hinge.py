@@ -1,3 +1,4 @@
+"""PyCUDA implementation of the categorical hinge metric."""
 import logging
 
 import numpy as np
@@ -12,12 +13,23 @@ logger = logging.getLogger(__name__)
 
 
 class CategoricalHingePycuda(CategoricalHinge[TensorArray], MetricPycuda):
+    """Categorical hinge metric implementation for PyCUDA backends."""
     def _model_init(self) -> None:
+        """Initializes the metric buffers on the GPU."""
         super()._model_init()
         self.res = TensorArray.new_zeros(shape=(1,), dtype=np.dtype(self.model.dtype), tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
         self.local_res = TensorArray.new_zeros(shape=(self.model.batch_size,), dtype=np.dtype(self.model.dtype), tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
 
     def compute(self, y_pred: TensorArray, y_targ: TensorArray) -> float:
+        """Computes the categorical hinge loss between predictions and targets.
+
+        Args:
+            y_pred: Predicted tensor values.
+            y_targ: Ground truth tensor values.
+
+        Returns:
+            The computed categorical hinge loss as a float.
+        """
         n = y_pred.shape[0]
 
         self.res.fill(0)

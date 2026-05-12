@@ -1,3 +1,6 @@
+"""
+In-memory dataset implementation for PyDTNN.
+"""
 from __future__ import annotations
 
 import logging
@@ -45,6 +48,20 @@ class Memory(Dataset):
         force_test_as_validation=False,
         debug=False,
     ):
+        """
+        Initialize the in-memory dataset.
+
+        Args:
+            model: The model instance.
+            x_train: Training input data.
+            y_train: Training target data.
+            x_test: Testing input data.
+            y_test: Testing target data.
+            input_shape: Expected shape of input data.
+            output_shape: Expected shape of output data.
+            force_test_as_validation: Whether to force test data as validation.
+            debug: Enable debug mode.
+        """
         if x_test is None or y_test is None:
             if x_test is None and y_test is None:
                 x_test = x_train
@@ -85,6 +102,9 @@ class Memory(Dataset):
         super().__init__(model, x_train.shape[0], x_test.shape[0], input_shape, output_shape, force_test_as_validation=force_test_as_validation, debug=debug)
 
     def _init_actual_data(self):
+        """
+        Initialize the internal data buffers by slicing the source arrays.
+        """
         for part in Dataset.Part:
             local_offset = self._local_offset[part]
             local_nsamples = self._local_nsamples[part]

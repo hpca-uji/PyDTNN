@@ -1,3 +1,7 @@
+"""
+Module providing factory functions to convert ONNX operations into PyDTNN layers.
+"""
+
 # Typing related (or non important) imports
 from typing import Any
 
@@ -28,6 +32,15 @@ __all__ = (
 
 
 def Add(info: dict[str, Any]) -> Layerable:
+    """
+    Converts an ONNX Add operation to a PyDTNN AdditionBlock.
+
+    Args:
+        info: Dictionary containing ONNX node information and attributes.
+
+    Returns:
+        A configured AdditionBlock layer.
+    """
 
     # TODO: from print to "log - debug" or somthing like that.
     print(f"attributes: {info[cons.CONST_ATTRIBUTES]}")
@@ -39,6 +52,15 @@ def Add(info: dict[str, Any]) -> Layerable:
 
 
 def AveragePool(info: dict[str, Any]) -> Layerable:
+    """
+    Converts an ONNX AveragePool operation to a PyDTNN AveragePool2D layer.
+
+    Args:
+        info: Dictionary containing ONNX node information and attributes.
+
+    Returns:
+        A configured AveragePool2D layer.
+    """
 
     # Onnx attributes names from: https://onnx.ai/onnx/operators/onnx__AveragePool.html
     ONNX_COUNT_DILATATIONS = "dilations"
@@ -74,6 +96,15 @@ def AveragePool(info: dict[str, Any]) -> Layerable:
 
 
 def BatchNormalization(info: dict[str, Any]) -> Layerable:
+    """
+    Converts an ONNX BatchNormalization operation to a PyDTNN BatchNormalization layer.
+
+    Args:
+        info: Dictionary containing ONNX node information and attributes.
+
+    Returns:
+        A configured BatchNormalization layer.
+    """
     print(f"attributes: {info[cons.CONST_ATTRIBUTES]}")
 
     # Onnx attributes names from: https://onnx.ai/onnx/operators/onnx__BatchNormalization.html#l-onnx-doc-batchnormalization
@@ -100,6 +131,15 @@ def BatchNormalization(info: dict[str, Any]) -> Layerable:
 
 
 def Concat(info: dict[str, Any]) -> Layerable:
+    """
+    Converts an ONNX Concat operation to a PyDTNN ConcatenationBlock.
+
+    Args:
+        info: Dictionary containing ONNX node information and attributes.
+
+    Returns:
+        A configured ConcatenationBlock layer.
+    """
     print(f"attributes: {info[cons.CONST_ATTRIBUTES]}")
     # Onnx attributes names from: https://onnx.ai/onnx/operators/onnx__Concat.html#l-onnx-doc-concat
     # TODO: ONNX_AXIS = "axis"
@@ -114,6 +154,15 @@ def Concat(info: dict[str, Any]) -> Layerable:
 
 
 def Conv(info: dict[str, Any]) -> Layerable:
+    """
+    Converts an ONNX Conv operation to a PyDTNN Conv2D layer.
+
+    Args:
+        info: Dictionary containing ONNX node information and attributes.
+
+    Returns:
+        A configured Conv2D layer.
+    """
 
     print(f"attributes: {info[cons.CONST_ATTRIBUTES]}")
 
@@ -161,6 +210,15 @@ def Conv(info: dict[str, Any]) -> Layerable:
 
 
 def Dropout(info: dict[str, Any]) -> Layerable:
+    """
+    Converts an ONNX Dropout operation to a PyDTNN Dropout layer.
+
+    Args:
+        info: Dictionary containing ONNX node information and attributes.
+
+    Returns:
+        A configured Dropout layer.
+    """
     print(f"attributes: {info[cons.CONST_ATTRIBUTES]}")
     # Onnx attributes names from: https://onnx.ai/onnx/operators/onnx__Dropout.html#l-onnx-doc-dropout
     # TODO: ONNX_SEED = "seed"
@@ -194,6 +252,15 @@ def Dropout(info: dict[str, Any]) -> Layerable:
 
 
 def Flatten(info: dict[str, Any]) -> Layerable:
+    """
+    Converts an ONNX Flatten operation to a PyDTNN Flatten layer.
+
+    Args:
+        info: Dictionary containing ONNX node information and attributes.
+
+    Returns:
+        A configured Flatten layer.
+    """
     print(f"attributes: {info[cons.CONST_ATTRIBUTES]}")
     # Source: https://onnx.ai/onnx/operators/onnx__Flatten.html
     # It has one attribute (axis), but there is no equivalence in PyDTNN.
@@ -207,6 +274,15 @@ def Flatten(info: dict[str, Any]) -> Layerable:
 
 
 def Gemm(info: dict[str, Any]) -> Layerable:
+    """
+    Converts an ONNX Gemm operation to a PyDTNN FC (Fully Connected) layer.
+
+    Args:
+        info: Dictionary containing ONNX node information and attributes.
+
+    Returns:
+        A configured FC layer with custom forward and initialization logic.
+    """
 
     print(f"attributes: {info[cons.CONST_ATTRIBUTES]}")
     # Onnx documentation: https://onnx.ai/onnx/operators/onnx__Gemm.html
@@ -271,6 +347,15 @@ def Gemm(info: dict[str, Any]) -> Layerable:
 
 
 def GlobalAveragePool(info: dict[str, Any]) -> Layerable:
+    """
+    Converts an ONNX GlobalAveragePool operation to a PyDTNN AveragePool2D layer.
+
+    Args:
+        info: Dictionary containing ONNX node information and attributes.
+
+    Returns:
+        A configured AveragePool2D layer.
+    """
     print(f"attributes: {info[cons.CONST_ATTRIBUTES]}")
     # 1.- Onnx documentation: https://onnx.ai/onnx/operators/onnx__GlobalAveragePool.html
 
@@ -298,6 +383,15 @@ def GlobalAveragePool(info: dict[str, Any]) -> Layerable:
 
 
 def MaxPool(info: dict[str, Any]) -> Layerable:
+    """
+    Converts an ONNX MaxPool operation to a PyDTNN MaxPool2D layer.
+
+    Args:
+        info: Dictionary containing ONNX node information and attributes.
+
+    Returns:
+        A configured MaxPool2D layer.
+    """
     print("------")
     print(f"attributes: {info[cons.CONST_ATTRIBUTES]}")
 
@@ -336,6 +430,15 @@ def MaxPool(info: dict[str, Any]) -> Layerable:
 
 
 def Mul(info: dict[str, Any]) -> Layerable:
+    """
+    Converts an ONNX Mul operation to a custom PyDTNN multiplication block layer.
+
+    Args:
+        info: Dictionary containing ONNX node information and attributes.
+
+    Returns:
+        A configured _Mul layer.
+    """
     print(f"attributes: {info[cons.CONST_ATTRIBUTES]}")
 
     # TODO: Move it to a file and do it in the right way.
@@ -345,6 +448,9 @@ def Mul(info: dict[str, Any]) -> Layerable:
     from pydtnn.layers.abstract.block_layer import AbstractBlockLayer
 
     class _Mul(AbstractBlockLayer):
+        """
+        Internal multiplication block layer implementation.
+        """
         def initialize_block_layer(self):
             super().initialize_block_layer()
             assert all([o == self.out_shapes[0] for o in self.out_shapes])
@@ -378,6 +484,15 @@ def Mul(info: dict[str, Any]) -> Layerable:
 
 
 def Relu(info: dict[str, Any]) -> Layerable:
+    """
+    Converts an ONNX Relu operation to a PyDTNN Relu activation layer.
+
+    Args:
+        info: Dictionary containing ONNX node information and attributes.
+
+    Returns:
+        A configured Relu layer.
+    """
     # ONNX info: https://onnx.ai/onnx/operators/onnx__Relu.html
     print(f"attributes: {info[cons.CONST_ATTRIBUTES]}")
     from pydtnn.activations.relu import Relu
@@ -389,6 +504,15 @@ def Relu(info: dict[str, Any]) -> Layerable:
 
 
 def Unsqueeze(info: dict[str, Any]) -> Layerable:
+    """
+    Converts an ONNX Unsqueeze operation to a custom PyDTNN Unsqueeze layer.
+
+    Args:
+        info: Dictionary containing ONNX node information and attributes.
+
+    Returns:
+        A configured _Unsqueeze layer.
+    """
     # Onnx information: https://onnx.ai/onnx/operators/onnx__Unsqueeze.html
     print(f"attributes: {info[cons.CONST_ATTRIBUTES]}")
     ONNX_AXES = "axes"
@@ -408,6 +532,9 @@ def Unsqueeze(info: dict[str, Any]) -> Layerable:
     from pydtnn.layers.abstract.block_layer import AbstractBlockLayer as Layer
 
     class _Unsqueeze(Layer):
+        """
+        Internal unsqueeze layer implementation.
+        """
         def __init__(self, shape=(1,), axis=()):
             super().__init__(shape)
             self.axis = axis

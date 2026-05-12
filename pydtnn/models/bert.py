@@ -1,4 +1,6 @@
 """
+BERT architecture implementation for PyDTNN framework.
+
 https://github.com/google-research/bert
 https://github.com/google-research/bert/blob/master/modeling.py
 https://www.kaggle.com/tanulsingh077/deep-learning-for-nlp-zero-to-transformers-bert

@@ -1,3 +1,6 @@
+"""
+PyCUDA implementation of the Transformer Decoder block.
+"""
 import logging
 
 import numpy as np
@@ -17,7 +20,13 @@ logger = logging.getLogger(__name__)
 
 
 class DecoderPycuda(AbstractBlockLayerPycuda, Decoder):
+    """
+    PyCUDA-accelerated Transformer Decoder layer.
+    """
     def __init__(self, *args, **kwargs):
+        """
+        Initializes the DecoderPycuda layer with sub-layers and internal buffers.
+        """
         super().__init__(*args, **kwargs)
         self.multiheadattention = MultiHeadAttention(embedl=self.embedl, d_k=self.d_k, heads=self.heads, dropout_rate=self.dropout_rate)
         # self.dropout_1 = DropoutPycuda(rate=self.dropout_rate)
@@ -35,6 +44,9 @@ class DecoderPycuda(AbstractBlockLayerPycuda, Decoder):
         self.dx: TensorArray = None  # type: ignore
 
     def _model_init(self, prev_shape, x):
+        """
+        Initializes the backend model and sub-layer structures.
+        """
         super()._model_init(prev_shape, x)
         x_dec, x_enc, mask_dec = x
         x_dec_shape, x_enc_shape, mask_dec_shape = prev_shape
@@ -85,17 +97,29 @@ class DecoderPycuda(AbstractBlockLayerPycuda, Decoder):
             self.nparams += layer.nparams
 
     def initialize_block_layer(self):
+        """
+        Placeholder for block layer initialization.
+        """
         pass
 
     def flatten(self, x):
+        """
+        Flattens the input tensor to 2D.
+        """
         last_dim = x.shape[-1]
         return x.reshape((int(np.prod(self.first_dims)), last_dim))
 
     def unflatten(self, x):
+        """
+        Restores the original shape of the flattened tensor.
+        """
         last_dim = x.shape[-1]
         return x.reshape((*self.first_dims, last_dim))
 
     def forward(self, x, x_enc, mask=None):
+        """
+        Performs the forward pass through the decoder block.
+        """
         alpha, beta = 1.0, 1.0
         # Self Attention
         self.multiheadattention.forward(x, x, x, mask, x)  # type: ignore (multiheadattention uses more parameters)
@@ -114,6 +138,9 @@ class DecoderPycuda(AbstractBlockLayerPycuda, Decoder):
         return self.y
 
     def backward(self, dy):
+        """
+        Performs the backward pass through the decoder block.
+        """
 
         alpha, beta = 1.0, 1.0
         # Feed Forward

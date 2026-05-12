@@ -1,3 +1,6 @@
+"""
+NumPy backend implementation for activation layers in PyDTNN.
+"""
 import logging
 from typing import TYPE_CHECKING
 
@@ -15,4 +18,7 @@ if TYPE_CHECKING:
 
 
 class ActivationNumpy(Activation[np.ndarray], LayerableNumpy):
+    """
+    Base class for activation layers using the NumPy backend.
+    """
     ...

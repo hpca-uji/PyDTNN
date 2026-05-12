@@ -1,3 +1,6 @@
+"""
+DenseNet implementation for CIFAR-10 dataset.
+"""
 from collections.abc import Sequence
 
 from pydtnn.abstract.layerable import Layerable
@@ -17,6 +20,16 @@ __all__ = ("densenet_cifar10",)
 
 
 def densenet_cifar10(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
+    """
+    Constructs a DenseNet architecture tailored for the CIFAR-10 dataset.
+
+    Args:
+        input_shape: The shape of the input data (channels, height, width).
+        output_shape: The shape of the output layer.
+
+    Returns:
+        A sequence of layers forming the DenseNet model.
+    """
     model = list[Layerable]()
     _ = model.append
 

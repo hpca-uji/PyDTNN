@@ -1,3 +1,6 @@
+"""
+ResNet-34 model architecture implementation for PyDTNN.
+"""
 from collections.abc import Sequence
 
 from pydtnn.abstract.layerable import Layerable
@@ -17,6 +20,16 @@ __all__ = ("resnet34",)
 
 
 def resnet34(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
+    """
+    Constructs a ResNet-34 model architecture.
+
+    Args:
+        input_shape: The shape of the input data.
+        output_shape: The shape of the output layer.
+
+    Returns:
+        A sequence of layers representing the ResNet-34 model.
+    """
     model = list[Layerable]()
     _ = model.append
 

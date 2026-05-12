@@ -1,3 +1,6 @@
+"""
+Test suite for verifying Conv2D GEMM implementation consistency.
+"""
 import logging
 from copy import deepcopy
 
@@ -24,6 +27,10 @@ class Conv2DConvGemmTestCase(Conv2DCommonTestCase):
 
     @staticmethod
     def _get_layers(d: D, deconv=False, trans=False) -> tuple[Conv2D, Conv2D]:
+        """
+        Initializes and returns two Conv2D layers with identical weights, one using
+        im2col and the other using GEMM backend.
+        """
         params = Params()
         params.tensor_format = TensorFormat.NCHW.upper()
         params.batch_size = d.b

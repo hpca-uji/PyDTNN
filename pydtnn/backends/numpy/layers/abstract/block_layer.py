@@ -1,3 +1,6 @@
+"""
+Module providing the abstract base class for block-based layers in the NumPy backend.
+"""
 import logging
 from typing import TYPE_CHECKING
 
@@ -14,4 +17,7 @@ if TYPE_CHECKING:
 
 
 class AbstractBlockLayerNumpy(AbstractBlockLayer[np.ndarray], LayerNumpy):
+    """
+    Abstract base class for layers that operate on blocks using the NumPy backend.
+    """
     pass

@@ -1,3 +1,6 @@
+"""
+Module for the Tsunamis Eflows UMA model architecture.
+"""
 from collections.abc import Sequence
 
 from pydtnn.abstract.layerable import Layerable
@@ -17,6 +20,16 @@ __all__ = ("tsunamis_eflows_UMA",)
 
 
 def tsunamis_eflows_UMA(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
+    """
+    Constructs the Tsunamis Eflows UMA model architecture.
+
+    Args:
+        input_shape: The shape of the input data.
+        output_shape: The shape of the output data.
+
+    Returns:
+        A sequence of layers defining the model.
+    """
     model = list[Layerable]()
     _ = model.append
 

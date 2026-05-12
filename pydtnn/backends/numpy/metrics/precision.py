@@ -1,3 +1,6 @@
+"""
+Numpy backend implementation for the Precision metric.
+"""
 import logging
 import math
 from typing import TYPE_CHECKING
@@ -18,9 +21,15 @@ if TYPE_CHECKING:
 
 
 class PrecisionNumpy(Precision[np.ndarray], MetricNumpy):
+    """
+    Numpy implementation of the Precision metric for binary classification.
+    """
     conf_matrix_metric: BinaryConfusionMatrixNumpy
 
     def _model_init(self) -> None:
+        """
+        Initializes model-specific memory requirements for precision calculation.
+        """
         super()._model_init()
         self.temp_var_shape = (self.shape[1],)
         self.tmp_memory_used += int(2 * math.prod(self.temp_var_shape)) * np.float32().itemsize
@@ -28,6 +37,9 @@ class PrecisionNumpy(Precision[np.ndarray], MetricNumpy):
         self.memory_used += self.tmp_memory_used
 
     def _post_init(self) -> None:
+        """
+        Allocates memory buffers for true positives, false positives, and zero-check masks.
+        """
         super()._post_init()
         with self.model.memory:
             self.true_positives = self.model.memory.ndarray(self.temp_var_shape, dtype=np.float32)
@@ -35,6 +47,16 @@ class PrecisionNumpy(Precision[np.ndarray], MetricNumpy):
             self.are_zeros = self.model.memory.ndarray(self.temp_var_shape, dtype=np.bool_)
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
+        """
+        Computes the precision score based on the confusion matrix statistics.
+
+        Args:
+            y_pred: Predicted labels.
+            y_targ: Target ground truth labels.
+
+        Returns:
+            The average precision score.
+        """
         true_positives = self.true_positives
         false_positives = self.false_positives
         are_zeros = self.are_zeros

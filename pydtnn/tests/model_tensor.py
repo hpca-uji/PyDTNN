@@ -1,3 +1,6 @@
+"""
+Test suite for verifying model consistency across different tensor formats.
+"""
 import logging
 import unittest
 import warnings
@@ -39,6 +42,15 @@ class ModelTensorTestCase(ModelCommonTestCase):
     model2_desc = "using the CPU backend tensor format NCHW"
 
     def get_model2(self, model_name: str):
+        """
+        Instantiates a model configured for NCHW tensor format.
+
+        Args:
+            model_name: The name of the model to instantiate.
+
+        Returns:
+            Model: The initialized model instance.
+        """
 
         # Tensor format NCHW
         params = Params()
@@ -53,6 +65,15 @@ class ModelTensorTestCase(ModelCommonTestCase):
 
     @staticmethod
     def nhwc2nchw(x: np.ndarray):
+        """
+        Transposes a tensor from NHWC to NCHW format.
+
+        Args:
+            x: Input numpy array in NHWC format.
+
+        Returns:
+            np.ndarray: Transposed array in NCHW format.
+        """
         if len(x.shape) == 4:
             x = format_transpose(x, TensorFormat.NHWC, TensorFormat.NCHW)
         return np.asarray(x, order="C")
@@ -73,6 +94,15 @@ class ModelTensorTestCase(ModelCommonTestCase):
         return super().do_model2_backward_pass(model2, dx1_format)
 
     def compare_forward(self, model1: Model, x1: list[np.ndarray], model2: Model, x2: list[np.ndarray]):
+        """
+        Compares forward pass outputs between two models.
+
+        Args:
+            model1: The reference model.
+            x1: Input data for the reference model.
+            model2: The target model to compare.
+            x2: Input data for the target model.
+        """
         assert len(x1) == len(x2), "x1 and x2 should have the same length"
         if verbose_test():
             logger.info("\nComparing outputs of both models...")
@@ -86,6 +116,15 @@ class ModelTensorTestCase(ModelCommonTestCase):
                 self.assertTrue(allclose, f"Forward result from layers {layer.name_with_id} differ ({self.print_stats(x1_i, x2[i], rtol, atol)})")
 
     def compare_backward(self, model1: Model, dx1, model2: Model, dx2):
+        """
+        Compares backward pass gradients between two models.
+
+        Args:
+            model1: The reference model.
+            dx1: Gradient data for the reference model.
+            model2: The target model to compare.
+            dx2: Gradient data for the target model.
+        """
         assert len(dx1) == len(dx2), "dx1 and dx2 should have the same length"
         if verbose_test():
             logger.info("\nComparing dw of both models...")

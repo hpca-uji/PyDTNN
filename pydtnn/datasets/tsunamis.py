@@ -1,5 +1,12 @@
 from __future__ import annotations
 
+"""
+PyDTNN Tsunami Dataset Module.
+
+This module provides the Tsunamis dataset class, which is designed to load
+and process tsunami simulation data for machine learning tasks.
+"""
+
 import copy
 import logging
 import math
@@ -39,9 +46,20 @@ class Tsunamis(Dataset):
     """
 
     def __init__(self, model: Model, force_test_as_validation=False, debug=False):
+        """
+        Initialize the Tsunamis dataset handler.
+
+        Args:
+            model: The model instance associated with the dataset.
+            force_test_as_validation: Whether to use the test set as validation.
+            debug: Whether to enable debug mode.
+        """
         super().__init__(model, TRAIN_NSAMPLES, TEST_NSAMPLES, INPUT_SHAPE, OUTPUT_SHAPE, force_test_as_validation=force_test_as_validation, debug=debug)
 
     def _init_actual_data(self):
+        """
+        Initialize file paths and metadata for the tsunami dataset.
+        """
         self._src_filename = os.path.join(self.model.dataset_path, "tsunamis-binary.tar.gz")
         self._xy_filenames = [[os.path.join("tsunamis-batches-bin", f"data_batch_{x}.bin") for x in range(1, 6)], [], [os.path.join("tsunamis-batches-bin", "test_batch.bin")]]
         self._xy_filenames[Dataset.Part.VAL] = copy.copy(self._xy_filenames[Dataset.Part.TEST] if self.test_as_validation else self._xy_filenames[Dataset.Part.TRAIN])
@@ -50,6 +68,15 @@ class Tsunamis(Dataset):
         self._gzip_open(self._src_filename).close()
 
     def _actual_data_generator(self, part: Dataset.Part):
+        """
+        Generate batches of data for the specified dataset partition.
+
+        Args:
+            part: The dataset partition (TRAIN, VAL, or TEST).
+
+        Yields:
+            A tuple containing the input tensor and the target tensor.
+        """
         xy_filenames = self._xy_filenames[part]
 
         if part is Dataset.Part.TRAIN and self.model.augment_shuffle:
@@ -70,6 +97,17 @@ class Tsunamis(Dataset):
                     yield x, y
 
     def _read_file(self, f, offset, nsamples):
+        """
+        Read a chunk of binary data from the file object.
+
+        Args:
+            f: The file object to read from.
+            offset: The starting offset in the file.
+            nsamples: The number of samples to read.
+
+        Returns:
+            A tuple containing the input images and their corresponding class labels.
+        """
         chunk_size = math.prod(INPUT_SHAPE) + 1
         f.seek(offset * chunk_size)
         im = np.frombuffer(f.read(nsamples * chunk_size), dtype=np.uint8).reshape(nsamples, chunk_size)

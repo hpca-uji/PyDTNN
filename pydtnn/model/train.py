@@ -1,3 +1,7 @@
+"""
+Training module for the PyDTNN framework, providing functionality for model training,
+synchronization, and epoch-based execution.
+"""
 import enum
 import logging
 import time
@@ -25,16 +29,23 @@ logger = logging.getLogger(__name__)
 
 
 class Train[T: Array](Eval[T]):
+    """
+    Handles the training process for a model, including weight synchronization,
+    gradient updates, and training loop management.
+    """
     class SyncParticipation(enum.StrEnum):
+        """Defines strategies for node participation in model synchronization."""
         ALL = enum.auto()
         AVAIL2ALL = enum.auto()
 
     class SyncAlgorithm(enum.StrEnum):
+        """Defines algorithms for weight aggregation during synchronization."""
         AVG = enum.auto()
         WAVG = enum.auto()
         INVAVG = enum.auto()
 
     def __init__(self, **kwargs) -> None:
+        """Initializes the training instance with synchronization parameters and schedulers."""
         super().__init__(**kwargs)
         self._training_round: int = 0
         # Synchronization parameters
@@ -49,18 +60,21 @@ class Train[T: Array](Eval[T]):
             scheduler.model = self
 
     def _model_reduce_sync(self, gradient=True):
+        """Performs a synchronous all-reduce operation on model weights or gradients."""
         for layer in self.layers:
             self.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.ALLREDUCE_DW)
             layer.reduce_weights_sync(gradient=gradient)
             self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
     def _model_reduce_async(self, gradient=True):
+        """Initiates an asynchronous all-reduce operation on model weights or gradients."""
         for layer in self.layers:
             self.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.ALLREDUCE_DW)
             layer.reduce_weights_async(gradient=gradient)
             self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
     def _model_reduce_wait(self, gradient=True):
+        """Waits for completion of pending asynchronous all-reduce operations."""
         for layer in self.layers:
             self.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.WAIT_DW)
             layer.wait_allreduce_async(gradient=gradient)
@@ -68,6 +82,7 @@ class Train[T: Array](Eval[T]):
 
     # TODO: Modify the method's name.
     def _weight_update(self, gradient=True, blocking=True, pipeline=False):
+        """Updates model weights or gradients based on the configured synchronization strategy."""
         if blocking:
             self._model_reduce_sync(gradient)
         elif pipeline:
@@ -78,6 +93,7 @@ class Train[T: Array](Eval[T]):
             self._model_reduce_wait(gradient)
 
     def _compute_rank_weight(self, mask: list[int], part: Dataset.Part) -> float:
+        """Calculates the weight contribution of the current rank based on dataset participation."""
         match self.model_sync_participation:
             case Train.SyncParticipation.ALL:
                 comm_nsamples = self.comm_nsamples[part]
@@ -103,19 +119,8 @@ class Train[T: Array](Eval[T]):
             case _:
                 raise ValueError(f"Model synchronization algorithm option '{self.model_sync_algo}' not recognized. Only recognized: {list(Eval.SyncAlgorithm)}")
 
-    # def update_status(self, pbar: tqdm, batch_loss: np.ndarray, total_loss: np.ndarray,
-    #                  batch_count: int, batch_size: int, output_prefix: str = "val_", delta: float = -1,
-
-    #                  prev_string: str = "") -> tuple[np.ndarray, int]:
-    #    total_loss, batch_count, string = \
-    #        self._update_running_average(batch_loss, total_loss, batch_count, batch_size, prefix=output_prefix)
-
-    #    if self.comm_rank == 0:
-    #        pbar.set_postfix_str(s=f"{prev_string}{string}", refresh=True)
-
-    #    return total_loss, batch_count
-
     def _train_batch(self, x_batch: np.ndarray, y_batch: np.ndarray, sync_model=True) -> np.ndarray:
+        """Executes a single training batch including forward pass, backward pass, and weight updates."""
         self.mode = Eval.Mode.TRAIN
 
         # Schedulers begin
@@ -193,6 +198,7 @@ class Train[T: Array](Eval[T]):
         prev_string: str = "",
         out_prefix: str = "",
     ) -> tuple[np.ndarray, int, bool, str]:
+        """Executes a full training round over the provided batch generator."""
         sync_epoch = False
         string = ""
 
@@ -245,6 +251,7 @@ class Train[T: Array](Eval[T]):
         return (total_loss, model_sync_count, sync_epoch, string)
 
     def train(self, bar_width=BAR_WIDTH) -> dict[str, list[np.ndarray]]:
+        """Runs the full training process over multiple epochs."""
         self._ensure_model_runnable()
 
         # If working with CUDA, self.y_batch must be in a GPU's data structure.

@@ -1,3 +1,9 @@
+"""
+Debugging utilities for the PyDTNN framework.
+
+Provides tools for tracing function calls, stack execution, and logging
+detailed exception tracebacks to files.
+"""
 import functools
 import inspect
 import logging
@@ -20,7 +26,12 @@ logger = logging.getLogger(__name__)
 
 
 def debug_line(*args) -> None:
-    """Get line trace"""
+    """
+    Print the current file, function, and line number to standard output.
+
+    Args:
+        *args: Variable length argument list to be printed alongside the trace.
+    """
     log = print
 
     frame_info = inspect.stack()[1]
@@ -33,7 +44,13 @@ def debug_line(*args) -> None:
 
 
 def debug_stack(*args, sep="|") -> None:
-    """Get stack trace"""
+    """
+    Print the current call stack trace to standard output.
+
+    Args:
+        *args: Variable length argument list to be printed alongside the trace.
+        sep: Separator string used to join stack frames.
+    """
     log = print
 
     stack = inspect.stack()[1:]
@@ -46,7 +63,15 @@ def debug_stack(*args, sep="|") -> None:
 
 
 def debug_func(func):
-    """Functions trace decorator"""
+    """
+    Decorator to trace function calls, arguments, return values, and exceptions.
+
+    Args:
+        func: The function to be decorated.
+
+    Returns:
+        The wrapped function with tracing logic.
+    """
     log = print
 
     @functools.wraps(func)
@@ -72,6 +97,11 @@ def debug_func(func):
 
 @contextmanager
 def traceback_context():
+    """
+    Context manager that catches exceptions and writes a detailed traceback to a log file.
+
+    The traceback includes local variables and is saved with a timestamped filename.
+    """
     try:
         yield
     except Exception as exc:

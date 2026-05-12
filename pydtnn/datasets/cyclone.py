@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+"""
+Cyclone dataset implementation for the PyDTNN framework.
+"""
+
 import copy
 import logging
 import math
@@ -39,9 +43,20 @@ class Cyclone(Dataset):
     """
 
     def __init__(self, model: Model, force_test_as_validation=False, debug=False):
+        """
+        Initialize the Cyclone dataset.
+
+        Args:
+            model: The model instance associated with the dataset.
+            force_test_as_validation: Whether to use test data for validation.
+            debug: Whether to enable debug mode.
+        """
         super().__init__(model, TRAIN_NSAMPLES, TEST_NSAMPLES, INPUT_SHAPE, OUTPUT_SHAPE, force_test_as_validation=force_test_as_validation, debug=debug)
 
     def _init_actual_data(self):
+        """
+        Initialize file paths and verify dataset archive accessibility.
+        """
         self._src_filename = os.path.join(self.model.dataset_path, "cyclone-binary.tar.gz")
         self._xy_filenames = [[os.path.join("cyclone-batches-bin", f"data_batch_{x}.bin") for x in range(1, 6)], [], [os.path.join("cyclone-batches-bin", "test_batch.bin")]]
         self._xy_filenames[Dataset.Part.VAL] = copy.copy(self._xy_filenames[Dataset.Part.TEST] if self.test_as_validation else self._xy_filenames[Dataset.Part.TRAIN])
@@ -50,6 +65,15 @@ class Cyclone(Dataset):
         self._gzip_open(self._src_filename).close()
 
     def _actual_data_generator(self, part: Dataset.Part):
+        """
+        Generate batches of data for the specified dataset partition.
+
+        Args:
+            part: The dataset partition (TRAIN, VAL, or TEST).
+
+        Yields:
+            A tuple containing the input tensor and the target labels.
+        """
         xy_filenames = self._xy_filenames[part]
 
         if part is Dataset.Part.TRAIN and self.model.augment_shuffle:
@@ -70,6 +94,17 @@ class Cyclone(Dataset):
                     yield x, y
 
     def _read_file(self, f, offset, nsamples):
+        """
+        Read a chunk of data from the binary file.
+
+        Args:
+            f: The file object to read from.
+            offset: The starting index within the file.
+            nsamples: The number of samples to read.
+
+        Returns:
+            A tuple containing the input data array and the class labels array.
+        """
         chunk_size = math.prod(INPUT_SHAPE) + 1
         f.seek(offset * chunk_size)
         im = np.frombuffer(f.read(nsamples * chunk_size), dtype=np.uint8).reshape(nsamples, chunk_size)

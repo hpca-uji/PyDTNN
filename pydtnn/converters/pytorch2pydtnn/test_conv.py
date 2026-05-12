@@ -1,3 +1,10 @@
+"""
+Test suite for PyDTNN convolution layer converters.
+
+This module provides functional tests for various convolution layer types,
+including standard, depthwise, and pointwise convolutions, as well as
+activation layers, ensuring correct forward and backward pass behavior.
+"""
 from copy import deepcopy
 
 import numpy as np
@@ -52,6 +59,12 @@ random.seed(SEED)
 
 
 def main():
+    """
+    Executes the main test routine for convolution layers.
+
+    Initializes multiple model configurations, performs forward and backward
+    passes through various layer types, and validates output shapes.
+    """
     model_I2C = Model(**KWARGS)
     model_DEPTH = Model(**KWARGS)
     model_POINT = Model(**KWARGS)

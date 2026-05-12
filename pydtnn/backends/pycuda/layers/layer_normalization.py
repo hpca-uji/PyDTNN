@@ -1,3 +1,4 @@
+"""PyCUDA implementation of the Layer Normalization layer."""
 import logging
 
 import numpy as np
@@ -13,7 +14,9 @@ logger = logging.getLogger(__name__)
 
 
 class LayerNormalizationPycuda(LayerNormalization[TensorArray], LayerPycuda):
+    """PyCUDA-accelerated Layer Normalization layer."""
     def _model_init(self, prev_shape, x):
+        """Initialize layer parameters and GPU buffers."""
         super()._model_init(prev_shape, x)
         self.shape = prev_shape
         self.x = x
@@ -52,6 +55,7 @@ class LayerNormalizationPycuda(LayerNormalization[TensorArray], LayerPycuda):
         self.blocks_backward_weights = int(max(self.kernel_dim_params[1], 1024) // self.threads_backward_weights + 1)
 
     def forward(self, x):
+        """Perform forward pass on GPU."""
         self.kernel_forward(
             x.ary,
             self.y.ary,
@@ -68,6 +72,7 @@ class LayerNormalizationPycuda(LayerNormalization[TensorArray], LayerPycuda):
         return self.y
 
     def backward(self, dy):
+        """Perform backward pass on GPU."""
         self.kernel_backward(
             dy.ary, self.dx.ary, self.xn.ary, self.std.ary, self.gamma.ary, self.epsilon, *self.kernel_dim_params, grid=(self.blocks, 1, 1), block=(self.threads, 1, 1), stream=self.model.stream
         )
@@ -88,6 +93,7 @@ class LayerNormalizationPycuda(LayerNormalization[TensorArray], LayerPycuda):
         return self.dx
 
     def __init_kernels_gpu__(self):
+        """Initialize CUDA kernels for forward and backward passes."""
 
         self.kernel_forward = self._fwd_kernel()
         n = np.prod([self.y.shape[i] for i in self.axis])

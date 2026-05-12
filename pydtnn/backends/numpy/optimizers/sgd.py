@@ -1,3 +1,4 @@
+"""Numpy implementation of the Stochastic Gradient Descent (SGD) optimizer."""
 import logging
 import math
 from typing import TYPE_CHECKING
@@ -16,7 +17,9 @@ if TYPE_CHECKING:
 
 
 class SGDNumpy(SGD[np.ndarray], OptimizerNumpy):
+    """Numpy-specific implementation of the SGD optimizer."""
     def _model_init(self, list_layers: list[LayerNumpy]) -> None:
+        """Initializes optimizer state and memory buffers for layers."""
         super()._model_init(list_layers)  # type: ignore (it's the right type)
 
         temp_memory_size = []
@@ -43,6 +46,7 @@ class SGDNumpy(SGD[np.ndarray], OptimizerNumpy):
         self.memory_used += self.tmp_memory_used
 
     def _post_init(self) -> None:
+        """Allocates memory for temporary buffers after model initialization."""
         super()._post_init()
         for layer_id in self.context.keys():
             with self.model.memory:
@@ -62,6 +66,7 @@ class SGDNumpy(SGD[np.ndarray], OptimizerNumpy):
                     w_shape = self.context[layer_id][key] = self.model.memory.ndarray(w_shape, dtype=self.model.dtype)
 
     def update(self, layer: LayerNumpy) -> None:
+        """Performs a single optimization step for the given layer."""
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
             velocity: np.ndarray = self.context[layer.id]["velocity_%s" % w_]  # type: ignore

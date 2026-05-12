@@ -1,3 +1,6 @@
+"""
+Multi-head attention layer implementation for the NumPy backend.
+"""
 import logging
 from typing import TYPE_CHECKING
 
@@ -22,7 +25,13 @@ if TYPE_CHECKING:
 
 
 class MultiHeadAttentionNumpy(MultiHeadAttention[np.ndarray], AbstractBlockLayerNumpy):
+    """
+    NumPy implementation of the Multi-Head Attention mechanism.
+    """
     def __init__(self, *args, **kwargs):
+        """
+        Initializes the MultiHeadAttentionNumpy layer with required sublayers.
+        """
         super().__init__(*args, **kwargs)
         self.FC_q = FC(shape=(self.heads * self.d_k,))  # Dim: embedl x heads*d_k
         self.FC_k = FC(shape=(self.heads * self.d_k,))  # Dim: embedl x heads*d_k
@@ -40,6 +49,9 @@ class MultiHeadAttentionNumpy(MultiHeadAttention[np.ndarray], AbstractBlockLayer
         self.mask = None
 
     def _model_init(self, prev_shape, x):
+        """
+        Initializes the model structure and sublayers for the NumPy backend.
+        """
         super()._model_init(prev_shape, x)
         self.shape = prev_shape
         if type(prev_shape[0]) is tuple:
@@ -87,15 +99,27 @@ class MultiHeadAttentionNumpy(MultiHeadAttention[np.ndarray], AbstractBlockLayer
                 self.nparams += layer.nparams
 
     def initialize_block_layer(self):
+        """
+        Placeholder for block layer initialization.
+        """
         pass
 
     def transformation_addheads(self, x):
+        """
+        Reshapes input to separate attention heads.
+        """
         return x.reshape((x.shape[:-1] + (self.heads, self.d_k))).swapaxes(-3, -2)
 
     def transformation_removeheads(self, x):
+        """
+        Reshapes input to merge attention heads.
+        """
         return x.swapaxes(-3, -2).reshape((x.shape[:-3] + (x.shape[-2], self.heads * self.d_k)))
 
     def mask_apply(self, x, mask):
+        """
+        Applies an attention mask to the score tensor.
+        """
         if len(mask.shape) == 2:
             seq, seq2 = mask.shape
         else:
@@ -110,9 +134,15 @@ class MultiHeadAttentionNumpy(MultiHeadAttention[np.ndarray], AbstractBlockLayer
         return x
 
     def transpose(self, x):
+        """
+        Transposes the last two dimensions of the input.
+        """
         return x.swapaxes(-2, -1)
 
     def forward(self, query, key, value, mask=None):
+        """
+        Performs the forward pass of the multi-head attention mechanism.
+        """
         if self.model.mode == Model.Mode.TRAIN:
             self.mask = mask
 
@@ -147,6 +177,9 @@ class MultiHeadAttentionNumpy(MultiHeadAttention[np.ndarray], AbstractBlockLayer
         return score
 
     def backward(self, dy):
+        """
+        Performs the backward pass of the multi-head attention mechanism.
+        """
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_MHA_FC_O)
         dx = self.FC_o.backward(dy)
         dx = self.transformation_addheads(dx)

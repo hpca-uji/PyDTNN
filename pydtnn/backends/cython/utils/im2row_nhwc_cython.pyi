@@ -1,9 +1,14 @@
+"""
+Cython-accelerated utilities for image-to-row and row-to-image transformations in NHWC format.
+"""
 from pydtnn.backends.cython.utils.base import _npDT, _npDT_2Dims, _npDT_4Dims
 
 def im2row_nhwc_cython[T: _npDT](
     x: _npDT_4Dims[T], rows: _npDT_2Dims[T], kh: int, kw: int, ho: int, wo: int, vpadding: int, hpadding: int, vstride: int, hstride: int, vdilation: int, hdilation: int
 ) -> None:
     """
+    Extracts image patches into rows for convolution operations in NHWC layout.
+
     Args:
         x (npDT_4Dims): The 4 dimensional array (the image).
         rows (npDT_2Dims): The 2 dimensional array where the image as columns is stored (it should be initalized with 0s).
@@ -40,6 +45,8 @@ def row2im_nhwc_cython[T: _npDT](
     hdilation: int,
 ) -> None:
     """
+    Reconstructs an image from row-based patches in NHWC layout.
+
     Args:
         rows (npDT_2Dims): The 2 dimensional array (the image).
         x (npDT_4Dims): The 4 dimensional array where the image will be stored (it should be initalized with 0s).

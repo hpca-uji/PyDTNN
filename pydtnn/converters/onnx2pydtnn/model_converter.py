@@ -1,3 +1,10 @@
+"""
+Module for converting ONNX models to PyDTNN model format.
+
+This module provides functionality to parse ONNX graph structures, extract
+weights and attributes, and map ONNX nodes to corresponding PyDTNN layers.
+"""
+
 # Typing related
 from typing import Any
 
@@ -33,6 +40,15 @@ __all__ = (
 
 
 def extract_shape(data: onnx.ValueInfoProto) -> tuple[int]:
+    """
+    Extracts the shape tuple from an ONNX ValueInfoProto object.
+
+    Args:
+        data: The ONNX value information containing shape dimensions.
+
+    Returns:
+        A tuple representing the shape of the tensor, excluding the batch dimension.
+    """
     # The shape of the inputs/ouputs is more or less a list quite hidden.
     #   NOTE: ONNX allows to have shapes of undefined value, e.g.: (N, 3, 224, 224),
     #       and, if it is not defined, that dimension is stored as 1. It's assumed that it is not relevant data and it will be removed, since "N" are the number of samples.
@@ -45,6 +61,15 @@ def extract_shape(data: onnx.ValueInfoProto) -> tuple[int]:
 
 
 def get_relevant_data(model_graph: onnx.GraphProto) -> tuple[dict[str, tuple[int]], dict[str, tuple[int]], dict[str, np.ndarray]]:
+    """
+    Extracts inputs, outputs, and weights from an ONNX graph.
+
+    Args:
+        model_graph: The ONNX graph to process.
+
+    Returns:
+        A tuple containing dictionaries for inputs, outputs, and weights.
+    """
 
     # onnx.numpy_helper.to_array() is a function that transforms onnx data into a ndarray (numpy's array)
 
@@ -61,11 +86,30 @@ def get_relevant_data(model_graph: onnx.GraphProto) -> tuple[dict[str, tuple[int
 
 
 def extract_attributes(node: onnx.NodeProto) -> dict[str, Any]:
+    """
+    Extracts attributes from an ONNX node.
+
+    Args:
+        node: The ONNX node to extract attributes from.
+
+    Returns:
+        A dictionary mapping attribute names to their values.
+    """
 
     return {attribute.name: onnx.helper.get_node_attr_value(node, attribute.name) for attribute in node.attribute}
 
 
 def get_lists_operations_and_outputs(info: dict[str, Any], operations: dict[str, tuple[Layerable, list[str]]]) -> tuple[list[list[Layerable]], list[str]]:
+    """
+    Organizes operations and outputs into branches for feed-forward processing.
+
+    Args:
+        info: Dictionary containing model metadata.
+        operations: Dictionary mapping output names to layer operations and inputs.
+
+    Returns:
+        A tuple containing a list of operation lists and a list of output names.
+    """
 
     # NOTE: It is assumed that the model will by a feed-forward network
     dict_branch = {}
@@ -117,12 +161,32 @@ def get_lists_operations_and_outputs(info: dict[str, Any], operations: dict[str,
 
 
 def get_actual_inputs(list_inputs: list[str], weights_names: list[str]) -> list[str]:
+    """
+    Filters out weight and bias names from the input list.
+
+    Args:
+        list_inputs: List of all input names for a node.
+        weights_names: List of names corresponding to model weights.
+
+    Returns:
+        A list of input names that are not weights.
+    """
     # This function' objective is to remove non layer-to-layer onnx inputs (e.g.: the weigth [_weight], the bias [_bias], etc. ).
     #   To do that, only the inputs that end with the accepted ending remains.
     return list(filter(lambda _input: _input not in weights_names, list_inputs))
 
 
 def _get_and_put_layer(node: onnx.NodeProto, opset_version: int, operations: dict[str, tuple[Layerable, list[str]]], weights: dict[str, np.ndarray], output: list[str] | None = None) -> None:
+    """
+    Internal helper to create a PyDTNN layer from an ONNX node and store it.
+
+    Args:
+        node: The ONNX node to convert.
+        opset_version: The ONNX opset version.
+        operations: Dictionary of existing operations.
+        weights: Dictionary of model weights.
+        output: Optional list of output names.
+    """
 
     info = {  # cons.CONST_NODE: node, # Refererence to the model itself (TODO: see if it's necessary. If not ==> delete)
         cons.CONST_OPSET: opset_version,  # Version of the onnx operation
@@ -145,6 +209,19 @@ def _get_and_put_layer(node: onnx.NodeProto, opset_version: int, operations: dic
 
 
 def get_layers(onnx_model: onnx.ModelProto, opset_version: int, inputs: dict[str, tuple[int]], weights: dict[str, np.ndarray], outputs: dict[str, tuple[int]]) -> list[Layerable]:
+    """
+    Converts all nodes in an ONNX model into a list of PyDTNN layers.
+
+    Args:
+        onnx_model: The ONNX model to convert.
+        opset_version: The ONNX opset version.
+        inputs: Dictionary of input shapes.
+        weights: Dictionary of model weights.
+        outputs: Dictionary of output shapes.
+
+    Returns:
+        A list of converted PyDTNN layers.
+    """
 
     # TODO: meter otros parámetros que se puedan necesitar
     # operations = list()
@@ -175,6 +252,13 @@ def get_layers(onnx_model: onnx.ModelProto, opset_version: int, inputs: dict[str
 
 
 def load_layers(model: PyDTNN_Model, operations: list[Layerable]) -> None:
+    """
+    Adds a list of layers to a PyDTNN model.
+
+    Args:
+        model: The PyDTNN model instance.
+        operations: The list of layers to add.
+    """
 
     print(f"Loading layers: {operations}")
     for operation in operations:
@@ -190,6 +274,24 @@ def load_layers(model: PyDTNN_Model, operations: list[Layerable]) -> None:
 def convert_model(
     onnx_model: onnx.ModelProto, omm=None, non_blocking_mpi=False, enable_cudnn=False, enable_gpudirect=False, enable_nccl=False, dtype=np.float32, tracing=False, tracer_output="", **kwargs
 ) -> PyDTNN_Model:
+    """
+    Converts an ONNX model to a PyDTNN model.
+
+    Args:
+        onnx_model: The ONNX model to convert.
+        omm: Optional OMM configuration.
+        non_blocking_mpi: Whether to use non-blocking MPI.
+        enable_cudnn: Whether to enable cuDNN.
+        enable_gpudirect: Whether to enable GPUDirect.
+        enable_nccl: Whether to enable NCCL.
+        dtype: The data type for the model.
+        tracing: Whether to enable tracing.
+        tracer_output: Path for tracer output.
+        **kwargs: Additional arguments for the model.
+
+    Returns:
+        A fully initialized PyDTNN model.
+    """
 
     if "tensor_format" not in kwargs:
         kwargs["tensor_format"] = TensorFormat.NHWC  # listTensorFormat.NCHW #listTensorFormat.NHWC

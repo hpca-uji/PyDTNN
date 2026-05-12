@@ -1,3 +1,6 @@
+"""
+Masked Language Model dataset implementation for PyDTNN.
+"""
 from __future__ import annotations
 
 import logging
@@ -37,6 +40,18 @@ class MaskLang(Dataset):
     """
 
     def __init__(self, model: Model, preprocess=0, embedl=512, max_sentence=512, split_token="<translation>", force_test_as_validation=False, debug=False):
+        """
+        Initialize the MaskLang dataset.
+
+        Args:
+            model: The model instance.
+            preprocess: Number of samples to pre-process.
+            embedl: Embedding length.
+            max_sentence: Maximum sentence length.
+            split_token: Token used for splitting.
+            force_test_as_validation: Whether to force test set as validation.
+            debug: Debug mode flag.
+        """
 
         self.model = model
         self.num_preprocess = preprocess
@@ -57,6 +72,9 @@ class MaskLang(Dataset):
         super().__init__(model, TRAIN_NSAMPLES, TEST_NSAMPLES, INPUT_SHAPE, OUTPUT_SHAPE, force_test_as_validation=force_test_as_validation, debug=debug)
 
     def _init_actual_data(self):
+        """
+        Initialize actual data by loading, partitioning, and optionally preprocessing.
+        """
         # Actual
         self.load_data()
         self.make_train_val_partitions()
@@ -72,6 +90,9 @@ class MaskLang(Dataset):
         # self.tgt_embeddings = random.random((self.train_val_nsamples, 1, self.max_sentence, self.embedl)).astype(dtype=self.dtype)
 
     def load_data(self):
+        """
+        Load raw text data from the dataset path.
+        """
         self.dictionary = self.get_dictionary(self.lang)
         self.mask = self.dictionary("Mask")[0]
         self.mask = np.zeros(self.mask.vector.shape, dtype=self.dtype)
@@ -85,6 +106,15 @@ class MaskLang(Dataset):
         self.train_nsamples = None
 
     def get_dictionary(self, language):
+        """
+        Load a spaCy language model.
+
+        Args:
+            language: Language code.
+
+        Returns:
+            The loaded spaCy model.
+        """
         import spacy  # type: ignore
 
         table = {"en": "en_core_web_md", "de": "de_core_news_md"}
@@ -93,6 +123,9 @@ class MaskLang(Dataset):
         return spacy.load(language)
 
     def make_train_val_partitions(self):
+        """
+        Create training and validation partitions based on model configuration.
+        """
         val_split = self.model.validation_split
         if self.train_nsamples is None:
             s = np.arange(self.train_val_nsamples)
@@ -105,6 +138,12 @@ class MaskLang(Dataset):
             self.test_nsamples = self.val_nsamples
 
     def _actual_data_generator_normal(self, part):
+        """
+        Generator for on-the-fly data processing.
+
+        Args:
+            part: The partition to generate data for.
+        """
         batch_size = self.model.batch_size
         rank = self.model.rank
 
@@ -127,6 +166,12 @@ class MaskLang(Dataset):
             yield x, y
 
     def _actual_data_generator_preprocess(self, part):
+        """
+        Generator for pre-processed data.
+
+        Args:
+            part: The partition to generate data for.
+        """
         batch_size = self.model.batch_size
         rank = self.model.rank
 
@@ -137,6 +182,9 @@ class MaskLang(Dataset):
             yield x, y
 
     def _synthetic_data_generator(self):
+        """
+        Generator for synthetic data.
+        """
         batch_size = self.model.batch_size
         rank = self.model.rank
 
@@ -148,6 +196,12 @@ class MaskLang(Dataset):
 
     # === Preprocess ===
     def preprocess(self, size=None):
+        """
+        Pre-process text data into embeddings.
+
+        Args:
+            size: Number of samples to process.
+        """
         if size is None:
             size = len(self.lines)
         self.train_val_nsamples = size
