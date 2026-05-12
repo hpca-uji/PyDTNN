@@ -882,7 +882,7 @@ The main contributors to PyDTNN are:
 - Enrique Salvador Quintana Ortí ([quintana@uji.es](mailto:quintana@uji.es))
 
 Other colaborators of the project:
-- Pau San Juan ([p.sanjuan@upv.es](p.sanjuan@upv.es))
+- Pau San Juan ([p.sanjuan@upv.es](mailto:p.sanjuan@upv.es))
 - Pedro Alonso-Jordá ([palonso@uji.es](mailto:palonso@uji.es))
 
 If you have questions or comments about PyDTNN, please contact:

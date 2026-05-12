@@ -5,10 +5,10 @@ import time
 from pathlib import Path
 from warnings import warn
 
-from openai import OpenAI
+from openai import OpenAI, InternalServerError
 
 config = {
-    "model": "gemini-3.1-flash-lite-preview",
+    "model": "gemini-3.1-flash-lite",
     "reasoning_effort": "minimal",
     "temperature": 0.1,
 }
@@ -71,6 +71,7 @@ Docstring rules:
 - No hallucinations
 
 Output rules:
+- Return the whole file back
 - Return ONLY valid Python code
 - No markdown, no explanations
 
@@ -95,34 +96,47 @@ Code:
     return content
 
 
-def process_file(path: Path) -> None:
+def process_file(path: Path) -> bool:
     original = path.read_text()
 
     # Skip empty or finished files
     if not should_process_file(original):
-        return
+        return False
 
     generated = generate_file_docstrings(path, original)
 
     if not generated:
-        return
+        return True
 
     # Validar sintaxis
     if not is_valid_python(generated):
-        warn("Invalid Python file generated!", RuntimeWarning)
+        warn(f"Invalid Python file generated ({path})!", RuntimeWarning)
 
     # Evitar sobrescribir si no hay cambios
     if generated.strip() == original.strip():
-        return
+        return True
 
     path.write_text(generated)
     print(f"Updated {path}")
+    return True
 
 
-def process_project(root: Path, name="*.py", delay: float = 1.0) -> None:
+def process_project(root: Path, name="*.py", delay: float = 5.0) -> None:
+    base_delay = delay
     for file in root.rglob(name):
-        process_file(file)
-        time.sleep(delay)
+        while True:
+            delay = max(base_delay, delay)
+            try:
+                if process_file(file):
+                    delay /= 2
+                    time.sleep(delay)
+                break
+            except InternalServerError as e:
+                delay *= 2
+                print(f"Error: {e}")
+                print(f"Backing off {delay}s")
+                time.sleep(delay)
+
 
 
 if __name__ == "__main__":
