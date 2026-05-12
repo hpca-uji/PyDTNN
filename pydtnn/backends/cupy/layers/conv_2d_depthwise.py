@@ -1,3 +1,5 @@
+"""CuPy backend implementation for 2D depthwise convolution layers."""
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -17,13 +19,17 @@ if TYPE_CHECKING:
 
 
 class Conv2DDepthwiseCython(Conv2DDepthwiseNumpy, AbstractConv2DCupy, LayerCupy):
+    """CuPy-accelerated 2D depthwise convolution layer."""
+
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
+        """Initialize model parameters and compile CUDA kernels."""
         super()._model_init(prev_shape, x)
         self.defines_replaces = {'"TYPE"': DTYPE2CTYPE[self.model.dtype], "TENSOR_FORMAT": str(self.model.tensor_format)}
         self.fwd = self._fwd_kernel()
         self.bwd = self._bwd_kernel()
 
     def _conv_fwd_nhwc(self, x: np.ndarray, y: np.ndarray) -> None:
+        """Execute forward pass for NHWC format."""
         self.fwd(
             self.model.cuda_grid,
             self.model.cuda_block,
@@ -31,6 +37,7 @@ class Conv2DDepthwiseCython(Conv2DDepthwiseNumpy, AbstractConv2DCupy, LayerCupy)
         )
 
     def _conv_fwd_nchw(self, x: np.ndarray, y: np.ndarray) -> None:
+        """Execute forward pass for NCHW format."""
         self.fwd(
             self.model.cuda_grid,
             self.model.cuda_block,
@@ -38,6 +45,7 @@ class Conv2DDepthwiseCython(Conv2DDepthwiseNumpy, AbstractConv2DCupy, LayerCupy)
         )
 
     def _conv_bwd_nhwc(self, dx: np.ndarray, dy: np.ndarray) -> None:
+        """Execute backward pass for NHWC format."""
         self.bwd(
             self.model.cuda_grid,
             self.model.cuda_block,
@@ -65,6 +73,7 @@ class Conv2DDepthwiseCython(Conv2DDepthwiseNumpy, AbstractConv2DCupy, LayerCupy)
         )
 
     def _conv_bwd_nchw(self, dx: np.ndarray, dy: np.ndarray) -> None:
+        """Execute backward pass for NCHW format."""
         self.bwd(
             self.model.cuda_grid,
             self.model.cuda_block,

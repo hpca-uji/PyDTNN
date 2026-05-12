@@ -1,3 +1,11 @@
+"""
+Base module for PyDTNN models.
+
+This module defines the abstract Base class that serves as the foundation for all
+neural network models within the PyDTNN framework, providing common attributes,
+memory management, and infrastructure for distributed training.
+"""
+
 import enum
 import logging
 from types import ModuleType
@@ -27,10 +35,21 @@ else:
 
 
 class Base[T: Array]:
+    """
+    Base class for all models in PyDTNN.
+
+    Provides the structural interface and shared state management for neural
+    network architectures, including distributed training support and memory
+    handling.
+    """
+
     def __init__(self, **kwargs):
+        """Initialize the base model instance."""
         pass
 
     class Mode(enum.StrEnum):
+        """Enumeration for model execution modes."""
+
         EVALUATE = enum.auto()
         TRAIN = enum.auto()
 

@@ -1,3 +1,7 @@
+"""
+MNIST dataset implementation for PyDTNN.
+"""
+
 from __future__ import annotations
 
 import itertools
@@ -42,9 +46,20 @@ class MNIST(Dataset):
     """
 
     def __init__(self, model: Model, force_test_as_validation=False, debug=False):
+        """
+        Initialize the MNIST dataset.
+
+        Args:
+            model: The model instance.
+            force_test_as_validation: Whether to use test set as validation set.
+            debug: Whether to enable debug mode.
+        """
         super().__init__(model, TRAIN_NSAMPLES, TEST_NSAMPLES, INPUT_SHAPE, OUTPUT_SHAPE, force_test_as_validation=force_test_as_validation, debug=debug)
 
     def _init_actual_data(self) -> None:
+        """
+        Initialize file paths and offsets for MNIST data.
+        """
         self._x_filename = [os.path.join(self.model.dataset_path, "train-images-idx3-ubyte.gz"), None, os.path.join(self.model.dataset_path, "t10k-images-idx3-ubyte.gz")]
         self._y_filename = [os.path.join(self.model.dataset_path, "train-labels-idx1-ubyte.gz"), None, os.path.join(self.model.dataset_path, "t10k-labels-idx1-ubyte.gz")]
         if self.test_as_validation:
@@ -62,6 +77,12 @@ class MNIST(Dataset):
             self._gzip_open(gz).close()
 
     def _actual_data_generator(self, part: Dataset.Part):
+        """
+        Generate batches of MNIST data.
+
+        Args:
+            part: The dataset partition to generate.
+        """
         size = int(math.prod(INPUT_SHAPE))
         offset = self._images_header_offset + self._local_offset[part] * size
         nbytes = self._local_nsamples[part] * size
@@ -84,6 +105,17 @@ class MNIST(Dataset):
         yield x, y
 
     def _read_file(self, f: IO[bytes], offset: int, nbytes: int) -> np.ndarray:
+        """
+        Read raw bytes from a file at a specific offset.
+
+        Args:
+            f: The file object.
+            offset: The byte offset to seek to.
+            nbytes: The number of bytes to read.
+
+        Returns:
+            A numpy array containing the read data.
+        """
         # How to read the header:
         #  zero, data_type, dims = struct.unpack('>HBB', f.read(4))
         #  shape = (struct.unpack('>I', f.read(4))[0] for _ in range(dims))

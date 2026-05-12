@@ -1,3 +1,7 @@
+"""
+AlexNet architecture implementation for CIFAR-10 dataset.
+"""
+
 from collections.abc import Sequence
 
 from pydtnn.abstract.layerable import Layerable
@@ -15,6 +19,16 @@ __all__ = ("alexnet_cifar10",)
 
 
 def alexnet_cifar10(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
+    """
+    Constructs an AlexNet-style neural network architecture for CIFAR-10.
+
+    Args:
+        input_shape: The shape of the input data (channels, height, width).
+        output_shape: The shape of the output layer (number of classes).
+
+    Returns:
+        A sequence of Layerable objects representing the model architecture.
+    """
     model = list[Layerable]()
     _ = model.append
 

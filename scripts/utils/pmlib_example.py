@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+"""
+Example script demonstrating the usage of PMLib for power measurement collection.
+
+This script initializes a PMLib instance, configures a counter for a specific device,
+collects energy measurement data over a set duration, and performs post-processing
+calculations such as joule integration.
+"""
 
 import time
 
@@ -57,6 +64,13 @@ print()
 
 
 def print_joules(start_time, end_time):
+    """
+    Calculate and print the total energy in joules for a given time interval.
+
+    Args:
+        start_time (float): The beginning of the time interval.
+        end_time (float): The end of the time interval.
+    """
     print(f"Computing joules between {start_time:f} and {end_time:f}...")
     joules = pmlib.get_joules(start_time, end_time, debug=True)
     print(f"Joules = {joules}")

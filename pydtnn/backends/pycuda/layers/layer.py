@@ -1,3 +1,7 @@
+"""
+PyDTNN PyCUDA backend layer implementation.
+"""
+
 import logging
 
 import numpy as np
@@ -21,6 +25,9 @@ class LayerPycuda(Layer[TensorArray], LayerablePycuda):
     """
 
     def __init__(self, *args, **kwargs):
+        """
+        Initializes the PyCUDA layer with GPU-specific attributes.
+        """
         super().__init__(*args, **kwargs)
         # GPU layer attributes
         # NOTE: All of these values will be initalized in the "initialize" method.
@@ -37,6 +44,9 @@ class LayerPycuda(Layer[TensorArray], LayerablePycuda):
         self.block: tuple[int, int, int] = None  # type: ignore
 
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray | None = None) -> None:
+        """
+        Initializes model parameters and validates CUDNN requirements.
+        """
         super()._model_init(prev_shape, x)
 
         if not self.model.enable_cudnn:
@@ -49,9 +59,15 @@ class LayerPycuda(Layer[TensorArray], LayerablePycuda):
 
     @property
     def _ary_prop(self) -> set[str]:
+        """
+        Returns a set of attribute names representing GPU array properties.
+        """
         return {*self.grad_vars.keys(), *self.grad_vars.values()}
 
     def _export_prop(self, key: str):
+        """
+        Exports a GPU array property to a CPU-based numpy array.
+        """
         if key not in self._ary_prop:
             return super()._export_prop(key)
 
@@ -60,6 +76,9 @@ class LayerPycuda(Layer[TensorArray], LayerablePycuda):
         return cpu_ary
 
     def _import_prop(self, key: str, value) -> None:
+        """
+        Imports a CPU-based numpy array into a GPU array property.
+        """
         if key not in self._ary_prop:
             return super()._import_prop(key, value)
 

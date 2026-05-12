@@ -1,3 +1,7 @@
+"""
+ResNet50 architecture implementation compatible with TensorFlow specifications.
+"""
+
 from collections.abc import Sequence
 
 from pydtnn.abstract.layerable import Layerable
@@ -24,6 +28,16 @@ __all__ = ("resNet50",)
 
 
 def resNet50(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
+    """
+    Constructs a ResNet50 model architecture.
+
+    Args:
+        input_shape: The shape of the input tensor.
+        output_shape: The shape of the output tensor.
+
+    Returns:
+        A sequence of layers representing the ResNet50 model.
+    """
     model = list[Layerable]()
     _ = model.append
     _(Input(shape=input_shape))

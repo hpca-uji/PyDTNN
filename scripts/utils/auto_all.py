@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
+"""Utility module for automatically managing __all__ exports in PyDTNN source files."""
+
 import ast
 from pathlib import Path
 
 
 def get_names(source: str) -> list[str]:
+    """Extracts public function and class names from the provided source code."""
     public_names = []
 
     try:
@@ -20,6 +23,7 @@ def get_names(source: str) -> list[str]:
 
 
 def remove_all(source: str) -> str:
+    """Removes existing __all__ definitions from the provided source code."""
     to_remove = set()
 
     try:
@@ -40,6 +44,7 @@ def remove_all(source: str) -> str:
 
 
 def find_insert(source: str) -> int:
+    """Determines the optimal line index to insert the __all__ definition."""
     end = len(source.splitlines()) - 1
 
     try:
@@ -65,6 +70,7 @@ def find_insert(source: str) -> int:
 
 
 def add_all(source: str, names: list[str]) -> str:
+    """Generates and inserts an __all__ definition into the source code."""
     if not names:
         return source
 
@@ -82,6 +88,7 @@ def add_all(source: str, names: list[str]) -> str:
 
 
 def process_file(path: Path, replace=False):
+    """Processes a single file to update its __all__ definition."""
     source = path.read_text()
     clean = remove_all(source)
 
@@ -95,6 +102,7 @@ def process_file(path: Path, replace=False):
 
 
 def process_project(root: Path, name="*.py", replace=False):
+    """Recursively processes all Python files in the given directory."""
     for path in root.rglob(name):
         process_file(path, replace)
 

@@ -1,3 +1,7 @@
+"""
+Kullback-Leibler divergence metric implementation for the NumPy backend.
+"""
+
 import logging
 import math
 from typing import TYPE_CHECKING
@@ -15,18 +19,38 @@ if TYPE_CHECKING:
 
 
 class KLDivergenceMetricNumpy(KLDivergenceMetric[np.ndarray], MetricNumpy):
+    """
+    NumPy implementation of the KL Divergence metric.
+    """
+
     def _model_init(self) -> None:
+        """
+        Initializes model-specific memory requirements for the metric.
+        """
         super()._model_init()
 
         self.tmp_memory_used += int(math.prod(self.shape)) * self.model.dtype.itemsize
         self.memory_used += self.tmp_memory_used
 
     def _post_init(self) -> None:
+        """
+        Allocates memory for the loss buffer after model initialization.
+        """
         super()._post_init()
         with self.model.memory:
             self.loss = self.model.memory.ndarray(self.shape, dtype=self.model.dtype)
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
+        """
+        Computes the KL divergence between predicted and target distributions.
+
+        Args:
+            y_pred: Predicted probability distribution.
+            y_targ: Target probability distribution.
+
+        Returns:
+            The calculated KL divergence as a float.
+        """
         y_targ = np.asarray(y_targ, dtype=self.model.dtype, order="C")
         loss = self.loss[: y_pred.shape[0]]
         # loss = np.abs(y_pred * np.log(np.abs(y_pred / (y_targ + eps) + eps)))

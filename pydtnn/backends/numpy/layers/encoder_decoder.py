@@ -1,3 +1,7 @@
+"""
+Numpy implementation of the Encoder-Decoder architecture.
+"""
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -17,13 +21,23 @@ if TYPE_CHECKING:
 
 
 class EncoderDecoderNumpy(EncoderDecoder[np.ndarray], AbstractBlockLayerNumpy):
+    """
+    Numpy-based Encoder-Decoder block layer.
+    """
+
     def __init__(self, *args, **kwargs):
+        """
+        Initializes the EncoderDecoderNumpy layer with encoder and decoder stacks.
+        """
         super().__init__(*args, **kwargs)
         self.encoder = [Encoder[np.ndarray](embedl=self.embedl, d_k=self.d_k, d_ff=self.d_ff, heads=self.heads, dropout_rate=self.dropout_rate) for _ in range(self.enc_layers)]
         self.decoder = [Decoder[np.ndarray](embedl=self.embedl, d_k=self.d_k, d_ff=self.d_ff, heads=self.heads, dropout_rate=self.dropout_rate) for _ in range(self.dec_layers)]
         self.paths = [self.encoder + self.decoder]  # type: ignore
 
     def _model_init(self, prev_shape, x):
+        """
+        Initializes model parameters and sublayers based on input shapes.
+        """
         super()._model_init(prev_shape, x)
         if len(prev_shape) == 2:
             x_enc, x_dec = x if x else (None, None)
@@ -52,9 +66,15 @@ class EncoderDecoderNumpy(EncoderDecoder[np.ndarray], AbstractBlockLayerNumpy):
             self.nparams += layer.nparams
 
     def initialize_block_layer(self):
+        """
+        Placeholder for block layer initialization logic.
+        """
         pass
 
     def forward(self, x):
+        """
+        Performs the forward pass through the encoder and decoder stacks.
+        """
         if len(x) == 2:
             x, y = x
             x_mask = y_mask = None
@@ -69,6 +89,9 @@ class EncoderDecoderNumpy(EncoderDecoder[np.ndarray], AbstractBlockLayerNumpy):
         return y
 
     def backward(self, prev_dx):
+        """
+        Performs the backward pass through the decoder and encoder stacks.
+        """
         dx_tgt = prev_dx
         dx_enc = 0.0
         for i in range(self.dec_layers):  # Decoding layers

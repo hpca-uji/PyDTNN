@@ -1,3 +1,5 @@
+"""Exhaustive test suite for Conv2D GEMM implementation."""
+
 import itertools
 import logging
 import time
@@ -82,6 +84,22 @@ class Conv2DConvGemmSlowTestCase(Conv2DConvGemmTestCase):
             print(f"{perc:.5%} (eta: {d:2.0f}d {h:2.0f}h {m:2.0f}m {s:2.0f}s)", end="\r")
 
     def _test_forward_backward_multiple_params(self, kn: int, b: int, c: int, h: int, w: int, kh: int, kw: int, vpadding: int, hpadding: int, vstride: int, hstride: int):
+        """
+        Executes forward and backward pass verification for a specific set of convolution parameters.
+
+        Args:
+            kn: Number of kernels.
+            b: Batch size.
+            c: Number of input channels.
+            h: Input height.
+            w: Input width.
+            kh: Kernel height.
+            kw: Kernel width.
+            vpadding: Vertical padding.
+            hpadding: Horizontal padding.
+            vstride: Vertical stride.
+            hstride: Horizontal stride.
+        """
         d = D(kn=kn, b=b, c=c, h=h, w=w, kh=kh, kw=kw, vpadding=vpadding, hpadding=hpadding, vstride=vstride, hstride=hstride)
 
         if d.kh >= d.h + 1 or d.kw >= d.w + 1:

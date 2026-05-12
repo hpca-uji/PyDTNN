@@ -1,3 +1,7 @@
+"""
+Tests for verifying the equivalence of convolution implementations using Im2Col+MM versus ConvGemm.
+"""
+
 import logging
 import unittest
 
@@ -26,6 +30,19 @@ class ModelConvGemmTestCase(ModelCommonTestCase):
     model2_desc = "using ConvGemm"
 
     def get_model2(self, model_name: str, overwrite_params: dict | None = None) -> Model:
+        """
+        Constructs and returns a model configured to use the ConvGemm backend.
+
+        Args:
+            model_name: The name of the model to instantiate.
+            overwrite_params: Optional dictionary of parameters to override defaults.
+
+        Returns:
+            A configured Model instance.
+
+        Raises:
+            unittest.SkipTest: If the model is incompatible with the dataset.
+        """
         # CPU model with convGemm
         params = Params()
         # Begin of params configuration

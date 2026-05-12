@@ -1,3 +1,7 @@
+"""
+Tracer implementation for PyDTNN that integrates with PMLib for power monitoring.
+"""
+
 import logging
 import time
 from collections import defaultdict
@@ -24,10 +28,21 @@ else:
 
 class SimpleTracerPMLib(SimpleTracer):
     """
-    SimpleTracerPMLib
+    A tracer that extends SimpleTracer to record power consumption data using PMLib.
     """
 
     def __init__(self, tracing: bool, output_filename: str, comm: MPI_COMM | None, pmlib_server_ip: str, pmlib_port: int, pmlib_device: str):
+        """
+        Initializes the PMLib tracer.
+
+        Args:
+            tracing: Whether tracing is enabled.
+            output_filename: Base path for output files.
+            comm: MPI communicator.
+            pmlib_server_ip: IP address of the PMLib server.
+            pmlib_port: Port of the PMLib server.
+            pmlib_device: Device identifier for power monitoring.
+        """
         super().__init__(tracing, output_filename, comm)
         if self.rank == 0:
             self.pmlib = PMLib(pmlib_server_ip, pmlib_port, verbose=True)
@@ -36,6 +51,9 @@ class SimpleTracerPMLib(SimpleTracer):
         self.pending_times = []
 
     def enable_tracing(self):
+        """
+        Enables tracing and initializes the PMLib power counter.
+        """
         super().enable_tracing()
         # Start counter
         if self.rank == 0:
@@ -43,7 +61,14 @@ class SimpleTracerPMLib(SimpleTracer):
             self.pmlib.start_counter()
 
     def _emit_event(self, evt_type_val: int, evt_val: int, stream=None):
-        """This method will be called only if tracing is enabled"""
+        """
+        Records the start or end time of an event for power calculation.
+
+        Args:
+            evt_type_val: The type of the event.
+            evt_val: The value of the event (0 indicates end of event).
+            stream: Optional CUDA stream.
+        """
         super()._emit_event(evt_type_val, evt_val, stream)
         if evt_val != 0:
             self.pending_times.append((evt_type_val, evt_val, time.time()))
@@ -53,6 +78,12 @@ class SimpleTracerPMLib(SimpleTracer):
             self.times[_evt_type_val][_evt_val].append((start_time, end_time))
 
     def _output_header(self) -> str:
+        """
+        Generates the CSV header including power metrics.
+
+        Returns:
+            The formatted header string.
+        """
         output = super()._output_header()
         output += ";Joules"
         assert self.pmlib.len_lines
@@ -61,6 +92,16 @@ class SimpleTracerPMLib(SimpleTracer):
         return output + ";Mean of intermediate power samples"
 
     def _output_row(self, event_type_value: int, event_value: int) -> str:
+        """
+        Generates a CSV row containing power consumption data for an event.
+
+        Args:
+            event_type_value: The type of the event.
+            event_value: The value of the event.
+
+        Returns:
+            The formatted row string.
+        """
         output = super()._output_row(event_type_value, event_value) + ";"
         assert self.pmlib.len_lines
         joules = np.zeros(self.pmlib.len_lines)
@@ -74,7 +115,9 @@ class SimpleTracerPMLib(SimpleTracer):
         return output + f";{intermediate_samples}"
 
     def _write_output(self):
-        """This method will be called at exit only if tracing has been enabled at any time"""
+        """
+        Finalizes power monitoring and writes the power consumption logs to disk.
+        """
         if self.rank == 0:
             self.pmlib.stop_counter()
             self.pmlib.get_counter_data()

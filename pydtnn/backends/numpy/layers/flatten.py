@@ -1,3 +1,7 @@
+"""
+Numpy backend implementation of the Flatten layer.
+"""
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -16,13 +20,35 @@ if TYPE_CHECKING:
 
 
 class FlattenNumpy(Flatten[np.ndarray], LayerNumpy):
+    """
+    Numpy-based Flatten layer implementation.
+    """
+
     def forward(self, x: np.ndarray) -> np.ndarray:
+        """
+        Flattens the input tensor while preserving the batch dimension.
+
+        Args:
+            x: Input tensor of shape (batch_size, ...).
+
+        Returns:
+            Flattened tensor of shape (batch_size, *self.shape).
+        """
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_Y)
         y: np.ndarray = x.reshape((x.shape[0], *self.shape))
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return np.ascontiguousarray(y, dtype=self.model.dtype)
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
+        """
+        Reshapes the gradient back to the original input shape.
+
+        Args:
+            dy: Gradient of the loss with respect to the output.
+
+        Returns:
+            Gradient of the loss with respect to the input.
+        """
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_RESHAPE_DX)
         dx: np.ndarray = dy.reshape((dy.shape[0], *self.prev_shape))
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)

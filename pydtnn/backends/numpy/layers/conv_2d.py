@@ -1,3 +1,7 @@
+"""
+Numpy backend implementation of the 2D Convolution layer.
+"""
+
 import logging
 import math
 from typing import TYPE_CHECKING
@@ -18,7 +22,14 @@ if TYPE_CHECKING:
 
 
 class Conv2DNumpy(AbstractConv2DStandardNumpy):
+    """
+    Numpy-based 2D Convolution layer implementation using im2col/im2row transformations.
+    """
+
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
+        """
+        Initializes layer parameters, memory buffers, and selects forward/backward strategies.
+        """
         super()._model_init(prev_shape, x)
 
         # dim_n: Dimension where the "n" of NCHW/NHWC is used in the calculations.
@@ -68,6 +79,9 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
         self.memory_used += self.tmp_memory_used
 
     def get_rows(self, batch_size: int) -> np.ndarray:
+        """
+        Retrieves a view of the temporary buffer as a row-major matrix.
+        """
         dim_n = batch_size * self.ho * self.wo
         shape = (dim_n, self.dim_c)
         x_rows: np.ndarray = self.temp_c_r[: math.prod(shape)]
@@ -75,6 +89,9 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
         return np.ascontiguousarray(x_rows, dtype=self.model.dtype)
 
     def get_cols(self, batch_size: int) -> np.ndarray:
+        """
+        Retrieves a view of the temporary buffer as a column-major matrix.
+        """
         dim_n = batch_size * self.ho * self.wo
         shape = (self.dim_c, dim_n)
         x_cols: np.ndarray = self.temp_c_r[: math.prod(shape)]
@@ -82,6 +99,9 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
         return np.ascontiguousarray(x_cols, dtype=self.model.dtype)
 
     def get_y(self, batch_size: int) -> np.ndarray:
+        """
+        Retrieves a view of the output buffer for the current batch size.
+        """
         dim_n = batch_size * self.ho * self.wo
         shape = (dim_n, self.co)
         y: np.ndarray = self.temp_y_dx[: math.prod(shape)]
@@ -89,13 +109,18 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
         return np.ascontiguousarray(y, dtype=self.model.dtype)
 
     def get_dx(self, batch_size: int) -> np.ndarray:
+        """
+        Retrieves a view of the input gradient buffer for the current batch size.
+        """
         shape = self.model.encode_shape((batch_size, self.ci, self.hi, self.wi))
         dx: np.ndarray = self.temp_y_dx[: math.prod(shape)]
         dx = dx.reshape(shape)
         return np.ascontiguousarray(dx, dtype=self.model.dtype)
 
     def _forward_i2c_nhwc(self, x: np.ndarray) -> np.ndarray:
-        """Version of the forward function that uses im2col and matmul"""
+        """
+        Performs forward pass using im2row and matrix multiplication for NHWC format.
+        """
 
         # x_rows = np.zeros(shape=(dim_n, self.dim_c), dtype=self.model.dtype)
         # x_rows = np.asarray(self._x_rows[:dim_n, :], dtype=self.model.dtype, order="C")
@@ -129,7 +154,9 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
         return np.asarray(y, dtype=self.model.dtype, order="C")
 
     def _forward_i2c_nchw(self, x: np.ndarray) -> np.ndarray:
-        """Version of the forward function that uses im2col and matmul"""
+        """
+        Performs forward pass using im2col and matrix multiplication for NCHW format.
+        """
 
         # x_cols = np.zeros(shape=(self.dim_c, dim_n), dtype=self.model.dtype)
         # x_cols: np.ndarray = np.asarray(self._x_cr[:, :dim_n], dtype=self.model.dtype, order="C")
@@ -165,7 +192,9 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
         return np.asarray(y, dtype=self.model.dtype, order="C")
 
     def _backward_i2c_nhwc(self, dy: np.ndarray) -> np.ndarray:
-        """Version of the backward function that uses im2col and matmul"""
+        """
+        Performs backward pass using im2row and matrix multiplication for NHWC format.
+        """
 
         # res = np.asarray(self.res_bw[:(dy.shape[0] * self.ho * self.wo), :], dtype=self.model.dtype, order="C")
         self.dw = self.dw.reshape(self._dw_shape)
@@ -211,7 +240,9 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
         return np.asarray(dx, dtype=self.model.dtype, order="C")
 
     def _backward_i2c_nchw(self, dy: np.ndarray) -> np.ndarray:
-        """Version of the backward function that uses im2col and matmul"""
+        """
+        Performs backward pass using im2col and matrix multiplication for NCHW format.
+        """
         # cols:np.ndarray = np.asarray(self.temp_bw[:, :(dy.shape[0] * self.ho * self.wo)], dtype=self.model.dtype, order="C")
         self.dw = self.dw.reshape(self._dw_shape)
 

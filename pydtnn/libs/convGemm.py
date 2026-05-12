@@ -1,5 +1,11 @@
 """
 PyDTNN convGemm module
+
+This module provides the ConvGemm class, which wraps the libconvGemm.so
+library to perform efficient convolution operations using General Matrix
+Multiply (GEMM) with implicit im2col/col2im transformations. It supports
+both NCHW and NHWC data formats and includes functionalities for standard
+convolutions and transposed convolutions (deconvolutions).
 """
 
 import ctypes
@@ -28,16 +34,60 @@ class ConvGemm:
     """
     Exposes the libconvGemm functions following the PyDTNN conventions.
 
+    This class acts as a wrapper for the `libconvGemm.so` shared library,
+    providing an interface to perform convolution operations efficiently
+    by leveraging GEMM (General Matrix Multiply) with implicit im2col
+    transformations. It supports both NCHW and NHWC data layouts and
+    handles both forward and backward passes for convolutions and
+    transposed convolutions (deconvolutions).
+
+    Attributes
+    ----------
+    lib_cg : ctypes.CDLL or None
+        The loaded `libconvGemm.so` library. It is shared across all instances
+        of `ConvGemm`.
+    dtype : np.dtype
+        The data type (e.g., `np.float32`) used for matrix operations.
+    ac_pack : ctypes.POINTER(ctypes.c_float)
+        Pointer to an auxiliary buffer used internally by `libconvGemm`.
+    bc_pack : ctypes.POINTER(ctypes.c_float)
+        Pointer to another auxiliary buffer used internally by `libconvGemm`.
+    debug : bool
+        Flag to enable or disable debug logging.
+    get_parent_layer : weakref.ref
+        A weak reference to the parent layer, used for tracing purposes.
+    x_conv_gemm_nhwc : ctypes.c_void_p
+        Function pointer to the NHWC convolution GEMM implementation in `libconvGemm`.
+    x_deconv_gemm_nhwc : ctypes.c_void_p
+        Function pointer to the NHWC transposed convolution (deconvolution) GEMM
+        implementation in `libconvGemm`.
+    x_conv_gemm_nchw : ctypes.c_void_p
+        Function pointer to the NCHW convolution GEMM implementation in `libconvGemm`.
+    x_deconv_gemm_nchw : ctypes.c_void_p
+        Function pointer to the NCHW transposed convolution (deconvolution) GEMM
+        implementation in `libconvGemm`.
+
     Methods
     -------
-    conv_gemm(weights, x, out, vpadding, hpadding, vstride, hstride,
-              vdilation, hdilation, biases)
-        Calls the appropriate convGemm function from libconvGemm.so to perform a
-        matrix matrix multiplication with an implicit im2col.
+    __init__(dtype, debug, parent_layer)
+        Initializes the ConvGemm instance, loads the library, and allocates
+        necessary internal buffers.
+    __del__()
+        Frees the allocated internal buffers when the instance is garbage collected.
+    conv_gemm_nchw(...)
+        Performs a convolution operation using the NCHW data format.
+    conv_gemm_nhwc(...)
+        Performs a convolution operation using the NHWC data format.
+    deconv_gemm_nchw(...)
+        Performs a transposed convolution (deconvolution) operation using the NCHW
+        data format.
+    deconv_gemm_nhwc(...)
+        Performs a transposed convolution (deconvolution) operation using the NHWC
+        data format.
 
     Examples
     --------
-    See __usage_example__() method for an example of use. This example can be
+    See `__usage_example__()` method for an example of use. This example can be
     run with: 'python conv_gemm.py'
 
     Tests
@@ -52,16 +102,31 @@ class ConvGemm:
 
     def __init__(self, dtype: np.dtype = np.dtype(np.float32), debug: bool = False, parent_layer=None):
         """
-        Loads the libconvGemm.so library and creates the required auxiliary matrices ac_pack and bc_pack.
+        Initializes the ConvGemm instance.
+
+        Loads the `libconvGemm.so` library if it hasn't been loaded already
+        and allocates the required auxiliary matrices (`ac_pack` and `bc_pack`)
+        for internal use by the C/C++ library. It also selects the appropriate
+        convolution GEMM functions based on the specified data type.
 
         Parameters
         ----------
-        dtype : data type
-            The element data type being used on all the matrices.
-        debug : boolean
-            Whether to print debug information or not.
-        parent_layer: layer
-            The layer that is using it (for tracing purposes).
+        dtype : np.dtype, optional
+            The element data type to be used for all matrices. Defaults to `np.float32`.
+        debug : bool, optional
+            If `True`, enables debug information printing. Defaults to `False`.
+        parent_layer : object, optional
+            A reference to the parent layer object, used for tracing purposes.
+            Defaults to `None`.
+
+        Raises
+        ------
+        MemoryError
+            If the internal auxiliary buffers (`ac_pack` or `bc_pack`) cannot be
+            allocated.
+        TypeError
+            If the specified `dtype` is not supported by the loaded `libconvGemm`
+            library.
         """
         self.dtype = dtype
         if ConvGemm.lib_cg is None:
@@ -90,8 +155,15 @@ class ConvGemm:
             raise TypeError(f"Type '{str(self.dtype)}' not supported by this version of libconvGemm!")
 
     def __del__(self):
-        """Free the allocated matrices"""
+        """
+        Frees the allocated internal auxiliary buffers.
+
+        This method is called when the `ConvGemm` instance is garbage collected.
+        It ensures that the memory allocated for `ac_pack` and `bc_pack` by
+        `libconvGemm` is properly released.
+        """
         try:
+            # Assuming __free__ is available and handles platform-specific freeing
             __free__(self.ac_pack)
             __free__(self.bc_pack)
         except AttributeError:
@@ -119,46 +191,86 @@ class ConvGemm:
         relu=False,
     ):
         """
-        Calls the appropriate convGemm function from libconvGemm.so to perform a
-        matrix matrix multiplication with an implicit im2col.
+        Performs a convolution operation using the NCHW data format via GEMM.
 
-        The matrix matrix product is in the form C = A * B, where:
-            + A is the weights matrix,
-            + B is the im2col(x) matrix, and
-            + C is the out matrix.
+        This method calls the `sconvGemmNCHW` function from `libconvGemm.so`
+        to perform a convolution. It implicitly transforms the input tensor `x`
+        into an im2col format and then performs a matrix multiplication with
+        the `weights`. Optionally, it can apply biases, batch normalization,
+        and ReLU activation.
 
-        If the out vector is supplied, the xapplyBias function of the libconvGemm library will be called. This
-        function sums each element of the out vector to all the elements in the corresponding output channel.
+        The core operation is equivalent to:
+        `out = weights * im2col(x)`
+
+        If `biases` are provided, they are added to the output channels.
+        If batch normalization parameters (`bn_running_mean`, `bn_inv_std`,
+        `bn_gamma`, `bn_beta`) are provided, they are applied after the
+        convolution and bias addition. If `relu` is `True`, a ReLU activation
+        is applied.
 
         Parameters
         ----------
-        weights : array_like
-            The weights matrix (kn x c x kh x kw).
-        x : array_like
-            The layers matrix (b x c x h x w).
-        out : array_like
-            An optional out matrix (kn x b*ho*wo). If provided, can be overwritten.
-        vpadding : int
-            The vertical padding to be applied to the x matrix.
-        hpadding : int
-            The horizontal padding to be applied to the x matrix.
-        vstride : int
-            The vertical stride.
-        hstride : int
-            The horizontal stride.
-        vdilation : int
-            The vertical dilation.
-        hdilation : int
-            The horizontal dilation.
-        biases: array_like
-            The out that have to be summed to all the elements in each output channel.
-        trans: bool
-            Perform the im2col(x) if False, or the im2colT(x) if True.
+        weights : np.ndarray
+            The convolution kernel weights. Expected shape: `(kn, c, kh, kw)`,
+            where `kn` is the number of output channels (filters), `c` is the
+            number of input channels, `kh` is the kernel height, and `kw` is
+            the kernel width.
+        x : np.ndarray
+            The input tensor. Expected shape: `(b, c, h, w)`, where `b` is the
+            batch size, `c` is the number of input channels, `h` is the input
+            height, and `w` is the input width.
+        out : np.ndarray, optional
+            An optional output tensor. If provided, it will be used to store the
+            result. Its shape should be `(b, kn, ho, wo)`, where `ho` and `wo`
+            are the output height and width. If `None`, a new tensor will be
+            created.
+        vpadding : int, optional
+            The vertical padding to apply to the input `x`. Defaults to `0`.
+        hpadding : int, optional
+            The horizontal padding to apply to the input `x`. Defaults to `0`.
+        vstride : int, optional
+            The vertical stride for the convolution. Defaults to `1`.
+        hstride : int, optional
+            The horizontal stride for the convolution. Defaults to `1`.
+        vdilation : int, optional
+            The vertical dilation rate for the convolution. Defaults to `1`.
+        hdilation : int, optional
+            The horizontal dilation rate for the convolution. Defaults to `1`.
+        biases : np.ndarray, optional
+            An optional bias vector. If provided, its shape should be `(kn,)`
+            and it will be added to each output channel. Defaults to `None`.
+        trans : bool, optional
+            If `False` (default), performs a standard convolution. If `True`,
+            it implies a transposed convolution (deconvolution) operation,
+            though this specific method is named `conv_gemm_nchw` and typically
+            used for forward pass. The `trans` parameter might control internal
+            behavior or be intended for a different function.
+        bn_running_mean : np.ndarray, optional
+            The running mean for batch normalization. Defaults to `None`.
+        bn_inv_std : np.ndarray, optional
+            The inverse standard deviation for batch normalization. Defaults to `None`.
+        bn_gamma : np.ndarray, optional
+            The gamma (scale) parameter for batch normalization. Defaults to `None`.
+        bn_beta : np.ndarray, optional
+            The beta (shift) parameter for batch normalization. Defaults to `None`.
+        relu : bool, optional
+            If `True`, applies the ReLU activation function to the output.
+            Defaults to `False`.
 
         Returns
         -------
-        array_like
-            The result of weights * im2col(x)
+        np.ndarray
+            The resulting output tensor after the convolution operation. Its shape
+            will be `(b, kn, ho, wo)`.
+
+        Raises
+        ------
+        AssertionError
+            If input tensor dimensions or data types are inconsistent or do not
+            match expectations.
+        TypeError
+            If the input matrices do not have the same data type as specified
+            during `ConvGemm` instantiation.
         """
 
         # Get matrices dimensions
@@ -177,9 +289,11 @@ class ConvGemm:
                 assert hob == ho, "Biases image height must be the same as the output image height!"
                 assert wob == wo, "Biases image width must be the same as the output image width!"
         else:
+            # This branch seems to be for transposed convolution logic, but the method name is conv_gemm_nchw.
+            # Assuming 'trans' might be used for backward pass or specific GEMM configurations.
             assert out is not None, "If using the transposed convGemm, the out matrix must be supplied"
-            kn, ck, kh, kw = out.shape
-            bw, knw, ho, wo = weights.shape
+            kn, ck, kh, kw = out.shape  # Assuming out shape is (kn, b, ho, wo) for transposed
+            bw, knw, ho, wo = weights.shape  # Assuming weights shape is (c, kn, kh, kw) for transposed
             assert kn == knw, "Number of filters must be the same!"
             assert b == bw, "Batch size must be the same!"
         assert ck == c, "Number of channels in weights and x should be the same!"
@@ -246,6 +360,88 @@ class ConvGemm:
         bn_beta: np.ndarray | None = None,  # type: ignore
         relu=False,
     ):
+        """
+        Performs a convolution operation using the NHWC data format via GEMM.
+
+        This method calls the `sconvGemmNHWC` function from `libconvGemm.so`
+        to perform a convolution. It implicitly transforms the input tensor `x`
+        into an im2col format and then performs a matrix multiplication with
+        the `weights`. Optionally, it can apply biases, batch normalization,
+        and ReLU activation.
+
+        The core operation is equivalent to:
+        `out = weights * im2col(x)`
+
+        If `biases` are provided, they are added to the output channels.
+        If batch normalization parameters (`bn_running_mean`, `bn_inv_std`,
+        `bn_gamma`, `bn_beta`) are provided, they are applied after the
+        convolution and bias addition. If `relu` is `True`, a ReLU activation
+        is applied.
+
+        Parameters
+        ----------
+        weights : np.ndarray
+            The convolution kernel weights. Expected shape: `(ck, kh, kw, kn)`,
+            where `ck` is the number of input channels, `kh` is the kernel height,
+            `kw` is the kernel width, and `kn` is the number of output channels
+            (filters).
+        x : np.ndarray
+            The input tensor. Expected shape: `(b, h, w, c)`, where `b` is the
+            batch size, `h` is the input height, `w` is the input width, and `c`
+            is the number of input channels.
+        out : np.ndarray, optional
+            An optional output tensor. If provided, it will be used to store the
+            result. Its shape should be `(b, ho, wo, kn)`, where `ho` and `wo`
+            are the output height and width. If `None`, a new tensor will be
+            created.
+        vpadding : int, optional
+            The vertical padding to apply to the input `x`. Defaults to `0`.
+        hpadding : int, optional
+            The horizontal padding to apply to the input `x`. Defaults to `0`.
+        vstride : int, optional
+            The vertical stride for the convolution. Defaults to `1`.
+        hstride : int, optional
+            The horizontal stride for the convolution. Defaults to `1`.
+        vdilation : int, optional
+            The vertical dilation rate for the convolution. Defaults to `1`.
+        hdilation : int, optional
+            The horizontal dilation rate for the convolution. Defaults to `1`.
+        biases : np.ndarray, optional
+            An optional bias vector. If provided, its shape should be `(kn,)`
+            and it will be added to each output channel. Defaults to `None`.
+        trans : bool, optional
+            If `False` (default), performs a standard convolution. If `True`,
+            it implies a transposed convolution (deconvolution) operation,
+            though this specific method is named `conv_gemm_nhwc` and typically
+            used for forward pass. The `trans` parameter might control internal
+            behavior or be intended for a different function.
+        bn_running_mean : np.ndarray, optional
+            The running mean for batch normalization. Defaults to `None`.
+        bn_inv_std : np.ndarray, optional
+            The inverse standard deviation for batch normalization. Defaults to `None`.
+        bn_gamma : np.ndarray, optional
+            The gamma (scale) parameter for batch normalization. Defaults to `None`.
+        bn_beta : np.ndarray, optional
+            The beta (shift) parameter for batch normalization. Defaults to `None`.
+        relu : bool, optional
+            If `True`, applies the ReLU activation function to the output.
+            Defaults to `False`.
+
+        Returns
+        -------
+        np.ndarray
+            The resulting output tensor after the convolution operation. Its shape
+            will be `(b, ho, wo, kn)`.
+
+        Raises
+        ------
+        AssertionError
+            If input tensor dimensions or data types are inconsistent or do not
+            match expectations.
+        TypeError
+            If the input matrices do not have the same data type as specified
+            during `ConvGemm` instantiation.
+        """
 
         # Get matrices dimensions
         b, h, w, c = x.shape
@@ -263,9 +459,11 @@ class ConvGemm:
                 assert wob == wo, "Biases image width must be the same as the output image width!"
                 assert knb == kn, "Number of filters in out must be the same as in the filter tensor!"
         else:
+            # This branch seems to be for transposed convolution logic, but the method name is conv_gemm_nhwc.
+            # Assuming 'trans' might be used for backward pass or specific GEMM configurations.
             assert out is not None, "If using the transposed convGemm, the output matrix must be supplied"
-            ck, kh, kw, kn = out.shape
-            bw, ho, wo, knw = weights.shape
+            ck, kh, kw, kn = out.shape  # Assuming out shape is (ho, wo, kn) for transposed
+            bw, ho, wo, knw = weights.shape  # Assuming weights shape is (h, w, c, kn) for transposed
             assert kn == knw, "Number of filters must be the same!"
             assert b == bw, "Batch size must be the same!"
         assert ck == c, "Number of channels in weights and x should be the same!"
@@ -314,40 +512,53 @@ class ConvGemm:
 
     def deconv_gemm_nchw(self, weights: np.ndarray, dy: np.ndarray, dx: np.ndarray, vpadding=0, hpadding=0, vstride=1, hstride=1, vdilation=1, hdilation=1):
         """
-        Calls the appropriate deconv_gemm function from libconvGemm.so to perform
-        an inplace matrix matrix multiplication and deconvolution:
+        Performs a transposed convolution (deconvolution) operation using NCHW format.
 
-            dx = col2im(weights_2D_T * dy_2D),
-
-        where:
-          * weights_2D_T is the weights matrix reshaped to 2D and transposed (c·kh·kw x kn),
-          * dy_2D is the dy matrix transposed_1023 and reshaped to 2D (kn x b·ho·wo).
+        This method calls the `sconvGemmNCHW_back` function from `libconvGemm.so`
+        to compute the gradient with respect to the input (`dx`) in a transposed
+        convolution manner. It effectively performs `dx = col2im(weights_T * dy)`.
 
         Parameters
         ----------
-        weights : array_like
-            The weights matrix (kn x c x kh x kw).
-        dy : array_like
-            The dy matrix (b x kn x ho x wo).
-        dx : array_like
-            An empty dx matrix (b x c x h x w) that will be overwritten with col2im(* weights_2D_T * dy_2D).
-        vpadding : int
-            The vertical padding to be applied to the x matrix.
-        hpadding : int
-            The horizontal padding to be applied to the x matrix.
-        vstride : int
-            The vertical stride.
-        hstride : int
-            The horizontal stride.
-        vdilation : int
-            The vertical dilation.
-        hdilation : int
-            The horizontal dilation.
+        weights : np.ndarray
+            The convolution kernel weights. Expected shape: `(kn, c, kh, kw)`,
+            where `kn` is the number of output channels (filters), `c` is the
+            number of input channels, `kh` is the kernel height, and `kw` is
+            the kernel width.
+        dy : np.ndarray
+            The gradient tensor from the subsequent layer. Expected shape:
+            `(b, kn, ho, wo)`, where `b` is the batch size, `kn` is the number
+            of output channels (filters), `ho` is the output height, and `wo`
+            is the output width.
+        dx : np.ndarray
+            An output tensor to store the computed gradient with respect to the
+            input. It will be overwritten. Expected shape: `(b, c, h, w)`, where
+            `b` is the batch size, `c` is the number of input channels, `h` is
+            the input height, and `w` is the input width.
+        vpadding : int, optional
+            The vertical padding that was applied to the original input `x`
+            during the forward pass. Defaults to `0`.
+        hpadding : int, optional
+            The horizontal padding that was applied to the original input `x`
+            during the forward pass. Defaults to `0`.
+        vstride : int, optional
+            The vertical stride used in the forward pass. Defaults to `1`.
+        hstride : int, optional
+            The horizontal stride used in the forward pass. Defaults to `1`.
+        vdilation : int, optional
+            The vertical dilation rate used in the forward pass. Defaults to `1`.
+        hdilation : int, optional
+            The horizontal dilation rate used in the forward pass. Defaults to `1`.
 
         Returns
         -------
-        array_like
-            The dx matrix.
+        np.ndarray
+            The computed gradient tensor `dx`.
+
+        Raises
+        ------
+        AssertionError
+            If input tensor dimensions are inconsistent.
         """
 
         # Get matrices dimensions
@@ -382,6 +593,55 @@ class ConvGemm:
         return dx
 
     def deconv_gemm_nhwc(self, weights: np.ndarray, dy: np.ndarray, dx: np.ndarray, vpadding=0, hpadding=0, vstride=1, hstride=1, vdilation=1, hdilation=1):
+        """
+        Performs a transposed convolution (deconvolution) operation using NHWC format.
+
+        This method calls the `sconvGemmNHWC_back` function from `libconvGemm.so`
+        to compute the gradient with respect to the input (`dx`) in a transposed
+        convolution manner. It effectively performs `dx = col2im(weights_T * dy)`.
+
+        Parameters
+        ----------
+        weights : np.ndarray
+            The convolution kernel weights. Expected shape: `(ck, kh, kw, kn)`,
+            where `ck` is the number of input channels, `kh` is the kernel height,
+            `kw` is the kernel width, and `kn` is the number of output channels
+            (filters).
+        dy : np.ndarray
+            The gradient tensor from the subsequent layer. Expected shape:
+            `(b, ho, wo, kn)`, where `b` is the batch size, `ho` is the output
+            height, `wo` is the output width, and `kn` is the number of output
+            channels (filters).
+        dx : np.ndarray
+            An output tensor to store the computed gradient with respect to the
+            input. It will be overwritten. Expected shape: `(b, h, w, c)`, where
+            `b` is the batch size, `h` is the input height, `w` is the input width,
+            and `c` is the number of input channels.
+        vpadding : int, optional
+            The vertical padding that was applied to the original input `x`
+            during the forward pass. Defaults to `0`.
+        hpadding : int, optional
+            The horizontal padding that was applied to the original input `x`
+            during the forward pass. Defaults to `0`.
+        vstride : int, optional
+            The vertical stride used in the forward pass. Defaults to `1`.
+        hstride : int, optional
+            The horizontal stride used in the forward pass. Defaults to `1`.
+        vdilation : int, optional
+            The vertical dilation rate used in the forward pass. Defaults to `1`.
+        hdilation : int, optional
+            The horizontal dilation rate used in the forward pass. Defaults to `1`.
+
+        Returns
+        -------
+        np.ndarray
+            The computed gradient tensor `dx`.
+
+        Raises
+        ------
+        AssertionError
+            If input tensor dimensions are inconsistent.
+        """
 
         ck, kh, kw, kn = weights.shape
         b2, ho, wo, kn2 = dy.shape
@@ -415,6 +675,25 @@ class ConvGemm:
 
 
 def __free__(pack):
+    """
+    Frees a memory buffer allocated by `libc` on different platforms.
+
+    This utility function is used to release memory allocated by C libraries,
+    typically for auxiliary buffers used by `libconvGemm`. It dynamically
+    loads the appropriate C standard library (`libc`) based on the operating
+    system and calls its `free` function.
+
+    Parameters
+    ----------
+    pack : ctypes.POINTER
+        A pointer to the memory buffer to be freed.
+
+    Raises
+    ------
+    AssertionError
+        If the operating system is not supported or if `libc` cannot be found.
+    """
+
     def find_msvcr():
         import re
         import sys
@@ -453,6 +732,55 @@ def time_it_func(
     vdilation: int,
     hdilation: int,
 ) -> int | float:
+    """
+    Helper function to perform convolution using im2col and matrix multiplication for timing.
+
+    This function is likely used for benchmarking or comparison purposes. It
+    first transforms the input tensor `x` into an im2col format using
+    `im2col_nchw_cython`, then performs a matrix multiplication with the
+    weights `w_c`, and finally adds the `out` tensor (presumably biases or
+    an initial output).
+
+    Parameters
+    ----------
+    x : np.ndarray
+        The input tensor.
+    w_c : np.ndarray
+        The weights matrix, likely reshaped for GEMM.
+    out : np.ndarray
+        An auxiliary tensor, possibly for biases or initial output.
+    b : int
+        Batch size.
+    kn : int
+        Number of output channels (filters).
+    ho : int
+        Output height.
+    wo : int
+        Output width.
+    kh : int
+        Kernel height.
+    kw : int
+        Kernel width.
+    vpadding : int
+        Vertical padding.
+    hpadding : int
+        Horizontal padding.
+    vstride : int
+        Vertical stride.
+    hstride : int
+        Horizontal stride.
+    vdilation : int
+        Vertical dilation.
+    hdilation : int
+        Horizontal dilation.
+
+    Returns
+    -------
+    int or float
+        The result of the operation, likely a numerical value or array.
+        The return type hint `int | float` seems potentially inaccurate given
+        the operations performed; it might return a numpy array.
+    """
 
     res = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype=x.dtype)
     im2col_nchw_cython(
@@ -475,6 +803,18 @@ def time_it_func(
 
 
 def __usage_example__():
+    """
+    Provides a usage example for the `ConvGemm` class.
+
+    This function demonstrates how to instantiate and use the `ConvGemm` class
+    for performing NCHW convolutions. It sets up sample input tensors (`weights`,
+    `x`), defines convolution parameters, performs the convolution using
+    `conv_gemm.conv_gemm_nchw`, and compares the result with a manual
+    implementation using `im2col_nchw_cython` and standard NumPy matrix
+    multiplication. It also includes basic timing comparisons.
+
+    The example can be run directly by executing the script.
+    """
     # Imports for this usage example (not required otherwise)
     from timeit import timeit
 

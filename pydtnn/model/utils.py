@@ -1,3 +1,7 @@
+"""
+Utility module for PyDTNN model operations, providing shape and tensor format transformations.
+"""
+
 import logging
 from typing import Any
 
@@ -18,12 +22,18 @@ LIMIT_THREADS_AND_BLOCKS = 1024
 
 
 class Utils[T: Array](Base[T]):
+    """
+    Base utility class for model operations, handling tensor format conversions and configuration access.
+    """
+
     @property
     def input_shape(self):
+        """Returns the shape of the first layer."""
         return self.layers[0].shape
 
     @property
     def output_shape(self):
+        """Returns the shape of the last layer."""
         return self.layers[-1].shape
 
     def encode_shape(self, shape: ArrayShape) -> ArrayShape:
@@ -48,4 +58,5 @@ class Utils[T: Array](Base[T]):
         return utils.string_substitute(self.kwargs["dataset_path"], rank=self.comm_rank)
 
     def __getattr__(self, item) -> Any:
+        """Retrieve values from the model's keyword arguments."""
         return self.kwargs.get(item)

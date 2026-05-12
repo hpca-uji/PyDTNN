@@ -1,3 +1,7 @@
+"""
+Constants and type definitions for the PyDTNN framework.
+"""
+
 import logging
 import typing
 from enum import StrEnum, auto
@@ -14,11 +18,15 @@ DTYPE2CTYPE: dict[np.dtype, str] = {np.dtype(np.float32): "float", np.dtype(np.f
 
 
 class NetworkAlgoEnum(StrEnum):
+    """Enumeration of supported network algorithms."""
+
     BTA = auto()
     VDG = auto()
 
 
 class Components(StrEnum):
+    """Enumeration of core framework component categories."""
+
     DATASETS = auto()
     ACTIVATIONS = auto()
     LAYERS = auto()
@@ -31,6 +39,8 @@ class Components(StrEnum):
 
 
 class Parameters(StrEnum):
+    """Enumeration of parameter keys used in model state and gradients."""
+
     PATHS = auto()
     CANONICAL_NAME = auto()
     MODEL_NAME = auto()

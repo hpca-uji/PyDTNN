@@ -1,9 +1,13 @@
+"""Cython-accelerated utility functions for image-to-row and row-to-image transformations in NHWC format."""
+
 from pydtnn.backends.cython.utils.base import _npDT, _npDT_2Dims, _npDT_4Dims
 
 def im2row_1ch_nhwc_cython[T: _npDT](
     x: _npDT_4Dims[T], rows: _npDT_2Dims[T], kh: int, kw: int, ho: int, wo: int, vpadding: int, hpadding: int, vstride: int, hstride: int, vdilation: int, hdilation: int
 ) -> None:
     """
+    Performs im2row transformation for a single channel NHWC input using Cython.
+
     Args:
         x (npDT_4Dims): The 4 dimensional array (the image).
         rows (npDT_2Dims): The 2 dimensional array where the image will be stored as rows (it should be initalized with 0s).
@@ -40,9 +44,15 @@ def row2im_1ch_nhwc_cython[T: _npDT](
     hdilation: int,
 ) -> None:
     """
+    Performs row2im transformation for a single channel NHWC output using Cython.
+
     Args:
         rows (npDT_2Dims): The 2 dimensional array (the image as rows).
         x (npDT_4Dims): The 4 dimensional array where the image will be stored (it should be initalized with 0s).
+        n (int): Batch size.
+        h (int): Input height.
+        w (int): Input width.
+        c (int): Number of channels.
         kh (int): Kernel's heigth.
         kw (int): Kernel's width.
         ho (int): Output's heigth.

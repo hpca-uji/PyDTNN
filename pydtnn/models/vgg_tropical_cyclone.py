@@ -1,3 +1,7 @@
+"""
+VGG-style neural network architecture for tropical cyclone intensity estimation.
+"""
+
 from collections.abc import Sequence
 
 from pydtnn.abstract.layerable import Layerable
@@ -13,6 +17,16 @@ __all__ = ("vgg_cyclone",)
 
 
 def vgg_cyclone(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
+    """
+    Constructs a VGG-style convolutional neural network for tropical cyclone data.
+
+    Args:
+        input_shape: The shape of the input data (channels, height, width).
+        output_shape: The shape of the output layer.
+
+    Returns:
+        A sequence of layers defining the VGG-cyclone architecture.
+    """
     model = list[Layerable]()
     _ = model.append
 

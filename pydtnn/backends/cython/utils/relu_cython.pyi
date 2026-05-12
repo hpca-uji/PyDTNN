@@ -1,9 +1,15 @@
+"""
+Cython-accelerated ReLU activation function implementations for PyDTNN.
+"""
+
 import numpy as _np
 
 from pydtnn.backends.cython.utils.base import _npDT, _npDT_1Dims
 
 def relu_cython[T: _npDT](x: _npDT_1Dims[T], max: _npDT_1Dims[T], mask: _np.ndarray[tuple[int], _np.dtype[_np.int8]]) -> None:
     """
+    Computes the ReLU activation function in-place.
+
     Args:
         x (npDT_1Dims): 1-dimensional input's array.
         max (npDT_1Dims): 1-dimensional array where the ouput is stored
@@ -29,6 +35,8 @@ def capped_relu_cython[T: _npDT](x: _npDT_1Dims[T], max: _npDT_1Dims[T], mask: _
 
 def leaky_relu_cython[T: _npDT](x: _npDT_1Dims[T], max: _npDT_1Dims[T], mask: _npDT_1Dims[T], negative_slope: float) -> None:
     """
+    Computes the Leaky ReLU activation function in-place.
+
     Args:
         x (npDT_1Dims): 1-dimensional input's array.
         max (npDT_1Dims): 1-dimensional array where the ouput is stored

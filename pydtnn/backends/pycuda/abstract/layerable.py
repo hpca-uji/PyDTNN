@@ -1,3 +1,5 @@
+"""PyCUDA implementation of layerable components for distributed training."""
+
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.backends.pycuda.abstract.base import BasePycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
@@ -12,7 +14,10 @@ __all__ = ("LayerablePycuda",)
 
 
 class LayerablePycuda(Layerable[TensorArray], BasePycuda):
+    """Provides PyCUDA-specific weight reduction capabilities for distributed layers."""
+
     def reduce_weights_async(self, gradient=True):
+        """Initiates asynchronous weight reduction across distributed processes."""
         # NOTE: Keep in sync with Layer
         if not self.model.comm:
             return
@@ -70,6 +75,7 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
                 self.reqs_allred[dw_] = req
 
     def wait_allreduce_async(self, gradient=True):
+        """Waits for completion of asynchronous weight reduction operations."""
         # NOTE: Keep in sync with Layer
         if not self.model.comm:
             return
@@ -116,6 +122,7 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
                 dw.set_async(dw_cpu, self.stream_2)
 
     def reduce_weights_sync(self, gradient=True):
+        """Performs synchronous weight reduction across distributed processes."""
         # NOTE: Keep in sync with Layer
         if not self.model.comm:
             return

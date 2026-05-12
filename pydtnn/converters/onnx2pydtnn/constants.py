@@ -1,4 +1,7 @@
-# ONNX operations:
+"""
+Constants and mapping utilities for converting ONNX operations to PyDTNN layers.
+"""
+
 from typing import Any, Callable
 
 from pydtnn.abstract.layerable import Layerable
@@ -26,7 +29,16 @@ CONST_PREV_LAYERS = "previous_layers"
 # Union of the ones before - {'Add', 'AveragePool', 'BatchNormalization', 'Concat', 'Conv', 'Dropout', 'Flatten', 'Gemm', 'GlobalAveragePool', 'MaxPool', 'Mul', 'Relu', 'Unsqueeze'}
 
 
-def pads_from_onnx_to_pydtnn(pads: list[int]) -> tuple[int, int]:  # -> list[tuple[int, int]]:
+def pads_from_onnx_to_pydtnn(pads: list[int]) -> tuple[int, int]:
+    """
+    Converts ONNX padding format to PyDTNN padding format.
+
+    Args:
+        pads: A list of integers representing ONNX padding [x1_begin, ..., x1_end, ...].
+
+    Returns:
+        A tuple representing the padding for PyDTNN.
+    """
     # "pads format should be as follow [x1_begin, x2_begin…x1_end, x2_end,…]" from, for example, https://onnx.ai/onnx/operators/onnx__AveragePool.html
     # Onnx: [x1_begin, x2_begin, ..., x1_end, x2_end, ...] ==> "PyDTNN: [(x1_begin, x1_end), (x2_end, x2_begin), ...]"
     # ==> PyDTNN only admits a int or a (vpadding, hpadding) ==> It's assumed that is the first tuple.
@@ -42,6 +54,16 @@ def pads_from_onnx_to_pydtnn(pads: list[int]) -> tuple[int, int]:  # -> list[tup
 
 
 def not_implemented(name: str) -> Callable:
+    """
+    Creates a placeholder function for unimplemented operations.
+
+    Args:
+        name: The name of the operation that is not implemented.
+
+    Returns:
+        A callable that raises a NotImplementedError when invoked.
+    """
+
     # Normal usage of this: switch_pytorch_pydtnn([not_implemented_layer_name])(args)
     def _not_implemented(args: dict[str, Any]) -> None:
         raise NotImplementedError(f"Layer {name} not implemented - Args received:\n{args} ")
@@ -50,6 +72,15 @@ def not_implemented(name: str) -> Callable:
 
 
 def switch_onnx_operation_to_pydtnn(name: str) -> Callable[[dict[str, Any]], Layerable]:
+    """
+    Maps an ONNX operation name to its corresponding PyDTNN layer class.
+
+    Args:
+        name: The name of the ONNX operation.
+
+    Returns:
+        The corresponding PyDTNN layer class or a not_implemented placeholder.
+    """
     match name:
         case "Add":
             return Add

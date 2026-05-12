@@ -1,3 +1,7 @@
+"""
+Numpy backend implementation of the Transformer Encoder layer.
+"""
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -20,7 +24,14 @@ if TYPE_CHECKING:
 
 
 class EncoderNumpy(Encoder[np.ndarray], AbstractBlockLayerNumpy):
+    """
+    Numpy-based implementation of the Transformer Encoder layer.
+    """
+
     def __init__(self, *args, **kwargs):
+        """
+        Initializes the EncoderNumpy layer with sub-layers.
+        """
         super().__init__(*args, **kwargs)
         self.multiheadattention = MultiHeadAttention(embedl=self.embedl, d_k=self.d_k, heads=self.heads, dropout_rate=self.dropout_rate)
         # self.dropout_1 = Dropout(rate=self.dropout_rate)
@@ -33,6 +44,9 @@ class EncoderNumpy(Encoder[np.ndarray], AbstractBlockLayerNumpy):
         self.paths = [[self.multiheadattention, self.layernormalization_1, self.feedforward, self.dropout_2, self.layernormalization_2]]
 
     def _model_init(self, prev_shape, x):
+        """
+        Initializes the model state and sub-layers for the Numpy backend.
+        """
         super()._model_init(prev_shape, x)
         self.y = x
         if type(prev_shape[-1]) is tuple:
@@ -80,9 +94,15 @@ class EncoderNumpy(Encoder[np.ndarray], AbstractBlockLayerNumpy):
             self.nparams += layer.nparams
 
     def initialize_block_layer(self):
+        """
+        Placeholder for block layer initialization.
+        """
         pass
 
     def forward(self, x, mask=None):
+        """
+        Performs the forward pass of the encoder layer.
+        """
         # Self Attention
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_MHA)
         x_1 = self.multiheadattention.forward(x, x, x, mask)  # type: ignore (encoder has multiple parameters)
@@ -100,6 +120,9 @@ class EncoderNumpy(Encoder[np.ndarray], AbstractBlockLayerNumpy):
         return self.y
 
     def backward(self, dy):
+        """
+        Performs the backward pass of the encoder layer.
+        """
         # Feed Forward
         dx_1 = self.layernormalization_2.backward(dy)
         dx_2 = self.dropout_2.backward(dx_1)

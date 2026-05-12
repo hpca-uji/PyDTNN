@@ -1,3 +1,5 @@
+"""Max pooling 2D layer implementation using Cython backends."""
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -23,9 +25,12 @@ if TYPE_CHECKING:
 
 
 class MaxPool2DCython(MaxPool2DNumpy, AbstractPool2DLayerCython):
+    """Cython implementation of the 2D max pooling layer."""
+
     # CYTHON
 
     def _fwd_max_pool_nhwc(self, x: np.ndarray, y: np.ndarray) -> None:
+        """Perform forward max pooling for NHWC format using Cython."""
         max_pool_2d_fwd_nhwc_cython(
             x,
             y,
@@ -44,6 +49,7 @@ class MaxPool2DCython(MaxPool2DNumpy, AbstractPool2DLayerCython):
         )
 
     def _fwd_max_pool_nchw(self, x: np.ndarray, y: np.ndarray) -> None:
+        """Perform forward max pooling for NCHW format using Cython."""
         max_pool_2d_fwd_nchw_cython(
             x,
             y,
@@ -62,6 +68,7 @@ class MaxPool2DCython(MaxPool2DNumpy, AbstractPool2DLayerCython):
         )
 
     def _bwd_max_pool_nhwc(self, dx: np.ndarray, dy: np.ndarray) -> None:
+        """Perform backward max pooling for NHWC format using Cython."""
         max_pool_2d_bwd_nhwc_cython(
             dy,
             self.idx_max,
@@ -83,6 +90,7 @@ class MaxPool2DCython(MaxPool2DNumpy, AbstractPool2DLayerCython):
         )
 
     def _bwd_max_pool_nchw(self, dx: np.ndarray, dy: np.ndarray) -> None:
+        """Perform backward max pooling for NCHW format using Cython."""
         max_pool_2d_bwd_nchw_cython(
             dy,
             self.idx_max,
@@ -106,6 +114,7 @@ class MaxPool2DCython(MaxPool2DNumpy, AbstractPool2DLayerCython):
     # I2C
 
     def _forward_nhwc_i2c(self, x: np.ndarray) -> np.ndarray:
+        """Perform forward pass for NHWC format using im2col approach."""
         y: np.ndarray = np.zeros((x.shape[0],), dtype=self.model.dtype)
         amax: np.ndarray = np.zeros((x.shape[0],), dtype=np.int32)
         rng: np.ndarray = np.zeros((x.shape[0],), dtype=np.int32)
@@ -135,6 +144,7 @@ class MaxPool2DCython(MaxPool2DNumpy, AbstractPool2DLayerCython):
         return y.reshape((-1, self.ho, self.wo, self.co))
 
     def _forward_nchw_i2c(self, x: np.ndarray) -> np.ndarray:
+        """Perform forward pass for NCHW format using im2col approach."""
         n, c, _, _ = x.shape
         x_cols: np.ndarray = np.zeros((self.kh * self.kw, n * c * self.ho * self.wo), dtype=self.model.dtype)
         y: np.ndarray = np.zeros((n,), dtype=self.model.dtype)
@@ -163,6 +173,7 @@ class MaxPool2DCython(MaxPool2DNumpy, AbstractPool2DLayerCython):
         return y.reshape((-1, self.co, self.ho, self.wo))
 
     def _backward_nhwc_i2c(self, dy: np.ndarray) -> np.ndarray:
+        """Perform backward pass for NHWC format using col2im approach."""
         dy_rows: np.ndarray = np.zeros((np.prod(dy.shape), self.kh * self.kw), dtype=self.model.dtype)
         dy_rows[self.idx_max] = dy.flatten()
         dx: np.ndarray = np.zeros_like(dy, dtype=self.model.dtype)
@@ -189,6 +200,7 @@ class MaxPool2DCython(MaxPool2DNumpy, AbstractPool2DLayerCython):
         return dx.reshape((-1, self.hi, self.wi, self.ci))
 
     def _backward_nchw_i2c(self, dy: np.ndarray) -> np.ndarray:
+        """Perform backward pass for NCHW format using col2im approach."""
         dy_cols: np.ndarray = np.zeros((self.kh * self.kw, np.prod(dy.shape)), dtype=self.model.dtype)
         dy_cols[self.idx_max] = dy.flatten(order="C").view(dtype=self.model.dtype)
         dx: np.ndarray = np.zeros((dy.shape[0], self.ci, self.hi, self.wi), dtype=self.model.dtype)

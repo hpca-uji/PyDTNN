@@ -1,3 +1,5 @@
+"""PyCUDA implementation of the Encoder-Decoder architecture."""
+
 import logging
 
 from pydtnn.backends.pycuda.layers.abstract.block_layer import AbstractBlockLayerPycuda
@@ -13,7 +15,10 @@ logger = logging.getLogger(__name__)
 
 
 class EncoderDecoderPycuda(AbstractBlockLayerPycuda, EncoderDecoder):
+    """PyCUDA-accelerated Encoder-Decoder block layer."""
+
     def __init__(self, *args, **kwargs):
+        """Initializes the EncoderDecoderPycuda layer with PyCUDA-specific sublayers."""
         super().__init__(*args, **kwargs)
         self.encoder = [Encoder(embedl=self.embedl, d_k=self.d_k, d_ff=self.d_ff, heads=self.heads, dropout_rate=self.dropout_rate) for _ in range(self.enc_layers)]
         self.decoder = [Decoder(embedl=self.embedl, d_k=self.d_k, d_ff=self.d_ff, heads=self.heads, dropout_rate=self.dropout_rate) for _ in range(self.dec_layers)]
@@ -24,6 +29,7 @@ class EncoderDecoderPycuda(AbstractBlockLayerPycuda, EncoderDecoder):
         self.dx: TensorArray = None  # type: ignore
 
     def _model_init(self, prev_shape, x):
+        """Initializes the model structure and sublayers for PyCUDA execution."""
         super()._model_init(prev_shape, x)
         if len(x) == 2:
             x_enc, x_dec = x
@@ -52,9 +58,11 @@ class EncoderDecoderPycuda(AbstractBlockLayerPycuda, EncoderDecoder):
             self.nparams += layer.nparams
 
     def initialize_block_layer(self):
+        """Placeholder for block layer initialization."""
         pass
 
     def forward(self, x):
+        """Performs the forward pass through the encoder and decoder stacks."""
         if len(x) == 2:
             x, y = x
             x_mask = y_mask = None
@@ -68,6 +76,7 @@ class EncoderDecoderPycuda(AbstractBlockLayerPycuda, EncoderDecoder):
         return self.y
 
     def backward(self, prev_dx):
+        """Performs the backward pass through the decoder and encoder stacks."""
         alpha, beta = 1.0, 1.0
         dx_tgt, dx_enc = self.decoder[self.dec_layers - 1].backward(prev_dx)
         for i in range(self.dec_layers - 1, 0, -1):  # Decoding layers

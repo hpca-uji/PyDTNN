@@ -1,5 +1,7 @@
 # In this file must be implemented only the translation of PyTorch Linear layers to its PyDTNN equivalent.
 
+"""Module for converting PyTorch Linear layers to PyDTNN FC layers."""
+
 import logging
 from typing import Any
 
@@ -16,6 +18,15 @@ logger = logging.getLogger(__name__)
 
 
 def Linear(args: dict[str, Any]) -> FC:
+    """
+    Converts a PyTorch Linear layer configuration to a PyDTNN FC layer.
+
+    Args:
+        args: A dictionary containing the PyTorch layer configuration.
+
+    Returns:
+        An initialized PyDTNN FC layer instance.
+    """
     # https://pytorch.org/docs/stable/generated/torch.nn.Linear.html#torch.nn.Linear
 
     # PyTorch attributes:

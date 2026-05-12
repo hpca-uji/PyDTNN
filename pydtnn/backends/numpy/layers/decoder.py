@@ -1,3 +1,7 @@
+"""
+Decoder layer implementation for the NumPy backend.
+"""
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -20,7 +24,14 @@ if TYPE_CHECKING:
 
 
 class DecoderNumpy(Decoder[np.ndarray], AbstractBlockLayerNumpy):
+    """
+    NumPy implementation of the Transformer Decoder block.
+    """
+
     def __init__(self, *args, **kwargs):
+        """
+        Initializes the DecoderNumpy layer with sub-layers.
+        """
         super().__init__(*args, **kwargs)
         self.multiheadattention = MultiHeadAttention(embedl=self.embedl, d_k=self.d_k, heads=self.heads, dropout_rate=self.dropout_rate)
         # self.dropout_1 = Dropout(rate=self.dropout_rate)
@@ -36,6 +47,9 @@ class DecoderNumpy(Decoder[np.ndarray], AbstractBlockLayerNumpy):
         self.paths = [[self.multiheadattention, self.layernormalization_1, self.multiheadattention_enc, self.layernormalization_enc, self.feedforward, self.dropout_2, self.layernormalization_2]]
 
     def _model_init(self, prev_shape, x):
+        """
+        Initializes the model parameters and sub-layers for the decoder.
+        """
         super()._model_init(prev_shape, x)
         x_dec, x_enc, mask_dec = x if x else (None, None, None)
         x_dec_shape, x_enc_shape, mask_dec_shape = prev_shape
@@ -72,17 +86,29 @@ class DecoderNumpy(Decoder[np.ndarray], AbstractBlockLayerNumpy):
             self.nparams += layer.nparams
 
     def initialize_block_layer(self):
+        """
+        Placeholder for block layer initialization.
+        """
         pass
 
     def flatten(self, x):
+        """
+        Flattens the input tensor for feed-forward processing.
+        """
         last_dim = x.shape[-1]
         return x.reshape((int(np.prod(self.first_dims)), last_dim))
 
     def unflatten(self, x):
+        """
+        Restores the original shape of the tensor after feed-forward processing.
+        """
         last_dim = x.shape[-1]
         return x.reshape((*self.first_dims, last_dim))
 
     def forward(self, x, x_enc, mask=None):
+        """
+        Performs the forward pass of the decoder layer.
+        """
         # Self Attention
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_MHA)
         x_1 = self.multiheadattention.forward(x, x, x, mask)  # type: ignore (multiheadattention has more parameters)
@@ -107,6 +133,9 @@ class DecoderNumpy(Decoder[np.ndarray], AbstractBlockLayerNumpy):
         return x_3
 
     def backward(self, dy):
+        """
+        Performs the backward pass of the decoder layer.
+        """
         # Feed Forward
         dx_1 = self.layernormalization_2.backward(dy)
         dx_2 = self.dropout_2.backward(dx_1)

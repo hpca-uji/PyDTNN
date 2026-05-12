@@ -1,4 +1,6 @@
-# In this file must be implemented only the translation of PyTorch Activations layers to its PyDTNN equivalent.
+"""
+This module provides converters to translate PyTorch activation layers to their PyDTNN equivalents.
+"""
 
 import logging
 from typing import Any
@@ -32,18 +34,45 @@ logger = logging.getLogger(__name__)
 
 
 def Arctanh(args: dict[str, Any]) -> _Arctanh:
+    """
+    Converts a PyTorch-like Arctanh configuration to a PyDTNN Arctanh layer.
+
+    Args:
+        args: Dictionary containing layer configuration.
+
+    Returns:
+        An instance of pydtnn.activations.arctanh.Arctanh.
+    """
     # NOTE: There is no equivalent in PyTorch
     # not_used = args
     return _Arctanh()
 
 
 def LogSigmoid(args: dict[str, Any]) -> _Log:
+    """
+    Converts a PyTorch LogSigmoid layer to a PyDTNN Log layer.
+
+    Args:
+        args: Dictionary containing layer configuration.
+
+    Returns:
+        An instance of pydtnn.activations.log.Log.
+    """
     # https://pytorch.org/docs/stable/generated/torch.nn.LogSigmoid.html#torch.nn.LogSigmoid
     # not_used = args
     return _Log()
 
 
 def ReLU(args: dict[str, Any]) -> _Relu:
+    """
+    Converts a PyTorch ReLU layer to a PyDTNN Relu layer.
+
+    Args:
+        args: Dictionary containing layer configuration.
+
+    Returns:
+        An instance of pydtnn.activations.relu.Relu.
+    """
     # https://pytorch.org/docs/stable/generated/torch.nn.ReLU.html#torch.nn.ReLU
     # Not used Pytorch's parameters: inplace.
     # not_used = args
@@ -51,6 +80,15 @@ def ReLU(args: dict[str, Any]) -> _Relu:
 
 
 def ReLU6(args: dict[str, Any]) -> _Relu:
+    """
+    Converts a PyTorch ReLU6 layer to a PyDTNN Relu6 layer.
+
+    Args:
+        args: Dictionary containing layer configuration.
+
+    Returns:
+        An instance of pydtnn.activations.relu6.Relu6.
+    """
     # https://pytorch.org/docs/stable/generated/torch.nn.ReLU.html#torch.nn.ReLU
     # Not used Pytorch's parameters: inplace.
     # not_used = args
@@ -61,6 +99,15 @@ def ReLU6(args: dict[str, Any]) -> _Relu:
 
 
 def LeakyReLU(args: dict[str, Any]) -> _Relu:
+    """
+    Converts a PyTorch LeakyReLU layer to a PyDTNN LeakyRelu layer.
+
+    Args:
+        args: Dictionary containing layer configuration.
+
+    Returns:
+        An instance of pydtnn.activations.leaky_relu.LeakyRelu.
+    """
     # https://pytorch.org/docs/stable/generated/torch.nn.ReLU.html#torch.nn.ReLU
     # Not used Pytorch's parameters: inplace.
     NEGATIVE_SLOPE = "negative_slope"
@@ -73,12 +120,30 @@ def LeakyReLU(args: dict[str, Any]) -> _Relu:
 
 
 def Sigmoid(args: dict[str, Any]) -> _Sigmoid:
+    """
+    Converts a PyTorch Sigmoid layer to a PyDTNN Sigmoid layer.
+
+    Args:
+        args: Dictionary containing layer configuration.
+
+    Returns:
+        An instance of pydtnn.activations.sigmoid.Sigmoid.
+    """
     # https://pytorch.org/docs/stable/generated/torch.nn.Sigmoid.html#torch.nn.Sigmoid
     # not_used = args
     return _Sigmoid()
 
 
 def Softmax(args: dict[str, Any]) -> _Softmax:
+    """
+    Converts a PyTorch Softmax layer to a PyDTNN Softmax layer.
+
+    Args:
+        args: Dictionary containing layer configuration.
+
+    Returns:
+        An instance of pydtnn.activations.softmax.Softmax.
+    """
     # https://pytorch.org/docs/stable/generated/torch.nn.Softmax.html#torch.nn.Softmax
     # Not used Pytorch's parameters: dim.
     # not_used = args
@@ -86,6 +151,15 @@ def Softmax(args: dict[str, Any]) -> _Softmax:
 
 
 def Tanh(args: dict[str, Any]) -> _Tanh:
+    """
+    Converts a PyTorch Tanh layer to a PyDTNN Tanh layer.
+
+    Args:
+        args: Dictionary containing layer configuration.
+
+    Returns:
+        An instance of pydtnn.activations.tanh.Tanh.
+    """
     # https://pytorch.org/docs/stable/generated/torch.nn.Tanh.html#torch.nn.Tanh
     # not_used = args
     return _Tanh()

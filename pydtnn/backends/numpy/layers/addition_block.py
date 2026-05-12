@@ -1,3 +1,7 @@
+"""
+Numpy backend implementation of the AdditionBlock layer.
+"""
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -16,7 +20,20 @@ if TYPE_CHECKING:
 
 
 class AdditionBlockNumpy(AdditionBlock[np.ndarray], AbstractBlockLayerNumpy):
+    """
+    Numpy implementation of an addition block that sums outputs from multiple parallel paths.
+    """
+
     def forward(self, x: np.ndarray) -> np.ndarray:
+        """
+        Performs the forward pass by computing the sum of outputs from all parallel paths.
+
+        Args:
+            x: Input tensor.
+
+        Returns:
+            The element-wise sum of the outputs of all paths.
+        """
 
         num_paths = len(self.paths)
         p = self.paths[0]
@@ -41,6 +58,15 @@ class AdditionBlockNumpy(AdditionBlock[np.ndarray], AbstractBlockLayerNumpy):
         return np.asarray(sum_forwards, dtype=self.model.dtype, order="C")
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
+        """
+        Performs the backward pass by propagating gradients through all parallel paths.
+
+        Args:
+            dy: Gradient of the loss with respect to the output.
+
+        Returns:
+            The accumulated gradient with respect to the input.
+        """
         num_paths = len(self.paths)
         p = self.paths[0]
         dx_backward = dy

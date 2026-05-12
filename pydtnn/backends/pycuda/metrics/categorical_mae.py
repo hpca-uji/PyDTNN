@@ -1,3 +1,7 @@
+"""
+PyCUDA implementation of the Categorical Mean Absolute Error metric.
+"""
+
 import logging
 
 import numpy as np
@@ -12,12 +16,29 @@ logger = logging.getLogger(__name__)
 
 
 class CategoricalMAEPycuda(CategoricalMAE[TensorArray], MetricPycuda):
+    """
+    Categorical Mean Absolute Error metric implemented for PyCUDA backends.
+    """
+
     def _model_init(self) -> None:
+        """
+        Initializes the PyCUDA-specific buffers for metric calculation.
+        """
         super()._model_init()
         self.res = TensorArray.new_zeros(shape=(1,), dtype=np.dtype(self.model.dtype), tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
         self.local_res = TensorArray.new_zeros(shape=(self.model.batch_size,), dtype=np.dtype(self.model.dtype), tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
 
     def compute(self, y_pred: TensorArray, y_targ: TensorArray) -> float:
+        """
+        Computes the categorical MAE between predictions and targets using a CUDA kernel.
+
+        Args:
+            y_pred: Predicted tensor array.
+            y_targ: Target tensor array.
+
+        Returns:
+            The computed mean absolute error as a float.
+        """
         n = y_pred.shape[0]
 
         self.res.fill(0)

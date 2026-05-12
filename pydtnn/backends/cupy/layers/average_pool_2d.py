@@ -1,3 +1,5 @@
+"""CuPy implementation of the 2D average pooling layer."""
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -18,14 +20,17 @@ if TYPE_CHECKING:
 
 
 class AveragePool2DCupy(AveragePool2DNumpy, AbstractPool2DLayerCupy, LayerCupy):
+    """CuPy-accelerated 2D average pooling layer."""
+
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
+        """Initialize model parameters and CUDA kernels."""
         super()._model_init(prev_shape, x)
         self.defines_replaces = {'"TYPE"': DTYPE2CTYPE[self.model.dtype], "TENSOR_FORMAT": str(self.model.tensor_format)}
         self.fwd_kernel = self._fwd_kernel()
         self.bwd_kernel = self._bwd_kernel()
 
     def _fwd_avg_pool_nchw(self, x: np.ndarray, y: np.ndarray) -> None:
-        # return super()._fwd_avg_pool_nchw(x, y)
+        """Perform forward average pooling for NCHW format."""
         self.fwd_kernel(
             self.model.cuda_grid,
             self.model.cuda_block,
@@ -33,7 +38,7 @@ class AveragePool2DCupy(AveragePool2DNumpy, AbstractPool2DLayerCupy, LayerCupy):
         )
 
     def _fwd_avg_pool_nhwc(self, x: np.ndarray, y: np.ndarray) -> None:
-        # return super()._fwd_avg_pool_nhwc(x, y)
+        """Perform forward average pooling for NHWC format."""
         y.fill(0)
         self.fwd_kernel(
             self.model.cuda_grid,
@@ -42,7 +47,7 @@ class AveragePool2DCupy(AveragePool2DNumpy, AbstractPool2DLayerCupy, LayerCupy):
         )
 
     def _bwd_avg_pool_nchw(self, dx: np.ndarray, dy: np.ndarray) -> None:
-        # return super()._bwd_avg_pool_nchw(dx, dy)
+        """Perform backward average pooling for NCHW format."""
         self.bwd_kernel(
             self.model.cuda_grid,
             self.model.cuda_block,
@@ -50,7 +55,7 @@ class AveragePool2DCupy(AveragePool2DNumpy, AbstractPool2DLayerCupy, LayerCupy):
         )
 
     def _bwd_avg_pool_nhwc(self, dx: np.ndarray, dy: np.ndarray) -> None:
-        # return super()._bwd_avg_pool_nhwc(dx, dy)
+        """Perform backward average pooling for NHWC format."""
         self.bwd_kernel(
             self.model.cuda_grid,
             self.model.cuda_block,

@@ -1,3 +1,7 @@
+"""
+Numpy-based optimizer implementation for the PyDTNN framework.
+"""
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -19,4 +23,13 @@ class OptimizerNumpy(Optimizer[np.ndarray], BaseNumpy):
     """
 
     def are_all_zeros(self, ndarray: np.ndarray) -> bool:
+        """
+        Checks if all elements in the provided numpy array are zero.
+
+        Args:
+            ndarray: The numpy array to check.
+
+        Returns:
+            True if all elements are zero, False otherwise.
+        """
         return not ndarray.any()

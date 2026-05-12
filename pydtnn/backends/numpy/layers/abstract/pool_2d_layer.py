@@ -1,3 +1,5 @@
+"""Module providing the abstract base class for 2D pooling layers using NumPy."""
+
 import logging
 import math
 from typing import TYPE_CHECKING
@@ -19,10 +21,14 @@ if TYPE_CHECKING:
 
 
 class AbstractPool2DLayerNumpy(AbstractPool2DLayer[np.ndarray], LayerNumpy):
+    """Abstract base class for 2D pooling layers implemented with NumPy."""
+
     def __init__(self, *args, **kwargs):
+        """Initialize the 2D pooling layer."""
         super().__init__(*args, **kwargs)
 
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None):
+        """Initialize model parameters, memory buffers, and performance estimates."""
         super()._model_init(prev_shape, x)
 
         match self.model.tensor_format:
@@ -68,33 +74,41 @@ class AbstractPool2DLayerNumpy(AbstractPool2DLayer[np.ndarray], LayerNumpy):
         )  # type: ignore (it's fine)
 
     def get_y(self, batch_size: int) -> np.ndarray:
+        """Retrieve the output tensor from the shared memory buffer."""
         y_shape = self.model.encode_shape((batch_size, self.co, self.ho, self.wo))
         y_size = math.prod(y_shape)
         y = self.y_dx[:y_size]
         return np.ascontiguousarray(y.reshape(y_shape), dtype=self.model.dtype)
 
     def get_dx(self, batch_size: int) -> np.ndarray:
+        """Retrieve the gradient input tensor from the shared memory buffer."""
         dx_shape = self.model.encode_shape((batch_size, self.ci, self.hi, self.wi))
         dx_size = math.prod(dx_shape)
         dx = self.y_dx[:dx_size]
         return np.ascontiguousarray(dx.reshape(dx_shape), dtype=self.model.dtype)
 
     def forward(self, x: np.ndarray) -> np.ndarray:
+        """Placeholder for the forward pass method."""
         msg = """This is a fake forward function. It will be masked on initialization by _forward_i2c or _forward_cg"""
         raise NotImplementedError(f"Class 'AbstractPool2DLayerNumpy'. Error: {msg}")
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
+        """Placeholder for the backward pass method."""
         msg = """This is a fake backward function. It will be masked on initialization by _backward_i2c or _backward_cg"""
         raise NotImplementedError(f"Class 'AbstractPool2DLayerNumpy'. Error: {msg}")
 
     def _forward_nchw(self, x: np.ndarray) -> np.ndarray:
+        """Perform forward pass in NCHW format."""
         raise NotImplementedError(f"This is a fake method. {self} must implement _forward_nchw.")
 
     def _backward_nchw(self, dy: np.ndarray) -> np.ndarray:
+        """Perform backward pass in NCHW format."""
         raise NotImplementedError(f"This is a fake method. {self} must implement _backward_nchw.")
 
     def _forward_nhwc(self, x: np.ndarray) -> np.ndarray:
+        """Perform forward pass in NHWC format."""
         raise NotImplementedError(f"This is a fake method. {self} must implement _forward_nhwc.")
 
     def _backward_nhwc(self, dy: np.ndarray) -> np.ndarray:
+        """Perform backward pass in NHWC format."""
         raise NotImplementedError(f"This is a fake method. {self} must implement _backward_nhwc.")

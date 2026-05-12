@@ -1,4 +1,6 @@
-# In this file must be implemented only the translation of PyTorch Pooling layers to its PyDTNN equivalent.
+"""
+Module for converting PyTorch pooling layers to PyDTNN equivalent layers.
+"""
 
 import logging
 from typing import Any
@@ -36,6 +38,15 @@ PYDTNN_DILATION = "dilation"
 
 
 def MaxPool2d(args: dict[str, Any]) -> MaxPool2D:
+    """
+    Converts a PyTorch MaxPool2d layer configuration to a PyDTNN MaxPool2D layer.
+
+    Args:
+        args: Dictionary containing layer configuration arguments.
+
+    Returns:
+        An instance of pydtnn.layers.max_pool_2d.MaxPool2D.
+    """
     # https://pytorch.org/docs/stable/generated/torch.nn.MaxPool2d.html#torch.nn.MaxPool2d
 
     # PyTorch attributes:
@@ -58,6 +69,15 @@ def MaxPool2d(args: dict[str, Any]) -> MaxPool2D:
 
 
 def AvgPool2d(args: dict[str, Any]) -> AveragePool2D:
+    """
+    Converts a PyTorch AvgPool2d layer configuration to a PyDTNN AveragePool2D layer.
+
+    Args:
+        args: Dictionary containing layer configuration arguments.
+
+    Returns:
+        An instance of pydtnn.layers.average_pool_2d.AveragePool2D.
+    """
     # https://pytorch.org/docs/stable/generated/torch.nn.AvgPool2d.html#torch.nn.AvgPool2d
 
     # PyTorch attributes:
@@ -79,6 +99,15 @@ def AvgPool2d(args: dict[str, Any]) -> AveragePool2D:
 
 
 def AdaptiveAvgPool2d(args: dict[str, Any]) -> AdaptiveAveragePool2D:
+    """
+    Converts a PyTorch AdaptiveAvgPool2d layer configuration to a PyDTNN AdaptiveAveragePool2D layer.
+
+    Args:
+        args: Dictionary containing layer configuration arguments.
+
+    Returns:
+        An instance of pydtnn.layers.adaptive_average_pool_2d.AdaptiveAveragePool2D.
+    """
     # https://pytorch.org/docs/stable/generated/torch.nn.AdaptiveAvgPool2d.html#torch.nn.AdaptiveAvgPool2d
     # from torch.nn import AdaptiveAvgPool2d
 

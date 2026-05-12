@@ -1,3 +1,5 @@
+"""PyCUDA implementation of the Mean Absolute Error (MAE) regression metric."""
+
 import logging
 
 import numpy as np
@@ -12,7 +14,10 @@ logger = logging.getLogger(__name__)
 
 
 class RegressionMAEPycuda(RegressionMAE[TensorArray], MetricPycuda):
+    """PyCUDA-accelerated Mean Absolute Error metric for regression tasks."""
+
     def _model_init(self) -> None:
+        """Initializes the metric buffers and internal state for PyCUDA execution."""
         super()._model_init()
 
         n = self.model.batch_size
@@ -23,6 +28,15 @@ class RegressionMAEPycuda(RegressionMAE[TensorArray], MetricPycuda):
         self.local_res = TensorArray.new_zeros(shape=(n, *num_classes), dtype=np.dtype(self.model.dtype), tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
 
     def compute(self, y_pred: TensorArray, y_targ: TensorArray) -> float:
+        """Computes the Mean Absolute Error between predictions and targets.
+
+        Args:
+            y_pred: Predicted values.
+            y_targ: Ground truth target values.
+
+        Returns:
+            The calculated MAE as a float.
+        """
 
         n = y_pred.shape[0]
         num_classes = y_pred.shape[1]

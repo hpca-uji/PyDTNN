@@ -1,3 +1,7 @@
+"""
+Numpy backend implementation for multiclass confusion matrix calculation.
+"""
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -16,13 +20,30 @@ if TYPE_CHECKING:
 
 
 class MulticlassConfusionMatrixNumpy(MulticlassConfusionMatrix[np.ndarray], MetricNumpy):
+    """
+    Numpy-based multiclass confusion matrix metric.
+    """
+
     def _model_init(self) -> None:
+        """
+        Initializes the confusion matrix buffer based on model output shape.
+        """
         super()._model_init()
         _, target_classes = self.shape
         self.conf_matrix: np.ndarray = np.zeros((target_classes, target_classes), dtype=np.int32)
         self.memory_used += self.conf_matrix.nbytes
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> np.ndarray:
+        """
+        Computes the confusion matrix for a given batch of predictions and targets.
+
+        Args:
+            y_pred: Predicted labels in one-hot encoded format.
+            y_targ: Ground truth labels in one-hot encoded format.
+
+        Returns:
+            A 2D numpy array representing the confusion matrix.
+        """
         y_targ = np.asarray(y_targ, dtype=self.model.dtype, order="C")
         """
         The output will be a confusion matrix like this:

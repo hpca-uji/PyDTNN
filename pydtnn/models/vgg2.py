@@ -1,3 +1,7 @@
+"""
+VGG-style convolutional neural network architecture implementation.
+"""
+
 from collections.abc import Sequence
 
 from pydtnn.abstract.layerable import Layerable
@@ -15,6 +19,16 @@ __all__ = ("vgg2",)
 
 
 def vgg2(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
+    """
+    Constructs a VGG-style CNN architecture with two blocks of convolutional layers.
+
+    Args:
+        input_shape: The shape of the input data (channels, height, width).
+        output_shape: The shape of the output layer.
+
+    Returns:
+        A sequence of layers defining the VGG2 model.
+    """
     model = list[Layerable]()
     _ = model.append
 

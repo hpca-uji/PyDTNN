@@ -1,3 +1,5 @@
+"""PyCUDA implementation of the Input layer for the PyDTNN framework."""
+
 import ctypes
 import logging
 
@@ -16,10 +18,13 @@ logger = logging.getLogger(__name__)
 
 
 class InputPycuda(Input[TensorArray], LayerPycuda):
+    """PyCUDA-specific implementation of the Input layer."""
+
     ws_size = 0
     ws: drv.DeviceAllocation = None
 
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray):
+        """Initialize layer memory and GPU buffers."""
         super()._model_init(prev_shape, x)
 
         y_gpu = gpuarray.zeros((self.model.batch_size, *self.shape), self.model.dtype)
@@ -28,12 +33,15 @@ class InputPycuda(Input[TensorArray], LayerPycuda):
         self.memory_used += self.y.nbytes
 
     def forward(self, x: TensorArray) -> TensorArray:
+        """Perform forward pass."""
         return x
 
     def backward(self, dy: TensorArray) -> TensorArray:
+        """Perform backward pass."""
         return dy
 
     def _sync_x_y(self, x_batch: np.ndarray, y_batch: np.ndarray) -> tuple[TensorArray, TensorArray]:
+        """Synchronize input and target batches to GPU memory."""
         # NOTE: in CUDA it's necessary to always have batches of the same size.
         local_batch_size = x_batch.shape[0]
 
@@ -61,9 +69,11 @@ class InputPycuda(Input[TensorArray], LayerPycuda):
 
     @property
     def ws_ptr(self) -> ctypes.c_void_p:
+        """Return the pointer to the workspace memory."""
         return ctypes.c_void_p(int(self.ws))
 
     def checkConvolutionMemory(self, size) -> None:
+        """Allocate or reallocate workspace memory if required."""
         if size.value < self.ws_size:
             return
 
@@ -74,7 +84,9 @@ class InputPycuda(Input[TensorArray], LayerPycuda):
         self.ws = drv.mem_alloc(self.ws_size)
 
     def getConvolutionWorkspacePtr(self) -> ctypes.c_void_p:
+        """Return the workspace pointer."""
         return self.ws_ptr
 
     def getConvolutionWorkspaceSize(self) -> int:
+        """Return the workspace size in bytes."""
         return self.ws_size

@@ -1,3 +1,5 @@
+"""Cython implementation of 2D depthwise convolutional layers."""
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -17,7 +19,10 @@ if TYPE_CHECKING:
 
 
 class Conv2DDepthwiseCython(Conv2DDepthwiseNumpy, AbstractConv2DCython):
+    """2D depthwise convolutional layer using Cython kernels for acceleration."""
+
     def _conv_fwd_nhwc(self, x: np.ndarray, y: np.ndarray) -> None:
+        """Perform forward depthwise convolution in NHWC format."""
         depthwise_conv_nhwc_cython(
             x,
             self.weights,
@@ -33,6 +38,7 @@ class Conv2DDepthwiseCython(Conv2DDepthwiseNumpy, AbstractConv2DCython):
         )
 
     def _conv_fwd_nchw(self, x: np.ndarray, y: np.ndarray) -> None:
+        """Perform forward depthwise convolution in NCHW format."""
         depthwise_conv_nchw_cython(
             x,
             self.weights,
@@ -48,6 +54,7 @@ class Conv2DDepthwiseCython(Conv2DDepthwiseNumpy, AbstractConv2DCython):
         )
 
     def _conv_bwd_nhwc(self, dx: np.ndarray, dy: np.ndarray) -> None:
+        """Perform backward depthwise convolution in NHWC format to compute gradients."""
         depthwise_conv_backward_nhwc_cython(
             dy,
             self.x,
@@ -63,6 +70,7 @@ class Conv2DDepthwiseCython(Conv2DDepthwiseNumpy, AbstractConv2DCython):
         )
 
     def _conv_bwd_nchw(self, dx: np.ndarray, dy: np.ndarray) -> None:
+        """Perform backward depthwise convolution in NCHW format to compute gradients."""
         depthwise_conv_backward_nchw_cython(
             dy,
             self.x,

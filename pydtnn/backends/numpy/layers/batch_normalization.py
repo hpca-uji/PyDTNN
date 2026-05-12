@@ -1,3 +1,7 @@
+"""
+NumPy backend implementation of the Batch Normalization layer.
+"""
+
 import logging
 import math
 from typing import TYPE_CHECKING
@@ -18,18 +22,31 @@ if TYPE_CHECKING:
 
 
 class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
+    """
+    NumPy-based Batch Normalization layer implementation.
+    """
+
     @property
     def _ary_prop(self) -> set[str]:
+        """
+        Returns the set of parameter names that are NumPy arrays.
+        """
         return {Parameters.RUNNING_MEAN, Parameters.RUNNING_VAR, *super()._ary_prop}
 
     @staticmethod
     def get_inv_std(running_var: np.ndarray, epsilon: float, dtype: np.dtype) -> np.ndarray:
+        """
+        Calculates the inverse standard deviation for normalization.
+        """
         inv_std = np.add(running_var, epsilon, dtype=dtype)
         np.sqrt(inv_std, out=inv_std, dtype=dtype)
         np.reciprocal(inv_std, out=inv_std, dtype=dtype)
         return inv_std
 
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None):
+        """
+        Initializes layer parameters and memory buffers.
+        """
         super()._model_init(prev_shape, x)
 
         if self.spatial:
@@ -79,6 +96,9 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
         self.memory_used += self.tmp_memory_used
 
     def _post_init(self) -> None:
+        """
+        Allocates memory buffers after model initialization.
+        """
         super()._post_init()
         with self.model.memory:
             self._mean_inv = self.model.memory.ndarray(self._mean_inv_shape, dtype=self.model.dtype)
@@ -88,6 +108,9 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
             self.dy_xn = self.model.memory.ndarray(self.dy_xn_shape, dtype=self.model.dtype)
 
     def _training_fwd(self, x: np.ndarray, _mean: np.ndarray, _var: np.ndarray, y: np.ndarray) -> None:
+        """
+        Performs the forward pass during training.
+        """
         # y = ((x - mean(x)) / sqrt(var(x) + epsilon)) * gamma + beta
         np.subtract(x, _mean, out=self.xn, dtype=self.model.dtype)
 
@@ -102,6 +125,9 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
         self.xn = np.asarray(self.xn, dtype=self.model.dtype, order="C")
 
     def _training_bwd(self, dx: np.ndarray, dy: np.ndarray) -> None:
+        """
+        Performs the backward pass during training.
+        """
         n = dy.shape[0]
         # dx = (self.gamma / (self.std * n)) * (n * dy - self.xn * self.dgamma - self.dbeta)
         np.multiply(self.std, n, out=dx)
@@ -113,6 +139,9 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
         np.multiply(dx, dy, out=dx)
 
     def forward(self, x: np.ndarray) -> np.ndarray:
+        """
+        Computes the forward pass of the layer.
+        """
 
         self.y_dx: np.ndarray
         n = x.shape[0]
@@ -157,6 +186,9 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
         return np.asarray(y, dtype=self.model.dtype, order="C")
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
+        """
+        Computes the backward pass of the layer.
+        """
 
         n = dy.shape[0]
         if self.spatial:

@@ -1,3 +1,5 @@
+"""PyCUDA implementation of the Batch Normalization layer."""
+
 import logging
 from typing import Any
 
@@ -19,11 +21,15 @@ logger = logging.getLogger(__name__)
 
 
 class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
+    """PyCUDA-accelerated Batch Normalization layer using cuDNN."""
+
     @property
     def _ary_prop(self) -> set[str]:
+        """Returns the set of parameter names that are stored as TensorArrays."""
         return {Parameters.RUNNING_MEAN, Parameters.RUNNING_VAR, *super()._ary_prop}
 
     def __init__(self, *args, **kwargs):
+        """Initializes the BatchNormalizationPycuda layer."""
         super().__init__(*args, **kwargs)
         # NOTE: The next attributes will be initialized later
         self.gamma_beta_mean_var_desc: int | None = None
@@ -37,6 +43,7 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
         self.factor: float = None  # type: ignore
 
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray):
+        """Initializes GPU memory and cuDNN descriptors for the layer."""
         super()._model_init(prev_shape, x)
         self.stream_2 = drv.Stream()
 
@@ -107,6 +114,7 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
         self.memory_used += self.gamma.nbytes
 
     def forward(self, x: TensorArray) -> TensorArray:
+        """Performs the forward pass using cuDNN."""
         alpha, beta = 1.0, 0.0
         match self.model.mode:
             case Model.Mode.TRAIN:
@@ -155,6 +163,7 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
         return self.y
 
     def backward(self, dy: TensorArray) -> TensorArray:
+        """Performs the backward pass using cuDNN."""
         self.x: TensorArray
 
         alpha_dx, beta_dx, alpha_dgb, beta_dgb = 1.0, 0.0, 1.0, 0.0
@@ -191,12 +200,14 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
         return self.dx
 
     def _export_gamma_beta(self, key: str) -> Any:
+        """Exports gamma or beta parameters to CPU."""
         value = getattr(self, key)
         gpu_ary = value
         cpu_ary = gpu_ary.get()
         return np.asarray(cpu_ary, dtype=np.float64, order="C", copy=True)
 
     def _export_prop(self, key: str) -> Any:
+        """Exports layer properties."""
         match key:
             case Parameters.GAMMA | Parameters.DGAMMA | Parameters.BETA | Parameters.DBETA:
                 return self._export_gamma_beta(key)
@@ -204,11 +215,13 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
                 return super()._export_prop(key)
 
     def _import_gamma_beta(self, key: str, value: Any) -> None:
+        """Imports gamma or beta parameters from CPU."""
         attribute = getattr(self, key)
         attribute.set(value)
         return
 
     def _import_prop(self, key: str, value) -> None:
+        """Imports layer properties."""
         match key:
             case Parameters.GAMMA | Parameters.DGAMMA | Parameters.BETA | Parameters.DBETA:
                 return self._import_gamma_beta(key, value)

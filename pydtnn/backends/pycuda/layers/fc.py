@@ -1,3 +1,5 @@
+"""PyCUDA implementation of the Fully Connected (FC) layer."""
+
 import logging
 from typing import Any
 
@@ -20,12 +22,16 @@ logger = logging.getLogger(__name__)
 
 
 class FCPycuda(FC[TensorArray], LayerPycuda):
+    """Fully connected layer implementation for PyCUDA backend."""
+
     def __init__(self, *args, **kwargs):
+        """Initialize the FCPycuda layer."""
         super().__init__(*args, **kwargs)
         self.matmul = matmul_gpu
         self.matvec = matvec_gpu
 
     def _import_biases_db(self, key: str, value: Any) -> None:
+        """Import bias or gradient data from CPU to GPU."""
         attribute = getattr(self, key)
 
         cpu_ary = value
@@ -33,6 +39,7 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
         return
 
     def _import_prop(self, key: str, value) -> None:
+        """Import layer property from CPU to GPU."""
         match key:
             case Parameters.BIASES | Parameters.DB:
                 return self._import_biases_db(key, value)
@@ -41,6 +48,7 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
                 return super()._import_prop(key, value)
 
     def _export_biases_db(self, key: str) -> Any:
+        """Export bias or gradient data from GPU to CPU."""
         value = getattr(self, key)
         gpu_ary = value
         cpu_ary = gpu_ary.get()
@@ -48,6 +56,7 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
         return np.asarray(cpu_ary, dtype=np.float64, order="C", copy=True)
 
     def _export_prop(self, key: str) -> Any:
+        """Export layer property from GPU to CPU."""
         match key:
             case Parameters.BIASES | Parameters.DB:
                 return self._export_biases_db(key)
@@ -55,6 +64,7 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
                 return super()._export_prop(key)
 
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
+        """Initialize model parameters and GPU buffers."""
         super()._model_init(prev_shape, x)
         self.stream_2 = drv.Stream()
 
@@ -118,6 +128,7 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
         )  # type: ignore (This is correct)
 
     def forward(self, x: TensorArray) -> TensorArray:
+        """Perform forward pass computation."""
         m = x.shape[0]
         n = ldb = ldc = self.weights.shape[1]
         k = lda = x.shape[1]
@@ -138,6 +149,7 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
         return self.y
 
     def backward(self, dy: TensorArray) -> TensorArray:
+        """Perform backward pass computation."""
         # Compute dw
         m = lda = self.x.shape[1]
         n = ldb = ldc = dy.shape[1]

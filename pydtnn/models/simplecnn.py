@@ -1,3 +1,7 @@
+"""
+Module for defining a standard simple convolutional neural network architecture.
+"""
+
 from collections.abc import Sequence
 
 from pydtnn.abstract.layerable import Layerable
@@ -15,6 +19,16 @@ __all__ = ("simplecnn",)
 
 
 def simplecnn(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
+    """
+    Constructs a simple CNN architecture consisting of convolutional, pooling, and fully connected layers.
+
+    Args:
+        input_shape: The shape of the input data.
+        output_shape: The shape of the output layer.
+
+    Returns:
+        A sequence of layers forming the CNN model.
+    """
     model = list[Layerable]()
     _ = model.append
 

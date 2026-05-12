@@ -1,3 +1,5 @@
+"""PyCUDA implementation of Depthwise 2D Convolution layer."""
+
 import logging
 from typing import Any, override
 
@@ -17,13 +19,17 @@ logger = logging.getLogger(__name__)
 
 
 class Conv2DDepthwisePycuda(AbstractConv2DPycuda):
+    """Depthwise 2D Convolution layer implementation for PyCUDA backend."""
+
     def _initializing_special_parameters(self):
+        """Initialize layer-specific parameters and weight shapes."""
         # Setting other parameters
         self.co = self.ci
         # Setting weights
         self.weights_shape = (1, self.ci, *self.filter_shape)
 
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
+        """Initialize model buffers and select CUDA kernels based on tensor format."""
         super()._model_init(prev_shape, x)
         self.bias_sum_bwd: Function = None
 
@@ -57,6 +63,7 @@ class Conv2DDepthwisePycuda(AbstractConv2DPycuda):
         self.bias_sum_fwd: Function = self._get_kernel(func_name="cuda_bias_sum_fwd_depthwise_conv")
 
     def _forward_depthwise_nchw(self, x: TensorArray) -> TensorArray:
+        """Execute forward pass for NCHW format."""
         self.x = x
         self.y.fill(0)
 
@@ -100,6 +107,7 @@ class Conv2DDepthwisePycuda(AbstractConv2DPycuda):
         return self.y
 
     def _forward_depthwise_nhwc(self, x: TensorArray) -> TensorArray:
+        """Execute forward pass for NHWC format."""
         self.x = x
         n, h, w, c = x.shape
         self.y.fill(0)
@@ -142,6 +150,7 @@ class Conv2DDepthwisePycuda(AbstractConv2DPycuda):
         return self.y
 
     def _backward_depthwise_nchw(self, dy: TensorArray) -> TensorArray:
+        """Execute backward pass for NCHW format."""
 
         n, c, h, w = dy.shape
         self.dx.fill(0)
@@ -183,6 +192,7 @@ class Conv2DDepthwisePycuda(AbstractConv2DPycuda):
         return self.dx
 
     def _backward_depthwise_nhwc(self, dy: TensorArray) -> TensorArray:
+        """Execute backward pass for NHWC format."""
         n, h, w, c = dy.shape
         self.dx.fill(0)
 
@@ -224,6 +234,7 @@ class Conv2DDepthwisePycuda(AbstractConv2DPycuda):
 
     @override
     def _export_weights_dw(self, key: str) -> Any:
+        """Export weights from GPU to CPU."""
         value = getattr(self, key)
         gpu_ary = value
         cpu_ary = gpu_ary.get()
@@ -231,5 +242,6 @@ class Conv2DDepthwisePycuda(AbstractConv2DPycuda):
 
     @override
     def _import_weights_dw(self, key: str, value: Any) -> None:
+        """Import weights from CPU to GPU."""
         attribute = getattr(self, key)
         attribute.set(value)

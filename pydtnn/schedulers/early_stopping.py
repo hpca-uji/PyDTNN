@@ -1,3 +1,11 @@
+"""
+Early stopping module for PyDTNN.
+
+This module provides the EarlyStopping class, which monitors model performance
+during training and terminates the process if no improvement is observed
+within a specified number of epochs.
+"""
+
 from __future__ import annotations
 
 import logging
@@ -20,12 +28,21 @@ if TYPE_CHECKING:
 
 class EarlyStopping(SchedulerWithLossOrMetric):
     """
-    EarlyStopping LRScheduler
+    Early stopping scheduler to terminate training when a monitored metric stops improving.
     """
 
     model: Model
 
     def __init__(self, loss_or_metric="", patience=10, minimize=True, verbose=True):
+        """
+        Initialize the EarlyStopping scheduler.
+
+        Args:
+            loss_or_metric: Name of the metric to monitor.
+            patience: Number of epochs to wait for improvement before stopping.
+            minimize: Whether the metric should be minimized.
+            verbose: Whether to log status updates.
+        """
         super().__init__(loss_or_metric, verbose)
         self.patience = patience
         self.minimize = minimize
@@ -35,6 +52,13 @@ class EarlyStopping(SchedulerWithLossOrMetric):
         self.compare = operator.lt if self.minimize else operator.gt
 
     def on_epoch_end(self, train_loss_or_metrics: np.ndarray, val_loss_or_metrics: np.ndarray) -> None:
+        """
+        Check if the monitored metric has improved at the end of an epoch.
+
+        Args:
+            train_loss_or_metrics: Array of training metrics.
+            val_loss_or_metrics: Array of validation metrics.
+        """
         idx = self._get_idx()
         self.epoch_count += 1
         loss_or_metrics = val_loss_or_metrics if self.is_val_metric else train_loss_or_metrics
@@ -56,4 +80,13 @@ class EarlyStopping(SchedulerWithLossOrMetric):
 
     @classmethod
     def from_model(cls, model: Model) -> EarlyStopping:
+        """
+        Create an EarlyStopping instance from a model configuration.
+
+        Args:
+            model: The model instance containing early stopping parameters.
+
+        Returns:
+            An initialized EarlyStopping scheduler.
+        """
         return EarlyStopping(model.early_stopping_metric, model.early_stopping_patience, model.early_stopping_minimize)

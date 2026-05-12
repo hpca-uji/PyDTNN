@@ -1,3 +1,5 @@
+"""Cython-accelerated transposition utilities for PyDTNN."""
+
 import numpy as _np
 
 type _npDT = _np.int8 | _np.float32 | _np.float64

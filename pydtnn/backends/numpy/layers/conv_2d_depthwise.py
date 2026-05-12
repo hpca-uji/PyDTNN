@@ -1,3 +1,5 @@
+"""Numpy backend implementation for 2D depthwise convolution layers."""
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -18,7 +20,10 @@ if TYPE_CHECKING:
 
 
 class Conv2DDepthwiseNumpy(AbstractConv2DNumpy, Conv2DDepthwise):
+    """Numpy-based implementation of a 2D depthwise convolution layer."""
+
     def _initializing_special_parameters(self):
+        """Initialize layer-specific parameters for depthwise convolution."""
         super()._initializing_special_parameters()
         # Setting other parameters
         self.co = self.ci
@@ -26,6 +31,7 @@ class Conv2DDepthwiseNumpy(AbstractConv2DNumpy, Conv2DDepthwise):
         self.weights_shape = (self.ci, *self.filter_shape)
 
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None):
+        """Initialize model buffers and select forward/backward implementations."""
         super()._model_init(prev_shape, x)
 
         match self.model.tensor_format:
@@ -51,14 +57,17 @@ class Conv2DDepthwiseNumpy(AbstractConv2DNumpy, Conv2DDepthwise):
             self.memory_used += self.dx.nbytes
 
     def _export_weights_dw(self, key: str):
+        """Export weights to a standard numpy array."""
         value = getattr(self, key)
         return np.asarray(value, dtype=np.float64, order="C", copy=True)
 
     def _import_weights_dw(self, key: str, value) -> None:
+        """Import weights from a numpy array into the layer."""
         ary = getattr(self, key)
         ary[:] = value
 
     def _conv_fwd_nhwc(self, x: np.ndarray, y: np.ndarray) -> None:
+        """Perform NHWC depthwise convolution forward pass."""
         for nn in range(x.shape[0]):
             for cc in range(self.ci):
                 for ii in range(self.kh):
@@ -72,6 +81,7 @@ class Conv2DDepthwiseNumpy(AbstractConv2DNumpy, Conv2DDepthwise):
                                         y[nn, cc, xx, yy] += self.weights[cc, ii, jj] * x[nn, cc, x_x, x_y]
 
     def _conv_fwd_nchw(self, x: np.ndarray, y: np.ndarray) -> None:
+        """Perform NCHW depthwise convolution forward pass."""
         for nn in range(x.shape[0]):
             for ii in range(self.kh):
                 for jj in range(self.kw):
@@ -85,6 +95,7 @@ class Conv2DDepthwiseNumpy(AbstractConv2DNumpy, Conv2DDepthwise):
                                         y[nn, xx, yy, cc] += self.weights[cc, ii, jj] * x[nn, x_x, x_y, cc]
 
     def _conv_bwd_nhwc(self, dx: np.ndarray, dy: np.ndarray) -> None:
+        """Perform NHWC depthwise convolution backward pass."""
         for cc in range(self.ci):
             for ii in range(self.kh):
                 for jj in range(self.kw):
@@ -101,6 +112,7 @@ class Conv2DDepthwiseNumpy(AbstractConv2DNumpy, Conv2DDepthwise):
                                         dx[nn, x_x, x_y, cc] += val_k * val_dy
 
     def _conv_bwd_nchw(self, dx: np.ndarray, dy: np.ndarray) -> None:
+        """Perform NCHW depthwise convolution backward pass."""
         for cc in range(self.ci):
             for ii in range(self.kh):
                 for jj in range(self.kw):
@@ -164,6 +176,7 @@ class Conv2DDepthwiseNumpy(AbstractConv2DNumpy, Conv2DDepthwise):
         return np.asarray(y, dtype=self.model.dtype, order="C")
 
     def _backward_nhwc(self, dy: np.ndarray) -> np.ndarray:
+        """Perform NHWC backward pass for depthwise convolution."""
 
         dx: np.ndarray = np.ascontiguousarray(self.dx[: dy.shape[0],], dtype=self.model.dtype)
         dx.fill(0)
@@ -178,6 +191,7 @@ class Conv2DDepthwiseNumpy(AbstractConv2DNumpy, Conv2DDepthwise):
         return np.asarray(dx, dtype=self.model.dtype, order="C")
 
     def _backward_nchw(self, dy: np.ndarray) -> np.ndarray:
+        """Perform NCHW backward pass for depthwise convolution."""
 
         dx: np.ndarray = np.ascontiguousarray(self.dx[: dy.shape[0],], dtype=self.model.dtype)
         dx.fill(0)

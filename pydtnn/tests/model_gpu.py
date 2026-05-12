@@ -1,3 +1,7 @@
+"""
+Module for testing PyDTNN model consistency between CPU and GPU backends.
+"""
+
 from __future__ import annotations
 
 import logging
@@ -24,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 class ModelGpuTestCase(ModelCommonTestCase):
     """
-    Tests that two models with different parameters lead to the same results
+    Test case for verifying model parity between CPU and GPU implementations.
     """
 
     global ModelCommonTestCase
@@ -40,6 +44,15 @@ class ModelGpuTestCase(ModelCommonTestCase):
     model2_desc = "using the GPU backend"
 
     def get_model2(self, model_name: str) -> Model:
+        """
+        Initialize and return a model configured for the GPU backend.
+
+        Args:
+            model_name: The name of the model to instantiate.
+
+        Returns:
+            A Model instance configured with the GPU backend.
+        """
         # GPU model
         params = Params()
         params.model_name = model_name  # type: ignore
@@ -56,7 +69,11 @@ class ModelGpuTestCase(ModelCommonTestCase):
 
     def copy_weights_and_biases(self, model1: Model, model2: Model):
         """
-        Copy weights and biases from Model 1 to Model 2
+        Copy weights and biases from a CPU model to a GPU model.
+
+        Args:
+            model1: The source CPU model.
+            model2: The destination GPU model.
         """
         for cpu_layer, gpu_layer in zip(model1.get_all_layers(), model2.get_all_layers()):
             if cpu_layer.weights is None:
@@ -86,6 +103,14 @@ class ModelGpuTestCase(ModelCommonTestCase):
         data: np.ndarray,
         layer: Layerable,
     ) -> None:
+        """
+        Upload numpy data to a GPU array.
+
+        Args:
+            ary: The target GPU array.
+            data: The source numpy array.
+            layer: The layer associated with the data.
+        """
         try:
             ary.set(data.copy())
         except ValueError as e:
@@ -93,7 +118,14 @@ class ModelGpuTestCase(ModelCommonTestCase):
 
     def do_model2_forward_pass(self, model2: Model, x1: list[np.ndarray]) -> list[np.ndarray]:
         """
-        Model 2 forward pass
+        Execute a forward pass on the GPU model.
+
+        Args:
+            model2: The GPU model.
+            x1: A list of input numpy arrays.
+
+        Returns:
+            A list of output numpy arrays from the forward pass.
         """
         x2 = [x1[0]]
         # Input layer
@@ -114,7 +146,14 @@ class ModelGpuTestCase(ModelCommonTestCase):
 
     def do_model2_backward_pass(self, model2: Model, dx1: list[np.ndarray]) -> list[np.ndarray]:
         """
-        Model 2 backward pass
+        Execute a backward pass on the GPU model.
+
+        Args:
+            model2: The GPU model.
+            dx1: A list of gradient numpy arrays.
+
+        Returns:
+            A list of gradient numpy arrays from the backward pass.
         """
         dx2 = [dx1[-1].copy()]
 

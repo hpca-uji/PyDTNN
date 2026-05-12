@@ -1,3 +1,5 @@
+"""PyCUDA implementation of the Flatten layer."""
+
 import logging
 
 from pydtnn.backends.pycuda.layers.layer import LayerPycuda
@@ -11,17 +13,22 @@ logger = logging.getLogger(__name__)
 
 
 class FlattenPycuda(Flatten[TensorArray], LayerPycuda):
+    """PyCUDA-accelerated Flatten layer implementation."""
+
     def _model_init(self, prev_shape, x):
+        """Initialize layer parameters and output reference."""
         super()._model_init(prev_shape, x)
         self.y = x  # type: ignore (it's okay)
 
     def forward(self, x: TensorArray) -> TensorArray:
+        """Perform forward pass by reshaping the input tensor."""
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_Y)
         self.y = x.reshape((self.model.batch_size, *self.shape))
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.y
 
     def backward(self, dy: TensorArray) -> TensorArray:
+        """Perform backward pass by reshaping the gradient tensor."""
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_RESHAPE_DX)
         self.dx = dy.reshape((self.model.batch_size, *self.prev_shape))
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)

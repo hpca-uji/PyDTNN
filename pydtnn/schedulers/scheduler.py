@@ -1,3 +1,7 @@
+"""
+Module for defining the base Scheduler interface and component selection utilities.
+"""
+
 import logging
 
 from pydtnn.abstract.base import Base
@@ -14,10 +18,16 @@ logger = logging.getLogger(__name__)
 
 class Scheduler(Base):
     """
-    Scheduler base class
+    Base class for all training schedulers in PyDTNN.
     """
 
     def __init__(self, verbose: bool):
+        """
+        Initialize the scheduler.
+
+        Args:
+            verbose: Whether to enable logging output.
+        """
         super().__init__()
         self.verbose = verbose
         self.epoch_count = 0
@@ -27,25 +37,55 @@ class Scheduler(Base):
         self.stop_training: bool = False
 
     def __str__(self):
+        """
+        Return the string representation of the scheduler.
+        """
         return f"Scheduler {type(self).__name__}"
 
     def on_batch_begin(self, *args):
+        """
+        Hook called at the beginning of a training batch.
+        """
         pass
 
     def on_batch_end(self, *args):
+        """
+        Hook called at the end of a training batch.
+        """
         pass
 
     def on_epoch_begin(self, *args):
+        """
+        Hook called at the beginning of a training epoch.
+        """
         pass
 
     def on_epoch_end(self, *args):
+        """
+        Hook called at the end of a training epoch.
+        """
         pass
 
     def log(self, text: str):
+        """
+        Log a message if verbose mode is enabled and the process is the primary rank.
+
+        Args:
+            text: The message to log.
+        """
         if self.verbose and self.model.comm_rank == 0:
             logger.info(f"{self}: {text}")
 
 
 def select(name: str) -> type[Scheduler]:
+    """
+    Retrieve a scheduler class by its name.
+
+    Args:
+        name: The name of the scheduler component.
+
+    Returns:
+        The scheduler class type.
+    """
     assert __package__, "Package not found!"
     return find_component(__package__, name)

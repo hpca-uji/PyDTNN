@@ -1,3 +1,9 @@
+"""
+ChestXRay dataset module for PyDTNN.
+
+Provides functionality to load and process the NIH Chest X-ray dataset.
+"""
+
 from __future__ import annotations
 
 import csv
@@ -37,6 +43,15 @@ type Class = np.ndarray
 
 
 def get_dict_file_labels(path: Path) -> dict[str, list[str]]:
+    """
+    Parses the CSV file to map image filenames to their associated labels.
+
+    Args:
+        path: Path to the CSV file containing image metadata.
+
+    Returns:
+        A dictionary where keys are image filenames and values are lists of labels.
+    """
     with open(file=path, mode="r") as file:
         reader = csv.DictReader(file, delimiter=CSV_DELIMETER)
         dict_file_labels = dict[str, list[str]]()
@@ -77,9 +92,26 @@ class ChestXRay(Dataset):
     """
 
     def __init__(self, model: Model, force_test_as_validation=False, debug=False):
+        """
+        Initializes the ChestXRay dataset.
+
+        Args:
+            model: The model instance associated with the dataset.
+            force_test_as_validation: Whether to use the test set as validation.
+            debug: Whether to enable debug mode.
+        """
         super().__init__(model, TRAIN_NSAMPLES, TEST_NSAMPLES, INPUT_SHAPE, OUTPUT_SHAPE, force_test_as_validation=force_test_as_validation, debug=debug)
 
     def _get_labels(self, image_file: str) -> Class:
+        """
+        Converts image labels into a binary mask.
+
+        Args:
+            image_file: The filename of the image.
+
+        Returns:
+            A binary numpy array representing the labels.
+        """
         labels = self._dict_images_labels[image_file]
         mask = np.zeros(self.output_shape, dtype=np.uint8)
         for label in labels:
@@ -87,6 +119,9 @@ class ChestXRay(Dataset):
         return mask
 
     def _init_actual_data(self):
+        """
+        Initializes the dataset by parsing metadata and mapping images to archives.
+        """
         self._xy_filenames: list[list[tuple[str, Class]]] = [[("", np.empty((0,)))] for _ in Dataset.Part]
         self.files = Path(self.model.dataset_path)
         csv = self.files.joinpath("Data_Entry_2017_v2020.csv")
@@ -125,6 +160,15 @@ class ChestXRay(Dataset):
         self._xy_filenames[Dataset.Part.VAL] = self._xy_filenames[Dataset.Part.TEST] if self.model.test_as_validation else self._xy_filenames[Dataset.Part.TRAIN]
 
     def _actual_data_generator(self, part):
+        """
+        Generates batches of data for training, validation, or testing.
+
+        Args:
+            part: The dataset partition (TRAIN, TEST, or VAL).
+
+        Yields:
+            A tuple containing the image tensor and the label tensor.
+        """
         offset = self._local_offset[part]
         nsamples = self._local_nsamples[part]
         xy_filenames = self._xy_filenames[part]

@@ -1,3 +1,5 @@
+"""VGG3 model architecture implementation for PyDTNN."""
+
 from collections.abc import Sequence
 
 from pydtnn.abstract.layerable import Layerable
@@ -15,6 +17,16 @@ __all__ = ("vgg3",)
 
 
 def vgg3(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
+    """
+    Constructs a VGG3-style convolutional neural network architecture.
+
+    Args:
+        input_shape: The shape of the input data (channels, height, width).
+        output_shape: The shape of the output layer.
+
+    Returns:
+        A sequence of layers defining the VGG3 model.
+    """
     model = list[Layerable]()
     _ = model.append
 

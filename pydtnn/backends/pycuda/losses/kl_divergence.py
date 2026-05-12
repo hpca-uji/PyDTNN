@@ -1,3 +1,7 @@
+"""
+PyCUDA implementation of the Kullback-Leibler Divergence loss function.
+"""
+
 import logging
 
 import numpy as np
@@ -13,7 +17,22 @@ logger = logging.getLogger(__name__)
 
 
 class KLDivergencePycuda(KLDivergence[TensorArray], LossPycuda):
+    """
+    PyCUDA-accelerated Kullback-Leibler Divergence loss calculation.
+    """
+
     def compute(self, y_pred, y_targ, batch_size):
+        """
+        Computes the KL Divergence loss and its gradient on the GPU.
+
+        Args:
+            y_pred (TensorArray): Predicted probability distribution.
+            y_targ (TensorArray): Target probability distribution.
+            batch_size (int): Number of samples in the current batch.
+
+        Returns:
+            tuple: A tuple containing the scalar loss value and the gradient TensorArray.
+        """
         # loss = SUM(|pred * log(|pred / (targ + eps)| + eps) / N
         # dx = log(|pred / targ + eps| + eps) + 1 / N
 

@@ -1,3 +1,5 @@
+"""VGG model architectures implemented using TensorFlow-style configurations."""
+
 from collections.abc import Sequence
 
 from pydtnn.abstract.layerable import Layerable
@@ -22,6 +24,15 @@ __all__ = (
 
 
 def vgg16(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
+    """Constructs a VGG16 model architecture.
+
+    Args:
+        input_shape: The shape of the input data.
+        output_shape: The shape of the output layer.
+
+    Returns:
+        A sequence of layers forming the VGG16 model.
+    """
     model = list[Layerable]()
     _ = model.append
     _(Input(shape=input_shape))
@@ -41,6 +52,15 @@ def vgg16(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerab
 
 
 def vgg8(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
+    """Constructs a VGG8 model architecture.
+
+    Args:
+        input_shape: The shape of the input data.
+        output_shape: The shape of the output layer.
+
+    Returns:
+        A sequence of layers forming the VGG8 model.
+    """
     model = list[Layerable]()
     _ = model.append
     _(Input(shape=input_shape))
@@ -59,6 +79,15 @@ def vgg8(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerabl
 
 
 def vgg6(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
+    """Constructs a VGG6 model architecture.
+
+    Args:
+        input_shape: The shape of the input data.
+        output_shape: The shape of the output layer.
+
+    Returns:
+        A sequence of layers forming the VGG6 model.
+    """
     model = list[Layerable]()
     _ = model.append
     _(Input(shape=input_shape))

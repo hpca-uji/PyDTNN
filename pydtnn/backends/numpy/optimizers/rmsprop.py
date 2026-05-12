@@ -1,3 +1,5 @@
+"""RMSProp optimizer implementation for NumPy backend."""
+
 import logging
 import math
 from typing import TYPE_CHECKING
@@ -16,7 +18,10 @@ if TYPE_CHECKING:
 
 
 class RMSPropNumpy(RMSProp[np.ndarray], OptimizerNumpy):
+    """RMSProp optimizer implementation using NumPy arrays."""
+
     def _model_init(self, list_layers: list[LayerNumpy]) -> None:
+        """Initialize optimizer state for each layer."""
         super()._model_init(list_layers)  # type: ignore (it is the right type)
 
         temp_memory_size = []
@@ -42,6 +47,7 @@ class RMSPropNumpy(RMSProp[np.ndarray], OptimizerNumpy):
         self.memory_used += self.tmp_memory_used
 
     def _post_init(self) -> None:
+        """Finalize memory allocation for temporary buffers."""
         super()._post_init()
         for layer_id in self.context.keys():
             with self.model.memory:
@@ -52,6 +58,7 @@ class RMSPropNumpy(RMSProp[np.ndarray], OptimizerNumpy):
                         w_shape = self.context[layer_id][key] = self.model.memory.ndarray(w_shape, dtype=self.model.dtype)
 
     def update(self, layer: LayerNumpy) -> None:
+        """Perform a single optimization step for the given layer."""
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
             cache: np.ndarray = self.context[layer.id]["cache_%s" % w_]  # type: ignore

@@ -1,3 +1,5 @@
+"""Utilities for selecting the optimal 1023-transpose implementation."""
+
 import logging
 from typing import Callable
 
@@ -19,6 +21,7 @@ def transpose_1023_numpy(
     original: np.ndarray,
     transposed: np.ndarray | None = None,  # type: ignore
 ) -> np.ndarray:
+    """Perform 1023 transpose using NumPy's native transpose method."""
     d0, d1, d2, d3 = original.shape
     if transposed is None:
         transposed: np.ndarray = np.empty((d1, d0, d2, d3), original.dtype)
@@ -30,6 +33,7 @@ def transpose_1023_ijk_cython_wrapper(
     original: np.ndarray,
     transposed: np.ndarray | None = None,  # type: ignore
 ) -> np.ndarray:
+    """Perform 1023 transpose using the IJK Cython implementation."""
     d0, d1, d2, d3 = original.shape
     if transposed is None:
         transposed: np.ndarray = np.empty((d1, d0, d2, d3), original.dtype)
@@ -41,6 +45,7 @@ def transpose_1023_jik_cython_wrapper(
     original: np.ndarray,
     transposed: np.ndarray | None = None,  # type: ignore
 ) -> np.ndarray:
+    """Perform 1023 transpose using the JIK Cython implementation."""
     d0, d1, d2, d3 = original.shape
     if transposed is None:
         transposed: np.ndarray = np.empty((d1, d0, d2, d3), original.dtype)

@@ -1,5 +1,10 @@
 """
 PyDTNN convWinograd module
+
+This module provides an implementation of the Winograd convolution algorithm,
+leveraging optimized C/C++ libraries for performance. It supports different
+tensor formats (NCHW, NHWC) and aims to provide a faster alternative to
+standard convolution implementations for specific kernel and stride configurations.
 """
 
 import ctypes
@@ -35,6 +40,11 @@ class ConvWinograd:
     """
     Exposes the libconvWinograd functions following the PyDTNN conventions.
 
+    This class acts as a wrapper around the compiled Winograd convolution library.
+    It selects the appropriate optimized routine based on the input parameters
+    (kernel size, strides, dilation, data type, and tensor format) and provides
+    a unified interface for performing Winograd convolutions.
+
     Methods
     -------
     winograd(weights, x, biases, vpadding, hpadding,
@@ -61,31 +71,54 @@ class ConvWinograd:
         self, kh: int, kw: int, vstride: int, hstride: int, vdilation: int, hdilation: int, dtype: np.dtype = np.dtype(np.float32), tensor_format=TensorFormat.NCHW, debug=False, parent_layer=None
     ):
         """
-        Loads the libconvWinograd.so library.
+        Initializes the ConvWinograd layer, loading the necessary library and
+        registering available Winograd routines.
 
         Parameters
         ----------
-        kh : kernel height
-
-        kw : kernel width
-
-        vstride : vertical stride
-
-        hstride : horizontal stride
-
-        vdilation : vertical dilation
-
-        hdilation : horizontal dilation
-
-        dtype : data type
-            The element data type being used on all the matrices.
-        debug : boolean
-            Whether to print debug information or not.
-        parent_layer: layer
-            The layer that is using it (for tracing purposes).
+        kh : int
+            Kernel height.
+        kw : int
+            Kernel width.
+        vstride : int
+            Vertical stride.
+        hstride : int
+            Horizontal stride.
+        vdilation : int
+            Vertical dilation.
+        hdilation : int
+            Horizontal dilation.
+        dtype : np.dtype, optional
+            The element data type being used on all the matrices. Defaults to np.float32.
+        tensor_format : TensorFormat, optional
+            The format of the input and output tensors (NCHW or NHWC). Defaults to TensorFormat.NCHW.
+        debug : bool, optional
+            Whether to print debug information or not. Defaults to False.
+        parent_layer : object, optional
+            The layer that is using this Winograd implementation (for tracing purposes). Defaults to None.
         """
 
         def register_winograd_function(m: int, r: int, g: np.ndarray, bt: np.ndarray, at: np.ndarray) -> None:
+            """
+            Registers available Winograd routines for a given Winograd transform size (m, r).
+
+            It attempts to find optimized C/C++ routines in the loaded library
+            for the current architecture and data type. If no optimized routine
+            is found, it falls back to a NumPy implementation.
+
+            Parameters
+            ----------
+            m : int
+                The 'm' parameter of the Winograd transform (output tile size).
+            r : int
+                The 'r' parameter of the Winograd transform (input tile size).
+            g : np.ndarray
+                The transformation matrix G for the input data.
+            bt : np.ndarray
+                The transformation matrix B_T for the input data.
+            at : np.ndarray
+                The transformation matrix A_T for the output data.
+            """
             # choose the appropriate convWinograd function depending on the architecture and the data type being used
             if platform.machine() == "aarch64":
                 if self.dtype == np.float32:
@@ -212,6 +245,25 @@ class ConvWinograd:
             logger.error("Winograd conv_winograd_workspace_alloc_pre/kernel routines not found.")
 
         def winograd_workspace_alloc_pre(m, r, k, c):
+            """
+            Allocates workspace memory for the Winograd pre-processing step.
+
+            Parameters
+            ----------
+            m : int
+                Winograd transform parameter 'm'.
+            r : int
+                Winograd transform parameter 'r'.
+            k : int
+                Number of output channels.
+            c : int
+                Number of input channels.
+
+            Returns
+            -------
+            tuple
+                A tuple containing a dummy numpy array and a ctypes pointer to the allocated memory.
+            """
             _u = ctypes.POINTER(ctypes.c_float)()
             self.conv_winograd_workspace_alloc_pre(
                 ctypes.c_uint(m),
@@ -223,6 +275,39 @@ class ConvWinograd:
             return np.array([False]), _u
 
         def winograd_workspace_alloc_kernel(m, r, n, k, c, hi, wi, kh, kw, vpadding, hpadding):
+            """
+            Allocates workspace memory for the Winograd kernel execution step.
+
+            Parameters
+            ----------
+            m : int
+                Winograd transform parameter 'm'.
+            r : int
+                Winograd transform parameter 'r'.
+            n : int
+                Batch size.
+            k : int
+                Number of output channels.
+            c : int
+                Number of input channels.
+            hi : int
+                Input height.
+            wi : int
+                Input width.
+            kh : int
+                Kernel height.
+            kw : int
+                Kernel width.
+            vpadding : int
+                Vertical padding.
+            hpadding : int
+                Horizontal padding.
+
+            Returns
+            -------
+            tuple
+                A tuple containing two ctypes pointers to the allocated memory (_v and _m).
+            """
             _v = ctypes.POINTER(ctypes.c_float)()
             _m = ctypes.POINTER(ctypes.c_float)()
             self.conv_winograd_workspace_alloc_kernel(
@@ -284,21 +369,129 @@ class ConvWinograd:
         _v: ctypes.c_void_p,
         _m: ctypes.c_void_p,
     ):
+        """
+        Placeholder for the C function to allocate kernel workspace memory.
+        This method is intended to be overridden or called by the C library.
+        """
         pass
 
     def conv_winograd_workspace_alloc_pre(self, m: ctypes.c_uint, r: ctypes.c_uint, k: ctypes.c_uint, c: ctypes.c_uint, _u: ctypes.c_void_p):
+        """
+        Placeholder for the C function to allocate pre-processing workspace memory.
+        This method is intended to be overridden or called by the C library.
+        """
         pass
 
     def conv_winograd_nchw(self, weights: np.ndarray, x: np.ndarray, biases: np.ndarray | None, vpadding: int, hpadding: int, vstride: int, hstride: int, vdilation: int, hdilation: int) -> np.ndarray:
+        """
+        Abstract method to perform Winograd convolution in NCHW format.
+
+        This method should be implemented by specific Winograd routines or
+        delegated to the chosen optimized function.
+
+        Parameters
+        ----------
+        weights : np.ndarray
+            The convolution weights.
+        x : np.ndarray
+            The input tensor.
+        biases : np.ndarray or None
+            The bias tensor.
+        vpadding : int
+            Vertical padding.
+        hpadding : int
+            Horizontal padding.
+        vstride : int
+            Vertical stride.
+        hstride : int
+            Horizontal stride.
+        vdilation : int
+            Vertical dilation.
+        hdilation : int
+            Horizontal dilation.
+
+        Returns
+        -------
+        np.ndarray
+            The output tensor after convolution.
+
+        Raises
+        ------
+        NotImplementedError
+            If the method is called directly.
+        """
         raise NotImplementedError("Abstract method called!")
 
     def conv_winograd_nhwc(self, weights: np.ndarray, x: np.ndarray, biases: np.ndarray | None, vpadding: int, hpadding: int, vstride: int, hstride: int, vdilation: int, hdilation: int) -> np.ndarray:
+        """
+        Abstract method to perform Winograd convolution in NHWC format.
+
+        This method should be implemented by specific Winograd routines or
+        delegated to the chosen optimized function.
+
+        Parameters
+        ----------
+        weights : np.ndarray
+            The convolution weights.
+        x : np.ndarray
+            The input tensor.
+        biases : np.ndarray or None
+            The bias tensor.
+        vpadding : int
+            Vertical padding.
+        hpadding : int
+            Horizontal padding.
+        vstride : int
+            Vertical stride.
+        hstride : int
+            Horizontal stride.
+        vdilation : int
+            Vertical dilation.
+        hdilation : int
+            Horizontal dilation.
+
+        Returns
+        -------
+        np.ndarray
+            The output tensor after convolution.
+
+        Raises
+        ------
+        NotImplementedError
+            If the method is called directly.
+        """
         raise NotImplementedError("Abstract method called!")
 
     def encode_shape(self, shape):
+        """
+        Encodes a shape tuple according to the configured tensor format.
+
+        Parameters
+        ----------
+        shape : tuple
+            The shape tuple to encode.
+
+        Returns
+        -------
+        tuple
+            The encoded shape tuple.
+        """
         return encode_shape(shape, self.tensor_format)
 
     def decode_shape(self, shape):
+        """
+        Decodes a shape tuple according to the configured tensor format.
+
+        Parameters
+        ----------
+        shape : tuple
+            The shape tuple to decode.
+
+        Returns
+        -------
+        tuple
+            The decoded shape tuple.
+        """
         return decode_shape(shape, self.tensor_format)
 
     def _conv_winograd_numpy(
@@ -326,6 +519,72 @@ class ConvWinograd:
         gamma: np.ndarray | None = None,
         beta: np.ndarray | None = None,
     ) -> np.ndarray:
+        """
+        Performs Winograd convolution using a NumPy-based implementation.
+
+        This method serves as a fallback when optimized C/C++ routines are not
+        available or selected. It implements the Winograd algorithm steps using
+        NumPy operations.
+
+        Parameters
+        ----------
+        m : int
+            Winograd transform parameter 'm' (output tile size).
+        r : int
+            Winograd transform parameter 'r' (input tile size).
+        g : np.ndarray
+            Transformation matrix G for input data.
+        bt : np.ndarray
+            Transformation matrix B_T for input data.
+        at : np.ndarray
+            Transformation matrix A_T for output data.
+        pre : callable
+            Function for pre-processing (e.g., workspace allocation).
+        kernel : callable
+            Function for kernel execution (e.g., workspace allocation).
+        weights : np.ndarray
+            The convolution weights (shape depends on tensor_format).
+        x : np.ndarray
+            The input tensor (shape depends on tensor_format).
+        biases : np.ndarray or None, optional
+            The bias tensor. Defaults to None.
+        vpadding : int, optional
+            Vertical padding. Defaults to 0.
+        hpadding : int, optional
+            Horizontal padding. Defaults to 0.
+        vstride : int, optional
+            Vertical stride. Defaults to 1.
+        hstride : int, optional
+            Horizontal stride. Defaults to 1.
+        vdilation : int, optional
+            Vertical dilation. Defaults to 1.
+        hdilation : int, optional
+            Horizontal dilation. Defaults to 1.
+        relu : bool, optional
+            Whether to apply ReLU activation. Defaults to False.
+        bn : bool, optional
+            Whether to apply Batch Normalization. Defaults to False.
+        running_mean : np.ndarray or None, optional
+            Running mean for Batch Normalization. Defaults to None.
+        inv_std : np.ndarray or None, optional
+            Inverse standard deviation for Batch Normalization. Defaults to None.
+        gamma : np.ndarray or None, optional
+            Scale parameter for Batch Normalization. Defaults to None.
+        beta : np.ndarray or None, optional
+            Shift parameter for Batch Normalization. Defaults to None.
+
+        Returns
+        -------
+        np.ndarray
+            The output tensor after convolution.
+
+        Raises
+        ------
+        ValueError
+            If kernel size, stride, or dilation are not supported by this Winograd version.
+        NotImplementedError
+            If the tensor format is not supported.
+        """
 
         n, ci, hi, wi = self.decode_shape(x.shape)
 
@@ -499,6 +758,72 @@ class ConvWinograd:
         gamma: np.ndarray | None = None,
         beta: np.ndarray | None = None,
     ) -> np.ndarray:
+        """
+        Performs Winograd convolution using an optimized C/C++ library routine.
+
+        This method orchestrates the call to the underlying compiled library functions
+        for Winograd convolution, including workspace allocation and kernel execution.
+        It handles data type conversions and parameter passing to the C functions.
+
+        Parameters
+        ----------
+        m : int
+            Winograd transform parameter 'm' (output tile size).
+        r : int
+            Winograd transform parameter 'r' (input tile size).
+        g : np.ndarray
+            Transformation matrix G for input data.
+        bt : np.ndarray
+            Transformation matrix B_T for input data.
+        at : np.ndarray
+            Transformation matrix A_T for output data.
+        x_winograd_pre : callable
+            The C function pointer for Winograd pre-processing (e.g., weight transformation).
+        x_winograd_kernel : callable
+            The C function pointer for Winograd kernel execution.
+        weights : np.ndarray
+            The convolution weights (shape depends on tensor_format).
+        x : np.ndarray
+            The input tensor (shape depends on tensor_format).
+        biases : np.ndarray or None, optional
+            The bias tensor. Defaults to None.
+        vpadding : int, optional
+            Vertical padding. Defaults to 0.
+        hpadding : int, optional
+            Horizontal padding. Defaults to 0.
+        vstride : int, optional
+            Vertical stride. Defaults to 1.
+        hstride : int, optional
+            Horizontal stride. Defaults to 1.
+        vdilation : int, optional
+            Vertical dilation. Defaults to 1.
+        hdilation : int, optional
+            Horizontal dilation. Defaults to 1.
+        relu : bool, optional
+            Whether to apply ReLU activation. Defaults to False.
+        bn : bool, optional
+            Whether to apply Batch Normalization. Defaults to False.
+        running_mean : np.ndarray or None, optional
+            Running mean for Batch Normalization. Defaults to None.
+        inv_std : np.ndarray or None, optional
+            Inverse standard deviation for Batch Normalization. Defaults to None.
+        gamma : np.ndarray or None, optional
+            Scale parameter for Batch Normalization. Defaults to None.
+        beta : np.ndarray or None, optional
+            Shift parameter for Batch Normalization. Defaults to None.
+
+        Returns
+        -------
+        np.ndarray
+            The output tensor after convolution.
+
+        Raises
+        ------
+        ValueError
+            If kernel size, stride, or dilation are not supported by this Winograd version.
+        NotImplementedError
+            If the tensor format is not supported.
+        """
 
         n, ci, hi, wi = self.decode_shape(x.shape)
 
@@ -614,6 +939,45 @@ def time_it_func(
     vdilation: int,
     hdilation: int,
 ):
+    """
+    Times the execution of a convolution operation using im2row (NHWC format) and matrix multiplication.
+
+    This function is primarily for benchmarking and comparison purposes. It reshapes
+    the input data using im2row and then performs a matrix multiplication with weights.
+
+    Parameters
+    ----------
+    x : np.ndarray
+        Input tensor in NHWC format.
+    w_c : np.ndarray
+        Weights reshaped for matrix multiplication.
+    biases : np.ndarray
+        Bias vector.
+    b : int
+        Batch size.
+    kn : int
+        Number of output channels (filters).
+    ho : int
+        Output height.
+    wo : int
+        Output width.
+    kh : int
+        Kernel height.
+    kw : int
+        Kernel width.
+    vpadding : int
+        Vertical padding.
+    hpadding : int
+        Horizontal padding.
+    vstride : int
+        Vertical stride.
+    hstride : int
+        Horizontal stride.
+    vdilation : int
+        Vertical dilation.
+    hdilation : int
+        Horizontal dilation.
+    """
 
     res = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype=x.dtype)
     im2row_nhwc_cython(
@@ -651,6 +1015,45 @@ def time_it_im2col(
     vdilation: int,
     hdilation: int,
 ):
+    """
+    Times the execution of a convolution operation using im2col (NCHW format) and matrix multiplication.
+
+    This function is primarily for benchmarking and comparison purposes. It reshapes
+    the input data using im2col and then performs a matrix multiplication with weights.
+
+    Parameters
+    ----------
+    x : np.ndarray
+        Input tensor in NCHW format.
+    w_c : np.ndarray
+        Weights reshaped for matrix multiplication.
+    biases : np.ndarray
+        Bias vector.
+    b : int
+        Batch size.
+    kn : int
+        Number of output channels (filters).
+    ho : int
+        Output height.
+    wo : int
+        Output width.
+    kh : int
+        Kernel height.
+    kw : int
+        Kernel width.
+    vpadding : int
+        Vertical padding.
+    hpadding : int
+        Horizontal padding.
+    vstride : int
+        Vertical stride.
+    hstride : int
+        Horizontal stride.
+    vdilation : int
+        Vertical dilation.
+    hdilation : int
+        Horizontal dilation.
+    """
 
     res = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype=x.dtype)
     im2col_nchw_cython(
@@ -687,6 +1090,45 @@ def time_it_im2col_4_dims(
     vdilation: int,
     hdilation: int,
 ):
+    """
+    Times the execution of a convolution operation using im2col (NCHW format) and matrix multiplication,
+    specifically for a 4-dimensional output shape.
+
+    This function is primarily for benchmarking and comparison purposes. It reshapes
+    the input data using im2col and then performs a matrix multiplication with weights,
+    adjusting the output shape for 4 dimensions.
+
+    Parameters
+    ----------
+    x : np.ndarray
+        Input tensor in NCHW format.
+    w_c : np.ndarray
+        Weights reshaped for matrix multiplication.
+    biases : np.ndarray
+        Bias vector.
+    kk : int
+        Number of output channels (filters).
+    ho : int
+        Output height.
+    wo : int
+        Output width.
+    kh : int
+        Kernel height.
+    kw : int
+        Kernel width.
+    vpadding : int
+        Vertical padding.
+    hpadding : int
+        Horizontal padding.
+    vstride : int
+        Vertical stride.
+    hstride : int
+        Horizontal stride.
+    vdilation : int
+        Vertical dilation.
+    hdilation : int
+        Horizontal dilation.
+    """
 
     res = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype=x.dtype)
     im2col_nchw_cython(
@@ -708,6 +1150,16 @@ def time_it_im2col_4_dims(
 
 
 def __usage_example__():
+    """
+    Provides a usage example for the ConvWinograd class.
+
+    This function demonstrates how to instantiate and use the ConvWinograd class
+    for both NCHW and NHWC tensor formats. It compares the results and performance
+    against a standard im2col + matrix multiplication approach. It also includes
+    a more extensive test loop to check various configurations.
+
+    The example requires `timeit` and `pydtnn.utils.random` to be imported.
+    """
     # Imports for this usage example (not required otherwise)
     from timeit import timeit
 

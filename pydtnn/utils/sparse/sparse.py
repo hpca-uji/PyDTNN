@@ -1,3 +1,10 @@
+"""
+Sparse matrix utilities for the PyDTNN framework.
+
+This module provides the SparseMatrixCOO class, which implements a Coordinate (COO)
+sparse matrix format optimized for performance using Cython-backed operations.
+"""
+
 import logging
 import warnings
 
@@ -30,6 +37,7 @@ class SparseMatrixCOO:
             row  (np.ndarray): Array with the row indices.
             col  (np.ndarray): Array with the column indices.
             shape (tuple): Shape of the original matrix.
+            has_canonical_format (bool): Whether the input arrays are already sorted.
         """
 
         if len(data) != len(row) or len(data) != len(col):
@@ -101,7 +109,7 @@ class SparseMatrixCOO:
 
         Parameters:
             threshold (float): Threshold for including an element.
-            inplace (bool, optional):
+            inplace (bool, optional): Whether to modify the current instance.
 
         Returns:
             topk (SparseMatrixCOO): if inplace == False, or void (None): if inplace == True
@@ -121,19 +129,19 @@ class SparseMatrixCOO:
 
     def get_indexes(self):
         """
-        Returns the row and col
+        Returns the row and col indices.
 
         Returns:
-            tuple (tuple): row and col
+            tuple: (row, col) arrays.
         """
         return self.row, self.col
 
     def get_triplet(self):
         """
-        Returns the data, row, col triplet
+        Returns the data, row, col triplet.
 
         Returns:
-            triplet (tuple): data, row col
+            tuple: (data, row, col) arrays.
         """
         return self.data, self.row, self.col
 
@@ -148,7 +156,7 @@ class SparseMatrixCOO:
                                             sliced matrix so that `row_start` maps to zero.
                                             Defaults to False.
         Returns:
-            coo_sliced: (SparseMatrixCOO): A row-sliced sparse matrix of self
+            SparseMatrixCOO: A row-sliced sparse matrix of self.
         """
         start_index = np.searchsorted(self.row, row_start, side="left")
         ending_index = np.searchsorted(self.row, row_end, side="left")
@@ -163,10 +171,10 @@ class SparseMatrixCOO:
 
     def to_dense(self):
         """
-        Convert to dense np.array
+        Convert to dense np.array.
 
         Returns:
-            dense_matrix: (np.array): a dense matrix
+            np.array: A dense matrix representation.
         """
 
         logger.warning("This function ('to_sparse') should be used only in case of debugging for performance reasons.")
@@ -206,10 +214,10 @@ class SparseMatrixCOO:
         otherwise, it delegates the operation to the __add__ method.
 
         Parameters:
-            other (int or instance of the same class): The left-hand operand, typically 0 when used with sum().
+            other (int or SparseMatrixCOO): The left-hand operand.
 
         Returns:
-            An instance of the class representing the sum of self and other.
+            SparseMatrixCOO: The sum of self and other.
         """
         if other == 0:
             return self
@@ -225,7 +233,7 @@ class SparseMatrixCOO:
         This function should only be used in developement to assert that sparse matrices have canonical format.
 
         Returns:
-            has_canonical_format (boolean): True if indexes are in canonical format, False if not.
+            bool: True if indexes are in canonical format, False if not.
         """
 
         logger.warning("This function ('has_canonical_format') should be used only in case of debugging for performance reasons.")

@@ -1,3 +1,7 @@
+"""
+Simple tracer implementation for PyDTNN.
+"""
+
 import atexit
 import logging
 from collections import defaultdict
@@ -24,10 +28,18 @@ else:
 
 class SimpleTracer(Tracer):
     """
-    SimpleTracer
+    A basic tracer implementation that records event durations and writes them to a CSV file.
     """
 
     def __init__(self, tracing: bool, output_filename: str, comm: MPI_COMM | None):
+        """
+        Initialize the SimpleTracer.
+
+        Args:
+            tracing: Whether tracing is enabled.
+            output_filename: Path to the output file.
+            comm: MPI communicator for rank-aware output.
+        """
         super().__init__(tracing)
         self.output_filename = output_filename
         self.rank = 0
@@ -37,11 +49,22 @@ class SimpleTracer(Tracer):
         self.pending_events = []
 
     def enable_tracing(self):
+        """
+        Enable tracing and register the output writer to run at exit.
+        """
         super().enable_tracing()
         # If tracing is enabled at least once, register self.write_output to be executed at exit
         atexit.register(self._write_output)
 
     def _emit_event(self, evt_type_val: int, evt_val: int, stream=None):
+        """
+        Record the start or end of an event.
+
+        Args:
+            evt_type_val: The integer identifier for the event type.
+            evt_val: The integer identifier for the specific event value.
+            stream: Optional stream context.
+        """
         """This method will be called only if tracing is enabled"""
         if evt_val != 0:
             self.pending_events.append((evt_type_val, evt_val, timer()))
@@ -56,6 +79,14 @@ class SimpleTracer(Tracer):
             self.events[_evt_type_val][_evt_val][1].append(toc - tic)  # type: ignore
 
     def _emit_nevent(self, evt_type_val_list: list[int], evt_val_list: list[int], stream=None):
+        """
+        Record multiple events simultaneously.
+
+        Args:
+            evt_type_val_list: List of event type identifiers.
+            evt_val_list: List of event value identifiers.
+            stream: Optional stream context.
+        """
         """This method will be called only if tracing is enabled"""
         zipped_list = list(zip(evt_type_val_list, evt_val_list))
         if evt_val_list[0] == 0:
@@ -64,10 +95,20 @@ class SimpleTracer(Tracer):
             self.emit_event(evt_type_val, evt_val)
 
     def _output_header(self) -> str:
+        """
+        Return the CSV header string for the output file.
+        """
         return "Event type,Event value,Event name,Calls,Total time,Median of times"
         # return "Event type;Event value;Event name;Calls;Total time;Median of times"
 
     def _output_row(self, event_type_value: int, event_value: int) -> str:
+        """
+        Format a single event row for the output file.
+
+        Args:
+            event_type_value: The event type identifier.
+            event_value: The event value identifier.
+        """
         event_type = self.event_types[event_type_value]
         event_type_name = event_type.name
         _calls, _times = self.events[event_type_value][event_value]
@@ -79,6 +120,9 @@ class SimpleTracer(Tracer):
         # return f"{event_type_name};{event_value};{event_type[event_value]};{_calls};{total_time};{mean_of_times}"
 
     def _write_output(self):
+        """
+        Write the collected trace data to the output file.
+        """
         """This method will be called at exit only if tracing has been enabled at any time"""
         output_filename = utils.string_substitute(self.output_filename, rank=self.rank)
         if output_filename != self.output_filename or self.rank == 0:

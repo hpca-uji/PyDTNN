@@ -1,3 +1,7 @@
+"""
+Test suite for verifying the correctness of the fused Conv2D+ReLU layer implementation.
+"""
+
 import logging
 import unittest
 
@@ -31,6 +35,17 @@ class Conv2DReluTestCase(Conv2DCommonTestCase):
 
     @staticmethod
     def _get_layers(d: D, deconv=False, trans=False) -> tuple[ConcatenationBlock, AbstractConv2D]:
+        """
+        Constructs and initializes a standard Conv2D+ReLU chain and a fused Conv2DRelu layer.
+
+        Args:
+            d: Configuration parameters for the layer dimensions.
+            deconv: Boolean flag for deconvolution (unused).
+            trans: Boolean flag for transposed convolution (unused).
+
+        Returns:
+            A tuple containing the standard ConcatenationBlock and the fused Conv2DRelu layer.
+        """
         params = Params()
         params.tensor_format = TensorFormat.NCHW.upper()
         params.batch_size = d.b  # type: ignore (it's okay)
@@ -69,6 +84,13 @@ class Conv2DReluTestCase(Conv2DCommonTestCase):
 
     @staticmethod
     def _set_state(layer: Conv2D, weights) -> None:
+        """
+        Synchronizes weights between the standard layer and the fused layer.
+
+        Args:
+            layer: The target layer to update.
+            weights: The weight tensor to copy.
+        """
         if isinstance(layer, ConcatenationBlock):
             layer.paths[0][0].weights = weights.copy()
         else:
@@ -76,44 +98,55 @@ class Conv2DReluTestCase(Conv2DCommonTestCase):
 
     @unittest.skip("Backward not implemented")
     def test_forward_backward_larger_handmade_array_stride3(self):
+        """Tests forward and backward pass with stride 3."""
         raise NotImplementedError()
 
     @unittest.skip("Backward not implemented")
     def test_forward_backward_larger_handmade_array_stride2(self):
+        """Tests forward and backward pass with stride 2."""
         raise NotImplementedError()
 
     @unittest.skip("Backward not implemented")
     def test_forward_backward_handmade_array(self):
+        """Tests forward and backward pass with standard handmade array."""
         raise NotImplementedError()
 
     @unittest.skip("Backward not implemented")
     def test_forward_backward_even_larger_handmade_array_stride3_filter1x2(self):
+        """Tests forward and backward pass with stride 3 and 1x2 filter."""
         raise NotImplementedError()
 
     @unittest.skip("Backward not implemented")
     def test_forward_backward_even_larger_handmade_array_stride3_filter1x1(self):
+        """Tests forward and backward pass with stride 3 and 1x1 filter."""
         raise NotImplementedError()
 
     @unittest.skip("Backward not implemented")
     def test_forward_backward_defaults(self):
+        """Tests forward and backward pass with default parameters."""
         raise NotImplementedError()
 
     @unittest.skip("Backward not implemented")
     def test_forward_backward_handmade_array_stride2(self):
+        """Tests forward and backward pass with handmade array and stride 2."""
         raise NotImplementedError()
 
     @unittest.skip("Backward not implemented")
     def test_forward_backward_even_larger_handmade_array_stride3(self):
+        """Tests forward and backward pass with larger array and stride 3."""
         raise NotImplementedError()
 
     @unittest.skip("Backward not implemented")
     def test_forward_backward_even_larger_handmade_array_stride12(self):
+        """Tests forward and backward pass with larger array and stride 12."""
         raise NotImplementedError()
 
     @unittest.skip("Backward not implemented")
     def test_forward_backward_alexnet_imagenet_first_conv2d(self):
+        """Tests forward and backward pass using AlexNet ImageNet configuration."""
         raise NotImplementedError()
 
     @unittest.skip("Backward not implemented")
     def test_forward_backward_alexnet_cifar10_first_conv2d(self):
+        """Tests forward and backward pass using AlexNet CIFAR10 configuration."""
         raise NotImplementedError()

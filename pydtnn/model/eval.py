@@ -1,3 +1,10 @@
+"""
+Evaluation module for PyDTNN models.
+
+This module provides the Eval class, which handles model evaluation,
+metric computation, and performance tracking during the testing phase.
+"""
+
 import logging
 import time
 from timeit import default_timer as timer
@@ -22,12 +29,33 @@ logger = logging.getLogger(__name__)
 
 
 class Eval[T: Array](Sync[T]):
+    """
+    Handles the evaluation logic for distributed models.
+
+    Extends Sync to provide evaluation-specific synchronization and
+    metric aggregation across distributed processes.
+    """
+
     def __init__(self, **kwargs) -> None:
+        """Initializes the Eval instance."""
         super().__init__(**kwargs)
         # Private attributes
         self._evaluate_round: int = 0
 
     def _compute_metrics_funcs(self, y_pred: T, y_targ: T, loss: float, blocking=True, comm=True) -> tuple[np.ndarray, None] | tuple[None, Any]:
+        """
+        Computes metrics and loss, optionally synchronizing across processes.
+
+        Args:
+            y_pred: Predicted output tensor.
+            y_targ: Target output tensor.
+            loss: Calculated loss value.
+            blocking: Whether to use blocking MPI communication.
+            comm: Whether to perform MPI communication.
+
+        Returns:
+            A tuple containing the aggregated metrics/loss and an optional MPI request.
+        """
         loss_req: Any | None = None
         _losses: np.ndarray | None
 
@@ -55,6 +83,19 @@ class Eval[T: Array](Sync[T]):
         return _losses, loss_req  # type: ignore
 
     def _update_running_average(self, curr: np.ndarray, total: np.ndarray, count: int, batch_size: int, prefix="") -> tuple[np.ndarray, int, str]:
+        """
+        Updates the running average of metrics and generates a status string.
+
+        Args:
+            curr: Current batch metrics.
+            total: Accumulated metrics.
+            count: Total samples processed.
+            batch_size: Current batch size.
+            prefix: String prefix for output.
+
+        Returns:
+            Updated total metrics, updated count, and formatted status string.
+        """
         string = ""
         total = ((curr * batch_size) + (total * count)) / (count + batch_size)
         for c in range(len(self.loss_and_metrics)):
@@ -65,6 +106,17 @@ class Eval[T: Array](Sync[T]):
         return total, count + batch_size, string
 
     def _evaluate_batch(self, x_batch: np.ndarray, y_batch: np.ndarray, sync_model=True) -> np.ndarray:
+        """
+        Performs a forward pass and metric computation for a single batch.
+
+        Args:
+            x_batch: Input data batch.
+            y_batch: Target data batch.
+            sync_model: Whether to synchronize metrics across processes.
+
+        Returns:
+            The computed metrics for the batch.
+        """
         self.mode = Sync.Mode.EVALUATE
 
         self.real_batch_size = x_batch.shape[0]
@@ -96,6 +148,22 @@ class Eval[T: Array](Sync[T]):
     def _update_status(
         self, pbar: tqdm | None, batch_loss: np.ndarray, total_loss: np.ndarray, batch_count: int, batch_size: int, output_prefix: str, delta: float = -1, prev_string: str = ""
     ) -> tuple[np.ndarray, int, str]:
+        """
+        Updates the progress bar and internal performance counters.
+
+        Args:
+            pbar: Tqdm progress bar instance.
+            batch_loss: Loss/metrics for the current batch.
+            total_loss: Accumulated loss/metrics.
+            batch_count: Total samples processed.
+            batch_size: Size of the current batch.
+            output_prefix: Prefix for logging.
+            delta: Time taken for the batch.
+            prev_string: Previous status string.
+
+        Returns:
+            Updated total metrics, updated count, and formatted status string.
+        """
 
         part = Dataset.Part[output_prefix.strip("_").upper()]
 
@@ -129,8 +197,10 @@ class Eval[T: Array](Sync[T]):
         out_prefix: str = "",
     ) -> tuple[np.ndarray, int, bool, str]:
         """
-        Return:
-            tuple[model_sync_count (int), sync_epoch (bool)]
+        Executes a single evaluation round over the provided batch generator.
+
+        Returns:
+            A tuple containing updated total loss, sync count, sync status, and status string.
         """
         sync_epoch = False
         string = ""
@@ -183,6 +253,12 @@ class Eval[T: Array](Sync[T]):
         return (total_loss, model_sync_count, sync_epoch, string)
 
     def evaluate(self, bar_width=BAR_WIDTH):
+        """
+        Runs the full evaluation process on the test dataset.
+
+        Args:
+            bar_width: Width of the progress bar.
+        """
         self._ensure_model_runnable()
 
         if self.enable_cudnn and self.y_batch is None:
@@ -192,12 +268,11 @@ class Eval[T: Array](Sync[T]):
 
         self.comm_nsamples = list(zip(*self.comm.allgather(self.dataset._nsamples) if self.comm else [self.dataset._nsamples]))
 
-        test_batches_min: float = min(self.comm_nsamples[Dataset.Part.TEST]) / (self.batch_size * self.nprocs)
-
         test_batch_generator = self.dataset.get_test_generator()
+        test_batches_min: float = min(self.comm_nsamples[Dataset.Part.TEST]) / (self.batch_size * self.nprocs)
+        test_total_loss, test_batch_count = np.zeros(len(self.loss_and_metrics), np.float32), 0
 
         if self.comm_rank == 0:
-            test_total_loss, test_batch_count = np.zeros(len(self.loss_and_metrics), np.float32), 0
             pbar = tqdm(file=TqdmLogger(), total=self.dataset.test_nsamples, ncols=bar_width, ascii=" ▁▂▃▄▅▆▇█", smoothing=0.3, desc="Testing", unit=" samples")
         else:
             pbar = None
@@ -222,6 +297,12 @@ class Eval[T: Array](Sync[T]):
         self._model_reduce_wait(gradient=False)
 
     def calculate_time(self) -> np.ndarray:
+        """
+        Calculates the estimated time for various model operations.
+
+        Returns:
+            A numpy array containing total, computation, memory, and network time estimates.
+        """
         # Total elapsed_time, Comp elapsed_time, Memo elapsed_time, Net elapsed_time
         total_time: np.ndarray = np.zeros((4,), dtype=np.float32)
 

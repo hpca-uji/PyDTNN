@@ -1,3 +1,5 @@
+"""Standard PyCUDA implementation for 2D convolution layers."""
+
 import logging
 from typing import Any, override
 
@@ -15,7 +17,10 @@ logger = logging.getLogger(__name__)
 
 
 class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
+    """Abstract base class for standard PyCUDA 2D convolution layers."""
+
     def _initializing_special_parameters(self):
+        """Initialize layer-specific weight shapes based on tensor format."""
         match self.model.tensor_format:
             case TensorFormat.NCHW:
                 self.weights_shape = (self.co, self.ci, *self.filter_shape)
@@ -27,6 +32,7 @@ class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
                 raise NotImplementedError(f"{self.model.tensor_format} format not implemented.")
 
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
+        """Initialize model buffers and kernels for the convolution operation."""
         super()._model_init(prev_shape, x)
 
         self.dim_n = self.model.batch_size * self.ho * self.wo
@@ -62,6 +68,7 @@ class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
 
     @override
     def _export_weights_dw(self, key: str) -> Any:
+        """Export weights or gradients, applying format transposition if necessary."""
         value = getattr(self, key)
 
         match self.model.tensor_format:
@@ -76,6 +83,7 @@ class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
 
     @override
     def _import_weights_dw(self, key: str, value: Any) -> None:
+        """Import weights or gradients, applying format transposition if necessary."""
         attribute = getattr(self, key)
         match self.model.tensor_format:
             case TensorFormat.NHWC:
@@ -88,6 +96,7 @@ class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
                 return super()._import_prop(key, value)
 
     def forward(self, x: TensorArray) -> TensorArray:
+        """Perform the forward pass of the convolution."""
         # im2col / im2row
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
         self.im2_func(
@@ -121,6 +130,7 @@ class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
         return self.y
 
     def backward(self, dy: TensorArray) -> TensorArray:
+        """Perform the backward pass of the convolution."""
 
         self.dx.fill(0)
         # im2col / im2row

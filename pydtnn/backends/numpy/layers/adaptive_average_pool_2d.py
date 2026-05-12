@@ -1,3 +1,5 @@
+"""Numpy backend implementation for Adaptive Average Pooling 2D layer."""
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -22,15 +24,17 @@ if TYPE_CHECKING:
 
 
 class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], AbstractPool2DLayerNumpy):
-    # The backend is almost the same as a AveragePool2D layer.
+    """Numpy implementation of the Adaptive Average Pooling 2D layer."""
 
     def __init__(self, *args, **kwargs):
+        """Initialize the AdaptiveAveragePool2DNumpy layer."""
         super().__init__(*args, **kwargs)
         # The following atributte will be initalized in "initalize"
         self.y: np.ndarray = None  # type: ignore
 
     # Method from AbstractPool2DLayerNumpy
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None):
+        """Initialize model parameters and allocate memory for forward/backward passes."""
         # The objective is following lines is to override the
         # AbstractPool2DLayer's initialize method, that is avoiding call to
         # "super" since in that case AbstractPool2DLayer will be called
@@ -62,12 +66,15 @@ class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], AbstractPool
         # else: Nothing special.
 
     def forward(self, x: np.ndarray) -> np.ndarray:
+        """Perform the forward pass."""
         return self._forward(x)
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
+        """Perform the backward pass."""
         return self._backward(dy)
 
     def _fwd_nchw(self, x: np.ndarray, y: np.ndarray) -> None:
+        """Compute forward pass for NCHW format."""
         for nn in range(x.shape[0]):
             for cc in range(self.ci):
                 for hi in range(self.ho):
@@ -87,6 +94,7 @@ class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], AbstractPool
                         y[nn, cc, hi, wi] = add / elements
 
     def _fwd_nhwc(self, x: np.ndarray, y: np.ndarray) -> None:
+        """Compute forward pass for NHWC format."""
         for nn in range(x.shape[0]):
             for cc in range(self.ci):
                 for hi in range(self.ho):
@@ -106,6 +114,7 @@ class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], AbstractPool
                         y[nn, hi, wi, cc] = add / elements
 
     def _bwd_nchw(self, dx: np.ndarray, dy: np.ndarray) -> None:
+        """Compute backward pass for NCHW format."""
         for nn in range(dy.shape[0]):
             for cc in range(self.ci):
                 for ho in range(self.ho):
@@ -123,6 +132,7 @@ class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], AbstractPool
                                 dx[nn, cc, i, j] += delta
 
     def _bwd_nhwc(self, dx: np.ndarray, dy: np.ndarray) -> None:
+        """Compute backward pass for NHWC format."""
         for nn in range(dy.shape[0]):
             for cc in range(self.ci):
                 for ho in range(self.ho):
@@ -140,6 +150,7 @@ class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], AbstractPool
                                 dx[nn, i, j, cc] += delta
 
     def _forward_nhwc(self, x: np.ndarray) -> np.ndarray:
+        """Execute forward pass for NHWC and emit tracing events."""
         y: np.ndarray = np.ascontiguousarray(self.y[: x.shape[0], :], dtype=self.model.dtype)
         self.mask = np.ascontiguousarray(self._mask[: x.shape[0], :], dtype=self.model.dtype)
 
@@ -149,6 +160,7 @@ class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], AbstractPool
         return np.asarray(y, dtype=self.model.dtype, order="C")
 
     def _forward_nchw(self, x: np.ndarray) -> np.ndarray:
+        """Execute forward pass for NCHW and emit tracing events."""
         y: np.ndarray = np.ascontiguousarray(self.y[: x.shape[0], :], dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_ADP_AVG_POOL)
         self._fwd_nchw(x, y)
@@ -156,6 +168,7 @@ class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], AbstractPool
         return np.asarray(y, dtype=self.model.dtype, order="C")
 
     def _backward_nhwc(self, dy: np.ndarray) -> np.ndarray:
+        """Execute backward pass for NHWC and emit tracing events."""
         dx: np.ndarray = np.ascontiguousarray(self.dx[: dy.shape[0], :], dtype=self.model.dtype)
         dx.fill(0)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ADP_AVG_POOL)
@@ -164,6 +177,7 @@ class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], AbstractPool
         return np.asarray(dx, dtype=self.model.dtype, order="C")
 
     def _backward_nchw(self, dy: np.ndarray) -> np.ndarray:
+        """Execute backward pass for NCHW and emit tracing events."""
         dx: np.ndarray = np.ascontiguousarray(self.dx[: dy.shape[0], :], dtype=self.model.dtype)
         dx.fill(0)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ADP_AVG_POOL)

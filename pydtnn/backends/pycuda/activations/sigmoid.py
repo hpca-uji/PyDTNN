@@ -1,3 +1,5 @@
+"""PyCUDA backend implementation of the Sigmoid activation function."""
+
 import logging
 
 from pycuda import gpuarray  # type:ignore
@@ -14,11 +16,15 @@ logger = logging.getLogger(__name__)
 
 
 class SigmoidPycuda(Sigmoid[TensorArray], ActivationPycuda):
+    """PyCUDA-accelerated Sigmoid activation layer."""
+
     def __init__(self, *args, **kwargs):
+        """Initialize the SigmoidPycuda layer."""
         super().__init__(*args, **kwargs)
         self.act_desc = None
 
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
+        """Initialize cuDNN descriptors and allocate memory for forward and backward passes."""
         super()._model_init(prev_shape, x)
 
         self.act_desc = cudnn.cudnnCreateActivationDescriptor()
@@ -38,11 +44,13 @@ class SigmoidPycuda(Sigmoid[TensorArray], ActivationPycuda):
         self.memory_used += self.y.nbytes + self.dx.nbytes
 
     def forward(self, x: TensorArray) -> TensorArray:
+        """Perform the forward pass using cuDNN."""
         alpha, beta = 1.0, 0.0
         cudnn.cudnnActivationForward(self.model.cudnn_handle, self.act_desc, alpha, x.desc, x.ptr_voidp, beta, self.y.desc, self.y.ptr_voidp)
         return self.y
 
     def backward(self, dy: TensorArray) -> TensorArray:
+        """Perform the backward pass using cuDNN."""
         alpha, beta = 1.0, 0.0
         cudnn.cudnnActivationBackward(
             self.model.cudnn_handle, self.act_desc, alpha, self.y.desc, self.y.ptr_voidp, dy.desc, dy.ptr_voidp, self.x.desc, self.x.ptr_voidp, beta, self.dx.desc, self.dx.ptr_voidp

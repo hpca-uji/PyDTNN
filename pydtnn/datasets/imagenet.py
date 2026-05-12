@@ -1,3 +1,10 @@
+"""
+ImageNet dataset implementation for PyDTNN.
+
+Provides functionality to load, parse, and iterate over the ILSVRC 2012
+ImageNet dataset, including support for nested TAR archives and label mapping.
+"""
+
 from __future__ import annotations
 
 import copy
@@ -31,11 +38,19 @@ OUTPUT_SHAPE = (1000,)
 
 
 def list_archive(root_path: Path) -> typing.Iterator[tuple[str, ...]]:
-    """Recursive TAR walk"""
+    """
+    Recursively walk through a TAR archive or nested TAR archives.
+
+    Args:
+        root_path: Path to the root TAR file.
+
+    Yields:
+        A tuple of strings representing the path hierarchy to a file.
+    """
     path = str(root_path)
 
     def is_tar(path: PurePath) -> bool:
-        """Does the path look like a TAR"""
+        """Check if the given path has a .tar extension."""
         return path.suffix == ".tar"
 
     if not is_tar(root_path):
@@ -68,7 +83,15 @@ def list_archive(root_path: Path) -> typing.Iterator[tuple[str, ...]]:
 
 @contextmanager
 def load_archive(*paths: str) -> abc.Generator[typing.IO[bytes]]:
-    """Recursive TAR loader"""
+    """
+    Open a file located inside nested TAR archives.
+
+    Args:
+        *paths: A sequence of paths representing the nesting hierarchy.
+
+    Yields:
+        A file-like object for the target file.
+    """
     with ExitStack() as stack:
         # First: on disk
         file = stack.enter_context(open(paths[0], "rb"))
@@ -110,17 +133,18 @@ class ImageNet(Dataset):
     """
 
     def __init__(self, model: Model, force_test_as_validation=False, debug=False):
+        """Initialize the ImageNet dataset."""
         super().__init__(model, TRAIN_NSAMPLES, TEST_NSAMPLES, INPUT_SHAPE, OUTPUT_SHAPE, force_test_as_validation=force_test_as_validation, debug=debug)
 
     def _get_label(self, code: int, labels: dict[int, int]) -> np.ndarray:
-        """Transform a code (int) into a label (ndarray 1D uint8)"""
+        """Transform a code (int) into a label (ndarray 1D uint8)."""
         label = labels[code] - 1
         mask = np.zeros(len(labels), dtype=np.uint8)
         mask[label] = 1
         return mask
 
     def _get_train_code(self, name: str) -> int:
-        """Transform a file-name (str) to code (int)"""
+        """Transform a file-name (str) to code (int)."""
         label = name
         label = label.replace("_", ".")
         label = label.split(".")[0]
@@ -129,7 +153,7 @@ class ImageNet(Dataset):
         return label
 
     def _get_val_code(self, name: str) -> int:
-        """Transform a file-name (str) to code (int)"""
+        """Transform a file-name (str) to code (int)."""
         label = name
         label = label.replace("_", ".")
         label = label.split(".")[2]
@@ -137,7 +161,7 @@ class ImageNet(Dataset):
         return label
 
     def _get_train_labels(self, path: Path) -> dict[int, int]:
-        """Get label mappings from archive"""
+        """Get label mappings from archive."""
         member = "ILSVRC2012_devkit_t12/data/meta.mat"
         with tarfile.open(path) as tar, tar.extractfile(member) as fp:  # type: ignore
             meta = loadmat(file_name=fp, squeeze_me=True)["synsets"]
@@ -147,12 +171,13 @@ class ImageNet(Dataset):
         return {int(code.lstrip("n")): int(label) for code, label in zip(codes, labels)}
 
     def _get_val_labels(self, path: Path) -> dict[int, int]:
-        """Get label mappings from archive"""
+        """Get label mappings from archive."""
         member = "ILSVRC2012_devkit_t12/data/ILSVRC2012_validation_ground_truth.txt"
         with tarfile.open(path) as tar, tar.extractfile(member) as fp, io.TextIOWrapper(buffer=fp) as lines:  # type: ignore
             return {i: int(line) for i, line in enumerate(lines, 1)}
 
     def _init_actual_data(self):
+        """Initialize dataset metadata and file paths."""
         if not self.model.transform_resize:
             raise ValueError("Model transform_resize must be enabled for dataset!")
 
@@ -179,6 +204,12 @@ class ImageNet(Dataset):
         self._xy_filenames = [train_xy, copy.copy(val_xy if self.test_as_validation else train_xy), val_xy]
 
     def _actual_data_generator(self, part):
+        """
+        Generate data batches for the specified dataset part.
+
+        Args:
+            part: The dataset partition (TRAIN, VALIDATION, or TEST).
+        """
         offset = self._local_offset[part]
         nsamples = self._local_nsamples[part]
         xy_filenames = self._xy_filenames[part]

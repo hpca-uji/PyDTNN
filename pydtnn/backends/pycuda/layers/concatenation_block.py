@@ -1,3 +1,5 @@
+"""PyCUDA implementation of the concatenation block layer."""
+
 import logging
 
 from pycuda import gpuarray  # type: ignore
@@ -17,7 +19,10 @@ logger = logging.getLogger(__name__)
 
 
 class ConcatenationBlockPycuda(ConcatenationBlock[TensorArray], AbstractBlockLayerPycuda):
+    """PyCUDA-accelerated concatenation block layer."""
+
     def __init__(self, *args, **kwargs):
+        """Initialize the concatenation block layer."""
         super().__init__(*args, **kwargs)
         self.concat: ElementwiseKernel = None
         self.split: ElementwiseKernel = None
@@ -25,6 +30,7 @@ class ConcatenationBlockPycuda(ConcatenationBlock[TensorArray], AbstractBlockLay
         self.idx_co = None  # type: ignore
 
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
+        """Initialize PyCUDA kernels and allocate memory for forward and backward passes."""
         super()._model_init(prev_shape, x)
         # @warning: super().initialize() calls self.initialize_block_layer() (don't call it again)
         self.concat = ElementwiseKernel(
@@ -91,6 +97,7 @@ class ConcatenationBlockPycuda(ConcatenationBlock[TensorArray], AbstractBlockLay
             self.memory_used += dy_gpu.nbytes
 
     def forward(self, x: TensorArray) -> TensorArray:
+        """Execute the forward pass through the concatenation block."""
         for i, p in enumerate(self.paths):
             y_i = x
             for layer in p:
@@ -103,6 +110,7 @@ class ConcatenationBlockPycuda(ConcatenationBlock[TensorArray], AbstractBlockLay
         return self.y
 
     def backward(self, dy: TensorArray) -> TensorArray:
+        """Execute the backward pass through the concatenation block."""
         for i, p in enumerate(self.paths):
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_SPLIT)
             self.split(dy.ary, self.dy[i].ary, self.model.batch_size, self.ho, self.wo, self.co, 0 if i == 0 else self.idx_co[i - 1], self.idx_co[i])

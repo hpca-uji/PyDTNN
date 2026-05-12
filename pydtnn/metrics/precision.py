@@ -1,3 +1,5 @@
+"""Precision metric implementation for binary classification tasks."""
+
 import logging
 
 from pydtnn.metrics.binary_confusion_matrix import BinaryConfusionMatrix
@@ -10,11 +12,22 @@ logger = logging.getLogger(__name__)
 
 
 class Precision[T: Array](Metric[T]):
+    """
+    Calculates the precision metric based on a binary confusion matrix.
+
+    Precision is defined as the ratio of true positives to the sum of true
+    positives and false positives.
+    """
+
     order = BinaryConfusionMatrix.order + 1
     conf_matrix_metric: BinaryConfusionMatrix[T] = None  # type: ignore
     format = "prec: %.4f"
 
     def _model_init(self) -> None:
+        """
+        Initializes the metric by locating the required BinaryConfusionMatrix
+        within the model's metrics.
+        """
         super()._model_init()
         for metric in self.model.metrics_funcs:
             if isinstance(metric, BinaryConfusionMatrix):

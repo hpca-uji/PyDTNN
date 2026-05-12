@@ -1,3 +1,5 @@
+"""Binary Cross Entropy loss implementation for the NumPy backend."""
+
 import logging
 import math
 from typing import TYPE_CHECKING
@@ -15,13 +17,17 @@ if TYPE_CHECKING:
 
 
 class BinaryCrossEntropyNumpy(BinaryCrossEntropy[np.ndarray], LossNumpy):
+    """NumPy implementation of the Binary Cross Entropy loss function."""
+
     def _model_init(self) -> None:
+        """Initialize model-specific memory requirements for the loss."""
         super()._model_init()
 
         self.tmp_memory_used += int(5 * math.prod(self.shape)) * self.model.dtype.itemsize
         self.memory_used += self.tmp_memory_used
 
     def _post_init(self) -> None:
+        """Allocate memory buffers for intermediate calculations."""
         super()._post_init()
         with self.model.memory:
             self.neg_targ = self.model.memory.ndarray(self.shape, dtype=self.model.dtype)
@@ -31,6 +37,17 @@ class BinaryCrossEntropyNumpy(BinaryCrossEntropy[np.ndarray], LossNumpy):
             self.neg_pred = self.model.memory.ndarray(self.shape, dtype=self.model.dtype)
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray, batch_size: int) -> tuple[float, np.ndarray]:
+        """
+        Compute the binary cross entropy loss and its gradient.
+
+        Args:
+            y_pred: Predicted values.
+            y_targ: Target ground truth values.
+            batch_size: Size of the current batch.
+
+        Returns:
+            A tuple containing the scalar loss and the gradient array.
+        """
         assert len(y_targ.shape) == 2
 
         b = y_targ.shape[0]

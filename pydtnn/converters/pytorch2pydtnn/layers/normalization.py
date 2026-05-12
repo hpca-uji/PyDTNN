@@ -1,5 +1,7 @@
 # In this file must be implemented only the translation of PyTorch Normalization layers to its PyDTNN equivalent.
 
+"""Module for converting PyTorch normalization layers to PyDTNN equivalents."""
+
 import logging
 from typing import Any
 
@@ -16,6 +18,15 @@ logger = logging.getLogger(__name__)
 
 
 def BatchNorm2d(args: dict[str, Any]) -> BatchNormalization:
+    """
+    Converts a PyTorch BatchNorm2d layer configuration to a PyDTNN BatchNormalization layer.
+
+    Args:
+        args: A dictionary containing the PyTorch layer arguments.
+
+    Returns:
+        An initialized PyDTNN BatchNormalization layer.
+    """
     # https://pytorch.org/docs/stable/generated/torch.nn.BatchNorm2d.html#torch.nn.BatchNorm2d
 
     # PyTorch attributes:

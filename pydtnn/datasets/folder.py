@@ -1,3 +1,7 @@
+"""
+Module for handling datasets organized in a folder-based structure.
+"""
+
 from __future__ import annotations
 
 import copy
@@ -77,6 +81,16 @@ class Folder(Dataset):
         self.labels_and_images[Dataset.Part.VAL] = copy.copy(self.labels_and_images[Dataset.Part.TEST] if self.test_as_validation else self.labels_and_images[Dataset.Part.TRAIN])
 
     def _get_dict_class_and_file(self, path: str) -> tuple[list[tuple[ClassName, DataPath]], int, int]:
+        """
+        Scans the directory structure to map class indices to file paths.
+
+        Args:
+            path (str): Root directory path containing class subfolders.
+
+        Returns:
+            tuple: A tuple containing the list of (class_index, file_path) pairs,
+                   the total number of classes, and the total number of images.
+        """
         dict_class_file = dict[ClassName, set[DataPath]]()
         num_images = 0
         list_dir = sorted(os.listdir(path))
@@ -104,6 +118,15 @@ class Folder(Dataset):
 
     @override
     def _actual_data_generator(self, part: Dataset.Part) -> Generator[tuple[np.ndarray, np.ndarray]]:
+        """
+        Generates batches of data for the specified dataset partition.
+
+        Args:
+            part (Dataset.Part): The dataset partition to generate data from.
+
+        Yields:
+            tuple: A tuple containing the input data tensor and the label tensor.
+        """
         offset = self._local_offset[part]
         nsamples = self._local_nsamples[part]
         labels_and_images = self.labels_and_images[part]

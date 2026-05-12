@@ -1,3 +1,5 @@
+"""CuPy implementation of the Precision metric."""
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -14,7 +16,10 @@ if TYPE_CHECKING:
 
 
 class PrecisionCupy(PrecisionNumpy, MetricCupy):
+    """Precision metric implementation using CuPy backend."""
+
     def _post_init(self) -> None:
+        """Initializes metric buffers on the GPU device."""
         super()._post_init()
         with self.model.memory:
             self.true_positives = self.model.memory.ndarray(self.temp_var_shape, dtype=self.dtype)
@@ -22,6 +27,15 @@ class PrecisionCupy(PrecisionNumpy, MetricCupy):
             self.false_negatives = self.model.memory.ndarray(self.temp_var_shape, dtype=self.dtype)
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
+        """Computes the precision score using GPU-accelerated operations.
+
+        Args:
+            y_pred: Predicted labels.
+            y_targ: Ground truth labels.
+
+        Returns:
+            The average precision score.
+        """
         true_positives = self.true_positives
         false_positives = self.false_positives
         # This two variables are not necessary, are to make the code more understandable.

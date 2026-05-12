@@ -1,3 +1,7 @@
+"""
+PyCUDA implementation of the F1-Score metric for the PyDTNN framework.
+"""
+
 import logging
 
 import numpy as np
@@ -12,13 +16,30 @@ logger = logging.getLogger(__name__)
 
 
 class F1ScorePycuda(F1Score[TensorArray], MetricPycuda):
+    """
+    PyCUDA-accelerated F1-Score metric implementation.
+    """
+
     def _model_init(self) -> None:
+        """
+        Initializes the F1-Score metric buffers on the GPU.
+        """
         super()._model_init()
         target_classes = self.model.output_shape[0]
         self.f1 = TensorArray.new_zeros(shape=(1,), dtype=self.model.dtype, tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
         self.local_f1 = TensorArray.new_zeros(shape=(target_classes,), dtype=self.model.dtype, tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
 
     def compute(self, y_pred: TensorArray, y_targ: TensorArray) -> float:
+        """
+        Computes the F1-Score using a PyCUDA kernel.
+
+        Args:
+            y_pred: Predicted tensor array.
+            y_targ: Target tensor array.
+
+        Returns:
+            The computed F1-Score as a float.
+        """
 
         target_classes = self.model.output_shape[0]
 

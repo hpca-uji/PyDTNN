@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-PyDTNN Benchmark script
+PyDTNN Benchmark script.
 """
 
 import cProfile
@@ -41,6 +41,7 @@ if os.environ.get("EXTRAE_ON", None) == "1":
 
 
 def _start() -> int:
+    """System entry point"""
     parser = ArgumentParser()
     config = parser.parse_args()
 
@@ -53,6 +54,7 @@ def _start() -> int:
 
 
 def main(config):
+    """Application entry point"""
     # Initialize random seed
     from pydtnn.utils import random
 

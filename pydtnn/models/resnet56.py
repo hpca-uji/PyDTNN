@@ -1,3 +1,5 @@
+"""ResNet-56 model architecture implementation for PyDTNN."""
+
 from collections.abc import Sequence
 
 from pydtnn.abstract.layerable import Layerable
@@ -17,6 +19,16 @@ __all__ = ("resnet56",)
 
 
 def resnet56(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
+    """
+    Constructs a ResNet-56 model architecture.
+
+    Args:
+        input_shape: The shape of the input tensor.
+        output_shape: The shape of the output tensor.
+
+    Returns:
+        A sequence of layers defining the ResNet-56 model.
+    """
     model = list[Layerable]()
     _ = model.append
 

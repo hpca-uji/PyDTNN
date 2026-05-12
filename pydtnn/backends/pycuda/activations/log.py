@@ -1,3 +1,5 @@
+"""PyCUDA backend implementation for the Log activation function."""
+
 import logging
 
 import numpy as np
@@ -16,12 +18,16 @@ logger = logging.getLogger(__name__)
 
 
 class LogPycuda(Log[TensorArray], ActivationPycuda):
+    """PyCUDA implementation of the Log activation layer."""
+
     def __init__(self, *args, **kwargs):
+        """Initialize the LogPycuda layer."""
         super().__init__(*args, **kwargs)
         self.log: ElementwiseKernel = None
         self.dlog: ElementwiseKernel = None
 
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
+        """Initialize kernels and allocate memory for forward and backward passes."""
         super()._model_init(prev_shape, x)
 
         self.log = ElementwiseKernel(
@@ -49,10 +55,12 @@ class LogPycuda(Log[TensorArray], ActivationPycuda):
         self.memory_used += self.y.nbytes + self.dx.nbytes
 
     def forward(self, x: TensorArray) -> TensorArray:
+        """Perform the forward pass using the log kernel."""
         self.log(x.ary, self.y.ary, stream=self.model.stream)
         return self.y
 
     def backward(self, dy: TensorArray) -> TensorArray:
+        """Perform the backward pass using the dlog kernel."""
         # Compute dx
         self.dlog(dy.ary, self.dx.ary, stream=self.model.stream)
         return self.dx

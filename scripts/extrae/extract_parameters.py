@@ -79,6 +79,7 @@ def get_opts():
 
 
 def extract_parameters():
+    """Parse shell scripts to extract and display model configuration parameters."""
     models_files = {
         "alexnet_cifar10": "run_alexnet_cifar10.sh",
         "alexnet_imagenet": "run_alexnet_imagenet.sh",

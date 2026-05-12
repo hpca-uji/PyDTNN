@@ -1,3 +1,5 @@
+"""InceptionV3 model architecture implementation for PyDTNN."""
+
 from collections.abc import Sequence
 
 from pydtnn.abstract.layerable import Layerable
@@ -18,6 +20,16 @@ __all__ = ("inceptionv3",)
 
 
 def inceptionv3(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
+    """
+    Constructs an InceptionV3 model architecture.
+
+    Args:
+        input_shape: The shape of the input data.
+        output_shape: The shape of the output layer.
+
+    Returns:
+        A sequence of layers representing the InceptionV3 model.
+    """
     model = list[Layerable]()
     _ = model.append
 

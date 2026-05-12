@@ -1,3 +1,7 @@
+"""
+AlexNet architecture implementation for the PyDTNN framework.
+"""
+
 from collections.abc import Sequence
 
 from pydtnn.abstract.layerable import Layerable
@@ -15,6 +19,16 @@ __all__ = ("alexnet",)
 
 
 def alexnet(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
+    """
+    Constructs an AlexNet model architecture.
+
+    Args:
+        input_shape: The shape of the input data.
+        output_shape: The shape of the output layer.
+
+    Returns:
+        A sequence of layers representing the AlexNet model.
+    """
     model = list[Layerable]()
     _ = model.append
 

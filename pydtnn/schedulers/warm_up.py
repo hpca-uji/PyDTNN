@@ -1,3 +1,7 @@
+"""
+Warm-up learning rate scheduler module for PyDTNN.
+"""
+
 from __future__ import annotations
 
 import logging
@@ -6,6 +10,10 @@ from typing import TYPE_CHECKING
 from numpy import ndarray
 
 from pydtnn.schedulers.scheduler import Scheduler
+
+"""
+Warm-up learning rate scheduler module for PyDTNN.
+"""
 
 __all__ = ("WarmUp",)
 
@@ -18,10 +26,19 @@ if TYPE_CHECKING:
 
 class WarmUp(Scheduler):
     """
-    WarmUp
+    Learning rate scheduler that linearly increases the learning rate during an initial warm-up phase.
     """
 
     def __init__(self, warmup_epochs=5, base_lr=1e-4, init_lr=1e-3, verbose=False):
+        """
+        Initialize the WarmUp scheduler.
+
+        Args:
+            warmup_epochs: Number of epochs to perform warm-up.
+            base_lr: The starting learning rate.
+            init_lr: The target learning rate after warm-up.
+            verbose: Whether to log learning rate updates.
+        """
         super().__init__(verbose)
         self.warmup_epochs = warmup_epochs
         self.base_lr = base_lr
@@ -29,6 +46,13 @@ class WarmUp(Scheduler):
         self.epoch_count: int = 0
 
     def on_epoch_end(self, train_loss: ndarray, val_loss: ndarray) -> None:
+        """
+        Update the model's learning rate at the end of each epoch if within the warm-up period.
+
+        Args:
+            train_loss: Training loss value.
+            val_loss: Validation loss value.
+        """
         if self.epoch_count < self.warmup_epochs:
             self.model.optimizer.learning_rate = self.base_lr + ((self.epoch_count + 1) / self.warmup_epochs) * (self.init_lr - self.base_lr)
             self.epoch_count += 1
@@ -36,4 +60,13 @@ class WarmUp(Scheduler):
 
     @classmethod
     def from_model(cls, model: Model) -> WarmUp:
+        """
+        Create a WarmUp instance from a model configuration.
+
+        Args:
+            model: The model instance containing warm-up parameters.
+
+        Returns:
+            A configured WarmUp scheduler instance.
+        """
         return WarmUp(model.warm_up_epochs, model.learning_rate / model.nprocs, model.learning_rate)

@@ -1,4 +1,6 @@
-# In this file must be implemented only the translation of PyTorch Convolutional layers to its PyDTNN equivalent.
+"""
+Module for translating PyTorch convolutional layers to PyDTNN equivalent layers.
+"""
 
 import logging
 from typing import Any
@@ -16,6 +18,15 @@ logger = logging.getLogger(__name__)
 
 
 def Conv2d(args: dict[str, Any]) -> _Conv2D:
+    """
+    Converts a PyTorch Conv2d layer configuration to a PyDTNN Conv2D layer instance.
+
+    Args:
+        args: A dictionary containing the PyTorch layer configuration and arguments.
+
+    Returns:
+        An initialized PyDTNN Conv2D layer.
+    """
     # https://pytorch.org/docs/stable/generated/torch.nn.Conv2d.html#torch.nn.Conv2d
 
     # PyTorch attributes:

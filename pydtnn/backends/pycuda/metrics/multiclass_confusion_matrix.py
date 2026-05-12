@@ -1,3 +1,7 @@
+"""
+PyCUDA implementation of the multiclass confusion matrix metric.
+"""
+
 import logging
 
 import numpy as np
@@ -12,7 +16,14 @@ logger = logging.getLogger(__name__)
 
 
 class MulticlassConfusionMatrixPycuda(MulticlassConfusionMatrix[TensorArray], MetricPycuda):
+    """
+    PyCUDA-accelerated multiclass confusion matrix calculation.
+    """
+
     def _model_init(self) -> None:
+        """
+        Initializes the confusion matrix buffers on the GPU.
+        """
         super()._model_init()
         n = self.model.batch_size
         target_classes = self.model.output_shape[0]
@@ -22,6 +33,8 @@ class MulticlassConfusionMatrixPycuda(MulticlassConfusionMatrix[TensorArray], Me
 
     def compute(self, y_pred: TensorArray, y_targ: TensorArray) -> np.ndarray:
         """
+        Computes the confusion matrix using a PyCUDA kernel.
+
         The output will be a confusion matrix like this:
                 |Predicted     |
         ________| 0  | 1  | 2  |

@@ -1,4 +1,7 @@
-# In this file must be implemented only the translation of PyTorch functions to its PyDTNN equivalent.
+"""
+This module provides translation functions to convert PyTorch functional operations
+into their corresponding PyDTNN layer implementations.
+"""
 
 import logging
 from typing import Any
@@ -39,6 +42,15 @@ logger = logging.getLogger(__name__)
 
 
 def adaptive_avg_pool_2d(args: dict[str, str]) -> tuple[AveragePool2D, str]:
+    """
+    Converts PyTorch adaptive average pooling operation to PyDTNN AdaptiveAveragePool2D layer.
+
+    Args:
+        args: Dictionary containing operation parameters and input configuration.
+
+    Returns:
+        A tuple containing the initialized AdaptiveAveragePool2D layer and the input layer name.
+    """
     # It is not the layer, but the operation itself.
     # from torch.nn.functional import adaptive_avg_pool2d
     # adaptive_avg_pool2d(input: Tensor, output_size: BroadcastingList2[int])
@@ -66,6 +78,15 @@ def adaptive_avg_pool_2d(args: dict[str, str]) -> tuple[AveragePool2D, str]:
 
 
 def add(args: dict[str, Any]) -> tuple[AdditionBlock, str]:
+    """
+    Converts PyTorch addition operation to PyDTNN AdditionBlock layer.
+
+    Args:
+        args: Dictionary containing operation parameters and layer graph state.
+
+    Returns:
+        A tuple containing the initialized AdditionBlock layer and the input layer name.
+    """
     # https://pytorch.org/docs/stable/generated/torch.add.html
 
     # It should be prepared so the params have the following format: "[layer1,layer2]"
@@ -94,6 +115,15 @@ def add(args: dict[str, Any]) -> tuple[AdditionBlock, str]:
 
 
 def concat(args: dict[str, Any]) -> tuple[ConcatenationBlock, str]:
+    """
+    Converts PyTorch concatenation operation to PyDTNN ConcatenationBlock layer.
+
+    Args:
+        args: Dictionary containing operation parameters and layer graph state.
+
+    Returns:
+        A tuple containing the initialized ConcatenationBlock layer and the input layer name.
+    """
     # https://pytorch.org/docs/main/generated/torch.cat.html
 
     # TODO: es necesario hacer un diccionario que sustituya los parámetros que ya han sido introducidos por la capa de concatenación/adición.
@@ -126,6 +156,15 @@ def concat(args: dict[str, Any]) -> tuple[ConcatenationBlock, str]:
 
 
 def flatten(args: dict[str, str]) -> tuple[Flatten, str]:
+    """
+    Converts PyTorch flatten operation to PyDTNN Flatten layer.
+
+    Args:
+        args: Dictionary containing operation parameters.
+
+    Returns:
+        A tuple containing the initialized Flatten layer and the input layer name.
+    """
     # https://pytorch.org/docs/stable/generated/torch.flatten.html
     # torch.flatten(input, start_dim=0, end_dim=-1)
 
@@ -156,6 +195,15 @@ def flatten(args: dict[str, str]) -> tuple[Flatten, str]:
 
 
 def log(args: dict[str, Any]) -> tuple[Log, str]:
+    """
+    Converts PyTorch log activation operation to PyDTNN Log layer.
+
+    Args:
+        args: Dictionary containing operation parameters.
+
+    Returns:
+        A tuple containing the initialized Log layer and the input layer name.
+    """
     # https://pytorch.org/docs/stable/generated/torch.nn.functional.logsigmoid.html#torch.nn.functional.logsigmoid
 
     dict_params = dict()
@@ -172,6 +220,15 @@ def log(args: dict[str, Any]) -> tuple[Log, str]:
 
 
 def relu(args: dict[str, str]) -> tuple[Relu, str]:
+    """
+    Converts PyTorch ReLU activation operation to PyDTNN Relu layer.
+
+    Args:
+        args: Dictionary containing operation parameters.
+
+    Returns:
+        A tuple containing the initialized Relu layer and the input layer name.
+    """
 
     # https://pytorch.org/docs/stable/generated/torch.nn.functional.relu.html#torch.nn.functional.relu
     # It is not the layer, but the operation itself.
@@ -192,6 +249,15 @@ def relu(args: dict[str, str]) -> tuple[Relu, str]:
 
 
 def sigmoid(args: dict[str, Any]) -> tuple[Sigmoid, str]:
+    """
+    Converts PyTorch sigmoid activation operation to PyDTNN Sigmoid layer.
+
+    Args:
+        args: Dictionary containing operation parameters.
+
+    Returns:
+        A tuple containing the initialized Sigmoid layer and the input layer name.
+    """
     # https://pytorch.org/docs/stable/generated/torch.nn.functional.sigmoid.html#torch.nn.functional.sigmoid
     # Not used Pytorch's parameters: inplace.
 
@@ -205,6 +271,15 @@ def sigmoid(args: dict[str, Any]) -> tuple[Sigmoid, str]:
 
 
 def softmax(args: dict[str, Any]) -> tuple[Softmax, str]:
+    """
+    Converts PyTorch softmax activation operation to PyDTNN Softmax layer.
+
+    Args:
+        args: Dictionary containing operation parameters.
+
+    Returns:
+        A tuple containing the initialized Softmax layer and the input layer name.
+    """
     # https://pytorch.org/docs/stable/generated/torch.nn.functional.softmax.html#torch.nn.functional.softmax
     # softmax(input, dim=None, _stacklevel=3, dtype=None)
 
@@ -232,6 +307,15 @@ def softmax(args: dict[str, Any]) -> tuple[Softmax, str]:
 
 
 def tanh(args: dict[str, Any]) -> tuple[Tanh, str]:
+    """
+    Converts PyTorch tanh activation operation to PyDTNN Tanh layer.
+
+    Args:
+        args: Dictionary containing operation parameters.
+
+    Returns:
+        A tuple containing the initialized Tanh layer and the input layer name.
+    """
     # https://pytorch.org/docs/stable/generated/torch.nn.functional.tanh.html#torch.nn.functional.tanh
     dict_params = dict()
 

@@ -1,3 +1,7 @@
+"""
+Cython implementation of the Leaky ReLU activation function.
+"""
+
 import logging
 
 from pydtnn.backends.cython.activations.activation import ActivationCython
@@ -11,7 +15,20 @@ logger = logging.getLogger(__name__)
 
 
 class LeakyReluCython(LeakyReluNumpy, ActivationCython):
+    """
+    Leaky ReLU activation layer using Cython acceleration.
+    """
+
     def forward(self, x: np.ndarray) -> np.ndarray:
+        """
+        Performs the forward pass of the Leaky ReLU activation.
+
+        Args:
+            x: Input tensor.
+
+        Returns:
+            The activated tensor.
+        """
         self.y = self._y[: x.shape[0], :]
         self.mask = self._mask[: x.shape[0], :]
 

@@ -1,3 +1,7 @@
+"""
+Cython-accelerated ReLU activation implementation.
+"""
+
 import logging
 
 from pydtnn.backends.cython.activations.activation import ActivationCython
@@ -11,7 +15,20 @@ logger = logging.getLogger(__name__)
 
 
 class ReluCython(ReluNumpy, ActivationCython):
+    """
+    ReLU activation layer using Cython for optimized computation.
+    """
+
     def forward(self, x: np.ndarray) -> np.ndarray:
+        """
+        Performs the forward pass of the ReLU activation.
+
+        Args:
+            x: Input tensor.
+
+        Returns:
+            The result of the ReLU activation applied to the input.
+        """
         n = x.shape[0]
         self.y = self._y[:n, :]
         self.mask = self._mask[:n, :]

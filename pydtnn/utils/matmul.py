@@ -1,3 +1,5 @@
+"""Matrix multiplication utilities for PyDTNN using BLIS and MKL backends."""
+
 import ctypes
 import logging
 
@@ -17,18 +19,21 @@ logger = logging.getLogger(__name__)
 
 
 def blis():
+    """Lazy load and return the BLIS library instance."""
     if not hasattr(blis, "lib"):
         blis.lib = load_library("blis")
     return blis.lib
 
 
 def mkl():
+    """Lazy load and return the MKL library instance."""
     if not hasattr(mkl, "lib"):
         mkl.lib = load_library("mkl_rt")
     return mkl.lib
 
 
 def _matmul_xgemm(called_from, lib, a, b, c=None):
+    """Internal helper to perform matrix multiplication using BLAS xGEMM interface."""
     order = 101  # 101 for row-major, 102 for column major data structures
     m = a.shape[0]
     n = b.shape[1]
@@ -95,18 +100,21 @@ def _matmul_xgemm(called_from, lib, a, b, c=None):
 
 
 def matmul_mkl(a, b, c=None):
+    """Perform matrix multiplication using the MKL backend."""
     # os.environ['GOMP_CPU_AFFINITY'] = ""
     # os.environ['OMP_PLACES'] = ""
     return _matmul_xgemm("matmul_mkl", mkl(), a, b, c)
 
 
 def matmul_blis(a, b, c=None):
+    """Perform matrix multiplication using the BLIS backend."""
     return _matmul_xgemm("matmul_blis", blis(), a, b, c)
 
 
 # Matmul operation
 # Warning: the output matrix can not be cached, as it will persist outside this method
 def matmul(a: np.ndarray, b: np.ndarray, c: np.ndarray | None = None) -> np.ndarray:
+    """Perform matrix multiplication using NumPy's optimized backend."""
     # if a.dtype == np.float32:
     #    c = slb.sgemm(1.0, a, b)
     # elif a.dtype == np.float64:

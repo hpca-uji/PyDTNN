@@ -1,3 +1,7 @@
+"""
+PyDTNN model module providing the base Model class for the framework.
+"""
+
 from pydtnn.model.repr import Repr
 from pydtnn.model.state import State
 from pydtnn.model.train import Train
@@ -18,4 +22,7 @@ class Model[T: Array](Train[T], State[T], Repr[T]):
     ┃              └── Repr ─────────────────────────────┘       ┃
     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
     ```
+
+    The Model class serves as the primary interface for PyDTNN, integrating
+    training, state management, and representation capabilities.
     """

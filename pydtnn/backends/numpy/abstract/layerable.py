@@ -1,3 +1,7 @@
+"""
+Numpy backend implementation for layerable components in PyDTNN.
+"""
+
 import numpy as np
 
 from pydtnn.abstract.layerable import Layerable
@@ -8,7 +12,17 @@ __all__ = ("LayerableNumpy",)
 
 
 class LayerableNumpy(Layerable[np.ndarray], BaseNumpy):
+    """
+    Numpy-specific implementation of a layerable component supporting distributed operations.
+    """
+
     def reduce_weights_async(self, gradient=True):
+        """
+        Initiates an asynchronous all-reduce operation for weights or gradients.
+
+        Args:
+            gradient (bool): If True, reduces gradients; otherwise, reduces weights.
+        """
         # NOTE: Keep in sync with Layer
         if not self.model.comm:
             return
@@ -24,6 +38,12 @@ class LayerableNumpy(Layerable[np.ndarray], BaseNumpy):
             self.reqs_allred[dw_] = req
 
     def wait_allreduce_async(self, gradient=True):
+        """
+        Waits for completion of asynchronous all-reduce operations and decodes results.
+
+        Args:
+            gradient (bool): If True, waits for gradients; otherwise, waits for weights.
+        """
         # NOTE: Keep in sync with Layer
         if not self.model.comm or self.model.enable_nccl:
             return
@@ -40,6 +60,12 @@ class LayerableNumpy(Layerable[np.ndarray], BaseNumpy):
             setattr(self, dw_, dw)
 
     def reduce_weights_sync(self, gradient=True):
+        """
+        Performs a synchronous all-reduce operation for weights or gradients.
+
+        Args:
+            gradient (bool): If True, reduces gradients; otherwise, reduces weights.
+        """
         # NOTE: Keep in sync with Layer
         if not self.model.comm:
             return

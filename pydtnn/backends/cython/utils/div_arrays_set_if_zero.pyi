@@ -1,8 +1,15 @@
+"""
+Utility module for element-wise division with zero-handling logic.
+"""
+
 from pydtnn.backends.cython.utils.base import _npDT, _npDT_1Dims
 
 def div_arrays_set_if_zero[T: _npDT](dividend: _npDT_1Dims[T], divider: _npDT_1Dims[T], default_value: T):  # type: ignore
     """
-    This function execute a element wise division between dividend and divider ("dividend / divider"), but if divider is 0, then the result is 0 too.
+    Performs element-wise division of dividend by divider, replacing results with a default value where the divider is zero.
+
+    The operation is performed in-place on the dividend array.
+
     Example:
         dividend = [-1, 1, 0, 10, -29, 3, 0, 0]
         divider = [0, 40, 0, 0, 3, 0, 10, -30]
@@ -18,10 +25,10 @@ def div_arrays_set_if_zero[T: _npDT](dividend: _npDT_1Dims[T], divider: _npDT_1D
         result = [33.3, 1/40, 33.3, 33.3, -29/3, 33.3, 0, 0]
 
     Args:
-        dividend (npDT_1Dims): The division's dividend.
-        divider (npDT_1Dims): The division's divider.
-        default_value (npDT): The va
+        dividend: The array to be divided, modified in-place.
+        divider: The array used as the divisor.
+        default_value: The value to assign when the corresponding divider element is zero.
 
     Returns:
-        Nothing. The value is stores in "dividend".
+        None
     """

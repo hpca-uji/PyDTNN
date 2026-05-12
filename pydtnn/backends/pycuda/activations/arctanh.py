@@ -1,3 +1,5 @@
+"""PyCUDA backend implementation for the Arctanh activation function."""
+
 import logging
 
 import numpy as np
@@ -15,12 +17,16 @@ logger = logging.getLogger(__name__)
 
 
 class ArctanhPycuda(Arctanh[TensorArray], ActivationPycuda):
+    """PyCUDA implementation of the Arctanh activation layer."""
+
     def __init__(self, *args, **kwargs):
+        """Initialize the ArctanhPycuda layer."""
         super().__init__(*args, **kwargs)
         self.atanh: ElementwiseKernel = None
         self.datanh: ElementwiseKernel = None
 
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
+        """Initialize kernels and allocate memory for forward and backward passes."""
         super()._model_init(prev_shape, x)
 
         self.atanh = ElementwiseKernel(
@@ -46,10 +52,12 @@ class ArctanhPycuda(Arctanh[TensorArray], ActivationPycuda):
         self.memory_used += self.y.nbytes + self.dx.nbytes
 
     def forward(self, x: TensorArray) -> TensorArray:
+        """Perform the forward pass using the PyCUDA atanh kernel."""
         self.atanh(x.ary, self.y, stream=self.model.stream)
         return self.y
 
     def backward(self, dy: TensorArray) -> TensorArray:
+        """Perform the backward pass using the PyCUDA datanh kernel."""
         # Compute dx
         self.datanh(dy.ary, self.dx.ary, stream=self.model.stream)
         return self.dx

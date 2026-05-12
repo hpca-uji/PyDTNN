@@ -1,3 +1,7 @@
+"""
+NumPy backend implementation of the Layer Normalization layer.
+"""
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -14,7 +18,20 @@ if TYPE_CHECKING:
 
 
 class LayerNormalizationNumpy(LayerNormalization[np.ndarray], LayerNumpy):
+    """
+    NumPy implementation of Layer Normalization.
+    """
+
     def forward(self, x: np.ndarray) -> np.ndarray:
+        """
+        Performs the forward pass of layer normalization.
+
+        Args:
+            x: Input tensor of shape (batch_size, features).
+
+        Returns:
+            Normalized output tensor.
+        """
         # TODO: Check how to initialize this parameters outside (in the initalization layer)
         mu = np.mean(x, axis=self.axis, keepdims=True)
         xc = x - mu
@@ -34,6 +51,15 @@ class LayerNormalizationNumpy(LayerNormalization[np.ndarray], LayerNumpy):
         return y
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
+        """
+        Performs the backward pass of layer normalization.
+
+        Args:
+            dy: Gradient of the loss with respect to the output.
+
+        Returns:
+            Gradient of the loss with respect to the input.
+        """
         self.dgamma = np.sum(dy * self.xn, axis=0)
         self.dbeta = np.sum(dy, axis=0)
 

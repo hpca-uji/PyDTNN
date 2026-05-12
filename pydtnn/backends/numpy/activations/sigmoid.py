@@ -1,3 +1,5 @@
+"""NumPy backend implementation of the Sigmoid activation function."""
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -14,7 +16,10 @@ if TYPE_CHECKING:
 
 
 class SigmoidNumpy(Sigmoid[np.ndarray], ActivationNumpy):
+    """NumPy-based Sigmoid activation layer."""
+
     def _model_init(self, prev_shape, x=None):
+        """Initialize layer buffers and memory tracking."""
         super()._model_init(prev_shape, x)
 
         # NOTE: These attributes only store data, their values before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
@@ -25,6 +30,7 @@ class SigmoidNumpy(Sigmoid[np.ndarray], ActivationNumpy):
         self.memory_used += self.dx.nbytes
 
     def forward(self, x: np.ndarray) -> np.ndarray:
+        """Compute the forward pass of the sigmoid function."""
         self.y: np.ndarray = self._y[: x.shape[0], :]
         # y = (1 / ( 1 + exp(-1*x)))
         np.multiply(-1, x, out=self.y)
@@ -34,6 +40,7 @@ class SigmoidNumpy(Sigmoid[np.ndarray], ActivationNumpy):
         return self.y
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
+        """Compute the backward pass of the sigmoid function."""
         dx: np.ndarray = self.dx[: dy.shape[0], :]
         # dx = dy * (y * (1 - y))
         np.subtract(1, self.y, out=dx)

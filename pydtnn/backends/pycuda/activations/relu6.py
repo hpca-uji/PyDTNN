@@ -1,3 +1,5 @@
+"""PyCUDA implementation of the ReLU6 activation function."""
+
 import logging
 import math
 
@@ -17,12 +19,16 @@ logger = logging.getLogger(__name__)
 
 
 class Relu6Pycuda(Relu6[TensorArray], ActivationPycuda):
+    """PyCUDA-accelerated ReLU6 activation layer."""
+
     def __init__(self, *args, **kwargs):
+        """Initialize the Relu6Pycuda layer."""
         super().__init__(*args, **kwargs)
         self.mask: TensorArray = None  # type: ignore
         self.y: TensorArray = None  # type: ignore
 
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
+        """Initialize model parameters, CUDA kernels, and memory buffers."""
         super()._model_init(prev_shape, x)
 
         y_gpu = gpuarray.zeros(x.shape, self.model.dtype)
@@ -42,6 +48,7 @@ class Relu6Pycuda(Relu6[TensorArray], ActivationPycuda):
         self.initialize_relu_2d_gpu(prev_shape)
 
     def forward(self, x: TensorArray) -> TensorArray:
+        """Perform the forward pass of the ReLU6 activation."""
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
 
         n = np.int32(math.prod(x.shape))
@@ -55,6 +62,7 @@ class Relu6Pycuda(Relu6[TensorArray], ActivationPycuda):
         return self.y
 
     def backward(self, dy: TensorArray) -> TensorArray:
+        """Perform the backward pass of the ReLU6 activation."""
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
 
         n = np.int32(math.prod(dy.shape))
@@ -65,6 +73,7 @@ class Relu6Pycuda(Relu6[TensorArray], ActivationPycuda):
         return self.dx
 
     def initialize_relu_2d_gpu(self, prev_shape: ArrayShape) -> None:
+        """Initialize GPU buffers and performance models for 2D ReLU operations."""
         self.ci, self.hi, self.wi = self.model.decode_shape(prev_shape)
         self.shape = prev_shape
 

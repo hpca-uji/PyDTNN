@@ -1,3 +1,7 @@
+"""
+Reduce learning rate when a metric has stopped improving.
+"""
+
 from __future__ import annotations
 
 import logging
@@ -22,6 +26,16 @@ class ReduceLROnPlateau(SchedulerWithLossOrMetric):
     """
 
     def __init__(self, loss_or_metric: str = "", factor=0.1, patience=5, min_lr=0, verbose=True):
+        """
+        Initialize the ReduceLROnPlateau scheduler.
+
+        Args:
+            loss_or_metric: The name of the loss or metric to monitor.
+            factor: Factor by which the learning rate will be reduced.
+            patience: Number of epochs with no improvement after which learning rate will be reduced.
+            min_lr: A lower bound on the learning rate.
+            verbose: Whether to print updates to the logger.
+        """
         # NOTE: loss_or_metric default value is "val_accuracy" in Parser.
         super().__init__(loss_or_metric, verbose)
         self.factor = factor
@@ -31,6 +45,13 @@ class ReduceLROnPlateau(SchedulerWithLossOrMetric):
         self.best_loss: float = np.inf * {True: -1, False: 1}["accuracy" in self.loss_or_metric]
 
     def on_epoch_end(self, train_loss: np.ndarray, val_loss: np.ndarray) -> None:
+        """
+        Update the learning rate at the end of an epoch if the monitored metric has plateaued.
+
+        Args:
+            train_loss: Array of training losses.
+            val_loss: Array of validation losses.
+        """
         idx = self._get_idx()
         self.epoch_count += 1
         loss = val_loss if self.is_val_metric else train_loss
@@ -44,4 +65,13 @@ class ReduceLROnPlateau(SchedulerWithLossOrMetric):
 
     @classmethod
     def from_model(cls, model: Model) -> ReduceLROnPlateau:
+        """
+        Create a ReduceLROnPlateau instance from a model configuration.
+
+        Args:
+            model: The model instance containing scheduler parameters.
+
+        Returns:
+            An instance of ReduceLROnPlateau.
+        """
         return ReduceLROnPlateau(model.reduce_lr_on_plateau_metric, model.reduce_lr_on_plateau_factor, model.reduce_lr_on_plateau_patience, model.reduce_lr_on_plateau_min_lr)

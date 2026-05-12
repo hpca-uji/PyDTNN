@@ -1,3 +1,7 @@
+"""
+Test suite for verifying grouped 2D convolution operations in PyDTNN.
+"""
+
 import logging
 
 from pydtnn.backends.numpy.layers.abstract.conv_2d import AbstractConv2DNumpy
@@ -27,6 +31,17 @@ class Conv2DGroupTestCase(Conv2DCommonTestCase):
 
     @staticmethod
     def _get_layers(d: D, deconv=False, trans=False) -> tuple[AbstractConv2DNumpy, AbstractConv2DNumpy]:
+        """
+        Constructs and initializes standard Conv2D and grouped Conv2D layers for comparison.
+
+        Args:
+            d: Data configuration object.
+            deconv: Boolean flag for deconvolution (unused).
+            trans: Boolean flag for transposed convolution (unused).
+
+        Returns:
+            A tuple containing the standard Conv2D layer and the grouped ConcatenationBlock.
+        """
         params = Params()
         params.tensor_format = TensorFormat.NHWC.upper()
         params.batch_size = d.b
@@ -80,6 +95,13 @@ class Conv2DGroupTestCase(Conv2DCommonTestCase):
 
     @staticmethod
     def _set_state(layer: Conv2D, weights) -> None:
+        """
+        Synchronizes weights between standard and grouped layer implementations.
+
+        Args:
+            layer: The target layer or block to update.
+            weights: The weight tensor to assign.
+        """
         if isinstance(layer, ConcatenationBlock):
             layer.paths[0][0].weights = weights.copy()
             layer.paths[0][1].weights = weights.copy()

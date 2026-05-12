@@ -1,3 +1,7 @@
+"""
+Kullback-Leibler Divergence loss implementation for PyDTNN.
+"""
+
 import logging
 
 from pydtnn.losses.loss import Loss
@@ -9,4 +13,8 @@ logger = logging.getLogger(__name__)
 
 
 class KLDivergence[T: Array](Loss[T]):
+    """
+    Computes the Kullback-Leibler divergence between two probability distributions.
+    """
+
     format = "kld: %.7f"

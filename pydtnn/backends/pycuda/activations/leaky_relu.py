@@ -1,3 +1,5 @@
+"""PyCUDA backend implementation for the Leaky ReLU activation layer."""
+
 import logging
 import math
 
@@ -17,13 +19,17 @@ logger = logging.getLogger(__name__)
 
 
 class LeakyReluPycuda(LeakyRelu[TensorArray], ActivationPycuda):
+    """PyCUDA-accelerated Leaky ReLU activation layer."""
+
     def __init__(self, *args, **kwargs):
+        """Initialize the LeakyReluPycuda layer."""
         super().__init__(*args, **kwargs)
         # The following attributes will be initialized later.
         self.mask: TensorArray = None  # type: ignore
         self.y: TensorArray = None  # type: ignore
 
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
+        """Initialize model parameters and CUDA kernels."""
         super()._model_init(prev_shape, x)
 
         y_gpu = gpuarray.zeros(x.shape, self.model.dtype)
@@ -43,6 +49,7 @@ class LeakyReluPycuda(LeakyRelu[TensorArray], ActivationPycuda):
         self.initialize_relu_2d_gpu(prev_shape)
 
     def initialize_relu_2d_gpu(self, prev_shape: ArrayShape) -> None:
+        """Initialize GPU buffers and performance models for 2D ReLU operations."""
         self.ci, self.hi, self.wi = self.model.decode_shape(prev_shape)
         self.shape = prev_shape
 
@@ -62,6 +69,7 @@ class LeakyReluPycuda(LeakyRelu[TensorArray], ActivationPycuda):
         self.bwd_time = col2im_time(m=self.ci, n=n, cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw, dtype=self.model.dtype)  # type: ignore (it's fine)
 
     def forward(self, x: TensorArray) -> TensorArray:
+        """Perform the forward pass on the GPU."""
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
 
         n = np.int32(math.prod(x.shape))
@@ -75,6 +83,7 @@ class LeakyReluPycuda(LeakyRelu[TensorArray], ActivationPycuda):
         return self.y
 
     def backward(self, dy: TensorArray) -> TensorArray:
+        """Perform the backward pass on the GPU."""
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
 
         n = np.int32(math.prod(dy.shape))

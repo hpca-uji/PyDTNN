@@ -1,3 +1,5 @@
+"""PyCUDA implementation of 2D Convolution layer."""
+
 import logging
 from typing import Any, override
 
@@ -17,7 +19,10 @@ logger = logging.getLogger(__name__)
 
 
 class Conv2DPycuda(AbstractConv2DPycuda):
+    """PyCUDA-accelerated 2D Convolution layer using cuDNN."""
+
     def _initializing_special_parameters(self):
+        """Initialize layer-specific weight shapes based on tensor format."""
         match self.model.tensor_format:
             case TensorFormat.NCHW:
                 self.weights_shape = (self.co, self.ci, *self.filter_shape)
@@ -28,6 +33,7 @@ class Conv2DPycuda(AbstractConv2DPycuda):
                 raise NotImplementedError(f"{self.model.tensor_format} format not implemented.")
 
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
+        """Initialize cuDNN descriptors, algorithms, and workspace memory."""
         super()._model_init(prev_shape, x)
 
         # Activations y
@@ -100,6 +106,7 @@ class Conv2DPycuda(AbstractConv2DPycuda):
         self.memory_used += self.model.layers[0].getConvolutionWorkspaceSize() - base_conv_memory
 
     def _forward_standard(self, x: TensorArray) -> TensorArray:
+        """Perform forward pass using cuDNN convolution."""
         alpha, beta = 1.0, 0.0
         # Compute a' = x x weights
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
@@ -129,6 +136,7 @@ class Conv2DPycuda(AbstractConv2DPycuda):
         return self.y
 
     def _backward_standard(self, dy: TensorArray) -> TensorArray:
+        """Perform backward pass using cuDNN convolution gradients."""
         alpha, beta = 1.0, 0.0
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DW)
         # Compute dw
@@ -187,6 +195,7 @@ class Conv2DPycuda(AbstractConv2DPycuda):
 
     @override
     def _export_weights_dw(self, key: str) -> Any:
+        """Export weights or gradients to CPU, handling format transposition."""
         value = getattr(self, key)
 
         match self.model.tensor_format:
@@ -205,6 +214,7 @@ class Conv2DPycuda(AbstractConv2DPycuda):
 
     @override
     def _import_weights_dw(self, key: str, value: Any) -> None:
+        """Import weights or gradients from CPU, handling format transposition."""
         attribute = getattr(self, key)
         match self.model.tensor_format:
             case TensorFormat.NHWC:

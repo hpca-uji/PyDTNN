@@ -1,3 +1,7 @@
+"""
+Module for converting PyTorch models to PyDTNN models.
+"""
+
 import copy
 import logging
 
@@ -26,6 +30,14 @@ logger = logging.getLogger(__name__)
 
 
 def load_layers(model: PyDTNN_Model, layers: list[Layerable], activation_layer: Activation | None) -> None:
+    """
+    Adds a list of layers to the model and initializes it.
+
+    Args:
+        model: The PyDTNN model to populate.
+        layers: A list of layer objects to add.
+        activation_layer: An optional activation layer to append if not present.
+    """
     for layer in layers:
         model.add(layer)
     if not isinstance(layers[-1], Activation) and activation_layer is not None:
@@ -34,6 +46,15 @@ def load_layers(model: PyDTNN_Model, layers: list[Layerable], activation_layer: 
 
 
 def extract_layers_relations(model: torch.nn.Module) -> dict[str, tuple[str | torch.nn.Module, str]]:
+    """
+    Parses a PyTorch model to extract layer relationships and operations.
+
+    Args:
+        model: The PyTorch model to trace.
+
+    Returns:
+        A dictionary mapping output variable names to a tuple of (operation/layer, arguments).
+    """
     # TODO: Search the way "torch.fx.symbolic_trace" generates ".code" and not extracting the data from a
     # graph: torch.fx.GraphModule
     graph = torch.fx.symbolic_trace(model)
@@ -123,6 +144,16 @@ def extract_layers_relations(model: torch.nn.Module) -> dict[str, tuple[str | to
 
 
 def convert_layers_and_set_weights_and_biases(input_shape: tuple[int, int, int], layers: dict[str, tuple[str | torch.nn.Module, str]]) -> list[Layerable]:
+    """
+    Converts PyTorch layers to PyDTNN layers and maps weights/biases.
+
+    Args:
+        input_shape: The input shape of the model.
+        layers: Dictionary of layer relations extracted from the model.
+
+    Returns:
+        A list of converted PyDTNN layers.
+    """
 
     converted_layers: dict[str, tuple[Layerable, str | None]] = dict()
 
@@ -218,6 +249,12 @@ def convert_layers_and_set_weights_and_biases(input_shape: tuple[int, int, int],
 
 
 def check_kwargs_and_set_default(kwargs: dict) -> None:
+    """
+    Sets default values for missing keyword arguments.
+
+    Args:
+        kwargs: Dictionary of user-provided arguments.
+    """
 
     DICT_KWARGS_DEFAULT_VALUES = {
         "tensor_format": "nchw",  # NOTE: PyTorch's weight tensors only NCHW format.
@@ -240,6 +277,18 @@ def check_kwargs_and_set_default(kwargs: dict) -> None:
 
 
 def convert_model(model: torch.nn.Module, input_shape: tuple[int, int, int], default_output_activation_layer: Activation | None = None, **kwargs) -> PyDTNN_Model:
+    """
+    Converts a PyTorch model to a PyDTNN model.
+
+    Args:
+        model: The PyTorch model to convert.
+        input_shape: The input shape of the model.
+        default_output_activation_layer: Optional activation layer to add at the end.
+        **kwargs: Additional configuration parameters.
+
+    Returns:
+        A converted PyDTNN model.
+    """
     # "default_output_activation_layer" parameter: if there is no activation layer at the end, the one in this parameter is added to the converted model.
     check_kwargs_and_set_default(kwargs)
 
