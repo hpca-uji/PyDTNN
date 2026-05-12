@@ -104,13 +104,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
 
         self._show_message_only_once(f"\n\nIn '_compute_acc', the method that it is being used is '{method}'")
 
-        if method == "cython":
-            return compute_dense_acc_cython(residuals, dw, learning_rate)
-
-        if method == "numpy":
-            return residuals + (learning_rate * dw)
-
-        raise NotImplementedError(f"Method '{method}' not implemented")
+        return residuals + (learning_rate * dw)
 
     def _reset_residuals(self, acc: np.ndarray, indexes: tuple[np.ndarray, np.ndarray], method="cython") -> np.ndarray:
         """
@@ -131,19 +125,14 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
         self._show_message_only_once(f"In '_reset_residuals', the method that it is being used is '{method}'")
 
         if self.density == 1:
+            # TODO: Check if this if is necessary or if it's necessary in this function.
             return np.zeros_like(acc)
-
-        if method == "cython":
-            assert self._has_canonical_format(indexes)
-            return reset_residuals_cython(acc, indexes[0], indexes[1])
-
-        if method == "numpy":
+        else:
             if len(indexes[0]) > 0:
                 acc[indexes] = 0
             return acc
 
-        raise NotImplementedError(f"Method '{method}' not implemented")
-
+    # TODO: Move this to 3 different methods.
     def _update_weights(self, layer: Layerable, w_type: str, w: np.ndarray, coo_u: SparseMatrixCOO, method="cython") -> None:
         """
         Update weights: w -= (u / self.model.nprocs)
@@ -161,30 +150,6 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
         """
 
         self._show_message_only_once(f"In '_update_weights', the method that it is being used is '{method}'")
-
-        if method == "cython":
-            if len(self.dw_original_shape) != 2:
-                w = w.reshape(w.shape[0], -1)
-            w = update_sparsed_weights_cython(w, coo_u.data, coo_u.row, coo_u.col)
-            if len(self.dw_original_shape) != 2:
-                w = w.reshape(self.dw_original_shape)
-            setattr(layer, w_type, w)
-            return
-
-        if method == "cython_with_vel_and_momentum":
-            if self.momentum == 0:
-                logger.warning("If momentum is 0 use 'cython' method, it produces the same output but it is faster")
-                warnings.warn("If momentum is 0 use 'cython' method, it produces the same output but it is faster", RuntimeWarning)
-
-            if len(self.dw_original_shape) != 2:
-                w = w.reshape(w.shape[0], -1)
-            velocity = getattr(layer, "velocity_%s" % w_type, np.zeros_like(w, dtype=layer.model.dtype))
-            w, velocity = update_sparsed_weights_mv_cython(w, coo_u.data, coo_u.row, coo_u.col, velocity, self.momentum)
-            if len(self.dw_original_shape) != 2:
-                w = w.reshape(self.dw_original_shape)
-            setattr(layer, w_type, w)
-            setattr(layer, "velocity_%s" % w_type, velocity)
-            return
 
         if method == "numpy":
             if len(self.dw_original_shape) != 2:
@@ -268,6 +233,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
         indexes = self._intersect_indexes(local_topk_indexes, global_topk_indexes)
         return coo_u, indexes
 
+    # TODO: Move this to different methods.
     def _th_re_evaluate(self, matrix: np.ndarray | SparseMatrixCOO, k: int, input_format: str | None=None, 
                         method="numpy_sort") -> float:
         """
@@ -455,6 +421,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
         global_rows, global_cols = global_indexes
         return intersect_2d_indexes_cython(local_rows, local_cols, global_rows, global_cols)
 
+    # TODO: Move this to different methods.
     def _reduce_topk(self, coo_topk: SparseMatrixCOO, boundaries: np.ndarray,
                      method="p2p_region_wise_reduce_destination_rotation_and_bucketing") -> SparseMatrixCOO:
         """
@@ -549,6 +516,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
 
         raise NotImplementedError(f"Method '{method}' not implemented")
 
+    # TODO: Move this to different methods.
     def _allgather(self, local_data: np.ndarray | SparseMatrixCOO, input_format="SparseMatrixCOO") -> np.ndarray | SparseMatrixCOO:
         """
         Gathers data from all processes.
