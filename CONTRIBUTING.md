@@ -180,7 +180,7 @@
 - Migrate `libs/{cuda,cudadrv,cudart}` to `cuda-bindings` (and/or `nvidia-cuda-runtime-cu12`)
 - Migrate `libs/nccl` to `nvidia-nccl-cu12`
 - Migrate `libs/cudnn` to `nvidia-cudnn-cu12`
-- Migrate `libs/cublas` to `nvidia-cublass-cu12`
+- Migrate `libs/cublas` to `nvidia-cublas-cu12`
 - Add PyCUDA parameter quantization (operate on model.dtype, weights on model.param_dtype)
 - Update CuDNN to graph implementation
 - Fix NLP support
