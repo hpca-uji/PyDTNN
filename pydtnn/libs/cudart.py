@@ -1,9 +1,8 @@
 #!/usr/bin/env python
-# Source: https://github.com/lebedov/scikit-cuda
-
 """
 Python interface to CUDA runtime functions.
 """
+# Source: https://github.com/lebedov/scikit-cuda
 
 import ctypes
 import re
