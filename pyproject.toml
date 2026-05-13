@@ -1,6 +1,6 @@
 [project]
 name = "pydtnn"
-version = "3.8.7"
+version = "3.8.8"
 description = "Python Distributed Training of Neural Networks"
 readme = "README.md"
 license = "GPL-3.0-or-later"
@@ -37,60 +37,60 @@ classifiers = [
 keywords = ["Deep neural networks", "Distributed parallel training", "Python"]
 urls = { Homepage = "https://github.com/hpca-uji/PyDTNN", Repository = "https://github.com/hpca-uji/PyDTNN.git" }
 
-requires-python = ">=3.13"
+requires-python = "~=3.13"
 dependencies = [
-    "cython>=0.29.21",
-    "numpy>=1.19.4",
-    "prettytable>=2.1.0",
-    "rich>=9.9.0",
-    "pillow>=12.1.0",
-    "scipy>=1.5.4",
-    "tqdm>=4.55.0",
-    "rapidgzip>=0.15.2",
-    "pyyaml>=6.0.3",
-    "spacy>=3.8.0"
+    "cython~=3.2",
+    "numpy~=2.4",
+    "prettytable~=3.17",
+    "rich~=15.0",
+    "pillow~=12.2",
+    "scipy~=1.17",
+    "tqdm~=4.67",
+    "rapidgzip~=0.16",
+    "pyyaml~=6.0",
+    "spacy~=3.8"
 ]
 
 [project.optional-dependencies]
 gpu = [
-    "pycuda>=2021.1",
-    "cupy-cuda12x>=13.6.0"
+    "pycuda~=2026.1",
+    "cupy-cuda12x~=14.0"
 ]
 mpi = [
-    "mpi4py>=4.1.0",
-    "pympi>=1.4.6"
+    "mpi4py~=4.1",
+    "pympi~=1.4"
 ]
 fhe = [
-    "polyhe>=1.0.0"
+    "polyhe~=1.0"
 ]
 test = [
-    "torch>=2.6.0",
-    "torchvision>=0.21.0",
-    "torchmetrics>=1.9.0"
+    "torch~=2.11",
+    "torchvision~=0.26",
+    "torchmetrics~=1.9"
 ]
 profile = [
-    "memray>=1.19.1"
+    "memray~=1.19"
 ]
 pypi = [
-    "build>=1.3.0",
-    "auditwheel>=6.5.1",
-    "twine>=6.2.0"
+    "build~=1.4",
+    "auditwheel~=6.6",
+    "twine~=6.2"
 ]
 dev = [
-    "flake8>=7.1.1",
-    "flake8-docstrings>=1.7.0",
-    "mccabe>=0.7.0",
-    "pep8-naming>=0.14.1",
-    "pipdeptree>=2.23.1",
-    "pycodestyle>=2.12.1",
-    "pydocstyle>=6.3.0",
-    "pyflakes>=3.2.0",
+    "flake8~=7.3",
+    "flake8-docstrings~=1.7",
+    "mccabe~=0.7",
+    "pep8-naming~=0.15",
+    "pipdeptree~=2.35",
+    "pycodestyle~=2.14",
+    "pydocstyle~=6.3",
+    "pyflakes~=3.4",
 ]
 format = [
-    "autopep8>=2.3.1",
-    "absolufy-imports>=0.3.1",
-    "isort>=8.0.0",
-    "ruff>=0.15.12"
+    "autopep8~=2.3",
+    "absolufy-imports~=0.3",
+    "isort~=8.0",
+    "ruff~=0.15"
 ]
 
 [project.scripts]
@@ -98,10 +98,10 @@ pydtnn-benchmark = "pydtnn.__main__:_start"
 
 [build-system]
 requires = [
-    "setuptools>=82.0.1",
-    "setuptools-scm>=10.0.5",
-    "cython>=0.29.21",
-    "numpy>=1.19.4"
+    "setuptools~=82.0",
+    "setuptools-scm~=10.0",
+    "cython~=3.2",
+    "numpy~=2.4",
 ]
 build-backend = "setuptools.build_meta"
 
