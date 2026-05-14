@@ -12,19 +12,35 @@ def compute_dense_acc_cython[T: _npDT](residuals: _npDT_2Dims[T],
     Compute dense accumulation of residuals scaled by learning rate.
 
     Args:
-        residuals (npDT_2Dims: 
-        dw (npDT_2Dims: 
-        acc (npDT_2Dims: 
+        residuals (npDT_2Dims): 
+        dw (npDT_2Dims): 
+        acc (npDT_2Dims): 
         learning_rate (float): 
-    Return:
+    Returns:
         Nothing; the output is stored in "acc".
     """
     ...
 
-def intersect_2d_indexes_cython(
-    local_rows: _npDT_1Dims[_np.int32], local_cols: _npDT_1Dims[_np.int32], global_rows: _npDT_1Dims[_np.int32], global_cols: _npDT_1Dims[_np.int32]
-) -> tuple[_npDT_1Dims[_np.int32], _npDT_1Dims[_np.int32]]:
-    """Find the intersection of two sets of 2D indices."""
+def intersect_2d_indexes_cython(local_rows: _npDT_1Dims[_np.int32],
+                                local_cols: _npDT_1Dims[_np.int32],
+                                global_rows: _npDT_1Dims[_np.int32],
+                                global_cols: _npDT_1Dims[_np.int32],
+                                intersected_rows: _npDT_1Dims[_np.int32],
+                                intersected_cols: _npDT_1Dims[_np.int32]
+                                ) -> tuple[_npDT_1Dims[_np.int32], _npDT_1Dims[_np.int32]]:
+    """
+    Find the intersection of two sets of 2D indices.
+    Args:
+        local_rows (_npDT_1Dims[np.int32]): 
+        local_cols (_npDT_1Dims[np.int32]): 
+        global_rows (_npDT_1Dims[np.int32]): 
+        global_cols (_npDT_1Dims[np.int32]): 
+        intersected_rows (_npDT_1Dims[np.int32]): 
+        intersected_cols (_npDT_1Dims[np.int32]): 
+    Returns:
+        intersected_rows (_npDT_1Dims[np.int32]): 
+        intersected_cols (_npDT_1Dims[np.int32]): 
+    """
     ...
 
 def reset_residuals_cython[T: _npDT](acc: _npDT_2Dims[T],
@@ -36,7 +52,7 @@ def reset_residuals_cython[T: _npDT](acc: _npDT_2Dims[T],
         acc (npDT_2Dims): accuracy 
         rows (npDT_1Dims): 
         cols (npDT_1Dims): 
-    Return:
+    Returns:
         Nothing; the output is stored in "acc".
     """
     ...
@@ -48,7 +64,7 @@ def update_dense_weights_cython[T: _npDT](w: _npDT_2Dims[T],
     Args:
         w (npDT_2Dims): weights
         u (npDT_2Dims): 
-    Return:
+    Returns:
         Nothing; the output is stored in "w".
     """
     ...
@@ -64,7 +80,7 @@ def update_sparsed_weights_cython[T: _npDT](w: _npDT_2Dims[T],
         grads_to_update (_npDT_1Dims[T]): 
         rows_to_update (_npDT_1Dims[_np.int32]): 
         cols_to_update (_npDT_1Dims[_np.int32]): 
-    Return:
+    Returns:
         Nothing; the output is stored in "w".
     """
     ...

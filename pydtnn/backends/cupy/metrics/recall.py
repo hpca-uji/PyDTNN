@@ -50,4 +50,4 @@ class RecallCupy(RecallNumpy, MetricCupy):
 
         for i in range(true_positives.shape[0]):
             recall[i] = (true_positives[i] / real_positives[i]) if real_positives[i] != 0 else 0
-        return float(np.average(recall))
+        return np.average(recall).item()

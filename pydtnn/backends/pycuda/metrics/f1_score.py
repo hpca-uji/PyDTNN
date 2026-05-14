@@ -50,4 +50,4 @@ class F1ScorePycuda(F1Score[TensorArray], MetricPycuda):
 
         self.kernel(self.f1.ary, self.conf_matrix_metric.conf_matrix.ary, self.local_f1.ary, target_classes, grid=self.grid, block=self.block, stream=self.model.stream)
 
-        return float(self.f1.get())
+        return self.f1.get().item()

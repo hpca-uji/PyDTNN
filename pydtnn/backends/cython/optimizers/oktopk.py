@@ -183,4 +183,4 @@ class OkTopkCython(OkTopkNumpy, OptimizerCython):
         intersected_rows = np.zeros(max_size, dtype=np.int32)
         intersected_cols = np.zeros(max_size, dtype=np.int32)
 
-        return intersect_2d_indexes_cython(local_rows, local_cols, global_rows, global_cols)
+        return intersect_2d_indexes_cython(local_rows, local_cols, global_rows, global_cols, intersected_rows, intersected_cols)

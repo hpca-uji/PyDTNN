@@ -36,4 +36,4 @@ class BinaryCrossEntropyPycuda(LossPycuda, BinaryCrossEntropy[TensorArray]):
         assert len(y_targ.shape) == 2
         self.kernel(y_targ, y_pred, self.loss, self.dx.ary, batch_size, self.shape[1], self.eps, grid=self.grid, block=self.block, stream=self.model.stream)
         loss = -gpuarray.sum(self.loss[:batch_size]).get() / batch_size
-        return float(loss), self.dx
+        return loss.item(), self.dx

@@ -75,4 +75,4 @@ class PrecisionNumpy(Precision[np.ndarray], MetricNumpy):
         # div_arrays_set_if_zero(precision,  f_positives, default_value=0)
         np.not_equal(positives, 0, out=are_zeros)
         np.divide(true_positives, positives, out=precision, where=(are_zeros))
-        return float(np.average(precision))
+        return np.average(precision).item()

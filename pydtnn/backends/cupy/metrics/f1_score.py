@@ -53,4 +53,4 @@ class F1ScoreCupy(F1ScoreNumpy, MetricCupy):
         for i in range(true_positives.shape[0]):
             f1[i] = (true_positives[i] / aggregation[i]) if aggregation[i] != 0 else 0
 
-        return float(np.average(f1))
+        return np.average(f1).item()

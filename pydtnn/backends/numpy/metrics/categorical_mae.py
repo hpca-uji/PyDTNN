@@ -57,4 +57,4 @@ class CategoricalMAENumpy(CategoricalMAE[np.ndarray], MetricNumpy):
         # return np.sum(np.absolute(1 - y_pred[np.arange(b), np.argmax(y_targ, axis=1)]))
         np.subtract(y_pred, y_targ, dtype=self.model.dtype, out=error)
         np.absolute(error, out=error, dtype=self.model.dtype)
-        return float(np.mean(error, dtype=self.model.dtype))
+        return np.mean(error, dtype=self.model.dtype).item()

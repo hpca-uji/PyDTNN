@@ -47,4 +47,4 @@ class RegressionMAEPycuda(RegressionMAE[TensorArray], MetricPycuda):
         n = np.int32(n)
         num_classes = np.int32(num_classes)
         self.kernel(y_targ.ary, y_pred.ary, self.res.ary, self.local_res.ary, n, num_classes, grid=self.grid, block=self.block, stream=self.model.stream)
-        return float(self.res.get())
+        return self.res.get().item()

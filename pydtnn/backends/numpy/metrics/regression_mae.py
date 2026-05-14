@@ -56,4 +56,4 @@ class RegressionMAENumpy(RegressionMAE[np.ndarray], MetricNumpy):
         # return np.sum(np.absolute(y_targ - y_pred))
         np.subtract(y_targ, y_pred, dtype=self.model.dtype, out=diff)
         np.absolute(diff, out=diff, dtype=self.model.dtype, casting="unsafe")
-        return float(np.mean(diff, dtype=self.model.dtype))
+        return np.mean(diff, dtype=self.model.dtype).item()

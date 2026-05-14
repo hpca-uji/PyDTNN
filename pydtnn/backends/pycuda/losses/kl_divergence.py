@@ -51,4 +51,4 @@ class KLDivergencePycuda(KLDivergence[TensorArray], LossPycuda):
         )
         # loss = gpuarray.sum(self.loss).get()
         loss = gpuarray.sum(self.dx.ary).get()
-        return float(loss), self.dx
+        return loss.item(), self.dx

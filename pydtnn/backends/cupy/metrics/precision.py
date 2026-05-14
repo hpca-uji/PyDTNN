@@ -51,4 +51,4 @@ class PrecisionCupy(PrecisionNumpy, MetricCupy):
         # div_arrays_set_if_zero(precision,  f_positives, default_value=0)
         for i in range(true_positives.shape[0]):
             precision[i] = (true_positives[i] / positives[i]) if positives[i] != 0 else 0
-        return float(np.average(precision))
+        return np.average(precision).item()

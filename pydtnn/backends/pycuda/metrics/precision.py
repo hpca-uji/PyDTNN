@@ -50,4 +50,4 @@ class PrecisionPycuda(Precision[TensorArray], MetricPycuda):
 
         self.kernel(self.precision.ary, self.conf_matrix_metric.conf_matrix.ary, self.local_precision.ary, target_classes, grid=self.grid, block=self.block, stream=self.model.stream)
 
-        return float(self.precision.get())
+        return self.precision.get().item()

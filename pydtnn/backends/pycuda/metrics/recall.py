@@ -49,4 +49,4 @@ class RecallPycuda(Recall[TensorArray], MetricPycuda):
         target_classes = np.int32(target_classes)
         self.kernel(self.recall.ary, self.conf_matrix_metric.conf_matrix.ary, self.local_recall.ary, target_classes, grid=self.grid, block=self.block, stream=self.model.stream)
 
-        return float(self.recall.get())
+        return self.recall.get().item()

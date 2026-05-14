@@ -35,4 +35,4 @@ class CategoricalCrossEntropyPycuda(LossPycuda, CategoricalCrossEntropy[TensorAr
         """
         self.kernel(y_targ.ary, y_pred.ary, self.loss, self.dx.ary, np.int32(batch_size), np.int32(self.shape[1]), np.float32(self.eps), grid=self.grid, block=self.block, stream=self.model.stream)
         loss = -gpuarray.sum(self.loss[:batch_size]).get() / batch_size
-        return float(loss), self.dx
+        return loss.item(), self.dx

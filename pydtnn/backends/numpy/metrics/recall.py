@@ -74,4 +74,4 @@ class RecallNumpy(Recall[np.ndarray], MetricNumpy):
 
         np.not_equal(real_positives, 0, out=are_zeros)
         np.divide(true_positives, real_positives, out=recall, where=(are_zeros))
-        return float(np.average(recall))
+        return np.average(recall).item()

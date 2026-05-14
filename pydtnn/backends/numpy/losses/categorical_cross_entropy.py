@@ -78,4 +78,4 @@ class CategoricalCrossEntropyNumpy(CategoricalCrossEntropy[np.ndarray], LossNump
         dx[:] = y_targ
         np.multiply(-1 * batch_size, _y_pred, out=_y_pred)
         dx[b_range, _argmax] /= _y_pred[b_range, _argmax]
-        return float(loss), np.asarray(dx, dtype=self.model.dtype, order="C")
+        return loss, np.asarray(dx, dtype=self.model.dtype, order="C")

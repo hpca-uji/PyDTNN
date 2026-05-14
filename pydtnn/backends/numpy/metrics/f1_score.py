@@ -83,4 +83,4 @@ class F1ScoreNumpy(F1Score[np.ndarray], MetricNumpy):
         np.not_equal(aggregation, 0, out=are_zeros)
         np.divide(true_positives, aggregation, out=f1, where=(are_zeros))
 
-        return float(np.average(f1))
+        return np.average(f1).item()

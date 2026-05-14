@@ -57,4 +57,4 @@ class CategoricalMSENumpy(CategoricalMSE[np.ndarray], MetricNumpy):
         # return np.square(1 - y_pred[np.arange(b), np.argmax(y_targ, axis=1)]).mean()
         np.subtract(y_pred, y_targ, dtype=self.model.dtype, out=error)
         np.power(error, 2, out=error, dtype=self.model.dtype, casting="unsafe")
-        return float(np.mean(error, dtype=self.model.dtype))
+        return np.mean(error, dtype=self.model.dtype).item()
