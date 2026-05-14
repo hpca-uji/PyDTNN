@@ -3,6 +3,7 @@
 import logging
 import resource
 from collections import defaultdict
+from enum import IntEnum, auto
 
 import numpy as np
 
@@ -14,7 +15,11 @@ logger = logging.getLogger(__name__)
 class PerformanceCounter:
     """Tracks and reports performance metrics including time, throughput, and memory usage."""
 
-    TRAINING, TESTING = range(2)
+    class Where(IntEnum):
+        #TODO: Change this Enum name.
+        #TRAINING, TESTING = range(2)
+        TRAINING = auto() # Originally: 0
+        TESTING = auto() # Originally: 1
 
     def __init__(self):
         """Initializes the performance counter with empty records."""
@@ -24,73 +29,73 @@ class PerformanceCounter:
 
     #  Public methods and properties
 
-    def add_training_time_and_batch_size(self, epoch, elapsed_time, batch_size):
+    def add_training_time_and_batch_size(self, epoch: int, elapsed_time: float, batch_size: int):
         """Records training metrics for a specific epoch."""
-        self._add_time_and_batch_size(self.TRAINING, epoch, elapsed_time, batch_size)
+        self._add_time_and_batch_size(PerformanceCounter.Where.TRAINING, epoch, elapsed_time, batch_size)
 
-    def add_testing_time_and_batch_size(self, test_round, elapsed_time, batch_size):
+    def add_testing_time_and_batch_size(self, test_round: int, elapsed_time: float, batch_size: int):
         """Records testing metrics for a specific test round."""
-        self._add_time_and_batch_size(self.TESTING, test_round, elapsed_time, batch_size)
+        self._add_time_and_batch_size(PerformanceCounter.Where.TESTING, test_round, elapsed_time, batch_size)
 
     @property
     def training_throughput(self):
         """Returns the overall training throughput in samples per second."""
-        return self._throughput(self.TRAINING)
+        return self._throughput(PerformanceCounter.Where.TRAINING)
 
     @property
     def training_throughput_only_last_half_of_each_epoch(self):
         """Returns the training throughput estimated from the last half of each epoch."""
-        return self._throughput(self.TRAINING, last_half=True)
+        return self._throughput(PerformanceCounter.Where.TRAINING, last_half=True)
 
     @property
     def num_epochs(self):
         """Returns the total number of training epochs recorded."""
-        return len(self._batch_sizes_record[self.TRAINING].keys())
+        return len(self._batch_sizes_record[PerformanceCounter.Where.TRAINING].keys())
 
     @property
     def num_evaluations(self):
         """Returns the total number of testing evaluations recorded."""
-        return len(self._batch_sizes_record[self.TESTING].keys())
+        return len(self._batch_sizes_record[PerformanceCounter.Where.TESTING].keys())
 
     @property
     def training_time(self):
         """Returns the total training time in seconds."""
-        return self._time(self.TRAINING)
+        return self._time(PerformanceCounter.Where.TRAINING)
 
     @property
     def training_time_estimated_from_last_half_of_each_epoch(self):
         """Returns the estimated total training time based on the last half of each epoch."""
-        return self._time(self.TRAINING, last_half=True)
+        return self._time(PerformanceCounter.Where.TRAINING, last_half=True)
 
     @property
     def training_maximum_memory(self):
         """Returns the maximum memory usage recorded during training in KiB."""
-        return self._maximum_memory(self.TRAINING)
+        return self._maximum_memory(PerformanceCounter.Where.TRAINING)
 
     @property
     def training_mean_memory(self):
         """Returns the mean memory usage recorded during training in KiB."""
-        return self._mean_memory(self.TRAINING)
+        return self._mean_memory(PerformanceCounter.Where.TRAINING)
 
     @property
     def testing_throughput(self):
         """Returns the overall testing throughput in samples per second."""
-        return self._throughput(self.TESTING)
+        return self._throughput(PerformanceCounter.Where.TESTING)
 
     @property
     def testing_time(self):
         """Returns the total testing time in seconds."""
-        return self._time(self.TESTING)
+        return self._time(PerformanceCounter.Where.TESTING)
 
     @property
     def testing_maximum_memory(self):
         """Returns the maximum memory usage recorded during testing in KiB."""
-        return self._maximum_memory(self.TESTING)
+        return self._maximum_memory(PerformanceCounter.Where.TESTING)
 
     @property
     def testing_mean_memory(self):
         """Returns the mean memory usage recorded during testing in KiB."""
-        return self._mean_memory(self.TESTING)
+        return self._mean_memory(PerformanceCounter.Where.TESTING)
 
     def print_report(self):
         """Logs a formatted performance report to the logger."""
@@ -122,19 +127,19 @@ class PerformanceCounter:
 
     #  Private methods
 
-    def _add_time_and_batch_size(self, where, epoch, elapsed_time, batch_size):
+    def _add_time_and_batch_size(self, where: Where, epoch: int, elapsed_time: float, batch_size: int):
         """Internal helper to record time, batch size, and memory usage."""
         self._times_record[where][epoch].append(elapsed_time)
         self._batch_sizes_record[where][epoch].append(batch_size)
         mem = resource.getrusage(resource.RUSAGE_SELF)[2] + resource.getrusage(resource.RUSAGE_CHILDREN)[2]
         self._memory_record[where][epoch].append(mem)  # KiB in GNU/Linux
 
-    def _time(self, where, last_half=False):
+    def _time(self, where: Where, last_half=False):
         """Calculates total time for a given phase."""
         return self._sum(self._times_record[where].values(), last_half)
 
     @staticmethod
-    def _sum(arrays, last_half):
+    def _sum(arrays, last_half: bool):
         """Sums values across records, optionally estimating from the last half of data."""
         # When last_half is True, the total size is estimated from the last half steps of each epoch size
         if not last_half:
@@ -147,17 +152,17 @@ class PerformanceCounter:
                     records_per_epoch.append(np.sum(array_last_half) * len(array) / len(array_last_half))
         return np.sum(records_per_epoch)
 
-    def _size(self, where, last_half=False):
+    def _size(self, where: Where, last_half=False):
         """Calculates total batch size for a given phase."""
         return self._sum(self._batch_sizes_record[where].values(), last_half)
 
-    def _throughput(self, where, last_half=False):
+    def _throughput(self, where: Where, last_half=False):
         """Calculates throughput for a given phase."""
         return self._size(where, last_half) / self._time(where, last_half)
 
-    def _maximum_memory(self, where):
+    def _maximum_memory(self, where: Where):
         """Calculates maximum memory usage for a given phase."""
-        if where == self.TRAINING:
+        if where is PerformanceCounter.Where.TRAINING:
             maximum_memory_per_epoch = [np.max(m_array) for m_array in self._memory_record[where].values()]
             return np.max(maximum_memory_per_epoch)
         else:
@@ -165,9 +170,9 @@ class PerformanceCounter:
             maximum_memory_first_evaluation = np.max(self._memory_record[where][0])
             return maximum_memory_first_evaluation
 
-    def _mean_memory(self, where):
+    def _mean_memory(self, where: Where):
         """Calculates mean memory usage for a given phase."""
-        if where == self.TRAINING:
+        if where is PerformanceCounter.Where.TRAINING:
             mean_memory_per_epoch = [np.mean(m_array) for m_array in self._memory_record[where].values()]
             return np.mean(mean_memory_per_epoch)
         else:

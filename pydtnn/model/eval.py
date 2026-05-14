@@ -177,9 +177,9 @@ class Eval[T: Array](Sync[T]):
 
         if self.comm_rank == 0:
             # noinspection PyUnboundLocalVariable
-            pbar.set_postfix_str(s=f"{prev_string}{string}", refresh=True)  # type: ignore (Here is a 'tqdm', only is None in self.comm_rank != 0)
+            pbar.set_postfix_str(s=f"{prev_string}{string}", refresh=True)  # type: ignore (pbar is a 'tqdm', it only is None in self.comm_rank != 0)
             if part != Dataset.Part.VAL:
-                pbar.update(batch_size)  # type: ignore (Here is a 'tqdm', only is None in self.comm_rank != 0)
+                pbar.update(batch_size)  # type: ignore (Here there is a 'tqdm' object, pbar only is None in self.comm_rank != 0)
 
         return total_loss, batch_count, string
 
