@@ -3,9 +3,10 @@
 import logging
 import resource
 from collections import defaultdict
-from enum import IntEnum, auto
 
 import numpy as np
+
+from pydtnn.datasets.dataset import Dataset
 
 __all__ = ("PerformanceCounter",)
 
@@ -15,11 +16,7 @@ logger = logging.getLogger(__name__)
 class PerformanceCounter:
     """Tracks and reports performance metrics including time, throughput, and memory usage."""
 
-    class Where(IntEnum):
-        #TODO: Change this Enum name.
-        #TRAINING, TESTING = range(2)
-        TRAINING = auto() # Originally: 0
-        TESTING = auto() # Originally: 1
+    #Originally: TRAINING, TESTING = range(2); Changed to Dataset.Part
 
     def __init__(self):
         """Initializes the performance counter with empty records."""
@@ -31,73 +28,73 @@ class PerformanceCounter:
 
     def add_training_time_and_batch_size(self, epoch: int, elapsed_time: float, batch_size: int):
         """Records training metrics for a specific epoch."""
-        self._add_time_and_batch_size(PerformanceCounter.Where.TRAINING, epoch, elapsed_time, batch_size)
+        self._add_time_and_batch_size(Dataset.Part.TRAIN, epoch, elapsed_time, batch_size)
 
     def add_testing_time_and_batch_size(self, test_round: int, elapsed_time: float, batch_size: int):
         """Records testing metrics for a specific test round."""
-        self._add_time_and_batch_size(PerformanceCounter.Where.TESTING, test_round, elapsed_time, batch_size)
+        self._add_time_and_batch_size(Dataset.Part.TEST, test_round, elapsed_time, batch_size)
 
     @property
-    def training_throughput(self):
+    def training_throughput(self) -> float:
         """Returns the overall training throughput in samples per second."""
-        return self._throughput(PerformanceCounter.Where.TRAINING)
+        return self._throughput(Dataset.Part.TRAIN)
 
     @property
-    def training_throughput_only_last_half_of_each_epoch(self):
+    def training_throughput_only_last_half_of_each_epoch(self) -> float:
         """Returns the training throughput estimated from the last half of each epoch."""
-        return self._throughput(PerformanceCounter.Where.TRAINING, last_half=True)
+        return self._throughput(Dataset.Part.TRAIN, last_half=True)
 
     @property
-    def num_epochs(self):
+    def num_epochs(self) -> int:
         """Returns the total number of training epochs recorded."""
-        return len(self._batch_sizes_record[PerformanceCounter.Where.TRAINING].keys())
+        return len(self._batch_sizes_record[Dataset.Part.TRAIN].keys())
 
     @property
-    def num_evaluations(self):
+    def num_evaluations(self) -> int:
         """Returns the total number of testing evaluations recorded."""
-        return len(self._batch_sizes_record[PerformanceCounter.Where.TESTING].keys())
+        return len(self._batch_sizes_record[Dataset.Part.TEST].keys())
 
     @property
-    def training_time(self):
+    def training_time(self) -> float:
         """Returns the total training time in seconds."""
-        return self._time(PerformanceCounter.Where.TRAINING)
+        return self._time(Dataset.Part.TRAIN)
 
     @property
-    def training_time_estimated_from_last_half_of_each_epoch(self):
+    def training_time_estimated_from_last_half_of_each_epoch(self) -> float:
         """Returns the estimated total training time based on the last half of each epoch."""
-        return self._time(PerformanceCounter.Where.TRAINING, last_half=True)
+        return self._time(Dataset.Part.TRAIN, last_half=True)
 
     @property
-    def training_maximum_memory(self):
+    def training_maximum_memory(self)  -> int:
         """Returns the maximum memory usage recorded during training in KiB."""
-        return self._maximum_memory(PerformanceCounter.Where.TRAINING)
+        return self._maximum_memory(Dataset.Part.TRAIN)
 
     @property
-    def training_mean_memory(self):
+    def training_mean_memory(self) -> float:
         """Returns the mean memory usage recorded during training in KiB."""
-        return self._mean_memory(PerformanceCounter.Where.TRAINING)
+        return self._mean_memory(Dataset.Part.TRAIN)
 
     @property
-    def testing_throughput(self):
+    def testing_throughput(self) -> float:
         """Returns the overall testing throughput in samples per second."""
-        return self._throughput(PerformanceCounter.Where.TESTING)
+        return self._throughput(Dataset.Part.TEST)
 
     @property
     def testing_time(self):
         """Returns the total testing time in seconds."""
-        return self._time(PerformanceCounter.Where.TESTING)
+        return self._time(Dataset.Part.TEST)
 
     @property
-    def testing_maximum_memory(self):
+    def testing_maximum_memory(self) -> int:
         """Returns the maximum memory usage recorded during testing in KiB."""
-        return self._maximum_memory(PerformanceCounter.Where.TESTING)
+        return self._maximum_memory(Dataset.Part.TEST)
 
     @property
-    def testing_mean_memory(self):
+    def testing_mean_memory(self) -> float:
         """Returns the mean memory usage recorded during testing in KiB."""
-        return self._mean_memory(PerformanceCounter.Where.TESTING)
+        return self._mean_memory(Dataset.Part.TEST)
 
-    def print_report(self):
+    def print_report(self) -> None:
         """Logs a formatted performance report to the logger."""
         _report = [""]
 
@@ -126,20 +123,21 @@ class PerformanceCounter:
         logger.info(report)
 
     #  Private methods
-
-    def _add_time_and_batch_size(self, where: Where, epoch: int, elapsed_time: float, batch_size: int):
+    def _add_time_and_batch_size(self, where: Dataset.Part, epoch: int, elapsed_time: float, batch_size: int) -> None:
         """Internal helper to record time, batch size, and memory usage."""
         self._times_record[where][epoch].append(elapsed_time)
         self._batch_sizes_record[where][epoch].append(batch_size)
+        # TODO: Check why [2] and move it to a constant or add a comment explain why [2]
         mem = resource.getrusage(resource.RUSAGE_SELF)[2] + resource.getrusage(resource.RUSAGE_CHILDREN)[2]
         self._memory_record[where][epoch].append(mem)  # KiB in GNU/Linux
 
-    def _time(self, where: Where, last_half=False):
+    def _time(self, where: Dataset.Part, last_half=False) -> float:
         """Calculates total time for a given phase."""
         return self._sum(self._times_record[where].values(), last_half)
 
     @staticmethod
-    def _sum(arrays, last_half: bool):
+    def _sum(arrays, last_half: bool) -> int | float:
+        # TODO: Add right typing to arrays and check the output type
         """Sums values across records, optionally estimating from the last half of data."""
         # When last_half is True, the total size is estimated from the last half steps of each epoch size
         if not last_half:
@@ -152,30 +150,40 @@ class PerformanceCounter:
                     records_per_epoch.append(np.sum(array_last_half) * len(array) / len(array_last_half))
         return np.sum(records_per_epoch)
 
-    def _size(self, where: Where, last_half=False):
+    def _size(self, where: Dataset.Part, last_half=False):
+        # TODO: Add right output's typing
         """Calculates total batch size for a given phase."""
         return self._sum(self._batch_sizes_record[where].values(), last_half)
 
-    def _throughput(self, where: Where, last_half=False):
+    def _throughput(self, where: Dataset.Part, last_half=False):
+        # TODO: Add right output's typing
         """Calculates throughput for a given phase."""
         return self._size(where, last_half) / self._time(where, last_half)
 
-    def _maximum_memory(self, where: Where):
+    def _maximum_memory(self, where: Dataset.Part) -> int:
         """Calculates maximum memory usage for a given phase."""
-        if where is PerformanceCounter.Where.TRAINING:
-            maximum_memory_per_epoch = [np.max(m_array) for m_array in self._memory_record[where].values()]
-            return np.max(maximum_memory_per_epoch)
-        else:
-            # Consider only the first evaluation
-            maximum_memory_first_evaluation = np.max(self._memory_record[where][0])
-            return maximum_memory_first_evaluation
+        match where:
+            case Dataset.Part.TRAIN:
+                maximum_memory_per_epoch = [np.max(m_array) for m_array in self._memory_record[where].values()]
+                return np.max(maximum_memory_per_epoch)
+            case Dataset.Part.TEST:
+                # Consider only the first evaluation
+                maximum_memory_first_evaluation = np.max(self._memory_record[where][0])
+                return maximum_memory_first_evaluation
+            case _:
+                NotImplementedError(f"_maximum_memory not implemented for \"{where}\" case.")
+                return 0
 
-    def _mean_memory(self, where: Where):
+    def _mean_memory(self, where: Dataset.Part) -> float:
         """Calculates mean memory usage for a given phase."""
-        if where is PerformanceCounter.Where.TRAINING:
-            mean_memory_per_epoch = [np.mean(m_array) for m_array in self._memory_record[where].values()]
-            return np.mean(mean_memory_per_epoch)
-        else:
-            # Consider only the first evaluation
-            mean_memory_first_evaluation = np.mean(self._memory_record[where][0])
-            return mean_memory_first_evaluation
+        match where:
+            case Dataset.Part.TRAIN:
+                mean_memory_per_epoch = [np.mean(m_array) for m_array in self._memory_record[where].values()]
+                return np.mean(mean_memory_per_epoch).item()
+            case Dataset.Part.TEST:
+                # Consider only the first evaluation
+                mean_memory_first_evaluation = np.mean(self._memory_record[where][0])
+                return mean_memory_first_evaluation.item()
+            case _:
+                NotImplementedError(f"_maximum_memory not implemented for \"{where}\" case.")
+                return 0

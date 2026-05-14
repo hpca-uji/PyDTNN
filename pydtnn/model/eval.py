@@ -144,9 +144,15 @@ class Eval[T: Array](Sync[T]):
 
         return self.total_metrics
 
-    def _update_status(
-        self, pbar: tqdm | None, batch_loss: np.ndarray, total_loss: np.ndarray, batch_count: int, batch_size: int, output_prefix: str, delta: float = -1, prev_string: str = ""
-    ) -> tuple[np.ndarray, int, str]:
+    def _update_status(self, pbar: tqdm | None,
+                       batch_loss: np.ndarray,
+                       total_loss: np.ndarray,
+                       batch_count: int,
+                       batch_size: int,
+                       output_prefix: str,
+                       current_round: int,
+                       delta: float = -1,
+                       prev_string: str = "") -> tuple[np.ndarray, int, str]:
         """
         Updates the progress bar and internal performance counters.
 
@@ -157,6 +163,7 @@ class Eval[T: Array](Sync[T]):
             batch_count: Total samples processed.
             batch_size: Size of the current batch.
             output_prefix: Prefix for logging.
+            current_round: The current training/evaluation round.
             delta: Time taken for the batch.
             prev_string: Previous status string.
 
@@ -169,11 +176,7 @@ class Eval[T: Array](Sync[T]):
         # noinspection PyUnboundLocalVariable
         total_loss, batch_count, string = self._update_running_average(batch_loss, total_loss, batch_count, batch_size, prefix=output_prefix)
 
-        match part:
-            case Dataset.Part.TRAIN:
-                self.perf_counter.add_training_time_and_batch_size(self._train_round, delta, batch_size)
-            case Dataset.Part.TEST:
-                self.perf_counter.add_testing_time_and_batch_size(self._evaluate_round, delta, batch_size)
+        self.perf_counter._add_time_and_batch_size(part, current_round, delta, batch_size)
 
         if self.comm_rank == 0:
             # noinspection PyUnboundLocalVariable
@@ -243,9 +246,15 @@ class Eval[T: Array](Sync[T]):
             if batch_size <= 0:
                 continue
 
-            total_loss, batch_count, string = self._update_status(
-                pbar=pbar, batch_loss=test_batch_loss, total_loss=total_loss, batch_count=batch_count, batch_size=batch_size, output_prefix=out_prefix, delta=delta, prev_string=prev_string
-            )
+            total_loss, batch_count, string = self._update_status(pbar=pbar,
+                                                                  batch_loss=test_batch_loss,
+                                                                  total_loss=total_loss,
+                                                                  batch_count=batch_count,
+                                                                  batch_size=batch_size,
+                                                                  output_prefix=out_prefix,
+                                                                  current_round=self._evaluate_round,
+                                                                  delta=delta,
+                                                                  prev_string=prev_string)
 
         # Increment self._evaluate_round
         self._evaluate_round += 1
