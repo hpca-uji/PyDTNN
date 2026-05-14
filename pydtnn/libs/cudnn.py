@@ -2034,8 +2034,7 @@ _libcudnn.cudnnSoftmaxBackward.argtypes = [
     ctypes.c_void_p,
     ctypes.c_void_p,
     ctypes.c_void_p,
-    ctypes.c_void_p,
-    ctypes.c_void_p,
+    ctypes.c_void_p
 ]
 
 
