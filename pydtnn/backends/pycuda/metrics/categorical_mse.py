@@ -48,4 +48,4 @@ class CategoricalMSEPycuda(CategoricalMSE[TensorArray], MetricPycuda):
         num_classes = np.int32(y_pred.shape[1])
 
         self.kernel(y_targ.ary, y_pred.ary, self.res.ary, self.local_res.ary, n, num_classes, grid=self.grid, block=self.block, stream=self.model.stream)
-        return float(self.res.get())
+        return self.res.get().item()
