@@ -62,66 +62,6 @@ class Train[T: Array](Eval[T]):
         for scheduler in self.schedulers:
             scheduler.model = self
 
-    def _model_reduce_sync(self, gradient=True):
-        """Performs a synchronous all-reduce operation on model weights or gradients."""
-        for layer in self.layers:
-            self.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.ALLREDUCE_DW)
-            layer.reduce_weights_sync(gradient=gradient)
-            self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
-
-    def _model_reduce_async(self, gradient=True):
-        """Initiates an asynchronous all-reduce operation on model weights or gradients."""
-        for layer in self.layers:
-            self.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.ALLREDUCE_DW)
-            layer.reduce_weights_async(gradient=gradient)
-            self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
-
-    def _model_reduce_wait(self, gradient=True):
-        """Waits for completion of pending asynchronous all-reduce operations."""
-        for layer in self.layers:
-            self.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.WAIT_DW)
-            layer.wait_allreduce_async(gradient=gradient)
-            self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
-
-    # TODO: Modify the method's name.
-    def _weight_update(self, gradient=True, blocking=True, pipeline=False):
-        """Updates model weights or gradients based on the configured synchronization strategy."""
-        if blocking:
-            self._model_reduce_sync(gradient)
-        elif pipeline:
-            self._model_reduce_wait(gradient)
-            self._model_reduce_async(gradient)
-        else:
-            self._model_reduce_async(gradient)
-            self._model_reduce_wait(gradient)
-
-    def _compute_rank_weight(self, mask: list[int], part: Dataset.Part) -> float:
-        """Calculates the weight contribution of the current rank based on dataset participation."""
-        match self.model_sync_participation:
-            case Train.SyncParticipation.ALL:
-                comm_nsamples = self.comm_nsamples[part]
-            case Train.SyncParticipation.AVAIL2ALL:
-                if mask[self.comm_rank]:
-                    comm_nsamples = [nsamples for nsamples, mask in zip(self.comm_nsamples[part], mask) if mask]
-                else:
-                    return 0.0
-            case _:
-                raise ValueError(f"Model synchronization participation option '{self.model_sync_participation}' not recognized. Only recognized: {list(Eval.SyncParticipation)}")
-
-        min_nsamples, max_nsamples, total_nsamples = min(comm_nsamples), max(comm_nsamples), sum(comm_nsamples)
-        comm_size = len(comm_nsamples)
-
-        match self.model_sync_algo:
-            case Train.SyncAlgorithm.AVG:
-                return 1.0 / comm_size
-            case Train.SyncAlgorithm.WAVG:
-                return self.dataset._nsamples[part] / total_nsamples
-            case Train.SyncAlgorithm.INVAVG:
-                inverse_nsamples = min_nsamples + (max_nsamples - self.dataset._nsamples[part])
-                return inverse_nsamples / total_nsamples
-            case _:
-                raise ValueError(f"Model synchronization algorithm option '{self.model_sync_algo}' not recognized. Only recognized: {list(Eval.SyncAlgorithm)}")
-
     def _train_batch(self, x_batch: np.ndarray, y_batch: np.ndarray, sync_model=True) -> np.ndarray:
         """Executes a single training batch including forward pass, backward pass, and weight updates."""
         self.mode = Eval.Mode.TRAIN

@@ -84,7 +84,7 @@ class Init[T: Array](Layers[T]):
         self.perf_counter = PerformanceCounter()
 
         # Layers' attributes
-        self.layers: list[Layerable] = []
+        self.layers: list[Layerable[T]] = []
         self.layer_id_generator: abc.Iterator[int] = iter(itertools.count())
 
         # Set current mode to unspecified
@@ -131,6 +131,13 @@ class Init[T: Array](Layers[T]):
 
         # Metrics list
         self.metrics_list: list[str] = [m for m in self.metrics.replace(" ", "").split(",")]
+
+        # Synchronization parameters
+        # NOTE: This parameter come from Parser.
+        self.model_sync_algo = self.SyncAlgorithm(self.model_sync_algo)
+
+        # NOTE: This parameter come from Parser.
+        self.model_sync_participation = self.SyncParticipation(self.kwargs["model_sync_participation"])
 
         # Read the model (NOTE: must be the last action, as it calls self._model_init() if there is a model)
         if model_name := self.kwargs.get("model_name"):

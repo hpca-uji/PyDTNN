@@ -53,6 +53,19 @@ class Base[T: Array]:
         EVALUATE = enum.auto()
         TRAIN = enum.auto()
 
+    class SyncParticipation(enum.StrEnum):
+        """Defines strategies for node participation in model synchronization."""
+
+        ALL = enum.auto()
+        AVAIL2ALL = enum.auto()
+
+    class SyncAlgorithm(enum.StrEnum):
+        """Defines algorithms for weight aggregation during synchronization."""
+
+        AVG = enum.auto()
+        WAVG = enum.auto()
+        INVAVG = enum.auto()
+
     # Explicit declaration of those model attributes that are referenced by other parts of PyDTNN
     #   NOTE: The following parameters come from "Parser"
     backend: str
@@ -171,3 +184,4 @@ class Base[T: Array]:
     cuda_grid: tuple[int, int, int]
     cuda_block: tuple[int, int, int]
     optimizer: Optimizer
+    comm_nsamples: list[tuple[int]]
