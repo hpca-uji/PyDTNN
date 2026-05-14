@@ -16,7 +16,6 @@ __all__ = ("Utils",)
 
 logger = logging.getLogger(__name__)
 
-BAR_WIDTH = 150
 DEFAULT_BACH_SIZE = 64
 LIMIT_THREADS_AND_BLOCKS = 1024
 

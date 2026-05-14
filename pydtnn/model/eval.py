@@ -17,7 +17,6 @@ from pydtnn import MPI, gpuarray
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.datasets.dataset import Dataset
 from pydtnn.model.sync import Sync
-from pydtnn.model.utils import BAR_WIDTH
 from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_MDL_EVENT_enum
 from pydtnn.utils import TqdmLogger
 from pydtnn.utils.constants import Array
@@ -252,7 +251,7 @@ class Eval[T: Array](Sync[T]):
         self._evaluate_round += 1
         return (total_loss, model_sync_count, sync_epoch, string)
 
-    def evaluate(self, bar_width=BAR_WIDTH):
+    def evaluate(self):
         """
         Runs the full evaluation process on the test dataset.
 
@@ -273,7 +272,7 @@ class Eval[T: Array](Sync[T]):
         test_total_loss, test_batch_count = np.zeros(len(self.loss_and_metrics), np.float32), 0
 
         if self.comm_rank == 0:
-            pbar = tqdm(file=TqdmLogger(), total=self.dataset.test_nsamples, ncols=bar_width, ascii=" ▁▂▃▄▅▆▇█", smoothing=0.3, desc="Testing", unit=" samples")
+            pbar = tqdm(file=TqdmLogger(), total=self.dataset.test_nsamples, ascii=" ▁▂▃▄▅▆▇█", smoothing=0.3, desc="Testing", unit=" samples")
         else:
             pbar = None
 

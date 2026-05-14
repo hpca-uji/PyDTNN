@@ -17,7 +17,6 @@ from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.datasets.dataset import Dataset
 from pydtnn.layers.input import Input
 from pydtnn.model.eval import Eval
-from pydtnn.model.utils import BAR_WIDTH
 from pydtnn.schedulers.scheduler import Scheduler
 from pydtnn.schedulers.scheduler import select as select_scheduler
 from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_MDL_EVENT_enum
@@ -254,7 +253,7 @@ class Train[T: Array](Eval[T]):
         self._training_round += 1
         return (total_loss, model_sync_count, sync_epoch, string)
 
-    def train(self, bar_width=BAR_WIDTH) -> dict[str, list[np.ndarray]]:
+    def train(self) -> dict[str, list[np.ndarray]]:
         """Runs the full training process over multiple epochs."""
         self._ensure_model_runnable()
 
@@ -286,7 +285,7 @@ class Train[T: Array](Eval[T]):
                 string = ""
                 fmt = "%%%dd" % (len(str(self.num_epochs)))
                 epoch_string = "Epoch %s/%s" % (fmt, fmt)
-                pbar = tqdm(file=TqdmLogger(), total=self.dataset.train_nsamples, ncols=bar_width, ascii=" ▁▂▃▄▅▆▇█", smoothing=0.3, desc=epoch_string % (epoch + 1, self.num_epochs), unit=" samples")
+                pbar = tqdm(file=TqdmLogger(), total=self.dataset.train_nsamples, ascii=" ▁▂▃▄▅▆▇█", smoothing=0.3, desc=epoch_string % (epoch + 1, self.num_epochs), unit=" samples")
             else:
                 pbar = None
 
