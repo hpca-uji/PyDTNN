@@ -8,7 +8,8 @@ from typing import TYPE_CHECKING
 
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.backends.cython.optimizers.optimizer import OptimizerCython
-from pydtnn.backends.cython.utils.oktopk_utils_cython import compute_dense_acc_cython, intersect_2d_indexes_cython, reset_residuals_cython, update_sparsed_weights_cython, update_sparsed_weights_mv_cython
+from pydtnn.backends.cython.utils.oktopk_utils_cython import (compute_dense_acc_cython, intersect_2d_indexes_cython, reset_residuals_cython,
+                                                              update_sparsed_weights_cython, update_sparsed_weights_mv_cython)
 from pydtnn.backends.numpy.optimizers.oktopk import OkTopkNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.utils.sparse.sparse import SparseMatrixCOO
@@ -67,7 +68,7 @@ class OkTopkCython(OkTopkNumpy, OptimizerCython):
         acc = np.empty_like(dw)  # TODO: move to model init.
         compute_dense_acc_cython(residuals, dw, acc, learning_rate)
 
-        return acc 
+        return acc
 
     def _reset_residuals(self, acc: np.ndarray, indexes: tuple[np.ndarray, np.ndarray]) -> np.ndarray:
         """

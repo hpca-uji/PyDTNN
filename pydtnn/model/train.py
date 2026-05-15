@@ -185,15 +185,17 @@ class Train[T: Array](Eval[T]):
                     pbar.set_postfix_str(s=f"{string}, waiting…", refresh=True)  # type: ignore (Here is a 'tqdm', only is None in self.comm_rank != 0)
                 continue
 
-            total_loss, batch_count, string = self._update_status(pbar=pbar,
-                                                                  batch_loss=train_batch_loss,
-                                                                  total_loss=total_loss,
-                                                                  batch_count=batch_count,
-                                                                  batch_size=batch_size,
-                                                                  output_prefix=out_prefix,
-                                                                  current_round=self._training_round,
-                                                                  delta=delta,
-                                                                  prev_string=prev_string)
+            total_loss, batch_count, string = self._update_status(
+                pbar=pbar,
+                batch_loss=train_batch_loss,
+                total_loss=total_loss,
+                batch_count=batch_count,
+                batch_size=batch_size,
+                output_prefix=out_prefix,
+                current_round=self._training_round,
+                delta=delta,
+                prev_string=prev_string,
+            )
 
         # Increment self._train_round
         self._training_round += 1

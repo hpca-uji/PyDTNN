@@ -167,7 +167,7 @@ class PerformanceCounter:
                 maximum_memory_first_evaluation = np.max(self._memory_record[where][0])
                 return maximum_memory_first_evaluation
             case _:
-                NotImplementedError(f"_maximum_memory not implemented for \"{where}\" case.")
+                NotImplementedError(f'_maximum_memory not implemented for "{where}" case.')
                 return -1
 
     def _mean_memory(self, where: Dataset.Part) -> float:
@@ -181,5 +181,5 @@ class PerformanceCounter:
                 mean_memory_first_evaluation = np.mean(self._memory_record[where][0])
                 return mean_memory_first_evaluation.item()
             case _:
-                NotImplementedError(f"_maximum_memory not implemented for \"{where}\" case.")
+                NotImplementedError(f'_maximum_memory not implemented for "{where}" case.')
                 return -1.0

@@ -144,15 +144,9 @@ class Eval[T: Array](Sync[T]):
 
         return self.total_metrics
 
-    def _update_status(self, pbar: tqdm | None,
-                       batch_loss: np.ndarray,
-                       total_loss: np.ndarray,
-                       batch_count: int,
-                       batch_size: int,
-                       output_prefix: str,
-                       current_round: int,
-                       delta: float = -1,
-                       prev_string: str = "") -> tuple[np.ndarray, int, str]:
+    def _update_status(
+        self, pbar: tqdm | None, batch_loss: np.ndarray, total_loss: np.ndarray, batch_count: int, batch_size: int, output_prefix: str, current_round: int, delta: float = -1, prev_string: str = ""
+    ) -> tuple[np.ndarray, int, str]:
         """
         Updates the progress bar and internal performance counters.
 
@@ -246,15 +240,17 @@ class Eval[T: Array](Sync[T]):
             if batch_size <= 0:
                 continue
 
-            total_loss, batch_count, string = self._update_status(pbar=pbar,
-                                                                  batch_loss=test_batch_loss,
-                                                                  total_loss=total_loss,
-                                                                  batch_count=batch_count,
-                                                                  batch_size=batch_size,
-                                                                  output_prefix=out_prefix,
-                                                                  current_round=self._evaluate_round,
-                                                                  delta=delta,
-                                                                  prev_string=prev_string)
+            total_loss, batch_count, string = self._update_status(
+                pbar=pbar,
+                batch_loss=test_batch_loss,
+                total_loss=total_loss,
+                batch_count=batch_count,
+                batch_size=batch_size,
+                output_prefix=out_prefix,
+                current_round=self._evaluate_round,
+                delta=delta,
+                prev_string=prev_string,
+            )
 
         # Increment self._evaluate_round
         self._evaluate_round += 1

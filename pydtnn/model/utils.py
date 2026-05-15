@@ -8,7 +8,6 @@ from typing import Any
 import numpy as np
 
 from pydtnn import utils
-from pydtnn.datasets.dataset import Dataset
 from pydtnn.model.base import Base
 from pydtnn.utils.constants import Array, ArrayShape
 from pydtnn.utils.tensor import decode_shape, decode_tensor, encode_shape, encode_tensor

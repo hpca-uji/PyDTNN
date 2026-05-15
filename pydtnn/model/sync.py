@@ -156,7 +156,7 @@ class Sync[T: Array](Init[T]):
                 else:
                     return 0.0
             case _:
-                raise ValueError(f"Model synchronization participation option '{self.model_sync_participation}' not recognized. Only recognized: {list(Eval.SyncParticipation)}")
+                raise ValueError(f"Model synchronization participation option '{self.model_sync_participation}' not recognized. Only recognized: {list(Base.SyncParticipation)}")
 
         min_nsamples, max_nsamples, total_nsamples = min(comm_nsamples), max(comm_nsamples), sum(comm_nsamples)
         comm_size = len(comm_nsamples)
@@ -170,4 +170,4 @@ class Sync[T: Array](Init[T]):
                 inverse_nsamples = min_nsamples + (max_nsamples - self.dataset._nsamples[part])
                 return inverse_nsamples / total_nsamples
             case _:
-                raise ValueError(f"Model synchronization algorithm option '{self.model_sync_algo}' not recognized. Only recognized: {list(Eval.SyncAlgorithm)}")
+                raise ValueError(f"Model synchronization algorithm option '{self.model_sync_algo}' not recognized. Only recognized: {list(Base.SyncAlgorithm)}")

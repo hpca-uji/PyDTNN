@@ -7,7 +7,6 @@ import warnings
 from typing import TYPE_CHECKING
 
 from pydtnn.abstract.layerable import Layerable
-from pydtnn.backends.cython.utils.oktopk_utils_cython import intersect_2d_indexes_cython
 from pydtnn.backends.numpy.optimizers.optimizer import OptimizerNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.optimizers.oktopk import OkTopk
@@ -252,8 +251,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
         return coo_u, indexes
 
     # TODO: Move this to different methods.
-    def _th_re_evaluate(self, matrix: np.ndarray | SparseMatrixCOO, k: int, input_format: str | None=None, 
-                        method="numpy_sort") -> float:
+    def _th_re_evaluate(self, matrix: np.ndarray | SparseMatrixCOO, k: int, input_format: str | None = None, method="numpy_sort") -> float:
         """
         Return the absolute gradient threshold for a given matrix.
 
@@ -436,7 +434,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
 
         local_rows, local_cols = local_indexes
         global_rows, global_cols = global_indexes
-        
+
         count = 0
         i_local = 0
         i_global = 0
@@ -468,8 +466,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
         return intersected_rows[:count], intersected_cols[:count]
 
     # TODO: Move this to different methods.
-    def _reduce_topk(self, coo_topk: SparseMatrixCOO, boundaries: np.ndarray,
-                     method="p2p_region_wise_reduce_destination_rotation_and_bucketing") -> SparseMatrixCOO:
+    def _reduce_topk(self, coo_topk: SparseMatrixCOO, boundaries: np.ndarray, method="p2p_region_wise_reduce_destination_rotation_and_bucketing") -> SparseMatrixCOO:
         """
         Reduce the topk elements in regions defined by boundaries.
 
