@@ -1,4 +1,5 @@
 """Abstract base class for layers composed of multiple sequential paths."""
+
 import logging
 
 from pydtnn.layers.layer import Layer
@@ -11,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 class AbstractBlockLayer[T: Array](Layer[T]):
     """Base class for layers that manage multiple parallel execution paths."""
+
     def __init__(self, *args, **kwargs):
         """Initializes the block layer with a collection of paths."""
         super().__init__(**kwargs)

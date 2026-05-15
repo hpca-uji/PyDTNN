@@ -1,6 +1,7 @@
 """
 Module for handling layer fusion operations in PyDTNN.
 """
+
 from __future__ import annotations
 
 import logging
@@ -8,7 +9,6 @@ import logging
 from pydtnn.layers.layer import Layer
 from pydtnn.utils import find_component
 from pydtnn.utils.constants import Array
-
 
 __all__ = (
     "LayerFuse",

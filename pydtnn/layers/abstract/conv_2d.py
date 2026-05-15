@@ -1,4 +1,5 @@
 """Abstract base class for 2D convolutional layers."""
+
 import logging
 import math
 from typing import TYPE_CHECKING, Optional
@@ -20,6 +21,7 @@ class AbstractConv2D[T: Array](Layer[T]):
     """
     Base class for 2D convolutional layers providing common configuration and initialization logic.
     """
+
     def __init__(
         self,
         nfilters: int = 1,

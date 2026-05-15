@@ -1,6 +1,7 @@
 """
 Abstract base class for 2D pooling layers in the PyDTNN framework.
 """
+
 import logging
 import math
 
@@ -16,6 +17,7 @@ class AbstractPool2DLayer[T: Array](Layer[T]):
     """
     Base class for 2D pooling operations providing shared configuration and shape inference.
     """
+
     def __init__(self, pool_shape: tuple[int, int] | int = (2, 2), padding: tuple[int, int] | int = 0, stride: tuple[int, int] | int = 1, dilation: tuple[int, int] | int = 1):
         """
         Initializes the pooling layer parameters.

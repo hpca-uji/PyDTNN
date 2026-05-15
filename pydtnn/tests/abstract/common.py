@@ -30,6 +30,7 @@ def verbose_test():
 
 class Params:
     """Configuration parameters for test execution."""
+
     def __init__(self) -> None:
         self.parallel_data = False
         self.dtype: np.dtype = np.dtype(np.float32)
@@ -46,6 +47,7 @@ class Params:
 
 class TestCase(unittest.TestCase):
     """Base test case class for PyDTNN unit tests."""
+
     def setUp(self) -> None:
         """Initializes the test environment with fixed seeds and warning filters."""
         super().setUp()
@@ -60,6 +62,7 @@ class TestCase(unittest.TestCase):
 
 class D:
     """Container for convolution layer dimensions and parameters."""
+
     def __init__(self, b=1, c=1, h=128, w=100, kn=1, kh=16, kw=10, vpadding=1, hpadding=1, vstride=1, hstride=1, vdilation=1, hdilation=1):
         self.b = b  # Batch size
         self.c = c  # Channels per layer

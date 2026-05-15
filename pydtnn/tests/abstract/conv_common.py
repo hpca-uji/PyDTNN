@@ -1,6 +1,7 @@
 """
 Common test suite for convolution operations in PyDTNN.
 """
+
 import inspect
 import logging
 

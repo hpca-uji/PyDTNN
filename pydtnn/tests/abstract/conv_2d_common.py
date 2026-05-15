@@ -1,6 +1,7 @@
 """
 Common test suite for 2D convolution layer implementations.
 """
+
 import inspect
 import logging
 
