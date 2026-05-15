@@ -11,7 +11,6 @@ import functools
 import itertools
 import logging
 import warnings
-from enum import IntEnum
 from pathlib import Path
 from typing import IO, TYPE_CHECKING, Callable, Generator
 

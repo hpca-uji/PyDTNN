@@ -1,3 +1,10 @@
+"""
+Dataset module for PyDTNN.
+
+Provides the base Dataset class and utility functions for managing,
+transforming, and generating data batches for machine learning models.
+"""
+
 from pydtnn.datasets.dataset.transform import Transform
 from pydtnn.utils import find_component
 
