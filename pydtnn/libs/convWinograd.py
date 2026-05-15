@@ -24,7 +24,10 @@ from pydtnn.utils import load_library
 from pydtnn.utils.best_of.best_of import BestOf
 from pydtnn.utils.tensor import TensorFormat, decode_shape, encode_shape
 
-__all__ = ("ConvWinograd",)
+__all__ = (
+    "ConvWinograd",
+    "is_conv_winograd_available"
+)
 
 logger = logging.getLogger(__name__)
 

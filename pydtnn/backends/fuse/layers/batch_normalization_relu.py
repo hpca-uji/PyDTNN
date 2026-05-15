@@ -5,15 +5,13 @@ Fused Batch Normalization and ReLU layer implementation for PyDTNN.
 import logging
 from typing import TYPE_CHECKING
 
-from pydtnn.backends.fuse.layers.layer import LayerFuse as FusedLayerMixIn
 from pydtnn.backends.fuse.utils.bn_inference_cython import bn_relu_inference_cython
 from pydtnn.backends.numpy.layers.batch_normalization import BatchNormalizationNumpy
-from pydtnn.layers.batch_normalization import BatchNormalization
+from pydtnn.layers.batch_normalization_relu import BatchNormalizationRelu
 from pydtnn.libs import numpy as np
 from pydtnn.utils.constants import Array, ArrayShape
 
 __all__ = (
-    "BatchNormalizationRelu",
     "BatchNormalizationReluFuse",
 )
 
@@ -23,14 +21,6 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     import numpy as np
-
-
-class BatchNormalizationRelu[T: Array](FusedLayerMixIn[T], BatchNormalization[T]):
-    """
-    Abstract base class for fused Batch Normalization and ReLU layers.
-    """
-
-    pass
 
 
 class BatchNormalizationReluFuse(BatchNormalizationRelu[np.ndarray], BatchNormalizationNumpy):

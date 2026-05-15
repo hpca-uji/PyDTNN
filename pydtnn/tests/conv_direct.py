@@ -4,12 +4,12 @@ Test suite for direct convolution implementation in PyDTNN.
 
 import inspect
 import logging
-from unittest import SkipTest
+from unittest import SkipTest, skipUnless
 
 import numpy as np
 
 from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython
-from pydtnn.libs.convDirect import ConvDirect
+from pydtnn.libs.convDirect import ConvDirect, is_conv_direct_available
 from pydtnn.tests.abstract.common import verbose_test
 from pydtnn.tests.abstract.conv_common import ConvCommonTestCase
 from pydtnn.utils import print_with_header
@@ -19,6 +19,7 @@ __all__ = ("ConvDirectTestCase",)
 logger = logging.getLogger(__name__)
 
 
+@skipUnless(is_conv_direct_available, "requires ConvDirect")
 class ConvDirectTestCase(ConvCommonTestCase):
     """
     Tests that conv_direct leads to the same results as i2c and mm.

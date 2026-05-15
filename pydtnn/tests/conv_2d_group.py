@@ -2,6 +2,7 @@
 Test suite for verifying grouped 2D convolution operations in PyDTNN.
 """
 
+from copy import deepcopy
 import logging
 
 from pydtnn.backends.numpy.layers.abstract.conv_2d import AbstractConv2DNumpy
@@ -9,6 +10,7 @@ from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.conv_2d_depthwise import Conv2DDepthwise
 from pydtnn.layers.conv_2d_pointwise import Conv2DPointwise
+from pydtnn.layers.input import Input
 from pydtnn.model import Model
 from pydtnn.tests.abstract.common import D, Params
 from pydtnn.tests.abstract.conv_2d_common import Conv2DCommonTestCase
@@ -42,12 +44,12 @@ class Conv2DGroupTestCase(Conv2DCommonTestCase):
         Returns:
             A tuple containing the standard Conv2D layer and the grouped ConcatenationBlock.
         """
-        params = Params()
-        params.tensor_format = TensorFormat.NHWC.upper()
-        params.batch_size = d.b
-        model = Model(**vars(params))
-        model.mode = Model.Mode.TRAIN
-
+        params_chain = Params()
+        params_chain.tensor_format = TensorFormat.NHWC.upper()
+        params_chain.batch_size = d.b
+        model_chain = Model(**vars(params_chain))
+        model_chain.mode = Model.Mode.TRAIN
+        model_chain.add(Input(model_chain.encode_shape((d.c, d.h, d.w))))
         conv2d_depth = Conv2DDepthwise(
             nfilters=d.kn,
             filter_shape=(d.kh, d.kw),
@@ -69,10 +71,13 @@ class Conv2DGroupTestCase(Conv2DCommonTestCase):
             biases_initializer=zeros,
         )
         chain = ConcatenationBlock([conv2d_depth, conv2d_pair])
-        chain._init_backend_with_model(model)
-        chain._model_init(prev_shape=(d.c, d.h, d.w), x=None)
+        model_chain.add(chain)
 
-        conv2d = Conv2D(
+        params_fuse = deepcopy(params_chain)
+        model_fuse = Model(**vars(params_fuse))
+        model_fuse.mode = Model.Mode.TRAIN
+        model_fuse.add(Input(model_fuse.encode_shape((d.c, d.h, d.w))))
+        conv2d_fuse = Conv2D(
             nfilters=d.kn,
             filter_shape=(d.kh, d.kw),
             padding=(d.vpadding, d.hpadding),
@@ -82,16 +87,19 @@ class Conv2DGroupTestCase(Conv2DCommonTestCase):
             weights_initializer=glorot_uniform,
             biases_initializer=zeros,
         )
-        conv2d._init_backend_with_model(model)
-        conv2d._model_init(prev_shape=(d.c, d.h, d.w), x=None)
+        model_fuse.add(conv2d_fuse)
+
+        model_chain._model_init()
+        model_fuse._model_init()
+        fuse = model_fuse.layers[1]
 
         # Set the same initial weights and biases to both layers
-        conv2d_depth.weights = conv2d.weights.copy()
-        conv2d_depth.biases = conv2d.biases.copy()
-        conv2d_pair.weights = conv2d.weights.copy()
-        conv2d_pair.biases = conv2d.biases.copy()
+        conv2d_depth.weights = fuse.weights.copy()
+        conv2d_depth.biases = fuse.biases.copy()
+        conv2d_pair.weights = fuse.weights.copy()
+        conv2d_pair.biases = fuse.biases.copy()
 
-        return conv2d, chain  # type: ignore
+        return conv2d_fuse, chain  # type: ignore
 
     @staticmethod
     def _set_state(layer: Conv2D, weights) -> None:

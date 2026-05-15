@@ -9,7 +9,7 @@ import unittest
 import numpy as np
 
 from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython
-from pydtnn.libs.convWinograd import ConvWinograd
+from pydtnn.libs.convWinograd import ConvWinograd, is_conv_winograd_available
 from pydtnn.tests.abstract.common import D, verbose_test
 from pydtnn.tests.abstract.conv_common import ConvCommonTestCase
 from pydtnn.utils import print_with_header
@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 # if (kh, kw) == (5, 5) and (vstride, hstride) == (1, 1) and (vdilation, hdilation) == (1, 1):
 
 
+@unittest.skipUnless(is_conv_winograd_available, "requires ConvWinograd")
 class ConvWinogradTestCase(ConvCommonTestCase):
     """
     Tests that conv_winograd leads to the same results as i2c and mm.

@@ -5,15 +5,13 @@ Fused 2D Convolution and ReLU layer implementation.
 import logging
 from typing import TYPE_CHECKING
 
-from pydtnn.backends.fuse.layers.layer import LayerFuse as FusedLayerMixIn
 from pydtnn.backends.numpy.layers.abstract.conv_2d_standard import AbstractConv2DStandardNumpy
-from pydtnn.layers.conv_2d import Conv2D
+from pydtnn.layers.conv_2d_relu import Conv2DRelu
 from pydtnn.libs import numpy as np
 from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
-from pydtnn.utils.constants import Array, ArrayShape
+from pydtnn.utils.constants import ArrayShape
 
 __all__ = (
-    "Conv2DRelu",
     "Conv2DReluFuse",
 )
 
@@ -26,14 +24,6 @@ if TYPE_CHECKING:
 
 # Next no inspection is because Conv2D _backward_depthwise and _backward_pointwise being considered as abstract methods
 # noinspection PyAbstractClass
-
-
-class Conv2DRelu[T: Array](FusedLayerMixIn[T], Conv2D[T]):
-    """
-    Base class for 2D Convolution layers with fused ReLU activation.
-    """
-
-    pass
 
 
 class Conv2DReluFuse(Conv2DRelu[np.ndarray], AbstractConv2DStandardNumpy):

@@ -2,6 +2,7 @@
 Unit tests for the Conv2D and BatchNormalization fusion layer.
 """
 
+from copy import deepcopy
 import logging
 import unittest
 
@@ -10,6 +11,7 @@ from pydtnn.backends.numpy.layers.abstract.conv_2d import AbstractConv2DNumpy
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.conv_2d import Conv2D
+from pydtnn.layers.input import Input
 from pydtnn.model import Model
 from pydtnn.tests.abstract.common import D, Params
 from pydtnn.tests.abstract.conv_2d_common import Conv2DCommonTestCase
@@ -46,14 +48,14 @@ class Conv2DBatchNormalizationTestCase(Conv2DCommonTestCase):
         Returns:
             A tuple containing the concatenated layer chain and the fused layer.
         """
-        params = Params()
-        params.tensor_format = TensorFormat.NCHW.upper()
-        params.batch_size = d.b
-        params.backend = "cpu;conv_2d:gemm"
-        model = Model(**vars(params))
-        model.mode = Model.Mode.TRAIN
-
-        conv2d = Conv2D(
+        params_chain = Params()
+        params_chain.tensor_format = TensorFormat.NCHW.upper()
+        params_chain.batch_size = d.b
+        params_chain.backend = "cpu;conv_2d:gemm"
+        model_chain = Model(**vars(params_chain))
+        model_chain.mode = Model.Mode.TRAIN
+        model_chain.add(Input(model_chain.encode_shape((d.c, d.h, d.w))))
+        conv2d_chain = Conv2D(
             nfilters=d.kn,
             filter_shape=(d.kh, d.kw),
             padding=(d.vpadding, d.hpadding),
@@ -63,21 +65,35 @@ class Conv2DBatchNormalizationTestCase(Conv2DCommonTestCase):
             weights_initializer=glorot_uniform,
             biases_initializer=zeros,
         )
-        bn = BatchNormalization()
-        chain = ConcatenationBlock([conv2d, bn])
-        shape = (d.c, d.h, d.w)
-        chain._init_backend_with_model(model)
-        chain._model_init(prev_shape=shape, x=None)
+        bn_chain = BatchNormalization()
+        chain = ConcatenationBlock([conv2d_chain, bn_chain])
+        model_chain.add(chain)
 
-        from_parent = bn.__dict__ | conv2d.__dict__
-        fuse = Conv2DBatchNormalization(from_parent=from_parent)
-        fuse.init_backend_with_model(model)
-        fuse.__dict__.update(from_parent)
-        fuse.initialize(prev_shape=shape, x=None)
+        params_fuse = deepcopy(params_chain)
+        params_fuse.enable_fused_conv_bn = True
+        model_fuse = Model(**vars(params_fuse))
+        model_fuse.mode = Model.Mode.TRAIN
+        model_fuse.add(Input(model_fuse.encode_shape((d.c, d.h, d.w))))
+        conv2d_fuse = Conv2D(
+            nfilters=d.kn,
+            filter_shape=(d.kh, d.kw),
+            padding=(d.vpadding, d.hpadding),
+            stride=(d.vstride, d.hstride),
+            dilation=(d.vdilation, d.hdilation),
+            use_bias=True,
+            weights_initializer=glorot_uniform,
+            biases_initializer=zeros,
+        )
+        bn_fuse = BatchNormalization()
+        model_chain.add_layers([conv2d_fuse, bn_fuse])
+
+        model_chain._model_init()
+        model_fuse._model_init()
+        fuse = model_fuse.layers[1]
 
         # Set the same initial weights and biases to both layers
-        fuse.weights = conv2d.weights.copy()
-        fuse.biases = conv2d.biases.copy()
+        fuse.weights = conv2d_chain.weights.copy()
+        fuse.biases = conv2d_chain.biases.copy()
 
         return chain, fuse  # type: ignore
 

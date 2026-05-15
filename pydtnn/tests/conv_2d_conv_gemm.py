@@ -6,6 +6,7 @@ import logging
 from copy import deepcopy
 
 from pydtnn.layers.conv_2d import Conv2D
+from pydtnn.layers.input import Input
 from pydtnn.model import Model
 from pydtnn.tests.abstract.common import D, Params
 from pydtnn.tests.abstract.conv_2d_common import Conv2DCommonTestCase
@@ -32,16 +33,13 @@ class Conv2DConvGemmTestCase(Conv2DCommonTestCase):
         Initializes and returns two Conv2D layers with identical weights, one using
         im2col and the other using GEMM backend.
         """
-        params = Params()
-        params.tensor_format = TensorFormat.NCHW.upper()
-        params.batch_size = d.b
-        params.backend = "cpu"
-        model_i2c = Model(**vars(params))
+        params_i2c = Params()
+        params_i2c.tensor_format = TensorFormat.NCHW.upper()
+        params_i2c.batch_size = d.b
+        params_i2c.backend = "cpu"
+        model_i2c = Model(**vars(params_i2c))
         model_i2c.mode = Model.Mode.TRAIN
-        params_gc = deepcopy(params)
-        params_gc.backend = "cpu;conv_2d:gemm"
-        model_cg = Model(**vars(params_gc))
-        model_cg.mode = Model.Mode.TRAIN
+        model_i2c.add(Input(model_i2c.encode_shape((d.c, d.h, d.w))))
         conv2d_i2c = Conv2D(
             nfilters=d.kn,
             filter_shape=(d.kh, d.kw),
@@ -52,7 +50,13 @@ class Conv2DConvGemmTestCase(Conv2DCommonTestCase):
             weights_initializer=glorot_uniform,
             biases_initializer=zeros,
         )
-        conv2d_i2c._init_backend_with_model(model_i2c)
+        model_i2c.add(conv2d_i2c)
+
+        params_gc = deepcopy(params_i2c)
+        params_gc.backend = "cpu;conv_2d:gemm"
+        model_cg = Model(**vars(params_gc))
+        model_cg.mode = Model.Mode.TRAIN
+        model_cg.add(Input(model_cg.encode_shape((d.c, d.h, d.w))))
         conv2d_cg = Conv2D(
             nfilters=d.kn,
             filter_shape=(d.kh, d.kw),
@@ -63,9 +67,11 @@ class Conv2DConvGemmTestCase(Conv2DCommonTestCase):
             weights_initializer=glorot_uniform,
             biases_initializer=zeros,
         )
-        conv2d_cg._init_backend_with_model(model_cg)
-        for layer in (conv2d_i2c, conv2d_cg):
-            layer._model_init(prev_shape=model_i2c.encode_shape((d.c, d.h, d.w)), x=None)
+        model_cg.add(conv2d_cg)
+
+        model_i2c._model_init()
+        model_cg._model_init()
+
         # Set the same initial weights and biases to both layers
         conv2d_cg.weights = conv2d_i2c.weights.copy()
         conv2d_cg.biases = conv2d_i2c.biases.copy()

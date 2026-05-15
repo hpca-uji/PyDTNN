@@ -15,7 +15,10 @@ from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython
 from pydtnn.utils import load_library
 from pydtnn.utils.tensor import TensorFormat, decode_shape, encode_shape
 
-__all__ = ("ConvDirect",)
+__all__ = (
+    "ConvDirect",
+    "is_conv_direct_available"
+)
 
 logger = logging.getLogger(__name__)
 

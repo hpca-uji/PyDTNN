@@ -108,12 +108,9 @@ class ModelCommonTestCase(TestCase):
             model1 = Model(**params_dict)
         except LayerError as exc:
             raise unittest.SkipTest(f"Model {model_name} incompatible with {params_dict['dataset_name']}") from exc
+        model1._model_init()
         # loss function
-        loss_func_name = model1.loss_func_name
-        loss_cls = select_loss(loss_func_name)
-        loss_func = loss_cls()
-        loss_func._init_backend_with_model(model1)
-        loss_func._model_init()
+        loss_func = model1.loss_func
         return model1, loss_func
 
     def get_model2(self, model_name: str, overwrite_params: dict | None = None) -> Model:

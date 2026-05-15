@@ -4,11 +4,12 @@ Test suite for verifying the correctness of the ConvGemm implementation.
 
 import inspect
 import logging
+from unittest import skipUnless
 
 import numpy as np
 
 from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython
-from pydtnn.libs.convGemm import ConvGemm
+from pydtnn.libs.convGemm import ConvGemm, is_conv_gemm_available
 from pydtnn.tests.abstract.common import D, verbose_test
 from pydtnn.tests.abstract.conv_common import ConvCommonTestCase
 from pydtnn.utils import print_with_header
@@ -18,6 +19,7 @@ __all__ = ("ConvGemmTestCase",)
 logger = logging.getLogger(__name__)
 
 
+@skipUnless(is_conv_gemm_available, "requires ConvGemm")
 class ConvGemmTestCase(ConvCommonTestCase):
     """
     Tests that conv_gemm leads to the same results as i2c and mm.

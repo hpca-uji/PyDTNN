@@ -11,7 +11,7 @@ from warnings import warn
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.activations.relu import Relu
 from pydtnn.backends.fuse.layers.layer import LayerFuse as FusedLayerMixIn
-from pydtnn.backends.fuse.layers.layer import select as select_fuse_layer
+from pydtnn.layers.layer import select as select_layer
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.model.utils import Utils
@@ -130,12 +130,13 @@ class Layers[T: Array](Utils[T]):
             for j, p in enumerate(curr_layer.paths):
                 self._layer_fusion(curr_layer.paths[j], switch_fusion)
 
-            layer_name, layers_to_fuse = switch_fusion(layers[:i])
+            # NOTE: i+1 include current layer, range(i+1) excludes end
+            layer_name, layers_to_fuse = switch_fusion(layers[:i+1])
 
             if layer_name:
                 dict_params = reduce(operator.or_, (layer.__dict__ for layer in reversed(layers_to_fuse)))
                 logger.info(f"Fusing {' + '.join(map(lambda layer: layer.name_with_id, layers_to_fuse))}")
-                fused_layer = select_fuse_layer(layer_name)
+                fused_layer = select_layer(layer_name)
 
                 new_curr_layer = fused_layer(from_parent=dict_params)  # type: ignore (it's okay)
                 new_curr_layer._init_backend_with_model(self)
@@ -147,9 +148,8 @@ class Layers[T: Array](Utils[T]):
                     logger.warning(warn_text)
                     warn(warn_text, RuntimeWarning)
                 else:
-                    start = i - len(layers_to_fuse)
-                    del layers[start:i]
-                    layers.insert(start, new_curr_layer)
+                    start = i+1 - len(layers_to_fuse)
+                    layers[start:i+1] = [new_curr_layer]
                     i -= len(layers_to_fuse)
             i += 1
 

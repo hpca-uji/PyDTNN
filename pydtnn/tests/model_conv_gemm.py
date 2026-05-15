@@ -57,4 +57,5 @@ class ModelConvGemmTestCase(ModelCommonTestCase):
             model2 = Model(**params_dict)
         except LayerError as exc:
             raise unittest.SkipTest(f"Model {model_name} incompatible with {params_dict['dataset_name']}") from exc
+        model2._model_init()
         return model2

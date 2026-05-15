@@ -2,6 +2,7 @@
 Test suite for the BatchNormalizationRelu fused layer implementation.
 """
 
+from copy import deepcopy
 import logging
 import unittest
 
@@ -9,6 +10,7 @@ from pydtnn.activations.relu import Relu
 from pydtnn.backends.fuse.layers.batch_normalization_relu import BatchNormalizationRelu
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.concatenation_block import ConcatenationBlock
+from pydtnn.layers.input import Input
 from pydtnn.model import Model
 from pydtnn.tests.abstract.common import D, Params
 from pydtnn.tests.abstract.conv_2d_common import Conv2DCommonTestCase
@@ -44,29 +46,34 @@ class BatchNormalizationReluTestCase(Conv2DCommonTestCase):
         Returns:
             A tuple containing the standard ConcatenationBlock and the fused BatchNormalizationRelu layer.
         """
-        params = Params()
-        params.tensor_format = TensorFormat.NCHW.upper()
-        params.batch_size = d.b
-        params.backend = "cpu;conv_2d:gemm"
-        model = Model(**vars(params))
-        model.mode = Model.Mode.TRAIN
+        params_chain = Params()
+        params_chain.tensor_format = TensorFormat.NCHW.upper()
+        params_chain.batch_size = d.b
+        params_chain.backend = "cpu;conv_2d:gemm"
+        model_chain = Model(**vars(params_chain))
+        model_chain.mode = Model.Mode.TRAIN
+        model_chain.add(Input(model_chain.encode_shape((d.c, d.h, d.w))))
+        bn_chain = BatchNormalization()
+        relu_chain = Relu()
+        chain = ConcatenationBlock([bn_chain, relu_chain])
+        model_chain.add(chain)
 
-        bn = BatchNormalization()
-        relu = Relu()
-        chain = ConcatenationBlock([bn, relu])
-        shape = (d.c, d.h, d.w)
-        chain._init_backend_with_model(model)
-        chain._model_init(prev_shape=shape, x=None)
+        params_fuse = deepcopy(params_chain)
+        params_fuse.enable_fused_bn_relu = True
+        model_fuse = Model(**vars(params_fuse))
+        model_fuse.mode = Model.Mode.TRAIN
+        model_fuse.add(Input(model_fuse.encode_shape((d.c, d.h, d.w))))
+        bn_fuse = BatchNormalization()
+        relu_fuse = Relu()
+        model_fuse.add_layers([bn_fuse, relu_fuse])
 
-        from_parent = relu.__dict__ | bn.__dict__
-        fuse = BatchNormalizationRelu(from_parent=from_parent)
-        fuse.init_backend_with_model(model)
-        fuse.__dict__.update(from_parent)
-        fuse.initialize(prev_shape=shape, x=None)
+        model_chain._model_init()
+        model_fuse._model_init()
+        fuse = model_fuse.layers[1]
 
         # Set the same initial weights and biases to both layers
-        fuse.running_mean = bn.running_mean.copy()
-        fuse.running_var = bn.running_var.copy()
+        fuse.running_mean = bn_chain.running_mean.copy()
+        fuse.running_var = bn_chain.running_var.copy()
 
         return chain, fuse
 
