@@ -270,7 +270,7 @@ PYMPI_SRC="$SRC/pympi"
 # git clone https://github.com/hpca-uji/pympi.git "$PYMPI_SRC"
 git submodule update --init "$PYMPI_SRC"
 cd "$PYMPI_SRC"
-git checkout 6b4456166dac555ffae865f4a8b1df5f12d92476
+git checkout a1bddf15ce0675a7748ec4ebf9fa2c779e0c9285
 
 # Install
 pip install "$PYMPI_SRC"
