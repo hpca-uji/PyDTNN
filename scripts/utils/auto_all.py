@@ -93,6 +93,7 @@ def process_file(path: Path, replace=False):
     clean = remove_all(source)
 
     if not replace and source != clean:
+        print(f"Skipped {path}")
         return
 
     names = get_names(clean)

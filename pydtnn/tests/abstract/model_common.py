@@ -131,7 +131,11 @@ class ModelCommonTestCase(TestCase):
 
     def copy_weights_and_biases(self, model1: Model, model2: Model):
         """
-        Copy weights and biases from Model 1 to Model 2
+        Copies weights and biases from Model 1 to Model 2.
+
+        Args:
+            model1: Source model.
+            model2: Destination model.
         """
         model2.import_(model1)
 
@@ -189,7 +193,14 @@ class ModelCommonTestCase(TestCase):
 
     def do_model1_forward_pass(self, model1: Model, x0: list[np.ndarray]) -> list[np.ndarray]:
         """
-        Model 1 forward pass
+        Performs a forward pass for Model 1.
+
+        Args:
+            model1: The model instance.
+            x0: Initial input list.
+
+        Returns:
+            List of outputs after each layer.
         """
         x1 = [x0[0]]
         for i, layer in enumerate(model1.layers):
@@ -200,7 +211,14 @@ class ModelCommonTestCase(TestCase):
 
     def do_model2_forward_pass(self, model2: Model, x1: list[np.ndarray]) -> list[np.ndarray]:
         """
-        Model 2 forward pass
+        Performs a forward pass for Model 2.
+
+        Args:
+            model2: The model instance.
+            x1: Initial input list.
+
+        Returns:
+            List of outputs after each layer.
         """
         x2 = [x1[0]]
         for i, layer in enumerate(model2.layers):
@@ -212,7 +230,14 @@ class ModelCommonTestCase(TestCase):
     @staticmethod
     def do_model1_backward_pass(model1: Model, dx0: list[np.ndarray]) -> list[np.ndarray]:
         """
-        Model 1 backward pass
+        Performs a backward pass for Model 1.
+
+        Args:
+            model1: The model instance.
+            dx0: Initial gradient list.
+
+        Returns:
+            List of gradients after each layer.
         """
         dx1 = [dx0[0]]
         for _, layer in reversed(list(enumerate(model1.layers))):
@@ -223,7 +248,14 @@ class ModelCommonTestCase(TestCase):
 
     def do_model2_backward_pass(self, model2: Model, dx1: list[np.ndarray]) -> list[np.ndarray]:
         """
-        Model 2 backward pass
+        Performs a backward pass for Model 2.
+
+        Args:
+            model2: The model instance.
+            dx1: Initial gradient list.
+
+        Returns:
+            List of gradients after each layer.
         """
         dx2 = [dx1[-1]]
         for i, layer in reversed(list(enumerate(model2.layers))):
@@ -290,7 +322,10 @@ class ModelCommonTestCase(TestCase):
 
     def do_test_model(self, model_name: str):
         """
-        Compares results between a model that uses I2C and other that uses ConvGemm
+        Executes the full comparison test for a given model.
+
+        Args:
+            model_name: Name of the model to test.
         """
 
         # Model 1 forward

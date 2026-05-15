@@ -32,6 +32,7 @@ class Params:
     """Configuration parameters for test execution."""
 
     def __init__(self) -> None:
+        """Initializes default test parameters."""
         self.parallel_data = False
         self.dtype: np.dtype = np.dtype(np.float32)
         self.tensor_format = TensorFormat.NHWC.upper()
@@ -64,6 +65,7 @@ class D:
     """Container for convolution layer dimensions and parameters."""
 
     def __init__(self, b=1, c=1, h=128, w=100, kn=1, kh=16, kw=10, vpadding=1, hpadding=1, vstride=1, hstride=1, vdilation=1, hdilation=1):
+        """Initializes convolution dimensions and hyperparameters."""
         self.b = b  # Batch size
         self.c = c  # Channels per layer
         self.h = h  # Layers height
