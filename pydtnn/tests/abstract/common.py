@@ -29,6 +29,7 @@ def verbose_test():
 
 
 class Params:
+    """Configuration parameters for test execution."""
     def __init__(self) -> None:
         self.parallel_data = False
         self.dtype: np.dtype = np.dtype(np.float32)
@@ -44,17 +45,21 @@ class Params:
 
 
 class TestCase(unittest.TestCase):
+    """Base test case class for PyDTNN unit tests."""
     def setUp(self) -> None:
+        """Initializes the test environment with fixed seeds and warning filters."""
         super().setUp()
         random.seed(0)
         warnings.simplefilter("error")
 
     def tearDown(self) -> None:
+        """Resets warning filters after test completion."""
         warnings.resetwarnings()
         super().tearDown()
 
 
 class D:
+    """Container for convolution layer dimensions and parameters."""
     def __init__(self, b=1, c=1, h=128, w=100, kn=1, kh=16, kw=10, vpadding=1, hpadding=1, vstride=1, hstride=1, vdilation=1, hdilation=1):
         self.b = b  # Batch size
         self.c = c  # Channels per layer
@@ -72,17 +77,21 @@ class D:
 
     @property
     def ho(self):
+        """Calculates the output height."""
         return (self.h + 2 * self.vpadding - self.vdilation * (self.kh - 1) - 1) // self.vstride + 1
 
     @property
     def wo(self):
+        """Calculates the output width."""
         return (self.w + 2 * self.hpadding - self.hdilation * (self.kw - 1) - 1) // self.hstride + 1
 
     @property
     def shape(self):
+        """Returns the input shape as a tuple (b, c, h, w)."""
         return self.b, self.c, self.h, self.w
 
     def __repr__(self):
+        """Returns a formatted string representation of the layer dimensions."""
         return f"""\
 x, weights, and y parameters:
   (b, c, h, w)    = {self.b} {self.c} {self.h} {self.w}

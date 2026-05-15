@@ -183,6 +183,7 @@ class cuFloatComplex(float2):
 
     @property
     def value(self):
+        """Return the complex representation of the structure."""
         return complex(self.x, self.y)
 
 
@@ -197,6 +198,7 @@ class cuDoubleComplex(double2):
 
     @property
     def value(self):
+        """Return the complex representation of the structure."""
         return complex(self.x, self.y)
 
 

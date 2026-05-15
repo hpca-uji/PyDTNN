@@ -23,6 +23,7 @@ class AbstractConv2DNumpy(AbstractConv2D[np.ndarray], LayerNumpy):
     """Abstract base class for 2D convolution layers using the NumPy backend."""
 
     def __init__(self, *args, **kwargs):
+        """Initialize the AbstractConv2DNumpy layer."""
         super().__init__(*args, **kwargs)
         # More parameters initialized in initialize()
         self.biases = None  # type: ignore

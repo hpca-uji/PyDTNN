@@ -19,6 +19,7 @@ class TanhPycuda(Tanh[TensorArray], ActivationPycuda):
     """PyCUDA implementation of the Tanh activation layer using cuDNN."""
 
     def __init__(self, *args, **kwargs):
+        """Initialize the TanhPycuda layer."""
         super().__init__(*args, **kwargs)
         self.act_desc = None
 

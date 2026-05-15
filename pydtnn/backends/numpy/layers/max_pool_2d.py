@@ -22,6 +22,7 @@ class MaxPool2DNumpy(MaxPool2D[np.ndarray], AbstractPool2DLayerNumpy):
     """NumPy-based 2D Max Pooling layer implementation."""
 
     def __init__(self, *args, **kwargs):
+        """Initialize the MaxPool2DNumpy layer."""
         super().__init__(*args, **kwargs)
         # The following attribute will be intialized later.
         self.idx_max: np.ndarray = None  # type: ignore

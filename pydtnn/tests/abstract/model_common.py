@@ -1,3 +1,7 @@
+"""
+Module for common model testing utilities in PyDTNN.
+Provides a base test class to compare model outputs and gradients across different implementations.
+"""
 import logging
 import unittest
 import warnings
@@ -48,6 +52,15 @@ class ModelCommonTestCase(TestCase):
     }
 
     def get_tolerance(self, layer: Layerable) -> tuple[float, float]:
+        """
+        Calculates the relative and absolute tolerance for a given layer.
+
+        Args:
+            layer: The layer instance to check.
+
+        Returns:
+            A tuple containing (rtol, atol).
+        """
         rtol = self.rtol_default
         for cls, tol in self.rtol_dict.items():
             if isinstance(layer, cls):
@@ -71,6 +84,16 @@ class ModelCommonTestCase(TestCase):
 
     @staticmethod
     def get_model1_and_loss_func(model_name: str, overwrite_params: dict | None = None) -> tuple[Model, Loss]:
+        """
+        Initializes a model and its corresponding loss function.
+
+        Args:
+            model_name: Name of the model to initialize.
+            overwrite_params: Optional dictionary to override default parameters.
+
+        Returns:
+            A tuple containing the initialized Model and Loss objects.
+        """
         # CPU model with no convGemm
         params = Params()
         # Begin of params configuration
@@ -93,6 +116,16 @@ class ModelCommonTestCase(TestCase):
         return model1, loss_func
 
     def get_model2(self, model_name: str, overwrite_params: dict | None = None) -> Model:
+        """
+        Abstract method to retrieve the second model for comparison.
+
+        Args:
+            model_name: Name of the model.
+            overwrite_params: Optional parameters to override.
+
+        Raises:
+            NotImplementedError: If not implemented by subclass.
+        """
         raise NotImplementedError()
 
     def copy_weights_and_biases(self, model1: Model, model2: Model):
@@ -102,6 +135,17 @@ class ModelCommonTestCase(TestCase):
         model2.import_(model1)
 
     def get_first_dx(self, model: Model, loss_func: Loss, x: np.ndarray) -> np.ndarray:
+        """
+        Computes the initial gradient (dx) for a given model and input.
+
+        Args:
+            model: The model instance.
+            loss_func: The loss function instance.
+            x: Input data array.
+
+        Returns:
+            The computed gradient array.
+        """
         # random y target
         y_targ = np.asarray(random.random(x.shape), dtype=model.dtype, order="C").copy()
         # obtain first dx1
@@ -110,6 +154,18 @@ class ModelCommonTestCase(TestCase):
         return dx
 
     def print_stats(self, x1: np.ndarray, x2: np.ndarray, rtol: float, atol: float) -> str:
+        """
+        Generates a string summary of statistical differences between two arrays.
+
+        Args:
+            x1: First array.
+            x2: Second array.
+            rtol: Relative tolerance used.
+            atol: Absolute tolerance used.
+
+        Returns:
+            A formatted string containing statistics.
+        """
         diff = x1 - x2
         return (
             "\n"
@@ -176,6 +232,15 @@ class ModelCommonTestCase(TestCase):
         return dx2
 
     def compare_forward(self, model1: Model, x1: list[np.ndarray], model2: Model, x2: list[np.ndarray]):
+        """
+        Compares the forward pass outputs of two models.
+
+        Args:
+            model1: First model.
+            x1: Forward pass outputs of model 1.
+            model2: Second model.
+            x2: Forward pass outputs of model 2.
+        """
         assert len(x1) == len(x2), "x1 and x2 should have the same length"
         if verbose_test():
             print()
@@ -187,6 +252,15 @@ class ModelCommonTestCase(TestCase):
                 self.assertTrue(np.allclose(x1[i], x2[i], rtol=rtol, atol=atol), f"Forward result from layers {layer.name_with_id} differ ({self.print_stats(x1[i], x2[i], rtol, atol)})")
 
     def compare_backward(self, model1: Model, dx1: list[np.ndarray], model2: Model, dx2: list[np.ndarray]):
+        """
+        Compares the backward pass gradients of two models.
+
+        Args:
+            model1: First model.
+            dx1: Backward pass gradients of model 1.
+            model2: Second model.
+            dx2: Backward pass gradients of model 2.
+        """
         assert len(dx1) == len(dx2), f"dx1 and dx2 should have the same length {len(dx1)=}, {len(dx2)=}"
         if verbose_test():
             print("\nComparing outputs shapes.")

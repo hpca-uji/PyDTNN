@@ -14,6 +14,7 @@ from warnings import warn
 
 from openai import InternalServerError, OpenAI
 
+limit = 64_000
 config = {
     "model": "gemini-3.1-flash-lite",
     "reasoning_effort": "minimal",
@@ -37,11 +38,11 @@ def should_process_file(code: str) -> bool:
     except SyntaxError:
         return False
 
-    # Docstring de módulo
+    # Module docstring
     if ast.get_docstring(tree) is None:
         return True
 
-    # Clases y funciones
+    # Classes and functions
     for node in ast.walk(tree):
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
             if ast.get_docstring(node) is None:
@@ -114,6 +115,7 @@ Code:
 {code}
 """
 
+    print(f"Generating {path}")
     response = client.chat.completions.create(
         **config,
         messages=[{"role": "user", "content": prompt}],
@@ -144,19 +146,17 @@ def process_file(path: Path) -> bool:
     original = path.read_text()
 
     # Skip empty or finished files
-    if not should_process_file(original):
+    if len(original) > limit or not should_process_file(original):
+        print(f"Skipped {path}")
         return False
 
     generated = generate_file_docstrings(path, original)
 
-    if not generated:
-        return True
-
-    # Validar sintaxis
+    # Validate syntax
     if not is_valid_python(generated):
         warn(f"Invalid Python file generated ({path})!", RuntimeWarning)
 
-    # Evitar sobrescribir si no hay cambios
+    # Skip if unchanged
     if generated.strip() == original.strip():
         return True
 

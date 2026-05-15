@@ -169,6 +169,9 @@ def flatten(args: dict[str, str]) -> tuple[Flatten, str]:
     # torch.flatten(input, start_dim=0, end_dim=-1)
 
     def switch(list_params: list[str], dict_params: dict[str, str] = dict()) -> dict[str, str]:
+        """
+        Helper to parse flatten parameters recursively.
+        """
         # This is a switch with "fall through".
         match len(list_params):
             case 3:
@@ -284,6 +287,9 @@ def softmax(args: dict[str, Any]) -> tuple[Softmax, str]:
     # softmax(input, dim=None, _stacklevel=3, dtype=None)
 
     def switch(list_params: list[str], dict_params: dict[str, str] = dict()) -> dict[str, str]:
+        """
+        Helper to parse softmax parameters recursively.
+        """
         # This is a switch with "fall through".
         match len(list_params):
             case 3:

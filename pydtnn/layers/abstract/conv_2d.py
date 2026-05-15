@@ -1,3 +1,4 @@
+"""Abstract base class for 2D convolutional layers."""
 import logging
 import math
 from typing import TYPE_CHECKING, Optional
@@ -16,6 +17,9 @@ if TYPE_CHECKING:
 
 
 class AbstractConv2D[T: Array](Layer[T]):
+    """
+    Base class for 2D convolutional layers providing common configuration and initialization logic.
+    """
     def __init__(
         self,
         nfilters: int = 1,
@@ -28,6 +32,20 @@ class AbstractConv2D[T: Array](Layer[T]):
         weights_initializer: InitializerFunc = glorot_uniform,
         biases_initializer: InitializerFunc = zeros,
     ):
+        """
+        Initializes the 2D convolutional layer parameters.
+
+        Args:
+            nfilters: Number of output filters.
+            filter_shape: Dimensions of the convolution kernel.
+            padding: Padding applied to the input.
+            stride: Stride of the convolution.
+            dilation: Dilation factor for the kernel.
+            activation: Activation function class.
+            use_bias: Whether to include a bias term.
+            weights_initializer: Initializer function for weights.
+            biases_initializer: Initializer function for biases.
+        """
 
         super().__init__()
         self.co = nfilters
@@ -54,11 +72,19 @@ class AbstractConv2D[T: Array](Layer[T]):
         # @warning: do not do this (affects the gpu version) self.forward = self.backward = None
 
     def _initializing_special_parameters(self):
-        # NOTE: This method's objective is to define and change the value of some parameters defined before that are needed later in the initialization process,
-        #   for example: "self.weights_shape" and, in non-standard cases, "self.co".
+        """
+        Hook for subclasses to define or modify parameters required for initialization.
+        """
         pass
 
     def _model_init(self, prev_shape: ArrayShape, x: T | None):
+        """
+        Initializes layer dimensions and output shape based on input shape.
+
+        Args:
+            prev_shape: Shape of the input tensor.
+            x: Input tensor data.
+        """
         super()._model_init(prev_shape, x)
         self.ci, self.hi, self.wi = self.model.decode_shape(prev_shape)
         self.kh, self.kw = self.filter_shape
@@ -72,6 +98,12 @@ class AbstractConv2D[T: Array](Layer[T]):
         self.nparams = int(math.prod(self.weights_shape) + (self.co if self.use_bias else 0))
 
     def _show_props(self) -> dict:
+        """
+        Returns a dictionary of layer properties for debugging or logging.
+
+        Returns:
+            Dictionary containing layer configuration properties.
+        """
         props = super()._show_props()
 
         props["padding"] = (self.hpadding, self.wpadding)

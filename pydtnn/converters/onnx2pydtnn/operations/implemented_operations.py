@@ -453,11 +453,23 @@ def Mul(info: dict[str, Any]) -> Layerable:
         """
 
         def initialize_block_layer(self):
+            """
+            Initializes the block layer by verifying output shapes and setting the layer shape.
+            """
             super().initialize_block_layer()
             assert all([o == self.out_shapes[0] for o in self.out_shapes])
             self.shape = self.out_shapes[0]
 
         def forward(self, x):
+            """
+            Performs the forward pass of the multiplication block.
+
+            Args:
+                x: Input tensor.
+
+            Returns:
+                The result of the element-wise multiplication across paths.
+            """
             x = [x] * len(self.paths)
             for i, p in enumerate(self.paths):
                 for layer in p:
@@ -469,6 +481,15 @@ def Mul(info: dict[str, Any]) -> Layerable:
             return x[0]
 
         def backward(self, dy):
+            """
+            Performs the backward pass of the multiplication block.
+
+            Args:
+                dy: Gradient of the output.
+
+            Returns:
+                The gradient of the input.
+            """
             dx = [dy] * len(self.paths)
             for i, p in enumerate(self.paths):
                 for layer in reversed(p):
@@ -538,20 +559,46 @@ def Unsqueeze(info: dict[str, Any]) -> Layerable:
         """
 
         def __init__(self, shape=(1,), axis=()):
+            """
+            Initializes the _Unsqueeze layer.
+
+            Args:
+                shape: Initial shape of the layer.
+                axis: Axes to expand.
+            """
             super().__init__(shape)
             self.axis = axis
 
         def _model_init(self, prev_shape, need_dx=False):
+            """
+            Initializes the model with the previous layer shape.
+
+            Args:
+                prev_shape: Shape of the previous layer.
+                need_dx: Whether gradient calculation is required.
+            """
             super()._model_init(prev_shape, need_dx)
             self.shape = self.forward(np.zeros(prev_shape)).shape  # FIXME: revisar, estaba lo de antes
             # self.shape = self.shape + self.model.encode_shape(self.model.tensor_format)
 
         def initialize_block_layer(self):
+            """
+            Initializes the block layer by verifying output shapes.
+            """
             super().initialize_block_layer()
             assert all([o == self.out_shapes[0] for o in self.out_shapes])
             self.shape = self.out_shapes[0]
 
         def forward(self, x):
+            """
+            Performs the forward pass by expanding dimensions.
+
+            Args:
+                x: Input tensor.
+
+            Returns:
+                The expanded tensor.
+            """
             return expand_dims(x, axis=self.axis)
 
     return _Unsqueeze(**args)

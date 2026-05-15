@@ -1,3 +1,6 @@
+"""
+Common test suite for 2D convolution layer implementations.
+"""
 import inspect
 import logging
 
@@ -15,15 +18,21 @@ logger = logging.getLogger(__name__)
 
 class Conv2DCommonTestCase[T: Conv2D](TestCase):
     """
-    Tests that A layer leads to the same results than B layer
+    Abstract base class for testing and comparing two Conv2D layer implementations.
     """
 
     @staticmethod
     def _get_layers(d: D) -> tuple[T, T]:
+        """
+        Factory method to return the reference and test layers.
+        """
         raise NotImplementedError()
 
     @staticmethod
     def _set_state(layer: Conv2D, weights) -> None:
+        """
+        Sets the weights for a given Conv2D layer.
+        """
         layer.weights = weights.copy()
 
     x_2x4 = np.array([[[[1, 2, 4, 8], [16, 32, 64, 128]]]]).astype(np.float32, order="C")
@@ -58,6 +67,9 @@ class Conv2DCommonTestCase[T: Conv2D](TestCase):
     w_3x3 = np.array([[[[1, 1, 1], [1, 1, 1], [1, 1, 1]]]]).astype(np.float32, order="C")
 
     def _test_forward_backward(self, d: D, x: np.ndarray, weights: np.ndarray, print_times=False):
+        """
+        Executes forward and backward passes on both layers and asserts equality.
+        """
         from timeit import timeit
 
         conv2d_ref, conv2d_test = self._get_layers(d)

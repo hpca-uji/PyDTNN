@@ -1,3 +1,6 @@
+"""
+Common test suite for convolution operations in PyDTNN.
+"""
 import inspect
 import logging
 
@@ -21,17 +24,29 @@ class ConvCommonTestCase(TestCase):
     def _compute_both(
         cls, weights: np.ndarray, x: np.ndarray, biases: np.ndarray | None = None, vpadding=0, hpadding=0, vstride=1, hstride=1, vdilation=1, hdilation=1
     ) -> tuple[np.ndarray, np.ndarray]:
+        """
+        Computes convolution using two different methods for comparison.
+        """
         raise NotImplementedError()
 
     @staticmethod
     def _get_config() -> D:
+        """
+        Returns the configuration object for the test case.
+        """
         return D()
 
     @staticmethod
     def _compute(weights: np.ndarray, x: np.ndarray, biases: np.ndarray | None = None, kh=1, kw=1, vpadding=0, hpadding=0, vstride=1, hstride=1, vdilation=1, hdilation=1):
+        """
+        Computes the convolution operation.
+        """
         raise NotImplementedError()
 
     def test_raise_on_different_strides(self):
+        """
+        Verifies that convolution handles different vertical and horizontal strides correctly.
+        """
         d = self._get_config()
         weights = np.ones((d.c, d.kh, d.kw, d.kn)).astype(np.float32, order="C")
         x = np.ones((d.b, d.h, d.w, d.c)).astype(np.float32, order="C")
@@ -76,6 +91,9 @@ class ConvCommonTestCase(TestCase):
         self.assertTrue(np.allclose(test_result, ref_result), f"The difference is to big (rtol=1.e-5, atol=1.e-8). max diff: {diff.max()}. min diff: {diff.min()}")
 
     def test_with_different_kn(self):
+        """
+        Tests convolution correctness across varying numbers of output kernels.
+        """
         d = self._get_config()
         if verbose_test():
             print_with_header("{}".format(inspect.stack()[1][3]), None)
@@ -109,6 +127,9 @@ class ConvCommonTestCase(TestCase):
         self.assertTrue(np_all_close_for_all_cases)
 
     def test_with_different_b(self):
+        """
+        Tests convolution correctness across varying batch sizes.
+        """
         d = self._get_config()
         if verbose_test():
             print_with_header("{}".format(inspect.stack()[1][3]), None)
@@ -142,6 +163,9 @@ class ConvCommonTestCase(TestCase):
         self.assertTrue(np_all_close_for_all_cases)
 
     def test_with_different_padding(self):
+        """
+        Tests convolution correctness across varying padding values.
+        """
         d = self._get_config()
         if verbose_test():
             print_with_header("{}".format(inspect.stack()[1][3]), None)
@@ -175,6 +199,9 @@ class ConvCommonTestCase(TestCase):
         self.assertTrue(np_all_close_for_all_cases)
 
     def test_with_different_stride(self):
+        """
+        Tests convolution correctness across varying stride values.
+        """
         d = self._get_config()
         if verbose_test():
             print_with_header("{}".format(inspect.stack()[1][3]), None)
@@ -208,6 +235,9 @@ class ConvCommonTestCase(TestCase):
         self.assertTrue(np_all_close_for_all_cases)
 
     def test_with_different_strides(self):
+        """
+        Tests convolution correctness across varying combinations of vertical and horizontal strides.
+        """
         d = self._get_config()
         if verbose_test():
             print_with_header("{}".format(inspect.stack()[1][3]), None)
@@ -242,6 +272,9 @@ class ConvCommonTestCase(TestCase):
                 self.assertTrue(np.allclose(test_result, ref_result), f"Results differ with vstride {vstride} and hstride {hstride}")
 
     def test_with_different_dilation(self):
+        """
+        Tests convolution correctness across varying dilation values.
+        """
         d = self._get_config()
         if verbose_test():
             print_with_header("{}".format(inspect.stack()[1][3]), None)
@@ -275,6 +308,9 @@ class ConvCommonTestCase(TestCase):
         self.assertTrue(np_all_close_for_all_cases)
 
     def test_alexnet_layers(self):
+        """
+        Tests convolution correctness using parameters derived from AlexNet layers.
+        """
         if verbose_test():
             print_with_header("{}".format(inspect.stack()[1][3]), None)
             print(" layer   Maximum difference")

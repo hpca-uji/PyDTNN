@@ -121,6 +121,7 @@ _libcudnn.cudnnGetErrorString.argtypes = [ctypes.c_int]
 
 
 class CudnnError(Exception):
+    """Exception raised for errors in the cuDNN library."""
     def __init__(self, status):
         self.status = status
 
@@ -1289,6 +1290,7 @@ def cudnnDestroyConvolutionDescriptor(conv_desc):
 
 
 class CudnnConvolutionFwdAlgoPerf(ctypes.Structure):
+    """Performance result structure for forward convolution algorithms."""
     _fields_ = [("algo", ctypes.c_int), ("status", ctypes.c_int), ("time", ctypes.c_float), ("memory", ctypes.c_size_t)]
 
     def __str__(self):
@@ -1592,6 +1594,7 @@ def cudnnConvolutionBackwardBias(handle, alpha, src_desc, src_data, beta, dest_d
 
 
 class CudnnConvolutionBwdDataAlgoPerf(ctypes.Structure):
+    """Performance result structure for backward data convolution algorithms."""
     _fields_ = [("algo", ctypes.c_int), ("status", ctypes.c_int), ("time", ctypes.c_float), ("memory", ctypes.c_size_t)]
 
     def __str__(self):
@@ -1784,6 +1787,7 @@ def cudnnConvolutionBackwardData(handle, alpha, w_desc, w, dy_desc, dy, conv_des
 
 
 class CudnnConvolutionBwdFilterAlgoPerf(ctypes.Structure):
+    """Performance result structure for backward filter convolution algorithms."""
     _fields_ = [("algo", ctypes.c_int), ("status", ctypes.c_int), ("time", ctypes.c_float), ("memory", ctypes.c_size_t)]
 
     def __str__(self):
