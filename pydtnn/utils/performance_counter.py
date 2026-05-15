@@ -127,8 +127,7 @@ class PerformanceCounter:
         """Internal helper to record time, batch size, and memory usage."""
         self._times_record[where][epoch].append(elapsed_time)
         self._batch_sizes_record[where][epoch].append(batch_size)
-        # TODO: Check why [2] and move it to a constant or add a comment explain why [2]
-        mem = resource.getrusage(resource.RUSAGE_SELF)[2] + resource.getrusage(resource.RUSAGE_CHILDREN)[2]
+        mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss + resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss
         self._memory_record[where][epoch].append(mem)  # KiB in GNU/Linux
 
     def _time(self, where: Dataset.Part, last_half=False) -> float:
@@ -137,7 +136,6 @@ class PerformanceCounter:
 
     @staticmethod
     def _sum(arrays, last_half: bool) -> int | float:
-        # TODO: Add right typing to arrays and check the output type
         """Sums values across records, optionally estimating from the last half of data."""
         # When last_half is True, the total size is estimated from the last half steps of each epoch size
         if not last_half:
@@ -150,13 +148,11 @@ class PerformanceCounter:
                     records_per_epoch.append(np.sum(array_last_half) * len(array) / len(array_last_half))
         return np.sum(records_per_epoch)
 
-    def _size(self, where: Dataset.Part, last_half=False):
-        # TODO: Add right output's typing
+    def _size(self, where: Dataset.Part, last_half=False) -> int | float:
         """Calculates total batch size for a given phase."""
         return self._sum(self._batch_sizes_record[where].values(), last_half)
 
-    def _throughput(self, where: Dataset.Part, last_half=False):
-        # TODO: Add right output's typing
+    def _throughput(self, where: Dataset.Part, last_half=False) -> float:
         """Calculates throughput for a given phase."""
         return self._size(where, last_half) / self._time(where, last_half)
 
@@ -172,7 +168,7 @@ class PerformanceCounter:
                 return maximum_memory_first_evaluation
             case _:
                 NotImplementedError(f"_maximum_memory not implemented for \"{where}\" case.")
-                return 0
+                return -1
 
     def _mean_memory(self, where: Dataset.Part) -> float:
         """Calculates mean memory usage for a given phase."""
@@ -186,4 +182,4 @@ class PerformanceCounter:
                 return mean_memory_first_evaluation.item()
             case _:
                 NotImplementedError(f"_maximum_memory not implemented for \"{where}\" case.")
-                return 0
+                return -1.0
