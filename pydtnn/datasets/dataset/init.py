@@ -19,13 +19,13 @@ import numpy as np
 import rapidgzip
 from PIL import Image
 
-from pydtnn.utils import BackgroundGenerator, find_component, random
+from pydtnn.datasets.dataset.base import Base
+from pydtnn.utils import BackgroundGenerator
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import ChannelFormat, SampleFormat, TensorFormat, format_transpose
 
 __all__ = (
-    "Dataset",
-    "select",
+    "Init",
 )
 
 logger = logging.getLogger(__name__)
@@ -38,7 +38,7 @@ if TYPE_CHECKING:
 type TransformFunc = Callable[[np.ndarray, np.ndarray], tuple[np.ndarray, np.ndarray]]
 
 
-class Dataset:
+class Init(Base):
     """
     Base class for handling datasets in PyDTNN.
 
@@ -52,13 +52,6 @@ class Dataset:
     - data_generator(x) is expected to be in model.tensor_format format
     - data_generator(y) is expected to be in NC format
     """
-
-    class Part(IntEnum):
-        """Enum representing the dataset partition."""
-
-        TRAIN = 0
-        VAL = 1
-        TEST = 2
 
     def __init__(self, model: Model, train_nsamples: int = 0, test_nsamples: int = 0, input_shape: ArrayShape = (), output_shape: ArrayShape = (), force_test_as_validation=False, debug=False):
         """
@@ -101,77 +94,40 @@ class Dataset:
         self.test_as_validation: bool = self.model.test_as_validation or force_test_as_validation
         self._nsamples: list[int] = [train_nsamples, 0, test_nsamples]
 
-        self._transformations = dict[Dataset.Part, list[TransformFunc]]()
-        transformations_training = list[TransformFunc]()
-        transformations_always = list[TransformFunc]()
-
         # Compute self._nsamples[DatasetEnum.VAL]
         if self.test_as_validation:
-            self._nsamples[Dataset.Part.VAL] = self._nsamples[Dataset.Part.TEST]
+            self._nsamples[Base.Part.VAL] = self._nsamples[Base.Part.TEST]
         else:
-            self._nsamples[Dataset.Part.VAL] = min(
-                self._nsamples[Dataset.Part.TRAIN] - self.model.nprocs, max(self.model.nprocs, int(self._nsamples[Dataset.Part.TRAIN] * self.model.validation_split))
+            self._nsamples[Base.Part.VAL] = min(
+                self._nsamples[Base.Part.TRAIN] - self.model.nprocs, max(self.model.nprocs, int(self._nsamples[Base.Part.TRAIN] * self.model.validation_split))
             )
-            self._nsamples[Dataset.Part.TRAIN] -= self._nsamples[Dataset.Part.VAL]
+            self._nsamples[Base.Part.TRAIN] -= self._nsamples[Base.Part.VAL]
 
         # self.real_input_shape = tuple(input_shape)
         self.input_shape: ArrayShape = tuple(input_shape)
         self.output_shape: ArrayShape = tuple(output_shape)
 
-        if self.model.transform_crop:
-            crop, size = self._calculate_crop(self.input_shape[1:])  # type: ignore (The cropped input shape will be a tuple[int, int])
-            self.input_shape = (self.input_shape[0], *size)
-            transformations_training.append(self._x_transformer_adaptor(self._do_transform_crop))
-            transformations_always.append(self._x_transformer_adaptor(self._do_transform_crop))
-
-        if self.model.transform_resize:
-            self.input_shape = (self.input_shape[0], self.model.transform_resize_size, self.model.transform_resize_size)
-            transformations_training.append(self._x_transformer_adaptor(self._do_transform_resize))
-            transformations_always.append(self._x_transformer_adaptor(self._do_transform_resize))
-
-        if self.model.augment_flip > 0:
-            transformations_training.append(self._x_transformer_adaptor(self._do_flip_images))
-
-        if self.model.augment_crop > 0:
-            transformations_training.append(self._x_transformer_adaptor(self._do_augment_crop))
-
-        if self.model.augment_shuffle:
-            transformations_training.append(self._do_augment_shuffle)
-
-        if self.model.normalize:
-            transformations_training.append(self._x_transformer_adaptor(self._do_normalize))
-            transformations_always.append(self._x_transformer_adaptor(self._do_normalize))
-
-        self._transformations[Dataset.Part.TRAIN] = transformations_training
-        self._transformations[Dataset.Part.TEST] = transformations_always
-        self._transformations[Dataset.Part.VAL] = transformations_always
-
-        self._initial_nsamples = [self._nsamples[Dataset.Part.TRAIN], self._nsamples[Dataset.Part.VAL], self._nsamples[Dataset.Part.TEST]]
+        self._initial_nsamples = [self._nsamples[Base.Part.TRAIN], self._nsamples[Base.Part.VAL], self._nsamples[Base.Part.TEST]]
         # Offset (in number of samples) and number of samples for the current job for each dataset part
-        self._local_offset = [0] * len(Dataset.Part)
-        self._local_nsamples = [0] * len(Dataset.Part)
-        self._local_remaining_nsamples = [-1] * len(Dataset.Part)  # -1 is used to mark each part as not initialized
+        self._local_offset = [0] * len(Base.Part)
+        self._local_nsamples = [0] * len(Base.Part)
+        self._local_remaining_nsamples = [-1] * len(Base.Part)  # -1 is used to mark each part as not initialized
 
-        for part in Dataset.Part.TRAIN, Dataset.Part.VAL, Dataset.Part.TEST:
+        for part in Base.Part.TRAIN, Base.Part.VAL, Base.Part.TEST:
             (self._local_offset[part], self._local_nsamples[part], self._nsamples[part]) = self._compute_local_workload(self._nsamples[part])
 
         self.x_empty_batch = np.zeros(shape=self.model.encode_shape((0, *self.input_shape)), dtype=self.model.dtype)
         self.y_empty_batch = np.zeros(shape=(0, *self.output_shape), dtype=self.model.dtype)
 
         # Declare _x and _y for train, val and test dataset parts
-        self._x = [self.x_empty_batch] * len(Dataset.Part)
-        self._y = [self.y_empty_batch] * len(Dataset.Part)
+        self._x = [self.x_empty_batch] * len(Base.Part)
+        self._y = [self.y_empty_batch] * len(Base.Part)
 
         self._data_generator = self._actual_data_generator
         self._init_actual_data()
 
         if self.debug:
             self._print_report()
-
-    @property
-    def name(self) -> str:
-        """Return the class name of the dataset."""
-        return type(self).__name__
 
     def _gzip_open(self, filename: str) -> IO[bytes]:
         """
@@ -225,12 +181,12 @@ class Dataset:
         """
 
         # Data generators
-        gen_train = BackgroundGenerator(self._actual_batch_generator(Dataset.Part.TRAIN), max_prefetch=1)
-        gen_val = BackgroundGenerator(self._actual_batch_generator(Dataset.Part.VAL), max_prefetch=1)
-        gen_test = BackgroundGenerator(self._actual_batch_generator(Dataset.Part.TEST), max_prefetch=1)
-        num_train = self._local_nsamples[Dataset.Part.TRAIN]
-        num_val = self._local_nsamples[Dataset.Part.VAL]
-        num_test = self._local_nsamples[Dataset.Part.TEST]
+        gen_train = BackgroundGenerator(self._actual_batch_generator(Base.Part.TRAIN), max_prefetch=1)
+        gen_val = BackgroundGenerator(self._actual_batch_generator(Base.Part.VAL), max_prefetch=1)
+        gen_test = BackgroundGenerator(self._actual_batch_generator(Base.Part.TEST), max_prefetch=1)
+        num_train = self._local_nsamples[Base.Part.TRAIN]
+        num_val = self._local_nsamples[Base.Part.VAL]
+        num_test = self._local_nsamples[Base.Part.TEST]
 
         # Reconstruct validation split
         if not self.test_as_validation:
@@ -265,7 +221,7 @@ class Dataset:
             "y_test": y_test,
         }
 
-    def _export_split(self, data: dict[str, np.ndarray], split_weights: list[float] = [1]) -> Generator[dict[str, np.ndarray]]:
+    def _export_split(self, data: dict[str, np.ndarray], split_weights: list[float] = [1.0]) -> Generator[dict[str, np.ndarray]]:
         """
         Generate export data splits based on weights.
 
@@ -326,36 +282,6 @@ class Dataset:
         else:
             np.savez_compressed(path / "archive.npz", **data)  # type: ignore
 
-    @property
-    def train_nsamples(self):
-        """Get number of training samples."""
-        return self._nsamples[Dataset.Part.TRAIN]
-
-    @train_nsamples.setter
-    def train_nsamples(self, value):
-        """Set number of training samples."""
-        self._nsamples[Dataset.Part.TRAIN] = value
-
-    @property
-    def val_nsamples(self):
-        """Get number of validation samples."""
-        return self._nsamples[Dataset.Part.VAL]
-
-    @val_nsamples.setter
-    def val_nsamples(self, value):
-        """Set number of validation samples."""
-        self._nsamples[Dataset.Part.VAL] = value
-
-    @property
-    def test_nsamples(self):
-        """Get number of test samples."""
-        return self._nsamples[Dataset.Part.TEST]
-
-    @test_nsamples.setter
-    def test_nsamples(self, value):
-        """Set number of test samples."""
-        self._nsamples[Dataset.Part.TEST] = value
-
     def get_train_val_generator(self) -> tuple[Generator[tuple[np.ndarray, np.ndarray, int]], Generator[tuple[np.ndarray, np.ndarray, int]]]:
         """
         Return generators for training and validation sets.
@@ -366,7 +292,7 @@ class Dataset:
         Returns:
             A tuple containing two generators: (training_generator, validation_generator).
         """
-        return (self._batch_generator(Dataset.Part.TRAIN), self._batch_generator(Dataset.Part.VAL))
+        return (self._batch_generator(Base.Part.TRAIN), self._batch_generator(Base.Part.VAL))
 
     def get_test_generator(self) -> Generator[tuple[np.ndarray, np.ndarray, int]]:
         """
@@ -377,20 +303,20 @@ class Dataset:
         Returns:
             A generator yielding test data batches.
         """
-        return self._batch_generator(Dataset.Part.TEST)
+        return self._batch_generator(Base.Part.TEST)
 
     def _print_report(self):
         """Print a summary report of the dataset configuration."""
         report = list[str]()
         if self.model.comm_rank == 0:
             report.append("Initial nsamples:")
-            report.append(f" train: {self._initial_nsamples[Dataset.Part.TRAIN]} ")
-            report.append(f" val: {self._initial_nsamples[Dataset.Part.VAL]} ")
-            report.append(f" test: {self._initial_nsamples[Dataset.Part.TEST]} ")
+            report.append(f" train: {self._initial_nsamples[Base.Part.TRAIN]} ")
+            report.append(f" val: {self._initial_nsamples[Base.Part.VAL]} ")
+            report.append(f" test: {self._initial_nsamples[Base.Part.TEST]} ")
 
         desc = ["train", "val", "test"]
-        for part in (Dataset.Part.TRAIN, Dataset.Part.VAL, Dataset.Part.TEST):
-            prefix = f"{self.model.rank}: " if part is Dataset.Part.TRAIN else "   "
+        for part in (Base.Part.TRAIN, Base.Part.VAL, Base.Part.TEST):
+            prefix = f"{self.model.rank}: " if part is Base.Part.TRAIN else "   "
             report.append(f"{prefix}")
             report.append(f" {desc[part]} offset: {self._local_offset[part]}")
             report.append(f" {desc[part]} local nsamples: {self._local_nsamples[part]}")
@@ -500,7 +426,7 @@ class Dataset:
             local_nsamples -= nsamples
         return output
 
-    def _actual_data_generator(self, part: Part) -> Generator[tuple[np.ndarray, np.ndarray]]:
+    def _actual_data_generator(self, part: Base.Part) -> Generator[tuple[np.ndarray, np.ndarray]]:
         """Yield raw data from the dataset partition."""
         yield self._x[part], self._y[part]
 
@@ -527,8 +453,8 @@ class Dataset:
             return func(x), y
 
         return wrapper
-
-    def _transform_data_generator(self, part: Part) -> Generator[tuple[np.ndarray, np.ndarray]]:
+    
+    def _base_data_generator(self, part: Base.Part) -> Generator[tuple[np.ndarray, np.ndarray]]:
         """
         Yield transformed data from the dataset partition.
 
@@ -543,11 +469,10 @@ class Dataset:
         """
         for x, y in self._data_generator(part):
             x, y = x.copy(), y.copy()
-            for transformation in self._transformations[part]:
-                x, y = transformation(x, y)
             yield x, y
 
-    def _actual_batch_generator(self, part: Part) -> Generator[tuple[np.ndarray, np.ndarray, int]]:
+
+    def _actual_batch_generator(self, part: Base.Part) -> Generator[tuple[np.ndarray, np.ndarray, int]]:
         """
         Generate batches of data for the specified partition.
 
@@ -581,7 +506,7 @@ class Dataset:
         local_batch_size = self.model.batch_size
         global_batch_size = self.model.batch_size * self.model.nprocs
 
-        generator = self._transform_data_generator(part)
+        generator = self._base_data_generator(part)
         nsamples = self._nsamples[part]
 
         batch_size = 0
@@ -620,7 +545,7 @@ class Dataset:
                 yield x_batch[:nsamples], y_batch[:nsamples], global_batch_size
                 nsamples -= global_batch_size
 
-    def _batch_generator(self, part: Part) -> Generator[tuple[np.ndarray, np.ndarray, int]]:
+    def _batch_generator(self, part: Base.Part) -> Generator[tuple[np.ndarray, np.ndarray, int]]:
         """
         Yield batches with background prefetching.
 
@@ -639,212 +564,6 @@ class Dataset:
         while True:
             yield self.x_empty_batch, self.y_empty_batch, 0
 
-    def _do_normalize(self, data: np.ndarray) -> np.ndarray:
-        """
-        Normalize data using model parameters.
-
-        Applies offset and scaling defined in `self.model.normalize_offset`
-        and `self.model.normalize_scale` to the input data.
-
-        Args:
-            data: The input numpy array to normalize.
-
-        Returns:
-            The normalized numpy array.
-        """
-        np.add(data, self.model.normalize_offset, out=data)
-        np.multiply(data, self.model.normalize_scale, out=data)
-        return data
-
-    def _do_flip_images(self, data: np.ndarray) -> np.ndarray:
-        """
-        Apply random horizontal flip augmentation to images.
-
-        Randomly flips a portion of the images horizontally based on the
-        `self.model.augment_flip` parameter.
-
-        Args:
-            data: The input numpy array (batch of images).
-
-        Returns:
-            The array with some images potentially flipped horizontally.
-
-        Raises:
-            NotImplementedError: If the `self.model.tensor_format` is not supported.
-        """
-        n = data.shape[0]
-        match self.model.tensor_format:
-            case TensorFormat.NCHW:
-                width_dim = -1
-            case TensorFormat.NHWC:
-                width_dim = 2
-            case _:
-                raise NotImplementedError(f"Dataset _do_flip_image is not implemented for {self.model.tensor_format} format.")
-
-        limit = min(n, int(n * self.model.augment_flip))
-        s = np.arange(n)
-        random.shuffle(s)
-        s = s[:limit]
-        data[s, ...] = np.flip(data[s, ...], axis=width_dim)
-        return data
-
-    def _do_augment_shuffle(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        """
-        Shuffle samples within a batch.
-
-        Randomly shuffles the order of samples (and their corresponding labels)
-        within a given batch. This is a form of data augmentation.
-
-        Args:
-            x: The input data batch.
-            y: The corresponding label batch.
-
-        Returns:
-            A tuple containing the shuffled input data and label batches.
-        """
-        idx = np.arange(x.shape[0])
-        random.shuffle(idx)
-        x[:] = x[idx]
-        y[:] = y[idx]
-        return x, y
-
-    def _do_augment_crop(self, data: np.ndarray) -> np.ndarray:
-        """
-        Apply random crop augmentation.
-
-        Randomly crops a portion of the images in the batch. The crop size and
-        the percentage of images to crop are determined by model parameters.
-        Pads the cropped area with zeros.
-
-        Args:
-            data: The input numpy array (batch of images).
-
-        Returns:
-            The array with some images randomly cropped.
-
-        Raises:
-            NotImplementedError: If the `self.model.tensor_format` is not supported.
-        """
-        n, c, h, w = self.model.decode_shape(data.shape)
-        crop_size = min(self.model.augment_crop_size, h, w)
-        limit = min(n, int(n * self.model.augment_crop))
-        s = np.arange(n)
-        random.shuffle(s)
-        s = s[:limit]
-        t = random.integers(0, h - crop_size, (limit,))
-        ll = random.integers(0, w - crop_size, (limit,))
-        for i, ri in enumerate(s):
-            b, r = t[i] + crop_size, ll[i] + crop_size
-            match self.model.tensor_format:
-                case TensorFormat.NCHW:
-                    data[ri, :, : t[i], : ll[i]] = 0.0
-                    data[ri, :, b:, r:] = 0.0
-                case TensorFormat.NHWC:
-                    data[ri, : t[i], : ll[i], :] = 0.0
-                    data[ri, b:, r:, :] = 0.0
-                case _:
-                    raise NotImplementedError(f"Dataset _do_crop_images is not implemented for {self.model.tensor_format} format.")
-            data[ri, ...] = np.roll(data[ri, ...], random.integers(-t[i], (h - b)), axis=1)
-            data[ri, ...] = np.roll(data[ri, ...], random.integers(-ll[i], (w - r)), axis=2)
-        return data
-
-    def _do_transform_resize(self, data: np.ndarray) -> np.ndarray:
-        """
-        Resize images using PIL.
-
-        Resizes images in the batch to a fixed size specified by
-        `self.model.transform_resize_size`. Uses PIL for image resizing.
-
-        Args:
-            data: The input numpy array (batch of images).
-
-        Returns:
-            The array with images resized.
-        """
-        data = self.model.decode_tensor(data)
-
-        size = (self.model.transform_resize_size, self.model.transform_resize_size)
-        shape = (*data.shape[:2], *size)
-        N, C, H, W = shape
-
-        new_data = np.empty(shape=shape, dtype=self.model.dtype)
-
-        for n in range(N):
-            for c in range(C):
-                channel: np.ndarray = data[n, c]
-                # NOTE: PIL mode F is WH in float32
-                channel = channel.transpose().astype(np.float32)  # type: ignore (it's possible to use copy=None)
-                image = Image.fromarray(channel, mode="F")
-                image = image.resize(size)
-                channel = np.asarray(image, dtype=np.float32, order="C")
-                channel = channel.transpose().astype(self.model.dtype)  # type: ignore (it's possible to use copy=None)
-                new_data[n, c] = channel
-
-        new_data = self.model.encode_tensor(new_data)
-
-        return new_data
-
-    def _calculate_crop(self, size: tuple[int, int]) -> tuple[tuple[int, int, int, int], tuple[int, int]]:
-        """
-        Calculate crop coordinates and resulting size.
-
-        Determines the bounding box for a center crop based on the
-        `self.model.transform_crop_perc` parameter, and calculates the
-        resulting dimensions after cropping.
-
-        Args:
-            size: The original (width, height) of the image.
-
-        Returns:
-            A tuple containing:
-            - crop: A tuple (x_offset, y_offset, width - x_offset, height - y_offset)
-                    representing the crop box.
-            - size: A tuple (new_width, new_height) representing the dimensions
-                    after cropping.
-        """
-        width, height = size
-        frame_fraction = (1 - self.model.transform_crop_perc) / 2
-        x_offset, y_offset = round(width * frame_fraction), round(height * frame_fraction)
-        crop = (x_offset, y_offset, width - x_offset, height - y_offset)
-        size = (crop[2] - crop[0], crop[3] - crop[1])
-        return (crop, size)
-
-    def _do_transform_crop(self, data: np.ndarray) -> np.ndarray:
-        """
-        Apply center crop transformation.
-
-        Performs a center crop on the images in the batch according to the
-        calculated crop box and size. Uses PIL for the cropping operation.
-
-        Args:
-            data: The input numpy array (batch of images).
-
-        Returns:
-            The array with images center-cropped.
-        """
-        data = self.model.decode_tensor(data)
-
-        size = data.shape[2:4]
-        crop, size = self._calculate_crop(size)
-        shape = (*data.shape[:2], *size)
-        N, C, H, W = shape
-
-        new_data = np.empty(shape=shape, dtype=self.model.dtype)
-
-        for n in range(N):
-            for c in range(C):
-                channel: np.ndarray = data[n, c]
-                # NOTE: PIL mode F is WH in float32
-                channel = channel.transpose().astype(np.float32)  # type: ignore (it's possible to use copy=None)
-                image = Image.fromarray(channel, mode="F")
-                image = image.crop(crop)
-                channel = np.asarray(image, dtype=np.float32, order="C")
-                channel = channel.transpose().astype(self.model.dtype)  # type: ignore (it's possible to use copy=None)
-                new_data[n, c] = channel
-
-        new_data = self.model.encode_tensor(new_data)
-
-        return new_data
 
     def _load_rgb_image(self, fp: IO[bytes] | str) -> np.ndarray:
         """
@@ -886,23 +605,3 @@ class Dataset:
             array = format_transpose(array, ChannelFormat.WH, ChannelFormat.HW)
             array = array[None, ...]
         return array
-
-
-def select(name: str) -> type[Dataset]:
-    """
-    Select a dataset class by name.
-
-    This function dynamically imports and returns a dataset class based on its
-    string name. It searches within the current package for the specified class.
-
-    Args:
-        name: The string name of the dataset class to select.
-
-    Returns:
-        The dataset class type.
-
-    Raises:
-        AssertionError: If the package context cannot be determined.
-    """
-    assert __package__, "Package not found!"
-    return find_component(__package__, name)
