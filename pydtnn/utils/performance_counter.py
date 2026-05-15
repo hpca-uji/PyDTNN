@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 class PerformanceCounter:
     """Tracks and reports performance metrics including time, throughput, and memory usage."""
 
-    #Originally: TRAINING, TESTING = range(2); Changed to Dataset.Part
+    # Originally: TRAINING, TESTING = range(2); Changed to Dataset.Part
 
     def __init__(self):
         """Initializes the performance counter with empty records."""
@@ -65,7 +65,7 @@ class PerformanceCounter:
         return self._time(Dataset.Part.TRAIN, last_half=True)
 
     @property
-    def training_maximum_memory(self)  -> int:
+    def training_maximum_memory(self) -> int:
         """Returns the maximum memory usage recorded during training in KiB."""
         return self._maximum_memory(Dataset.Part.TRAIN)
 
