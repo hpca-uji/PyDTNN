@@ -85,7 +85,7 @@ class Conv2DBatchNormalizationTestCase(Conv2DCommonTestCase):
             biases_initializer=zeros,
         )
         bn_fuse = BatchNormalization()
-        model_chain.add_layers([conv2d_fuse, bn_fuse])
+        model_fuse.add_layers([conv2d_fuse, bn_fuse])
 
         model_chain._model_init()
         model_fuse._model_init()
