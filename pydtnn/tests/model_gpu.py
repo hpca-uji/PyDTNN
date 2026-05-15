@@ -10,6 +10,7 @@ import unittest
 import numpy as np
 import pycuda.gpuarray as gpuarray  # type: ignore
 
+from pydtnn import pycuda, supported_gpu
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.layers.addition_block import AdditionBlock
@@ -26,6 +27,7 @@ __all__ = ("ModelGpuTestCase",)
 logger = logging.getLogger(__name__)
 
 
+@unittest.skipUnless(pycuda and supported_gpu, "requires GPU")
 class ModelGpuTestCase(ModelCommonTestCase):
     """
     Test case for verifying model parity between CPU and GPU implementations.
