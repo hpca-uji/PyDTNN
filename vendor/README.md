@@ -138,7 +138,7 @@ DIRECT_PREFIX="$PREFIX/convDirect"
 # git clone --recursive https://github.com/hpca-uji/convDirect.git "$DIRECT_SRC"
 git submodule update --init --recursive "$DIRECT_SRC"
 cd "$DIRECT_SRC"
-git checkout 888402fc45df89f8a055dc4575ef53a6b35ea502
+git checkout 25937a6b3e06cf06089e7403798547c31528cba3
 
 # Compile
 cd ./build
