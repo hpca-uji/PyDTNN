@@ -8,6 +8,10 @@ import unittest
 import numpy as np
 
 from pydtnn.layers.abstract.layer import LayerError
+from pydtnn.layers.addition_block import AdditionBlock
+from pydtnn.layers.batch_normalization import BatchNormalization
+from pydtnn.layers.concatenation_block import ConcatenationBlock
+from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.model import Model
 from pydtnn.tests.abstract.common import Params
 from pydtnn.tests.abstract.model_common import ModelCommonTestCase
@@ -26,9 +30,24 @@ class ModelDTypeTestCase(ModelCommonTestCase):
     global ModelCommonTestCase
     del ModelCommonTestCase
 
-    # Compares results between an XX model {self.model1_desc} and other {self.model1_desc}
+    # Compares results between an XX model {self.model1_desc} and other {self.model2_desc}
     model1_desc = "using float32"
     model2_desc = "using float64"
+
+    rtol_default = 1e-4
+    atol_default = 1e-5
+    rtol_dict = {
+        AdditionBlock: 5e-3,
+        ConcatenationBlock: 1e-1,
+        BatchNormalization: 1e-5,
+        Conv2D: 1e-4,
+    }
+    atol_dict = {
+        AdditionBlock: 5e-3,
+        ConcatenationBlock: 1e-1,
+        Conv2D: 1e-5,
+        BatchNormalization: 1e-4,
+    }
 
     def get_model2(self, model_name: str, overwrite_params: dict | None = None) -> Model:
         """
