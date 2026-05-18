@@ -18,7 +18,7 @@ import numpy as np
 import rapidgzip
 from PIL import Image
 
-from pydtnn.datasets.dataset.base import Base
+from pydtnn.datasets.abstract.base import Base
 from pydtnn.utils import BackgroundGenerator
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import ChannelFormat, SampleFormat, TensorFormat, format_transpose

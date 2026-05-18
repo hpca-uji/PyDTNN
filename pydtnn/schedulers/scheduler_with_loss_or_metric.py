@@ -5,7 +5,7 @@ Module for schedulers that depend on model loss or metric values.
 import logging
 import operator
 
-from pydtnn.schedulers.scheduler import Scheduler
+from pydtnn.schedulers.abstract.scheduler import Scheduler
 
 __all__ = ("SchedulerWithLossOrMetric",)
 

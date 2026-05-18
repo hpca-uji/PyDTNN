@@ -8,7 +8,7 @@ from pycuda.driver import Function  # type: ignore
 
 from pydtnn.backends.pycuda.abstract.base import BasePycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.metrics.metric import Metric
+from pydtnn.metrics.abstract.metric import Metric
 from pydtnn.utils.constants import DTYPE2CTYPE
 
 __all__ = ("MetricPycuda",)

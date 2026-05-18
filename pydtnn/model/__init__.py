@@ -13,8 +13,10 @@ __all__ = ("Model",)
 class Model[T: Array](Train[T], State[T], Repr[T]):
     """
     # PyDTNN model
+    The Model class serves as the primary interface for PyDTNN, integrating
+    training, inference, state management, and representation capabilities.
 
-    # Hierarchy structure diagram:
+    ## Hierarchy structure diagram:
     ```
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
     ┃ Base ─ Utils ┬ Layers ┬ Init ─ Sync ─ Eval ─ Train ┬ Model ┃
@@ -22,7 +24,4 @@ class Model[T: Array](Train[T], State[T], Repr[T]):
     ┃              └── Repr ─────────────────────────────┘       ┃
     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
     ```
-
-    The Model class serves as the primary interface for PyDTNN, integrating
-    training, state management, and representation capabilities.
     """

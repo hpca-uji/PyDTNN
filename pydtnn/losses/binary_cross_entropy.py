@@ -4,7 +4,7 @@ Binary Cross Entropy loss implementation for the PyDTNN framework.
 
 import logging
 
-from pydtnn.losses.loss import Loss
+from pydtnn.losses.abstract.loss import Loss
 from pydtnn.utils.constants import Array
 
 __all__ = ("BinaryCrossEntropy",)

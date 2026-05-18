@@ -4,7 +4,7 @@ Categorical Mean Squared Error metric implementation for PyDTNN.
 
 import logging
 
-from pydtnn.metrics.metric import Metric
+from pydtnn.metrics.abstract.metric import Metric
 from pydtnn.utils.constants import Array
 
 __all__ = ("CategoricalMSE",)

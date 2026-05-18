@@ -13,16 +13,16 @@ import numpy as np
 
 from pydtnn import MPI, context, cublas, cublas_handle, cudnn, cudnn_handle, drv, gpuarray, hostname, nccl, nccl_comm, num_gpus, ranks_per_node, stream
 from pydtnn.abstract.layerable import Layerable
-from pydtnn.datasets.dataset import Dataset
-from pydtnn.datasets.dataset import select as select_dataset
+from pydtnn.datasets.abstract import Dataset
+from pydtnn.datasets import select as select_dataset
 from pydtnn.libs.mpi.rc import proto as PROTOCOL
-from pydtnn.losses.loss import select as select_loss
-from pydtnn.metrics.metric import select as select_metric
+from pydtnn.losses import select as select_loss
+from pydtnn.metrics import select as select_metric
 from pydtnn.model.base import Base
 from pydtnn.model.layers import Layers
 from pydtnn.model.utils import DEFAULT_BACH_SIZE, LIMIT_THREADS_AND_BLOCKS
-from pydtnn.models.model import select as select_model
-from pydtnn.optimizers.optimizer import select as select_optimizer
+from pydtnn.models import select as select_model
+from pydtnn.optimizers import select as select_optimizer
 from pydtnn.utils.gpu import CudnnDataType
 from pydtnn.utils.memory_pool import PreallocMemory, PrivateMemory
 from pydtnn.utils.parser import ArgumentParser

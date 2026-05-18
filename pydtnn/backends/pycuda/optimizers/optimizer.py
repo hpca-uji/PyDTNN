@@ -11,7 +11,7 @@ from pycuda.elementwise import ElementwiseKernel  # type: ignore
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.backends.pycuda.abstract.base import BasePycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.optimizers.optimizer import Optimizer
+from pydtnn.optimizers.abstract.optimizer import Optimizer
 
 __all__ = ("OptimizerPycuda",)
 

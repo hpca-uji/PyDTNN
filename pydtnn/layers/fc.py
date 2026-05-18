@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-from pydtnn.layers.layer import Layer
+from pydtnn.layers.abstract.layer import Layer
 from pydtnn.utils.constants import Array, ArrayShape, Parameters
 from pydtnn.utils.initializers import InitializerFunc, glorot_uniform, zeros
 
@@ -14,7 +14,7 @@ __all__ = ("FC",)
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from pydtnn.activations.activation import Activation
+    from pydtnn.activations.abstract.activation import Activation
 
 
 class FC[T: Array](Layer[T]):

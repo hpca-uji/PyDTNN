@@ -4,7 +4,7 @@ Module providing the Arctanh activation function for the PyDTNN framework.
 
 import logging
 
-from pydtnn.activations.activation import Activation
+from pydtnn.activations.abstract.activation import Activation
 from pydtnn.utils.constants import Array
 
 __all__ = ("Arctanh",)

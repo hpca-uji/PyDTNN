@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Generator, override
 
 import numpy as np
 
-from pydtnn.datasets.dataset import Dataset
+from pydtnn.datasets.abstract import Dataset
 from pydtnn.utils import random
 from pydtnn.utils.constants import ArrayShape
 

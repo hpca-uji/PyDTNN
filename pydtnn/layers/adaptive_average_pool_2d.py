@@ -5,7 +5,7 @@ Adaptive Average Pooling 2D layer implementation for PyDTNN.
 import logging
 import math
 
-from pydtnn.layers.layer import Layer, LayerError
+from pydtnn.layers.abstract.layer import Layer, LayerError
 from pydtnn.utils.constants import Array, ArrayShape
 
 __all__ = ("AdaptiveAveragePool2D",)

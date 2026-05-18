@@ -11,7 +11,7 @@ from pycuda import gpuarray  # type: ignore
 from pydtnn import gpu_errors
 from pydtnn.backends.pycuda.abstract.layerable import LayerablePycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.layers.layer import Layer
+from pydtnn.layers.abstract.layer import Layer
 from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
 
 __all__ = ("LayerPycuda",)

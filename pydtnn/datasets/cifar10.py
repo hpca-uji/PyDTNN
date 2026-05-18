@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from pydtnn.datasets.dataset import Dataset
+from pydtnn.datasets.abstract import Dataset
 from pydtnn.utils import random
 
 __all__ = ("CIFAR10",)

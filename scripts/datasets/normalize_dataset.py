@@ -9,7 +9,7 @@ from collections import abc
 
 import numpy as np
 
-from pydtnn.datasets.dataset import Dataset
+from pydtnn.datasets.abstract import Dataset
 from pydtnn.model import Model
 from pydtnn.utils.parser import ArgumentParser
 from pydtnn.utils.tensor import TensorFormat

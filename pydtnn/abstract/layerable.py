@@ -18,9 +18,9 @@ logger = logging.getLogger(__name__)
 
 
 if TYPE_CHECKING:
-    from pydtnn.activations.activation import Activation
+    from pydtnn.activations.abstract.activation import Activation
     from pydtnn.model import Model
-    from pydtnn.optimizers.optimizer import Optimizer
+    from pydtnn.optimizers.abstract.optimizer import Optimizer
 
 
 try:

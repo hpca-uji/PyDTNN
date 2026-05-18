@@ -7,7 +7,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-from pydtnn.optimizers.optimizer import Optimizer
+from pydtnn.optimizers.abstract.optimizer import Optimizer
 from pydtnn.utils.constants import Array
 
 __all__ = ("Nadam",)

@@ -8,7 +8,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from pydtnn.backends.numpy.abstract.layerable import LayerableNumpy
-from pydtnn.layers.layer import Layer
+from pydtnn.layers.abstract.layer import Layer
 from pydtnn.libs import numpy as np
 
 __all__ = ("LayerNumpy",)

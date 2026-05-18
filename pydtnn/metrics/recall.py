@@ -5,7 +5,7 @@ Recall metric implementation for binary classification tasks.
 import logging
 
 from pydtnn.metrics.binary_confusion_matrix import BinaryConfusionMatrix
-from pydtnn.metrics.metric import Metric
+from pydtnn.metrics.abstract.metric import Metric
 from pydtnn.utils.constants import Array
 
 __all__ = ("Recall",)

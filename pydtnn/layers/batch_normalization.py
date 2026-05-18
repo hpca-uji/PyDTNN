@@ -5,7 +5,7 @@ from typing import Any, Callable
 
 import numpy as np
 
-from pydtnn.layers.layer import Layer
+from pydtnn.layers.abstract.layer import Layer
 from pydtnn.utils.constants import Array, ArrayShape, Parameters
 from pydtnn.utils.initializers import ones, zeros
 

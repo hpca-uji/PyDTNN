@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 from pydtnn.backends.numpy.abstract.base import BaseNumpy
 from pydtnn.libs import numpy as np
-from pydtnn.losses.loss import Loss
+from pydtnn.losses.abstract.loss import Loss
 
 __all__ = ("LossNumpy",)
 

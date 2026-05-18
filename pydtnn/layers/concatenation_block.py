@@ -5,7 +5,7 @@ import logging
 import numpy as np
 
 from pydtnn.layers.abstract.block_layer import AbstractBlockLayer
-from pydtnn.layers.layer import LayerError
+from pydtnn.layers.abstract.layer import LayerError
 from pydtnn.utils.constants import Array, ArrayShape
 from pydtnn.utils.tensor import TensorFormat
 

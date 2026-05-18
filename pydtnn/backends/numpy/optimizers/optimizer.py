@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 from pydtnn.backends.numpy.abstract.base import BaseNumpy
 from pydtnn.libs import numpy as np
-from pydtnn.optimizers.optimizer import Optimizer
+from pydtnn.optimizers.abstract.optimizer import Optimizer
 
 __all__ = ("OptimizerNumpy",)
 

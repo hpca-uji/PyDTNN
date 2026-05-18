@@ -4,7 +4,7 @@ Categorical hinge loss metric implementation.
 
 import logging
 
-from pydtnn.metrics.metric import Metric
+from pydtnn.metrics.abstract.metric import Metric
 from pydtnn.utils.constants import Array
 
 __all__ = ("CategoricalHinge",)

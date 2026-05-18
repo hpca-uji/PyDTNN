@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from pydtnn.activations.activation import Activation
+from pydtnn.activations.abstract.activation import Activation
 from pydtnn.layers.addition_block import AdditionBlock
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.concatenation_block import ConcatenationBlock
@@ -18,9 +18,9 @@ from pydtnn.layers.conv_2d_depthwise import Conv2DDepthwise
 from pydtnn.layers.conv_2d_pointwise import Conv2DPointwise
 from pydtnn.layers.flatten import Flatten
 from pydtnn.layers.input import Input
-from pydtnn.layers.layer import Layer
+from pydtnn.layers.abstract.layer import Layer
 from pydtnn.model import Model
-from pydtnn.optimizers.optimizer import Optimizer
+from pydtnn.optimizers.abstract.optimizer import Optimizer
 from pydtnn.optimizers.sgd import SGD
 from pydtnn.utils import random
 

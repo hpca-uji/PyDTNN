@@ -11,12 +11,10 @@ from abc import abstractmethod
 import numpy as np
 
 from pydtnn.abstract.base import Base
-from pydtnn.utils import find_component
 from pydtnn.utils.constants import Array
 
 __all__ = (
     "Metric",
-    "select",
 )
 
 logger = logging.getLogger(__name__)
@@ -69,15 +67,3 @@ class Metric[T: Array](Base):
         pass
 
 
-def select(name: str) -> type[Metric]:
-    """
-    Retrieves a metric class by its name from the metrics package.
-
-    Args:
-        name (str): The name of the metric class to retrieve.
-
-    Returns:
-        type[Metric]: The requested metric class.
-    """
-    assert __package__, "Package not found!"
-    return find_component(__package__, name)

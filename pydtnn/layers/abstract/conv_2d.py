@@ -4,7 +4,7 @@ import logging
 import math
 from typing import TYPE_CHECKING, Optional
 
-from pydtnn.layers.layer import Layer
+from pydtnn.layers.abstract.layer import Layer
 from pydtnn.utils.constants import Array, ArrayShape, Parameters
 from pydtnn.utils.initializers import InitializerFunc, glorot_uniform, zeros
 
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 if TYPE_CHECKING:
-    from pydtnn.activations.activation import Activation
+    from pydtnn.activations.abstract.activation import Activation
 
 
 class AbstractConv2D[T: Array](Layer[T]):

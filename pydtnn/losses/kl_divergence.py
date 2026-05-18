@@ -4,7 +4,7 @@ Kullback-Leibler Divergence loss implementation for PyDTNN.
 
 import logging
 
-from pydtnn.losses.loss import Loss
+from pydtnn.losses.abstract.loss import Loss
 from pydtnn.utils.constants import Array
 
 __all__ = ("KLDivergence",)

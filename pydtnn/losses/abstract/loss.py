@@ -8,12 +8,10 @@ loss implementations.
 import logging
 
 from pydtnn.abstract.base import Base
-from pydtnn.utils import find_component
 from pydtnn.utils.constants import Array
 
 __all__ = (
     "Loss",
-    "select",
 )
 
 logger = logging.getLogger(__name__)
@@ -65,18 +63,3 @@ class Loss[T: Array](Base):
         raise NotImplementedError()
 
 
-def select(name: str) -> type[Loss]:
-    """
-    Selects a loss class by its name.
-
-    Args:
-        name (str): The name of the loss class to retrieve.
-
-    Returns:
-        type[Loss]: The requested loss class.
-
-    Raises:
-        AssertionError: If the package is not defined.
-    """
-    assert __package__, "Package not found!"
-    return find_component(__package__, name)

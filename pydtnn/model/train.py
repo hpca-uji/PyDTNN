@@ -14,11 +14,11 @@ from tqdm import tqdm
 
 from pydtnn import MPI, gpuarray
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.datasets.dataset import Dataset
+from pydtnn.datasets.abstract import Dataset
 from pydtnn.layers.input import Input
 from pydtnn.model.eval import Eval
-from pydtnn.schedulers.scheduler import Scheduler
-from pydtnn.schedulers.scheduler import select as select_scheduler
+from pydtnn.schedulers.abstract.scheduler import Scheduler
+from pydtnn.schedulers import select as select_scheduler
 from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_MDL_EVENT_enum
 from pydtnn.utils import TqdmLogger
 from pydtnn.utils.constants import Array

@@ -2,7 +2,7 @@
 
 import logging
 
-from pydtnn.activations.activation import Activation
+from pydtnn.activations.abstract.activation import Activation
 from pydtnn.utils.constants import Array, ArrayShape
 
 __all__ = ("Relu",)

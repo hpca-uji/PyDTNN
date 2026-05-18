@@ -15,9 +15,9 @@ from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.dropout import Dropout
-from pydtnn.layers.layer import Layerable, LayerError
-from pydtnn.losses.loss import Loss
-from pydtnn.losses.loss import select as select_loss
+from pydtnn.layers.abstract.layer import Layerable, LayerError
+from pydtnn.losses.abstract.loss import Loss
+from pydtnn.losses import select as select_loss
 from pydtnn.model import Model
 from pydtnn.tests.abstract.common import Params, TestCase, verbose_test
 from pydtnn.utils import print_with_header, random

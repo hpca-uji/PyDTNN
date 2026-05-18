@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import logging
 
-from pydtnn.layers.layer import Layer
+from pydtnn.layers.abstract.layer import Layer
 from pydtnn.utils.constants import Array
 
 __all__ = (

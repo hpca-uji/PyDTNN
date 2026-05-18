@@ -5,12 +5,9 @@ Module for defining the base Scheduler interface and component selection utiliti
 import logging
 
 from pydtnn.abstract.base import Base
-from pydtnn.utils import find_component
 
-# TODO: Check if this is what I want.
 __all__ = (
     "Scheduler",
-    "select",
 )
 
 logger = logging.getLogger(__name__)
@@ -77,15 +74,3 @@ class Scheduler(Base):
             logger.info(f"{self}: {text}")
 
 
-def select(name: str) -> type[Scheduler]:
-    """
-    Retrieve a scheduler class by its name.
-
-    Args:
-        name: The name of the scheduler component.
-
-    Returns:
-        The scheduler class type.
-    """
-    assert __package__, "Package not found!"
-    return find_component(__package__, name)

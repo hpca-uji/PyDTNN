@@ -6,7 +6,7 @@ from collections import defaultdict
 
 import numpy as np
 
-from pydtnn.datasets.dataset import Dataset
+from pydtnn.datasets.abstract import Dataset
 
 __all__ = ("PerformanceCounter",)
 

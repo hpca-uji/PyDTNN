@@ -15,9 +15,9 @@ import numpy as np
 
 from pydtnn import MPI_MODULE, Cublas_Handle_Type, Cudnn_Handle_Type
 from pydtnn.abstract.layerable import Layerable
-from pydtnn.losses.loss import Loss
-from pydtnn.metrics.metric import Metric
-from pydtnn.optimizers.optimizer import Optimizer
+from pydtnn.losses.abstract.loss import Loss
+from pydtnn.metrics.abstract.metric import Metric
+from pydtnn.optimizers.abstract.optimizer import Optimizer
 from pydtnn.utils.constants import Array, ArrayShape, NetworkAlgoEnum
 from pydtnn.utils.memory_pool import PrivateMemory
 from pydtnn.utils.tensor import TensorFormat

@@ -5,13 +5,12 @@ Provides the base Dataset class and utility functions for managing,
 transforming, and generating data batches for machine learning models.
 """
 
-from pydtnn.datasets.dataset.transform import Transform
-from pydtnn.utils import find_component
+from pydtnn.datasets.abstract.transform import Transform
 
 
 __all__ = (
     "Dataset",
-    "select"
+    
 )
 
 
@@ -31,23 +30,3 @@ class Dataset(Transform):
     """
 
 
-def select(name: str) -> type[Dataset]:
-    """
-    Select a dataset class by name.
-
-    This function dynamically imports and returns a dataset class based on its
-    string name. It searches within the current package for the specified class.
-
-    Args:
-        name: The string name of the dataset class to select.
-
-    Returns:
-        The dataset class type.
-
-    Raises:
-        AssertionError: If the package context cannot be determined.
-    """
-    assert __package__, "Package not found!"
-    # NOTE: Going to parent package:
-    package = ".".join(__package__.split(".")[:-1])
-    return find_component(package, name)

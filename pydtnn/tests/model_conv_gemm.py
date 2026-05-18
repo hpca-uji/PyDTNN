@@ -5,7 +5,7 @@ Tests for verifying the equivalence of convolution implementations using Im2Col+
 import logging
 import unittest
 
-from pydtnn.layers.layer import LayerError
+from pydtnn.layers.abstract.layer import LayerError
 from pydtnn.model import Model
 from pydtnn.tests.abstract.common import Params
 from pydtnn.tests.abstract.model_common import ModelCommonTestCase

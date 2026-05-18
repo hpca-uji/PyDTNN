@@ -15,7 +15,7 @@ from tqdm import tqdm
 
 from pydtnn import MPI, gpuarray
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.datasets.dataset import Dataset
+from pydtnn.datasets.abstract import Dataset
 from pydtnn.model.sync import Sync
 from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_MDL_EVENT_enum
 from pydtnn.utils import TqdmLogger

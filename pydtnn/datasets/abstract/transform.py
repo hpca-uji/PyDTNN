@@ -14,8 +14,8 @@ from typing import TYPE_CHECKING, Callable, Generator
 import numpy as np
 from PIL import Image
 
-from pydtnn.datasets.dataset.base import Base
-from pydtnn.datasets.dataset.init import Init
+from pydtnn.datasets.abstract.base import Base
+from pydtnn.datasets.abstract.init import Init
 from pydtnn.utils import random
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import TensorFormat

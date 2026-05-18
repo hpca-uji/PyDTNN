@@ -5,7 +5,7 @@ Flatten layer for reshaping multi-dimensional input tensors into a 1D vector.
 import logging
 import math
 
-from pydtnn.layers.layer import Layer
+from pydtnn.layers.abstract.layer import Layer
 from pydtnn.utils.constants import Array, ArrayShape
 
 __all__ = ("Flatten",)

@@ -12,7 +12,7 @@ from typing import IO, TYPE_CHECKING
 
 import numpy as np
 
-from pydtnn.datasets.dataset import Dataset
+from pydtnn.datasets.abstract import Dataset
 
 __all__ = ("MNIST",)
 

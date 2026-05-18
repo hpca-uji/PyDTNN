@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 
 from numpy import ndarray
 
-from pydtnn.schedulers.scheduler import Scheduler
+from pydtnn.schedulers.abstract.scheduler import Scheduler
 
 __all__ = ("ReduceLREveryNEpochs",)
 

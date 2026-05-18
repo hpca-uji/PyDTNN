@@ -11,7 +11,7 @@ from warnings import warn
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.activations.relu import Relu
 from pydtnn.backends.fuse.layers.layer import LayerFuse as FusedLayerMixIn
-from pydtnn.layers.layer import select as select_layer
+from pydtnn.layers import select as select_layer
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.model.utils import Utils

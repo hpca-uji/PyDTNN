@@ -7,7 +7,7 @@ import logging
 import numpy as np
 
 from pydtnn import MPI
-from pydtnn.datasets.dataset import Dataset
+from pydtnn.datasets.abstract import Dataset
 from pydtnn.model.base import Base
 from pydtnn.model.init import Init
 from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_MDL_EVENT_enum

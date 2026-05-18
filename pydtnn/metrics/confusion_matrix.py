@@ -4,7 +4,7 @@ Module for computing and managing confusion matrices in PyDTNN.
 
 import logging
 
-from pydtnn.metrics.metric import Metric
+from pydtnn.metrics.abstract.metric import Metric
 from pydtnn.utils.constants import Array
 
 __all__ = ("ConfusionMatrix",)

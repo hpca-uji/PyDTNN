@@ -11,12 +11,10 @@ import numpy as np
 
 from pydtnn.abstract.base import Base
 from pydtnn.abstract.layerable import Layerable
-from pydtnn.utils import find_component
 from pydtnn.utils.constants import Array
 
 __all__ = (
     "Optimizer",
-    "select",
 )
 
 logger = logging.getLogger(__name__)
@@ -84,15 +82,3 @@ class Optimizer[T: Array](Base):
         raise NotImplementedError("method update of an Optimizer's child class is not implemented")
 
 
-def select(name: str) -> type[Optimizer]:
-    """
-    Selects an optimizer class by its name.
-
-    Args:
-        name (str): The name of the optimizer class to retrieve.
-
-    Returns:
-        type[Optimizer]: The requested optimizer class.
-    """
-    assert __package__, "Package not found!"
-    return find_component(__package__, name)

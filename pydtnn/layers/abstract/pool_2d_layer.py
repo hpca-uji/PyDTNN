@@ -5,7 +5,7 @@ Abstract base class for 2D pooling layers in the PyDTNN framework.
 import logging
 import math
 
-from pydtnn.layers.layer import Layer, LayerError
+from pydtnn.layers.abstract.layer import Layer, LayerError
 from pydtnn.utils.constants import Array
 
 __all__ = ("AbstractPool2DLayer",)
