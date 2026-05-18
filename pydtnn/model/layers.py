@@ -6,12 +6,11 @@ import logging
 import operator
 from collections import abc
 from functools import reduce
-from warnings import warn
 
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.activations.relu import Relu
-from pydtnn.backends.fuse.layers.abstract.layer import LayerFuse as FusedLayerMixIn
-from pydtnn.layers import select as select_layer
+from pydtnn.backends.fuse.layers import select as select_layer
+from pydtnn.backends.fuse.layers.abstract.layer import LayerFuse
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.model.utils import Utils
@@ -70,7 +69,7 @@ class Layers[T: Array](Utils[T]):
             this_recursion_layers += self.get_all_layers(children)
         return this_recursion_layers
 
-    def _select_fusion_3(self, fused_layers: list) -> tuple[str | None, list[Layerable | FusedLayerMixIn | None]]:
+    def _select_fusion_3(self, fused_layers: list) -> tuple[str | None, list[Layerable | LayerFuse | None]]:
         """
         Identifies potential 3-layer fusion patterns.
         """
@@ -81,7 +80,7 @@ class Layers[T: Array](Utils[T]):
         layer_name = None
 
         match (layer0, layer1, layer2):
-            case (_, FusedLayerMixIn(), _):
+            case (_, LayerFuse(), _):
                 pass  # else: layer_name = None
             case (Conv2D(), BatchNormalization(), Relu()):
                 if self.enable_fused_conv_bn_relu:
@@ -92,7 +91,7 @@ class Layers[T: Array](Utils[T]):
 
         return layer_name, [layer0, layer1, layer2]
 
-    def _select_fusion_2(self, fused_layers: list) -> tuple[str | None, list[Layerable | FusedLayerMixIn | None]]:
+    def _select_fusion_2(self, fused_layers: list) -> tuple[str | None, list[Layerable | LayerFuse | None]]:
         """
         Identifies potential 2-layer fusion patterns.
         """
@@ -102,7 +101,7 @@ class Layers[T: Array](Utils[T]):
         layer_name = None
 
         match (layer1, layer2):
-            case (FusedLayerMixIn(), _):
+            case (LayerFuse(), _):
                 pass
             case (Conv2D(), BatchNormalization()):
                 if self.enable_fused_conv_bn:
@@ -135,6 +134,9 @@ class Layers[T: Array](Utils[T]):
 
             if layer_name:
                 dict_params = reduce(operator.or_, (layer.__dict__ for layer in reversed(layers_to_fuse)))
+                memory_used = reduce(operator.add, (layer.memory_used for layer in reversed(layers_to_fuse)))
+                tmp_memory_used = reduce(operator.add, (layer.tmp_memory_used for layer in reversed(layers_to_fuse)))
+                dict_params |= {"memory_used": memory_used, "tmp_memory_used": tmp_memory_used}
                 logger.info(f"Fusing {' + '.join(map(lambda layer: layer.name_with_id, layers_to_fuse))}")
                 fused_layer = select_layer(layer_name)
 
@@ -143,10 +145,8 @@ class Layers[T: Array](Utils[T]):
                 new_curr_layer.__dict__.update(dict_params)
                 try:
                     new_curr_layer._model_init(prev_shape=layers_to_fuse[0].prev_shape, x=layers_to_fuse[0].x)
-                except Exception as e:
-                    warn_text = f"Aborted fusion, {e}"
-                    logger.warning(warn_text)
-                    warn(warn_text, RuntimeWarning)
+                except Exception:
+                    logger.warning("Aborted fusion", exc_info=True)
                 else:
                     start = i + 1 - len(layers_to_fuse)
                     layers[start: i + 1] = [new_curr_layer]

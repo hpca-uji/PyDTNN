@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import logging
 from typing import TYPE_CHECKING
-from warnings import warn
 
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.optimizers.abstract.optimizer import Optimizer
@@ -80,7 +79,7 @@ class OkTopk[T: Array](Optimizer[T]):
         super()._model_init(list_layers)
 
         if self.model.model_sync_freq >= 0:
-            warn("Optimizer does model sync but global model sync is also enabled!", RuntimeWarning)
+            logger.warning("Optimizer does model sync but global model sync is also enabled!")
 
         if not self.model.shared_data:
             raise NotImplementedError("OkTopK optimizer does not support Federated Learing (unbalanced datasets)!")

@@ -5,9 +5,10 @@ Fused Batch Normalization and ReLU layer implementation for PyDTNN.
 import logging
 from typing import TYPE_CHECKING
 
+from pydtnn.backends.fuse.layers.abstract.layer import LayerFuse
 from pydtnn.backends.fuse.utils.bn_inference_cython import bn_relu_inference_cython
 from pydtnn.backends.numpy.layers.batch_normalization import BatchNormalizationNumpy
-from pydtnn.layers.batch_normalization_relu import BatchNormalizationRelu
+from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.libs import numpy as np
 from pydtnn.utils.constants import ArrayShape
 
@@ -21,7 +22,7 @@ if TYPE_CHECKING:
     import numpy as np
 
 
-class BatchNormalizationReluFuse(BatchNormalizationRelu[np.ndarray], BatchNormalizationNumpy):
+class BatchNormalizationReluFuse(LayerFuse, BatchNormalization[np.ndarray], BatchNormalizationNumpy):
     """
     Numpy-based implementation of fused Batch Normalization and ReLU for inference.
     """
@@ -66,3 +67,7 @@ class BatchNormalizationReluFuse(BatchNormalizationRelu[np.ndarray], BatchNormal
         Raises NotImplementedError as this layer is intended for inference only.
         """
         raise NotImplementedError("Use a real backwards variant!")
+
+
+# NOTE: select compatibility
+BatchNormalizationRelu = BatchNormalizationReluFuse

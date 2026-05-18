@@ -5,9 +5,11 @@ Module for fused 2D Convolution and Batch Normalization layers.
 import logging
 from typing import TYPE_CHECKING
 
+from pydtnn.backends.fuse.layers.abstract.layer import LayerFuse
 from pydtnn.backends.numpy.layers.abstract.conv_2d_standard import AbstractConv2DStandardNumpy
 from pydtnn.backends.numpy.layers.batch_normalization import BatchNormalizationNumpy
-from pydtnn.layers.conv_2d_batch_normalization import Conv2DBatchNormalization
+from pydtnn.layers.batch_normalization import BatchNormalization
+from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.libs import numpy as np
 from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
 from pydtnn.utils.constants import ArrayShape, Parameters
@@ -22,7 +24,7 @@ if TYPE_CHECKING:
     import numpy as np
 
 
-class Conv2DBatchNormalizationFuse(Conv2DBatchNormalization[np.ndarray], AbstractConv2DStandardNumpy):
+class Conv2DBatchNormalizationFuse(LayerFuse, Conv2D[np.ndarray], BatchNormalization[np.ndarray], AbstractConv2DStandardNumpy):
     """
     Numpy-based implementation of fused 2D Convolution and Batch Normalization.
     """
@@ -127,3 +129,7 @@ class Conv2DBatchNormalizationFuse(Conv2DBatchNormalization[np.ndarray], Abstrac
         Placeholder for the backward pass.
         """
         raise NotImplementedError("Use a real backward variant!")
+
+
+# NOTE: select compatibility
+Conv2DBatchNormalization = Conv2DBatchNormalizationFuse

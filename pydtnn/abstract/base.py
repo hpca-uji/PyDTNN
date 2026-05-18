@@ -183,6 +183,11 @@ class Base[T: Array]:
         self = getattr(self, "_frontend", self)
         return type(self).__name__
 
+    @property
+    def backend_name(self) -> str:
+        """Return the class name of the frontend instance."""
+        return self.name.removeprefix(self.canonical_name).lower()
+
     def _show_props(self) -> dict:
         """Return a dictionary of properties for representation."""
         props = {}
@@ -190,7 +195,7 @@ class Base[T: Array]:
         props["name"] = self.canonical_name
 
         if self.name != self.canonical_name:
-            props["backend"] = self.name.removeprefix(self.canonical_name).lower()
+            props["backend"] = self.backend_name
 
         if self.memory_used > 0:
             memory = utils.convert_size_bytes(self.memory_used)

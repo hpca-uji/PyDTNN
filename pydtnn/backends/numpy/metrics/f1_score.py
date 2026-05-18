@@ -6,8 +6,8 @@ import logging
 import math
 from typing import TYPE_CHECKING
 
-from pydtnn.backends.numpy.metrics.binary_confusion_matrix import BinaryConfusionMatrixNumpy
 from pydtnn.backends.numpy.metrics.abstract.metric import MetricNumpy
+from pydtnn.backends.numpy.metrics.binary_confusion_matrix import BinaryConfusionMatrixNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.metrics.f1_score import F1Score
 

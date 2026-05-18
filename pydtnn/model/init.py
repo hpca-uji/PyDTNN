@@ -7,7 +7,6 @@ import itertools
 import logging
 from collections import abc
 from typing import TYPE_CHECKING, Any
-from warnings import warn
 
 import numpy as np
 
@@ -220,9 +219,7 @@ class Init[T: Array](Layers[T]):
 
         assert crypt is not None
         if self.enable_nccl:
-            warn_text = "If NCCL is active, encryption is disabled"
-            logger.warning(warn_text)
-            warn(warn_text, RuntimeWarning)
+            logger.warning("If NCCL is active, encryption is disabled")
 
         return crypt
 
@@ -314,9 +311,7 @@ class Init[T: Array](Layers[T]):
         # NOTE: Dataset is always in NCHW
         # Change input_shape to model.tensor_format
         if len(input_shape) != 3:
-            warn_text = f"Input layer does not have 3 dimensions ({input_shape}), it may cause issues!"
-            logger.warning(warn_text)
-            warn(warn_text, RuntimeWarning)
+            logger.warning(f"Input layer does not have 3 dimensions ({input_shape}), it may cause issues!")
         else:
             input_shape = format_reshape(input_shape, SampleFormat.CHW, self.tensor_format.as_sample())
 
@@ -379,9 +374,7 @@ class Init[T: Array](Layers[T]):
     def _ensure_model_runnable(self) -> None:
         """Validates that the model is ready for execution."""
         if not self.layers:
-            warn_text = "The model has no layers in it."
-            logger.warning(warn_text)
-            warn(warn_text, RuntimeWarning)
+            logger.warning("The model has no layers in it.")
         elif not self.dataset:
             raise ValueError("There is no dataset and the model has layers.")
         self._model_init()

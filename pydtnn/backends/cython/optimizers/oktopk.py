@@ -3,7 +3,6 @@ Cython-accelerated implementation of the OkTopk optimizer for PyDTNN.
 """
 
 import logging
-import warnings
 from typing import TYPE_CHECKING
 
 from pydtnn.abstract.layerable import Layerable
@@ -146,7 +145,6 @@ class OkTopkCython(OkTopkNumpy, OptimizerCython):
 
         if self.momentum == 0:
             logger.warning("If momentum is 0 use 'cython' method, it produces the same output but it is faster")
-            warnings.warn("If momentum is 0 use 'cython' method, it produces the same output but it is faster", RuntimeWarning)
 
         if len(self.dw_original_shape) != 2:
             w = w.reshape(w.shape[0], -1)

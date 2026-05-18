@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import logging
 from typing import Any
-from warnings import warn
 
 import numpy as np
 
@@ -77,9 +76,7 @@ class State[T: Array](Init[T]):
 
         model_name = str(data.get(Parameters.MODEL_NAME))
         if model_name != str(self.model_name):
-            warn_text = f"Importing from different models! (self: {self.model_name}, got: {model_name})"
-            logger.warning(warn_text)
-            warn(warn_text, RuntimeWarning)
+            logger.warning(f"Importing from different models! (self: {self.model_name}, got: {model_name})")
 
         if model_name and not self._is_model_init and not self.layers:
             self._layers_init(model_name)

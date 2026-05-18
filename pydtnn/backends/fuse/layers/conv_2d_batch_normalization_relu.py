@@ -3,9 +3,11 @@
 import logging
 from typing import TYPE_CHECKING
 
+from pydtnn.backends.fuse.layers.abstract.layer import LayerFuse
 from pydtnn.backends.numpy.layers.abstract.conv_2d_standard import AbstractConv2DStandardNumpy
 from pydtnn.backends.numpy.layers.batch_normalization import BatchNormalizationNumpy
-from pydtnn.layers.conv_2d_batch_normalization_relu import Conv2DBatchNormalizationRelu
+from pydtnn.layers.batch_normalization import BatchNormalization
+from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.libs import numpy as np
 from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
 from pydtnn.utils.constants import ArrayShape, Parameters
@@ -20,7 +22,7 @@ if TYPE_CHECKING:
     import numpy as np
 
 
-class Conv2DBatchNormalizationReluFuse(Conv2DBatchNormalizationRelu[np.ndarray], AbstractConv2DStandardNumpy):
+class Conv2DBatchNormalizationReluFuse(LayerFuse, Conv2D[np.ndarray], BatchNormalization[np.ndarray], AbstractConv2DStandardNumpy):
     """Numpy backend implementation for fused Conv2D, BatchNormalization, and ReLU."""
 
     @property
@@ -111,3 +113,7 @@ class Conv2DBatchNormalizationReluFuse(Conv2DBatchNormalizationRelu[np.ndarray],
     def _backward(self, dy: np.ndarray) -> np.ndarray:
         """Raises NotImplementedError as backward pass is not supported for this fused layer."""
         raise NotImplementedError("Use a real backwards variant!")
+
+
+# NOTE: select compatibility
+Conv2DBatchNormalizationRelu = Conv2DBatchNormalizationReluFuse

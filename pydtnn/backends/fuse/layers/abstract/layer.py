@@ -6,15 +6,16 @@ from __future__ import annotations
 
 import logging
 
+import numpy as np
+
 from pydtnn.layers.abstract.layer import Layer
-from pydtnn.utils.constants import Array
 
 __all__ = ("LayerFuse",)
 
 logger = logging.getLogger(__name__)
 
 
-class LayerFuse[T: Array](Layer):
+class LayerFuse(Layer[np.ndarray]):
     """
     Base class for fused layers, allowing initialization from existing layer states.
     """
@@ -32,3 +33,7 @@ class LayerFuse[T: Array](Layer):
             super().__init__(*args, **kwargs)
         else:
             self.__dict__.update(from_parent)
+
+    @property
+    def canonical_name(self) -> str:
+        return self.name.removesuffix("Fuse")

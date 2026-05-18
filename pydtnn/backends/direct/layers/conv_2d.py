@@ -2,7 +2,6 @@
 
 import logging
 from functools import partial
-from warnings import warn
 
 import numpy as np
 
@@ -72,7 +71,6 @@ class Conv2DDirect(Conv2DNumpy, AbstractConv2DDirect):
 
         if self.use_bias:
             logger.warning(f"{self.__class__.__name__} never uses the biases.")
-            warn(f"{self.__class__.__name__} never uses the biases.", RuntimeWarning)
 
     def _forward_cd(self, x: np.ndarray, n=0) -> np.ndarray:
         """Execute the forward pass using the convDirect library."""

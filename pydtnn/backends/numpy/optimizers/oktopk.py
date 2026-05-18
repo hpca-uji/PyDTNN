@@ -3,7 +3,6 @@ Module for the OkTopk optimizer implementation using NumPy.
 """
 
 import logging
-import warnings
 from typing import TYPE_CHECKING
 
 from pydtnn.abstract.layerable import Layerable
@@ -181,7 +180,6 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
         if method == "numpy_with_vel_and_momentum":
             if self.momentum == 0:
                 logger.warning("If momentum is 0 use just 'numpy' method, it produces the same output but it is faster")
-                warnings.warn("If momentum is 0 use just 'numpy' method, it produces the same output but it is faster", RuntimeWarning)
 
             if len(self.dw_original_shape) != 2:
                 w = w.reshape(w.shape[0], -1)
@@ -198,7 +196,6 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
         if method == "like_sgd":
             """Use only for debugging purposes"""
             logger.warning("This method should be used only in case of debugging for performance reasons.")
-            warnings.warn("This method should be used only in case of debugging for performance reasons.", RuntimeWarning)
 
             dw = coo_u.to_dense()
             if len(self.dw_original_shape) != 2:
@@ -487,7 +484,6 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
 
         if method == "collective_allreduce_then_slice":
             logger.warning("This reduce_topk method ('collective_allreduce_then_slice') should be used only in case of debugging for performance reasons.")
-            warnings.warn("This reduce_topk method ('collective_allreduce_then_slice') should be used only in case of debugging for performance reasons.", RuntimeWarning)
             all_reduced_coo = self.model.comm.allreduce(coo_topk, op=MPI.SUM)
             row_start = 0 if self.model.rank == 0 else boundaries[self.model.rank - 1]
             row_end = boundaries[self.model.rank]
@@ -585,7 +581,6 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
 
         if input_format == "dense":
             logger.warning("Try to avoid dense communications!")
-            warnings.warn("Try to avoid dense communications!", RuntimeWarning)
             return np.concatenate(self.model.comm.allgather(local_data))
 
         raise NotImplementedError(f"Input format '{input_format}' not implemented")
@@ -620,7 +615,6 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
         """
 
         logger.warning("This function ('has_canonical_format') should be used only in case of debugging for performance reasons.")
-        warnings.warn("This function ('has_canonical_format') should be used only in case of debugging for performance reasons.", RuntimeWarning)
 
         row, col = indexes
 

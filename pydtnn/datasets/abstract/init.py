@@ -10,7 +10,6 @@ from __future__ import annotations
 import functools
 import itertools
 import logging
-import warnings
 from pathlib import Path
 from typing import IO, TYPE_CHECKING, Callable, Generator
 
@@ -78,13 +77,13 @@ class Init(Base):
             raise ValueError("Dataset has no output shape!")
 
         if len(input_shape) != 3:
-            warnings.warn(f"Input shape does not have 3 dimensions ({input_shape}), it may cause issues!", RuntimeWarning)
+            logger.warning(f"Input shape does not have 3 dimensions ({input_shape}), it may cause issues!")
         # if len(input_shape) == 3 and not (input_shape[0] < input_shape[2]):
         elif not (input_shape[0] < input_shape[2]):
-            warnings.warn(f"Dataset input_shape {input_shape} may not be in NCHW format, regardless of model format!", RuntimeWarning)
+            logger.warning(f"Dataset input_shape {input_shape} may not be in NCHW format, regardless of model format!")
 
         if len(output_shape) != 1:
-            warnings.warn(f"Output shape should have 1 dimension, but it has {len(output_shape)} (Output shape: {output_shape}). This may cause issues!", RuntimeWarning)
+            logger.warning(f"Output shape should have 1 dimension, but it has {len(output_shape)} (Output shape: {output_shape}). This may cause issues!")
 
         self.model: Model = model
         self.debug: bool = debug

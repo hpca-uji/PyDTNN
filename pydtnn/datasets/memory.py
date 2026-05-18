@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import logging
 import operator
-import warnings
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -77,10 +76,10 @@ class Memory(Dataset):
             output_shape = y_train.shape[1:]
 
         if len(x_train.shape) == 3 and not TENSOR_ASSERT[self.model.tensor_format](x_train.shape[0], x_train.shape[2]):
-            warnings.warn(f"Dataset x_train.shape {x_train.shape} may not be in {self.model.tensor_format.upper()} format, following the model format!", RuntimeWarning)
+            logger.warning(f"Dataset x_train.shape {x_train.shape} may not be in {self.model.tensor_format.upper()} format, following the model format!")
 
         if len(x_test.shape) == 3 and not TENSOR_ASSERT[self.model.tensor_format](x_test.shape[0], x_test.shape[2]):
-            warnings.warn(f"Dataset x_test.shape {x_test.shape} may not be in {self.model.tensor_format.upper()} format, following the model format!", RuntimeWarning)
+            logger.warning(f"Dataset x_test.shape {x_test.shape} may not be in {self.model.tensor_format.upper()} format, following the model format!")
 
         test_as_validation = model.test_as_validation or force_test_as_validation
 
