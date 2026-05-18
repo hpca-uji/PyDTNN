@@ -102,10 +102,11 @@ class Memory(Dataset):
 
         super().__init__(model, x_train.shape[0], x_test.shape[0], input_shape, output_shape, force_test_as_validation=force_test_as_validation, debug=debug)
 
-    def _init_actual_data(self):
+    def _model_init(self):
         """
         Initialize the internal data buffers by slicing the source arrays.
         """
+        super()._model_init()
         for part in Dataset.Part:
             local_offset = self._local_offset[part]
             local_nsamples = self._local_nsamples[part]

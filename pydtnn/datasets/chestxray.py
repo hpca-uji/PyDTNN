@@ -118,7 +118,7 @@ class ChestXRay(Dataset):
             mask[self.labels2classes[label]] = 1
         return mask
 
-    def _init_actual_data(self):
+    def _model_init(self):
         """
         Initializes the dataset by parsing metadata and mapping images to archives.
         """

@@ -49,11 +49,11 @@ class Synthetic(Dataset):
             model, train_nsamples=train_nsamples, test_nsamples=test_nsamples, input_shape=input_shape, output_shape=output_shape, force_test_as_validation=force_test_as_validation, debug=debug
         )
 
-    def _init_actual_data(self):
+    def _model_init(self):
         """
         Initializes the internal synthetic data arrays based on model shapes and batch sizes.
         """
-        super()._init_actual_data()
+        super()._model_init()
 
         for part in Dataset.Part:
             local_batches = self._local_nsamples[part] // self.model.batch_size

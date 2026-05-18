@@ -328,6 +328,8 @@ class Init[T: Array](Layers[T]):
             return
         self._is_model_init = True
 
+        self.dataset._model_init()
+
         self._apply_layer_fusion()
 
         temp_memory_size = []

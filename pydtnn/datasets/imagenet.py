@@ -176,7 +176,7 @@ class ImageNet(Dataset):
         with tarfile.open(path) as tar, tar.extractfile(member) as fp, io.TextIOWrapper(buffer=fp) as lines:  # type: ignore
             return {i: int(line) for i, line in enumerate(lines, 1)}
 
-    def _init_actual_data(self):
+    def _model_init(self):
         """Initialize dataset metadata and file paths."""
         if not self.model.transform_resize:
             raise ValueError("Model transform_resize must be enabled for dataset!")

@@ -116,7 +116,6 @@ class Init(Base):
             (self._local_offset[part], self._local_nsamples[part], self._nsamples[part]) = self._compute_local_workload(self._nsamples[part])
 
         self._data_generator = self._actual_data_generator
-        self._init_actual_data()
 
         if self.debug:
             self._print_report()
@@ -360,7 +359,7 @@ class Init(Base):
 
         return int(local_offset), int(local_nsamples), int(nsamples)
 
-    def _init_actual_data(self):
+    def _model_init(self):
         """Generates initial self._x[] and self._y[]. To be implemented in derived classes."""
         self.x_empty_batch = np.zeros(shape=self.model.encode_shape((0, *self.input_shape)), dtype=self.model.dtype)
         self.y_empty_batch = np.zeros(shape=(0, *self.output_shape), dtype=self.model.dtype)
