@@ -36,4 +36,5 @@ class LayerFuse(Layer[np.ndarray]):
 
     @property
     def canonical_name(self) -> str:
+        """Return the class name of the frontend instance."""
         return self.name.removesuffix("Fuse")
