@@ -115,13 +115,6 @@ class Init(Base):
         for part in Base.Part.TRAIN, Base.Part.VAL, Base.Part.TEST:
             (self._local_offset[part], self._local_nsamples[part], self._nsamples[part]) = self._compute_local_workload(self._nsamples[part])
 
-        self.x_empty_batch = np.zeros(shape=self.model.encode_shape((0, *self.input_shape)), dtype=self.model.dtype)
-        self.y_empty_batch = np.zeros(shape=(0, *self.output_shape), dtype=self.model.dtype)
-
-        # Declare _x and _y for train, val and test dataset parts
-        self._x = [self.x_empty_batch] * len(Base.Part)
-        self._y = [self.y_empty_batch] * len(Base.Part)
-
         self._data_generator = self._actual_data_generator
         self._init_actual_data()
 
@@ -369,7 +362,12 @@ class Init(Base):
 
     def _init_actual_data(self):
         """Generates initial self._x[] and self._y[]. To be implemented in derived classes."""
-        pass
+        self.x_empty_batch = np.zeros(shape=self.model.encode_shape((0, *self.input_shape)), dtype=self.model.dtype)
+        self.y_empty_batch = np.zeros(shape=(0, *self.output_shape), dtype=self.model.dtype)
+
+        # Declare _x and _y for train, val and test dataset parts
+        self._x = [self.x_empty_batch] * len(Base.Part)
+        self._y = [self.y_empty_batch] * len(Base.Part)
 
     @staticmethod
     def _nchw2nhwc(x: np.ndarray) -> np.ndarray:
@@ -558,10 +556,13 @@ class Init(Base):
             Tuples of (x_batch, y_batch, effective_global_batch_size), prefetched.
         """
         yield from BackgroundGenerator(self._actual_batch_generator(part), max_prefetch=1)
+
         # NOTE: The following infinite loop provides of empty batches
         #       if there are asked more batches than actually are.
+        x_empty_batch = np.zeros(shape=self.model.encode_shape((0, *self.input_shape)), dtype=self.model.dtype)
+        y_empty_batch = np.zeros(shape=(0, *self.output_shape), dtype=self.model.dtype)
         while True:
-            yield self.x_empty_batch, self.y_empty_batch, 0
+            yield x_empty_batch, y_empty_batch, 0
 
 
     def _load_rgb_image(self, fp: IO[bytes] | str) -> np.ndarray:

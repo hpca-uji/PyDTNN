@@ -53,8 +53,7 @@ class Synthetic(Dataset):
         """
         Initializes the internal synthetic data arrays based on model shapes and batch sizes.
         """
-        self._x: list[np.ndarray] = [np.empty((0,)) for part in Dataset.Part]
-        self._y: list[np.ndarray] = [np.empty((0,)) for part in Dataset.Part]
+        super()._init_actual_data()
 
         for part in Dataset.Part:
             local_batches = self._local_nsamples[part] // self.model.batch_size
