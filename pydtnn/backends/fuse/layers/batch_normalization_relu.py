@@ -8,9 +8,9 @@ from typing import TYPE_CHECKING
 from pydtnn.backends.fuse.layers.abstract.layer import LayerFuse
 from pydtnn.backends.fuse.utils.bn_inference_cython import bn_relu_inference_cython
 from pydtnn.backends.numpy.layers.batch_normalization import BatchNormalizationNumpy
-from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.libs import numpy as np
 from pydtnn.utils.constants import ArrayShape
+from pydtnn.utils.tensor import TensorFormat, format_transpose
 
 __all__ = ("BatchNormalizationReluFuse",)
 
@@ -51,14 +51,15 @@ class BatchNormalizationReluFuse(LayerFuse, BatchNormalizationNumpy):
 
         n = x.shape[0]
         if self.spatial:
+            x = format_transpose(x, self.model.tensor_format, TensorFormat.NHWC)
             x = x.reshape((-1, self.ci), copy=False)
 
         y: np.ndarray = self.y[:n, :]
         bn_relu_inference_cython(x, y.reshape((-1, self.ci), copy=False), self.running_mean, self.inv_std, self.gamma, self.beta)  # type: ignore (it's fine)
 
         if self.spatial:
-            y_shape = self.model.encode_shape((n, self.ci, self.hi, self.wi))
-            y = y.reshape(y_shape, copy=False)
+            y = y.reshape((n, self.hi, self.wi, self.ci))
+            y = format_transpose(y, TensorFormat.NHWC, self.model.tensor_format)
 
         return np.asarray(y, dtype=self.model.dtype, order="C")
 

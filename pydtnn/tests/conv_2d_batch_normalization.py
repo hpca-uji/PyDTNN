@@ -52,7 +52,7 @@ class Conv2DBatchNormalizationTestCase(Conv2DCommonTestCase):
         params_chain.batch_size = d.b
         params_chain.backend = "cpu;conv_2d:gemm"
         model_chain = Model(**vars(params_chain))
-        model_chain.mode = Model.Mode.TRAIN
+        model_chain.mode = Model.Mode.EVALUATE
         model_chain.add(Input(model_chain.encode_shape((d.c, d.h, d.w))))
         conv2d_chain = Conv2D(
             nfilters=d.kn,
@@ -71,7 +71,7 @@ class Conv2DBatchNormalizationTestCase(Conv2DCommonTestCase):
         params_fuse = deepcopy(params_chain)
         params_fuse.enable_fused_conv_bn = True
         model_fuse = Model(**vars(params_fuse))
-        model_fuse.mode = Model.Mode.TRAIN
+        model_fuse.mode = Model.Mode.EVALUATE
         model_fuse.add(Input(model_fuse.encode_shape((d.c, d.h, d.w))))
         conv2d_fuse = Conv2D(
             nfilters=d.kn,

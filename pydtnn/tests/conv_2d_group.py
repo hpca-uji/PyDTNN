@@ -75,7 +75,7 @@ class Conv2DGroupTestCase(Conv2DCommonTestCase):
 
         params_fuse = deepcopy(params_chain)
         model_fuse = Model(**vars(params_fuse))
-        model_fuse.mode = Model.Mode.TRAIN
+        model_fuse.mode = Model.Mode.EVALUATE
         model_fuse.add(Input(model_fuse.encode_shape((d.c, d.h, d.w))))
         conv2d_fuse = Conv2D(
             nfilters=d.kn,
