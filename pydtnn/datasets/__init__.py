@@ -1,3 +1,10 @@
+"""
+PyDTNN datasets module.
+
+This module provides utilities for managing and selecting dataset implementations
+within the PyDTNN framework.
+"""
+
 from pydtnn.datasets.abstract import Dataset
 from pydtnn.utils import find_component
 

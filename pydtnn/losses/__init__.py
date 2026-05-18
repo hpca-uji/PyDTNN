@@ -1,3 +1,10 @@
+"""
+Loss functions module for PyDTNN.
+
+This module provides utilities for managing and retrieving loss function implementations
+within the PyDTNN framework.
+"""
+
 from pydtnn.losses.abstract.loss import Loss
 from pydtnn.utils import find_component
 

@@ -9,11 +9,9 @@ from pydtnn.backends.fuse.utils.bn_inference_cython import bn_relu_inference_cyt
 from pydtnn.backends.numpy.layers.batch_normalization import BatchNormalizationNumpy
 from pydtnn.layers.batch_normalization_relu import BatchNormalizationRelu
 from pydtnn.libs import numpy as np
-from pydtnn.utils.constants import Array, ArrayShape
+from pydtnn.utils.constants import ArrayShape
 
-__all__ = (
-    "BatchNormalizationReluFuse",
-)
+__all__ = ("BatchNormalizationReluFuse",)
 
 
 logger = logging.getLogger(__name__)

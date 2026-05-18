@@ -10,9 +10,7 @@ import logging
 from pydtnn.abstract.base import Base
 from pydtnn.utils.constants import Array
 
-__all__ = (
-    "Loss",
-)
+__all__ = ("Loss",)
 
 logger = logging.getLogger(__name__)
 
@@ -61,5 +59,3 @@ class Loss[T: Array](Base):
             NotImplementedError: If the subclass does not implement this method.
         """
         raise NotImplementedError()
-
-

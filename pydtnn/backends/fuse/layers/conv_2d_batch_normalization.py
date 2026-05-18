@@ -12,9 +12,7 @@ from pydtnn.libs import numpy as np
 from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
 from pydtnn.utils.constants import ArrayShape, Parameters
 
-__all__ = (
-    "Conv2DBatchNormalizationFuse",
-)
+__all__ = ("Conv2DBatchNormalizationFuse",)
 
 
 logger = logging.getLogger(__name__)

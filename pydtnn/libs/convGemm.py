@@ -18,10 +18,7 @@ import numpy as np
 from pydtnn.backends.cython.utils.im2col_nchw_cython import im2col_nchw_cython
 from pydtnn.utils import load_library
 
-__all__ = (
-    "ConvGemm",
-    "is_conv_gemm_available"
-)
+__all__ = ("ConvGemm", "is_conv_gemm_available")
 
 logger = logging.getLogger(__name__)
 

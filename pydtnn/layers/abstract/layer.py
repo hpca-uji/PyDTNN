@@ -7,11 +7,7 @@ import logging
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.utils.constants import Array
 
-__all__ = (
-    "Layer",
-    "LayerError",
-    "ParameterException"
-)
+__all__ = ("Layer", "LayerError", "ParameterException")
 
 logger = logging.getLogger(__name__)
 
@@ -32,5 +28,3 @@ class Layer[T: Array](Layerable[T]):
     """Base class for all neural network layers in PyDTNN."""
 
     pass
-
-

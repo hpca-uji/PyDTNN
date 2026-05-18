@@ -2,11 +2,10 @@
 Unit tests for the Conv2D and BatchNormalization fusion layer.
 """
 
-from copy import deepcopy
 import logging
 import unittest
+from copy import deepcopy
 
-from pydtnn.backends.fuse.layers.conv_2d_batch_normalization import Conv2DBatchNormalization
 from pydtnn.backends.numpy.layers.abstract.conv_2d import AbstractConv2DNumpy
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.concatenation_block import ConcatenationBlock

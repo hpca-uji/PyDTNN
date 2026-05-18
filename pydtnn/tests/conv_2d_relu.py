@@ -2,12 +2,11 @@
 Test suite for verifying the correctness of the fused Conv2D+ReLU layer implementation.
 """
 
-from copy import deepcopy
 import logging
 import unittest
+from copy import deepcopy
 
 from pydtnn.activations.relu import Relu
-from pydtnn.backends.fuse.layers.conv_2d_relu import Conv2DRelu
 from pydtnn.layers.abstract.conv_2d import AbstractConv2D
 from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.conv_2d import Conv2D

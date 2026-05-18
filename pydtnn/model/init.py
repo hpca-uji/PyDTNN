@@ -13,8 +13,8 @@ import numpy as np
 
 from pydtnn import MPI, context, cublas, cublas_handle, cudnn, cudnn_handle, drv, gpuarray, hostname, nccl, nccl_comm, num_gpus, ranks_per_node, stream
 from pydtnn.abstract.layerable import Layerable
-from pydtnn.datasets.abstract import Dataset
 from pydtnn.datasets import select as select_dataset
+from pydtnn.datasets.abstract import Dataset
 from pydtnn.libs.mpi.rc import proto as PROTOCOL
 from pydtnn.losses import select as select_loss
 from pydtnn.metrics import select as select_metric

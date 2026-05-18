@@ -10,14 +10,13 @@ import warnings
 import numpy as np
 
 from pydtnn.layers.abstract.block_layer import AbstractBlockLayer
+from pydtnn.layers.abstract.layer import Layerable, LayerError
 from pydtnn.layers.addition_block import AdditionBlock
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.dropout import Dropout
-from pydtnn.layers.abstract.layer import Layerable, LayerError
 from pydtnn.losses.abstract.loss import Loss
-from pydtnn.losses import select as select_loss
 from pydtnn.model import Model
 from pydtnn.tests.abstract.common import Params, TestCase, verbose_test
 from pydtnn.utils import print_with_header, random
@@ -368,37 +367,37 @@ class ModelCommonTestCase(TestCase):
         self.compare_backward(model1, dx1, model2, dx2)
 
     def test_alexnet(self):
-        f"""
-        Compares results between an Alexnet model {self.model1_desc} and other {self.model1_desc}
+        """
+        Compares results between an Alexnet model using A and other using B.
         """
         self.do_test_model("alexnet_cifar10")
 
     def test_vgg11(self):
-        f"""
-        Compares results between a VGG-11 BN model {self.model1_desc} and other {self.model1_desc}
+        """
+        Compares results between a VGG-11 BN model using A and other using B.
         """
         self.do_test_model("vgg11_cifar10")
 
     def test_vgg16bn(self):
-        f"""
-        Compares results between a VGG-16 BN model {self.model1_desc} and other {self.model1_desc}
+        """
+        Compares results between a VGG-16 BN model using A and other using B.
         """
         self.do_test_model("vgg16bn_cifar10")
 
     def test_resnet34(self):
-        f"""
-        Compares results between a Densenet model {self.model1_desc} and other {self.model1_desc}
+        """
+        Compares results between a Densenet model using A and other using B.
         """
         self.do_test_model("resnet34_cifar10")
 
     def test_densenet(self):
-        f"""
-        Compares results between a Densenet model {self.model1_desc} and other {self.model1_desc}
+        """
+        Compares results between a Densenet model using A and other using B.
         """
         self.do_test_model("densenet_cifar10")
 
     def test_simplecnn(self):
-        f"""
-        Compares results between a SimpleCNN model {self.model1_desc} and other {self.model1_desc}
+        """
+        Compares results between a SimpleCNN model using A and other using B.
         """
         self.do_test_model("simplecnn")

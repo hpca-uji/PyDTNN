@@ -8,13 +8,13 @@ import warnings
 
 import numpy as np
 
+from pydtnn.layers.abstract.layer import LayerError
 from pydtnn.layers.addition_block import AdditionBlock
 from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.dropout import Dropout
 from pydtnn.layers.fc import FC
 from pydtnn.layers.flatten import Flatten
-from pydtnn.layers.abstract.layer import LayerError
 from pydtnn.model import Model
 from pydtnn.tests.abstract.common import Params, verbose_test
 from pydtnn.tests.abstract.model_common import ModelCommonTestCase

@@ -2,12 +2,11 @@
 Test suite for verifying the fused Conv2D-BatchNormalization-Relu layer implementation.
 """
 
-from copy import deepcopy
 import logging
 import unittest
+from copy import deepcopy
 
 from pydtnn.activations.relu import Relu
-from pydtnn.backends.fuse.layers.conv_2d_batch_normalization_relu import Conv2DBatchNormalizationRelu
 from pydtnn.backends.numpy.layers.abstract.conv_2d import AbstractConv2DNumpy
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.concatenation_block import ConcatenationBlock

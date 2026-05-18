@@ -131,7 +131,7 @@ class Layers[T: Array](Utils[T]):
                 self._layer_fusion(curr_layer.paths[j], switch_fusion)
 
             # NOTE: i+1 include current layer, range(i+1) excludes end
-            layer_name, layers_to_fuse = switch_fusion(layers[:i+1])
+            layer_name, layers_to_fuse = switch_fusion(layers[: i + 1])
 
             if layer_name:
                 dict_params = reduce(operator.or_, (layer.__dict__ for layer in reversed(layers_to_fuse)))
@@ -148,8 +148,8 @@ class Layers[T: Array](Utils[T]):
                     logger.warning(warn_text)
                     warn(warn_text, RuntimeWarning)
                 else:
-                    start = i+1 - len(layers_to_fuse)
-                    layers[start:i+1] = [new_curr_layer]
+                    start = i + 1 - len(layers_to_fuse)
+                    layers[start: i + 1] = [new_curr_layer]
                     i -= len(layers_to_fuse)
             i += 1
 

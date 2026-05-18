@@ -1,3 +1,10 @@
+"""
+PyDTNN optimizers module.
+
+This module provides utilities for managing and retrieving optimizer implementations
+within the PyDTNN framework.
+"""
+
 from pydtnn.optimizers.abstract.optimizer import Optimizer
 from pydtnn.utils import find_component
 

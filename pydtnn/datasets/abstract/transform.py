@@ -20,9 +20,7 @@ from pydtnn.utils import random
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import TensorFormat
 
-__all__ = (
-    "Transform",
-)
+__all__ = ("Transform",)
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +48,18 @@ class Transform(Init):
     """
 
     def __init__(self, model: Model, train_nsamples: int = 0, test_nsamples: int = 0, input_shape: ArrayShape = (), output_shape: ArrayShape = (), force_test_as_validation=False, debug=False):
+        """
+        Initialize the Transform dataset handler.
+
+        Args:
+            model: The model utility instance containing configuration.
+            train_nsamples: Number of training samples.
+            test_nsamples: Number of test samples.
+            input_shape: Expected shape of input data.
+            output_shape: Expected shape of output data.
+            force_test_as_validation: Whether to treat test set as validation.
+            debug: Enable debug mode.
+        """
         super().__init__(model, train_nsamples, test_nsamples, input_shape, output_shape, force_test_as_validation, debug)
 
         self._transformations = dict[Base.Part, list[TransformFunc]]()

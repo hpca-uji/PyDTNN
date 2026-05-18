@@ -6,9 +6,7 @@ import logging
 
 from pydtnn.abstract.base import Base
 
-__all__ = (
-    "Scheduler",
-)
+__all__ = ("Scheduler",)
 
 logger = logging.getLogger(__name__)
 
@@ -72,5 +70,3 @@ class Scheduler(Base):
         """
         if self.verbose and self.model.comm_rank == 0:
             logger.info(f"{self}: {text}")
-
-

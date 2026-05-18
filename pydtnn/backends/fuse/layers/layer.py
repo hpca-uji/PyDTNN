@@ -9,9 +9,7 @@ import logging
 from pydtnn.layers.abstract.layer import Layer
 from pydtnn.utils.constants import Array
 
-__all__ = (
-    "LayerFuse",
-)
+__all__ = ("LayerFuse",)
 
 logger = logging.getLogger(__name__)
 

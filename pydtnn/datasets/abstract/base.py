@@ -16,9 +16,7 @@ import numpy as np
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import SampleFormat, TensorFormat, format_transpose
 
-__all__ = (
-    "Base",
-)
+__all__ = ("Base",)
 
 logger = logging.getLogger(__name__)
 
@@ -31,13 +29,20 @@ type TransformFunc = Callable[[np.ndarray, np.ndarray], tuple[np.ndarray, np.nda
 
 
 class Base:
+    """
+    Abstract base class for all datasets in PyDTNN.
+
+    Defines the interface and common utilities for data partitioning,
+    shape management, and format conversion.
+    """
+
     class Part(IntEnum):
         """Enum representing the dataset partition."""
 
         TRAIN = 0
         VAL = 1
         TEST = 2
-    
+
     model: Model
     debug: bool
     test_as_validation: bool
@@ -46,7 +51,7 @@ class Base:
     input_shape: ArrayShape
     output_shape: ArrayShape
     _nsamples: list[int]
-    _transformations:dict[Base.Part, list[TransformFunc]]
+    _transformations: dict[Base.Part, list[TransformFunc]]
     _initial_nsamples: list[int]
     _local_offset: list[int]
     _local_nsamples: list[int]

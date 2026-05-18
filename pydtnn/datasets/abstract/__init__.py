@@ -7,11 +7,7 @@ transforming, and generating data batches for machine learning models.
 
 from pydtnn.datasets.abstract.transform import Transform
 
-
-__all__ = (
-    "Dataset",
-    
-)
+__all__ = ("Dataset",)
 
 
 class Dataset(Transform):
@@ -28,5 +24,3 @@ class Dataset(Transform):
     - data_generator(x) is expected to be in model.tensor_format format
     - data_generator(y) is expected to be in NC format
     """
-
-

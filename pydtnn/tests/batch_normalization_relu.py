@@ -2,12 +2,11 @@
 Test suite for the BatchNormalizationRelu fused layer implementation.
 """
 
-from copy import deepcopy
 import logging
 import unittest
+from copy import deepcopy
 
 from pydtnn.activations.relu import Relu
-from pydtnn.backends.fuse.layers.batch_normalization_relu import BatchNormalizationRelu
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.input import Input

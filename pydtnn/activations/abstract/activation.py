@@ -7,9 +7,7 @@ import logging
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.utils.constants import Array, ArrayShape
 
-__all__ = (
-    "Activation",
-)
+__all__ = ("Activation",)
 
 logger = logging.getLogger(__name__)
 
@@ -38,5 +36,3 @@ class Activation[T: Array](Layerable[T]):
         """
         super()._model_init(prev_shape, x)
         self.shape = prev_shape
-
-

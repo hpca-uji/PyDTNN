@@ -13,9 +13,7 @@ import numpy as np
 from pydtnn.abstract.base import Base
 from pydtnn.utils.constants import Array
 
-__all__ = (
-    "Metric",
-)
+__all__ = ("Metric",)
 
 logger = logging.getLogger(__name__)
 
@@ -65,5 +63,3 @@ class Metric[T: Array](Base):
             float | np.ndarray: The computed metric result.
         """
         pass
-
-

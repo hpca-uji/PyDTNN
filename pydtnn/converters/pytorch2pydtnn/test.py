@@ -9,8 +9,8 @@ from torchmetrics import Accuracy, Metric  # type: ignore
 from torchvision.models import alexnet, densenet121, densenet169, densenet201, googlenet, resnet18, resnet34, resnet50, resnet101, resnet152, vgg11, vgg16, vgg19  # type: ignore
 
 from pydtnn.activations.softmax import Softmax
-from pydtnn.datasets.abstract import Dataset
 from pydtnn.datasets import select as select_dataset
+from pydtnn.datasets.abstract import Dataset
 from pydtnn.model import Model as PyDTNN_Model
 from pydtnn.models.alexnet_cifar10 import alexnet_cifar10 as pydtnn_alexnet_cifar10
 from pydtnn.models.densenet121_cifar10 import densenet121_cifar10 as pydtnn_densenet121_cifar10

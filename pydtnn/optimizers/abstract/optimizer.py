@@ -13,9 +13,7 @@ from pydtnn.abstract.base import Base
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.utils.constants import Array
 
-__all__ = (
-    "Optimizer",
-)
+__all__ = ("Optimizer",)
 
 logger = logging.getLogger(__name__)
 
@@ -80,5 +78,3 @@ class Optimizer[T: Array](Base):
             NotImplementedError: If the method is not implemented by the subclass.
         """
         raise NotImplementedError("method update of an Optimizer's child class is not implemented")
-
-

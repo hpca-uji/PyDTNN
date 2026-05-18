@@ -1,3 +1,10 @@
+"""
+Metrics module for PyDTNN.
+
+This module provides utilities for managing and retrieving metric implementations
+used for evaluating model performance within the PyDTNN framework.
+"""
+
 from pydtnn.metrics.abstract.metric import Metric
 from pydtnn.utils import find_component
 

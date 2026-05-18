@@ -1,3 +1,10 @@
+"""
+Activation functions module for PyDTNN.
+
+This module provides utilities for managing and retrieving activation function
+implementations within the PyDTNN framework.
+"""
+
 from pydtnn.activations.abstract.activation import Activation
 from pydtnn.utils import find_component
 

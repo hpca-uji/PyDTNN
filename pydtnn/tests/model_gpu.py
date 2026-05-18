@@ -13,10 +13,10 @@ import pycuda.gpuarray as gpuarray  # type: ignore
 from pydtnn import pycuda, supported_gpu
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.layers.abstract.layer import LayerError
 from pydtnn.layers.addition_block import AdditionBlock
 from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.conv_2d import Conv2D
-from pydtnn.layers.abstract.layer import LayerError
 from pydtnn.model import Model
 from pydtnn.tests.abstract.common import Params, verbose_test
 from pydtnn.tests.abstract.model_common import ModelCommonTestCase

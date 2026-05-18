@@ -1,3 +1,10 @@
+"""
+PyDTNN layers module.
+
+This module provides utilities for managing and retrieving neural network layer
+implementations within the PyDTNN framework.
+"""
+
 from pydtnn.layers.abstract.layer import Layer
 from pydtnn.utils import find_component
 

@@ -23,9 +23,7 @@ from pydtnn.utils import BackgroundGenerator
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import ChannelFormat, SampleFormat, TensorFormat, format_transpose
 
-__all__ = (
-    "Init",
-)
+__all__ = ("Init",)
 
 logger = logging.getLogger(__name__)
 
@@ -97,9 +95,7 @@ class Init(Base):
         if self.test_as_validation:
             self._nsamples[Base.Part.VAL] = self._nsamples[Base.Part.TEST]
         else:
-            self._nsamples[Base.Part.VAL] = min(
-                self._nsamples[Base.Part.TRAIN] - self.model.nprocs, max(self.model.nprocs, int(self._nsamples[Base.Part.TRAIN] * self.model.validation_split))
-            )
+            self._nsamples[Base.Part.VAL] = min(self._nsamples[Base.Part.TRAIN] - self.model.nprocs, max(self.model.nprocs, int(self._nsamples[Base.Part.TRAIN] * self.model.validation_split)))
             self._nsamples[Base.Part.TRAIN] -= self._nsamples[Base.Part.VAL]
 
         # self.real_input_shape = tuple(input_shape)
@@ -449,7 +445,7 @@ class Init(Base):
             return func(x), y
 
         return wrapper
-    
+
     def _base_data_generator(self, part: Base.Part) -> Generator[tuple[np.ndarray, np.ndarray]]:
         """
         Yield transformed data from the dataset partition.
@@ -466,7 +462,6 @@ class Init(Base):
         for x, y in self._data_generator(part):
             x, y = x.copy(), y.copy()
             yield x, y
-
 
     def _actual_batch_generator(self, part: Base.Part) -> Generator[tuple[np.ndarray, np.ndarray, int]]:
         """
@@ -562,7 +557,6 @@ class Init(Base):
         y_empty_batch = np.zeros(shape=(0, *self.output_shape), dtype=self.model.dtype)
         while True:
             yield x_empty_batch, y_empty_batch, 0
-
 
     def _load_rgb_image(self, fp: IO[bytes] | str) -> np.ndarray:
         """

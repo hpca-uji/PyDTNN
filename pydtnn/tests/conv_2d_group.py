@@ -2,8 +2,8 @@
 Test suite for verifying grouped 2D convolution operations in PyDTNN.
 """
 
-from copy import deepcopy
 import logging
+from copy import deepcopy
 
 from pydtnn.backends.numpy.layers.abstract.conv_2d import AbstractConv2DNumpy
 from pydtnn.layers.concatenation_block import ConcatenationBlock
