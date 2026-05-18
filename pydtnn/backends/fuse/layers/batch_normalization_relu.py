@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     import numpy as np
 
 
-class BatchNormalizationReluFuse(LayerFuse, BatchNormalization[np.ndarray], BatchNormalizationNumpy):
+class BatchNormalizationReluFuse(LayerFuse, BatchNormalizationNumpy):
     """
     Numpy-based implementation of fused Batch Normalization and ReLU for inference.
     """
