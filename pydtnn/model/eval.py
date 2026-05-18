@@ -200,6 +200,7 @@ class Eval[T: Array](Sync[T]):
         """
         sync_epoch = False
         string = ""
+        part = Dataset.Part[out_prefix.rstrip("_").upper()]
 
         for i_batch, (x_batch, y_batch, batch_size) in enumerate(batch_generator):
             if terminate:
@@ -229,12 +230,14 @@ class Eval[T: Array](Sync[T]):
             if rank_avail < self.model_sync_min_avail:
                 sync_model = False
 
+            self.rank_weight = self._compute_rank_weight(rank_mask, part)
+
             tic = timer()
             test_batch_loss = self._evaluate_batch(x_batch, y_batch, sync_model=sync_model)
             toc = timer()
             delta = toc - tic
 
-            if out_prefix != f"{Dataset.Part.TEST._name_.lower()}_":
+            if part is not Dataset.Part.TEST:
                 delta = -1
 
             if batch_size <= 0:
