@@ -135,7 +135,7 @@ class Layers[T: Array](Utils[T]):
             if layer_name:
                 dict_params = reduce(operator.or_, (layer.__dict__ for layer in reversed(layers_to_fuse)))
                 memory_used = reduce(operator.add, (layer.memory_used for layer in reversed(layers_to_fuse)))
-                tmp_memory_used = reduce(operator.add, (layer.tmp_memory_used for layer in reversed(layers_to_fuse)))
+                tmp_memory_used = reduce(self.memory_cls._total, (layer.tmp_memory_used for layer in reversed(layers_to_fuse)))
                 dict_params |= {"memory_used": memory_used, "tmp_memory_used": tmp_memory_used}
                 logger.info(f"Fusing {' + '.join(map(lambda layer: layer.name_with_id, layers_to_fuse))}")
                 fused_layer = select_layer(layer_name)
