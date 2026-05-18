@@ -7,7 +7,7 @@ from pycuda import gpuarray  # type: ignore
 from pycuda.elementwise import ElementwiseKernel  # type: ignore
 
 from pydtnn.activations.arctanh import Arctanh
-from pydtnn.backends.pycuda.activations.activation import ActivationPycuda
+from pydtnn.backends.pycuda.activations.abstract.activation import ActivationPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
 

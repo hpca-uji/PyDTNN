@@ -8,7 +8,7 @@ import cupy as cp
 import numpy as np
 
 from pydtnn.backends.cupy.abstract.layerable import LayerableCupy
-from pydtnn.backends.numpy.layers.layer import LayerNumpy
+from pydtnn.backends.numpy.layers.abstract.layer import LayerNumpy
 from pydtnn.libs import numpy as libnp
 from pydtnn.utils.constants import ArrayShape
 

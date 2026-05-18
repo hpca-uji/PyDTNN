@@ -5,7 +5,7 @@ Numpy backend implementation of the Kullback-Leibler Divergence loss.
 import logging
 from typing import TYPE_CHECKING
 
-from pydtnn.backends.numpy.losses.loss import LossNumpy
+from pydtnn.backends.numpy.losses.abstract.loss import LossNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.losses.kl_divergence import KLDivergence
 

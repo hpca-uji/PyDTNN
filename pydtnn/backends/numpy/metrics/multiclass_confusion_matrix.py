@@ -5,7 +5,7 @@ Numpy backend implementation for multiclass confusion matrix calculation.
 import logging
 from typing import TYPE_CHECKING
 
-from pydtnn.backends.numpy.metrics.metric import MetricNumpy
+from pydtnn.backends.numpy.metrics.abstract.metric import MetricNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.metrics.multiclass_confusion_matrix import MulticlassConfusionMatrix
 

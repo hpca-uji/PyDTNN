@@ -5,7 +5,7 @@ Numpy backend implementation of the Multiplication layer.
 import logging
 from typing import TYPE_CHECKING
 
-from pydtnn.backends.numpy.layers.layer import LayerNumpy
+from pydtnn.backends.numpy.layers.abstract.layer import LayerNumpy
 from pydtnn.layers.multiplication import Multiplication
 from pydtnn.libs import numpy as np
 from pydtnn.model import Model

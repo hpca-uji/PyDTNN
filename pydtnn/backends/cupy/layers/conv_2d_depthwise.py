@@ -4,7 +4,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from pydtnn.backends.cupy.layers.abstract.conv_2d import AbstractConv2DCupy
-from pydtnn.backends.cupy.layers.layer import LayerCupy
+from pydtnn.backends.cupy.layers.abstract.layer import LayerCupy
 from pydtnn.backends.numpy.layers.conv_2d_depthwise import Conv2DDepthwiseNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape

@@ -6,7 +6,7 @@ import logging
 import math
 from typing import TYPE_CHECKING
 
-from pydtnn.backends.numpy.metrics.metric import MetricNumpy
+from pydtnn.backends.numpy.metrics.abstract.metric import MetricNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.metrics.categorical_mae import CategoricalMAE
 

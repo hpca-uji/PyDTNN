@@ -2,7 +2,7 @@
 Fused 2D Convolution and ReLU layer implementation.
 """
 
-from pydtnn.backends.fuse.layers.layer import LayerFuse as FusedLayerMixIn
+from pydtnn.backends.fuse.layers.abstract.layer import LayerFuse as FusedLayerMixIn
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.utils.constants import Array
 

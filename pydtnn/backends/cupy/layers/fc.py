@@ -7,7 +7,7 @@ import logging
 import numpy as np
 from cupy.cuda import Stream  # type: ignore
 
-from pydtnn.backends.cupy.layers.layer import LayerCupy
+from pydtnn.backends.cupy.layers.abstract.layer import LayerCupy
 from pydtnn.backends.numpy.layers.fc import FCNumpy
 from pydtnn.utils.constants import ArrayShape
 

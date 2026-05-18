@@ -4,7 +4,7 @@ CuPy implementation of the Rectified Linear Unit (ReLU) activation function.
 
 import logging
 
-from pydtnn.backends.cupy.activations.activation import ActivationCupy
+from pydtnn.backends.cupy.activations.abstract.activation import ActivationCupy
 from pydtnn.backends.numpy.activations.relu import ReluNumpy
 from pydtnn.libs import numpy as np
 

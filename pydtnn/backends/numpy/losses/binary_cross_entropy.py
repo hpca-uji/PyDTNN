@@ -4,7 +4,7 @@ import logging
 import math
 from typing import TYPE_CHECKING
 
-from pydtnn.backends.numpy.losses.loss import LossNumpy
+from pydtnn.backends.numpy.losses.abstract.loss import LossNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.losses.binary_cross_entropy import BinaryCrossEntropy
 

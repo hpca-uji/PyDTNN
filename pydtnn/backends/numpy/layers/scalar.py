@@ -5,7 +5,7 @@ Numpy backend implementation for scalar multiplication layers.
 import logging
 from typing import TYPE_CHECKING
 
-from pydtnn.backends.numpy.layers.layer import LayerNumpy
+from pydtnn.backends.numpy.layers.abstract.layer import LayerNumpy
 from pydtnn.layers.scalar import Scalar
 from pydtnn.libs import numpy as np
 

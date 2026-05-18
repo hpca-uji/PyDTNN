@@ -5,7 +5,7 @@ Cython-based implementation of neural network layers for PyDTNN.
 import logging
 
 from pydtnn.backends.cython.abstract.layerable import LayerableCython
-from pydtnn.backends.numpy.layers.layer import LayerNumpy
+from pydtnn.backends.numpy.layers.abstract.layer import LayerNumpy
 
 __all__ = ("LayerCython",)
 

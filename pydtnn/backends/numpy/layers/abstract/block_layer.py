@@ -5,7 +5,7 @@ Module providing the abstract base class for block-based layers in the NumPy bac
 import logging
 from typing import TYPE_CHECKING
 
-from pydtnn.backends.numpy.layers.layer import LayerNumpy
+from pydtnn.backends.numpy.layers.abstract.layer import LayerNumpy
 from pydtnn.layers.abstract.block_layer import AbstractBlockLayer
 from pydtnn.libs import numpy as np
 

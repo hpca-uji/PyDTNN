@@ -3,7 +3,7 @@
 import logging
 
 from pydtnn.backends.gemm.abstract.layerable import LayerableGemm
-from pydtnn.backends.numpy.layers.layer import LayerNumpy
+from pydtnn.backends.numpy.layers.abstract.layer import LayerNumpy
 
 """GEMM-based layer implementation for the PyDTNN framework."""
 

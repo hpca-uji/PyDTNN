@@ -6,7 +6,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from pydtnn.activations.log import Log
-from pydtnn.backends.numpy.activations.activation import ActivationNumpy
+from pydtnn.backends.numpy.activations.abstract.activation import ActivationNumpy
 from pydtnn.libs import numpy as np
 
 __all__ = ("LogNumpy",)

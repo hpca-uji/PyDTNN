@@ -4,7 +4,7 @@ import logging
 import math
 from typing import TYPE_CHECKING
 
-from pydtnn.backends.numpy.layers.layer import LayerNumpy
+from pydtnn.backends.numpy.layers.abstract.layer import LayerNumpy
 from pydtnn.layers.abstract.pool_2d_layer import AbstractPool2DLayer
 from pydtnn.libs import numpy as np
 from pydtnn.utils.constants import ArrayShape

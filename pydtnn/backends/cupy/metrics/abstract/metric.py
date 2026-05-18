@@ -4,7 +4,7 @@ CuPy-based metric implementations for the PyDTNN framework.
 
 import logging
 
-from pydtnn.backends.numpy.metrics.metric import MetricNumpy
+from pydtnn.backends.numpy.metrics.abstract.metric import MetricNumpy
 
 __all__ = ("MetricCupy",)
 

@@ -3,7 +3,7 @@
 import logging
 from typing import TYPE_CHECKING
 
-from pydtnn.backends.cupy.metrics.metric import MetricCupy
+from pydtnn.backends.cupy.metrics.abstract.metric import MetricCupy
 from pydtnn.backends.numpy.metrics.recall import RecallNumpy
 from pydtnn.libs import numpy as np
 

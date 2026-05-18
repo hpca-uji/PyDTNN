@@ -3,7 +3,7 @@
 import logging
 from typing import TYPE_CHECKING, Any
 
-from pydtnn.backends.numpy.layers.layer import LayerNumpy
+from pydtnn.backends.numpy.layers.abstract.layer import LayerNumpy
 from pydtnn.layers.abstract.conv_2d import AbstractConv2D
 from pydtnn.libs import numpy as np
 from pydtnn.utils.constants import ArrayShape, Parameters

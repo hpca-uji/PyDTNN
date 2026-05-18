@@ -2,7 +2,7 @@
 Fused Batch Normalization and ReLU layer implementation.
 """
 
-from pydtnn.backends.fuse.layers.layer import LayerFuse as FusedLayerMixIn
+from pydtnn.backends.fuse.layers.abstract.layer import LayerFuse as FusedLayerMixIn
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.utils.constants import Array
 

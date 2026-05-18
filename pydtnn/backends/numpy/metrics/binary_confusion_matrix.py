@@ -5,7 +5,7 @@ Numpy backend implementation for binary confusion matrix metrics.
 import logging
 from typing import TYPE_CHECKING
 
-from pydtnn.backends.numpy.metrics.metric import MetricNumpy
+from pydtnn.backends.numpy.metrics.abstract.metric import MetricNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.metrics.binary_confusion_matrix import BinaryConfusionMatrix
 

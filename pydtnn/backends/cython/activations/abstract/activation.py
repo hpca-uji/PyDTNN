@@ -5,7 +5,7 @@ Cython-based activation layer implementations for the PyDTNN framework.
 import logging
 
 from pydtnn.backends.cython.abstract.layerable import LayerableCython
-from pydtnn.backends.numpy.activations.activation import ActivationNumpy
+from pydtnn.backends.numpy.activations.abstract.activation import ActivationNumpy
 
 __all__ = ("ActivationCython",)
 

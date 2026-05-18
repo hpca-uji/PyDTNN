@@ -2,7 +2,7 @@
 
 import logging
 
-from pydtnn.backends.gemm.layers.layer import LayerGemm
+from pydtnn.backends.gemm.layers.abstract.layer import LayerGemm
 from pydtnn.backends.numpy.layers.abstract.conv_2d import AbstractConv2DNumpy
 
 """Abstract base class for 2D convolutional layers using GEMM-based operations."""

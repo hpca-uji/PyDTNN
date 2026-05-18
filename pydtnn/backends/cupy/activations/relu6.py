@@ -4,7 +4,7 @@ CuPy implementation of the ReLU6 activation function.
 
 import logging
 
-from pydtnn.backends.cupy.activations.activation import ActivationCupy
+from pydtnn.backends.cupy.activations.abstract.activation import ActivationCupy
 from pydtnn.backends.numpy.activations.relu6 import Relu6Numpy
 from pydtnn.libs import numpy as np
 

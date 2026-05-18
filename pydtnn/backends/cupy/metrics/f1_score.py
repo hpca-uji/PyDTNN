@@ -5,7 +5,7 @@ CuPy implementation of the F1-score metric for the PyDTNN framework.
 import logging
 from typing import TYPE_CHECKING
 
-from pydtnn.backends.cupy.metrics.metric import MetricCupy
+from pydtnn.backends.cupy.metrics.abstract.metric import MetricCupy
 from pydtnn.backends.numpy.metrics.f1_score import F1ScoreNumpy
 from pydtnn.libs import numpy as np
 

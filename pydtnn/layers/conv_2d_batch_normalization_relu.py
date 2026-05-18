@@ -1,6 +1,6 @@
 """Fused layer implementation for Conv2D, BatchNormalization, and ReLU operations."""
 
-from pydtnn.backends.fuse.layers.layer import LayerFuse as FusedLayerMixIn
+from pydtnn.backends.fuse.layers.abstract.layer import LayerFuse as FusedLayerMixIn
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.utils.constants import Array

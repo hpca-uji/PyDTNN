@@ -5,7 +5,7 @@ Direct backend implementation for neural network layers.
 import logging
 
 from pydtnn.backends.direct.abstract.layerable import LayerableDirect
-from pydtnn.backends.numpy.layers.layer import LayerNumpy
+from pydtnn.backends.numpy.layers.abstract.layer import LayerNumpy
 
 __all__ = ("LayerDirect",)
 

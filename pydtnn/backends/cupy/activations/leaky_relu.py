@@ -4,7 +4,7 @@ CuPy implementation of the Leaky ReLU activation function.
 
 import logging
 
-from pydtnn.backends.cupy.activations.activation import ActivationCupy
+from pydtnn.backends.cupy.activations.abstract.activation import ActivationCupy
 from pydtnn.backends.numpy.activations.leaky_relu import LeakyReluNumpy
 from pydtnn.libs import numpy as np
 

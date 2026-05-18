@@ -7,7 +7,7 @@ import logging
 import numpy as np
 from pycuda import gpuarray  # type: ignore
 
-from pydtnn.backends.pycuda.losses.loss import LossPycuda
+from pydtnn.backends.pycuda.losses.abstract.loss import LossPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.losses.kl_divergence import KLDivergence
 

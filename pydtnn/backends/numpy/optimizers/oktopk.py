@@ -7,7 +7,7 @@ import warnings
 from typing import TYPE_CHECKING
 
 from pydtnn.abstract.layerable import Layerable
-from pydtnn.backends.numpy.optimizers.optimizer import OptimizerNumpy
+from pydtnn.backends.numpy.optimizers.abstract.optimizer import OptimizerNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.optimizers.oktopk import OkTopk
 from pydtnn.utils.sparse.sparse import SparseMatrixCOO

@@ -4,7 +4,7 @@ Cython-based optimizer backend for the PyDTNN framework.
 
 import logging
 
-from pydtnn.backends.numpy.optimizers.optimizer import OptimizerNumpy
+from pydtnn.backends.numpy.optimizers.abstract.optimizer import OptimizerNumpy
 
 __all__ = ("OptimizerCython",)
 

@@ -4,7 +4,7 @@ Winograd backend implementation for neural network layers.
 
 import logging
 
-from pydtnn.backends.numpy.layers.layer import LayerNumpy
+from pydtnn.backends.numpy.layers.abstract.layer import LayerNumpy
 from pydtnn.backends.winograd.abstract.layerable import LayerableWinograd
 
 __all__ = ("LayerWinograd",)

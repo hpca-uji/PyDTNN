@@ -4,7 +4,7 @@ Cython implementation of the Logarithmic activation function.
 
 import logging
 
-from pydtnn.backends.cython.activations.activation import ActivationCython
+from pydtnn.backends.cython.activations.abstract.activation import ActivationCython
 from pydtnn.backends.cython.utils.log_activation_cython import log_bwd_cython, log_fwd_cython
 from pydtnn.backends.numpy.activations.log import LogNumpy
 from pydtnn.libs import numpy as np

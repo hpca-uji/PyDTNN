@@ -4,7 +4,7 @@ import logging
 
 import numpy as np
 
-from pydtnn.backends.pycuda.metrics.metric import MetricPycuda
+from pydtnn.backends.pycuda.metrics.abstract.metric import MetricPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.metrics.categorical_hinge import CategoricalHinge
 

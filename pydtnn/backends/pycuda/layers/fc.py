@@ -7,7 +7,7 @@ import numpy as np
 import pycuda.driver as drv  # type: ignore
 from pycuda import gpuarray  # type: ignore
 
-from pydtnn.backends.pycuda.layers.layer import LayerPycuda
+from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
 from pydtnn.backends.pycuda.utils import matmul_gpu, matvec_gpu
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.layers.fc import FC

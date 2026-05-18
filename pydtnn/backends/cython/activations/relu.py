@@ -4,7 +4,7 @@ Cython-accelerated ReLU activation implementation.
 
 import logging
 
-from pydtnn.backends.cython.activations.activation import ActivationCython
+from pydtnn.backends.cython.activations.abstract.activation import ActivationCython
 from pydtnn.backends.cython.utils.relu_cython import relu_cython
 from pydtnn.backends.numpy.activations.relu import ReluNumpy
 from pydtnn.libs import numpy as np

@@ -4,7 +4,7 @@ Cython implementation of the Leaky ReLU activation function.
 
 import logging
 
-from pydtnn.backends.cython.activations.activation import ActivationCython
+from pydtnn.backends.cython.activations.abstract.activation import ActivationCython
 from pydtnn.backends.cython.utils.relu_cython import leaky_relu_cython
 from pydtnn.backends.numpy.activations.leaky_relu import LeakyReluNumpy
 from pydtnn.libs import numpy as np
