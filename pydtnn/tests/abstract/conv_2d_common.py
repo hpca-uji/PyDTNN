@@ -169,7 +169,6 @@ class Conv2DCommonTestCase[T: Conv2D](TestCase):
         y_test: np.ndarray
         diff = y_ref - y_test
         if not allclose:
-            breakpoint()
             print (
                 "\n"
                 f"\tmax_diff={np.max(np.abs(diff))}\n"
@@ -186,7 +185,6 @@ class Conv2DCommonTestCase[T: Conv2D](TestCase):
                 f"\t{y_test.mean()=}\n"
                 f"\t{diff.mean()=}\n"
             )
-            breakpoint()
         self.assertTrue(allclose)
 
     def test_forward_backward_defaults(self):

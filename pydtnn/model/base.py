@@ -185,3 +185,8 @@ class Base[T: Array]:
     cuda_block: tuple[int, int, int]
     optimizer: Optimizer
     comm_nsamples: list[tuple[int]]
+
+    enable_fused_bn_relu: bool
+    enable_fused_conv_relu: bool
+    enable_fused_conv_bn: bool
+    enable_fused_conv_bn_relu: bool
