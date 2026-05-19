@@ -73,7 +73,7 @@ def print_with_header(header: str, to_be_printed=None) -> None:
     to_print = list[str]()
     to_print.append(f"# {header}")
     if to_be_printed is not None:
-        to_print.append(to_be_printed)
+        to_print.append(str(to_be_printed))
     info_to_print = "\n".join(to_print)
     logger.info(info_to_print)
 
