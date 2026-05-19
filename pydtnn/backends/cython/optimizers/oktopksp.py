@@ -1,5 +1,5 @@
 """
-Cython-accelerated implementation of the OkTopk optimizer for PyDTNN.
+Cython-accelerated implementation of the OkTopkSP optimizer for PyDTNN.
 """
 
 import logging
@@ -9,11 +9,11 @@ from pydtnn.abstract.layerable import Layerable
 from pydtnn.backends.cython.optimizers.optimizer import OptimizerCython
 from pydtnn.backends.cython.utils.oktopk_utils_cython import (compute_dense_acc_cython, intersect_2d_indexes_cython, reset_residuals_cython,
                                                               update_sparsed_weights_cython, update_sparsed_weights_mv_cython)
-from pydtnn.backends.numpy.optimizers.oktopk import OkTopkNumpy
+from pydtnn.backends.numpy.optimizers.oktopksp import OkTopkSPNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.utils.sparse.sparse import SparseMatrixCOO
 
-__all__ = ("OkTopkNumpy",)
+__all__ = ("OkTopkSPNumpy",)
 
 logger = logging.getLogger(__name__)
 
@@ -22,9 +22,9 @@ if TYPE_CHECKING:
     import numpy as np
 
 
-class OkTopkCython(OkTopkNumpy, OptimizerCython):
+class OkTopkSPCython(OkTopkSPNumpy, OptimizerCython):
     """
-    Cython-optimized version of the OkTopk optimizer, inheriting from both
+    Cython-optimized version of the OkTopkSP optimizer, inheriting from both
     the NumPy implementation and the Cython optimizer base class.
     """
 

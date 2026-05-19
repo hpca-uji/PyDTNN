@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Callable, Generator
 
 import numpy as np
 from PIL import Image
+from scipy.ndimage import gaussian_filter
 
 from pydtnn.datasets.abstract.base import Base
 from pydtnn.datasets.abstract.init import Init
@@ -78,10 +79,16 @@ class Transform(Init):
             transformations_always.append(self._x_transformer_adaptor(self._do_transform_resize))
 
         if self.model.augment_flip > 0:
-            transformations_training.append(self._x_transformer_adaptor(self._do_flip_images))
+            transformations_training.append(self._x_transformer_adaptor(self._do_augment_flip))
 
-        if self.model.augment_crop > 0:
-            transformations_training.append(self._x_transformer_adaptor(self._do_augment_crop))
+        if self.model.augment_blur > 0:
+            transformations_training.append(self._x_transformer_adaptor(self._do_augment_blur))
+
+        if self.model.augment_mask > 0:
+            transformations_training.append(self._x_transformer_adaptor(self._do_augment_mask))
+
+        if self.model.augment_rotate > 0:
+            transformations_training.append(self._x_transformer_adaptor(self._do_augment_rotate))
 
         if self.model.augment_shuffle:
             transformations_training.append(self._do_augment_shuffle)
@@ -154,18 +161,18 @@ class Transform(Init):
         np.multiply(data, self.model.normalize_scale, out=data)
         return data
 
-    def _do_flip_images(self, data: np.ndarray) -> np.ndarray:
+    def _do_augment_flip(self, data: np.ndarray) -> np.ndarray:
         """
-        Apply random horizontal flip augmentation to images.
+        Apply random flip augmentation to images.
 
-        Randomly flips a portion of the images horizontally based on the
+        Randomly flips a portion of the images based on the
         `self.model.augment_flip` parameter.
 
         Args:
             data: The input numpy array (batch of images).
 
         Returns:
-            The array with some images potentially flipped horizontally.
+            The array with some images potentially flipped.
 
         Raises:
             NotImplementedError: If the `self.model.tensor_format` is not supported.
@@ -173,17 +180,26 @@ class Transform(Init):
         n = data.shape[0]
         match self.model.tensor_format:
             case TensorFormat.NCHW:
-                width_dim = -1
+                height_dim = 2
+                width_dim = 3
             case TensorFormat.NHWC:
+                height_dim = 1
                 width_dim = 2
             case _:
-                raise NotImplementedError(f"Dataset _do_flip_image is not implemented for {self.model.tensor_format} format.")
+                raise NotImplementedError(f"Dataset _do_augment_flip is not implemented for {self.model.tensor_format} format.")
 
         limit = min(n, int(n * self.model.augment_flip))
+
+        s = np.arange(n)
+        random.shuffle(s)
+        s = s[:limit]
+        data[s, ...] = np.flip(data[s, ...], axis=height_dim)
+
         s = np.arange(n)
         random.shuffle(s)
         s = s[:limit]
         data[s, ...] = np.flip(data[s, ...], axis=width_dim)
+
         return data
 
     def _do_augment_shuffle(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -206,33 +222,33 @@ class Transform(Init):
         y[:] = y[idx]
         return x, y
 
-    def _do_augment_crop(self, data: np.ndarray) -> np.ndarray:
+    def _do_augment_mask(self, data: np.ndarray) -> np.ndarray:
         """
-        Apply random crop augmentation.
+        Apply random mask augmentation.
 
-        Randomly crops a portion of the images in the batch. The crop size and
-        the percentage of images to crop are determined by model parameters.
-        Pads the cropped area with zeros.
+        Randomly masks a portion of the images in the batch. The mask size and
+        the percentage of images to mask are determined by model parameters.
+        Pads the masked area with zeros.
 
         Args:
             data: The input numpy array (batch of images).
 
         Returns:
-            The array with some images randomly cropped.
+            The array with some images randomly masked.
 
         Raises:
             NotImplementedError: If the `self.model.tensor_format` is not supported.
         """
         n, c, h, w = self.model.decode_shape(data.shape)
-        crop_size = min(self.model.augment_crop_size, h, w)
-        limit = min(n, int(n * self.model.augment_crop))
+        mask_size = min(self.model.augment_mask_size, h, w)
+        limit = min(n, int(n * self.model.augment_mask))
         s = np.arange(n)
         random.shuffle(s)
         s = s[:limit]
-        t = random.integers(0, h - crop_size, (limit,))
-        ll = random.integers(0, w - crop_size, (limit,))
+        t = random.integers(0, h - mask_size, (limit,))
+        ll = random.integers(0, w - mask_size, (limit,))
         for i, ri in enumerate(s):
-            b, r = t[i] + crop_size, ll[i] + crop_size
+            b, r = t[i] + mask_size, ll[i] + mask_size
             match self.model.tensor_format:
                 case TensorFormat.NCHW:
                     data[ri, :, : t[i], : ll[i]] = 0.0
@@ -241,9 +257,78 @@ class Transform(Init):
                     data[ri, : t[i], : ll[i], :] = 0.0
                     data[ri, b:, r:, :] = 0.0
                 case _:
-                    raise NotImplementedError(f"Dataset _do_crop_images is not implemented for {self.model.tensor_format} format.")
+                    raise NotImplementedError(f"Dataset _do_augment_mask is not implemented for {self.model.tensor_format} format.")
             data[ri, ...] = np.roll(data[ri, ...], random.integers(-t[i], (h - b)), axis=1)
             data[ri, ...] = np.roll(data[ri, ...], random.integers(-ll[i], (w - r)), axis=2)
+        return data
+
+    def _do_augment_rotate(self, data: np.ndarray) -> np.ndarray:
+        """
+        Apply random rotation augmentation to images.
+
+        Randomly rotate the images based on the
+        `self.model.augment_rotate` parameter.
+
+        Args:
+            data: The input numpy array (batch of images).
+
+        Returns:
+            The array with some images potentially rotations.
+
+        Raises:
+            NotImplementedError: If the `self.model.tensor_format` is not supported.
+        """
+        data = self.model.decode_tensor(data)
+        N, C, H, W = data.shape
+
+        rotation = random.random(N) * 360
+
+        limit = min(N, int(N * self.model.augment_mask))
+        s = np.arange(N)
+        random.shuffle(s)
+        s = s[:limit]
+
+        for n in s:
+            for c in range(C):
+                channel: np.ndarray = data[n, c]
+                # NOTE: PIL mode F is WH in float32
+                channel = channel.transpose().astype(np.float32)  # type: ignore (it's possible to use copy=None)
+                image = Image.fromarray(channel, mode="F")
+                image = image.rotate(rotation[n])
+                channel = np.asarray(image, dtype=np.float32, order="C")
+                channel = channel.transpose().astype(self.model.dtype)  # type: ignore (it's possible to use copy=None)
+                data[n, c] = channel
+
+        data = self.model.encode_tensor(data)
+
+        return data
+
+    def _do_augment_blur(self, data: np.ndarray) -> np.ndarray:
+        """
+        Apply random blur augmentation to images.
+
+        Args:
+            data: The input numpy array (batch of images).
+
+        Returns:
+            The array with some images potentially blurs.
+
+        Raises:
+            NotImplementedError: If the `self.model.tensor_format` is not supported.
+        """
+        data = self.model.decode_tensor(data)
+        N, C, H, W = data.shape
+
+        limit = min(N, int(N * self.model.augment_blur))
+        s = np.arange(N)
+        random.shuffle(s)
+        s = s[:limit]
+
+        for n in s:
+            data[n] = gaussian_filter(data[n], sigma=(0, self.model.augment_blur_size, self.model.augment_blur_size))
+
+        data = self.model.encode_tensor(data)
+
         return data
 
     def _do_transform_resize(self, data: np.ndarray) -> np.ndarray:
@@ -295,8 +380,7 @@ class Transform(Init):
 
         Returns:
             A tuple containing:
-            - crop: A tuple (x_offset, y_offset, width - x_offset, height - y_offset)
-                    representing the crop box.
+            - crop: A tuple (x1, y1, x2, y2) representing the crop box.
             - size: A tuple (new_width, new_height) representing the dimensions
                     after cropping.
         """

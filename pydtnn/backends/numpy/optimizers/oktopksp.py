@@ -1,5 +1,5 @@
 """
-Module for the OkTopk optimizer implementation using NumPy.
+Module for the OkTopkSP optimizer implementation using NumPy.
 """
 
 import logging
@@ -8,10 +8,10 @@ from typing import TYPE_CHECKING
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.backends.numpy.optimizers.abstract.optimizer import OptimizerNumpy
 from pydtnn.libs import numpy as np
-from pydtnn.optimizers.oktopk import OkTopk
+from pydtnn.optimizers.oktopksp import OkTopkSP
 from pydtnn.utils.sparse.sparse import SparseMatrixCOO
 
-__all__ = ("OkTopkNumpy",)
+__all__ = ("OkTopkSPNumpy",)
 
 logger = logging.getLogger(__name__)
 
@@ -26,9 +26,9 @@ except (ImportError, ModuleNotFoundError):
     pass
 
 
-class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
+class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
     """
-    NumPy-based implementation of the OkTopk optimizer for distributed training.
+    NumPy-based implementation of the OkTopkSP optimizer for distributed training.
     """
 
     def _model_init(self, list_layers: list[Layerable]) -> None:

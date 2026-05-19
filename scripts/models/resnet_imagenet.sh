@@ -13,8 +13,8 @@ mpirun -np 2 \
   --synthetic-output-shape=1000 \
   --test-as-validation=False \
   --augment-flip=0.5 \
-  --augment-crop=0.5 \
-  --augment-crop-size=16 \
+  --augment-mask=0.5 \
+  --augment-mask-size=16 \
   --test-as-validation=True \
   --batch-size=64 \
   --validation-split=0.2 \
