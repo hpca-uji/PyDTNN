@@ -16,6 +16,7 @@ Dependencies: `make gcc`
 # Configuration
 BLIS_SRC="$SRC/blis"
 BLIS_PREFIX="$PREFIX/blis"
+export LD_LIBRARY_PATH="$BLIS_PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 
 # Source
 # git clone https://github.com/flame/blis.git "$BLIS_SRC"
@@ -30,7 +31,6 @@ make -j "$NPROC"
 # Install
 mkdir -p "$BLIS_PREFIX"
 make install
-export LD_LIBRARY_PATH="$BLIS_PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 ```
 
 ## TVM
@@ -42,6 +42,7 @@ Dependencies: `python3 cmake gcc llvm-dev` and virutal Python environment
 # Configuration
 TVM_SRC="$SRC/tvm"
 TVM_PREFIX="$PREFIX/tvm"
+export LD_LIBRARY_PATH="$TVM_PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 
 # Source
 # git clone --recursive https://github.com/apache/tvm.git "$TVM_SRC"
@@ -59,7 +60,6 @@ cmake --build . --parallel "$NPROC"
 # Install
 mkdir -p "$TVM_PREFIX"
 cmake --install .
-export LD_LIBRARY_PATH="$TVM_PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 cd ..
 pip install numpy psutil
 pip install ./3rdparty/tvm-ffi
@@ -76,6 +76,7 @@ Dependencies: `cmake gcc` and `blis`
 BLIS_PREFIX="$PREFIX/blis"
 GEMM_SRC="$SRC/convGemm"
 GEMM_PREFIX="$PREFIX/convGemm"
+export LD_LIBRARY_PATH="$GEMM_PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 
 # Source
 # git clone https://github.com/hpca-uji/convGemm.git "$GEMM_SRC"
@@ -91,7 +92,6 @@ cmake --build . --parallel "$NPROC"
 # Install
 mkdir -p "$GEMM_PREFIX"
 cmake --install .
-export LD_LIBRARY_PATH="$GEMM_PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 ```
 
 ## convWinograd
@@ -104,6 +104,7 @@ Dependencies: `cmake gcc` and `blis`
 BLIS_PREFIX="$PREFIX/blis"
 WINOGRAD_SRC="$SRC/convWinograd"
 WINOGRAD_PREFIX="$PREFIX/convWinograd"
+export LD_LIBRARY_PATH="$WINOGRAD_PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 
 # Source
 # git clone https://github.com/hpca-uji/convWinograd.git "$WINOGRAD_SRC"
@@ -119,7 +120,6 @@ cmake --build . --parallel "$NPROC"
 # Install
 mkdir -p "$WINOGRAD_PREFIX"
 cmake --install .
-export LD_LIBRARY_PATH="$WINOGRAD_PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 ```
 
 ## convDirect
@@ -133,6 +133,7 @@ BLIS_PREFIX="$PREFIX/blis"
 TVM_PREFIX="$PREFIX/tvm"
 DIRECT_SRC="$SRC/convDirect"
 DIRECT_PREFIX="$PREFIX/convDirect"
+export LD_LIBRARY_PATH="$DIRECT_PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 
 # Source
 # git clone --recursive https://github.com/hpca-uji/convDirect.git "$DIRECT_SRC"
@@ -148,7 +149,6 @@ cmake --build . --parallel "$NPROC"
 # Install
 mkdir -p "$DIRECT_PREFIX"
 cmake --install .
-export LD_LIBRARY_PATH="$DIRECT_PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 ```
 
 ## OpenFHE
@@ -158,8 +158,9 @@ Dependencies: `cmake gcc`
 
 ```sh
 # Configuration
-OFHE_PREFIX="$PREFIX/openfhe"
 OFHE_SRC="$SRC/openfhe"
+OFHE_PREFIX="$PREFIX/openfhe"
+export LD_LIBRARY_PATH="$OFHE_PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 
 # Source
 # git clone https://github.com/openfheorg/openfhe-development.git "$OFHE_SRC"
@@ -176,7 +177,6 @@ cmake --build . --parallel "$NPROC"
 # Install
 mkdir -p "$OFHE_PREFIX"
 cmake --install .
-export LD_LIBRARY_PATH="$OFHE_PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 ```
 
 ## OpenFHE-Python
