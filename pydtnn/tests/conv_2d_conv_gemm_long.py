@@ -12,13 +12,13 @@ from pydtnn.libs.mpi import MPI
 from pydtnn.tests.conv_2d_conv_gemm import Conv2DConvGemmTestCase, D
 from pydtnn.utils import random
 
-__all__ = ("Conv2DConvGemmSlowTestCase",)
+__all__ = ("Conv2DConvGemmLongTestCase",)
 
 logger = logging.getLogger(__name__)
 
 
 @skipUnless(is_conv_gemm_available, "requires ConvGemm")
-class Conv2DConvGemmSlowTestCase(Conv2DConvGemmTestCase):
+class Conv2DConvGemmLongTestCase(Conv2DConvGemmTestCase):
     """
     Tests that Conv2D with conv_gemm leads to the same results than Conv2d with mm and i2c.T (exhaustive version)
     """
