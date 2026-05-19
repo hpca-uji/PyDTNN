@@ -251,7 +251,7 @@ POLYHE_SRC="$SRC/polyhe"
 # git clone https://github.com/hpca-uji/polyhe.git "$POLYHE_SRC"
 git submodule update --init "$POLYHE_SRC"
 cd "$POLYHE_SRC"
-git checkout 05f2a4c168f370d2ea5c1781bed0758f63c26687
+git checkout 804e4d48fbf792cfe61c1a8f283ed6ef1e907e7f
 
 # Install
 pip install "$POLYHE_SRC"
