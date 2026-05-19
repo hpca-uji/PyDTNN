@@ -1,5 +1,5 @@
 """
-Ok-Topk optimizer implementation for distributed training.
+OkTopkSP optimizer implementation for distributed training.
 """
 
 from __future__ import annotations
@@ -11,7 +11,7 @@ from pydtnn.abstract.layerable import Layerable
 from pydtnn.optimizers.abstract.optimizer import Optimizer
 from pydtnn.utils.constants import Array
 
-__all__ = ("OkTopk",)
+__all__ = ("OkTopkSP",)
 
 logger = logging.getLogger(__name__)
 
@@ -20,9 +20,9 @@ if TYPE_CHECKING:
     from pydtnn.model import Model
 
 
-class OkTopk[T: Array](Optimizer[T]):
+class OkTopkSP[T: Array](Optimizer[T]):
     """
-    SGD Ok-Topk Optimizer
+    OkTopkSP Optimizer
     """
 
     def __init__(self, learning_rate: float = 1e-2, momentum: float = 0.9, tau: int = 64, tau_prime: int = 32, density: float = 0.01, min_k_layer: int = 10):
@@ -85,7 +85,7 @@ class OkTopk[T: Array](Optimizer[T]):
             raise NotImplementedError("OkTopK optimizer does not support Federated Learing (unbalanced datasets)!")
 
     @classmethod
-    def from_model(cls, model: Model) -> OkTopk:
+    def from_model(cls, model: Model) -> OkTopkSP:
         """
         Create an OkTopk instance from a model configuration.
 
@@ -95,4 +95,4 @@ class OkTopk[T: Array](Optimizer[T]):
         Returns:
             An initialized OkTopk optimizer.
         """
-        return OkTopk(learning_rate=model.learning_rate, momentum=model.optimizer_momentum, tau=model.optimizer_tau, tau_prime=model.optimizer_tau_prime, density=model.optimizer_density)
+        return OkTopkSP(learning_rate=model.learning_rate, momentum=model.optimizer_momentum, tau=model.optimizer_tau, tau_prime=model.optimizer_tau_prime, density=model.optimizer_density)
