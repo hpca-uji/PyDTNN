@@ -213,7 +213,12 @@ def read_file(path: str, replaces: dict[str, str] = {}) -> str:
 class TqdmLogger:
     """Logger wrapper to redirect tqdm output to the logging system."""
 
+    def __init__(self) -> None:
+        """Pad string to the logger."""
+        logger.info(self.__class__.__name__)
+
     def write(self, s: str) -> int:
         """Write string to the logger."""
-        logger.info(s.replace("\r", "\x1b[F"))
+        if s := s.replace("\r", "\x1b[F").replace("\n", ""):
+            logger.info(s.replace("\r", "\x1b[F").replace("\n", ""))
         return len(s)
