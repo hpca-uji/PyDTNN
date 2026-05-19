@@ -532,7 +532,6 @@ def _get_cublas_version():
         major, minor = match.groups()
     except BaseException:
         # Create a temporary context to run cublasGetVersion():
-        # warnings.warn('creating CUBLAS context to get version number')
         h = cublasCreate()
         version = cublasGetVersion(h)
         cublasDestroy(h)
