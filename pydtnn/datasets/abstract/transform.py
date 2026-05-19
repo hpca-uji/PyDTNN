@@ -80,8 +80,8 @@ class Transform(Init):
         if self.model.augment_flip > 0:
             transformations_training.append(self._x_transformer_adaptor(self._do_flip_images))
 
-        if self.model.augment_crop > 0:
-            transformations_training.append(self._x_transformer_adaptor(self._do_augment_crop))
+        if self.model.augment_mask > 0:
+            transformations_training.append(self._x_transformer_adaptor(self._do_augment_mask))
 
         if self.model.augment_shuffle:
             transformations_training.append(self._do_augment_shuffle)
@@ -206,7 +206,7 @@ class Transform(Init):
         y[:] = y[idx]
         return x, y
 
-    def _do_augment_crop(self, data: np.ndarray) -> np.ndarray:
+    def _do_augment_mask(self, data: np.ndarray) -> np.ndarray:
         """
         Apply random crop augmentation.
 
@@ -224,8 +224,8 @@ class Transform(Init):
             NotImplementedError: If the `self.model.tensor_format` is not supported.
         """
         n, c, h, w = self.model.decode_shape(data.shape)
-        crop_size = min(self.model.augment_crop_size, h, w)
-        limit = min(n, int(n * self.model.augment_crop))
+        crop_size = min(self.model.augment_mask_size, h, w)
+        limit = min(n, int(n * self.model.augment_mask))
         s = np.arange(n)
         random.shuffle(s)
         s = s[:limit]

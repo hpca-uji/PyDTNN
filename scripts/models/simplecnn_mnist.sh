@@ -16,7 +16,7 @@ pydtnn-benchmark \
   --augment-shuffle=True \
   --batch-size=64 \
   --num-epochs=50 \
-  --steps-per-epoch=0 \
+  --steps-per-epoch=100 \
   --validation-split=0.2 \
   --evaluate=False \
   --optimizer=sgd \

@@ -104,7 +104,7 @@ def extract_parameters():
         parameters_overwritten["model"][model] = model
         parameters_overwritten["evaluate"][model] = "True"
         parameters_overwritten["augment_flip"][model] = "False"
-        parameters_overwritten["augment_crop"][model] = "False"
+        parameters_overwritten["augment_mask"][model] = "False"
         parameters_overwritten["enable_cudnn"][model] = "False"
     parameters_overwritten["optimizer"]["vgg16_imagenet"] = "sgd"
     parameters_overwritten["learning_rate"]["vgg16_imagenet"] = "0.01"
