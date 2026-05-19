@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Callable, Generator
 
 import numpy as np
 from PIL import Image
+from scipy.ndimage import gaussian_filter
 
 from pydtnn.datasets.abstract.base import Base
 from pydtnn.datasets.abstract.init import Init
@@ -80,11 +81,14 @@ class Transform(Init):
         if self.model.augment_flip > 0:
             transformations_training.append(self._x_transformer_adaptor(self._do_augment_flip))
 
+        if self.model.augment_blur > 0:
+            transformations_training.append(self._x_transformer_adaptor(self._do_augment_blur))
+
         if self.model.augment_mask > 0:
             transformations_training.append(self._x_transformer_adaptor(self._do_augment_mask))
 
         if self.model.augment_rotate > 0:
-            transformations_training.append(self._x_transformer_adaptor(self._do_agument_rotate))
+            transformations_training.append(self._x_transformer_adaptor(self._do_augment_rotate))
 
         if self.model.augment_shuffle:
             transformations_training.append(self._do_augment_shuffle)
@@ -258,7 +262,7 @@ class Transform(Init):
             data[ri, ...] = np.roll(data[ri, ...], random.integers(-ll[i], (w - r)), axis=2)
         return data
 
-    def _do_agument_rotate(self, data: np.ndarray) -> np.ndarray:
+    def _do_augment_rotate(self, data: np.ndarray) -> np.ndarray:
         """
         Apply random rotation augmentation to images.
 
@@ -279,7 +283,12 @@ class Transform(Init):
 
         rotation = random.random(N) * 360
 
-        for n in range(N):
+        limit = min(N, int(N * self.model.augment_mask))
+        s = np.arange(N)
+        random.shuffle(s)
+        s = s[:limit]
+
+        for n in s:
             for c in range(C):
                 channel: np.ndarray = data[n, c]
                 # NOTE: PIL mode F is WH in float32
@@ -289,6 +298,34 @@ class Transform(Init):
                 channel = np.asarray(image, dtype=np.float32, order="C")
                 channel = channel.transpose().astype(self.model.dtype)  # type: ignore (it's possible to use copy=None)
                 data[n, c] = channel
+
+        data = self.model.encode_tensor(data)
+
+        return data
+
+    def _do_augment_blur(self, data: np.ndarray) -> np.ndarray:
+        """
+        Apply random blur augmentation to images.
+
+        Args:
+            data: The input numpy array (batch of images).
+
+        Returns:
+            The array with some images potentially blurs.
+
+        Raises:
+            NotImplementedError: If the `self.model.tensor_format` is not supported.
+        """
+        data = self.model.decode_tensor(data)
+        N, C, H, W = data.shape
+
+        limit = min(N, int(N * self.model.augment_blur))
+        s = np.arange(N)
+        random.shuffle(s)
+        s = s[:limit]
+
+        for n in s:
+            data[n] = gaussian_filter(data[n], sigma=(0, self.model.augment_blur_size, self.model.augment_blur_size))
 
         data = self.model.encode_tensor(data)
 

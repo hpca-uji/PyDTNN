@@ -198,6 +198,8 @@ The PyDTNN framework comes with a utility launcher called
   - `--augment-rotate`: Probability to rotation training images. If the value is less or equal to 0 it is disabled. Default: `0.0`.
   - `--augment-mask`: Probability to mask training images. If the value is less or equal to 0 it is disabled. Default: `0.0`.
   - `--augment-mask-size`: Size to mask training images. Default: `16`.
+  - `--augment-blur`: Probability to blur training images. If the value is less or equal to 0 it is disabled. Default: `0.0`.
+  - `--augment-blur-size`: Size to blur training images. Default: `16`.
   - `--validation-split`: Split between training and validation data.
   - `--transform-crop`: Crop the images. `True` if specified.
   - `--transform-crop-perc`: Central crop of the images. Default: `0.875`.
