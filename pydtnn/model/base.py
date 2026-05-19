@@ -94,8 +94,8 @@ class Base[T: Array]:
     shared_data: bool
     encryption_name: str
     augment_flip: float
-    augment_crop_size: int
-    augment_crop: float
+    augment_mask_size: int
+    augment_mask: float
     transform_crop: bool
     transform_crop_perc: int
     transform_resize: bool
