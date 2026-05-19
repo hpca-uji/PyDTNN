@@ -295,8 +295,7 @@ class Transform(Init):
 
         Returns:
             A tuple containing:
-            - crop: A tuple (x_offset, y_offset, width - x_offset, height - y_offset)
-                    representing the crop box.
+            - crop: A tuple (x1, y1, x2, y2) representing the crop box.
             - size: A tuple (new_width, new_height) representing the dimensions
                     after cropping.
         """
