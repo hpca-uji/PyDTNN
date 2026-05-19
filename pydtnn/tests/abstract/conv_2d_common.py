@@ -124,26 +124,6 @@ class Conv2DCommonTestCase[T: Conv2D](TestCase):
                 print("         +-------+--------+")
                 print("           {:.3f}   {:.3f}  ".format(forward_ref_t + backward_ref_t, forward_test_t + backward_test_t))
         # self.assertTrue(np.allclose(y_ref, y_test, rtol=1e-5, atol=1e-6), f"y matrices differ")
-        if not np.allclose(y_ref, y_test):
-            y_ref: np.ndarray
-            y_test: np.ndarray
-            diff = y_ref - y_test
-            print(
-                "\n"
-                f"\tmax_diff={np.max(np.abs(diff))}\n"
-                f"\t{y_ref.max()=}\n"
-                f"\t{y_test.max()=}\n"
-                f"\t{diff.max()=}\n"
-                f"\t{y_ref.min()=}\n"
-                f"\t{y_test.min()=}\n"
-                f"\t{diff.min()=}\n"
-                f"\t{y_ref.std()=}\n"
-                f"\t{y_test.std()=}\n"
-                f"\t{diff.std()=}\n"
-                f"\t{y_ref.mean()=}\n"
-                f"\t{y_test.mean()=}\n"
-                f"\t{diff.mean()=}\n"
-            )
         self.assertTrue(np.allclose(y_ref, y_test), "y matrices differ")
         self.assertTrue(dw_allclose, "dw matrices differ")
         self.assertTrue(dx_allclose, "dx return matrices differ")
@@ -165,26 +145,6 @@ class Conv2DCommonTestCase[T: Conv2D](TestCase):
             print("y_ref.shape:", y_ref.shape)
             print("y_test.shape: ", y_test.shape)
         allclose = np.allclose(y_ref, y_test, rtol=1e-5, atol=1e-6)
-        y_ref: np.ndarray
-        y_test: np.ndarray
-        diff = y_ref - y_test
-        if not allclose:
-            print (
-                "\n"
-                f"\tmax_diff={np.max(np.abs(diff))}\n"
-                f"\t{y_ref.max()=}\n"
-                f"\t{y_test.max()=}\n"
-                f"\t{diff.max()=}\n"
-                f"\t{y_ref.min()=}\n"
-                f"\t{y_test.min()=}\n"
-                f"\t{diff.min()=}\n"
-                f"\t{y_ref.std()=}\n"
-                f"\t{y_test.std()=}\n"
-                f"\t{diff.std()=}\n"
-                f"\t{y_ref.mean()=}\n"
-                f"\t{y_test.mean()=}\n"
-                f"\t{diff.mean()=}\n"
-            )
         self.assertTrue(allclose)
 
     def test_forward_backward_defaults(self):
