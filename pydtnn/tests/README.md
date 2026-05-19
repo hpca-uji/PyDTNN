@@ -11,8 +11,8 @@ _Note: exhaustive tests are skipped_
 
 ## Exhaustive
 ```sh
-python -m unittest pydtnn.tests.conv2d_cython.Conv2DCythonTestCase
-python -m unittest pydtnn.tests.conv2d_conv_gemm_long.Conv2DConvGemmLongTestCase.test_forward_backward_multiple_params
+python -m unittest pydtnn.tests.conv_2d_cython.Conv2DCythonTestCase
+mpirun python -m unittest pydtnn.tests.conv_2d_conv_gemm_long.Conv2DConvGemmLongTestCase.test_forward_backward_multiple_params
 ```
 
 ## CUDA
