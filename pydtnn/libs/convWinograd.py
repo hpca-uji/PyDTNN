@@ -140,7 +140,7 @@ class ConvWinograd:
                 except AttributeError:
                     pass
             if not funcs:
-                warn("Winograd routine not found. Fallback to numpy version!", RuntimeWarning)
+                logger.warning("Winograd routine not found. Fallback to numpy version!")
                 funcs = [("numpy", (self._conv_winograd_numpy, None, None))]
 
             for intr, f in funcs:

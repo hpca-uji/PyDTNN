@@ -73,7 +73,6 @@ class SparseMatrixCOO:
             raise AssertionError("Dense array must be 2D.")
 
         logger.warning("From dense constructor should be used only in case of debugging for performance reasons.")
-        warnings.warn("From dense constructor should be used only in case of debugging for performance reasons.")
 
         row, col = np.where(dense_array != 0)
         data = dense_array[row, col]
@@ -178,7 +177,6 @@ class SparseMatrixCOO:
         """
 
         logger.warning("This function ('to_sparse') should be used only in case of debugging for performance reasons.")
-        warnings.warn("This function ('to_sparse') should be used only in case of debugging for performance reasons.")
 
         dense_matrix = np.zeros(self.shape, dtype=np.float32)
         dense_matrix[self.row, self.col] = self.data
@@ -237,7 +235,6 @@ class SparseMatrixCOO:
         """
 
         logger.warning("This function ('has_canonical_format') should be used only in case of debugging for performance reasons.")
-        warnings.warn("This function ('has_canonical_format') should be used only in case of debugging for performance reasons.")
 
         if self.nnz == 0:
             return True

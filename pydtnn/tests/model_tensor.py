@@ -161,7 +161,7 @@ class ModelTensorTestCase(ModelCommonTestCase):
                 if dx1_i.shape == dx2[i].shape:
                     allclose = np.allclose(dx1_i, dx2[i], rtol=rtol, atol=atol)
                 else:
-                    warnings.warn(f"dx shape on both models for {layer.name_with_id} differ: [dx1.shape: {dx1[i].shape}, dx2.shape: {dx2[i].shape}]")
+                    logger.warning(f"dx shape on both models for {layer.name_with_id} differ: [dx1.shape: {dx1[i].shape}, dx2.shape: {dx2[i].shape}]")
                     # Try flattening both
                     allclose = np.allclose(dx1_i.flatten(), dx2[i].flatten(), rtol=rtol, atol=atol)
                 self.assertTrue(allclose, f"Backward result from layer {layer.name_with_id} differ ({self.print_stats(dx1_i, dx2[i], rtol, atol)})")

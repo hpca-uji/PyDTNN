@@ -1,7 +1,6 @@
 """Model test group"""
 
 import logging
-from warnings import warn
 
 __all__ = ("ModelDTypeTestCase", "ModelTensorTestCase", "ModelGpuTestCase")
 
@@ -14,4 +13,3 @@ try:
     from pydtnn.tests.model_gpu import ModelGpuTestCase
 except Exception:
     logger.warning("GPU not available, skiping tests!")
-    warn("GPU not available, skiping tests!")
