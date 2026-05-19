@@ -21,12 +21,15 @@ from pydtnn.activations.relu6 import Relu6
 from pydtnn.activations.sigmoid import Sigmoid
 from pydtnn.activations.softmax import Softmax
 from pydtnn.activations.tanh import Tanh
+from pydtnn.layers.abstract.block_layer import AbstractBlockLayer
 from pydtnn.layers.adaptive_average_pool_2d import AdaptiveAveragePool2D
 from pydtnn.layers.addition_block import AdditionBlock
 from pydtnn.layers.average_pool_2d import AveragePool2D
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.conv_2d import Conv2D
+from pydtnn.layers.conv_2d_depthwise import Conv2DDepthwise
+from pydtnn.layers.conv_2d_pointwise import Conv2DPointwise
 from pydtnn.layers.dropout import Dropout
 from pydtnn.layers.fc import FC
 from pydtnn.layers.flatten import Flatten
@@ -97,6 +100,7 @@ CONV2D_FILTER_SHAPE = (4, 4)
 CONV2D_PADDING = 0
 CONV2D_STRIDE = 1
 CONV2D_DILATION = 1
+CONV2D_DEPTHWISE_PADDING = 1
 
 FC_OUPUT_SHAPE = (4,)
 LINEAR_OUTPUT = FC_OUPUT_SHAPE[0]
@@ -174,6 +178,29 @@ class TorchConcatenationBlock(torch.nn.Module):
         x1 = self.block1(x)
         x2 = self.block2(x)
         x = torch.cat([x1, x2], dim=1)
+        return x
+    
+class TorchDepthPointConv(torch.nn.Module):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        input_filt = CONV2D_IN_C_TORCH
+        output_filt = CONV2D_N_FILTERS
+        stride = CONV2D_STRIDE
+        padding = CONV2D_DEPTHWISE_PADDING
+    
+        self.conv_depth = torch.nn.Conv2d(in_channels=input_filt, out_channels=input_filt, kernel_size=CONV2D_FILTER_SHAPE, stride=stride, padding=padding, groups=input_filt)
+        self.conv_point = torch.nn.Conv2d(in_channels=input_filt, out_channels=output_filt, kernel_size=(1,1), stride=1, padding=0, dilation=1, groups=1)
+
+        #self.layers = torch.nn.Sequential(
+        #                torch.nn.Conv2d(in_channels=input_filt, out_channels=input_filt, kernel_size=CONV2D_FILTER_SHAPE, stride=stride, padding=1, groups=input_filt),
+        #                torch.nn.Conv2d(in_channels=input_filt, out_channels=output_filt, kernel_size=(1,1), stride=1, padding=0, dilation=1, groups=1),
+        #              )
+
+    def forward(self, x):
+        x = self.conv_depth(x)
+        x = self.conv_point(x)
+        #x = self.layers(x)
         return x
 
 
@@ -271,17 +298,25 @@ class LayerPyTorchTestCase(TestCase):
         if grad is not None:
             torch_grad_var = GRAD_EQUIVALENCES[grad_var]
             torch_grad = getattr(torch_layer, torch_grad_var)
-            torch_grad.copy_(torch.from_numpy(grad.copy()).to(torch.device("cpu")).float())
+            torch_grad.copy_(torch.from_numpy(grad.reshape(torch_grad.shape, copy=True)).to(torch.device("cpu")).float())
 
     def copy_grad_vars(self, pydtnn_model: Model, torch_model: torch.nn.Module) -> None:
         """Synchronizes model parameters between PyDTNN and PyTorch."""
-        layers = pydtnn_model.get_all_layers().copy()
+        layers = [layer for layer in pydtnn_model.get_all_layers() if not isinstance(layer, AbstractBlockLayer)]
 
         if isinstance(layers[0], Input):
             layers.pop(0)
 
-        torch_layers = [module for module in torch_model.modules() if not isinstance(module, torch.nn.Sequential)]
-        # print(f"{layers=} {len(layers)=} || {len(torch_layers)=} {torch_layers=}")
+        torch_layers = list()
+        list_children = list(torch_model.children())
+        if len(list_children) == 0:
+            torch_layers.append(torch_model)
+        else:
+            for module in list_children:
+                if isinstance(module, torch.nn.Sequential):
+                    torch_layers.extend(module.children())
+                else:
+                    torch_layers.append(module)
 
         with torch.no_grad():
             for i in range(len(layers)):
@@ -303,7 +338,13 @@ class LayerPyTorchTestCase(TestCase):
                     case Conv2D():
                         for grad_var in layer.grad_vars.keys():
                             grad: np.ndarray = getattr(layer, grad_var)
-                            if grad_var == "weights" and grad is not None:
+                            if grad_var == Parameters.WEIGHTS and grad is not None:
+                                grad = format_transpose(grad, {TensorFormat.NHWC: "ihwo", TensorFormat.NCHW: "oihw"}[pydtnn_model.tensor_format], "oihw")
+                            self._copy_grad_vars(grad, grad_var, torch_layer)
+                    case Conv2DDepthwise():
+                        for grad_var in layer.grad_vars.keys():
+                            grad: np.ndarray = getattr(layer, grad_var)
+                            if grad_var == Parameters.WEIGHTS and grad is not None:
                                 grad = format_transpose(grad, {TensorFormat.NHWC: "ihwo", TensorFormat.NCHW: "oihw"}[pydtnn_model.tensor_format], "oihw")
                             self._copy_grad_vars(grad, grad_var, torch_layer)
                     case _:
@@ -513,6 +554,18 @@ class LayerPyTorchTestCase(TestCase):
         """Tests Softmax activation."""
         pydtnn_layers = [Softmax()]
         torch_model = torch.nn.Softmax(dim=1)
+        pydtnn_model = LayerPyTorchTestCase.initialize_pydtnn_model(pydtnn_layers, params=self.params)  # type: ignore
+        _x = LayerPyTorchTestCase.get_test_data()
+        self.do_test(_x=_x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="Softmax")
+
+    def test_Depthwise_Pointwise(self):
+        input_filt = CONV2D_IN_C_TORCH
+        output_filt = CONV2D_N_FILTERS
+
+        pydtnn_layers = [Conv2DDepthwise(nfilters=input_filt, stride=CONV2D_STRIDE, filter_shape=CONV2D_FILTER_SHAPE,
+                                         padding=CONV2D_DEPTHWISE_PADDING),
+                         Conv2DPointwise(nfilters=output_filt)]
+        torch_model = TorchDepthPointConv()
         pydtnn_model = LayerPyTorchTestCase.initialize_pydtnn_model(pydtnn_layers, params=self.params)  # type: ignore
         _x = LayerPyTorchTestCase.get_test_data()
         self.do_test(_x=_x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="Softmax")
