@@ -78,11 +78,11 @@ class Transform(Init):
             transformations_training.append(self._x_transformer_adaptor(self._do_transform_resize))
             transformations_always.append(self._x_transformer_adaptor(self._do_transform_resize))
 
-        if self.model.augment_flip > 0:
-            transformations_training.append(self._x_transformer_adaptor(self._do_augment_flip))
-
         if self.model.augment_blur > 0:
             transformations_training.append(self._x_transformer_adaptor(self._do_augment_blur))
+
+        if self.model.augment_flip > 0:
+            transformations_training.append(self._x_transformer_adaptor(self._do_augment_flip))
 
         if self.model.augment_mask > 0:
             transformations_training.append(self._x_transformer_adaptor(self._do_augment_mask))
