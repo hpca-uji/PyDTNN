@@ -231,6 +231,8 @@ class ArgumentParser(argparse.ArgumentParser):
         _ds_group.add_argument("--augment-rotate", type=factor, default=0.0, help="Probability to rotate training images. If the value is less or equal to 0 it is disabled. Default: 0.0.")
         _ds_group.add_argument("--augment-mask", type=factor, default=0.0, help="Probability to mask training images. If the value is less or equal to 0 it is disabled. Default: 0.0.")
         _ds_group.add_argument("--augment-mask-size", type=int, default=16, help="Size to mask training images. Default: 16.")
+        _ds_group.add_argument("--augment-blur", type=factor, default=0.0, help="Probability to blur training images. If the value is less or equal to 0 it is disabled. Default: 0.0.")
+        _ds_group.add_argument("--augment-blur-size", type=int, default=16, help="Size to blur training images. Default: 16.")
         _ds_group.add_argument("--transform-crop", default=False, type=bool_lambda, help="Crop the images. True if specified.")
         _ds_group.add_argument("--transform-crop-perc", type=float, default=0.875, help="Central crop of the images. Default: 0.875.")
         _ds_group.add_argument("--transform-resize", default=False, type=bool_lambda, help="Resize the images. True if specified.")
