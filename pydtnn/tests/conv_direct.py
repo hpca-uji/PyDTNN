@@ -43,8 +43,8 @@ class ConvDirectTestCase(ConvCommonTestCase):
         # b, c, h, w = x.shape
         cg_biases = biases.copy() if biases is not None else None
         conv_direct_result: np.ndarray = cls._compute(
-            weights, x, biases=cg_biases, kw=kw, kh=kh, vpadding=vpadding, hpadding=hpadding, vstride=vstride, hstride=hstride, vdilation=vdilation, hdilation=hdilation
-        )
+            weights, x.copy(), biases=cg_biases, kw=kw, kh=kh, vpadding=vpadding, hpadding=hpadding, vstride=vstride, hstride=hstride, vdilation=vdilation, hdilation=hdilation
+        ).copy()
         conv_direct_result: np.ndarray = conv_direct_result.reshape((-1, kn), copy=False)
 
         n, h, w, c = x.shape
@@ -58,7 +58,7 @@ class ConvDirectTestCase(ConvCommonTestCase):
         x_c: np.ndarray = np.zeros(shape=(dim_n, dim_c), dtype=x.dtype)
 
         im2row_nhwc_cython(
-            x,
+            x.copy(),
             x_c,  # type: ignore
             kh,
             kw,
@@ -72,7 +72,7 @@ class ConvDirectTestCase(ConvCommonTestCase):
             hdilation,
         )
         w_c = weights.reshape((-1, kn), copy=False)
-        im2row_mm_result: np.ndarray = np.matmul(x_c, w_c)
+        im2row_mm_result: np.ndarray = np.matmul(x_c, w_c).copy()
         if biases is not None:
             np.add(im2row_mm_result, biases.reshape((-1, kn), copy=False), out=im2row_mm_result, dtype=im2row_mm_result.dtype)
         if verbose_test():
