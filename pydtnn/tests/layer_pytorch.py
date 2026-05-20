@@ -367,11 +367,11 @@ class LayerPyTorchTestCase(TestCase):
         for layer in pydtnn_model.layers:
             x: np.ndarray = layer.forward(x)
         x_pydtnn = x
-        x_pydtnn = format_transpose(x, self.params.tensor_format.upper(), TensorFormat.NCHW.upper())
+        x_pydtnn = format_transpose(x, self.params.tensor_format.upper(), TensorFormat.NCHW.upper()).copy()
 
         x = torch.from_numpy(_x.reshape((N, C, H, W), copy=False)).to(torch.device("cpu")).float()
         x_torch: torch.Tensor = torch_model(x)
-        x_torch = np.asarray(x_torch.cpu().detach().numpy(), dtype=pydtnn_model.dtype, order="C")
+        x_torch = np.asarray(x_torch.cpu().detach().numpy(), dtype=pydtnn_model.dtype, order="C").copy()
 
         if verbose_test():
             logger.info(f"[{rtol=}, {atol=}]\n{x_pydtnn.max()=}\n{x_torch.max()=}\n{x_pydtnn.min()=}\n{x_torch.min()=}\n{x_pydtnn.std()=}\n{x_torch.std()=}\n{x_pydtnn.mean()=}\n{x_torch.mean()=}")

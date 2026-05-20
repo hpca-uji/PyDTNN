@@ -80,14 +80,14 @@ class Conv2DCommonTestCase[T: Conv2D](TestCase):
         self._set_state(conv2d_ref, weights)
         self._set_state(conv2d_test, weights)
         # Forward pass
-        y_ref = conv2d_ref.forward(x).copy()
-        y_test = conv2d_test.forward(x).copy()
+        y_ref = conv2d_ref.forward(x.copy()).copy()
+        y_test = conv2d_test.forward(x.copy()).copy()
         dy = random.random((d.b, d.kn, d.ho, d.wo)).astype(np.float32, order="C")
         if conv2d_ref.model.tensor_format is TensorFormat.NHWC:
             dy = format_transpose(dy, "NCHW", "NHWC").copy()
         # Backward pass
-        dx_ref = conv2d_ref.backward(dy).copy()
-        dx_test = conv2d_test.backward(dy).copy()
+        dx_ref = conv2d_ref.backward(dy.copy()).copy()
+        dx_test = conv2d_test.backward(dy.copy()).copy()
         # All close?
         dw_allclose = np.allclose(conv2d_ref.dw, conv2d_test.dw)
         dx_allclose = np.allclose(dx_ref, dx_test)
@@ -136,8 +136,8 @@ class Conv2DCommonTestCase[T: Conv2D](TestCase):
         conv2d_ref, conv2d_test = self._get_layers(d)
         x = random.random((d.b, d.c, d.h, d.w)).astype(np.float32, order="C")
         x = conv2d_ref.model.encode_tensor(x).copy()
-        y_ref = conv2d_ref.forward(x).copy()
-        y_test = conv2d_test.forward(x).copy()
+        y_ref = conv2d_ref.forward(x.copy()).copy()
+        y_test = conv2d_test.forward(x.copy()).copy()
         if verbose_test():
             print_with_header("test forward defaults")
             print(y_ref)

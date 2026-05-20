@@ -81,13 +81,10 @@ class Layers[T: Array](Utils[T]):
 
         match (layer0, layer1, layer2):
             case (_, LayerFuse(), _):
-                pass  # else: layer_name = None
+                pass  # skip fused
             case (Conv2D(), BatchNormalization(), Relu()):
                 if self.enable_fused_conv_bn_relu:
                     layer_name = "conv_2d_batch_normalization_relu"
-                # else: layer_name = None
-            case _:
-                pass  # else: layer_name = None
 
         return layer_name, [layer0, layer1, layer2]
 
@@ -102,7 +99,7 @@ class Layers[T: Array](Utils[T]):
 
         match (layer1, layer2):
             case (LayerFuse(), _):
-                pass
+                pass  # skip fused
             case (Conv2D(), BatchNormalization()):
                 if self.enable_fused_conv_bn:
                     layer_name = "conv_2d_batch_normalization"
@@ -112,8 +109,6 @@ class Layers[T: Array](Utils[T]):
             case (BatchNormalization(), Relu()):
                 if self.enable_fused_bn_relu:
                     layer_name = "batch_normalization_relu"
-            case _:
-                pass
 
         return layer_name, [layer1, layer2]
 
