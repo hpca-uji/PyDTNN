@@ -36,4 +36,9 @@ job_release:
 
   script:
     - glab auth login --hostname lorca.act.uji.es --token "$CI_JOB_TOKEN"
+    - git remote -v
+    - echo "$CI_PROJECT_PATH"
+    - echo "$CI_SERVER_HOST"
+    - glab repo view
+    - glab api projects/$(python3 -c "import urllib.parse,os; print(urllib.parse.quote(os.environ['CI_PROJECT_PATH'], safe=''))")
     - glab release create "ci-$CI_COMMIT_SHA" build/* --ref "$CI_COMMIT_SHA"
