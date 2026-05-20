@@ -35,4 +35,5 @@ job_release:
       artifacts: true
 
   script:
+    - glab auth login --hostname lorca.act.uji.es --token "$CI_JOB_TOKEN"
     - glab release create "$CI_COMMIT_SHA" build/*
