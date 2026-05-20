@@ -35,11 +35,4 @@ job_release:
       artifacts: true
 
   script:
-    - echo "Test release for $CI_COMMIT_SHA"
-
-  release:
-    name: "$CI_COMMIT_SHA"
-    description: "Test release for $CI_COMMIT_SHA"
-
-  script:
     - glab release create "$CI_COMMIT_SHA" --title "$CI_COMMIT_SHA" --notes "Release $CI_COMMIT_SHA" build/*
