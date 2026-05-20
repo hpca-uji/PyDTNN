@@ -1,0 +1,45 @@
+stages:
+  - build
+  - release
+
+variables:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+
+job_build:
+  stage: build
+
+  tags: [ lorca-ubuntu ]
+  image: python:3.13
+
+  before_script:
+    - python -m pip install --upgrade pip
+    - pip install build cibuildwheel
+  script:
+    - mkdir ./build/
+    - echo "$CI_COMMIT_SHA" > ./build/test.txt
+    # - python -m build --sdist --outdir ./build/
+    # - python -m cibuildwheel --output-dir ./build/
+
+  artifacts:
+    paths:
+      - ./build/*
+
+job_release:
+  stage: release
+
+  tags: [ lorca-ubuntu ]
+  image: registry.gitlab.com/gitlab-org/cli:latest
+
+  needs:
+    - job: job_build
+      artifacts: true
+
+  script:
+    - glab auth login --hostname lorca.act.uji.es/gitlab --token "$GLAB_TOKEN"
+    - git remote -v
+    - echo "$CI_PROJECT_PATH"
+    - echo "$CI_SERVER_HOST"
+    - wget --header "PRIVATE-TOKEN:$GLAB_TOKEN" "https://lorca.act.uji.es/gitlab/api/v4/projects/deep-learning%2FPyDTNN"
+    - glab repo view --repo deep-learning/PyDTNN
+    - glab api projects/$(python3 -c "import urllib.parse,os; print(urllib.parse.quote(os.environ['CI_PROJECT_PATH'], safe=''))")
+    - glab release create "ci-$CI_COMMIT_SHA" build/* --ref "$CI_COMMIT_SHA"
