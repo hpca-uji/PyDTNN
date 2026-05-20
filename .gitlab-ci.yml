@@ -1,0 +1,45 @@
+stages:
+  - build
+  - release
+
+variables:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+
+build:
+  stage: build
+
+  tags: [ lorca-ubuntu ]
+  image: python:3.13
+
+  before_script:
+    - python -m pip install --upgrade pip
+    - pip install build cibuildwheel
+  script:
+    - python -m build --sdist --outdir ./build/
+    # - python -m cibuildwheel --output-dir ./build/
+
+  artifacts:
+    paths:
+      - ./build/*
+
+
+release:
+  stage: release
+
+  tags: [ lorca-ubuntu ]
+
+  image: registry.gitlab.com/gitlab-org/release-cli:latest
+
+  needs:
+    - job: build
+      artifacts: true
+
+  release:
+    tag_name: "$CI_COMMIT_SHA"
+    name: "$CI_COMMIT_SHA"
+    description: "Test release for $CI_COMMIT_SHA"
+
+    assets:
+      links:
+        - name: "Distribution files"
+          url: "${CI_PROJECT_URL}/-/jobs/${CI_JOB_ID}/artifacts/browse/build/"
