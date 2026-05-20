@@ -47,9 +47,10 @@ class Conv2DGemm(Conv2DNumpy, AbstractConv2DGemm):
         self.cg_x = x
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVGEMM)
-        y: np.ndarray = self.cg.conv_gemm_nhwc(
+        y = self.get_y(x.shape[0])
+        self.cg.conv_gemm_nhwc(
             np.asarray(self.weights, dtype=self.model.dtype),
-            x,
+            x, y,
             vpadding=self.hpadding,
             hpadding=self.wpadding,
             vstride=self.hstride,
@@ -68,9 +69,10 @@ class Conv2DGemm(Conv2DNumpy, AbstractConv2DGemm):
         self.cg_x = x
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVGEMM)
-        res = self.cg.conv_gemm_nchw(
+        y = self.get_y(x.shape[0])
+        self.cg.conv_gemm_nchw(
             np.asarray(self.weights, dtype=self.model.dtype),
-            x,
+            x, y,
             vpadding=self.hpadding,
             hpadding=self.wpadding,
             vstride=self.hstride,
@@ -80,7 +82,7 @@ class Conv2DGemm(Conv2DNumpy, AbstractConv2DGemm):
             biases=np.asarray(self.biases, dtype=self.model.dtype),
         )
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return res
+        return y
 
     def _backward_cg_nhwc(self, dy: np.ndarray) -> np.ndarray:
         """Version of the backward function that uses the convGemm library"""
@@ -98,7 +100,8 @@ class Conv2DGemm(Conv2DNumpy, AbstractConv2DGemm):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_DECONV_GEMM)
-        dx: np.ndarray = np.zeros((dy.shape[0], self.hi, self.wi, self.ci), dtype=dy.dtype)
+        dx = self.get_dx(dy.shape[0])
+        dx.fill(0)  # NOTE: It is necessary that dx is filled with 0s.
         self.cg.deconv_gemm_nhwc(
             np.asarray(self.weights, dtype=self.model.dtype),
             dy,
@@ -131,7 +134,8 @@ class Conv2DGemm(Conv2DNumpy, AbstractConv2DGemm):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_DECONV_GEMM)
-        dx = np.zeros((dy.shape[0], self.ci, self.hi, self.wi), dtype=dy.dtype)
+        dx = self.get_dx(dy.shape[0])
+        dx.fill(0)  # NOTE: It is necessary that dx is filled with 0s.
         self.cg.deconv_gemm_nchw(
             np.asarray(self.weights, dtype=self.model.dtype),
             dy,
