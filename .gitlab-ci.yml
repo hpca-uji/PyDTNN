@@ -1,11 +1,11 @@
 stages:
   - build
-  # - release
+  - release
 
 variables:
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
 
-build:
+job_build:
   stage: build
 
   tags: [ lorca-ubuntu ]
@@ -15,34 +15,31 @@ build:
     - python -m pip install --upgrade pip
     - pip install build cibuildwheel
   script:
-    - python -m build --sdist --outdir ./build/
+    - mkdir ./build/
+    - echo "$CI_COMMIT_SHA" > ./build/test.txt
+    # - python -m build --sdist --outdir ./build/
     # - python -m cibuildwheel --output-dir ./build/
 
   artifacts:
     paths:
       - ./build/*
 
+job_release:
+  stage: release
 
-#release:
-#  stage: release
-#
-#  tags: [ lorca-ubuntu ]
-#
-#  image: registry.gitlab.com/gitlab-org/release-cli:latest
-#
-#  needs:
-#    - job: build
-#      artifacts: true
-#
-#  script:
-#    - echo "Test release for $CI_COMMIT_SHA"
-#
-#  release:
-#    name: "$CI_COMMIT_SHA"
-#    description: "Test release for $CI_COMMIT_SHA"
-#
-#    assets:
-#      links:
-#        - name: "Distribution files"
-#          url: "${CI_PROJECT_URL}/-/jobs/${CI_JOB_ID}/artifacts/browse/build/"
-#
+  tags: [ lorca-ubuntu ]
+  image: registry.gitlab.com/gitlab-org/cli:latest
+
+  needs:
+    - job: job_build
+      artifacts: true
+
+  script:
+    - echo "Test release for $CI_COMMIT_SHA"
+
+  release:
+    name: "$CI_COMMIT_SHA"
+    description: "Test release for $CI_COMMIT_SHA"
+
+  script:
+    - glab release create "$CI_COMMIT_SHA" --title "$CI_COMMIT_SHA" --notes "Release $CI_COMMIT_SHA" build/*
