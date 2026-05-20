@@ -80,54 +80,59 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
 
     def get_rows(self, batch_size: int) -> np.ndarray:
         """
-        Retrieves a view of the temporary buffer as a row-major matrix.
+        Retrieves a view of the im2row temporary output buffer.
         """
         dim_n = batch_size * self.ho * self.wo
         shape = (dim_n, self.dim_c)
         x_rows: np.ndarray = self.temp_c_r[: math.prod(shape)]
-        x_rows = x_rows.reshape(shape)
-        return np.ascontiguousarray(x_rows, dtype=self.model.dtype)
+        x_rows = x_rows.reshape(shape, order="C")
+        return x_rows
 
     def get_cols(self, batch_size: int) -> np.ndarray:
         """
-        Retrieves a view of the temporary buffer as a column-major matrix.
+        Retrieves a view of the im2col temporary output buffer.
         """
         dim_n = batch_size * self.ho * self.wo
         shape = (self.dim_c, dim_n)
         x_cols: np.ndarray = self.temp_c_r[: math.prod(shape)]
-        x_cols = x_cols.reshape(shape)
-        return np.ascontiguousarray(x_cols, dtype=self.model.dtype)
-
+        x_cols = x_cols.reshape(shape, order="C")
+        return x_cols
+    
     def get_y(self, batch_size: int) -> np.ndarray:
         """
-        Retrieves a view of the output buffer for the current batch size.
+        Retrieves a view of the forward's output buffer for the current batch size.
+        """
+        shape = (batch_size, *self.shape)
+        y: np.ndarray = self.temp_y_dx[: math.prod(shape)]
+        y = y.reshape(shape, order="C")
+        return y
+
+    def get_y_im2(self, batch_size: int) -> np.ndarray:
+        """
+        Retrieves a view of the forward's output buffer for the current batch size.
         """
         dim_n = batch_size * self.ho * self.wo
         shape = (dim_n, self.co)
         y: np.ndarray = self.temp_y_dx[: math.prod(shape)]
-        y = y.reshape(shape)
-        return np.ascontiguousarray(y, dtype=self.model.dtype)
+        y = y.reshape(shape, order="C")
+        return y
 
     def get_dx(self, batch_size: int) -> np.ndarray:
         """
-        Retrieves a view of the input gradient buffer for the current batch size.
+        Retrieves a view of the backward's output gradient buffer for the current batch size.
         """
         shape = self.model.encode_shape((batch_size, self.ci, self.hi, self.wi))
         dx: np.ndarray = self.temp_y_dx[: math.prod(shape)]
-        dx = dx.reshape(shape)
-        return np.ascontiguousarray(dx, dtype=self.model.dtype)
+        dx = dx.reshape(shape, order="C")
+        return dx
 
     def _forward_i2c_nhwc(self, x: np.ndarray) -> np.ndarray:
         """
         Performs forward pass using im2row and matrix multiplication for NHWC format.
         """
-
-        # x_rows = np.zeros(shape=(dim_n, self.dim_c), dtype=self.model.dtype)
-        # x_rows = np.asarray(self._x_rows[:dim_n, :], dtype=self.model.dtype, order="C")
         x_rows = self.get_rows(x.shape[0])
         x_rows.fill(0)
-        # y = self.y[:shape[-1], :]
-        y = self.get_y(x.shape[0])
+        y = self.get_y_im2(x.shape[0])
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
         self.im2row(x, x_rows)
@@ -157,13 +162,9 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
         """
         Performs forward pass using im2col and matrix multiplication for NCHW format.
         """
-
-        # x_cols = np.zeros(shape=(self.dim_c, dim_n), dtype=self.model.dtype)
-        # x_cols: np.ndarray = np.asarray(self._x_cr[:, :dim_n], dtype=self.model.dtype, order="C")
         x_cols = self.get_cols(x.shape[0])
         x_cols.fill(0)
-        # y = self.y[:shape[-1], :]
-        y = self.get_y(x.shape[0])
+        y = self.get_y_im2(x.shape[0])
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
         self.im2col(x, x_cols)
@@ -196,7 +197,6 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
         Performs backward pass using im2row and matrix multiplication for NHWC format.
         """
 
-        # res = np.asarray(self.res_bw[:(dy.shape[0] * self.ho * self.wo), :], dtype=self.model.dtype, order="C")
         self.dw = self.dw.reshape(self._dw_shape)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_TRANSPOSE_DY)
@@ -218,7 +218,6 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
         if self.use_bias:
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_SUM_BIASES)
             np.sum(dy, axis=(0, 1, 2), out=self.db)
-            # np.sum(dy.reshape((self.co, -1)), axis=1, out=self.db)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         # Data gradient
