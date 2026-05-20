@@ -48,16 +48,17 @@ class Conv2DGemm(Conv2DNumpy, AbstractConv2DGemm):
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVGEMM)
         y = self.get_y(x.shape[0])
+        w = np.asarray(self.weights, dtype=self.model.dtype)
+        biases = np.asarray(self.biases, dtype=self.model.dtype) if self.use_bias else self.biases
         self.cg.conv_gemm_nhwc(
-            np.asarray(self.weights, dtype=self.model.dtype),
-            x, y,
+            w, x, y,
             vpadding=self.hpadding,
             hpadding=self.wpadding,
             vstride=self.hstride,
             hstride=self.wstride,
             vdilation=self.hdilation,
             hdilation=self.wdilation,
-            biases=np.asarray(self.biases, dtype=self.model.dtype),
+            biases=biases,
         )
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
