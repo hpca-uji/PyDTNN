@@ -5,7 +5,6 @@ Provides a base test class to compare model outputs and gradients across differe
 
 import logging
 import unittest
-import warnings
 
 import numpy as np
 
@@ -98,7 +97,7 @@ class ModelCommonTestCase(TestCase):
         params = Params()
         # Begin of params configuration
         params.model_name = model_name  # type: ignore
-        params.tensor_format = TensorFormat.NHWC.upper()
+        params.tensor_format = TensorFormat.NCHW.upper()
         # End of params configuration
         params_dict = vars(params)
         if overwrite_params is not None:
@@ -202,7 +201,19 @@ class ModelCommonTestCase(TestCase):
         for i, layer in enumerate(model1.layers):
             if verbose_test():
                 print(layer)
+                print(f"\n{layer.name} - {layer.id} - input {model1.tensor_format=}", end = " - ")
+                print(f"{x1[i].max()=}", end = " - ")
+                print(f"{x1[i].min()=}", end = " - ")
+                print(f"{x1[i].mean()=}", end = " - ")
+                print(f"{x1[i].std()=}")
             x1.append(layer.forward(np.asarray(x1[i], dtype=model1.dtype, order="C").copy()).copy())
+            
+            if verbose_test():
+                print(f"output", end = " - ")
+                print(f"{x1[-1].max()=}", end = " - ")
+                print(f"{x1[-1].min()=}", end = " - ")
+                print(f"{x1[-1].mean()=}", end = " - ")
+                print(f"{x1[-1].std()=}")
         return x1
 
     def do_model2_forward_pass(self, model2: Model, x1: list[np.ndarray]) -> list[np.ndarray]:
@@ -220,7 +231,19 @@ class ModelCommonTestCase(TestCase):
         for i, layer in enumerate(model2.layers):
             if verbose_test():
                 print(layer)
+                print(f"\n{layer.name} - {layer.id} - input {model2.tensor_format=}", end = " - ")
+                print(f"{x1[i].shape=}", end = " - ")
+                print(f"{x1[i].max()=}", end = " - ")
+                print(f"{x1[i].min()=}", end = " - ")
+                print(f"{x1[i].mean()=}", end = " - ")
+                print(f"{x1[i].std()=}")
             x2.append(layer.forward(np.asarray(x1[i], dtype=model2.dtype, order="C").copy()).copy())
+            if verbose_test() or True:
+                print(f"output", end = " - ")
+                print(f"{x2[-1].max()=}", end = " - ")
+                print(f"{x2[-1].min()=}", end = " - ")
+                print(f"{x2[-1].mean()=}", end = " - ")
+                print(f"{x2[-1].std()=}")
         return x2
 
     @staticmethod
