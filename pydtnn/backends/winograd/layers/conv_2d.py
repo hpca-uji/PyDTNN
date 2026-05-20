@@ -70,10 +70,11 @@ class Conv2DWinograd(Conv2DNumpy, AbstractConv2DWinograd):
         self.cw_x = x
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVWINOGRAD)
+        biases = np.asarray(self.biases, dtype=self.model.dtype) if self.use_bias else self.biases
         y: np.ndarray = self.cw.conv_winograd_nchw(
             np.asarray(self.weights, dtype=self.model.dtype),
             x,
-            biases=np.asarray(self.biases, dtype=self.model.dtype),
+            biases=biases,
             vpadding=self.hpadding,
             hpadding=self.wpadding,
             vstride=self.hstride,
