@@ -39,7 +39,7 @@ job_release:
     - git remote -v
     - echo "$CI_PROJECT_PATH"
     - echo "$CI_SERVER_HOST"
-    - curl -H "PRIVATE-TOKEN: $GLAB_TOKEN" https://lorca.act.uji.es/gitlab/api/v4/projects/deep-learning%2FPyDTNN
+    - curl -H "PRIVATE-TOKEN:$GLAB_TOKEN" "https://lorca.act.uji.es/gitlab/api/v4/projects/deep-learning%2FPyDTNN"
     - glab repo view --repo deep-learning/PyDTNN
     - glab api projects/$(python3 -c "import urllib.parse,os; print(urllib.parse.quote(os.environ['CI_PROJECT_PATH'], safe=''))")
     - glab release create "ci-$CI_COMMIT_SHA" build/* --ref "$CI_COMMIT_SHA"
