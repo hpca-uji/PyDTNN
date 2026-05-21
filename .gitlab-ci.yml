@@ -11,8 +11,9 @@ job_build:
   tags: [ lorca-ubuntu ]
 #  image: python:3.13
 
-#  before_script:
-#    - apt-get update
+  before_script:
+    - apt-get update
+    - apt-get install -y python3
 #    - apt-get install -y docker.io
 #    - pip install build cibuildwheel
   script:
