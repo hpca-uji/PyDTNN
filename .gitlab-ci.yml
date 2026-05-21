@@ -22,17 +22,34 @@ job_build:
     - |
       TAG="ci-$CI_COMMIT_SHA"
 
-      curl --header "PRIVATE-TOKEN: $GLAB_TOKEN" \
-           --request POST \
-           --data "name=$TAG" \
-           --data "tag_name=$TAG" \
-           --data "ref=$CI_COMMIT_SHA" \
-           "https://lorca.act.uji.es/gitlab/api/v4/projects/$CI_PROJECT_ID/releases"
+      # Crear release
+      curl --fail \
+          --header "PRIVATE-TOKEN: $GLAB_TOKEN" \
+          --request POST \
+          --data "name=$TAG" \
+          --data "tag_name=$TAG" \
+          --data "ref=$CI_COMMIT_SHA" \
+          "https://lorca.act.uji.es/gitlab/api/v4/projects/$CI_PROJECT_ID/releases"
 
-      for file in build/*; do
-        curl --header "PRIVATE-TOKEN: $GLAB_TOKEN" \
-             --upload-file "$file" \
-             "https://lorca.act.uji.es/gitlab/api/v4/projects/$CI_PROJECT_ID/packages/generic/wheels/$TAG/$(basename "$file")"
+      # Subir wheels y añadirlos a la release
+      for file in build/*.whl; do
+        echo "Uploading $file"
+
+        RESPONSE=$(curl --silent --fail \
+            --header "PRIVATE-TOKEN: $GLAB_TOKEN" \
+            --form "file=@$file" \
+            "https://lorca.act.uji.es/gitlab/api/v4/projects/$CI_PROJECT_ID/uploads")
+
+        URL=$(echo "$RESPONSE" | jq -r '.url')
+
+        echo "Creating asset link for $file"
+
+        curl --fail \
+            --header "PRIVATE-TOKEN: $GLAB_TOKEN" \
+            --request POST \
+            --data-urlencode "name=$(basename "$file")" \
+            --data-urlencode "url=https://lorca.act.uji.es/gitlab${URL}" \
+            "https://lorca.act.uji.es/gitlab/api/v4/projects/$CI_PROJECT_ID/releases/$TAG/assets/links"
       done
 
 #  artifacts:
