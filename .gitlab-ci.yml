@@ -19,6 +19,8 @@ job_build:
   - python -m build --outdir ./build/ --sdist
   - python -m build --outdir ./build/wheel/ --wheel
   - python -m auditwheel repair --wheel-dir ./build/ ./build/wheel/*.whl
+  - pip install ./build/*.whl
+  - python -c "import importlib.metadata import version; print(version('pydtnn'))" > ./build/version
 
   artifacts:
     paths:
@@ -37,18 +39,12 @@ job_release:
   script:
   - glab auth login --hostname lorca.act.uji.es/gitlab --token "$GLAB_TOKEN"
   - |
-    TAG="ci-$CI_COMMIT_SHA"
-
-    glab release create "$TAG" --ref "$CI_COMMIT_SHA"
-
-    for file in build/pydtnn-*; do
+    LINKS=""
+    VERSION=$(cat ./build/version)
+    for file in ./build/pydtnn-*; do
       NAME=$(basename "$file")
-
       URL="https://lorca.act.uji.es/gitlab/${CI_PROJECT_PATH}/-/jobs/artifacts/${CI_COMMIT_SHA}/raw/build/${NAME}?job=job_build"
-
-      glab release upload "$TAG" \
-        --assets-links="[{
-          \"name\":\"${NAME}\",
-          \"url\":\"${URL}\"
-        }]"
+      LINK="{\"name\":\"${NAME}\",\"url\":\"${URL}\"}"
+      LINKS="${LINKS},${LINK}"
     done
+    glab release create "ci-$CI_COMMIT_SHA" --ref "$CI_COMMIT_SHA" --notes "PyDTNN v$VERSION" --assets-links="[${LINKS%,}]"
