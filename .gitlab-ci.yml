@@ -16,7 +16,7 @@ job_build:
 #    - apt-get install -y docker.io
 #    - pip install build cibuildwheel
   script:
-    - python -m venv --help
+    - python3 -m venv --help
     #- python -m build --sdist --outdir ./build/
     #- python -m cibuildwheel --output-dir ./build/
 
