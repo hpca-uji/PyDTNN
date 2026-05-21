@@ -1,7 +1,7 @@
 stages:
 - build
 - test
-- promote
+- merge
 - release
 
 variables:
@@ -42,8 +42,8 @@ job_test:
     - cd ./build/
     - python -m unittest pydtnn.tests.groups.all
 
-job_promote:
-  stage: promote
+job_merge:
+  stage: merge
 
   image: registry.gitlab.com/gitlab-org/cli:latest
   tags: [ lorca-ubuntu ]
@@ -54,7 +54,7 @@ job_promote:
   rules:
   - if: '$CI_COMMIT_BRANCH == "develop"'
 
-  resource_group: promote-main
+  resource_group: merge
 
   before_script:
     - glab auth login --hostname lorca.act.uji.es/gitlab --token "$GLAB_TOKEN"
