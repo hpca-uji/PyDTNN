@@ -10,7 +10,7 @@ job_build:
   stage: build
 
   tags: [ lorca-ubuntu ]
-  image: python:3.13
+  image: python:latest
 
   before_script:
     - apt-get update
@@ -19,9 +19,21 @@ job_build:
   script:
     - python -m build --sdist --outdir ./build/
     - python -m cibuildwheel --output-dir ./build/
-    - glab auth login --hostname lorca.act.uji.es --token "$GLAB_TOKEN"
-    - glab config set api_host https://lorca.act.uji.es/gitlab/api/v4 --host lorca.act.uji.es
-    - glab release create "ci-$CI_COMMIT_SHA" build/* --ref "$CI_COMMIT_SHA" --repo "$CI_PROJECT_PATH"
+    -|
+      TAG="ci-$CI_COMMIT_SHA"
+
+      curl --header "PRIVATE-TOKEN: $GLAB_TOKEN" \
+           --request POST \
+           --data "name=$TAG" \
+           --data "tag_name=$TAG" \
+           --data "ref=$CI_COMMIT_SHA" \
+           "https://lorca.act.uji.es/gitlab/api/v4/projects/$CI_PROJECT_ID/releases"
+
+      for file in build/*; do
+        curl --header "PRIVATE-TOKEN: $GLAB_TOKEN" \
+             --upload-file "$file" \
+             "https://lorca.act.uji.es/gitlab/api/v4/projects/$CI_PROJECT_ID/packages/generic/wheels/$TAG/$(basename "$file")"
+      done
 
 #  artifacts:
 #    paths:
