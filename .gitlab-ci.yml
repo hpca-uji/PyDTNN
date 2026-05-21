@@ -14,7 +14,7 @@ job_build:
 
   before_script:
     - apt-get update
-    - apt-get install -y glab docker.io
+    - apt-get install -y jq glab docker.io
     - pip install build cibuildwheel
   script:
     - python -m build --sdist --outdir ./build/
