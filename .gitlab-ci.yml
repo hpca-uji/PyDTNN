@@ -3,12 +3,13 @@ stages:
 #  - release
 
 variables:
+  CIBW_SKIP: "*musllinux* cp*t-*"
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
 
 job_build:
   stage: build
 
-  tags: [ lorca-ubuntu ]
+  #tags: [ lorca-ubuntu ]
   image: python:3.13
 
   before_script:
@@ -18,7 +19,7 @@ job_build:
   script:
     - python -m build --sdist --outdir ./build/
     - python -m cibuildwheel --output-dir ./build/
-    - glab auth login --hostname lorca.act.uji.es/gitlab --token "$GLAB_TOKEN"
+    - glab auth login --hostname lorca.act.uji.es --token "$GLAB_TOKEN"
     - glab release create "ci-$CI_COMMIT_SHA" build/* --ref "$CI_COMMIT_SHA"
 
 #  artifacts:
