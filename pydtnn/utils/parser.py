@@ -229,6 +229,7 @@ class ArgumentParser(argparse.ArgumentParser):
         _ds_group.add_argument("--augment-shuffle", default=True, type=bool_lambda, help="Shuffle training images. Default: True.")
         _ds_group.add_argument("--augment-flip", type=factor, default=0.0, help="Probability to flip training images. If the value is less or equal to 0 it is disabled. Default: 0.0.")
         _ds_group.add_argument("--augment-rotate", type=factor, default=0.0, help="Probability to rotate training images. If the value is less or equal to 0 it is disabled. Default: 0.0.")
+        _ds_group.add_argument("--augment-rotate-degree", type=factor, default=90, help="The máximum degree to rotate training images.Default: 90.")
         _ds_group.add_argument("--augment-mask", type=factor, default=0.0, help="Probability to mask training images. If the value is less or equal to 0 it is disabled. Default: 0.0.")
         _ds_group.add_argument("--augment-mask-size", type=int, default=16, help="Size to mask training images. Default: 16.")
         _ds_group.add_argument("--augment-blur", type=factor, default=0.0, help="Probability to blur training images. If the value is less or equal to 0 it is disabled. Default: 0.0.")
