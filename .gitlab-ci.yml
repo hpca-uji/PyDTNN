@@ -9,7 +9,7 @@ variables:
 job_build:
   stage: build
 
-  #tags: [ lorca-ubuntu ]
+  tags: [ lorca-ubuntu ]
   image: python:3.13
 
   before_script:
