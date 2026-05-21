@@ -18,10 +18,11 @@ job_build:
   script:
     - python -m build --sdist --outdir ./build/
     - python -m cibuildwheel --output-dir ./build/
+    - ls -al ./build/
 
   artifacts:
     paths:
-      - ./build/
+      - ./build/*
 
 job_release:
   stage: release
