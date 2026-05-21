@@ -12,6 +12,7 @@ job_build:
   image: python:3.13
 
   before_script:
+    - apt-get update
     - apt-get install -y docker.io
     - pip install build cibuildwheel
   script:
