@@ -20,7 +20,7 @@ job_build:
   - python -m build --outdir ./build/wheel/ --wheel
   - python -m auditwheel repair --wheel-dir ./build/ ./build/wheel/*.whl
   - pip install ./build/*.whl
-  - python -c "import importlib.metadata import version; print(version('pydtnn'))" > ./build/version
+  - python -c "from importlib.metadata import version; print(version('pydtnn'))" > ./build/version
 
   artifacts:
     paths:
