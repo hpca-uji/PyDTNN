@@ -181,7 +181,6 @@ class Base[T: Array]:
     mpi_server: str
     mpi_port: int
 
-    #-----
     kwargs: dict[str, Any]
     backend: str
     model_name: str
@@ -220,7 +219,7 @@ class Base[T: Array]:
     rank_weight: float
 
     batch_size: int
-    global_batch_size:int
+    global_batch_size: int
     real_batch_size: int
     input_shape: ArrayShape
     output_shape: ArrayShape

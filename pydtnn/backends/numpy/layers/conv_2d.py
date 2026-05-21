@@ -97,7 +97,7 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
         x_cols: np.ndarray = self.temp_c_r[: math.prod(shape)]
         x_cols = x_cols.reshape(shape, order="C")
         return x_cols
-    
+
     def get_y(self, batch_size: int) -> np.ndarray:
         """
         Retrieves a view of the forward's output buffer for the current batch size.
