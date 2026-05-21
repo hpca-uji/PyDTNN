@@ -36,4 +36,19 @@ job_release:
 
   script:
   - glab auth login --hostname lorca.act.uji.es/gitlab --token "$GLAB_TOKEN"
-  - glab release create "ci-$CI_COMMIT_SHA" ./build/pydtnn-* --ref "$CI_COMMIT_SHA"
+  - |
+    TAG="ci-$CI_COMMIT_SHA"
+
+    glab release create "$TAG" --ref "$CI_COMMIT_SHA"
+
+    for file in build/pydtnn-*; do
+      NAME=$(basename "$file")
+
+      URL="https://lorca.act.uji.es/gitlab/${CI_PROJECT_PATH}/-/jobs/artifacts/${CI_COMMIT_SHA}/raw/build/${NAME}?job=job_build"
+
+      glab release upload "$TAG" \
+        --assets-links="[{
+          \"name\":\"${NAME}\",
+          \"url\":\"${URL}\"
+        }]"
+    done
