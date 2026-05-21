@@ -4,7 +4,6 @@ Test suite for verifying model consistency across different tensor formats.
 
 import logging
 import unittest
-import warnings
 
 import numpy as np
 

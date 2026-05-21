@@ -6,7 +6,6 @@ sparse matrix format optimized for performance using Cython-backed operations.
 """
 
 import logging
-import warnings
 
 import numpy as np
 

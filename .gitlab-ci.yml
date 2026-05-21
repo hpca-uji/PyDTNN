@@ -1,0 +1,92 @@
+stages:
+- build
+- test
+- promote
+- release
+
+variables:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+
+job_build:
+  stage: build
+
+  tags: [ lorca-ubuntu ]
+  image: python:latest
+
+  before_script:
+  - apt-get update
+  - apt-get install -y gcc patchelf
+  - pip install build twine auditwheel
+  script:
+  - python -m build --outdir ./build/ --sdist
+  - python -m build --outdir ./build/wheel/ --wheel
+  - python -m auditwheel repair --wheel-dir ./build/ ./build/wheel/*.whl
+
+  artifacts:
+    paths:
+      - ./build/pydtnn-*
+
+job_test:
+  stage: test
+
+  tags: [ lorca-ubuntu ]
+  image: python:latest
+
+  needs:
+    - job: job_build
+      artifacts: true
+
+  before_script:
+    - pip install ./build/*.whl
+  script:
+    - cd ./build/
+    - python -m unittest pydtnn.tests.groups.all
+
+job_promote:
+  stage: promote
+
+  image: registry.gitlab.com/gitlab-org/cli:latest
+  tags: [ lorca-ubuntu ]
+
+  needs:
+  - job_test
+
+  rules:
+  - if: '$CI_COMMIT_BRANCH == "develop"'
+
+  resource_group: promote-main
+
+  before_script:
+    - glab auth login --hostname lorca.act.uji.es/gitlab --token "$GLAB_TOKEN"
+    - git config --global user.email "ci@lorca.act.uji.es"
+    - git config --global user.name "GitLab CI"
+  script:
+    - git checkout main
+    - git merge origin/develop --ff-only
+    - git push origin main
+
+job_release:
+  stage: release
+
+  tags: [ lorca-ubuntu ]
+  image: registry.gitlab.com/gitlab-org/cli:latest
+
+  needs:
+  - job: job_build
+    artifacts: true
+  - job: job_test
+
+  script:
+  - glab auth login --hostname lorca.act.uji.es/gitlab --token "$GLAB_TOKEN"
+  - |
+    VERSION=$(basename ./build/pydtnn-*.tar.gz | sed -E 's/pydtnn-(.*).tar.gz/\1/')
+    glab release delete "v$VERSION" --yes || true
+    LINKS=""
+    VERSION=$(basename ./build/pydtnn-*.tar.gz | sed -E 's/pydtnn-(.*).tar.gz/\1/')
+    for file in ./build/pydtnn-*; do
+      NAME=$(basename "$file")
+      URL="https://lorca.act.uji.es/gitlab/${CI_PROJECT_PATH}/-/jobs/artifacts/${CI_COMMIT_SHA}/raw/build/${NAME}?job=job_build"
+      LINK="{\"name\":\"${NAME}\",\"url\":\"${URL}\"}"
+      LINKS="${LINKS},${LINK}"
+    done
+    glab release create "v$VERSION" --ref "$CI_COMMIT_SHA" --name "PyDTNN v$VERSION" --assets-links="[${LINKS#,}]"

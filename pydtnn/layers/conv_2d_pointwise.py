@@ -3,7 +3,7 @@ Pointwise 2D convolution layer implementation for the PyDTNN framework.
 """
 
 import logging
-from typing import Callable, Optional
+from typing import Optional
 
 from pydtnn.activations.abstract.activation import Activation
 from pydtnn.layers.abstract.conv_2d import AbstractConv2D

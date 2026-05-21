@@ -14,7 +14,6 @@ import platform
 import weakref
 from collections import defaultdict
 from functools import partial
-from warnings import warn
 
 import numpy as np
 

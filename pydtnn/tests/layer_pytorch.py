@@ -179,7 +179,8 @@ class TorchConcatenationBlock(torch.nn.Module):
         x2 = self.block2(x)
         x = torch.cat([x1, x2], dim=1)
         return x
-    
+
+
 class TorchDepthPointConv(torch.nn.Module):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -188,11 +189,11 @@ class TorchDepthPointConv(torch.nn.Module):
         output_filt = CONV2D_N_FILTERS
         stride = CONV2D_STRIDE
         padding = CONV2D_DEPTHWISE_PADDING
-    
-        self.conv_depth = torch.nn.Conv2d(in_channels=input_filt, out_channels=input_filt, kernel_size=CONV2D_FILTER_SHAPE, stride=stride, padding=padding, groups=input_filt)
-        self.conv_point = torch.nn.Conv2d(in_channels=input_filt, out_channels=output_filt, kernel_size=(1,1), stride=1, padding=0, dilation=1, groups=1)
 
-        #self.layers = torch.nn.Sequential(
+        self.conv_depth = torch.nn.Conv2d(in_channels=input_filt, out_channels=input_filt, kernel_size=CONV2D_FILTER_SHAPE, stride=stride, padding=padding, groups=input_filt)
+        self.conv_point = torch.nn.Conv2d(in_channels=input_filt, out_channels=output_filt, kernel_size=(1, 1), stride=1, padding=0, dilation=1, groups=1)
+
+        # self.layers = torch.nn.Sequential(
         #                torch.nn.Conv2d(in_channels=input_filt, out_channels=input_filt, kernel_size=CONV2D_FILTER_SHAPE, stride=stride, padding=1, groups=input_filt),
         #                torch.nn.Conv2d(in_channels=input_filt, out_channels=output_filt, kernel_size=(1,1), stride=1, padding=0, dilation=1, groups=1),
         #              )
@@ -200,7 +201,7 @@ class TorchDepthPointConv(torch.nn.Module):
     def forward(self, x):
         x = self.conv_depth(x)
         x = self.conv_point(x)
-        #x = self.layers(x)
+        # x = self.layers(x)
         return x
 
 
@@ -562,9 +563,7 @@ class LayerPyTorchTestCase(TestCase):
         input_filt = CONV2D_IN_C_TORCH
         output_filt = CONV2D_N_FILTERS
 
-        pydtnn_layers = [Conv2DDepthwise(nfilters=input_filt, stride=CONV2D_STRIDE, filter_shape=CONV2D_FILTER_SHAPE,
-                                         padding=CONV2D_DEPTHWISE_PADDING),
-                         Conv2DPointwise(nfilters=output_filt)]
+        pydtnn_layers = [Conv2DDepthwise(nfilters=input_filt, stride=CONV2D_STRIDE, filter_shape=CONV2D_FILTER_SHAPE, padding=CONV2D_DEPTHWISE_PADDING), Conv2DPointwise(nfilters=output_filt)]
         torch_model = TorchDepthPointConv()
         pydtnn_model = LayerPyTorchTestCase.initialize_pydtnn_model(pydtnn_layers, params=self.params)  # type: ignore
         _x = LayerPyTorchTestCase.get_test_data()

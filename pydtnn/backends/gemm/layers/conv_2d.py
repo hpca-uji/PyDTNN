@@ -51,7 +51,9 @@ class Conv2DGemm(Conv2DNumpy, AbstractConv2DGemm):
         w = np.asarray(self.weights, dtype=self.model.dtype)
         biases = np.asarray(self.biases, dtype=self.model.dtype) if self.use_bias else self.biases
         self.cg.conv_gemm_nhwc(
-            w, x, y,
+            w,
+            x,
+            y,
             vpadding=self.hpadding,
             hpadding=self.wpadding,
             vstride=self.hstride,
@@ -74,7 +76,9 @@ class Conv2DGemm(Conv2DNumpy, AbstractConv2DGemm):
         w = np.asarray(self.weights, dtype=self.model.dtype)
         biases = np.asarray(self.biases, dtype=self.model.dtype) if self.use_bias else self.biases
         self.cg.conv_gemm_nchw(
-            w, x, y,
+            w,
+            x,
+            y,
             vpadding=self.hpadding,
             hpadding=self.wpadding,
             vstride=self.hstride,

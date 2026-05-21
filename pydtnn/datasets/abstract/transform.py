@@ -280,7 +280,7 @@ class Transform(Init):
         """
         data = self.model.decode_tensor(data)
         N, C, H, W = data.shape
-        # NOTE: C not included so all channels in a sample rotate by the same amount 
+        # NOTE: C not included so all channels in a sample rotate by the same amount
         rotation = random.random(N) * self.model.augment_rotate_degree
 
         limit = min(N, int(N * self.model.augment_mask))
