@@ -97,7 +97,7 @@ class ModelCommonTestCase(TestCase):
         params = Params()
         # Begin of params configuration
         params.model_name = model_name  # type: ignore
-        params.tensor_format = TensorFormat.NCHW.upper()
+        params.tensor_format = TensorFormat.NHWC.upper()
         # End of params configuration
         params_dict = vars(params)
         if overwrite_params is not None:
@@ -296,12 +296,13 @@ class ModelCommonTestCase(TestCase):
         assert len(x1) == len(x2), "x1 and x2 should have the same length"
         if verbose_test():
             print()
-            print("Comparing outputs of both models...")
+            print(f"Comparing outputs of both models...")
         for i, layer in enumerate(model1.layers, 1):
             # Skip test on layers that behave randomly
             if not isinstance(layer, Dropout):
                 rtol, atol = self.get_tolerance(layer)
-                self.assertTrue(np.allclose(x1[i], x2[i], rtol=rtol, atol=atol), f"Forward result from layers {layer.name_with_id} differ ({self.print_stats(x1[i], x2[i], rtol, atol)})")
+                self.assertTrue(x1[i].size == x2[i].size, f"Both tensors doesn't have the same number of elements (x1[{i}].size = {x1[i].size} != {x2[i].size} = x2[{i}].size)")
+                self.assertTrue(np.allclose(x1[i], x2[i].reshape(x1[i].shape), rtol=rtol, atol=atol), f"Forward result from layers {layer.name_with_id} differ ({self.print_stats(x1[i], x2[i], rtol, atol)})")
 
     def compare_backward(self, model1: Model, dx1: list[np.ndarray], model2: Model, dx2: list[np.ndarray]):
         """
