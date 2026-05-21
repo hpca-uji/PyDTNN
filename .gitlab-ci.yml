@@ -14,8 +14,8 @@ job_build:
   before_script:
     - apt-get update
     - apt-get install -y python3
-#    - apt-get install -y docker.io
-#    - pip install build cibuildwheel
+    - pip install build cibuildwheel
+    #- apt-get install -y docker.io
   script:
     - python3 -m venv --help
     #- python -m build --sdist --outdir ./build/
