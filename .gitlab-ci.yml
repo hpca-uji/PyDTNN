@@ -1,0 +1,54 @@
+stages:
+- build
+- release
+
+variables:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+
+job_build:
+  stage: build
+
+  tags: [ lorca-ubuntu ]
+  image: python:latest
+
+  before_script:
+  - apt-get update
+  - apt-get install -y gcc patchelf
+  - pip install build twine auditwheel
+  script:
+  - python -m build --outdir ./build/ --sdist
+  - python -m build --outdir ./build/wheel/ --wheel
+  - python -m auditwheel repair --wheel-dir ./build/ ./build/wheel/*.whl
+
+  artifacts:
+    paths:
+      - ./build/pydtnn-*
+
+job_release:
+  stage: release
+
+  tags: [ lorca-ubuntu ]
+  image: registry.gitlab.com/gitlab-org/cli:latest
+
+  needs:
+  - job: job_build
+    artifacts: true
+
+  script:
+  - glab auth login --hostname lorca.act.uji.es/gitlab --token "$GLAB_TOKEN"
+  - |
+    TAG="ci-$CI_COMMIT_SHA"
+
+    glab release create "$TAG" --ref "$CI_COMMIT_SHA"
+
+    for file in build/pydtnn-*; do
+      NAME=$(basename "$file")
+
+      URL="https://lorca.act.uji.es/gitlab/${CI_PROJECT_PATH}/-/jobs/artifacts/${CI_COMMIT_SHA}/raw/build/${NAME}?job=job_build"
+
+      glab release upload "$TAG" \
+        --assets-links="[{
+          \"name\":\"${NAME}\",
+          \"url\":\"${URL}\"
+        }]"
+    done

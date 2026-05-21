@@ -201,18 +201,18 @@ class ModelCommonTestCase(TestCase):
         for i, layer in enumerate(model1.layers):
             if verbose_test():
                 print(layer)
-                print(f"\n{layer.name} - {layer.id} - input {model1.tensor_format=}", end = " - ")
-                print(f"{x1[i].max()=}", end = " - ")
-                print(f"{x1[i].min()=}", end = " - ")
-                print(f"{x1[i].mean()=}", end = " - ")
+                print(f"\n{layer.name} - {layer.id} - input {model1.tensor_format=}", end=" - ")
+                print(f"{x1[i].max()=}", end=" - ")
+                print(f"{x1[i].min()=}", end=" - ")
+                print(f"{x1[i].mean()=}", end=" - ")
                 print(f"{x1[i].std()=}")
             x1.append(layer.forward(np.asarray(x1[i], dtype=model1.dtype, order="C").copy()).copy())
-            
+
             if verbose_test():
-                print(f"output", end = " - ")
-                print(f"{x1[-1].max()=}", end = " - ")
-                print(f"{x1[-1].min()=}", end = " - ")
-                print(f"{x1[-1].mean()=}", end = " - ")
+                print("output", end=" - ")
+                print(f"{x1[-1].max()=}", end=" - ")
+                print(f"{x1[-1].min()=}", end=" - ")
+                print(f"{x1[-1].mean()=}", end=" - ")
                 print(f"{x1[-1].std()=}")
         return x1
 
@@ -231,18 +231,18 @@ class ModelCommonTestCase(TestCase):
         for i, layer in enumerate(model2.layers):
             if verbose_test():
                 print(layer)
-                print(f"\n{layer.name} - {layer.id} - input {model2.tensor_format=}", end = " - ")
-                print(f"{x1[i].shape=}", end = " - ")
-                print(f"{x1[i].max()=}", end = " - ")
-                print(f"{x1[i].min()=}", end = " - ")
-                print(f"{x1[i].mean()=}", end = " - ")
+                print(f"\n{layer.name} - {layer.id} - input {model2.tensor_format=}", end=" - ")
+                print(f"{x1[i].shape=}", end=" - ")
+                print(f"{x1[i].max()=}", end=" - ")
+                print(f"{x1[i].min()=}", end=" - ")
+                print(f"{x1[i].mean()=}", end=" - ")
                 print(f"{x1[i].std()=}")
             x2.append(layer.forward(np.asarray(x1[i], dtype=model2.dtype, order="C").copy()).copy())
             if verbose_test() or True:
-                print(f"output", end = " - ")
-                print(f"{x2[-1].max()=}", end = " - ")
-                print(f"{x2[-1].min()=}", end = " - ")
-                print(f"{x2[-1].mean()=}", end = " - ")
+                print("output", end=" - ")
+                print(f"{x2[-1].max()=}", end=" - ")
+                print(f"{x2[-1].min()=}", end=" - ")
+                print(f"{x2[-1].mean()=}", end=" - ")
                 print(f"{x2[-1].std()=}")
         return x2
 
@@ -296,13 +296,15 @@ class ModelCommonTestCase(TestCase):
         assert len(x1) == len(x2), "x1 and x2 should have the same length"
         if verbose_test():
             print()
-            print(f"Comparing outputs of both models...")
+            print("Comparing outputs of both models...")
         for i, layer in enumerate(model1.layers, 1):
             # Skip test on layers that behave randomly
             if not isinstance(layer, Dropout):
                 rtol, atol = self.get_tolerance(layer)
                 self.assertTrue(x1[i].size == x2[i].size, f"Both tensors doesn't have the same number of elements (x1[{i}].size = {x1[i].size} != {x2[i].size} = x2[{i}].size)")
-                self.assertTrue(np.allclose(x1[i], x2[i].reshape(x1[i].shape), rtol=rtol, atol=atol), f"Forward result from layers {layer.name_with_id} differ ({self.print_stats(x1[i], x2[i], rtol, atol)})")
+                self.assertTrue(
+                    np.allclose(x1[i], x2[i].reshape(x1[i].shape), rtol=rtol, atol=atol), f"Forward result from layers {layer.name_with_id} differ ({self.print_stats(x1[i], x2[i], rtol, atol)})"
+                )
 
     def compare_backward(self, model1: Model, dx1: list[np.ndarray], model2: Model, dx2: list[np.ndarray]):
         """
