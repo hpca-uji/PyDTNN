@@ -68,125 +68,168 @@ class Base[T: Array]:
 
     # Explicit declaration of those model attributes that are referenced by other parts of PyDTNN
     #   NOTE: The following parameters come from "Parser"
-    backend: str
-    tensor_format: TensorFormat
-    steps_per_epoch: int
-    cpu_speed: float
-    memory_bw: float
-    network_bw: float
-    network_lat: float
-    network_algo: NetworkAlgoEnum
-    loss_func_name: str
+    dtype: np.dtype
+    quantize: bool
+    quantize_dtype: np.dtype
     num_epochs: int
-    model_sync_freq: int
-    final_model_sync: bool
-    test_as_validation: bool
-    validation_split: float
-    use_synthetic_data: bool
-    dataset_train_path: str
-    dataset_test_path: str
+    steps_per_epoch: float
+    evaluate: bool
     evaluate_only: bool
-    evaluate_on_train: bool
-    profile: bool
-    history_file: str
-    model_sync_min_avail: int
-    dataset_name: str
-    shared_data: bool
-    encryption_name: str
-    augment_flip: float
-    augment_mask_size: int
-    augment_mask: float
-    transform_crop: bool
-    transform_crop_perc: int
-    transform_resize: bool
-    transform_resize_dsize: int
-    initial_model_sync: bool
-    dataset_percentage: float
-    use_mpi_buffers: bool
-    blocking_mpi: bool
-    # enable_memory_cache: bool
-    enable_nccl: bool
-    gpus_per_node: int
     model_state_filename: str
-    learning_rate_scaling: bool
-    metrics: str
-    use_memory_pool: bool
-    augment_shuffle: bool
-    normalize: bool
-    transform_resize_size: int
-    normalize_offset: float
-    normalize_scale: float
+    history_file: str
+    tensor_format: TensorFormat
+    random_seed: int
+    shared_tmp_memory: bool
+    shared_data: bool
+    model_sync_freq: int
+    model_sync_algo: str
+    model_sync_participation: str
+    model_sync_min_avail: int
+    initial_model_sync: bool
+    final_model_sync: bool
     model_sync_quantize: bool
     model_sync_dtype: np.dtype
-    enable_fused_conv_bn: bool
-    enable_fused_conv_relu: bool
+    dataset_name: str
+    dataset_percentage: float
+    dataset_path: str
+    dataset_lang: str
+    dataset_lang2: str
+    synthetic_train_samples: int
+    synthetic_test_samples: int
+    synthetic_input_shape: str
+    synthetic_output_shape: str
+    test_as_validation: bool
+    validation_split: float
+    augment_shuffle: bool
+    augment_flip: float
+    augment_rotate: float
+    augment_rotate_degree: float
+    augment_mask: float
+    augment_mask_size: int
+    augment_blur: float
+    augment_blur_size: int
+    transform_crop: bool
+    transform_crop_perc: float
+    transform_resize: bool
+    transform_resize_size: int
+    normalize: bool
+    normalize_offset: float
+    normalize_scale: float
     enable_fused_bn_relu: bool
+    enable_fused_conv_relu: bool
+    enable_fused_conv_bn: bool
     enable_fused_conv_bn_relu: bool
     conv_direct_method: str
+    optimizer_name: str
+    learning_rate: float
+    learning_rate_scaling: bool
+    optimizer_momentum: float
+    optimizer_decay: float
+    optimizer_nesterov: bool
+    optimizer_beta1: float
+    optimizer_beta2: float
+    optimizer_epsilon: float
+    optimizer_rho: float
+    optimizer_tau: int
+    optimizer_tau_prime: int
+    optimizer_density: float
+    loss_func_name: str
+    metrics: str
+    schedulers_names: str
+    early_stopping_metric: str
+    early_stopping_patience: int
+    early_stopping_minimize: bool
+    reduce_lr_on_plateau_metric: str
+    reduce_lr_on_plateau_float: float
+    reduce_lr_on_plateau_patience: int
+    reduce_lr_on_plateau_min_lr: float
+    reduce_lr_every_nepochs_float: float
+    reduce_lr_every_nepochs_nepochs: int
+    reduce_lr_every_nepochs_min_lr: float
+    stop_at_loss_metric: str
+    stop_at_loss_threshold: float
+    model_checkpoint_metric: str
+    model_checkpoint_save_freq: int
     parallel_data: bool
     parallel_pipeline: bool
     use_blocking_mpi: bool
+    use_mpi_buffers: bool
+    enable_cudnn: bool
     enable_gpudirect: bool
-    shared_tmp_memory: bool
+    enable_nccl: bool
+    enable_cudnn_auto_conv_algo: bool
+    encryption_name: str
+    encryption_slots: int
+    encryption_scale: int
+    encryption_security: int
     tracing: bool
     tracer_output: str
     tracer_pmlib_server: str
     tracer_pmlib_port: int
     tracer_pmlib_device: str
-    model_name: str
-    global_batch_size: int
-    dataset_path: str
-    quantize: bool
-    quantize_dtype: np.dtype
-    enable_cudnn: bool
-    batch_size: int
-    layers: list[Layerable]
+    profile: bool
+    traceback: bool
+    cpu_speed: float
+    memory_bw: float
+    network_bw: float
+    network_lat: float
+    network_algo: NetworkAlgoEnum
+    mpi_processes: int
+    threads_per_process: int
+    gpus_per_node: int
+    mpi_protocol: str
+    mpi_server: str
+    mpi_port: int
+
+    #-----
     kwargs: dict[str, Any]
+    backend: str
+    model_name: str
+    history: dict[str, list[np.ndarray]]
+    nparams: int
 
-    memory_cls: type[PrivateMemory]
-    memory: PrivateMemory
-    memory_used: int
-    tmp_memory_used: int
-
-    _is_model_init: bool
-
-    rank_weight: float
-    comm_rank: int
-    comm_size: int
-    rank: int
-    nprocs: int
-    learning_rate: float
-    MPI: MPI_MODULE | None
-    comm: MPI_COMM | None
-
-    gpudirect: bool
-    nccl_type: Any | None
-    nccl_comm: Any | None
+    cudnn_dtype: int
+    cuda_grid: tuple[int, int, int]
+    cuda_block: tuple[int, int, int]
     cudnn_handle: Cudnn_Handle_Type | None
     cublas_handle: Cublas_Handle_Type | None
+    gpudirect: bool
+    nccl_comm: Any | None
+    nccl_type: Any | None
     stream: Any  # drv.Stream
-    cudnn_dtype: int
+
+    memory_used: int
+    use_memory_pool: bool
+    memory_cls: type[PrivateMemory]
+    memory: PrivateMemory
+    tmp_memory_used: int
+
+    total_metrics: np.ndarray
+    metrics_funcs: list[Metric]
+    loss_and_metrics: list[str]
+    layers: list[Layerable]
+
+    nprocs: int
+    blocking_mpi: bool
+    MPI: MPI_MODULE | None
+    comm: MPI_COMM | None
+    comm_size: int
+    comm_rank: int
+    comm_nsamples: list[tuple[int]]
+    rank: int
+    rank_weight: float
+
+    batch_size: int
+    global_batch_size:int
+    real_batch_size: int
     input_shape: ArrayShape
     output_shape: ArrayShape
 
-    dtype: np.dtype
-
-    real_batch_size: int
-    nparams: int
-
+    evaluate_on_train: bool
+    dataset_train_path: str
+    dataset_test_path: str
+    use_synthetic_data: bool
     y_batch: T
-    history: dict[str, list[np.ndarray]]
-    loss_func: Loss
-    metrics_funcs: list[Metric]
-    loss_and_metrics: list[str]
-    total_metrics: np.ndarray
-
-    cuda_grid: tuple[int, int, int]
-    cuda_block: tuple[int, int, int]
     optimizer: Optimizer
-    comm_nsamples: list[tuple[int]]
-
-    enable_fused_bn_relu: bool
-    enable_fused_conv_relu: bool
-    enable_fused_conv_bn: bool
-    enable_fused_conv_bn_relu: bool
+    loss_func: Loss
+    _is_model_init: bool
