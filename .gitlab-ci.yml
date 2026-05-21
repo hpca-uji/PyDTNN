@@ -19,8 +19,6 @@ job_build:
   - python -m build --outdir ./build/ --sdist
   - python -m build --outdir ./build/wheel/ --wheel
   - python -m auditwheel repair --wheel-dir ./build/ ./build/wheel/*.whl
-  - pip install ./build/*.whl
-  - python -c "from importlib.metadata import version; print(version('pydtnn'))" > ./build/version
 
   artifacts:
     paths:
@@ -40,7 +38,7 @@ job_release:
   - glab auth login --hostname lorca.act.uji.es/gitlab --token "$GLAB_TOKEN"
   - |
     LINKS=""
-    VERSION=$(cat ./build/version)
+    VERSION=$(basename ./build/pydtnn-*.tar.gz | sed -E 's/pydtnn-([0-9][^-]*).*/\1/')
     for file in ./build/pydtnn-*; do
       NAME=$(basename "$file")
       URL="https://lorca.act.uji.es/gitlab/${CI_PROJECT_PATH}/-/jobs/artifacts/${CI_COMMIT_SHA}/raw/build/${NAME}?job=job_build"
