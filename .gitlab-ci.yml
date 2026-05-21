@@ -1,6 +1,6 @@
 stages:
   - build
-  - release
+#  - release
 
 variables:
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
@@ -13,27 +13,28 @@ job_build:
 
   before_script:
     - apt-get update
-    - apt-get install -y docker.io
+    - apt-get install -y glab docker.io
     - pip install build cibuildwheel
   script:
     - python -m build --sdist --outdir ./build/
     - python -m cibuildwheel --output-dir ./build/
-    - ls -al ./build/
-
-  artifacts:
-    paths:
-      - ./build/*
-
-job_release:
-  stage: release
-
-  tags: [ lorca-ubuntu ]
-  image: registry.gitlab.com/gitlab-org/cli:latest
-
-  needs:
-    - job: job_build
-      artifacts: true
-
-  script:
     - glab auth login --hostname lorca.act.uji.es/gitlab --token "$GLAB_TOKEN"
     - glab release create "ci-$CI_COMMIT_SHA" build/* --ref "$CI_COMMIT_SHA"
+
+#  artifacts:
+#    paths:
+#      - ./build/*
+#
+#job_release:
+#  stage: release
+#
+#  tags: [ lorca-ubuntu ]
+#  image: registry.gitlab.com/gitlab-org/cli:latest
+#
+#  needs:
+#    - job: job_build
+#      artifacts: true
+#
+#  script:
+#    - glab auth login --hostname lorca.act.uji.es/gitlab --token "$GLAB_TOKEN"
+#    - glab release create "ci-$CI_COMMIT_SHA" build/* --ref "$CI_COMMIT_SHA"
