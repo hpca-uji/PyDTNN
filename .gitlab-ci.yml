@@ -24,8 +24,8 @@ job_build:
     - apt-get install -y docker.io netcat-openbsd
     #- pip install build cibuildwheel
   script:
-  - echo "Runner: $CI_RUNNER_DESCRIPTION"
-  - echo "Executor: $CI_RUNNER_EXECUTABLE_ARCH"
+  - echo "Runner:$CI_RUNNER_DESCRIPTION"
+  - echo "Executor:$CI_RUNNER_EXECUTABLE_ARCH"
   - docker info || true
   - ps aux || true
   - ip addr || true
