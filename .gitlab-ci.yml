@@ -19,7 +19,7 @@ job_build:
   script:
     - python -m build --sdist --outdir ./build/
     - python -m cibuildwheel --output-dir ./build/
-    -|
+    - |
       TAG="ci-$CI_COMMIT_SHA"
 
       curl --header "PRIVATE-TOKEN: $GLAB_TOKEN" \
