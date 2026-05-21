@@ -11,8 +11,16 @@ job_build:
   tags: [ lorca-ubuntu ]
   image: python:3.13
 
+  services:
+    - name: docker:dind
+      command: ["--tls=false"]
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
+
   before_script:
-    - python -m pip install --upgrade pip
+    - apt-get update
+    - apt-get install -y docker.io
     - pip install build cibuildwheel
   script:
     - python -m build --sdist --outdir ./build/
