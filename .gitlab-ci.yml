@@ -13,7 +13,7 @@ job_build:
 
   before_script:
     - apt-get update
-    - apt-get install -y python3
+    - apt-get install -y python3-pip
     - pip3 install build cibuildwheel
     #- apt-get install -y docker.io
   script:
