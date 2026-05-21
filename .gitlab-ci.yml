@@ -20,6 +20,7 @@ job_build:
     - python -m build --sdist --outdir ./build/
     - python -m cibuildwheel --output-dir ./build/
     - glab auth login --hostname lorca.act.uji.es --token "$GLAB_TOKEN"
+    - glab config set api_host https://lorca.act.uji.es/gitlab/api/v4 --host lorca.act.uji.es
     - glab release create "ci-$CI_COMMIT_SHA" build/* --ref "$CI_COMMIT_SHA" --repo "$CI_PROJECT_PATH"
 
 #  artifacts:
