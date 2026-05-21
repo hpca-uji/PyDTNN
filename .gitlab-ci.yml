@@ -45,4 +45,4 @@ job_release:
       LINK="{\"name\":\"${NAME}\",\"url\":\"${URL}\"}"
       LINKS="${LINKS},${LINK}"
     done
-    glab release create "ci-$CI_COMMIT_SHA" --ref "$CI_COMMIT_SHA" --notes "PyDTNN v$VERSION" --assets-links="[${LINKS%,}]"
+    glab release create "ci-$CI_COMMIT_SHA" --ref "$CI_COMMIT_SHA" --notes "PyDTNN v$VERSION" --assets-links="[${LINKS#,}]"
