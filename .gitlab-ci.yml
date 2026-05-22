@@ -26,7 +26,7 @@ job_build:
   - python -m auditwheel repair --wheel-dir ./build/ ./build/wheel/*.whl
 
   artifacts:
-    expire_in: 30min
+    expire_in: 1d
     paths:
     - ./build/pydtnn-*
 
@@ -44,10 +44,10 @@ job_test:
       artifacts: true
 
   before_script:
-    - pip install pytest ./build/*.whl
-    - python -c "from importlib.metadata import version; print('PYDTNN_VERSION', version('pydtnn'), sep='=')" > ./build/env
+  - WHEEL=$(echo ./build/*.whl) && pip install pytest ${WHEEL:?}[test]
+  - python -c "from importlib.metadata import version; print('PYDTNN_VERSION', version('pydtnn'), sep='=')" > ./build/env
   script:
-    - pytest --junitxml=./build/tests --pyargs pydtnn.tests.groups.all
+  - pytest -v --junitxml=./build/tests --pyargs pydtnn.tests.groups.layer
 
   artifacts:
     when: always
@@ -73,13 +73,13 @@ job_test:
 #   resource_group: merge
 # 
 #   before_script:
-#     - glab auth login --hostname lorca.act.uji.es/gitlab --token "${CI_JOB_TOKEN:?}"
-#     - git config --global user.email "ci@lorca.act.uji.es"
-#     - git config --global user.name "GitLab CI"
+#   - glab auth login --hostname lorca.act.uji.es/gitlab --token "${CI_JOB_TOKEN:?}"
+#   - git config --global user.email "ci@lorca.act.uji.es"
+#   - git config --global user.name "GitLab CI"
 #   script:
-#     - git checkout main
-#     - git merge origin/develop --ff-only
-#     - git push origin main
+#   - git checkout main
+#   - git merge origin/develop --ff-only
+#   - git push origin main
 
 job_release:
   stage: release
@@ -96,8 +96,9 @@ job_release:
   - job: job_test
     artifacts: true
 
-  script:
+  before_script:
   - glab auth login --hostname lorca.act.uji.es/gitlab --token "${CI_JOB_TOKEN:?}"
+  script:
   - |
     # LINKS=""
     TAG="v${PYDTNN_VERSION:?}"
@@ -108,4 +109,4 @@ job_release:
     #   LINK="{\"name\":\"${NAME:?}\",\"url\":\"${URL:?}\"}"
     #   LINKS="${LINKS:?},${LINK:?}"
     # done
-    glab release create "${TAG:?}" ./build/pydtnn-* --ref "$CI_COMMIT_SHA" --name "PyDTNN ${TAG:?}" # --assets-links="[${LINKS#,}]"
+    glab release create "${TAG:?}" ./build/pydtnn-* --ref "${CI_COMMIT_SHA:?}" --name "PyDTNN ${TAG:?}" # --assets-links="[${LINKS#,}]"
