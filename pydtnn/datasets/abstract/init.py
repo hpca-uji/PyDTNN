@@ -332,16 +332,17 @@ class Init(Base):
         # Reduce nsamples according to steps per epoch
         global_batch_size = self.model.batch_size * self.model.nprocs
         batches_per_worker = nsamples / global_batch_size
+        _nsamples: float = nsamples
 
         if self.model.dataset_percentage != 0:
-            nsamples = nsamples * self.model.dataset_percentage  # type: ignore (It's expected to receive a int as parameter and it's fine like this)
+            _nsamples = nsamples * self.model.dataset_percentage
 
         if batches_per_worker > self.model.steps_per_epoch > 0:
             batches_per_worker = self.model.steps_per_epoch
-            nsamples = batches_per_worker * global_batch_size
+            _nsamples = batches_per_worker * global_batch_size
 
         # Calculate nsamples per worker
-        nsamples_per_worker, big_workers = divmod(nsamples, self.model.nprocs)
+        nsamples_per_worker, big_workers = divmod(_nsamples, self.model.nprocs)
         nsamples_per_big_worker = nsamples_per_worker + 1
 
         # Calculate local values
