@@ -104,6 +104,10 @@ class Base[T: Array]:
     augment_flip: float
     augment_rotate: float
     augment_rotate_degree: float
+    augment_brightness: float
+    augment_brightness_range: float
+    augment_contrast: float
+    augment_contrast_range: float
     augment_mask: float
     augment_mask_size: int
     augment_blur: float
