@@ -44,10 +44,10 @@ job_test:
       artifacts: true
 
   before_script:
-    - pip install pytest ./build/*.whl[test]
-    - python -c "from importlib.metadata import version; print('PYDTNN_VERSION', version('pydtnn'), sep='=')" > ./build/env
+  - WHEEL=$(echo ./build/*.whl) && pip install pytest ${WHEEL:?}[test]
+  - python -c "from importlib.metadata import version; print('PYDTNN_VERSION', version('pydtnn'), sep='=')" > ./build/env
   script:
-    - pytest -v --junitxml=./build/tests --pyargs pydtnn.tests.groups.layer
+  - pytest -v --junitxml=./build/tests --pyargs pydtnn.tests.groups.layer
 
   artifacts:
     when: always
@@ -73,13 +73,13 @@ job_test:
 #   resource_group: merge
 # 
 #   before_script:
-#     - glab auth login --hostname lorca.act.uji.es/gitlab --token "${CI_JOB_TOKEN:?}"
-#     - git config --global user.email "ci@lorca.act.uji.es"
-#     - git config --global user.name "GitLab CI"
+#   - glab auth login --hostname lorca.act.uji.es/gitlab --token "${CI_JOB_TOKEN:?}"
+#   - git config --global user.email "ci@lorca.act.uji.es"
+#   - git config --global user.name "GitLab CI"
 #   script:
-#     - git checkout main
-#     - git merge origin/develop --ff-only
-#     - git push origin main
+#   - git checkout main
+#   - git merge origin/develop --ff-only
+#   - git push origin main
 
 job_release:
   stage: release
