@@ -12,7 +12,7 @@ import logging
 from typing import TYPE_CHECKING, Callable, Generator
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageEnhance
 from scipy.ndimage import gaussian_filter
 
 from pydtnn.datasets.abstract.base import Base
@@ -89,6 +89,12 @@ class Transform(Init):
 
         if self.model.augment_rotate > 0:
             transformations_training.append(self._x_transformer_adaptor(self._do_augment_rotate))
+
+        if self.model.augment_contrast > 0:
+            transformations_training.append(self._x_transformer_adaptor(self._do_augment_brightness))
+        
+        if self.model.augment_brightness > 0:
+            transformations_training.append(self._x_transformer_adaptor(self._do_augment_contrast))
 
         if self.model.augment_shuffle:
             transformations_training.append(self._do_augment_shuffle)
@@ -267,7 +273,7 @@ class Transform(Init):
         Apply random rotation augmentation to images.
 
         Randomly rotate the images based on the
-        `self.model.augment_rotate` parameter.
+        `self.model.augment_rotate` and `self.model.augment_rotate_degree` parameters.
 
         Args:
             data: The input numpy array (batch of images).
@@ -283,7 +289,7 @@ class Transform(Init):
         # NOTE: C not included so all channels in a sample rotate by the same amount
         rotation = random.random(N) * self.model.augment_rotate_degree
 
-        limit = min(N, int(N * self.model.augment_mask))
+        limit = min(N, int(N * self.model.augment_rotate))
         s = np.arange(N)
         random.shuffle(s)
         s = s[:limit]
@@ -427,3 +433,89 @@ class Transform(Init):
         new_data = self.model.encode_tensor(new_data)
 
         return new_data
+    
+    def _do_augment_brightness(self, data: np.ndarray) -> np.ndarray:
+        """
+        Apply random brightness augmentation to images.
+
+        Randomly rotate the images based on the
+        `self.model.augment_brightness` and `self.model.augment_brightness_range` parameter.
+
+        Args:
+            data: The input numpy array (batch of images).
+
+        Returns:
+            The array of images with some brightness change.
+
+        Raises:
+            NotImplementedError: If the `self.model.tensor_format` is not supported.
+        """
+        data = self.model.decode_tensor(data)
+        N, C, H, W = data.shape
+        # NOTE: C not included so all channels in a sample rotate by the same amount
+        brightness = random.random(N, dtype=np.float32) * (1 + self.model.augment_brightness_range)
+
+        limit = min(N, int(N * self.model.augment_brightness))
+        s = np.arange(N)
+        random.shuffle(s)
+        s = s[:limit]
+
+        for n in s:
+            for c in range(C):
+                channel: np.ndarray = data[n, c]
+                # NOTE: PIL mode F is WH in float32
+                channel *= 255
+                channel = channel.transpose().astype(np.uint8)  # type: ignore (it's possible to use copy=None)
+                image = Image.fromarray(channel, mode="L")
+                image = ImageEnhance.Brightness(image)
+                image = image.enhance(brightness[n].item())
+                channel = np.asarray(image, dtype=np.float32, order="C")
+                channel = channel.transpose().astype(self.model.dtype)  # type: ignore (it's possible to use copy=None)
+                data[n, c] = channel
+
+        data = self.model.encode_tensor(data)
+
+        return data
+
+
+    def _do_augment_contrast(self, data: np.ndarray) -> np.ndarray:
+        """
+        Apply random contrast augmentation to images.
+
+        Randomly rotate the images based on the
+        `self.model.augment_contrast` and `self.model.augment_contrast_range` parameter.
+
+        Args:
+            data: The input numpy array (batch of images).
+
+        Returns:
+            The array of images with some contrast change.
+
+        Raises:
+            NotImplementedError: If the `self.model.tensor_format` is not supported.
+        """
+        data = self.model.decode_tensor(data)
+        N, C, H, W = data.shape
+        # NOTE: C not included so all channels in a sample rotate by the same amount
+        contrast = random.random(N) * (1 + self.model.augment_contrast_range)
+
+        limit = min(N, int(N * self.model.augment_contrast))
+        s = np.arange(N)
+        random.shuffle(s)
+        s = s[:limit]
+
+        for n in s:
+            for c in range(C):
+                channel: np.ndarray = data[n, c]
+                channel *= 255
+                channel = channel.transpose().astype(np.uint8)  # type: ignore (it's possible to use copy=None)
+                image = Image.fromarray(channel, mode="L")
+                image = ImageEnhance.Contrast(image)
+                image = image.enhance(contrast[n].item())
+                channel = np.asarray(image, dtype=np.float32, order="C")
+                channel = channel.transpose().astype(self.model.dtype)  # type: ignore (it's possible to use copy=None)
+                data[n, c] = channel
+
+        data = self.model.encode_tensor(data)
+
+        return data
