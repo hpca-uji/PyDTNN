@@ -1,6 +1,8 @@
 stages:
-  - build
-  - release
+- build
+- test
+- merge
+- release
 
 variables:
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
@@ -8,31 +10,102 @@ variables:
 job_build:
   stage: build
 
+  rules:
+  - if: '$CI_COMMIT_BRANCH == "develop"'
+
   tags: [ lorca-ubuntu ]
-  image: python:3.13
+  image: python:latest
 
   before_script:
-    - apt-get update
-    - apt-get install -y docker.io
-    - pip install build cibuildwheel
+  - apt-get update
+  - apt-get install -y gcc patchelf
+  - pip install build twine auditwheel
   script:
-    - python -m build --sdist --outdir ./build/
-    #- python -m cibuildwheel --output-dir ./build/
+  - python -m build --outdir ./build/ --sdist
+  - python -m build --outdir ./build/wheel/ --wheel
+  - python -m auditwheel repair --wheel-dir ./build/ ./build/wheel/*.whl
 
   artifacts:
+    expire_in: 30min
     paths:
-      - ./build/
+    - ./build/pydtnn-*
 
-job_release:
-  stage: release
+job_test:
+  stage: test
+
+  rules:
+  - if: '$CI_COMMIT_BRANCH == "develop"'
 
   tags: [ lorca-ubuntu ]
-  image: registry.gitlab.com/gitlab-org/cli:latest
+  image: python:latest
 
   needs:
     - job: job_build
       artifacts: true
 
+  before_script:
+    - pip install pytest ./build/*.whl
+    - python -c "from importlib.metadata import version; print('PYDTNN_VERSION', version('pydtnn'), sep='=')" > ./build/env
   script:
-    - glab auth login --hostname lorca.act.uji.es/gitlab --token "$GLAB_TOKEN"
-    - glab release create "ci-$CI_COMMIT_SHA" build/* --ref "$CI_COMMIT_SHA"
+    - pytest --junitxml=./build/tests --pyargs pydtnn.tests.groups.all
+
+  artifacts:
+    when: always
+    reports:
+      dotenv: ./build/env
+      junit: ./build/tests
+
+# job_merge:
+#   stage: merge
+# 
+#   rules:
+#   - if: '$CI_COMMIT_BRANCH == "develop"'
+# 
+#   image: registry.gitlab.com/gitlab-org/cli:latest
+#   tags: [ lorca-ubuntu ]
+# 
+#   needs:
+#   - job: job_test
+# 
+#   rules:
+#   - if: '$CI_COMMIT_BRANCH == "develop"'
+# 
+#   resource_group: merge
+# 
+#   before_script:
+#     - glab auth login --hostname lorca.act.uji.es/gitlab --token "${CI_JOB_TOKEN:?}"
+#     - git config --global user.email "ci@lorca.act.uji.es"
+#     - git config --global user.name "GitLab CI"
+#   script:
+#     - git checkout main
+#     - git merge origin/develop --ff-only
+#     - git push origin main
+
+job_release:
+  stage: release
+
+  rules:
+  - if: '$CI_COMMIT_BRANCH == "develop"'
+
+  tags: [ lorca-ubuntu ]
+  image: registry.gitlab.com/gitlab-org/cli:latest
+
+  needs:
+  - job: job_build
+    artifacts: true
+  - job: job_test
+    artifacts: true
+
+  script:
+  - glab auth login --hostname lorca.act.uji.es/gitlab --token "${CI_JOB_TOKEN:?}"
+  - |
+    # LINKS=""
+    TAG="v${PYDTNN_VERSION:?}"
+    glab release delete "${TAG:?}" --yes || true
+    # for artifact in ./build/pydtnn-*; do
+    #   NAME=$(basename "${artifact:?}")
+    #   URL="https://lorca.act.uji.es/gitlab/${CI_PROJECT_PATH:?}/-/jobs/artifacts/${CI_COMMIT_SHA:?}/raw/build/${NAME:?}?job=job_build"
+    #   LINK="{\"name\":\"${NAME:?}\",\"url\":\"${URL:?}\"}"
+    #   LINKS="${LINKS:?},${LINK:?}"
+    # done
+    glab release create "${TAG:?}" ./build/pydtnn-* --ref "$CI_COMMIT_SHA" --name "PyDTNN ${TAG:?}" # --assets-links="[${LINKS#,}]"

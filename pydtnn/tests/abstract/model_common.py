@@ -207,7 +207,6 @@ class ModelCommonTestCase(TestCase):
                 print(f"{x1[i].mean()=}", end=" - ")
                 print(f"{x1[i].std()=}")
             x1.append(layer.forward(np.asarray(x1[i], dtype=model1.dtype, order="C").copy()).copy())
-
             if verbose_test():
                 print("output", end=" - ")
                 print(f"{x1[-1].max()=}", end=" - ")
@@ -238,7 +237,7 @@ class ModelCommonTestCase(TestCase):
                 print(f"{x1[i].mean()=}", end=" - ")
                 print(f"{x1[i].std()=}")
             x2.append(layer.forward(np.asarray(x1[i], dtype=model2.dtype, order="C").copy()).copy())
-            if verbose_test() or True:
+            if verbose_test():
                 print("output", end=" - ")
                 print(f"{x2[-1].max()=}", end=" - ")
                 print(f"{x2[-1].min()=}", end=" - ")
