@@ -64,7 +64,7 @@ class Cyclone(Dataset):
         # Pregenerate GZIP indexs
         self._gzip_open(self._src_filename).close()
 
-    def _actual_data_generator(self, part: Dataset.Part):
+    def _data_generator(self, part: Dataset.Part):
         """
         Generate batches of data for the specified dataset partition.
 
@@ -84,12 +84,12 @@ class Cyclone(Dataset):
                 for filename, offset, nsamples in self._offset2files(xy_filenames, IMAGES_PER_FILE, self._local_offset[part], self._local_nsamples[part]):
                     with t.extractfile(filename) as f:  # type: ignore
                         x, y_classes = self._read_file(f, offset, nsamples)
-                    x /= 255.0
 
                     y = np.zeros((*y_classes.shape, *self.output_shape), dtype=self.model.dtype)
                     self._decode_class(y, y_classes)
 
                     x = self.model.encode_tensor(x)
+                    x = np.divide(x, 255.0, dtype=self.model.dtype, casting="unsafe")
 
                     yield x, y
 
@@ -108,5 +108,5 @@ class Cyclone(Dataset):
         chunk_size = math.prod(INPUT_SHAPE) + 1
         f.seek(offset * chunk_size)
         im = np.frombuffer(f.read(nsamples * chunk_size), dtype=np.uint8).reshape(nsamples, chunk_size)
-        y_classes, x = im[:, 0].flatten(), im[:, 1:].reshape(nsamples, *INPUT_SHAPE).astype(self.model.dtype)
+        y_classes, x = im[:, 0].flatten(), im[:, 1:].reshape(nsamples, *INPUT_SHAPE)
         return x, y_classes

@@ -327,7 +327,7 @@ def main():
 
     dataset: Dataset = select_dataset(old_model.dataset_name)(old_model)
 
-    dataloader = list(dataset._actual_batch_generator(Dataset.Part.TRAIN))
+    dataloader = list(dataset._batch_generator(Dataset.Part.TRAIN))
 
     print("dataset:")
     print(dataset)

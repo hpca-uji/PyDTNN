@@ -64,7 +64,7 @@ class Synthetic(Dataset):
             self._x[part] = np.zeros(x_shape, dtype=self.model.dtype)
             self._y[part] = np.zeros(y_shape, dtype=self.model.dtype)
 
-    def _actual_data_generator(self, part: Dataset.Part):
+    def _data_generator(self, part: Dataset.Part):
         """
         Generates synthetic data for each dataset part returning (slices of) _x[part] and _y[part] initialized in
         _init_synthetic_data().

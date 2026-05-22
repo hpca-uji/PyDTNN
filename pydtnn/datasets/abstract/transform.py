@@ -63,52 +63,52 @@ class Transform(Init):
         """
         super().__init__(model, train_nsamples, test_nsamples, input_shape, output_shape, force_test_as_validation, debug)
 
-        self._transformations = dict[Base.Part, list[TransformFunc]]()
-        transformations_training = list[TransformFunc]()
-        transformations_always = list[TransformFunc]()
+        self._augments = dict[Base.Part, list[TransformFunc]]()
+        augments_training = list[TransformFunc]()
+        augments_always = list[TransformFunc]()
 
         if self.model.transform_crop:
             crop, size = self._calculate_crop(self.input_shape[1:])  # type: ignore (The cropped input shape will be a tuple[int, int])
             self.input_shape = (self.input_shape[0], *size)
-            transformations_training.append(self._x_transformer_adaptor(self._do_transform_crop))
-            transformations_always.append(self._x_transformer_adaptor(self._do_transform_crop))
+            augments_training.append(self._x_augment_adaptor(self._do_augment_crop))
+            augments_always.append(self._x_augment_adaptor(self._do_augment_crop))
 
         if self.model.transform_resize:
             self.input_shape = (self.input_shape[0], self.model.transform_resize_size, self.model.transform_resize_size)
-            transformations_training.append(self._x_transformer_adaptor(self._do_transform_resize))
-            transformations_always.append(self._x_transformer_adaptor(self._do_transform_resize))
-
-        if self.model.augment_blur > 0:
-            transformations_training.append(self._x_transformer_adaptor(self._do_augment_blur))
+            augments_training.append(self._x_augment_adaptor(self._do_augment_resize))
+            augments_always.append(self._x_augment_adaptor(self._do_augment_resize))
 
         if self.model.augment_flip > 0:
-            transformations_training.append(self._x_transformer_adaptor(self._do_augment_flip))
-
-        if self.model.augment_mask > 0:
-            transformations_training.append(self._x_transformer_adaptor(self._do_augment_mask))
-
-        if self.model.augment_rotate > 0:
-            transformations_training.append(self._x_transformer_adaptor(self._do_augment_rotate))
+            augments_training.append(self._x_augment_adaptor(self._do_augment_flip))
 
         if self.model.augment_contrast > 0:
-            transformations_training.append(self._x_transformer_adaptor(self._do_augment_brightness))
-        
-        if self.model.augment_brightness > 0:
-            transformations_training.append(self._x_transformer_adaptor(self._do_augment_contrast))
+            augments_training.append(self._x_augment_adaptor(self._do_augment_brightness))
 
-        if self.model.augment_shuffle:
-            transformations_training.append(self._do_augment_shuffle)
+        if self.model.augment_brightness > 0:
+            augments_training.append(self._x_augment_adaptor(self._do_augment_contrast))
+
+        if self.model.augment_blur > 0:
+            augments_training.append(self._x_augment_adaptor(self._do_augment_blur))
+
+        if self.model.augment_mask > 0:
+            augments_training.append(self._x_augment_adaptor(self._do_augment_mask))
+
+        if self.model.augment_rotate > 0:
+            augments_training.append(self._x_augment_adaptor(self._do_augment_rotate))
 
         if self.model.normalize:
-            transformations_training.append(self._x_transformer_adaptor(self._do_normalize))
-            transformations_always.append(self._x_transformer_adaptor(self._do_normalize))
+            augments_training.append(self._x_augment_adaptor(self._do_normalize))
+            augments_always.append(self._x_augment_adaptor(self._do_normalize))
 
-        self._transformations[Base.Part.TRAIN] = transformations_training
-        self._transformations[Base.Part.TEST] = transformations_always
-        self._transformations[Base.Part.VAL] = transformations_always
+        if self.model.augment_shuffle:
+            augments_training.append(self._do_augment_shuffle)
+
+        self._augments[Base.Part.TRAIN] = augments_training
+        self._augments[Base.Part.TEST] = augments_always
+        self._augments[Base.Part.VAL] = augments_always
 
     @staticmethod
-    def _x_transformer_adaptor(func: Callable[[np.ndarray], np.ndarray]) -> TransformFunc:
+    def _x_augment_adaptor(func: Callable[[np.ndarray], np.ndarray]) -> TransformFunc:
         """
         Adapt a single-input transformation function to the (x, y) signature.
 
@@ -131,7 +131,7 @@ class Transform(Init):
 
         return wrapper
 
-    def _base_data_generator(self, part: Base.Part) -> Generator[tuple[np.ndarray, np.ndarray]]:
+    def _augment_data_generator(self, part: Base.Part) -> Generator[tuple[np.ndarray, np.ndarray]]:
         """
         Yield transformed data from the dataset partition.
 
@@ -146,7 +146,7 @@ class Transform(Init):
         """
         for x, y in self._data_generator(part):
             x, y = x.copy(), y.copy()
-            for transformation in self._transformations[part]:
+            for transformation in self._augments[part]:
                 x, y = transformation(x, y)
             yield x, y
 
@@ -298,10 +298,10 @@ class Transform(Init):
             for c in range(C):
                 channel: np.ndarray = data[n, c]
                 # NOTE: PIL mode F is WH in float32
-                channel = channel.transpose().astype(np.float32)  # type: ignore (it's possible to use copy=None)
+                channel = channel.transpose().astype(np.float32)  # type: ignore (it's NOT possible to use copy=None)
                 image = Image.fromarray(channel, mode="F")
                 image = image.rotate(rotation[n])
-                channel = np.asarray(image, dtype=np.float32, order="C")
+                channel = np.asarray(image, dtype=np.float32)
                 channel = channel.transpose().astype(self.model.dtype)  # type: ignore (it's possible to use copy=None)
                 data[n, c] = channel
 
@@ -337,7 +337,7 @@ class Transform(Init):
 
         return data
 
-    def _do_transform_resize(self, data: np.ndarray) -> np.ndarray:
+    def _do_augment_resize(self, data: np.ndarray) -> np.ndarray:
         """
         Resize images using PIL.
 
@@ -362,10 +362,10 @@ class Transform(Init):
             for c in range(C):
                 channel: np.ndarray = data[n, c]
                 # NOTE: PIL mode F is WH in float32
-                channel = channel.transpose().astype(np.float32)  # type: ignore (it's possible to use copy=None)
+                channel = channel.transpose().astype(np.float32)  # type: ignore (it's NOT possible to use copy=None)
                 image = Image.fromarray(channel, mode="F")
                 image = image.resize(size)
-                channel = np.asarray(image, dtype=np.float32, order="C")
+                channel = np.asarray(image, dtype=np.float32)
                 channel = channel.transpose().astype(self.model.dtype)  # type: ignore (it's possible to use copy=None)
                 new_data[n, c] = channel
 
@@ -397,7 +397,7 @@ class Transform(Init):
         size = (crop[2] - crop[0], crop[3] - crop[1])
         return (crop, size)
 
-    def _do_transform_crop(self, data: np.ndarray) -> np.ndarray:
+    def _do_augment_crop(self, data: np.ndarray) -> np.ndarray:
         """
         Apply center crop transformation.
 
@@ -423,10 +423,10 @@ class Transform(Init):
             for c in range(C):
                 channel: np.ndarray = data[n, c]
                 # NOTE: PIL mode F is WH in float32
-                channel = channel.transpose().astype(np.float32)  # type: ignore (it's possible to use copy=None)
+                channel = channel.transpose().astype(np.float32)  # type: ignore (it's NOT possible to use copy=None)
                 image = Image.fromarray(channel, mode="F")
                 image = image.crop(crop)
-                channel = np.asarray(image, dtype=np.float32, order="C")
+                channel = np.asarray(image, dtype=np.float32)
                 channel = channel.transpose().astype(self.model.dtype)  # type: ignore (it's possible to use copy=None)
                 new_data[n, c] = channel
 
@@ -464,13 +464,14 @@ class Transform(Init):
             for c in range(C):
                 channel: np.ndarray = data[n, c]
                 # NOTE: PIL mode F is WH in float32
-                channel *= 255
-                channel = channel.transpose().astype(np.uint8)  # type: ignore (it's possible to use copy=None)
+                channel = np.interp(channel, (0, 1), (0, 255))
+                channel = channel.transpose().astype(np.uint8)  # type: ignore (it's NOT possible to use copy=None)
                 image = Image.fromarray(channel, mode="L")
                 image = ImageEnhance.Brightness(image)
                 image = image.enhance(brightness[n].item())
-                channel = np.asarray(image, dtype=np.float32, order="C")
+                channel = np.asarray(image, dtype=np.uint8)
                 channel = channel.transpose().astype(self.model.dtype)  # type: ignore (it's possible to use copy=None)
+                channel = np.interp(channel, (0, 255), (0, 1))
                 data[n, c] = channel
 
         data = self.model.encode_tensor(data)
@@ -507,13 +508,14 @@ class Transform(Init):
         for n in s:
             for c in range(C):
                 channel: np.ndarray = data[n, c]
-                channel *= 255
-                channel = channel.transpose().astype(np.uint8)  # type: ignore (it's possible to use copy=None)
+                channel = np.interp(channel, (0, 1), (0, 255))
+                channel = channel.transpose().astype(np.uint8)  # type: ignore (it's NOT possible to use copy=None)
                 image = Image.fromarray(channel, mode="L")
                 image = ImageEnhance.Contrast(image)
                 image = image.enhance(contrast[n].item())
-                channel = np.asarray(image, dtype=np.float32, order="C")
+                channel = np.asarray(image, dtype=np.uint8)
                 channel = channel.transpose().astype(self.model.dtype)  # type: ignore (it's possible to use copy=None)
+                channel = np.interp(channel, (0, 255), (0, 1))
                 data[n, c] = channel
 
         data = self.model.encode_tensor(data)

@@ -110,8 +110,6 @@ class Init(Base):
         for part in Base.Part.TRAIN, Base.Part.VAL, Base.Part.TEST:
             (self._local_offset[part], self._local_nsamples[part], self._nsamples[part]) = self._compute_local_workload(self._nsamples[part])
 
-        self._data_generator = self._actual_data_generator
-
         if self.debug:
             self._print_report()
 
@@ -167,9 +165,9 @@ class Init(Base):
         """
 
         # Data generators
-        gen_train = BackgroundGenerator(self._actual_batch_generator(Base.Part.TRAIN), max_prefetch=1)
-        gen_val = BackgroundGenerator(self._actual_batch_generator(Base.Part.VAL), max_prefetch=1)
-        gen_test = BackgroundGenerator(self._actual_batch_generator(Base.Part.TEST), max_prefetch=1)
+        gen_train = BackgroundGenerator(self._batch_generator(Base.Part.TRAIN), max_prefetch=1)
+        gen_val = BackgroundGenerator(self._batch_generator(Base.Part.VAL), max_prefetch=1)
+        gen_test = BackgroundGenerator(self._batch_generator(Base.Part.TEST), max_prefetch=1)
         num_train = self._local_nsamples[Base.Part.TRAIN]
         num_val = self._local_nsamples[Base.Part.VAL]
         num_test = self._local_nsamples[Base.Part.TEST]
@@ -278,7 +276,7 @@ class Init(Base):
         Returns:
             A tuple containing two generators: (training_generator, validation_generator).
         """
-        return (self._batch_generator(Base.Part.TRAIN), self._batch_generator(Base.Part.VAL))
+        return (self._get_batch_generator(Base.Part.TRAIN), self._get_batch_generator(Base.Part.VAL))
 
     def get_test_generator(self) -> Generator[tuple[np.ndarray, np.ndarray, int]]:
         """
@@ -289,7 +287,7 @@ class Init(Base):
         Returns:
             A generator yielding test data batches.
         """
-        return self._batch_generator(Base.Part.TEST)
+        return self._get_batch_generator(Base.Part.TEST)
 
     def _print_report(self):
         """Print a summary report of the dataset configuration."""
@@ -418,12 +416,12 @@ class Init(Base):
             local_nsamples -= nsamples
         return output
 
-    def _actual_data_generator(self, part: Base.Part) -> Generator[tuple[np.ndarray, np.ndarray]]:
+    def _data_generator(self, part: Base.Part) -> Generator[tuple[np.ndarray, np.ndarray]]:
         """Yield raw data from the dataset partition."""
         yield self._x[part], self._y[part]
 
     @staticmethod
-    def _x_transformer_adaptor(func: Callable[[np.ndarray], np.ndarray]) -> TransformFunc:
+    def _x_augment_adaptor(func: Callable[[np.ndarray], np.ndarray]) -> TransformFunc:
         """
         Adapt a single-input transformation function to the (x, y) signature.
 
@@ -446,7 +444,7 @@ class Init(Base):
 
         return wrapper
 
-    def _base_data_generator(self, part: Base.Part) -> Generator[tuple[np.ndarray, np.ndarray]]:
+    def _augment_data_generator(self, part: Base.Part) -> Generator[tuple[np.ndarray, np.ndarray]]:
         """
         Yield transformed data from the dataset partition.
 
@@ -463,7 +461,7 @@ class Init(Base):
             x, y = x.copy(), y.copy()
             yield x, y
 
-    def _actual_batch_generator(self, part: Base.Part) -> Generator[tuple[np.ndarray, np.ndarray, int]]:
+    def _batch_generator(self, part: Base.Part) -> Generator[tuple[np.ndarray, np.ndarray, int]]:
         """
         Generate batches of data for the specified partition.
 
@@ -497,7 +495,7 @@ class Init(Base):
         local_batch_size = self.model.batch_size
         global_batch_size = self.model.batch_size * self.model.nprocs
 
-        generator = self._base_data_generator(part)
+        generator = self._augment_data_generator(part)
         nsamples = self._nsamples[part]
 
         batch_size = 0
@@ -536,7 +534,7 @@ class Init(Base):
                 yield x_batch[:nsamples], y_batch[:nsamples], global_batch_size
                 nsamples -= global_batch_size
 
-    def _batch_generator(self, part: Base.Part) -> Generator[tuple[np.ndarray, np.ndarray, int]]:
+    def _get_batch_generator(self, part: Base.Part) -> Generator[tuple[np.ndarray, np.ndarray, int]]:
         """
         Yield batches with background prefetching.
 
@@ -549,7 +547,7 @@ class Init(Base):
         Yields:
             Tuples of (x_batch, y_batch, effective_global_batch_size), prefetched.
         """
-        yield from BackgroundGenerator(self._actual_batch_generator(part), max_prefetch=1)
+        yield from BackgroundGenerator(self._batch_generator(part), max_prefetch=1)
 
         # NOTE: The following infinite loop provides of empty batches
         #       if there are asked more batches than actually are.

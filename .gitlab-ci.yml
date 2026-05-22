@@ -1,11 +1,19 @@
 stages:
 - build
-- test
+- check
 - merge
-- release
+- push
 
 variables:
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+
+cache:
+- key:
+    files:
+    - pyproject.toml
+  paths:
+  - .cache/pip
 
 job_build:
   stage: build
@@ -30,8 +38,8 @@ job_build:
     paths:
     - ./build/pydtnn-*
 
-job_test:
-  stage: test
+job_check:
+  stage: check
 
   rules:
   - if: '$CI_COMMIT_BRANCH == "develop"'
@@ -45,9 +53,10 @@ job_test:
 
   before_script:
   - WHEEL=$(echo ./build/*.whl) && pip install pytest ${WHEEL:?}[test]
-  - python -c "from importlib.metadata import version; print('PYDTNN_VERSION', version('pydtnn'), sep='=')" > ./build/env
   script:
-  - pytest -v --junitxml=./build/tests --pyargs pydtnn.tests.groups.layer
+  - TAG=v$(python -c "from importlib.metadata import version; print(version('pydtnn'))")
+  - printf '%s\n' GIT_TAG=${TAG:?} PUBLIC_TAG=$(git tag | grep -xF ${TAG:?}) > ./build/env
+  - pytest -v --junitxml=./build/tests --pyargs pydtnn.tests.groups.all
 
   artifacts:
     when: always
@@ -81,11 +90,11 @@ job_test:
 #   - git merge origin/develop --ff-only
 #   - git push origin main
 
-job_release:
-  stage: release
+job_push:
+  stage: push
 
   rules:
-  - if: '$CI_COMMIT_BRANCH == "develop"'
+  - if: '$CI_COMMIT_BRANCH == "develop"'  # ' && $PUBLIC_TAG == ""'
 
   tags: [ lorca-ubuntu ]
   image: registry.gitlab.com/gitlab-org/cli:latest
@@ -93,8 +102,7 @@ job_release:
   needs:
   - job: job_build
     artifacts: true
-  - job: job_test
-    artifacts: true
+  - job: job_check
 
   before_script:
   - glab auth login --hostname lorca.act.uji.es/gitlab --token "${CI_JOB_TOKEN:?}"

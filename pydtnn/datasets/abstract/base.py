@@ -51,7 +51,7 @@ class Base:
     input_shape: ArrayShape
     output_shape: ArrayShape
     _nsamples: list[int]
-    _transformations: dict[Base.Part, list[TransformFunc]]
+    _augments: dict[Base.Part, list[TransformFunc]]
     _initial_nsamples: list[int]
     _local_offset: list[int]
     _local_nsamples: list[int]

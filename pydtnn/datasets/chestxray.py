@@ -159,7 +159,7 @@ class ChestXRay(Dataset):
         self._xy_filenames[Dataset.Part.TEST] = [(f"images/{name}", self._get_labels(name)) for name in test]
         self._xy_filenames[Dataset.Part.VAL] = self._xy_filenames[Dataset.Part.TEST] if self.model.test_as_validation else self._xy_filenames[Dataset.Part.TRAIN]
 
-    def _actual_data_generator(self, part):
+    def _data_generator(self, part):
         """
         Generates batches of data for training, validation, or testing.
 
@@ -190,11 +190,8 @@ class ChestXRay(Dataset):
             # Set tensor format
             x = self.model.encode_tensor(x)
 
-            # Set dtype and order
-            x = x.astype(dtype=self.model.dtype)
+            # Set dtype and order (and normalize)
+            x = np.divide(x, 255.0, dtype=self.model.dtype, casting="unsafe")
             y = y.astype(dtype=self.model.dtype)
-
-            # Inplace normalization
-            x /= 255.0
 
             yield x, y

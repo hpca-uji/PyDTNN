@@ -155,7 +155,7 @@ class IWSLT(Dataset):
                     self.lines1_test = [self.lines1[i] for i in self.test_indices]
                     self.lines2_test = [self.lines2[i] for i in self.test_indices]
 
-    def _actual_data_generator(self, part):
+    def _data_generator(self, part):
         """
         Generate batches of real data for training, validation, or testing.
         """

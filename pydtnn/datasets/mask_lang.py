@@ -66,9 +66,9 @@ class MaskLang(Dataset):
         self.lang = self.model.dataset_lang
 
         if self.num_preprocess > 0:
-            self._actual_data_generator = self._actual_data_generator_preprocess
+            self._data_generator = self._actual_data_generator_preprocess
         else:
-            self._actual_data_generator = self._actual_data_generator_normal
+            self._data_generator = self._actual_data_generator_normal
 
         super().__init__(model, TRAIN_NSAMPLES, TEST_NSAMPLES, INPUT_SHAPE, OUTPUT_SHAPE, force_test_as_validation=force_test_as_validation, debug=debug)
 

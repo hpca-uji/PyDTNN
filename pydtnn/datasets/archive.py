@@ -96,7 +96,7 @@ class Archive(Dataset):
         self._x[Dataset.Part.VAL] = x_test if self.test_as_validation else x_train
         self._y[Dataset.Part.VAL] = y_test if self.test_as_validation else y_train
 
-    def _actual_data_generator(self, part: Dataset.Part):
+    def _data_generator(self, part: Dataset.Part):
         """
         Generator that yields data batches for a specific dataset part.
 
@@ -104,4 +104,4 @@ class Archive(Dataset):
             part: The dataset partition to generate data from.
         """
         self._ensure_data_init()
-        yield from super()._actual_data_generator(part)
+        yield from super()._data_generator(part)

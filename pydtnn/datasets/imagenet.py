@@ -203,7 +203,7 @@ class ImageNet(Dataset):
 
         self._xy_filenames = [train_xy, copy.copy(val_xy if self.test_as_validation else train_xy), val_xy]
 
-    def _actual_data_generator(self, part):
+    def _data_generator(self, part):
         """
         Generate data batches for the specified dataset part.
 
@@ -230,11 +230,8 @@ class ImageNet(Dataset):
             # Set tensor format
             x = self.model.encode_tensor(x)
 
-            # Set dtype and order
-            x = x.astype(dtype=self.model.dtype)
+            # Set dtype and order (normalize)
+            x = np.divide(x, 255.0, dtype=self.model.dtype, casting="unsafe")
             y = y.astype(dtype=self.model.dtype)
-
-            # Inplace normalization
-            x /= 255.0
 
             yield x, y

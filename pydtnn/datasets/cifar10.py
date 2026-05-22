@@ -67,7 +67,7 @@ class CIFAR10(Dataset):
         # Pregenerate GZIP indexs
         self._gzip_open(self._src_filename).close()
 
-    def _actual_data_generator(self, part: Dataset.Part):
+    def _data_generator(self, part: Dataset.Part):
         """
         Generate batches of data for the specified dataset part.
 

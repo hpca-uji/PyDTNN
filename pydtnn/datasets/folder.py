@@ -117,7 +117,7 @@ class Folder(Dataset):
         return np_label
 
     @override
-    def _actual_data_generator(self, part: Dataset.Part) -> Generator[tuple[np.ndarray, np.ndarray]]:
+    def _data_generator(self, part: Dataset.Part) -> Generator[tuple[np.ndarray, np.ndarray]]:
         """
         Generates batches of data for the specified dataset partition.
 
@@ -147,11 +147,8 @@ class Folder(Dataset):
             # Set tensor format
             x = self.model.encode_tensor(x)
 
-            # Set dtype and order
-            x = x.astype(dtype=self.model.dtype)
+            # Set dtype and order (normalize)
+            x = np.divide(x, 255.0, dtype=self.model.dtype, casting="unsafe")
             y = y.astype(dtype=self.model.dtype)
-
-            # Inplace normalization
-            x /= 255.0
 
             yield x, y

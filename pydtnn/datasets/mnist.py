@@ -76,7 +76,7 @@ class MNIST(Dataset):
         for gz in itertools.chain(self._x_filename, self._y_filename):
             self._gzip_open(gz).close()
 
-    def _actual_data_generator(self, part: Dataset.Part):
+    def _data_generator(self, part: Dataset.Part):
         """
         Generate batches of MNIST data.
 
@@ -89,9 +89,9 @@ class MNIST(Dataset):
         filename = self._x_filename[part]
         with self._gzip_open(filename) as f:
             x = self._read_file(f, offset, nbytes).reshape(self._local_nsamples[part], *INPUT_SHAPE)
-        x = np.divide(x, 255.0, dtype=self.model.dtype, casting="unsafe")
 
         x = self.model.encode_tensor(x)
+        x = np.divide(x, 255.0, dtype=self.model.dtype, casting="unsafe")
 
         offset = self._labels_header_offset + self._local_offset[part] * 1  # The output class is encoded as a number
         nbytes = self._local_nsamples[part] * 1  # The output class is encoded as a number
