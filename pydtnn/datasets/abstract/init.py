@@ -351,7 +351,7 @@ class Init(Base):
             local_nsamples = nsamples_per_worker
             local_offset = nsamples_per_big_worker * big_workers + nsamples_per_worker * (self.model.rank - big_workers)
 
-        return int(local_offset), int(local_nsamples), int(nsamples)
+        return int(local_offset), int(local_nsamples), int(_nsamples)
 
     def _model_init(self):
         """Generates initial self._x[] and self._y[]. To be implemented in derived classes."""
