@@ -6,6 +6,7 @@ import logging
 import unittest
 
 from pydtnn.layers.abstract.layer import LayerError
+from pydtnn.libs.convGemm import is_conv_gemm_available
 from pydtnn.model import Model
 from pydtnn.tests.abstract.common import Params
 from pydtnn.tests.abstract.model_common import ModelCommonTestCase
@@ -16,6 +17,7 @@ __all__ = ("ModelConvGemmTestCase",)
 logger = logging.getLogger(__name__)
 
 
+@unittest.skipUnless(is_conv_gemm_available, "requires ConvGemm")
 class ModelConvGemmTestCase(ModelCommonTestCase):
     """
     Tests that two models with different parameters lead to the same results

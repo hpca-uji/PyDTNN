@@ -48,7 +48,7 @@ class BatchNormalizationReluTestCase(Conv2DCommonTestCase):
         params_chain = Params()
         params_chain.tensor_format = TensorFormat.NCHW.upper()
         params_chain.batch_size = d.b
-        params_chain.backend = "cpu;conv_2d:gemm"
+        params_chain.backend = "cpu"  # cpu;conv_2d:gemm
         model_chain = Model(**vars(params_chain))
         model_chain.mode = Model.Mode.EVALUATE
         model_chain.add(Input(model_chain.encode_shape((d.c, d.h, d.w))))
