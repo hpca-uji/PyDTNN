@@ -5,6 +5,8 @@ stages:
 - push
 
 variables:
+  BRANCH_WORK: tmp1
+  BRANCH_MAIN: tmp2
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
 
@@ -19,7 +21,7 @@ job_build:
   stage: build
 
   rules:
-  - if: '$CI_COMMIT_BRANCH == "develop"'
+  - if: '$CI_COMMIT_BRANCH == $BRANCH_WORK'
 
   tags: [ lorca-ubuntu ]
   image: python:latest
@@ -42,7 +44,7 @@ job_check:
   stage: check
 
   rules:
-  - if: '$CI_COMMIT_BRANCH == "develop"'
+  - if: '$CI_COMMIT_BRANCH == $BRANCH_WORK'
 
   tags: [ lorca-ubuntu ]
   image: python:latest
@@ -68,7 +70,7 @@ job_check:
 #   stage: merge
 # 
 #   rules:
-#   - if: '$CI_COMMIT_BRANCH == "develop"'
+#   - if: '$CI_COMMIT_BRANCH == $BRANCH_WORK'
 # 
 #   image: registry.gitlab.com/gitlab-org/cli:latest
 #   tags: [ lorca-ubuntu ]
@@ -77,7 +79,7 @@ job_check:
 #   - job: job_test
 # 
 #   rules:
-#   - if: '$CI_COMMIT_BRANCH == "develop"'
+#   - if: '$CI_COMMIT_BRANCH == $BRANCH_WORK'
 # 
 #   resource_group: merge
 # 
@@ -86,15 +88,15 @@ job_check:
 #   - git config --global user.email "ci@lorca.act.uji.es"
 #   - git config --global user.name "GitLab CI"
 #   script:
-#   - git checkout main
-#   - git merge origin/develop --ff-only
-#   - git push origin main
+#   - git checkout ${$BRANCH_MAIN:?}
+#   - git merge origin/${BRANCH_WORK:?} --ff-only
+#   - git push origin ${$BRANCH_MAIN:?}
 
 job_push:
   stage: push
 
   rules:
-  - if: '$CI_COMMIT_BRANCH == "develop"'  # ' && $PUBLIC_TAG == ""'
+  - if: '$CI_COMMIT_BRANCH == $BRANCH_WORK'  # ' && $PUBLIC_TAG == ""'
 
   tags: [ lorca-ubuntu ]
   image: registry.gitlab.com/gitlab-org/cli:latest
