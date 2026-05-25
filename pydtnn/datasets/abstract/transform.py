@@ -82,10 +82,13 @@ class Transform(Init):
             augments_training.append(self._x_augment_adaptor(self._do_augment_flip))
 
         if self.model.augment_contrast > 0:
-            augments_training.append(self._x_augment_adaptor(self._do_augment_brightness))
+            augments_training.append(self._x_augment_adaptor(self._do_augment_contrast))
 
         if self.model.augment_brightness > 0:
-            augments_training.append(self._x_augment_adaptor(self._do_augment_contrast))
+            augments_training.append(self._x_augment_adaptor(self._do_augment_brightness))
+        
+        if self.model.augment_saturation > 0:
+            augments_training.append(self._x_augment_adaptor(self._do_augment_saturation))
 
         if self.model.augment_blur > 0:
             augments_training.append(self._x_augment_adaptor(self._do_augment_blur))
@@ -438,7 +441,7 @@ class Transform(Init):
         """
         Apply random brightness augmentation to images.
 
-        Randomly rotate the images based on the
+        Randomly rotates the images based on the
         `self.model.augment_brightness` and `self.model.augment_brightness_range` parameter.
 
         Args:
@@ -453,7 +456,7 @@ class Transform(Init):
         data = self.model.decode_tensor(data)
         N, C, H, W = data.shape
         # NOTE: C not included so all channels in a sample rotate by the same amount
-        brightness = random.random(N, dtype=np.float32) * (1 + self.model.augment_brightness_range)
+        brightness: np.ndarray = random.random(N, dtype=np.float32) * (1 + self.model.augment_brightness_range)
 
         limit = min(N, int(N * self.model.augment_brightness))
         s = np.arange(N)
@@ -483,7 +486,7 @@ class Transform(Init):
         """
         Apply random contrast augmentation to images.
 
-        Randomly rotate the images based on the
+        Randomly changes the contrast of the images based on the
         `self.model.augment_contrast` and `self.model.augment_contrast_range` parameter.
 
         Args:
@@ -498,7 +501,7 @@ class Transform(Init):
         data = self.model.decode_tensor(data)
         N, C, H, W = data.shape
         # NOTE: C not included so all channels in a sample rotate by the same amount
-        contrast = random.random(N) * (1 + self.model.augment_contrast_range)
+        contrast: np.ndarray = random.random(N) * (1 + self.model.augment_contrast_range)
 
         limit = min(N, int(N * self.model.augment_contrast))
         s = np.arange(N)
@@ -513,6 +516,49 @@ class Transform(Init):
                 image = Image.fromarray(channel, mode="L")
                 image = ImageEnhance.Contrast(image)
                 image = image.enhance(contrast[n].item())
+                channel = np.asarray(image, dtype=np.uint8)
+                channel = channel.transpose().astype(self.model.dtype)
+                channel = np.interp(channel, (0, 255), (0, 1))
+                data[n, c] = channel
+
+        data = self.model.encode_tensor(data)
+
+        return data
+
+    def _do_augment_saturation(self, data: np.ndarray) -> np.ndarray:
+        """
+        Apply random saturation augmentation to images.
+
+        Randomly changes the saturation the images based on the
+        `self.model.augment_saturation` and `self.model.augment_saturation_range` parameter.
+
+        Args:
+            data: The input numpy array (batch of images).
+
+        Returns:
+            The array of images with some saturation change.
+
+        Raises:
+            NotImplementedError: If the `self.model.tensor_format` is not supported.
+        """
+        data = self.model.decode_tensor(data)
+        N, C, H, W = data.shape
+        # NOTE: C not included so all channels in a sample rotate by the same amount
+        saturation: np.ndarray = random.random(N) * (1 + self.model.augment_saturation_range)
+
+        limit = min(N, int(N * self.model.augment_saturation))
+        s = np.arange(N)
+        random.shuffle(s)
+        s = s[:limit]
+
+        for n in s:
+            for c in range(C):
+                channel: np.ndarray = data[n, c]
+                channel = np.interp(channel, (0, 1), (0, 255))
+                channel = channel.transpose().astype(np.uint8)
+                image = Image.fromarray(channel, mode="L")
+                image = ImageEnhance.Color(image)
+                image = image.enhance(saturation[n].item())
                 channel = np.asarray(image, dtype=np.uint8)
                 channel = channel.transpose().astype(self.model.dtype)
                 channel = np.interp(channel, (0, 255), (0, 1))

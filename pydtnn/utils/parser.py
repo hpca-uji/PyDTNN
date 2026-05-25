@@ -234,6 +234,8 @@ class ArgumentParser(argparse.ArgumentParser):
         _ds_group.add_argument("--augment-brightness-range", type=factor, default=0.0, help="The maximum brightness to apply in training images. The range will be from \'0\' (no brightness at all) to \'augment-brightness-range + 1\'. Default: 0.0.")
         _ds_group.add_argument("--augment-contrast", type=factor, default=0.5, help="Probability to change the contrast to training images. If the value is less or equal to 0 it is disabled. Default: 0.0.")
         _ds_group.add_argument("--augment-contrast-range", type=factor, default=0.0, help="The maximum contrast to apply in training images. The range will be from \'0\' (no contrast at all) to \'augment-contrast-range + 1\'. Default: 0.")
+        _ds_group.add_argument("--augment-saturation", type=factor, default=0.5, help="Probability to change the saturation to training images. If the value is less or equal to 0 it is disabled. Default: 0.0.")
+        _ds_group.add_argument("--augment-saturation-range", type=factor, default=0.0, help="The maximum saturation to apply in training images. The range will be from \'0\' (no saturation at all) to \'augment-saturation-range + 1\'. Default: 0.")
         _ds_group.add_argument("--augment-mask", type=factor, default=0.0, help="Probability to mask training images. If the value is less or equal to 0 it is disabled. Default: 0.0.")
         _ds_group.add_argument("--augment-mask-size", type=int, default=16, help="Size to mask training images. Default: 16.")
         _ds_group.add_argument("--augment-blur", type=factor, default=0.0, help="Probability to blur training images. If the value is less or equal to 0 it is disabled. Default: 0.0.")

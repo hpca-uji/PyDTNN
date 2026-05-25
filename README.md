@@ -198,9 +198,11 @@ The PyDTNN framework comes with a utility launcher called
   - `--augment-rotate`: Probability to rotate training images. If the value is less or equal to 0 it is disabled. Default: `0.0`.
   - `--augment-rotate-degree`: The maximum degree to rotate training images. Default: `90.0`.
   - `--augment-brightness`: Probability to change the brightnes to training images. If the value is less or equal to 0 it is disabled. Default: `0.0`.
-  - `--augment-brightness-range`: The maximum brightness to apply in training images. The range will be from `0` (no brightness at all) to `augment-brightness-range + 1`. Default: `0`.
+  - `--augment-brightness-range`: The maximum brightness to apply in training images. The range will be from `0` (no brightness at all) to `augment-brightness-range + 1`. Default: `0.0`.
   - `--augment-contrast`: Probability to change the contrast to training images. If the value is less or equal to 0 it is disabled. Default: `0.0`.
-  - `--augment-contrast-range`: The maximum contrast to apply in training images. The range will be from `0` (no contrast at all) to `augment-contrast-range + 1`. Default: `0`.
+  - `--augment-contrast-range`: The maximum contrast to apply in training images. The range will be from `0` (no contrast at all) to `augment-contrast-range + 1`. Default: `0.0`.
+  - `--augment-saturation`: Probability to change the saturation to training images. If the value is less or equal to 0 it is disabled. Default: 0.0.
+  - `--augment-saturation-range`: The maximum saturation to apply in training images. The range will be from `0` (no saturation at all) to `augment-saturation-range + 1`. Default: 0.0
   - `--augment-mask`: Probability to mask training images. If the value is less or equal to 0 it is disabled. Default: `0.0`.
   - `--augment-mask-size`: Size to mask training images. Default: `16`.
   - `--augment-blur`: Probability to blur training images. If the value is less or equal to 0 it is disabled. Default: `0.0`.
