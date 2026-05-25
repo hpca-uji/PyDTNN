@@ -298,11 +298,11 @@ class Transform(Init):
             for c in range(C):
                 channel: np.ndarray = data[n, c]
                 # NOTE: PIL mode F is WH in float32
-                channel = channel.transpose().astype(np.float32)  # type: ignore (it's NOT possible to use copy=None)
+                channel = channel.transpose().astype(np.float32)
                 image = Image.fromarray(channel, mode="F")
                 image = image.rotate(rotation[n])
                 channel = np.asarray(image, dtype=np.float32)
-                channel = channel.transpose().astype(self.model.dtype)  # type: ignore (it's possible to use copy=None)
+                channel = channel.transpose().astype(self.model.dtype)
                 data[n, c] = channel
 
         data = self.model.encode_tensor(data)
@@ -362,11 +362,11 @@ class Transform(Init):
             for c in range(C):
                 channel: np.ndarray = data[n, c]
                 # NOTE: PIL mode F is WH in float32
-                channel = channel.transpose().astype(np.float32)  # type: ignore (it's NOT possible to use copy=None)
+                channel = channel.transpose().astype(np.float32)
                 image = Image.fromarray(channel, mode="F")
                 image = image.resize(size)
                 channel = np.asarray(image, dtype=np.float32)
-                channel = channel.transpose().astype(self.model.dtype)  # type: ignore (it's possible to use copy=None)
+                channel = channel.transpose().astype(self.model.dtype)
                 new_data[n, c] = channel
 
         new_data = self.model.encode_tensor(new_data)
@@ -423,11 +423,11 @@ class Transform(Init):
             for c in range(C):
                 channel: np.ndarray = data[n, c]
                 # NOTE: PIL mode F is WH in float32
-                channel = channel.transpose().astype(np.float32)  # type: ignore (it's NOT possible to use copy=None)
+                channel = channel.transpose().astype(np.float32)
                 image = Image.fromarray(channel, mode="F")
                 image = image.crop(crop)
                 channel = np.asarray(image, dtype=np.float32)
-                channel = channel.transpose().astype(self.model.dtype)  # type: ignore (it's possible to use copy=None)
+                channel = channel.transpose().astype(self.model.dtype)
                 new_data[n, c] = channel
 
         new_data = self.model.encode_tensor(new_data)
@@ -465,12 +465,12 @@ class Transform(Init):
                 channel: np.ndarray = data[n, c]
                 # NOTE: PIL mode F is WH in float32
                 channel = np.interp(channel, (0, 1), (0, 255))
-                channel = channel.transpose().astype(np.uint8)  # type: ignore (it's NOT possible to use copy=None)
+                channel = channel.transpose().astype(np.uint8)
                 image = Image.fromarray(channel, mode="L")
                 image = ImageEnhance.Brightness(image)
                 image = image.enhance(brightness[n].item())
                 channel = np.asarray(image, dtype=np.uint8)
-                channel = channel.transpose().astype(self.model.dtype)  # type: ignore (it's possible to use copy=None)
+                channel = channel.transpose().astype(self.model.dtype)
                 channel = np.interp(channel, (0, 255), (0, 1))
                 data[n, c] = channel
 
@@ -509,12 +509,12 @@ class Transform(Init):
             for c in range(C):
                 channel: np.ndarray = data[n, c]
                 channel = np.interp(channel, (0, 1), (0, 255))
-                channel = channel.transpose().astype(np.uint8)  # type: ignore (it's NOT possible to use copy=None)
+                channel = channel.transpose().astype(np.uint8)
                 image = Image.fromarray(channel, mode="L")
                 image = ImageEnhance.Contrast(image)
                 image = image.enhance(contrast[n].item())
                 channel = np.asarray(image, dtype=np.uint8)
-                channel = channel.transpose().astype(self.model.dtype)  # type: ignore (it's possible to use copy=None)
+                channel = channel.transpose().astype(self.model.dtype)
                 channel = np.interp(channel, (0, 255), (0, 1))
                 data[n, c] = channel
 
