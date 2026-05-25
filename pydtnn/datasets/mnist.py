@@ -8,7 +8,7 @@ import itertools
 import logging
 import math
 import os
-from typing import IO, TYPE_CHECKING
+from typing import IO, TYPE_CHECKING, Generator
 
 import numpy as np
 
@@ -76,7 +76,7 @@ class MNIST(Dataset):
         for gz in itertools.chain(self._x_filename, self._y_filename):
             self._gzip_open(gz).close()
 
-    def _data_generator(self, part: Dataset.Part):
+    def _data_generator(self, part: Dataset.Part) -> Generator[tuple[np.ndarray, np.ndarray]]:
         """
         Generate batches of MNIST data.
 

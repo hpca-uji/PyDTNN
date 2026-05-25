@@ -11,7 +11,7 @@ import logging
 import tarfile
 from itertools import chain
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Generator
 
 import numpy as np
 
@@ -159,7 +159,7 @@ class ChestXRay(Dataset):
         self._xy_filenames[Dataset.Part.TEST] = [(f"images/{name}", self._get_labels(name)) for name in test]
         self._xy_filenames[Dataset.Part.VAL] = self._xy_filenames[Dataset.Part.TEST] if self.model.test_as_validation else self._xy_filenames[Dataset.Part.TRAIN]
 
-    def _data_generator(self, part):
+    def _data_generator(self, part: Dataset.Part) -> Generator[tuple[np.ndarray, np.ndarray]]:
         """
         Generates batches of data for training, validation, or testing.
 

@@ -15,7 +15,7 @@ import typing
 from collections import abc
 from contextlib import ExitStack, contextmanager
 from pathlib import Path, PurePath
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Generator
 
 import numpy as np
 from scipy.io import loadmat
@@ -203,7 +203,7 @@ class ImageNet(Dataset):
 
         self._xy_filenames = [train_xy, copy.copy(val_xy if self.test_as_validation else train_xy), val_xy]
 
-    def _data_generator(self, part):
+    def _data_generator(self, part: Dataset.Part) -> Generator[tuple[np.ndarray, np.ndarray]]:
         """
         Generate data batches for the specified dataset part.
 

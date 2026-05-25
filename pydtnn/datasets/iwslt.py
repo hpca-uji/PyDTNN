@@ -6,9 +6,10 @@ Provides data loading and processing utilities for the IWSLT 2017 translation ta
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Generator
 
 import numpy as np
+from spacy.language import Language
 
 from pydtnn.datasets.abstract import Dataset
 from pydtnn.utils import random
@@ -70,7 +71,7 @@ class IWSLT(Dataset):
 
         super().__init__(model, TRAIN_NSAMPLES, TEST_NSAMPLES, INPUT_SHAPE, OUTPUT_SHAPE, force_test_as_validation=force_test_as_validation, debug=debug)
 
-    def _model_init(self):
+    def _model_init(self) -> None:
         """
         Initialize actual dataset partitions from files.
         """
@@ -92,7 +93,7 @@ class IWSLT(Dataset):
         # # self.src_mask = np.zeros((1000,1,self.max_sentence),dtype=bool)
         # # self.tgt_mask = np.zeros((1000,1,self.max_sentence),dtype=bool)
 
-    def load_data(self, file, lang1, lang2):
+    def load_data(self, file, lang1: str, lang2: str) -> None:
         """
         Load translation data from a text file.
         """
@@ -114,7 +115,7 @@ class IWSLT(Dataset):
         #     eos = dictionary1(eos).vector
         # pad = dictionary(pad).vector  # No hace falta si inicializamos a 0s
 
-    def get_dictionary(self, language):
+    def get_dictionary(self, language: str) -> Language:
         """
         Load a spaCy language model for tokenization and embeddings.
         """
@@ -125,7 +126,7 @@ class IWSLT(Dataset):
             language = table[language]
         return spacy.load(language)
 
-    def make_train_val_partitions(self):
+    def make_train_val_partitions(self) -> None:
         """
         Create train, validation, and test partitions from loaded data.
         """
@@ -155,7 +156,7 @@ class IWSLT(Dataset):
                     self.lines1_test = [self.lines1[i] for i in self.test_indices]
                     self.lines2_test = [self.lines2[i] for i in self.test_indices]
 
-    def _data_generator(self, part):
+    def _data_generator(self, part: Dataset.Part) -> Generator[tuple[list[np.ndarray], np.ndarray]]:
         """
         Generate batches of real data for training, validation, or testing.
         """
@@ -188,7 +189,7 @@ class IWSLT(Dataset):
             y = tgt_embeddings
             yield x, y
 
-    def _synthetic_data_generator(self):
+    def _synthetic_data_generator(self) -> Generator[tuple[list[np.ndarray], np.ndarray], Any, None]:
         """
         Generate batches of synthetic data for testing purposes.
         """
@@ -198,8 +199,8 @@ class IWSLT(Dataset):
         if getattr(self, "src_embeddings", None):
             pass
         else:
-            self.src_embeddings = random.random((1000, 1, self.max_sentence, self.embedl)).astype(dtype=self.dtype)
-            self.tgt_embeddings = random.random((1000, 1, self.max_sentence, self.embedl)).astype(dtype=self.dtype)
+            self.src_embeddings: np.ndarray = random.random((1000, 1, self.max_sentence, self.embedl)).astype(dtype=self.dtype)
+            self.tgt_embeddings: np.ndarray = random.random((1000, 1, self.max_sentence, self.embedl)).astype(dtype=self.dtype)
 
         for i in range(self.train_nsamples // batch_size):
             # window = (i * batch_size + rank * batch_size, i * batch_size + (rank + 1) * batch_size)
@@ -211,7 +212,7 @@ class IWSLT(Dataset):
             yield x, y
 
     # === Preprocess ===
-    def preprocess(self, original_file_lang1, lang1, original_file_lang2, lang2, destination_file="IWSLT.txt"):
+    def preprocess(self, original_file_lang1, lang1: str, original_file_lang2, lang2: str, destination_file="IWSLT.txt"):
         """
         Preprocess raw translation files into a unified format.
         """
@@ -234,7 +235,7 @@ class IWSLT(Dataset):
                 file.write(line1 + self.split_token + line2 + "\n")
         file.close()
 
-    def xml_to_txt(self, file_in, file_out):
+    def xml_to_txt(self, file_in, file_out) -> None:
         """
         Convert XML-formatted translation files to plain text.
         """

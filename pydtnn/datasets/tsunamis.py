@@ -12,7 +12,7 @@ import logging
 import math
 import os
 import tarfile
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Generator
 
 import numpy as np
 
@@ -56,7 +56,7 @@ class Tsunamis(Dataset):
         """
         super().__init__(model, TRAIN_NSAMPLES, TEST_NSAMPLES, INPUT_SHAPE, OUTPUT_SHAPE, force_test_as_validation=force_test_as_validation, debug=debug)
 
-    def _model_init(self):
+    def _model_init(self)-> None:
         """
         Initialize file paths and metadata for the tsunami dataset.
         """
@@ -67,7 +67,7 @@ class Tsunamis(Dataset):
         # Pregenerate GZIP indexs
         self._gzip_open(self._src_filename).close()
 
-    def _data_generator(self, part: Dataset.Part):
+    def _data_generator(self, part: Dataset.Part) -> Generator[tuple[np.ndarray, np.ndarray]]:
         """
         Generate batches of data for the specified dataset partition.
 
@@ -96,7 +96,7 @@ class Tsunamis(Dataset):
 
                     yield x, y
 
-    def _read_file(self, f, offset, nsamples):
+    def _read_file(self, f, offset, nsamples) -> tuple[np.ndarray, np.ndarray]:
         """
         Read a chunk of binary data from the file object.
 

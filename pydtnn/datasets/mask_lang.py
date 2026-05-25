@@ -5,9 +5,10 @@ Masked Language Model dataset implementation for PyDTNN.
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Generator
 
 import numpy as np
+from spacy.language import Language
 
 from pydtnn.datasets.abstract import Dataset
 from pydtnn.utils import random
@@ -72,7 +73,7 @@ class MaskLang(Dataset):
 
         super().__init__(model, TRAIN_NSAMPLES, TEST_NSAMPLES, INPUT_SHAPE, OUTPUT_SHAPE, force_test_as_validation=force_test_as_validation, debug=debug)
 
-    def _model_init(self):
+    def _model_init(self) -> None:
         """
         Initialize actual data by loading, partitioning, and optionally preprocessing.
         """
@@ -90,7 +91,7 @@ class MaskLang(Dataset):
         # self.src_embeddings = random.random((self.train_val_nsamples, 1, self.max_sentence, self.embedl)).astype(dtype=self.dtype)
         # self.tgt_embeddings = random.random((self.train_val_nsamples, 1, self.max_sentence, self.embedl)).astype(dtype=self.dtype)
 
-    def load_data(self):
+    def load_data(self) -> None:
         """
         Load raw text data from the dataset path.
         """
@@ -106,7 +107,7 @@ class MaskLang(Dataset):
         logger.info(self.train_val_nsamples)
         self.train_nsamples = None
 
-    def get_dictionary(self, language):
+    def get_dictionary(self, language: str) -> Language:
         """
         Load a spaCy language model.
 
@@ -123,7 +124,7 @@ class MaskLang(Dataset):
             language = table[language]
         return spacy.load(language)
 
-    def make_train_val_partitions(self):
+    def make_train_val_partitions(self) -> None:
         """
         Create training and validation partitions based on model configuration.
         """
@@ -138,7 +139,7 @@ class MaskLang(Dataset):
             self.val_nsamples = len(self.val_indices)
             self.test_nsamples = self.val_nsamples
 
-    def _actual_data_generator_normal(self, part):
+    def _actual_data_generator_normal(self, part: Dataset.Part) -> Generator[tuple[np.ndarray, np.ndarray], Any, None]:
         """
         Generator for on-the-fly data processing.
 
@@ -166,7 +167,7 @@ class MaskLang(Dataset):
             y = tgt_embeddings
             yield x, y
 
-    def _actual_data_generator_preprocess(self, part):
+    def _actual_data_generator_preprocess(self, part: Dataset.Part) -> Generator[tuple[np.ndarray, np.ndarray], Any, None]:
         """
         Generator for pre-processed data.
 
@@ -182,7 +183,7 @@ class MaskLang(Dataset):
             y = self.tgt_embeddings[window[0]: window[1]]
             yield x, y
 
-    def _synthetic_data_generator(self):
+    def _synthetic_data_generator(self) -> Generator[tuple[np.ndarray, np.ndarray], Any, None]:
         """
         Generator for synthetic data.
         """
@@ -196,7 +197,7 @@ class MaskLang(Dataset):
             yield x, y
 
     # === Preprocess ===
-    def preprocess(self, size=None):
+    def preprocess(self, size: int | None=None) -> None:
         """
         Pre-process text data into embeddings.
 

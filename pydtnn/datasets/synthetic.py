@@ -5,7 +5,7 @@ Synthetic dataset module for generating random data for model training and testi
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Generator
 
 import numpy as np
 
@@ -49,7 +49,7 @@ class Synthetic(Dataset):
             model, train_nsamples=train_nsamples, test_nsamples=test_nsamples, input_shape=input_shape, output_shape=output_shape, force_test_as_validation=force_test_as_validation, debug=debug
         )
 
-    def _model_init(self):
+    def _model_init(self) -> None:
         """
         Initializes the internal synthetic data arrays based on model shapes and batch sizes.
         """
@@ -64,7 +64,7 @@ class Synthetic(Dataset):
             self._x[part] = np.zeros(x_shape, dtype=self.model.dtype)
             self._y[part] = np.zeros(y_shape, dtype=self.model.dtype)
 
-    def _data_generator(self, part: Dataset.Part):
+    def _data_generator(self, part: Dataset.Part) -> Generator[tuple[np.ndarray, np.ndarray]]:
         """
         Generates synthetic data for each dataset part returning (slices of) _x[part] and _y[part] initialized in
         _init_synthetic_data().

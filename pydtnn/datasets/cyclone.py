@@ -9,7 +9,7 @@ import logging
 import math
 import os
 import tarfile
-from typing import TYPE_CHECKING
+from typing import IO, TYPE_CHECKING, Generator
 
 import numpy as np
 
@@ -64,7 +64,7 @@ class Cyclone(Dataset):
         # Pregenerate GZIP indexs
         self._gzip_open(self._src_filename).close()
 
-    def _data_generator(self, part: Dataset.Part):
+    def _data_generator(self, part: Dataset.Part) -> Generator[tuple[np.ndarray, np.ndarray]]:
         """
         Generate batches of data for the specified dataset partition.
 
@@ -93,7 +93,7 @@ class Cyclone(Dataset):
 
                     yield x, y
 
-    def _read_file(self, f, offset, nsamples):
+    def _read_file(self, f: IO, offset: int, nsamples: int) -> tuple[np.ndarray, np.ndarray]:
         """
         Read a chunk of data from the binary file.
 

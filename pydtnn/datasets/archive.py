@@ -5,7 +5,7 @@ Module for handling archived datasets stored in NPZ format.
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Generator
 
 import numpy as np
 
@@ -56,7 +56,7 @@ class Archive(Dataset):
 
         super().__init__(model, x_train[0], x_test[0], x_train[1:], y_train[1:], force_test_as_validation=force_test_as_validation, debug=debug)
 
-    def _ensure_data_init(self):
+    def _ensure_data_init(self) -> None:
         """
         Lazy load and process dataset from disk if not already initialized.
         """
@@ -96,7 +96,7 @@ class Archive(Dataset):
         self._x[Dataset.Part.VAL] = x_test if self.test_as_validation else x_train
         self._y[Dataset.Part.VAL] = y_test if self.test_as_validation else y_train
 
-    def _data_generator(self, part: Dataset.Part):
+    def _data_generator(self, part: Dataset.Part) -> Generator[tuple[np.ndarray, np.ndarray]]:
         """
         Generator that yields data batches for a specific dataset part.
 
