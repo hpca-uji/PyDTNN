@@ -16,6 +16,7 @@ cache:
     - pyproject.toml
   paths:
   - .cache/pip
+  when: always
 
 job_build:
   stage: build

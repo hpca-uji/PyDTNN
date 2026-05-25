@@ -74,23 +74,26 @@ class Conv2DCommonTestCase[T: Conv2D](TestCase):
         from timeit import timeit
 
         conv2d_ref, conv2d_test = self._get_layers(d)
-        x = conv2d_ref.model.encode_tensor(x).copy()
         if conv2d_ref.model.tensor_format is TensorFormat.NHWC:
             weights = format_transpose(weights, "OIHW", "IHWO").copy()
         self._set_state(conv2d_ref, weights)
         self._set_state(conv2d_test, weights)
+
         # Forward pass
+        x = conv2d_ref.model.encode_tensor(x).copy()
         y_ref = conv2d_ref.forward(x.copy()).copy()
         y_test = conv2d_test.forward(x.copy()).copy()
+        y_allclose = np.allclose(y_ref, y_test)
+
+        # Backward pass
         dy = random.random((d.b, d.kn, d.ho, d.wo)).astype(np.float32, order="C")
         if conv2d_ref.model.tensor_format is TensorFormat.NHWC:
             dy = format_transpose(dy, "NCHW", "NHWC").copy()
-        # Backward pass
         dx_ref = conv2d_ref.backward(dy.copy()).copy()
         dx_test = conv2d_test.backward(dy.copy()).copy()
-        # All close?
         dw_allclose = np.allclose(conv2d_ref.dw, conv2d_test.dw)
         dx_allclose = np.allclose(dx_ref, dx_test)
+
         if verbose_test():
             print_with_header(inspect.stack()[1][3])
             # np.set_printoptions(threshold=50)  # default is 1000
@@ -123,8 +126,8 @@ class Conv2DCommonTestCase[T: Conv2D](TestCase):
                 print("backward | {:.3f} | {:.3f} |".format(backward_ref_t, backward_test_t))
                 print("         +-------+--------+")
                 print("           {:.3f}   {:.3f}  ".format(forward_ref_t + backward_ref_t, forward_test_t + backward_test_t))
-        # self.assertTrue(np.allclose(y_ref, y_test, rtol=1e-5, atol=1e-6), f"y matrices differ")
-        self.assertTrue(np.allclose(y_ref, y_test), "y matrices differ")
+
+        self.assertTrue(y_allclose, "y matrices differ")
         self.assertTrue(dw_allclose, "dw matrices differ")
         self.assertTrue(dx_allclose, "dx return matrices differ")
 

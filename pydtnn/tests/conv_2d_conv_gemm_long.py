@@ -72,7 +72,8 @@ class Conv2DConvGemmLongTestCase(Conv2DConvGemmTestCase):
         batch = self.R[comm.rank:: comm.size]
 
         for i, params in enumerate(batch):
-            self._test_forward_backward_multiple_params(*params)
+            with self.subTest(params=params):
+                self._test_forward_backward_multiple_params(*params)
 
             if comm.rank:
                 continue
