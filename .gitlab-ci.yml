@@ -5,8 +5,8 @@ stages:
 - push
 
 variables:
-  BRANCH_WORK: tmp1
-  BRANCH_MAIN: tmp2
+  BRANCH_MAIN: main
+  BRANCH_WORK: develop
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
 
@@ -16,6 +16,7 @@ cache:
     - pyproject.toml
   paths:
   - .cache/pip
+  when: always
 
 job_build:
   stage: build
@@ -54,11 +55,11 @@ job_check:
       artifacts: true
 
   before_script:
-  - WHEEL=$(echo ./build/*.whl) && pip install pytest ${WHEEL:?}[test]
+  - WHEEL=$(echo ./build/*.whl) && pip install pytest pytest-forked ${WHEEL:?}[test]
   script:
   - TAG=v$(python -c "from importlib.metadata import version; print(version('pydtnn'))")
   - printf '%s\n' GIT_TAG=${TAG:?} PUBLIC_TAG=$(git tag | grep -xF ${TAG:?}) > ./build/env
-  - pytest -v --junitxml=./build/tests --pyargs pydtnn.tests.groups.all
+  - pytest -v --forked --junitxml=./build/tests --pyargs pydtnn.tests.groups.all
 
   artifacts:
     when: always

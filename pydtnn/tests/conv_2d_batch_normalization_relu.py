@@ -12,6 +12,7 @@ from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.input import Input
+from pydtnn.libs.convGemm import is_conv_gemm_available
 from pydtnn.model import Model
 from pydtnn.tests.abstract.common import D, Params
 from pydtnn.tests.abstract.conv_2d_common import Conv2DCommonTestCase
@@ -30,6 +31,7 @@ logger = logging.getLogger(__name__)
 # TODO: Mirar esto
 
 
+@unittest.skipUnless(is_conv_gemm_available, "requires ConvGemm")
 class Conv2DBatchNormalizationReluTestCase(Conv2DCommonTestCase):
     """
     Tests that Conv2D+BatchNormalization+Relu leads to the same results than Conv2DBatchNormalizationRelu

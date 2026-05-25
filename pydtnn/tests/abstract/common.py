@@ -2,8 +2,9 @@
 Common methods and properties for various unitary tests
 """
 
-import logging
+import gc
 import sys
+import logging
 import unittest
 import warnings
 
@@ -58,6 +59,7 @@ class TestCase(unittest.TestCase):
     def tearDown(self) -> None:
         """Resets warning filters after test completion."""
         warnings.resetwarnings()
+        gc.collect()
         super().tearDown()
 
 

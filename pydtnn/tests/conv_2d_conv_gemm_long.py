@@ -115,4 +115,5 @@ class Conv2DConvGemmLongTestCase(Conv2DConvGemmTestCase):
 
         weights = self.W[: d.kn, : d.c, : d.kh, : d.kw].copy(order="C")
 
-        self._test_forward_backward(d, x, weights)
+        with self.subTest(d=d):
+            self._test_forward_backward(d, x, weights)
