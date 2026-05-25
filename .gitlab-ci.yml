@@ -5,8 +5,8 @@ stages:
 - push
 
 variables:
-  BRANCH_WORK: tmp1
-  BRANCH_MAIN: tmp2
+  BRANCH_MAIN: main
+  BRANCH_WORK: develop
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
 
