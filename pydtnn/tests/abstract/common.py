@@ -38,11 +38,11 @@ class Params:
         self.dtype: np.dtype = np.dtype(np.float32)
         self.tensor_format = TensorFormat.NHWC.upper()
         self.backend = "cpu"
-        self.batch_size = 64
+        self.batch_size = 8
         self.model_name: str = None  # type: ignore
         self.dataset_name = "synthetic"
-        self.synthetic_train_samples = "50000"
-        self.synthetic_test_samples = "10000"
+        self.synthetic_train_samples = 128
+        self.synthetic_test_samples = 128
         self.synthetic_input_shape = "3,32,32"
         self.synthetic_output_shape = "10"
 

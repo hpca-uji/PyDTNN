@@ -66,7 +66,9 @@ fhe = [
 test = [
     "torch~=2.11",
     "torchvision~=0.26",
-    "torchmetrics~=1.9"
+    "torchmetrics~=1.9",
+    "pytest~=9.0",
+    "pytest-xdist~=3.8"
 ]
 profile = [
     "memray~=1.19"

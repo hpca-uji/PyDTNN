@@ -55,11 +55,11 @@ job_check:
       artifacts: true
 
   before_script:
-  - WHEEL=$(echo ./build/*.whl) && pip install pytest pytest-forked ${WHEEL:?}[test]
+  - WHEEL=$(echo ./build/*.whl) && pip install ${WHEEL:?}[test]
   script:
   - TAG=v$(python -c "from importlib.metadata import version; print(version('pydtnn'))")
   - printf '%s\n' GIT_TAG=${TAG:?} PUBLIC_TAG=$(git tag | grep -xF ${TAG:?}) > ./build/env
-  - pytest -v --forked --junitxml=./build/tests --pyargs pydtnn.tests.groups.all
+  - pytest -v -n auto --junitxml=./build/tests --pyargs pydtnn.tests.groups.all
 
   artifacts:
     when: always
