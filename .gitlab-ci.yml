@@ -112,12 +112,11 @@ job_push:
   script:
   - |
     # LINKS=""
-    TAG="v${PYDTNN_VERSION:?}"
-    glab release delete "${TAG:?}" --yes || true
+    glab release delete "${GIT_TAG:?}" --yes || true
     # for artifact in ./build/pydtnn-*; do
     #   NAME=$(basename "${artifact:?}")
     #   URL="https://lorca.act.uji.es/gitlab/${CI_PROJECT_PATH:?}/-/jobs/artifacts/${CI_COMMIT_SHA:?}/raw/build/${NAME:?}?job=job_build"
     #   LINK="{\"name\":\"${NAME:?}\",\"url\":\"${URL:?}\"}"
     #   LINKS="${LINKS:?},${LINK:?}"
     # done
-    glab release create "${TAG:?}" ./build/pydtnn-* --ref "${CI_COMMIT_SHA:?}" --name "PyDTNN ${TAG:?}" # --assets-links="[${LINKS#,}]"
+    glab release create "${GIT_TAG:?}" ./build/pydtnn-* --ref "${CI_COMMIT_SHA:?}" --name "PyDTNN ${GIT_TAG:?}" # --assets-links="[${LINKS#,}]"
