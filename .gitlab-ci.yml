@@ -59,7 +59,7 @@ job_check:
   script:
   - TAG=v$(python -c "from importlib.metadata import version; print(version('pydtnn'))")
   - printf '%s\n' GIT_TAG=${TAG:?} PUBLIC_TAG=$(git tag | grep -xF ${TAG:?}) > ./build/env
-  - pytest -v -n auto --junitxml=./build/tests --pyargs pydtnn.tests.groups.all
+  - pytest -v -n 1 --dist loadscope --junitxml=./build/tests --pyargs pydtnn.tests.groups.all
 
   artifacts:
     when: always
