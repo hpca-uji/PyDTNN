@@ -72,8 +72,7 @@ class Conv2DConvGemmLongTestCase(Conv2DConvGemmTestCase):
         batch = self.R[comm.rank:: comm.size]
 
         for i, params in enumerate(batch):
-            with self.subTest(params=params):
-                self._test_forward_backward_multiple_params(*params)
+            self._test_forward_backward_multiple_params(*params)
 
             if comm.rank:
                 continue
@@ -116,4 +115,5 @@ class Conv2DConvGemmLongTestCase(Conv2DConvGemmTestCase):
 
         weights = self.W[: d.kn, : d.c, : d.kh, : d.kw].copy(order="C")
 
-        self._test_forward_backward(d, x, weights)
+        with self.subTest(d=d):
+            self._test_forward_backward(d, x, weights)
