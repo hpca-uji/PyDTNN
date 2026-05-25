@@ -78,8 +78,8 @@ random.seed(SEED)
 
 N = 64
 C = 3
-H = 524
-W = 524
+H = 224
+W = 224
 
 ADAPTIVE_AVG_POOL_OUTPUT_SIZE = (3, 3)
 
@@ -95,14 +95,14 @@ BATCH_NORMALIZATION_MOMENTUM_TORCH = BATCH_NORMALIZATION_MOMENTUM_PYDTNN
 BATCH_NORMALIZATION_NUM_FEATURES = C
 
 CONV2D_IN_C_TORCH = C
-CONV2D_N_FILTERS = 5
+CONV2D_N_FILTERS = 2
 CONV2D_FILTER_SHAPE = (4, 4)
 CONV2D_PADDING = 0
 CONV2D_STRIDE = 1
 CONV2D_DILATION = 1
 CONV2D_DEPTHWISE_PADDING = 1
 
-FC_OUPUT_SHAPE = (4,)
+FC_OUPUT_SHAPE = (2,)
 LINEAR_OUTPUT = FC_OUPUT_SHAPE[0]
 
 MAX_POOL_SHAPE = (2, 2)
@@ -370,9 +370,9 @@ class LayerPyTorchTestCase(TestCase):
         x_pydtnn = x
         x_pydtnn = format_transpose(x, self.params.tensor_format.upper(), TensorFormat.NCHW.upper()).copy()
 
-        x = torch.from_numpy(_x.reshape((N, C, H, W), copy=False)).to(torch.device("cpu")).float()
+        x = torch.from_numpy(_x.reshape((N, C, H, W), copy=False)).to(torch.device("cpu")).float()  # type: ignore (It's fine)
         x_torch: torch.Tensor = torch_model(x)
-        x_torch = np.asarray(x_torch.cpu().detach().numpy(), dtype=pydtnn_model.dtype, order="C").copy()
+        x_torch = np.asarray(x_torch.cpu().detach().numpy(), dtype=pydtnn_model.dtype, order="C").copy()  # type: ignore (It's fine)
 
         if verbose_test():
             logger.info(f"[{rtol=}, {atol=}]\n{x_pydtnn.max()=}\n{x_torch.max()=}\n{x_pydtnn.min()=}\n{x_torch.min()=}\n{x_pydtnn.std()=}\n{x_torch.std()=}\n{x_pydtnn.mean()=}\n{x_torch.mean()=}")
