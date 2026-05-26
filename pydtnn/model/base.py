@@ -101,7 +101,8 @@ class Base[T: Array]:
     test_as_validation: bool
     validation_split: float
     augment_shuffle: bool
-    augment_flip: float
+    augment_horizontal_flip: float
+    augment_vertical_flip: float
     augment_rotate: float
     augment_rotate_degree: float
     augment_brightness: float
