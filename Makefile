@@ -5,6 +5,8 @@
 .DEFAULT_GOAL := pydtnn-develop
 SHELL := $(shell which bash)
 PROCS := $(shell nproc)
+APT := $(shell apt-get)
+PIP := $(shell pip3)
 
 SRC := $(CURDIR)/vendor
 DST := $(CURDIR)/build
@@ -155,7 +157,7 @@ config:
 blis: blis-install
 
 blis-deps:
-	apt-get install -y make gcc
+	$(APT) install -y make gcc
 
 blis-src: $(BLIS_SRC)/.git
 $(BLIS_SRC)/.git:
@@ -201,8 +203,8 @@ blis-clean:
 tvm: tvm-install
 
 tvm-deps:
-	apt-get install -y python3 cmake gcc llvm-dev
-	pip install numpy psutil build
+	$(APT) install -y python3 cmake gcc llvm-dev
+	$(PIP) install numpy psutil build
 
 tvm-src: $(TVM_SRC)/.git
 $(TVM_SRC)/.git:
@@ -231,7 +233,7 @@ tvm-install: $(TVM_DST)/.build
 	@ \
 	$(call ld_add,$(TVM_DST)/lib); \
 	echo export LD_LIBRARY_PATH=$${LD_LIBRARY_PATH:?}
-	pip install "$(TVM_DST)"/*.whl
+	$(PIP) install "$(TVM_DST)"/*.whl
 
 tvm-clean:
 	cd "$(TVM_SRC)" && \
@@ -253,7 +255,7 @@ tvm-clean:
 convgemm: convgemm-install
 
 convgemm-deps: # blis-install
-	apt-get install -y cmake gcc
+	$(APT) install -y cmake gcc
 
 convgemm-src: $(CONVGEMM_SRC)/.git
 $(CONVGEMM_SRC)/.git:
@@ -300,7 +302,7 @@ convgemm-clean:
 convwinograd: convwinograd-install
 
 convwinograd-deps: # blis-install
-	apt-get install -y cmake gcc
+	$(APT) install -y cmake gcc
 
 convwinograd-src: $(CONVWINOGRAD_SRC)/.git
 $(CONVWINOGRAD_SRC)/.git:
@@ -348,7 +350,7 @@ convwinograd-clean:
 convdirect: convdirect-install
 
 convdirect-deps: # blis-install tvm-install convgemm-install
-	apt-get install -y cmake gcc
+	$(APT) install -y cmake gcc
 
 convdirect-src: $(CONVDIRECT_SRC)/.git
 $(CONVDIRECT_SRC)/.git:
@@ -395,7 +397,7 @@ convdirect-clean:
 openfhe: openfhe-install
 
 openfhe-deps:
-	apt-get install -y cmake gcc
+	$(APT) install -y cmake gcc
 
 openfhe-src: $(OPENFHE_SRC)/.git
 $(OPENFHE_SRC)/.git:
@@ -441,8 +443,8 @@ openfhe-clean:
 openfhe-python: openfhe-python-install
 
 openfhe-python-deps: # openfhe-install
-	apt-get install -y python3 cmake gcc
-	pip install pybind11[global]
+	$(APT) install -y python3 cmake gcc
+	$(PIP) install pybind11[global]
 
 openfhe-python-src: $(OPENFHE_PYTHON_SRC)/.git
 $(OPENFHE_PYTHON_SRC)/.git:
@@ -476,7 +478,7 @@ $(OPENFHE_PYTHON_DST)/.build: $(OPENFHE_PYTHON_SRC)/.git
 	touch "$(OPENFHE_PYTHON_DST)/.build"
 
 openfhe-python-install: $(OPENFHE_PYTHON_DST)/.build
-	pip install "$(OPENFHE_PYTHON_DST)"/*.whl
+	$(PIP) install "$(OPENFHE_PYTHON_DST)"/*.whl
 
 openfhe-python-clean:
 	cd "$(OPENFHE_PYTHON_SRC)" && \
@@ -498,8 +500,8 @@ openfhe-python-clean:
 uarchfhe: uarchfhe-install
 
 uarchfhe-deps:
-	apt-get install -y python3 libgmp-dev libntl-dev libbz2-dev
-	pip install build
+	$(APT) install -y python3 libgmp-dev libntl-dev libbz2-dev
+	$(PIP) install build
 
 uarchfhe-src: $(UARCHFHE_SRC)/.git
 $(UARCHFHE_SRC)/.git:
@@ -515,7 +517,7 @@ $(UARCHFHE_DST)/.build: $(UARCHFHE_SRC)/.git
 	touch "$(UARCHFHE_DST)/.build"
 
 uarchfhe-install: $(UARCHFHE_DST)/.build
-	pip install "$(UARCHFHE_DST)"/*.whl
+	$(PIP) install "$(UARCHFHE_DST)"/*.whl
 
 uarchfhe-clean:
 	cd "$(UARCHFHE_SRC)" && \
@@ -536,8 +538,8 @@ uarchfhe-clean:
 polyhe: polyhe-install
 
 polyhe-deps:
-	apt-get install -y python3
-	pip install build
+	$(APT) install -y python3
+	$(PIP) install build
 
 polyhe-src: $(POLYHE_SRC)/.git
 $(POLYHE_SRC)/.git:
@@ -553,7 +555,7 @@ $(POLYHE_DST)/.build: $(POLYHE_SRC)/.git
 	touch "$(POLYHE_DST)/.build"
 
 polyhe-install: $(POLYHE_DST)/.build
-	pip install "$(POLYHE_DST)"/*.whl
+	$(PIP) install "$(POLYHE_DST)"/*.whl
 
 polyhe-clean:
 	cd "$(POLYHE_SRC)" && \
@@ -574,8 +576,8 @@ polyhe-clean:
 pympi: pympi-install
 
 pympi-deps:
-	apt-get install -y python3
-	pip install build
+	$(APT) install -y python3
+	$(PIP) install build
 
 pympi-src: $(PYMPI_SRC)/.git
 $(PYMPI_SRC)/.git:
@@ -591,7 +593,7 @@ $(PYMPI_DST)/.build: $(PYMPI_SRC)/.git
 	touch "$(PYMPI_DST)/.build"
 
 pympi-install: $(PYMPI_DST)/.build
-	pip install "$(PYMPI_DST)"/*.whl
+	$(PIP) install "$(PYMPI_DST)"/*.whl
 
 pympi-clean:
 	cd "$(PYMPI_SRC)" && \
@@ -613,8 +615,8 @@ pympi-clean:
 pydtnn: pydtnn-install
 
 pydtnn-deps:
-	apt-get install -y python3 gcc patchelf
-	pip install build auditwheel
+	$(APT) install -y python3 gcc patchelf
+	$(PIP) install build auditwheel
 
 pydtnn-src: $(PYDTNN_SRC)/.git
 $(PYDTNN_SRC)/.git:
@@ -631,10 +633,10 @@ $(PYDTNN_DST)/.build: $(PYDTNN_SRC)/.git
 	touch "$(PYDTNN_DST)/.build"
 
 pydtnn-install: $(PYDTNN_DST)/.build
-	pip install "$(PYDTNN_DST)"/pydtnn-*.whl
+	$(PIP) install "$(PYDTNN_DST)"/pydtnn-*.whl
 
 pydtnn-develop:
-	pip install --config-settings editable_mode=compat -e "$(PYDTNN_SRC)"
+	$(PIP) install --config-settings editable_mode=compat -e "$(PYDTNN_SRC)"
 
 pydtnn-clean:
 	cd "$(PYDTNN_SRC)" && \

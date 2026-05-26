@@ -186,6 +186,20 @@
 - Fix NLP support
 - Add model tensor parallelism (previously implemented on a prototype)
 
+# Vendor
+Acquire the dependencies, build it and install it with:
+```sh
+eval $(make config)  # update environment
+make deps build install APT="sudo apt" PIP="pip"
+```
+
+For specific dependencies, prefix the target with their name, for example:
+```sh
+make blis-install
+```
+
+*Note*: `make deps` is intended for Debian-based distributions.
+
 # Publishing
 Dependencies: `gcc patchelf` and `build twine auditwheel`  
 

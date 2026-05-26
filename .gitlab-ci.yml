@@ -17,6 +17,11 @@ cache:
   paths:
   - .cache/pip
   when: always
+- key:
+    files:
+    - Makefile
+  paths:
+  - build
 
 job_build:
   stage: build
@@ -29,17 +34,15 @@ job_build:
 
   before_script:
   - apt-get update
-  - apt-get install -y gcc patchelf
-  - pip install build twine auditwheel
+  - make pydtnn-deps
   script:
-  - python -m build --outdir ./build/ --sdist
-  - python -m build --outdir ./build/wheel/ --wheel
-  - python -m auditwheel repair --wheel-dir ./build/ ./build/wheel/*.whl
+  - make pydtnn-clean
+  - make pydtnn-build
 
   artifacts:
     expire_in: 1d
     paths:
-    - ./build/pydtnn-*
+    - ./build/pydtnn/
 
 job_check:
   stage: check
@@ -55,7 +58,7 @@ job_check:
       artifacts: true
 
   before_script:
-  - WHEEL=$(echo ./build/*.whl) && pip install ${WHEEL:?}[test]
+  - WHEEL=$(echo ./build/pydtnn/*.whl) && pip install ${WHEEL:?}[test]
   script:
   - TAG=v$(python -c "from importlib.metadata import version; print(version('pydtnn'))")
   - printf '%s\n' GIT_TAG=${TAG:?} PUBLIC_TAG=$(git tag | grep -xF ${TAG:?}) > ./build/env
@@ -109,14 +112,6 @@ job_push:
 
   before_script:
   - glab auth login --hostname lorca.act.uji.es/gitlab --token "${CI_JOB_TOKEN:?}"
+  - glab release delete "${GIT_TAG:?}" --yes || true
   script:
-  - |
-    # LINKS=""
-    glab release delete "${GIT_TAG:?}" --yes || true
-    # for artifact in ./build/pydtnn-*; do
-    #   NAME=$(basename "${artifact:?}")
-    #   URL="https://lorca.act.uji.es/gitlab/${CI_PROJECT_PATH:?}/-/jobs/artifacts/${CI_COMMIT_SHA:?}/raw/build/${NAME:?}?job=job_build"
-    #   LINK="{\"name\":\"${NAME:?}\",\"url\":\"${URL:?}\"}"
-    #   LINKS="${LINKS:?},${LINK:?}"
-    # done
-    glab release create "${GIT_TAG:?}" ./build/pydtnn-* --ref "${CI_COMMIT_SHA:?}" --name "PyDTNN ${GIT_TAG:?}" # --assets-links="[${LINKS#,}]"
+  - glab release create "${GIT_TAG:?}" ./build/pydtnn/* --ref "${CI_COMMIT_SHA:?}" --name "PyDTNN ${GIT_TAG:?}"

@@ -120,9 +120,9 @@ cd PyDTNN
 pip install --config-settings editable_mode=compat -e .
 ```
 
-For more information on how to work on the project see `CONTRIBUTING.md`.
-
-For more information on how to manage external dependencies see `Makefile`.
+For more information on how to work on the project,
+and how to use its vendored dependencies,
+see `CONTRIBUTING.md`.
 
 ## Launcher options
 The PyDTNN framework comes with a utility launcher called
