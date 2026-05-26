@@ -473,7 +473,6 @@ Tracing options
   tracer-pmlib-port  : 6526
   tracer-pmlib-device: 
   profile            : False
-  traceback          : False
 
 Performance modeling options
   cpu-speed   : 4000000000000.0
@@ -744,7 +743,6 @@ Tracing options
   tracer-pmlib-port  : 6526
   tracer-pmlib-device: 
   profile            : False
-  traceback          : False
 
 Performance modeling options
   cpu-speed   : 4000000000000.0

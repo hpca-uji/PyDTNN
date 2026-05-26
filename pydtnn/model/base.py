@@ -174,7 +174,6 @@ class Base[T: Array]:
     tracer_pmlib_port: int
     tracer_pmlib_device: str
     profile: bool
-    traceback: bool
     cpu_speed: float
     memory_bw: float
     network_bw: float

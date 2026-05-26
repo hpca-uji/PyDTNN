@@ -360,7 +360,6 @@ class ArgumentParser(argparse.ArgumentParser):
         _tr_group.add_argument("--tracer-pmlib-port", type=int, default=6526, help="Port of PMlib tracer server. Default: 6526.")
         _tr_group.add_argument("--tracer-pmlib-device", type=str, default="", help="Port of PMlib tracer device.")
         _tr_group.add_argument("--profile", type=bool_lambda, default=False, help="Obtain cProfile profiles. Default: False.")
-        _tr_group.add_argument("--traceback", type=bool_lambda, default=False, help="Obtain Traceback profiles. Default: False.")
 
         # Performance modeling options
         _pm_group = self.add_argument_group("Performance modeling options")
