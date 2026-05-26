@@ -4,9 +4,9 @@
 
 .DEFAULT_GOAL := pydtnn-develop
 SHELL := $(shell which bash)
+APT := $(shell which apt-get)
+PIP := $(shell which pip3)
 PROCS := $(shell nproc)
-APT := $(shell apt-get)
-PIP := $(shell pip3)
 
 SRC := $(CURDIR)/vendor
 DST := $(CURDIR)/build
