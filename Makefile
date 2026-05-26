@@ -59,7 +59,7 @@ PYDTNN_DST := $(DST)/pydtnn
 # Global targets
 # ============================================================================
 
-.PHONY: all deps src build install clean config
+.PHONY: all deps src build install clean env
 
 all: install
 
@@ -132,7 +132,7 @@ define ld_add
 	[[ ":$${LD_LIBRARY_PATH}:" = *":$(1):"* ]] || LD_LIBRARY_PATH="$${LD_LIBRARY_PATH:+"$${LD_LIBRARY_PATH:?}:"}$(1)"
 endef
 
-config:
+env:
 	@ \
 	$(call ld_add,$(BLIS_DST)/lib); \
 	$(call ld_add,$(TVM_DST)/lib); \
@@ -140,7 +140,7 @@ config:
 	$(call ld_add,$(CONVWINOGRAD_DST)/lib); \
 	$(call ld_add,$(CONVDIRECT_DST)/lib); \
 	$(call ld_add,$(OPENFHE_DST)/lib); \
-	echo export LD_LIBRARY_PATH=$${LD_LIBRARY_PATH:?}
+	echo LD_LIBRARY_PATH=$${LD_LIBRARY_PATH:?}
 
 # ============================================================================
 # BLIS
@@ -179,9 +179,8 @@ $(BLIS_DST)/.build: $(BLIS_SRC)/.git
 	touch "$(BLIS_DST)/.build"
 
 blis-install: $(BLIS_DST)/.build
-	@ \
 	$(call ld_add,$(BLIS_DST)/lib); \
-	echo export LD_LIBRARY_PATH=$${LD_LIBRARY_PATH:?}
+	export LD_LIBRARY_PATH=$${LD_LIBRARY_PATH:?}
 
 blis-clean:
 	cd "$(BLIS_SRC)" && \
@@ -230,9 +229,8 @@ $(TVM_DST)/.build: $(TVM_SRC)/.git
 	touch "$(TVM_DST)/.build"
 
 tvm-install: $(TVM_DST)/.build
-	@ \
 	$(call ld_add,$(TVM_DST)/lib); \
-	echo export LD_LIBRARY_PATH=$${LD_LIBRARY_PATH:?}
+	export LD_LIBRARY_PATH=$${LD_LIBRARY_PATH:?}
 	$(PIP) install "$(TVM_DST)"/*.whl
 
 tvm-clean:
@@ -278,9 +276,8 @@ $(CONVGEMM_DST)/.build: $(CONVGEMM_SRC)/.git
 	touch "$(CONVGEMM_DST)/.build"
 
 convgemm-install: $(CONVGEMM_DST)/.build
-	@ \
 	$(call ld_add,$(CONVGEMM_DST)/lib); \
-	echo export LD_LIBRARY_PATH=$${LD_LIBRARY_PATH:?}
+	export LD_LIBRARY_PATH=$${LD_LIBRARY_PATH:?}
 
 convgemm-clean:
 	cd "$(CONVGEMM_SRC)" && \
@@ -326,9 +323,8 @@ $(CONVWINOGRAD_DST)/.build: $(CONVWINOGRAD_SRC)/.git
 	touch "$(CONVWINOGRAD_DST)/.build"
 
 convwinograd-install: $(CONVWINOGRAD_DST)/.build
-	@ \
 	$(call ld_add,$(CONVWINOGRAD_DST)/lib); \
-	echo export LD_LIBRARY_PATH=$${LD_LIBRARY_PATH:?}
+	export LD_LIBRARY_PATH=$${LD_LIBRARY_PATH:?}
 
 convwinograd-clean:
 	cd "$(CONVWINOGRAD_SRC)" && \
@@ -373,9 +369,8 @@ $(CONVDIRECT_DST)/.build: $(CONVDIRECT_SRC)/.git
 	touch "$(CONVDIRECT_DST)/.build"
 
 convdirect-install: $(CONVDIRECT_DST)/.build
-	@ \
 	$(call ld_add,$(CONVDIRECT_DST)/lib); \
-	echo export LD_LIBRARY_PATH=$${LD_LIBRARY_PATH:?}
+	export LD_LIBRARY_PATH=$${LD_LIBRARY_PATH:?}
 
 convdirect-clean:
 	cd "$(CONVDIRECT_SRC)" && \
@@ -419,9 +414,8 @@ $(OPENFHE_DST)/.build: $(OPENFHE_SRC)/.git
 	touch "$(OPENFHE_DST)/.build"
 
 openfhe-install: $(OPENFHE_DST)/.build
-	@ \
 	$(call ld_add,$(OPENFHE_DST)/lib); \
-	echo export LD_LIBRARY_PATH=$${LD_LIBRARY_PATH:?}
+	export LD_LIBRARY_PATH=$${LD_LIBRARY_PATH:?}
 
 openfhe-clean:
 	cd "$(OPENFHE_SRC)" && \

@@ -36,6 +36,7 @@ job_build:
 
   before_script:
   - apt-get update
+  - export $(make env | tee ./build/env | xargs)
   - make deps
   script:
   - make pydtnn-clean
@@ -43,6 +44,8 @@ job_build:
 
   artifacts:
     expire_in: 1d
+    reports:
+      dotenv: ./build/env
     paths:
     - ./build/pydtnn/
 
@@ -63,14 +66,14 @@ job_check:
   - WHEEL=$(echo ./build/pydtnn/*.whl) && pip install ${WHEEL:?}[test]
   script:
   - TAG=v$(python -c "from importlib.metadata import version; print(version('pydtnn'))")
-  - printf '%s\n' GIT_TAG=${TAG:?} PUBLIC_TAG=$(git tag | grep -xF ${TAG:?}) > ./build/env
+  - printf '%s\n' GIT_TAG=${TAG:?} PUBLIC_TAG=$(git tag | grep -xF ${TAG:?}) >> ./build/env
   - pytest -v -n 1 --dist loadscope --junitxml=./build/tests --pyargs pydtnn.tests.groups.all
 
   artifacts:
-    when: always
     reports:
       dotenv: ./build/env
       junit: ./build/tests
+    when: always
 
 # job_merge:
 #   stage: merge
