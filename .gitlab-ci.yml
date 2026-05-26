@@ -22,6 +22,7 @@ cache:
     - Makefile
   paths:
   - build
+  when: always
 
 job_build:
   stage: build
