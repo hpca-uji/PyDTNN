@@ -81,12 +81,12 @@ class Transform(Init):
         if self.model.augment_flip > 0:
             augments_training.append(self._x_augment_adaptor(self._do_augment_flip))
 
+        if self.model.augment_brightness > 0:
+            augments_training.append(self._x_augment_adaptor(self._do_augment_brightness))
+
         if self.model.augment_contrast > 0:
             augments_training.append(self._x_augment_adaptor(self._do_augment_contrast))
 
-        if self.model.augment_brightness > 0:
-            augments_training.append(self._x_augment_adaptor(self._do_augment_brightness))
-        
         if self.model.augment_saturation > 0:
             augments_training.append(self._x_augment_adaptor(self._do_augment_saturation))
 
@@ -527,10 +527,7 @@ class Transform(Init):
         # NOTE: C not included so all channels in a sample rotate by the same amount
         saturation: np.ndarray = random.random(N) * (1 + self.model.augment_saturation_range)
 
-        limit = min(N, int(N * self.model.augment_saturation))
-        s = np.arange(N)
-        random.shuffle(s)
-        s = s[:limit]
+        s = np.where(random.random(N) <= self.model.augment_saturation)[0]
 
         for n in s:
             for c in range(C):
