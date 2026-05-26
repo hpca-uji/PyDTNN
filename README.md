@@ -122,7 +122,7 @@ pip install --config-settings editable_mode=compat -e .
 
 For more information on how to work on the project see `CONTRIBUTING.md`.
 
-For more information on how to manage external dependencies see `vendor/README.md`.
+For more information on how to manage external dependencies see `Makefile`.
 
 ## Launcher options
 The PyDTNN framework comes with a utility launcher called
