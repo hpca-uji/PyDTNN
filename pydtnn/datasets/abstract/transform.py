@@ -197,16 +197,10 @@ class Transform(Init):
             case _:
                 raise NotImplementedError(f"Dataset _do_augment_flip is not implemented for {self.model.tensor_format} format.")
 
-        limit = min(n, int(n * self.model.augment_flip))
-
-        s = np.arange(n)
-        random.shuffle(s)
-        s = s[:limit]
+        s = np.where(random.random(n) <= self.model.augment_flip)[0]
         data[s, ...] = np.flip(data[s, ...], axis=height_dim)
 
-        s = np.arange(n)
-        random.shuffle(s)
-        s = s[:limit]
+        s = np.where(random.random(n) <= self.model.augment_flip)[0]
         data[s, ...] = np.flip(data[s, ...], axis=width_dim)
 
         return data
@@ -250,12 +244,11 @@ class Transform(Init):
         """
         n, c, h, w = self.model.decode_shape(data.shape)
         mask_size = min(self.model.augment_mask_size, h, w)
-        limit = min(n, int(n * self.model.augment_mask))
-        s = np.arange(n)
-        random.shuffle(s)
-        s = s[:limit]
-        t = random.integers(0, h - mask_size, (limit,))
-        ll = random.integers(0, w - mask_size, (limit,))
+
+        s = np.where(random.random(n) <= self.model.augment_mask)[0]
+
+        t = random.integers(0, h - mask_size, (len(s),))
+        ll = random.integers(0, w - mask_size, (len(s),))
         for i, ri in enumerate(s):
             b, r = t[i] + mask_size, ll[i] + mask_size
             match self.model.tensor_format:
@@ -292,10 +285,7 @@ class Transform(Init):
         # NOTE: C not included so all channels in a sample rotate by the same amount
         rotation = random.random(N) * self.model.augment_rotate_degree
 
-        limit = min(N, int(N * self.model.augment_rotate))
-        s = np.arange(N)
-        random.shuffle(s)
-        s = s[:limit]
+        s = np.where(random.random(N) <= self.model.augment_rotate)[0]
 
         for n in s:
             for c in range(C):
@@ -328,10 +318,7 @@ class Transform(Init):
         data = self.model.decode_tensor(data)
         N, C, H, W = data.shape
 
-        limit = min(N, int(N * self.model.augment_blur))
-        s = np.arange(N)
-        random.shuffle(s)
-        s = s[:limit]
+        s = np.where(random.random(N) <= self.model.augment_blur)[0]
 
         for n in s:
             data[n] = gaussian_filter(data[n], sigma=(0, self.model.augment_blur_size, self.model.augment_blur_size))
@@ -458,10 +445,7 @@ class Transform(Init):
         # NOTE: C not included so all channels in a sample rotate by the same amount
         brightness: np.ndarray = random.random(N, dtype=np.float32) * (1 + self.model.augment_brightness_range)
 
-        limit = min(N, int(N * self.model.augment_brightness))
-        s = np.arange(N)
-        random.shuffle(s)
-        s = s[:limit]
+        s = np.where(random.random(N) <= self.model.augment_brightness)[0]
 
         for n in s:
             for c in range(C):
@@ -503,10 +487,7 @@ class Transform(Init):
         # NOTE: C not included so all channels in a sample rotate by the same amount
         contrast: np.ndarray = random.random(N) * (1 + self.model.augment_contrast_range)
 
-        limit = min(N, int(N * self.model.augment_contrast))
-        s = np.arange(N)
-        random.shuffle(s)
-        s = s[:limit]
+        s = np.where(random.random(N) <= self.model.augment_contrast)[0]
 
         for n in s:
             for c in range(C):
