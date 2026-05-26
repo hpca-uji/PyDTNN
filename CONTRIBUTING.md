@@ -189,7 +189,7 @@
 # Vendor
 Acquire the dependencies, build it and install it with:
 ```sh
-export $(make env | xargs)  # update environment
+eval $(make config)  # update environment
 make deps build install APT="sudo apt" PIP="pip"
 ```
 
