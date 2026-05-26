@@ -194,7 +194,8 @@ The PyDTNN framework comes with a utility launcher called
     for training+validation data, use test data for validation. `True`
     if specified.
   - `--validation-split`: Split between training and validation data.
-  - `--augment-flip`: Probability to flip training images. If the value is less or equal to 0 it is disabled. Default: `0.0`.
+  - `--augment-horizontal-flip`: Probability to flip horizontally training images. If the value is less or equal to 0 it is disabled. Default: `0.0`.
+  - `--augment-vertical-flip`: Probability to flip vertically training images. If the value is less or equal to 0 it is disabled. Default: `0.0`.
   - `--augment-rotate`: Probability to rotate training images. If the value is less or equal to 0 it is disabled. Default: `0.0`.
   - `--augment-rotate-degree`: The maximum degree to rotate training images. Default: `90.0`.
   - `--augment-brightness`: Probability to change the brightnes to training images. If the value is less or equal to 0 it is disabled. Default: `0.0`.

@@ -78,8 +78,11 @@ class Transform(Init):
             augments_training.append(self._x_augment_adaptor(self._do_augment_resize))
             augments_always.append(self._x_augment_adaptor(self._do_augment_resize))
 
-        if self.model.augment_flip > 0:
-            augments_training.append(self._x_augment_adaptor(self._do_augment_flip))
+        if self.model.augment_horizontal_flip > 0:
+            augments_training.append(self._x_augment_adaptor(self._do_augment_horizontal_flip))
+        
+        if self.model.augment_vertical_flip > 0:
+            augments_training.append(self._x_augment_adaptor(self._do_augment_vertical_flip))
 
         if self.model.augment_brightness > 0:
             augments_training.append(self._x_augment_adaptor(self._do_augment_brightness))
@@ -169,13 +172,32 @@ class Transform(Init):
         np.add(data, self.model.normalize_offset, out=data)
         np.multiply(data, self.model.normalize_scale, out=data)
         return data
-
-    def _do_augment_flip(self, data: np.ndarray) -> np.ndarray:
+    
+    def _do_augment_flip(self, data: np.ndarray, augment_probability: float, axis: int) -> np.ndarray:
         """
         Apply random flip augmentation to images.
 
+        Args:
+            data: The input numpy array (batch of images).
+            augment_probability: The probability to do the flip
+            axis: The axis about which the flip is done.
+
+        Returns:
+            The array with some images potentially flipped.
+        """
+        n = data.shape[0]
+
+        s = np.where(random.random(n) <= augment_probability)[0]
+        data[s, ...] = np.flip(data[s, ...], axis=axis)
+
+        return data
+    
+    def _do_augment_horizontal_flip(self, data: np.ndarray) -> np.ndarray:
+        """
+        Apply random horizontal flip augmentation to images.
+
         Randomly flips a portion of the images based on the
-        `self.model.augment_flip` parameter.
+        `self.model.augment_horizontal_flip` parameter.
 
         Args:
             data: The input numpy array (batch of images).
@@ -186,24 +208,41 @@ class Transform(Init):
         Raises:
             NotImplementedError: If the `self.model.tensor_format` is not supported.
         """
-        n = data.shape[0]
+        match self.model.tensor_format:
+            case TensorFormat.NCHW:
+                width_dim = 3
+            case TensorFormat.NHWC:
+                width_dim = 2
+            case _:
+                raise NotImplementedError(f"Dataset _do_augment_horizontal_flip is not implemented for {self.model.tensor_format} format.")
+        
+        return self._do_augment_flip(data=data, augment_probability=self.model.augment_horizontal_flip, axis=width_dim)
+
+    def _do_augment_vertical_flip(self, data: np.ndarray) -> np.ndarray:
+        """
+        Apply random vertical flip augmentation to images.
+
+        Randomly flips a portion of the images based on the
+        `self.model.augment_vertical_flip` parameter.
+
+        Args:
+            data: The input numpy array (batch of images).
+
+        Returns:
+            The array with some images potentially flipped.
+
+        Raises:
+            NotImplementedError: If the `self.model.tensor_format` is not supported.
+        """
         match self.model.tensor_format:
             case TensorFormat.NCHW:
                 height_dim = 2
-                width_dim = 3
             case TensorFormat.NHWC:
                 height_dim = 1
-                width_dim = 2
             case _:
-                raise NotImplementedError(f"Dataset _do_augment_flip is not implemented for {self.model.tensor_format} format.")
+                raise NotImplementedError(f"Dataset _do_augment_vertical_flip is not implemented for {self.model.tensor_format} format.")
 
-        s = np.where(random.random(n) <= self.model.augment_flip)[0]
-        data[s, ...] = np.flip(data[s, ...], axis=height_dim)
-
-        s = np.where(random.random(n) <= self.model.augment_flip)[0]
-        data[s, ...] = np.flip(data[s, ...], axis=width_dim)
-
-        return data
+        return self._do_augment_flip(data=data, augment_probability=self.model.augment_vertical_flip, axis=height_dim)
 
     def _do_augment_shuffle(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """
