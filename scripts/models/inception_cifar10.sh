@@ -8,9 +8,9 @@ mpirun -np 2 \
   --model=googlenet_cifar10 \
   --dataset=cifar10 \
   --dataset-path=datasets/cifar10 \
-  --normalize=True \
-  --normalize-offset=-0.472 \
-  --normalize-scale=1 \
+  --augment-normalize=True \
+  --augment-normalize-offset=-0.472 \
+  --augment-normalize-scale=1 \
   --augment-flip=0.5 \
   --augment-mask=0.5 \
   --augment-mask-size=16 \

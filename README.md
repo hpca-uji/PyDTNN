@@ -198,24 +198,23 @@ The PyDTNN framework comes with a utility launcher called
   - `--augment-vertical-flip`: Probability to flip vertically training images. If the value is less or equal to 0 it is disabled. Default: `0.0`.
   - `--augment-rotate`: Probability to rotate training images. If the value is less or equal to 0 it is disabled. Default: `0.0`.
   - `--augment-rotate-degree`: The maximum degree to rotate training images. Default: `90.0`.
-  - `--augment-brightness`: Probability to change the brightnes to training images. If the value is less or equal to 0 it is disabled. Default: `0.0`.
-  - `--augment-brightness-range`: The maximum brightness to apply in training images. The range will be from `0` (no brightness at all) to `augment-brightness-range + 1`. Default: `0.0`.
+  - `--augment-brightness`: Probability to change the brightness to training images. If the value is less or equal to 0 it is disabled. Default: `0.0`.
+  - `--augment-brightness-factor`: The maximum brightness to apply in training images. Value ranges from 0 (no brightness), to 1 (same), up to infinity. Default: `0.0`.
   - `--augment-contrast`: Probability to change the contrast to training images. If the value is less or equal to 0 it is disabled. Default: `0.0`.
-  - `--augment-contrast-range`: The maximum contrast to apply in training images. The range will be from `0` (no contrast at all) to `augment-contrast-range + 1`. Default: `0.0`.
+  - `--augment-contrast-factor`: The maximum contrast to apply in training images. Value ranges from 0 (no brightness), to 1 (same), up to infinity. Default: `0.0`.
   - `--augment-saturation`: Probability to change the saturation to training images. If the value is less or equal to 0 it is disabled. Default: 0.0.
-  - `--augment-saturation-range`: The maximum saturation to apply in training images. The range will be from `0` (no saturation at all) to `augment-saturation-range + 1`. Default: 0.0
+  - `--augment-saturation-factor`: The maximum saturation to apply in training images. Value ranges from 0 (no brightness), to 1 (same), up to infinity. Default: 0.0
   - `--augment-mask`: Probability to mask training images. If the value is less or equal to 0 it is disabled. Default: `0.0`.
   - `--augment-mask-size`: Size to mask training images. Default: `16`.
   - `--augment-blur`: Probability to blur training images. If the value is less or equal to 0 it is disabled. Default: `0.0`.
   - `--augment-blur-size`: Size to blur training images. Default: `16`.
-  - `--validation-split`: Split between training and validation data.
-  - `--transform-crop`: Crop the images. `True` if specified.
-  - `--transform-crop-perc`: Central crop of the images. Default: `0.875`.
-  - `--transform-resize`: Resize the images. `True` if specified.
-  - `--transform-resize-size`: New size of the images. Default: `300`.
-  - `--normalize`: Normalize dataset. Default: `False`.
-  - `--normalize-offset`: Offset samples by a value. Default: `-0.45`.
-  - `--normalize-scale`: Scale samples by a value. Default: `3.75`.
+  - `--augment-crop`: Crop the images. `True` if specified.
+  - `--augment-crop-perc`: Central crop percentage of the images. Default: `0.875`.
+  - `--augment-scale`: Resize the images. `True` if specified.
+  - `--augment-scale-size`: New size of the images. Default: `300`.
+  - `--augment-normalize`: Normalize dataset. Default: `False`.
+  - `--augment-normalize-offset`: Offset samples by a value. Default: `-0.45`.
+  - `--augment-normalize-scale`: Scale samples by a value. Default: `3.75`.
 - Optimization parameters:
   - `--enable-best-of`: Enable the `BestOf` auto-tuner.
   - `--enable-memory-cache`: Enable the memory cache module to use

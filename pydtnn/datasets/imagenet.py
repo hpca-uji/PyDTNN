@@ -178,8 +178,8 @@ class ImageNet(Dataset):
 
     def _model_init(self):
         """Initialize dataset metadata and file paths."""
-        if not self.model.transform_resize:
-            raise ValueError("Model transform_resize must be enabled for dataset!")
+        if not self.model.augment_scale:
+            raise ValueError("Model augment_resize must be enabled for dataset!")
 
         meta = Path(self.model.dataset_path) / "ILSVRC2012_devkit_t12.tar.gz"
         train = Path(self.model.dataset_path) / "ILSVRC2012_img_train.tar"

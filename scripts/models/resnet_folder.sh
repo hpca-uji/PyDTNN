@@ -48,5 +48,5 @@ mpirun -np 4 "${MPI_ARGS[@]}" \
   --enable-cudnn=False \
   --enable-gpudirect=False \
   --dtype=float32 \
-  --transform-resize=True \
-  --transform-resize-size=300
+  --augment-scale=True \
+  --augment-scale-size=300

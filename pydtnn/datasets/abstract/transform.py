@@ -67,20 +67,20 @@ class Transform(Init):
         augments_training = list[TransformFunc]()
         augments_always = list[TransformFunc]()
 
-        if self.model.transform_crop:
+        if self.model.augment_crop:
             crop, size = self._calculate_crop(self.input_shape[1:])  # type: ignore (The cropped input shape will be a tuple[int, int])
             self.input_shape = (self.input_shape[0], *size)
             augments_training.append(self._x_augment_adaptor(self._do_augment_crop))
             augments_always.append(self._x_augment_adaptor(self._do_augment_crop))
 
-        if self.model.transform_resize:
-            self.input_shape = (self.input_shape[0], self.model.transform_resize_size, self.model.transform_resize_size)
-            augments_training.append(self._x_augment_adaptor(self._do_augment_resize))
-            augments_always.append(self._x_augment_adaptor(self._do_augment_resize))
+        if self.model.augment_scale:
+            self.input_shape = (self.input_shape[0], self.model.augment_scale_size, self.model.augment_scale_size)
+            augments_training.append(self._x_augment_adaptor(self._do_augment_scale))
+            augments_always.append(self._x_augment_adaptor(self._do_augment_scale))
 
         if self.model.augment_horizontal_flip > 0:
             augments_training.append(self._x_augment_adaptor(self._do_augment_horizontal_flip))
-        
+
         if self.model.augment_vertical_flip > 0:
             augments_training.append(self._x_augment_adaptor(self._do_augment_vertical_flip))
 
@@ -102,9 +102,9 @@ class Transform(Init):
         if self.model.augment_rotate > 0:
             augments_training.append(self._x_augment_adaptor(self._do_augment_rotate))
 
-        if self.model.normalize:
-            augments_training.append(self._x_augment_adaptor(self._do_normalize))
-            augments_always.append(self._x_augment_adaptor(self._do_normalize))
+        if self.model.augment_normalize:
+            augments_training.append(self._x_augment_adaptor(self._do_augment_normalize))
+            augments_always.append(self._x_augment_adaptor(self._do_augment_normalize))
 
         if self.model.augment_shuffle:
             augments_training.append(self._do_augment_shuffle)
@@ -156,12 +156,12 @@ class Transform(Init):
                 x, y = transformation(x, y)
             yield x, y
 
-    def _do_normalize(self, data: np.ndarray) -> np.ndarray:
+    def _do_augment_normalize(self, data: np.ndarray) -> np.ndarray:
         """
         Normalize data using model parameters.
 
-        Applies offset and scaling defined in `self.model.normalize_offset`
-        and `self.model.normalize_scale` to the input data.
+        Applies offset and scaling defined in `self.model.augment_normalize_offset`
+        and `self.model.augment_normalize_scale` to the input data.
 
         Args:
             data: The input numpy array to normalize.
@@ -169,8 +169,8 @@ class Transform(Init):
         Returns:
             The normalized numpy array.
         """
-        np.add(data, self.model.normalize_offset, out=data)
-        np.multiply(data, self.model.normalize_scale, out=data)
+        np.add(data, self.model.augment_normalize_offset, out=data)
+        np.multiply(data, self.model.augment_normalize_scale, out=data)
         return data
     
     def _do_augment_flip(self, data: np.ndarray, augment_probability: float, axis: int) -> np.ndarray:
@@ -322,7 +322,7 @@ class Transform(Init):
         data = self.model.decode_tensor(data)
         N, C, H, W = data.shape
         # NOTE: C not included so all channels in a sample rotate by the same amount
-        rotation = random.random(N) * self.model.augment_rotate_degree
+        rotation = (random.random(N) - 0.5) * (2 * self.model.augment_rotate_degree)
 
         s = np.where(random.random(N) <= self.model.augment_rotate)[0]
 
@@ -366,7 +366,7 @@ class Transform(Init):
 
         return data
 
-    def _do_augment_resize(self, data: np.ndarray) -> np.ndarray:
+    def _do_augment_scale(self, data: np.ndarray) -> np.ndarray:
         """
         Resize images using PIL.
 
@@ -381,7 +381,7 @@ class Transform(Init):
         """
         data = self.model.decode_tensor(data)
 
-        size = (self.model.transform_resize_size, self.model.transform_resize_size)
+        size = (self.model.augment_scale_size, self.model.augment_scale_size)
         shape = (*data.shape[:2], *size)
         N, C, H, W = shape
 
@@ -420,7 +420,7 @@ class Transform(Init):
                     after cropping.
         """
         width, height = size
-        frame_fraction = (1 - self.model.transform_crop_perc) / 2
+        frame_fraction = (1 - self.model.augment_crop_perc) / 2
         x_offset, y_offset = round(width * frame_fraction), round(height * frame_fraction)
         crop = (x_offset, y_offset, width - x_offset, height - y_offset)
         size = (crop[2] - crop[0], crop[3] - crop[1])
@@ -482,7 +482,7 @@ class Transform(Init):
         data = self.model.decode_tensor(data)
         N, C, H, W = data.shape
         # NOTE: C not included so all channels in a sample rotate by the same amount
-        brightness: np.ndarray = random.random(N, dtype=np.float32) * (1 + self.model.augment_brightness_range)
+        brightness: np.ndarray = random.random(N) * self.model.augment_brightness_factor
 
         s = np.where(random.random(N) <= self.model.augment_brightness)[0]
 
@@ -493,8 +493,8 @@ class Transform(Init):
                 channel = np.interp(channel, (0, 1), (0, 255))
                 channel = channel.transpose().astype(np.uint8)
                 image = Image.fromarray(channel, mode="L")
-                image = ImageEnhance.Brightness(image)
-                image = image.enhance(brightness[n].item())
+                enhancer = ImageEnhance.Brightness(image)
+                image = enhancer.enhance(brightness[n].item())
                 channel = np.asarray(image, dtype=np.uint8)
                 channel = channel.transpose().astype(self.model.dtype)
                 channel = np.interp(channel, (0, 255), (0, 1))
@@ -524,7 +524,7 @@ class Transform(Init):
         data = self.model.decode_tensor(data)
         N, C, H, W = data.shape
         # NOTE: C not included so all channels in a sample rotate by the same amount
-        contrast: np.ndarray = random.random(N) * (1 + self.model.augment_contrast_range)
+        contrast: np.ndarray = random.random(N) * self.model.augment_contrast_factor
 
         s = np.where(random.random(N) <= self.model.augment_contrast)[0]
 
@@ -534,8 +534,8 @@ class Transform(Init):
                 channel = np.interp(channel, (0, 1), (0, 255))
                 channel = channel.transpose().astype(np.uint8)
                 image = Image.fromarray(channel, mode="L")
-                image = ImageEnhance.Contrast(image)
-                image = image.enhance(contrast[n].item())
+                enhancer = ImageEnhance.Contrast(image)
+                image = enhancer.enhance(contrast[n].item())
                 channel = np.asarray(image, dtype=np.uint8)
                 channel = channel.transpose().astype(self.model.dtype)
                 channel = np.interp(channel, (0, 255), (0, 1))
@@ -564,7 +564,7 @@ class Transform(Init):
         data = self.model.decode_tensor(data)
         N, C, H, W = data.shape
         # NOTE: C not included so all channels in a sample rotate by the same amount
-        saturation: np.ndarray = random.random(N) * (1 + self.model.augment_saturation_range)
+        saturation: np.ndarray = random.random(N) * self.model.augment_saturation_factor
 
         s = np.where(random.random(N) <= self.model.augment_saturation)[0]
 
@@ -574,8 +574,8 @@ class Transform(Init):
                 channel = np.interp(channel, (0, 1), (0, 255))
                 channel = channel.transpose().astype(np.uint8)
                 image = Image.fromarray(channel, mode="L")
-                image = ImageEnhance.Color(image)
-                image = image.enhance(saturation[n].item())
+                enhancer = ImageEnhance.Color(image)
+                image = enhancer.enhance(saturation[n].item())
                 channel = np.asarray(image, dtype=np.uint8)
                 channel = channel.transpose().astype(self.model.dtype)
                 channel = np.interp(channel, (0, 255), (0, 1))

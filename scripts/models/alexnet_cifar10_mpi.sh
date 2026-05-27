@@ -33,9 +33,9 @@ mpirun -genv LD_PRELOAD $EXTRAELIB -iface ib0 -hosts $HOSTS -ppn $PROCS_PER_NODE
   --model=alexnet_cifar10 \
   --dataset=cifar10 \
   --dataset-path=datasets/cifar10 \
-  --normalize=True \
-  --normalize-offset=-0.472 \
-  --normalize-scale=1 \
+  --augment-normalize=True \
+  --augment-normalize-offset=-0.472 \
+  --augment-normalize-scale=1 \
   --test-as-validation=False \
   --batch-size=64 \
   --validation-split=0.2 \

@@ -106,22 +106,22 @@ class Base[T: Array]:
     augment_rotate: float
     augment_rotate_degree: float
     augment_brightness: float
-    augment_brightness_range: float
+    augment_brightness_factor: float
     augment_contrast: float
-    augment_contrast_range: float
+    augment_contrast_factor: float
     augment_saturation: float
-    augment_saturation_range: float
+    augment_saturation_factor: float
     augment_mask: float
     augment_mask_size: int
     augment_blur: float
     augment_blur_size: int
-    transform_crop: bool
-    transform_crop_perc: float
-    transform_resize: bool
-    transform_resize_size: int
-    normalize: bool
-    normalize_offset: float
-    normalize_scale: float
+    augment_crop: bool
+    augment_crop_perc: float
+    augment_scale: bool
+    augment_scale_size: int
+    augment_normalize: bool
+    augment_normalize_offset: float
+    augment_normalize_scale: float
     enable_fused_bn_relu: bool
     enable_fused_conv_relu: bool
     enable_fused_conv_bn: bool
