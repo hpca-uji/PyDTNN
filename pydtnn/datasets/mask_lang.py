@@ -197,7 +197,7 @@ class MaskLang(Dataset):
             yield x, y
 
     # === Preprocess ===
-    def preprocess(self, size: int | None=None) -> None:
+    def preprocess(self, size: int | None = None) -> None:
         """
         Pre-process text data into embeddings.
 

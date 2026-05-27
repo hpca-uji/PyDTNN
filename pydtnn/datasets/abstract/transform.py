@@ -661,15 +661,14 @@ class Transform(Init):
         w = np.asanyarray(w, dtype=np.int32)
         h = np.asanyarray(h, dtype=np.int32)
 
-        rescaled_base = np.asarray([(width * _min, height * _min),
-                                    (width * _max, height * _min),
-                                    (width * _min, height * _max),
-                                    (width * _max, height * _max)], np.int32)
+        rescaled_base = np.asarray([(width * _min, height * _min), (width * _max, height * _min), (width * _min, height * _max), (width * _max, height * _max)], np.int32)
         transformed_points = list(zip(w, h))
 
         coeffs = self._perspective_coeffs(transformed_points, rescaled_base)
-        transomed_img = image.transform((width, height),
-                                        Image.Transform.PERSPECTIVE,
-                                        coeffs,  # type: ignore (It's the right type)
-                                        Image.Resampling.BICUBIC)
+        transomed_img = image.transform(
+            (width, height),
+            Image.Transform.PERSPECTIVE,
+            coeffs,  # type: ignore (It's the right type)
+            Image.Resampling.BICUBIC,
+        )
         return transomed_img

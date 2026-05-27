@@ -56,7 +56,7 @@ class Tsunamis(Dataset):
         """
         super().__init__(model, TRAIN_NSAMPLES, TEST_NSAMPLES, INPUT_SHAPE, OUTPUT_SHAPE, force_test_as_validation=force_test_as_validation, debug=debug)
 
-    def _model_init(self)-> None:
+    def _model_init(self) -> None:
         """
         Initialize file paths and metadata for the tsunami dataset.
         """

@@ -3,8 +3,8 @@ Common methods and properties for various unitary tests
 """
 
 import gc
-import sys
 import logging
+import sys
 import unittest
 import warnings
 
