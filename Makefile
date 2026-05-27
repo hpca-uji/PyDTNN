@@ -604,6 +604,7 @@ pympi-clean:
 	pydtnn-build \
 	pydtnn-install \
 	pydtnn-develop \
+	pydtnn-test \
 	pydtnn-clean
 
 pydtnn: pydtnn-install
@@ -630,7 +631,16 @@ pydtnn-install: $(PYDTNN_DST)/.build
 	$(PIP) install "$(PYDTNN_DST)"/pydtnn-*.whl
 
 pydtnn-develop:
-	$(PIP) install --config-settings editable_mode=compat -e "$(PYDTNN_SRC)"
+	$(PIP) install \
+		--config-settings editable_mode=compat \
+		-e "$(PYDTNN_SRC)"
+
+pydtnn-test:
+	pytest -v -n "$(PROCS)" \
+		--dist loadscope \
+		--junitxml="$(PYDTNN_SRC)/build/tests" \
+		--cov --cov-report term --cov-report xml:"$(PYDTNN_SRC)/build/coverage" \
+		--pyargs pydtnn.tests.groups.all
 
 pydtnn-clean:
 	cd "$(PYDTNN_SRC)" && \

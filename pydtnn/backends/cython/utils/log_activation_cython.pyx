@@ -12,9 +12,6 @@ __all__ = (
 )
 
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.initializedcheck(False)
 def log_fwd_cython(npDT[::1] x, npDT[::1] y) -> None:
     cdef int i
     # return np.log(1 / (1 + np.exp(-x)))
@@ -26,9 +23,6 @@ def log_fwd_cython(npDT[::1] x, npDT[::1] y) -> None:
         y[i] = <npDT> ((-1.0) * log( 1.0 + exp(-1.0*x[i])))
         #x[i] = <npDT> ((-1.0) * log( 1.0 + exp(-1.0*x[i])))
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.initializedcheck(False)
 def log_bwd_cython(npDT[::1] dy, npDT[::1] dx) -> None:
     cdef int i
     # return 1 / (np.exp(dy) + 1)

@@ -11,9 +11,6 @@ __all__ = (
 )
 
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.initializedcheck(False)
 def sigmoid_fwd_cython(npDT[::1] x, npDT[::1] y) -> None:
     cdef int i
     
@@ -21,9 +18,6 @@ def sigmoid_fwd_cython(npDT[::1] x, npDT[::1] y) -> None:
     for i in prange(x.shape[0], nogil=True):
         y[i] = <npDT> (1 / ( 1 + exp(-1*x[i])))
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.initializedcheck(False)
 def sigmoid_bwd_cython(npDT[::1] dy, npDT[::1] y, npDT[::1] dx) -> None:
     cdef int i
     

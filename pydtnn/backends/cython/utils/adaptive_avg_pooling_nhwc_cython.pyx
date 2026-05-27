@@ -7,22 +7,15 @@ __all__ = (
     "adaptive_avg_pooling_bwd_nhwc_cython"
 )
 
-@cython.cdivision(True)
 cdef inline int index_first_element(int index, int dim_in, int dim_out) nogil:
     return ((index * dim_in) / dim_out)
 
-@cython.cdivision(True)
 cdef inline int index_last_element(int index, int dim_in, int dim_out) nogil:
     return ((((index + 1) * dim_in) + dim_out - 1) / dim_out)
 
 
 
 # --- FORWARD ---
-
-@cython.cdivision(True)
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.initializedcheck(False)
 def adaptive_avg_pooling_fwd_nhwc_cython(npDT[:,:,:,::1] x, 
                                          npDT[:,:,:,::1] pooled_x) -> None:
     cdef int n = x.shape[0]
@@ -62,10 +55,6 @@ def adaptive_avg_pooling_fwd_nhwc_cython(npDT[:,:,:,::1] x,
 
 # --- BACKWARD ---
 
-@cython.cdivision(True)
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.initializedcheck(False)
 def adaptive_avg_pooling_bwd_nhwc_cython(npDT[:,:,:,::1] dy, 
                                          npDT[:,:,:,::1] dx) -> None:
     cdef int n = dy.shape[0]

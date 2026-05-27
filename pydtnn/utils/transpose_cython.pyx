@@ -10,9 +10,6 @@ ctypedef fused npDT:
     np.float32_t
     np.float64_t
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.initializedcheck(False)
 def transpose_0231_ikj_cython(np.ndarray[npDT, ndim=4] original,
                               np.ndarray[npDT, ndim=4] transposed) -> None:
     """
@@ -28,9 +25,6 @@ def transpose_0231_ikj_cython(np.ndarray[npDT, ndim=4] original,
             for d1 in range(orig3d.shape[1]):
                 trans3d[d0, d2, d1] = orig3d[d0, d1, d2]
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.initializedcheck(False)
 def transpose_0231_ijk_cython(np.ndarray[npDT, ndim=4] original,
                               np.ndarray[npDT, ndim=4] transposed) -> None:
     """
@@ -46,9 +40,6 @@ def transpose_0231_ijk_cython(np.ndarray[npDT, ndim=4] original,
             for d2 in range(orig3d.shape[2]):
                 trans3d[d0, d2, d1] = orig3d[d0, d1, d2]
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.initializedcheck(False)
 def transpose_0312_ikj_cython(np.ndarray[npDT, ndim=4] original,
                               np.ndarray[npDT, ndim=4] transposed) -> None:
     """
@@ -64,9 +55,6 @@ def transpose_0312_ikj_cython(np.ndarray[npDT, ndim=4] original,
             for d1 in range(orig3d.shape[1]):
                 trans3d[d0, d2, d1] = orig3d[d0, d1, d2]
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.initializedcheck(False)
 def transpose_0312_ijk_cython(np.ndarray[npDT, ndim=4] original,
                               np.ndarray[npDT, ndim=4] transposed) -> None:
     """
@@ -82,9 +70,6 @@ def transpose_0312_ijk_cython(np.ndarray[npDT, ndim=4] original,
             for d2 in range(orig3d.shape[2]):
                 trans3d[d0, d2, d1] = orig3d[d0, d1, d2]
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.initializedcheck(False)
 def transpose_1023_jik_cython(np.ndarray[npDT, ndim=4] original,
                               np.ndarray[npDT, ndim=4] transposed) -> None:
     """
@@ -100,9 +85,6 @@ def transpose_1023_jik_cython(np.ndarray[npDT, ndim=4] original,
             for d2 in range(orig3d.shape[2]):
                 trans3d[d1, d0, d2] = orig3d[d0, d1, d2]
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.initializedcheck(False)
 def transpose_1023_ijk_cython(np.ndarray[npDT, ndim=4] original,
                               np.ndarray[npDT, ndim=4] transposed) -> None:
     """

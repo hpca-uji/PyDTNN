@@ -8,6 +8,7 @@ __pycache__/
 *.log
 *.whl
 *.egg-info
+.coverage*
 
 /vendor/*/
 /datasets/*/

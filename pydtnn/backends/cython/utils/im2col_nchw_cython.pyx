@@ -15,9 +15,6 @@ __all__ = (
 # NOTE:
 # This code has been inspired from cthorey, see:
 #    https://github.com/cthorey/CS231/blob/master/assignment2/cs231n/im2col_cython.pyx
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.initializedcheck(False)
 def im2col_nchw_cython(npDT[:,:,:,::1] x,
                        npDT[:,::1] cols,
                        int kh, int kw, int ho, int wo,
@@ -48,9 +45,6 @@ def im2col_nchw_cython(npDT[:,:,:,::1] x,
 
 
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.initializedcheck(False)
 def col2im_nchw_cython(npDT[:,::1] cols,
                        npDT[:,:,:,::1] dx,
                        int n, int c, int h, int w,
@@ -75,9 +69,6 @@ def col2im_nchw_cython(npDT[:,::1] cols,
                                     col = (nn * ho + xx) * wo + yy
                                     dx[nn, cc, x_x, x_y] += cols[row, col]
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.initializedcheck(False)
 def alt_col2im_nchw_cython(npDT[:,::1] cols,
                            npDT[:,:,:,::1] dx,
                            int n, int c, int h, int w,
@@ -112,9 +103,6 @@ def alt_col2im_nchw_cython(npDT[:,::1] cols,
 
 
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.initializedcheck(False)
 cdef im2col_nchw_3x3_cython_inner(npDT[:,::1] cols,
                                   npDT[:,:,:,::1] x,
                                   int n, int c, int h, int w, int ho, int wo,

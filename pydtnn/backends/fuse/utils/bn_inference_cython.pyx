@@ -19,9 +19,6 @@ ctypedef fused npDT:
     # NOTE: in order to extend the supported data types, add the new types here.
 
 # --- Base Batch Normalization ---
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.initializedcheck(False)
 def bn_inference_cython(npDT[:, ::1] x,
                              npDT[:, ::1] y,
                              npDT[::1] running_mean,
@@ -38,9 +35,6 @@ def bn_inference_cython(npDT[:, ::1] x,
 
 
 # --- NCHW Batch Normalization ---
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.initializedcheck(False)
 def bn_inference_nchw_cython(npDT[:, ::1] x,
                              npDT[:, ::1] y,
                              npDT[::1] running_mean,
@@ -60,9 +54,6 @@ def bn_inference_nchw_cython(npDT[:, ::1] x,
 
 
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.initializedcheck(False)
 def bn_relu_inference_cython(npDT[:, ::1] x,
                              npDT[:, ::1] y,
                              npDT[::1] running_mean,

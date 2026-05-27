@@ -13,9 +13,6 @@ __all__ = (
 )
 
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.initializedcheck(False)
 def max_pool_2d_fwd_nhwc_cython(npDT[:,:,:,::1] x,
                                 npDT[:,:,:,::1] y,
                                 np.int32_t[:,:,:,::1] idx_max,
@@ -55,9 +52,6 @@ def max_pool_2d_fwd_nhwc_cython(npDT[:,:,:,::1] x,
 
 
 # --- Backward ---
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.initializedcheck(False)
 def max_pool_2d_bwd_nhwc_cython(npDT[:,:,:,::1] dy,
                                 np.int32_t[:,:,:,::1] idx_max,
                                 npDT[:,:,:,::1] dx,

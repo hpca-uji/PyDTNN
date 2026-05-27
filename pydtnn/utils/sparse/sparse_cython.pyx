@@ -4,8 +4,6 @@ cimport numpy as np
 from cython.parallel cimport prange
 
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
 def summ_coo_cython(np.ndarray [np.float32_t, ndim=1] self_data,
                     np.ndarray [np.int32_t, ndim=1] self_rows,
                     np.ndarray [np.int32_t, ndim=1] self_cols,
@@ -80,8 +78,6 @@ def summ_coo_cython(np.ndarray [np.float32_t, ndim=1] self_data,
     
 
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
 def top_threshold_selection_dense_cython(np.ndarray[np.float32_t, ndim=2] matrix, 
                                          float threshold):
     
@@ -114,8 +110,6 @@ def top_threshold_selection_dense_cython(np.ndarray[np.float32_t, ndim=2] matrix
     return top_values, row_indices, col_indices
 
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
 def top_threshold_selection_coo_cython(np.ndarray[np.float32_t, ndim=1] values, 
                                        np.ndarray[np.int32_t, ndim=1] rows, 
                                        np.ndarray[np.int32_t, ndim=1] cols, 

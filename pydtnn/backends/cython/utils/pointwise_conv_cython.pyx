@@ -7,9 +7,6 @@ __all__ = (
 )
 
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.initializedcheck(False)
 def pointwise_conv_cython(npDT[:,:,:,::1] x, npDT[:,::1] k, npDT[:,:,:,::1] out) -> None:
 
     cdef int n = x.shape[0]

@@ -9,9 +9,6 @@ __all__ = (
 
 
 # --- FORWARD ---
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.initializedcheck(False)
 def depthwise_conv_nchw_cython(npDT[:,:,:,::1] x,
                                npDT[:,:,::1] k,
                                npDT[:,:,:,::1] res,
@@ -42,9 +39,6 @@ def depthwise_conv_nchw_cython(npDT[:,:,:,::1] x,
                                     res[nn, cc, xx, yy] += k[cc, ii, jj] * x[nn, cc, x_x, x_y]
 
 # ----- BACKWARD ----
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.initializedcheck(False)
 def depthwise_conv_backward_nchw_cython(npDT[:,:,:,::1] dy,
                                         npDT[:,:,:,::1] x,
                                         npDT[:,:,::1] k,

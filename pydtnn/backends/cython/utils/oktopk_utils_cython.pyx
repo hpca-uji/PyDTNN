@@ -16,9 +16,6 @@ __all__ = (
 )
 
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.initializedcheck(False)
 def compute_dense_acc_cython(npDT[:,::1] residuals,
                              npDT[:,::1] dw,
                              npDT[:,::1] acc,
@@ -32,9 +29,6 @@ def compute_dense_acc_cython(npDT[:,::1] residuals,
             acc[i, j] = residuals[i, j] + (<npDT> (learning_rate * dw[i, j]))
 
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.initializedcheck(False)
 def intersect_2d_indexes_cython(np.int32_t[::1] local_rows,
                                 np.int32_t[::1] local_cols,
                                 np.int32_t[::1] global_rows,
@@ -69,9 +63,6 @@ def intersect_2d_indexes_cython(np.int32_t[::1] local_rows,
     return intersected_rows[:count], intersected_cols[:count]
 
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.initializedcheck(False)
 def reset_residuals_cython(npDT[:,::1] acc,
                            np.int32_t[::1] rows,
                            np.int32_t[::1] cols):
@@ -81,9 +72,6 @@ def reset_residuals_cython(npDT[:,::1] acc,
         acc[rows[i], cols[i]] = 0
 
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.initializedcheck(False)
 def update_dense_weights_cython(npDT[:,::1] w,
                                 npDT[:,::1] u):
 
@@ -96,9 +84,6 @@ def update_dense_weights_cython(npDT[:,::1] w,
             w[i, j] -= u[i, j]
 
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.initializedcheck(False)
 def update_sparsed_weights_cython(npDT[:,::1] w,
                                   npDT[::1] grads_to_update,
                                   np.int32_t[::1] rows_to_update,
@@ -114,9 +99,6 @@ def update_sparsed_weights_cython(npDT[:,::1] w,
         w[wi, wj] -= grads_to_update[i]
 
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.initializedcheck(False)
 def update_sparsed_weights_mv_cython(npDT[:,::1] w,
                                      npDT[::1] grads_to_update,
                                      np.int32_t[::1] rows_to_update,
