@@ -245,6 +245,8 @@ class ArgumentParser(argparse.ArgumentParser):
         _ds_group.add_argument("--augment-crop-perc", type=factor, default=0.875, help="Central crop percentage of the images. Default: 0.875.")
         _ds_group.add_argument("--augment-scale", default=False, type=bool_lambda, help="Resize the images. True if specified.")
         _ds_group.add_argument("--augment-scale-size", type=int, default=300, help="New size of the images. Default: 300.")
+        _ds_group.add_argument("--augment-perspective", type=factor, default=0.5, help="Probability to change the perspective in training images. If the value is less or equal to 0 it is disabled. Default: 0.0.")
+        _ds_group.add_argument("--augment-perspective-factor", type=float, default=0.25, help="The perspective distorsion factor. The ranges are from 0.0 to 0.5. Default: 0.25.")
         _ds_group.add_argument("--augment-normalize", default=False, type=bool_lambda, help="Normalize dataset. Default: False.")
         _ds_group.add_argument("--augment-normalize-offset", type=float, default=-0.45, help="Offset samples by a value. Default: -0.45.")
         _ds_group.add_argument("--augment-normalize-scale", type=float, default=3.75, help="Scale samples by a value. Default: 3.75.")

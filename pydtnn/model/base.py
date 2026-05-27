@@ -119,6 +119,8 @@ class Base[T: Array]:
     augment_crop_perc: float
     augment_scale: bool
     augment_scale_size: int
+    augment_perspective: float
+    augment_perspective_factor: float
     augment_normalize: bool
     augment_normalize_offset: float
     augment_normalize_scale: float

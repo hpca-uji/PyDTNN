@@ -102,6 +102,9 @@ class Transform(Init):
         if self.model.augment_rotate > 0:
             augments_training.append(self._x_augment_adaptor(self._do_augment_rotate))
 
+        if self.model.augment_perspective > 0:
+            augments_training.append(self._x_augment_adaptor(self._do_augment_perspective))
+
         if self.model.augment_normalize:
             augments_training.append(self._x_augment_adaptor(self._do_augment_normalize))
             augments_always.append(self._x_augment_adaptor(self._do_augment_normalize))
@@ -584,3 +587,90 @@ class Transform(Init):
         data = self.model.encode_tensor(data)
 
         return data
+    
+    def _do_augment_perspective(self, data: np.ndarray) -> np.ndarray:
+        
+        N, C, H, W = data.shape
+        # NOTE: C not included so all channels in a sample rotate by the same amount
+        persepctive: np.ndarray = random.random(N) * self.model.augment_perspective_factor
+
+        s = np.where(random.random(N) <= self.model.augment_perspective)[0]
+
+        for n in s:
+            for c in range(C):
+                channel: np.ndarray = data[n, c]
+                channel = np.interp(channel, (0, 1), (0, 255))
+                channel = channel.transpose().astype(np.uint8)
+                image = Image.fromarray(channel, mode="L")
+                image = self.__change_perspective(image, persepctive[n].item())
+                channel = np.asarray(image, dtype=np.uint8)
+                channel = channel.transpose().astype(self.model.dtype)
+                channel = np.interp(channel, (0, 255), (0, 1))
+                data[n, c] = channel
+
+        data = self.model.encode_tensor(data)
+
+        return data
+
+    def __change_perspective(self, image: Image.Image, factor: float) -> Image.Image:
+        def find_coeffs(points_a: np.ndarray | list, points_b: np.ndarray | list) -> np.ndarray[tuple[int]]:
+            # Source:
+            # A) https://stackoverflow.com/questions/14177744/how-does-perspective-transformation-work-in-pil
+            # B) https://web.archive.org/web/20150222120106/xenia.media.mit.edu/~cwren/interpolator/
+            matrix = []
+            for p1, p2 in zip(points_a, points_b):
+                    matrix.append([p1[0], p1[1], 1, 0, 0, 0, -p2[0]*p1[0], -p2[0]*p1[1]])
+                    matrix.append([0, 0, 0, p1[0], p1[1], 1, -p2[1]*p1[0], -p2[1]*p1[1]])
+
+            matrix_a = np.matrix(matrix, dtype=np.float32)
+            matrix_b = np.array(points_b).reshape(8)
+
+            res = np.dot(np.linalg.inv(matrix_a.T * matrix_a) * matrix_a.T, matrix_b)
+            return np.array(res).reshape(8)
+
+        #NOTE:
+        # top_left     = [0, 0]
+        # top_right    = [width, 0]
+        # bottom_left  = [0, height]
+        # bottom_right = [width, height]
+        width, height = image.size
+
+        top_left     = (random.uniform(0, factor), random.uniform(0, factor))
+        top_right    = (1 - random.uniform(0, factor), random.uniform(0, factor))
+        bottom_left  = (random.uniform(0, factor), 1 - random.uniform(0, factor))
+        bottom_right = (1 - random.uniform(0, factor), 1 - random.uniform(0, factor))
+
+        transformed_points = list(zip(*[top_left, top_right, bottom_left, bottom_right]))
+        w = transformed_points[0]
+        h = transformed_points[1]
+
+        mw = max(w) - min(w)
+        mh = max(h) - min(h)
+
+        if mw < mh:
+            _min = min(h)
+            _max = max(h)
+        else:
+            _min = min(w)
+            _max = max(w)
+
+        w = np.interp(w, (_min, _max), (0, 1))
+        h = np.interp(h, (_min, _max), (0, 1))
+        np.multiply(w, width, out=w)
+        np.multiply(h, height, out=h)
+        w = np.asanyarray(w, dtype=np.int32)
+        h = np.asanyarray(h, dtype=np.int32)
+
+        rescaled_base = np.asarray([(width * _min, height * _min),
+                                    (width * _max, height * _min),
+                                    (width * _min, height * _max),
+                                    (width * _max, height * _max)], np.int32)
+        transformed_points = list(zip(w, h))
+
+        coeffs = find_coeffs(transformed_points, rescaled_base)
+        transomed_img = image.transform((width, height),
+                                        Image.Transform.PERSPECTIVE,
+                                        coeffs,  # type: ignore (It's the right type)
+                                        Image.Resampling.BICUBIC)
+        return transomed_img
+

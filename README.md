@@ -203,7 +203,7 @@ The PyDTNN framework comes with a utility launcher called
   - `--augment-contrast`: Probability to change the contrast to training images. If the value is less or equal to 0 it is disabled. Default: `0.0`.
   - `--augment-contrast-factor`: The maximum contrast to apply in training images. Value ranges from 0 (no brightness), to 1 (same), up to infinity. Default: `0.0`.
   - `--augment-saturation`: Probability to change the saturation to training images. If the value is less or equal to 0 it is disabled. Default: 0.0.
-  - `--augment-saturation-factor`: The maximum saturation to apply in training images. Value ranges from 0 (no brightness), to 1 (same), up to infinity. Default: 0.0
+  - `--augment-saturation-factor`: The maximum saturation to apply in training images. Value ranges from 0 (no brightness), to 1 (same), up to infinity. Default: `0.0`.
   - `--augment-mask`: Probability to mask training images. If the value is less or equal to 0 it is disabled. Default: `0.0`.
   - `--augment-mask-size`: Size to mask training images. Default: `16`.
   - `--augment-blur`: Probability to blur training images. If the value is less or equal to 0 it is disabled. Default: `0.0`.
@@ -212,6 +212,8 @@ The PyDTNN framework comes with a utility launcher called
   - `--augment-crop-perc`: Central crop percentage of the images. Default: `0.875`.
   - `--augment-scale`: Resize the images. `True` if specified.
   - `--augment-scale-size`: New size of the images. Default: `300`.
+  - `--augment-perspective`: Probability to change the perspective in training images. If the value is less or equal to 0 it is disabled. Default: `0.0`.
+  - `--augment-perspective-factor`: The perspective distorsion factor. The ranges are from 0.0 to 0.5. Default: `0.25`.
   - `--augment-normalize`: Normalize dataset. Default: `False`.
   - `--augment-normalize-offset`: Offset samples by a value. Default: `-0.45`.
   - `--augment-normalize-scale`: Scale samples by a value. Default: `3.75`.
