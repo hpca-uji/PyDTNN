@@ -201,8 +201,9 @@ blis-clean:
 
 tvm: tvm-install
 
+# libdlpack-dev
 tvm-deps:
-	$(APT) install -y python3 cmake gcc llvm-dev libdlpack-dev
+	$(APT) install -y python3 cmake gcc llvm-dev
 	$(PIP) install numpy psutil build
 
 tvm-src: $(TVM_SRC)/.git
