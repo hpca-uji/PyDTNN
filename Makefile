@@ -639,7 +639,7 @@ pydtnn-test:
 	pytest -v -n "$(PROCS)" \
 		--dist loadscope \
 		--junitxml="$(PYDTNN_SRC)/build/tests" \
-		--cov --cov-report term --cov-report xml:"$(PYDTNN_SRC)/build/coverage" \
+		--cov=pydtnn --cov-report=term --cov-report=xml:"$(PYDTNN_SRC)/build/coverage" \
 		--pyargs pydtnn.tests.groups.all
 
 pydtnn-clean:
