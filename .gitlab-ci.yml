@@ -22,7 +22,7 @@ cache:
     - Makefile
   paths:
   - build
-  - vendor
+  # - vendor
   - /var/cache/apt/archives
   when: always
 
