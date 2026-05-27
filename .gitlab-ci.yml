@@ -36,10 +36,8 @@ job_make:
   - make clean
   - export $(make env | xargs)
   - make deps
-  - python --version
-  - python3 --version
   script:
-  - make build
+  - make build PROCS=1
   - WHEEL=$(echo ./build/pydtnn/*.whl)
   - pip install ${WHEEL:?}[test]
   - TAG=v$(python -c "from importlib.metadata import version; print(version('pydtnn'))")
