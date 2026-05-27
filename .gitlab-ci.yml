@@ -1,68 +1,48 @@
 stages:
-- build
-- check
+- make
 - merge
 - push
 
 variables:
   BRANCH_MAIN: main
   BRANCH_WORK: develop
-  PIP_DISABLE_PIP_VERSION_CHECK: "1"
-  PIP_CACHE_DIR: "$CI_PROJECT_DIR/build/pip"
-  CYTHON_CACHE_DIR: "$CI_PROJECT_DIR/build/cython"
 
-cache:
-- key:
-    files:
-    - Makefile
-    - pyproject.toml
-  paths:
-  - build
-  - /var/cache/apt/archives
-  when: always
+job_make:
+  stage: make
 
-job_build:
-  stage: build
+  variables:
+    PYTHON_VERSION: latest
+    PIP_DISABLE_PIP_VERSION_CHECK: "1"
+    PIP_CACHE_DIR: "$CI_PROJECT_DIR/build/pip"
+    CYTHON_CACHE_DIR: "$CI_PROJECT_DIR/build/cython"
 
   rules:
   - if: '$CI_COMMIT_BRANCH == $BRANCH_WORK'
 
   tags: [ lorca-ubuntu ]
-  image: python:latest
+  image: python:$PYTHON_VERSION
+
+  cache:
+  - key:
+      files:
+      - Makefile
+      - pyproject.toml
+    paths:
+    - build
+    - /var/cache/apt/archives
+    when: always
 
   before_script:
   - apt-get update
-  - export $(make env | tee ./build/env | xargs)
-  - make pydtnn-clean
+  - make clean
+  - export (make env | xargs)
   - make deps
   script:
   - make build
-
-  artifacts:
-    expire_in: 1d
-    reports:
-      dotenv: ./build/env
-    paths:
-    - ./build/pydtnn/
-
-job_check:
-  stage: check
-
-  rules:
-  - if: '$CI_COMMIT_BRANCH == $BRANCH_WORK'
-
-  tags: [ lorca-ubuntu ]
-  image: python:latest
-
-  needs:
-    - job: job_build
-      artifacts: true
-
-  before_script:
-  - WHEEL=$(echo ./build/pydtnn/*.whl) && pip install ${WHEEL:?}[test]
-  script:
+  - WHEEL=$(echo ./build/pydtnn/*.whl)
+  - pip install ${WHEEL:?}[test]
   - TAG=v$(python -c "from importlib.metadata import version; print(version('pydtnn'))")
-  - printf '%s\n' GIT_TAG=${TAG:?} PUBLIC_TAG=$(git tag | grep -xF ${TAG:?}) >> ./build/env
+  - printf '%s\n' GIT_TAG=${TAG:?} PUBLIC_TAG=$(git tag | grep -xF ${TAG:?}) > ./build/env
   - make pydtnn-test PROCS=1
 
   artifacts:
@@ -72,6 +52,9 @@ job_check:
       coverage_report:
         coverage_format: cobertura
         path: ./build/coverage
+    paths:
+    - ./build/pydtnn/
+    expire_in: 1d
     when: always
 
 # job_merge:
@@ -110,9 +93,8 @@ job_push:
   image: registry.gitlab.com/gitlab-org/cli:latest
 
   needs:
-  - job: job_build
+  - job: job_make
     artifacts: true
-  - job: job_check
 
   before_script:
   - glab auth login --hostname lorca.act.uji.es/gitlab --token "${CI_JOB_TOKEN:?}"
