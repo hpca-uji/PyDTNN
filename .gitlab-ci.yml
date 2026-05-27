@@ -35,7 +35,7 @@ job_make:
   before_script:
   - apt-get update
   - make clean
-  - export (make env | xargs)
+  - export $(make env | xargs)
   - make deps
   script:
   - make build
