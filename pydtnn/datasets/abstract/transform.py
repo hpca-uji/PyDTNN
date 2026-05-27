@@ -99,11 +99,11 @@ class Transform(Init):
         if self.model.augment_mask > 0:
             augments_training.append(self._x_augment_adaptor(self._do_augment_mask))
 
-        if self.model.augment_rotate > 0:
-            augments_training.append(self._x_augment_adaptor(self._do_augment_rotate))
-
         if self.model.augment_perspective > 0:
             augments_training.append(self._x_augment_adaptor(self._do_augment_perspective))
+
+        if self.model.augment_rotate > 0:
+            augments_training.append(self._x_augment_adaptor(self._do_augment_rotate))
 
         if self.model.augment_normalize:
             augments_training.append(self._x_augment_adaptor(self._do_augment_normalize))
@@ -175,7 +175,7 @@ class Transform(Init):
         np.add(data, self.model.augment_normalize_offset, out=data)
         np.multiply(data, self.model.augment_normalize_scale, out=data)
         return data
-    
+
     def _do_augment_flip(self, data: np.ndarray, augment_probability: float, axis: int) -> np.ndarray:
         """
         Apply random flip augmentation to images.
@@ -194,7 +194,7 @@ class Transform(Init):
         data[s, ...] = np.flip(data[s, ...], axis=axis)
 
         return data
-    
+
     def _do_augment_horizontal_flip(self, data: np.ndarray) -> np.ndarray:
         """
         Apply random horizontal flip augmentation to images.
@@ -218,7 +218,7 @@ class Transform(Init):
                 width_dim = 2
             case _:
                 raise NotImplementedError(f"Dataset _do_augment_horizontal_flip is not implemented for {self.model.tensor_format} format.")
-        
+
         return self._do_augment_flip(data=data, augment_probability=self.model.augment_horizontal_flip, axis=width_dim)
 
     def _do_augment_vertical_flip(self, data: np.ndarray) -> np.ndarray:
@@ -465,7 +465,7 @@ class Transform(Init):
         new_data = self.model.encode_tensor(new_data)
 
         return new_data
-    
+
     def _do_augment_brightness(self, data: np.ndarray) -> np.ndarray:
         """
         Apply random brightness augmentation to images.
@@ -506,7 +506,6 @@ class Transform(Init):
         data = self.model.encode_tensor(data)
 
         return data
-
 
     def _do_augment_contrast(self, data: np.ndarray) -> np.ndarray:
         """
@@ -587,9 +586,9 @@ class Transform(Init):
         data = self.model.encode_tensor(data)
 
         return data
-    
+
     def _do_augment_perspective(self, data: np.ndarray) -> np.ndarray:
-        
+
         N, C, H, W = data.shape
         # NOTE: C not included so all channels in a sample rotate by the same amount
         persepctive: np.ndarray = random.random(N) * self.model.augment_perspective_factor
@@ -602,7 +601,7 @@ class Transform(Init):
                 channel = np.interp(channel, (0, 1), (0, 255))
                 channel = channel.transpose().astype(np.uint8)
                 image = Image.fromarray(channel, mode="L")
-                image = self.__change_perspective(image, persepctive[n].item())
+                image = self._image_perspective(image, persepctive[n].item())
                 channel = np.asarray(image, dtype=np.uint8)
                 channel = channel.transpose().astype(self.model.dtype)
                 channel = np.interp(channel, (0, 255), (0, 1))
@@ -612,32 +611,33 @@ class Transform(Init):
 
         return data
 
-    def __change_perspective(self, image: Image.Image, factor: float) -> Image.Image:
-        def find_coeffs(points_a: np.ndarray | list, points_b: np.ndarray | list) -> np.ndarray[tuple[int]]:
-            # Source:
-            # A) https://stackoverflow.com/questions/14177744/how-does-perspective-transformation-work-in-pil
-            # B) https://web.archive.org/web/20150222120106/xenia.media.mit.edu/~cwren/interpolator/
-            matrix = []
-            for p1, p2 in zip(points_a, points_b):
-                    matrix.append([p1[0], p1[1], 1, 0, 0, 0, -p2[0]*p1[0], -p2[0]*p1[1]])
-                    matrix.append([0, 0, 0, p1[0], p1[1], 1, -p2[1]*p1[0], -p2[1]*p1[1]])
+    @staticmethod
+    def _perspective_coeffs(src_points: np.ndarray | list, dst_points: np.ndarray | list) -> np.ndarray[tuple[int]]:
+        # Source:
+        # A) https://stackoverflow.com/questions/14177744/how-does-perspective-transformation-work-in-pil
+        # B) https://web.archive.org/web/20150222120106/xenia.media.mit.edu/~cwren/interpolator/
+        matrix = []
+        for p1, p2 in zip(src_points, dst_points):
+            matrix.append([p1[0], p1[1], 1, 0, 0, 0, -p2[0] * p1[0], -p2[0] * p1[1]])
+            matrix.append([0, 0, 0, p1[0], p1[1], 1, -p2[1] * p1[0], -p2[1] * p1[1]])
 
-            matrix_a = np.matrix(matrix, dtype=np.float32)
-            matrix_b = np.array(points_b).reshape(8)
+        matrix_a = np.matrix(matrix, dtype=np.float32)
+        matrix_b = np.array(dst_points).reshape(8)
 
-            res = np.dot(np.linalg.inv(matrix_a.T * matrix_a) * matrix_a.T, matrix_b)
-            return np.array(res).reshape(8)
+        res = np.dot(np.linalg.inv(matrix_a.T * matrix_a) * matrix_a.T, matrix_b)
+        return np.array(res).reshape(8)
 
-        #NOTE:
+    def _image_perspective(self, image: Image.Image, factor: float) -> Image.Image:
+        # NOTE:
         # top_left     = [0, 0]
         # top_right    = [width, 0]
         # bottom_left  = [0, height]
         # bottom_right = [width, height]
         width, height = image.size
 
-        top_left     = (random.uniform(0, factor), random.uniform(0, factor))
-        top_right    = (1 - random.uniform(0, factor), random.uniform(0, factor))
-        bottom_left  = (random.uniform(0, factor), 1 - random.uniform(0, factor))
+        top_left = (random.uniform(0, factor), random.uniform(0, factor))
+        top_right = (1 - random.uniform(0, factor), random.uniform(0, factor))
+        bottom_left = (random.uniform(0, factor), 1 - random.uniform(0, factor))
         bottom_right = (1 - random.uniform(0, factor), 1 - random.uniform(0, factor))
 
         transformed_points = list(zip(*[top_left, top_right, bottom_left, bottom_right]))
@@ -667,10 +667,9 @@ class Transform(Init):
                                     (width * _max, height * _max)], np.int32)
         transformed_points = list(zip(w, h))
 
-        coeffs = find_coeffs(transformed_points, rescaled_base)
+        coeffs = self._perspective_coeffs(transformed_points, rescaled_base)
         transomed_img = image.transform((width, height),
                                         Image.Transform.PERSPECTIVE,
                                         coeffs,  # type: ignore (It's the right type)
                                         Image.Resampling.BICUBIC)
         return transomed_img
-
