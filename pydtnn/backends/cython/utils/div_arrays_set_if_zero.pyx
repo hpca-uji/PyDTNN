@@ -8,9 +8,6 @@ __all__ = (
 )
 
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.initializedcheck(False)
 def div_arrays_set_if_zero(npDT[::1] dividend,
                            npDT[::1] divider,
                            npDT default_value):

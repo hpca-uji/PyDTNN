@@ -12,9 +12,6 @@ __all__ = (
 )
 
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.initializedcheck(False)
 def argmax_cython(npDT[:, :] x, 
                   npDT[:] maxv, 
                   np.int32_t[:] amax,

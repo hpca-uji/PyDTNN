@@ -68,7 +68,8 @@ test = [
     "torchvision~=0.26",
     "torchmetrics~=1.9",
     "pytest~=9.0",
-    "pytest-xdist~=3.8"
+    "pytest-xdist~=3.8",
+    "pytest-cov~=7.1"
 ]
 profile = [
     "memray~=1.19"

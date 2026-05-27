@@ -12,9 +12,6 @@ __all__ = (
 )
 
 # --- FORWARD ---
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.initializedcheck(False)
 def bn_training_fwd_cython(npDT[:,::1] x,
                            npDT[:,::1] y,
                            npDT[:,::1] xn,
@@ -41,9 +38,6 @@ def bn_training_fwd_cython(npDT[:,::1] x,
 
 
 # --- BACKWARD ---
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.initializedcheck(False)
 def bn_training_bwd_cython(npDT[:, ::1] dx,
                            npDT[:, ::1] dy,
                            npDT[:, ::1] xn,

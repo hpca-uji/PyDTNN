@@ -22,7 +22,7 @@ cache:
     - Makefile
   paths:
   - build
-  - vendor
+  # - vendor
   - /var/cache/apt/archives
   when: always
 
@@ -68,12 +68,15 @@ job_check:
   script:
   - TAG=v$(python -c "from importlib.metadata import version; print(version('pydtnn'))")
   - printf '%s\n' GIT_TAG=${TAG:?} PUBLIC_TAG=$(git tag | grep -xF ${TAG:?}) >> ./build/env
-  - pytest -v -n 1 --dist loadscope --junitxml=./build/tests --pyargs pydtnn.tests.groups.all
+  - make pydtnn-test PROCS=1
 
   artifacts:
     reports:
       dotenv: ./build/env
       junit: ./build/tests
+      coverage_report:
+        coverage_format: cobertura
+        path: ./build/coverage
     when: always
 
 # job_merge:
@@ -106,7 +109,7 @@ job_push:
   stage: push
 
   rules:
-  - if: '$CI_COMMIT_BRANCH == $BRANCH_WORK'  # ' && $PUBLIC_TAG == ""'
+  - if: '$CI_COMMIT_BRANCH == $BRANCH_WORK && $PUBLIC_TAG == ""'
 
   tags: [ lorca-ubuntu ]
   image: registry.gitlab.com/gitlab-org/cli:latest

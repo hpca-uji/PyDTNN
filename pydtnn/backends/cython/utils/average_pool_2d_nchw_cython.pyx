@@ -9,9 +9,6 @@ __all__ = (
 
 
 # --- FORWARD ---
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.initializedcheck(False)
 def average_pool_2d_fwd_nchw_cython(npDT[:,:,:,::1] x,
                                     npDT[:,:,:,::1] y,
                                     int kh, int kw, int ho, int wo,
@@ -45,9 +42,6 @@ def average_pool_2d_fwd_nchw_cython(npDT[:,:,:,::1] x,
 
 
 # --- BACKWARD ---
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.initializedcheck(False)
 def average_pool_2d_bwd_nchw_cython(npDT[:,:,:,::1] dy,
                                     npDT[:,:,:,::1] dx,
                                     int n, int h, int w, int c,
@@ -82,9 +76,6 @@ def average_pool_2d_bwd_nchw_cython(npDT[:,:,:,::1] dy,
                                     dx[nn, cc, x_x, x_y] += avgval
 
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.initializedcheck(False)
 def average_pool_2d_bwd_nchw_cython_alt(npDT[:,:,:,::1] dy,
                                         npDT[:,:,:,::1] dx,
                                         int n, int h, int w, int c,

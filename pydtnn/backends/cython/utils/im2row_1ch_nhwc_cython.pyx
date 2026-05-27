@@ -8,9 +8,6 @@ __all__ = (
 )
 
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.initializedcheck(False)
 def im2row_1ch_nhwc_cython(npDT[:,:,:,::1] x, 
                            npDT[:,::1] rows,
                            int kh, int kw, int ho, int wo,
@@ -41,8 +38,6 @@ def im2row_1ch_nhwc_cython(npDT[:,:,:,::1] x,
 
 
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
 def row2im_1ch_nhwc_cython(npDT[:,::1] rows,
                            npDT[:,:,:,::1] x,
                            int n, int h, int w, int c,

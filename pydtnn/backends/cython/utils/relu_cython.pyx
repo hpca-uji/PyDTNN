@@ -18,9 +18,6 @@ __all__ = (
 #                 relu_cython
 #
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.initializedcheck(False)
 def relu_cython(npDT[::1] x, npDT[::1] max, np.int8_t[::1] mask) -> None:
 
     cdef int i
@@ -34,9 +31,6 @@ def relu_cython(npDT[::1] x, npDT[::1] max, np.int8_t[::1] mask) -> None:
 #             capped_relu_cython
 #
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.initializedcheck(False)
 # NOTE: If cap = 6, then this is a Relu6.
 def capped_relu_cython(npDT[::1] x, npDT[::1] max, np.int8_t[::1] mask, float cap) -> None:
     cdef int i
@@ -52,9 +46,6 @@ def capped_relu_cython(npDT[::1] x, npDT[::1] max, np.int8_t[::1] mask, float ca
 #              leaky_relu_cython
 #
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.initializedcheck(False)
 def leaky_relu_cython(npDT[::1] x, npDT[::1] max, npDT[::1] mask, float negative_slope) -> None:
     cdef int i
     for i in prange(x.shape[0], nogil=True):
