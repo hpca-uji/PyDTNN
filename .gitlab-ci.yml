@@ -14,7 +14,6 @@ job_make:
     PYTHON_VERSION: latest
     PIP_DISABLE_PIP_VERSION_CHECK: "1"
     PIP_CACHE_DIR: "$CI_PROJECT_DIR/build/pip"
-    CYTHON_CACHE_DIR: "$CI_PROJECT_DIR/build/cython"
 
   rules:
   - if: '$CI_COMMIT_BRANCH == $BRANCH_WORK'
@@ -37,6 +36,8 @@ job_make:
   - make clean
   - export $(make env | xargs)
   - make deps
+  - python --version
+  - python3 --version
   script:
   - make build
   - WHEEL=$(echo ./build/pydtnn/*.whl)
