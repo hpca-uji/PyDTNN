@@ -84,10 +84,10 @@ src: \
 	convdirect-src \
 	openfhe-src \
 	openfhe-python-src \
-	uarchfhe-src \
 	polyhe-src \
 	pympi-src \
 	pydtnn-src
+#	uarchfhe-src
 
 build: \
 	blis-build \
@@ -97,10 +97,10 @@ build: \
 	convdirect-build \
 	openfhe-build \
 	openfhe-python-build \
-	uarchfhe-build \
 	polyhe-build \
 	pympi-build \
 	pydtnn-build
+#	uarchfhe-build
 
 install: \
 	blis-install \
@@ -110,10 +110,10 @@ install: \
 	convdirect-install \
 	openfhe-install \
 	openfhe-python-install \
-	uarchfhe-install \
 	polyhe-install \
 	pympi-install \
 	pydtnn-install
+#	uarchfhe-install
 
 clean: \
 	blis-clean \
@@ -637,7 +637,7 @@ pydtnn-develop:
 
 pydtnn-test:
 	pytest -v -n "$(PROCS)" \
-		--dist loadscope \
+		--dist=loadscope \
 		--junitxml="$(PYDTNN_SRC)/build/tests" \
 		--cov=pydtnn --cov-report=term --cov-report=xml:"$(PYDTNN_SRC)/build/coverage" \
 		--pyargs pydtnn.tests.groups.all

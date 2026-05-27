@@ -33,10 +33,10 @@ job_build:
   before_script:
   - apt-get update
   - export $(make env | tee ./build/env | xargs)
-  - make pydtnn-deps
-  script:
   - make pydtnn-clean
-  - make pydtnn-build
+  - make deps
+  script:
+  - make build
 
   artifacts:
     expire_in: 1d
