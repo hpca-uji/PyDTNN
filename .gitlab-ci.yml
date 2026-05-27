@@ -8,21 +8,16 @@ variables:
   BRANCH_MAIN: main
   BRANCH_WORK: develop
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
-  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/build/pip"
+  CYTHON_CACHE_DIR: "$CI_PROJECT_DIR/build/cython"
 
 cache:
 - key:
     files:
+    - Makefile
     - pyproject.toml
   paths:
-  - .cache/pip
-  when: always
-- key:
-    files:
-    - Makefile
-  paths:
   - build
-  # - vendor
   - /var/cache/apt/archives
   when: always
 

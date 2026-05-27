@@ -28,7 +28,9 @@ for pyx in Path("pydtnn").rglob("*.pyx"):
     ))
 
 setup(
-    cmdclass={"build_ext": BuildExt},
+    cmdclass={
+        "build_ext": BuildExt
+    },
     ext_modules=cythonize(
         ext_modules,
         language_level=3,
@@ -39,6 +41,7 @@ setup(
             'boundscheck': False,
             "initializedcheck": False
         },
+        cache=True,
         nthreads=process_cpu_count(),
         shared_utility_qualified_name="pydtnn.utils._cyutility"
     )
