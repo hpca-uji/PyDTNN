@@ -8,7 +8,7 @@ pydtnn-benchmark \
   --dataset=mnist \
   --dataset-path=datasets/mnist \
   --test-as-validation=False \
-  --augment-flip=0.5 \
+  --augment-horizontal-flip=0.5 \
   --batch-size=64 \
   --validation-split=0.2 \
   --num-epochs=50 \

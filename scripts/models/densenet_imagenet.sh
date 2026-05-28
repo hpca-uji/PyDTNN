@@ -12,7 +12,7 @@ mpirun -np 2 \
   --synthetic-input-shape=3,227,227 \
   --synthetic-output-shape=1000 \
   --test-as-validation=False \
-  --augment-flip=0.5 \
+  --augment-horizontal-flip=0.5 \
   --augment-mask=0.5 \
   --augment-mask-size=16 \
   --test-as-validation=True \

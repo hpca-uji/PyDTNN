@@ -21,23 +21,23 @@ job_make:
   tags: [ lorca-ubuntu ]
   image: python:$PYTHON_VERSION
 
-  cache:
-  - key:
-      files:
-      - Makefile
-      - pyproject.toml
-    paths:
-    - build
-    - /var/cache/apt/archives
-    when: always
+  # cache:
+  # - key:
+  #     files:
+  #     - Makefile
+  #     - pyproject.toml
+  #   paths:
+  #   - build
+  #   - /var/cache/apt/archives
+  #   when: always
 
   before_script:
   - apt-get update
   - make clean
   - export $(make env | xargs)
-  - make deps
+  - make deps src build install PROCS=1
   script:
-  - make build install PROCS=1
+  - make pydtnn-build PROCS=1
   - WHEEL=$(echo ./build/pydtnn/*.whl)
   - pip install ${WHEEL:?}[test]
   - TAG=v$(python -c "from importlib.metadata import version; print(version('pydtnn'))")

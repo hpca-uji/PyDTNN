@@ -85,9 +85,9 @@ src: \
 	openfhe-src \
 	openfhe-python-src \
 	polyhe-src \
-	pympi-src \
-	pydtnn-src
+	pympi-src
 #	uarchfhe-src
+#	pydtnn-src
 
 build: \
 	blis-build \
@@ -98,9 +98,9 @@ build: \
 	openfhe-build \
 	openfhe-python-build \
 	polyhe-build \
-	pympi-build \
-	pydtnn-build
+	pympi-build
 #	uarchfhe-build
+#	pydtnn-build
 
 install: \
 	blis-install \
@@ -111,9 +111,9 @@ install: \
 	openfhe-install \
 	openfhe-python-install \
 	polyhe-install \
-	pympi-install \
-	pydtnn-install
+	pympi-install
 #	uarchfhe-install
+#	pydtnn-install
 
 clean: \
 	blis-clean \
@@ -604,6 +604,7 @@ pympi-clean:
 	pydtnn-build \
 	pydtnn-install \
 	pydtnn-develop \
+	pydtnn-format \
 	pydtnn-test \
 	pydtnn-clean
 
@@ -634,6 +635,9 @@ pydtnn-develop:
 	$(PIP) install \
 		--config-settings editable_mode=compat \
 		-e "$(PYDTNN_SRC)"
+
+pydtnn-format:
+	"$(PYDTNN_SRC)/scripts/srcs/format.sh" pydtnn
 
 pydtnn-test:
 	pytest -v -n "$(PROCS)" \
