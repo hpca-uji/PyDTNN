@@ -589,6 +589,7 @@ class Transform(Init):
 
     def _do_augment_perspective(self, data: np.ndarray) -> np.ndarray:
 
+        data = self.model.decode_tensor(data)
         N, C, H, W = data.shape
         # NOTE: C not included so all channels in a sample rotate by the same amount
         persepctive: np.ndarray = random.random(N) * self.model.augment_perspective_factor
@@ -641,28 +642,35 @@ class Transform(Init):
         bottom_right = (1 - random.uniform(0, factor), 1 - random.uniform(0, factor))
 
         transformed_points = list(zip(*[top_left, top_right, bottom_left, bottom_right]))
-        w = transformed_points[0]
-        h = transformed_points[1]
+        widths = transformed_points[0]
+        heights = transformed_points[1]
 
-        mw = max(w) - min(w)
-        mh = max(h) - min(h)
+        diff_widths = max(widths) - min(widths)
+        diff_heights = max(heights) - min(heights)
 
-        if mw < mh:
-            _min = min(h)
-            _max = max(h)
+        if diff_widths < diff_heights:
+            _min = min(heights)
+            _max = max(heights)
         else:
-            _min = min(w)
-            _max = max(w)
+            _min = min(widths)
+            _max = max(widths)
 
-        w = np.interp(w, (_min, _max), (0, 1))
-        h = np.interp(h, (_min, _max), (0, 1))
-        np.multiply(w, width, out=w)
-        np.multiply(h, height, out=h)
-        w = np.asanyarray(w, dtype=np.int32)
-        h = np.asanyarray(h, dtype=np.int32)
+        widths = np.interp(widths, (_min, _max), (0, 1))
+        heights = np.interp(heights, (_min, _max), (0, 1))
+        np.multiply(widths, width, out=widths)
+        np.multiply(heights, height, out=heights)
+        # NOTE: The change of dtype is made in two steps in order to store the data without truncate values to early
+        #  Example:
+        #   0.5 * 7.1 = 3,55 =(truncate)=> 3
+        #   !=
+        #   0.5 * 7.1 =(truncate variables)=> 0 * 7 = 0
+        widths = np.asanyarray(widths, dtype=np.int32)
+        heights = np.asanyarray(heights, dtype=np.int32)
 
-        rescaled_base = np.asarray([(width * _min, height * _min), (width * _max, height * _min), (width * _min, height * _max), (width * _max, height * _max)], np.int32)
-        transformed_points = list(zip(w, h))
+
+        rescaled_base = np.asarray([(width * _min, height * _min), (width * _max, height * _min),
+                                    (width * _min, height * _max), (width * _max, height * _max)], np.int32)
+        transformed_points = list(zip(widths, heights))
 
         coeffs = self._perspective_coeffs(transformed_points, rescaled_base)
         transomed_img = image.transform(
