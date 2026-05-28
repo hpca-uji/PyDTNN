@@ -3,7 +3,7 @@
 set -xe; set -o pipefail
 
 SRC="${1:-.}"
-MAX_LINE_LENGTH="${MAX_LINE_LENGTH:-200}"
+MAX_LINE_LENGTH="${MAX_LINE_LENGTH:-100}"
 PYS=('(' -name '*.py' -o -name '*.py' -o -name '*.pyi' -o -name '*.pyx' ')')
 
 ruff check --fix "${SRC:?}"
