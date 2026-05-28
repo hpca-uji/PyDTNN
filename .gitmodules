@@ -4,9 +4,6 @@
 [submodule "vendor/tvm"]
 	path = vendor/tvm
 	url = https://github.com/apache/tvm.git
-[submodule "vendor/pympi"]
-	path = vendor/pympi
-	url = https://github.com/hpca-uji/pympi.git
 [submodule "vendor/convGemm"]
 	path = vendor/convGemm
 	url = https://github.com/hpca-uji/convGemm.git
@@ -25,6 +22,3 @@
 [submodule "vendor/uarchfhe"]
 	path = vendor/uarchfhe
 	url = https://github.com/darwinquezada/he_hpc
-[submodule "vendor/polyhe"]
-	path = vendor/polyhe
-	url = https://github.com/hpca-uji/polyhe.git
