@@ -31,7 +31,15 @@ class SimpleTracerPMLib(SimpleTracer):
     A tracer that extends SimpleTracer to record power consumption data using PMLib.
     """
 
-    def __init__(self, tracing: bool, output_filename: str, comm: MPI_COMM | None, pmlib_server_ip: str, pmlib_port: int, pmlib_device: str):
+    def __init__(
+        self,
+        tracing: bool,
+        output_filename: str,
+        comm: MPI_COMM | None,
+        pmlib_server_ip: str,
+        pmlib_port: int,
+        pmlib_device: str,
+    ):
         """
         Initializes the PMLib tracer.
 
@@ -108,9 +116,13 @@ class SimpleTracerPMLib(SimpleTracer):
         intermediate_samples = 0
         for start_time, end_time in self.times[event_type_value][event_value]:
             joules += self.pmlib.get_joules(start_time, end_time)
-            intermediate_samples += self.pmlib.get_number_of_intermediate_samples(start_time, end_time)
+            intermediate_samples += self.pmlib.get_number_of_intermediate_samples(
+                start_time, end_time
+            )
         if len(self.times[event_type_value][event_value]) > 0:
-            intermediate_samples = intermediate_samples / len(self.times[event_type_value][event_value])
+            intermediate_samples = intermediate_samples / len(
+                self.times[event_type_value][event_value]
+            )
         output += ";".join([f"{x}" for x in joules])
         return output + f";{intermediate_samples}"
 
@@ -135,7 +147,9 @@ class SimpleTracerPMLib(SimpleTracer):
                 elapsed_times = self.pmlib.times - self.pmlib.times[0]
                 assert isinstance(elapsed_times, np.ndarray)
                 assert self.pmlib.watts
-                elapsed_times_watts = np.concatenate((elapsed_times.reshape(1, -1), self.pmlib.watts)).transpose()
+                elapsed_times_watts = np.concatenate(
+                    (elapsed_times.reshape(1, -1), self.pmlib.watts)
+                ).transpose()
                 for row in elapsed_times_watts:
                     f.write(";".join(f"{x}" for x in row) + "\n")
             self.pmlib.finalize_counter()

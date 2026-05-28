@@ -34,7 +34,16 @@ def vgg19(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerab
     conv_pattern = [[2, 64], [2, 128], [4, 256], [4, 512], [4, 512]]
     for nlayers, nfilters in conv_pattern:
         for layer in range(nlayers):
-            _(Conv2D(nfilters=nfilters, filter_shape=(3, 3), padding=1, stride=1, activation=Relu, weights_initializer=he_uniform))
+            _(
+                Conv2D(
+                    nfilters=nfilters,
+                    filter_shape=(3, 3),
+                    padding=1,
+                    stride=1,
+                    activation=Relu,
+                    weights_initializer=he_uniform,
+                )
+            )
         _(MaxPool2D(pool_shape=(2, 2), stride=2))
     _(Flatten())
     _(FC(shape=(4096,), activation=Relu, weights_initializer=he_uniform))

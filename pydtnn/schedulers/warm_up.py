@@ -54,7 +54,9 @@ class WarmUp(Scheduler):
             val_loss: Validation loss value.
         """
         if self.epoch_count < self.warmup_epochs:
-            self.model.optimizer.learning_rate = self.base_lr + ((self.epoch_count + 1) / self.warmup_epochs) * (self.init_lr - self.base_lr)
+            self.model.optimizer.learning_rate = self.base_lr + (
+                (self.epoch_count + 1) / self.warmup_epochs
+            ) * (self.init_lr - self.base_lr)
             self.epoch_count += 1
             self.log(f"Setting learning rate to {self.model.optimizer.learning_rate:.8f}.")
 

@@ -41,7 +41,9 @@ def matmul_gpu(handle, trans_a, trans_b, m, n, k, alpha, a, lda, b, ldb, beta, c
         dtype: Data type of the matrices.
     """
     try:
-        gemm = {np.dtype(np.float32): cublas.cublasSgemm, np.dtype(np.float64): cublas.cublasDgemm}[dtype]
+        gemm = {np.dtype(np.float32): cublas.cublasSgemm, np.dtype(np.float64): cublas.cublasDgemm}[
+            dtype
+        ]
     except KeyError:
         logger.error("I cannot handle %s type!\n" % dtype.__name__)
     else:
@@ -68,7 +70,9 @@ def matvec_gpu(handle, trans_a, m, n, alpha, a, lda, b, ldb, beta, c, ldc, dtype
         dtype: Data type of the matrix and vectors.
     """
     try:
-        gemv = {np.dtype(np.float32): cublas.cublasSgemv, np.dtype(np.float64): cublas.cublasDgemv}[dtype]
+        gemv = {np.dtype(np.float32): cublas.cublasSgemv, np.dtype(np.float64): cublas.cublasDgemv}[
+            dtype
+        ]
     except KeyError:
         logger.error("I cannot handle %s type!\n" % dtype.__name__)
     else:

@@ -6,7 +6,8 @@ from typing import TYPE_CHECKING
 from pydtnn.backends.numpy.layers.abstract.conv_2d import AbstractConv2DNumpy
 from pydtnn.layers.conv_2d_depthwise import Conv2DDepthwise
 from pydtnn.libs import numpy as np
-from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
+from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
+                                   PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import TensorFormat
 
@@ -44,7 +45,11 @@ class Conv2DDepthwiseNumpy(AbstractConv2DNumpy, Conv2DDepthwise):
             case _:
                 _y_shape = None
                 dx_shape = None
-                raise NotImplementedError(f"Format {self.model.tensor_format} is not supported in Conv2DDepthwiseNumpy layer.")
+                raise NotImplementedError(
+                    f"Format {
+                        self.model.tensor_format
+                    } is not supported in Conv2DDepthwiseNumpy layer."
+                )
 
         _y_shape = self.model.encode_shape((self.model.batch_size, self.co, self.ho, self.wo))
         dx_shape = self.model.encode_shape((self.model.batch_size, self.hi, self.wi, self.ci))
@@ -78,7 +83,9 @@ class Conv2DDepthwiseNumpy(AbstractConv2DNumpy, Conv2DDepthwise):
                                 for yy in range(self.wo):
                                     x_y = self.wstride * yy + self.wdilation * jj - self.wpadding
                                     if 0 <= x_y < self.wi:
-                                        y[nn, cc, xx, yy] += self.weights[cc, ii, jj] * x[nn, cc, x_x, x_y]
+                                        y[nn, cc, xx, yy] += (
+                                            self.weights[cc, ii, jj] * x[nn, cc, x_x, x_y]
+                                        )
 
     def _conv_fwd_nchw(self, x: np.ndarray, y: np.ndarray) -> None:
         """Perform NCHW depthwise convolution forward pass."""
@@ -92,7 +99,9 @@ class Conv2DDepthwiseNumpy(AbstractConv2DNumpy, Conv2DDepthwise):
                                 for yy in range(self.wo):
                                     x_y = self.wstride * yy + self.wdilation * jj - self.wpadding
                                     if 0 <= x_y < self.wi:
-                                        y[nn, xx, yy, cc] += self.weights[cc, ii, jj] * x[nn, x_x, x_y, cc]
+                                        y[nn, xx, yy, cc] += (
+                                            self.weights[cc, ii, jj] * x[nn, x_x, x_y, cc]
+                                        )
 
     def _conv_bwd_nhwc(self, dx: np.ndarray, dy: np.ndarray) -> None:
         """Perform NHWC depthwise convolution backward pass."""
@@ -135,18 +144,26 @@ class Conv2DDepthwiseNumpy(AbstractConv2DNumpy, Conv2DDepthwise):
         y: np.ndarray = np.ascontiguousarray(self._y[: x.shape[0],], dtype=self.model.dtype)
         y.fill(0)
 
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_DEPTHWISE_CONV)
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT,
+            self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_DEPTHWISE_CONV,
+        )
         self._conv_fwd_nhwc(x, y)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.use_bias:
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_SUM_BIASES)
+            self.model.tracer.emit_event(
+                PYDTNN_OPS_EVENT,
+                self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_SUM_BIASES,
+            )
             y: np.ndarray = y.reshape((self.co, -1))
             for i in range(self.co):
                 np.add(y[i], self.biases[i], out=y[i], dtype=self.model.dtype)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_Y)
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_Y
+        )
         y: np.ndarray = y.reshape((-1, self.ho, self.wo, self.co))
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
@@ -158,18 +175,26 @@ class Conv2DDepthwiseNumpy(AbstractConv2DNumpy, Conv2DDepthwise):
         y: np.ndarray = np.ascontiguousarray(self._y[: x.shape[0],], dtype=self.model.dtype)
         y.fill(0)
 
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_DEPTHWISE_CONV)
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT,
+            self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_DEPTHWISE_CONV,
+        )
         self._conv_fwd_nchw(x, y)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.use_bias:
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_SUM_BIASES)
+            self.model.tracer.emit_event(
+                PYDTNN_OPS_EVENT,
+                self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_SUM_BIASES,
+            )
             y: np.ndarray = y.reshape((self.co, -1))
             for i in range(self.co):
                 np.add(y[i], self.biases[i], out=y[i], dtype=self.model.dtype)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_Y)
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_Y
+        )
         y: np.ndarray = y.reshape((-1, self.co, self.ho, self.wo))
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
@@ -184,7 +209,10 @@ class Conv2DDepthwiseNumpy(AbstractConv2DNumpy, Conv2DDepthwise):
         self._conv_bwd_nhwc(dx, dy)
 
         if self.use_bias:
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_SUM_BIASES)
+            self.model.tracer.emit_event(
+                PYDTNN_OPS_EVENT,
+                self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_SUM_BIASES,
+            )
             np.sum(dy, axis=(0, 1, 2), out=self.db)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
@@ -199,7 +227,10 @@ class Conv2DDepthwiseNumpy(AbstractConv2DNumpy, Conv2DDepthwise):
         self._conv_bwd_nhwc(dx, dy)
 
         if self.use_bias:
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_SUM_BIASES)
+            self.model.tracer.emit_event(
+                PYDTNN_OPS_EVENT,
+                self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_SUM_BIASES,
+            )
             np.sum(dy, axis=(0, 2, 3), out=self.db)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 

@@ -51,13 +51,17 @@ class AbstractConv2D[T: Array](Layer[T]):
 
         super().__init__()
         self.co = nfilters
-        self.filter_shape = (filter_shape, filter_shape) if isinstance(filter_shape, int) else filter_shape
+        self.filter_shape = (
+            (filter_shape, filter_shape) if isinstance(filter_shape, int) else filter_shape
+        )
         self.padding = padding
         self.stride = stride
         self.dilation = dilation
         self.hpadding, self.wpadding = (padding, padding) if isinstance(padding, int) else padding
         self.hstride, self.wstride = (stride, stride) if isinstance(stride, int) else stride
-        self.hdilation, self.wdilation = (dilation, dilation) if isinstance(dilation, int) else dilation
+        self.hdilation, self.wdilation = (
+            (dilation, dilation) if isinstance(dilation, int) else dilation
+        )
         self.act = activation
         self.use_bias = use_bias
         self.weights_initializer: InitializerFunc = weights_initializer
@@ -92,8 +96,12 @@ class AbstractConv2D[T: Array](Layer[T]):
         self.kh, self.kw = self.filter_shape
         self._initializing_special_parameters()
 
-        self.ho = (self.hi + 2 * self.hpadding - self.hdilation * (self.kh - 1) - 1) // self.hstride + 1
-        self.wo = (self.wi + 2 * self.wpadding - self.wdilation * (self.kw - 1) - 1) // self.wstride + 1
+        self.ho = (
+            self.hi + 2 * self.hpadding - self.hdilation * (self.kh - 1) - 1
+        ) // self.hstride + 1
+        self.wo = (
+            self.wi + 2 * self.wpadding - self.wdilation * (self.kw - 1) - 1
+        ) // self.wstride + 1
         self.shape = self.model.encode_shape((self.co, self.ho, self.wo))
 
         # NOTE: self.weights_shape must be defined in "self._initializing_special_parameters"

@@ -634,7 +634,7 @@ pydtnn-install: $(PYDTNN_DST)/.build
 pydtnn-develop:
 	$(PIP) install \
 		--config-settings editable_mode=compat \
-		-e "$(PYDTNN_SRC)"
+		-e "$(PYDTNN_SRC)"[dev]
 
 pydtnn-format:
 	"$(PYDTNN_SRC)/scripts/srcs/format.sh" pydtnn

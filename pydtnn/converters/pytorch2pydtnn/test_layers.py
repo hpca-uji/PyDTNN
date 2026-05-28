@@ -87,11 +87,19 @@ KWARGS = {
     "batch_size": N,
 }
 
-TYPES_DATA_CUDA = {np.float64: "CUDNN_DATA_DOUBLE", np.float32: "CUDNN_DATA_FLOAT", np.int8: "CUDNN_DATA_INT8", np.int32: "CUDNN_DATA_INT32"}
+TYPES_DATA_CUDA = {
+    np.float64: "CUDNN_DATA_DOUBLE",
+    np.float32: "CUDNN_DATA_FLOAT",
+    np.int8: "CUDNN_DATA_INT8",
+    np.int32: "CUDNN_DATA_INT32",
+}
 
 DICT_SUPPORTED_LAYERS: dict[str, tuple[nn.Module, float]] = {
     # Activations:
-    "LogSigmoid": (nn.LogSigmoid(), 1e-5),  # PyTorch is more precise ==> it can differ in elements below "e-08"
+    "LogSigmoid": (
+        nn.LogSigmoid(),
+        1e-5,
+    ),  # PyTorch is more precise ==> it can differ in elements below "e-08"
     "ReLU": (nn.ReLU(), 1e-5),
     "ReLU6": (nn.ReLU6(), 1e-5),
     "LeakyReLU": (nn.LeakyReLU(negative_slope=6), 1e-5),
@@ -99,9 +107,17 @@ DICT_SUPPORTED_LAYERS: dict[str, tuple[nn.Module, float]] = {
     "Softmax": (nn.Softmax(), 1e-5),
     "Tanh": (nn.Tanh(), 1e-5),
     # Convolutional layers:
-    "Conv2d": (nn.Conv2d(CONV_IN_CHANNELS, CONV_OUT_CHANNELS, CONV_KERNEL_SIZE), 2e-3),  # PyTorch is more precise ==> it can differ in elements below "e-03"
+    "Conv2d": (
+        nn.Conv2d(CONV_IN_CHANNELS, CONV_OUT_CHANNELS, CONV_KERNEL_SIZE),
+        2e-3,
+    ),  # PyTorch is more precise ==> it can differ in elements below "e-03"
     # Dropout layers:
-    "Dropout": (nn.Dropout(), 1e10),  # It varies due the chosen distribution. In p=0, p=1 and testing mode they have the same results.
+    "Dropout": (
+        nn.Dropout(),
+        1e10,
+        # It varies due the chosen distribution. In p=0, p=1 and testing mode they
+        # have the same results.
+    ),
     # Linear layers:
     # "Linear": (nn.Linear(LINEAR_IN_FEATURES, LINEAR_OUT_FEATURES), 2e-3),
     # Normalization layers:
@@ -202,11 +218,15 @@ def are_all_below_threshold(diff: np.ndarray, threshold: float = THRESHOLD) -> b
     return bool(np.all(diff < threshold))
 
 
-def forward_pydtnn_model(model: PyDTNN_Model, dataset: np.ndarray | TensorArray) -> np.ndarray | TensorArray:
+def forward_pydtnn_model(
+    model: PyDTNN_Model, dataset: np.ndarray | TensorArray
+) -> np.ndarray | TensorArray:
     """Performs a forward pass through a PyDTNN model, skipping the input layer."""
     y: np.ndarray | TensorArray = dataset
 
-    for i in range(1, len(model.layers)):  # NOTE - Remember: Layer 0 is the Input layer and it's ignored
+    for i in range(
+        1, len(model.layers)
+    ):  # NOTE - Remember: Layer 0 is the Input layer and it's ignored
         layer: Layerable = model.layers[i]
         y = layer.forward(y)
 
@@ -228,10 +248,18 @@ def test_layers_gpu(model: PyDTNN_Model, dataset: np.ndarray) -> TensorArray:
     print(f"TYPES_DATA_CUDA[model.dtype]: {TYPES_DATA_CUDA[model.dtype]}")
     dtype = model.dtype
     model.cudnn_dtype = cudnn.cudnnDataType[TYPES_DATA_CUDA[model.dtype]]
-    _dataset = TensorArray(gpu_arr=gpuarray.zeros(shape=dataset.shape, dtype=dtype), tensor_format=model.tensor_format, cudnn_dtype=model.cudnn_dtype)
+    _dataset = TensorArray(
+        gpu_arr=gpuarray.zeros(shape=dataset.shape, dtype=dtype),
+        tensor_format=model.tensor_format,
+        cudnn_dtype=model.cudnn_dtype,
+    )
 
     _dataset.set(dataset)
-    print(f"_dataset: {_dataset} | type(_dataset): {type(_dataset)} | _dataset.shape: {_dataset.shape}")
+    print(
+        f"_dataset: {_dataset} | type(_dataset): {type(_dataset)} | _dataset.shape: {
+            _dataset.shape
+        }"
+    )
 
     model.y_batch = _dataset
 
@@ -255,7 +283,13 @@ def test_layers(
 
     print("=======================\n== Converted version ==\n=======================")
 
-    new_model: PyDTNN_Model = convert_model(model=pytorch_model, input_shape=input_shape, default_output_activation_layer=None, is_input_shape_in_format=True, **kwargs)
+    new_model: PyDTNN_Model = convert_model(
+        model=pytorch_model,
+        input_shape=input_shape,
+        default_output_activation_layer=None,
+        is_input_shape_in_format=True,
+        **kwargs,
+    )
 
     new_model.mode = PyDTNN_Model.Mode.TRAIN
     # new_model.show()
@@ -268,7 +302,10 @@ def test_layers(
 
     # Must be only two layers: "Input" layer and the testing one.
     pydtnn_layer: Layerable = new_model.layers[-1]
-    print("=============================\n== Checking Dataset Values ==\n=============================")
+    print(
+        "=============================\n== Checking Dataset Values"
+        " ==\n============================="
+    )
 
     torch_dataset = torch.from_numpy(dataset).to(device)
 
@@ -277,7 +314,11 @@ def test_layers(
 
     pytorch_state_dict = pytorch_model.layer.state_dict()
 
-    pytorch_weights: None | torch.Tensor = pytorch_state_dict[PYTORCH_LAYER_WEIGHTS] if PYTORCH_LAYER_WEIGHTS in pytorch_state_dict else None
+    pytorch_weights: None | torch.Tensor = (
+        pytorch_state_dict[PYTORCH_LAYER_WEIGHTS]
+        if PYTORCH_LAYER_WEIGHTS in pytorch_state_dict
+        else None
+    )
     pydtnn_weights = pydtnn_layer.weights
 
     if isinstance(pydtnn_weights, TensorArray):
@@ -288,9 +329,17 @@ def test_layers(
 
     if there_are_pytorch_weigths and there_are_pydtnn_weights:
         pydtnn_weights = pydtnn_weights.T if name in TRANSPOSE_WEIGHTS_LAYERS else pydtnn_weights
-        print(f"weigths are all zeros: {are_all_zeros(pytorch_weights.cpu().detach().numpy() - pydtnn_weights)}")
+        print(
+            f"weigths are all zeros: {
+                are_all_zeros(pytorch_weights.cpu().detach().numpy() - pydtnn_weights)
+            }"
+        )
 
-    pytorch_biases: None | torch.Tensor = pytorch_state_dict[PYTORCH_LAYER_BIASES] if PYTORCH_LAYER_BIASES in pytorch_state_dict else None
+    pytorch_biases: None | torch.Tensor = (
+        pytorch_state_dict[PYTORCH_LAYER_BIASES]
+        if PYTORCH_LAYER_BIASES in pytorch_state_dict
+        else None
+    )
     pydtnn_biases = pydtnn_layer.biases
 
     if isinstance(pydtnn_weights, TensorArray):
@@ -300,7 +349,11 @@ def test_layers(
     there_are_pydtnn_biases = pydtnn_biases is not None
 
     if there_are_pytorch_biases and there_are_pydtnn_biases:
-        print(f"biases are all zeros: {are_all_zeros(pytorch_biases.cpu().detach().numpy() - pydtnn_biases)}")
+        print(
+            f"biases are all zeros: {
+                are_all_zeros(pytorch_biases.cpu().detach().numpy() - pydtnn_biases)
+            }"
+        )
 
     print("=====================\n== Testing Forward ==\n=====================")
     print(f"pytorch_model: {pytorch_model}")
@@ -331,7 +384,13 @@ def test_layers(
 
 
 def test_add_and_concat(
-    name: str, pytorch_model: TEST_PyTorch_Model, kwargs: dict[str, Any], input_shape: tuple[int, int, int], device: torch.device, dataset: np.ndarray, threshold: float = THRESHOLD
+    name: str,
+    pytorch_model: TEST_PyTorch_Model,
+    kwargs: dict[str, Any],
+    input_shape: tuple[int, int, int],
+    device: torch.device,
+    dataset: np.ndarray,
+    threshold: float = THRESHOLD,
 ) -> None:
     """Tests complex models involving addition and concatenation operations."""
     print(pytorch_model)
@@ -344,7 +403,13 @@ def test_add_and_concat(
 
     print("-----\n")
 
-    pydtnn_model: PyDTNN_Model = convert_model(model=pytorch_model, input_shape=input_shape, default_output_activation_layer=None, is_input_shape_in_format=True, **kwargs)
+    pydtnn_model: PyDTNN_Model = convert_model(
+        model=pytorch_model,
+        input_shape=input_shape,
+        default_output_activation_layer=None,
+        is_input_shape_in_format=True,
+        **kwargs,
+    )
 
     # pydtnn_model.mode = ModelModeEnum.EVALUATE
     # pydtnn_model.show()
@@ -402,7 +467,16 @@ def main():
         print(f"{dataset.min()=}")
         print(f"{dataset.max()=}\n")
 
-        test_layers(name=name, pytorch_model=model, kwargs=kwargs, input_shape=SHAPE, device=device, dataset=np.copy(dataset), threshold=threshold, function_to_test_layers=function_to_test_layers)
+        test_layers(
+            name=name,
+            pytorch_model=model,
+            kwargs=kwargs,
+            input_shape=SHAPE,
+            device=device,
+            dataset=np.copy(dataset),
+            threshold=threshold,
+            function_to_test_layers=function_to_test_layers,
+        )
 
     print("\n\n\n========================\n TESTING ADD AND CONCAT \n========================")
 
@@ -411,7 +485,14 @@ def main():
         ("Concat", Concat_Test_PyTorch_Model()),
     ]:
         print(f"Testing: {name}")
-        test_add_and_concat(name=name, pytorch_model=model, kwargs=kwargs, input_shape=SHAPE, device=device, dataset=deepcopy(dataset))
+        test_add_and_concat(
+            name=name,
+            pytorch_model=model,
+            kwargs=kwargs,
+            input_shape=SHAPE,
+            device=device,
+            dataset=deepcopy(dataset),
+        )
 
 
 if __name__ == "__main__":

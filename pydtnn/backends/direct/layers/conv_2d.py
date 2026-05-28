@@ -8,7 +8,8 @@ import numpy as np
 from pydtnn.backends.direct.layers.abstract.conv_2d import AbstractConv2DDirect
 from pydtnn.backends.numpy.layers.conv_2d import Conv2DNumpy
 from pydtnn.libs.convDirect import ConvDirect
-from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
+from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
+                                   PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import encode_shape
 
@@ -44,7 +45,15 @@ class Conv2DDirect(Conv2DNumpy, AbstractConv2DDirect):
         ]
 
         for n, method in enumerate(self._algos):
-            self.cd.append(ConvDirect(method, dtype=self.model.dtype, tensor_format=self.model.tensor_format, debug=self.debug, parent_layer=self))
+            self.cd.append(
+                ConvDirect(
+                    method,
+                    dtype=self.model.dtype,
+                    tensor_format=self.model.tensor_format,
+                    debug=self.debug,
+                    parent_layer=self,
+                )
+            )
             new(f"_forward_cd{n}_{self.model.tensor_format}", partial(self._forward_cd, n=n))
             new(f"_backward_cd{n}_{self.model.tensor_format}", partial(self._forward_cd, n=n))
 
@@ -75,7 +84,9 @@ class Conv2DDirect(Conv2DNumpy, AbstractConv2DDirect):
     def _forward_cd(self, x: np.ndarray, n=0) -> np.ndarray:
         """Execute the forward pass using the convDirect library."""
 
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVDIRECT)
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVDIRECT
+        )
         y = self.cd[n].conv_direct(
             np.asarray(self.weights, dtype=self.model.dtype),
             x,

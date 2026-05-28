@@ -18,7 +18,13 @@ class AbstractPool2DLayer[T: Array](Layer[T]):
     Base class for 2D pooling operations providing shared configuration and shape inference.
     """
 
-    def __init__(self, pool_shape: tuple[int, int] | int = (2, 2), padding: tuple[int, int] | int = 0, stride: tuple[int, int] | int = 1, dilation: tuple[int, int] | int = 1):
+    def __init__(
+        self,
+        pool_shape: tuple[int, int] | int = (2, 2),
+        padding: tuple[int, int] | int = 0,
+        stride: tuple[int, int] | int = 1,
+        dilation: tuple[int, int] | int = 1,
+    ):
         """
         Initializes the pooling layer parameters.
 
@@ -35,7 +41,9 @@ class AbstractPool2DLayer[T: Array](Layer[T]):
         self.dilation = dilation
         self.hpadding, self.wpadding = (padding, padding) if isinstance(padding, int) else padding
         self.hstride, self.wstride = (stride, stride) if isinstance(stride, int) else stride
-        self.hdilation, self.wdilation = (dilation, dilation) if isinstance(dilation, int) else dilation
+        self.hdilation, self.wdilation = (
+            (dilation, dilation) if isinstance(dilation, int) else dilation
+        )
         self.ci = self.hi = self.wi = self.kh = self.kw = self.ho = self.wo = self.co = self.n = 0
 
     def _model_init(self, prev_shape, x: T | None):
@@ -54,10 +62,16 @@ class AbstractPool2DLayer[T: Array](Layer[T]):
             self.pool_shape = (self.pool_shape[0], self.wi)
         self.kh, self.kw = self.pool_shape
         self.co = self.ci
-        self.ho = (self.hi + 2 * self.hpadding - self.hdilation * (self.kh - 1) - 1) // self.hstride + 1
-        self.wo = (self.wi + 2 * self.wpadding - self.wdilation * (self.kw - 1) - 1) // self.wstride + 1
+        self.ho = (
+            self.hi + 2 * self.hpadding - self.hdilation * (self.kh - 1) - 1
+        ) // self.hstride + 1
+        self.wo = (
+            self.wi + 2 * self.wpadding - self.wdilation * (self.kw - 1) - 1
+        ) // self.wstride + 1
         if not (self.ho > 0 and self.wo > 0):
-            raise LayerError(f"Output dimensions must be greater than 0. ho: {self.ho}, wo: {self.wo}.")
+            raise LayerError(
+                f"Output dimensions must be greater than 0. ho: {self.ho}, wo: {self.wo}."
+            )
         self.shape = self.model.encode_shape((self.co, self.ho, self.wo))
         self.n = math.prod(self.shape)
 

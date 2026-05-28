@@ -67,7 +67,9 @@ class Memory(Dataset):
                 x_test = x_train
                 y_test = y_train
             else:
-                raise ValueError("Both x_test and y_test must be provided or, alternatively, none of them!")
+                raise ValueError(
+                    "Both x_test and y_test must be provided or, alternatively, none of them!"
+                )
 
         if input_shape is None:
             input_shape = x_train.shape[1:]
@@ -75,11 +77,23 @@ class Memory(Dataset):
         if output_shape is None:
             output_shape = y_train.shape[1:]
 
-        if len(x_train.shape) == 3 and not TENSOR_ASSERT[self.model.tensor_format](x_train.shape[0], x_train.shape[2]):
-            logger.warning(f"Dataset x_train.shape {x_train.shape} may not be in {self.model.tensor_format.upper()} format, following the model format!")
+        if len(x_train.shape) == 3 and not TENSOR_ASSERT[self.model.tensor_format](
+            x_train.shape[0], x_train.shape[2]
+        ):
+            logger.warning(
+                f"Dataset x_train.shape {x_train.shape} may not be in {
+                    self.model.tensor_format.upper()
+                } format, following the model format!"
+            )
 
-        if len(x_test.shape) == 3 and not TENSOR_ASSERT[self.model.tensor_format](x_test.shape[0], x_test.shape[2]):
-            logger.warning(f"Dataset x_test.shape {x_test.shape} may not be in {self.model.tensor_format.upper()} format, following the model format!")
+        if len(x_test.shape) == 3 and not TENSOR_ASSERT[self.model.tensor_format](
+            x_test.shape[0], x_test.shape[2]
+        ):
+            logger.warning(
+                f"Dataset x_test.shape {x_test.shape} may not be in {
+                    self.model.tensor_format.upper()
+                } format, following the model format!"
+            )
 
         test_as_validation = model.test_as_validation or force_test_as_validation
 
@@ -99,7 +113,15 @@ class Memory(Dataset):
         self.__x_source.append(x_test)
         self.__y_source.append(y_test)
 
-        super().__init__(model, x_train.shape[0], x_test.shape[0], input_shape, output_shape, force_test_as_validation=force_test_as_validation, debug=debug)
+        super().__init__(
+            model,
+            x_train.shape[0],
+            x_test.shape[0],
+            input_shape,
+            output_shape,
+            force_test_as_validation=force_test_as_validation,
+            debug=debug,
+        )
 
     def _model_init(self) -> None:
         """

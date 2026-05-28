@@ -33,4 +33,6 @@ class Precision[T: Array](Metric[T]):
             if isinstance(metric, BinaryConfusionMatrix):
                 self.conf_matrix_metric = metric
                 break
-        assert self.conf_matrix_metric is not None, f"Precision requires of {BinaryConfusionMatrix.__name__}"
+        assert self.conf_matrix_metric is not None, (
+            f"Precision requires of {BinaryConfusionMatrix.__name__}"
+        )

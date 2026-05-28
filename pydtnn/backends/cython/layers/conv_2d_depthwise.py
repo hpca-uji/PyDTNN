@@ -4,8 +4,10 @@ import logging
 from typing import TYPE_CHECKING
 
 from pydtnn.backends.cython.layers.abstract.conv_2d import AbstractConv2DCython
-from pydtnn.backends.cython.utils.depthwise_conv_nchw_cython import depthwise_conv_backward_nchw_cython, depthwise_conv_nchw_cython
-from pydtnn.backends.cython.utils.depthwise_conv_nhwc_cython import depthwise_conv_backward_nhwc_cython, depthwise_conv_nhwc_cython
+from pydtnn.backends.cython.utils.depthwise_conv_nchw_cython import (
+    depthwise_conv_backward_nchw_cython, depthwise_conv_nchw_cython)
+from pydtnn.backends.cython.utils.depthwise_conv_nhwc_cython import (
+    depthwise_conv_backward_nhwc_cython, depthwise_conv_nhwc_cython)
 from pydtnn.backends.numpy.layers.conv_2d_depthwise import Conv2DDepthwiseNumpy
 from pydtnn.libs import numpy as np
 

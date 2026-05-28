@@ -7,7 +7,8 @@ import numpy as np
 
 from pydtnn.backends.pycuda.layers.abstract.conv_2d import AbstractConv2DPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
+from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
+                                   PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import TensorFormat, format_transpose
 
@@ -59,12 +60,25 @@ class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
             case _:
                 raise NotImplementedError(f"{self.model.tensor_format} format not implemented.")
 
-        self.im2_x = TensorArray.new_zeros(im2_x_shape, self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype)
-        self.x_2im_var = TensorArray.new_zeros(x_2im_var_shape, self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype)
+        self.im2_x = TensorArray.new_zeros(
+            im2_x_shape, self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype
+        )
+        self.x_2im_var = TensorArray.new_zeros(
+            x_2im_var_shape, self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype
+        )
 
-        self.y = TensorArray.new_zeros((self.model.batch_size, *self.shape), self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype)
-        self.dw = TensorArray.new_zeros(dw_shape, self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype)
-        self.dx = TensorArray.new_zeros(self.x.ary.shape, self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype)
+        self.y = TensorArray.new_zeros(
+            (self.model.batch_size, *self.shape),
+            self.model.dtype,
+            self.model.tensor_format,
+            self.model.cudnn_dtype,
+        )
+        self.dw = TensorArray.new_zeros(
+            dw_shape, self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype
+        )
+        self.dx = TensorArray.new_zeros(
+            self.x.ary.shape, self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype
+        )
 
     @override
     def _export_weights_dw(self, key: str) -> Any:
@@ -77,7 +91,12 @@ class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
                 # NCHW's dst: co, ci, kh, kw
                 gpu_ary = value
                 cpu_ary = gpu_ary.get()
-                return np.asarray(format_transpose(cpu_ary, "IHWO", "OIHW"), dtype=np.float64, order="C", copy=True)
+                return np.asarray(
+                    format_transpose(cpu_ary, "IHWO", "OIHW"),
+                    dtype=np.float64,
+                    order="C",
+                    copy=True,
+                )
             case _:
                 return super()._export_prop(key)
 
@@ -98,7 +117,9 @@ class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
     def forward(self, x: TensorArray) -> TensorArray:
         """Perform the forward pass of the convolution."""
         # im2col / im2row
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN
+        )
         self.im2_func(
             x.ary,
             self.weights.ary,
@@ -134,7 +155,9 @@ class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
 
         self.dx.fill(0)
         # im2col / im2row
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX
+        )
         self._2im_func(
             dy.ary,
             self.im2_x.ary,

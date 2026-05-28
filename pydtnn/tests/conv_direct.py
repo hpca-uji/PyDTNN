@@ -31,7 +31,16 @@ class ConvDirectTestCase(ConvCommonTestCase):
 
     @classmethod
     def _compute_both(
-        cls, weights: np.ndarray, x: np.ndarray, biases: np.ndarray | None = None, vpadding=0, hpadding=0, vstride=1, hstride=1, vdilation=1, hdilation=1
+        cls,
+        weights: np.ndarray,
+        x: np.ndarray,
+        biases: np.ndarray | None = None,
+        vpadding=0,
+        hpadding=0,
+        vstride=1,
+        hstride=1,
+        vdilation=1,
+        hdilation=1,
     ) -> tuple[np.ndarray, np.ndarray]:
         """
         Computes convolution results using both direct implementation and im2row matrix multiplication for comparison.
@@ -43,7 +52,17 @@ class ConvDirectTestCase(ConvCommonTestCase):
         # b, c, h, w = x.shape
         cg_biases = biases.copy() if biases is not None else None
         conv_direct_result: np.ndarray = cls._compute(
-            weights, x.copy(), biases=cg_biases, kw=kw, kh=kh, vpadding=vpadding, hpadding=hpadding, vstride=vstride, hstride=hstride, vdilation=vdilation, hdilation=hdilation
+            weights,
+            x.copy(),
+            biases=cg_biases,
+            kw=kw,
+            kh=kh,
+            vpadding=vpadding,
+            hpadding=hpadding,
+            vstride=vstride,
+            hstride=hstride,
+            vdilation=vdilation,
+            hdilation=hdilation,
         ).copy()
         conv_direct_result: np.ndarray = conv_direct_result.reshape((-1, kn), copy=False)
 
@@ -74,19 +93,64 @@ class ConvDirectTestCase(ConvCommonTestCase):
         w_c = weights.reshape((-1, kn), copy=False)
         im2row_mm_result: np.ndarray = np.matmul(x_c, w_c).copy()
         if biases is not None:
-            np.add(im2row_mm_result, biases.reshape((-1, kn), copy=False), out=im2row_mm_result, dtype=im2row_mm_result.dtype)
+            np.add(
+                im2row_mm_result,
+                biases.reshape((-1, kn), copy=False),
+                out=im2row_mm_result,
+                dtype=im2row_mm_result.dtype,
+            )
         if verbose_test():
-            print_with_header("{} conv_direct_result".format(inspect.stack()[1][3]), conv_direct_result)
-            logger.info("Shape: ", conv_direct_result.shape, " Sum: ", conv_direct_result.sum(), " Min: ", conv_direct_result.min(), " Max: ", conv_direct_result.max())
+            print_with_header(
+                "{} conv_direct_result".format(inspect.stack()[1][3]), conv_direct_result
+            )
+            logger.info(
+                "Shape: ",
+                conv_direct_result.shape,
+                " Sum: ",
+                conv_direct_result.sum(),
+                " Min: ",
+                conv_direct_result.min(),
+                " Max: ",
+                conv_direct_result.max(),
+            )
             print_with_header("{} im2row_mm_result".format(inspect.stack()[1][3]), im2row_mm_result)
-            logger.info("Shape: ", im2row_mm_result.shape, " Sum: ", im2row_mm_result.sum(), " Min: ", im2row_mm_result.min(), " Max: ", im2row_mm_result.max())
+            logger.info(
+                "Shape: ",
+                im2row_mm_result.shape,
+                " Sum: ",
+                im2row_mm_result.sum(),
+                " Min: ",
+                im2row_mm_result.min(),
+                " Max: ",
+                im2row_mm_result.max(),
+            )
             logger.info("---")
-            logger.info("Maximum difference: ", max([abs(x - y) for x, y in zip(conv_direct_result.flatten(), im2row_mm_result.flatten())]))
+            logger.info(
+                "Maximum difference: ",
+                max(
+                    [
+                        abs(x - y)
+                        for x, y in zip(conv_direct_result.flatten(), im2row_mm_result.flatten())
+                    ]
+                ),
+            )
             logger.info("---")
         return conv_direct_result, im2row_mm_result
 
     @staticmethod
-    def _compute(weights: np.ndarray, x: np.ndarray, biases: np.ndarray | None = None, kh=1, kw=1, vpadding=0, hpadding=0, vstride=1, hstride=1, vdilation=1, hdilation=1):
+    def _compute(
+        weights: np.ndarray,
+        x: np.ndarray,
+        biases: np.ndarray | None = None,
+        kh=1,
+        kw=1,
+        vpadding=0,
+        hpadding=0,
+        vstride=1,
+        hstride=1,
+        vdilation=1,
+        hdilation=1,
+    ):
         """
         Executes the direct convolution operation using the ConvDirect library.
 
@@ -95,4 +159,6 @@ class ConvDirectTestCase(ConvCommonTestCase):
         """
         if biases is not None:
             raise SkipTest("Direct does not support biases")
-        return ConvDirect(method_name="convdirect_original_nhwc_default", debug=False).conv_direct(weights, x, None, vpadding, hpadding, vstride, hstride, vdilation, hdilation)
+        return ConvDirect(method_name="convdirect_original_nhwc_default", debug=False).conv_direct(
+            weights, x, None, vpadding, hpadding, vstride, hstride, vdilation, hdilation
+        )

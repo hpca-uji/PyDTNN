@@ -8,7 +8,8 @@ from typing import TYPE_CHECKING
 from pydtnn.backends.numpy.layers.abstract.layer import LayerNumpy
 from pydtnn.layers.flatten import Flatten
 from pydtnn.libs import numpy as np
-from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
+from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
+                                   PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
 
 __all__ = ("FlattenNumpy",)
 
@@ -34,7 +35,9 @@ class FlattenNumpy(Flatten[np.ndarray], LayerNumpy):
         Returns:
             Flattened tensor of shape (batch_size, *self.shape).
         """
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_Y)
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_Y
+        )
         y: np.ndarray = x.reshape((x.shape[0], *self.shape))
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return np.ascontiguousarray(y, dtype=self.model.dtype)
@@ -49,7 +52,10 @@ class FlattenNumpy(Flatten[np.ndarray], LayerNumpy):
         Returns:
             Gradient of the loss with respect to the input.
         """
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_RESHAPE_DX)
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT,
+            self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_RESHAPE_DX,
+        )
         dx: np.ndarray = dy.reshape((dy.shape[0], *self.prev_shape))
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return np.ascontiguousarray(dx, dtype=self.model.dtype)

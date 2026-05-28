@@ -30,16 +30,32 @@ class DecoderPycuda(AbstractBlockLayerPycuda, Decoder):
         Initializes the DecoderPycuda layer with sub-layers and internal buffers.
         """
         super().__init__(*args, **kwargs)
-        self.multiheadattention = MultiHeadAttention(embedl=self.embedl, d_k=self.d_k, heads=self.heads, dropout_rate=self.dropout_rate)
+        self.multiheadattention = MultiHeadAttention(
+            embedl=self.embedl, d_k=self.d_k, heads=self.heads, dropout_rate=self.dropout_rate
+        )
         # self.dropout_1 = DropoutPycuda(rate=self.dropout_rate)
         self.layernormalization_1 = LayerNormalization(axis=(3,))
-        self.multiheadattention_enc = MultiHeadAttention(embedl=self.embedl, d_k=self.d_k, heads=self.heads, dropout_rate=self.dropout_rate)
+        self.multiheadattention_enc = MultiHeadAttention(
+            embedl=self.embedl, d_k=self.d_k, heads=self.heads, dropout_rate=self.dropout_rate
+        )
         # self.dropout_enc = DropoutPycuda(rate=self.dropout_rate)
         self.layernormalization_enc = LayerNormalization(axis=(3,))
-        self.feedforward = FeedForward(shape=(self.embedl,), d_ff=self.d_ff, dropout_rate=self.dropout_rate)
+        self.feedforward = FeedForward(
+            shape=(self.embedl,), d_ff=self.d_ff, dropout_rate=self.dropout_rate
+        )
         self.dropout_2 = Dropout(rate=self.dropout_rate)
         self.layernormalization_2 = LayerNormalization(axis=(3,))
-        self.paths = [[self.multiheadattention, self.layernormalization_1, self.multiheadattention_enc, self.layernormalization_enc, self.feedforward, self.dropout_2, self.layernormalization_2]]
+        self.paths = [
+            [
+                self.multiheadattention,
+                self.layernormalization_1,
+                self.multiheadattention_enc,
+                self.layernormalization_enc,
+                self.feedforward,
+                self.dropout_2,
+                self.layernormalization_2,
+            ]
+        ]
 
         # The next attributes will be initialized later
         self.y: TensorArray = None  # type: ignore
@@ -63,22 +79,38 @@ class DecoderPycuda(AbstractBlockLayerPycuda, Decoder):
 
         self.multiheadattention._model_init(prev_shape=mha_shape, x=(x_dec, x_dec, x_dec, mask_dec))
         self.layernormalization_1._model_init(prev_shape=self.shape, x=self.multiheadattention.y)
-        self.multiheadattention_enc._model_init(prev_shape=mha_shape, x=(x_dec, x_enc, x_enc, mask_dec))
-        self.layernormalization_enc._model_init(prev_shape=self.shape, x=self.multiheadattention_enc.y)
+        self.multiheadattention_enc._model_init(
+            prev_shape=mha_shape, x=(x_dec, x_enc, x_enc, mask_dec)
+        )
+        self.layernormalization_enc._model_init(
+            prev_shape=self.shape, x=self.multiheadattention_enc.y
+        )
 
         x_aux = self.flatten(self.layernormalization_enc.y)
-        self.layernormalization_enc_y_flatten = TensorArray(x_aux.ary, self.model.tensor_fmt, self.model.cudnn_dtype)
+        self.layernormalization_enc_y_flatten = TensorArray(
+            x_aux.ary, self.model.tensor_fmt, self.model.cudnn_dtype
+        )
 
-        self.feedforward._model_init(prev_shape=self.layernormalization_enc.shape, x=self.layernormalization_enc_y_flatten)
+        self.feedforward._model_init(
+            prev_shape=self.layernormalization_enc.shape, x=self.layernormalization_enc_y_flatten
+        )
 
         x_aux = self.unflatten(self.feedforward.y)
-        self.feedforward_y_unflatten = TensorArray(x_aux.ary, self.model.tensor_fmt, self.model.cudnn_dtype)
+        self.feedforward_y_unflatten = TensorArray(
+            x_aux.ary, self.model.tensor_fmt, self.model.cudnn_dtype
+        )
         x_aux = self.unflatten(self.feedforward.dx)
-        self.feedforward_dx_unflatten = TensorArray(x_aux.ary, self.model.tensor_fmt, self.model.cudnn_dtype)
+        self.feedforward_dx_unflatten = TensorArray(
+            x_aux.ary, self.model.tensor_fmt, self.model.cudnn_dtype
+        )
 
-        self.dropout_2._model_init(prev_shape=self.feedforward.shape, x=self.feedforward_y_unflatten)
+        self.dropout_2._model_init(
+            prev_shape=self.feedforward.shape, x=self.feedforward_y_unflatten
+        )
         x_aux = self.flatten(self.dropout_2.dx)
-        self.dropout_2_dx_flatten = TensorArray(x_aux.ary, self.model.tensor_fmt, self.model.cudnn_dtype)
+        self.dropout_2_dx_flatten = TensorArray(
+            x_aux.ary, self.model.tensor_fmt, self.model.cudnn_dtype
+        )
 
         self.layernormalization_2._model_init(prev_shape=self.dropout_2.shape, x=self.dropout_2.y)
 
@@ -124,18 +156,30 @@ class DecoderPycuda(AbstractBlockLayerPycuda, Decoder):
         """
         alpha, beta = 1.0, 1.0
         # Self Attention
-        self.multiheadattention.forward(x, x, x, mask, x)  # type: ignore (multiheadattention uses more parameters)
+        # type: ignore (multiheadattention uses more parameters)
+        self.multiheadattention.forward(x, x, x, mask, x)
         self.layernormalization_1.forward(self.multiheadattention.y)
 
         # Self Attention Encoder
-        self.multiheadattention_enc.forward(self.layernormalization_1.y, x_enc, x_enc, mask, self.layernormalization_1.y)  # type: ignore (multiheadattention uses more parameters)
+        # type: ignore (multiheadattention uses more parameters)
+        self.multiheadattention_enc.forward(
+            self.layernormalization_1.y, x_enc, x_enc, mask, self.layernormalization_1.y
+        )
         self.layernormalization_enc.forward(self.multiheadattention_enc.y)
 
         # Feed Forward
         self.feedforward.forward(self.layernormalization_enc_y_flatten)
         self.dropout_2.forward(self.feedforward_y_unflatten)
         # y = dropout_2.y + layernormalization_enc.y
-        cudnn.cudnnAddTensor(self.model.cudnn_handle, alpha, self.layernormalization_enc.y.desc, self.layernormalization_enc.y.ptr, beta, self.dropout_2.y.desc, self.dropout_2.y.ptr)
+        cudnn.cudnnAddTensor(
+            self.model.cudnn_handle,
+            alpha,
+            self.layernormalization_enc.y.desc,
+            self.layernormalization_enc.y.ptr,
+            beta,
+            self.dropout_2.y.desc,
+            self.dropout_2.y.ptr,
+        )
         self.layernormalization_2.forward(self.dropout_2.y)
         return self.y
 
@@ -152,25 +196,71 @@ class DecoderPycuda(AbstractBlockLayerPycuda, Decoder):
 
         # dx = feedforward.dx + layernormalization_2.dx
         cudnn.cudnnAddTensor(
-            self.model.cudnn_handle, alpha, self.layernormalization_2.dx.desc, self.layernormalization_2.dx.ptr, beta, self.feedforward_dx_unflatten.desc, self.feedforward_dx_unflatten.ptr_voidp
+            self.model.cudnn_handle,
+            alpha,
+            self.layernormalization_2.dx.desc,
+            self.layernormalization_2.dx.ptr,
+            beta,
+            self.feedforward_dx_unflatten.desc,
+            self.feedforward_dx_unflatten.ptr_voidp,
         )
 
         # Self Attention Encoder
         self.layernormalization_enc.backward(self.feedforward_dx_unflatten)
         self.multiheadattention_enc.backward(self.layernormalization_enc.dx)
         # dx_enc = multihead.dkey + multiheadattention.dvalue
-        cudnn.cudnnAddTensor(self.model.cudnn_handle, alpha, self.dx_enc.desc, self.multiheadattention_enc.dvalue.ptr, beta, self.dx_enc.desc, self.dx_enc.ptr_voidp)
+        cudnn.cudnnAddTensor(
+            self.model.cudnn_handle,
+            alpha,
+            self.dx_enc.desc,
+            self.multiheadattention_enc.dvalue.ptr,
+            beta,
+            self.dx_enc.desc,
+            self.dx_enc.ptr_voidp,
+        )
         # dx = layernorm_enc.dx + multihead_enc.dquery
-        cudnn.cudnnAddTensor(self.model.cudnn_handle, alpha, self.dx_enc_dquery.desc, self.layernormalization_enc.dx.ptr, beta, self.dx_enc_dquery.desc, self.multiheadattention_enc.dquery.ptr)
+        cudnn.cudnnAddTensor(
+            self.model.cudnn_handle,
+            alpha,
+            self.dx_enc_dquery.desc,
+            self.layernormalization_enc.dx.ptr,
+            beta,
+            self.dx_enc_dquery.desc,
+            self.multiheadattention_enc.dquery.ptr,
+        )
 
         # Self Attention
         self.layernormalization_1.backward(self.dx_enc_dquery)
         self.multiheadattention.backward(self.layernormalization_1.dx)
         # if self.need_dx:
         # dx = layernorm_1.dx + multihead.dquery + multihead.dkey + multihead.dvalue
-        cudnn.cudnnAddTensor(self.model.cudnn_handle, alpha, self.dx.desc, self.layernormalization_1.dx.ptr, beta, self.dx.desc, self.dx.ptr_voidp)
-        cudnn.cudnnAddTensor(self.model.cudnn_handle, alpha, self.dx.desc, self.multiheadattention.dkey.ptr, beta, self.dx.desc, self.dx.ptr_voidp)
-        cudnn.cudnnAddTensor(self.model.cudnn_handle, alpha, self.dx.desc, self.multiheadattention.dvalue.ptr, beta, self.dx.desc, self.dx.ptr_voidp)
+        cudnn.cudnnAddTensor(
+            self.model.cudnn_handle,
+            alpha,
+            self.dx.desc,
+            self.layernormalization_1.dx.ptr,
+            beta,
+            self.dx.desc,
+            self.dx.ptr_voidp,
+        )
+        cudnn.cudnnAddTensor(
+            self.model.cudnn_handle,
+            alpha,
+            self.dx.desc,
+            self.multiheadattention.dkey.ptr,
+            beta,
+            self.dx.desc,
+            self.dx.ptr_voidp,
+        )
+        cudnn.cudnnAddTensor(
+            self.model.cudnn_handle,
+            alpha,
+            self.dx.desc,
+            self.multiheadattention.dvalue.ptr,
+            beta,
+            self.dx.desc,
+            self.dx.ptr_voidp,
+        )
         return self.dx, self.dx_enc
         # else:
         #     return self.dx_enc

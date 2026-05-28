@@ -52,7 +52,15 @@ class IWSLT(Dataset):
     scale:  ???
     """
 
-    def __init__(self, model: Model, embedl=512, max_sentence=512, split_token="<translation>", force_test_as_validation=False, debug=False):
+    def __init__(
+        self,
+        model: Model,
+        embedl=512,
+        max_sentence=512,
+        split_token="<translation>",
+        force_test_as_validation=False,
+        debug=False,
+    ):
         """
         Initialize the IWSLT dataset instance.
         """
@@ -69,7 +77,15 @@ class IWSLT(Dataset):
         self.lang1 = self.model.dataset_lang
         self.lang2 = self.model.dataset_lang2
 
-        super().__init__(model, TRAIN_NSAMPLES, TEST_NSAMPLES, INPUT_SHAPE, OUTPUT_SHAPE, force_test_as_validation=force_test_as_validation, debug=debug)
+        super().__init__(
+            model,
+            TRAIN_NSAMPLES,
+            TEST_NSAMPLES,
+            INPUT_SHAPE,
+            OUTPUT_SHAPE,
+            force_test_as_validation=force_test_as_validation,
+            debug=debug,
+        )
 
     def _model_init(self) -> None:
         """
@@ -172,8 +188,12 @@ class IWSLT(Dataset):
 
         for i in range(self.train_val_nsamples // batch_size):
             window = (i * batch_size, (i + 1) * batch_size)
-            src_embeddings = np.zeros((batch_size, self.max_sentence, self.embedl), dtype=np.float32)
-            tgt_embeddings = np.zeros((batch_size, self.max_sentence, self.embedl), dtype=np.float32)
+            src_embeddings = np.zeros(
+                (batch_size, self.max_sentence, self.embedl), dtype=np.float32
+            )
+            tgt_embeddings = np.zeros(
+                (batch_size, self.max_sentence, self.embedl), dtype=np.float32
+            )
             src_mask = np.zeros((batch_size, 1, self.max_sentence), dtype=bool)
             tgt_mask = np.zeros((batch_size, self.max_sentence, self.max_sentence), dtype=bool)
             for i, doc in enumerate(self.dictionary1.pipe(lines1[window[0]: window[1]])):
@@ -189,7 +209,9 @@ class IWSLT(Dataset):
             y = tgt_embeddings
             yield x, y
 
-    def _synthetic_data_generator(self) -> Generator[tuple[list[np.ndarray], np.ndarray], Any, None]:
+    def _synthetic_data_generator(
+        self,
+    ) -> Generator[tuple[list[np.ndarray], np.ndarray], Any, None]:
         """
         Generate batches of synthetic data for testing purposes.
         """
@@ -199,20 +221,34 @@ class IWSLT(Dataset):
         if getattr(self, "src_embeddings", None):
             pass
         else:
-            self.src_embeddings: np.ndarray = random.random((1000, 1, self.max_sentence, self.embedl)).astype(dtype=self.dtype)
-            self.tgt_embeddings: np.ndarray = random.random((1000, 1, self.max_sentence, self.embedl)).astype(dtype=self.dtype)
+            self.src_embeddings: np.ndarray = random.random(
+                (1000, 1, self.max_sentence, self.embedl)
+            ).astype(dtype=self.dtype)
+            self.tgt_embeddings: np.ndarray = random.random(
+                (1000, 1, self.max_sentence, self.embedl)
+            ).astype(dtype=self.dtype)
 
         for i in range(self.train_nsamples // batch_size):
             # window = (i * batch_size + rank * batch_size, i * batch_size + (rank + 1) * batch_size)
             window = (0 * batch_size + rank * batch_size, 0 * batch_size + (rank + 1) * batch_size)
             # x = [self.src_embeddings[window[0]:window[1]], self.src_mask[window[0]:window[1]], self.tgt_embeddings[window[0]:window[1]], self.tgt_mask[window[0]:window[1]]]
             # y = self.tgt_embeddings[window[0]:window[1]]
-            x = [self.src_embeddings[window[0]: window[1]], self.tgt_embeddings[window[0]: window[1]]]
+            x = [
+                self.src_embeddings[window[0]: window[1]],
+                self.tgt_embeddings[window[0]: window[1]],
+            ]
             y = self.tgt_embeddings[window[0]: window[1]]
             yield x, y
 
     # === Preprocess ===
-    def preprocess(self, original_file_lang1, lang1: str, original_file_lang2, lang2: str, destination_file="IWSLT.txt"):
+    def preprocess(
+        self,
+        original_file_lang1,
+        lang1: str,
+        original_file_lang2,
+        lang2: str,
+        destination_file="IWSLT.txt",
+    ):
         """
         Preprocess raw translation files into a unified format.
         """
@@ -224,14 +260,21 @@ class IWSLT(Dataset):
         lines2 = file.readlines()
         file.close()
         if len(lines1) != len(lines2):
-            logger.error("Los archivos tienen un numero de muestras distintas, {} y {}".format(len(lines1), len(lines2)))
+            logger.error(
+                "Los archivos tienen un numero de muestras distintas, {} y {}".format(
+                    len(lines1), len(lines2)
+                )
+            )
             return -1
 
         file = open(destination_file, "w")
         for i in range(len(lines1)):
             line1 = lines1[i].replace("\n", "")
             line2 = lines2[i].replace("\n", "")
-            if len(self.dictionary1(line1)) <= self.max_sentence and len(self.dictionary2(line2)) <= self.max_sentence:
+            if (
+                len(self.dictionary1(line1)) <= self.max_sentence
+                and len(self.dictionary2(line2)) <= self.max_sentence
+            ):
                 file.write(line1 + self.split_token + line2 + "\n")
         file.close()
 

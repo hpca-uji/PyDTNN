@@ -32,4 +32,14 @@ class Conv2DPointwise[T: Array](AbstractConv2D[T]):
         weights_initializer: InitializerFunc = glorot_uniform,
         biases_initializer: InitializerFunc = zeros,
     ):
-        super().__init__(nfilters, filter_shape, padding, stride, dilation, activation, use_bias, weights_initializer, biases_initializer)
+        super().__init__(
+            nfilters,
+            filter_shape,
+            padding,
+            stride,
+            dilation,
+            activation,
+            use_bias,
+            weights_initializer,
+            biases_initializer,
+        )

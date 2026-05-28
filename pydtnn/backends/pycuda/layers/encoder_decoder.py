@@ -20,8 +20,26 @@ class EncoderDecoderPycuda(AbstractBlockLayerPycuda, EncoderDecoder):
     def __init__(self, *args, **kwargs):
         """Initializes the EncoderDecoderPycuda layer with PyCUDA-specific sublayers."""
         super().__init__(*args, **kwargs)
-        self.encoder = [Encoder(embedl=self.embedl, d_k=self.d_k, d_ff=self.d_ff, heads=self.heads, dropout_rate=self.dropout_rate) for _ in range(self.enc_layers)]
-        self.decoder = [Decoder(embedl=self.embedl, d_k=self.d_k, d_ff=self.d_ff, heads=self.heads, dropout_rate=self.dropout_rate) for _ in range(self.dec_layers)]
+        self.encoder = [
+            Encoder(
+                embedl=self.embedl,
+                d_k=self.d_k,
+                d_ff=self.d_ff,
+                heads=self.heads,
+                dropout_rate=self.dropout_rate,
+            )
+            for _ in range(self.enc_layers)
+        ]
+        self.decoder = [
+            Decoder(
+                embedl=self.embedl,
+                d_k=self.d_k,
+                d_ff=self.d_ff,
+                heads=self.heads,
+                dropout_rate=self.dropout_rate,
+            )
+            for _ in range(self.dec_layers)
+        ]
         self.paths = [self.encoder + self.decoder]  # type: ignore
 
         # The next attributes will be initialized later
@@ -46,11 +64,14 @@ class EncoderDecoderPycuda(AbstractBlockLayerPycuda, EncoderDecoder):
         for layer in self.children:
             layer._init_backend_with_model(self.model)
 
-        self.encoder[0]._model_init(prev_shape=enc_shape, x=(x_enc, mask_enc))  # type: ignore (encoder use more parameters)
+        # type: ignore (encoder use more parameters)
+        self.encoder[0]._model_init(prev_shape=enc_shape, x=(x_enc, mask_enc))
         for layer in self.encoder[1:]:
-            layer._model_init(prev_shape=enc_shape, x=(x_enc, mask_enc))  # type: ignore (encoder use more parameters)
+            # type: ignore (encoder use more parameters)
+            layer._model_init(prev_shape=enc_shape, x=(x_enc, mask_enc))
         for layer in self.decoder:
-            layer._model_init(prev_shape=dec_shape, x=(x_dec, x_enc, mask_dec))  # type: ignore (decoder use more parameters)
+            layer._model_init(prev_shape=dec_shape, x=(x_dec, x_enc, mask_dec)
+                              )  # type: ignore (decoder use more parameters)
 
         for layer in self.children:
             self.fwd_time += layer.fwd_time
@@ -81,7 +102,9 @@ class EncoderDecoderPycuda(AbstractBlockLayerPycuda, EncoderDecoder):
         dx_tgt, dx_enc = self.decoder[self.dec_layers - 1].backward(prev_dx)
         for i in range(self.dec_layers - 1, 0, -1):  # Decoding layers
             dx_tgt, dx_2 = self.decoder[i - 1].backward(dx_tgt)
-            cudnn.cudnnAddTensor(self.model.cudnn_handle, alpha, dx_2.desc, dx_2.ptr, beta, dx_enc.desc, dx_enc.ptr)  # dx_enc += dx2
+            cudnn.cudnnAddTensor(
+                self.model.cudnn_handle, alpha, dx_2.desc, dx_2.ptr, beta, dx_enc.desc, dx_enc.ptr
+            )  # dx_enc += dx2
         for i in range(self.enc_layers, 0, -1):  # Enconding layers
             dx_enc = self.encoder[i - 1].backward(dx_enc)
         if self.need_dx:

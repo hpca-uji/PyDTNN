@@ -100,7 +100,9 @@ class ConvGemm:
 
     lib_cg = None  # will link to the libconvGemm.so library
 
-    def __init__(self, dtype: np.dtype = np.dtype(np.float32), debug: bool = False, parent_layer=None):
+    def __init__(
+        self, dtype: np.dtype = np.dtype(np.float32), debug: bool = False, parent_layer=None
+    ):
         """
         Initializes the ConvGemm instance.
 
@@ -137,7 +139,9 @@ class ConvGemm:
         self.ac_pack = ctypes.POINTER(ctypes.c_float)()
         self.bc_pack = ctypes.POINTER(ctypes.c_float)()
         self.lib_cg.alloc_pack_buffs.restype = ctypes.c_int
-        result = self.lib_cg.alloc_pack_buffs(ctypes.byref(self.ac_pack), ctypes.byref(self.bc_pack))
+        result = self.lib_cg.alloc_pack_buffs(
+            ctypes.byref(self.ac_pack), ctypes.byref(self.bc_pack)
+        )
         if result == 1:
             raise MemoryError("Could not allocate space for ac_pack or bc_pack!")
         # Debug
@@ -145,14 +149,17 @@ class ConvGemm:
         # Parent layer
         if parent_layer is not None:
             self.get_parent_layer = weakref.ref(parent_layer)
-        # Choose the appropriate convGemm function depending on the architecture and the data type being used
+        # Choose the appropriate convGemm function depending on the architecture
+        # and the data type being used
         if self.dtype == np.float32:
             self.x_conv_gemm_nhwc = self.lib_cg.sconvGemmNHWC
             self.x_deconv_gemm_nhwc = self.lib_cg.sconvGemmNHWC_back
             self.x_conv_gemm_nchw = self.lib_cg.sconvGemmNCHW
             self.x_deconv_gemm_nchw = self.lib_cg.sconvGemmNCHW_back
         else:
-            raise TypeError(f"Type '{str(self.dtype)}' not supported by this version of libconvGemm!")
+            raise TypeError(
+                f"Type '{str(self.dtype)}' not supported by this version of libconvGemm!"
+            )
 
     def __del__(self):
         """
@@ -285,15 +292,21 @@ class ConvGemm:
                 out = out[:b, :]
                 bb, knb, hob, wob = out.shape
                 assert bb == b, "Batch size of the out must be the same as in the input!"
-                assert knb == kn, "Number of filters in out must be the same as in the filter tensor!"
+                assert knb == kn, (
+                    "Number of filters in out must be the same as in the filter tensor!"
+                )
                 assert hob == ho, "Biases image height must be the same as the output image height!"
                 assert wob == wo, "Biases image width must be the same as the output image width!"
         else:
             # This branch seems to be for transposed convolution logic, but the method name is conv_gemm_nchw.
             # Assuming 'trans' might be used for backward pass or specific GEMM configurations.
-            assert out is not None, "If using the transposed convGemm, the out matrix must be supplied"
+            assert out is not None, (
+                "If using the transposed convGemm, the out matrix must be supplied"
+            )
             kn, ck, kh, kw = out.shape  # Assuming out shape is (kn, b, ho, wo) for transposed
-            bw, knw, ho, wo = weights.shape  # Assuming weights shape is (c, kn, kh, kw) for transposed
+            bw, knw, ho, wo = (
+                weights.shape
+            )  # Assuming weights shape is (c, kn, kh, kw) for transposed
             assert kn == knw, "Number of filters must be the same!"
             assert b == bw, "Batch size must be the same!"
         assert ck == c, "Number of channels in weights and x should be the same!"
@@ -306,8 +319,13 @@ class ConvGemm:
         bn_beta: np.ndarray
 
         # Check that dtype is the same on all the matrices
-        assert weights.dtype == x.dtype == out.dtype, "All the matrices must have the same type of data!"
-        assert weights.dtype == self.dtype, "The input matrices must have the same type of data as the one specified when this class was instantiated!"
+        assert weights.dtype == x.dtype == out.dtype, (
+            "All the matrices must have the same type of data!"
+        )
+        assert weights.dtype == self.dtype, (
+            "The input matrices must have the same type of data as the one specified when this"
+            " class was instantiated!"
+        )
 
         # Call the appropriate convGemm function from libconvGemm
         self.x_conv_gemm_nchw(
@@ -457,13 +475,19 @@ class ConvGemm:
                 assert bb == b, "Batch size of the out must be the same as in the input!"
                 assert hob == ho, "Biases image height must be the same as the output image height!"
                 assert wob == wo, "Biases image width must be the same as the output image width!"
-                assert knb == kn, "Number of filters in out must be the same as in the filter tensor!"
+                assert knb == kn, (
+                    "Number of filters in out must be the same as in the filter tensor!"
+                )
         else:
             # This branch seems to be for transposed convolution logic, but the method name is conv_gemm_nhwc.
             # Assuming 'trans' might be used for backward pass or specific GEMM configurations.
-            assert out is not None, "If using the transposed convGemm, the output matrix must be supplied"
+            assert out is not None, (
+                "If using the transposed convGemm, the output matrix must be supplied"
+            )
             ck, kh, kw, kn = out.shape  # Assuming out shape is (ho, wo, kn) for transposed
-            bw, ho, wo, knw = weights.shape  # Assuming weights shape is (h, w, c, kn) for transposed
+            bw, ho, wo, knw = (
+                weights.shape
+            )  # Assuming weights shape is (h, w, c, kn) for transposed
             assert kn == knw, "Number of filters must be the same!"
             assert b == bw, "Batch size must be the same!"
         assert ck == c, "Number of channels in weights and x should be the same!"
@@ -476,8 +500,13 @@ class ConvGemm:
         bn_beta: np.ndarray
 
         # Check that dtype is the same on all the matrices
-        assert weights.dtype == x.dtype == out.dtype, "All the matrices must have the same type of data!"
-        assert weights.dtype == self.dtype, "The input matrices must have the same type of data as the one specified when this class was instantiated!"
+        assert weights.dtype == x.dtype == out.dtype, (
+            "All the matrices must have the same type of data!"
+        )
+        assert weights.dtype == self.dtype, (
+            "The input matrices must have the same type of data as the one specified when this"
+            " class was instantiated!"
+        )
 
         # Call the appropriate convGemm function from libconvGemm
         self.x_conv_gemm_nhwc(
@@ -510,7 +539,18 @@ class ConvGemm:
 
         return out
 
-    def deconv_gemm_nchw(self, weights: np.ndarray, dy: np.ndarray, dx: np.ndarray, vpadding=0, hpadding=0, vstride=1, hstride=1, vdilation=1, hdilation=1):
+    def deconv_gemm_nchw(
+        self,
+        weights: np.ndarray,
+        dy: np.ndarray,
+        dx: np.ndarray,
+        vpadding=0,
+        hpadding=0,
+        vstride=1,
+        hstride=1,
+        vdilation=1,
+        hdilation=1,
+    ):
         """
         Performs a transposed convolution (deconvolution) operation using NCHW format.
 
@@ -592,7 +632,18 @@ class ConvGemm:
 
         return dx
 
-    def deconv_gemm_nhwc(self, weights: np.ndarray, dy: np.ndarray, dx: np.ndarray, vpadding=0, hpadding=0, vstride=1, hstride=1, vdilation=1, hdilation=1):
+    def deconv_gemm_nhwc(
+        self,
+        weights: np.ndarray,
+        dy: np.ndarray,
+        dx: np.ndarray,
+        vpadding=0,
+        hpadding=0,
+        vstride=1,
+        hstride=1,
+        vdilation=1,
+        hdilation=1,
+    ):
         """
         Performs a transposed convolution (deconvolution) operation using NHWC format.
 
@@ -710,7 +761,9 @@ def __free__(pack):
     elif platform.system == "Darwin":
         libc = ctypes.cdll.LoadLibrary("libc.dylib")
     else:
-        raise AssertionError("Don't know how to get to libc for a '{}' system".format(platform.system()))
+        raise AssertionError(
+            "Don't know how to get to libc for a '{}' system".format(platform.system())
+        )
     assert isinstance(pack, object)
     libc.free(pack)
 
@@ -846,9 +899,21 @@ def __usage_example__():
     logger.info("Using conv_gemm to compute alpha * weights * im2col(x) + beta * out...")
     conv_gemm = ConvGemm(debug=False)
     conv_gemm_result = conv_gemm.conv_gemm_nchw(
-        weights, x, vpadding=vpadding, hpadding=hpadding, vstride=vstride, hstride=hstride, vdilation=vdilation, hdilation=hdilation, out=out.reshape(kn, b, ho, wo)
+        weights,
+        x,
+        vpadding=vpadding,
+        hpadding=hpadding,
+        vstride=vstride,
+        hstride=hstride,
+        vdilation=vdilation,
+        hdilation=hdilation,
+        out=out.reshape(kn, b, ho, wo),
     )
-    logger.info("\n".join([str(conv_gemm_result), f"Sum: {conv_gemm_result.sum()}", "", "Using im2col and mm..."]))
+    logger.info(
+        "\n".join(
+            [str(conv_gemm_result), f"Sum: {conv_gemm_result.sum()}", "", "Using im2col and mm..."]
+        )
+    )
     x_c = np.zeros((c * kh * kw, b * ho * wo))
     im2col_nchw_cython(
         x,
@@ -866,14 +931,63 @@ def __usage_example__():
     )
     w_c = weights.reshape(kn, -1)
     im2col_mm_result = (w_c @ x_c + out).reshape(kn, b, ho, wo).transpose(1, 0, 2, 3)
-    logger.info("\n".join([str(im2col_mm_result), f"Sum: {im2col_mm_result.sum()}", f"np.allclose: {np.allclose(conv_gemm_result, im2col_mm_result)}"]))
+    logger.info(
+        "\n".join(
+            [
+                str(im2col_mm_result),
+                f"Sum: {im2col_mm_result.sum()}",
+                f"np.allclose: {np.allclose(conv_gemm_result, im2col_mm_result)}",
+            ]
+        )
+    )
     # print(conv_gemm_result - im2col_mm_result)
     # Times
-    conv_gemm_t = timeit(lambda: conv_gemm.conv_gemm_nchw(weights, x, vpadding=vpadding, hpadding=hpadding, vstride=vstride, hstride=hstride, vdilation=vdilation, hdilation=hdilation), number=10) / 10
+    conv_gemm_t = (
+        timeit(
+            lambda: conv_gemm.conv_gemm_nchw(
+                weights,
+                x,
+                vpadding=vpadding,
+                hpadding=hpadding,
+                vstride=vstride,
+                hstride=hstride,
+                vdilation=vdilation,
+                hdilation=hdilation,
+            ),
+            number=10,
+        )
+        / 10
+    )
     logger.info("\n".join(["Times", "-----", "conv_gemm time: {:.4f}".format(conv_gemm_t)]))
-    im2col_t = timeit(lambda: time_it_func(x, w_c, out, b, kn, ho, wo, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation), number=10) / 10
+    im2col_t = (
+        timeit(
+            lambda: time_it_func(
+                x,
+                w_c,
+                out,
+                b,
+                kn,
+                ho,
+                wo,
+                kh,
+                kw,
+                vpadding,
+                hpadding,
+                vstride,
+                hstride,
+                vdilation,
+                hdilation,
+            ),
+            number=10,
+        )
+        / 10
+    )
     mm_t = timeit(lambda: w_c @ x_c + out, number=10) / 10
-    logger.info("im2col+mm time: {:.4f}  (im2col: {:.4f}  mm: {:.4f}".format(im2col_t + mm_t, im2col_t, mm_t))
+    logger.info(
+        "im2col+mm time: {:.4f}  (im2col: {:.4f}  mm: {:.4f}".format(
+            im2col_t + mm_t, im2col_t, mm_t
+        )
+    )
 
 
 if __name__ == "__main__":

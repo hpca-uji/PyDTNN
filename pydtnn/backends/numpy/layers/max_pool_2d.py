@@ -6,7 +6,8 @@ from typing import TYPE_CHECKING
 from pydtnn.backends.numpy.layers.abstract.pool_2d_layer import AbstractPool2DLayerNumpy
 from pydtnn.layers.max_pool_2d import MaxPool2D
 from pydtnn.libs import numpy as np
-from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
+from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
+                                   PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
 from pydtnn.utils.constants import ArrayShape
 
 __all__ = ("MaxPool2DNumpy",)
@@ -31,10 +32,16 @@ class MaxPool2DNumpy(MaxPool2D[np.ndarray], AbstractPool2DLayerNumpy):
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None):
         """Initialize model parameters and allocate memory for indices."""
         super()._model_init(prev_shape, x)
-        self.minval = int(np.iinfo(self.model.dtype).min) if np.issubdtype(self.model.dtype, np.integer) else float(np.finfo(self.model.dtype).min)
+        self.minval = (
+            int(np.iinfo(self.model.dtype).min)
+            if np.issubdtype(self.model.dtype, np.integer)
+            else float(np.finfo(self.model.dtype).min)
+        )
         idx_max_shape = self.model.encode_shape((self.model.batch_size, self.co, self.ho, self.wo))
 
-        # NOTE: This attribute only stores data, its value before the operation doesn't matter; it's initalized due avoid warnings in "LayerAndActivationBase.export".
+        # NOTE: This attribute only stores data, its value before the operation
+        # doesn't matter; it's initalized due avoid warnings in
+        # "LayerAndActivationBase.export".
         self._idx_max: np.ndarray = np.zeros(idx_max_shape, dtype=np.int32)
         self.memory_used += self._idx_max.nbytes
 
@@ -114,7 +121,9 @@ class MaxPool2DNumpy(MaxPool2D[np.ndarray], AbstractPool2DLayerNumpy):
         y = self.get_y(x.shape[0])
         self.idx_max: np.ndarray = self._idx_max[: x.shape[0], :]
 
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL
+        )
         self._fwd_max_pool_nhwc(x, y)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return y
@@ -125,7 +134,9 @@ class MaxPool2DNumpy(MaxPool2D[np.ndarray], AbstractPool2DLayerNumpy):
         y = self.get_y(x.shape[0])
         self.idx_max = self._idx_max[: x.shape[0], :]
 
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL
+        )
         self._fwd_max_pool_nchw(x, y)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return np.asarray(y, dtype=self.model.dtype, order="C")
@@ -136,7 +147,9 @@ class MaxPool2DNumpy(MaxPool2D[np.ndarray], AbstractPool2DLayerNumpy):
         dx = self.get_dx(dy.shape[0])
         dx.fill(0)
 
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM)
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM
+        )
         self._bwd_max_pool_nhwc(dx, dy)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return dx
@@ -147,16 +160,24 @@ class MaxPool2DNumpy(MaxPool2D[np.ndarray], AbstractPool2DLayerNumpy):
         dx = self.get_dx(dy.shape[0])
         dx.fill(0)
 
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM)
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM
+        )
         self._bwd_max_pool_nchw(dx, dy)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return np.asarray(dx, dtype=self.model.dtype, order="C")
 
     # TEST
 
-    def max_pool(self, x: np.ndarray, y: np.ndarray, idx_maxval: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    def max_pool(
+        self, x: np.ndarray, y: np.ndarray, idx_maxval: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray]:
         """Vectorized max pooling operation for testing purposes."""
-        x = np.pad(x, ((0, 0), (0, 0), (self.hpadding, self.hpadding), (self.wpadding, self.wpadding)), mode="constant")
+        x = np.pad(
+            x,
+            ((0, 0), (0, 0), (self.hpadding, self.hpadding), (self.wpadding, self.wpadding)),
+            mode="constant",
+        )
         for kh in range(self.kh):
             for kw in range(self.kw):
                 h_start = kh * self.hdilation

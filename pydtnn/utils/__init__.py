@@ -152,7 +152,11 @@ def load_library(name: str):
         elif sys.platform == "win32":
             full_name = f"lib{name}.dll"
         else:
-            raise NotImplementedError(f"Trying to load '{name}' library, but platform '{sys.platform}' is not yet supported!")
+            raise NotImplementedError(
+                f"Trying to load '{name}' library, but platform '{
+                    sys.platform
+                }' is not yet supported!"
+            )
 
         for current_path in os.environ.get("LD_LIBRARY_PATH", "").split(":"):
             if os.path.exists(os.path.join(current_path, full_name)):
@@ -163,7 +167,7 @@ def load_library(name: str):
             raise ImportError(
                 f"Library '{full_name}' could not be found. Please add its path to LD_LIBRARY_PATH "
                 f"using 'export LD_LIBRARY_PATH={name.upper()}_LIB_PATH:$LD_LIBRARY_PATH' and "
-                f"then call this application again."
+                "then call this application again."
             )
     return ctypes.CDLL(path)
 

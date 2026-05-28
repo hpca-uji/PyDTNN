@@ -59,12 +59,28 @@ def mobileNet(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Lay
             hidden_layers = expand_ration * prev_n_filt
             stride = _stride if r == 0 else 1
             if expand_ration != 1:
-                _(Conv2D(nfilters=hidden_layers, filter_shape=(1, 1), padding=1, stride=stride, use_bias=False))
+                _(
+                    Conv2D(
+                        nfilters=hidden_layers,
+                        filter_shape=(1, 1),
+                        padding=1,
+                        stride=stride,
+                        use_bias=False,
+                    )
+                )
                 _(BatchNormalization())
                 _(Relu6())
             # else: nothing special.
 
-            _(Conv2DDepthwise(nfilters=hidden_layers, filter_shape=(3, 3), padding=1, stride=stride, use_bias=False))
+            _(
+                Conv2DDepthwise(
+                    nfilters=hidden_layers,
+                    filter_shape=(3, 3),
+                    padding=1,
+                    stride=stride,
+                    use_bias=False,
+                )
+            )
             _(BatchNormalization())
             _(Relu6())
 

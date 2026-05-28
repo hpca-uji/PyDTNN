@@ -134,7 +134,15 @@ class ImageNet(Dataset):
 
     def __init__(self, model: Model, force_test_as_validation=False, debug=False):
         """Initialize the ImageNet dataset."""
-        super().__init__(model, TRAIN_NSAMPLES, TEST_NSAMPLES, INPUT_SHAPE, OUTPUT_SHAPE, force_test_as_validation=force_test_as_validation, debug=debug)
+        super().__init__(
+            model,
+            TRAIN_NSAMPLES,
+            TEST_NSAMPLES,
+            INPUT_SHAPE,
+            OUTPUT_SHAPE,
+            force_test_as_validation=force_test_as_validation,
+            debug=debug,
+        )
 
     def _get_label(self, code: int, labels: dict[int, int]) -> np.ndarray:
         """Transform a code (int) into a label (ndarray 1D uint8)."""
@@ -173,7 +181,11 @@ class ImageNet(Dataset):
     def _get_val_labels(self, path: Path) -> dict[int, int]:
         """Get label mappings from archive."""
         member = "ILSVRC2012_devkit_t12/data/ILSVRC2012_validation_ground_truth.txt"
-        with tarfile.open(path) as tar, tar.extractfile(member) as fp, io.TextIOWrapper(buffer=fp) as lines:  # type: ignore
+        with (
+            tarfile.open(path) as tar,
+            tar.extractfile(member) as fp,
+            io.TextIOWrapper(buffer=fp) as lines,
+        ):  # type: ignore
             return {i: int(line) for i, line in enumerate(lines, 1)}
 
     def _model_init(self):
@@ -188,20 +200,36 @@ class ImageNet(Dataset):
         train_lables = self._get_train_labels(meta)
 
         if len(train_lables) != OUTPUT_SHAPE[0]:
-            raise ValueError(f"Mismatch class shape (got: {len(train_lables)}, expect: {OUTPUT_SHAPE[0]})")
+            raise ValueError(
+                f"Mismatch class shape (got: {len(train_lables)}, expect: {OUTPUT_SHAPE[0]})"
+            )
 
-        train_xy = [(path, self._get_label(self._get_train_code(path[-1]), train_lables)) for path in list_archive(train)]
+        train_xy = [
+            (path, self._get_label(self._get_train_code(path[-1]), train_lables))
+            for path in list_archive(train)
+        ]
 
         if len(train_xy) != TRAIN_NSAMPLES:
-            raise ValueError(f"Mismatch train samples (got: {len(train_xy)}, expect: {TRAIN_NSAMPLES})")
+            raise ValueError(
+                f"Mismatch train samples (got: {len(train_xy)}, expect: {TRAIN_NSAMPLES})"
+            )
 
         val_lables = self._get_val_labels(meta)
-        val_xy = [(path, self._get_label(self._get_val_code(path[-1]), val_lables)) for path in list_archive(test)]
+        val_xy = [
+            (path, self._get_label(self._get_val_code(path[-1]), val_lables))
+            for path in list_archive(test)
+        ]
 
         if len(val_lables) != TEST_NSAMPLES:
-            raise ValueError(f"Mismatch test samples (got: {len(val_lables)}, expect: {TEST_NSAMPLES})")
+            raise ValueError(
+                f"Mismatch test samples (got: {len(val_lables)}, expect: {TEST_NSAMPLES})"
+            )
 
-        self._xy_filenames = [train_xy, copy.copy(val_xy if self.test_as_validation else train_xy), val_xy]
+        self._xy_filenames = [
+            train_xy,
+            copy.copy(val_xy if self.test_as_validation else train_xy),
+            val_xy,
+        ]
 
     def _data_generator(self, part: Dataset.Part) -> Generator[tuple[np.ndarray, np.ndarray]]:
         """
@@ -215,7 +243,8 @@ class ImageNet(Dataset):
         xy_filenames = self._xy_filenames[part]
 
         if part is Dataset.Part.TRAIN and self.model.augment_shuffle:
-            random.shuffle(xy_filenames)  # type: ignore (numpy shuffle's typing wasn't well defined.)
+            # type: ignore (numpy shuffle's typing wasn't well defined.)
+            random.shuffle(xy_filenames)
 
         xy_filenames = xy_filenames[offset: offset + nsamples]
 

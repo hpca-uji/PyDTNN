@@ -39,11 +39,14 @@ class NadamNumpy(Nadam[np.ndarray], OptimizerNumpy):
                 mt_temp_dw = None
                 self.memory_used += momentum.nbytes + velocity.nbytes
                 temp_memory_size.append(int(2 * math.prod(shape)) * self.model.dtype.itemsize)
-                # NOTE: int(2 * math.prod(w.shape)): temp_w.nbytes = temp_dw.nbytes = w.nbytes ==> temp_w.nbytes + temp_dw.nbytes = 2 * w.nbytes
+                # NOTE: int(2 * math.prod(w.shape)): temp_w.nbytes = temp_dw.nbytes =
+                # w.nbytes ==> temp_w.nbytes + temp_dw.nbytes = 2 * w.nbytes
                 self.context[layer.id]["m_%s" % w_] = momentum
                 self.context[layer.id]["v_%s" % w_] = velocity
-                self.context[layer.id]["temp_w_%s" % w_] = vt_temp_w  # type: ignore (it is the right type)
-                self.context[layer.id]["temp_dw_%s" % w_] = mt_temp_dw  # type: ignore (it is the right type)
+                self.context[layer.id]["temp_w_%s" %
+                                       w_] = vt_temp_w  # type: ignore (it is the right type)
+                self.context[layer.id]["temp_dw_%s" %
+                                       w_] = mt_temp_dw  # type: ignore (it is the right type)
 
         self.tmp_memory_used += self.model.memory_cls._total(*temp_memory_size)
         self.memory_used += self.tmp_memory_used
@@ -65,8 +68,11 @@ class NadamNumpy(Nadam[np.ndarray], OptimizerNumpy):
                         continue
                     # if w_ is not None:
 
-                    w_shape = self.context[layer_id]["m_%s" % w_].shape  # type: ignore (it is correct)
-                    w_shape = self.context[layer_id][key] = self.model.memory.ndarray(w_shape, dtype=self.model.dtype)
+                    w_shape = self.context[layer_id]["m_%s" %
+                                                     w_].shape  # type: ignore (it is correct)
+                    w_shape = self.context[layer_id][key] = self.model.memory.ndarray(
+                        w_shape, dtype=self.model.dtype
+                    )
 
     def update(self, layer: LayerNumpy) -> None:
         """Perform a single Nadam optimization step for the given layer."""
@@ -82,10 +88,15 @@ class NadamNumpy(Nadam[np.ndarray], OptimizerNumpy):
             # Velocity of the weight or bias of the given layer
             v: np.ndarray = self.context[layer.id]["v_%s" % w_]  # type: ignore
 
-            vt_temp_w: np.ndarray = self.context[layer.id]["temp_w_%s" % w_]  # type:ignore
-            mt_temp_dw: np.ndarray = self.context[layer.id]["temp_dw_%s" % w_]  # type:ignore
+            vt_temp_w: np.ndarray = self.context[layer.id]["temp_w_%s" % w_]  # type: ignore
+            mt_temp_dw: np.ndarray = self.context[layer.id]["temp_dw_%s" % w_]  # type: ignore
 
-            if not (self.are_all_zeros(w) and self.are_all_zeros(dw) or self.are_all_zeros(m) or self.are_all_zeros(v)):
+            if not (
+                self.are_all_zeros(w)
+                and self.are_all_zeros(dw)
+                or self.are_all_zeros(m)
+                or self.are_all_zeros(v)
+            ):
                 # NOTE: The operations are unrolled in order to reduce the memory consumed by intermediate copies of the variables during the operations.
                 # m = self.beta1 * m + (1 - self.beta1) * dw
                 np.multiply((1 - self.beta1), dw, dtype=self.model.dtype, out=mt_temp_dw)
@@ -101,10 +112,13 @@ class NadamNumpy(Nadam[np.ndarray], OptimizerNumpy):
                 np.add(v, mt_temp_dw, dtype=self.model.dtype, out=v)
 
                 # w -= self.learning_rate * (self.decay * w + (mt / np.sqrt(vt + epsilon))) ==>
-                # w -= (self.learning_rate * self.decay * w) + (self.learning_rate * (mt / np.sqrt(vt + epsilon))))
+                # w -= (self.learning_rate * self.decay * w) + (self.learning_rate * (mt /
+                # np.sqrt(vt + epsilon))))
 
                 # w -= (self.learning_rate * self.decay * w)
-                np.multiply((self.learning_rate * self.decay), w, dtype=self.model.dtype, out=mt_temp_dw)
+                np.multiply(
+                    (self.learning_rate * self.decay), w, dtype=self.model.dtype, out=mt_temp_dw
+                )
 
                 np.subtract(w, mt_temp_dw, dtype=self.model.dtype, out=w)
 

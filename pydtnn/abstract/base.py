@@ -68,7 +68,11 @@ class Base[T: Array]:
         """
         groups = {}
 
-        spec = re.sub(rf"\b({r'|'.join(self._map_backend)})\b", lambda match: self._map_backend[match.group()], spec)
+        spec = re.sub(
+            rf"\b({r'|'.join(self._map_backend)})\b",
+            lambda match: self._map_backend[match.group()],
+            spec,
+        )
 
         for group in spec.split(";"):
             kv = group.split(":", 1)

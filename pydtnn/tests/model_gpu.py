@@ -35,8 +35,16 @@ class ModelGpuTestCase(ModelCommonTestCase):
 
     global ModelCommonTestCase
 
-    rtol_dict = ModelCommonTestCase.rtol_dict | {ConcatenationBlock: 1e-1, AdditionBlock: 1e-1, Conv2D: 1e-4}
-    atol_dict = ModelCommonTestCase.atol_dict | {ConcatenationBlock: 1e-1, AdditionBlock: 1e-1, Conv2D: 1e-4}
+    rtol_dict = ModelCommonTestCase.rtol_dict | {
+        ConcatenationBlock: 1e-1,
+        AdditionBlock: 1e-1,
+        Conv2D: 1e-4,
+    }
+    atol_dict = ModelCommonTestCase.atol_dict | {
+        ConcatenationBlock: 1e-1,
+        AdditionBlock: 1e-1,
+        Conv2D: 1e-4,
+    }
 
     # NOTE: Delete parent test to prevent re-export and re-testing
     del ModelCommonTestCase
@@ -66,7 +74,9 @@ class ModelGpuTestCase(ModelCommonTestCase):
         try:
             model2 = Model(**params_dict)
         except LayerError as exc:
-            raise unittest.SkipTest(f"Model {model_name} incompatible with {params_dict['dataset_name']}") from exc
+            raise unittest.SkipTest(
+                f"Model {model_name} incompatible with {params_dict['dataset_name']}"
+            ) from exc
         model2._model_init()
         return model2
 
@@ -83,14 +93,21 @@ class ModelGpuTestCase(ModelCommonTestCase):
                 continue
             if isinstance(gpu_layer, Conv2D):
                 if model2.tensor_format is TensorFormat.NHWC:
-                    gpu_layer.weights_cpu = format_transpose(cpu_layer.weights, "IHWO", "OHWI").copy()
+                    gpu_layer.weights_cpu = format_transpose(
+                        cpu_layer.weights, "IHWO", "OHWI"
+                    ).copy()
                 else:
                     gpu_layer.weights_cpu = cpu_layer.weights.copy()
             else:
                 gpu_layer.weights_cpu = cpu_layer.weights.copy()
             if gpu_layer.weights_cpu is not None:
                 weights_gpu = gpuarray.to_gpu(gpu_layer.weights_cpu)
-                gpu_layer.weights = TensorArray(weights_gpu, gpu_layer.model.tensor_format, gpu_layer.model.cudnn_dtype, TensorArray.TensorType.FILTER)
+                gpu_layer.weights = TensorArray(
+                    weights_gpu,
+                    gpu_layer.model.tensor_format,
+                    gpu_layer.model.cudnn_dtype,
+                    TensorArray.TensorType.FILTER,
+                )
             if gpu_layer.use_bias:
                 if cpu_layer.biases is None:
                     continue
@@ -98,7 +115,9 @@ class ModelGpuTestCase(ModelCommonTestCase):
                 gpu_layer.biases_cpu = cpu_layer.biases.copy()
                 if gpu_layer.biases_cpu is not None:
                     biases_gpu = gpuarray.to_gpu(gpu_layer.biases_cpu)
-                    gpu_layer.biases = TensorArray(biases_gpu, gpu_layer.model.tensor_format, gpu_layer.model.cudnn_dtype)
+                    gpu_layer.biases = TensorArray(
+                        biases_gpu, gpu_layer.model.tensor_format, gpu_layer.model.cudnn_dtype
+                    )
 
     def set_data_to_ary(
         self,
@@ -117,7 +136,9 @@ class ModelGpuTestCase(ModelCommonTestCase):
         try:
             ary.set(data.copy())
         except ValueError as e:
-            raise ValueError(f"Output of model 1 {layer.name_with_id} is not ordered [x.strides: {data.strides}") from e
+            raise ValueError(
+                f"Output of model 1 {layer.name_with_id} is not ordered [x.strides: {data.strides}"
+            ) from e
 
     def do_model2_forward_pass(self, model2: Model, x1: list[np.ndarray]) -> list[np.ndarray]:
         """

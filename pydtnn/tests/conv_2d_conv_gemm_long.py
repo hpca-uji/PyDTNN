@@ -86,7 +86,20 @@ class Conv2DConvGemmLongTestCase(Conv2DConvGemmTestCase):
             d, h = divmod(h, 24)
             print(f"{perc:.5%} (eta: {d:2.0f}d {h:2.0f}h {m:2.0f}m {s:2.0f}s)", end="\r")
 
-    def _test_forward_backward_multiple_params(self, kn: int, b: int, c: int, h: int, w: int, kh: int, kw: int, vpadding: int, hpadding: int, vstride: int, hstride: int):
+    def _test_forward_backward_multiple_params(
+        self,
+        kn: int,
+        b: int,
+        c: int,
+        h: int,
+        w: int,
+        kh: int,
+        kw: int,
+        vpadding: int,
+        hpadding: int,
+        vstride: int,
+        hstride: int,
+    ):
         """
         Executes forward and backward pass verification for a specific set of convolution parameters.
 
@@ -103,7 +116,19 @@ class Conv2DConvGemmLongTestCase(Conv2DConvGemmTestCase):
             vstride: Vertical stride.
             hstride: Horizontal stride.
         """
-        d = D(kn=kn, b=b, c=c, h=h, w=w, kh=kh, kw=kw, vpadding=vpadding, hpadding=hpadding, vstride=vstride, hstride=hstride)
+        d = D(
+            kn=kn,
+            b=b,
+            c=c,
+            h=h,
+            w=w,
+            kh=kh,
+            kw=kw,
+            vpadding=vpadding,
+            hpadding=hpadding,
+            vstride=vstride,
+            hstride=hstride,
+        )
 
         if d.kh >= d.h + 1 or d.kw >= d.w + 1:
             return
@@ -111,7 +136,9 @@ class Conv2DConvGemmLongTestCase(Conv2DConvGemmTestCase):
         if d.b != 1 or d.c != 1:
             x = self.X[: d.b, : d.c, : d.h, : d.w].copy(order="C")
         else:
-            x = np.concatenate([np.arange(b := (i + 1) * 100, b + d.w, dtype=np.float32) for i in range(d.h)]).reshape((d.b, d.c, d.h, d.w))
+            x = np.concatenate(
+                [np.arange(b := (i + 1) * 100, b + d.w, dtype=np.float32) for i in range(d.h)]
+            ).reshape((d.b, d.c, d.h, d.w))
 
         weights = self.W[: d.kn, : d.c, : d.kh, : d.kw].copy(order="C")
 

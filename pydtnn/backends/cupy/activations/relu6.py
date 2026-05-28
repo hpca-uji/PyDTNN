@@ -31,7 +31,9 @@ class Relu6Cupy(Relu6Numpy, ActivationCupy):
         self.y = np.ascontiguousarray(self._y[: x.shape[0], :], dtype=self.model.dtype)
         self.mask = np.ascontiguousarray(self._mask[: x.shape[0], :], dtype=self.model.dtype)
 
-        self.fwd_kernel(self.model.cuda_grid, self.model.cuda_block, (x, self.y, self.mask, self.cap, x.size))
+        self.fwd_kernel(
+            self.model.cuda_grid, self.model.cuda_block, (x, self.y, self.mask, self.cap, x.size)
+        )
         return self.y
 
     def backward(self, dy: np.ndarray) -> np.ndarray:

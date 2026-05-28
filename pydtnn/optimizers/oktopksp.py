@@ -25,7 +25,15 @@ class OkTopkSP[T: Array](Optimizer[T]):
     OkTopkSP Optimizer
     """
 
-    def __init__(self, learning_rate: float = 1e-2, momentum: float = 0.9, tau: int = 64, tau_prime: int = 32, density: float = 0.01, min_k_layer: int = 10):
+    def __init__(
+        self,
+        learning_rate: float = 1e-2,
+        momentum: float = 0.9,
+        tau: int = 64,
+        tau_prime: int = 32,
+        density: float = 0.01,
+        min_k_layer: int = 10,
+    ):
         """
         Initialize the Ok-Topk optimizer.
 
@@ -82,7 +90,9 @@ class OkTopkSP[T: Array](Optimizer[T]):
             logger.warning("Optimizer does model sync but global model sync is also enabled!")
 
         if not self.model.shared_data:
-            raise NotImplementedError("OkTopK optimizer does not support Federated Learing (unbalanced datasets)!")
+            raise NotImplementedError(
+                "OkTopK optimizer does not support Federated Learing (unbalanced datasets)!"
+            )
 
     @classmethod
     def from_model(cls, model: Model) -> OkTopkSP:
@@ -95,4 +105,10 @@ class OkTopkSP[T: Array](Optimizer[T]):
         Returns:
             An initialized OkTopk optimizer.
         """
-        return OkTopkSP(learning_rate=model.learning_rate, momentum=model.optimizer_momentum, tau=model.optimizer_tau, tau_prime=model.optimizer_tau_prime, density=model.optimizer_density)
+        return OkTopkSP(
+            learning_rate=model.learning_rate,
+            momentum=model.optimizer_momentum,
+            tau=model.optimizer_tau,
+            tau_prime=model.optimizer_tau_prime,
+            density=model.optimizer_density,
+        )

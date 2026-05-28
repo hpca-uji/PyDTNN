@@ -49,13 +49,33 @@ class ReluPycuda(Relu[TensorArray], ActivationPycuda):
     def forward(self, x: TensorArray) -> TensorArray:
         """Perform the forward pass of the ReLU activation."""
         alpha, beta = 1.0, 0.0
-        cudnn.cudnnActivationForward(self.model.cudnn_handle, self.act_desc, alpha, x.desc, x.ptr_voidp, beta, self.y.desc, self.y.ptr_voidp)
+        cudnn.cudnnActivationForward(
+            self.model.cudnn_handle,
+            self.act_desc,
+            alpha,
+            x.desc,
+            x.ptr_voidp,
+            beta,
+            self.y.desc,
+            self.y.ptr_voidp,
+        )
         return self.y
 
     def backward(self, dy: TensorArray) -> TensorArray:
         """Perform the backward pass of the ReLU activation."""
         alpha, beta = 1.0, 0.0
         cudnn.cudnnActivationBackward(
-            self.model.cudnn_handle, self.act_desc, alpha, self.y.desc, self.y.ptr_voidp, dy.desc, dy.ptr_voidp, self.x.desc, self.x.ptr_voidp, beta, self.dx.desc, self.dx.ptr_voidp
+            self.model.cudnn_handle,
+            self.act_desc,
+            alpha,
+            self.y.desc,
+            self.y.ptr_voidp,
+            dy.desc,
+            dy.ptr_voidp,
+            self.x.desc,
+            self.x.ptr_voidp,
+            beta,
+            self.dx.desc,
+            self.dx.ptr_voidp,
         )
         return self.dx

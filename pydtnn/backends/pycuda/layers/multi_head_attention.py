@@ -1,6 +1,7 @@
 """
 PyDTNN PyCUDA backend implementation for Multi-Head Attention layers.
 """
+
 # https://github.com/storypku/cuda-support-for-bazel/blob/9a9c90c7d73fdafb3fbc8713232405cae4ae66d8/examples/cudnn-samples/multiHeadAttention/multiHeadAttention.cpp
 
 import logging
@@ -65,16 +66,34 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
         self.o_weights_cpu = self.weights_initializer(o_weights_shape, self.model.param_dtype)
         self.o_biases_cpu = self.biases_initializer(o_biases_shape, self.model.param_dtype)
         self.nparams = 0
-        _weights = [self.q_weights_cpu, self.k_weights_cpu, self.v_weights_cpu, self.o_weights_cpu, self.q_biases_cpu, self.k_biases_cpu, self.v_biases_cpu, self.o_biases_cpu]
+        _weights = [
+            self.q_weights_cpu,
+            self.k_weights_cpu,
+            self.v_weights_cpu,
+            self.o_weights_cpu,
+            self.q_biases_cpu,
+            self.k_biases_cpu,
+            self.v_biases_cpu,
+            self.o_biases_cpu,
+        ]
         for w in _weights:
             self.nparams += w.size
 
         # Dropout Descriptor
         self.states_size = cudnn.cudnnDropoutGetStatesSize(self.model.cudnn_handle)
         states_gpu = gpuarray.zeros((self.states_size.value,), self.model.dtype)
-        self.states = TensorArray(states_gpu, self.model.tensor_fmt, self.model.cudnn_dtype, TensorArray.TensorType.OTHER)
+        self.states = TensorArray(
+            states_gpu, self.model.tensor_fmt, self.model.cudnn_dtype, TensorArray.TensorType.OTHER
+        )
         self.drop_desc = cudnn.cudnnCreateDropoutDescriptor()
-        cudnn.cudnnSetDropoutDescriptor(self.drop_desc, self.model.cudnn_handle, self.dropout_rate, self.states.ptr_voidp, self.states_size.value, seed=0)
+        cudnn.cudnnSetDropoutDescriptor(
+            self.drop_desc,
+            self.model.cudnn_handle,
+            self.dropout_rate,
+            self.states.ptr_voidp,
+            self.states_size.value,
+            seed=0,
+        )
 
         # Attention Descriptor
         self.attn_mode = cudnn.cudnnAttnMode["CUDNN_ATTN_QUERYMAP_ONE_TO_ONE"]
@@ -105,16 +124,32 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
         )
 
         # GPU Memory Allocation
-        self.weights_size, self.workspace_size, self.reserve_backward_size = cudnn.cudnnGetMultiHeadAttnBuffers(self.model.cudnn_handle, self.attn_desc)
+        self.weights_size, self.workspace_size, self.reserve_backward_size = (
+            cudnn.cudnnGetMultiHeadAttnBuffers(self.model.cudnn_handle, self.attn_desc)
+        )
         self.model.layers[0].checkConvolutionMemory(self.workspace_size)
         weights_size = self.weights_size.value // np.dtype(self.model.dtype).itemsize
-        reserve_backward_size = self.reserve_backward_size.value // np.dtype(self.model.dtype).itemsize + 1
+        reserve_backward_size = (
+            self.reserve_backward_size.value // np.dtype(self.model.dtype).itemsize + 1
+        )
         self.weights = gpuarray.zeros((weights_size,), self.model.dtype)
-        self.weights = TensorArray(self.weights, self.model.tensor_fmt, self.model.cudnn_dtype, TensorArray.TensorType.OTHER)
+        self.weights = TensorArray(
+            self.weights,
+            self.model.tensor_fmt,
+            self.model.cudnn_dtype,
+            TensorArray.TensorType.OTHER,
+        )
         self.dw = gpuarray.zeros((weights_size,), self.model.dtype)
-        self.dw = TensorArray(self.dw, self.model.tensor_fmt, self.model.cudnn_dtype, TensorArray.TensorType.OTHER)
+        self.dw = TensorArray(
+            self.dw, self.model.tensor_fmt, self.model.cudnn_dtype, TensorArray.TensorType.OTHER
+        )
         self.reserve_backward = gpuarray.zeros((reserve_backward_size,), self.model.dtype)
-        self.reserve_backward = TensorArray(self.reserve_backward, self.model.tensor_fmt, self.model.cudnn_dtype, TensorArray.TensorType.OTHER)
+        self.reserve_backward = TensorArray(
+            self.reserve_backward,
+            self.model.tensor_fmt,
+            self.model.cudnn_dtype,
+            TensorArray.TensorType.OTHER,
+        )
 
         # Weights to GPU
         # self.copy_weights()
@@ -128,22 +163,53 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
             "CUDNN_MH_ATTN_V_BIASES",
             "CUDNN_MH_ATTN_O_BIASES",
         ]
-        _weights = [self.q_weights_cpu, self.k_weights_cpu, self.v_weights_cpu, self.o_weights_cpu, self.q_biases_cpu, self.k_biases_cpu, self.v_biases_cpu, self.o_biases_cpu]
-        drv.memcpy_htod(self.weights.ptr_voidp.value, np.concatenate([w.flatten() for w in _weights]))
+        _weights = [
+            self.q_weights_cpu,
+            self.k_weights_cpu,
+            self.v_weights_cpu,
+            self.o_weights_cpu,
+            self.q_biases_cpu,
+            self.k_biases_cpu,
+            self.v_biases_cpu,
+            self.o_biases_cpu,
+        ]
+        drv.memcpy_htod(
+            self.weights.ptr_voidp.value, np.concatenate([w.flatten() for w in _weights])
+        )
 
         # Memory Allocation for Outputs
-        self.y = gpuarray.zeros((self.model.batch_size, self.beam, self.seq, self.embedl), self.model.dtype)
-        self.y = TensorArray(self.y, self.model.tensor_fmt, self.model.cudnn_dtype, TensorArray.TensorType.SEQ)
-        self.dquery = gpuarray.zeros((self.model.batch_size, self.beam, self.seq, self.embedl), self.model.dtype)
-        self.dquery = TensorArray(self.dquery, self.model.tensor_fmt, self.model.cudnn_dtype, TensorArray.TensorType.SEQ)
-        self.dkey = gpuarray.zeros((self.model.batch_size, self.beam, self.seq, self.embedl), self.model.dtype)
-        self.dkey = TensorArray(self.dkey, self.model.tensor_fmt, self.model.cudnn_dtype, TensorArray.TensorType.SEQ)
-        self.dvalue = gpuarray.zeros((self.model.batch_size, self.beam, self.seq, self.embedl), self.model.dtype)
-        self.dvalue = TensorArray(self.dvalue, self.model.tensor_fmt, self.model.cudnn_dtype, TensorArray.TensorType.SEQ)
+        self.y = gpuarray.zeros(
+            (self.model.batch_size, self.beam, self.seq, self.embedl), self.model.dtype
+        )
+        self.y = TensorArray(
+            self.y, self.model.tensor_fmt, self.model.cudnn_dtype, TensorArray.TensorType.SEQ
+        )
+        self.dquery = gpuarray.zeros(
+            (self.model.batch_size, self.beam, self.seq, self.embedl), self.model.dtype
+        )
+        self.dquery = TensorArray(
+            self.dquery, self.model.tensor_fmt, self.model.cudnn_dtype, TensorArray.TensorType.SEQ
+        )
+        self.dkey = gpuarray.zeros(
+            (self.model.batch_size, self.beam, self.seq, self.embedl), self.model.dtype
+        )
+        self.dkey = TensorArray(
+            self.dkey, self.model.tensor_fmt, self.model.cudnn_dtype, TensorArray.TensorType.SEQ
+        )
+        self.dvalue = gpuarray.zeros(
+            (self.model.batch_size, self.beam, self.seq, self.embedl), self.model.dtype
+        )
+        self.dvalue = TensorArray(
+            self.dvalue, self.model.tensor_fmt, self.model.cudnn_dtype, TensorArray.TensorType.SEQ
+        )
 
         self.current_index = -1  # Training
-        self.low_window_index = np.full(shape=(self.batch, self.beam, self.seq), fill_value=0, dtype=np.int32)
-        self.high_window_index = np.full(shape=(self.batch, self.beam, self.seq), fill_value=self.seq, dtype=np.int32)
+        self.low_window_index = np.full(
+            shape=(self.batch, self.beam, self.seq), fill_value=0, dtype=np.int32
+        )
+        self.high_window_index = np.full(
+            shape=(self.batch, self.beam, self.seq), fill_value=self.seq, dtype=np.int32
+        )
         # self.dev_seq_lengths_QO = np.full(shape=(self.batch*self.beam), fill_value=self.seq, dtype=np.int32)
         dev_seq_lengths_QO = np.copy(self.y.seq_length_array)
         self.dev_seq_lengths_QO = gpuarray.to_gpu(dev_seq_lengths_QO)
@@ -165,14 +231,29 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
             "CUDNN_MH_ATTN_V_BIASES",
             "CUDNN_MH_ATTN_O_BIASES",
         ]
-        _weights = [self.q_weights_cpu, self.k_weights_cpu, self.v_weights_cpu, self.o_weights_cpu, self.q_biases_cpu, self.k_biases_cpu, self.v_biases_cpu, self.o_biases_cpu]
+        _weights = [
+            self.q_weights_cpu,
+            self.k_weights_cpu,
+            self.v_weights_cpu,
+            self.o_weights_cpu,
+            self.q_biases_cpu,
+            self.k_biases_cpu,
+            self.v_biases_cpu,
+            self.o_biases_cpu,
+        ]
 
-        drv.memcpy_htod(self.weights.ptr_voidp.value, np.concatenate([w.flatten() for w in _weights]))
+        drv.memcpy_htod(
+            self.weights.ptr_voidp.value, np.concatenate([w.flatten() for w in _weights])
+        )
         return
 
         for i in range(len(_weights)):
             wDesc, dest = cudnn.cudnnGetMultiHeadAttnWeights(
-                self.model.cudnn_handle, self.attn_desc, cudnn.cudnnMultiHeadAttnWeightKind[_weights_types[i]], self.weights_size.value, self.weights.ptr_voidp
+                self.model.cudnn_handle,
+                self.attn_desc,
+                cudnn.cudnnMultiHeadAttnWeightKind[_weights_types[i]],
+                self.weights_size.value,
+                self.weights.ptr_voidp,
             )
             print(_weights_types[i], dest)
             # Check wDesc order matches

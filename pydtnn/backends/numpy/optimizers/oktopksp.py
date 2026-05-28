@@ -87,7 +87,9 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
             acc = self._compute_acc(self.all_residuals[layer.id][dw_], dw, self.learning_rate)
 
             # Main part of ok-topk: compute the values that contribute to the update and its indexes
-            coo_u, indexes = self._ok_sparse_allreduce(acc, self.iterations[layer.id], k, self.tau, self.tau_prime)
+            coo_u, indexes = self._ok_sparse_allreduce(
+                acc, self.iterations[layer.id], k, self.tau, self.tau_prime
+            )
 
             # Update residuals
             self.all_residuals[layer.id][dw_] = self._reset_residuals(acc, indexes)
@@ -102,7 +104,9 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
 
         self.iterations[layer.id] += 1
 
-    def _compute_acc(self, residuals: np.ndarray, dw: np.ndarray, learning_rate: float, method="cython") -> np.ndarray:
+    def _compute_acc(
+        self, residuals: np.ndarray, dw: np.ndarray, learning_rate: float, method="cython"
+    ) -> np.ndarray:
         """
         Compute acc, where: acc = residuals + (learning_rate * dw)
 
@@ -119,11 +123,15 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
             acc (np.array): 2D dense matrix with the updated residuals
         """
 
-        self._show_message_only_once(f"\n\nIn '_compute_acc', the method that it is being used is '{method}'")
+        self._show_message_only_once(
+            f"\n\nIn '_compute_acc', the method that it is being used is '{method}'"
+        )
 
         return residuals + (learning_rate * dw)
 
-    def _reset_residuals(self, acc: np.ndarray, indexes: tuple[np.ndarray, np.ndarray], method="cython") -> np.ndarray:
+    def _reset_residuals(
+        self, acc: np.ndarray, indexes: tuple[np.ndarray, np.ndarray], method="cython"
+    ) -> np.ndarray:
         """
         Update residuals: set zero value if it is in indexes, else acc value is set.
         If density is 100% and some gradients are zero, scipy will be removing those indexes even if no sparsity is applied.
@@ -139,7 +147,9 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
             residuals (np.array): which is the same as acc with the values in indexes set to zero.
         """
 
-        self._show_message_only_once(f"In '_reset_residuals', the method that it is being used is '{method}'")
+        self._show_message_only_once(
+            f"In '_reset_residuals', the method that it is being used is '{method}'"
+        )
 
         if self.density == 1:
             # TODO: Check if this if is necessary or if it's necessary in this function.
@@ -150,7 +160,9 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
             return acc
 
     # TODO: Move this to 3 different methods.
-    def _update_weights(self, layer: Layerable, w_type: str, w: np.ndarray, coo_u: SparseMatrixCOO, method="cython") -> None:
+    def _update_weights(
+        self, layer: Layerable, w_type: str, w: np.ndarray, coo_u: SparseMatrixCOO, method="cython"
+    ) -> None:
         """
         Update weights: w -= (u / self.model.nprocs)
         and set to weight layer attribute: setattr(layer, w_type, w)
@@ -166,7 +178,9 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
             (void): instead it directly applies the result to the weight layer attribute
         """
 
-        self._show_message_only_once(f"In '_update_weights', the method that it is being used is '{method}'")
+        self._show_message_only_once(
+            f"In '_update_weights', the method that it is being used is '{method}'"
+        )
 
         if method == "numpy":
             if len(self.dw_original_shape) != 2:
@@ -179,11 +193,16 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
 
         if method == "numpy_with_vel_and_momentum":
             if self.momentum == 0:
-                logger.warning("If momentum is 0 use just 'numpy' method, it produces the same output but it is faster")
+                logger.warning(
+                    "If momentum is 0 use just 'numpy' method, it produces the same output but it"
+                    " is faster"
+                )
 
             if len(self.dw_original_shape) != 2:
                 w = w.reshape(w.shape[0], -1)
-            velocity = getattr(layer, "velocity_%s" % w_type, np.zeros_like(w, dtype=layer.model.dtype))
+            velocity = getattr(
+                layer, "velocity_%s" % w_type, np.zeros_like(w, dtype=layer.model.dtype)
+            )
             velocity *= self.momentum
             velocity[coo_u.row, coo_u.col] += coo_u.data
             w[coo_u.row, coo_u.col] -= velocity[coo_u.row, coo_u.col]
@@ -195,12 +214,16 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
 
         if method == "like_sgd":
             """Use only for debugging purposes"""
-            logger.warning("This method should be used only in case of debugging for performance reasons.")
+            logger.warning(
+                "This method should be used only in case of debugging for performance reasons."
+            )
 
             dw = coo_u.to_dense()
             if len(self.dw_original_shape) != 2:
                 dw = dw.reshape(self.dw_original_shape)
-            velocity = getattr(layer, "velocity_%s" % w_type, np.zeros_like(w, dtype=layer.model.dtype))
+            velocity = getattr(
+                layer, "velocity_%s" % w_type, np.zeros_like(w, dtype=layer.model.dtype)
+            )
             velocity = self.momentum * velocity + dw
             w -= velocity  # Oktopk already computes acc with learning_rate
             setattr(layer, w_type, w)
@@ -209,7 +232,14 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
 
         raise NotImplementedError(f"Method '{method}' not implemented")
 
-    def _ok_sparse_allreduce(self, acc: np.ndarray, t: int, k: int, space_repartition_t: int, thresholds_re_evaluation_t: int) -> tuple[SparseMatrixCOO, tuple[np.ndarray, np.ndarray]]:
+    def _ok_sparse_allreduce(
+        self,
+        acc: np.ndarray,
+        t: int,
+        k: int,
+        space_repartition_t: int,
+        thresholds_re_evaluation_t: int,
+    ) -> tuple[SparseMatrixCOO, tuple[np.ndarray, np.ndarray]]:
         """
         Performs the Ok-Topk sparse allreduce operation.
         This method executes the Ok-Topk sparse allreduce algorithm, which
@@ -237,18 +267,28 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
         if t % space_repartition_t == 0:
             self.boundaries = self._space_repartition(acc, self.local_th)
 
-        coo_reduced_region_topk, local_topk_indexes = self._split_and_reduce(acc, self.local_th, self.boundaries)
+        coo_reduced_region_topk, local_topk_indexes = self._split_and_reduce(
+            acc, self.local_th, self.boundaries
+        )
 
         if t % thresholds_re_evaluation_t == 0:
             coo_all_reduced_topk = self._allgather(coo_reduced_region_topk)
             self.global_th = self._th_re_evaluate(coo_all_reduced_topk, k, input_format="coo")
 
-        coo_u, global_topk_indexes = self._balance_and_allgather(coo_reduced_region_topk, self.global_th)
+        coo_u, global_topk_indexes = self._balance_and_allgather(
+            coo_reduced_region_topk, self.global_th
+        )
         indexes = self._intersect_indexes(local_topk_indexes, global_topk_indexes)
         return coo_u, indexes
 
     # TODO: Move this to different methods.
-    def _th_re_evaluate(self, matrix: np.ndarray | SparseMatrixCOO, k: int, input_format: str | None = None, method="numpy_sort") -> float:
+    def _th_re_evaluate(
+        self,
+        matrix: np.ndarray | SparseMatrixCOO,
+        k: int,
+        input_format: str | None = None,
+        method="numpy_sort",
+    ) -> float:
         """
         Return the absolute gradient threshold for a given matrix.
 
@@ -262,7 +302,9 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
             threshold (float): The absolute gradient threshold based on the top k values.
         """
 
-        self._show_message_only_once(f"In '_th_re_evaluate', the method that it is being used is '{method}'")
+        self._show_message_only_once(
+            f"In '_th_re_evaluate', the method that it is being used is '{method}'"
+        )
 
         if k <= 0:
             return 0.0
@@ -313,7 +355,9 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
             boundaries (np.array): [row_end_p0, row_end_p1, row_end_p2, ...]
         """
 
-        self._show_message_only_once(f"In '_space_repartition', balanced = '{balanced}' is being used")
+        self._show_message_only_once(
+            f"In '_space_repartition', balanced = '{balanced}' is being used"
+        )
 
         output = None
 
@@ -354,12 +398,16 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
                     current_proc += 1
             boundaries[self.model.nprocs - 1] = total_rows
 
-            global_boundaries = self.model.comm.allreduce(boundaries, op=MPI.SUM) // self.model.nprocs
+            global_boundaries = (
+                self.model.comm.allreduce(boundaries, op=MPI.SUM) // self.model.nprocs
+            )
             output = global_boundaries
 
         return output
 
-    def _split_and_reduce(self, acc: np.ndarray, local_th: float, boundaries: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    def _split_and_reduce(
+        self, acc: np.ndarray, local_th: float, boundaries: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
         First main phase of ok_sparse_allreduce.
         Split the gradients into partitions and reduce them by selecting top-k values.
@@ -380,7 +428,9 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
         coo_reduced_region_topk = self._reduce_topk(coo_topk, boundaries)
         return coo_reduced_region_topk, coo_topk.get_indexes()
 
-    def _balance_and_allgather(self, coo_reduced_region_topk: SparseMatrixCOO, global_th: float) -> tuple[np.ndarray, np.ndarray]:
+    def _balance_and_allgather(
+        self, coo_reduced_region_topk: SparseMatrixCOO, global_th: float
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
         Second main phase of ok_sparse_allreduce.
         Performs the allgather of the coo_reduced_region_topk values among workers.
@@ -396,7 +446,9 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
         """
 
         # 1. Global topk selection
-        coo_reduced_region_global_topk = coo_reduced_region_topk.top_selection(global_th, inplace=False)
+        coo_reduced_region_global_topk = coo_reduced_region_topk.top_selection(
+            global_th, inplace=False
+        )
 
         # 2. Data packaging
         # TODO
@@ -408,7 +460,11 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
         coo_allgather_topk = self._allgather(coo_reduced_region_global_topk)
         return coo_allgather_topk, coo_reduced_region_global_topk.get_indexes()
 
-    def _intersect_indexes(self, local_indexes: tuple[np.ndarray, np.ndarray], global_indexes: tuple[np.ndarray, np.ndarray]) -> tuple[np.ndarray, np.ndarray]:
+    def _intersect_indexes(
+        self,
+        local_indexes: tuple[np.ndarray, np.ndarray],
+        global_indexes: tuple[np.ndarray, np.ndarray],
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
         Calculates the intersection of two sets of indices of 2D.
         The assertion statement is only executed when the script is not run in optimized mode (python3 -O script.py).
@@ -463,7 +519,12 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
         return intersected_rows[:count], intersected_cols[:count]
 
     # TODO: Move this to different methods.
-    def _reduce_topk(self, coo_topk: SparseMatrixCOO, boundaries: np.ndarray, method="p2p_region_wise_reduce_destination_rotation_and_bucketing") -> SparseMatrixCOO:
+    def _reduce_topk(
+        self,
+        coo_topk: SparseMatrixCOO,
+        boundaries: np.ndarray,
+        method="p2p_region_wise_reduce_destination_rotation_and_bucketing",
+    ) -> SparseMatrixCOO:
         """
         Reduce the topk elements in regions defined by boundaries.
 
@@ -475,7 +536,9 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
         Returns:
             coo_reduced_region (SparseMatrixCOO): The reduced topk values in COO format.
         """
-        self._show_message_only_once(f"In '_reduce_topk', the method that it is being used is '{method}'")
+        self._show_message_only_once(
+            f"In '_reduce_topk', the method that it is being used is '{method}'"
+        )
 
         if self.model.nprocs == 1:
             return coo_topk
@@ -483,7 +546,10 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
         assert self.model.comm, "Communicator need!"
 
         if method == "collective_allreduce_then_slice":
-            logger.warning("This reduce_topk method ('collective_allreduce_then_slice') should be used only in case of debugging for performance reasons.")
+            logger.warning(
+                "This reduce_topk method ('collective_allreduce_then_slice') should be used only in"
+                " case of debugging for performance reasons."
+            )
             all_reduced_coo = self.model.comm.allreduce(coo_topk, op=MPI.SUM)
             row_start = 0 if self.model.rank == 0 else boundaries[self.model.rank - 1]
             row_end = boundaries[self.model.rank]
@@ -494,7 +560,9 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
             reduced_regions_coo = [None] * self.model.nprocs
             for region in range(self.model.nprocs):
                 row_end = boundaries[region]
-                reduced_regions_coo[region] = self.model.comm.reduce(coo_topk.slice(row_start, row_end), op=MPI.SUM, root=region)
+                reduced_regions_coo[region] = self.model.comm.reduce(
+                    coo_topk.slice(row_start, row_end), op=MPI.SUM, root=region
+                )
                 row_start = row_end
             return reduced_regions_coo[self.model.rank]
 
@@ -520,7 +588,9 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
                 # recv_req = self.model.comm.irecv(source=receive_from)
                 # self.model.comm.send(coo_region_partial_sum[region_to_send], dest=destination)
                 # coo_region_partial_sum[region_to_recv] += recv_req.wait()
-                coo_region_partial_sum[region_to_recv] += self.model.comm.sendrecv(coo_region_partial_sum[region_to_send], dest=destination, source=receive_from)
+                coo_region_partial_sum[region_to_recv] += self.model.comm.sendrecv(
+                    coo_region_partial_sum[region_to_send], dest=destination, source=receive_from
+                )
 
             return coo_region_partial_sum[self.model.rank]
 
@@ -544,7 +614,9 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
                 for i in range(current_bucket_size):
                     row_start = 0 if region == 0 else boundaries[region - 1]
                     row_end = boundaries[region]
-                    requests[comm_step + i] = self.model.comm.isend(coo_topk.slice(row_start, row_end), dest=region)
+                    requests[comm_step + i] = self.model.comm.isend(
+                        coo_topk.slice(row_start, row_end), dest=region
+                    )
                     region = (region + 1) % self.model.nprocs
                 # After sending the bucket, perform the receives sequentially for the same bucket.
                 for i in range(current_bucket_size):
@@ -556,7 +628,9 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
         raise NotImplementedError(f"Method '{method}' not implemented")
 
     # TODO: Move this to different methods.
-    def _allgather(self, local_data: np.ndarray | SparseMatrixCOO, input_format="SparseMatrixCOO") -> np.ndarray | SparseMatrixCOO:
+    def _allgather(
+        self, local_data: np.ndarray | SparseMatrixCOO, input_format="SparseMatrixCOO"
+    ) -> np.ndarray | SparseMatrixCOO:
         """
         Gathers data from all processes.
 
@@ -577,7 +651,9 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
             all_val = np.concatenate([t[0] for t in gathered])
             all_row = np.concatenate([t[1] for t in gathered])
             all_col = np.concatenate([t[2] for t in gathered])
-            return SparseMatrixCOO(all_val, all_row, all_col, self.dw_2d_shape, has_canonical_format=True)
+            return SparseMatrixCOO(
+                all_val, all_row, all_col, self.dw_2d_shape, has_canonical_format=True
+            )
 
         if input_format == "dense":
             logger.warning("Try to avoid dense communications!")
@@ -614,7 +690,10 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
             has_canonical_format (bool): True if indexes are in canonical format, False if not.
         """
 
-        logger.warning("This function ('has_canonical_format') should be used only in case of debugging for performance reasons.")
+        logger.warning(
+            "This function ('has_canonical_format') should be used only in case of debugging for"
+            " performance reasons."
+        )
 
         row, col = indexes
 

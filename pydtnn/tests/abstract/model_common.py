@@ -82,7 +82,9 @@ class ModelCommonTestCase(TestCase):
         return rtol, atol
 
     @staticmethod
-    def get_model1_and_loss_func(model_name: str, overwrite_params: dict | None = None) -> tuple[Model, Loss]:
+    def get_model1_and_loss_func(
+        model_name: str, overwrite_params: dict | None = None
+    ) -> tuple[Model, Loss]:
         """
         Initializes a model and its corresponding loss function.
 
@@ -105,7 +107,9 @@ class ModelCommonTestCase(TestCase):
         try:
             model1 = Model(**params_dict)
         except LayerError as exc:
-            raise unittest.SkipTest(f"Model {model_name} incompatible with {params_dict['dataset_name']}") from exc
+            raise unittest.SkipTest(
+                f"Model {model_name} incompatible with {params_dict['dataset_name']}"
+            ) from exc
         model1._model_init()
         # loss function
         loss_func = model1.loss_func
@@ -261,7 +265,9 @@ class ModelCommonTestCase(TestCase):
         for _, layer in reversed(list(enumerate(model1.layers))):
             if verbose_test():
                 print(layer)
-            dx1.insert(0, layer.backward(np.asarray(dx1[0], dtype=model1.dtype, order="C").copy()).copy())
+            dx1.insert(
+                0, layer.backward(np.asarray(dx1[0], dtype=model1.dtype, order="C").copy()).copy()
+            )
         return dx1
 
     def do_model2_backward_pass(self, model2: Model, dx1: list[np.ndarray]) -> list[np.ndarray]:
@@ -279,10 +285,15 @@ class ModelCommonTestCase(TestCase):
         for i, layer in reversed(list(enumerate(model2.layers))):
             if verbose_test():
                 print(layer)
-            dx2.insert(0, layer.backward(np.asarray(dx1[i + 1], dtype=model2.dtype, order="C").copy()).copy())
+            dx2.insert(
+                0,
+                layer.backward(np.asarray(dx1[i + 1], dtype=model2.dtype, order="C").copy()).copy(),
+            )
         return dx2
 
-    def compare_forward(self, model1: Model, x1: list[np.ndarray], model2: Model, x2: list[np.ndarray]):
+    def compare_forward(
+        self, model1: Model, x1: list[np.ndarray], model2: Model, x2: list[np.ndarray]
+    ):
         """
         Compares the forward pass outputs of two models.
 
@@ -300,12 +311,22 @@ class ModelCommonTestCase(TestCase):
             # Skip test on layers that behave randomly
             if not isinstance(layer, Dropout):
                 rtol, atol = self.get_tolerance(layer)
-                self.assertTrue(x1[i].size == x2[i].size, f"Both tensors doesn't have the same number of elements (x1[{i}].size = {x1[i].size} != {x2[i].size} = x2[{i}].size)")
                 self.assertTrue(
-                    np.allclose(x1[i], x2[i].reshape(x1[i].shape), rtol=rtol, atol=atol), f"Forward result from layers {layer.name_with_id} differ ({self.print_stats(x1[i], x2[i], rtol, atol)})"
+                    x1[i].size == x2[i].size,
+                    f"Both tensors doesn't have the same number of elements (x1[{i}].size = {
+                        x1[i].size
+                    } != {x2[i].size} = x2[{i}].size)",
+                )
+                self.assertTrue(
+                    np.allclose(x1[i], x2[i].reshape(x1[i].shape), rtol=rtol, atol=atol),
+                    f"Forward result from layers {layer.name_with_id} differ ({
+                        self.print_stats(x1[i], x2[i], rtol, atol)
+                    })",
                 )
 
-    def compare_backward(self, model1: Model, dx1: list[np.ndarray], model2: Model, dx2: list[np.ndarray]):
+    def compare_backward(
+        self, model1: Model, dx1: list[np.ndarray], model2: Model, dx2: list[np.ndarray]
+    ):
         """
         Compares the backward pass gradients of two models.
 
@@ -315,7 +336,9 @@ class ModelCommonTestCase(TestCase):
             model2: Second model.
             dx2: Backward pass gradients of model 2.
         """
-        assert len(dx1) == len(dx2), f"dx1 and dx2 should have the same length {len(dx1)=}, {len(dx2)=}"
+        assert len(dx1) == len(dx2), (
+            f"dx1 and dx2 should have the same length {len(dx1)=}, {len(dx2)=}"
+        )
         if verbose_test():
             print("\nComparing outputs shapes.")
             min_dx = min(len(dx1), len(dx2))
@@ -336,11 +359,27 @@ class ModelCommonTestCase(TestCase):
                 if dx1[i].shape == dx2[i].shape:
                     allclose = np.allclose(dx1[i], dx2[i], rtol=rtol, atol=atol)
                 else:
-                    logger.warning(f"dx shape on both models for {layer.name_with_id} differ: [dx1.shape: {dx1[i].shape}, dx2.shape: {dx2[i].shape}]")
+                    logger.warning(
+                        f"dx shape on both models for {layer.name_with_id} differ: [dx1.shape: {
+                            dx1[i].shape
+                        }, dx2.shape: {dx2[i].shape}]"
+                    )
                     # Try flattening both
-                    self.assertTrue(dx1[i].size == dx2[i].size, f"Both tensors doesn't have the same number of elements (dx1[{i}].size = {dx1[i].size} != {dx2[i].size} = dx2[{i}].size)")
-                    allclose = np.allclose(dx1[i], dx2[i].reshape(dx1[i].shape), rtol=rtol, atol=atol)
-                self.assertTrue(allclose, f"Backward result from layer {layer.name_with_id} differ ({self.print_stats(dx1[i], dx2[i], rtol, atol)})")
+                    self.assertTrue(
+                        dx1[i].size == dx2[i].size,
+                        f"Both tensors doesn't have the same number of elements (dx1[{i}].size = {
+                            dx1[i].size
+                        } != {dx2[i].size} = dx2[{i}].size)",
+                    )
+                    allclose = np.allclose(
+                        dx1[i], dx2[i].reshape(dx1[i].shape), rtol=rtol, atol=atol
+                    )
+                self.assertTrue(
+                    allclose,
+                    f"Backward result from layer {layer.name_with_id} differ ({
+                        self.print_stats(dx1[i], dx2[i], rtol, atol)
+                    })",
+                )
 
     def do_test_model(self, model_name: str):
         """
@@ -358,7 +397,13 @@ class ModelCommonTestCase(TestCase):
         model2.mode = Model.Mode.TRAIN
         self.copy_weights_and_biases(model1, model2)
 
-        x = [np.asarray(random.random((model1.batch_size, *model1.layers[0].shape)), dtype=model1.dtype, order="C").copy()]
+        x = [
+            np.asarray(
+                random.random((model1.batch_size, *model1.layers[0].shape)),
+                dtype=model1.dtype,
+                order="C",
+            ).copy()
+        ]
 
         if verbose_test():
             print()

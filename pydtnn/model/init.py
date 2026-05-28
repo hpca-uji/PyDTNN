@@ -10,7 +10,8 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from pydtnn import MPI, context, cublas, cublas_handle, cudnn, cudnn_handle, drv, gpuarray, hostname, nccl, nccl_comm, num_gpus, ranks_per_node, stream
+from pydtnn import (MPI, context, cublas, cublas_handle, cudnn, cudnn_handle, drv,
+                    gpuarray, hostname, nccl, nccl_comm, num_gpus, ranks_per_node, stream)
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.datasets import select as select_dataset
 from pydtnn.datasets.abstract import Dataset
@@ -69,7 +70,8 @@ class Init[T: Array](Layers[T]):
         self.enable_cudnn = gpuarray is not None and drv is not None and cublas is not None
         self.gpudirect: bool = self.enable_gpudirect
         self.enable_nccl: bool = self.enable_nccl
-        self.memory: PrivateMemory = None  # type: ignore (it will be intialized later if "self.use_memory_pool" is True)
+        # type: ignore (it will be intialized later if "self.use_memory_pool" is True)
+        self.memory: PrivateMemory = None
         self.dtype: np.dtype = np.dtype(self.dtype)
         self.param_dtype: np.dtype = np.dtype(self.quantize_dtype) if self.quantize else self.dtype
         self.network_algo = NetworkAlgoEnum(self.network_algo.lower())
@@ -136,9 +138,12 @@ class Init[T: Array](Layers[T]):
         self.model_sync_algo = self.SyncAlgorithm(self.model_sync_algo)
 
         # NOTE: This parameter come from Parser.
-        self.model_sync_participation = self.SyncParticipation(self.kwargs["model_sync_participation"])
+        self.model_sync_participation = self.SyncParticipation(
+            self.kwargs["model_sync_participation"]
+        )
 
-        # Read the model (NOTE: must be the last action, as it calls self._model_init() if there is a model)
+        # Read the model (NOTE: must be the last action, as it calls
+        # self._model_init() if there is a model)
         if model_name := self.kwargs.get("model_name"):
             self._layers_init(model_name)
 
@@ -161,7 +166,9 @@ class Init[T: Array](Layers[T]):
             default: Default batch size if none is provided.
         """
         if self.batch_size and self.global_batch_size:
-            raise ValueError("Can not define 'local_batch_size' and 'global_batch_size' simultaneously")
+            raise ValueError(
+                "Can not define 'local_batch_size' and 'global_batch_size' simultaneously"
+            )
         elif self.global_batch_size:
             # NOTE: Using comm_size instead of nprocs might not be appropriate,
             #       as it differs to how global_batch_size is defined elsewhere,
@@ -173,7 +180,11 @@ class Init[T: Array](Layers[T]):
             batch_size = default
 
         if batch_size < 1:
-            raise ValueError(f"'batch_size' ({batch_size}) too small or too many processes (num processes: {self.comm_size})")
+            raise ValueError(
+                f"'batch_size' ({batch_size}) too small or too many processes (num processes: {
+                    self.comm_size
+                })"
+            )
 
         self.batch_size = batch_size
 
@@ -190,7 +201,14 @@ class Init[T: Array](Layers[T]):
         elif self.tracer_pmlib_device != "":
             from pydtnn.tracers.simple_tracer_pmlib import SimpleTracerPMLib
 
-            tracer = SimpleTracerPMLib(self.tracing, self.tracer_output, self.comm, self.tracer_pmlib_server, self.tracer_pmlib_port, self.tracer_pmlib_device)
+            tracer = SimpleTracerPMLib(
+                self.tracing,
+                self.tracer_output,
+                self.comm,
+                self.tracer_pmlib_server,
+                self.tracer_pmlib_port,
+                self.tracer_pmlib_device,
+            )
         else:
             from pydtnn.tracers.simple_tracer import SimpleTracer
 
@@ -209,7 +227,11 @@ class Init[T: Array](Layers[T]):
             raise RuntimeError("uHE is not avaliable, but is requiested!")
 
         backend = polyhe.Backend(encryption_name)
-        options = polyhe.Options(slots=self.encryption_slots, scale=self.encryption_scale, security=self.encryption_security)
+        options = polyhe.Options(
+            slots=self.encryption_slots,
+            scale=self.encryption_scale,
+            security=self.encryption_security,
+        )
 
         if self.comm_rank == 0:
             crypt = polyhe.new(backend, options)
@@ -257,7 +279,8 @@ class Init[T: Array](Layers[T]):
         """Initializes CUDA, cuDNN, and NCCL backend handles."""
         self.cuda_threads = min(self.batch_size, LIMIT_THREADS_AND_BLOCKS)
         self.cuda_blocks = (max(self.batch_size, LIMIT_THREADS_AND_BLOCKS) // self.cuda_threads) + 1
-        # NOTE: Seems that in PyDTNN, usually the ".x" (blockIdx.x, threadIdx.x, ...) is the only dimension used.
+        # NOTE: Seems that in PyDTNN, usually the ".x" (blockIdx.x, threadIdx.x,
+        # ...) is the only dimension used.
         self.cuda_grid = (self.cuda_blocks, 1, 1)
         self.cuda_block = (self.cuda_threads, 1, 1)
 
@@ -274,7 +297,12 @@ class Init[T: Array](Layers[T]):
             assert nccl is not None
             assert nccl_comm is not None
 
-            nccl_types = {np.float64: nccl.DataType.Float64, np.float32: nccl.DataType.Float32, np.int8: nccl.DataType.Int8, np.int32: nccl.DataType.Int32}
+            nccl_types = {
+                np.float64: nccl.DataType.Float64,
+                np.float32: nccl.DataType.Float32,
+                np.int8: nccl.DataType.Int8,
+                np.int32: nccl.DataType.Int32,
+            }
 
             nccl_type = nccl_types.get(self.dtype, nccl.DataType.Float32)
 
@@ -285,7 +313,12 @@ class Init[T: Array](Layers[T]):
 
         self.tracer.set_stream(stream)
 
-        cudnn_types = {np.float64: CudnnDataType.FLOAT64, np.float32: CudnnDataType.FLOAT32, np.int8: CudnnDataType.INT8, np.int32: CudnnDataType.INT32}
+        cudnn_types = {
+            np.float64: CudnnDataType.FLOAT64,
+            np.float32: CudnnDataType.FLOAT32,
+            np.int8: CudnnDataType.INT8,
+            np.int32: CudnnDataType.INT32,
+        }
 
         cudnn_type: str = cudnn_types.get(self.dtype, CudnnDataType.FLOAT32)
         cudnn_dtype: int = cudnn.cudnnDataType[cudnn_type]
@@ -311,9 +344,13 @@ class Init[T: Array](Layers[T]):
         # NOTE: Dataset is always in NCHW
         # Change input_shape to model.tensor_format
         if len(input_shape) != 3:
-            logger.warning(f"Input layer does not have 3 dimensions ({input_shape}), it may cause issues!")
+            logger.warning(
+                f"Input layer does not have 3 dimensions ({input_shape}), it may cause issues!"
+            )
         else:
-            input_shape = format_reshape(input_shape, SampleFormat.CHW, self.tensor_format.as_sample())
+            input_shape = format_reshape(
+                input_shape, SampleFormat.CHW, self.tensor_format.as_sample()
+            )
 
         self.add_layers(create_model(input_shape, output_shape))
 
@@ -346,7 +383,9 @@ class Init[T: Array](Layers[T]):
             temp_memory_size.append(metric.tmp_memory_used)
 
         self.loss_and_metrics = [self.loss_func_name] + self.metrics_list
-        self.loss_and_metrics_format = [self.loss_func.format] + [metric.format for metric in self.metrics_funcs]
+        self.loss_and_metrics_format = [self.loss_func.format] + [
+            metric.format for metric in self.metrics_funcs
+        ]
         self.total_metrics = np.array([0] + [0 for func in self.metrics_funcs], dtype=self.dtype)
         self.tracer.define_event_types(self)
 

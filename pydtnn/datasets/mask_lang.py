@@ -41,7 +41,16 @@ class MaskLang(Dataset):
     scale:  ???
     """
 
-    def __init__(self, model: Model, preprocess=0, embedl=512, max_sentence=512, split_token="<translation>", force_test_as_validation=False, debug=False):
+    def __init__(
+        self,
+        model: Model,
+        preprocess=0,
+        embedl=512,
+        max_sentence=512,
+        split_token="<translation>",
+        force_test_as_validation=False,
+        debug=False,
+    ):
         """
         Initialize the MaskLang dataset.
 
@@ -71,7 +80,15 @@ class MaskLang(Dataset):
         else:
             self._data_generator = self._actual_data_generator_normal
 
-        super().__init__(model, TRAIN_NSAMPLES, TEST_NSAMPLES, INPUT_SHAPE, OUTPUT_SHAPE, force_test_as_validation=force_test_as_validation, debug=debug)
+        super().__init__(
+            model,
+            TRAIN_NSAMPLES,
+            TEST_NSAMPLES,
+            INPUT_SHAPE,
+            OUTPUT_SHAPE,
+            force_test_as_validation=force_test_as_validation,
+            debug=debug,
+        )
 
     def _model_init(self) -> None:
         """
@@ -139,7 +156,9 @@ class MaskLang(Dataset):
             self.val_nsamples = len(self.val_indices)
             self.test_nsamples = self.val_nsamples
 
-    def _actual_data_generator_normal(self, part: Dataset.Part) -> Generator[tuple[np.ndarray, np.ndarray], Any, None]:
+    def _actual_data_generator_normal(
+        self, part: Dataset.Part
+    ) -> Generator[tuple[np.ndarray, np.ndarray], Any, None]:
         """
         Generator for on-the-fly data processing.
 
@@ -151,8 +170,12 @@ class MaskLang(Dataset):
 
         for i in range(self.train_val_nsamples // batch_size):
             window = (i * batch_size + rank * batch_size, i * batch_size + (rank + 1) * batch_size)
-            src_embeddings = np.zeros((batch_size, 1, self.max_sentence, self.embedl), dtype=self.dtype)
-            tgt_embeddings = np.zeros((batch_size, 1, self.max_sentence, self.embedl), dtype=self.dtype)
+            src_embeddings = np.zeros(
+                (batch_size, 1, self.max_sentence, self.embedl), dtype=self.dtype
+            )
+            tgt_embeddings = np.zeros(
+                (batch_size, 1, self.max_sentence, self.embedl), dtype=self.dtype
+            )
             for i, doc in enumerate(self.dictionary.pipe(self.lines[window[0]: window[1]])):
                 mask = np.random.randint(0, len(doc))
                 for j, word in enumerate(doc):
@@ -167,7 +190,9 @@ class MaskLang(Dataset):
             y = tgt_embeddings
             yield x, y
 
-    def _actual_data_generator_preprocess(self, part: Dataset.Part) -> Generator[tuple[np.ndarray, np.ndarray], Any, None]:
+    def _actual_data_generator_preprocess(
+        self, part: Dataset.Part
+    ) -> Generator[tuple[np.ndarray, np.ndarray], Any, None]:
         """
         Generator for pre-processed data.
 

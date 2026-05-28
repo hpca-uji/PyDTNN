@@ -6,7 +6,9 @@ import torch  # type: ignore
 from model_convertor import convert_model
 from torch.nn import CrossEntropyLoss  # type: ignore
 from torchmetrics import Accuracy, Metric  # type: ignore
-from torchvision.models import alexnet, densenet121, densenet169, densenet201, googlenet, resnet18, resnet34, resnet50, resnet101, resnet152, vgg11, vgg16, vgg19  # type: ignore
+from torchvision.models import googlenet  # type: ignore
+from torchvision.models import (alexnet, densenet121, densenet169, densenet201, resnet18,
+                                resnet34, resnet50, resnet101, resnet152, vgg11, vgg16, vgg19)
 
 from pydtnn.activations.softmax import Softmax
 from pydtnn.datasets import select as select_dataset
@@ -38,19 +40,103 @@ __all__ = (
 )
 
 dict_test = {
-    "vgg11": (vgg11, pydtnn_vgg11, (524, 524, 3), "cifar10", {"num_classes": 5}, None),  # (224, 224, 3)
-    "vgg16": (vgg16, pydtnn_vgg16, (524, 524, 3), "cifar10", {"num_classes": 5}, None),  # (224, 224, 3)
+    "vgg11": (
+        vgg11,
+        pydtnn_vgg11,
+        (524, 524, 3),
+        "cifar10",
+        {"num_classes": 5},
+        None,
+    ),  # (224, 224, 3)
+    "vgg16": (
+        vgg16,
+        pydtnn_vgg16,
+        (524, 524, 3),
+        "cifar10",
+        {"num_classes": 5},
+        None,
+    ),  # (224, 224, 3)
     "vgg19": (vgg19, pydtnn_vgg19_imagenet, (524, 524, 3), "cifar10", {"num_classes": 5}, not None),
-    "alexnet": (alexnet, pydtnn_alexnet_cifar10, (524, 524, 3), "cifar10", {"num_classes": 5}, None),
-    "densenet121": (densenet121, pydtnn_densenet121_cifar10, (524, 524, 3), "cifar10", {"num_classes": 5}, not None),
-    "densenet169": (densenet169, pydtnn_densenet169_cifar10, (524, 524, 3), "cifar10", {"num_classes": 5}, not None),
-    "densenet201": (densenet201, pydtnn_densenet201_cifar10, (524, 524, 3), "cifar10", {"num_classes": 5}, not None),
-    "resnet18": (resnet18, pydtnn_resnet18_cifar10, (524, 524, 3), "cifar10", {"num_classes": 5}, None),
-    "resnet34": (resnet34, pydtnn_resnet34_cifar10, (524, 524, 3), "cifar10", {"num_classes": 5}, None),
-    "resnet50": (resnet50, pydtnn_resnet50_cifar10, (524, 524, 3), "cifar10", {"num_classes": 5}, not None),
-    "resnet101": (resnet101, pydtnn_resnet101_cifar10, (524, 524, 3), "cifar10", {"num_classes": 5}, None),
-    "resnet152": (resnet152, pydtnn_resnet152_cifar10, (524, 524, 3), "cifar10", {"num_classes": 5}, not None),
-    "googlenet": (googlenet, pydtnn_inceptionv3_cifar10, (524, 524, 3), "cifar10", {"num_classes": 5}, None),  # (299, 299, 3)
+    "alexnet": (
+        alexnet,
+        pydtnn_alexnet_cifar10,
+        (524, 524, 3),
+        "cifar10",
+        {"num_classes": 5},
+        None,
+    ),
+    "densenet121": (
+        densenet121,
+        pydtnn_densenet121_cifar10,
+        (524, 524, 3),
+        "cifar10",
+        {"num_classes": 5},
+        not None,
+    ),
+    "densenet169": (
+        densenet169,
+        pydtnn_densenet169_cifar10,
+        (524, 524, 3),
+        "cifar10",
+        {"num_classes": 5},
+        not None,
+    ),
+    "densenet201": (
+        densenet201,
+        pydtnn_densenet201_cifar10,
+        (524, 524, 3),
+        "cifar10",
+        {"num_classes": 5},
+        not None,
+    ),
+    "resnet18": (
+        resnet18,
+        pydtnn_resnet18_cifar10,
+        (524, 524, 3),
+        "cifar10",
+        {"num_classes": 5},
+        None,
+    ),
+    "resnet34": (
+        resnet34,
+        pydtnn_resnet34_cifar10,
+        (524, 524, 3),
+        "cifar10",
+        {"num_classes": 5},
+        None,
+    ),
+    "resnet50": (
+        resnet50,
+        pydtnn_resnet50_cifar10,
+        (524, 524, 3),
+        "cifar10",
+        {"num_classes": 5},
+        not None,
+    ),
+    "resnet101": (
+        resnet101,
+        pydtnn_resnet101_cifar10,
+        (524, 524, 3),
+        "cifar10",
+        {"num_classes": 5},
+        None,
+    ),
+    "resnet152": (
+        resnet152,
+        pydtnn_resnet152_cifar10,
+        (524, 524, 3),
+        "cifar10",
+        {"num_classes": 5},
+        not None,
+    ),
+    "googlenet": (
+        googlenet,
+        pydtnn_inceptionv3_cifar10,
+        (524, 524, 3),
+        "cifar10",
+        {"num_classes": 5},
+        None,
+    ),  # (299, 299, 3)
 }
 
 # ----- EXECUTION PARAMETERS -----
@@ -82,14 +168,18 @@ def get_model_layers(model: torch.nn.Module, name: str = "self") -> dict[str, to
     Recursively extracts all leaf modules from a PyTorch model.
     """
 
-    def _get_model_layers(model: torch.nn.Module, name: str, dict_modules: dict[str, torch.nn.Module]):
+    def _get_model_layers(
+        model: torch.nn.Module, name: str, dict_modules: dict[str, torch.nn.Module]
+    ):
         """
         Internal recursive helper to traverse model children.
         """
         children = list(model.named_children())
         if len(children) > 0:
             for nom, module in children:
-                _get_model_layers(model=module, name=".".join([name, nom]), dict_modules=dict_modules)
+                _get_model_layers(
+                    model=module, name=".".join([name, nom]), dict_modules=dict_modules
+                )
         else:
             dict_modules[name] = model
 
@@ -98,7 +188,13 @@ def get_model_layers(model: torch.nn.Module, name: str = "self") -> dict[str, to
     return dict_modules
 
 
-def pytorch_inference(model: torch.nn.Module, dataloader, loss_func: torch.nn.modules.loss._Loss, device: torch.device, metrics_list: list) -> None:
+def pytorch_inference(
+    model: torch.nn.Module,
+    dataloader,
+    loss_func: torch.nn.modules.loss._Loss,
+    device: torch.device,
+    metrics_list: list,
+) -> None:
     """
     Runs inference on a PyTorch model and evaluates metrics.
     """
@@ -175,7 +271,11 @@ def pydtnn_inference(model: PyDTNN_Model, metrics_list=None, dataset=None) -> No
     """
     Runs inference on a PyDTNN model and prints reports.
     """
-    metrics_list = [f for f in model.metrics.replace(" ", "").split(",")] if metrics_list is None else metrics_list
+    metrics_list = (
+        [f for f in model.metrics.replace(" ", "").split(",")]
+        if metrics_list is None
+        else metrics_list
+    )
     model.dataset = dataset if dataset is not None else model.dataset
     model.show()
     model.evaluate()
@@ -244,7 +344,8 @@ def pydtnn_training(model: PyDTNN_Model, dataset: Dataset, num_samples=64 * 2):
     """
 
     # history = model.train(x_train=dataset._x[DatasetEnum.TRAIN][:num_samples], x_val=dataset._x[VAL][:num_samples],
-    #                      y_train=dataset._y[DatasetEnum.TRAIN][:num_samples], y_val=dataset._y[VAL][:num_samples])
+    # y_train=dataset._y[DatasetEnum.TRAIN][:num_samples],
+    # y_val=dataset._y[VAL][:num_samples])
     history = model.train()
     print(f"history: {history}")
 
@@ -304,7 +405,9 @@ def main():
     print("== Converted version ==")
     print("=======================")
 
-    new_model = convert_model(model=pytorch_model, input_shape=shape, default_output_activation_layer=Softmax(), **kwargs)
+    new_model = convert_model(
+        model=pytorch_model, input_shape=shape, default_output_activation_layer=Softmax(), **kwargs
+    )
 
     print("=====================")
     print("=== MODEL CREATED ===")

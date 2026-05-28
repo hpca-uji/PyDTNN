@@ -3,7 +3,18 @@
 from pydtnn.backends.cython.utils.base import _npDT, _npDT_4Dims
 
 def average_pool_2d_fwd_nhwc_cython[T: _npDT](
-    x: _npDT_4Dims[T], y: _npDT_4Dims[T], kh: int, kw: int, ho: int, wo: int, vpadding: int, hpadding: int, vstride: int, hstride: int, vdilation: int, hdilation: int
+    x: _npDT_4Dims[T],
+    y: _npDT_4Dims[T],
+    kh: int,
+    kw: int,
+    ho: int,
+    wo: int,
+    vpadding: int,
+    hpadding: int,
+    vstride: int,
+    hstride: int,
+    vdilation: int,
+    hdilation: int,
 ) -> None:
     """
     Performs forward 2D average pooling on NHWC input data using Cython.
@@ -27,7 +38,22 @@ def average_pool_2d_fwd_nhwc_cython[T: _npDT](
     """
 
 def average_pool_2d_bwd_nhwc_cython[T: _npDT](
-    dy: _npDT_4Dims[T], dx: _npDT_4Dims[T], n: int, h: int, w: int, c: int, kh: int, kw: int, ho: int, wo: int, vpadding: int, hpadding: int, vstride: int, hstride: int, vdilation: int, hdilation: int
+    dy: _npDT_4Dims[T],
+    dx: _npDT_4Dims[T],
+    n: int,
+    h: int,
+    w: int,
+    c: int,
+    kh: int,
+    kw: int,
+    ho: int,
+    wo: int,
+    vpadding: int,
+    hpadding: int,
+    vstride: int,
+    hstride: int,
+    vdilation: int,
+    hdilation: int,
 ) -> None:
     """
     Performs backward 2D average pooling on NHWC input data using Cython.

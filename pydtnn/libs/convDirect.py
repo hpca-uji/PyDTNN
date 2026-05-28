@@ -69,7 +69,14 @@ class ConvDirect:
         """
         return
 
-    def __init__(self, method_name, dtype: np.dtype = np.dtype(np.float32), tensor_format=TensorFormat.NHWC, debug=False, parent_layer=None):
+    def __init__(
+        self,
+        method_name,
+        dtype: np.dtype = np.dtype(np.float32),
+        tensor_format=TensorFormat.NHWC,
+        debug=False,
+        parent_layer=None,
+    ):
         """
         Initializes the ConvDirect wrapper and loads the `libconvDirect.so` library.
 
@@ -122,9 +129,15 @@ class ConvDirect:
         self._YT = ctypes.POINTER(ctypes.c_float)()
 
         try:
-            [self._conv_direct_pre, self._conv_direct_kernel, self._conv_direct_post] = [getattr(self.__class__.lib_cd, method_name + suffix) for suffix in ("_pre", "_kernel", "_post")]
+            [self._conv_direct_pre, self._conv_direct_kernel, self._conv_direct_post] = [
+                getattr(self.__class__.lib_cd, method_name + suffix)
+                for suffix in ("_pre", "_kernel", "_post")
+            ]
         except AttributeError as exc:
-            raise NotImplementedError("Error: Method '{}' not supported by convDirect library.\n       Run convDirect_info to see the convDirect supported methods.".format(method_name)) from exc
+            raise NotImplementedError(
+                "Error: Method '{}' not supported by convDirect library.\n       Run"
+                " convDirect_info to see the convDirect supported methods.".format(method_name)
+            ) from exc
 
         self._reuse_processed_weights = False
         if self.evaluate_only and method_name.find("convdirect_block_blis") == 0:
@@ -276,7 +289,7 @@ class ConvDirect:
         out: np.ndarray
 
         # int t = n, Co = co, Ci = ci, Ho = h, Wo = w, Hf = r, Wf = s;
-        (t, Co, Ci, Ho, Wo, Hf, Wf) = (n, co, ci, hi, wi, kh, kw)
+        t, Co, Ci, Ho, Wo, Hf, Wf = (n, co, ci, hi, wi, kh, kw)
 
         if self._reuse_processed_weights and self._weights_already_processed:
             self._DT = x.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
@@ -506,23 +519,73 @@ def __usage_example__():
     # conv_direct = ConvDirect("convdirect_conv_gemm_nhwc_default")
     # from ipdb import launch_ipdb_on_exception
     # with launch_ipdb_on_exception():
-    conv_direct_result = conv_direct.conv_direct(weights, x, out, vpadding=vpadding, hpadding=hpadding, vstride=vstride, hstride=hstride, vdilation=vdilation, hdilation=hdilation)
+    conv_direct_result = conv_direct.conv_direct(
+        weights,
+        x,
+        out,
+        vpadding=vpadding,
+        hpadding=hpadding,
+        vstride=vstride,
+        hstride=hstride,
+        vdilation=vdilation,
+        hdilation=hdilation,
+    )
     conv_direct_t = (
-        timeit(lambda: conv_direct.conv_direct(weights, x, out, vpadding=vpadding, hpadding=hpadding, vstride=vstride, hstride=hstride, vdilation=vdilation, hdilation=hdilation), number=10) / 10
+        timeit(
+            lambda: conv_direct.conv_direct(
+                weights,
+                x,
+                out,
+                vpadding=vpadding,
+                hpadding=hpadding,
+                vstride=vstride,
+                hstride=hstride,
+                vdilation=vdilation,
+                hdilation=hdilation,
+            ),
+            number=10,
+        )
+        / 10
     )
     logger.info("Using im2col and mm NHWC ...")
 
     x_c = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype=x.dtype)
-    im2row_nhwc_cython(x, x_c, kh, kw, ho, wo, vpadding, hpadding, vstride, hstride, vdilation, hdilation)
+    im2row_nhwc_cython(
+        x, x_c, kh, kw, ho, wo, vpadding, hpadding, vstride, hstride, vdilation, hdilation
+    )
     w_c = weights.reshape(-1, kn)
     im2col_mm_result_nhwc = (x_c @ w_c + out.reshape(b * ho * wo, kn)).reshape(-1, ho, wo, kn)
-    mm_t = timeit(lambda: time_it_func(x, w_c, out, b, kn, ho, wo, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation), number=10) / 10
+    mm_t = (
+        timeit(
+            lambda: time_it_func(
+                x,
+                w_c,
+                out,
+                b,
+                kn,
+                ho,
+                wo,
+                kh,
+                kw,
+                vpadding,
+                hpadding,
+                vstride,
+                hstride,
+                vdilation,
+                hdilation,
+            ),
+            number=10,
+        )
+        / 10
+    )
 
     logger.info("conv_direct time: {:.4f}".format(conv_direct_t))
     logger.info("im2row + mm time: {:.4f}".format(mm_t))
     logger.info(f"Sum WINOGRAD NHWC: {conv_direct_result.sum()} {conv_direct_result.shape}")
     logger.info(f"Sum   IM2COL NHWC: {im2col_mm_result_nhwc.sum()} {im2col_mm_result_nhwc.shape}")
-    logger.info(f"np.allclose NHWC: {np.allclose(conv_direct_result, im2col_mm_result_nhwc, atol=1e-3)}")
+    logger.info(
+        f"np.allclose NHWC: {np.allclose(conv_direct_result, im2col_mm_result_nhwc, atol=1e-3)}"
+    )
 
 
 if __name__ == "__main__":

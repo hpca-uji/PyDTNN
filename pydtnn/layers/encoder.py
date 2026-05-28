@@ -27,7 +27,14 @@ class Encoder[T: Array](AbstractBlockLayer[T]):
         dropout_rate (float): Dropout probability.
     """
 
-    def __init__(self, embedl: int = 64, d_k: int = 3, d_ff: int = 256, heads: int = 10, dropout_rate: float = 0.5):
+    def __init__(
+        self,
+        embedl: int = 64,
+        d_k: int = 3,
+        d_ff: int = 256,
+        heads: int = 10,
+        dropout_rate: float = 0.5,
+    ):
         """
         Initializes the Encoder layer with specified hyperparameters.
 

@@ -17,7 +17,14 @@ class Decoder[T: Array](AbstractBlockLayer[T]):
     Decoder layer implementation for transformer-based architectures.
     """
 
-    def __init__(self, embedl: int = 64, d_k: int = 3, d_ff: int = 256, heads: int = 10, dropout_rate: float = 0.5):
+    def __init__(
+        self,
+        embedl: int = 64,
+        d_k: int = 3,
+        d_ff: int = 256,
+        heads: int = 10,
+        dropout_rate: float = 0.5,
+    ):
         """
         Initializes the Decoder layer.
 

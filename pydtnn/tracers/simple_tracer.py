@@ -45,7 +45,9 @@ class SimpleTracer(Tracer):
         self.rank = 0
         if comm is not None:
             self.rank = comm.Get_rank()
-        self.events = defaultdict(lambda: defaultdict(lambda: [0, []]))  # TODO: use tuple or structure
+        self.events = defaultdict(
+            lambda: defaultdict(lambda: [0, []])
+        )  # TODO: use tuple or structure
         self.pending_events = []
 
     def enable_tracing(self):
@@ -73,7 +75,9 @@ class SimpleTracer(Tracer):
             if len(self.pending_events) == 0:
                 raise RuntimeError("Received an 'End' event but there are no pending events!")
             if self.pending_events[-1][0] != evt_type_val:
-                raise RuntimeError("Received an 'End' event for a different event type than expected!")
+                raise RuntimeError(
+                    "Received an 'End' event for a different event type than expected!"
+                )
             _evt_type_val, _evt_val, tic = self.pending_events.pop()
             self.events[_evt_type_val][_evt_val][0] += 1  # type: ignore
             self.events[_evt_type_val][_evt_val][1].append(toc - tic)  # type: ignore
@@ -116,8 +120,11 @@ class SimpleTracer(Tracer):
         _times.sort()
         total_time = sum(_times)
         mean_of_times = _times[len(_times) // 2]
-        return f"{event_type_name},{event_value},{event_type[event_value]},{_calls},{total_time},{mean_of_times}"
-        # return f"{event_type_name};{event_value};{event_type[event_value]};{_calls};{total_time};{mean_of_times}"
+        return f"{event_type_name},{event_value},{event_type[event_value]},{_calls},{total_time},{
+            mean_of_times
+        }"
+        # return
+        # f"{event_type_name};{event_value};{event_type[event_value]};{_calls};{total_time};{mean_of_times}"
 
     def _write_output(self):
         """
@@ -127,7 +134,10 @@ class SimpleTracer(Tracer):
         output_filename = utils.string_substitute(self.output_filename, rank=self.rank)
         if output_filename != self.output_filename or self.rank == 0:
             if len(self.pending_events):
-                logger.warning("Warning: finishing simple tracer while there are pending events to be marked as finished.")
+                logger.warning(
+                    "Warning: finishing simple tracer while there are pending events to be marked"
+                    " as finished."
+                )
             path = Path(output_filename).resolve()
             with open(output_filename, "w") as f:
                 f.write(self._output_header() + "\n")

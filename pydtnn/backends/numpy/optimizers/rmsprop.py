@@ -41,7 +41,8 @@ class RMSPropNumpy(RMSProp[np.ndarray], OptimizerNumpy):
                     # NOTE: int(math.prod(w.shape)): temp_.nbytes = w.nbytes
 
                     self.context[layer.id]["cache_%s" % w_] = cache
-                    self.context[layer.id]["temp_%s" % w_] = temp  # type: ignore (it is the right type)
+                    self.context[layer.id]["temp_%s" %
+                                           w_] = temp  # type: ignore (it is the right type)
 
         self.tmp_memory_used += self.model.memory_cls._total(*temp_memory_size)
         self.memory_used += self.tmp_memory_used
@@ -54,8 +55,11 @@ class RMSPropNumpy(RMSProp[np.ndarray], OptimizerNumpy):
                 for key in self.context[layer_id].keys():
                     if "temp_" in key:
                         w_ = key.split("temp_")[-1]
-                        w_shape = self.context[layer_id]["cache_%s" % w_].shape  # type: ignore (it is correct)
-                        w_shape = self.context[layer_id][key] = self.model.memory.ndarray(w_shape, dtype=self.model.dtype)
+                        w_shape = self.context[layer_id]["cache_%s" %
+                                                         w_].shape  # type: ignore (it is correct)
+                        w_shape = self.context[layer_id][key] = self.model.memory.ndarray(
+                            w_shape, dtype=self.model.dtype
+                        )
 
     def update(self, layer: LayerNumpy) -> None:
         """Perform a single optimization step for the given layer."""
@@ -67,7 +71,8 @@ class RMSPropNumpy(RMSProp[np.ndarray], OptimizerNumpy):
             dw: np.ndarray
 
             if not (self.are_all_zeros(w) and self.are_all_zeros(dw) and self.are_all_zeros(cache)):
-                # NOTE: The operations are unrolled in order to reduce the memory consumed by intermediate copies of the variables during the operations.
+                # NOTE: The operations are unrolled in order to reduce the memory consumed
+                # by intermediate copies of the variables during the operations.
 
                 # cache = self.rho * cache + (1 - self.rho) * dw ** 2
                 np.multiply(cache, self.rho, dtype=self.model.dtype, out=cache)
@@ -76,7 +81,8 @@ class RMSPropNumpy(RMSProp[np.ndarray], OptimizerNumpy):
                 np.add(cache, temp, dtype=self.model.dtype, out=cache)
 
                 # w -= self.learning_rate * (self.decay * w + (dw / np.sqrt(cache + self.epsilon))) ==>
-                # w -= (self.learning_rate * self.decay) * w + self.learning_rate * (dw / np.sqrt(cache + self.epsilon)))
+                # w -= (self.learning_rate * self.decay) * w + self.learning_rate * (dw /
+                # np.sqrt(cache + self.epsilon)))
 
                 # w -= (self.learning_rate * self.decay) * w
                 np.multiply((self.learning_rate * self.decay), w, dtype=self.model.dtype, out=temp)

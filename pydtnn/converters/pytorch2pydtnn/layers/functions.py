@@ -59,7 +59,9 @@ def adaptive_avg_pool_2d(args: dict[str, str]) -> tuple[AveragePool2D, str]:
     # Example: torch.nn.functional.adaptive_avg_pool2d(relu, (1, 1)) | args = 'relu, (1, 1)'
     params: list = args[cm.PARAMETERS].split(cm.ARGS_SEPARATOR)
     # removing the input layer:
-    dict_params["input"] = params.pop(0)  # Situation after operation: [] or ['number'] or ['(number', 'number)']
+    dict_params["input"] = params.pop(
+        0
+    )  # Situation after operation: [] or ['number'] or ['(number', 'number)']
 
     # Getting the arguments:
     match len(params):
@@ -97,9 +99,13 @@ def add(args: dict[str, Any]) -> tuple[AdditionBlock, str]:
     params = cm.get_equivalent_layer(params, dict_equivalent_layers)
     dict_layers: dict[str, tuple[Layerable, str]] = args[cm.LAYERS]
 
-    list_layers, to_remove, input_layer_name = cm.get_lists_operations_and_outputs(dict_layers=dict_layers, layer_inputs=params)
+    list_layers, to_remove, input_layer_name = cm.get_lists_operations_and_outputs(
+        dict_layers=dict_layers, layer_inputs=params
+    )
 
-    to_remove = set(to_remove)  # Remove multiple ocurrences of a layer. Consecuence of "get_equivalent_layer".
+    to_remove = set(
+        to_remove
+    )  # Remove multiple ocurrences of a layer. Consecuence of "get_equivalent_layer".
     # The removed layers will be accesed through the AdditionBlock.
     for elem in to_remove:
         del dict_layers[elem]
@@ -132,14 +138,20 @@ def concat(args: dict[str, Any]) -> tuple[ConcatenationBlock, str]:
     dict_equivalent_layers: dict[str, str] = args[cm.EQUIVALENT_LAYERS]
     parameters: list[str] = args[cm.PARAMETERS].split("],")
 
-    params = parameters.pop(0)  # Since PyDTNN always concatenate in the same dimensions, the rest of the PyTorch parameters can be ignored
+    # Since PyDTNN always concatenate in the same dimensions, the rest of the
+    # PyTorch parameters can be ignored
+    params = parameters.pop(0)
     params = cm.separate_function_params(params)
     params = cm.get_equivalent_layer(params, dict_equivalent_layers)
 
     dict_layers: dict[str, tuple[Layerable, str]] = args[cm.LAYERS]
-    list_layers, to_remove, input_layer_name = cm.get_lists_operations_and_outputs(dict_layers=dict_layers, layer_inputs=params)
+    list_layers, to_remove, input_layer_name = cm.get_lists_operations_and_outputs(
+        dict_layers=dict_layers, layer_inputs=params
+    )
 
-    to_remove = set(to_remove)  # Remove multiple ocurrences of a layer. Consecuence of "get_equivalent_layer".
+    to_remove = set(
+        to_remove
+    )  # Remove multiple ocurrences of a layer. Consecuence of "get_equivalent_layer".
 
     # The removed layers will be accesed through the ConcatenationBlock.
     for elem in to_remove:

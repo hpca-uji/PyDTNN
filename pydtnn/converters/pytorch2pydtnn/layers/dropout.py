@@ -1,4 +1,5 @@
-# In this file must be implemented only the translation of PyTorch Dropout layers to its PyDTNN equivalent.
+# In this file must be implemented only the translation of PyTorch Dropout
+# layers to its PyDTNN equivalent.
 
 """
 Module for converting PyTorch Dropout layers to PyDTNN Dropout layers.
@@ -40,6 +41,10 @@ def Dropout(args: dict[str, Any]) -> _Dropout:
     PYDTNN_RATE = "rate"
     pydtnn_dict_keys = [PYDTNN_RATE]
 
-    layer_args = cm.prepare_pydtnn_arguments(arguments=args[cm.ARGUMENTS], torch_dict_keys=torch_dict_keys, pydtnn_dict_keys=pydtnn_dict_keys)
+    layer_args = cm.prepare_pydtnn_arguments(
+        arguments=args[cm.ARGUMENTS],
+        torch_dict_keys=torch_dict_keys,
+        pydtnn_dict_keys=pydtnn_dict_keys,
+    )
 
     return _Dropout(**layer_args)

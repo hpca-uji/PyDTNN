@@ -81,7 +81,9 @@ def main(config):
             total_time = t2 - t1
             if model.evaluate_only:
                 logger.info(f"Testing time: {total_time:5.4f} s")
-                logger.info(f"Testing throughput: {model.dataset.test_nsamples / total_time:5.4f} samples/s")
+                logger.info(
+                    f"Testing throughput: {model.dataset.test_nsamples / total_time:5.4f} samples/s"
+                )
         if model.evaluate_only:
             model.perf_counter.print_report()
             raise SystemExit(0)
@@ -117,8 +119,15 @@ def main(config):
         total_time = t2 - t1
         logger.info(f"Training and validation time: {total_time:5.4f} s")
         if model.perf_counter.num_epochs > 0:
-            logger.info(f"Training and validation time per epoch: {total_time / model.perf_counter.num_epochs:5.4f} s")
-            logger.info(f"Training and validation throughput: {(model.dataset.train_nsamples * model.perf_counter.num_epochs) / total_time:5.4f} samples/s")
+            logger.info(
+                f"Training and validation time per epoch: {
+                    total_time / model.perf_counter.num_epochs:5.4f} s"
+            )
+            logger.info(
+                f"Training and validation throughput: {
+                    (model.dataset.train_nsamples * model.perf_counter.num_epochs)
+                    / total_time:5.4f} samples/s"
+            )
     # Store history information
     if model.history_file:
         history_file = utils.string_substitute(model.history_file, rank=model.comm_rank)
@@ -143,14 +152,17 @@ def main(config):
             total_time = t2 - t1
             if not model.evaluate_only:
                 logger.info(f"Testing time: {total_time:5.4f} s")
-                logger.info(f"Testing throughput: {model.dataset.test_nsamples / total_time:5.4f} samples/s")
+                logger.info(
+                    f"Testing throughput: {model.dataset.test_nsamples / total_time:5.4f} samples/s"
+                )
     # Print model reports
     if model.comm_rank == 0:
         model.perf_counter.print_report()
     # Barrier and finalize
     if model.comm is not None and model.MPI is not None:
         model.comm.Barrier()
-        # The next line is required if running under SLURM (it seems it is not automatically called at exit)
+        # The next line is required if running under SLURM (it seems it is not
+        # automatically called at exit)
         model.MPI.Finalize()
 
 

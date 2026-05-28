@@ -21,7 +21,12 @@ class FC[T: Array](Layer[T]):
     """Fully connected (dense) layer."""
 
     def __init__(
-        self, shape: ArrayShape = (1,), activation: type[Activation] | None = None, use_bias=True, weights_initializer: InitializerFunc = glorot_uniform, biases_initializer: InitializerFunc = zeros
+        self,
+        shape: ArrayShape = (1,),
+        activation: type[Activation] | None = None,
+        use_bias=True,
+        weights_initializer: InitializerFunc = glorot_uniform,
+        biases_initializer: InitializerFunc = zeros,
     ):
         """Initializes the FC layer.
 

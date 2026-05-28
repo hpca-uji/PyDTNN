@@ -8,7 +8,9 @@ from typing import TYPE_CHECKING
 from pydtnn.backends.numpy.layers.abstract.block_layer import AbstractBlockLayerNumpy
 from pydtnn.layers.addition_block import AdditionBlock
 from pydtnn.libs import numpy as np
-from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
+from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT,
+                                   PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS,
+                                   PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum)
 
 __all__ = ("AdditionBlockNumpy",)
 
@@ -39,7 +41,9 @@ class AdditionBlockNumpy(AdditionBlock[np.ndarray], AbstractBlockLayerNumpy):
         p = self.paths[0]
         x_forward = x
         for layer in p:
-            self.model.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.FORWARD)
+            self.model.tracer.emit_event(
+                PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.FORWARD
+            )
             x_forward = layer.forward(x_forward)
             self.model.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
         sum_forwards = x_forward
@@ -48,10 +52,15 @@ class AdditionBlockNumpy(AdditionBlock[np.ndarray], AbstractBlockLayerNumpy):
             p = self.paths[i]
             x_forward = x
             for layer in p:
-                self.model.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.FORWARD)
+                self.model.tracer.emit_event(
+                    PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.FORWARD
+                )
                 x_forward = layer.forward(x_forward)
                 self.model.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_ELTW_SUM)
+            self.model.tracer.emit_event(
+                PYDTNN_OPS_EVENT,
+                self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_ELTW_SUM,
+            )
             np.add(sum_forwards, x_forward, out=sum_forwards, dtype=self.model.dtype)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
@@ -71,7 +80,9 @@ class AdditionBlockNumpy(AdditionBlock[np.ndarray], AbstractBlockLayerNumpy):
         p = self.paths[0]
         dx_backward = dy
         for layer in reversed(p):
-            self.model.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.FORWARD)
+            self.model.tracer.emit_event(
+                PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.FORWARD
+            )
             dx_backward = layer.backward(dx_backward)
             self.model.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
         dx = dx_backward
@@ -80,11 +91,16 @@ class AdditionBlockNumpy(AdditionBlock[np.ndarray], AbstractBlockLayerNumpy):
             p = self.paths[i]
             dx_backward = dy
             for layer in reversed(p):
-                self.model.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.BACKWARD)
+                self.model.tracer.emit_event(
+                    PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.BACKWARD
+                )
                 dx_backward = layer.backward(dx_backward)
                 self.model.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ELTW_SUM)
+            self.model.tracer.emit_event(
+                PYDTNN_OPS_EVENT,
+                self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ELTW_SUM,
+            )
             np.add(dx, dx_backward, out=dx, dtype=self.model.dtype)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return np.asarray(dx, dtype=self.model.dtype, order="C")

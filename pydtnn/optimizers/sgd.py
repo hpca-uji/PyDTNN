@@ -24,7 +24,13 @@ class SGD[T: Array](Optimizer[T]):
     Stochastic Gradient Descent optimizer with support for momentum, Nesterov acceleration, and weight decay.
     """
 
-    def __init__(self, learning_rate: float = 1e-2, momentum: float = 0.9, nesterov: bool = False, decay: float = 0.0):
+    def __init__(
+        self,
+        learning_rate: float = 1e-2,
+        momentum: float = 0.9,
+        nesterov: bool = False,
+        decay: float = 0.0,
+    ):
         """
         Initialize the SGD optimizer.
 
@@ -65,4 +71,9 @@ class SGD[T: Array](Optimizer[T]):
         Returns:
             An initialized SGD optimizer instance.
         """
-        return SGD(learning_rate=model.learning_rate, momentum=model.optimizer_momentum, nesterov=model.optimizer_nesterov, decay=model.optimizer_decay)
+        return SGD(
+            learning_rate=model.learning_rate,
+            momentum=model.optimizer_momentum,
+            nesterov=model.optimizer_nesterov,
+            decay=model.optimizer_decay,
+        )

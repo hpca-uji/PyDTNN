@@ -42,7 +42,9 @@ class Conv2DBatchNormalizationReluTestCase(Conv2DCommonTestCase):
     del Conv2DCommonTestCase
 
     @staticmethod
-    def _get_layers(d: D, deconv=False, trans=False) -> tuple[AbstractConv2DNumpy, AbstractConv2DNumpy]:
+    def _get_layers(
+        d: D, deconv=False, trans=False
+    ) -> tuple[AbstractConv2DNumpy, AbstractConv2DNumpy]:
         """
         Constructs and initializes a standard layer chain and a fused layer for comparison.
 

@@ -12,7 +12,8 @@ from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.libs import cudnn as cudnn
 from pydtnn.model import Model
-from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
+from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
+                                   PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
 from pydtnn.utils.constants import ArrayShape, Parameters
 
 __all__ = ("BatchNormalizationPycuda",)
@@ -58,7 +59,9 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
         self.memory_used += self.dx.nbytes
 
         self.spatial = len(self.shape) > 2
-        self.mode = cudnn.cudnnBatchNormMode["CUDNN_BATCHNORM_SPATIAL" if self.spatial else "CUDNN_BATCHNORM_PER_ACTIVATION"]
+        self.mode = cudnn.cudnnBatchNormMode[
+            "CUDNN_BATCHNORM_SPATIAL" if self.spatial else "CUDNN_BATCHNORM_PER_ACTIVATION"
+        ]
 
         self.gamma_beta_mean_var_desc = cudnn.cudnnCreateTensorDescriptor()
         cudnn.cudnnDeriveBNTensorDescriptor(self.gamma_beta_mean_var_desc, x.desc, self.mode)
@@ -82,34 +85,56 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
         self.memory_used += self.beta.nbytes
 
         self.dgamma_cpu, self.dgamma = TensorArray.new(
-            self.gamma.shape, self.model.dtype, tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype, gpudirect=self.model.gpudirect, drv=(drv if self.model.gpudirect else None)
+            self.gamma.shape,
+            self.model.dtype,
+            tensor_format=self.model.tensor_format,
+            cudnn_dtype=self.model.cudnn_dtype,
+            gpudirect=self.model.gpudirect,
+            drv=(drv if self.model.gpudirect else None),
         )
         self.memory_used += self.dgamma.nbytes
 
         self.dbeta_cpu, self.dbeta = TensorArray.new(
-            self.beta.shape, self.model.dtype, tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype, gpudirect=self.model.gpudirect, drv=(drv if self.model.gpudirect else None)
+            self.beta.shape,
+            self.model.dtype,
+            tensor_format=self.model.tensor_format,
+            cudnn_dtype=self.model.cudnn_dtype,
+            gpudirect=self.model.gpudirect,
+            drv=(drv if self.model.gpudirect else None),
         )
         self.memory_used += self.dbeta.nbytes
 
         running_mean_gpu = gpuarray.to_gpu(self.moving_mean_initializer(shape_, self.model.dtype))
-        self.running_mean = TensorArray(running_mean_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.running_mean = TensorArray(
+            running_mean_gpu, self.model.tensor_format, self.model.cudnn_dtype
+        )
         self.memory_used += self.running_mean.nbytes
 
-        running_var_gpu = gpuarray.to_gpu(self.moving_variance_initializer(shape_, self.model.dtype))
-        self.running_var = TensorArray(running_var_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        running_var_gpu = gpuarray.to_gpu(
+            self.moving_variance_initializer(shape_, self.model.dtype)
+        )
+        self.running_var = TensorArray(
+            running_var_gpu, self.model.tensor_format, self.model.cudnn_dtype
+        )
         self.memory_used += self.running_var.nbytes
 
         save_mean_gpu = gpuarray.zeros(shape_, self.model.dtype)
-        self.save_mean = TensorArray(save_mean_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.save_mean = TensorArray(
+            save_mean_gpu, self.model.tensor_format, self.model.cudnn_dtype
+        )
         self.memory_used += self.save_mean.nbytes
 
         save_inv_var_gpu = gpuarray.zeros(shape_, self.model.dtype)
-        self.save_inv_var = TensorArray(save_inv_var_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.save_inv_var = TensorArray(
+            save_inv_var_gpu, self.model.tensor_format, self.model.cudnn_dtype
+        )
         self.memory_used += self.save_inv_var.nbytes
 
         self.factor = 1.0 - self.momentum
 
-        self.nparams = self.gamma.size + self.beta.size + self.running_mean.size + self.running_var.size
+        self.nparams = (
+            self.gamma.size + self.beta.size + self.running_mean.size + self.running_var.size
+        )
 
         self.memory_used += self.gamma.nbytes
 
@@ -118,7 +143,10 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
         alpha, beta = 1.0, 0.0
         match self.model.mode:
             case Model.Mode.TRAIN:
-                self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
+                self.model.tracer.emit_event(
+                    PYDTNN_OPS_EVENT,
+                    self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN,
+                )
                 cudnn.cudnnBatchNormalizationForwardTraining(
                     self.model.cudnn_handle,
                     self.mode,
@@ -140,7 +168,10 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
                 )
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
             case Model.Mode.EVALUATE:
-                self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
+                self.model.tracer.emit_event(
+                    PYDTNN_OPS_EVENT,
+                    self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN,
+                )
                 cudnn.cudnnBatchNormalizationForwardInference(
                     self.model.cudnn_handle,
                     self.mode,
@@ -167,7 +198,9 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
         self.x: TensorArray
 
         alpha_dx, beta_dx, alpha_dgb, beta_dgb = 1.0, 0.0, 1.0, 0.0
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX
+        )
         # Compute dx, dgamma, dbeta
         cudnn.cudnnBatchNormalizationBackward(
             self.model.cudnn_handle,

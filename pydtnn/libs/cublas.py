@@ -3,6 +3,7 @@
 Python interface to CUBLAS functions.
 Note: this module does not explicitly depend on PyCUDA.
 """
+
 # Source: https://github.com/lebedov/scikit-cuda
 
 from __future__ import absolute_import
@@ -229,17 +230,39 @@ __all__ = (
     "cublasZtrsv",
 )
 
-_linux_version_list = [11.0, 10.2, 10.1, 10.0, 9.2, 9.1, 9.0, 8.0, 7.5, 7.0, 6.5, 6.0, 5.5, 5.0, 4.0]
+_linux_version_list = [
+    11.0,
+    10.2,
+    10.1,
+    10.0,
+    9.2,
+    9.1,
+    9.0,
+    8.0,
+    7.5,
+    7.0,
+    6.5,
+    6.0,
+    5.5,
+    5.0,
+    4.0,
+]
 _win32_version_list = [11, 10, 10, 100, 92, 91, 90, 80, 75, 70, 65, 60, 55, 50, 40]
 if "linux" in sys.platform:
-    _libcublas_libname_list = ["libcublas.so"] + ["libcublas.so.%s" % v for v in _linux_version_list]
+    _libcublas_libname_list = ["libcublas.so"] + [
+        "libcublas.so.%s" % v for v in _linux_version_list
+    ]
 elif sys.platform == "darwin":
     _libcublas_libname_list = ["libcublas.dylib"]
 elif sys.platform == "win32":
     if sys.maxsize > 2**32:
-        _libcublas_libname_list = ["cublas.dll"] + ["cublas64_%s.dll" % v for v in _win32_version_list]
+        _libcublas_libname_list = ["cublas.dll"] + [
+            "cublas64_%s.dll" % v for v in _win32_version_list
+        ]
     else:
-        _libcublas_libname_list = ["cublas.dll"] + ["cublas32_%s.dll" % v for v in _win32_version_list]
+        _libcublas_libname_list = ["cublas.dll"] + [
+            "cublas32_%s.dll" % v for v in _win32_version_list
+        ]
 else:
     raise RuntimeError("unsupported platform")
 
@@ -720,8 +743,7 @@ def cublasSetPointerMode(handle, mode):
 
 
 # ISAMAX, IDAMAX, ICAMAX, IZAMAX
-I_AMAX_doc = Template(
-    """
+I_AMAX_doc = Template("""
     Finds the index of the maximum magnitude element.
 
     Finds the smallest index of the maximum magnitude element of a
@@ -766,11 +788,16 @@ I_AMAX_doc = Template(
     References
     ----------
     `cublasI<t>amax <http://docs.nvidia.com/cuda/cublas/#cublasi-lt-t-gt-amax>`_
-"""
-)
+""")
 
 _libcublas.cublasIsamax_v2.restype = int
-_libcublas.cublasIsamax_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p]
+_libcublas.cublasIsamax_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+]
 
 
 def cublasIsamax(handle, n, x, incx):
@@ -782,10 +809,21 @@ def cublasIsamax(handle, n, x, incx):
     return result.value - 1
 
 
-cublasIsamax.__doc__ = I_AMAX_doc.substitute(precision="single precision", real="real", data="np.random.rand(5).astype(np.float32)", func="cublasIsamax")
+cublasIsamax.__doc__ = I_AMAX_doc.substitute(
+    precision="single precision",
+    real="real",
+    data="np.random.rand(5).astype(np.float32)",
+    func="cublasIsamax",
+)
 
 _libcublas.cublasIdamax_v2.restype = int
-_libcublas.cublasIdamax_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p]
+_libcublas.cublasIdamax_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+]
 
 
 def cublasIdamax(handle, n, x, incx):
@@ -797,10 +835,21 @@ def cublasIdamax(handle, n, x, incx):
     return result.value - 1
 
 
-cublasIdamax.__doc__ = I_AMAX_doc.substitute(precision="double precision", real="real", data="np.random.rand(5).astype(np.float64)", func="cublasIdamax")
+cublasIdamax.__doc__ = I_AMAX_doc.substitute(
+    precision="double precision",
+    real="real",
+    data="np.random.rand(5).astype(np.float64)",
+    func="cublasIdamax",
+)
 
 _libcublas.cublasIcamax_v2.restype = int
-_libcublas.cublasIcamax_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p]
+_libcublas.cublasIcamax_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+]
 
 
 def cublasIcamax(handle, n, x, incx):
@@ -812,10 +861,21 @@ def cublasIcamax(handle, n, x, incx):
     return result.value - 1
 
 
-cublasIcamax.__doc__ = I_AMAX_doc.substitute(precision="single precision", real="complex", data="(np.random.rand(5)+1j*np.random.rand(5)).astype(np.complex64)", func="cublasIcamax")
+cublasIcamax.__doc__ = I_AMAX_doc.substitute(
+    precision="single precision",
+    real="complex",
+    data="(np.random.rand(5)+1j*np.random.rand(5)).astype(np.complex64)",
+    func="cublasIcamax",
+)
 
 _libcublas.cublasIzamax_v2.restype = int
-_libcublas.cublasIzamax_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p]
+_libcublas.cublasIzamax_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+]
 
 
 def cublasIzamax(handle, n, x, incx):
@@ -827,11 +887,15 @@ def cublasIzamax(handle, n, x, incx):
     return result.value - 1
 
 
-cublasIzamax.__doc__ = I_AMAX_doc.substitute(precision="double precision", real="complex", data="(np.random.rand(5)+1j*np.random.rand(5)).astype(np.complex128)", func="cublasIzamax")
+cublasIzamax.__doc__ = I_AMAX_doc.substitute(
+    precision="double precision",
+    real="complex",
+    data="(np.random.rand(5)+1j*np.random.rand(5)).astype(np.complex128)",
+    func="cublasIzamax",
+)
 
 # ISAMIN, IDAMIN, ICAMIN, IZAMIN
-I_AMIN_doc = Template(
-    """
+I_AMIN_doc = Template("""
     Finds the index of the minimum magnitude element.
 
     Finds the smallest index of the minimum magnitude element of a
@@ -876,11 +940,16 @@ I_AMIN_doc = Template(
     References
     ----------
     `cublasI<t>amin <http://docs.nvidia.com/cuda/cublas/#cublasi-lt-t-gt-amin>`_
-    """
-)
+    """)
 
 _libcublas.cublasIsamin_v2.restype = int
-_libcublas.cublasIsamin_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p]
+_libcublas.cublasIsamin_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+]
 
 
 def cublasIsamin(handle, n, x, incx):
@@ -892,10 +961,21 @@ def cublasIsamin(handle, n, x, incx):
     return result.value - 1
 
 
-cublasIsamin.__doc__ = I_AMIN_doc.substitute(precision="single precision", real="real", data="np.random.rand(5).astype(np.float32)", func="cublasIsamin")
+cublasIsamin.__doc__ = I_AMIN_doc.substitute(
+    precision="single precision",
+    real="real",
+    data="np.random.rand(5).astype(np.float32)",
+    func="cublasIsamin",
+)
 
 _libcublas.cublasIdamin_v2.restype = int
-_libcublas.cublasIdamin_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p]
+_libcublas.cublasIdamin_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+]
 
 
 def cublasIdamin(handle, n, x, incx):
@@ -907,10 +987,21 @@ def cublasIdamin(handle, n, x, incx):
     return result.value - 1
 
 
-cublasIdamin.__doc__ = I_AMIN_doc.substitute(precision="double precision", real="real", data="np.random.rand(5).astype(np.float64)", func="cublasIdamin")
+cublasIdamin.__doc__ = I_AMIN_doc.substitute(
+    precision="double precision",
+    real="real",
+    data="np.random.rand(5).astype(np.float64)",
+    func="cublasIdamin",
+)
 
 _libcublas.cublasIcamin_v2.restype = int
-_libcublas.cublasIcamin_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p]
+_libcublas.cublasIcamin_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+]
 
 
 def cublasIcamin(handle, n, x, incx):
@@ -922,10 +1013,21 @@ def cublasIcamin(handle, n, x, incx):
     return result.value - 1
 
 
-cublasIcamin.__doc__ = I_AMIN_doc.substitute(precision="single precision", real="complex", data="(np.random.rand(5)+1j*np.random.rand(5)).astype(np.complex64)", func="cublasIcamin")
+cublasIcamin.__doc__ = I_AMIN_doc.substitute(
+    precision="single precision",
+    real="complex",
+    data="(np.random.rand(5)+1j*np.random.rand(5)).astype(np.complex64)",
+    func="cublasIcamin",
+)
 
 _libcublas.cublasIzamin_v2.restype = int
-_libcublas.cublasIzamin_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p]
+_libcublas.cublasIzamin_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+]
 
 
 def cublasIzamin(handle, n, x, incx):
@@ -937,11 +1039,15 @@ def cublasIzamin(handle, n, x, incx):
     return result.value - 1
 
 
-cublasIzamin.__doc__ = I_AMIN_doc.substitute(precision="double precision", real="complex", data="(np.random.rand(5)+1j*np.random.rand(5)).astype(np.complex128)", func="cublasIzamin")
+cublasIzamin.__doc__ = I_AMIN_doc.substitute(
+    precision="double precision",
+    real="complex",
+    data="(np.random.rand(5)+1j*np.random.rand(5)).astype(np.complex128)",
+    func="cublasIzamin",
+)
 
 # SASUM, DASUM, SCASUM, DZASUM
-_ASUM_doc = Template(
-    """
+_ASUM_doc = Template("""
     Computes the sum of the absolute values of vector elements.
 
     Computes the sum of the absolute values of the elements of a
@@ -982,11 +1088,16 @@ _ASUM_doc = Template(
     References
     ----------
     `cublas<t>sum <http://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-asum>`_
-    """
-)
+    """)
 
 _libcublas.cublasSasum_v2.restype = int
-_libcublas.cublasSasum_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p]
+_libcublas.cublasSasum_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+]
 
 
 def cublasSasum(handle, n, x, incx):
@@ -998,10 +1109,22 @@ def cublasSasum(handle, n, x, incx):
     return np.float32(result.value)
 
 
-cublasSasum.__doc__ = _ASUM_doc.substitute(precision="single precision", real="real", data="np.random.rand(5).astype(np.float32)", func="cublasSasum", ret_type="numpy.float32")
+cublasSasum.__doc__ = _ASUM_doc.substitute(
+    precision="single precision",
+    real="real",
+    data="np.random.rand(5).astype(np.float32)",
+    func="cublasSasum",
+    ret_type="numpy.float32",
+)
 
 _libcublas.cublasDasum_v2.restype = int
-_libcublas.cublasDasum_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p]
+_libcublas.cublasDasum_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+]
 
 
 def cublasDasum(handle, n, x, incx):
@@ -1013,10 +1136,22 @@ def cublasDasum(handle, n, x, incx):
     return np.float64(result.value)
 
 
-cublasDasum.__doc__ = _ASUM_doc.substitute(precision="double precision", real="real", data="np.random.rand(5).astype(np.float64)", func="cublasDasum", ret_type="numpy.float64")
+cublasDasum.__doc__ = _ASUM_doc.substitute(
+    precision="double precision",
+    real="real",
+    data="np.random.rand(5).astype(np.float64)",
+    func="cublasDasum",
+    ret_type="numpy.float64",
+)
 
 _libcublas.cublasScasum_v2.restype = int
-_libcublas.cublasScasum_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p]
+_libcublas.cublasScasum_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+]
 
 
 def cublasScasum(handle, n, x, incx):
@@ -1029,11 +1164,21 @@ def cublasScasum(handle, n, x, incx):
 
 
 cublasScasum.__doc__ = _ASUM_doc.substitute(
-    precision="single precision", real="complex", data="(np.random.rand(5)+1j*np.random.rand(5)).astype(np.complex64)", func="cublasScasum", ret_type="numpy.float32"
+    precision="single precision",
+    real="complex",
+    data="(np.random.rand(5)+1j*np.random.rand(5)).astype(np.complex64)",
+    func="cublasScasum",
+    ret_type="numpy.float32",
 )
 
 _libcublas.cublasDzasum_v2.restype = int
-_libcublas.cublasDzasum_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p]
+_libcublas.cublasDzasum_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+]
 
 
 def cublasDzasum(handle, n, x, incx):
@@ -1046,12 +1191,15 @@ def cublasDzasum(handle, n, x, incx):
 
 
 cublasDzasum.__doc__ = _ASUM_doc.substitute(
-    precision="double precision", real="complex", data="(np.random.rand(5)+1j*np.random.rand(5)).astype(np.complex128)", func="cublasDzasum", ret_type="numpy.float64"
+    precision="double precision",
+    real="complex",
+    data="(np.random.rand(5)+1j*np.random.rand(5)).astype(np.complex128)",
+    func="cublasDzasum",
+    ret_type="numpy.float64",
 )
 
 # SAXPY, DAXPY, CAXPY, ZAXPY
-_AXPY_doc = Template(
-    """
+_AXPY_doc = Template("""
     Computes the sum of a scaled vector and another vector.
 
     Computes the sum of a ${precision} ${real} vector scaled by a
@@ -1098,47 +1246,92 @@ _AXPY_doc = Template(
     References
     ----------
     `cublas<t>axpy <http://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-axpy>`_
-    """
-)
+    """)
 
 _libcublas.cublasSaxpy_v2.restype = int
-_libcublas.cublasSaxpy_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasSaxpy_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasSaxpy(handle, n, alpha, x, incx, y, incy):
     """Computes y = alpha*x + y (single precision real)."""
     assert _libcublas
-    status = _libcublas.cublasSaxpy_v2(handle, n, ctypes.byref(ctypes.c_float(alpha)), int(x), incx, int(y), incy)
+    status = _libcublas.cublasSaxpy_v2(
+        handle, n, ctypes.byref(ctypes.c_float(alpha)), int(x), incx, int(y), incy
+    )
     cublasCheckStatus(status)
 
 
 cublasSaxpy.__doc__ = _AXPY_doc.substitute(
-    precision="single precision", real="real", type="numpy.float32", alpha="np.float32(np.random.rand())", data="np.random.rand(5).astype(np.float32)", func="cublasSaxpy"
+    precision="single precision",
+    real="real",
+    type="numpy.float32",
+    alpha="np.float32(np.random.rand())",
+    data="np.random.rand(5).astype(np.float32)",
+    func="cublasSaxpy",
 )
 
 _libcublas.cublasDaxpy_v2.restype = int
-_libcublas.cublasDaxpy_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasDaxpy_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasDaxpy(handle, n, alpha, x, incx, y, incy):
     """Computes y = alpha*x + y (double precision real)."""
     assert _libcublas
-    status = _libcublas.cublasDaxpy_v2(handle, n, ctypes.byref(ctypes.c_double(alpha)), int(x), incx, int(y), incy)
+    status = _libcublas.cublasDaxpy_v2(
+        handle, n, ctypes.byref(ctypes.c_double(alpha)), int(x), incx, int(y), incy
+    )
     cublasCheckStatus(status)
 
 
 cublasDaxpy.__doc__ = _AXPY_doc.substitute(
-    precision="double precision", real="real", type="numpy.float64", alpha="np.float64(np.random.rand())", data="np.random.rand(5).astype(np.float64)", func="cublasDaxpy"
+    precision="double precision",
+    real="real",
+    type="numpy.float64",
+    alpha="np.float64(np.random.rand())",
+    data="np.random.rand(5).astype(np.float64)",
+    func="cublasDaxpy",
 )
 
 _libcublas.cublasCaxpy_v2.restype = int
-_libcublas.cublasCaxpy_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasCaxpy_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasCaxpy(handle, n, alpha, x, incx, y, incy):
     """Computes y = alpha*x + y (single precision complex)."""
     assert _libcublas
-    status = _libcublas.cublasCaxpy_v2(handle, n, ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)), int(x), incx, int(y), incy)
+    status = _libcublas.cublasCaxpy_v2(
+        handle,
+        n,
+        ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)),
+        int(x),
+        incx,
+        int(y),
+        incy,
+    )
     cublasCheckStatus(status)
 
 
@@ -1152,13 +1345,29 @@ cublasCaxpy.__doc__ = _AXPY_doc.substitute(
 )
 
 _libcublas.cublasZaxpy_v2.restype = int
-_libcublas.cublasZaxpy_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasZaxpy_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasZaxpy(handle, n, alpha, x, incx, y, incy):
     """Computes y = alpha*x + y (double precision complex)."""
     assert _libcublas
-    status = _libcublas.cublasZaxpy_v2(handle, n, ctypes.byref(cuda.cuDoubleComplex(alpha.real, alpha.imag)), int(x), incx, int(y), incy)
+    status = _libcublas.cublasZaxpy_v2(
+        handle,
+        n,
+        ctypes.byref(cuda.cuDoubleComplex(alpha.real, alpha.imag)),
+        int(x),
+        incx,
+        int(y),
+        incy,
+    )
     cublasCheckStatus(status)
 
 
@@ -1172,8 +1381,7 @@ cublasZaxpy.__doc__ = _AXPY_doc.substitute(
 )
 
 # SCOPY, DCOPY, CCOPY, ZCOPY
-_COPY_doc = Template(
-    """
+_COPY_doc = Template("""
     Copies a vector.
 
     Copies a ${precision} ${real} vector to another ${precision} ${real}
@@ -1215,11 +1423,17 @@ _COPY_doc = Template(
     References
     ----------
     `cublas<t>copy <http://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-copy>`_
-"""
-)
+""")
 
 _libcublas.cublasScopy_v2.restype = int
-_libcublas.cublasScopy_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasScopy_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasScopy(handle, n, x, incx, y, incy):
@@ -1229,10 +1443,22 @@ def cublasScopy(handle, n, x, incx, y, incy):
     cublasCheckStatus(status)
 
 
-cublasScopy.__doc__ = _COPY_doc.substitute(precision="single precision", real="real", data="np.random.rand(5).astype(np.float32)", func="cublasScopy")
+cublasScopy.__doc__ = _COPY_doc.substitute(
+    precision="single precision",
+    real="real",
+    data="np.random.rand(5).astype(np.float32)",
+    func="cublasScopy",
+)
 
 _libcublas.cublasDcopy_v2.restype = int
-_libcublas.cublasDcopy_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasDcopy_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasDcopy(handle, n, x, incx, y, incy):
@@ -1242,10 +1468,22 @@ def cublasDcopy(handle, n, x, incx, y, incy):
     cublasCheckStatus(status)
 
 
-cublasDcopy.__doc__ = _COPY_doc.substitute(precision="double precision", real="real", data="np.random.rand(5).astype(np.float64)", func="cublasDcopy")
+cublasDcopy.__doc__ = _COPY_doc.substitute(
+    precision="double precision",
+    real="real",
+    data="np.random.rand(5).astype(np.float64)",
+    func="cublasDcopy",
+)
 
 _libcublas.cublasCcopy_v2.restype = int
-_libcublas.cublasCcopy_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasCcopy_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasCcopy(handle, n, x, incx, y, incy):
@@ -1255,10 +1493,22 @@ def cublasCcopy(handle, n, x, incx, y, incy):
     cublasCheckStatus(status)
 
 
-cublasCcopy.__doc__ = _COPY_doc.substitute(precision="single precision", real="complex", data="(np.random.rand(5)+np.random.rand(5)).astype(np.complex64)", func="cublasCcopy")
+cublasCcopy.__doc__ = _COPY_doc.substitute(
+    precision="single precision",
+    real="complex",
+    data="(np.random.rand(5)+np.random.rand(5)).astype(np.complex64)",
+    func="cublasCcopy",
+)
 
 _libcublas.cublasZcopy_v2.restype = int
-_libcublas.cublasZcopy_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasZcopy_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasZcopy(handle, n, x, incx, y, incy):
@@ -1268,11 +1518,15 @@ def cublasZcopy(handle, n, x, incx, y, incy):
     cublasCheckStatus(status)
 
 
-cublasZcopy.__doc__ = _COPY_doc.substitute(precision="double precision", real="complex", data="(np.random.rand(5)+np.random.rand(5)).astype(np.complex128)", func="cublasZcopy")
+cublasZcopy.__doc__ = _COPY_doc.substitute(
+    precision="double precision",
+    real="complex",
+    data="(np.random.rand(5)+np.random.rand(5)).astype(np.complex128)",
+    func="cublasZcopy",
+)
 
 # SDOT, DDOT, CDOTU, CDOTC, ZDOTU, ZDOTC
-_DOT_doc = Template(
-    """
+_DOT_doc = Template("""
     Computes the dot product of two vectors.
 
     Computes the dot product of two ${precision} ${real} vectors.
@@ -1321,11 +1575,18 @@ _DOT_doc = Template(
     References
     ----------
     `cublas<t>dot <http://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-dot>`_
-"""
-)
+""")
 
 _libcublas.cublasSdot_v2.restype = int
-_libcublas.cublasSdot_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p]
+_libcublas.cublasSdot_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+]
 
 
 def cublasSdot(handle, n, x, incx, y, incy):
@@ -1338,11 +1599,24 @@ def cublasSdot(handle, n, x, incx, y, incy):
 
 
 cublasSdot.__doc__ = _DOT_doc.substitute(
-    precision="single precision", real="real", data="np.float32(np.random.rand(5))", ret_type="np.float32", func="cublasSdot", check="np.allclose(d, np.dot(x, y))"
+    precision="single precision",
+    real="real",
+    data="np.float32(np.random.rand(5))",
+    ret_type="np.float32",
+    func="cublasSdot",
+    check="np.allclose(d, np.dot(x, y))",
 )
 
 _libcublas.cublasDdot_v2.restype = int
-_libcublas.cublasDdot_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p]
+_libcublas.cublasDdot_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+]
 
 
 def cublasDdot(handle, n, x, incx, y, incy):
@@ -1355,11 +1629,24 @@ def cublasDdot(handle, n, x, incx, y, incy):
 
 
 cublasDdot.__doc__ = _DOT_doc.substitute(
-    precision="double precision", real="real", data="np.float64(np.random.rand(5))", ret_type="np.float64", func="cublasDdot", check="np.allclose(d, np.dot(x, y))"
+    precision="double precision",
+    real="real",
+    data="np.float64(np.random.rand(5))",
+    ret_type="np.float64",
+    func="cublasDdot",
+    check="np.allclose(d, np.dot(x, y))",
 )
 
 _libcublas.cublasCdotu_v2.restype = int
-_libcublas.cublasCdotu_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p]
+_libcublas.cublasCdotu_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+]
 
 
 def cublasCdotu(handle, n, x, incx, y, incy):
@@ -1381,7 +1668,15 @@ cublasCdotu.__doc__ = _DOT_doc.substitute(
 )
 
 _libcublas.cublasCdotc_v2.restype = int
-_libcublas.cublasCdotc_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p]
+_libcublas.cublasCdotc_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+]
 
 
 def cublasCdotc(handle, n, x, incx, y, incy):
@@ -1403,7 +1698,15 @@ cublasCdotc.__doc__ = _DOT_doc.substitute(
 )
 
 _libcublas.cublasZdotu_v2.restype = int
-_libcublas.cublasZdotu_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p]
+_libcublas.cublasZdotu_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+]
 
 
 def cublasZdotu(handle, n, x, incx, y, incy):
@@ -1425,7 +1728,15 @@ cublasZdotu.__doc__ = _DOT_doc.substitute(
 )
 
 _libcublas.cublasZdotc_v2.restype = int
-_libcublas.cublasZdotc_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p]
+_libcublas.cublasZdotc_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+]
 
 
 def cublasZdotc(handle, n, x, incx, y, incy):
@@ -1447,8 +1758,7 @@ cublasZdotc.__doc__ = _DOT_doc.substitute(
 )
 
 # SNRM2, DNRM2, SCNRM2, DZNRM2
-_NRM2_doc = Template(
-    """
+_NRM2_doc = Template("""
     Computes the Euclidean norm (2-norm) of a vector.
 
     Computes the Euclidean norm of a ${precision} ${real} vector.
@@ -1485,11 +1795,16 @@ _NRM2_doc = Template(
     References
     ----------
     `cublas<t>nrm2 <http://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-nrm2>`_
-"""
-)
+""")
 
 _libcublas.cublasSnrm2_v2.restype = int
-_libcublas.cublasSnrm2_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p]
+_libcublas.cublasSnrm2_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+]
 
 
 def cublasSnrm2(handle, n, x, incx):
@@ -1501,10 +1816,22 @@ def cublasSnrm2(handle, n, x, incx):
     return np.float32(result.value)
 
 
-cublasSnrm2.__doc__ = _NRM2_doc.substitute(precision="single precision", real="real", data="np.float32(np.random.rand(5))", ret_type="numpy.float32", func="cublasSnrm2")
+cublasSnrm2.__doc__ = _NRM2_doc.substitute(
+    precision="single precision",
+    real="real",
+    data="np.float32(np.random.rand(5))",
+    ret_type="numpy.float32",
+    func="cublasSnrm2",
+)
 
 _libcublas.cublasDnrm2_v2.restype = int
-_libcublas.cublasDnrm2_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p]
+_libcublas.cublasDnrm2_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+]
 
 
 def cublasDnrm2(handle, n, x, incx):
@@ -1516,10 +1843,22 @@ def cublasDnrm2(handle, n, x, incx):
     return np.float64(result.value)
 
 
-cublasDnrm2.__doc__ = _NRM2_doc.substitute(precision="double precision", real="real", data="np.float64(np.random.rand(5))", ret_type="numpy.float64", func="cublasDnrm2")
+cublasDnrm2.__doc__ = _NRM2_doc.substitute(
+    precision="double precision",
+    real="real",
+    data="np.float64(np.random.rand(5))",
+    ret_type="numpy.float64",
+    func="cublasDnrm2",
+)
 
 _libcublas.cublasScnrm2_v2.restype = int
-_libcublas.cublasScnrm2_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p]
+_libcublas.cublasScnrm2_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+]
 
 
 def cublasScnrm2(handle, n, x, incx):
@@ -1532,11 +1871,21 @@ def cublasScnrm2(handle, n, x, incx):
 
 
 cublasScnrm2.__doc__ = _NRM2_doc.substitute(
-    precision="single precision", real="complex", data="(np.random.rand(5)+1j*np.random.rand(5)).astype(np.complex64)", ret_type="numpy.complex64", func="cublasScnrm2"
+    precision="single precision",
+    real="complex",
+    data="(np.random.rand(5)+1j*np.random.rand(5)).astype(np.complex64)",
+    ret_type="numpy.complex64",
+    func="cublasScnrm2",
 )
 
 _libcublas.cublasDznrm2_v2.restype = int
-_libcublas.cublasDznrm2_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p]
+_libcublas.cublasDznrm2_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+]
 
 
 def cublasDznrm2(handle, n, x, incx):
@@ -1549,13 +1898,16 @@ def cublasDznrm2(handle, n, x, incx):
 
 
 cublasDznrm2.__doc__ = _NRM2_doc.substitute(
-    precision="double precision", real="complex", data="(np.random.rand(5)+1j*np.random.rand(5)).astype(np.complex128)", ret_type="numpy.complex128", func="cublasDznrm2"
+    precision="double precision",
+    real="complex",
+    data="(np.random.rand(5)+1j*np.random.rand(5)).astype(np.complex128)",
+    ret_type="numpy.complex128",
+    func="cublasDznrm2",
 )
 
 
 # SROT, DROT, CROT, CSROT, ZROT, ZDROT
-_ROT_doc = Template(
-    """
+_ROT_doc = Template("""
     Applies a Givens rotation to two vectors.
 
     Multiplies the ${precision} matrix `[[c, s], [-s.conj(), c]]`
@@ -1605,17 +1957,34 @@ _ROT_doc = Template(
     References
     ----------
     `cublas<t>rot <http://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-rot>`_
-"""
-)
+""")
 
 _libcublas.cublasSrot_v2.restype = int
-_libcublas.cublasSrot_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p]
+_libcublas.cublasSrot_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+]
 
 
 def cublasSrot(handle, n, x, incx, y, incy, c, s):
     """Applies a Givens rotation to two real vectors (single precision)."""
     assert _libcublas
-    status = _libcublas.cublasSrot_v2(handle, n, int(x), incx, int(y), incy, ctypes.byref(ctypes.c_float(c)), ctypes.byref(ctypes.c_float(s)))
+    status = _libcublas.cublasSrot_v2(
+        handle,
+        n,
+        int(x),
+        incx,
+        int(y),
+        incy,
+        ctypes.byref(ctypes.c_float(c)),
+        ctypes.byref(ctypes.c_float(s)),
+    )
 
     cublasCheckStatus(status)
 
@@ -1632,13 +2001,31 @@ cublasSrot.__doc__ = _ROT_doc.substitute(
 )
 
 _libcublas.cublasDrot_v2.restype = int
-_libcublas.cublasDrot_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p]
+_libcublas.cublasDrot_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+]
 
 
 def cublasDrot(handle, n, x, incx, y, incy, c, s):
     """Applies a Givens rotation to two real vectors (double precision)."""
     assert _libcublas
-    status = _libcublas.cublasDrot_v2(handle, n, int(x), incx, int(y), incy, ctypes.byref(ctypes.c_double(c)), ctypes.byref(ctypes.c_double(s)))
+    status = _libcublas.cublasDrot_v2(
+        handle,
+        n,
+        int(x),
+        incx,
+        int(y),
+        incy,
+        ctypes.byref(ctypes.c_double(c)),
+        ctypes.byref(ctypes.c_double(s)),
+    )
     cublasCheckStatus(status)
 
 
@@ -1654,13 +2041,31 @@ cublasDrot.__doc__ = _ROT_doc.substitute(
 )
 
 _libcublas.cublasCrot_v2.restype = int
-_libcublas.cublasCrot_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p]
+_libcublas.cublasCrot_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+]
 
 
 def cublasCrot(handle, n, x, incx, y, incy, c, s):
     """Applies a Givens rotation to two complex vectors (single precision)."""
     assert _libcublas
-    status = _libcublas.cublasCrot_v2(handle, n, int(x), incx, int(y), incy, ctypes.byref(ctypes.c_float(c)), ctypes.byref(cuda.cuFloatComplex(s.real, s.imag)))
+    status = _libcublas.cublasCrot_v2(
+        handle,
+        n,
+        int(x),
+        incx,
+        int(y),
+        incy,
+        ctypes.byref(ctypes.c_float(c)),
+        ctypes.byref(cuda.cuFloatComplex(s.real, s.imag)),
+    )
     cublasCheckStatus(status)
 
 
@@ -1676,13 +2081,31 @@ cublasCrot.__doc__ = _ROT_doc.substitute(
 )
 
 _libcublas.cublasCsrot_v2.restype = int
-_libcublas.cublasCsrot_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p]
+_libcublas.cublasCsrot_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+]
 
 
 def cublasCsrot(handle, n, x, incx, y, incy, c, s):
     """Applies a Givens rotation to two complex vectors (single precision real scalar)."""
     assert _libcublas
-    status = _libcublas.cublasCsrot_v2(handle, n, int(x), incx, int(y), incy, ctypes.byref(ctypes.c_float(c)), ctypes.byref(ctypes.c_float(s)))
+    status = _libcublas.cublasCsrot_v2(
+        handle,
+        n,
+        int(x),
+        incx,
+        int(y),
+        incy,
+        ctypes.byref(ctypes.c_float(c)),
+        ctypes.byref(ctypes.c_float(s)),
+    )
     cublasCheckStatus(status)
 
 
@@ -1698,13 +2121,31 @@ cublasCsrot.__doc__ = _ROT_doc.substitute(
 )
 
 _libcublas.cublasZrot_v2.restype = int
-_libcublas.cublasZrot_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p]
+_libcublas.cublasZrot_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+]
 
 
 def cublasZrot(handle, n, x, incx, y, incy, c, s):
     """Applies a Givens rotation to two complex vectors (double precision)."""
     assert _libcublas
-    status = _libcublas.cublasZrot_v2(handle, n, int(x), incx, int(y), incy, ctypes.byref(ctypes.c_double(c)), ctypes.byref(cuda.cuDoubleComplex(s.real, s.imag)))
+    status = _libcublas.cublasZrot_v2(
+        handle,
+        n,
+        int(x),
+        incx,
+        int(y),
+        incy,
+        ctypes.byref(ctypes.c_double(c)),
+        ctypes.byref(cuda.cuDoubleComplex(s.real, s.imag)),
+    )
     cublasCheckStatus(status)
 
 
@@ -1720,13 +2161,31 @@ cublasZrot.__doc__ = _ROT_doc.substitute(
 )
 
 _libcublas.cublasZdrot_v2.restype = int
-_libcublas.cublasZdrot_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p]
+_libcublas.cublasZdrot_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+]
 
 
 def cublasZdrot(handle, n, x, incx, y, incy, c, s):
     """Applies a Givens rotation to two complex vectors (double precision real scalar)."""
     assert _libcublas
-    status = _libcublas.cublasZdrot_v2(handle, n, int(x), incx, int(y), incy, ctypes.byref(ctypes.c_double(c)), ctypes.byref(ctypes.c_double(s)))
+    status = _libcublas.cublasZdrot_v2(
+        handle,
+        n,
+        int(x),
+        incx,
+        int(y),
+        incy,
+        ctypes.byref(ctypes.c_double(c)),
+        ctypes.byref(ctypes.c_double(s)),
+    )
     cublasCheckStatus(status)
 
 
@@ -1743,8 +2202,7 @@ cublasZdrot.__doc__ = _ROT_doc.substitute(
 
 
 # SROTG, DROTG, CROTG, ZROTG
-_ROTG_doc = Template(
-    """
+_ROTG_doc = Template("""
     Constructs a Givens rotation matrix.
 
     Constructs the ${precision} ${real} Givens rotation matrix
@@ -1789,11 +2247,16 @@ _ROTG_doc = Template(
     References
     ----------
     `cublas<t>rotg <http://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-rotg>`_
-"""
-)
+""")
 
 _libcublas.cublasSrotg_v2.restype = int
-_libcublas.cublasSrotg_v2.argtypes = [_types.handle, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
+_libcublas.cublasSrotg_v2.argtypes = [
+    _types.handle,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+]
 
 
 def cublasSrotg(handle, a, b):
@@ -1803,7 +2266,9 @@ def cublasSrotg(handle, a, b):
     _c = ctypes.c_float()
     _s = ctypes.c_float()
     assert _libcublas
-    status = _libcublas.cublasSrotg_v2(handle, ctypes.byref(_a), ctypes.byref(_b), ctypes.byref(_c), ctypes.byref(_s))
+    status = _libcublas.cublasSrotg_v2(
+        handle, ctypes.byref(_a), ctypes.byref(_b), ctypes.byref(_c), ctypes.byref(_s)
+    )
     cublasCheckStatus(status)
     return np.float32(_a.value), np.float32(_c.value), np.float32(_s.value)
 
@@ -1820,7 +2285,13 @@ cublasSrotg.__doc__ = _ROTG_doc.substitute(
 )
 
 _libcublas.cublasDrotg_v2.restype = int
-_libcublas.cublasDrotg_v2.argtypes = [_types.handle, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
+_libcublas.cublasDrotg_v2.argtypes = [
+    _types.handle,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+]
 
 
 def cublasDrotg(handle, a, b):
@@ -1830,7 +2301,9 @@ def cublasDrotg(handle, a, b):
     _c = ctypes.c_double()
     _s = ctypes.c_double()
     assert _libcublas
-    status = _libcublas.cublasDrotg_v2(handle, ctypes.byref(_a), ctypes.byref(_b), ctypes.byref(_c), ctypes.byref(_s))
+    status = _libcublas.cublasDrotg_v2(
+        handle, ctypes.byref(_a), ctypes.byref(_b), ctypes.byref(_c), ctypes.byref(_s)
+    )
     cublasCheckStatus(status)
     return np.float64(_a.value), np.float64(_c.value), np.float64(_s.value)
 
@@ -1847,7 +2320,13 @@ cublasDrotg.__doc__ = _ROTG_doc.substitute(
 )
 
 _libcublas.cublasCrotg_v2.restype = int
-_libcublas.cublasCrotg_v2.argtypes = [_types.handle, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
+_libcublas.cublasCrotg_v2.argtypes = [
+    _types.handle,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+]
 
 
 def cublasCrotg(handle, a, b):
@@ -1857,7 +2336,9 @@ def cublasCrotg(handle, a, b):
     _c = ctypes.c_float()
     _s = cuda.cuFloatComplex()
     assert _libcublas
-    status = _libcublas.cublasCrotg_v2(handle, ctypes.byref(_a), ctypes.byref(_b), ctypes.byref(_c), ctypes.byref(_s))
+    status = _libcublas.cublasCrotg_v2(
+        handle, ctypes.byref(_a), ctypes.byref(_b), ctypes.byref(_c), ctypes.byref(_s)
+    )
     cublasCheckStatus(status)
     return np.complex64(_a.value), np.float32(_c.value), np.complex64(_s.value)
 
@@ -1874,7 +2355,13 @@ cublasCrotg.__doc__ = _ROTG_doc.substitute(
 )
 
 _libcublas.cublasZrotg_v2.restype = int
-_libcublas.cublasZrotg_v2.argtypes = [_types.handle, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
+_libcublas.cublasZrotg_v2.argtypes = [
+    _types.handle,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+]
 
 
 def cublasZrotg(handle, a, b):
@@ -1884,7 +2371,9 @@ def cublasZrotg(handle, a, b):
     _c = ctypes.c_double()
     _s = cuda.cuDoubleComplex()
     assert _libcublas
-    status = _libcublas.cublasZrotg_v2(handle, ctypes.byref(_a), ctypes.byref(_b), ctypes.byref(_c), ctypes.byref(_s))
+    status = _libcublas.cublasZrotg_v2(
+        handle, ctypes.byref(_a), ctypes.byref(_b), ctypes.byref(_c), ctypes.byref(_s)
+    )
     cublasCheckStatus(status)
     return np.complex128(_a.value), np.float64(_c.value), np.complex128(_s.value)
 
@@ -1901,8 +2390,7 @@ cublasZrotg.__doc__ = _ROTG_doc.substitute(
 )
 
 # SROTM, DROTM (need to add example)
-_ROTM_doc = Template(
-    """
+_ROTM_doc = Template("""
     Applies a real modified Givens rotation to two vectors.
 
     Applies the ${precision} real modified Givens rotation matrix `h`
@@ -1942,38 +2430,56 @@ _ROTM_doc = Template(
     References
     ----------
     `cublas<t>srotm <http://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-rotm>`_
-"""
-)
+""")
 
 _libcublas.cublasSrotm_v2.restype = int
-_libcublas.cublasSrotm_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p]
+_libcublas.cublasSrotm_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+]
 
 
 def cublasSrotm(handle, n, x, incx, y, incy, sparam):
     """Applies a real modified Givens rotation (single precision)."""
     assert _libcublas
-    status = _libcublas.cublasSrotm_v2(handle, n, int(x), incx, int(y), incy, int(sparam.ctypes.data))
+    status = _libcublas.cublasSrotm_v2(
+        handle, n, int(x), incx, int(y), incy, int(sparam.ctypes.data)
+    )
     cublasCheckStatus(status)
 
 
 cublasSrotm.__doc__ = _ROTM_doc.substitute(precision="single precision")
 
 _libcublas.cublasDrotm_v2.restype = int
-_libcublas.cublasDrotm_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p]
+_libcublas.cublasDrotm_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+]
 
 
 def cublasDrotm(handle, n, x, incx, y, incy, sparam):
     """Applies a real modified Givens rotation (double precision)."""
     assert _libcublas
-    status = _libcublas.cublasDrotm_v2(handle, n, int(x), incx, int(y), incy, int(sparam.ctypes.data))
+    status = _libcublas.cublasDrotm_v2(
+        handle, n, int(x), incx, int(y), incy, int(sparam.ctypes.data)
+    )
     cublasCheckStatus(status)
 
 
 cublasDrotm.__doc__ = _ROTM_doc.substitute(precision="double precision")
 
 # SROTMG, DROTMG (need to add example)
-_ROTMG_doc = Template(
-    """
+_ROTMG_doc = Template("""
     Constructs a real modified Givens rotation matrix.
 
     Constructs the ${precision} real modified Givens rotation matrix
@@ -2013,11 +2519,17 @@ _ROTMG_doc = Template(
     References
     ----------
     `cublas<t>rotmg <http://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-rotmg>`_
-"""
-)
+""")
 
 _libcublas.cublasSrotmg_v2.restype = int
-_libcublas.cublasSrotmg_v2.argtypes = [_types.handle, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
+_libcublas.cublasSrotmg_v2.argtypes = [
+    _types.handle,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+]
 
 
 def cublasSrotmg(handle, d1, d2, x1, y1):
@@ -2028,7 +2540,14 @@ def cublasSrotmg(handle, d1, d2, x1, y1):
     _y1 = ctypes.c_float(y1)
     sparam = np.empty(5, np.float32)
     assert _libcublas
-    status = _libcublas.cublasSrotmg_v2(handle, ctypes.byref(_d1), ctypes.byref(_d2), ctypes.byref(_x1), ctypes.byref(_y1), int(sparam.ctypes.data))
+    status = _libcublas.cublasSrotmg_v2(
+        handle,
+        ctypes.byref(_d1),
+        ctypes.byref(_d2),
+        ctypes.byref(_x1),
+        ctypes.byref(_y1),
+        int(sparam.ctypes.data),
+    )
     cublasCheckStatus(status)
     return sparam
 
@@ -2036,7 +2555,14 @@ def cublasSrotmg(handle, d1, d2, x1, y1):
 cublasSrotmg.__doc__ = _ROTMG_doc.substitute(precision="single precision", type="numpy.float32")
 
 _libcublas.cublasDrotmg_v2.restype = int
-_libcublas.cublasDrotmg_v2.argtypes = [_types.handle, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
+_libcublas.cublasDrotmg_v2.argtypes = [
+    _types.handle,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+]
 
 
 def cublasDrotmg(handle, d1, d2, x1, y1):
@@ -2047,7 +2573,14 @@ def cublasDrotmg(handle, d1, d2, x1, y1):
     _y1 = ctypes.c_double(y1)
     sparam = np.empty(5, np.float64)
     assert _libcublas
-    status = _libcublas.cublasDrotmg_v2(handle, ctypes.byref(_d1), ctypes.byref(_d2), ctypes.byref(_x1), ctypes.byref(_y1), int(sparam.ctypes.data))
+    status = _libcublas.cublasDrotmg_v2(
+        handle,
+        ctypes.byref(_d1),
+        ctypes.byref(_d2),
+        ctypes.byref(_x1),
+        ctypes.byref(_y1),
+        int(sparam.ctypes.data),
+    )
     cublasCheckStatus(status)
     return sparam
 
@@ -2055,8 +2588,7 @@ def cublasDrotmg(handle, d1, d2, x1, y1):
 cublasDrotmg.__doc__ = _ROTMG_doc.substitute(precision="double precision", type="numpy.float64")
 
 # SSCAL, DSCAL, CSCAL, CSCAL, CSSCAL, ZSCAL, ZDSCAL
-_SCAL_doc = Template(
-    """
+_SCAL_doc = Template("""
     Scales a vector by a scalar.
 
     Replaces a ${precision} ${real} vector `x` with `alpha * x`.
@@ -2091,11 +2623,16 @@ _SCAL_doc = Template(
     References
     ----------
     `cublas<t>scal <http://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-scal>`_
-"""
-)
+""")
 
 _libcublas.cublasSscal_v2.restype = int
-_libcublas.cublasSscal_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasSscal_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasSscal(handle, n, alpha, x, incx):
@@ -2106,32 +2643,60 @@ def cublasSscal(handle, n, alpha, x, incx):
 
 
 cublasSscal.__doc__ = _SCAL_doc.substitute(
-    precision="single precision", real="real", a_real="real", a_type="numpy.float32", alpha="np.float32(np.random.rand())", data="np.random.rand(5).astype(np.float32)", func="cublasSscal"
+    precision="single precision",
+    real="real",
+    a_real="real",
+    a_type="numpy.float32",
+    alpha="np.float32(np.random.rand())",
+    data="np.random.rand(5).astype(np.float32)",
+    func="cublasSscal",
 )
 
 _libcublas.cublasDscal_v2.restype = int
-_libcublas.cublasDscal_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasDscal_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasDscal(handle, n, alpha, x, incx):
     """Scales a vector by a scalar (double precision real)."""
     assert _libcublas
-    status = _libcublas.cublasDscal_v2(handle, n, ctypes.byref(ctypes.c_double(alpha)), int(x), incx)
+    status = _libcublas.cublasDscal_v2(
+        handle, n, ctypes.byref(ctypes.c_double(alpha)), int(x), incx
+    )
     cublasCheckStatus(status)
 
 
 cublasDscal.__doc__ = _SCAL_doc.substitute(
-    precision="double precision", real="real", a_real="real", a_type="numpy.float64", alpha="np.float64(np.random.rand())", data="np.random.rand(5).astype(np.float64)", func="cublasDscal"
+    precision="double precision",
+    real="real",
+    a_real="real",
+    a_type="numpy.float64",
+    alpha="np.float64(np.random.rand())",
+    data="np.random.rand(5).astype(np.float64)",
+    func="cublasDscal",
 )
 
 _libcublas.cublasCscal_v2.restype = int
-_libcublas.cublasCscal_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasCscal_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasCscal(handle, n, alpha, x, incx):
     """Scales a vector by a scalar (single precision complex)."""
     assert _libcublas
-    status = _libcublas.cublasCscal_v2(handle, n, ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)), int(x), incx)
+    status = _libcublas.cublasCscal_v2(
+        handle, n, ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)), int(x), incx
+    )
     cublasCheckStatus(status)
 
 
@@ -2146,13 +2711,21 @@ cublasCscal.__doc__ = _SCAL_doc.substitute(
 )
 
 _libcublas.cublasCsscal_v2.restype = int
-_libcublas.cublasCsscal_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasCsscal_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasCsscal(handle, n, alpha, x, incx):
     """Scales a complex vector by a real scalar (single precision)."""
     assert _libcublas
-    status = _libcublas.cublasCsscal_v2(handle, n, ctypes.byref(ctypes.c_float(alpha)), int(x), incx)
+    status = _libcublas.cublasCsscal_v2(
+        handle, n, ctypes.byref(ctypes.c_float(alpha)), int(x), incx
+    )
     cublasCheckStatus(status)
 
 
@@ -2167,13 +2740,21 @@ cublasCsscal.__doc__ = _SCAL_doc.substitute(
 )
 
 _libcublas.cublasZscal_v2.restype = int
-_libcublas.cublasZscal_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasZscal_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasZscal(handle, n, alpha, x, incx):
     """Scales a vector by a scalar (double precision complex)."""
     assert _libcublas
-    status = _libcublas.cublasZscal_v2(handle, n, ctypes.byref(cuda.cuDoubleComplex(alpha.real, alpha.imag)), int(x), incx)
+    status = _libcublas.cublasZscal_v2(
+        handle, n, ctypes.byref(cuda.cuDoubleComplex(alpha.real, alpha.imag)), int(x), incx
+    )
     cublasCheckStatus(status)
 
 
@@ -2188,13 +2769,21 @@ cublasZscal.__doc__ = _SCAL_doc.substitute(
 )
 
 _libcublas.cublasZdscal_v2.restype = int
-_libcublas.cublasZdscal_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasZdscal_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasZdscal(handle, n, alpha, x, incx):
     """Scales a complex vector by a real scalar (double precision)."""
     assert _libcublas
-    status = _libcublas.cublasZdscal_v2(handle, n, ctypes.byref(ctypes.c_double(alpha)), int(x), incx)
+    status = _libcublas.cublasZdscal_v2(
+        handle, n, ctypes.byref(ctypes.c_double(alpha)), int(x), incx
+    )
     cublasCheckStatus(status)
 
 
@@ -2209,8 +2798,7 @@ cublasZdscal.__doc__ = _SCAL_doc.substitute(
 )
 
 # SSWAP, DSWAP, CSWAP, ZSWAP
-_SWAP_doc = Template(
-    """
+_SWAP_doc = Template("""
     Swaps the contents of two vectors.
 
     Swaps the contents of one ${precision} ${real} vector with those
@@ -2255,11 +2843,17 @@ _SWAP_doc = Template(
     References
     ----------
     `cublas<t>swap <http://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-swap>`_
-"""
-)
+""")
 
 _libcublas.cublasSswap_v2.restype = int
-_libcublas.cublasSswap_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasSswap_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasSswap(handle, n, x, incx, y, incy):
@@ -2269,10 +2863,22 @@ def cublasSswap(handle, n, x, incx, y, incy):
     cublasCheckStatus(status)
 
 
-cublasSswap.__doc__ = _SWAP_doc.substitute(precision="single precision", real="real", data="np.random.rand(5).astype(np.float32)", func="cublasSswap")
+cublasSswap.__doc__ = _SWAP_doc.substitute(
+    precision="single precision",
+    real="real",
+    data="np.random.rand(5).astype(np.float32)",
+    func="cublasSswap",
+)
 
 _libcublas.cublasDswap_v2.restype = int
-_libcublas.cublasDswap_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasDswap_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasDswap(handle, n, x, incx, y, incy):
@@ -2282,10 +2888,22 @@ def cublasDswap(handle, n, x, incx, y, incy):
     cublasCheckStatus(status)
 
 
-cublasDswap.__doc__ = _SWAP_doc.substitute(precision="double precision", real="real", data="np.random.rand(5).astype(np.float64)", func="cublasDswap")
+cublasDswap.__doc__ = _SWAP_doc.substitute(
+    precision="double precision",
+    real="real",
+    data="np.random.rand(5).astype(np.float64)",
+    func="cublasDswap",
+)
 
 _libcublas.cublasCswap_v2.restype = int
-_libcublas.cublasCswap_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasCswap_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasCswap(handle, n, x, incx, y, incy):
@@ -2295,10 +2913,22 @@ def cublasCswap(handle, n, x, incx, y, incy):
     cublasCheckStatus(status)
 
 
-cublasCswap.__doc__ = _SWAP_doc.substitute(precision="single precision", real="complex", data="(np.random.rand(5)+1j*np.random.rand(5)).astype(np.complex64)", func="cublasCswap")
+cublasCswap.__doc__ = _SWAP_doc.substitute(
+    precision="single precision",
+    real="complex",
+    data="(np.random.rand(5)+1j*np.random.rand(5)).astype(np.complex64)",
+    func="cublasCswap",
+)
 
 _libcublas.cublasZswap_v2.restype = int
-_libcublas.cublasZswap_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasZswap_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasZswap(handle, n, x, incx, y, incy):
@@ -2308,7 +2938,12 @@ def cublasZswap(handle, n, x, incx, y, incy):
     cublasCheckStatus(status)
 
 
-cublasZswap.__doc__ = _SWAP_doc.substitute(precision="double precision", real="complex", data="(np.random.rand(5)+1j*np.random.rand(5)).astype(np.complex128)", func="cublasZswap")
+cublasZswap.__doc__ = _SWAP_doc.substitute(
+    precision="double precision",
+    real="complex",
+    data="(np.random.rand(5)+1j*np.random.rand(5)).astype(np.complex128)",
+    func="cublasZswap",
+)
 
 # BLAS Level 2 Functions
 
@@ -2346,7 +2981,22 @@ def cublasSgbmv(handle, trans, m, n, kl, ku, alpha, A, lda, x, incx, beta, y, in
 
     trans = trans.encode("ascii")
     assert _libcublas
-    status = _libcublas.cublasSgbmv_v2(handle, trans, m, n, kl, ku, ctypes.byref(ctypes.c_float(alpha)), int(A), lda, int(x), incx, ctypes.byref(ctypes.c_float(beta)), int(y), incy)
+    status = _libcublas.cublasSgbmv_v2(
+        handle,
+        trans,
+        m,
+        n,
+        kl,
+        ku,
+        ctypes.byref(ctypes.c_float(alpha)),
+        int(A),
+        lda,
+        int(x),
+        incx,
+        ctypes.byref(ctypes.c_float(beta)),
+        int(y),
+        incy,
+    )
     cublasCheckStatus(status)
 
 
@@ -2383,7 +3033,22 @@ def cublasDgbmv(handle, trans, m, n, kl, ku, alpha, A, lda, x, incx, beta, y, in
 
     trans = trans.encode("ascii")
     assert _libcublas
-    status = _libcublas.cublasDgbmv_v2(handle, trans, m, n, kl, ku, ctypes.byref(ctypes.c_float(alpha)), int(A), lda, int(x), incx, ctypes.byref(ctypes.c_float(beta)), int(y), incy)
+    status = _libcublas.cublasDgbmv_v2(
+        handle,
+        trans,
+        m,
+        n,
+        kl,
+        ku,
+        ctypes.byref(ctypes.c_float(alpha)),
+        int(A),
+        lda,
+        int(x),
+        incx,
+        ctypes.byref(ctypes.c_float(beta)),
+        int(y),
+        incy,
+    )
     cublasCheckStatus(status)
 
 
@@ -2421,7 +3086,20 @@ def cublasCgbmv(handle, trans, m, n, kl, ku, alpha, A, lda, x, incx, beta, y, in
     trans = trans.encode("ascii")
     assert _libcublas
     status = _libcublas.cublasCgbmv_v2(
-        handle, trans, m, n, kl, ku, ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)), int(A), lda, int(x), incx, ctypes.byref(cuda.cuFloatComplex(beta.real, beta.imag)), int(y), incy
+        handle,
+        trans,
+        m,
+        n,
+        kl,
+        ku,
+        ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)),
+        int(A),
+        lda,
+        int(x),
+        incx,
+        ctypes.byref(cuda.cuFloatComplex(beta.real, beta.imag)),
+        int(y),
+        incy,
     )
     cublasCheckStatus(status)
 
@@ -2458,14 +3136,26 @@ def cublasZgbmv(handle, trans, m, n, kl, ku, alpha, A, lda, x, incx, beta, y, in
     trans = trans.encode("ascii")
     assert _libcublas
     status = _libcublas.cublasZgbmv_v2(
-        handle, trans, m, n, kl, ku, ctypes.byref(cuda.cuDoubleComplex(alpha.real, alpha.imag)), int(A), lda, int(x), incx, ctypes.byref(cuda.cuDoubleComplex(beta.real, beta.imag)), int(y), incy
+        handle,
+        trans,
+        m,
+        n,
+        kl,
+        ku,
+        ctypes.byref(cuda.cuDoubleComplex(alpha.real, alpha.imag)),
+        int(A),
+        lda,
+        int(x),
+        incx,
+        ctypes.byref(cuda.cuDoubleComplex(beta.real, beta.imag)),
+        int(y),
+        incy,
     )
     cublasCheckStatus(status)
 
 
 # SGEMV, DGEMV, CGEMV, ZGEMV # XXX need to adjust
-_GEMV_doc = Template(
-    """
+_GEMV_doc = Template("""
     Matrix-vector product for ${precision} ${real} general matrix.
 
     Computes the product `alpha*op(A)*x + beta*y`, where `op(A)` is `A`
@@ -2506,8 +3196,7 @@ _GEMV_doc = Template(
     References
     ----------
     `cublas<t>gemv <http://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-gemv>`_
-"""
-)
+""")
 
 _libcublas.cublasSgemv_v2.restype = int
 _libcublas.cublasSgemv_v2.argtypes = [
@@ -2529,11 +3218,26 @@ _libcublas.cublasSgemv_v2.argtypes = [
 def cublasSgemv(handle, trans, m, n, alpha, A, lda, x, incx, beta, y, incy):
     """Matrix-vector product (single precision real)."""
     assert _libcublas
-    status = _libcublas.cublasSgemv_v2(handle, _CUBLAS_OP[trans], m, n, ctypes.byref(ctypes.c_float(alpha)), int(A), lda, int(x), incx, ctypes.byref(ctypes.c_float(beta)), int(y), incy)
+    status = _libcublas.cublasSgemv_v2(
+        handle,
+        _CUBLAS_OP[trans],
+        m,
+        n,
+        ctypes.byref(ctypes.c_float(alpha)),
+        int(A),
+        lda,
+        int(x),
+        incx,
+        ctypes.byref(ctypes.c_float(beta)),
+        int(y),
+        incy,
+    )
     cublasCheckStatus(status)
 
 
-cublasSgemv.__doc__ = _GEMV_doc.substitute(precision="single precision", real="real", a_type="numpy.float32")
+cublasSgemv.__doc__ = _GEMV_doc.substitute(
+    precision="single precision", real="real", a_type="numpy.float32"
+)
 
 _libcublas.cublasDgemv_v2.restype = int
 _libcublas.cublasDgemv_v2.argtypes = [
@@ -2555,11 +3259,26 @@ _libcublas.cublasDgemv_v2.argtypes = [
 def cublasDgemv(handle, trans, m, n, alpha, A, lda, x, incx, beta, y, incy):
     """Matrix-vector product (double precision real)."""
     assert _libcublas
-    status = _libcublas.cublasDgemv_v2(handle, _CUBLAS_OP[trans], m, n, ctypes.byref(ctypes.c_double(alpha)), int(A), lda, int(x), incx, ctypes.byref(ctypes.c_double(beta)), int(y), incy)
+    status = _libcublas.cublasDgemv_v2(
+        handle,
+        _CUBLAS_OP[trans],
+        m,
+        n,
+        ctypes.byref(ctypes.c_double(alpha)),
+        int(A),
+        lda,
+        int(x),
+        incx,
+        ctypes.byref(ctypes.c_double(beta)),
+        int(y),
+        incy,
+    )
     cublasCheckStatus(status)
 
 
-cublasDgemv.__doc__ = _GEMV_doc.substitute(precision="double precision", real="real", a_type="numpy.float64")
+cublasDgemv.__doc__ = _GEMV_doc.substitute(
+    precision="double precision", real="real", a_type="numpy.float64"
+)
 
 _libcublas.cublasCgemv_v2.restype = int
 _libcublas.cublasCgemv_v2.argtypes = [
@@ -2582,12 +3301,25 @@ def cublasCgemv(handle, trans, m, n, alpha, A, lda, x, incx, beta, y, incy):
     """Matrix-vector product (single precision complex)."""
     assert _libcublas
     status = _libcublas.cublasCgemv_v2(
-        handle, _CUBLAS_OP[trans], m, n, ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)), int(A), lda, int(x), incx, ctypes.byref(cuda.cuFloatComplex(beta.real, beta.imag)), int(y), incy
+        handle,
+        _CUBLAS_OP[trans],
+        m,
+        n,
+        ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)),
+        int(A),
+        lda,
+        int(x),
+        incx,
+        ctypes.byref(cuda.cuFloatComplex(beta.real, beta.imag)),
+        int(y),
+        incy,
     )
     cublasCheckStatus(status)
 
 
-cublasCgemv.__doc__ = _GEMV_doc.substitute(precision="single precision", real="complex", a_type="numpy.complex64")
+cublasCgemv.__doc__ = _GEMV_doc.substitute(
+    precision="single precision", real="complex", a_type="numpy.complex64"
+)
 
 _libcublas.cublasZgemv_v2.restype = int
 _libcublas.cublasZgemv_v2.argtypes = [
@@ -2610,17 +3342,29 @@ def cublasZgemv(handle, trans, m, n, alpha, A, lda, x, incx, beta, y, incy):
     """Matrix-vector product (double precision complex)."""
     assert _libcublas
     status = _libcublas.cublasZgemv_v2(
-        handle, _CUBLAS_OP[trans], m, n, ctypes.byref(cuda.cuDoubleComplex(alpha.real, alpha.imag)), int(A), lda, int(x), incx, ctypes.byref(cuda.cuDoubleComplex(beta.real, beta.imag)), int(y), incy
+        handle,
+        _CUBLAS_OP[trans],
+        m,
+        n,
+        ctypes.byref(cuda.cuDoubleComplex(alpha.real, alpha.imag)),
+        int(A),
+        lda,
+        int(x),
+        incx,
+        ctypes.byref(cuda.cuDoubleComplex(beta.real, beta.imag)),
+        int(y),
+        incy,
     )
     cublasCheckStatus(status)
 
 
-cublasZgemv.__doc__ = _GEMV_doc.substitute(precision="double precision", real="complex", a_type="numpy.complex128")
+cublasZgemv.__doc__ = _GEMV_doc.substitute(
+    precision="double precision", real="complex", a_type="numpy.complex128"
+)
 
 
 # SGER, DGER, CGERU, CGERC, ZGERU, ZGERC
-_GER_doc = Template(
-    """
+_GER_doc = Template("""
     Rank-1 operation on a general matrix.
 
     Updates the matrix `A` with the rank-1 operation:
@@ -2652,82 +3396,195 @@ _GER_doc = Template(
     References
     ----------
     `cublas<t>ger <http://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-ger>`_
-"""
-)
+""")
 
 _libcublas.cublasSger_v2.restype = int
-_libcublas.cublasSger_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasSger_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasSger(handle, m, n, alpha, x, incx, y, incy, A, lda):
     """Rank-1 operation (single precision real)."""
     assert _libcublas
-    status = _libcublas.cublasSger_v2(handle, m, n, ctypes.byref(ctypes.c_float(alpha)), int(x), incx, int(y), incy, int(A), lda)
+    status = _libcublas.cublasSger_v2(
+        handle, m, n, ctypes.byref(ctypes.c_float(alpha)), int(x), incx, int(y), incy, int(A), lda
+    )
     cublasCheckStatus(status)
 
 
 cublasSger.__doc__ = _GER_doc.substitute(a_type="numpy.float32")
 
 _libcublas.cublasDger_v2.restype = int
-_libcublas.cublasDger_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasDger_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasDger(handle, m, n, alpha, x, incx, y, incy, A, lda):
     """Rank-1 operation (double precision real)."""
     assert _libcublas
-    status = _libcublas.cublasDger_v2(handle, m, n, ctypes.byref(ctypes.c_double(alpha)), int(x), incx, int(y), incy, int(A), lda)
+    status = _libcublas.cublasDger_v2(
+        handle, m, n, ctypes.byref(ctypes.c_double(alpha)), int(x), incx, int(y), incy, int(A), lda
+    )
     cublasCheckStatus(status)
 
 
 cublasDger.__doc__ = _GER_doc.substitute(a_type="numpy.float64")
 
 _libcublas.cublasCgerc_v2.restype = int
-_libcublas.cublasCgerc_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasCgerc_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasCgerc(handle, m, n, alpha, x, incx, y, incy, A, lda):
     """Rank-1 operation (single precision complex, conjugate)."""
     assert _libcublas
-    status = _libcublas.cublasCgerc_v2(handle, m, n, ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)), int(x), incx, int(y), incy, int(A), lda)
+    status = _libcublas.cublasCgerc_v2(
+        handle,
+        m,
+        n,
+        ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)),
+        int(x),
+        incx,
+        int(y),
+        incy,
+        int(A),
+        lda,
+    )
     cublasCheckStatus(status)
 
 
 cublasCgerc.__doc__ = _GER_doc.substitute(a_type="numpy.complex64")
 
 _libcublas.cublasCgeru_v2.restype = int
-_libcublas.cublasCgeru_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasCgeru_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasCgeru(handle, m, n, alpha, x, incx, y, incy, A, lda):
     """Rank-1 operation (single precision complex, non-conjugate)."""
     assert _libcublas
-    status = _libcublas.cublasCgeru_v2(handle, m, n, ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)), int(x), incx, int(y), incy, int(A), lda)
+    status = _libcublas.cublasCgeru_v2(
+        handle,
+        m,
+        n,
+        ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)),
+        int(x),
+        incx,
+        int(y),
+        incy,
+        int(A),
+        lda,
+    )
     cublasCheckStatus(status)
 
 
 cublasCgeru.__doc__ = _GER_doc.substitute(a_type="numpy.complex64")
 
 _libcublas.cublasZgerc_v2.restype = int
-_libcublas.cublasZgerc_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasZgerc_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasZgerc(handle, m, n, alpha, x, incx, y, incy, A, lda):
     """Rank-1 operation (double precision complex, conjugate)."""
     assert _libcublas
-    status = _libcublas.cublasZgerc_v2(handle, m, n, ctypes.byref(cuda.cuDoubleComplex(alpha.real, alpha.imag)), int(x), incx, int(y), incy, int(A), lda)
+    status = _libcublas.cublasZgerc_v2(
+        handle,
+        m,
+        n,
+        ctypes.byref(cuda.cuDoubleComplex(alpha.real, alpha.imag)),
+        int(x),
+        incx,
+        int(y),
+        incy,
+        int(A),
+        lda,
+    )
     cublasCheckStatus(status)
 
 
 cublasZgerc.__doc__ = _GER_doc.substitute(a_type="numpy.complex128")
 
 _libcublas.cublasZgeru_v2.restype = int
-_libcublas.cublasZgeru_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasZgeru_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasZgeru(handle, m, n, alpha, x, incx, y, incy, A, lda):
     """Rank-1 operation (double precision complex, non-conjugate)."""
     assert _libcublas
-    status = _libcublas.cublasZgeru_v2(handle, m, n, ctypes.byref(cuda.cuDoubleComplex(alpha.real, alpha.imag)), int(x), incx, int(y), incy, int(A), lda)
+    status = _libcublas.cublasZgeru_v2(
+        handle,
+        m,
+        n,
+        ctypes.byref(cuda.cuDoubleComplex(alpha.real, alpha.imag)),
+        int(x),
+        incx,
+        int(y),
+        incy,
+        int(A),
+        lda,
+    )
     cublasCheckStatus(status)
 
 
@@ -2735,8 +3592,7 @@ cublasZgeru.__doc__ = _GER_doc.substitute(a_type="numpy.complex128")
 
 
 # SSBMV, DSBMV
-_SBMV_doc = Template(
-    """
+_SBMV_doc = Template("""
     Matrix-vector product for ${precision} ${real} symmetric-banded matrix.
 
     Computes the product `alpha*A*x + beta*y`, where `A` is a symmetric-banded
@@ -2774,8 +3630,7 @@ _SBMV_doc = Template(
     References
     ----------
     `cublas<t>sbmv <http://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-sbmv>`_
-    """
-)
+    """)
 
 _libcublas.cublasSsbmv_v2.restype = int
 _libcublas.cublasSsbmv_v2.argtypes = [
@@ -2797,11 +3652,26 @@ _libcublas.cublasSsbmv_v2.argtypes = [
 def cublasSsbmv(handle, uplo, n, k, alpha, A, lda, x, incx, beta, y, incy):
     """Matrix-vector product (single precision real symmetric-banded)."""
     assert _libcublas
-    status = _libcublas.cublasSsbmv_v2(handle, _CUBLAS_FILL_MODE[uplo], n, k, ctypes.byref(ctypes.c_float(alpha)), int(A), lda, int(x), incx, ctypes.byref(ctypes.c_float(beta)), int(y), incy)
+    status = _libcublas.cublasSsbmv_v2(
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        n,
+        k,
+        ctypes.byref(ctypes.c_float(alpha)),
+        int(A),
+        lda,
+        int(x),
+        incx,
+        ctypes.byref(ctypes.c_float(beta)),
+        int(y),
+        incy,
+    )
     cublasCheckStatus(status)
 
 
-cublasSsbmv.__doc__ = _SBMV_doc.substitute(precision="single precision", real="real", a_type="numpy.float32")
+cublasSsbmv.__doc__ = _SBMV_doc.substitute(
+    precision="single precision", real="real", a_type="numpy.float32"
+)
 
 _libcublas.cublasDsbmv_v2.restype = int
 _libcublas.cublasDsbmv_v2.argtypes = [
@@ -2823,16 +3693,30 @@ _libcublas.cublasDsbmv_v2.argtypes = [
 def cublasDsbmv(handle, uplo, n, k, alpha, A, lda, x, incx, beta, y, incy):
     """Matrix-vector product (double precision real symmetric-banded)."""
     assert _libcublas
-    status = _libcublas.cublasDsbmv_v2(handle, _CUBLAS_FILL_MODE[uplo], n, k, ctypes.byref(ctypes.c_double(alpha)), int(A), lda, int(x), incx, ctypes.byref(ctypes.c_double(beta)), int(y), incy)
+    status = _libcublas.cublasDsbmv_v2(
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        n,
+        k,
+        ctypes.byref(ctypes.c_double(alpha)),
+        int(A),
+        lda,
+        int(x),
+        incx,
+        ctypes.byref(ctypes.c_double(beta)),
+        int(y),
+        incy,
+    )
     cublasCheckStatus(status)
 
 
-cublasDsbmv.__doc__ = _SBMV_doc.substitute(precision="double precision", real="real", a_type="numpy.float64")
+cublasDsbmv.__doc__ = _SBMV_doc.substitute(
+    precision="double precision", real="real", a_type="numpy.float64"
+)
 
 
 # SSPMV, DSPMV
-_SPMV_doc = Template(
-    """
+_SPMV_doc = Template("""
     Matrix-vector product for ${precision} ${real} symmetric packed matrix.
 
     Computes the product `alpha*AP*x + beta*y`, where `AP` is a symmetric packed
@@ -2866,43 +3750,85 @@ _SPMV_doc = Template(
     References
     ----------
     `cublas<t>spmv <http://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-spmv>`_
-    """
-)
+    """)
 
 _libcublas.cublasSspmv_v2.restype = int
-_libcublas.cublasSspmv_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasSspmv_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasSspmv(handle, uplo, n, alpha, AP, x, incx, beta, y, incy):
     """Matrix-vector product (single precision real symmetric packed)."""
     assert _libcublas
     status = _libcublas.cublasSspmv_v2(
-        handle, _CUBLAS_FILL_MODE[uplo], n, ctypes.byref(ctypes.c_float(alpha)), ctypes.byref(ctypes.c_float(AP)), int(x), incx, ctypes.byref(ctypes.c_float(beta)), int(y), incy
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        n,
+        ctypes.byref(ctypes.c_float(alpha)),
+        ctypes.byref(ctypes.c_float(AP)),
+        int(x),
+        incx,
+        ctypes.byref(ctypes.c_float(beta)),
+        int(y),
+        incy,
     )
     cublasCheckStatus(status)
 
 
-cublasSspmv.__doc__ = _SPMV_doc.substitute(precision="single precision", real="real", a_type="numpy.float32")
+cublasSspmv.__doc__ = _SPMV_doc.substitute(
+    precision="single precision", real="real", a_type="numpy.float32"
+)
 
 _libcublas.cublasDspmv_v2.restype = int
-_libcublas.cublasDspmv_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasDspmv_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasDspmv(handle, uplo, n, alpha, AP, x, incx, beta, y, incy):
     """Matrix-vector product (double precision real symmetric packed)."""
     assert _libcublas
     status = _libcublas.cublasDspmv_v2(
-        handle, _CUBLAS_FILL_MODE[uplo], n, ctypes.byref(ctypes.c_double(alpha)), ctypes.byref(ctypes.c_double(AP)), int(x), incx, ctypes.byref(ctypes.c_double(beta)), int(y), incy
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        n,
+        ctypes.byref(ctypes.c_double(alpha)),
+        ctypes.byref(ctypes.c_double(AP)),
+        int(x),
+        incx,
+        ctypes.byref(ctypes.c_double(beta)),
+        int(y),
+        incy,
     )
     cublasCheckStatus(status)
 
 
-cublasDspmv.__doc__ = _SPMV_doc.substitute(precision="double precision", real="real", a_type="numpy.float64")
+cublasDspmv.__doc__ = _SPMV_doc.substitute(
+    precision="double precision", real="real", a_type="numpy.float64"
+)
 
 
 # SSPR, DSPR
-_SPR_doc = Template(
-    """
+_SPR_doc = Template("""
     Rank-1 operation on a symmetric packed matrix.
 
     Updates the symmetric packed matrix `AP` with a rank-1 operation:
@@ -2930,30 +3856,61 @@ _SPR_doc = Template(
     References
     ----------
     `cublas<t>spr <http://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-spr>`_
-    """
-)
+    """)
 
 _libcublas.cublasSspr_v2.restype = int
-_libcublas.cublasSspr_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p]
+_libcublas.cublasSspr_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+]
 
 
 def cublasSspr(handle, uplo, n, alpha, x, incx, AP):
     """Rank-1 operation (single precision real symmetric packed)."""
     assert _libcublas
-    status = _libcublas.cublasSspr_v2(handle, _CUBLAS_FILL_MODE[uplo], n, ctypes.byref(ctypes.c_float(alpha)), int(x), incx, int(AP))
+    status = _libcublas.cublasSspr_v2(
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        n,
+        ctypes.byref(ctypes.c_float(alpha)),
+        int(x),
+        incx,
+        int(AP),
+    )
     cublasCheckStatus(status)
 
 
 cublasSspr.__doc__ = _SPR_doc.substitute(a_type="numpy.float32")
 
 _libcublas.cublasDspr_v2.restype = int
-_libcublas.cublasDspr_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p]
+_libcublas.cublasDspr_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+]
 
 
 def cublasDspr(handle, uplo, n, alpha, x, incx, AP):
     """Rank-1 operation (double precision real symmetric packed)."""
     assert _libcublas
-    status = _libcublas.cublasDspr_v2(handle, _CUBLAS_FILL_MODE[uplo], n, ctypes.byref(ctypes.c_double(alpha)), int(x), incx, int(AP))
+    status = _libcublas.cublasDspr_v2(
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        n,
+        ctypes.byref(ctypes.c_double(alpha)),
+        int(x),
+        incx,
+        int(AP),
+    )
     cublasCheckStatus(status)
 
 
@@ -2961,8 +3918,7 @@ cublasDspr.__doc__ = _SPR_doc.substitute(a_type="numpy.float64")
 
 
 # SSPR2, DSPR2
-_SPR2_doc = Template(
-    """
+_SPR2_doc = Template("""
     Rank-2 operation on a symmetric packed matrix.
 
     Updates the symmetric packed matrix `AP` with a rank-2 operation:
@@ -2995,17 +3951,36 @@ _SPR2_doc = Template(
     References
     ----------
     `cublas<t>spr2 <http://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-spr2>`_
-    """
-)
+    """)
 
 _libcublas.cublasSspr2_v2.restype = int
-_libcublas.cublasSspr2_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p]
+_libcublas.cublasSspr2_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+]
 
 
 def cublasSspr2(handle, uplo, n, alpha, x, incx, y, incy, AP):
     """Rank-2 operation (single precision real symmetric packed)."""
     assert _libcublas
-    status = _libcublas.cublasSspr2_v2(handle, _CUBLAS_FILL_MODE[uplo], n, ctypes.byref(ctypes.c_float(alpha)), int(x), incx, int(y), incy, int(AP))
+    status = _libcublas.cublasSspr2_v2(
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        n,
+        ctypes.byref(ctypes.c_float(alpha)),
+        int(x),
+        incx,
+        int(y),
+        incy,
+        int(AP),
+    )
 
     cublasCheckStatus(status)
 
@@ -3013,13 +3988,33 @@ def cublasSspr2(handle, uplo, n, alpha, x, incx, y, incy, AP):
 cublasSspr2.__doc__ = _SPR2_doc.substitute(a_type="numpy.float32")
 
 _libcublas.cublasDspr2_v2.restype = int
-_libcublas.cublasDspr2_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p]
+_libcublas.cublasDspr2_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+]
 
 
 def cublasDspr2(handle, uplo, n, alpha, x, incx, y, incy, AP):
     """Rank-2 operation (double precision real symmetric packed)."""
     assert _libcublas
-    status = _libcublas.cublasDspr2_v2(handle, _CUBLAS_FILL_MODE[uplo], n, ctypes.byref(ctypes.c_double(alpha)), int(x), incx, int(y), incy, int(AP))
+    status = _libcublas.cublasDspr2_v2(
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        n,
+        ctypes.byref(ctypes.c_double(alpha)),
+        int(x),
+        incx,
+        int(y),
+        incy,
+        int(AP),
+    )
     cublasCheckStatus(status)
 
 
@@ -3027,8 +4022,7 @@ cublasDspr2.__doc__ = _SPR2_doc.substitute(a_type="numpy.float64")
 
 
 # SSYMV, DSYMV, CSYMV, ZSYMV
-_SYMV_doc = Template(
-    """
+_SYMV_doc = Template("""
     Matrix-vector product for a symmetric matrix.
 
     Computes the product `alpha*A*x + beta*y`, where `A` is a symmetric matrix.
@@ -3063,8 +4057,7 @@ _SYMV_doc = Template(
     References
     ----------
     `cublas<t>symv <http://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-symv>`_
-    """
-)
+    """)
 
 _libcublas.cublasSsymv_v2.restype = int
 _libcublas.cublasSsymv_v2.argtypes = [
@@ -3085,11 +4078,25 @@ _libcublas.cublasSsymv_v2.argtypes = [
 def cublasSsymv(handle, uplo, n, alpha, A, lda, x, incx, beta, y, incy):
     """Matrix-vector product (single precision real symmetric)."""
     assert _libcublas
-    status = _libcublas.cublasSsymv_v2(handle, _CUBLAS_FILL_MODE[uplo], n, ctypes.byref(ctypes.c_float(alpha)), int(A), lda, int(x), incx, ctypes.byref(ctypes.c_float(beta)), int(y), incy)
+    status = _libcublas.cublasSsymv_v2(
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        n,
+        ctypes.byref(ctypes.c_float(alpha)),
+        int(A),
+        lda,
+        int(x),
+        incx,
+        ctypes.byref(ctypes.c_float(beta)),
+        int(y),
+        incy,
+    )
     cublasCheckStatus(status)
 
 
-cublasSsymv.__doc__ = _SYMV_doc.substitute(precision="single precision", real="real", a_type="numpy.float32")
+cublasSsymv.__doc__ = _SYMV_doc.substitute(
+    precision="single precision", real="real", a_type="numpy.float32"
+)
 
 _libcublas.cublasDsymv_v2.restype = int
 _libcublas.cublasDsymv_v2.argtypes = [
@@ -3110,11 +4117,25 @@ _libcublas.cublasDsymv_v2.argtypes = [
 def cublasDsymv(handle, uplo, n, alpha, A, lda, x, incx, beta, y, incy):
     """Matrix-vector product (double precision real symmetric)."""
     assert _libcublas
-    status = _libcublas.cublasDsymv_v2(handle, _CUBLAS_FILL_MODE[uplo], n, ctypes.byref(ctypes.c_double(alpha)), int(A), lda, int(x), incx, ctypes.byref(ctypes.c_double(beta)), int(y), incy)
+    status = _libcublas.cublasDsymv_v2(
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        n,
+        ctypes.byref(ctypes.c_double(alpha)),
+        int(A),
+        lda,
+        int(x),
+        incx,
+        ctypes.byref(ctypes.c_double(beta)),
+        int(y),
+        incy,
+    )
     cublasCheckStatus(status)
 
 
-cublasDsymv.__doc__ = _SYMV_doc.substitute(precision="double precision", real="real", a_type="numpy.float64")
+cublasDsymv.__doc__ = _SYMV_doc.substitute(
+    precision="double precision", real="real", a_type="numpy.float64"
+)
 
 
 if _cublas_version >= 5000:
@@ -3139,7 +4160,17 @@ def cublasCsymv(handle, uplo, n, alpha, A, lda, x, incx, beta, y, incy):
     """Matrix-vector product (single precision complex symmetric)."""
     assert _libcublas
     status = _libcublas.cublasCsymv_v2(
-        handle, _CUBLAS_FILL_MODE[uplo], n, ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)), int(A), lda, int(x), incx, ctypes.byref(cuda.cuFloatComplex(beta.real, beta.imag)), int(y), incy
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        n,
+        ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)),
+        int(A),
+        lda,
+        int(x),
+        incx,
+        ctypes.byref(cuda.cuFloatComplex(beta.real, beta.imag)),
+        int(y),
+        incy,
     )
     cublasCheckStatus(status)
 
@@ -3182,8 +4213,7 @@ def cublasZsymv(handle, uplo, n, alpha, A, lda, x, incx, beta, y, incy):
 
 
 # SSYR, DSYR, CSYR, ZSYR
-_SYR_doc = Template(
-    """
+_SYR_doc = Template("""
     Rank-1 operation on a symmetric matrix.
 
     Updates the symmetric matrix `A` with a rank-1 operation:
@@ -3213,30 +4243,65 @@ _SYR_doc = Template(
     References
     ----------
     `cublas<t>syr <http://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-syr>`_
-    """
-)
+    """)
 
 _libcublas.cublasSsyr_v2.restype = int
-_libcublas.cublasSsyr_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasSsyr_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasSsyr(handle, uplo, n, alpha, x, incx, A, lda):
     """Rank-1 operation (single precision real symmetric)."""
     assert _libcublas
-    status = _libcublas.cublasSsyr_v2(handle, _CUBLAS_FILL_MODE[uplo], n, ctypes.byref(ctypes.c_float(alpha)), int(x), incx, int(A), lda)
+    status = _libcublas.cublasSsyr_v2(
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        n,
+        ctypes.byref(ctypes.c_float(alpha)),
+        int(x),
+        incx,
+        int(A),
+        lda,
+    )
     cublasCheckStatus(status)
 
 
 cublasSsyr.__doc__ = _SYR_doc.substitute(a_type="numpy.float32")
 
 _libcublas.cublasDsyr_v2.restype = int
-_libcublas.cublasDsyr_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasDsyr_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasDsyr(handle, uplo, n, alpha, x, incx, A, lda):
     """Rank-1 operation (double precision real symmetric)."""
     assert _libcublas
-    status = _libcublas.cublasDsyr_v2(handle, _CUBLAS_FILL_MODE[uplo], n, ctypes.byref(ctypes.c_double(alpha)), int(x), incx, int(A), lda)
+    status = _libcublas.cublasDsyr_v2(
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        n,
+        ctypes.byref(ctypes.c_double(alpha)),
+        int(x),
+        incx,
+        int(A),
+        lda,
+    )
     cublasCheckStatus(status)
 
 
@@ -3245,33 +4310,68 @@ cublasDsyr.__doc__ = _SYR_doc.substitute(a_type="numpy.float64")
 
 if _cublas_version >= 5000:
     _libcublas.cublasCsyr_v2.restype = int
-    _libcublas.cublasCsyr_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
+    _libcublas.cublasCsyr_v2.argtypes = [
+        _types.handle,
+        ctypes.c_int,
+        ctypes.c_int,
+        ctypes.c_void_p,
+        ctypes.c_void_p,
+        ctypes.c_int,
+        ctypes.c_void_p,
+        ctypes.c_int,
+    ]
 
 
 @_cublas_version_req(5.0)
 def cublasCsyr(handle, uplo, n, alpha, x, incx, A, lda):
     """Rank-1 operation (single precision complex symmetric)."""
     assert _libcublas
-    status = _libcublas.cublasCsyr_v2(handle, _CUBLAS_FILL_MODE[uplo], n, ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)), int(x), incx, int(A), lda)
+    status = _libcublas.cublasCsyr_v2(
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        n,
+        ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)),
+        int(x),
+        incx,
+        int(A),
+        lda,
+    )
     cublasCheckStatus(status)
 
 
 if _cublas_version >= 5000:
     _libcublas.cublasZsyr_v2.restype = int
-    _libcublas.cublasZsyr_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
+    _libcublas.cublasZsyr_v2.argtypes = [
+        _types.handle,
+        ctypes.c_int,
+        ctypes.c_int,
+        ctypes.c_void_p,
+        ctypes.c_void_p,
+        ctypes.c_int,
+        ctypes.c_void_p,
+        ctypes.c_int,
+    ]
 
 
 @_cublas_version_req(5.0)
 def cublasZsyr(handle, uplo, n, alpha, x, incx, A, lda):
     """Rank-1 operation (double precision complex symmetric)."""
     assert _libcublas
-    status = _libcublas.cublasZsyr_v2(handle, _CUBLAS_FILL_MODE[uplo], n, ctypes.byref(cuda.cuDoubleComplex(alpha.real, alpha.imag)), int(x), incx, int(A), lda)
+    status = _libcublas.cublasZsyr_v2(
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        n,
+        ctypes.byref(cuda.cuDoubleComplex(alpha.real, alpha.imag)),
+        int(x),
+        incx,
+        int(A),
+        lda,
+    )
     cublasCheckStatus(status)
 
 
 # SSYR2, DSYR2, CSYR2, ZSYR2
-_SYR2_doc = Template(
-    """
+_SYR2_doc = Template("""
     Rank-2 operation on a symmetric matrix.
 
     Updates the symmetric matrix `A` with a rank-2 operation:
@@ -3306,30 +4406,73 @@ _SYR2_doc = Template(
     References
     ----------
     `cublas<t>syr2 <http://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-syr2>`_
-    """
-)
+    """)
 
 _libcublas.cublasSsyr2_v2.restype = int
-_libcublas.cublasSsyr2_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasSsyr2_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasSsyr2(handle, uplo, n, alpha, x, incx, y, incy, A, lda):
     """Rank-2 operation (single precision real symmetric)."""
     assert _libcublas
-    status = _libcublas.cublasSsyr2_v2(handle, _CUBLAS_FILL_MODE[uplo], n, ctypes.byref(ctypes.c_float(alpha)), int(x), incx, int(y), incy, int(A), lda)
+    status = _libcublas.cublasSsyr2_v2(
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        n,
+        ctypes.byref(ctypes.c_float(alpha)),
+        int(x),
+        incx,
+        int(y),
+        incy,
+        int(A),
+        lda,
+    )
     cublasCheckStatus(status)
 
 
 cublasSsyr2.__doc__ = _SYR2_doc.substitute(a_type="numpy.float32")
 
 _libcublas.cublasDsyr2_v2.restype = int
-_libcublas.cublasDsyr2_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasDsyr2_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasDsyr2(handle, uplo, n, alpha, x, incx, y, incy, A, lda):
     """Rank-2 operation (double precision real symmetric)."""
     assert _libcublas
-    status = _libcublas.cublasDsyr2_v2(handle, _CUBLAS_FILL_MODE[uplo], n, ctypes.byref(ctypes.c_double(alpha)), int(x), incx, int(y), incy, int(A), lda)
+    status = _libcublas.cublasDsyr2_v2(
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        n,
+        ctypes.byref(ctypes.c_double(alpha)),
+        int(x),
+        incx,
+        int(y),
+        incy,
+        int(A),
+        lda,
+    )
     cublasCheckStatus(status)
 
 
@@ -3338,33 +4481,76 @@ cublasDsyr2.__doc__ = _SYR2_doc.substitute(a_type="numpy.float64")
 
 if _cublas_version >= 5000:
     _libcublas.cublasCsyr2_v2.restype = int
-    _libcublas.cublasCsyr2_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
+    _libcublas.cublasCsyr2_v2.argtypes = [
+        _types.handle,
+        ctypes.c_int,
+        ctypes.c_int,
+        ctypes.c_void_p,
+        ctypes.c_void_p,
+        ctypes.c_int,
+        ctypes.c_void_p,
+        ctypes.c_int,
+        ctypes.c_void_p,
+        ctypes.c_int,
+    ]
 
 
 @_cublas_version_req(5.0)
 def cublasCsyr2(handle, uplo, n, alpha, x, incx, y, incy, A, lda):
     """Rank-2 operation (single precision complex symmetric)."""
     assert _libcublas
-    status = _libcublas.cublasCsyr2_v2(handle, _CUBLAS_FILL_MODE[uplo], n, ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)), int(x), incx, int(y), incy, int(A), lda)
+    status = _libcublas.cublasCsyr2_v2(
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        n,
+        ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)),
+        int(x),
+        incx,
+        int(y),
+        incy,
+        int(A),
+        lda,
+    )
     cublasCheckStatus(status)
 
 
 if _cublas_version >= 5000:
     _libcublas.cublasZsyr2_v2.restype = int
-    _libcublas.cublasZsyr2_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
+    _libcublas.cublasZsyr2_v2.argtypes = [
+        _types.handle,
+        ctypes.c_int,
+        ctypes.c_int,
+        ctypes.c_void_p,
+        ctypes.c_void_p,
+        ctypes.c_int,
+        ctypes.c_void_p,
+        ctypes.c_int,
+        ctypes.c_void_p,
+        ctypes.c_int,
+    ]
 
 
 @_cublas_version_req(5.0)
 def cublasZsyr2(handle, uplo, n, alpha, x, incx, y, incy, A, lda):
     """Rank-2 operation (double precision complex symmetric)."""
     assert _libcublas
-    status = _libcublas.cublasZsyr2_v2(handle, _CUBLAS_FILL_MODE[uplo], n, ctypes.byref(cuda.cuDoubleComplex(alpha.real, alpha.imag)), int(x), incx, int(y), incy, int(A), lda)
+    status = _libcublas.cublasZsyr2_v2(
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        n,
+        ctypes.byref(cuda.cuDoubleComplex(alpha.real, alpha.imag)),
+        int(x),
+        incx,
+        int(y),
+        incy,
+        int(A),
+        lda,
+    )
     cublasCheckStatus(status)
 
 
 # STBMV, DTBMV, CTBMV, ZTBMV
-_TBMV_doc = Template(
-    """
+_TBMV_doc = Template("""
     Matrix-vector product for a triangular banded matrix.
 
     Computes the product `A*x`, where `A` is a triangular banded matrix.
@@ -3402,56 +4588,143 @@ _TBMV_doc = Template(
     References
     ----------
     `cublas<t>tbmv <http://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-tbmv>`_
-    """
-)
+    """)
 
 _libcublas.cublasStbmv_v2.restype = int
-_libcublas.cublasStbmv_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasStbmv_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasStbmv(handle, uplo, trans, diag, n, k, A, lda, x, incx):
     """Matrix-vector product (single precision real triangular banded)."""
     assert _libcublas
-    status = _libcublas.cublasStbmv_v2(handle, _CUBLAS_FILL_MODE[uplo], _CUBLAS_OP[trans], _CUBLAS_DIAG[diag], n, k, int(A), lda, int(x), incx)
+    status = _libcublas.cublasStbmv_v2(
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        _CUBLAS_OP[trans],
+        _CUBLAS_DIAG[diag],
+        n,
+        k,
+        int(A),
+        lda,
+        int(x),
+        incx,
+    )
     cublasCheckStatus(status)
 
 
 cublasStbmv.__doc__ = _TBMV_doc.substitute()
 
 _libcublas.cublasDtbmv_v2.restype = int
-_libcublas.cublasDtbmv_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasDtbmv_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasDtbmv(handle, uplo, trans, diag, n, k, A, lda, x, incx):
     """Matrix-vector product (double precision real triangular banded)."""
     assert _libcublas
-    status = _libcublas.cublasDtbmv_v2(handle, _CUBLAS_FILL_MODE[uplo], _CUBLAS_OP[trans], _CUBLAS_DIAG[diag], n, k, int(A), lda, int(x), incx)
+    status = _libcublas.cublasDtbmv_v2(
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        _CUBLAS_OP[trans],
+        _CUBLAS_DIAG[diag],
+        n,
+        k,
+        int(A),
+        lda,
+        int(x),
+        incx,
+    )
     cublasCheckStatus(status)
 
 
 cublasDtbmv.__doc__ = _TBMV_doc.substitute()
 
 _libcublas.cublasCtbmv_v2.restype = int
-_libcublas.cublasCtbmv_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasCtbmv_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasCtbmv(handle, uplo, trans, diag, n, k, A, lda, x, incx):
     """Matrix-vector product (single precision complex triangular banded)."""
     assert _libcublas
-    status = _libcublas.cublasCtbmv_v2(handle, _CUBLAS_FILL_MODE[uplo], _CUBLAS_OP[trans], _CUBLAS_DIAG[diag], n, k, int(A), lda, int(x), incx)
+    status = _libcublas.cublasCtbmv_v2(
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        _CUBLAS_OP[trans],
+        _CUBLAS_DIAG[diag],
+        n,
+        k,
+        int(A),
+        lda,
+        int(x),
+        incx,
+    )
     cublasCheckStatus(status)
 
 
 cublasCtbmv.__doc__ = _TBMV_doc.substitute()
 
 _libcublas.cublasZtbmv_v2.restype = int
-_libcublas.cublasZtbmv_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasZtbmv_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasZtbmv(handle, uplo, trans, diag, n, k, A, lda, x, incx):
     """Matrix-vector product (double precision complex triangular banded)."""
     assert _libcublas
-    status = _libcublas.cublasZtbmv_v2(handle, _CUBLAS_FILL_MODE[uplo], _CUBLAS_OP[trans], _CUBLAS_DIAG[diag], n, k, int(A), lda, int(x), incx)
+    status = _libcublas.cublasZtbmv_v2(
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        _CUBLAS_OP[trans],
+        _CUBLAS_DIAG[diag],
+        n,
+        k,
+        int(A),
+        lda,
+        int(x),
+        incx,
+    )
     cublasCheckStatus(status)
 
 
@@ -3459,8 +4732,7 @@ cublasZtbmv.__doc__ = _TBMV_doc.substitute()
 
 
 # STBSV, DTBSV, CTBSV, ZTBSV
-_TBSV_doc = Template(
-    """
+_TBSV_doc = Template("""
     Solves a triangular banded system with one right-hand side.
 
     Solves the system `A*x = b`, where `A` is a triangular banded matrix.
@@ -3498,56 +4770,143 @@ _TBSV_doc = Template(
     References
     ----------
     `cublas<t>tbsv <http://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-tbsv>`_
-    """
-)
+    """)
 
 _libcublas.cublasStbsv_v2.restype = int
-_libcublas.cublasStbsv_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasStbsv_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasStbsv(handle, uplo, trans, diag, n, k, A, lda, x, incx):
     """Solves a triangular banded system (single precision real)."""
     assert _libcublas
-    status = _libcublas.cublasStbsv_v2(handle, _CUBLAS_FILL_MODE[uplo], _CUBLAS_OP[trans], _CUBLAS_DIAG[diag], n, k, int(A), lda, int(x), incx)
+    status = _libcublas.cublasStbsv_v2(
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        _CUBLAS_OP[trans],
+        _CUBLAS_DIAG[diag],
+        n,
+        k,
+        int(A),
+        lda,
+        int(x),
+        incx,
+    )
     cublasCheckStatus(status)
 
 
 cublasStbsv.__doc__ = _TBSV_doc.substitute()
 
 _libcublas.cublasDtbsv_v2.restype = int
-_libcublas.cublasDtbsv_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasDtbsv_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasDtbsv(handle, uplo, trans, diag, n, k, A, lda, x, incx):
     """Solves a triangular banded system (double precision real)."""
     assert _libcublas
-    status = _libcublas.cublasDtbsv_v2(handle, _CUBLAS_FILL_MODE[uplo], _CUBLAS_OP[trans], _CUBLAS_DIAG[diag], n, k, int(A), lda, int(x), incx)
+    status = _libcublas.cublasDtbsv_v2(
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        _CUBLAS_OP[trans],
+        _CUBLAS_DIAG[diag],
+        n,
+        k,
+        int(A),
+        lda,
+        int(x),
+        incx,
+    )
     cublasCheckStatus(status)
 
 
 cublasDtbsv.__doc__ = _TBSV_doc.substitute()
 
 _libcublas.cublasCtbsv_v2.restype = int
-_libcublas.cublasCtbsv_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasCtbsv_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasCtbsv(handle, uplo, trans, diag, n, k, A, lda, x, incx):
     """Solves a triangular banded system (single precision complex)."""
     assert _libcublas
-    status = _libcublas.cublasCtbsv_v2(handle, _CUBLAS_FILL_MODE[uplo], _CUBLAS_OP[trans], _CUBLAS_DIAG[diag], n, k, int(A), lda, int(x), incx)
+    status = _libcublas.cublasCtbsv_v2(
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        _CUBLAS_OP[trans],
+        _CUBLAS_DIAG[diag],
+        n,
+        k,
+        int(A),
+        lda,
+        int(x),
+        incx,
+    )
     cublasCheckStatus(status)
 
 
 cublasCtbsv.__doc__ = _TBSV_doc.substitute()
 
 _libcublas.cublasZtbsv_v2.restype = int
-_libcublas.cublasZtbsv_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasZtbsv_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasZtbsv(handle, uplo, trans, diag, n, k, A, lda, x, incx):
     """Solves a triangular banded system (double precision complex)."""
     assert _libcublas
-    status = _libcublas.cublasZtbsv_v2(handle, _CUBLAS_FILL_MODE[uplo], _CUBLAS_OP[trans], _CUBLAS_DIAG[diag], n, k, int(A), lda, int(x), incx)
+    status = _libcublas.cublasZtbsv_v2(
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        _CUBLAS_OP[trans],
+        _CUBLAS_DIAG[diag],
+        n,
+        k,
+        int(A),
+        lda,
+        int(x),
+        incx,
+    )
     cublasCheckStatus(status)
 
 
@@ -3555,8 +4914,7 @@ cublasZtbsv.__doc__ = _TBSV_doc.substitute()
 
 
 # STPMV, DTPMV, CTPMV, ZTPMV
-_TPMV_doc = Template(
-    """
+_TPMV_doc = Template("""
     Matrix-vector product for a triangular packed matrix.
 
     Computes the product `A*x`, where `A` is a triangular packed matrix.
@@ -3590,56 +4948,127 @@ _TPMV_doc = Template(
     References
     ----------
     `cublas<t>tpmv <http://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-tpmv>`_
-    """
-)
+    """)
 
 _libcublas.cublasStpmv_v2.restype = int
-_libcublas.cublasStpmv_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasStpmv_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasStpmv(handle, uplo, trans, diag, n, AP, x, incx):
     """Matrix-vector product (single precision real triangular packed)."""
     assert _libcublas
-    status = _libcublas.cublasStpmv_v2(handle, _CUBLAS_FILL_MODE[uplo], _CUBLAS_OP[trans], _CUBLAS_DIAG[diag], n, int(AP), int(x), incx)
+    status = _libcublas.cublasStpmv_v2(
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        _CUBLAS_OP[trans],
+        _CUBLAS_DIAG[diag],
+        n,
+        int(AP),
+        int(x),
+        incx,
+    )
     cublasCheckStatus(status)
 
 
 cublasStpmv.__doc__ = _TPMV_doc.substitute()
 
 _libcublas.cublasCtpmv_v2.restype = int
-_libcublas.cublasCtpmv_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasCtpmv_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasCtpmv(handle, uplo, trans, diag, n, AP, x, incx):
     """Matrix-vector product (single precision complex triangular packed)."""
     assert _libcublas
-    status = _libcublas.cublasCtpmv_v2(handle, _CUBLAS_FILL_MODE[uplo], _CUBLAS_OP[trans], _CUBLAS_DIAG[diag], n, int(AP), int(x), incx)
+    status = _libcublas.cublasCtpmv_v2(
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        _CUBLAS_OP[trans],
+        _CUBLAS_DIAG[diag],
+        n,
+        int(AP),
+        int(x),
+        incx,
+    )
     cublasCheckStatus(status)
 
 
 cublasCtpmv.__doc__ = _TPMV_doc.substitute()
 
 _libcublas.cublasDtpmv_v2.restype = int
-_libcublas.cublasDtpmv_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasDtpmv_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasDtpmv(handle, uplo, trans, diag, n, AP, x, incx):
     """Matrix-vector product (double precision real triangular packed)."""
     assert _libcublas
-    status = _libcublas.cublasDtpmv_v2(handle, _CUBLAS_FILL_MODE[uplo], _CUBLAS_OP[trans], _CUBLAS_DIAG[diag], n, int(AP), int(x), incx)
+    status = _libcublas.cublasDtpmv_v2(
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        _CUBLAS_OP[trans],
+        _CUBLAS_DIAG[diag],
+        n,
+        int(AP),
+        int(x),
+        incx,
+    )
     cublasCheckStatus(status)
 
 
 cublasDtpmv.__doc__ = _TPMV_doc.substitute()
 
 _libcublas.cublasZtpmv_v2.restype = int
-_libcublas.cublasZtpmv_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasZtpmv_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasZtpmv(handle, uplo, trans, diag, n, AP, x, incx):
     """Matrix-vector product (double precision complex triangular packed)."""
     assert _libcublas
-    status = _libcublas.cublasZtpmv_v2(handle, _CUBLAS_FILL_MODE[uplo], _CUBLAS_OP[trans], _CUBLAS_DIAG[diag], n, int(AP), int(x), incx)
+    status = _libcublas.cublasZtpmv_v2(
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        _CUBLAS_OP[trans],
+        _CUBLAS_DIAG[diag],
+        n,
+        int(AP),
+        int(x),
+        incx,
+    )
     cublasCheckStatus(status)
 
 
@@ -3647,8 +5076,7 @@ cublasZtpmv.__doc__ = _TPMV_doc.substitute()
 
 
 # STPSV, DTPSV, CTPSV, ZTPSV
-_TPSV_doc = Template(
-    """
+_TPSV_doc = Template("""
     Solves a triangular packed system with one right-hand side.
 
     Solves the system `A*x = b`, where `A` is a triangular packed matrix.
@@ -3682,56 +5110,127 @@ _TPSV_doc = Template(
     References
     ----------
     `cublas<t>tpsv <http://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-tpsv>`_
-    """
-)
+    """)
 
 _libcublas.cublasStpsv_v2.restype = int
-_libcublas.cublasStpsv_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasStpsv_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasStpsv(handle, uplo, trans, diag, n, AP, x, incx):
     """Solves a triangular packed system (single precision real)."""
     assert _libcublas
-    status = _libcublas.cublasStpsv_v2(handle, _CUBLAS_FILL_MODE[uplo], _CUBLAS_OP[trans], _CUBLAS_DIAG[diag], n, int(AP), int(x), incx)
+    status = _libcublas.cublasStpsv_v2(
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        _CUBLAS_OP[trans],
+        _CUBLAS_DIAG[diag],
+        n,
+        int(AP),
+        int(x),
+        incx,
+    )
     cublasCheckStatus(status)
 
 
 cublasStpsv.__doc__ = _TPSV_doc.substitute()
 
 _libcublas.cublasDtpsv_v2.restype = int
-_libcublas.cublasDtpsv_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasDtpsv_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasDtpsv(handle, uplo, trans, diag, n, AP, x, incx):
     """Solves a triangular packed system (double precision real)."""
     assert _libcublas
-    status = _libcublas.cublasDtpsv_v2(handle, _CUBLAS_FILL_MODE[uplo], _CUBLAS_OP[trans], _CUBLAS_DIAG[diag], n, int(AP), int(x), incx)
+    status = _libcublas.cublasDtpsv_v2(
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        _CUBLAS_OP[trans],
+        _CUBLAS_DIAG[diag],
+        n,
+        int(AP),
+        int(x),
+        incx,
+    )
     cublasCheckStatus(status)
 
 
 cublasDtpsv.__doc__ = _TPSV_doc.substitute()
 
 _libcublas.cublasCtpsv_v2.restype = int
-_libcublas.cublasCtpsv_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasCtpsv_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasCtpsv(handle, uplo, trans, diag, n, AP, x, incx):
     """Solves a triangular packed system (single precision complex)."""
     assert _libcublas
-    status = _libcublas.cublasCtpsv_v2(handle, _CUBLAS_FILL_MODE[uplo], _CUBLAS_OP[trans], _CUBLAS_DIAG[diag], n, int(AP), int(x), incx)
+    status = _libcublas.cublasCtpsv_v2(
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        _CUBLAS_OP[trans],
+        _CUBLAS_DIAG[diag],
+        n,
+        int(AP),
+        int(x),
+        incx,
+    )
     cublasCheckStatus(status)
 
 
 cublasCtpsv.__doc__ = _TPSV_doc.substitute()
 
 _libcublas.cublasZtpsv_v2.restype = int
-_libcublas.cublasZtpsv_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasZtpsv_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasZtpsv(handle, uplo, trans, diag, n, AP, x, incx):
     """Solves a triangular packed system (double precision complex)."""
     assert _libcublas
-    status = _libcublas.cublasZtpsv_v2(handle, _CUBLAS_FILL_MODE[uplo], _CUBLAS_OP[trans], _CUBLAS_DIAG[diag], n, int(AP), int(x), incx)
+    status = _libcublas.cublasZtpsv_v2(
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        _CUBLAS_OP[trans],
+        _CUBLAS_DIAG[diag],
+        n,
+        int(AP),
+        int(x),
+        incx,
+    )
     cublasCheckStatus(status)
 
 
@@ -3739,8 +5238,7 @@ cublasZtpsv.__doc__ = _TPSV_doc.substitute()
 
 
 # STRMV, DTRMV, CTRMV, ZTRMV
-_TRMV_doc = Template(
-    """
+_TRMV_doc = Template("""
     Matrix-vector product for a triangular matrix.
 
     Computes the product `A*x`, where `A` is a triangular matrix.
@@ -3776,56 +5274,135 @@ _TRMV_doc = Template(
     References
     ----------
     `cublas<t>trmv <http://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-trmv>`_
-    """
-)
+    """)
 
 _libcublas.cublasStrmv_v2.restype = int
-_libcublas.cublasStrmv_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasStrmv_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasStrmv(handle, uplo, trans, diag, n, A, lda, x, inx):
     """Matrix-vector product (single precision real triangular)."""
     assert _libcublas
-    status = _libcublas.cublasStrmv_v2(handle, _CUBLAS_FILL_MODE[uplo], _CUBLAS_OP[trans], _CUBLAS_DIAG[diag], n, int(A), lda, int(x), inx)
+    status = _libcublas.cublasStrmv_v2(
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        _CUBLAS_OP[trans],
+        _CUBLAS_DIAG[diag],
+        n,
+        int(A),
+        lda,
+        int(x),
+        inx,
+    )
     cublasCheckStatus(status)
 
 
 cublasStrmv.__doc__ = _TRMV_doc.substitute()
 
 _libcublas.cublasCtrmv_v2.restype = int
-_libcublas.cublasCtrmv_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasCtrmv_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasCtrmv(handle, uplo, trans, diag, n, A, lda, x, incx):
     """Matrix-vector product (single precision complex triangular)."""
     assert _libcublas
-    status = _libcublas.cublasCtrmv_v2(handle, _CUBLAS_FILL_MODE[uplo], _CUBLAS_OP[trans], _CUBLAS_DIAG[diag], n, int(A), lda, int(x), incx)
+    status = _libcublas.cublasCtrmv_v2(
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        _CUBLAS_OP[trans],
+        _CUBLAS_DIAG[diag],
+        n,
+        int(A),
+        lda,
+        int(x),
+        incx,
+    )
     cublasCheckStatus(status)
 
 
 cublasCtrmv.__doc__ = _TRMV_doc.substitute()
 
 _libcublas.cublasDtrmv_v2.restype = int
-_libcublas.cublasDtrmv_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasDtrmv_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasDtrmv(handle, uplo, trans, diag, n, A, lda, x, inx):
     """Matrix-vector product (double precision real triangular)."""
     assert _libcublas
-    status = _libcublas.cublasDtrmv_v2(handle, _CUBLAS_FILL_MODE[uplo], _CUBLAS_OP[trans], _CUBLAS_DIAG[diag], n, int(A), lda, int(x), inx)
+    status = _libcublas.cublasDtrmv_v2(
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        _CUBLAS_OP[trans],
+        _CUBLAS_DIAG[diag],
+        n,
+        int(A),
+        lda,
+        int(x),
+        inx,
+    )
     cublasCheckStatus(status)
 
 
 cublasDtrmv.__doc__ = _TRMV_doc.substitute()
 
 _libcublas.cublasZtrmv_v2.restype = int
-_libcublas.cublasZtrmv_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasZtrmv_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasZtrmv(handle, uplo, trans, diag, n, A, lda, x, incx):
     """Matrix-vector product (double precision complex triangular)."""
     assert _libcublas
-    status = _libcublas.cublasZtrmv_v2(handle, _CUBLAS_FILL_MODE[uplo], _CUBLAS_OP[trans], _CUBLAS_DIAG[diag], n, int(A), lda, int(x), incx)
+    status = _libcublas.cublasZtrmv_v2(
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        _CUBLAS_OP[trans],
+        _CUBLAS_DIAG[diag],
+        n,
+        int(A),
+        lda,
+        int(x),
+        incx,
+    )
     cublasCheckStatus(status)
 
 
@@ -3833,8 +5410,7 @@ cublasZtrmv.__doc__ = _TRMV_doc.substitute()
 
 
 # STRSV, DTRSV, CTRSV, ZTRSV
-_TRSV_doc = Template(
-    """
+_TRSV_doc = Template("""
     Solves a triangular system with one right-hand side.
 
     Solves the system `A*x = b`, where `A` is a triangular matrix.
@@ -3870,56 +5446,135 @@ _TRSV_doc = Template(
     References
     ----------
     `cublas<t>trsv <http://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-trsv>`_
-    """
-)
+    """)
 
 _libcublas.cublasStrsv_v2.restype = int
-_libcublas.cublasStrsv_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasStrsv_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasStrsv(handle, uplo, trans, diag, n, A, lda, x, incx):
     """Solves a triangular system (single precision real)."""
     assert _libcublas
-    status = _libcublas.cublasStrsv_v2(handle, _CUBLAS_FILL_MODE[uplo], _CUBLAS_OP[trans], _CUBLAS_DIAG[diag], n, int(A), lda, int(x), incx)
+    status = _libcublas.cublasStrsv_v2(
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        _CUBLAS_OP[trans],
+        _CUBLAS_DIAG[diag],
+        n,
+        int(A),
+        lda,
+        int(x),
+        incx,
+    )
     cublasCheckStatus(status)
 
 
 cublasStrsv.__doc__ = _TRSV_doc.substitute()
 
 _libcublas.cublasDtrsv_v2.restype = int
-_libcublas.cublasDtrsv_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasDtrsv_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasDtrsv(handle, uplo, trans, diag, n, A, lda, x, incx):
     """Solves a triangular system (double precision real)."""
     assert _libcublas
-    status = _libcublas.cublasDtrsv_v2(handle, _CUBLAS_FILL_MODE[uplo], _CUBLAS_OP[trans], _CUBLAS_DIAG[diag], n, int(A), lda, int(x), incx)
+    status = _libcublas.cublasDtrsv_v2(
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        _CUBLAS_OP[trans],
+        _CUBLAS_DIAG[diag],
+        n,
+        int(A),
+        lda,
+        int(x),
+        incx,
+    )
     cublasCheckStatus(status)
 
 
 cublasDtrsv.__doc__ = _TRSV_doc.substitute()
 
 _libcublas.cublasCtrsv_v2.restype = int
-_libcublas.cublasCtrsv_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasCtrsv_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasCtrsv(handle, uplo, trans, diag, n, A, lda, x, incx):
     """Solves a triangular system (single precision complex)."""
     assert _libcublas
-    status = _libcublas.cublasCtrsv_v2(handle, _CUBLAS_FILL_MODE[uplo], _CUBLAS_OP[trans], _CUBLAS_DIAG[diag], n, int(A), lda, int(x), incx)
+    status = _libcublas.cublasCtrsv_v2(
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        _CUBLAS_OP[trans],
+        _CUBLAS_DIAG[diag],
+        n,
+        int(A),
+        lda,
+        int(x),
+        incx,
+    )
     cublasCheckStatus(status)
 
 
 cublasCtrsv.__doc__ = _TRSV_doc.substitute()
 
 _libcublas.cublasZtrsv_v2.restype = int
-_libcublas.cublasZtrsv_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasZtrsv_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasZtrsv(handle, uplo, trans, diag, n, A, lda, x, incx):
     """Solves a triangular system (double precision complex)."""
     assert _libcublas
-    status = _libcublas.cublasZtrsv_v2(handle, _CUBLAS_FILL_MODE[uplo], _CUBLAS_OP[trans], _CUBLAS_DIAG[diag], n, int(A), lda, int(x), incx)
+    status = _libcublas.cublasZtrsv_v2(
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        _CUBLAS_OP[trans],
+        _CUBLAS_DIAG[diag],
+        n,
+        int(A),
+        lda,
+        int(x),
+        incx,
+    )
     cublasCheckStatus(status)
 
 
@@ -3927,8 +5582,7 @@ cublasZtrsv.__doc__ = _TRSV_doc.substitute()
 
 
 # HEMV, ZHEMV
-_HEMV_doc = Template(
-    """
+_HEMV_doc = Template("""
     Matrix-vector product for a Hermitian matrix.
 
     Computes the product `alpha*A*x + beta*y`, where `A` is a Hermitian matrix.
@@ -3963,8 +5617,7 @@ _HEMV_doc = Template(
     References
     ----------
     `cublas<t>hemv <http://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-hemv>`_
-    """
-)
+    """)
 
 _libcublas.cublasChemv_v2.restype = int
 _libcublas.cublasChemv_v2.argtypes = [
@@ -3986,7 +5639,17 @@ def cublasChemv(handle, uplo, n, alpha, A, lda, x, incx, beta, y, incy):
     """Matrix-vector product (single precision complex Hermitian)."""
     assert _libcublas
     status = _libcublas.cublasChemv_v2(
-        handle, _CUBLAS_FILL_MODE[uplo], n, ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)), int(A), lda, int(x), incx, ctypes.byref(cuda.cuFloatComplex(beta.real, beta.imag)), int(y), incy
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        n,
+        ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)),
+        int(A),
+        lda,
+        int(x),
+        incx,
+        ctypes.byref(cuda.cuFloatComplex(beta.real, beta.imag)),
+        int(y),
+        incy,
     )
     cublasCheckStatus(status)
 
@@ -4032,8 +5695,7 @@ cublasZhemv.__doc__ = _HEMV_doc.substitute(a_type="numpy.complex128")
 
 
 # CHBMV, ZHBMV
-_HBMV_doc = Template(
-    """
+_HBMV_doc = Template("""
     Matrix-vector product for a Hermitian banded matrix.
 
     Computes the product `alpha*A*x + beta*y`, where `A` is a Hermitian banded
@@ -4071,8 +5733,7 @@ _HBMV_doc = Template(
     References
     ----------
     `cublas<t>hbmv <http://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-hbmv>`_
-    """
-)
+    """)
 
 _libcublas.cublasChbmv_v2.restype = int
 _libcublas.cublasChbmv_v2.argtypes = [
@@ -4154,8 +5815,7 @@ cublasZhbmv.__doc__ = _HBMV_doc.substitute(a_type="numpy.complex128")
 
 
 # CHPMV, ZHPMV
-_HPMV_doc = Template(
-    """
+_HPMV_doc = Template("""
     Matrix-vector product for a Hermitian packed matrix.
 
     Computes the product `alpha*AP*x + beta*y`, where `AP` is a Hermitian packed
@@ -4189,18 +5849,37 @@ _HPMV_doc = Template(
     References
     ----------
     `cublas<t>hpmv <http://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-tpmv>`_
-    """
-)
+    """)
 
 _libcublas.cublasChpmv_v2.restype = int
-_libcublas.cublasChpmv_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasChpmv_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasChpmv(handle, uplo, n, alpha, AP, x, incx, beta, y, incy):
     """Matrix-vector product (single precision complex Hermitian packed)."""
     assert _libcublas
     status = _libcublas.cublasChpmv_v2(
-        handle, _CUBLAS_FILL_MODE[uplo], n, ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)), int(AP), int(x), incx, ctypes.byref(cuda.cuFloatComplex(beta.real, beta.imag)), int(y), incy
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        n,
+        ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)),
+        int(AP),
+        int(x),
+        incx,
+        ctypes.byref(cuda.cuFloatComplex(beta.real, beta.imag)),
+        int(y),
+        incy,
     )
     cublasCheckStatus(status)
 
@@ -4208,14 +5887,34 @@ def cublasChpmv(handle, uplo, n, alpha, AP, x, incx, beta, y, incy):
 cublasChpmv.__doc__ = _HPMV_doc.substitute(a_type="numpy.complex64")
 
 _libcublas.cublasZhpmv_v2.restype = int
-_libcublas.cublasZhpmv_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasZhpmv_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasZhpmv(handle, uplo, n, alpha, AP, x, incx, beta, y, incy):
     """Matrix-vector product (double precision complex Hermitian packed)."""
     assert _libcublas
     status = _libcublas.cublasZhpmv_v2(
-        handle, _CUBLAS_FILL_MODE[uplo], n, ctypes.byref(cuda.cuDoubleComplex(alpha.real, alpha.imag)), int(AP), int(x), incx, ctypes.byref(cuda.cuDoubleComplex(beta.real, beta.imag)), int(y), incy
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        n,
+        ctypes.byref(cuda.cuDoubleComplex(alpha.real, alpha.imag)),
+        int(AP),
+        int(x),
+        incx,
+        ctypes.byref(cuda.cuDoubleComplex(beta.real, beta.imag)),
+        int(y),
+        incy,
     )
     cublasCheckStatus(status)
 
@@ -4224,8 +5923,7 @@ cublasZhpmv.__doc__ = _HPMV_doc.substitute(a_type="numpy.complex128")
 
 
 # CHER, ZHER
-_HER_doc = Template(
-    """
+_HER_doc = Template("""
     Rank-1 operation on a Hermitian matrix.
 
     Updates the Hermitian matrix `A` with a rank-1 operation:
@@ -4255,30 +5953,51 @@ _HER_doc = Template(
     References
     ----------
     `cublas<t>her <http://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-her>`_
-    """
-)
+    """)
 
 _libcublas.cublasCher_v2.restype = int
-_libcublas.cublasCher_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasCher_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasCher(handle, uplo, n, alpha, x, incx, A, lda):
     """Rank-1 operation (single precision complex Hermitian)."""
     assert _libcublas
-    status = _libcublas.cublasCher_v2(handle, _CUBLAS_FILL_MODE[uplo], n, alpha, int(x), incx, int(A), lda)
+    status = _libcublas.cublasCher_v2(
+        handle, _CUBLAS_FILL_MODE[uplo], n, alpha, int(x), incx, int(A), lda
+    )
     cublasCheckStatus(status)
 
 
 cublasCher.__doc__ = _HER_doc.substitute(a_type="numpy.float32")
 
 _libcublas.cublasZher_v2.restype = int
-_libcublas.cublasZher_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasZher_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasZher(handle, uplo, n, alpha, x, incx, A, lda):
     """Rank-1 operation (double precision complex Hermitian)."""
     assert _libcublas
-    status = _libcublas.cublasZher_v2(handle, _CUBLAS_FILL_MODE[uplo], n, alpha, int(x), incx, int(A), lda)
+    status = _libcublas.cublasZher_v2(
+        handle, _CUBLAS_FILL_MODE[uplo], n, alpha, int(x), incx, int(A), lda
+    )
     cublasCheckStatus(status)
 
 
@@ -4286,8 +6005,7 @@ cublasZher.__doc__ = _HER_doc.substitute(a_type="numpy.float64")
 
 
 # CHER2, ZHER2
-_HER2_doc = Template(
-    """
+_HER2_doc = Template("""
     Rank-2 operation on a Hermitian matrix.
 
     Updates the Hermitian matrix `A` with a rank-2 operation:
@@ -4321,30 +6039,73 @@ _HER2_doc = Template(
     References
     ----------
     `cublas<t>her2 <http://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-her2>`_
-    """
-)
+    """)
 
 _libcublas.cublasCher2_v2.restype = int
-_libcublas.cublasCher2_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasCher2_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasCher2(handle, uplo, n, alpha, x, incx, y, incy, A, lda):
     """Rank-2 operation (single precision complex Hermitian)."""
     assert _libcublas
-    status = _libcublas.cublasCher2_v2(handle, _CUBLAS_FILL_MODE[uplo], n, ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)), int(x), incx, int(y), incy, int(A), lda)
+    status = _libcublas.cublasCher2_v2(
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        n,
+        ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)),
+        int(x),
+        incx,
+        int(y),
+        incy,
+        int(A),
+        lda,
+    )
     cublasCheckStatus(status)
 
 
 cublasCher2.__doc__ = _HER2_doc.substitute(a_type="numpy.complex64")
 
 _libcublas.cublasZher2_v2.restype = int
-_libcublas.cublasZher2_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
+_libcublas.cublasZher2_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cublasZher2(handle, uplo, n, alpha, x, incx, y, incy, A, lda):
     """Rank-2 operation (double precision complex Hermitian)."""
     assert _libcublas
-    status = _libcublas.cublasZher2_v2(handle, _CUBLAS_FILL_MODE[uplo], n, ctypes.byref(cuda.cuDoubleComplex(alpha.real, alpha.imag)), int(x), incx, int(y), incy, int(A), lda)
+    status = _libcublas.cublasZher2_v2(
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        n,
+        ctypes.byref(cuda.cuDoubleComplex(alpha.real, alpha.imag)),
+        int(x),
+        incx,
+        int(y),
+        incy,
+        int(A),
+        lda,
+    )
     cublasCheckStatus(status)
 
 
@@ -4352,8 +6113,7 @@ cublasZher2.__doc__ = _HER2_doc.substitute(a_type="numpy.complex128")
 
 
 # CHPR, ZHPR
-_HPR_doc = Template(
-    """
+_HPR_doc = Template("""
     Rank-1 operation on a Hermitian packed matrix.
 
     Updates the Hermitian packed matrix `AP` with a rank-1 operation:
@@ -4381,30 +6141,61 @@ _HPR_doc = Template(
     References
     ----------
     `cublas<t>hpr <http://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-hpr>`_
-    """
-)
+    """)
 
 _libcublas.cublasChpr_v2.restype = int
-_libcublas.cublasChpr_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p]
+_libcublas.cublasChpr_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+]
 
 
 def cublasChpr(handle, uplo, n, alpha, x, incx, AP):
     """Rank-1 operation (single precision complex Hermitian packed)."""
     assert _libcublas
-    status = _libcublas.cublasChpr_v2(handle, _CUBLAS_FILL_MODE[uplo], n, ctypes.byref(ctypes.c_float(alpha)), int(x), incx, int(AP))
+    status = _libcublas.cublasChpr_v2(
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        n,
+        ctypes.byref(ctypes.c_float(alpha)),
+        int(x),
+        incx,
+        int(AP),
+    )
     cublasCheckStatus(status)
 
 
 cublasChpr.__doc__ = _HPR_doc.substitute(a_type="numpy.float32")
 
 _libcublas.cublasZhpr_v2.restype = int
-_libcublas.cublasZhpr_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p]
+_libcublas.cublasZhpr_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+]
 
 
 def cublasZhpr(handle, uplo, n, alpha, x, incx, AP):
     """Rank-1 operation (double precision complex Hermitian packed)."""
     assert _libcublas
-    status = _libcublas.cublasZhpr_v2(handle, _CUBLAS_FILL_MODE[uplo], n, ctypes.byref(ctypes.c_double(alpha)), int(x), incx, int(AP))
+    status = _libcublas.cublasZhpr_v2(
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        n,
+        ctypes.byref(ctypes.c_double(alpha)),
+        int(x),
+        incx,
+        int(AP),
+    )
     cublasCheckStatus(status)
 
 
@@ -4412,8 +6203,7 @@ cublasZhpr.__doc__ = _HPR_doc.substitute(a_type="numpy.float64")
 
 
 # CHPR2, ZHPR2
-_HPR2_doc = Template(
-    """
+_HPR2_doc = Template("""
     Rank-2 operation on a Hermitian packed matrix.
 
     Updates the Hermitian packed matrix `AP` with a rank-2 operation:
@@ -4445,30 +6235,69 @@ _HPR2_doc = Template(
     References
     ----------
     `cublas<t>hpr2 <http://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-hpr2>`_
-    """
-)
+    """)
 
 _libcublas.cublasChpr2.restype = int
-_libcublas.cublasChpr2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p]
+_libcublas.cublasChpr2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+]
 
 
 def cublasChpr2(handle, uplo, n, alpha, x, incx, y, incy, AP):
     """Rank-2 operation (single precision complex Hermitian packed)."""
     assert _libcublas
-    status = _libcublas.cublasChpr2_v2(handle, _CUBLAS_FILL_MODE[uplo], n, ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)), int(x), incx, int(y), incy, int(AP))
+    status = _libcublas.cublasChpr2_v2(
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        n,
+        ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)),
+        int(x),
+        incx,
+        int(y),
+        incy,
+        int(AP),
+    )
     cublasCheckStatus(status)
 
 
 cublasChpr2.__doc__ = _HPR2_doc.substitute(a_type="numpy.complex64")
 
 _libcublas.cublasZhpr2_v2.restype = int
-_libcublas.cublasZhpr2_v2.argtypes = [_types.handle, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p]
+_libcublas.cublasZhpr2_v2.argtypes = [
+    _types.handle,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+]
 
 
 def cublasZhpr2(handle, uplo, n, alpha, x, incx, y, incy, AP):
     """Rank-2 operation (double precision complex Hermitian packed)."""
     assert _libcublas
-    status = _libcublas.cublasZhpr2_v2(handle, _CUBLAS_FILL_MODE[uplo], n, ctypes.byref(cuda.cuDoubleComplex(alpha.real, alpha.imag)), int(x), incx, int(y), incy, int(AP))
+    status = _libcublas.cublasZhpr2_v2(
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        n,
+        ctypes.byref(cuda.cuDoubleComplex(alpha.real, alpha.imag)),
+        int(x),
+        incx,
+        int(y),
+        incy,
+        int(AP),
+    )
     cublasCheckStatus(status)
 
 
@@ -4476,8 +6305,7 @@ cublasZhpr2.__doc__ = _HPR2_doc.substitute(a_type="numpy.complex128")
 
 
 # SGEMM, CGEMM, DGEMM, ZGEMM
-_GEMM_doc = Template(
-    """
+_GEMM_doc = Template("""
     Matrix-matrix product.
 
     Computes the product `alpha*op(A)*B + beta*C`, where `op(A)` is `A` or `A^T`
@@ -4523,8 +6351,7 @@ _GEMM_doc = Template(
     References
     ----------
     `cublas<t>gemm <http://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-gemm>`_
-    """
-)
+    """)
 
 _libcublas.cublasSgemm_v2.restype = int
 _libcublas.cublasSgemm_v2.argtypes = [
@@ -4549,7 +6376,20 @@ def cublasSgemm(handle, transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C,
     """Matrix-matrix product (single precision real)."""
     assert _libcublas
     status = _libcublas.cublasSgemm_v2(
-        handle, _CUBLAS_OP[transa], _CUBLAS_OP[transb], m, n, k, ctypes.byref(ctypes.c_float(alpha)), int(A), lda, int(B), ldb, ctypes.byref(ctypes.c_float(beta)), int(C), ldc
+        handle,
+        _CUBLAS_OP[transa],
+        _CUBLAS_OP[transb],
+        m,
+        n,
+        k,
+        ctypes.byref(ctypes.c_float(alpha)),
+        int(A),
+        lda,
+        int(B),
+        ldb,
+        ctypes.byref(ctypes.c_float(beta)),
+        int(C),
+        ldc,
     )
     cublasCheckStatus(status)
 
@@ -4622,7 +6462,20 @@ def cublasDgemm(handle, transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C,
     """Matrix-matrix product (double precision real)."""
     assert _libcublas
     status = _libcublas.cublasDgemm_v2(
-        handle, _CUBLAS_OP[transa], _CUBLAS_OP[transb], m, n, k, ctypes.byref(ctypes.c_double(alpha)), int(A), lda, int(B), ldb, ctypes.byref(ctypes.c_double(beta)), int(C), ldc
+        handle,
+        _CUBLAS_OP[transa],
+        _CUBLAS_OP[transb],
+        m,
+        n,
+        k,
+        ctypes.byref(ctypes.c_double(alpha)),
+        int(A),
+        lda,
+        int(B),
+        ldb,
+        ctypes.byref(ctypes.c_double(beta)),
+        int(C),
+        ldc,
     )
     cublasCheckStatus(status)
 
@@ -4674,8 +6527,7 @@ cublasZgemm.__doc__ = _GEMM_doc.substitute(a_type="numpy.complex128")
 
 
 # SSYMM, DSYMM, CSYMM, ZSYMM
-_SYMM_doc = Template(
-    """
+_SYMM_doc = Template("""
     Matrix-matrix product for a symmetric matrix.
 
     Computes the product `alpha*op(A)*B + beta*C`, where `A` is a symmetric matrix.
@@ -4718,8 +6570,7 @@ _SYMM_doc = Template(
     References
     ----------
     `cublas<t>symm <http://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-symm>`_
-    """
-)
+    """)
 
 _libcublas.cublasSsymm_v2.restype = int
 _libcublas.cublasSsymm_v2.argtypes = [
@@ -4743,7 +6594,19 @@ def cublasSsymm(handle, side, uplo, m, n, alpha, A, lda, B, ldb, beta, C, ldc):
     """Matrix-matrix product (single precision real symmetric)."""
     assert _libcublas
     status = _libcublas.cublasSsymm_v2(
-        handle, _CUBLAS_SIDE_MODE[side], _CUBLAS_FILL_MODE[uplo], m, n, ctypes.byref(ctypes.c_float(alpha)), int(A), lda, ctypes.byref(ctypes.c_float(beta)), int(B), ldb, int(C), ldc
+        handle,
+        _CUBLAS_SIDE_MODE[side],
+        _CUBLAS_FILL_MODE[uplo],
+        m,
+        n,
+        ctypes.byref(ctypes.c_float(alpha)),
+        int(A),
+        lda,
+        ctypes.byref(ctypes.c_float(beta)),
+        int(B),
+        ldb,
+        int(C),
+        ldc,
     )
     cublasCheckStatus(status)
 
@@ -4772,7 +6635,19 @@ def cublasDsymm(handle, side, uplo, m, n, alpha, A, lda, B, ldb, beta, C, ldc):
     """Matrix-matrix product (double precision real symmetric)."""
     assert _libcublas
     status = _libcublas.cublasDsymm_v2(
-        handle, _CUBLAS_SIDE_MODE[side], _CUBLAS_FILL_MODE[uplo], m, n, ctypes.byref(ctypes.c_double(alpha)), int(A), lda, ctypes.byref(ctypes.c_double(beta)), int(B), ldb, int(C), ldc
+        handle,
+        _CUBLAS_SIDE_MODE[side],
+        _CUBLAS_FILL_MODE[uplo],
+        m,
+        n,
+        ctypes.byref(ctypes.c_double(alpha)),
+        int(A),
+        lda,
+        ctypes.byref(ctypes.c_double(beta)),
+        int(B),
+        ldb,
+        int(C),
+        ldc,
     )
     cublasCheckStatus(status)
 
@@ -4863,8 +6738,7 @@ cublasZsymm.__doc__ = _SYMM_doc.substitute(a_type="numpy.complex128")
 
 
 # SSYRK, DSYRK, CSYRK, ZSYRK
-_SYRK_doc = Template(
-    """
+_SYRK_doc = Template("""
     Rank-k operation on a symmetric matrix.
 
     Updates the symmetric matrix `C` with a rank-k operation:
@@ -4904,8 +6778,7 @@ _SYRK_doc = Template(
     References
     ----------
     `cublas<t>syrk <http://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-syrk>`_
-    """
-)
+    """)
 
 _libcublas.cublasSsyrk_v2.restype = int
 _libcublas.cublasSsyrk_v2.argtypes = [
@@ -4926,7 +6799,19 @@ _libcublas.cublasSsyrk_v2.argtypes = [
 def cublasSsyrk(handle, uplo, trans, n, k, alpha, A, lda, beta, C, ldc):
     """Rank-k operation (single precision real symmetric)."""
     assert _libcublas
-    status = _libcublas.cublasSsyrk_v2(handle, _CUBLAS_FILL_MODE[uplo], _CUBLAS_OP[trans], n, k, ctypes.byref(ctypes.c_float(alpha)), int(A), lda, ctypes.byref(ctypes.c_float(beta)), int(C), ldc)
+    status = _libcublas.cublasSsyrk_v2(
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        _CUBLAS_OP[trans],
+        n,
+        k,
+        ctypes.byref(ctypes.c_float(alpha)),
+        int(A),
+        lda,
+        ctypes.byref(ctypes.c_float(beta)),
+        int(C),
+        ldc,
+    )
     cublasCheckStatus(status)
 
 
@@ -4951,7 +6836,19 @@ _libcublas.cublasDsyrk_v2.argtypes = [
 def cublasDsyrk(handle, uplo, trans, n, k, alpha, A, lda, beta, C, ldc):
     """Rank-k operation (double precision real symmetric)."""
     assert _libcublas
-    status = _libcublas.cublasDsyrk_v2(handle, _CUBLAS_FILL_MODE[uplo], _CUBLAS_OP[trans], n, k, ctypes.byref(ctypes.c_double(alpha)), int(A), lda, ctypes.byref(ctypes.c_double(beta)), int(C), ldc)
+    status = _libcublas.cublasDsyrk_v2(
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        _CUBLAS_OP[trans],
+        n,
+        k,
+        ctypes.byref(ctypes.c_double(alpha)),
+        int(A),
+        lda,
+        ctypes.byref(ctypes.c_double(beta)),
+        int(C),
+        ldc,
+    )
     cublasCheckStatus(status)
 
 
@@ -5033,8 +6930,7 @@ cublasZsyrk.__doc__ = _SYRK_doc.substitute(a_type="numpy.complex128")
 
 
 # SSYR2K, DSYR2K, CSYR2K, ZSYR2K
-_SYR2K_doc = Template(
-    """
+_SYR2K_doc = Template("""
     Rank-2k operation on a symmetric matrix.
 
     Updates the symmetric matrix `C` with a rank-2k operation:
@@ -5078,8 +6974,7 @@ _SYR2K_doc = Template(
     References
     ----------
     `cublas<t>syr2k <http://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-syr2k>`_
-    """
-)
+    """)
 
 _libcublas.cublasSsyr2k_v2.restype = int
 _libcublas.cublasSsyr2k_v2.argtypes = [
@@ -5103,7 +6998,19 @@ def cublasSsyr2k(handle, uplo, trans, n, k, alpha, A, lda, B, ldb, beta, C, ldc)
     """Rank-2k operation (single precision real symmetric)."""
     assert _libcublas
     status = _libcublas.cublasSsyr2k_v2(
-        handle, _CUBLAS_FILL_MODE[uplo], _CUBLAS_OP[trans], n, k, ctypes.byref(ctypes.c_float(alpha)), int(A), lda, int(B), ldb, ctypes.byref(ctypes.c_float(beta)), int(C), ldc
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        _CUBLAS_OP[trans],
+        n,
+        k,
+        ctypes.byref(ctypes.c_float(alpha)),
+        int(A),
+        lda,
+        int(B),
+        ldb,
+        ctypes.byref(ctypes.c_float(beta)),
+        int(C),
+        ldc,
     )
     cublasCheckStatus(status)
 
@@ -5132,7 +7039,19 @@ def cublasDsyr2k(handle, uplo, trans, n, k, alpha, A, lda, B, ldb, beta, C, ldc)
     """Rank-2k operation (double precision real symmetric)."""
     assert _libcublas
     status = _libcublas.cublasDsyr2k_v2(
-        handle, _CUBLAS_FILL_MODE[uplo], _CUBLAS_OP[trans], n, k, ctypes.byref(ctypes.c_double(alpha)), int(A), lda, int(B), ldb, ctypes.byref(ctypes.c_double(beta)), int(C), ldc
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        _CUBLAS_OP[trans],
+        n,
+        k,
+        ctypes.byref(ctypes.c_double(alpha)),
+        int(A),
+        lda,
+        int(B),
+        ldb,
+        ctypes.byref(ctypes.c_double(beta)),
+        int(C),
+        ldc,
     )
     cublasCheckStatus(status)
 
@@ -5224,8 +7143,7 @@ cublasZsyr2k.__doc__ = _SYR2K_doc.substitute(a_type="numpy.complex128")
 
 
 # STRMM, DTRMM, CTRMM, ZTRMM
-_TRMM_doc = Template(
-    """
+_TRMM_doc = Template("""
     Matrix-matrix multiplication with a triangular matrix.
 
     Computes:
@@ -5278,8 +7196,7 @@ _TRMM_doc = Template(
     References
     ----------
     `cublas<t>trmm <http://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-trmm>`_
-    """
-)
+    """)
 
 _libcublas.cublasStrmm_v2.restype = int
 _libcublas.cublasStrmm_v2.argtypes = [
@@ -5304,7 +7221,20 @@ def cublasStrmm(handle, side, uplo, trans, diag, m, n, alpha, A, lda, B, ldb, C,
     """Matrix-matrix product for real single precision triangular matrix"""
     assert _libcublas
     status = _libcublas.cublasStrmm_v2(
-        handle, _CUBLAS_SIDE_MODE[side], _CUBLAS_FILL_MODE[uplo], _CUBLAS_OP[trans], _CUBLAS_DIAG[diag], m, n, ctypes.byref(ctypes.c_float(alpha)), int(A), lda, int(B), ldb, int(C), ldc
+        handle,
+        _CUBLAS_SIDE_MODE[side],
+        _CUBLAS_FILL_MODE[uplo],
+        _CUBLAS_OP[trans],
+        _CUBLAS_DIAG[diag],
+        m,
+        n,
+        ctypes.byref(ctypes.c_float(alpha)),
+        int(A),
+        lda,
+        int(B),
+        ldb,
+        int(C),
+        ldc,
     )
     cublasCheckStatus(status)
 
@@ -5334,7 +7264,20 @@ def cublasDtrmm(handle, side, uplo, trans, diag, m, n, alpha, A, lda, B, ldb, C,
     """Matrix-matrix product for real double precision triangular matrix"""
     assert _libcublas
     status = _libcublas.cublasDtrmm_v2(
-        handle, _CUBLAS_SIDE_MODE[side], _CUBLAS_FILL_MODE[uplo], _CUBLAS_OP[trans], _CUBLAS_DIAG[diag], m, n, ctypes.byref(ctypes.c_double(alpha)), int(A), lda, int(B), ldb, int(C), ldc
+        handle,
+        _CUBLAS_SIDE_MODE[side],
+        _CUBLAS_FILL_MODE[uplo],
+        _CUBLAS_OP[trans],
+        _CUBLAS_DIAG[diag],
+        m,
+        n,
+        ctypes.byref(ctypes.c_double(alpha)),
+        int(A),
+        lda,
+        int(B),
+        ldb,
+        int(C),
+        ldc,
     )
     cublasCheckStatus(status)
 
@@ -5428,8 +7371,7 @@ def cublasZtrmm(handle, side, uplo, trans, diag, m, n, alpha, A, lda, B, ldb, C,
 cublasZtrmm.__doc__ = _TRMM_doc.substitute(a_type="numpy.complex128")
 
 # STRSM, DTRSM, CTRSM, ZTRSM
-_TRSM_doc = Template(
-    """
+_TRSM_doc = Template("""
     Solve a triangular system with multiple right-hand sides.
 
     Solves:
@@ -5478,8 +7420,7 @@ _TRSM_doc = Template(
     References
     ----------
     `cublas<t>trsm <http://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-trsm>`_
-    """
-)
+    """)
 
 _libcublas.cublasStrsm_v2.restype = int
 _libcublas.cublasStrsm_v2.argtypes = [
@@ -5502,7 +7443,18 @@ def cublasStrsm(handle, side, uplo, trans, diag, m, n, alpha, A, lda, B, ldb):
     """Solve a real single precision triangular system with multiple right-hand sides"""
     assert _libcublas
     status = _libcublas.cublasStrsm_v2(
-        handle, _CUBLAS_SIDE_MODE[side], _CUBLAS_FILL_MODE[uplo], _CUBLAS_OP[trans], _CUBLAS_DIAG[diag], m, n, ctypes.byref(ctypes.c_float(alpha)), int(A), lda, int(B), ldb
+        handle,
+        _CUBLAS_SIDE_MODE[side],
+        _CUBLAS_FILL_MODE[uplo],
+        _CUBLAS_OP[trans],
+        _CUBLAS_DIAG[diag],
+        m,
+        n,
+        ctypes.byref(ctypes.c_float(alpha)),
+        int(A),
+        lda,
+        int(B),
+        ldb,
     )
     cublasCheckStatus(status)
 
@@ -5530,7 +7482,18 @@ def cublasDtrsm(handle, side, uplo, trans, diag, m, n, alpha, A, lda, B, ldb):
     """Solve a real double precision triangular system with multiple right-hand sides"""
     assert _libcublas
     status = _libcublas.cublasDtrsm_v2(
-        handle, _CUBLAS_SIDE_MODE[side], _CUBLAS_FILL_MODE[uplo], _CUBLAS_OP[trans], _CUBLAS_DIAG[diag], m, n, ctypes.byref(ctypes.c_double(alpha)), int(A), lda, int(B), ldb
+        handle,
+        _CUBLAS_SIDE_MODE[side],
+        _CUBLAS_FILL_MODE[uplo],
+        _CUBLAS_OP[trans],
+        _CUBLAS_DIAG[diag],
+        m,
+        n,
+        ctypes.byref(ctypes.c_double(alpha)),
+        int(A),
+        lda,
+        int(B),
+        ldb,
     )
     cublasCheckStatus(status)
 
@@ -5558,7 +7521,18 @@ def cublasCtrsm(handle, side, uplo, trans, diag, m, n, alpha, A, lda, B, ldb):
     """Solve a complex single precision triangular system with multiple right-hand sides"""
     assert _libcublas
     status = _libcublas.cublasCtrsm_v2(
-        handle, _CUBLAS_SIDE_MODE[side], _CUBLAS_FILL_MODE[uplo], _CUBLAS_OP[trans], _CUBLAS_DIAG[diag], m, n, ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)), int(A), lda, int(B), ldb
+        handle,
+        _CUBLAS_SIDE_MODE[side],
+        _CUBLAS_FILL_MODE[uplo],
+        _CUBLAS_OP[trans],
+        _CUBLAS_DIAG[diag],
+        m,
+        n,
+        ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)),
+        int(A),
+        lda,
+        int(B),
+        ldb,
     )
     cublasCheckStatus(status)
 
@@ -5586,7 +7560,18 @@ def cublasZtrsm(handle, side, uplo, trans, diag, m, n, alpha, A, lda, B, ldb):
     """Solve complex double precision triangular system with multiple right-hand sides"""
     assert _libcublas
     status = _libcublas.cublasZtrsm_v2(
-        handle, _CUBLAS_SIDE_MODE[side], _CUBLAS_FILL_MODE[uplo], _CUBLAS_OP[trans], _CUBLAS_DIAG[diag], m, n, ctypes.byref(cuda.cuDoubleComplex(alpha.real, alpha.imag)), int(A), lda, int(B), ldb
+        handle,
+        _CUBLAS_SIDE_MODE[side],
+        _CUBLAS_FILL_MODE[uplo],
+        _CUBLAS_OP[trans],
+        _CUBLAS_DIAG[diag],
+        m,
+        n,
+        ctypes.byref(cuda.cuDoubleComplex(alpha.real, alpha.imag)),
+        int(A),
+        lda,
+        int(B),
+        ldb,
     )
     cublasCheckStatus(status)
 
@@ -5594,8 +7579,7 @@ def cublasZtrsm(handle, side, uplo, trans, diag, m, n, alpha, A, lda, B, ldb):
 cublasZtrsm.__doc__ = _TRSM_doc.substitute(a_type="numpy.complex128")
 
 # CHEMM, ZHEMM
-_HEMM_doc = Template(
-    """
+_HEMM_doc = Template("""
     Matrix-matrix multiplication with a Hermitian matrix.
 
     Computes:
@@ -5642,8 +7626,7 @@ _HEMM_doc = Template(
     References
     ----------
     `cublas<t>hemm <http://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-hemm>`_
-    """
-)
+    """)
 
 _libcublas.cublasChemm_v2.restype = int
 _libcublas.cublasChemm_v2.argtypes = [
@@ -5728,8 +7711,7 @@ def cublasZhemm(handle, side, uplo, m, n, alpha, A, lda, B, ldb, beta, C, ldc):
 cublasZhemm.__doc__ = _HEMM_doc.substitute(a_type="numpy.complex128")
 
 # CHERK, ZHERK
-_HERK_doc = Template(
-    """
+_HERK_doc = Template("""
     Rank-k update of a Hermitian matrix.
 
     Updates the Hermitian matrix `C`:
@@ -5769,8 +7751,7 @@ _HERK_doc = Template(
     References
     ----------
     `cublas<t>herk <http://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-herk>`_
-    """
-)
+    """)
 
 _libcublas.cublasCherk_v2.restype = int
 _libcublas.cublasCherk_v2.argtypes = [
@@ -5791,7 +7772,19 @@ _libcublas.cublasCherk_v2.argtypes = [
 def cublasCherk(handle, uplo, trans, n, k, alpha, A, lda, beta, C, ldc):
     """Rank-k operation on single precision Hermitian matrix."""
     assert _libcublas
-    status = _libcublas.cublasCherk_v2(handle, _CUBLAS_FILL_MODE[uplo], _CUBLAS_OP[trans], n, k, ctypes.byref(ctypes.c_float(alpha)), int(A), lda, ctypes.byref(ctypes.c_float(beta)), int(C), ldc)
+    status = _libcublas.cublasCherk_v2(
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        _CUBLAS_OP[trans],
+        n,
+        k,
+        ctypes.byref(ctypes.c_float(alpha)),
+        int(A),
+        lda,
+        ctypes.byref(ctypes.c_float(beta)),
+        int(C),
+        ldc,
+    )
     cublasCheckStatus(status)
 
 
@@ -5816,15 +7809,26 @@ _libcublas.cublasZherk_v2.argtypes = [
 def cublasZherk(handle, uplo, trans, n, k, alpha, A, lda, beta, C, ldc):
     """Rank-k operation on double precision Hermitian matrix."""
     assert _libcublas
-    status = _libcublas.cublasZherk_v2(handle, _CUBLAS_FILL_MODE[uplo], _CUBLAS_OP[trans], n, k, ctypes.byref(ctypes.c_double(alpha)), int(A), lda, ctypes.byref(ctypes.c_double(beta)), int(C), ldc)
+    status = _libcublas.cublasZherk_v2(
+        handle,
+        _CUBLAS_FILL_MODE[uplo],
+        _CUBLAS_OP[trans],
+        n,
+        k,
+        ctypes.byref(ctypes.c_double(alpha)),
+        int(A),
+        lda,
+        ctypes.byref(ctypes.c_double(beta)),
+        int(C),
+        ldc,
+    )
     cublasCheckStatus(status)
 
 
 cublasZherk.__doc__ = _HERK_doc.substitute(scalar_type="numpy.float64")
 
 # CHER2K, ZHER2K
-_HER2K_doc = Template(
-    """
+_HER2K_doc = Template("""
     Rank-2k update of a Hermitian matrix.
 
     Updates the Hermitian matrix `C`:
@@ -5868,8 +7872,7 @@ _HER2K_doc = Template(
     References
     ----------
     `cublas<t>her2k <http://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-her2k>`_
-    """
-)
+    """)
 
 _libcublas.cublasCher2k_v2.restype = int
 _libcublas.cublasCher2k_v2.argtypes = [
@@ -5963,8 +7966,7 @@ cublasZher2k.__doc__ = _HER2K_doc.substitute(
 
 
 # SGEAM, DGEAM, CGEAM, ZGEAM
-_GEAM_doc = Template(
-    """
+_GEAM_doc = Template("""
     Matrix-matrix addition/transposition (${precision} ${real}).
 
     Computes the sum of two ${precision} ${real} scaled and possibly (conjugate)
@@ -6030,8 +8032,7 @@ _GEAM_doc = Template(
     References
     ----------
     `cublas<t>geam <http://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-geam>`_
-"""
-)
+""")
 
 if _cublas_version >= 5000:
     _libcublas.cublasSgeam.restype = int
@@ -6057,7 +8058,19 @@ def cublasSgeam(handle, transa, transb, m, n, alpha, A, lda, beta, B, ldb, C, ld
     """Real matrix-matrix addition/transposition."""
     assert _libcublas
     status = _libcublas.cublasSgeam(
-        handle, _CUBLAS_OP[transa], _CUBLAS_OP[transb], m, n, ctypes.byref(ctypes.c_float(alpha)), int(A), lda, ctypes.byref(ctypes.c_float(beta)), int(B), ldb, int(C), ldc
+        handle,
+        _CUBLAS_OP[transa],
+        _CUBLAS_OP[transb],
+        m,
+        n,
+        ctypes.byref(ctypes.c_float(alpha)),
+        int(A),
+        lda,
+        ctypes.byref(ctypes.c_float(beta)),
+        int(B),
+        ldb,
+        int(C),
+        ldc,
     )
     cublasCheckStatus(status)
 
@@ -6101,7 +8114,19 @@ def cublasDgeam(handle, transa, transb, m, n, alpha, A, lda, beta, B, ldb, C, ld
     """Real matrix-matrix addition/transposition."""
     assert _libcublas
     status = _libcublas.cublasDgeam(
-        handle, _CUBLAS_OP[transa], _CUBLAS_OP[transb], m, n, ctypes.byref(ctypes.c_double(alpha)), int(A), lda, ctypes.byref(ctypes.c_double(beta)), int(B), ldb, int(C), ldc
+        handle,
+        _CUBLAS_OP[transa],
+        _CUBLAS_OP[transb],
+        m,
+        n,
+        ctypes.byref(ctypes.c_double(alpha)),
+        int(A),
+        lda,
+        ctypes.byref(ctypes.c_double(beta)),
+        int(B),
+        ldb,
+        int(C),
+        ldc,
     )
     cublasCheckStatus(status)
 
@@ -6236,8 +8261,7 @@ cublasZgeam.__doc__ = _GEAM_doc.substitute(
 # Batched routines
 
 # SgemmBatched, DgemmBatched, CgemmBatched, ZgemmBatched
-_GEMM_BATCHED_doc = Template(
-    """
+_GEMM_BATCHED_doc = Template("""
     Batched matrix-matrix multiplication (${precision} ${real}).
 
     Computes a batch of matrix products:
@@ -6280,8 +8304,7 @@ _GEMM_BATCHED_doc = Template(
     References
     ----------
     `cublas<t>gemmBatched <http://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-gemmbatched>`_
-"""
-)
+""")
 
 if _cublas_version >= 5000:
     _libcublas.cublasSgemmBatched.restype = int
@@ -6305,12 +8328,28 @@ if _cublas_version >= 5000:
 
 
 @_cublas_version_req(5.0)
-def cublasSgemmBatched(handle, transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc, batchCount):
+def cublasSgemmBatched(
+    handle, transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc, batchCount
+):
     """Matrix-matrix product for arrays of real single precision general matrices."""
 
     assert _libcublas
     status = _libcublas.cublasSgemmBatched(
-        handle, _CUBLAS_OP[transa], _CUBLAS_OP[transb], m, n, k, ctypes.byref(ctypes.c_float(alpha)), int(A), lda, int(B), ldb, ctypes.byref(ctypes.c_float(beta)), int(C), ldc, batchCount
+        handle,
+        _CUBLAS_OP[transa],
+        _CUBLAS_OP[transb],
+        m,
+        n,
+        k,
+        ctypes.byref(ctypes.c_float(alpha)),
+        int(A),
+        lda,
+        int(B),
+        ldb,
+        ctypes.byref(ctypes.c_float(beta)),
+        int(C),
+        ldc,
+        batchCount,
     )
     cublasCheckStatus(status)
 
@@ -6343,12 +8382,28 @@ if _cublas_version >= 5000:
 
 
 @_cublas_version_req(5.0)
-def cublasDgemmBatched(handle, transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc, batchCount):
+def cublasDgemmBatched(
+    handle, transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc, batchCount
+):
     """Matrix-matrix product for arrays of real double precision general matrices."""
 
     assert _libcublas
     status = _libcublas.cublasDgemmBatched(
-        handle, _CUBLAS_OP[transa], _CUBLAS_OP[transb], m, n, k, ctypes.byref(ctypes.c_double(alpha)), int(A), lda, int(B), ldb, ctypes.byref(ctypes.c_double(beta)), int(C), ldc, batchCount
+        handle,
+        _CUBLAS_OP[transa],
+        _CUBLAS_OP[transb],
+        m,
+        n,
+        k,
+        ctypes.byref(ctypes.c_double(alpha)),
+        int(A),
+        lda,
+        int(B),
+        ldb,
+        ctypes.byref(ctypes.c_double(beta)),
+        int(C),
+        ldc,
+        batchCount,
     )
     cublasCheckStatus(status)
 
@@ -6381,7 +8436,9 @@ if _cublas_version >= 5000:
 
 
 @_cublas_version_req(5.0)
-def cublasCgemmBatched(handle, transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc, batchCount):
+def cublasCgemmBatched(
+    handle, transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc, batchCount
+):
     """Matrix-matrix product for arrays of complex single precision general matrices."""
 
     assert _libcublas
@@ -6433,7 +8490,9 @@ if _cublas_version >= 5000:
 
 
 @_cublas_version_req(5.0)
-def cublasZgemmBatched(handle, transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc, batchCount):
+def cublasZgemmBatched(
+    handle, transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc, batchCount
+):
     """Matrix-matrix product for arrays of complex double precision general matrices."""
 
     assert _libcublas
@@ -6464,8 +8523,7 @@ cublasZgemmBatched.__doc__ = _GEMM_BATCHED_doc.substitute(
 )
 
 # StrsmBatched, DtrsmBatched
-_TRSM_BATCHED_doc = Template(
-    """
+_TRSM_BATCHED_doc = Template("""
     Batched triangular solve (${precision} ${real}).
 
     Solves a batch of triangular linear systems with multiple right-hand sides.
@@ -6510,8 +8568,7 @@ _TRSM_BATCHED_doc = Template(
     References
     ----------
     `cublas<t>trsmBatched <http://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-trsmbatched>`_
-"""
-)
+""")
 
 if _cublas_version >= 5000:
     _libcublas.cublasStrsmBatched.restype = int
@@ -6538,7 +8595,19 @@ def cublasStrsmBatched(handle, side, uplo, trans, diag, m, n, alpha, A, lda, B, 
 
     assert _libcublas
     status = _libcublas.cublasStrsmBatched(
-        handle, _CUBLAS_SIDE_MODE[side], _CUBLAS_FILL_MODE[uplo], _CUBLAS_OP[trans], _CUBLAS_DIAG[diag], m, n, ctypes.byref(ctypes.c_float(alpha)), int(A), lda, int(B), ldb, batchCount
+        handle,
+        _CUBLAS_SIDE_MODE[side],
+        _CUBLAS_FILL_MODE[uplo],
+        _CUBLAS_OP[trans],
+        _CUBLAS_DIAG[diag],
+        m,
+        n,
+        ctypes.byref(ctypes.c_float(alpha)),
+        int(A),
+        lda,
+        int(B),
+        ldb,
+        batchCount,
     )
     cublasCheckStatus(status)
 
@@ -6574,7 +8643,19 @@ def cublasDtrsmBatched(handle, side, uplo, trans, diag, m, n, alpha, A, lda, B, 
 
     assert _libcublas
     status = _libcublas.cublasDtrsmBatched(
-        handle, _CUBLAS_SIDE_MODE[side], _CUBLAS_FILL_MODE[uplo], _CUBLAS_OP[trans], _CUBLAS_DIAG[diag], m, n, ctypes.byref(ctypes.c_double(alpha)), int(A), lda, int(B), ldb, batchCount
+        handle,
+        _CUBLAS_SIDE_MODE[side],
+        _CUBLAS_FILL_MODE[uplo],
+        _CUBLAS_OP[trans],
+        _CUBLAS_DIAG[diag],
+        m,
+        n,
+        ctypes.byref(ctypes.c_double(alpha)),
+        int(A),
+        lda,
+        int(B),
+        ldb,
+        batchCount,
     )
     cublasCheckStatus(status)
 
@@ -6586,8 +8667,7 @@ cublasDtrsmBatched.__doc__ = _TRSM_BATCHED_doc.substitute(
 )
 
 # SgetrfBatched, DgetrfBatched,CgetrfBatched, ZgetrfBatched
-_GETRF_BATCHED_doc = Template(
-    """
+_GETRF_BATCHED_doc = Template("""
     Batched LU factorization (${precision} ${real}).
 
     Computes the LU factorization of a batch of square matrices using
@@ -6616,12 +8696,19 @@ _GETRF_BATCHED_doc = Template(
     References
     ----------
     `cublas<t>getrfBatched <http://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-getrfbatched>`_
-"""
-)
+""")
 
 if _cublas_version >= 5000:
     _libcublas.cublasSgetrfBatched.restype = int
-    _libcublas.cublasSgetrfBatched.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int]
+    _libcublas.cublasSgetrfBatched.argtypes = [
+        _types.handle,
+        ctypes.c_int,
+        ctypes.c_void_p,
+        ctypes.c_int,
+        ctypes.c_void_p,
+        ctypes.c_void_p,
+        ctypes.c_int,
+    ]
 
 
 @_cublas_version_req(5.0)
@@ -6640,7 +8727,15 @@ cublasSgetrfBatched.__doc__ = _GETRF_BATCHED_doc.substitute(
 
 if _cublas_version >= 5000:
     _libcublas.cublasDgetrfBatched.restype = int
-    _libcublas.cublasDgetrfBatched.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int]
+    _libcublas.cublasDgetrfBatched.argtypes = [
+        _types.handle,
+        ctypes.c_int,
+        ctypes.c_void_p,
+        ctypes.c_int,
+        ctypes.c_void_p,
+        ctypes.c_void_p,
+        ctypes.c_int,
+    ]
 
 
 @_cublas_version_req(5.0)
@@ -6659,7 +8754,15 @@ cublasDgetrfBatched.__doc__ = _GETRF_BATCHED_doc.substitute(
 
 if _cublas_version >= 5000:
     _libcublas.cublasCgetrfBatched.restype = int
-    _libcublas.cublasCgetrfBatched.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int]
+    _libcublas.cublasCgetrfBatched.argtypes = [
+        _types.handle,
+        ctypes.c_int,
+        ctypes.c_void_p,
+        ctypes.c_int,
+        ctypes.c_void_p,
+        ctypes.c_void_p,
+        ctypes.c_int,
+    ]
 
 
 @_cublas_version_req(5.0)
@@ -6678,7 +8781,15 @@ cublasCgetrfBatched.__doc__ = _GETRF_BATCHED_doc.substitute(
 
 if _cublas_version >= 5000:
     _libcublas.cublasZgetrfBatched.restype = int
-    _libcublas.cublasZgetrfBatched.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int]
+    _libcublas.cublasZgetrfBatched.argtypes = [
+        _types.handle,
+        ctypes.c_int,
+        ctypes.c_void_p,
+        ctypes.c_int,
+        ctypes.c_void_p,
+        ctypes.c_void_p,
+        ctypes.c_int,
+    ]
 
 
 @_cublas_version_req(5.0)
@@ -6696,8 +8807,7 @@ cublasZgetrfBatched.__doc__ = _GETRF_BATCHED_doc.substitute(
 )
 
 # SgetrsBatched, DgetrsBatched, CgetrsBatched, ZgetrsBatched
-_GETRS_BATCHED_doc = Template(
-    """
+_GETRS_BATCHED_doc = Template("""
     Batched LU-based linear solve (${precision} ${real}).
 
     Solves a batch of linear systems using matrices previously factorized
@@ -6732,8 +8842,7 @@ _GETRS_BATCHED_doc = Template(
     References
     ----------
     `cublas<t>getrsBatched <https://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-getrsbatched>`_
-"""
-)
+""")
 
 if _cublas_version >= 5000:
     _libcublas.cublasSgetrsBatched.restype = int
@@ -6757,7 +8866,19 @@ def cublasSgetrsBatched(handle, trans, n, nrhs, Aarray, lda, devIpiv, Barray, ld
     """This function solves an array of LU factored linear systems."""
 
     assert _libcublas
-    status = _libcublas.cublasSgetrsBatched(handle, _CUBLAS_OP[trans], n, nrhs, int(Aarray), lda, int(devIpiv), int(Barray), ldb, info, batchSize)
+    status = _libcublas.cublasSgetrsBatched(
+        handle,
+        _CUBLAS_OP[trans],
+        n,
+        nrhs,
+        int(Aarray),
+        lda,
+        int(devIpiv),
+        int(Barray),
+        ldb,
+        info,
+        batchSize,
+    )
     cublasCheckStatus(status)
 
 
@@ -6788,7 +8909,19 @@ def cublasDgetrsBatched(handle, trans, n, nrhs, Aarray, lda, devIpiv, Barray, ld
     """This function solves an array of LU factored linear systems."""
 
     assert _libcublas
-    status = _libcublas.cublasDgetrsBatched(handle, _CUBLAS_OP[trans], n, nrhs, int(Aarray), lda, int(devIpiv), int(Barray), ldb, info, batchSize)
+    status = _libcublas.cublasDgetrsBatched(
+        handle,
+        _CUBLAS_OP[trans],
+        n,
+        nrhs,
+        int(Aarray),
+        lda,
+        int(devIpiv),
+        int(Barray),
+        ldb,
+        info,
+        batchSize,
+    )
     cublasCheckStatus(status)
 
 
@@ -6819,7 +8952,19 @@ def cublasCgetrsBatched(handle, trans, n, nrhs, Aarray, lda, devIpiv, Barray, ld
     """This function solves an array of LU factored linear systems."""
 
     assert _libcublas
-    status = _libcublas.cublasCgetrsBatched(handle, _CUBLAS_OP[trans], n, nrhs, int(Aarray), lda, int(devIpiv), int(Barray), ldb, info, batchSize)
+    status = _libcublas.cublasCgetrsBatched(
+        handle,
+        _CUBLAS_OP[trans],
+        n,
+        nrhs,
+        int(Aarray),
+        lda,
+        int(devIpiv),
+        int(Barray),
+        ldb,
+        info,
+        batchSize,
+    )
     cublasCheckStatus(status)
 
 
@@ -6850,7 +8995,19 @@ def cublasZgetrsBatched(handle, trans, n, nrhs, Aarray, lda, devIpiv, Barray, ld
     """This function solves an array of LU factored linear systems."""
 
     assert _libcublas
-    status = _libcublas.cublasZgetrsBatched(handle, _CUBLAS_OP[trans], n, nrhs, int(Aarray), lda, int(devIpiv), int(Barray), ldb, info, batchSize)
+    status = _libcublas.cublasZgetrsBatched(
+        handle,
+        _CUBLAS_OP[trans],
+        n,
+        nrhs,
+        int(Aarray),
+        lda,
+        int(devIpiv),
+        int(Barray),
+        ldb,
+        info,
+        batchSize,
+    )
     cublasCheckStatus(status)
 
 
@@ -6860,8 +9017,7 @@ cublasZgetrsBatched.__doc__ = _GETRS_BATCHED_doc.substitute(
 )
 
 # SgetriBatched, DgetriBatched, CgetriBatched, ZgetriBatched
-_GETRI_BATCHED_doc = Template(
-    """
+_GETRI_BATCHED_doc = Template("""
     Batched matrix inversion (${precision} ${real}).
 
     Computes the inverse of a batch of matrices previously factorized
@@ -6895,12 +9051,21 @@ _GETRI_BATCHED_doc = Template(
     References
     ----------
     `cublas<t>getriBatched <http://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-getribatched>`_
-"""
-)
+""")
 
 if _cublas_version >= 5050:
     _libcublas.cublasSgetriBatched.restype = int
-    _libcublas.cublasSgetriBatched.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
+    _libcublas.cublasSgetriBatched.argtypes = [
+        _types.handle,
+        ctypes.c_int,
+        ctypes.c_void_p,
+        ctypes.c_int,
+        ctypes.c_void_p,
+        ctypes.c_void_p,
+        ctypes.c_int,
+        ctypes.c_void_p,
+        ctypes.c_int,
+    ]
 
 
 @_cublas_version_req(5.5)
@@ -6908,7 +9073,9 @@ def cublasSgetriBatched(handle, n, A, lda, P, C, ldc, info, batchSize):
     """This function performs the inversion of an array of n x n matrices."""
 
     assert _libcublas
-    status = _libcublas.cublasSgetriBatched(handle, n, int(A), lda, int(P), int(C), ldc, int(info), batchSize)
+    status = _libcublas.cublasSgetriBatched(
+        handle, n, int(A), lda, int(P), int(C), ldc, int(info), batchSize
+    )
     cublasCheckStatus(status)
 
 
@@ -6920,7 +9087,17 @@ cublasSgetriBatched.__doc__ = _GETRI_BATCHED_doc.substitute(
 
 if _cublas_version >= 5050:
     _libcublas.cublasDgetriBatched.restype = int
-    _libcublas.cublasDgetriBatched.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
+    _libcublas.cublasDgetriBatched.argtypes = [
+        _types.handle,
+        ctypes.c_int,
+        ctypes.c_void_p,
+        ctypes.c_int,
+        ctypes.c_void_p,
+        ctypes.c_void_p,
+        ctypes.c_int,
+        ctypes.c_void_p,
+        ctypes.c_int,
+    ]
 
 
 @_cublas_version_req(5.5)
@@ -6928,7 +9105,9 @@ def cublasDgetriBatched(handle, n, A, lda, P, C, ldc, info, batchSize):
     """This function performs the inversion of an array of n x n matrices."""
 
     assert _libcublas
-    status = _libcublas.cublasDgetriBatched(handle, n, int(A), lda, int(P), int(C), ldc, int(info), batchSize)
+    status = _libcublas.cublasDgetriBatched(
+        handle, n, int(A), lda, int(P), int(C), ldc, int(info), batchSize
+    )
     cublasCheckStatus(status)
 
 
@@ -6940,7 +9119,17 @@ cublasDgetriBatched.__doc__ = _GETRI_BATCHED_doc.substitute(
 
 if _cublas_version >= 5050:
     _libcublas.cublasCgetriBatched.restype = int
-    _libcublas.cublasCgetriBatched.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
+    _libcublas.cublasCgetriBatched.argtypes = [
+        _types.handle,
+        ctypes.c_int,
+        ctypes.c_void_p,
+        ctypes.c_int,
+        ctypes.c_void_p,
+        ctypes.c_void_p,
+        ctypes.c_int,
+        ctypes.c_void_p,
+        ctypes.c_int,
+    ]
 
 
 @_cublas_version_req(5.5)
@@ -6948,7 +9137,9 @@ def cublasCgetriBatched(handle, n, A, lda, P, C, ldc, info, batchSize):
     """This function performs the inversion of an array of n x n matrices."""
 
     assert _libcublas
-    status = _libcublas.cublasCgetriBatched(handle, n, int(A), lda, int(P), int(C), ldc, int(info), batchSize)
+    status = _libcublas.cublasCgetriBatched(
+        handle, n, int(A), lda, int(P), int(C), ldc, int(info), batchSize
+    )
     cublasCheckStatus(status)
 
 
@@ -6960,7 +9151,17 @@ cublasCgetriBatched.__doc__ = _GETRI_BATCHED_doc.substitute(
 
 if _cublas_version >= 5050:
     _libcublas.cublasZgetriBatched.restype = int
-    _libcublas.cublasZgetriBatched.argtypes = [_types.handle, ctypes.c_int, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
+    _libcublas.cublasZgetriBatched.argtypes = [
+        _types.handle,
+        ctypes.c_int,
+        ctypes.c_void_p,
+        ctypes.c_int,
+        ctypes.c_void_p,
+        ctypes.c_void_p,
+        ctypes.c_int,
+        ctypes.c_void_p,
+        ctypes.c_int,
+    ]
 
 
 @_cublas_version_req(5.5)
@@ -6968,7 +9169,9 @@ def cublasZgetriBatched(handle, n, A, lda, P, C, ldc, info, batchSize):
     """This function performs the inversion of an array of n x n matrices."""
 
     assert _libcublas
-    status = _libcublas.cublasZgetriBatched(handle, n, int(A), lda, int(P), int(C), ldc, int(info), batchSize)
+    status = _libcublas.cublasZgetriBatched(
+        handle, n, int(A), lda, int(P), int(C), ldc, int(info), batchSize
+    )
     cublasCheckStatus(status)
 
 
@@ -6979,8 +9182,7 @@ cublasZgetriBatched.__doc__ = _GETRI_BATCHED_doc.substitute(
 )
 
 # SgelsBatched, DgelsBatched, CgelsBatched, ZgelsBatched
-_GELS_BATCHED_doc = Template(
-    """
+_GELS_BATCHED_doc = Template("""
     Batched least-squares solver (${precision} ${real}).
 
     Computes the least-squares solution of a batch of overdetermined
@@ -7017,12 +9219,15 @@ _GELS_BATCHED_doc = Template(
     References
     ----------
     `cublas<t>gelsBatched <http://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-gelsbatched>`_
-"""
-)
+""")
 
 if _cublas_version >= 5000:
-    _libcublas.cublasSgelsBatched.restype = _libcublas.cublasDgelsBatched.restype = _libcublas.cublasCgelsBatched.restype = _libcublas.cublasZgelsBatched.restype = int
-    _libcublas.cublasSgelsBatched.argtypes = _libcublas.cublasDgelsBatched.argtypes = _libcublas.cublasCgelsBatched.argtypes = _libcublas.cublasZgelsBatched.argtypes = [
+    _libcublas.cublasSgelsBatched.restype = _libcublas.cublasDgelsBatched.restype = (
+        _libcublas.cublasCgelsBatched.restype
+    ) = _libcublas.cublasZgelsBatched.restype = int
+    _libcublas.cublasSgelsBatched.argtypes = _libcublas.cublasDgelsBatched.argtypes = (
+        _libcublas.cublasCgelsBatched.argtypes
+    ) = _libcublas.cublasZgelsBatched.argtypes = [
         _types.handle,
         ctypes.c_int,
         ctypes.c_int,
@@ -7039,11 +9244,26 @@ if _cublas_version >= 5000:
 
 
 @_cublas_version_req(5.0)
-def cublasSgelsBatched(handle, trans, m, n, nrhs, Aarray, lda, Carray, ldc, info, devInfoArray, batchSize):
+def cublasSgelsBatched(
+    handle, trans, m, n, nrhs, Aarray, lda, Carray, ldc, info, devInfoArray, batchSize
+):
     """This function finds the least squares solution of a batch of overdetermined systems."""
 
     assert _libcublas
-    status = _libcublas.cublasSgelsBatched(handle, _CUBLAS_OP[trans], m, n, nrhs, int(Aarray), lda, int(Carray), ldc, info, int(devInfoArray), batchSize)
+    status = _libcublas.cublasSgelsBatched(
+        handle,
+        _CUBLAS_OP[trans],
+        m,
+        n,
+        nrhs,
+        int(Aarray),
+        lda,
+        int(Carray),
+        ldc,
+        info,
+        int(devInfoArray),
+        batchSize,
+    )
     cublasCheckStatus(status)
 
 
@@ -7054,11 +9274,26 @@ cublasSgelsBatched.__doc__ = _GELS_BATCHED_doc.substitute(
 
 
 @_cublas_version_req(5.0)
-def cublasDgelsBatched(handle, trans, m, n, nrhs, Aarray, lda, Carray, ldc, info, devInfoArray, batchSize):
+def cublasDgelsBatched(
+    handle, trans, m, n, nrhs, Aarray, lda, Carray, ldc, info, devInfoArray, batchSize
+):
     """This function finds the least squares solution of a batch of overdetermined systems."""
 
     assert _libcublas
-    status = _libcublas.cublasDgelsBatched(handle, _CUBLAS_OP[trans], m, n, nrhs, int(Aarray), lda, int(Carray), ldc, info, int(devInfoArray), batchSize)
+    status = _libcublas.cublasDgelsBatched(
+        handle,
+        _CUBLAS_OP[trans],
+        m,
+        n,
+        nrhs,
+        int(Aarray),
+        lda,
+        int(Carray),
+        ldc,
+        info,
+        int(devInfoArray),
+        batchSize,
+    )
     cublasCheckStatus(status)
 
 
@@ -7069,11 +9304,26 @@ cublasDgelsBatched.__doc__ = _GELS_BATCHED_doc.substitute(
 
 
 @_cublas_version_req(5.0)
-def cublasCgelsBatched(handle, trans, m, n, nrhs, Aarray, lda, Carray, ldc, info, devInfoArray, batchSize):
+def cublasCgelsBatched(
+    handle, trans, m, n, nrhs, Aarray, lda, Carray, ldc, info, devInfoArray, batchSize
+):
     """This function finds the least squares solution of a batch of overdetermined systems."""
 
     assert _libcublas
-    status = _libcublas.cublasCgelsBatched(handle, _CUBLAS_OP[trans], m, n, nrhs, int(Aarray), lda, int(Carray), ldc, info, int(devInfoArray), batchSize)
+    status = _libcublas.cublasCgelsBatched(
+        handle,
+        _CUBLAS_OP[trans],
+        m,
+        n,
+        nrhs,
+        int(Aarray),
+        lda,
+        int(Carray),
+        ldc,
+        info,
+        int(devInfoArray),
+        batchSize,
+    )
     cublasCheckStatus(status)
 
 
@@ -7084,11 +9334,26 @@ cublasCgelsBatched.__doc__ = _GELS_BATCHED_doc.substitute(
 
 
 @_cublas_version_req(5.0)
-def cublasZgelsBatched(handle, trans, m, n, nrhs, Aarray, lda, Carray, ldc, info, devInfoArray, batchSize):
+def cublasZgelsBatched(
+    handle, trans, m, n, nrhs, Aarray, lda, Carray, ldc, info, devInfoArray, batchSize
+):
     """This function finds the least squares solution of a batch of overdetermined systems."""
 
     assert _libcublas
-    status = _libcublas.cublasZgelsBatched(handle, _CUBLAS_OP[trans], m, n, nrhs, int(Aarray), lda, int(Carray), ldc, info, int(devInfoArray), batchSize)
+    status = _libcublas.cublasZgelsBatched(
+        handle,
+        _CUBLAS_OP[trans],
+        m,
+        n,
+        nrhs,
+        int(Aarray),
+        lda,
+        int(Carray),
+        ldc,
+        info,
+        int(devInfoArray),
+        batchSize,
+    )
     cublasCheckStatus(status)
 
 
@@ -7098,9 +9363,13 @@ cublasZgelsBatched.__doc__ = _GELS_BATCHED_doc.substitute(
 )
 
 if _cublas_version >= 5000:
-    _libcublas.cublasSdgmm.restype = _libcublas.cublasDdgmm.restype = _libcublas.cublasCdgmm.restype = _libcublas.cublasZdgmm.restype = int
+    _libcublas.cublasSdgmm.restype = _libcublas.cublasDdgmm.restype = (
+        _libcublas.cublasCdgmm.restype
+    ) = _libcublas.cublasZdgmm.restype = int
 
-    _libcublas.cublasSdgmm.argtypes = _libcublas.cublasDdgmm.argtypes = _libcublas.cublasCdgmm.argtypes = _libcublas.cublasZdgmm.argtypes = [
+    _libcublas.cublasSdgmm.argtypes = _libcublas.cublasDdgmm.argtypes = (
+        _libcublas.cublasCdgmm.argtypes
+    ) = _libcublas.cublasZdgmm.argtypes = [
         _types.handle,
         ctypes.c_int,
         ctypes.c_int,
@@ -7114,8 +9383,7 @@ if _cublas_version >= 5000:
     ]
 
 # SDGMM, DDGMM, CDGMM, ZDGMM
-_DGMM_doc = Template(
-    """
+_DGMM_doc = Template("""
     Matrix-diagonal matrix multiplication (${precision} ${real}).
 
     Multiplies a matrix by a diagonal matrix formed from a vector.
@@ -7154,8 +9422,7 @@ _DGMM_doc = Template(
     References
     ----------
     `cublas<t>dgmm <http://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-dgmm>`_
-"""
-)
+""")
 
 
 @_cublas_version_req(5.0)
@@ -7163,7 +9430,9 @@ def cublasSdgmm(handle, side, m, n, A, lda, x, incx, C, ldc):
     """Multiplies a matrix with a diagonal matrix."""
 
     assert _libcublas
-    status = _libcublas.cublasSdgmm(handle, _CUBLAS_SIDE_MODE[side], m, n, int(A), lda, int(x), incx, int(C), ldc)
+    status = _libcublas.cublasSdgmm(
+        handle, _CUBLAS_SIDE_MODE[side], m, n, int(A), lda, int(x), incx, int(C), ldc
+    )
     cublasCheckStatus(status)
 
 
@@ -7178,7 +9447,9 @@ def cublasDdgmm(handle, side, m, n, A, lda, x, incx, C, ldc):
     """Multiplies a matrix with a diagonal matrix."""
 
     assert _libcublas
-    status = _libcublas.cublasDdgmm(handle, _CUBLAS_SIDE_MODE[side], m, n, int(A), lda, int(x), incx, int(C), ldc)
+    status = _libcublas.cublasDdgmm(
+        handle, _CUBLAS_SIDE_MODE[side], m, n, int(A), lda, int(x), incx, int(C), ldc
+    )
     cublasCheckStatus(status)
 
 
@@ -7193,7 +9464,9 @@ def cublasCdgmm(handle, side, m, n, A, lda, x, incx, C, ldc):
     """Multiplies a matrix with a diagonal matrix."""
 
     assert _libcublas
-    status = _libcublas.cublasCdgmm(handle, _CUBLAS_SIDE_MODE[side], m, n, int(A), lda, int(x), incx, int(C), ldc)
+    status = _libcublas.cublasCdgmm(
+        handle, _CUBLAS_SIDE_MODE[side], m, n, int(A), lda, int(x), incx, int(C), ldc
+    )
     cublasCheckStatus(status)
 
 
@@ -7208,7 +9481,9 @@ def cublasZdgmm(handle, side, m, n, A, lda, x, incx, C, ldc):
     """Multiplies a matrix with a diagonal matrix."""
 
     assert _libcublas
-    status = _libcublas.cublasZdgmm(handle, _CUBLAS_SIDE_MODE[side], m, n, int(A), lda, int(x), incx, int(C), ldc)
+    status = _libcublas.cublasZdgmm(
+        handle, _CUBLAS_SIDE_MODE[side], m, n, int(A), lda, int(x), incx, int(C), ldc
+    )
     cublasCheckStatus(status)
 
 
@@ -7219,8 +9494,7 @@ cublasZdgmm.__doc__ = _DGMM_doc.substitute(
 
 # SGEMMSTRIDEDBATCHED, DGEMMSTRIDEDBATCHED,
 # CGEMMSTRIDEDBATCHED, ZGEMMSTRIDEDBATCHED
-_GEMM_STRIDED_BATCHED_doc = Template(
-    """
+_GEMM_STRIDED_BATCHED_doc = Template("""
     Strided batched matrix-matrix multiplication (${precision} ${real}).
 
     Computes a batch of matrix products using regularly strided memory:
@@ -7267,13 +9541,18 @@ _GEMM_STRIDED_BATCHED_doc = Template(
     References
     ----------
     `cublas<t>gemmStridedBatched <https://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-gemmstridedbatched>`_
-"""
-)
+""")
 
 if _cublas_version >= 8000:
-    _libcublas.cublasSgemmStridedBatched.restype = _libcublas.cublasDgemmStridedBatched.restype = _libcublas.cublasCgemmStridedBatched.restype = _libcublas.cublasZgemmStridedBatched.restype = int
+    _libcublas.cublasSgemmStridedBatched.restype = _libcublas.cublasDgemmStridedBatched.restype = (
+        _libcublas.cublasCgemmStridedBatched.restype
+    ) = _libcublas.cublasZgemmStridedBatched.restype = int
 
-    _libcublas.cublasSgemmStridedBatched.argtypes = _libcublas.cublasDgemmStridedBatched.argtypes = _libcublas.cublasCgemmStridedBatched.argtypes = _libcublas.cublasZgemmStridedBatched.argtypes = [
+    _libcublas.cublasSgemmStridedBatched.argtypes = (
+        _libcublas.cublasDgemmStridedBatched.argtypes
+    ) = _libcublas.cublasCgemmStridedBatched.argtypes = (
+        _libcublas.cublasZgemmStridedBatched.argtypes
+    ) = [
         ctypes.c_void_p,
         ctypes.c_int,
         ctypes.c_int,
@@ -7296,7 +9575,26 @@ if _cublas_version >= 8000:
 
 
 @_cublas_version_req(8.0)
-def cublasSgemmStridedBatched(handle, transa, transb, m, n, k, alpha, A, lda, strideA, B, ldb, strideB, beta, C, ldc, strideC, batchCount):
+def cublasSgemmStridedBatched(
+    handle,
+    transa,
+    transb,
+    m,
+    n,
+    k,
+    alpha,
+    A,
+    lda,
+    strideA,
+    B,
+    ldb,
+    strideB,
+    beta,
+    C,
+    ldc,
+    strideC,
+    batchCount,
+):
     """Matrix-matrix multiplication of a batch of matrices."""
 
     assert _libcublas
@@ -7331,7 +9629,26 @@ cublasSgemmStridedBatched.__doc__ = _GEMM_STRIDED_BATCHED_doc.substitute(
 
 
 @_cublas_version_req(8.0)
-def cublasDgemmStridedBatched(handle, transa, transb, m, n, k, alpha, A, lda, strideA, B, ldb, strideB, beta, C, ldc, strideC, batchCount):
+def cublasDgemmStridedBatched(
+    handle,
+    transa,
+    transb,
+    m,
+    n,
+    k,
+    alpha,
+    A,
+    lda,
+    strideA,
+    B,
+    ldb,
+    strideB,
+    beta,
+    C,
+    ldc,
+    strideC,
+    batchCount,
+):
     """Matrix-matrix multiplication of a batch of matrices."""
 
     assert _libcublas
@@ -7366,7 +9683,26 @@ cublasDgemmStridedBatched.__doc__ = _GEMM_STRIDED_BATCHED_doc.substitute(
 
 
 @_cublas_version_req(8.0)
-def cublasCgemmStridedBatched(handle, transa, transb, m, n, k, alpha, A, lda, strideA, B, ldb, strideB, beta, C, ldc, strideC, batchCount):
+def cublasCgemmStridedBatched(
+    handle,
+    transa,
+    transb,
+    m,
+    n,
+    k,
+    alpha,
+    A,
+    lda,
+    strideA,
+    B,
+    ldb,
+    strideB,
+    beta,
+    C,
+    ldc,
+    strideC,
+    batchCount,
+):
     """Matrix-matrix multiplication of a batch of matrices."""
 
     assert _libcublas
@@ -7401,7 +9737,26 @@ cublasCgemmStridedBatched.__doc__ = _GEMM_STRIDED_BATCHED_doc.substitute(
 
 
 @_cublas_version_req(8.0)
-def cublasZgemmStridedBatched(handle, transa, transb, m, n, k, alpha, A, lda, strideA, B, ldb, strideB, beta, C, ldc, strideC, batchCount):
+def cublasZgemmStridedBatched(
+    handle,
+    transa,
+    transb,
+    m,
+    n,
+    k,
+    alpha,
+    A,
+    lda,
+    strideA,
+    B,
+    ldb,
+    strideB,
+    beta,
+    C,
+    ldc,
+    strideC,
+    batchCount,
+):
     """Matrix-matrix multiplication of a batch of matrices."""
 
     assert _libcublas

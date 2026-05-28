@@ -9,7 +9,8 @@ import logging
 
 import numpy as np
 
-from pydtnn.utils.sparse.sparse_cython import summ_coo_cython, top_threshold_selection_coo_cython, top_threshold_selection_dense_cython
+from pydtnn.utils.sparse.sparse_cython import (summ_coo_cython, top_threshold_selection_coo_cython,
+                                               top_threshold_selection_dense_cython)
 
 __all__ = ("SparseMatrixCOO",)
 
@@ -27,7 +28,14 @@ class SparseMatrixCOO:
     This class is not designed to store explict zeros so, len(self.data) should always be equal to nnz.
     """
 
-    def __init__(self, data, row: np.ndarray[tuple[int], np.dtype[np.int32]], col: np.ndarray[tuple[int], np.dtype[np.int32]], shape, has_canonical_format):
+    def __init__(
+        self,
+        data,
+        row: np.ndarray[tuple[int], np.dtype[np.int32]],
+        col: np.ndarray[tuple[int], np.dtype[np.int32]],
+        shape,
+        has_canonical_format,
+    ):
         """
         Primary initializer for SparseMatrixCOO.
 
@@ -53,7 +61,9 @@ class SparseMatrixCOO:
 
         else:
             # TODO: order arrays in canonical format
-            raise NotImplementedError("Not yet implemented constructor with unordered rows and cols")
+            raise NotImplementedError(
+                "Not yet implemented constructor with unordered rows and cols"
+            )
 
     @classmethod
     def from_dense(cls, dense_array):
@@ -71,7 +81,10 @@ class SparseMatrixCOO:
         if len(dense_array.shape) != 2:
             raise AssertionError("Dense array must be 2D.")
 
-        logger.warning("From dense constructor should be used only in case of debugging for performance reasons.")
+        logger.warning(
+            "From dense constructor should be used only in case of debugging for performance"
+            " reasons."
+        )
 
         row, col = np.where(dense_array != 0)
         data = dense_array[row, col]
@@ -113,7 +126,9 @@ class SparseMatrixCOO:
             topk (SparseMatrixCOO): if inplace == False, or void (None): if inplace == True
         """
 
-        topk, topk_row, topk_col = top_threshold_selection_coo_cython(self.data, self.row, self.col, threshold)
+        topk, topk_row, topk_col = top_threshold_selection_coo_cython(
+            self.data, self.row, self.col, threshold
+        )
 
         if inplace:
             self.data = topk
@@ -165,7 +180,9 @@ class SparseMatrixCOO:
         if reset_indexes:
             sliced_row -= row_start
 
-        return SparseMatrixCOO(sliced_data, sliced_row, sliced_col, self.shape, self.has_canonical_format)
+        return SparseMatrixCOO(
+            sliced_data, sliced_row, sliced_col, self.shape, self.has_canonical_format
+        )
 
     def to_dense(self):
         """
@@ -175,7 +192,10 @@ class SparseMatrixCOO:
             np.array: A dense matrix representation.
         """
 
-        logger.warning("This function ('to_sparse') should be used only in case of debugging for performance reasons.")
+        logger.warning(
+            "This function ('to_sparse') should be used only in case of debugging for performance"
+            " reasons."
+        )
 
         dense_matrix = np.zeros(self.shape, dtype=np.float32)
         dense_matrix[self.row, self.col] = self.data
@@ -199,7 +219,9 @@ class SparseMatrixCOO:
         if not self.has_canonical_format or not other.has_canonical_format:
             raise AssertionError("Both matrices must be in canonical format.")
 
-        summ_val, summ_row, summ_col = summ_coo_cython(self.data, self.row, self.col, other.data, other.row, other.col)
+        summ_val, summ_row, summ_col = summ_coo_cython(
+            self.data, self.row, self.col, other.data, other.row, other.col
+        )
         return SparseMatrixCOO(summ_val, summ_row, summ_col, self.shape, has_canonical_format=True)
 
     def __radd__(self, other):
@@ -233,7 +255,10 @@ class SparseMatrixCOO:
             bool: True if indexes are in canonical format, False if not.
         """
 
-        logger.warning("This function ('has_canonical_format') should be used only in case of debugging for performance reasons.")
+        logger.warning(
+            "This function ('has_canonical_format') should be used only in case of debugging for"
+            " performance reasons."
+        )
 
         if self.nnz == 0:
             return True

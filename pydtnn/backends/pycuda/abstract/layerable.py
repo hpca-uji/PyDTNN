@@ -3,7 +3,8 @@
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.backends.pycuda.abstract.base import BasePycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
+from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
+                                   PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
 
 try:
     import pydtnn.libs.nccl as nccl
@@ -36,7 +37,15 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
                 # self.model.stream.synchronize()
                 dw *= self.model.rank_weight
                 # TODO: self.model._encode_reduce
-                nccl.ncclAllReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type, nccl.RedOp.Sum, comm=self.model.nccl_comm, stream=self.stream_2.handle)
+                nccl.ncclAllReduce(
+                    dw.ptr,
+                    dw.ptr,
+                    dw.size,
+                    self.model.nccl_type,
+                    nccl.RedOp.Sum,
+                    comm=self.model.nccl_comm,
+                    stream=self.stream_2.handle,
+                )
 
                 # # Hierarchical mode NCCL + MPI
                 # if len(self.model.inter_ranks) == 1:
@@ -60,13 +69,17 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
             else:  # Without NCCL
                 # We have asynchronously moved the dw and db to dw_cpu and db_cpu in stream_2
                 # so we need to synchronize stream_2 before performing Allreduce.
-                # In GPU direct we have to synchronize the main stream to ensure dw and db are ready.
+                # In GPU direct we have to synchronize the main stream to ensure dw and db
+                # are ready.
 
                 if not self.model.gpudirect:
                     self.stream_2.synchronize()
 
                 dw_cpu = getattr(self, f"{dw_}_cpu")
-                self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.LAYER_ENCODE)
+                self.model.tracer.emit_event(
+                    PYDTNN_OPS_EVENT,
+                    self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.LAYER_ENCODE,
+                )
                 dw_cpu = self.model._layer_reduce_encode(dw_cpu)
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
@@ -94,8 +107,13 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
                     continue  # noqa: E701
                 dw_cpu = self.model._layer_reduce_wait(dw_cpu, req)
 
-                self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.LAYER_DECODE)
-                dw_cpu = self.model._layer_reduce_decode(dw_cpu)  # FIXME: dw and dw_cpu relation unclear
+                self.model.tracer.emit_event(
+                    PYDTNN_OPS_EVENT,
+                    self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.LAYER_DECODE,
+                )
+                dw_cpu = self.model._layer_reduce_decode(
+                    dw_cpu
+                )  # FIXME: dw and dw_cpu relation unclear
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
                 setattr(self, f"{dw_}_cpu", dw_cpu)
 
@@ -136,8 +154,19 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
                 # self.stream_2.synchronize()
                 dw *= self.model.rank_weight
                 # TODO: self.model._encode_reduce
-                self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.OPS_ALLREDUCE_DW)
-                nccl.ncclAllReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type, nccl.RedOp.Sum, comm=self.model.nccl_comm, stream=self.stream_2.handle)
+                self.model.tracer.emit_event(
+                    PYDTNN_OPS_EVENT,
+                    self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.OPS_ALLREDUCE_DW,
+                )
+                nccl.ncclAllReduce(
+                    dw.ptr,
+                    dw.ptr,
+                    dw.size,
+                    self.model.nccl_type,
+                    nccl.RedOp.Sum,
+                    comm=self.model.nccl_comm,
+                    stream=self.stream_2.handle,
+                )
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
                 # self.stream_2.synchronize()
                 # TODO: self.mode._decode_reduce
@@ -177,15 +206,24 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
 
                 dw_cpu = getattr(self, f"{dw_}_cpu")
 
-                self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.LAYER_ENCODE)
+                self.model.tracer.emit_event(
+                    PYDTNN_OPS_EVENT,
+                    self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.LAYER_ENCODE,
+                )
                 dw_cpu = self.model._layer_reduce_encode(dw_cpu)
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-                self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.OPS_ALLREDUCE_DW)
+                self.model.tracer.emit_event(
+                    PYDTNN_OPS_EVENT,
+                    self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.OPS_ALLREDUCE_DW,
+                )
                 dw_cpu = self.model._layer_reduce_sync(dw_cpu)
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-                self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.LAYER_DECODE)
+                self.model.tracer.emit_event(
+                    PYDTNN_OPS_EVENT,
+                    self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.LAYER_DECODE,
+                )
                 dw_cpu = self.model._layer_reduce_decode(dw_cpu)
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 

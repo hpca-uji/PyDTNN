@@ -46,7 +46,13 @@ class Synthetic(Dataset):
         output_shape = tuple(map(int, model.synthetic_output_shape.split(",")))
 
         super().__init__(
-            model, train_nsamples=train_nsamples, test_nsamples=test_nsamples, input_shape=input_shape, output_shape=output_shape, force_test_as_validation=force_test_as_validation, debug=debug
+            model,
+            train_nsamples=train_nsamples,
+            test_nsamples=test_nsamples,
+            input_shape=input_shape,
+            output_shape=output_shape,
+            force_test_as_validation=force_test_as_validation,
+            debug=debug,
         )
 
     def _model_init(self) -> None:
@@ -93,5 +99,6 @@ class Synthetic(Dataset):
                 remaining_samples = self._local_remaining_nsamples[part]
                 self._local_remaining_nsamples[part] = 0
                 yield self._x[part][:remaining_samples, ...], self._y[part][:remaining_samples, ...]
-        # Mark that a round for part has finished (_local_remaining_nsamples[part] is set to -1 and nothing is yield)
+        # Mark that a round for part has finished (_local_remaining_nsamples[part]
+        # is set to -1 and nothing is yield)
         self._local_remaining_nsamples[part] = -1

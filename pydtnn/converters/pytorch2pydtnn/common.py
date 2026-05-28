@@ -6,10 +6,13 @@ import logging
 from typing import Any, Callable
 
 from pydtnn.abstract.layerable import Layerable
-from pydtnn.converters.pytorch2pydtnn.layers.activation import LeakyReLU, LogSigmoid, ReLU, ReLU6, Sigmoid, Softmax, Tanh
+from pydtnn.converters.pytorch2pydtnn.layers.activation import (LeakyReLU, LogSigmoid, ReLU,
+                                                                ReLU6, Sigmoid, Softmax, Tanh)
 from pydtnn.converters.pytorch2pydtnn.layers.convolutional import Conv2d
 from pydtnn.converters.pytorch2pydtnn.layers.dropout import Dropout
-from pydtnn.converters.pytorch2pydtnn.layers.functions import adaptive_avg_pool_2d, add, concat, flatten, log, relu, sigmoid, softmax, tanh
+from pydtnn.converters.pytorch2pydtnn.layers.functions import (adaptive_avg_pool_2d, add,
+                                                               concat, flatten, log, relu,
+                                                               sigmoid, softmax, tanh)
 from pydtnn.converters.pytorch2pydtnn.layers.linear import Linear
 from pydtnn.converters.pytorch2pydtnn.layers.normalization import BatchNorm2d
 from pydtnn.converters.pytorch2pydtnn.layers.pooling import AdaptiveAvgPool2d, AvgPool2d, MaxPool2d
@@ -39,8 +42,12 @@ PARAMETERS = "parameters"
 LAYERS = "layers"
 EQUIVALENT_LAYERS = "equivalent_layers"
 OPERATION_VAR = "operation_var"
-TRANSPOSE_WEIGHTS_LAYERS = ["Linear"]  # There are layers that put the weigths in the correct order. Theese layers doesn't do it.
-REMOVE_WIGHTS_DIMENSIONS = [("Conv2d", (0))]  # Name of the layer, tuple of dimensions/axis to remove.
+TRANSPOSE_WEIGHTS_LAYERS = [
+    "Linear"
+]  # There are layers that put the weigths in the correct order. Theese layers doesn't do it.
+REMOVE_WIGHTS_DIMENSIONS = [
+    ("Conv2d", (0))
+]  # Name of the layer, tuple of dimensions/axis to remove.
 
 RELU = "relu"
 ADP_AVG_POOL = "adaptive_avg_pool2d"
@@ -84,7 +91,9 @@ def not_implemented(name: str) -> Callable:
     return _not_implemented
 
 
-def prepare_pydtnn_arguments(arguments: dict[str, Any], torch_dict_keys: list[str], pydtnn_dict_keys: list[str]) -> dict[str, Any]:
+def prepare_pydtnn_arguments(
+    arguments: dict[str, Any], torch_dict_keys: list[str], pydtnn_dict_keys: list[str]
+) -> dict[str, Any]:
     """
     Maps PyTorch argument keys to PyDTNN argument keys.
 
@@ -96,7 +105,11 @@ def prepare_pydtnn_arguments(arguments: dict[str, Any], torch_dict_keys: list[st
     Returns:
         A dictionary with mapped keys.
     """
-    return {pydtnn_key: arguments[torch_key] for torch_key, pydtnn_key in zip(torch_dict_keys, pydtnn_dict_keys) if torch_key in arguments}
+    return {
+        pydtnn_key: arguments[torch_key]
+        for torch_key, pydtnn_key in zip(torch_dict_keys, pydtnn_dict_keys)
+        if torch_key in arguments
+    }
 
 
 def switch_pytorch_pydtnn(name: str) -> Callable[[dict[str, Any]], Layerable]:
@@ -145,9 +158,13 @@ def switch_pytorch_pydtnn(name: str) -> Callable[[dict[str, Any]], Layerable]:
 
         # Not actual PyTorch layers (are torch functions):
         case "Add":
-            return add  # type: ignore  # Possible FIXME: if the constants ADD values are changed, change the case in order to have the same value.
+            # type: ignore  # Possible FIXME: if the constants ADD values are changed,
+            # change the case in order to have the same value.
+            return add
         case "Concat":
-            return concat  # type: ignore  # Possible FIXME: if the constants CONCAT values are changed, change the case in order to have the same value.
+            # type: ignore  # Possible FIXME: if the constants CONCAT values are
+            # changed, change the case in order to have the same value.
+            return concat
         # Base case:
         case _:
             return not_implemented(name)
@@ -184,7 +201,9 @@ def function_operation_to_pydtnn(name: str) -> Callable[[dict[str, Any]], tuple[
         The corresponding PyDTNN function.
     """
 
-    # NOTE: I found impossible to do a switch (match-case) nor a dictionary due the name may be larger than the "key" (e.g.: name = torch.flatten(input, start_dim=0, end_dim=-1); "key" = "flatten")
+    # NOTE: I found impossible to do a switch (match-case) nor a dictionary
+    # due the name may be larger than the "key" (e.g.: name =
+    # torch.flatten(input, start_dim=0, end_dim=-1); "key" = "flatten")
     if ADD in name:
         op = add
     elif any(pattern in name for pattern in [CONCAT, CAT]):
@@ -205,13 +224,17 @@ def function_operation_to_pydtnn(name: str) -> Callable[[dict[str, Any]], tuple[
         op = softmax
     elif TANH in name:
         op = tanh
-    # NOTE: If a new function operation handler is implemented, an "elif" must be place before the followin else in order to call the handler of that operation.
+    # NOTE: If a new function operation handler is implemented, an "elif" must
+    # be place before the followin else in order to call the handler of that
+    # operation.
     else:
         op = not_implemented(name)
     return op
 
 
-def get_lists_operations_and_outputs(dict_layers: dict[str, tuple[Layerable, str]], layer_inputs: list[str]) -> tuple[list[list[Layerable]], list[str], str]:
+def get_lists_operations_and_outputs(
+    dict_layers: dict[str, tuple[Layerable, str]], layer_inputs: list[str]
+) -> tuple[list[list[Layerable]], list[str], str]:
     """
     Traces the network graph to organize operations and outputs for branches.
 
@@ -245,9 +268,13 @@ def get_lists_operations_and_outputs(dict_layers: dict[str, tuple[Layerable, str
     #  > ==> braches have different sizes, then the same node may have different order in different branches ==>
     #  > ==> that's true from bottom to top, but from top to bottom the "intersection layers" -the ones to be searched- (the ones that coincide in all branches) must be in the same position in every branch.
     enumerated_reversed_inputs = enumerate(list(dict_branch[layer_inputs[0]].keys())[::-1])
-    coincidences = set(enumerated_reversed_inputs)  # NOTE: It is necessary to have a set with elements in order to make an intersection.
+    coincidences = set(
+        enumerated_reversed_inputs
+    )  # NOTE: It is necessary to have a set with elements in order to make an intersection.
     for i in range(1, len(layer_inputs)):
-        coincidences = coincidences.intersection(set(enumerate(list(dict_branch[layer_inputs[i]].keys())[::-1])))
+        coincidences = coincidences.intersection(
+            set(enumerate(list(dict_branch[layer_inputs[i]].keys())[::-1]))
+        )
     # "Unenumerating" and sorting the intersection, and getting the first coincidence layer.
     #   ==> NOTE: Due the list was sorting in reverse before, now it is necessary to sort it be reverse again (that's why the "-x[0]").
     coincidences = [elem[1] for elem in sorted(coincidences, key=lambda x: -x[0])]
@@ -267,7 +294,9 @@ def get_lists_operations_and_outputs(dict_layers: dict[str, tuple[Layerable, str
         layers = list(dict_branch[inpt].values())[::-1]
         outputs = list(dict_branch[inpt].keys())
         lists_operations.append(layers)  # NOTE: Remember, this is a list of lists (one per branch)
-        lists_outputs.extend(outputs)  # NOTE: Remember, this is a list of strings (all branches in one)
+        lists_outputs.extend(
+            outputs
+        )  # NOTE: Remember, this is a list of strings (all branches in one)
     # for inpt in layer_inputs end
     return (lists_operations, lists_outputs, new_previous_layer)
 

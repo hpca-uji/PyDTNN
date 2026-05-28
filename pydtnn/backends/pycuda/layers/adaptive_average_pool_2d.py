@@ -9,7 +9,8 @@ from pycuda import gpuarray  # type: ignore
 from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.layers.adaptive_average_pool_2d import AdaptiveAveragePool2D
-from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
+from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
+                                   PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
 from pydtnn.utils.performance_models import col2im_time, im2col_time
 
 __all__ = ("AdaptiveAveragePool2DPycuda",)
@@ -52,14 +53,26 @@ class AdaptiveAveragePool2DPycuda(AdaptiveAveragePool2D[TensorArray], LayerPycud
 
         self.memory_used += self.y.nbytes + self.dx.nbytes
 
-        self.fwd_time = im2col_time(m=self.co, n=(self.model.batch_size * self.ho * self.wo * self.ci), cpu_speed=self.model.cpu_speed,
-                                    memory_bw=self.model.memory_bw, dtype=self.model.dtype)  # type: ignore (it's fine)
-        self.bwd_time = col2im_time(m=self.co, n=(self.model.batch_size * self.ho * self.wo * self.ci), cpu_speed=self.model.cpu_speed,
-                                    memory_bw=self.model.memory_bw, dtype=self.model.dtype)  # type: ignore (it's fine)
+        self.fwd_time = im2col_time(
+            m=self.co,
+            n=(self.model.batch_size * self.ho * self.wo * self.ci),
+            cpu_speed=self.model.cpu_speed,
+            memory_bw=self.model.memory_bw,
+            dtype=self.model.dtype,
+        )  # type: ignore (it's fine)
+        self.bwd_time = col2im_time(
+            m=self.co,
+            n=(self.model.batch_size * self.ho * self.wo * self.ci),
+            cpu_speed=self.model.cpu_speed,
+            memory_bw=self.model.memory_bw,
+            dtype=self.model.dtype,
+        )  # type: ignore (it's fine)
 
     def forward(self, x: TensorArray) -> TensorArray:
         """Perform the forward pass of the adaptive average pooling operation."""
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN
+        )
 
         if self.pooling_not_needed:
             self.y = x
@@ -67,15 +80,21 @@ class AdaptiveAveragePool2DPycuda(AdaptiveAveragePool2D[TensorArray], LayerPycud
             n, c, h, w = self.model.decode_shape(x.shape)
 
             # NOTE: "num_elements" (or simply "N") is the number of elements to process. Usually it would be math.prod(x.shape),
-            #   but in this case we are putting elements in the output instead of processing the input's elements.
+            # but in this case we are putting elements in the output instead of
+            # processing the input's elements.
             num_elements = np.int32(math.prod((n, c, self.ho, self.wo)))
 
             total_num_threads = np.int32(math.prod(self.grid) * math.prod(self.block))
 
-            # If num_elements < total_num_threads, only will work "num_elements" threads. In the other cases will work "total_num_threads" threads.
+            # If num_elements < total_num_threads, only will work "num_elements"
+            # threads. In the other cases will work "total_num_threads" threads.
             num_active_workers = np.int32(min(total_num_threads, num_elements))
-            num_ops_per_worker = np.int32((num_elements + num_active_workers - 1) / num_active_workers)
-            num_ops_last_worker = np.int32(num_elements - (num_active_workers - 1) * num_ops_per_worker)
+            num_ops_per_worker = np.int32(
+                (num_elements + num_active_workers - 1) / num_active_workers
+            )
+            num_ops_last_worker = np.int32(
+                num_elements - (num_active_workers - 1) * num_ops_per_worker
+            )
 
             # NOTE: Instead of a number, PyCuda's driver expects "numpy.number"
             self.cuda_fwd_func(
@@ -101,7 +120,9 @@ class AdaptiveAveragePool2DPycuda(AdaptiveAveragePool2D[TensorArray], LayerPycud
 
     def backward(self, dy: TensorArray) -> TensorArray:
         """Perform the backward pass of the adaptive average pooling operation."""
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX
+        )
         n, c, h, w = self.model.decode_shape(dy.shape)
 
         num_elements = np.int32(math.prod((n, c, self.ho, self.wo)))

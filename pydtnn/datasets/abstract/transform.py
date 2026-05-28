@@ -48,7 +48,16 @@ class Transform(Init):
     - data_generator(y) is expected to be in NC format
     """
 
-    def __init__(self, model: Model, train_nsamples: int = 0, test_nsamples: int = 0, input_shape: ArrayShape = (), output_shape: ArrayShape = (), force_test_as_validation=False, debug=False):
+    def __init__(
+        self,
+        model: Model,
+        train_nsamples: int = 0,
+        test_nsamples: int = 0,
+        input_shape: ArrayShape = (),
+        output_shape: ArrayShape = (),
+        force_test_as_validation=False,
+        debug=False,
+    ):
         """
         Initialize the Transform dataset handler.
 
@@ -61,20 +70,33 @@ class Transform(Init):
             force_test_as_validation: Whether to treat test set as validation.
             debug: Enable debug mode.
         """
-        super().__init__(model, train_nsamples, test_nsamples, input_shape, output_shape, force_test_as_validation, debug)
+        super().__init__(
+            model,
+            train_nsamples,
+            test_nsamples,
+            input_shape,
+            output_shape,
+            force_test_as_validation,
+            debug,
+        )
 
         self._augments = dict[Base.Part, list[TransformFunc]]()
         augments_training = list[TransformFunc]()
         augments_always = list[TransformFunc]()
 
         if self.model.augment_crop:
-            crop, size = self._calculate_crop(self.input_shape[1:])  # type: ignore (The cropped input shape will be a tuple[int, int])
+            # type: ignore (The cropped input shape will be a tuple[int, int])
+            crop, size = self._calculate_crop(self.input_shape[1:])
             self.input_shape = (self.input_shape[0], *size)
             augments_training.append(self._x_augment_adaptor(self._do_augment_crop))
             augments_always.append(self._x_augment_adaptor(self._do_augment_crop))
 
         if self.model.augment_scale:
-            self.input_shape = (self.input_shape[0], self.model.augment_scale_size, self.model.augment_scale_size)
+            self.input_shape = (
+                self.input_shape[0],
+                self.model.augment_scale_size,
+                self.model.augment_scale_size,
+            )
             augments_training.append(self._x_augment_adaptor(self._do_augment_scale))
             augments_always.append(self._x_augment_adaptor(self._do_augment_scale))
 
@@ -176,7 +198,9 @@ class Transform(Init):
         np.multiply(data, self.model.augment_normalize_scale, out=data)
         return data
 
-    def _do_augment_flip(self, data: np.ndarray, augment_probability: float, axis: int) -> np.ndarray:
+    def _do_augment_flip(
+        self, data: np.ndarray, augment_probability: float, axis: int
+    ) -> np.ndarray:
         """
         Apply random flip augmentation to images.
 
@@ -217,9 +241,13 @@ class Transform(Init):
             case TensorFormat.NHWC:
                 width_dim = 2
             case _:
-                raise NotImplementedError(f"Dataset _do_augment_horizontal_flip is not implemented for {self.model.tensor_format} format.")
+                raise NotImplementedError(
+                    f"Dataset _do_augment_horizontal_flip is not implemented for {
+                        self.model.tensor_format} format.")
 
-        return self._do_augment_flip(data=data, augment_probability=self.model.augment_horizontal_flip, axis=width_dim)
+        return self._do_augment_flip(
+            data=data, augment_probability=self.model.augment_horizontal_flip, axis=width_dim
+        )
 
     def _do_augment_vertical_flip(self, data: np.ndarray) -> np.ndarray:
         """
@@ -243,9 +271,13 @@ class Transform(Init):
             case TensorFormat.NHWC:
                 height_dim = 1
             case _:
-                raise NotImplementedError(f"Dataset _do_augment_vertical_flip is not implemented for {self.model.tensor_format} format.")
+                raise NotImplementedError(
+                    f"Dataset _do_augment_vertical_flip is not implemented for {
+                        self.model.tensor_format} format.")
 
-        return self._do_augment_flip(data=data, augment_probability=self.model.augment_vertical_flip, axis=height_dim)
+        return self._do_augment_flip(
+            data=data, augment_probability=self.model.augment_vertical_flip, axis=height_dim
+        )
 
     def _do_augment_shuffle(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """
@@ -301,7 +333,9 @@ class Transform(Init):
                     data[ri, : t[i], : ll[i], :] = 0.0
                     data[ri, b:, r:, :] = 0.0
                 case _:
-                    raise NotImplementedError(f"Dataset _do_augment_mask is not implemented for {self.model.tensor_format} format.")
+                    raise NotImplementedError(
+                        f"Dataset _do_augment_mask is not implemented for {
+                            self.model.tensor_format} format.")
             data[ri, ...] = np.roll(data[ri, ...], random.integers(-t[i], (h - b)), axis=1)
             data[ri, ...] = np.roll(data[ri, ...], random.integers(-ll[i], (w - r)), axis=2)
         return data
@@ -363,7 +397,9 @@ class Transform(Init):
         s = np.where(random.random(N) <= self.model.augment_blur)[0]
 
         for n in s:
-            data[n] = gaussian_filter(data[n], sigma=(0, self.model.augment_blur_size, self.model.augment_blur_size))
+            data[n] = gaussian_filter(
+                data[n], sigma=(0, self.model.augment_blur_size, self.model.augment_blur_size)
+            )
 
         data = self.model.encode_tensor(data)
 
@@ -405,7 +441,9 @@ class Transform(Init):
 
         return new_data
 
-    def _calculate_crop(self, size: tuple[int, int]) -> tuple[tuple[int, int, int, int], tuple[int, int]]:
+    def _calculate_crop(
+        self, size: tuple[int, int]
+    ) -> tuple[tuple[int, int, int, int], tuple[int, int]]:
         """
         Calculate crop coordinates and resulting size.
 
@@ -613,7 +651,9 @@ class Transform(Init):
         return data
 
     @staticmethod
-    def _perspective_coeffs(src_points: np.ndarray | list, dst_points: np.ndarray | list) -> np.ndarray[tuple[int]]:
+    def _perspective_coeffs(
+        src_points: np.ndarray | list, dst_points: np.ndarray | list
+    ) -> np.ndarray[tuple[int]]:
         # Source:
         # A) https://stackoverflow.com/questions/14177744/how-does-perspective-transformation-work-in-pil
         # B) https://web.archive.org/web/20150222120106/xenia.media.mit.edu/~cwren/interpolator/
@@ -667,9 +707,15 @@ class Transform(Init):
         widths = np.asanyarray(widths, dtype=np.int32)
         heights = np.asanyarray(heights, dtype=np.int32)
 
-
-        rescaled_base = np.asarray([(width * _min, height * _min), (width * _max, height * _min),
-                                    (width * _min, height * _max), (width * _max, height * _max)], np.int32)
+        rescaled_base = np.asarray(
+            [
+                (width * _min, height * _min),
+                (width * _max, height * _min),
+                (width * _min, height * _max),
+                (width * _max, height * _max),
+            ],
+            np.int32,
+        )
         transformed_points = list(zip(widths, heights))
 
         coeffs = self._perspective_coeffs(transformed_points, rescaled_base)

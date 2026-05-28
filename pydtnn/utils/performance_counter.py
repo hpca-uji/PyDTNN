@@ -30,7 +30,9 @@ class PerformanceCounter:
         """Records training metrics for a specific epoch."""
         self._add_time_and_batch_size(Dataset.Part.TRAIN, epoch, elapsed_time, batch_size)
 
-    def add_testing_time_and_batch_size(self, test_round: int, elapsed_time: float, batch_size: int):
+    def add_testing_time_and_batch_size(
+        self, test_round: int, elapsed_time: float, batch_size: int
+    ):
         """Records testing metrics for a specific test round."""
         self._add_time_and_batch_size(Dataset.Part.TEST, test_round, elapsed_time, batch_size)
 
@@ -103,31 +105,59 @@ class PerformanceCounter:
             _report.append("| Performance counter training report |")
             _report.append(" -------------------------------------")
             _report.append(f"Training time (from model): {self.training_time:5.4f} s")
-            _report.append(f"Training time per epoch (from model): {self.training_time / self.num_epochs:5.4f} s")
-            _report.append(f"Training throughput (from model): {self.training_throughput:5.4f} samples/s")
-            _report.append(f"Training time (from model, estimated from last half of each epoch): {self.training_time_estimated_from_last_half_of_each_epoch:5.4f} s")
-            _report.append(f"Training throughput (from model, from last half of each epoch): {self.training_throughput_only_last_half_of_each_epoch:5.4f} samples/s")
-            _report.append(f"Training maximum memory allocated: {self.training_maximum_memory / 1024:.2f} MiB")
-            _report.append(f"Training mean memory allocated: {self.training_mean_memory / 1024:.2f} MiB")
+            _report.append(
+                f"Training time per epoch (from model): {
+                    self.training_time / self.num_epochs:5.4f} s"
+            )
+            _report.append(
+                f"Training throughput (from model): {self.training_throughput:5.4f} samples/s"
+            )
+            _report.append(
+                f"Training time (from model, estimated from last half of each epoch): {
+                    self.training_time_estimated_from_last_half_of_each_epoch:5.4f} s"
+            )
+            _report.append(
+                f"Training throughput (from model, from last half of each epoch): {
+                    self.training_throughput_only_last_half_of_each_epoch:5.4f} samples/s"
+            )
+            _report.append(
+                f"Training maximum memory allocated: {self.training_maximum_memory / 1024:.2f} MiB"
+            )
+            _report.append(
+                f"Training mean memory allocated: {self.training_mean_memory / 1024:.2f} MiB"
+            )
 
         if self.num_evaluations > 0:
             _report.append(" ------------------------------------")
             _report.append("| Performance counter testing report |")
             _report.append(" ------------------------------------")
-            _report.append(f"Testing time (from model): {self.testing_time / self.num_evaluations:5.4f} s")
-            _report.append(f"Testing throughput (from model): {self.testing_throughput:5.4f} samples/s")
-            _report.append(f"Testing maximum memory allocated: {self.testing_maximum_memory / 1024:.2f} MiB")
-            _report.append(f"Testing mean memory allocated: {self.testing_mean_memory / 1024:.2f} MiB")
+            _report.append(
+                f"Testing time (from model): {self.testing_time / self.num_evaluations:5.4f} s"
+            )
+            _report.append(
+                f"Testing throughput (from model): {self.testing_throughput:5.4f} samples/s"
+            )
+            _report.append(
+                f"Testing maximum memory allocated: {self.testing_maximum_memory / 1024:.2f} MiB"
+            )
+            _report.append(
+                f"Testing mean memory allocated: {self.testing_mean_memory / 1024:.2f} MiB"
+            )
 
         report = "\n".join(_report)
         logger.info(report)
 
     #  Private methods
-    def _add_time_and_batch_size(self, where: Dataset.Part, epoch: int, elapsed_time: float, batch_size: int) -> None:
+    def _add_time_and_batch_size(
+        self, where: Dataset.Part, epoch: int, elapsed_time: float, batch_size: int
+    ) -> None:
         """Internal helper to record time, batch size, and memory usage."""
         self._times_record[where][epoch].append(elapsed_time)
         self._batch_sizes_record[where][epoch].append(batch_size)
-        mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss + resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss
+        mem = (
+            resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+            + resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss
+        )
         self._memory_record[where][epoch].append(mem)  # KiB in GNU/Linux
 
     def _time(self, where: Dataset.Part, last_half=False) -> float:
@@ -137,7 +167,8 @@ class PerformanceCounter:
     @staticmethod
     def _sum(arrays, last_half: bool) -> int | float:
         """Sums values across records, optionally estimating from the last half of data."""
-        # When last_half is True, the total size is estimated from the last half steps of each epoch size
+        # When last_half is True, the total size is estimated from the last half
+        # steps of each epoch size
         if not last_half:
             records_per_epoch = [np.sum(array) for array in arrays]
         else:
@@ -145,7 +176,9 @@ class PerformanceCounter:
             for array in arrays:
                 array_last_half = array[len(array) // 2:]
                 if len(array_last_half) > 0:
-                    records_per_epoch.append(np.sum(array_last_half) * len(array) / len(array_last_half))
+                    records_per_epoch.append(
+                        np.sum(array_last_half) * len(array) / len(array_last_half)
+                    )
         return np.sum(records_per_epoch)
 
     def _size(self, where: Dataset.Part, last_half=False) -> int | float:
@@ -160,7 +193,9 @@ class PerformanceCounter:
         """Calculates maximum memory usage for a given phase."""
         match where:
             case Dataset.Part.TRAIN:
-                maximum_memory_per_epoch = [np.max(m_array) for m_array in self._memory_record[where].values()]
+                maximum_memory_per_epoch = [
+                    np.max(m_array) for m_array in self._memory_record[where].values()
+                ]
                 return np.max(maximum_memory_per_epoch)
             case Dataset.Part.TEST:
                 # Consider only the first evaluation
@@ -174,7 +209,9 @@ class PerformanceCounter:
         """Calculates mean memory usage for a given phase."""
         match where:
             case Dataset.Part.TRAIN:
-                mean_memory_per_epoch = [np.mean(m_array) for m_array in self._memory_record[where].values()]
+                mean_memory_per_epoch = [
+                    np.mean(m_array) for m_array in self._memory_record[where].values()
+                ]
                 return np.mean(mean_memory_per_epoch).item()
             case Dataset.Part.TEST:
                 # Consider only the first evaluation

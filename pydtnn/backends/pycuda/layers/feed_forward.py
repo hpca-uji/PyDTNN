@@ -56,7 +56,8 @@ class FeedForwardPycuda(FeedForward[TensorArray], AbstractBlockLayerPycuda):
         """Initialize block-specific configurations."""
         pass
 
-    # Need to flatten and unflatten after the operation in order to maintain the shape it recieves from pre and post layers
+    # Need to flatten and unflatten after the operation in order to maintain
+    # the shape it recieves from pre and post layers
     def forward(self, x):
         """Perform the forward pass through the feed-forward network."""
         self.FC_1.forward(x)

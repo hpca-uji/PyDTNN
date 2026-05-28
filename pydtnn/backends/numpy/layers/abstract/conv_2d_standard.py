@@ -52,7 +52,9 @@ class AbstractConv2DStandardNumpy(AbstractConv2DNumpy):
             case TensorFormat.NHWC:
                 # NHWC's src: ci, kh, kw, co
                 # NCHW's dst: co, ci, kh, kw
-                return np.asarray(format_transpose(value, "IHWO", "OIHW"), dtype=np.float64, order="C", copy=True)
+                return np.asarray(
+                    format_transpose(value, "IHWO", "OIHW"), dtype=np.float64, order="C", copy=True
+                )
             case TensorFormat.NCHW:
                 return np.asarray(value, dtype=np.float64, order="C", copy=True)
             case tensor_format:

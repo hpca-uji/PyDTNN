@@ -34,7 +34,15 @@ def vgg_cyclone(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[L
     conv_pattern = [[3, 3, 1, 64], [2, 3, 1, 128], [2, 3, 1, 256], [3, 3, 1, 512]]
     for nlayers, filter_, padding_, nfilters_ in conv_pattern:
         for layer in range(nlayers):
-            _(Conv2D(nfilters=nfilters_, filter_shape=(filter_, filter_), padding=padding_, stride=1, activation=Relu))
+            _(
+                Conv2D(
+                    nfilters=nfilters_,
+                    filter_shape=(filter_, filter_),
+                    padding=padding_,
+                    stride=1,
+                    activation=Relu,
+                )
+            )
         _(MaxPool2D(pool_shape=(2, 2), stride=2))
     _(Flatten())
     _(FC(shape=(512,), activation=Relu))

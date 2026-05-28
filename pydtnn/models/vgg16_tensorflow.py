@@ -41,7 +41,9 @@ def vgg16(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerab
     for nlayers, nfilters in conv_pattern:
         for layer in range(nlayers):
             _(Conv2D(nfilters=nfilters, filter_shape=(3, 3), padding=1, stride=1, activation=Relu))
-        _(MaxPool2D(pool_shape=(2, 2), stride=2, padding=1))  # NOTE: Model breaks with initial input size < (32, 32), as input size < pool shape
+        _(
+            MaxPool2D(pool_shape=(2, 2), stride=2, padding=1)
+        )  # NOTE: Model breaks with initial input size < (32, 32), as input size < pool shape
 
     _(Flatten())
     _(FC(shape=(4096,), activation=Relu))

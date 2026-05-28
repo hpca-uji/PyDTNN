@@ -45,7 +45,20 @@ class MultiHeadAttentionNumpy(MultiHeadAttention[np.ndarray], AbstractBlockLayer
         self.dropout = Dropout(rate=self.dropout_rate)
         self.mult_smv = Multiplication()
         self.mult_o = Multiplication()
-        self.paths = [[self.FC_q, self.FC_k, self.FC_v, self.mult_qkt, self.scalar_dk, self.FC_o, self.softmax, self.dropout, self.mult_smv, self.mult_o]]
+        self.paths = [
+            [
+                self.FC_q,
+                self.FC_k,
+                self.FC_v,
+                self.mult_qkt,
+                self.scalar_dk,
+                self.FC_o,
+                self.softmax,
+                self.dropout,
+                self.mult_smv,
+                self.mult_o,
+            ]
+        ]
 
         # The next attributes will be initialized later
         self.mask = None
@@ -148,17 +161,26 @@ class MultiHeadAttentionNumpy(MultiHeadAttention[np.ndarray], AbstractBlockLayer
         if self.model.mode == Model.Mode.TRAIN:
             self.mask = mask
 
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_MHA_FC_QKV)
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_MHA_FC_QKV
+        )
         query = self.transformation_addheads(self.FC_q.forward(query))
         key = self.transformation_addheads(self.FC_k.forward(key))
         value = self.transformation_addheads(self.FC_v.forward(value))
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_MHA_MATMUL_QK)
-        score = self.mult_qkt.forward(query, self.transpose(key))  # type: ignore (encoder has multiple parameters)
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT,
+            self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_MHA_MATMUL_QK,
+        )
+        # type: ignore (encoder has multiple parameters)
+        score = self.mult_qkt.forward(query, self.transpose(key))
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_MHA_SCALARDK)
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT,
+            self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_MHA_SCALARDK,
+        )
         score = self.scalar_dk.forward(score)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
@@ -167,11 +189,17 @@ class MultiHeadAttentionNumpy(MultiHeadAttention[np.ndarray], AbstractBlockLayer
         score = self.softmax.forward(score)
         score = self.dropout.forward(score)
 
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_MHA_MATMUL_SMV)
-        score = self.mult_smv.forward(score, value)  # type: ignore (encoder has multiple parameters)
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT,
+            self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_MHA_MATMUL_SMV,
+        )
+        # type: ignore (encoder has multiple parameters)
+        score = self.mult_smv.forward(score, value)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_MHA_FC_O)
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_MHA_FC_O
+        )
         score = self.transformation_removeheads(score)
         score = self.FC_o.forward(score)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
@@ -182,12 +210,17 @@ class MultiHeadAttentionNumpy(MultiHeadAttention[np.ndarray], AbstractBlockLayer
         """
         Performs the backward pass of the multi-head attention mechanism.
         """
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_MHA_FC_O)
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_MHA_FC_O
+        )
         dx = self.FC_o.backward(dy)
         dx = self.transformation_addheads(dx)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_MHA_MATMUL_SMV)
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT,
+            self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_MHA_MATMUL_SMV,
+        )
         dx, d_value = self.mult_smv.backward(dx)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
@@ -196,16 +229,25 @@ class MultiHeadAttentionNumpy(MultiHeadAttention[np.ndarray], AbstractBlockLayer
         if self.mask is not None:
             dx = self.mask_apply(dx, self.mask)
 
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_MHA_SCALARDK)
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT,
+            self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_MHA_SCALARDK,
+        )
         dx = self.scalar_dk.backward(dx)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_MHA_MATMUL_QK)
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT,
+            self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_MHA_MATMUL_QK,
+        )
         d_query, d_key = self.mult_qkt.backward(dx)
         d_key = self.transpose(d_key)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_MHA_FC_QKV)
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT,
+            self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_MHA_FC_QKV,
+        )
         d_query = self.FC_q.backward(self.transformation_removeheads(d_query))
         d_key = self.FC_k.backward(self.transformation_removeheads(d_key))
         d_value = self.FC_v.backward(self.transformation_removeheads(d_value))

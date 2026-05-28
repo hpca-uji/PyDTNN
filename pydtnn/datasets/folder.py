@@ -59,11 +59,22 @@ class Folder(Dataset):
         self._nsamples = [0, 0, 0]  # train, val, test
         self.labels_and_images = dict[Dataset.Part, list[tuple[ClassName, DataPath]]]()
 
-        self.labels_and_images[Dataset.Part.TRAIN], num_classes_train, self._nsamples[Dataset.Part.TRAIN] = self._get_dict_class_and_file(path=dataset_train_path)
-        self.labels_and_images[Dataset.Part.TEST], num_classes_test, self._nsamples[Dataset.Part.TEST] = self._get_dict_class_and_file(path=dataset_test_path)
+        (
+            self.labels_and_images[Dataset.Part.TRAIN],
+            num_classes_train,
+            self._nsamples[Dataset.Part.TRAIN],
+        ) = self._get_dict_class_and_file(path=dataset_train_path)
+        (
+            self.labels_and_images[Dataset.Part.TEST],
+            num_classes_test,
+            self._nsamples[Dataset.Part.TEST],
+        ) = self._get_dict_class_and_file(path=dataset_test_path)
 
         if num_classes_train != num_classes_test:
-            raise ValueError(f"The number of train classes ({num_classes_train}) must be the same as the number of test classes {num_classes_test}.")
+            raise ValueError(
+                f"The number of train classes ({num_classes_train}) must be the same as the number"
+                f" of test classes {num_classes_test}."
+            )
 
         input_shape = (3, 10, 10)  # synthetic
         output_shape = (num_classes_train,)
@@ -78,9 +89,15 @@ class Folder(Dataset):
             debug=debug,
         )
 
-        self.labels_and_images[Dataset.Part.VAL] = copy.copy(self.labels_and_images[Dataset.Part.TEST] if self.test_as_validation else self.labels_and_images[Dataset.Part.TRAIN])
+        self.labels_and_images[Dataset.Part.VAL] = copy.copy(
+            self.labels_and_images[Dataset.Part.TEST]
+            if self.test_as_validation
+            else self.labels_and_images[Dataset.Part.TRAIN]
+        )
 
-    def _get_dict_class_and_file(self, path: str) -> tuple[list[tuple[ClassName, DataPath]], int, int]:
+    def _get_dict_class_and_file(
+        self, path: str
+    ) -> tuple[list[tuple[ClassName, DataPath]], int, int]:
         """
         Scans the directory structure to map class indices to file paths.
 
@@ -99,14 +116,24 @@ class Folder(Dataset):
             file = list_dir[class_name]
             path_folder = os.path.join(path, file)
             if os.path.isdir(path_folder):
-                data_set = set(file for file in [os.path.join(path_folder, file) for file in sorted(os.listdir(path_folder))] if os.path.isfile(file))
+                data_set = set(
+                    file
+                    for file in [
+                        os.path.join(path_folder, file) for file in sorted(os.listdir(path_folder))
+                    ]
+                    if os.path.isfile(file)
+                )
                 dict_class_file[class_name] = data_set
                 num_images += len(data_set)
 
         if len(dict_class_file.values()) == 0:
             raise ValueError(f"There are no directories in '{path}'.")
 
-        labels_and_images = [(class_name, path_image) for class_name, set_path_image in dict_class_file.items() for path_image in set_path_image]
+        labels_and_images = [
+            (class_name, path_image)
+            for class_name, set_path_image in dict_class_file.items()
+            for path_image in set_path_image
+        ]
 
         return (labels_and_images, num_classes, num_images)
 

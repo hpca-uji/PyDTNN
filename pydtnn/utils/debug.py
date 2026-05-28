@@ -37,7 +37,9 @@ def debug_line(*args) -> None:
 
     frame_info = inspect.stack()[1]
     try:
-        context = f"{frame_info.frame.f_globals['__name__']}.{frame_info.function}:{frame_info.lineno}"
+        context = (
+            f"{frame_info.frame.f_globals['__name__']}.{frame_info.function}:{frame_info.lineno}"
+        )
     finally:
         del frame_info
 
@@ -56,7 +58,10 @@ def debug_stack(*args, sep="|") -> None:
 
     stack = inspect.stack()[1:]
     try:
-        context = sep.join(f"{frame_info.frame.f_globals['__name__']}.{frame_info.function}:{frame_info.lineno}" for frame_info in stack)
+        context = sep.join(
+            f"{frame_info.frame.f_globals['__name__']}.{frame_info.function}:{frame_info.lineno}"
+            for frame_info in stack
+        )
     finally:
         del stack
 
@@ -80,7 +85,11 @@ def debug_func(func):
         header = "DEBUG"
         frame_info = inspect.stack()[1]
         try:
-            context = f"{func.__qualname__}{args!r}{kwds!r} from {frame_info.frame.f_globals['__name__']}.{frame_info.function}:{frame_info.lineno} from {os.getpid()}:{threading.get_native_id()}"
+            context = f"{func.__qualname__}{args!r}{kwds!r} from {
+                frame_info.frame.f_globals['__name__']
+            }.{frame_info.function}:{frame_info.lineno} from {os.getpid()}:{
+                threading.get_native_id()
+            }"
         finally:
             del frame_info
         log(f"{header}: Call {context}")

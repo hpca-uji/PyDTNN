@@ -28,8 +28,18 @@ class MulticlassConfusionMatrixPycuda(MulticlassConfusionMatrix[TensorArray], Me
         n = self.model.batch_size
         target_classes = self.model.output_shape[0]
 
-        self.conf_matrix = TensorArray.new_zeros(shape=(1, 1, target_classes, target_classes), dtype=np.dtype(np.int32), tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
-        self.local_cm = TensorArray.new_zeros(shape=(1, n, target_classes, target_classes), dtype=np.dtype(np.int32), tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
+        self.conf_matrix = TensorArray.new_zeros(
+            shape=(1, 1, target_classes, target_classes),
+            dtype=np.dtype(np.int32),
+            tensor_format=self.model.tensor_format,
+            cudnn_dtype=self.model.cudnn_dtype,
+        )
+        self.local_cm = TensorArray.new_zeros(
+            shape=(1, n, target_classes, target_classes),
+            dtype=np.dtype(np.int32),
+            tensor_format=self.model.tensor_format,
+            cudnn_dtype=self.model.cudnn_dtype,
+        )
 
     def compute(self, y_pred: TensorArray, y_targ: TensorArray) -> np.ndarray:
         """
@@ -52,5 +62,15 @@ class MulticlassConfusionMatrixPycuda(MulticlassConfusionMatrix[TensorArray], Me
         n = np.int32(n)
         num_classes = np.int32(target_classes)
 
-        self.kernel(y_targ.ary, y_pred.ary, self.conf_matrix.ary, self.local_cm.ary, num_classes, n, grid=self.grid, block=self.block, stream=self.model.stream)
+        self.kernel(
+            y_targ.ary,
+            y_pred.ary,
+            self.conf_matrix.ary,
+            self.local_cm.ary,
+            num_classes,
+            n,
+            grid=self.grid,
+            block=self.block,
+            stream=self.model.stream,
+        )
         return self.conf_matrix.get()

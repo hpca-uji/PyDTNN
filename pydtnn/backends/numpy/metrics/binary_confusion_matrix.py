@@ -70,7 +70,9 @@ class BinaryConfusionMatrixNumpy(BinaryConfusionMatrix[np.ndarray], MetricNumpy)
 
         for i in range(n):
             for label in range(target_classes):
-                expected = bool(np.isclose(y_targ[i, label], y_pred[i, label], rtol=1e-03, atol=1e-3))
+                expected = bool(
+                    np.isclose(y_targ[i, label], y_pred[i, label], rtol=1e-03, atol=1e-3)
+                )
                 is_positive = bool(y_targ[i, label])
                 self.conf_matrix[label, *(_dict_indexes[expected][is_positive])] += 1
 

@@ -12,7 +12,8 @@ from pydtnn.backends.pycuda.utils import matmul_gpu, matvec_gpu
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.layers.fc import FC
 from pydtnn.libs import cudnn as cudnn
-from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
+from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
+                                   PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
 from pydtnn.utils.constants import ArrayShape, Parameters
 from pydtnn.utils.performance_models import matmul_time
 
@@ -118,13 +119,28 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
 
         self.fwd_time = self.bwd_time = np.zeros((4,), dtype=np.float32)
         self.fwd_time += matmul_time(
-            m=self.model.batch_size, n=self.weights_cpu.shape[1], k=self.weights_cpu.shape[0], cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw, dtype=self.model.dtype
+            m=self.model.batch_size,
+            n=self.weights_cpu.shape[1],
+            k=self.weights_cpu.shape[0],
+            cpu_speed=self.model.cpu_speed,
+            memory_bw=self.model.memory_bw,
+            dtype=self.model.dtype,
         )  # type: ignore (it's fine)
         self.bwd_time += matmul_time(
-            m=self.weights_cpu.shape[0], n=self.weights_cpu.shape[1], k=self.model.batch_size, cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw, dtype=self.model.dtype
+            m=self.weights_cpu.shape[0],
+            n=self.weights_cpu.shape[1],
+            k=self.model.batch_size,
+            cpu_speed=self.model.cpu_speed,
+            memory_bw=self.model.memory_bw,
+            dtype=self.model.dtype,
         )
         self.bwd_time += matmul_time(
-            m=self.model.batch_size, n=self.weights_cpu.shape[0], k=self.weights_cpu.shape[1], cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw, dtype=self.model.dtype
+            m=self.model.batch_size,
+            n=self.weights_cpu.shape[0],
+            k=self.weights_cpu.shape[1],
+            cpu_speed=self.model.cpu_speed,
+            memory_bw=self.model.memory_bw,
+            dtype=self.model.dtype,
         )  # type: ignore (This is correct)
 
     def forward(self, x: TensorArray) -> TensorArray:
@@ -135,16 +151,46 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
         trans_a, trans_b, alpha, beta = "N", "N", 1.0, 0.0
 
         # Compute a' = x @ weights
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUBLAS_MATMUL)
-        self.matmul(self.model.cublas_handle, trans_b, trans_a, n, m, k, alpha, self.weights.gpudata, ldb, x.gpudata, lda, beta, self.y.gpudata, ldc, self.model.dtype)
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT,
+            self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUBLAS_MATMUL,
+        )
+        self.matmul(
+            self.model.cublas_handle,
+            trans_b,
+            trans_a,
+            n,
+            m,
+            k,
+            alpha,
+            self.weights.gpudata,
+            ldb,
+            x.gpudata,
+            lda,
+            beta,
+            self.y.gpudata,
+            ldc,
+            self.model.dtype,
+        )
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.use_bias:
             self.biases: TensorArray
             alpha, beta = 1.0, 1.0
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN_SUM_BIASES)
+            self.model.tracer.emit_event(
+                PYDTNN_OPS_EVENT,
+                self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN_SUM_BIASES,
+            )
             # Compute a = a' + biases
-            cudnn.cudnnAddTensor(self.model.cudnn_handle, alpha, self.biases.desc, self.biases.ptr_voidp, beta, self.y.desc, self.y.ptr_voidp)
+            cudnn.cudnnAddTensor(
+                self.model.cudnn_handle,
+                alpha,
+                self.biases.desc,
+                self.biases.ptr_voidp,
+                beta,
+                self.y.desc,
+                self.y.ptr_voidp,
+            )
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.y
 
@@ -156,9 +202,26 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
         k = dy.shape[0]
         trans_a, trans_b, alpha, beta = "T", "N", 1.0, 0.0
 
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUBLAS_MATMUL_DW)
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT,
+            self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUBLAS_MATMUL_DW,
+        )
         self.matmul(
-            self.model.cublas_handle, trans_b, trans_a, n, m, k, alpha, dy.gpudata, ldb, self.x.gpudata, lda, beta, self.dw.ptr_intp if self.model.gpudirect else self.dw.gpudata, ldc, self.model.dtype
+            self.model.cublas_handle,
+            trans_b,
+            trans_a,
+            n,
+            m,
+            k,
+            alpha,
+            dy.gpudata,
+            ldb,
+            self.x.gpudata,
+            lda,
+            beta,
+            self.dw.ptr_intp if self.model.gpudirect else self.dw.gpudata,
+            ldc,
+            self.model.dtype,
         )
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
@@ -174,7 +237,10 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
             n = lda = dy.shape[1]
             trans_a, alpha, beta, inc_x, inc_y = "N", 1.0, 0.0, 1, 1
 
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUBLAS_MATVEC_DB)
+            self.model.tracer.emit_event(
+                PYDTNN_OPS_EVENT,
+                self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUBLAS_MATVEC_DB,
+            )
             self.matvec(
                 self.model.cublas_handle,
                 trans_a,
@@ -203,7 +269,26 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
         k = lda = ldb = dy.shape[1]
         trans_a, trans_b, alpha, beta = "N", "T", 1.0, 0.0
 
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUBLAS_MATMUL_DX)
-        self.matmul(self.model.cublas_handle, trans_b, trans_a, n, m, k, alpha, self.weights.gpudata, ldb, dy.gpudata, lda, beta, self.dx.gpudata, ldc, self.model.dtype)
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT,
+            self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUBLAS_MATMUL_DX,
+        )
+        self.matmul(
+            self.model.cublas_handle,
+            trans_b,
+            trans_a,
+            n,
+            m,
+            k,
+            alpha,
+            self.weights.gpudata,
+            ldb,
+            dy.gpudata,
+            lda,
+            beta,
+            self.dx.gpudata,
+            ldc,
+            self.model.dtype,
+        )
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.dx

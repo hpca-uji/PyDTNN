@@ -54,14 +54,30 @@ class MNIST(Dataset):
             force_test_as_validation: Whether to use test set as validation set.
             debug: Whether to enable debug mode.
         """
-        super().__init__(model, TRAIN_NSAMPLES, TEST_NSAMPLES, INPUT_SHAPE, OUTPUT_SHAPE, force_test_as_validation=force_test_as_validation, debug=debug)
+        super().__init__(
+            model,
+            TRAIN_NSAMPLES,
+            TEST_NSAMPLES,
+            INPUT_SHAPE,
+            OUTPUT_SHAPE,
+            force_test_as_validation=force_test_as_validation,
+            debug=debug,
+        )
 
     def _model_init(self) -> None:
         """
         Initialize file paths and offsets for MNIST data.
         """
-        self._x_filename = [os.path.join(self.model.dataset_path, "train-images-idx3-ubyte.gz"), None, os.path.join(self.model.dataset_path, "t10k-images-idx3-ubyte.gz")]
-        self._y_filename = [os.path.join(self.model.dataset_path, "train-labels-idx1-ubyte.gz"), None, os.path.join(self.model.dataset_path, "t10k-labels-idx1-ubyte.gz")]
+        self._x_filename = [
+            os.path.join(self.model.dataset_path, "train-images-idx3-ubyte.gz"),
+            None,
+            os.path.join(self.model.dataset_path, "t10k-images-idx3-ubyte.gz"),
+        ]
+        self._y_filename = [
+            os.path.join(self.model.dataset_path, "train-labels-idx1-ubyte.gz"),
+            None,
+            os.path.join(self.model.dataset_path, "t10k-labels-idx1-ubyte.gz"),
+        ]
         if self.test_as_validation:
             self._x_filename[Dataset.Part.VAL] = self._x_filename[Dataset.Part.TEST]
             self._y_filename[Dataset.Part.VAL] = self._y_filename[Dataset.Part.TEST]
@@ -93,7 +109,9 @@ class MNIST(Dataset):
         x = self.model.encode_tensor(x)
         x = np.divide(x, 255.0, dtype=self.model.dtype, casting="unsafe")
 
-        offset = self._labels_header_offset + self._local_offset[part] * 1  # The output class is encoded as a number
+        offset = (
+            self._labels_header_offset + self._local_offset[part] * 1
+        )  # The output class is encoded as a number
         nbytes = self._local_nsamples[part] * 1  # The output class is encoded as a number
 
         with self._gzip_open(self._y_filename[part]) as f:

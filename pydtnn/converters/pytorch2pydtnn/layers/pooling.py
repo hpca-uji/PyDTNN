@@ -56,7 +56,11 @@ def MaxPool2d(args: dict[str, Any]) -> MaxPool2D:
     # PyDTNN attributes:
     pydtnn_dict_keys = [PYDTNN_POOL_SHAPE, PYDTNN_STRIDE, PYDTNN_PADDING, PYDTNN_DILATION]
 
-    layer_args = cm.prepare_pydtnn_arguments(arguments=args[cm.ARGUMENTS], torch_dict_keys=torch_dict_keys, pydtnn_dict_keys=pydtnn_dict_keys)
+    layer_args = cm.prepare_pydtnn_arguments(
+        arguments=args[cm.ARGUMENTS],
+        torch_dict_keys=torch_dict_keys,
+        pydtnn_dict_keys=pydtnn_dict_keys,
+    )
 
     if PYDTNN_POOL_SHAPE in layer_args:
         pool_shape = layer_args[PYDTNN_POOL_SHAPE]
@@ -87,7 +91,11 @@ def AvgPool2d(args: dict[str, Any]) -> AveragePool2D:
     # PyDTNN attributes:
     pydtnn_dict_keys = [PYDTNN_POOL_SHAPE, PYDTNN_STRIDE, PYDTNN_PADDING, PYDTNN_DILATION]
 
-    layer_args = cm.prepare_pydtnn_arguments(arguments=args[cm.ARGUMENTS], torch_dict_keys=torch_dict_keys, pydtnn_dict_keys=pydtnn_dict_keys)
+    layer_args = cm.prepare_pydtnn_arguments(
+        arguments=args[cm.ARGUMENTS],
+        torch_dict_keys=torch_dict_keys,
+        pydtnn_dict_keys=pydtnn_dict_keys,
+    )
 
     if PYDTNN_POOL_SHAPE in layer_args:
         pool_shape = layer_args[PYDTNN_POOL_SHAPE]
@@ -112,6 +120,8 @@ def AdaptiveAvgPool2d(args: dict[str, Any]) -> AdaptiveAveragePool2D:
     # from torch.nn import AdaptiveAvgPool2d
 
     arguments = args[cm.ARGUMENTS]
-    output_shape = arguments[cm.PYTORCH_OUTPUT_SIZE] if cm.PYTORCH_OUTPUT_SIZE in arguments else None
+    output_shape = (
+        arguments[cm.PYTORCH_OUTPUT_SIZE] if cm.PYTORCH_OUTPUT_SIZE in arguments else None
+    )
 
     return AdaptiveAveragePool2D(output_shape=output_shape)

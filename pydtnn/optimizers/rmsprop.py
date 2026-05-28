@@ -28,7 +28,13 @@ class RMSProp[T: Array](Optimizer[T]):
     RMSProp optimizer that maintains a moving average of squared gradients.
     """
 
-    def __init__(self, learning_rate: float = 1e-2, rho: float = 0.9, epsilon: float = 1e-7, decay: float = 0.0):
+    def __init__(
+        self,
+        learning_rate: float = 1e-2,
+        rho: float = 0.9,
+        epsilon: float = 1e-7,
+        decay: float = 0.0,
+    ):
         """
         Initialize the RMSProp optimizer.
 
@@ -69,4 +75,9 @@ class RMSProp[T: Array](Optimizer[T]):
         Returns:
             An initialized RMSProp optimizer.
         """
-        return RMSProp(learning_rate=model.learning_rate, rho=model.optimizer_rho, epsilon=model.optimizer_epsilon, decay=model.optimizer_decay)
+        return RMSProp(
+            learning_rate=model.learning_rate,
+            rho=model.optimizer_rho,
+            epsilon=model.optimizer_epsilon,
+            decay=model.optimizer_decay,
+        )

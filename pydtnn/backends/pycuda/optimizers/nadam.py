@@ -37,7 +37,10 @@ class NadamPycuda(Nadam[TensorArray], OptimizerPycuda):
         func_pow = {np.dtype(np.float32): "powf", np.dtype(np.float64): "pow"}
 
         # --- GPU ---
-        parameters_gpu = "{T} *w, {T} *dw, {T} *m, {T} *v, float it, float lr, float decay, float beta1, float beta2, float epsilon".format(T=DTYPE2CTYPE[self.model.dtype])
+        parameters_gpu = (
+            "{T} *w, {T} *dw, {T} *m, {T} *v, float it, float lr, float decay, float beta1, float"
+            " beta2, float epsilon".format(T=DTYPE2CTYPE[self.model.dtype])
+        )
         operations_gpu = """
             m[i] = beta1 * m[i] + (1 - beta1) * dw[i];
             v[i] = beta2 * v[i] + (1 - beta2) * {func}(dw[i], 2);
@@ -47,7 +50,10 @@ class NadamPycuda(Nadam[TensorArray], OptimizerPycuda):
         self.update_kernel = ElementwiseKernel(parameters_gpu, operations_gpu, "Nadam_kernel")
 
         # GPU DIRECT-
-        self.defines_replaces: dict[str, str] = {'"TYPE"': DTYPE2CTYPE[self.model.dtype], "powf_or_pow": func_pow[self.model.dtype]}
+        self.defines_replaces: dict[str, str] = {
+            '"TYPE"': DTYPE2CTYPE[self.model.dtype],
+            "powf_or_pow": func_pow[self.model.dtype],
+        }
         self.update_gpudirect = self._get_kernel(func_name_subfix="_gpudirect")
 
     def _model_init(self, list_layers: list[LayerPycuda]) -> None:
@@ -62,17 +68,25 @@ class NadamPycuda(Nadam[TensorArray], OptimizerPycuda):
 
             for w_ in layer.grad_vars.keys():
                 w = getattr(layer, w_)
-                self.context[layer.id]["m_%s" % w_] = gpuarray.zeros(w.shape, dtype=layer.model.dtype)
-                self.context[layer.id]["v_%s" % w_] = gpuarray.zeros(w.shape, dtype=layer.model.dtype)
+                self.context[layer.id]["m_%s" % w_] = gpuarray.zeros(
+                    w.shape, dtype=layer.model.dtype
+                )
+                self.context[layer.id]["v_%s" % w_] = gpuarray.zeros(
+                    w.shape, dtype=layer.model.dtype
+                )
 
-                self.memory_used += self.context[layer.id]["m_%s" % w_].nbytes + self.context[layer.id]["v_%s" % w_].nbytes  # type: ignore (They are both "gpuarray" and not "int")
+                self.memory_used += (
+                    self.context[layer.id]["m_%s" % w_].nbytes
+                    + self.context[layer.id]["v_%s" % w_].nbytes
+                )  # type: ignore (They are both "gpuarray" and not "int")
 
     def update(self, layer: LayerPycuda) -> None:
         """
         Perform a single optimization step on the specified layer.
         """
         self.context[layer.id]["it"] += 1  # type: ignore (self.context[layer]["it"] is always an integer)
-        it: int = self.context[layer.id]["it"]  # type: ignore (self.context[layer]["it"] is always an integer)
+        # type: ignore (self.context[layer]["it"] is always an integer)
+        it: int = self.context[layer.id]["it"]
 
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)

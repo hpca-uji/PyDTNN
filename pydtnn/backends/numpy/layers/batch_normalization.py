@@ -54,7 +54,8 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
             vars_shape = (self.model.batch_size * self.hi * self.wi, self.ci)
         else:
             self.ci = self.shape[0]
-            # NOTE: in this case, self.hi and self.wi are 0 (self.shape should be somethin like: "(512, )"
+            # NOTE: in this case, self.hi and self.wi are 0 (self.shape should be
+            # somethin like: "(512, )"
             vars_shape = (self.model.batch_size, self.ci)
         shape_ = (self.ci,)
 
@@ -62,12 +63,20 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
 
         self.gamma = np.full(shape_, self.gamma_init_val, dtype=self.model.dtype)
         self.beta = np.full(shape_, self.beta_init_val, dtype=self.model.dtype)
-        self.running_mean = np.asarray(self.moving_mean_initializer(shape_, self.model.dtype), order="C")
-        self.running_var = np.asarray(self.moving_variance_initializer(shape_, self.model.dtype), order="C")
+        self.running_mean = np.asarray(
+            self.moving_mean_initializer(shape_, self.model.dtype), order="C"
+        )
+        self.running_var = np.asarray(
+            self.moving_variance_initializer(shape_, self.model.dtype), order="C"
+        )
 
-        self.nparams = self.gamma.size + self.beta.size + self.running_mean.size + self.running_var.size
+        self.nparams = (
+            self.gamma.size + self.beta.size + self.running_mean.size + self.running_var.size
+        )
 
-        # NOTE: These attributes only store data, their value before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
+        # NOTE: These attributes only store data, their value before the operation
+        # doesn't matter; they're initalized due avoid warnings in
+        # "LayerAndActivationBase.export".
         self.y_dx: np.ndarray = np.zeros(vars_shape, dtype=self.model.dtype)
         self.memory_used += (self.nparams * self.model.dtype.itemsize) + self.y_dx.nbytes
         # NOTE: This variable stores both y and dx values.
@@ -79,7 +88,10 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
         self.std: np.ndarray = np.zeros(shape=self.std_shape, dtype=self.model.dtype)
         self.memory_used += self.std.nbytes
 
-        self.tmp_memory_used += int(math.prod(self._mean_inv_shape) + math.prod(self._var_inv_shape)) * self.model.dtype.itemsize
+        self.tmp_memory_used += (
+            int(math.prod(self._mean_inv_shape) + math.prod(self._var_inv_shape))
+            * self.model.dtype.itemsize
+        )
 
         # self.dx: np.ndarray = np.zeros(shape=vars_shape, dtype=self.model.dtype)
         # self.real_memory_size += self.dx.nbytes
@@ -91,7 +103,14 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
         self._mean_shape = (self.ci,)
         self._var_shape = (self.ci,)
         self.dy_xn_shape = vars_shape
-        self.tmp_memory_used += int(math.prod(self._mean_shape) + math.prod(self._var_shape) + math.prod(self.dy_xn_shape)) * self.model.dtype.itemsize
+        self.tmp_memory_used += (
+            int(
+                math.prod(self._mean_shape)
+                + math.prod(self._var_shape)
+                + math.prod(self.dy_xn_shape)
+            )
+            * self.model.dtype.itemsize
+        )
 
         self.memory_used += self.tmp_memory_used
 
@@ -107,7 +126,9 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
             self._var = self.model.memory.ndarray(self._var_shape, dtype=self.model.dtype)
             self.dy_xn = self.model.memory.ndarray(self.dy_xn_shape, dtype=self.model.dtype)
 
-    def _training_fwd(self, x: np.ndarray, _mean: np.ndarray, _var: np.ndarray, y: np.ndarray) -> None:
+    def _training_fwd(
+        self, x: np.ndarray, _mean: np.ndarray, _var: np.ndarray, y: np.ndarray
+    ) -> None:
         """
         Performs the forward pass during training.
         """
@@ -153,7 +174,9 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
         # else: x = x (no reshape needed)
 
         y: np.ndarray = np.asarray(self.y_dx[: x.shape[0], :], dtype=self.model.dtype, order="C")
-        self.xn: np.ndarray = np.asarray(self._xn[: x.shape[0], :], dtype=self.model.dtype, order="C")
+        self.xn: np.ndarray = np.asarray(
+            self._xn[: x.shape[0], :], dtype=self.model.dtype, order="C"
+        )
 
         if self.model.mode is Model.Mode.EVALUATE:
             _mean = self.running_mean
@@ -166,13 +189,17 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
 
             inv_momentum = 1.0 - self.momentum
             # self.running_mean = self.momentum * self.running_mean + inv_momentum * _mean
-            np.multiply(self.momentum, self.running_mean, out=self.running_mean, dtype=self.model.dtype)
+            np.multiply(
+                self.momentum, self.running_mean, out=self.running_mean, dtype=self.model.dtype
+            )
             np.multiply(inv_momentum, _mean, out=self._mean_inv, dtype=self.model.dtype)
             np.add(self.running_mean, self._mean_inv, out=self.running_mean, dtype=self.model.dtype)
             self.running_mean = np.asarray(self.running_mean, dtype=self.model.dtype, order="C")
 
             # self.running_var = self.momentum * self.running_var + inv_momentum * _var
-            np.multiply(self.momentum, self.running_var, out=self.running_var, dtype=self.model.dtype)
+            np.multiply(
+                self.momentum, self.running_var, out=self.running_var, dtype=self.model.dtype
+            )
             np.multiply(inv_momentum, _var, out=self._var_inv, dtype=self.model.dtype)
             np.add(self.running_var, self._var_inv, out=self.running_var, dtype=self.model.dtype)
             self.running_var = np.asarray(self.running_var, dtype=self.model.dtype, order="C")

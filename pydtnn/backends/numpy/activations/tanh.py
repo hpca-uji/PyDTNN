@@ -27,7 +27,9 @@ class TanhNumpy(Tanh[np.ndarray], ActivationNumpy):
         Initialize the layer model and allocate memory for the output buffer.
         """
         super()._model_init(prev_shape, x)
-        # NOTE: This attribute only stores data, its value before the operation doesn't matters; it's initalized due avoid warnings in "LayerAndActivationBase.export".
+        # NOTE: This attribute only stores data, its value before the operation
+        # doesn't matters; it's initalized due avoid warnings in
+        # "LayerAndActivationBase.export".
         self._y = np.zeros((self.model.batch_size, *prev_shape), dtype=self.model.dtype)
 
         self.memory_used += self._y.nbytes

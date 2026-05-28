@@ -27,7 +27,9 @@ class LogNumpy(Log[np.ndarray], ActivationNumpy):
         Initialize layer buffers and memory tracking.
         """
         super()._model_init(prev_shape, x)
-        # NOTE: These attributes only store data, their value before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
+        # NOTE: These attributes only store data, their value before the operation
+        # doesn't matter; they're initalized due avoid warnings in
+        # "LayerAndActivationBase.export".
         self.y = np.zeros(shape=(self.model.batch_size, *self.shape), dtype=self.model.dtype)
         self.memory_used += self.y.nbytes
 
@@ -46,7 +48,7 @@ class LogNumpy(Log[np.ndarray], ActivationNumpy):
         np.exp(x, out=x, dtype=self.model.dtype)
         np.add(x, 1, out=x, dtype=self.model.dtype)
         np.log(x, out=y, dtype=self.model.dtype)
-        # NOTE: Log propierty: "log(a / b) = log(a) - log(b)", and "log(1) = 0" ==> "log(a / b) = - log(b)"
+        # NOTE: Log propierty: "log(a / b) = log(a) - log(b)", and "log(1) = 0"
         np.multiply(y, -1, out=y, dtype=self.model.dtype)
         return y
 

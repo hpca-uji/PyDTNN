@@ -48,7 +48,15 @@ def mobileNet(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Lay
     for n_filt, reps in layout:
         for r in range(reps):
             stride = 2 if reps > 1 and r == 0 else 1
-            _(Conv2DDepthwise(nfilters=first_filters, filter_shape=(3, 3), padding=1, stride=stride, use_bias=False))
+            _(
+                Conv2DDepthwise(
+                    nfilters=first_filters,
+                    filter_shape=(3, 3),
+                    padding=1,
+                    stride=stride,
+                    use_bias=False,
+                )
+            )
             _(BatchNormalization())
             _(Relu6())
             _(Conv2DPointwise(nfilters=n_filt, filter_shape=(1, 1), use_bias=False))

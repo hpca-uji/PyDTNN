@@ -65,16 +65,40 @@ class LeakyReluPycuda(LeakyRelu[TensorArray], ActivationPycuda):
         dx_gpu = gpuarray.zeros((self.model.batch_size, *self.shape), self.model.dtype)
         self.dx = TensorArray(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
-        self.fwd_time = im2col_time(m=self.ci, n=n, cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw, dtype=self.model.dtype)  # type: ignore (it's fine)
-        self.bwd_time = col2im_time(m=self.ci, n=n, cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw, dtype=self.model.dtype)  # type: ignore (it's fine)
+        self.fwd_time = im2col_time(
+            m=self.ci,
+            n=n,
+            cpu_speed=self.model.cpu_speed,
+            memory_bw=self.model.memory_bw,
+            dtype=self.model.dtype,
+        )  # type: ignore (it's fine)
+        self.bwd_time = col2im_time(
+            m=self.ci,
+            n=n,
+            cpu_speed=self.model.cpu_speed,
+            memory_bw=self.model.memory_bw,
+            dtype=self.model.dtype,
+        )  # type: ignore (it's fine)
 
     def forward(self, x: TensorArray) -> TensorArray:
         """Perform the forward pass on the GPU."""
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN
+        )
 
         n = np.int32(math.prod(x.shape))
 
-        self.cuda_fwd_func(x.ary, self.mask.ary, self.max.ary, np.float32(self.negative_slope), self.total_num_threads, n, grid=self.grid, block=self.block, stream=self.model.stream)
+        self.cuda_fwd_func(
+            x.ary,
+            self.mask.ary,
+            self.max.ary,
+            np.float32(self.negative_slope),
+            self.total_num_threads,
+            n,
+            grid=self.grid,
+            block=self.block,
+            stream=self.model.stream,
+        )
 
         self.y: TensorArray = self.mask
 
@@ -84,11 +108,22 @@ class LeakyReluPycuda(LeakyRelu[TensorArray], ActivationPycuda):
 
     def backward(self, dy: TensorArray) -> TensorArray:
         """Perform the backward pass on the GPU."""
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX
+        )
 
         n = np.int32(math.prod(dy.shape))
 
-        self.cuda_bwd_func(self.dx.ary, dy.ary, self.mask.ary, self.total_num_threads, n, grid=self.grid, block=self.block, stream=self.model.stream)
+        self.cuda_bwd_func(
+            self.dx.ary,
+            dy.ary,
+            self.mask.ary,
+            self.total_num_threads,
+            n,
+            grid=self.grid,
+            block=self.block,
+            stream=self.model.stream,
+        )
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         return self.dx

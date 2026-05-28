@@ -25,7 +25,9 @@ class ArctanhNumpy(Arctanh[np.ndarray], ActivationNumpy):
     def _model_init(self, prev_shape, x=None):
         """Initialize model parameters and allocate memory for output."""
         super()._model_init(prev_shape, x)
-        # NOTE: This attribute only stores data, its value before the operation doesn't matters; it's initalized due avoid warnings in "LayerAndActivationBase.export".
+        # NOTE: This attribute only stores data, its value before the operation
+        # doesn't matters; it's initalized due avoid warnings in
+        # "LayerAndActivationBase.export".
         self._y = np.zeros(shape=(self.model.batch_size, *self.shape), dtype=self.model.dtype)
 
         self.memory_used += self._y.nbytes

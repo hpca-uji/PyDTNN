@@ -51,7 +51,9 @@ class EarlyStopping(SchedulerWithLossOrMetric):
         self.best_weights_filename: str | None = None
         self.compare = operator.lt if self.minimize else operator.gt
 
-    def on_epoch_end(self, train_loss_or_metrics: np.ndarray, val_loss_or_metrics: np.ndarray) -> None:
+    def on_epoch_end(
+        self, train_loss_or_metrics: np.ndarray, val_loss_or_metrics: np.ndarray
+    ) -> None:
         """
         Check if the monitored metric has improved at the end of an epoch.
 
@@ -68,14 +70,20 @@ class EarlyStopping(SchedulerWithLossOrMetric):
             self.best_epoch = self.epoch_count
             # Save weights + bias
             if not self.best_weights_filename:
-                self.best_weights_filename = f"./model-{self.model.model_name}-weights-rank_{self.model.comm_rank}-{timestamp}.npz"
+                self.best_weights_filename = f"./model-{self.model.model_name}-weights-rank_{
+                    self.model.comm_rank
+                }-{timestamp}.npz"
             self.model.save_model_state(self.best_weights_filename, compress=False)
         elif (self.epoch_count - self.best_epoch) >= self.patience:
             self.stop_training = True
             # Restore weights + bias
             assert self.best_weights_filename
             self.model.load_model_state(self.best_weights_filename)
-            self.log(f"Metric '{self.loss_or_metric}' did not improve for {self.patience} epochs, stop training.")
+            self.log(
+                f"Metric '{self.loss_or_metric}' did not improve for {
+                    self.patience
+                } epochs, stop training."
+            )
         # else: do nothing.
 
     @classmethod
@@ -89,4 +97,8 @@ class EarlyStopping(SchedulerWithLossOrMetric):
         Returns:
             An initialized EarlyStopping scheduler.
         """
-        return EarlyStopping(model.early_stopping_metric, model.early_stopping_patience, model.early_stopping_minimize)
+        return EarlyStopping(
+            model.early_stopping_metric,
+            model.early_stopping_patience,
+            model.early_stopping_minimize,
+        )

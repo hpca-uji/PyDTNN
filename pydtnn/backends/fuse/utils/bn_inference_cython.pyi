@@ -12,7 +12,14 @@ type _npDT_1Dims[T] = _np.ndarray[tuple[int], T]
 
 # TODO: Missing `bn_inference_nchw_cython`
 
-def bn_inference_cython[T: _npDT](x: _npDT_2Dims[T], y: _npDT_2Dims[T], running_mean: _npDT_1Dims[T], std: _npDT_1Dims[T], gamma: _npDT_1Dims[T], beta: _npDT_1Dims[T]) -> None:
+def bn_inference_cython[T: _npDT](
+    x: _npDT_2Dims[T],
+    y: _npDT_2Dims[T],
+    running_mean: _npDT_1Dims[T],
+    std: _npDT_1Dims[T],
+    gamma: _npDT_1Dims[T],
+    beta: _npDT_1Dims[T],
+) -> None:
     """
     Performs batch normalization inference on 2D input data using Cython.
 
@@ -28,7 +35,14 @@ def bn_inference_cython[T: _npDT](x: _npDT_2Dims[T], y: _npDT_2Dims[T], running_
         Nothing. The output is stored in "y".
     """
 
-def bn_relu_inference_cython[T: _npDT](x: _npDT_2Dims[T], y: _npDT_2Dims[T], running_mean: _npDT_1Dims[T], inv_std: _npDT_1Dims[T], gamma: _npDT_1Dims[T], beta: _npDT_1Dims[T]) -> None:
+def bn_relu_inference_cython[T: _npDT](
+    x: _npDT_2Dims[T],
+    y: _npDT_2Dims[T],
+    running_mean: _npDT_1Dims[T],
+    inv_std: _npDT_1Dims[T],
+    gamma: _npDT_1Dims[T],
+    beta: _npDT_1Dims[T],
+) -> None:
     """
     Performs fused batch normalization and ReLU activation inference on 2D input data using Cython.
 

@@ -6,7 +6,8 @@ from typing import TYPE_CHECKING
 from pydtnn.backends.numpy.layers.abstract.pool_2d_layer import AbstractPool2DLayerNumpy
 from pydtnn.layers.adaptive_average_pool_2d import AdaptiveAveragePool2D
 from pydtnn.libs import numpy as np
-from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
+from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
+                                   PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import TensorFormat
 
@@ -49,10 +50,16 @@ class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], AbstractPool
                 self._forward = self._forward_nhwc
                 self._backward = self._backward_nhwc
             case _:
-                raise NotImplementedError(f"AdaptiveAveragePool2DNumpy is not implemented for {self.model.tensor_format} format.")
+                raise NotImplementedError(
+                    f"AdaptiveAveragePool2DNumpy is not implemented for {
+                        self.model.tensor_format
+                    } format."
+                )
 
         y_shape = self.model.encode_shape((self.model.batch_size, self.co, self.ho, self.wo))
-        # NOTE: This attribute only stores data, its value before the operation doesn't matter; it's initalized due avoid warnings in "LayerAndActivationBase.export".
+        # NOTE: This attribute only stores data, its value before the operation
+        # doesn't matter; it's initalized due avoid warnings in
+        # "LayerAndActivationBase.export".
         self.y = np.zeros(y_shape, dtype=self.model.dtype)
         self.memory_used += self.y.nbytes
 
@@ -154,7 +161,10 @@ class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], AbstractPool
         y: np.ndarray = np.ascontiguousarray(self.y[: x.shape[0], :], dtype=self.model.dtype)
         self.mask = np.ascontiguousarray(self._mask[: x.shape[0], :], dtype=self.model.dtype)
 
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_ADP_AVG_POOL)
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT,
+            self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_ADP_AVG_POOL,
+        )
         self._fwd_nhwc(x, y)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return np.asarray(y, dtype=self.model.dtype, order="C")
@@ -162,7 +172,10 @@ class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], AbstractPool
     def _forward_nchw(self, x: np.ndarray) -> np.ndarray:
         """Execute forward pass for NCHW and emit tracing events."""
         y: np.ndarray = np.ascontiguousarray(self.y[: x.shape[0], :], dtype=self.model.dtype)
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_ADP_AVG_POOL)
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT,
+            self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_ADP_AVG_POOL,
+        )
         self._fwd_nchw(x, y)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return np.asarray(y, dtype=self.model.dtype, order="C")
@@ -171,7 +184,10 @@ class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], AbstractPool
         """Execute backward pass for NHWC and emit tracing events."""
         dx: np.ndarray = np.ascontiguousarray(self.dx[: dy.shape[0], :], dtype=self.model.dtype)
         dx.fill(0)
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ADP_AVG_POOL)
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT,
+            self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ADP_AVG_POOL,
+        )
         self._bwd_nhwc(dx, dy)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return np.asarray(dx, dtype=self.model.dtype, order="C")
@@ -180,7 +196,10 @@ class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], AbstractPool
         """Execute backward pass for NCHW and emit tracing events."""
         dx: np.ndarray = np.ascontiguousarray(self.dx[: dy.shape[0], :], dtype=self.model.dtype)
         dx.fill(0)
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ADP_AVG_POOL)
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT,
+            self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ADP_AVG_POOL,
+        )
         self._bwd_nchw(dx, dy)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return np.asarray(dx, dtype=self.model.dtype, order="C")

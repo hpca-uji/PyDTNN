@@ -100,7 +100,15 @@ class ChestXRay(Dataset):
             force_test_as_validation: Whether to use the test set as validation.
             debug: Whether to enable debug mode.
         """
-        super().__init__(model, TRAIN_NSAMPLES, TEST_NSAMPLES, INPUT_SHAPE, OUTPUT_SHAPE, force_test_as_validation=force_test_as_validation, debug=debug)
+        super().__init__(
+            model,
+            TRAIN_NSAMPLES,
+            TEST_NSAMPLES,
+            INPUT_SHAPE,
+            OUTPUT_SHAPE,
+            force_test_as_validation=force_test_as_validation,
+            debug=debug,
+        )
 
     def _get_labels(self, image_file: str) -> Class:
         """
@@ -122,7 +130,9 @@ class ChestXRay(Dataset):
         """
         Initializes the dataset by parsing metadata and mapping images to archives.
         """
-        self._xy_filenames: list[list[tuple[str, Class]]] = [[("", np.empty((0,)))] for _ in Dataset.Part]
+        self._xy_filenames: list[list[tuple[str, Class]]] = [
+            [("", np.empty((0,)))] for _ in Dataset.Part
+        ]
         self.files = Path(self.model.dataset_path)
         csv = self.files.joinpath("Data_Entry_2017_v2020.csv")
         train = self.files.joinpath("train_val_list.txt").read_text().splitlines()
@@ -132,16 +142,22 @@ class ChestXRay(Dataset):
         output_shape = len(set(chain.from_iterable(self._dict_images_labels.values())))
 
         if output_shape != OUTPUT_SHAPE[0]:
-            raise ValueError(f"Mismatch class shape (got: {output_shape}, expect: {OUTPUT_SHAPE[0]})")
+            raise ValueError(
+                f"Mismatch class shape (got: {output_shape}, expect: {OUTPUT_SHAPE[0]})"
+            )
 
         if len(train) != TRAIN_NSAMPLES:
-            raise ValueError(f"Mismatch train samples (got: {len(train)}, expect: {TRAIN_NSAMPLES})")
+            raise ValueError(
+                f"Mismatch train samples (got: {len(train)}, expect: {TRAIN_NSAMPLES})"
+            )
 
         if len(test) != TEST_NSAMPLES:
             raise ValueError(f"Mismatch train samples (got: {len(test)}, expect: {TEST_NSAMPLES})")
 
         # Getting the labels and equivalence class - label
-        labels = sorted(list({elem for list_elems in self._dict_images_labels.values() for elem in list_elems}))
+        labels = sorted(
+            list({elem for list_elems in self._dict_images_labels.values() for elem in list_elems})
+        )
         self.labels2classes = {labels[_class]: _class for _class in range(len(labels))}
 
         # Get image map
@@ -155,9 +171,17 @@ class ChestXRay(Dataset):
                         self._src_filename[member.name] = str(gz)
 
         # Format: 'datasets/chestxray/images_06.tar.gz', 'images/00011575_000.png'
-        self._xy_filenames[Dataset.Part.TRAIN] = [(f"images/{name}", self._get_labels(name)) for name in train]
-        self._xy_filenames[Dataset.Part.TEST] = [(f"images/{name}", self._get_labels(name)) for name in test]
-        self._xy_filenames[Dataset.Part.VAL] = self._xy_filenames[Dataset.Part.TEST] if self.model.test_as_validation else self._xy_filenames[Dataset.Part.TRAIN]
+        self._xy_filenames[Dataset.Part.TRAIN] = [
+            (f"images/{name}", self._get_labels(name)) for name in train
+        ]
+        self._xy_filenames[Dataset.Part.TEST] = [
+            (f"images/{name}", self._get_labels(name)) for name in test
+        ]
+        self._xy_filenames[Dataset.Part.VAL] = (
+            self._xy_filenames[Dataset.Part.TEST]
+            if self.model.test_as_validation
+            else self._xy_filenames[Dataset.Part.TRAIN]
+        )
 
     def _data_generator(self, part: Dataset.Part) -> Generator[tuple[np.ndarray, np.ndarray]]:
         """
@@ -174,13 +198,18 @@ class ChestXRay(Dataset):
         xy_filenames = self._xy_filenames[part]
 
         if part is Dataset.Part.TRAIN and self.model.augment_shuffle:
-            random.shuffle(xy_filenames)  # type: ignore (numpy shuffle's typing wasn't well defined.)
+            # type: ignore (numpy shuffle's typing wasn't well defined.)
+            random.shuffle(xy_filenames)
 
         xy_filenames = xy_filenames[offset: offset + nsamples]
 
         for path, y in xy_filenames:
             src_path = self._src_filename[path]
-            with self._gzip_open(src_path) as g, tarfile.TarFile(fileobj=g) as t, t.extractfile(path) as fp:  # type: ignore
+            with (
+                self._gzip_open(src_path) as g,
+                tarfile.TarFile(fileobj=g) as t,
+                t.extractfile(path) as fp,
+            ):  # type: ignore
                 x = self._load_gray_image(fp)
 
             # Add N dimension

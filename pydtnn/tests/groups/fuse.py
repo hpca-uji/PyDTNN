@@ -1,6 +1,11 @@
 """Fused layers test group"""
 
-__all__ = ("BatchNormalizationReluTestCase", "Conv2DBatchNormalizationTestCase", "Conv2DBatchNormalizationReluTestCase", "Conv2DReluTestCase")
+__all__ = (
+    "BatchNormalizationReluTestCase",
+    "Conv2DBatchNormalizationTestCase",
+    "Conv2DBatchNormalizationReluTestCase",
+    "Conv2DReluTestCase",
+)
 
 from pydtnn.tests.batch_normalization_relu import BatchNormalizationReluTestCase  # isort:skip  # noqa: E402
 from pydtnn.tests.conv_2d_batch_normalization import Conv2DBatchNormalizationTestCase  # isort:skip  # noqa: E402

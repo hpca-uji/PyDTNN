@@ -27,7 +27,14 @@ class Adam[T: Array](Optimizer[T]):
     for each parameter from estimates of first and second moments of the gradients.
     """
 
-    def __init__(self, learning_rate: float = 1e-2, beta1: float = 0.99, beta2: float = 0.999, epsilon: float = 1e-7, decay: float = 0.0):
+    def __init__(
+        self,
+        learning_rate: float = 1e-2,
+        beta1: float = 0.99,
+        beta2: float = 0.999,
+        epsilon: float = 1e-7,
+        decay: float = 0.0,
+    ):
         """
         Initialize the Adam optimizer.
 
@@ -71,4 +78,10 @@ class Adam[T: Array](Optimizer[T]):
         Returns:
             An initialized Adam optimizer.
         """
-        return Adam(learning_rate=model.learning_rate, beta1=model.optimizer_beta1, beta2=model.optimizer_beta2, epsilon=model.optimizer_epsilon, decay=model.optimizer_decay)
+        return Adam(
+            learning_rate=model.learning_rate,
+            beta1=model.optimizer_beta1,
+            beta2=model.optimizer_beta2,
+            epsilon=model.optimizer_epsilon,
+            decay=model.optimizer_decay,
+        )

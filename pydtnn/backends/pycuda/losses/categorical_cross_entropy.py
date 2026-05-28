@@ -21,7 +21,9 @@ class CategoricalCrossEntropyPycuda(LossPycuda, CategoricalCrossEntropy[TensorAr
     Categorical Cross-Entropy loss implementation for PyCUDA backends.
     """
 
-    def compute(self, y_pred: TensorArray, y_targ: TensorArray, batch_size: int) -> tuple[float, TensorArray]:
+    def compute(
+        self, y_pred: TensorArray, y_targ: TensorArray, batch_size: int
+    ) -> tuple[float, TensorArray]:
         """
         Computes the categorical cross-entropy loss and gradients on the GPU.
 
@@ -33,6 +35,17 @@ class CategoricalCrossEntropyPycuda(LossPycuda, CategoricalCrossEntropy[TensorAr
         Returns:
             A tuple containing the scalar loss value and the gradient tensor.
         """
-        self.kernel(y_targ.ary, y_pred.ary, self.loss, self.dx.ary, np.int32(batch_size), np.int32(self.shape[1]), np.float32(self.eps), grid=self.grid, block=self.block, stream=self.model.stream)
+        self.kernel(
+            y_targ.ary,
+            y_pred.ary,
+            self.loss,
+            self.dx.ary,
+            np.int32(batch_size),
+            np.int32(self.shape[1]),
+            np.float32(self.eps),
+            grid=self.grid,
+            block=self.block,
+            stream=self.model.stream,
+        )
         loss = -gpuarray.sum(self.loss[:batch_size]).get() / batch_size
         return loss.item(), self.dx

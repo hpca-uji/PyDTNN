@@ -43,13 +43,22 @@ class RMSPropPycuda(RMSProp[TensorArray], OptimizerPycuda):
         pow_func = {np.dtype(np.float32): "powf", np.dtype(np.float64): "pow"}[self.model.dtype]
 
         # --- GPU ---
-        parameters_gpu = "{T} *w, {T} *dw, {T} *cache, float lr, float decay, float rho, float epsilon".format(T=DTYPE2CTYPE[self.model.dtype])
-        operations_gpu = "cache[i] = rho * cache[i] + (1 - rho) * {func}(dw[i], 2); \
-                                             w[i] -= lr * (decay * w[i] + (dw[i] / sqrtf(cache[i] + epsilon)))".format(func=pow_func)
+        parameters_gpu = (
+            "{T} *w, {T} *dw, {T} *cache, float lr, float decay, float rho, float epsilon".format(
+                T=DTYPE2CTYPE[self.model.dtype]
+            )
+        )
+        operations_gpu = (
+            "cache[i] = rho * cache[i] + (1 - rho) * {func}(dw[i], 2);                             "
+            "                 w[i] -= lr * (decay * w[i] + (dw[i] / sqrtf(cache[i] + epsilon)))".format(
+                func=pow_func))
         self.update_kernel = ElementwiseKernel(parameters_gpu, operations_gpu, "RMSProp_kernel")
 
         # GPU DIRECT -
-        self.defines_replaces: dict[str, str] = {'"TYPE"': DTYPE2CTYPE[self.model.dtype], "powf_or_pow": pow_func}
+        self.defines_replaces: dict[str, str] = {
+            '"TYPE"': DTYPE2CTYPE[self.model.dtype],
+            "powf_or_pow": pow_func,
+        }
         self.update_gpudirect = self._get_kernel(func_name_subfix="_gpudirect")
 
     def _model_init(self, list_layers: list[LayerPycuda]) -> None:
@@ -68,9 +77,12 @@ class RMSPropPycuda(RMSProp[TensorArray], OptimizerPycuda):
                 self.context[layer.id] = dict[str, gpuarray.GPUArray]()
                 for w_ in list_grad_vars:
                     w = getattr(layer, w_)
-                    self.context[layer.id]["cache_%s" % w_] = gpuarray.zeros(w.shape, dtype=layer.model.dtype)
+                    self.context[layer.id]["cache_%s" % w_] = gpuarray.zeros(
+                        w.shape, dtype=layer.model.dtype
+                    )
 
-                    self.memory_used += self.context[layer.id]["cache_%s" % w_].nbytes  # type: ignore (They are both "gpuarray" and not "int")
+                    # type: ignore (They are both "gpuarray" and not "int")
+                    self.memory_used += self.context[layer.id]["cache_%s" % w_].nbytes
 
     def update(self, layer: LayerPycuda):
         """
@@ -102,5 +114,14 @@ class RMSPropPycuda(RMSProp[TensorArray], OptimizerPycuda):
                     stream=layer.stream_2,
                 )
             else:
-                self.update_kernel(w.ary, dw.ary, cache, np.float32(self.learning_rate), np.float32(self.decay), np.float32(self.rho), np.float32(self.epsilon), stream=layer.stream_2)
+                self.update_kernel(
+                    w.ary,
+                    dw.ary,
+                    cache,
+                    np.float32(self.learning_rate),
+                    np.float32(self.decay),
+                    np.float32(self.rho),
+                    np.float32(self.epsilon),
+                    stream=layer.stream_2,
+                )
             self._dtoh_ary(layer=layer, w_gpu=w, w_cpu=getattr(layer, f"{w_}_cpu"))

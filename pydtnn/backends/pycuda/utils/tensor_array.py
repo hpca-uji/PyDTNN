@@ -54,7 +54,15 @@ class TensorArray:
     ):
         """Creates an uninitialized TensorArray."""
         gpu_arr = gpuarray.empty(shape, dtype)
-        return TensorArray(gpu_arr=gpu_arr, tensor_format=tensor_format, cudnn_dtype=cudnn_dtype, tensor_type=tensor_type, desc=desc, gpudirect=gpudirect, cublas=cublas)
+        return TensorArray(
+            gpu_arr=gpu_arr,
+            tensor_format=tensor_format,
+            cudnn_dtype=cudnn_dtype,
+            tensor_type=tensor_type,
+            desc=desc,
+            gpudirect=gpudirect,
+            cublas=cublas,
+        )
 
     @staticmethod
     def new_zeros(
@@ -69,7 +77,15 @@ class TensorArray:
     ):
         """Creates a zero-initialized TensorArray."""
         gpu_arr = gpuarray.zeros(shape, dtype)
-        return TensorArray(gpu_arr=gpu_arr, tensor_format=tensor_format, cudnn_dtype=cudnn_dtype, tensor_type=tensor_type, desc=desc, gpudirect=gpudirect, cublas=cublas)
+        return TensorArray(
+            gpu_arr=gpu_arr,
+            tensor_format=tensor_format,
+            cudnn_dtype=cudnn_dtype,
+            tensor_type=tensor_type,
+            desc=desc,
+            gpudirect=gpudirect,
+            cublas=cublas,
+        )
 
     @staticmethod
     def new_pair_gpudirect(
@@ -87,7 +103,15 @@ class TensorArray:
         x_cpu = drv.aligned_zeros(shape, dtype)
         x_gpu = drv.register_host_memory(x_cpu, flags=drv.mem_host_register_flags.DEVICEMAP)
 
-        x_gpu = TensorArray(x_gpu, tensor_format=tensor_format, cudnn_dtype=cudnn_dtype, tensor_type=tensor_type, desc=desc, gpudirect=gpudirect, cublas=cublas)
+        x_gpu = TensorArray(
+            x_gpu,
+            tensor_format=tensor_format,
+            cudnn_dtype=cudnn_dtype,
+            tensor_type=tensor_type,
+            desc=desc,
+            gpudirect=gpudirect,
+            cublas=cublas,
+        )
         return (x_cpu, x_gpu)
 
     @staticmethod
@@ -104,7 +128,15 @@ class TensorArray:
         """Creates a standard CPU/GPU pair."""
         x_cpu = np.zeros(shape, dtype)
         x_gpu = gpuarray.zeros(shape, dtype)
-        x_gpu = TensorArray(x_gpu, tensor_format=tensor_format, cudnn_dtype=cudnn_dtype, tensor_type=tensor_type, desc=desc, gpudirect=gpudirect, cublas=cublas)
+        x_gpu = TensorArray(
+            x_gpu,
+            tensor_format=tensor_format,
+            cudnn_dtype=cudnn_dtype,
+            tensor_type=tensor_type,
+            desc=desc,
+            gpudirect=gpudirect,
+            cublas=cublas,
+        )
         return (x_cpu, x_gpu)
 
     @staticmethod
@@ -122,10 +154,27 @@ class TensorArray:
         """Factory method to create a CPU/GPU pair based on driver availability."""
         if drv is not None:
             return TensorArray.new_pair_gpudirect(
-                drv=drv, shape=shape, dtype=dtype, tensor_format=tensor_format, cudnn_dtype=cudnn_dtype, tensor_type=tensor_type, desc=desc, gpudirect=gpudirect, cublas=cublas
+                drv=drv,
+                shape=shape,
+                dtype=dtype,
+                tensor_format=tensor_format,
+                cudnn_dtype=cudnn_dtype,
+                tensor_type=tensor_type,
+                desc=desc,
+                gpudirect=gpudirect,
+                cublas=cublas,
             )
         else:
-            return TensorArray.new_pair(shape=shape, dtype=dtype, tensor_format=tensor_format, cudnn_dtype=cudnn_dtype, tensor_type=tensor_type, desc=desc, gpudirect=gpudirect, cublas=cublas)
+            return TensorArray.new_pair(
+                shape=shape,
+                dtype=dtype,
+                tensor_format=tensor_format,
+                cudnn_dtype=cudnn_dtype,
+                tensor_type=tensor_type,
+                desc=desc,
+                gpudirect=gpudirect,
+                cublas=cublas,
+            )
 
     def __init__(
         self,
@@ -199,7 +248,10 @@ class TensorArray:
             case 4:
                 shape = gpu_arr.shape
             case _:
-                raise ValueError(f"The expected len shape are 1, 2, 3 or 4. Shape received: {len(gpu_arr.shape)}.")
+                raise ValueError(
+                    "The expected len shape are 1, 2, 3 or 4. Shape received:"
+                    f" {len(gpu_arr.shape)}."
+                )
 
         if self.cpu_shape is None:
             self.cpu_shape = gpu_arr.shape
@@ -209,12 +261,18 @@ class TensorArray:
         """Checks equality with another TensorArray."""
         if not isinstance(value, TensorArray):
             return False
-        return value.tensor_type == self.tensor_type and value.tensor_format == self.tensor_format and value.ary == self.ary
+        return (
+            value.tensor_type == self.tensor_type
+            and value.tensor_format == self.tensor_format
+            and value.ary == self.ary
+        )
 
     def __repr__(self) -> str:
         """Returns string representation of the TensorArray."""
         desc = hex(self.desc) if self.desc else None
-        return f"<{self.__class__.__name__} type={self.tensor_type} format={self.tensor_format} at {desc}>"
+        return f"<{self.__class__.__name__} type={self.tensor_type} format={self.tensor_format} at {
+            desc
+        }>"
 
     @property
     def ptr_voidp(self) -> ctypes.c_void_p:
@@ -237,13 +295,17 @@ class TensorArray:
                 desc = cudnn.cudnnCreateTensorDescriptor()
                 assert desc
                 self.desc = desc
-                cudnn.cudnnSetTensor4dDescriptor(self.desc, self.cudnn_tensor_format, self.cudnn_dtype, n, c, h, w)
+                cudnn.cudnnSetTensor4dDescriptor(
+                    self.desc, self.cudnn_tensor_format, self.cudnn_dtype, n, c, h, w
+                )
             case self.TensorType.FILTER:
                 n, c, h, w = self._decode_shape(self.shape)
                 desc = cudnn.cudnnCreateFilterDescriptor()
                 assert desc
                 self.desc = desc
-                cudnn.cudnnSetFilter4dDescriptor(self.desc, self.cudnn_dtype, self.cudnn_tensor_format, n, c, h, w)
+                cudnn.cudnnSetFilter4dDescriptor(
+                    self.desc, self.cudnn_dtype, self.cudnn_tensor_format, n, c, h, w
+                )
             case self.TensorType.SEQ:
                 desc = cudnn.cudnnCreateSeqDataDescriptor()
                 assert desc
@@ -258,8 +320,19 @@ class TensorArray:
                 axes[1] = cudnn.cudnnSeqDataAxis["CUDNN_SEQDATA_BEAM_DIM"]
                 axes[2] = cudnn.cudnnSeqDataAxis["CUDNN_SEQDATA_TIME_DIM"]
                 axes[3] = cudnn.cudnnSeqDataAxis["CUDNN_SEQDATA_VECT_DIM"]
-                self.seq_length_array = np.full(shape=(self.shape[0] * self.shape[1]), fill_value=self.shape[-2], dtype=np.int32)
-                cudnn.cudnnSetSeqDataDescriptor(self.desc, self.cudnn_dtype, np.int32(4), dimA, axes, np.int32(len(self.seq_length_array)), self.seq_length_array, None)
+                self.seq_length_array = np.full(
+                    shape=(self.shape[0] * self.shape[1]), fill_value=self.shape[-2], dtype=np.int32
+                )
+                cudnn.cudnnSetSeqDataDescriptor(
+                    self.desc,
+                    self.cudnn_dtype,
+                    np.int32(4),
+                    dimA,
+                    axes,
+                    np.int32(len(self.seq_length_array)),
+                    self.seq_length_array,
+                    None,
+                )
             case self.TensorType.OTHER:
                 pass
 
@@ -299,7 +372,9 @@ class TensorArray:
 
     def set_async(self, value: np.ndarray, stream=None) -> None:
         """Asynchronously copies data from CPU to GPU."""
-        self.ary.set_async(np.asarray(value.reshape(self.ary.shape), dtype=self.ary.dtype), stream=stream)
+        self.ary.set_async(
+            np.asarray(value.reshape(self.ary.shape), dtype=self.ary.dtype), stream=stream
+        )
 
     def get(self, ary=None) -> np.ndarray:
         """Copies data from GPU to CPU and removes padding."""
@@ -327,11 +402,16 @@ class TensorArray:
                     case TensorFormat.NCHW:
                         value = np.squeeze(value, axis=(1,))
                     case TensorFormat.NHWC:
-                        raise NotImplementedError("Shape padding not implemented for 3-dim shape on NHWC")
+                        raise NotImplementedError(
+                            "Shape padding not implemented for 3-dim shape on NHWC"
+                        )
             case 4:
                 value = value
             case _:
-                raise ValueError(f"The expected len shape are 1, 2, 3 or 4. Shape received: {len(self.ary.shape)}.")
+                raise ValueError(
+                    "The expected len shape are 1, 2, 3 or 4. Shape received:"
+                    f" {len(self.ary.shape)}."
+                )
 
         if ary is None:
             return value
@@ -355,7 +435,8 @@ class TensorArray:
 
     def _view(self, ary, keep_shape=True):
         """Creates a new TensorArray instance sharing the same underlying configuration."""
-        # NOTE: In some cases, it would be possible to share the descriptor more aggressively, but we don't have enough information to decide when.
+        # NOTE: In some cases, it would be possible to share the descriptor more
+        # aggressively, but we don't have enough information to decide when.
         return TensorArray(
             gpu_arr=ary,
             tensor_format=self.tensor_format,

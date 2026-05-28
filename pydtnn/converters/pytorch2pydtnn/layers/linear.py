@@ -1,4 +1,5 @@
-# In this file must be implemented only the translation of PyTorch Linear layers to its PyDTNN equivalent.
+# In this file must be implemented only the translation of PyTorch Linear
+# layers to its PyDTNN equivalent.
 
 """Module for converting PyTorch Linear layers to PyDTNN FC layers."""
 
@@ -42,7 +43,11 @@ def Linear(args: dict[str, Any]) -> FC:
     PYDTNN_SHAPE = "shape"
     pydtnn_dict_keys = [PYDTNN_BIAS, PYDTNN_SHAPE]
 
-    layer_args = cm.prepare_pydtnn_arguments(arguments=args[cm.ARGUMENTS], torch_dict_keys=torch_dict_keys, pydtnn_dict_keys=pydtnn_dict_keys)
+    layer_args = cm.prepare_pydtnn_arguments(
+        arguments=args[cm.ARGUMENTS],
+        torch_dict_keys=torch_dict_keys,
+        pydtnn_dict_keys=pydtnn_dict_keys,
+    )
 
     # PyDTNN expects the shape as a tuple instead of an int.
     if PYDTNN_SHAPE in layer_args and isinstance(layer_args[PYDTNN_SHAPE], int):

@@ -66,7 +66,22 @@ class TestCase(unittest.TestCase):
 class D:
     """Container for convolution layer dimensions and parameters."""
 
-    def __init__(self, b=1, c=1, h=128, w=100, kn=1, kh=16, kw=10, vpadding=1, hpadding=1, vstride=1, hstride=1, vdilation=1, hdilation=1):
+    def __init__(
+        self,
+        b=1,
+        c=1,
+        h=128,
+        w=100,
+        kn=1,
+        kh=16,
+        kw=10,
+        vpadding=1,
+        hpadding=1,
+        vstride=1,
+        hstride=1,
+        vdilation=1,
+        hdilation=1,
+    ):
         """Initializes convolution dimensions and hyperparameters."""
         self.b = b  # Batch size
         self.c = c  # Channels per layer
@@ -128,6 +143,20 @@ alexnet_layers = [
 alexnet_backward_layers = []
 for layer in alexnet_layers:
     # w <- y (kn * b * ho * wo)
-    alexnet_backward_layers.append(D(layer.c, layer.b, layer.h, layer.w, layer.kn, layer.ho, layer.wo, layer.vpadding, layer.hpadding, layer.vstride, layer.hstride))
+    alexnet_backward_layers.append(
+        D(
+            layer.c,
+            layer.b,
+            layer.h,
+            layer.w,
+            layer.kn,
+            layer.ho,
+            layer.wo,
+            layer.vpadding,
+            layer.hpadding,
+            layer.vstride,
+            layer.hstride,
+        )
+    )
 
 alexnet_all_layers = alexnet_layers + alexnet_backward_layers

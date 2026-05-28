@@ -87,7 +87,9 @@ def format_reshape(shape: ArrayShape, src: str, dst: str) -> ArrayShape:
         (ArrayShape): `shape` with `dst` order.
     """
 
-    assert len(shape) == len(src) == len(dst), f"Inconsistent number of dimensions ({shape=}, {src=}, {dst=})"
+    assert len(shape) == len(src) == len(dst), (
+        f"Inconsistent number of dimensions ({shape=}, {src=}, {dst=})"
+    )
     assert set(src) == set(dst), f"Inconsistent dimension names ({src=}, {dst=})"
     assert len(src) == len(set(src)), f"Duplicate dimension names ({src=})"
     assert len(dst) == len(set(dst)), f"Duplicate dimension names ({dst=})"

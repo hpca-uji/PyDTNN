@@ -3,7 +3,18 @@
 from pydtnn.backends.cython.utils.base import _npDT, _npDT_2Dims, _npDT_4Dims
 
 def im2col_1ch_nchw_cython[T: _npDT](
-    x: _npDT_4Dims[T], cols: _npDT_2Dims[T], kh: int, kw: int, ho: int, wo: int, vpadding: int, hpadding: int, vstride: int, hstride: int, vdilation: int, hdilation: int
+    x: _npDT_4Dims[T],
+    cols: _npDT_2Dims[T],
+    kh: int,
+    kw: int,
+    ho: int,
+    wo: int,
+    vpadding: int,
+    hpadding: int,
+    vstride: int,
+    hstride: int,
+    vdilation: int,
+    hdilation: int,
 ) -> None:
     """
     Perform im2col transformation for a single channel NCHW input using Cython.

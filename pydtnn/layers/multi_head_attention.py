@@ -18,7 +18,15 @@ class MultiHeadAttention[T: Array](AbstractBlockLayer[T]):
     Multi-head attention mechanism layer.
     """
 
-    def __init__(self, embedl: int = 64, d_k: int = 3, heads: int = 10, dropout_rate: float = 0.5, weights_initializer=initializers.glorot_uniform, biases_initializer=initializers.zeros):
+    def __init__(
+        self,
+        embedl: int = 64,
+        d_k: int = 3,
+        heads: int = 10,
+        dropout_rate: float = 0.5,
+        weights_initializer=initializers.glorot_uniform,
+        biases_initializer=initializers.zeros,
+    ):
         """
         Initializes the MultiHeadAttention layer.
 

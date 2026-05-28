@@ -44,11 +44,33 @@ class SoftmaxPycuda(Softmax[TensorArray], ActivationPycuda):
     def forward(self, x: TensorArray) -> TensorArray:
         """Perform the forward pass using cuDNN."""
         alpha, beta = 1.0, 0.0
-        cudnn.cudnnSoftmaxForward(self.model.cudnn_handle, self.algo, self.mode, alpha, x.desc, x.ptr_voidp, beta, self.y.desc, self.y.ptr_voidp)
+        cudnn.cudnnSoftmaxForward(
+            self.model.cudnn_handle,
+            self.algo,
+            self.mode,
+            alpha,
+            x.desc,
+            x.ptr_voidp,
+            beta,
+            self.y.desc,
+            self.y.ptr_voidp,
+        )
         return self.y
 
     def backward(self, dy: TensorArray) -> TensorArray:
         """Perform the backward pass using cuDNN."""
         alpha, beta = 1.0, 0.0
-        cudnn.cudnnSoftmaxBackward(self.model.cudnn_handle, self.algo, self.mode, alpha, self.y.desc, self.y.ptr_voidp, dy.desc, dy.ptr_voidp, beta, self.dx.desc, self.dx.ptr_voidp)
+        cudnn.cudnnSoftmaxBackward(
+            self.model.cudnn_handle,
+            self.algo,
+            self.mode,
+            alpha,
+            self.y.desc,
+            self.y.ptr_voidp,
+            dy.desc,
+            dy.ptr_voidp,
+            beta,
+            self.dx.desc,
+            self.dx.ptr_voidp,
+        )
         return self.dx

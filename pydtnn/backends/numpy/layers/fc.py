@@ -6,7 +6,8 @@ from typing import TYPE_CHECKING
 from pydtnn.backends.numpy.layers.abstract.layer import LayerNumpy
 from pydtnn.layers.fc import FC
 from pydtnn.libs import numpy as np
-from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
+from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
+                                   PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
 from pydtnn.utils.performance_models import matmul_time
 
 __all__ = ("FCNumpy",)
@@ -33,21 +34,29 @@ class FCNumpy(FC[np.ndarray], LayerNumpy):
     def _model_init(self, prev_shape, x=None):
         """Initialize layer parameters, buffers, and performance models."""
         super()._model_init(prev_shape, x)
-        self.weights = np.asarray(self.weights_initializer(self.weights_shape, self.model.param_dtype), order="C")
+        self.weights = np.asarray(
+            self.weights_initializer(self.weights_shape, self.model.param_dtype), order="C"
+        )
         self.nparams += self.weights.size
         self.memory_used += self.weights.nbytes
 
         # Initialize outputs:
-        # NOTE: These attributes only store data, their values before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
+        # NOTE: These attributes only store data, their values before the
+        # operation doesn't matter; they're initalized due avoid warnings in
+        # "LayerAndActivationBase.export".
         self.y = np.zeros((self.model.batch_size, *self.shape), dtype=self.model.dtype)
         self.memory_used += self.y.nbytes
 
-        self.dx = np.zeros(shape=(self.model.batch_size, *self.prev_shape), dtype=self.model.dtype, order="C")
+        self.dx = np.zeros(
+            shape=(self.model.batch_size, *self.prev_shape), dtype=self.model.dtype, order="C"
+        )
         self.dw = np.zeros(shape=self.weights_shape, dtype=self.model.param_dtype, order="C")
         self.memory_used += self.dx.nbytes + self.dw.nbytes
 
         if self.use_bias:
-            self.biases = np.asarray(self.biases_initializer(self.shape, self.model.param_dtype), order="C")
+            self.biases = np.asarray(
+                self.biases_initializer(self.shape, self.model.param_dtype), order="C"
+            )
             self.nparams += self.biases.size
             self.memory_used += self.biases.nbytes
 
@@ -57,25 +66,38 @@ class FCNumpy(FC[np.ndarray], LayerNumpy):
 
         # Performance model
         self.fwd_time = self.bwd_time = np.zeros((4,), dtype=np.float32)
-        self.fwd_time += matmul_time(m=self.model.batch_size,
-                                     n=self.weights.shape[1],
-                                     k=self.weights.shape[0],
-                                     cpu_speed=self.model.cpu_speed,
-                                     memory_bw=self.model.memory_bw,
-                                     dtype=self.model.dtype)  # type: ignore (it's fine)
-        self.bwd_time += matmul_time(m=self.weights.shape[0], n=self.weights.shape[1], k=self.model.batch_size, cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw, dtype=self.model.dtype)
-        self.bwd_time += matmul_time(m=self.model.batch_size,
-                                     n=self.weights.shape[0],
-                                     k=self.weights.shape[1],
-                                     cpu_speed=self.model.cpu_speed,
-                                     memory_bw=self.model.memory_bw,
-                                     dtype=self.model.dtype)  # type: ignore (It works well.)
+        self.fwd_time += matmul_time(
+            m=self.model.batch_size,
+            n=self.weights.shape[1],
+            k=self.weights.shape[0],
+            cpu_speed=self.model.cpu_speed,
+            memory_bw=self.model.memory_bw,
+            dtype=self.model.dtype,
+        )  # type: ignore (it's fine)
+        self.bwd_time += matmul_time(
+            m=self.weights.shape[0],
+            n=self.weights.shape[1],
+            k=self.model.batch_size,
+            cpu_speed=self.model.cpu_speed,
+            memory_bw=self.model.memory_bw,
+            dtype=self.model.dtype,
+        )
+        self.bwd_time += matmul_time(
+            m=self.model.batch_size,
+            n=self.weights.shape[0],
+            k=self.weights.shape[1],
+            cpu_speed=self.model.cpu_speed,
+            memory_bw=self.model.memory_bw,
+            dtype=self.model.dtype,
+        )  # type: ignore (It works well.)
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         """Perform the forward pass of the FC layer."""
         self.x = x
         y = np.ascontiguousarray(self.y[: x.shape[0], :], dtype=self.model.dtype)
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_MATMUL)
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_MATMUL
+        )
         np.matmul(x, self.weights, out=y, dtype=self.model.dtype)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
@@ -89,7 +111,9 @@ class FCNumpy(FC[np.ndarray], LayerNumpy):
         """Perform the backward pass of the FC layer."""
 
         # self.model.mode = ModelModeEnum.TRAIN is asumed from this point.
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DW_MATMUL)
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DW_MATMUL
+        )
         # self.dw = np.matmul(self.x.T, dy)
         np.matmul(self.x.T, dy, self.dw, dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
@@ -99,7 +123,9 @@ class FCNumpy(FC[np.ndarray], LayerNumpy):
             np.sum(dy, axis=0, out=self.db)
 
         dx = np.asarray(self.dx[: self.x.shape[0], :], dtype=self.model.dtype, order="C")
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_MATMUL)
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_MATMUL
+        )
         # dx = np.matmul(dy, self.weights.T)
         np.matmul(dy, self.weights.T, out=dx, dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)

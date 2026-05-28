@@ -33,6 +33,14 @@ class KLDivergenceMetricPycuda(KLDivergenceMetric[TensorArray], MetricPycuda):
             The computed KL divergence value as a float.
         """
         self.kernel(
-            y_targ, y_pred, self.cost, np.int32(self.model.batch_size), np.int32(self.shape[1]), np.float32(self.eps), grid=self.model.cuda_grid, block=self.model.cuda_block, stream=self.model.stream
+            y_targ,
+            y_pred,
+            self.cost,
+            np.int32(self.model.batch_size),
+            np.int32(self.shape[1]),
+            np.float32(self.eps),
+            grid=self.model.cuda_grid,
+            block=self.model.cuda_block,
+            stream=self.model.stream,
         )
         return float(gpuarray.sum(self.cost).get() / self.model.batch_size)

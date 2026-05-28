@@ -17,7 +17,16 @@ class EncoderDecoder[T: Array](AbstractBlockLayer[T]):
     A generic Encoder-Decoder block layer implementation.
     """
 
-    def __init__(self, enc_layers: int = 1, dec_layers: int = 1, embedl: int = 64, d_k: int = 3, heads: int = 10, d_ff: int = 256, dropout_rate: float = 0.5):
+    def __init__(
+        self,
+        enc_layers: int = 1,
+        dec_layers: int = 1,
+        embedl: int = 64,
+        d_k: int = 3,
+        heads: int = 10,
+        d_ff: int = 256,
+        dropout_rate: float = 0.5,
+    ):
         """
         Initializes the EncoderDecoder layer with specified hyperparameters.
         """

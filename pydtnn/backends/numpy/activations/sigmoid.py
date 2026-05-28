@@ -22,11 +22,17 @@ class SigmoidNumpy(Sigmoid[np.ndarray], ActivationNumpy):
         """Initialize layer buffers and memory tracking."""
         super()._model_init(prev_shape, x)
 
-        # NOTE: These attributes only store data, their values before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
-        self._y: np.ndarray = np.zeros(shape=(self.model.batch_size, *prev_shape), dtype=self.model.dtype)
+        # NOTE: These attributes only store data, their values before the
+        # operation doesn't matter; they're initalized due avoid warnings in
+        # "LayerAndActivationBase.export".
+        self._y: np.ndarray = np.zeros(
+            shape=(self.model.batch_size, *prev_shape), dtype=self.model.dtype
+        )
         self.memory_used += self._y.nbytes
 
-        self.dx: np.ndarray = np.zeros(shape=(self.model.batch_size, *prev_shape), dtype=self.model.dtype)
+        self.dx: np.ndarray = np.zeros(
+            shape=(self.model.batch_size, *prev_shape), dtype=self.model.dtype
+        )
         self.memory_used += self.dx.nbytes
 
     def forward(self, x: np.ndarray) -> np.ndarray:

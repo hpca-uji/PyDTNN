@@ -13,7 +13,19 @@ import scipy.stats as stats
 from pydtnn.utils import random
 from pydtnn.utils.constants import ArrayShape
 
-__all__ = ("DistributionModeEnum", "ProbabilisticDistribution", "glorot_normal", "glorot_uniform", "he_normal", "he_uniform", "lecun_normal", "lecun_uniform", "ones", "zeros", "InitializerFunc")
+__all__ = (
+    "DistributionModeEnum",
+    "ProbabilisticDistribution",
+    "glorot_normal",
+    "glorot_uniform",
+    "he_normal",
+    "he_uniform",
+    "lecun_normal",
+    "lecun_uniform",
+    "ones",
+    "zeros",
+    "InitializerFunc",
+)
 
 logger = logging.getLogger(__name__)
 
@@ -46,11 +58,19 @@ def _compute_fans(shape: ArrayShape) -> tuple[int, int]:
         fan_in = shape[1] * receptive_field
         fan_out = shape[0] * receptive_field
     else:
-        raise ValueError(f"The length of 'shape' must be greater or equal to 2, it is {len(shape)}.")
+        raise ValueError(
+            f"The length of 'shape' must be greater or equal to 2, it is {len(shape)}."
+        )
     return fan_in, fan_out
 
 
-def _generate_distribution(shape: ArrayShape, scale: float, mode: DistributionModeEnum, distribution: ProbabilisticDistribution, dtype: np.dtype) -> np.ndarray:
+def _generate_distribution(
+    shape: ArrayShape,
+    scale: float,
+    mode: DistributionModeEnum,
+    distribution: ProbabilisticDistribution,
+    dtype: np.dtype,
+) -> np.ndarray:
     """Generates a weight tensor based on the specified distribution and scaling mode."""
     fan_in, fan_out = _compute_fans(shape)
 
@@ -68,7 +88,11 @@ def _generate_distribution(shape: ArrayShape, scale: float, mode: DistributionMo
         case ProbabilisticDistribution.NORMAL:
             stddev: float = np.sqrt(scale) / STD_DEV_CONST
             # Truncated normal distribution [-2*stddev, 2*stddev]
-            x = stats.truncnorm(-2 * stddev, 2 * stddev, loc=0, scale=stddev).rvs(shape).astype(dtype, copy=False)
+            x = (
+                stats.truncnorm(-2 * stddev, 2 * stddev, loc=0, scale=stddev)
+                .rvs(shape)
+                .astype(dtype, copy=False)
+            )
         case ProbabilisticDistribution.UNIFORM:
             limit = np.sqrt(3.0 * scale)
             x = random.uniform(-limit, limit, shape).astype(dtype, copy=False)
@@ -79,32 +103,44 @@ def _generate_distribution(shape: ArrayShape, scale: float, mode: DistributionMo
 
 def glorot_uniform(shape: ArrayShape, dtype: np.dtype) -> np.ndarray:
     """Initializes weights using the Glorot uniform distribution."""
-    return _generate_distribution(shape, 1.0, DistributionModeEnum.FAN_AVG, ProbabilisticDistribution.UNIFORM, dtype)
+    return _generate_distribution(
+        shape, 1.0, DistributionModeEnum.FAN_AVG, ProbabilisticDistribution.UNIFORM, dtype
+    )
 
 
 def glorot_normal(shape: ArrayShape, dtype: np.dtype) -> np.ndarray:
     """Initializes weights using the Glorot normal distribution."""
-    return _generate_distribution(shape, 1.0, DistributionModeEnum.FAN_AVG, ProbabilisticDistribution.NORMAL, dtype)
+    return _generate_distribution(
+        shape, 1.0, DistributionModeEnum.FAN_AVG, ProbabilisticDistribution.NORMAL, dtype
+    )
 
 
 def he_uniform(shape: ArrayShape, dtype: np.dtype) -> np.ndarray:
     """Initializes weights using the He uniform distribution."""
-    return _generate_distribution(shape, 2.0, DistributionModeEnum.FAN_IN, ProbabilisticDistribution.UNIFORM, dtype)
+    return _generate_distribution(
+        shape, 2.0, DistributionModeEnum.FAN_IN, ProbabilisticDistribution.UNIFORM, dtype
+    )
 
 
 def he_normal(shape: ArrayShape, dtype: np.dtype) -> np.ndarray:
     """Initializes weights using the He normal distribution."""
-    return _generate_distribution(shape, 2.0, DistributionModeEnum.FAN_IN, ProbabilisticDistribution.NORMAL, dtype)
+    return _generate_distribution(
+        shape, 2.0, DistributionModeEnum.FAN_IN, ProbabilisticDistribution.NORMAL, dtype
+    )
 
 
 def lecun_uniform(shape: ArrayShape, dtype: np.dtype) -> np.ndarray:
     """Initializes weights using the LeCun uniform distribution."""
-    return _generate_distribution(shape, 1.0, DistributionModeEnum.FAN_IN, ProbabilisticDistribution.UNIFORM, dtype)
+    return _generate_distribution(
+        shape, 1.0, DistributionModeEnum.FAN_IN, ProbabilisticDistribution.UNIFORM, dtype
+    )
 
 
 def lecun_normal(shape: ArrayShape, dtype: np.dtype) -> np.ndarray:
     """Initializes weights using the LeCun normal distribution."""
-    return _generate_distribution(shape, 1.0, DistributionModeEnum.FAN_IN, ProbabilisticDistribution.NORMAL, dtype)
+    return _generate_distribution(
+        shape, 1.0, DistributionModeEnum.FAN_IN, ProbabilisticDistribution.NORMAL, dtype
+    )
 
 
 def ones(shape: ArrayShape, dtype: np.dtype) -> np.ndarray:

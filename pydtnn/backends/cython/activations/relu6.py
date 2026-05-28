@@ -27,5 +27,10 @@ class Relu6Cython(Relu6Numpy, ActivationCython):
         """
         self.y: np.ndarray = self._y[: x.shape[0], :]
         self.mask: np.ndarray = self._mask[: x.shape[0], :]
-        capped_relu_cython(x.reshape(-1, copy=False), self.y.reshape(-1, copy=False), self.mask.reshape(-1, copy=False), self.cap)
+        capped_relu_cython(
+            x.reshape(-1, copy=False),
+            self.y.reshape(-1, copy=False),
+            self.mask.reshape(-1, copy=False),
+            self.cap,
+        )
         return self.y

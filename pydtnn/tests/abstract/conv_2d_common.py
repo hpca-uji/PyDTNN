@@ -38,9 +38,22 @@ class Conv2DCommonTestCase[T: Conv2D](TestCase):
 
     x_2x4 = np.array([[[[1, 2, 4, 8], [16, 32, 64, 128]]]]).astype(np.float32, order="C")
 
-    x_4x4 = np.array([[[[1, 2, 4, 8], [16, 32, 64, 128], [1, 2, 4, 8], [16, 32, 64, 128]]]]).astype(np.float32, order="C")
+    x_4x4 = np.array([[[[1, 2, 4, 8], [16, 32, 64, 128], [1, 2, 4, 8], [16, 32, 64, 128]]]]).astype(
+        np.float32, order="C"
+    )
 
-    x_4x8 = np.array([[[[1, 2, 4, 8, 9, 10, 11, 12], [16, 32, 64, 128, 129, 130, 131, 132], [1, 2, 4, 8, 9, 10, 11, 12], [16, 32, 64, 128, 129, 130, 131, 132]]]]).astype(np.float32, order="C")
+    x_4x8 = np.array(
+        [
+            [
+                [
+                    [1, 2, 4, 8, 9, 10, 11, 12],
+                    [16, 32, 64, 128, 129, 130, 131, 132],
+                    [1, 2, 4, 8, 9, 10, 11, 12],
+                    [16, 32, 64, 128, 129, 130, 131, 132],
+                ]
+            ]
+        ]
+    ).astype(np.float32, order="C")
 
     x_8x8 = np.array(
         [
@@ -125,7 +138,11 @@ class Conv2DCommonTestCase[T: Conv2D](TestCase):
                 print("         +-------+--------+")
                 print("backward | {:.3f} | {:.3f} |".format(backward_ref_t, backward_test_t))
                 print("         +-------+--------+")
-                print("           {:.3f}   {:.3f}  ".format(forward_ref_t + backward_ref_t, forward_test_t + backward_test_t))
+                print(
+                    "           {:.3f}   {:.3f}  ".format(
+                        forward_ref_t + backward_ref_t, forward_test_t + backward_test_t
+                    )
+                )
 
         self.assertTrue(y_allclose, "y matrices differ")
         self.assertTrue(dw_allclose, "dw matrices differ")

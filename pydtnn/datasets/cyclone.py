@@ -51,15 +51,31 @@ class Cyclone(Dataset):
             force_test_as_validation: Whether to use test data for validation.
             debug: Whether to enable debug mode.
         """
-        super().__init__(model, TRAIN_NSAMPLES, TEST_NSAMPLES, INPUT_SHAPE, OUTPUT_SHAPE, force_test_as_validation=force_test_as_validation, debug=debug)
+        super().__init__(
+            model,
+            TRAIN_NSAMPLES,
+            TEST_NSAMPLES,
+            INPUT_SHAPE,
+            OUTPUT_SHAPE,
+            force_test_as_validation=force_test_as_validation,
+            debug=debug,
+        )
 
     def _model_init(self):
         """
         Initialize file paths and verify dataset archive accessibility.
         """
         self._src_filename = os.path.join(self.model.dataset_path, "cyclone-binary.tar.gz")
-        self._xy_filenames = [[os.path.join("cyclone-batches-bin", f"data_batch_{x}.bin") for x in range(1, 6)], [], [os.path.join("cyclone-batches-bin", "test_batch.bin")]]
-        self._xy_filenames[Dataset.Part.VAL] = copy.copy(self._xy_filenames[Dataset.Part.TEST] if self.test_as_validation else self._xy_filenames[Dataset.Part.TRAIN])
+        self._xy_filenames = [
+            [os.path.join("cyclone-batches-bin", f"data_batch_{x}.bin") for x in range(1, 6)],
+            [],
+            [os.path.join("cyclone-batches-bin", "test_batch.bin")],
+        ]
+        self._xy_filenames[Dataset.Part.VAL] = copy.copy(
+            self._xy_filenames[Dataset.Part.TEST]
+            if self.test_as_validation
+            else self._xy_filenames[Dataset.Part.TRAIN]
+        )
 
         # Pregenerate GZIP indexs
         self._gzip_open(self._src_filename).close()
@@ -81,7 +97,12 @@ class Cyclone(Dataset):
 
         with self._gzip_open(self._src_filename) as g:
             with tarfile.open(fileobj=g) as t:
-                for filename, offset, nsamples in self._offset2files(xy_filenames, IMAGES_PER_FILE, self._local_offset[part], self._local_nsamples[part]):
+                for filename, offset, nsamples in self._offset2files(
+                    xy_filenames,
+                    IMAGES_PER_FILE,
+                    self._local_offset[part],
+                    self._local_nsamples[part],
+                ):
                     with t.extractfile(filename) as f:  # type: ignore
                         x, y_classes = self._read_file(f, offset, nsamples)
 
@@ -107,6 +128,8 @@ class Cyclone(Dataset):
         """
         chunk_size = math.prod(INPUT_SHAPE) + 1
         f.seek(offset * chunk_size)
-        im = np.frombuffer(f.read(nsamples * chunk_size), dtype=np.uint8).reshape(nsamples, chunk_size)
+        im = np.frombuffer(f.read(nsamples * chunk_size), dtype=np.uint8).reshape(
+            nsamples, chunk_size
+        )
         y_classes, x = im[:, 0].flatten(), im[:, 1:].reshape(nsamples, *INPUT_SHAPE)
         return x, y_classes

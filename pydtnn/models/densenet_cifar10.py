@@ -41,7 +41,15 @@ def densenet_cifar10(input_shape: ArrayShape, output_shape: ArrayShape) -> Seque
     reduction = 0.5
     num_planes = 2 * growth_rate
 
-    _(Conv2D(nfilters=num_planes, filter_shape=(3, 3), padding=1, use_bias=False, weights_initializer=he_uniform))
+    _(
+        Conv2D(
+            nfilters=num_planes,
+            filter_shape=(3, 3),
+            padding=1,
+            use_bias=False,
+            weights_initializer=he_uniform,
+        )
+    )
 
     for i, nblocks in enumerate(blocks):
         for j in range(nblocks):
@@ -50,10 +58,21 @@ def densenet_cifar10(input_shape: ArrayShape, output_shape: ArrayShape) -> Seque
                     [
                         BatchNormalization(),
                         Relu(),
-                        Conv2D(nfilters=4 * growth_rate, filter_shape=(1, 1), use_bias=False, weights_initializer=he_uniform),
+                        Conv2D(
+                            nfilters=4 * growth_rate,
+                            filter_shape=(1, 1),
+                            use_bias=False,
+                            weights_initializer=he_uniform,
+                        ),
                         BatchNormalization(),
                         Relu(),
-                        Conv2D(nfilters=growth_rate, filter_shape=(3, 3), padding=1, use_bias=False, weights_initializer=he_uniform),
+                        Conv2D(
+                            nfilters=growth_rate,
+                            filter_shape=(3, 3),
+                            padding=1,
+                            use_bias=False,
+                            weights_initializer=he_uniform,
+                        ),
                     ],
                     [],
                 )
@@ -65,7 +84,14 @@ def densenet_cifar10(input_shape: ArrayShape, output_shape: ArrayShape) -> Seque
             num_planes = int(num_planes * reduction)
             _(BatchNormalization())
             _(Relu())
-            _(Conv2D(nfilters=num_planes, filter_shape=(1, 1), use_bias=False, weights_initializer=he_uniform))
+            _(
+                Conv2D(
+                    nfilters=num_planes,
+                    filter_shape=(1, 1),
+                    use_bias=False,
+                    weights_initializer=he_uniform,
+                )
+            )
             _(AveragePool2D(pool_shape=(2, 2), stride=2))
 
     _(BatchNormalization())

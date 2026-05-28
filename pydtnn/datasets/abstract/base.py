@@ -121,7 +121,9 @@ class Base:
         y[np.arange(y.shape[0]), classes_list] = 1
 
     @staticmethod
-    def _offset2files(filenames: list[str], images_per_file: int, local_offset: int, local_nsamples: int) -> list[tuple[str, int, int]]:
+    def _offset2files(
+        filenames: list[str], images_per_file: int, local_offset: int, local_nsamples: int
+    ) -> list[tuple[str, int, int]]:
         """
         Map local offset and sample count to specific files.
 

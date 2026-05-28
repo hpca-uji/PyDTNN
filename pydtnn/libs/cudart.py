@@ -2,6 +2,7 @@
 """
 Python interface to CUDA runtime functions.
 """
+
 # Source: https://github.com/lebedov/scikit-cuda
 
 import ctypes
@@ -112,17 +113,39 @@ __all__ = (
     "gpuarray_ptr",
 )
 
-_linux_version_list = [11.0, 10.2, 10.1, 10.0, 9.2, 9.1, 9.0, 8.0, 7.5, 7.0, 6.5, 6.0, 5.5, 5.0, 4.0]
+_linux_version_list = [
+    11.0,
+    10.2,
+    10.1,
+    10.0,
+    9.2,
+    9.1,
+    9.0,
+    8.0,
+    7.5,
+    7.0,
+    6.5,
+    6.0,
+    5.5,
+    5.0,
+    4.0,
+]
 _win32_version_list = [110, 102, 101, 100, 92, 91, 90, 80, 75, 70, 65, 60, 55, 50, 40]
 if "linux" in sys.platform:
-    _libcudart_libname_list = ["libcudart.so"] + ["libcudart.so.%s" % v for v in _linux_version_list]
+    _libcudart_libname_list = ["libcudart.so"] + [
+        "libcudart.so.%s" % v for v in _linux_version_list
+    ]
 elif sys.platform == "darwin":
     _libcudart_libname_list = ["libcudart.dylib"]
 elif sys.platform == "win32":
     if sys.maxsize > 2**32:
-        _libcudart_libname_list = ["cudart.dll"] + ["cudart64_%s.dll" % v for v in _win32_version_list]
+        _libcudart_libname_list = ["cudart.dll"] + [
+            "cudart64_%s.dll" % v for v in _win32_version_list
+        ]
     else:
-        _libcudart_libname_list = ["cudart.dll"] + ["cudart32_%s.dll" % v for v in _win32_version_list]
+        _libcudart_libname_list = ["cudart.dll"] + [
+            "cudart32_%s.dll" % v for v in _win32_version_list
+        ]
 else:
     raise RuntimeError("unsupported platform")
 
@@ -843,7 +866,12 @@ def cudaFree(ptr):
 
 
 _libcudart.cudaMallocPitch.restype = int
-_libcudart.cudaMallocPitch.argtypes = [ctypes.POINTER(ctypes.c_void_p), ctypes.POINTER(ctypes.c_size_t), ctypes.c_size_t, ctypes.c_size_t]
+_libcudart.cudaMallocPitch.argtypes = [
+    ctypes.POINTER(ctypes.c_void_p),
+    ctypes.POINTER(ctypes.c_size_t),
+    ctypes.c_size_t,
+    ctypes.c_size_t,
+]
 
 
 def cudaMallocPitch(pitch, rows, cols, elesize):
@@ -875,7 +903,9 @@ def cudaMallocPitch(pitch, rows, cols, elesize):
 
     ptr = ctypes.c_void_p()
     assert _libcudart
-    status = _libcudart.cudaMallocPitch(ctypes.byref(ptr), ctypes.c_size_t(pitch), cols * elesize, rows)
+    status = _libcudart.cudaMallocPitch(
+        ctypes.byref(ptr), ctypes.c_size_t(pitch), cols * elesize, rows
+    )
     cudaCheckStatus(status)
     return ptr, pitch
 
@@ -1098,7 +1128,12 @@ cudaMemoryTypeDevice = 2
 class cudaPointerAttributes(ctypes.Structure):
     """CUDA pointer attributes structure."""
 
-    _fields_ = [("memoryType", ctypes.c_int), ("device", ctypes.c_int), ("devicePointer", ctypes.c_void_p), ("hostPointer", ctypes.c_void_p)]
+    _fields_ = [
+        ("memoryType", ctypes.c_int),
+        ("device", ctypes.c_int),
+        ("devicePointer", ctypes.c_void_p),
+        ("hostPointer", ctypes.c_void_p),
+    ]
 
 
 _libcudart.cudaPointerGetAttributes.restype = int

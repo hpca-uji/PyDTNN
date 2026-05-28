@@ -38,11 +38,14 @@ class SGDNumpy(SGD[np.ndarray], OptimizerNumpy):
                     self.memory_used += velocity.nbytes
 
                     temp_memory_size.append(int(2 * math.prod(w.shape)) * self.model.dtype.itemsize)
-                    # NOTE: int(2 * math.prod(w.shape)): temp_w.nbytes = temp_v.nbytes = w.nbytes ==> temp_w.nbytes + temp_v.nbytes = 2 * w.nbytes
+                    # NOTE: int(2 * math.prod(w.shape)): temp_w.nbytes = temp_v.nbytes =
+                    # w.nbytes ==> temp_w.nbytes + temp_v.nbytes = 2 * w.nbytes
 
                     self.context[layer.id]["velocity_%s" % w_] = velocity
-                    self.context[layer.id]["temp_w_%s" % w_] = temp_w  # type: ignore (it's the right type)
-                    self.context[layer.id]["temp_v_%s" % w_] = temp_v  # type: ignore (it's the right type)
+                    self.context[layer.id]["temp_w_%s" %
+                                           w_] = temp_w  # type: ignore (it's the right type)
+                    self.context[layer.id]["temp_v_%s" %
+                                           w_] = temp_v  # type: ignore (it's the right type)
 
         self.tmp_memory_used += self.model.memory_cls._total(*temp_memory_size)
         self.memory_used += self.tmp_memory_used
@@ -64,8 +67,11 @@ class SGDNumpy(SGD[np.ndarray], OptimizerNumpy):
                         continue
                     # if w_ is not None:
 
-                    w_shape = self.context[layer_id]["velocity_%s" % w_].shape  # type: ignore (it is correct)
-                    w_shape = self.context[layer_id][key] = self.model.memory.ndarray(w_shape, dtype=self.model.dtype)
+                    w_shape = self.context[layer_id]["velocity_%s" %
+                                                     w_].shape  # type: ignore (it is correct)
+                    w_shape = self.context[layer_id][key] = self.model.memory.ndarray(
+                        w_shape, dtype=self.model.dtype
+                    )
 
     def update(self, layer: LayerNumpy) -> None:
         """Performs a single optimization step for the given layer."""
@@ -77,8 +83,11 @@ class SGDNumpy(SGD[np.ndarray], OptimizerNumpy):
             w: np.ndarray
             dw: np.ndarray
 
-            if (w is not None and dw is not None) and not (self.are_all_zeros(velocity) and self.are_all_zeros(w) and self.are_all_zeros(dw)):
-                # NOTE: The operations are unrolled in order to reduce the memory consumed by intermediate copies of the variables during the operations.
+            if (w is not None and dw is not None) and not (
+                self.are_all_zeros(velocity) and self.are_all_zeros(w) and self.are_all_zeros(dw)
+            ):
+                # NOTE: The operations are unrolled in order to reduce the memory consumed
+                # by intermediate copies of the variables during the operations.
 
                 # velocity = self.momentum * velocity + dw
 

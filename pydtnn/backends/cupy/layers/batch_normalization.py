@@ -31,14 +31,37 @@ class BatchNormalizationCupy(BatchNormalizationNumpy, LayerCupy):
         self.fwd = self._fwd_kernel()
         self.bwd = self._bwd_kernel()
 
-    def _training_fwd(self, x: np.ndarray, _mean: np.ndarray, _var: np.ndarray, y: np.ndarray) -> None:
+    def _training_fwd(
+        self, x: np.ndarray, _mean: np.ndarray, _var: np.ndarray, y: np.ndarray
+    ) -> None:
         """Execute the forward pass on GPU."""
         # return super()._training_bwd(dx, dy)
         dim_i, dim_j = x.shape
-        self.fwd(self.model.cuda_grid, self.model.cuda_block, (x, y, self.xn, self.std, self.gamma, self.beta, _mean, _var, self.epsilon, dim_i, dim_j, x.size))
+        self.fwd(
+            self.model.cuda_grid,
+            self.model.cuda_block,
+            (
+                x,
+                y,
+                self.xn,
+                self.std,
+                self.gamma,
+                self.beta,
+                _mean,
+                _var,
+                self.epsilon,
+                dim_i,
+                dim_j,
+                x.size,
+            ),
+        )
 
     def _training_bwd(self, dx: np.ndarray, dy: np.ndarray) -> None:
         """Execute the backward pass on GPU."""
         # return super()._training_bwd(dx, dy)
         dim_i, dim_j = dx.shape
-        self.bwd(self.model.cuda_grid, self.model.cuda_block, (dx, dy, self.xn, self.std, self.gamma, self.dgamma, self.dbeta, dim_i, dim_j, dx.size))
+        self.bwd(
+            self.model.cuda_grid,
+            self.model.cuda_block,
+            (dx, dy, self.xn, self.std, self.gamma, self.dgamma, self.dbeta, dim_i, dim_j, dx.size),
+        )

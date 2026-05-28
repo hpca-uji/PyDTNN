@@ -107,7 +107,8 @@ def BatchNormalization(info: dict[str, Any]) -> Layerable:
     """
     print(f"attributes: {info[cons.CONST_ATTRIBUTES]}")
 
-    # Onnx attributes names from: https://onnx.ai/onnx/operators/onnx__BatchNormalization.html#l-onnx-doc-batchnormalization
+    # Onnx attributes names from:
+    # https://onnx.ai/onnx/operators/onnx__BatchNormalization.html#l-onnx-doc-batchnormalization
     ONNX_EPSILON = "epsilon"
     ONNX_MOMENTUM = "momentum"
     # PyDTNN attributes names from BatchNormalization class.
@@ -230,8 +231,11 @@ def Dropout(info: dict[str, Any]) -> Layerable:
     # TODO: Check if this is correct.
     # Droput can receive 3 inputs: the previous layer output [Tensor],
     #   the ratio (of random dropout) [Float] and if it's in training mode [bool]
-    # Then if it has more than one input and it's not a bool or the previous layer output, it is the ratio.
-    _other_inputs = set(enumerate(info[cons.CONST_ALL_INPUTS])) - set(enumerate(info[cons.CONST_INPUTS]))
+    # Then if it has more than one input and it's not a bool or the previous
+    # layer output, it is the ratio.
+    _other_inputs = set(enumerate(info[cons.CONST_ALL_INPUTS])) - set(
+        enumerate(info[cons.CONST_INPUTS])
+    )
     other_inputs = [elem[1] for elem in sorted(_other_inputs, key=lambda x: x[0])]
 
     if len(other_inputs) > 0:
@@ -315,7 +319,9 @@ def Gemm(info: dict[str, Any]) -> Layerable:
 
     pseudo_gemm = FC()
 
-    _other_inputs = set(enumerate(info[cons.CONST_ALL_INPUTS])) - set(enumerate(info[cons.CONST_INPUTS]))
+    _other_inputs = set(enumerate(info[cons.CONST_ALL_INPUTS])) - set(
+        enumerate(info[cons.CONST_INPUTS])
+    )
     other_inputs = [elem[1] for elem in sorted(_other_inputs, key=lambda x: x[0])]
 
     if len(other_inputs) == 1:
@@ -338,7 +344,9 @@ def Gemm(info: dict[str, Any]) -> Layerable:
         x = alpha * (x.T if transA is not None else x)
         original_fw(x)
 
-    pseudo_gemm.weights_initializer = _weights_initializer  # (lambda *x: b.T if transB is not None else b)
+    pseudo_gemm.weights_initializer = (
+        _weights_initializer  # (lambda *x: b.T if transB is not None else b)
+    )
     if c is not None:
         pseudo_gemm.biases_initializer = _biases_initializer
     pseudo_gemm.forward = _mod_forward
@@ -395,7 +403,8 @@ def MaxPool(info: dict[str, Any]) -> Layerable:
     print("------")
     print(f"attributes: {info[cons.CONST_ATTRIBUTES]}")
 
-    # Onnx attributes names from: https://onnx.ai/onnx/operators/onnx__MaxPool.html#l-onnx-doc-maxpool
+    # Onnx attributes names from:
+    # https://onnx.ai/onnx/operators/onnx__MaxPool.html#l-onnx-doc-maxpool
     ONNX_KERNEL_SHAPE = "kernel_shape"
     ONNX_PADS = "pads"
     ONNX_STRIDES = "strides"
@@ -578,7 +587,9 @@ def Unsqueeze(info: dict[str, Any]) -> Layerable:
                 need_dx: Whether gradient calculation is required.
             """
             super()._model_init(prev_shape, need_dx)
-            self.shape = self.forward(np.zeros(prev_shape)).shape  # FIXME: revisar, estaba lo de antes
+            self.shape = self.forward(
+                np.zeros(prev_shape)
+            ).shape  # FIXME: revisar, estaba lo de antes
             # self.shape = self.shape + self.model.encode_shape(self.model.tensor_format)
 
         def initialize_block_layer(self):

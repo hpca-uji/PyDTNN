@@ -53,12 +53,16 @@ class BestOfProfiler:
                 if isinstance(outputs[0], np.ndarray):
                     name_0 = self.best_method.alternatives[0][0]
                     name_i = self.best_method.alternatives[i][0]
-                    assert np.allclose(outputs[0], outputs[-1]), f"{name_0} and {name_i} outputs differ"
+                    assert np.allclose(outputs[0], outputs[-1]), (
+                        f"{name_0} and {name_i} outputs differ"
+                    )
 
         # Rest runs
 
         logger.info(" \nNext runs (getting times)")
-        for i in range(0, (self.best_method.total_rounds - 1) * self.best_method.total_alternatives):
+        for i in range(
+            0, (self.best_method.total_rounds - 1) * self.best_method.total_alternatives
+        ):
             if self.best_method.best_method_has_been_found(*args, **kwargs):
                 break
             self.best_method(*args, **kwargs)

@@ -45,11 +45,33 @@ def resNet50(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Laye
         for r in range(res_blocks):
             if r > 0:
                 stride = 1
-                _(Conv2D(nfilters=n_filt, filter_shape=(1, 1), stride=1, weights_initializer=he_uniform))
+                _(
+                    Conv2D(
+                        nfilters=n_filt,
+                        filter_shape=(1, 1),
+                        stride=1,
+                        weights_initializer=he_uniform,
+                    )
+                )
                 _(BatchNormalization())
-                _(Conv2D(nfilters=n_filt, filter_shape=(3, 3), stride=stride, padding=1, weights_initializer=he_uniform))
+                _(
+                    Conv2D(
+                        nfilters=n_filt,
+                        filter_shape=(3, 3),
+                        stride=stride,
+                        padding=1,
+                        weights_initializer=he_uniform,
+                    )
+                )
                 _(BatchNormalization())
-                _(Conv2D(nfilters=n_filt * expansion, filter_shape=(1, 1), stride=1, weights_initializer=he_uniform))
+                _(
+                    Conv2D(
+                        nfilters=n_filt * expansion,
+                        filter_shape=(1, 1),
+                        stride=1,
+                        weights_initializer=he_uniform,
+                    )
+                )
                 _(BatchNormalization())
                 _(Relu())
 

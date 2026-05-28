@@ -4,7 +4,9 @@ import numpy as _np
 
 from pydtnn.backends.cython.utils.base import _npDT, _npDT_1Dims, _npDT_2Dims
 
-def compute_dense_acc_cython[T: _npDT](residuals: _npDT_2Dims[T], dw: _npDT_2Dims[T], acc: _npDT_2Dims[T], learning_rate: float):
+def compute_dense_acc_cython[T: _npDT](
+    residuals: _npDT_2Dims[T], dw: _npDT_2Dims[T], acc: _npDT_2Dims[T], learning_rate: float
+):
     """
     Compute dense accumulation of residuals scaled by learning rate.
 
@@ -41,7 +43,9 @@ def intersect_2d_indexes_cython(
     """
     ...
 
-def reset_residuals_cython[T: _npDT](acc: _npDT_2Dims[T], rows: _npDT_1Dims[_np.int32], cols: _npDT_1Dims[_np.int32]):
+def reset_residuals_cython[T: _npDT](
+    acc: _npDT_2Dims[T], rows: _npDT_1Dims[_np.int32], cols: _npDT_1Dims[_np.int32]
+):
     """
     Reset specific residual values to zero based on provided indices.
     Args:
@@ -64,7 +68,12 @@ def update_dense_weights_cython[T: _npDT](w: _npDT_2Dims[T], u: _npDT_2Dims[T]):
     """
     ...
 
-def update_sparsed_weights_cython[T: _npDT](w: _npDT_2Dims[T], grads_to_update: _npDT_1Dims[T], rows_to_update: _npDT_1Dims[_np.int32], cols_to_update: _npDT_1Dims[_np.int32]):
+def update_sparsed_weights_cython[T: _npDT](
+    w: _npDT_2Dims[T],
+    grads_to_update: _npDT_1Dims[T],
+    rows_to_update: _npDT_1Dims[_np.int32],
+    cols_to_update: _npDT_1Dims[_np.int32],
+):
     """
     Update sparse weights using coordinate-based gradient updates.
     Args:
@@ -78,7 +87,12 @@ def update_sparsed_weights_cython[T: _npDT](w: _npDT_2Dims[T], grads_to_update: 
     ...
 
 def update_sparsed_weights_mv_cython[T: _npDT](
-    w: _npDT_2Dims[T], grads_to_update: _npDT_1Dims[T], rows_to_update: _npDT_1Dims[_np.int32], cols_to_update: _npDT_1Dims[_np.int32], velocity: _npDT_2Dims[T], momentum: float
+    w: _npDT_2Dims[T],
+    grads_to_update: _npDT_1Dims[T],
+    rows_to_update: _npDT_1Dims[_np.int32],
+    cols_to_update: _npDT_1Dims[_np.int32],
+    velocity: _npDT_2Dims[T],
+    momentum: float,
 ):
     """
     Update sparse weights and velocity using momentum-based optimization.

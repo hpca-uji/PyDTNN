@@ -52,7 +52,12 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
 
         self.weights_cpu = self.weights_initializer(self.weights_shape, self.model.dtype)
         weights_gpu = gpuarray.to_gpu(self.weights_cpu)
-        self.weights = TensorArray(weights_gpu, self.model.tensor_format, self.model.cudnn_dtype, TensorArray.TensorType.FILTER)
+        self.weights = TensorArray(
+            weights_gpu,
+            self.model.tensor_format,
+            self.model.cudnn_dtype,
+            TensorArray.TensorType.FILTER,
+        )
         self.memory_used += self.weights.nbytes
 
         # Biases
@@ -64,12 +69,27 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
             self.memory_used += self.biases.nbytes
 
         self.fwd_time = matmul_time(
-            m=self.co, n=(self.model.batch_size * self.ho * self.wo), k=(self.ci * self.kh * self.kw), cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw, dtype=self.model.dtype
+            m=self.co,
+            n=(self.model.batch_size * self.ho * self.wo),
+            k=(self.ci * self.kh * self.kw),
+            cpu_speed=self.model.cpu_speed,
+            memory_bw=self.model.memory_bw,
+            dtype=self.model.dtype,
         )  # type: ignore (It is correct.)
         self.bwd_time = matmul_time(
-            m=self.co, n=(self.ci * self.kh * self.kw), k=(self.model.batch_size * self.ho * self.wo), cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw, dtype=self.model.dtype
+            m=self.co,
+            n=(self.ci * self.kh * self.kw),
+            k=(self.model.batch_size * self.ho * self.wo),
+            cpu_speed=self.model.cpu_speed,
+            memory_bw=self.model.memory_bw,
+            dtype=self.model.dtype,
         ) + matmul_time(
-            m=(self.ci * self.kh * self.kw), n=(self.model.batch_size * self.ho * self.wo), k=self.co, cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw, dtype=self.model.dtype
+            m=(self.ci * self.kh * self.kw),
+            n=(self.model.batch_size * self.ho * self.wo),
+            k=self.co,
+            cpu_speed=self.model.cpu_speed,
+            memory_bw=self.model.memory_bw,
+            dtype=self.model.dtype,
         )  # type: ignore (It is correct.)
 
         if self.model.gpudirect:
@@ -94,7 +114,13 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
         if self.use_bias:
             self.biases: TensorArray
             self.db_cpu, self.db = TensorArray.new(
-                self.biases.shape, self.model.dtype, tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype, gpudirect=self.model.gpudirect, tensor_type=bias_tensor_type, drv=_drv
+                self.biases.shape,
+                self.model.dtype,
+                tensor_format=self.model.tensor_format,
+                cudnn_dtype=self.model.cudnn_dtype,
+                gpudirect=self.model.gpudirect,
+                tensor_type=bias_tensor_type,
+                drv=_drv,
             )
             self.memory_used += self.db.nbytes
 
@@ -105,7 +131,10 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
         Args:
             x: Input tensor.
         """
-        msg = "This is a fake forward function. It must be masked on initialization by a _forward implementation."
+        msg = (
+            "This is a fake forward function. It must be masked on initialization by a _forward"
+            " implementation."
+        )
         raise NotImplementedError(f"Conv2DPycuda forward: {msg}")
 
     def backward(self, dy: TensorArray) -> TensorArray:
@@ -115,7 +144,10 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
         Args:
             dy: Gradient of the output.
         """
-        msg = "This is a fake backward function. It must be masked on initialization by a _backward implementation."
+        msg = (
+            "This is a fake backward function. It must be masked on initialization by a _backward"
+            " implementation."
+        )
         raise NotImplementedError(f"Conv2DPycuda backward: {msg}")
 
     def _export_weights_dw(self, key: str) -> Any:

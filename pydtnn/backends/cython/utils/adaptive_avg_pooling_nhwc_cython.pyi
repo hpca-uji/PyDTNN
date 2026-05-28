@@ -4,7 +4,9 @@ Cython-accelerated adaptive average pooling utilities for NHWC tensor layouts.
 
 from pydtnn.backends.cython.utils.base import _npDT, _npDT_4Dims
 
-def adaptive_avg_pooling_fwd_nhwc_cython[T: _npDT](x: _npDT_4Dims[T], pooled_x: _npDT_4Dims[T]) -> None:
+def adaptive_avg_pooling_fwd_nhwc_cython[T: _npDT](
+    x: _npDT_4Dims[T], pooled_x: _npDT_4Dims[T]
+) -> None:
     """
     Performs forward adaptive average pooling on NHWC input data.
 

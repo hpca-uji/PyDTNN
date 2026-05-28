@@ -88,7 +88,9 @@ class ModelCheckpoint(SchedulerWithLossOrMetric):
             # Save the model if the epoch count is a multiple of the save frequency.
             if (self.epoch_count % self.epoch_save_frequency) == 0:
                 # Construct a unique filename including model name, epoch, and timestamp.
-                self.filename = f"./model-{self.model.model_name}-epoch-{self.epoch_count}-{timestamp}.npz"
+                self.filename = (
+                    f"./model-{self.model.model_name}-epoch-{self.epoch_count}-{timestamp}.npz"
+                )
                 # Save the model's state.
                 self.model.save_model_state(self.filename)
                 self.log(f"Saving model weights and bias in '{self.filename}'.")

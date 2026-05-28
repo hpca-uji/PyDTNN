@@ -114,7 +114,11 @@ def LeakyReLU(args: dict[str, Any]) -> _Relu:
     torch_dict_keys = [NEGATIVE_SLOPE]
     pydtnn_dict_keys = [NEGATIVE_SLOPE]
 
-    layer_args = cm.prepare_pydtnn_arguments(arguments=args[cm.ARGUMENTS], torch_dict_keys=torch_dict_keys, pydtnn_dict_keys=pydtnn_dict_keys)
+    layer_args = cm.prepare_pydtnn_arguments(
+        arguments=args[cm.ARGUMENTS],
+        torch_dict_keys=torch_dict_keys,
+        pydtnn_dict_keys=pydtnn_dict_keys,
+    )
 
     return _LeakyRelu(**layer_args)
 

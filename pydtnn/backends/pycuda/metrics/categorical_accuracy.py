@@ -39,5 +39,14 @@ class CategoricalAccuracyPycuda(CategoricalAccuracy[TensorArray], MetricPycuda):
         Returns:
             The calculated accuracy as a percentage.
         """
-        self.kernel(y_targ.ary, y_pred.ary, self.cost, np.int32(self.model.batch_size), np.int32(self.shape[1]), grid=self.grid, block=self.block, stream=self.model.stream)
+        self.kernel(
+            y_targ.ary,
+            y_pred.ary,
+            self.cost,
+            np.int32(self.model.batch_size),
+            np.int32(self.shape[1]),
+            grid=self.grid,
+            block=self.block,
+            stream=self.model.stream,
+        )
         return float(gpuarray.sum(self.cost).get() * 100 / self.model.batch_size)

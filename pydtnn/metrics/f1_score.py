@@ -31,5 +31,7 @@ class F1Score[T: Array](Metric[T]):
             if isinstance(metric, BinaryConfusionMatrix):
                 self.conf_matrix_metric = metric
                 break
-        assert self.conf_matrix_metric is not None, f"F1-Score requires of {BinaryConfusionMatrix.__name__}"
+        assert self.conf_matrix_metric is not None, (
+            f"F1-Score requires of {BinaryConfusionMatrix.__name__}"
+        )
         super()._model_init()

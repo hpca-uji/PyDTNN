@@ -22,7 +22,14 @@ class LayerNormalization[T: Array](Layer[T]):
     Applies Layer Normalization over a mini-batch of inputs.
     """
 
-    def __init__(self, axis=(-2, -1), beta: float = 0.0, gamma: float = 1.0, epsilon: float = 1e-5, sync_stats: bool = False):
+    def __init__(
+        self,
+        axis=(-2, -1),
+        beta: float = 0.0,
+        gamma: float = 1.0,
+        epsilon: float = 1e-5,
+        sync_stats: bool = False,
+    ):
         """
         Initializes the LayerNormalization layer.
 

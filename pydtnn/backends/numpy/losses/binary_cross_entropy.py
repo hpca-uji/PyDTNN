@@ -36,7 +36,9 @@ class BinaryCrossEntropyNumpy(BinaryCrossEntropy[np.ndarray], LossNumpy):
             self.div_y = self.model.memory.ndarray(self.shape, dtype=self.model.dtype)
             self.neg_pred = self.model.memory.ndarray(self.shape, dtype=self.model.dtype)
 
-    def compute(self, y_pred: np.ndarray, y_targ: np.ndarray, batch_size: int) -> tuple[float, np.ndarray]:
+    def compute(
+        self, y_pred: np.ndarray, y_targ: np.ndarray, batch_size: int
+    ) -> tuple[float, np.ndarray]:
         """
         Compute the binary cross entropy loss and its gradient.
 

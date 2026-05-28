@@ -19,7 +19,16 @@ class BatchNormalization[T: Array](Layer[T]):
     Batch Normalization layer that normalizes the inputs to have zero mean and unit variance.
     """
 
-    def __init__(self, beta=0.0, gamma=1.0, momentum=0.9, epsilon=1e-5, moving_mean_initializer: Callable = zeros, moving_variance_initializer: Callable = ones, sync_stats=False):
+    def __init__(
+        self,
+        beta=0.0,
+        gamma=1.0,
+        momentum=0.9,
+        epsilon=1e-5,
+        moving_mean_initializer: Callable = zeros,
+        moving_variance_initializer: Callable = ones,
+        sync_stats=False,
+    ):
         """
         Initializes the BatchNormalization layer.
 
@@ -37,8 +46,12 @@ class BatchNormalization[T: Array](Layer[T]):
         self.beta_init_val = beta
         self.momentum = momentum
         self.epsilon = epsilon
-        self.moving_mean_initializer: Callable[[ArrayShape, np.dtype], np.ndarray] = moving_mean_initializer
-        self.moving_variance_initializer: Callable[[ArrayShape, np.dtype], np.ndarray] = moving_variance_initializer
+        self.moving_mean_initializer: Callable[[ArrayShape, np.dtype], np.ndarray] = (
+            moving_mean_initializer
+        )
+        self.moving_variance_initializer: Callable[[ArrayShape, np.dtype], np.ndarray] = (
+            moving_variance_initializer
+        )
         self.grad_vars = {Parameters.BETA: Parameters.DBETA, Parameters.GAMMA: Parameters.DGAMMA}
         self.sync_stats = sync_stats
         # The following attributes will be initialized later

@@ -50,7 +50,13 @@ type Cublas_Handle_Type = int
 
 gpu_errors = []
 package_name = __name__
-timestamp = datetime.now().isoformat(timespec="seconds").replace(" ", "-").replace(":", "-").replace(".", "-")
+timestamp = (
+    datetime.now()
+    .isoformat(timespec="seconds")
+    .replace(" ", "-")
+    .replace(":", "-")
+    .replace(".", "-")
+)
 
 # OPTIONAL IMPORTS
 try:

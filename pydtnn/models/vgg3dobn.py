@@ -34,7 +34,11 @@ def vgg3dobn(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Laye
     _(Input(shape=input_shape))
     for n_filt, do_rate in zip([32, 64, 128], [0.2, 0.3, 0.4]):
         for i in range(2):
-            _(Conv2D(nfilters=n_filt, filter_shape=(3, 3), padding=1, weights_initializer=he_uniform))
+            _(
+                Conv2D(
+                    nfilters=n_filt, filter_shape=(3, 3), padding=1, weights_initializer=he_uniform
+                )
+            )
             _(Relu())
             _(BatchNormalization())
         _(MaxPool2D(pool_shape=(2, 2), stride=2))

@@ -5,7 +5,13 @@ Constants and mapping utilities for converting ONNX operations to PyDTNN layers.
 from typing import Any, Callable
 
 from pydtnn.abstract.layerable import Layerable
-from pydtnn.converters.onnx2pydtnn.operations.implemented_operations import Add, AveragePool, BatchNormalization, Concat, Conv, Dropout, Flatten, Gemm, GlobalAveragePool, MaxPool, Mul, Relu, Unsqueeze
+from pydtnn.converters.onnx2pydtnn.operations.implemented_operations import (Add, AveragePool,
+                                                                             BatchNormalization,
+                                                                             Concat, Conv, Dropout,
+                                                                             Flatten, Gemm,
+                                                                             GlobalAveragePool,
+                                                                             MaxPool, Mul, Relu,
+                                                                             Unsqueeze)
 
 __all__ = (
     "pads_from_onnx_to_pydtnn",
@@ -26,7 +32,9 @@ CONST_PREV_LAYERS = "previous_layers"
 # DenseNet169 - {'Conv', 'BatchNormalization', 'Unsqueeze', 'Add', 'Mul', 'Relu', 'MaxPool', 'AveragePool', 'GlobalAveragePool', 'Concat'}
 # ResNet50 - {'Conv', 'MaxPool', 'Relu', 'Add', 'BatchNormalization', 'GlobalAveragePool', 'Gemm', 'Flatten'}
 # VGG19 - {'Dropout', 'Gemm', 'Flatten', 'Relu', 'MaxPool', 'BatchNormalization', 'Conv'}
-# Union of the ones before - {'Add', 'AveragePool', 'BatchNormalization', 'Concat', 'Conv', 'Dropout', 'Flatten', 'Gemm', 'GlobalAveragePool', 'MaxPool', 'Mul', 'Relu', 'Unsqueeze'}
+# Union of the ones before - {'Add', 'AveragePool', 'BatchNormalization',
+# 'Concat', 'Conv', 'Dropout', 'Flatten', 'Gemm', 'GlobalAveragePool',
+# 'MaxPool', 'Mul', 'Relu', 'Unsqueeze'}
 
 
 def pads_from_onnx_to_pydtnn(pads: list[int]) -> tuple[int, int]:

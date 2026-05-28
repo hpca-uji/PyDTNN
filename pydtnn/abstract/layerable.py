@@ -135,7 +135,9 @@ class Layerable[T: Array](Base[T]):
         props["output"] = self.shape
 
         if len(self.paths) > 0:
-            props["paths"] = ", ".join(f"{path[0].id}-{path[-1].id}" if path else "Empty" for path in self.paths)
+            props["paths"] = ", ".join(
+                f"{path[0].id}-{path[-1].id}" if path else "Empty" for path in self.paths
+            )
 
         if self.weights is not None:
             props["weights"] = self.weights.shape
@@ -157,7 +159,8 @@ class Layerable[T: Array](Base[T]):
         super()._model_init()
         self.id = next(self.model.layer_id_generator)
         self.prev_shape = prev_shape
-        self.x = x  # type:ignore (If it's used, it will be type "T"; if not, it will never be accesed)
+        # type: ignore (If it's used, it will be type "T"; if not, it will never be accesed)
+        self.x = x
         self.fwd_time = np.zeros((4,), dtype=np.float32)
         self.bwd_time = np.zeros((4,), dtype=np.float32)
 
@@ -347,7 +350,10 @@ class Layerable[T: Array](Base[T]):
                        layer's canonical name.
         """
         if data[Parameters.CANONICAL_NAME] != self.canonical_name:
-            raise TypeError(f"self type must be the same as the stored data type  (self: {self.canonical_name}, stored: {data[Parameters.CANONICAL_NAME]})")
+            raise TypeError(
+                f"self type must be the same as the stored data type  (self: {self.canonical_name},"
+                f" stored: {data[Parameters.CANONICAL_NAME]})"
+            )
 
         for var, dvar in self.grad_vars.items():
             self._import_prop(var, data[var])

@@ -54,7 +54,15 @@ class Archive(Dataset):
         debug_str.append(f"y_test: {y_test}")
         logger.debug("\n".join(debug_str))
 
-        super().__init__(model, x_train[0], x_test[0], x_train[1:], y_train[1:], force_test_as_validation=force_test_as_validation, debug=debug)
+        super().__init__(
+            model,
+            x_train[0],
+            x_test[0],
+            x_train[1:],
+            y_train[1:],
+            force_test_as_validation=force_test_as_validation,
+            debug=debug,
+        )
 
     def _ensure_data_init(self) -> None:
         """

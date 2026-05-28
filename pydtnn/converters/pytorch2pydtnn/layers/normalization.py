@@ -1,4 +1,5 @@
-# In this file must be implemented only the translation of PyTorch Normalization layers to its PyDTNN equivalent.
+# In this file must be implemented only the translation of PyTorch
+# Normalization layers to its PyDTNN equivalent.
 
 """Module for converting PyTorch normalization layers to PyDTNN equivalents."""
 
@@ -43,6 +44,10 @@ def BatchNorm2d(args: dict[str, Any]) -> BatchNormalization:
 
     pydtnn_dict_keys = [PYDTNN_MOMENTUM, PYDTNN_EPSILON]
 
-    layer_args = cm.prepare_pydtnn_arguments(arguments=args[cm.ARGUMENTS], torch_dict_keys=torch_dict_keys, pydtnn_dict_keys=pydtnn_dict_keys)
+    layer_args = cm.prepare_pydtnn_arguments(
+        arguments=args[cm.ARGUMENTS],
+        torch_dict_keys=torch_dict_keys,
+        pydtnn_dict_keys=pydtnn_dict_keys,
+    )
 
     return BatchNormalization(**layer_args)

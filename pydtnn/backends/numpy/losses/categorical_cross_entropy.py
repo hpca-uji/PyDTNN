@@ -28,7 +28,10 @@ class CategoricalCrossEntropyNumpy(CategoricalCrossEntropy[np.ndarray], LossNump
         self._y_pred_shape = self.shape
 
         self.tmp_memory_used += int(math.prod(self._argmax_shape)) * np.int32().itemsize
-        self.tmp_memory_used += int(math.prod(self._y_pred_op_shape) + math.prod(self._y_pred_shape)) * self.model.dtype.itemsize
+        self.tmp_memory_used += (
+            int(math.prod(self._y_pred_op_shape) + math.prod(self._y_pred_shape))
+            * self.model.dtype.itemsize
+        )
 
         # _y_pred_sliced_size = self.model.batch_size
         # + _y_pred_sliced_size
@@ -40,10 +43,14 @@ class CategoricalCrossEntropyNumpy(CategoricalCrossEntropy[np.ndarray], LossNump
         super()._post_init()
         with self.model.memory:
             self._argmax = self.model.memory.ndarray(self._argmax_shape, dtype=np.int32)
-            self._y_pred_op = self.model.memory.ndarray(self._y_pred_op_shape, dtype=self.model.dtype)
+            self._y_pred_op = self.model.memory.ndarray(
+                self._y_pred_op_shape, dtype=self.model.dtype
+            )
             self._y_pred = self.model.memory.ndarray(self._y_pred_shape, dtype=self.model.dtype)
 
-    def compute(self, y_pred: np.ndarray, y_targ: np.ndarray, batch_size: int) -> tuple[float, np.ndarray]:
+    def compute(
+        self, y_pred: np.ndarray, y_targ: np.ndarray, batch_size: int
+    ) -> tuple[float, np.ndarray]:
         """
         Compute the categorical cross entropy loss and gradients.
 

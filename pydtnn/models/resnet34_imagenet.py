@@ -46,13 +46,37 @@ def resnet34_imagenet(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequ
             _(
                 AdditionBlock(
                     [
-                        Conv2D(nfilters=n_filt, filter_shape=(3, 3), stride=stride, padding=1, weights_initializer=he_uniform),
+                        Conv2D(
+                            nfilters=n_filt,
+                            filter_shape=(3, 3),
+                            stride=stride,
+                            padding=1,
+                            weights_initializer=he_uniform,
+                        ),
                         BatchNormalization(),
                         Relu(),
-                        Conv2D(nfilters=n_filt, filter_shape=(3, 3), stride=1, padding=1, weights_initializer=he_uniform),
+                        Conv2D(
+                            nfilters=n_filt,
+                            filter_shape=(3, 3),
+                            stride=1,
+                            padding=1,
+                            weights_initializer=he_uniform,
+                        ),
                         BatchNormalization(),
                     ],
-                    [Conv2D(nfilters=n_filt, filter_shape=(1, 1), stride=stride, weights_initializer=he_uniform), BatchNormalization()] if stride != 1 else [],
+                    (
+                        [
+                            Conv2D(
+                                nfilters=n_filt,
+                                filter_shape=(1, 1),
+                                stride=stride,
+                                weights_initializer=he_uniform,
+                            ),
+                            BatchNormalization(),
+                        ]
+                        if stride != 1
+                        else []
+                    ),
                 )
             )
             _(Relu())

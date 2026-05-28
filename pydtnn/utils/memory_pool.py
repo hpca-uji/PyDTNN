@@ -60,7 +60,11 @@ class PreallocMemory(PrivateMemory):
         end = start + size
 
         if end > self._capacity:
-            raise RuntimeError(f"Getting too much memory. Memory to get={size}, Memory occupied={self._used}, Memory after the operation={self._capacity}")
+            raise RuntimeError(
+                f"Getting too much memory. Memory to get={size}, Memory occupied={
+                    self._used
+                }, Memory after the operation={self._capacity}"
+            )
 
         self._used = end
         return self._buffer[start:end]
@@ -70,7 +74,9 @@ class PreallocMemory(PrivateMemory):
         new_offset = self._used - size
 
         if new_offset < 0:
-            raise RuntimeError(f"Removing too much memory. {self._used=}, memory to erase={size}, {new_offset=}")
+            raise RuntimeError(
+                f"Removing too much memory. {self._used=}, memory to erase={size}, {new_offset=}"
+            )
 
         self._used = new_offset
 

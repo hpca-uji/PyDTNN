@@ -34,7 +34,9 @@ class LeakyReluNumpy(LeakyRelu[np.ndarray], ActivationNumpy):
         Initialize internal buffers for the forward and backward passes.
         """
         super()._model_init(prev_shape, x)
-        # NOTE: These attributes only store data, their values before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
+        # NOTE: These attributes only store data, their values before the
+        # operation doesn't matter; they're initalized due avoid warnings in
+        # "LayerAndActivationBase.export".
         self._y = np.zeros((self.model.batch_size, *self.prev_shape), dtype=self.model.dtype)
         self._mask = np.zeros((self.model.batch_size, *self.prev_shape), dtype=self.model.dtype)
 

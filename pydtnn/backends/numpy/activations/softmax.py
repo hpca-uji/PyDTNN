@@ -27,7 +27,9 @@ class SoftmaxNumpy(Softmax[np.ndarray], ActivationNumpy):
         shape_intermediate_ops = list(self.shape)
         shape_intermediate_ops[self.axis_dim - 1] = 1
 
-        # NOTE: These attributes only store data, their value before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
+        # NOTE: These attributes only store data, their value before the operation
+        # doesn't matter; they're initalized due avoid warnings in
+        # "LayerAndActivationBase.export".
         self._y = np.zeros(shape=(self.model.batch_size, *self.shape), dtype=self.model.dtype)
         self.memory_used += self._y.nbytes
 
@@ -39,11 +41,16 @@ class SoftmaxNumpy(Softmax[np.ndarray], ActivationNumpy):
 
         self.temp_shape = (self.model.batch_size, *shape_intermediate_ops)
         sum_y_shape = max_x_shape = self.temp_shape
-        self.tmp_memory_used += int(math.prod(max_x_shape) + math.prod(sum_y_shape)) * self.model.dtype.itemsize
+        self.tmp_memory_used += (
+            int(math.prod(max_x_shape) + math.prod(sum_y_shape)) * self.model.dtype.itemsize
+        )
 
         self.mul_dy_shape = (self.model.batch_size, *self.shape)
         self.sum_dy_shape = (self.model.batch_size, *shape_intermediate_ops)
-        self.tmp_memory_used += int(math.prod(self.mul_dy_shape) + math.prod(self.sum_dy_shape)) * self.model.dtype.itemsize
+        self.tmp_memory_used += (
+            int(math.prod(self.mul_dy_shape) + math.prod(self.sum_dy_shape))
+            * self.model.dtype.itemsize
+        )
 
         self.memory_used += self.tmp_memory_used
 

@@ -40,5 +40,7 @@ class SigmoidCython(SigmoidNumpy, ActivationCython):
             Gradient of the loss with respect to the input.
         """
         dx: np.ndarray = self.dx[: dy.shape[0], :]
-        sigmoid_bwd_cython(dy.reshape(-1, copy=False), self.y.reshape(-1, copy=False), dx.reshape(-1, copy=False))
+        sigmoid_bwd_cython(
+            dy.reshape(-1, copy=False), self.y.reshape(-1, copy=False), dx.reshape(-1, copy=False)
+        )
         return dx

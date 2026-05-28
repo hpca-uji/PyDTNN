@@ -5,7 +5,17 @@ Cython-accelerated depthwise convolution utilities for NHWC data layout.
 from pydtnn.backends.cython.utils.base import _npDT, _npDT_3Dims, _npDT_4Dims
 
 def depthwise_conv_nhwc_cython[T: _npDT](
-    x: _npDT_4Dims[T], k: _npDT_3Dims[T], res: _npDT_4Dims[T], ho: int, wo: int, vpadding: int, hpadding: int, vstride: int, hstride: int, vdilation: int, hdilation: int
+    x: _npDT_4Dims[T],
+    k: _npDT_3Dims[T],
+    res: _npDT_4Dims[T],
+    ho: int,
+    wo: int,
+    vpadding: int,
+    hpadding: int,
+    vstride: int,
+    hstride: int,
+    vdilation: int,
+    hdilation: int,
 ) -> None:
     """
     Performs a depthwise convolution in NHWC format using Cython.
@@ -28,7 +38,17 @@ def depthwise_conv_nhwc_cython[T: _npDT](
     """
 
 def depthwise_conv_backward_nhwc_cython[T: _npDT](
-    dy: _npDT_4Dims[T], x: _npDT_4Dims[T], k: _npDT_3Dims[T], dx: _npDT_4Dims[T], dw: _npDT_3Dims[T], vpadding: int, hpadding: int, vstride: int, hstride: int, vdilation: int, hdilation: int
+    dy: _npDT_4Dims[T],
+    x: _npDT_4Dims[T],
+    k: _npDT_3Dims[T],
+    dx: _npDT_4Dims[T],
+    dw: _npDT_3Dims[T],
+    vpadding: int,
+    hpadding: int,
+    vstride: int,
+    hstride: int,
+    vdilation: int,
+    hdilation: int,
 ) -> None:
     """
     Computes the gradients for depthwise convolution in NHWC format using Cython.

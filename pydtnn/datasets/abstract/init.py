@@ -49,7 +49,16 @@ class Init(Base):
     - data_generator(y) is expected to be in NC format
     """
 
-    def __init__(self, model: Model, train_nsamples: int = 0, test_nsamples: int = 0, input_shape: ArrayShape = (), output_shape: ArrayShape = (), force_test_as_validation=False, debug=False):
+    def __init__(
+        self,
+        model: Model,
+        train_nsamples: int = 0,
+        test_nsamples: int = 0,
+        input_shape: ArrayShape = (),
+        output_shape: ArrayShape = (),
+        force_test_as_validation=False,
+        debug=False,
+    ):
         """
         Initialize the dataset with model configuration and sample parameters.
 
@@ -77,13 +86,22 @@ class Init(Base):
             raise ValueError("Dataset has no output shape!")
 
         if len(input_shape) != 3:
-            logger.warning(f"Input shape does not have 3 dimensions ({input_shape}), it may cause issues!")
+            logger.warning(
+                f"Input shape does not have 3 dimensions ({input_shape}), it may cause issues!"
+            )
         # if len(input_shape) == 3 and not (input_shape[0] < input_shape[2]):
         elif not (input_shape[0] < input_shape[2]):
-            logger.warning(f"Dataset input_shape {input_shape} may not be in NCHW format, regardless of model format!")
+            logger.warning(
+                f"Dataset input_shape {input_shape} may not be in NCHW format, regardless of model"
+                " format!"
+            )
 
         if len(output_shape) != 1:
-            logger.warning(f"Output shape should have 1 dimension, but it has {len(output_shape)} (Output shape: {output_shape}). This may cause issues!")
+            logger.warning(
+                f"Output shape should have 1 dimension, but it has {
+                    len(output_shape)
+                } (Output shape: {output_shape}). This may cause issues!"
+            )
 
         self.model: Model = model
         self.debug: bool = debug
@@ -94,21 +112,36 @@ class Init(Base):
         if self.test_as_validation:
             self._nsamples[Base.Part.VAL] = self._nsamples[Base.Part.TEST]
         else:
-            self._nsamples[Base.Part.VAL] = min(self._nsamples[Base.Part.TRAIN] - self.model.nprocs, max(self.model.nprocs, int(self._nsamples[Base.Part.TRAIN] * self.model.validation_split)))
+            self._nsamples[Base.Part.VAL] = min(
+                self._nsamples[Base.Part.TRAIN] - self.model.nprocs,
+                max(
+                    self.model.nprocs,
+                    int(self._nsamples[Base.Part.TRAIN] * self.model.validation_split),
+                ),
+            )
             self._nsamples[Base.Part.TRAIN] -= self._nsamples[Base.Part.VAL]
 
         # self.real_input_shape = tuple(input_shape)
         self.input_shape: ArrayShape = tuple(input_shape)
         self.output_shape: ArrayShape = tuple(output_shape)
 
-        self._initial_nsamples = [self._nsamples[Base.Part.TRAIN], self._nsamples[Base.Part.VAL], self._nsamples[Base.Part.TEST]]
-        # Offset (in number of samples) and number of samples for the current job for each dataset part
+        self._initial_nsamples = [
+            self._nsamples[Base.Part.TRAIN],
+            self._nsamples[Base.Part.VAL],
+            self._nsamples[Base.Part.TEST],
+        ]
+        # Offset (in number of samples) and number of samples for the current job
+        # for each dataset part
         self._local_offset = [0] * len(Base.Part)
         self._local_nsamples = [0] * len(Base.Part)
-        self._local_remaining_nsamples = [-1] * len(Base.Part)  # -1 is used to mark each part as not initialized
+        self._local_remaining_nsamples = [-1] * len(
+            Base.Part
+        )  # -1 is used to mark each part as not initialized
 
         for part in Base.Part.TRAIN, Base.Part.VAL, Base.Part.TEST:
-            (self._local_offset[part], self._local_nsamples[part], self._nsamples[part]) = self._compute_local_workload(self._nsamples[part])
+            self._local_offset[part], self._local_nsamples[part], self._nsamples[part] = (
+                self._compute_local_workload(self._nsamples[part])
+            )
 
         if self.debug:
             self._print_report()
@@ -205,7 +238,9 @@ class Init(Base):
             "y_test": y_test,
         }
 
-    def _export_split(self, data: dict[str, np.ndarray], split_weights: list[float] = [1.0]) -> Generator[dict[str, np.ndarray]]:
+    def _export_split(
+        self, data: dict[str, np.ndarray], split_weights: list[float] = [1.0]
+    ) -> Generator[dict[str, np.ndarray]]:
         """
         Generate export data splits based on weights.
 
@@ -241,7 +276,13 @@ class Init(Base):
 
         # Yield splits
         for x_train, y_train, x_test, y_test in zip(x_train, y_train, x_test, y_test):
-            yield {**data, "x_train": x_train, "y_train": y_train, "x_test": x_test, "y_test": y_test}
+            yield {
+                **data,
+                "x_train": x_train,
+                "y_train": y_train,
+                "x_test": x_test,
+                "y_test": y_test,
+            }
 
     def export_archive(self, path: Path | None = None, split_weights: list[float] | None = None):
         """
@@ -266,7 +307,11 @@ class Init(Base):
         else:
             np.savez_compressed(path / "archive.npz", **data)  # type: ignore
 
-    def get_train_val_generator(self) -> tuple[Generator[tuple[np.ndarray, np.ndarray, int]], Generator[tuple[np.ndarray, np.ndarray, int]]]:
+    def get_train_val_generator(
+        self,
+    ) -> tuple[
+        Generator[tuple[np.ndarray, np.ndarray, int]], Generator[tuple[np.ndarray, np.ndarray, int]]
+    ]:
         """
         Return generators for training and validation sets.
 
@@ -276,7 +321,10 @@ class Init(Base):
         Returns:
             A tuple containing two generators: (training_generator, validation_generator).
         """
-        return (self._get_batch_generator(Base.Part.TRAIN), self._get_batch_generator(Base.Part.VAL))
+        return (
+            self._get_batch_generator(Base.Part.TRAIN),
+            self._get_batch_generator(Base.Part.VAL),
+        )
 
     def get_test_generator(self) -> Generator[tuple[np.ndarray, np.ndarray, int]]:
         """
@@ -349,13 +397,17 @@ class Init(Base):
             local_offset = self.model.rank * nsamples_per_big_worker
         else:
             local_nsamples = nsamples_per_worker
-            local_offset = nsamples_per_big_worker * big_workers + nsamples_per_worker * (self.model.rank - big_workers)
+            local_offset = nsamples_per_big_worker * big_workers + nsamples_per_worker * (
+                self.model.rank - big_workers
+            )
 
         return int(local_offset), int(local_nsamples), int(_nsamples)
 
     def _model_init(self):
         """Generates initial self._x[] and self._y[]. To be implemented in derived classes."""
-        self.x_empty_batch = np.zeros(shape=self.model.encode_shape((0, *self.input_shape)), dtype=self.model.dtype)
+        self.x_empty_batch = np.zeros(
+            shape=self.model.encode_shape((0, *self.input_shape)), dtype=self.model.dtype
+        )
         self.y_empty_batch = np.zeros(shape=(0, *self.output_shape), dtype=self.model.dtype)
 
         # Declare _x and _y for train, val and test dataset parts
@@ -388,7 +440,9 @@ class Init(Base):
         y[np.arange(y.shape[0]), classes_list] = 1
 
     @staticmethod
-    def _offset2files(filenames: list[str], images_per_file: int, local_offset: int, local_nsamples: int) -> list[tuple[str, int, int]]:
+    def _offset2files(
+        filenames: list[str], images_per_file: int, local_offset: int, local_nsamples: int
+    ) -> list[tuple[str, int, int]]:
         """
         Map local offset and sample count to specific files.
 
@@ -477,7 +531,8 @@ class Init(Base):
         """
 
         # NOTE: global_batch_size should be MPI.reduce(x_local_batch.shape[0])
-        # However to avoid communications per batch, we assume all process have our x_local_batch.shape[0]
+        # However to avoid communications per batch, we assume all process have
+        # our x_local_batch.shape[0]
 
         # NOTE:
         # batch_size: en memoria
@@ -526,7 +581,9 @@ class Init(Base):
                 batch_online.append((x_extra, y_extra))
                 batch_size += extra_size
 
-            while (x_data.shape[0] > 0) and ((x_data.shape[0] >= local_batch_size) or (local_batch_size >= nsamples)):
+            while (x_data.shape[0] > 0) and (
+                (x_data.shape[0] >= local_batch_size) or (local_batch_size >= nsamples)
+            ):
                 x_batch, x_data = x_data[:local_batch_size], x_data[local_batch_size:]
                 y_batch, y_data = y_data[:local_batch_size], y_data[local_batch_size:]
 
@@ -534,7 +591,9 @@ class Init(Base):
                 yield x_batch[:nsamples], y_batch[:nsamples], global_batch_size
                 nsamples -= global_batch_size
 
-    def _get_batch_generator(self, part: Base.Part) -> Generator[tuple[np.ndarray, np.ndarray, int]]:
+    def _get_batch_generator(
+        self, part: Base.Part
+    ) -> Generator[tuple[np.ndarray, np.ndarray, int]]:
         """
         Yield batches with background prefetching.
 
@@ -551,7 +610,9 @@ class Init(Base):
 
         # NOTE: The following infinite loop provides of empty batches
         #       if there are asked more batches than actually are.
-        x_empty_batch = np.zeros(shape=self.model.encode_shape((0, *self.input_shape)), dtype=self.model.dtype)
+        x_empty_batch = np.zeros(
+            shape=self.model.encode_shape((0, *self.input_shape)), dtype=self.model.dtype
+        )
         y_empty_batch = np.zeros(shape=(0, *self.output_shape), dtype=self.model.dtype)
         while True:
             yield x_empty_batch, y_empty_batch, 0

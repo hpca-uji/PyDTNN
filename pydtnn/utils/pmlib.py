@@ -46,19 +46,36 @@ class PMLibLines(ctypes.Structure):
 class PMLibMeasures(ctypes.Structure):
     """Structure containing power measurement data."""
 
-    _fields_ = [("watts_size", ctypes.c_int), ("watts_sets_size", ctypes.c_int), ("watts_sets", ctypes.POINTER(ctypes.c_int)), ("watts", ctypes.POINTER(ctypes.c_double)), ("lines_len", ctypes.c_int)]
+    _fields_ = [
+        ("watts_size", ctypes.c_int),
+        ("watts_sets_size", ctypes.c_int),
+        ("watts_sets", ctypes.POINTER(ctypes.c_int)),
+        ("watts", ctypes.POINTER(ctypes.c_double)),
+        ("lines_len", ctypes.c_int),
+    ]
 
 
 class PMLibMeasuresWT(ctypes.Structure):
     """Structure containing power measurement data with timing information."""
 
-    _fields_ = [("next_timing", ctypes.c_int), ("timing", ctypes.POINTER(ctypes.c_double)), ("energy", PMLibMeasures)]
+    _fields_ = [
+        ("next_timing", ctypes.c_int),
+        ("timing", ctypes.POINTER(ctypes.c_double)),
+        ("energy", PMLibMeasures),
+    ]
 
 
 class PMLibCounter(ctypes.Structure):
     """Structure representing a power measurement counter."""
 
-    _fields_ = [("sock", ctypes.c_int), ("aggregate", ctypes.c_int), ("lines", PMLibLines), ("num_lines", ctypes.c_int), ("interval", ctypes.c_int), ("measures", ctypes.POINTER(PMLibMeasuresWT))]
+    _fields_ = [
+        ("sock", ctypes.c_int),
+        ("aggregate", ctypes.c_int),
+        ("lines", PMLibLines),
+        ("num_lines", ctypes.c_int),
+        ("interval", ctypes.c_int),
+        ("measures", ctypes.POINTER(PMLibMeasuresWT)),
+    ]
 
 
 class PMLibException(Exception):
@@ -121,14 +138,25 @@ class PMLib:
         # Helper functions
         # int pm_set_server( char *ip, int port, server_t *pm_server);
         self._pmlib.pm_set_server.restype = int
-        self._pmlib.pm_set_server.argtypes = [ctypes.c_char_p, ctypes.c_int, ctypes.POINTER(PMLibServer)]
+        self._pmlib.pm_set_server.argtypes = [
+            ctypes.c_char_p,
+            ctypes.c_int,
+            ctypes.POINTER(PMLibServer),
+        ]
         # int pm_set_lines( char *lines_string ,line_t *lines );
         self._pmlib.pm_set_lines.restype = int
         self._pmlib.pm_set_lines.argtypes = [ctypes.c_char_p, ctypes.POINTER(PMLibLines)]
         # int pm_create_counter(char *pm_id, line_t lines, int aggregate, int interval, server_t pm_server,
         #                       counter_t *pm_counter);
         self._pmlib.pm_create_counter.restype = int
-        self._pmlib.pm_create_counter.argtypes = [ctypes.c_char_p, PMLibLines, ctypes.c_int, ctypes.c_int, PMLibServer, ctypes.POINTER(PMLibCounter)]
+        self._pmlib.pm_create_counter.argtypes = [
+            ctypes.c_char_p,
+            PMLibLines,
+            ctypes.c_int,
+            ctypes.c_int,
+            PMLibServer,
+            ctypes.POINTER(PMLibCounter),
+        ]
         # int pm_start_counter( counter_t *pm_counter );
         self._pmlib.pm_start_counter.restype = int
         self._pmlib.pm_start_counter.argtypes = [ctypes.POINTER(PMLibCounter)]
@@ -140,7 +168,12 @@ class PMLib:
         self._pmlib.pm_get_counter_data.argtypes = [ctypes.POINTER(PMLibCounter)]
         # int pm_print_data_text(char *file_name,  counter_t pm_counter, line_t lines, int set);
         self._pmlib.pm_print_data_text.restype = int
-        self._pmlib.pm_print_data_text.argtypes = [ctypes.c_char_p, PMLibCounter, PMLibLines, ctypes.c_int]
+        self._pmlib.pm_print_data_text.argtypes = [
+            ctypes.c_char_p,
+            PMLibCounter,
+            PMLibLines,
+            ctypes.c_int,
+        ]
         # int pm_finalize_counter( counter_t *pm_counter );
         self._pmlib.pm_finalize_counter.restype = int
         self._pmlib.pm_finalize_counter.argtypes = [ctypes.POINTER(PMLibCounter)]
@@ -228,7 +261,14 @@ class PMLib:
         """
         self.info("Creating counter...")
         assert self._pmlib
-        return self._pmlib.pm_create_counter(counter_string.encode("utf-8"), self.lines, aggregate, interval, self.server, ctypes.byref(self.counter))
+        return self._pmlib.pm_create_counter(
+            counter_string.encode("utf-8"),
+            self.lines,
+            aggregate,
+            interval,
+            self.server,
+            ctypes.byref(self.counter),
+        )
 
     @check_pmlib_returned_status
     def start_counter(self):
@@ -296,7 +336,9 @@ class PMLib:
         """
         self.info(f"Writing data to '{output_string}' file...")
         assert self._pmlib
-        return self._pmlib.pm_print_data_text(output_string.encode("utf-8"), self.counter, self.lines, set_value)
+        return self._pmlib.pm_print_data_text(
+            output_string.encode("utf-8"), self.counter, self.lines, set_value
+        )
 
     @check_pmlib_returned_status
     def finalize_counter(self):
@@ -323,14 +365,24 @@ class PMLib:
         like the number of lines, samples, and the time period.
         """
         self._get_counter_data()
-        self.counter_start_time, self.counter_end_time = np.ctypeslib.as_array((ctypes.c_double * 2).from_address(ctypes.addressof(self.counter.measures.contents.timing.contents)))
-        self.len_lines = 1 if self.counter.aggregate == 1 else self.counter.measures.contents.energy.lines_len
+        self.counter_start_time, self.counter_end_time = np.ctypeslib.as_array(
+            (ctypes.c_double * 2).from_address(
+                ctypes.addressof(self.counter.measures.contents.timing.contents)
+            )
+        )
+        self.len_lines = (
+            1 if self.counter.aggregate == 1 else self.counter.measures.contents.energy.lines_len
+        )
         self.len_samples = self.counter.measures.contents.energy.watts_size // self.len_lines
         self.period = (self.counter_end_time - self.counter_start_time) / (self.len_samples - 1)
-        self.times = np.array([self.counter_start_time + x * self.period for x in range(self.len_samples)])
-        self.watts = np.ctypeslib.as_array((ctypes.c_double * self.len_samples * self.len_lines).from_address(ctypes.addressof(self.counter.measures.contents.energy.watts.contents))).reshape(
-            (self.len_lines, self.len_samples)
+        self.times = np.array(
+            [self.counter_start_time + x * self.period for x in range(self.len_samples)]
         )
+        self.watts = np.ctypeslib.as_array(
+            (ctypes.c_double * self.len_samples * self.len_lines).from_address(
+                ctypes.addressof(self.counter.measures.contents.energy.watts.contents)
+            )
+        ).reshape((self.len_lines, self.len_samples))
         if self.counter.aggregate == 0:
             _sum = np.sum(self.watts, axis=0).reshape(1, -1)
             self.watts = np.concatenate((_sum, self.watts))
@@ -439,13 +491,22 @@ class PMLib:
             # Integrate the energy between start_time and times[next_sample_from_start]
             elapsed_time = self.times[next_sample_from_start] - start_time
             if elapsed_time > 0:
-                joules += ((watts_on_start_time + self.watts[:, next_sample_from_start]) / 2) * elapsed_time
+                joules += (
+                    (watts_on_start_time + self.watts[:, next_sample_from_start]) / 2
+                ) * elapsed_time
             # Integrate the energy between times[previous_sample_from_end] and end_time
             elapsed_time = end_time - self.times[previous_sample_from_end]
             if elapsed_time > 0:
-                joules += ((self.watts[:, previous_sample_from_end] + watts_on_end_time) / 2) * elapsed_time
+                joules += (
+                    (self.watts[:, previous_sample_from_end] + watts_on_end_time) / 2
+                ) * elapsed_time
             # Integrate the energy between next_sample_from_start and previous_sample_from_end
             elapsed_time = self.times[previous_sample_from_end] - self.times[next_sample_from_start]
             if elapsed_time > 0:
-                joules += np.mean(self.watts[:, next_sample_from_start: previous_sample_from_end + 1], axis=1) * elapsed_time
+                joules += (
+                    np.mean(
+                        self.watts[:, next_sample_from_start: previous_sample_from_end + 1], axis=1
+                    )
+                    * elapsed_time
+                )
         return joules

@@ -5,14 +5,19 @@ from typing import TYPE_CHECKING
 
 from pydtnn.backends.cython.layers.abstract.pool_2d_layer import AbstractPool2DLayerCython
 from pydtnn.backends.cython.utils.argmax_cython import argmax_cython
-from pydtnn.backends.cython.utils.im2col_1ch_nchw_cython import col2im_1ch_nchw_cython, im2col_1ch_nchw_cython
-from pydtnn.backends.cython.utils.im2row_1ch_nhwc_cython import im2row_1ch_nhwc_cython, row2im_1ch_nhwc_cython
-from pydtnn.backends.cython.utils.max_pool_2d_nchw_cython import max_pool_2d_bwd_nchw_cython, max_pool_2d_fwd_nchw_cython
-from pydtnn.backends.cython.utils.max_pool_2d_nhwc_cython import max_pool_2d_bwd_nhwc_cython, max_pool_2d_fwd_nhwc_cython
+from pydtnn.backends.cython.utils.im2col_1ch_nchw_cython import (col2im_1ch_nchw_cython,
+                                                                 im2col_1ch_nchw_cython)
+from pydtnn.backends.cython.utils.im2row_1ch_nhwc_cython import (im2row_1ch_nhwc_cython,
+                                                                 row2im_1ch_nhwc_cython)
+from pydtnn.backends.cython.utils.max_pool_2d_nchw_cython import (max_pool_2d_bwd_nchw_cython,
+                                                                  max_pool_2d_fwd_nchw_cython)
+from pydtnn.backends.cython.utils.max_pool_2d_nhwc_cython import (max_pool_2d_bwd_nhwc_cython,
+                                                                  max_pool_2d_fwd_nhwc_cython)
 from pydtnn.backends.numpy.layers.max_pool_2d import MaxPool2DNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.model import Model
-from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
+from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
+                                   PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
 
 __all__ = ("MaxPool2DCython",)
 
@@ -118,9 +123,13 @@ class MaxPool2DCython(MaxPool2DNumpy, AbstractPool2DLayerCython):
         y: np.ndarray = np.zeros((x.shape[0],), dtype=self.model.dtype)
         amax: np.ndarray = np.zeros((x.shape[0],), dtype=np.int32)
         rng: np.ndarray = np.zeros((x.shape[0],), dtype=np.int32)
-        x_rows: np.ndarray = np.zeros((x.shape[0] * self.ci * self.ho * self.wo, self.kh * self.kw), dtype=self.model.dtype)
+        x_rows: np.ndarray = np.zeros(
+            (x.shape[0] * self.ci * self.ho * self.wo, self.kh * self.kw), dtype=self.model.dtype
+        )
 
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL
+        )
         im2row_1ch_nhwc_cython(
             x,
             x_rows,  # type: ignore
@@ -146,12 +155,16 @@ class MaxPool2DCython(MaxPool2DNumpy, AbstractPool2DLayerCython):
     def _forward_nchw_i2c(self, x: np.ndarray) -> np.ndarray:
         """Perform forward pass for NCHW format using im2col approach."""
         n, c, _, _ = x.shape
-        x_cols: np.ndarray = np.zeros((self.kh * self.kw, n * c * self.ho * self.wo), dtype=self.model.dtype)
+        x_cols: np.ndarray = np.zeros(
+            (self.kh * self.kw, n * c * self.ho * self.wo), dtype=self.model.dtype
+        )
         y: np.ndarray = np.zeros((n,), dtype=self.model.dtype)
         amax: np.ndarray = np.zeros((n,), dtype=np.int32)
         rng: np.ndarray = np.zeros((n,), dtype=np.int32)
 
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL
+        )
         im2col_1ch_nchw_cython(
             x,
             x_cols,  # type: ignore
@@ -174,10 +187,14 @@ class MaxPool2DCython(MaxPool2DNumpy, AbstractPool2DLayerCython):
 
     def _backward_nhwc_i2c(self, dy: np.ndarray) -> np.ndarray:
         """Perform backward pass for NHWC format using col2im approach."""
-        dy_rows: np.ndarray = np.zeros((np.prod(dy.shape), self.kh * self.kw), dtype=self.model.dtype)
+        dy_rows: np.ndarray = np.zeros(
+            (np.prod(dy.shape), self.kh * self.kw), dtype=self.model.dtype
+        )
         dy_rows[self.idx_max] = dy.flatten()
         dx: np.ndarray = np.zeros_like(dy, dtype=self.model.dtype)
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM)
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM
+        )
         row2im_1ch_nhwc_cython(
             dy_rows,
             dx,  # type: ignore
@@ -201,11 +218,15 @@ class MaxPool2DCython(MaxPool2DNumpy, AbstractPool2DLayerCython):
 
     def _backward_nchw_i2c(self, dy: np.ndarray) -> np.ndarray:
         """Perform backward pass for NCHW format using col2im approach."""
-        dy_cols: np.ndarray = np.zeros((self.kh * self.kw, np.prod(dy.shape)), dtype=self.model.dtype)
+        dy_cols: np.ndarray = np.zeros(
+            (self.kh * self.kw, np.prod(dy.shape)), dtype=self.model.dtype
+        )
         dy_cols[self.idx_max] = dy.flatten(order="C").view(dtype=self.model.dtype)
         dx: np.ndarray = np.zeros((dy.shape[0], self.ci, self.hi, self.wi), dtype=self.model.dtype)
 
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM)
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM
+        )
         col2im_1ch_nchw_cython(
             dy_cols,
             dx,  # type: ignore

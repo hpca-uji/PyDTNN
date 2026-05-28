@@ -96,15 +96,25 @@ def main():
     model_RELU._model_init()
 
     model_DEPTH.add(Input(SHAPE))
-    model_DEPTH.add(Conv2DDepthwise(nfilters=CONV_OUT_CHANNELS, filter_shape=CONV_KERNEL_SIZE, use_bias=use_bias))
+    model_DEPTH.add(
+        Conv2DDepthwise(
+            nfilters=CONV_OUT_CHANNELS, filter_shape=CONV_KERNEL_SIZE, use_bias=use_bias
+        )
+    )
     model_DEPTH._model_init()
 
     model_POINT.add(Input(SHAPE))
-    model_POINT.add(Conv2DPointwise(nfilters=CONV_OUT_CHANNELS, filter_shape=CONV_KERNEL_SIZE, use_bias=use_bias))
+    model_POINT.add(
+        Conv2DPointwise(
+            nfilters=CONV_OUT_CHANNELS, filter_shape=CONV_KERNEL_SIZE, use_bias=use_bias
+        )
+    )
     model_POINT._model_init()
 
     model_I2C.add(Input(SHAPE))
-    model_I2C.add(Conv2D(nfilters=CONV_OUT_CHANNELS, filter_shape=CONV_KERNEL_SIZE, use_bias=use_bias))
+    model_I2C.add(
+        Conv2D(nfilters=CONV_OUT_CHANNELS, filter_shape=CONV_KERNEL_SIZE, use_bias=use_bias)
+    )
     model_I2C._model_init()
 
     for name, model in models:
@@ -115,7 +125,11 @@ def main():
 
         x = deepcopy(dataset)
         if KWARGS["enable_cudnn"]:
-            _dataset = TensorArray(gpu_arr=gpuarray.zeros(shape=dataset.shape, dtype=KWARGS["dtype"]), tensor_format=model.tensor_format, cudnn_dtype=model.cudnn_dtype)
+            _dataset = TensorArray(
+                gpu_arr=gpuarray.zeros(shape=dataset.shape, dtype=KWARGS["dtype"]),
+                tensor_format=model.tensor_format,
+                cudnn_dtype=model.cudnn_dtype,
+            )
             _dataset.set(dataset)
             x = _dataset
 

@@ -9,7 +9,8 @@ from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython
 from pydtnn.backends.numpy.layers.conv_2d import Conv2DNumpy
 from pydtnn.backends.winograd.layers.abstract.conv_2d import AbstractConv2DWinograd
 from pydtnn.libs.convWinograd import ConvWinograd
-from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
+from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
+                                   PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
 from pydtnn.utils.tensor import TensorFormat
 
 __all__ = ("Conv2DWinograd",)
@@ -31,7 +32,16 @@ class Conv2DWinograd(Conv2DNumpy, AbstractConv2DWinograd):
         super()._model_init(prev_shape, x)
         # ConvWinograd parameters
         self.cw = ConvWinograd(
-            self.kh, self.kw, self.hstride, self.wstride, self.hdilation, self.wdilation, dtype=self.model.dtype, tensor_format=self.model.tensor_format, debug=self.debug, parent_layer=self
+            self.kh,
+            self.kw,
+            self.hstride,
+            self.wstride,
+            self.hdilation,
+            self.wdilation,
+            dtype=self.model.dtype,
+            tensor_format=self.model.tensor_format,
+            debug=self.debug,
+            parent_layer=self,
         )
 
         match self.model.tensor_format:
@@ -50,7 +60,10 @@ class Conv2DWinograd(Conv2DNumpy, AbstractConv2DWinograd):
         self.cw_x = x
         w = np.asarray(self.weights, dtype=self.model.dtype)
         biases = np.asarray(self.biases, dtype=self.model.dtype) if self.use_bias else self.biases
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVWINOGRAD)
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT,
+            self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVWINOGRAD,
+        )
         y: np.ndarray = self.cw.conv_winograd_nhwc(
             w,
             x,
@@ -70,7 +83,10 @@ class Conv2DWinograd(Conv2DNumpy, AbstractConv2DWinograd):
 
         self.cw_x = x
 
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVWINOGRAD)
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT,
+            self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVWINOGRAD,
+        )
         w = np.asarray(self.weights, dtype=self.model.dtype)
         biases = np.asarray(self.biases, dtype=self.model.dtype) if self.use_bias else self.biases
         y: np.ndarray = self.cw.conv_winograd_nchw(
@@ -90,9 +106,14 @@ class Conv2DWinograd(Conv2DNumpy, AbstractConv2DWinograd):
     def _backward_cw_nhwc(self, dy: np.ndarray) -> np.ndarray:
         """Perform backward pass using im2row transformation for NHWC format."""
 
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_IM2COL)
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_IM2COL
+        )
 
-        self.x_rows = np.zeros(((dy.shape[0] * self.ho * self.wo), (self.ci * self.kh * self.kw)), dtype=self.model.dtype)
+        self.x_rows = np.zeros(
+            ((dy.shape[0] * self.ho * self.wo), (self.ci * self.kh * self.kw)),
+            dtype=self.model.dtype,
+        )
         im2row_nhwc_cython(
             self.cw_x,
             self.x_rows,  # type: ignore
@@ -115,7 +136,9 @@ class Conv2DWinograd(Conv2DNumpy, AbstractConv2DWinograd):
         """Perform backward pass using im2col transformation for NCHW format."""
         n, c, _, _ = dy.shape
         self.x_cols = np.zeros((c * self.kh * self.kw, n * self.ho * self.wo))
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_IM2COL)
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_IM2COL
+        )
         im2col_nchw_cython(
             self.cw_x,
             self.x_cols,  # type: ignore

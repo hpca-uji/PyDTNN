@@ -19,7 +19,8 @@ from pydtnn.layers.input import Input
 from pydtnn.model.eval import Eval
 from pydtnn.schedulers import select as select_scheduler
 from pydtnn.schedulers.abstract.scheduler import Scheduler
-from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_MDL_EVENT_enum
+from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT,
+                                   PYDTNN_MDL_EVENTS, PYDTNN_MDL_EVENT_enum)
 from pydtnn.utils import TqdmLogger
 from pydtnn.utils.constants import Array
 
@@ -56,9 +57,14 @@ class Train[T: Array](Eval[T]):
         self.model_sync_algo = self.SyncAlgorithm(self.model_sync_algo)
 
         # NOTE: This parameter come from Parser.
-        self.model_sync_participation = self.SyncParticipation(self.kwargs["model_sync_participation"])
+        self.model_sync_participation = self.SyncParticipation(
+            self.kwargs["model_sync_participation"]
+        )
 
-        self.schedulers: list[Scheduler] = [select_scheduler(scheduler_name).from_model(self) for scheduler_name in filter(None, self.schedulers_names.split(","))]
+        self.schedulers: list[Scheduler] = [
+            select_scheduler(scheduler_name).from_model(self)
+            for scheduler_name in filter(None, self.schedulers_names.split(","))
+        ]
         for scheduler in self.schedulers:
             scheduler.model = self
 
@@ -79,13 +85,19 @@ class Train[T: Array](Eval[T]):
         if has_batch:
             # Forward pass (FP)
             for layer in self.layers:
-                self.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.FORWARD)
+                self.tracer.emit_event(
+                    PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.FORWARD
+                )
                 x = layer.forward(x)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
             loss, dx = self.loss_func.compute(x, y_targ, self.real_batch_size)
         else:
             if y_targ.shape[0] != x_batch.shape[0]:
-                raise ValueError(f"y_targ.shape[0] ({y_targ.shape[0]}) and x_batch.shape[0] ({x_batch.shape[0]}) must have the same value.")
+                raise ValueError(
+                    f"y_targ.shape[0] ({y_targ.shape[0]}) and x_batch.shape[0] ({
+                        x_batch.shape[0]
+                    }) must have the same value."
+                )
             loss, dx = 0.0, y_targ
 
         total_metrics = None
@@ -96,7 +108,9 @@ class Train[T: Array](Eval[T]):
         if has_batch:
             # Backward pass (BP)
             for layer in reversed(self.layers):
-                self.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.BACKWARD)
+                self.tracer.emit_event(
+                    PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.BACKWARD
+                )
                 dx = layer.backward(dx)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
@@ -105,18 +119,24 @@ class Train[T: Array](Eval[T]):
 
         # Gradient update (GU)
         if self.model_sync_freq >= 0 and sync_model:
-            self._weight_update(gradient=True, blocking=self.blocking_mpi, pipeline=self.parallel_pipeline)
+            self._weight_update(
+                gradient=True, blocking=self.blocking_mpi, pipeline=self.parallel_pipeline
+            )
 
         if has_batch or sync_model:
             # Optimizer
             for layer in self.layers:
-                self.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.UPDATE_DW)
+                self.tracer.emit_event(
+                    PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.UPDATE_DW
+                )
                 layer.update_weights(self.optimizer)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
         # Weight update (WU)
         if self.model_sync_freq > 0 and sync_model:
-            self._weight_update(gradient=False, blocking=self.blocking_mpi, pipeline=self.parallel_pipeline)
+            self._weight_update(
+                gradient=False, blocking=self.blocking_mpi, pipeline=self.parallel_pipeline
+            )
 
         if self.enable_cudnn:
             for layer in self.layers:
@@ -151,7 +171,9 @@ class Train[T: Array](Eval[T]):
                 y_batch = y_batch[:0]
 
             local_batch_size = x_batch.shape[0]
-            sync_model = (self.model_sync_freq <= 0) or (model_sync_count % self.model_sync_freq == 0)
+            sync_model = (self.model_sync_freq <= 0) or (
+                model_sync_count % self.model_sync_freq == 0
+            )
 
             if sync_model:
                 sync_epoch = True
@@ -162,7 +184,11 @@ class Train[T: Array](Eval[T]):
             model_sync_count += 1
 
             if i_batch >= batches_min and sync_model:
-                rank_mask = self.comm.allgather(min(1, local_batch_size)) if self.comm else [min(1, local_batch_size)]
+                rank_mask = (
+                    self.comm.allgather(min(1, local_batch_size))
+                    if self.comm
+                    else [min(1, local_batch_size)]
+                )
             else:
                 rank_mask = [1] * self.comm_size
             rank_avail = sum(rank_mask)
@@ -182,7 +208,8 @@ class Train[T: Array](Eval[T]):
 
             if local_batch_size <= 0:
                 if self.comm_rank == 0:
-                    pbar.set_postfix_str(s=f"{string}, waiting…", refresh=True)  # type: ignore (Here is a 'tqdm', only is None in self.comm_rank != 0)
+                    # type: ignore (Here is a 'tqdm', only is None in self.comm_rank != 0)
+                    pbar.set_postfix_str(s=f"{string}, waiting…", refresh=True)
                 continue
 
             total_loss, batch_count, string = self._update_status(
@@ -208,19 +235,39 @@ class Train[T: Array](Eval[T]):
         # If working with CUDA, self.y_batch must be in a GPU's data structure.
         if self.enable_cudnn and self.y_batch is None:
             assert gpuarray and self.cudnn_dtype
-            tensor_ary = TensorArray(gpuarray.empty((self.batch_size, *self.layers[-1].shape), self.dtype), self.tensor_format, self.cudnn_dtype)
+            tensor_ary = TensorArray(
+                gpuarray.empty((self.batch_size, *self.layers[-1].shape), self.dtype),
+                self.tensor_format,
+                self.cudnn_dtype,
+            )
             self.y_batch = tensor_ary  # type: ignore
 
-        self.history = {lm: [] for lm in ([f"{Dataset.Part.TRAIN._name_.lower()}_{m}" for m in self.loss_and_metrics] + [f"{Dataset.Part.VAL._name_.lower()}_{m}" for m in self.loss_and_metrics])}
+        self.history = {
+            lm: []
+            for lm in [f"{Dataset.Part.TRAIN._name_.lower()}_{m}" for m in self.loss_and_metrics]
+            + [f"{Dataset.Part.VAL._name_.lower()}_{m}" for m in self.loss_and_metrics]
+        }
 
-        self.comm_nsamples = list(zip(*self.comm.allgather(self.dataset._nsamples) if self.comm else [self.dataset._nsamples]))
+        self.comm_nsamples = list(
+            zip(
+                *(
+                    self.comm.allgather(self.dataset._nsamples)
+                    if self.comm
+                    else [self.dataset._nsamples]
+                )
+            )
+        )
 
         terminate = False  # True: ends the following loop.
         global_terminate = False
 
         model_sync_count = 0
-        train_batches_min = min(self.comm_nsamples[Dataset.Part.TRAIN]) / (self.batch_size * self.nprocs)
-        val_batches_min = min(self.comm_nsamples[Dataset.Part.VAL]) / (self.batch_size * self.nprocs)
+        train_batches_min = min(self.comm_nsamples[Dataset.Part.TRAIN]) / (
+            self.batch_size * self.nprocs
+        )
+        val_batches_min = min(self.comm_nsamples[Dataset.Part.VAL]) / (
+            self.batch_size * self.nprocs
+        )
 
         for epoch in range(self.num_epochs):
             train_batch_generator, val_batch_generator = self.dataset.get_train_val_generator()
@@ -233,7 +280,14 @@ class Train[T: Array](Eval[T]):
                 string = ""
                 fmt = "%%%dd" % (len(str(self.num_epochs)))
                 epoch_string = "Epoch %s/%s" % (fmt, fmt)
-                pbar = tqdm(file=TqdmLogger(), total=self.dataset.train_nsamples, ascii=" ▁▂▃▄▅▆▇█", smoothing=0.3, desc=epoch_string % (epoch + 1, self.num_epochs), unit=" samples")
+                pbar = tqdm(
+                    file=TqdmLogger(),
+                    total=self.dataset.train_nsamples,
+                    ascii=" ▁▂▃▄▅▆▇█",
+                    smoothing=0.3,
+                    desc=epoch_string % (epoch + 1, self.num_epochs),
+                    unit=" samples",
+                )
             else:
                 pbar = None
 
@@ -255,7 +309,9 @@ class Train[T: Array](Eval[T]):
             train_string = string
 
             for c in range(len(self.loss_and_metrics)):
-                self.history[f"{Dataset.Part.TRAIN._name_.lower()}_" + self.loss_and_metrics[c]].append(train_total_loss[c])
+                self.history[
+                    f"{Dataset.Part.TRAIN._name_.lower()}_" + self.loss_and_metrics[c]
+                ].append(train_total_loss[c])
 
             # --- VAL ---
             val_total_loss, model_sync_count, val_sync_epoch, string = self._evalutate_round(
@@ -272,7 +328,9 @@ class Train[T: Array](Eval[T]):
 
             # if self.comm_rank == 0:  # All nodes must have history, not only the 0.
             for c in range(len(self.loss_and_metrics)):
-                self.history[f"{Dataset.Part.VAL._name_.lower()}_" + self.loss_and_metrics[c]].append(val_total_loss[c])
+                self.history[
+                    f"{Dataset.Part.VAL._name_.lower()}_" + self.loss_and_metrics[c]
+                ].append(val_total_loss[c])
 
             for sched in self.schedulers:
                 sched.on_epoch_end(train_total_loss, val_total_loss)
@@ -286,10 +344,16 @@ class Train[T: Array](Eval[T]):
 
             for c in range(len(self.loss_and_metrics)):
                 if not self.loss_and_metrics_format[c]:
-                    logger.info(f"{Dataset.Part.TRAIN._name_.lower()}_{self.loss_and_metrics[c]}: {train_total_loss[c]}")
+                    logger.info(
+                        f"{Dataset.Part.TRAIN._name_.lower()}_{self.loss_and_metrics[c]}:"
+                        f" {train_total_loss[c]}"
+                    )
             for c in range(len(self.loss_and_metrics)):
                 if not self.loss_and_metrics_format[c]:
-                    logger.info(f"{Dataset.Part.VAL._name_.lower()}_{self.loss_and_metrics[c]}: {val_total_loss[c]}")
+                    logger.info(
+                        f"{Dataset.Part.VAL._name_.lower()}_{self.loss_and_metrics[c]}:"
+                        f" {val_total_loss[c]}"
+                    )
 
             if sync_epoch:
                 if self.comm is not None:

@@ -1,6 +1,7 @@
 """
 Python interface to the NVIDIA cuDNN library
 """
+
 # Source: https://github.com/hannes-brt/cudnn-python-wrappers
 
 import ctypes
@@ -248,7 +249,8 @@ cudnnAttnMode = {
     # same beam bundle map to different K , V vectors. This requires beam
     # sizes in K , V sets to be the same as in the Q input.
     "CUDNN_ATTN_QUERYMAP_ONE_TO_ONE": 1,
-    "CUDNN_ATTN_DISABLE_PROJ_BIASES": 0,  # Use no biases in the attention input and output projections.
+    # Use no biases in the attention input and output projections.
+    "CUDNN_ATTN_DISABLE_PROJ_BIASES": 0,
     # Use extra biases in the attention input and output projections. In this
     # case the projected K ¯ vectors are computed as K i ¯ = W K , i K + b * 1
     # , 1 , ..., 1 1 × n , where n is the number of columns in the K matrix.
@@ -266,7 +268,9 @@ cudnnWgradMode = {
     # Alternatively, the first API call outputting to an uninitialized buffer
     # should use the CUDNN_WGRAD_MODE_SET option.
     "CUDNN_WGRAD_MODE_ADD": 0,
-    "CUDNN_WGRAD_MODE_SET": 1,  # A weight gradient component, corresponding to a new batch of inputs, overwrites previously stored weight gradients in the output buffer.
+    # A weight gradient component, corresponding to a new batch of inputs,
+    # overwrites previously stored weight gradients in the output buffer.
+    "CUDNN_WGRAD_MODE_SET": 1,
 }
 
 
@@ -333,7 +337,9 @@ cudnnConvolutionFwdAlgo = {
     "CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM": 0,  # This algorithm expresses the convolution
     # as a matrix product without actually explicitly forming the matrix
     # that holds the input tensor data.
-    "CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_PRECOMP_GEMM": 1,  # This algorithm expresses the convolution
+    "CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_PRECOMP_GEMM": (
+        1
+    ),  # This algorithm expresses the convolution
     # as a matrix product without actually explicitly forming the matrix
     # that holds the input tensor data, but still needs some memory
     # workspace to precompute some indices in order to facilitate the
@@ -352,7 +358,11 @@ cudnnConvolutionFwdAlgo = {
 }
 
 type CudnnConvolutionBwdDataPreference = dict[str, int]
-cudnnConvolutionBwdDataPreference = {"CUDNN_CONVOLUTION_BWD_DATA_NO_WORKSPACE": 0, "CUDNN_CONVOLUTION_BWD_DATA_PREFER_FASTEST": 1, "CUDNN_CONVOLUTION_BWD_DATA_SPECIFY_WORKSPACE_LIMIT": 2}
+cudnnConvolutionBwdDataPreference = {
+    "CUDNN_CONVOLUTION_BWD_DATA_NO_WORKSPACE": 0,
+    "CUDNN_CONVOLUTION_BWD_DATA_PREFER_FASTEST": 1,
+    "CUDNN_CONVOLUTION_BWD_DATA_SPECIFY_WORKSPACE_LIMIT": 2,
+}
 
 type CudnnConvolutionBwdDataAlgo = dict[str, int]
 cudnnConvolutionBwdDataAlgo = {
@@ -385,7 +395,11 @@ cudnnConvolutionBwdFilterAlgo = {
 }
 
 type CudnnBatchNormMode = dict[str, int]
-cudnnBatchNormMode = {"CUDNN_BATCHNORM_PER_ACTIVATION": 0, "CUDNN_BATCHNORM_SPATIAL": 1, "CUDNN_BATCHNORM_SPATIAL_PERSISTENT": 2}
+cudnnBatchNormMode = {
+    "CUDNN_BATCHNORM_PER_ACTIVATION": 0,
+    "CUDNN_BATCHNORM_SPATIAL": 1,
+    "CUDNN_BATCHNORM_SPATIAL_PERSISTENT": 2,
+}
 
 # cudnnSoftmaxAlgorithm_t is used to select an implementation of the softmax
 # function used in cudnnSoftmaxForward() and cudnnSoftmaxBackward().
@@ -580,7 +594,12 @@ def cudnnCreateActivationDescriptor():
 
 
 _libcudnn.cudnnSetActivationDescriptor.restype = int
-_libcudnn.cudnnSetActivationDescriptor.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_int, ctypes.c_double]
+_libcudnn.cudnnSetActivationDescriptor.argtypes = [
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_double,
+]
 
 
 def cudnnSetActivationDescriptor(activation_desc, mode, nan, coef):
@@ -627,7 +646,15 @@ def cudnnCreateTensorDescriptor():
 
 
 _libcudnn.cudnnSetTensor4dDescriptor.restype = int
-_libcudnn.cudnnSetTensor4dDescriptor.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int]
+_libcudnn.cudnnSetTensor4dDescriptor.argtypes = [
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+]
 
 
 def cudnnSetTensor4dDescriptor(tensor_desc, tensor_format, data_type, n, c, h, w):
@@ -674,7 +701,9 @@ _libcudnn.cudnnSetTensor4dDescriptorEx.argtypes = [
 ]
 
 
-def cudnnSetTensor4dDescriptorEx(tensor_desc, data_type, n, c, h, w, n_stride, c_stride, h_stride, w_stride):
+def cudnnSetTensor4dDescriptorEx(
+    tensor_desc, data_type, n, c, h, w, n_stride, c_stride, h_stride, w_stride
+):
     """ "
     Initialize a Tensor descriptor object with strides.
     This function initializes a previously created generic Tensor descriptor object into a
@@ -706,7 +735,9 @@ def cudnnSetTensor4dDescriptorEx(tensor_desc, data_type, n, c, h, w, n_stride, c
     """
 
     assert _libcudnn
-    status = _libcudnn.cudnnSetTensor4dDescriptorEx(tensor_desc, data_type, n, c, h, w, n_stride, c_stride, h_stride, w_stride)
+    status = _libcudnn.cudnnSetTensor4dDescriptorEx(
+        tensor_desc, data_type, n, c, h, w, n_stride, c_stride, h_stride, w_stride
+    )
     cudnnCheckStatus(status)
 
 
@@ -781,7 +812,17 @@ def cudnnGetTensor4dDescriptor(tensor_desc):
     )
     cudnnCheckStatus(status)
 
-    return data_type.value, n.value, c.value, h.value, w.value, n_stride.value, c_stride.value, h_stride.value, w_stride.value
+    return (
+        data_type.value,
+        n.value,
+        c.value,
+        h.value,
+        w.value,
+        n_stride.value,
+        c_stride.value,
+        h_stride.value,
+        w_stride.value,
+    )
 
 
 _libcudnn.cudnnDestroyTensorDescriptor.restype = int
@@ -804,7 +845,15 @@ def cudnnDestroyTensorDescriptor(tensor_desc):
 
 
 _libcudnn.cudnnTransformTensor.restype = int
-_libcudnn.cudnnTransformTensor.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
+_libcudnn.cudnnTransformTensor.argtypes = [
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+]
 
 
 def cudnnTransformTensor(handle, alpha, src_desc, src_data, beta, dest_desc, dest_data):
@@ -845,12 +894,22 @@ def cudnnTransformTensor(handle, alpha, src_desc, src_data, beta, dest_desc, des
         beta_ref = ctypes.byref(ctypes.c_float(beta))
 
     assert _libcudnn
-    status = _libcudnn.cudnnTransformTensor(handle, alpha_ref, src_desc, src_data, beta_ref, dest_desc, dest_data)
+    status = _libcudnn.cudnnTransformTensor(
+        handle, alpha_ref, src_desc, src_data, beta_ref, dest_desc, dest_data
+    )
     cudnnCheckStatus(status)
 
 
 _libcudnn.cudnnAddTensor.restype = int
-_libcudnn.cudnnAddTensor.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
+_libcudnn.cudnnAddTensor.argtypes = [
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+]
 
 
 def cudnnAddTensor(handle, alpha, bias_desc, bias_data, beta, src_dest_desc, src_dest_data):
@@ -889,12 +948,19 @@ def cudnnAddTensor(handle, alpha, bias_desc, bias_data, beta, src_dest_desc, src
         beta_ref = ctypes.byref(ctypes.c_float(beta))
 
     assert _libcudnn
-    status = _libcudnn.cudnnAddTensor(handle, alpha_ref, bias_desc, bias_data, beta_ref, src_dest_desc, src_dest_data)
+    status = _libcudnn.cudnnAddTensor(
+        handle, alpha_ref, bias_desc, bias_data, beta_ref, src_dest_desc, src_dest_data
+    )
     cudnnCheckStatus(status)
 
 
 _libcudnn.cudnnSetTensor.restype = int
-_libcudnn.cudnnSetTensor.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
+_libcudnn.cudnnSetTensor.argtypes = [
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+]
 
 
 def cudnnSetTensor(handle, src_desc, src_data, value):
@@ -924,7 +990,12 @@ def cudnnSetTensor(handle, src_desc, src_data, value):
 
 
 _libcudnn.cudnnScaleTensor.restype = int
-_libcudnn.cudnnScaleTensor.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
+_libcudnn.cudnnScaleTensor.argtypes = [
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+]
 
 
 def cudnnScaleTensor(handle, src_desc, src_data, alpha):
@@ -980,7 +1051,15 @@ def cudnnCreateFilterDescriptor():
 
 
 _libcudnn.cudnnSetFilter4dDescriptor.restype = int
-_libcudnn.cudnnSetFilter4dDescriptor.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int]
+_libcudnn.cudnnSetFilter4dDescriptor.argtypes = [
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+]
 
 
 def cudnnSetFilter4dDescriptor(w_desc, data_type, tensor_format, k, c, h, w):
@@ -1012,7 +1091,15 @@ def cudnnSetFilter4dDescriptor(w_desc, data_type, tensor_format, k, c, h, w):
 
 
 _libcudnn.cudnnGetFilter4dDescriptor.restype = int
-_libcudnn.cudnnGetFilter4dDescriptor.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
+_libcudnn.cudnnGetFilter4dDescriptor.argtypes = [
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+]
 
 
 def cudnnGetFilter4dDescriptor(w_desc):
@@ -1047,7 +1134,15 @@ def cudnnGetFilter4dDescriptor(w_desc):
     w = ctypes.c_int()
 
     assert _libcudnn
-    status = _libcudnn.cudnnGetFilter4dDescriptor(w_desc, ctypes.byref(data_type), ctypes.byref(tensor_format), ctypes.byref(k), ctypes.byref(c), ctypes.byref(h), ctypes.byref(w))
+    status = _libcudnn.cudnnGetFilter4dDescriptor(
+        w_desc,
+        ctypes.byref(data_type),
+        ctypes.byref(tensor_format),
+        ctypes.byref(k),
+        ctypes.byref(c),
+        ctypes.byref(h),
+        ctypes.byref(w),
+    )
     cudnnCheckStatus(status)
 
     return data_type.value, tensor_format.value, k.value, c.value, h.value, w.value
@@ -1096,10 +1191,21 @@ def cudnnCreateConvolutionDescriptor():
 
 
 _libcudnn.cudnnSetConvolution2dDescriptor.restype = int
-_libcudnn.cudnnSetConvolution2dDescriptor.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int]
+_libcudnn.cudnnSetConvolution2dDescriptor.argtypes = [
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+]
 
 
-def cudnnSetConvolution2dDescriptor(conv_desc, pad_h, pad_w, u, v, dilation_h, dilation_w, mode, compute_type):
+def cudnnSetConvolution2dDescriptor(
+    conv_desc, pad_h, pad_w, u, v, dilation_h, dilation_w, mode, compute_type
+):
     """ "
     Initialize a convolution descriptor.
     This function initializes a previously created convolution descriptor object into a 2D
@@ -1132,7 +1238,9 @@ def cudnnSetConvolution2dDescriptor(conv_desc, pad_h, pad_w, u, v, dilation_h, d
     """
 
     assert _libcudnn
-    status = _libcudnn.cudnnSetConvolution2dDescriptor(conv_desc, pad_h, pad_w, u, v, dilation_h, dilation_w, mode, compute_type)
+    status = _libcudnn.cudnnSetConvolution2dDescriptor(
+        conv_desc, pad_h, pad_w, u, v, dilation_h, dilation_w, mode, compute_type
+    )
     cudnnCheckStatus(status)
 
 
@@ -1180,16 +1288,41 @@ def cudnnGetConvolution2dDescriptor(conv_desc):
 
     assert _libcudnn
     status = _libcudnn.cudnnGetConvolution2dDescriptor(
-        conv_desc, ctypes.byref(pad_h), ctypes.byref(pad_w), ctypes.byref(u), ctypes.byref(v), ctypes.byref(dilation_h), ctypes.byref(dilation_w), ctypes.byref(mode), ctypes.byref(compute_type)
+        conv_desc,
+        ctypes.byref(pad_h),
+        ctypes.byref(pad_w),
+        ctypes.byref(u),
+        ctypes.byref(v),
+        ctypes.byref(dilation_h),
+        ctypes.byref(dilation_w),
+        ctypes.byref(mode),
+        ctypes.byref(compute_type),
     )
 
     cudnnCheckStatus(status)
 
-    return pad_h.value, pad_w.value, u.value, v.value, dilation_h.value, dilation_w.value, mode.value, compute_type.value
+    return (
+        pad_h.value,
+        pad_w.value,
+        u.value,
+        v.value,
+        dilation_h.value,
+        dilation_w.value,
+        mode.value,
+        compute_type.value,
+    )
 
 
 _libcudnn.cudnnGetConvolution2dForwardOutputDim.restype = int
-_libcudnn.cudnnGetConvolution2dForwardOutputDim.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
+_libcudnn.cudnnGetConvolution2dForwardOutputDim.argtypes = [
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+]
 
 
 def cudnnGetConvolution2dForwardOutputDim(conv_desc, input_tensor_desc, w_desc):
@@ -1224,7 +1357,15 @@ def cudnnGetConvolution2dForwardOutputDim(conv_desc, input_tensor_desc, w_desc):
     w = ctypes.c_int()
 
     assert _libcudnn
-    status = _libcudnn.cudnnGetConvolution2dForwardOutputDim(conv_desc, input_tensor_desc, w_desc, ctypes.byref(n), ctypes.byref(c), ctypes.byref(h), ctypes.byref(w))
+    status = _libcudnn.cudnnGetConvolution2dForwardOutputDim(
+        conv_desc,
+        input_tensor_desc,
+        w_desc,
+        ctypes.byref(n),
+        ctypes.byref(c),
+        ctypes.byref(h),
+        ctypes.byref(w),
+    )
     cudnnCheckStatus(status)
 
     return n.value, c.value, h.value, w.value
@@ -1267,7 +1408,15 @@ def cudnnSetConvolutionNdDescriptor(conv_desc, pad_a, filter_stride_a, dilation_
     """
     dim = len(pad_a)
     assert _libcudnn
-    status = _libcudnn.cudnnSetConvolutionNdDescriptor(conv_desc, dim, (ctypes.c_int * dim)(*pad_a), (ctypes.c_int * dim)(*filter_stride_a), (ctypes.c_int * dim)(*dilation_a), mode, data_type)
+    status = _libcudnn.cudnnSetConvolutionNdDescriptor(
+        conv_desc,
+        dim,
+        (ctypes.c_int * dim)(*pad_a),
+        (ctypes.c_int * dim)(*filter_stride_a),
+        (ctypes.c_int * dim)(*dilation_a),
+        mode,
+        data_type,
+    )
     cudnnCheckStatus(status)
 
 
@@ -1293,10 +1442,20 @@ def cudnnDestroyConvolutionDescriptor(conv_desc):
 class CudnnConvolutionFwdAlgoPerf(ctypes.Structure):
     """Performance result structure for forward convolution algorithms."""
 
-    _fields_ = [("algo", ctypes.c_int), ("status", ctypes.c_int), ("time", ctypes.c_float), ("memory", ctypes.c_size_t)]
+    _fields_ = [
+        ("algo", ctypes.c_int),
+        ("status", ctypes.c_int),
+        ("time", ctypes.c_float),
+        ("memory", ctypes.c_size_t),
+    ]
 
     def __str__(self):
-        return "(algo=%d, status=%d, time=%f, memory=%d)" % (self.algo, self.status, self.time, self.memory)
+        return "(algo=%d, status=%d, time=%f, memory=%d)" % (
+            self.algo,
+            self.status,
+            self.time,
+            self.memory,
+        )
 
     def __repr__(self):
         return self.__str__()
@@ -1315,7 +1474,9 @@ _libcudnn.cudnnFindConvolutionForwardAlgorithm.argtypes = [
 ]  # perf_results
 
 
-def cudnnFindConvolutionForwardAlgorithm(handle, x_desc, w_desc, conv_desc, y_desc, requested_algo_count):
+def cudnnFindConvolutionForwardAlgorithm(
+    handle, x_desc, w_desc, conv_desc, y_desc, requested_algo_count
+):
     """
     Find the best algorithm for forward convolution.
     This function searches for the best algorithm to execute the forward convolution operation
@@ -1345,7 +1506,14 @@ def cudnnFindConvolutionForwardAlgorithm(handle, x_desc, w_desc, conv_desc, y_de
     returned_algo_count = ctypes.c_int()
     assert _libcudnn
     status = _libcudnn.cudnnFindConvolutionForwardAlgorithm(
-        handle, x_desc, w_desc, conv_desc, y_desc, ctypes.c_int(requested_algo_count), ctypes.byref(returned_algo_count), ctypes.cast(perf_results, ctypes.POINTER(CudnnConvolutionFwdAlgoPerf))
+        handle,
+        x_desc,
+        w_desc,
+        conv_desc,
+        y_desc,
+        ctypes.c_int(requested_algo_count),
+        ctypes.byref(returned_algo_count),
+        ctypes.cast(perf_results, ctypes.POINTER(CudnnConvolutionFwdAlgoPerf)),
     )
     cudnnCheckStatus(status)
     return perf_results[0: returned_algo_count.value]
@@ -1441,7 +1609,14 @@ def cudnnSetConvolutionMathType(conv_desc, math_type):
 
 
 _libcudnn.cudnnGetConvolutionForwardWorkspaceSize.restype = int
-_libcudnn.cudnnGetConvolutionForwardWorkspaceSize.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int]
+_libcudnn.cudnnGetConvolutionForwardWorkspaceSize.argtypes = [
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
 def cudnnGetConvolutionForwardWorkspaceSize(handle, src_desc, w_desc, conv_desc, dest_desc, algo):
@@ -1471,7 +1646,9 @@ def cudnnGetConvolutionForwardWorkspaceSize(handle, src_desc, w_desc, conv_desc,
     size_in_bytes = ctypes.c_size_t()
 
     assert _libcudnn
-    status = _libcudnn.cudnnGetConvolutionForwardWorkspaceSize(handle, src_desc, w_desc, conv_desc, dest_desc, algo, ctypes.byref(size_in_bytes))
+    status = _libcudnn.cudnnGetConvolutionForwardWorkspaceSize(
+        handle, src_desc, w_desc, conv_desc, dest_desc, algo, ctypes.byref(size_in_bytes)
+    )
     cudnnCheckStatus(status)
 
     return size_in_bytes
@@ -1495,7 +1672,21 @@ _libcudnn.cudnnConvolutionForward.argtypes = [
 ]
 
 
-def cudnnConvolutionForward(handle, alpha, src_desc, src_data, w_desc, w, conv_desc, algo, workspace, workspace_size_in_bytes, beta, dest_desc, dest_data):
+def cudnnConvolutionForward(
+    handle,
+    alpha,
+    src_desc,
+    src_data,
+    w_desc,
+    w,
+    conv_desc,
+    algo,
+    workspace,
+    workspace_size_in_bytes,
+    beta,
+    dest_desc,
+    dest_data,
+):
     """ "
     Perform forward convolution. All of the form "output = alpha * Op(inputs) + beta * output".
     This function executes convolutions or cross-correlations over src using the specified
@@ -1544,12 +1735,34 @@ def cudnnConvolutionForward(handle, alpha, src_desc, src_data, w_desc, w, conv_d
         beta_ref = ctypes.byref(ctypes.c_float(beta))
 
     assert _libcudnn
-    status = _libcudnn.cudnnConvolutionForward(handle, alpha_ref, src_desc, src_data, w_desc, w, conv_desc, algo, workspace, ctypes.c_size_t(workspace_size_in_bytes), beta_ref, dest_desc, dest_data)
+    status = _libcudnn.cudnnConvolutionForward(
+        handle,
+        alpha_ref,
+        src_desc,
+        src_data,
+        w_desc,
+        w,
+        conv_desc,
+        algo,
+        workspace,
+        ctypes.c_size_t(workspace_size_in_bytes),
+        beta_ref,
+        dest_desc,
+        dest_data,
+    )
     cudnnCheckStatus(status)
 
 
 _libcudnn.cudnnConvolutionBackwardBias.restype = int
-_libcudnn.cudnnConvolutionBackwardBias.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
+_libcudnn.cudnnConvolutionBackwardBias.argtypes = [
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+]
 
 
 def cudnnConvolutionBackwardBias(handle, alpha, src_desc, src_data, beta, dest_desc, dest_data):
@@ -1591,17 +1804,29 @@ def cudnnConvolutionBackwardBias(handle, alpha, src_desc, src_data, beta, dest_d
         beta_ref = ctypes.byref(ctypes.c_float(beta))
 
     assert _libcudnn
-    status = _libcudnn.cudnnConvolutionBackwardBias(handle, alpha_ref, src_desc, src_data, beta_ref, dest_desc, dest_data)
+    status = _libcudnn.cudnnConvolutionBackwardBias(
+        handle, alpha_ref, src_desc, src_data, beta_ref, dest_desc, dest_data
+    )
     cudnnCheckStatus(status)
 
 
 class CudnnConvolutionBwdDataAlgoPerf(ctypes.Structure):
     """Performance result structure for backward data convolution algorithms."""
 
-    _fields_ = [("algo", ctypes.c_int), ("status", ctypes.c_int), ("time", ctypes.c_float), ("memory", ctypes.c_size_t)]
+    _fields_ = [
+        ("algo", ctypes.c_int),
+        ("status", ctypes.c_int),
+        ("time", ctypes.c_float),
+        ("memory", ctypes.c_size_t),
+    ]
 
     def __str__(self):
-        return "(algo=%d, status=%d, time=%f, memory=%d)" % (self.algo, self.status, self.time, self.memory)
+        return "(algo=%d, status=%d, time=%f, memory=%d)" % (
+            self.algo,
+            self.status,
+            self.time,
+            self.memory,
+        )
 
     def __repr__(self):
         return self.__str__()
@@ -1620,7 +1845,9 @@ _libcudnn.cudnnFindConvolutionBackwardDataAlgorithm.argtypes = [
 ]  # perf_results
 
 
-def cudnnFindConvolutionBackwardDataAlgorithm(handle, w_desc, dy_desc, conv_desc, dx_desc, requested_algo_count):
+def cudnnFindConvolutionBackwardDataAlgorithm(
+    handle, w_desc, dy_desc, conv_desc, dx_desc, requested_algo_count
+):
     """
     Find the best algorithm for backward data convolution.
     This function searches for the best algorithm to execute the backward data convolution operation
@@ -1650,7 +1877,14 @@ def cudnnFindConvolutionBackwardDataAlgorithm(handle, w_desc, dy_desc, conv_desc
     returned_algo_count = ctypes.c_int()
     assert _libcudnn
     status = _libcudnn.cudnnFindConvolutionBackwardDataAlgorithm(
-        handle, w_desc, dy_desc, conv_desc, dx_desc, ctypes.c_int(requested_algo_count), ctypes.byref(returned_algo_count), ctypes.cast(perf_results, ctypes.POINTER(CudnnConvolutionBwdDataAlgoPerf))
+        handle,
+        w_desc,
+        dy_desc,
+        conv_desc,
+        dx_desc,
+        ctypes.c_int(requested_algo_count),
+        ctypes.byref(returned_algo_count),
+        ctypes.cast(perf_results, ctypes.POINTER(CudnnConvolutionBwdDataAlgoPerf)),
     )
     cudnnCheckStatus(status)
     return perf_results[0: returned_algo_count.value]
@@ -1717,7 +1951,9 @@ def cudnnGetConvolutionBackwardDataWorkspaceSize(handle, w_desc, dy_desc, conv_d
     """
     size_in_bytes = ctypes.c_size_t()
     assert _libcudnn
-    status = _libcudnn.cudnnGetConvolutionBackwardDataWorkspaceSize(handle, w_desc, dy_desc, conv_desc, dx_desc, algo, ctypes.byref(size_in_bytes))
+    status = _libcudnn.cudnnGetConvolutionBackwardDataWorkspaceSize(
+        handle, w_desc, dy_desc, conv_desc, dx_desc, algo, ctypes.byref(size_in_bytes)
+    )
     cudnnCheckStatus(status)
     return size_in_bytes
 
@@ -1740,7 +1976,21 @@ _libcudnn.cudnnConvolutionBackwardData.argtypes = [
 ]
 
 
-def cudnnConvolutionBackwardData(handle, alpha, w_desc, w, dy_desc, dy, conv_desc, algo, workspace, workspace_size_in_bytes, beta, dx_desc, dx):
+def cudnnConvolutionBackwardData(
+    handle,
+    alpha,
+    w_desc,
+    w,
+    dy_desc,
+    dy,
+    conv_desc,
+    algo,
+    workspace,
+    workspace_size_in_bytes,
+    beta,
+    dx_desc,
+    dx,
+):
     """
     Perform backward data convolution.
     This function computes the gradient of the convolution operation with respect to the input data.
@@ -1785,17 +2035,41 @@ def cudnnConvolutionBackwardData(handle, alpha, w_desc, w, dy_desc, dy, conv_des
         beta_ref = ctypes.byref(ctypes.c_double(beta))
 
     assert _libcudnn
-    status = _libcudnn.cudnnConvolutionBackwardData(handle, alpha_ref, w_desc, w, dy_desc, dy, conv_desc, algo, workspace, workspace_size_in_bytes, beta_ref, dx_desc, dx)
+    status = _libcudnn.cudnnConvolutionBackwardData(
+        handle,
+        alpha_ref,
+        w_desc,
+        w,
+        dy_desc,
+        dy,
+        conv_desc,
+        algo,
+        workspace,
+        workspace_size_in_bytes,
+        beta_ref,
+        dx_desc,
+        dx,
+    )
     cudnnCheckStatus(status)
 
 
 class CudnnConvolutionBwdFilterAlgoPerf(ctypes.Structure):
     """Performance result structure for backward filter convolution algorithms."""
 
-    _fields_ = [("algo", ctypes.c_int), ("status", ctypes.c_int), ("time", ctypes.c_float), ("memory", ctypes.c_size_t)]
+    _fields_ = [
+        ("algo", ctypes.c_int),
+        ("status", ctypes.c_int),
+        ("time", ctypes.c_float),
+        ("memory", ctypes.c_size_t),
+    ]
 
     def __str__(self):
-        return "(algo=%d, status=%d, time=%f, memory=%d)" % (self.algo, self.status, self.time, self.memory)
+        return "(algo=%d, status=%d, time=%f, memory=%d)" % (
+            self.algo,
+            self.status,
+            self.time,
+            self.memory,
+        )
 
     def __repr__(self):
         return self.__str__()
@@ -1814,7 +2088,9 @@ _libcudnn.cudnnFindConvolutionBackwardFilterAlgorithm.argtypes = [
 ]  # perf_results
 
 
-def cudnnFindConvolutionBackwardFilterAlgorithm(handle, x_desc, dy_desc, conv_desc, dw_desc, requested_algo_count):
+def cudnnFindConvolutionBackwardFilterAlgorithm(
+    handle, x_desc, dy_desc, conv_desc, dw_desc, requested_algo_count
+):
     """
     Find the best algorithm for backward filter convolution.
     This function searches for the best algorithm to execute the backward filter convolution operation
@@ -1844,7 +2120,14 @@ def cudnnFindConvolutionBackwardFilterAlgorithm(handle, x_desc, dy_desc, conv_de
     returned_algo_count = ctypes.c_int()
     assert _libcudnn
     status = _libcudnn.cudnnFindConvolutionBackwardFilterAlgorithm(
-        handle, x_desc, dy_desc, conv_desc, dw_desc, ctypes.c_int(requested_algo_count), ctypes.byref(returned_algo_count), ctypes.cast(perf_results, ctypes.POINTER(CudnnConvolutionBwdFilterAlgoPerf))
+        handle,
+        x_desc,
+        dy_desc,
+        conv_desc,
+        dw_desc,
+        ctypes.c_int(requested_algo_count),
+        ctypes.byref(returned_algo_count),
+        ctypes.cast(perf_results, ctypes.POINTER(CudnnConvolutionBwdFilterAlgoPerf)),
     )
     cudnnCheckStatus(status)
     return perf_results[0: returned_algo_count.value]
@@ -1886,7 +2169,9 @@ _libcudnn.cudnnGetConvolutionBackwardFilterWorkspaceSize.argtypes = [
 ]
 
 
-def cudnnGetConvolutionBackwardFilterWorkspaceSize(handle, x_desc, dy_desc, conv_desc, grad_desc, algo):
+def cudnnGetConvolutionBackwardFilterWorkspaceSize(
+    handle, x_desc, dy_desc, conv_desc, grad_desc, algo
+):
     """
     Get the workspace size for backward filter convolution.
     This function returns the amount of GPU memory workspace required to execute
@@ -1912,7 +2197,9 @@ def cudnnGetConvolutionBackwardFilterWorkspaceSize(handle, x_desc, dy_desc, conv
     """
     size_in_bytes = ctypes.c_size_t()
     assert _libcudnn
-    status = _libcudnn.cudnnGetConvolutionBackwardFilterWorkspaceSize(handle, x_desc, dy_desc, conv_desc, grad_desc, algo, ctypes.byref(size_in_bytes))
+    status = _libcudnn.cudnnGetConvolutionBackwardFilterWorkspaceSize(
+        handle, x_desc, dy_desc, conv_desc, grad_desc, algo, ctypes.byref(size_in_bytes)
+    )
     cudnnCheckStatus(status)
     return size_in_bytes
 
@@ -1935,7 +2222,21 @@ _libcudnn.cudnnConvolutionBackwardFilter.argtypes = [
 ]
 
 
-def cudnnConvolutionBackwardFilter(handle, alpha, x_desc, x, dy_desc, dy, conv_desc, algo, workspace, workspace_size_in_bytes, beta, dw_desc, dw):
+def cudnnConvolutionBackwardFilter(
+    handle,
+    alpha,
+    x_desc,
+    x,
+    dy_desc,
+    dy,
+    conv_desc,
+    algo,
+    workspace,
+    workspace_size_in_bytes,
+    beta,
+    dw_desc,
+    dw,
+):
     """
     Perform backward filter convolution.
     This function computes the gradient of the convolution operation with respect to the filter weights.
@@ -1980,15 +2281,41 @@ def cudnnConvolutionBackwardFilter(handle, alpha, x_desc, x, dy_desc, dy, conv_d
         beta_ref = ctypes.byref(ctypes.c_float(beta))
 
     assert _libcudnn
-    status = _libcudnn.cudnnConvolutionBackwardFilter(handle, alpha_ref, x_desc, x, dy_desc, dy, conv_desc, algo, workspace, workspace_size_in_bytes, beta_ref, dw_desc, dw)
+    status = _libcudnn.cudnnConvolutionBackwardFilter(
+        handle,
+        alpha_ref,
+        x_desc,
+        x,
+        dy_desc,
+        dy,
+        conv_desc,
+        algo,
+        workspace,
+        workspace_size_in_bytes,
+        beta_ref,
+        dw_desc,
+        dw,
+    )
     cudnnCheckStatus(status)
 
 
 _libcudnn.cudnnSoftmaxForward.restype = int
-_libcudnn.cudnnSoftmaxForward.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
+_libcudnn.cudnnSoftmaxForward.argtypes = [
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+]
 
 
-def cudnnSoftmaxForward(handle, algorithm, mode, alpha, src_desc, src_data, beta, dest_desc, dest_data):
+def cudnnSoftmaxForward(
+    handle, algorithm, mode, alpha, src_desc, src_data, beta, dest_desc, dest_data
+):
     """ "
     This routing computes the softmax function
     Parameters
@@ -2026,7 +2353,9 @@ def cudnnSoftmaxForward(handle, algorithm, mode, alpha, src_desc, src_data, beta
         beta_ref = ctypes.byref(ctypes.c_float(beta))
 
     assert _libcudnn
-    status = _libcudnn.cudnnSoftmaxForward(handle, algorithm, mode, alpha_ref, src_desc, src_data, beta_ref, dest_desc, dest_data)
+    status = _libcudnn.cudnnSoftmaxForward(
+        handle, algorithm, mode, alpha_ref, src_desc, src_data, beta_ref, dest_desc, dest_data
+    )
     cudnnCheckStatus(status)
 
 
@@ -2046,7 +2375,19 @@ _libcudnn.cudnnSoftmaxBackward.argtypes = [
 ]
 
 
-def cudnnSoftmaxBackward(handle, algorithm, mode, alpha, src_desc, src_data, src_diff_esc, src_diff_data, beta, dest_diff_desc, dest_diff_data):
+def cudnnSoftmaxBackward(
+    handle,
+    algorithm,
+    mode,
+    alpha,
+    src_desc,
+    src_data,
+    src_diff_esc,
+    src_diff_data,
+    beta,
+    dest_diff_desc,
+    dest_diff_data,
+):
     """ "
     This routine computes the gradient of the softmax function.
     Parameters
@@ -2089,7 +2430,19 @@ def cudnnSoftmaxBackward(handle, algorithm, mode, alpha, src_desc, src_data, src
         beta_ref = ctypes.byref(ctypes.c_float(beta))
 
     assert _libcudnn
-    status = _libcudnn.cudnnSoftmaxBackward(handle, algorithm, mode, alpha_ref, src_desc, src_data, src_diff_esc, src_diff_data, beta_ref, dest_diff_desc, dest_diff_data)
+    status = _libcudnn.cudnnSoftmaxBackward(
+        handle,
+        algorithm,
+        mode,
+        alpha_ref,
+        src_desc,
+        src_data,
+        src_diff_esc,
+        src_diff_data,
+        beta_ref,
+        dest_diff_desc,
+        dest_diff_data,
+    )
     cudnnCheckStatus(status)
 
 
@@ -2117,7 +2470,14 @@ def cudnnCreateDropoutDescriptor():
 
 
 _libcudnn.cudnnSetDropoutDescriptor.restype = int
-_libcudnn.cudnnSetDropoutDescriptor.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_float, ctypes.c_void_p, ctypes.c_size_t, ctypes.c_ulonglong]
+_libcudnn.cudnnSetDropoutDescriptor.argtypes = [
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_float,
+    ctypes.c_void_p,
+    ctypes.c_size_t,
+    ctypes.c_ulonglong,
+]
 
 
 def cudnnSetDropoutDescriptor(drop_desc, handle, dropout, states, state_size_in_bytes, seed):
@@ -2139,7 +2499,9 @@ def cudnnSetDropoutDescriptor(drop_desc, handle, dropout, states, state_size_in_
         Seed for the random number generator.
     """
     assert _libcudnn
-    status = _libcudnn.cudnnSetDropoutDescriptor(drop_desc, handle, dropout, states, state_size_in_bytes, seed)
+    status = _libcudnn.cudnnSetDropoutDescriptor(
+        drop_desc, handle, dropout, states, state_size_in_bytes, seed
+    )
     cudnnCheckStatus(status)
 
 
@@ -2188,10 +2550,21 @@ def cudnnDropoutGetStatesSize(handle):
 
 
 _libcudnn.cudnnDropoutForward.restype = int
-_libcudnn.cudnnDropoutForward.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_size_t]
+_libcudnn.cudnnDropoutForward.argtypes = [
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_size_t,
+]
 
 
-def cudnnDropoutForward(handle, dropout_esc, x_desc, x, y_desc, y, reserve_space, reserve_space_size_in_bytes):
+def cudnnDropoutForward(
+    handle, dropout_esc, x_desc, x, y_desc, y, reserve_space, reserve_space_size_in_bytes
+):
     """
     Perform dropout forward pass.
     Parameters
@@ -2214,15 +2587,35 @@ def cudnnDropoutForward(handle, dropout_esc, x_desc, x, y_desc, y, reserve_space
         Size of the reserve space in bytes.
     """
     assert _libcudnn
-    status = _libcudnn.cudnnDropoutForward(handle, dropout_esc, x_desc, x, y_desc, y, reserve_space, ctypes.c_size_t(reserve_space_size_in_bytes))
+    status = _libcudnn.cudnnDropoutForward(
+        handle,
+        dropout_esc,
+        x_desc,
+        x,
+        y_desc,
+        y,
+        reserve_space,
+        ctypes.c_size_t(reserve_space_size_in_bytes),
+    )
     cudnnCheckStatus(status)
 
 
 _libcudnn.cudnnDropoutBackward.restype = int
-_libcudnn.cudnnDropoutBackward.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
+_libcudnn.cudnnDropoutBackward.argtypes = [
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+]
 
 
-def cudnnDropoutBackward(handle, dropout_esc, dy_desc, dy, dx_desc, dx, reserve_space, reserve_space_size_in_bytes):
+def cudnnDropoutBackward(
+    handle, dropout_esc, dy_desc, dy, dx_desc, dx, reserve_space, reserve_space_size_in_bytes
+):
     """
     Perform dropout backward pass.
     Parameters
@@ -2245,7 +2638,9 @@ def cudnnDropoutBackward(handle, dropout_esc, dy_desc, dy, dx_desc, dx, reserve_
         Size of the reserve space in bytes.
     """
     assert _libcudnn
-    status = _libcudnn.cudnnDropoutBackward(handle, dropout_esc, dy_desc, dy, dx_desc, dx, reserve_space, reserve_space_size_in_bytes)
+    status = _libcudnn.cudnnDropoutBackward(
+        handle, dropout_esc, dy_desc, dy, dx_desc, dx, reserve_space, reserve_space_size_in_bytes
+    )
 
     cudnnCheckStatus(status)
 
@@ -2274,10 +2669,30 @@ def cudnnCreatePoolingDescriptor():
 
 
 _libcudnn.cudnnSetPooling2dDescriptor.restype = int
-_libcudnn.cudnnSetPooling2dDescriptor.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int]
+_libcudnn.cudnnSetPooling2dDescriptor.argtypes = [
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+]
 
 
-def cudnnSetPooling2dDescriptor(pooling_desc, mode, nan, window_height, window_width, vertical_padding, horizontal_padding, vertical_stride, horizontal_stride):
+def cudnnSetPooling2dDescriptor(
+    pooling_desc,
+    mode,
+    nan,
+    window_height,
+    window_width,
+    vertical_padding,
+    horizontal_padding,
+    vertical_stride,
+    horizontal_stride,
+):
     """ "
     Initialize a 2D pooling descriptor.
     This function initializes a previously created pooling descriptor object.
@@ -2304,12 +2719,31 @@ def cudnnSetPooling2dDescriptor(pooling_desc, mode, nan, window_height, window_w
     """
 
     assert _libcudnn
-    status = _libcudnn.cudnnSetPooling2dDescriptor(pooling_desc, mode, nan, window_height, window_width, vertical_padding, horizontal_padding, vertical_stride, horizontal_stride)
+    status = _libcudnn.cudnnSetPooling2dDescriptor(
+        pooling_desc,
+        mode,
+        nan,
+        window_height,
+        window_width,
+        vertical_padding,
+        horizontal_padding,
+        vertical_stride,
+        horizontal_stride,
+    )
     cudnnCheckStatus(status)
 
 
 _libcudnn.cudnnGetPooling2dDescriptor.restype = int
-_libcudnn.cudnnGetPooling2dDescriptor.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
+_libcudnn.cudnnGetPooling2dDescriptor.argtypes = [
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+]
 
 
 def cudnnGetPooling2dDescriptor(pooling_desc):
@@ -2392,7 +2826,14 @@ def cudnnDestroyPoolingDescriptor(pooling_desc):
 
 
 _libcudnn.cudnnGetPooling2dForwardOutputDim.restype = int
-_libcudnn.cudnnGetPooling2dForwardOutputDim.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
+_libcudnn.cudnnGetPooling2dForwardOutputDim.argtypes = [
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+]
 
 
 def cudnnGetPooling2dForwardOutputDim(pooling_desc, input_desc):
@@ -2428,17 +2869,30 @@ def cudnnGetPooling2dForwardOutputDim(pooling_desc, input_desc):
     w = ctypes.c_int()
 
     assert _libcudnn
-    status = _libcudnn.cudnnGetPooling2dForwardOutputDim(pooling_desc, input_desc, ctypes.byref(n), ctypes.byref(c), ctypes.byref(h), ctypes.byref(w))
+    status = _libcudnn.cudnnGetPooling2dForwardOutputDim(
+        pooling_desc, input_desc, ctypes.byref(n), ctypes.byref(c), ctypes.byref(h), ctypes.byref(w)
+    )
     cudnnCheckStatus(status)
 
     return n.value, c.value, h.value, w.value
 
 
 _libcudnn.cudnnPoolingForward.restype = int
-_libcudnn.cudnnPoolingForward.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
+_libcudnn.cudnnPoolingForward.argtypes = [
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+]
 
 
-def cudnnPoolingForward(handle, pooling_desc, alpha, src_desc, src_data, beta, dest_desc, dest_data):
+def cudnnPoolingForward(
+    handle, pooling_desc, alpha, src_desc, src_data, beta, dest_desc, dest_data
+):
     """ "
     Perform pooling.
     This function computes pooling of input values (i.e., the maximum or average of several
@@ -2476,7 +2930,9 @@ def cudnnPoolingForward(handle, pooling_desc, alpha, src_desc, src_data, beta, d
         beta_ref = ctypes.byref(ctypes.c_float(beta))
 
     assert _libcudnn
-    status = _libcudnn.cudnnPoolingForward(handle, pooling_desc, alpha_ref, src_desc, src_data, beta_ref, dest_desc, dest_data)
+    status = _libcudnn.cudnnPoolingForward(
+        handle, pooling_desc, alpha_ref, src_desc, src_data, beta_ref, dest_desc, dest_data
+    )
     cudnnCheckStatus(status)
 
 
@@ -2497,7 +2953,20 @@ _libcudnn.cudnnPoolingBackward.argtypes = [
 ]
 
 
-def cudnnPoolingBackward(handle, pooling_desc, alpha, src_desc, src_data, src_diff_esc, src_diff_data, dest_desc, dest_data, beta, dest_diff_desc, dest_diff_data):
+def cudnnPoolingBackward(
+    handle,
+    pooling_desc,
+    alpha,
+    src_desc,
+    src_data,
+    src_diff_esc,
+    src_diff_data,
+    dest_desc,
+    dest_data,
+    beta,
+    dest_diff_desc,
+    dest_diff_data,
+):
     """ "
     Gradients wrt the pooling operation.
     This function computes the gradient of a pooling operation.
@@ -2544,7 +3013,20 @@ def cudnnPoolingBackward(handle, pooling_desc, alpha, src_desc, src_data, src_di
         beta_ref = ctypes.byref(ctypes.c_float(beta))
 
     assert _libcudnn
-    status = _libcudnn.cudnnPoolingBackward(handle, pooling_desc, alpha_ref, src_desc, src_data, src_diff_esc, src_diff_data, dest_desc, dest_data, beta_ref, dest_diff_desc, dest_diff_data)
+    status = _libcudnn.cudnnPoolingBackward(
+        handle,
+        pooling_desc,
+        alpha_ref,
+        src_desc,
+        src_data,
+        src_diff_esc,
+        src_diff_data,
+        dest_desc,
+        dest_data,
+        beta_ref,
+        dest_diff_desc,
+        dest_diff_data,
+    )
     cudnnCheckStatus(status)
 
 
@@ -2629,7 +3111,9 @@ _libcudnn.cudnnSetSeqDataDescriptor.argtypes = [
 ]  # paddingFill
 
 
-def cudnnSetSeqDataDescriptor(seqDataDesc, dataType, nbDims, dimA, axes, seqLengthArraySize, seqLengthArray, paddingFill):
+def cudnnSetSeqDataDescriptor(
+    seqDataDesc, dataType, nbDims, dimA, axes, seqLengthArraySize, seqLengthArray, paddingFill
+):
     """
     Initialize a previously created SeqData object.
     This function initializes a previously created sequence data descriptor object. In the most
@@ -2665,7 +3149,16 @@ def cudnnSetSeqDataDescriptor(seqDataDesc, dataType, nbDims, dimA, axes, seqLeng
     axesRef = axes.ctypes.data_as(ctypes.POINTER(ctypes.c_int32))
     seqLengthArrayRef = seqLengthArray.ctypes.data_as(ctypes.POINTER(ctypes.c_int32))
     assert _libcudnn
-    status = _libcudnn.cudnnSetSeqDataDescriptor(seqDataDesc, dataType, nbDims, dimARef, axesRef, seqLengthArraySize, seqLengthArrayRef, paddingFill)
+    status = _libcudnn.cudnnSetSeqDataDescriptor(
+        seqDataDesc,
+        dataType,
+        nbDims,
+        dimARef,
+        axesRef,
+        seqLengthArraySize,
+        seqLengthArrayRef,
+        paddingFill,
+    )
     cudnnCheckStatus(status)
 
 
@@ -2848,7 +3341,15 @@ def cudnnDestroyAttnDescriptor(attnDesc):
 
 
 _libcudnn.cudnnGetMultiHeadAttnWeights.restype = int
-_libcudnn.cudnnGetMultiHeadAttnWeights.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_size_t, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
+_libcudnn.cudnnGetMultiHeadAttnWeights.argtypes = [
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_size_t,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+]
 
 
 def cudnnGetMultiHeadAttnWeights(handle, attnDesc, wKind, weightSizeInBytes, weights):
@@ -2886,7 +3387,9 @@ def cudnnGetMultiHeadAttnWeights(handle, attnDesc, wKind, weightSizeInBytes, wei
     wAddr = (ctypes.POINTER(ctypes.c_void_p) * 1)()
 
     assert _libcudnn
-    status = _libcudnn.cudnnGetMultiHeadAttnWeights(handle, attnDesc, wKind, weightSizeInBytes, weights, wDesc, ctypes.byref(wAddr))
+    status = _libcudnn.cudnnGetMultiHeadAttnWeights(
+        handle, attnDesc, wKind, weightSizeInBytes, weights, wDesc, ctypes.byref(wAddr)
+    )
     cudnnCheckStatus(status)
     wAddr = wAddr[0]
     return wDesc, wAddr
@@ -2920,7 +3423,13 @@ def cudnnGetMultiHeadAttnBuffers(handle, attnDesc):
     reserveSpaceSizeInBytes = ctypes.c_size_t()
 
     assert _libcudnn
-    status = _libcudnn.cudnnGetMultiHeadAttnBuffers(handle, attnDesc, ctypes.byref(weightSizeInBytes), ctypes.byref(workSpaceSizeInBytes), ctypes.byref(reserveSpaceSizeInBytes))
+    status = _libcudnn.cudnnGetMultiHeadAttnBuffers(
+        handle,
+        attnDesc,
+        ctypes.byref(weightSizeInBytes),
+        ctypes.byref(workSpaceSizeInBytes),
+        ctypes.byref(reserveSpaceSizeInBytes),
+    )
     cudnnCheckStatus(status)
 
     return weightSizeInBytes, workSpaceSizeInBytes, reserveSpaceSizeInBytes
@@ -3233,7 +3742,24 @@ _libcudnn.cudnnMultiHeadAttnBackwardWeights.argtypes = [
 
 
 def cudnnMultiHeadAttnBackwardWeights(
-    handle, attnDesc, addGrad, qDesc, queries, kDesc, keys, vDesc, values, doDesc, dout, weightSizeInBytes, weights, dweights, workSpaceSizeInBytes, workSpace, reserveSpaceSizeInBytes, reserveSpace
+    handle,
+    attnDesc,
+    addGrad,
+    qDesc,
+    queries,
+    kDesc,
+    keys,
+    vDesc,
+    values,
+    doDesc,
+    dout,
+    weightSizeInBytes,
+    weights,
+    dweights,
+    workSpaceSizeInBytes,
+    workSpace,
+    reserveSpaceSizeInBytes,
+    reserveSpace,
 ):
     """ "
     This function computes exact, first-order derivatives of the multi-head attention block with respect to its trainable parameters:
@@ -3308,7 +3834,11 @@ def cudnnMultiHeadAttnBackwardWeights(
     cudnnCheckStatus(status)
 
 
-cudnnNormOps = {"CUDNN_NORM_OPS_NORM": 0, "CUDNN_NORM_OPS_NORM_ACTIVATION": 1, "CUDNN_NORM_OPS_NORM_ADD_ACTIVATION": 2}
+cudnnNormOps = {
+    "CUDNN_NORM_OPS_NORM": 0,
+    "CUDNN_NORM_OPS_NORM_ACTIVATION": 1,
+    "CUDNN_NORM_OPS_NORM_ADD_ACTIVATION": 2,
+}
 
 cudnnNormAlgo = {"CUDNN_NORM_ALGO_STANDARD": 0, "CUDNN_NORM_ALGO_PERSIST": 1}
 
@@ -3494,7 +4024,27 @@ _libcudnn.cudnnNormalizationForwardInference.argtypes = [
 
 
 def cudnnNormalizationForwardInference(
-    handle, mode, normOps, algo, alpha, beta, xDesc, x, normScaleBiasDesc, normScale, normBias, normMeanVarDesc, estimatedMean, estimatedVariance, zDesc, z, activationDesc, yDesc, y, epsilon, groupCnt
+    handle,
+    mode,
+    normOps,
+    algo,
+    alpha,
+    beta,
+    xDesc,
+    x,
+    normScaleBiasDesc,
+    normScale,
+    normBias,
+    normMeanVarDesc,
+    estimatedMean,
+    estimatedVariance,
+    zDesc,
+    z,
+    activationDesc,
+    yDesc,
+    y,
+    epsilon,
+    groupCnt,
 ):
     """
     This function performs the forward normalization layer computation for the inference phase.
@@ -3740,7 +4290,21 @@ _libcudnn.cudnnGetNormalizationBackwardWorkspaceSize.argtypes = [
 ]
 
 
-def cudnnGetNormalizationBackwardWorkspaceSize(handle, mode, normOps, algo, xDesc, yDesc, dyDesc, dzDesc, dxDesc, dNormScaleBiasDesc, activationDesc, normMeanVarDesc, groupCnt):
+def cudnnGetNormalizationBackwardWorkspaceSize(
+    handle,
+    mode,
+    normOps,
+    algo,
+    xDesc,
+    yDesc,
+    dyDesc,
+    dzDesc,
+    dxDesc,
+    dNormScaleBiasDesc,
+    activationDesc,
+    normMeanVarDesc,
+    groupCnt,
+):
     """
     Get the workspace size for backward normalization.
     Parameters
@@ -3779,7 +4343,20 @@ def cudnnGetNormalizationBackwardWorkspaceSize(handle, mode, normOps, algo, xDes
     sizeInBytes = ctypes.c_size_t()
     assert _libcudnn
     status = _libcudnn.cudnnGetNormalizationBackwardWorkspaceSize(
-        handle, mode, normOps, algo, xDesc, yDesc, dyDesc, dzDesc, dxDesc, dNormScaleBiasDesc, activationDesc, normMeanVarDesc, ctypes.byref(sizeInBytes), groupCnt
+        handle,
+        mode,
+        normOps,
+        algo,
+        xDesc,
+        yDesc,
+        dyDesc,
+        dzDesc,
+        dxDesc,
+        dNormScaleBiasDesc,
+        activationDesc,
+        normMeanVarDesc,
+        ctypes.byref(sizeInBytes),
+        groupCnt,
     )
     cudnnCheckStatus(status)
     return sizeInBytes
@@ -3802,7 +4379,19 @@ _libcudnn.cudnnGetNormalizationForwardTrainingWorkspaceSize.argtypes = [
 ]
 
 
-def cudnnGetNormalizationForwardTrainingWorkspaceSize(handle, mode, normOps, algo, xDesc, zDesc, yDesc, normScaleBiasDesc, activationDesc, normMeanVarDesc, groupCnt):
+def cudnnGetNormalizationForwardTrainingWorkspaceSize(
+    handle,
+    mode,
+    normOps,
+    algo,
+    xDesc,
+    zDesc,
+    yDesc,
+    normScaleBiasDesc,
+    activationDesc,
+    normMeanVarDesc,
+    groupCnt,
+):
     """
     Get the workspace size for forward training normalization.
     Parameters
@@ -3837,17 +4426,39 @@ def cudnnGetNormalizationForwardTrainingWorkspaceSize(handle, mode, normOps, alg
     sizeInBytes = ctypes.c_size_t()
     assert _libcudnn
     status = _libcudnn.cudnnGetNormalizationForwardTrainingWorkspaceSize(
-        handle, mode, normOps, algo, xDesc, zDesc, yDesc, normScaleBiasDesc, activationDesc, normMeanVarDesc, ctypes.byref(sizeInBytes), groupCnt
+        handle,
+        mode,
+        normOps,
+        algo,
+        xDesc,
+        zDesc,
+        yDesc,
+        normScaleBiasDesc,
+        activationDesc,
+        normMeanVarDesc,
+        ctypes.byref(sizeInBytes),
+        groupCnt,
     )
     cudnnCheckStatus(status)
     return sizeInBytes
 
 
 _libcudnn.cudnnGetNormalizationTrainingReserveSpaceSize.restype = int
-_libcudnn.cudnnGetNormalizationTrainingReserveSpaceSize.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int]
+_libcudnn.cudnnGetNormalizationTrainingReserveSpaceSize.argtypes = [
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,
+]
 
 
-def cudnnGetNormalizationTrainingReserveSpaceSize(handle, mode, normOps, algo, activationDesc, xDesc, groupCnt):
+def cudnnGetNormalizationTrainingReserveSpaceSize(
+    handle, mode, normOps, algo, activationDesc, xDesc, groupCnt
+):
     """
     Get the reserve space size for training normalization.
     Parameters
@@ -3873,7 +4484,9 @@ def cudnnGetNormalizationTrainingReserveSpaceSize(handle, mode, normOps, algo, a
     """
     sizeInBytes = ctypes.c_size_t()
     assert _libcudnn
-    status = _libcudnn.cudnnGetNormalizationTrainingReserveSpaceSize(handle, mode, normOps, algo, activationDesc, xDesc, ctypes.byref(sizeInBytes), groupCnt)
+    status = _libcudnn.cudnnGetNormalizationTrainingReserveSpaceSize(
+        handle, mode, normOps, algo, activationDesc, xDesc, ctypes.byref(sizeInBytes), groupCnt
+    )
     cudnnCheckStatus(status)
     return sizeInBytes
 
@@ -4012,7 +4625,22 @@ _libcudnn.cudnnBatchNormalizationForwardInference.argtypes = [
 ]
 
 
-def cudnnBatchNormalizationForwardInference(handle, mode, alpha, beta, x_desc, x, y_desc, y, bn_scale_bias_mean_var_desc, bn_scale, bn_bias, estimated_mean, estimated_variance, epsilon):
+def cudnnBatchNormalizationForwardInference(
+    handle,
+    mode,
+    alpha,
+    beta,
+    x_desc,
+    x,
+    y_desc,
+    y,
+    bn_scale_bias_mean_var_desc,
+    bn_scale,
+    bn_bias,
+    estimated_mean,
+    estimated_variance,
+    epsilon,
+):
     """
     This function performs the forward batch normalization layer
     computation for the inference phase. This layer is based on the
@@ -4063,7 +4691,20 @@ def cudnnBatchNormalizationForwardInference(handle, mode, alpha, beta, x_desc, x
         beta_ref = ctypes.byref(ctypes.c_float(beta))
     assert _libcudnn
     status = _libcudnn.cudnnBatchNormalizationForwardInference(
-        handle, mode, alpha_ref, beta_ref, x_desc, x, y_desc, y, bn_scale_bias_mean_var_desc, bn_scale, bn_bias, estimated_mean, estimated_variance, epsilon
+        handle,
+        mode,
+        alpha_ref,
+        beta_ref,
+        x_desc,
+        x,
+        y_desc,
+        y,
+        bn_scale_bias_mean_var_desc,
+        bn_scale,
+        bn_bias,
+        estimated_mean,
+        estimated_variance,
+        epsilon,
     )
 
     cudnnCheckStatus(status)
@@ -4196,10 +4837,21 @@ def cudnnBatchNormalizationForwardTraining(
 
 
 _libcudnn.cudnnActivationForward.restype = int
-_libcudnn.cudnnActivationForward.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
+_libcudnn.cudnnActivationForward.argtypes = [
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+]
 
 
-def cudnnActivationForward(handle, act_descriptor, alpha, src_desc, src_data, beta, dest_desc, dest_data):
+def cudnnActivationForward(
+    handle, act_descriptor, alpha, src_desc, src_data, beta, dest_desc, dest_data
+):
     """ "
     Apply activation function.
     This routine applies a specified neuron activation function element-wise over each input
@@ -4240,7 +4892,9 @@ def cudnnActivationForward(handle, act_descriptor, alpha, src_desc, src_data, be
         alpha_ref = ctypes.byref(ctypes.c_float(alpha))
         beta_ref = ctypes.byref(ctypes.c_float(beta))
     assert _libcudnn
-    status = _libcudnn.cudnnActivationForward(handle, act_descriptor, alpha_ref, src_desc, src_data, beta_ref, dest_desc, dest_data)
+    status = _libcudnn.cudnnActivationForward(
+        handle, act_descriptor, alpha_ref, src_desc, src_data, beta_ref, dest_desc, dest_data
+    )
     cudnnCheckStatus(status)
 
 
@@ -4261,7 +4915,20 @@ _libcudnn.cudnnActivationBackward.argtypes = [
 ]
 
 
-def cudnnActivationBackward(handle, act_desc, alpha, src_desc, src_data, src_diff_esc, src_diff_data, dest_desc, dest_data, beta, dest_diff_desc, dest_diff_data):
+def cudnnActivationBackward(
+    handle,
+    act_desc,
+    alpha,
+    src_desc,
+    src_data,
+    src_diff_esc,
+    src_diff_data,
+    dest_desc,
+    dest_data,
+    beta,
+    dest_diff_desc,
+    dest_diff_data,
+):
     """ "
     Gradient of activation function.
     This routine computes the gradient of a neuron activation function.
@@ -4312,5 +4979,18 @@ def cudnnActivationBackward(handle, act_desc, alpha, src_desc, src_data, src_dif
         alpha_ref = ctypes.byref(ctypes.c_float(alpha))
         beta_ref = ctypes.byref(ctypes.c_float(beta))
     assert _libcudnn
-    status = _libcudnn.cudnnActivationBackward(handle, act_desc, alpha_ref, src_desc, src_data, src_diff_esc, src_diff_data, dest_desc, dest_data, beta_ref, dest_diff_desc, dest_diff_data)
+    status = _libcudnn.cudnnActivationBackward(
+        handle,
+        act_desc,
+        alpha_ref,
+        src_desc,
+        src_data,
+        src_diff_esc,
+        src_diff_data,
+        dest_desc,
+        dest_data,
+        beta_ref,
+        dest_diff_desc,
+        dest_diff_data,
+    )
     cudnnCheckStatus(status)

@@ -20,7 +20,9 @@ class BinaryCrossEntropyPycuda(LossPycuda, BinaryCrossEntropy[TensorArray]):
     PyCUDA-accelerated Binary Cross Entropy loss implementation.
     """
 
-    def compute(self, y_pred: TensorArray, y_targ: TensorArray, batch_size: int) -> tuple[float, TensorArray]:
+    def compute(
+        self, y_pred: TensorArray, y_targ: TensorArray, batch_size: int
+    ) -> tuple[float, TensorArray]:
         """
         Computes the binary cross entropy loss and its gradient on the GPU.
 
@@ -34,6 +36,17 @@ class BinaryCrossEntropyPycuda(LossPycuda, BinaryCrossEntropy[TensorArray]):
         """
 
         assert len(y_targ.shape) == 2
-        self.kernel(y_targ, y_pred, self.loss, self.dx.ary, batch_size, self.shape[1], self.eps, grid=self.grid, block=self.block, stream=self.model.stream)
+        self.kernel(
+            y_targ,
+            y_pred,
+            self.loss,
+            self.dx.ary,
+            batch_size,
+            self.shape[1],
+            self.eps,
+            grid=self.grid,
+            block=self.block,
+            stream=self.model.stream,
+        )
         loss = -gpuarray.sum(self.loss[:batch_size]).get() / batch_size
         return loss.item(), self.dx
