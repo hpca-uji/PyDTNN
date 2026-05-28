@@ -33,13 +33,14 @@ job_make:
 
   before_script:
   - apt-get update
-  - make clean
+  - make vendor-clean  # TMP
   - export $(make env | xargs)
-  - make deps
-  - make src
-  - make build PROCS=1
-  - make install
+  - make vendor-deps pydtnn-deps
+  - make vendor-src
+  - make vendor-build PROCS=1
+  - make vendor-install
   script:
+  - make pydtnn-clean
   - make pydtnn-build PROCS=1
   - WHEEL=$(echo ./build/pydtnn/*.whl)
   - pip install ${WHEEL:?}[build,test]

@@ -2,7 +2,6 @@
 # Configuration
 # ============================================================================
 
-.DEFAULT_GOAL := pydtnn-develop
 SHELL := $(shell which bash)
 APT := $(shell which apt-get)
 PIP := $(shell which pip3)
@@ -43,90 +42,20 @@ UARCHFHE_VER := 7970d0dfad5b74939da492cf61c5d9c4a9753c19
 UARCHFHE_SRC := $(SRC)/uarchfhe
 UARCHFHE_DST := $(DST)/uarchfhe
 
-POLYHE_VER := 804e4d48fbf792cfe61c1a8f283ed6ef1e907e7f
-POLYHE_SRC := $(SRC)/polyhe
-POLYHE_DST := $(DST)/polyhe
-
-PYMPI_VER := a1bddf15ce0675a7748ec4ebf9fa2c779e0c9285
-PYMPI_SRC := $(SRC)/pympi
-PYMPI_DST := $(DST)/pympi
-
 PYDTNN_VER := 
 PYDTNN_SRC := $(CURDIR)
 PYDTNN_DST := $(DST)/pydtnn
 
 # ============================================================================
-# Global targets
+# Global
 # ============================================================================
 
-.PHONY: all deps src build install clean env
+.PHONY: format test clean env
 
-all: install
-
-deps: \
-	blis-deps \
-	tvm-deps \
-	convgemm-deps \
-	convwinograd-deps \
-	convdirect-deps \
-	openfhe-deps \
-	openfhe-python-deps \
-	uarchfhe-deps \
-	polyhe-deps \
-	pympi-deps \
-	pydtnn-deps
-
-src: \
-	blis-src \
-	tvm-src \
-	convgemm-src \
-	convwinograd-src \
-	convdirect-src \
-	openfhe-src \
-	openfhe-python-src \
-	polyhe-src \
-	pympi-src
-#	uarchfhe-src
-#	pydtnn-src
-
-build: \
-	blis-build \
-	tvm-build \
-	convgemm-build \
-	convwinograd-build \
-	convdirect-build \
-	openfhe-build \
-	openfhe-python-build \
-	polyhe-build \
-	pympi-build
-#	uarchfhe-build
-#	pydtnn-build
-
-install: \
-	blis-install \
-	tvm-install \
-	convgemm-install \
-	convwinograd-install \
-	convdirect-install \
-	openfhe-install \
-	openfhe-python-install \
-	polyhe-install \
-	pympi-install
-#	uarchfhe-install
-#	pydtnn-install
-
-clean: \
-	blis-clean \
-	tvm-clean \
-	convgemm-clean \
-	convwinograd-clean \
-	convdirect-clean \
-	openfhe-clean \
-	openfhe-python-clean \
-	uarchfhe-clean \
-	polyhe-clean \
-	pympi-clean \
-	pydtnn-clean
+.DEFAULT_GOAL := pydtnn-develop
+format: pydtnn-format
+test: pydtnn-test
+clean: pydtnn-clean
 
 define ld_add
 	[[ ":$${LD_LIBRARY_PATH}:" = *":$(1):"* ]] || LD_LIBRARY_PATH="$${LD_LIBRARY_PATH:+"$${LD_LIBRARY_PATH:?}:"}$(1)"
@@ -143,6 +72,64 @@ env:
 	echo LD_LIBRARY_PATH=$${LD_LIBRARY_PATH:?}
 
 # ============================================================================
+# Vendor
+# ============================================================================
+
+.PHONY: vendor vendor-deps vendor-src vendor-build vendor-install vendor-clean
+
+vendor: vendor-build
+
+vendor-deps: \
+	blis-deps \
+	tvm-deps \
+	convgemm-deps \
+	convwinograd-deps \
+	convdirect-deps \
+	openfhe-deps \
+	openfhe-python-deps
+#	uarchfhe-deps
+
+vendor-src: \
+	blis-src \
+	tvm-src \
+	convgemm-src \
+	convwinograd-src \
+	convdirect-src \
+	openfhe-src \
+	openfhe-python-src
+#	uarchfhe-src
+
+vendor-build: \
+	blis-build \
+	tvm-build \
+	convgemm-build \
+	convwinograd-build \
+	convdirect-build \
+	openfhe-build \
+	openfhe-python-build
+#	uarchfhe-build
+
+vendor-install: \
+	blis-install \
+	tvm-install \
+	convgemm-install \
+	convwinograd-install \
+	convdirect-install \
+	openfhe-install \
+	openfhe-python-install
+#	uarchfhe-install
+
+vendor-clean: \
+	blis-clean \
+	tvm-clean \
+	convgemm-clean \
+	convwinograd-clean \
+	convdirect-clean \
+	openfhe-clean \
+	openfhe-python-clean
+#	uarchfhe-clean
+
+# ============================================================================
 # BLIS
 # ============================================================================
 
@@ -154,7 +141,7 @@ env:
 	blis-install \
 	blis-clean
 
-blis: blis-install
+blis: blis-build
 
 blis-deps:
 	$(APT) install -y make gcc
@@ -199,7 +186,7 @@ blis-clean:
 	tvm-install \
 	tvm-clean
 
-tvm: tvm-install
+tvm: tvm-build
 
 tvm-deps:
 	$(APT) install -y python3 cmake gcc llvm-dev zlib1g-dev libxml2-dev
@@ -250,9 +237,10 @@ tvm-clean:
 	convgemm-install \
 	convgemm-clean
 
-convgemm: convgemm-install
+convgemm: convgemm-build
 
-convgemm-deps: # blis-install
+convgemm-deps:
+	@echo REQUIRES: blis-install
 	$(APT) install -y cmake gcc
 
 convgemm-src: $(CONVGEMM_SRC)/.git
@@ -296,9 +284,10 @@ convgemm-clean:
 	convwinograd-install \
 	convwinograd-clean
 
-convwinograd: convwinograd-install
+convwinograd: convwinograd-build
 
-convwinograd-deps: # blis-install
+convwinograd-deps:
+	@echo REQUIRES: blis-install
 	$(APT) install -y cmake gcc
 
 convwinograd-src: $(CONVWINOGRAD_SRC)/.git
@@ -343,9 +332,10 @@ convwinograd-clean:
 	convdirect-install \
 	convdirect-clean
 
-convdirect: convdirect-install
+convdirect: convdirect-build
 
-convdirect-deps: # blis-install tvm-install convgemm-install
+convdirect-deps:
+	@echo REQUIRES: blis-install tvm-install convgemm-install
 	$(APT) install -y cmake gcc
 
 convdirect-src: $(CONVDIRECT_SRC)/.git
@@ -389,7 +379,7 @@ convdirect-clean:
 	openfhe-install \
 	openfhe-clean
 
-openfhe: openfhe-install
+openfhe: openfhe-build
 
 openfhe-deps:
 	$(APT) install -y cmake gcc
@@ -434,9 +424,10 @@ openfhe-clean:
 	openfhe-python-install \
 	openfhe-python-clean
 
-openfhe-python: openfhe-python-install
+openfhe-python: openfhe-python-build
 
-openfhe-python-deps: # openfhe-install
+openfhe-python-deps:
+	@echo REQUIRES: openfhe-install
 	$(APT) install -y python3 cmake gcc
 	$(PIP) install pybind11[global]
 
@@ -491,7 +482,7 @@ openfhe-python-clean:
 	uarchfhe-install \
 	uarchfhe-clean
 
-uarchfhe: uarchfhe-install
+uarchfhe: uarchfhe-build
 
 uarchfhe-deps:
 	$(APT) install -y python3 libgmp-dev libntl-dev libbz2-dev
@@ -518,89 +509,12 @@ uarchfhe-clean:
 		rm -rf "$(UARCHFHE_DST)"
 
 # ============================================================================
-# PolyHE
-# ============================================================================
-
-.PHONY: \
-	polyhe \
-	polyhe-deps \
-	polyhe-src \
-	polyhe-build \
-	polyhe-install \
-	polyhe-clean
-
-polyhe: polyhe-install
-
-polyhe-deps:
-	$(APT) install -y python3
-	$(PIP) install build
-
-polyhe-src: $(POLYHE_SRC)/.git
-$(POLYHE_SRC)/.git:
-	git submodule update --init "$(POLYHE_SRC)"
-	cd "$(POLYHE_SRC)" && \
-		git checkout "$(POLYHE_VER)"
-
-polyhe-build: $(POLYHE_DST)/.build
-$(POLYHE_DST)/.build: $(POLYHE_SRC)/.git
-	mkdir -p "$(POLYHE_DST)"
-	cd "$(POLYHE_SRC)" && \
-		python3 -m build -wo "$(POLYHE_DST)"
-	touch "$(POLYHE_DST)/.build"
-
-polyhe-install: $(POLYHE_DST)/.build
-	$(PIP) install "$(POLYHE_DST)"/*.whl
-
-polyhe-clean:
-	cd "$(POLYHE_SRC)" && \
-		rm -rf "$(POLYHE_DST)"
-
-# ============================================================================
-# PyMPI
-# ============================================================================
-
-.PHONY: \
-	pympi \
-	pympi-deps \
-	pympi-src \
-	pympi-build \
-	pympi-install \
-	pympi-clean
-
-pympi: pympi-install
-
-pympi-deps:
-	$(APT) install -y python3
-	$(PIP) install build
-
-pympi-src: $(PYMPI_SRC)/.git
-$(PYMPI_SRC)/.git:
-	git submodule update --init "$(PYMPI_SRC)"
-	cd "$(PYMPI_SRC)" && \
-		git checkout "$(PYMPI_VER)"
-
-pympi-build: $(PYMPI_DST)/.build
-$(PYMPI_DST)/.build: $(PYMPI_SRC)/.git
-	mkdir -p "$(PYMPI_DST)"
-	cd "$(PYMPI_SRC)" && \
-		python3 -m build -wo "$(PYMPI_DST)"
-	touch "$(PYMPI_DST)/.build"
-
-pympi-install: $(PYMPI_DST)/.build
-	$(PIP) install "$(PYMPI_DST)"/*.whl
-
-pympi-clean:
-	cd "$(PYMPI_SRC)" && \
-		rm -rf "$(PYMPI_DST)"
-
-# ============================================================================
 # PyDTNN
 # ============================================================================
 
 .PHONY: \
 	pydtnn \
 	pydtnn-deps \
-	pydtnn-src \
 	pydtnn-build \
 	pydtnn-install \
 	pydtnn-develop \
@@ -608,16 +522,11 @@ pympi-clean:
 	pydtnn-test \
 	pydtnn-clean
 
-pydtnn: pydtnn-install
+pydtnn: pydtnn-build
 
 pydtnn-deps:
 	$(APT) install -y python3 gcc patchelf
 	$(PIP) install build auditwheel
-
-pydtnn-src: $(PYDTNN_SRC)/.git
-$(PYDTNN_SRC)/.git:
-	cd "$(PYDTNN_SRC)" && \
-		git checkout "$(PYDTNN_VER)"
 
 pydtnn-build: $(PYDTNN_DST)/.build
 $(PYDTNN_DST)/.build: $(PYDTNN_SRC)/.git
@@ -649,4 +558,5 @@ pydtnn-test:
 pydtnn-clean:
 	cd "$(PYDTNN_SRC)" && \
 		rm -rf "$(PYDTNN_DST)" && \
-		rm -rf "$(PYDTNN_SRC)/build"/pydtnn-*.whl
+		rm -rf "$(PYDTNN_SRC)/build"/pydtnn-*.whl && \
+		find "$(PYDTNN_SRC)/pydtnn" -name "*.so" -delete

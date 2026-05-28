@@ -49,6 +49,9 @@
   ---
 - If using `conda` and `pip install` fails with `no such option: --config-settings`, deactivate all environments and reactivate only the target environment.
 
+  ---
+- Multiple Cython optimizations are enabled by default, check for them in `setup.py`, and disabled them locally with `@cython.{option}(value)` if desired.
+
 # Structure
 ## Repository root
 ```
@@ -187,10 +190,10 @@
 - Add model tensor parallelism (previously implemented on a prototype)
 
 # Vendor
-Acquire the dependencies, build it and install it with:
+Acquire their dependencies, build them and install them with:
 ```sh
 export $(make env | xargs)  # update environment
-make deps build install APT="sudo apt" PIP="pip"
+make vendor-deps vendor-build vendor-install APT="sudo apt" PIP="pip"
 ```
 
 For specific dependencies, prefix the target with their name, for example:
@@ -198,7 +201,7 @@ For specific dependencies, prefix the target with their name, for example:
 make blis-install
 ```
 
-*Note*: `make deps` is intended for Debian-based distributions.
+*Note*: `make *-deps` uses Debian-based package names.
 
 # Publishing
 Dependencies: `gcc patchelf` and `build twine auditwheel`  
