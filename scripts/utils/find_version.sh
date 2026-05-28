@@ -11,7 +11,7 @@ git log --follow --reverse --format="%H" -- "${src:?}" | while read -r commit; d
         sed -E 's/.*=\s*"([^"]+)".*/\1/'
     )
 
-    if [[ -n "$version" && "$version" != "$last_version" ]]; then
+    if [[ -n "${version?}" && "${version?}" != "${last_version-}" ]]; then
         printf '%s %s\n' "${commit:?}" "${version:?}"
         last_version="${version:?}"
     fi

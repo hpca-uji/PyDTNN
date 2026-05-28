@@ -205,7 +205,7 @@ Dependencies: `gcc patchelf` and `build twine auditwheel`
 
 ## Cleanup sources
 ```sh
-./scripts/utils/run_formatter.sh pydtnn
+./scripts/srcs/format.sh pydtnn
 git add .
 git commit -m 'format codebase'
 git push

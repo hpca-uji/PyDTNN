@@ -1,6 +1,7 @@
-#!/usr/bin/env -S bash -x
+#!/usr/bin/env bash
 # Fixup sources for PEP8
-set -e; set -o pipefail
+set -xe; set -o pipefail
+
 SRC="${1:-.}"
 MAX_LINE_LENGTH="${PEP8_MAX_LINE_LENGTH:-200}"
 PYS=('(' -name '*.py' -o -name '*.py' -o -name '*.pyi' -o -name '*.pyx' ')')

@@ -334,7 +334,7 @@ $ mpirun -np 12 \
       --dataset-train-path=datasets/mnist \
       --dataset-test-path=datasets/mnist \
       --test-as-validation=False \
-      --augment-flip=True \
+      --augment-horizontal-flip=True \
       --batch-size=64 \
       --validation-split=0.2 \
       --num-epochs=50 \
