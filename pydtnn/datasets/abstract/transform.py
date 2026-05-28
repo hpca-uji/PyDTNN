@@ -84,9 +84,20 @@ class Transform(Init):
         augments_training = list[TransformFunc]()
         augments_always = list[TransformFunc]()
 
+        # --------------------------
+        # | AREA UNDER CONSTUCTION |
+        # --------------------------
+        self.to_transform = set() #set([2, 3, 4])
+
+        if len(self.to_transform) != 0:
+            self._augment_data_generator = self._augment_data_some_classes_generator
+        # else: self._augment_data_generator = self._augment_data_generator
+        # --------------------------
+
+
         if self.model.augment_crop:
             # type: ignore (The cropped input shape will be a tuple[int, int])
-            crop, size = self._calculate_crop(self.input_shape[1:])
+            crop, size = self._calculate_crop(self.input_shape[1:])  # type: ignore (It's the right shape)
             self.input_shape = (self.input_shape[0], *size)
             augments_training.append(self._x_augment_adaptor(self._do_augment_crop))
             augments_always.append(self._x_augment_adaptor(self._do_augment_crop))
@@ -179,6 +190,27 @@ class Transform(Init):
             x, y = x.copy(), y.copy()
             for transformation in self._augments[part]:
                 x, y = transformation(x, y)
+            yield x, y
+
+    def _augment_data_some_classes_generator(self, part: Base.Part) -> Generator[tuple[np.ndarray, np.ndarray]]:
+        """
+        Yield transformed data from the dataset partition.
+
+        This generator applies all registered transformations for a given dataset
+        partition to the raw data before yielding it.
+
+        Args:
+            part: The dataset partition (TRAIN, VAL, or TEST) to generate data from.
+
+        Yields:
+            Tuples of transformed input (x) and output (y) data.
+        """
+        for x, y in self._data_generator(part):
+            x, y = x.copy(), y.copy()
+            classes = set(y.nonzero()[0].flatten())
+            if len(classes.intersection(self.to_transform)) != 0:
+                for transformation in self._augments[part]:
+                    x, y = transformation(x, y)
             yield x, y
 
     def _do_augment_normalize(self, data: np.ndarray) -> np.ndarray:
