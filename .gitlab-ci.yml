@@ -37,12 +37,10 @@ job_make:
   - apt-get update
   - mkdir -p ./build
   - export $(make env | xargs)
-  - make vendor-deps pydtnn-deps &> ./build/vendor.log
-  - make vendor-src &>> ./build/vendor.log
-  - make vendor-build PROCS=1 &>> ./build/vendor.log
-  - make vendor-install &>> ./build/vendor.log
+  - make pydtnn-deps  # vendor-deps
+  # - make vendor-install PROCS=1
   script:
-  - make pydtnn-clean &>> ./build/vendor.log
+  - make pydtnn-clean
   - make pydtnn-build PROCS=1
   - WHEEL=$(echo ./build/pydtnn/*.whl)
   - pip install ${WHEEL:?}[build,test]
@@ -59,7 +57,7 @@ job_make:
         path: ./build/coverage
     paths:
     - ./build/pydtnn/
-    - ./build/vendor.log
+    # - ./build/vendor.log
     expire_in: 1d
     when: always
 
