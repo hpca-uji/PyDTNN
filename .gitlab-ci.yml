@@ -39,11 +39,11 @@ job_make:
   - export $(make env | xargs)
   - make vendor-deps pydtnn-deps &> ./build/vendor.log
   - make vendor-src &>> ./build/vendor.log
-  - make vendor-build &>> ./build/vendor.log
+  - make vendor-build PROCS=1 &>> ./build/vendor.log
   - make vendor-install &>> ./build/vendor.log
   script:
   - make pydtnn-clean &>> ./build/vendor.log
-  - make pydtnn-build
+  - make pydtnn-build PROCS=1
   - WHEEL=$(echo ./build/pydtnn/*.whl)
   - pip install ${WHEEL:?}[build,test]
   - TAG=v$(python -c "from importlib.metadata import version; print(version('pydtnn'))")
