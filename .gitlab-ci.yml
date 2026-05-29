@@ -31,34 +31,43 @@ job_make:
   #   - /var/cache/apt/archives
   #   when: always
 
-  before_script:
-  - apt-get update
-  - make vendor-clean  # TMP
-  - export $(make env | xargs)
-  - make vendor-deps pydtnn-deps
-  - make vendor-src
-  - make vendor-build PROCS=1
-  - make vendor-install
   script:
-  - make pydtnn-clean
-  - make pydtnn-build PROCS=1
-  - WHEEL=$(echo ./build/pydtnn/*.whl)
-  - pip install ${WHEEL:?}[build,test]
-  - TAG=v$(python -c "from importlib.metadata import version; print(version('pydtnn'))")
-  - printf '%s\n' GIT_TAG=${TAG:?} PUBLIC_TAG=$(git tag | grep -xF ${TAG:?}) > ./build/env
-  - make pydtnn-test PROCS=1
+  - apt-get update
+  - make vendor-clean pydtnn-clean
+  - export $(make env | xargs)
+  - make tvm-deps
+  - make tvm-src
+  - make tvm-build PROCS=1
+  - make tvm-install
 
-  artifacts:
-    reports:
-      dotenv: ./build/env
-      junit: ./build/tests
-      coverage_report:
-        coverage_format: cobertura
-        path: ./build/coverage
-    paths:
-    - ./build/pydtnn/
-    expire_in: 1d
-    when: always
+  # before_script:
+  # - apt-get update
+  # - make vendor-clean  # TMP
+  # - export $(make env | xargs)
+  # - make vendor-deps pydtnn-deps
+  # - make vendor-src
+  # - make vendor-build PROCS=1
+  # - make vendor-install
+  # script:
+  # - make pydtnn-clean
+  # - make pydtnn-build PROCS=1
+  # - WHEEL=$(echo ./build/pydtnn/*.whl)
+  # - pip install ${WHEEL:?}[build,test]
+  # - TAG=v$(python -c "from importlib.metadata import version; print(version('pydtnn'))")
+  # - printf '%s\n' GIT_TAG=${TAG:?} PUBLIC_TAG=$(git tag | grep -xF ${TAG:?}) > ./build/env
+  # - make pydtnn-test PROCS=1
+
+  # artifacts:
+  #   reports:
+  #     dotenv: ./build/env
+  #     junit: ./build/tests
+  #     coverage_report:
+  #       coverage_format: cobertura
+  #       path: ./build/coverage
+  #   paths:
+  #   - ./build/pydtnn/
+  #   expire_in: 1d
+  #   when: always
 
 # job_merge:
 #   stage: merge
