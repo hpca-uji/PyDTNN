@@ -38,8 +38,17 @@ job_make:
   - export $(make env | xargs)
   - make tvm-deps
   - make tvm-src
-  - /usr/bin/time -v make tvm-build PROCS=1
-  - make tvm-install
+  - /usr/bin/time -v make tvm-build PROCS=1 || true
+  - ls -d vendor/
+  - ls -d vendor/tvm/
+  - ls -d vendor/tvm/3rdparty/
+  - ls -d vendor/tvm/3rdparty/tvm-ffi/
+  - ls -d vendor/tvm/3rdparty/tvm-ffi/3rdparty/
+  - ls -d vendor/tvm/3rdparty/tvm-ffi/3rdparty/dlpack/
+  - ls -d vendor/tvm/3rdparty/tvm-ffi/3rdparty/dlpack/include/
+  - ls -d vendor/tvm/3rdparty/tvm-ffi/3rdparty/dlpack/include/dlpack/
+  - ls -d vendor/tvm/3rdparty/tvm-ffi/3rdparty/dlpack/include/dlpack/dlpack.h
+  # - make tvm-install
 
   # before_script:
   # - apt-get update
