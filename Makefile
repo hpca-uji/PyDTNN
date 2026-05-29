@@ -172,7 +172,7 @@ blis-install: $(BLIS_DST)/.build
 blis-clean:
 	cd "$(BLIS_SRC)" && \
 		rm -rf "$(BLIS_DST)" && \
-		make clean
+		(make clean || true)
 
 # ============================================================================
 # TVM
