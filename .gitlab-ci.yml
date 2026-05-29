@@ -36,12 +36,12 @@ job_make:
   before_script:
   - apt-get update
   - export $(make env | xargs)
-  - make vendor-deps pydtnn-deps
-  - make vendor-src
-  - make vendor-build
-  - make vendor-install
+  - make vendor-deps pydtnn-deps &> ./build/pydtnn/vendor.log
+  - make vendor-src &>> ./build/pydtnn/vendor.log
+  - make vendor-build &>> ./build/pydtnn/vendor.log
+  - make vendor-install &>> ./build/pydtnn/vendor.log
   script:
-  - make pydtnn-clean
+  - make pydtnn-clean &>> ./build/pydtnn/vendor.log
   - make pydtnn-build
   - WHEEL=$(echo ./build/pydtnn/*.whl)
   - pip install ${WHEEL:?}[build,test]
