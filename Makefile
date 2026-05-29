@@ -207,6 +207,7 @@ $(TVM_DST)/.build: $(TVM_SRC)/.git
 		cp ../cmake/config.cmake . && \
 		cmake \
 			-D CMAKE_INSTALL_PREFIX="$(TVM_DST)" \
+			-D CMAKE_VERBOSE_MAKEFILE=ON \
 			.. && \
 		cmake --build . --parallel "$(PROCS)" && \
 	cd "$(TVM_SRC)" && \
