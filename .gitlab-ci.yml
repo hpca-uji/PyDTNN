@@ -6,6 +6,7 @@ stages:
 variables:
   BRANCH_MAIN: main
   BRANCH_WORK: develop
+  GIT_STRATEGY: clone
   GIT_SUBMODULE_STRATEGY: none
 
 job_make:
