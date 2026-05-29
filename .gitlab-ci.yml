@@ -23,64 +23,43 @@ job_make:
   tags: [ lorca-ubuntu ]
   image: python:$PYTHON_VERSION
 
-  # cache:
-  # - key:
-  #     files:
-  #     - Makefile
-  #     - pyproject.toml
-  #   paths:
-  #   - build
-  #   - /var/cache/apt/archives
-  #   when: always
+  cache:
+  - key:
+      files:
+      - Makefile
+      - pyproject.toml
+    paths:
+    - build
+    - /var/cache/apt/archives
+    when: always
 
-  script:
-  - ls -al vendor/*
+  before_script:
   - apt-get update
-  - apt-get install -y time
-  - make vendor-clean pydtnn-clean
   - export $(make env | xargs)
-  - make tvm-deps
-  - make tvm-src
-  - /usr/bin/time -v make tvm-build PROCS=1 || true
-  - ls -d vendor/
-  - ls -d vendor/tvm/
-  - ls -d vendor/tvm/3rdparty/
-  - ls -d vendor/tvm/3rdparty/tvm-ffi/
-  - ls -d vendor/tvm/3rdparty/tvm-ffi/3rdparty/
-  - ls -d vendor/tvm/3rdparty/tvm-ffi/3rdparty/dlpack/
-  - ls -d vendor/tvm/3rdparty/tvm-ffi/3rdparty/dlpack/include/
-  - ls -d vendor/tvm/3rdparty/tvm-ffi/3rdparty/dlpack/include/dlpack/
-  - ls -d vendor/tvm/3rdparty/tvm-ffi/3rdparty/dlpack/include/dlpack/dlpack.h
-  # - make tvm-install
+  - make vendor-deps pydtnn-deps
+  - make vendor-src pydtnn-src
+  - make vendor-build PROCS=1
+  - make vendor-install
+  script:
+  - make pydtnn-clean
+  - make pydtnn-build PROCS=1
+  - WHEEL=$(echo ./build/pydtnn/*.whl)
+  - pip install ${WHEEL:?}[build,test]
+  - TAG=v$(python -c "from importlib.metadata import version; print(version('pydtnn'))")
+  - printf '%s\n' GIT_TAG=${TAG:?} PUBLIC_TAG=$(git tag | grep -xF ${TAG:?}) > ./build/env
+  - make pydtnn-test PROCS=1
 
-  # before_script:
-  # - apt-get update
-  # - make vendor-clean  # TMP
-  # - export $(make env | xargs)
-  # - make vendor-deps pydtnn-deps
-  # - make vendor-src
-  # - make vendor-build PROCS=1
-  # - make vendor-install
-  # script:
-  # - make pydtnn-clean
-  # - make pydtnn-build PROCS=1
-  # - WHEEL=$(echo ./build/pydtnn/*.whl)
-  # - pip install ${WHEEL:?}[build,test]
-  # - TAG=v$(python -c "from importlib.metadata import version; print(version('pydtnn'))")
-  # - printf '%s\n' GIT_TAG=${TAG:?} PUBLIC_TAG=$(git tag | grep -xF ${TAG:?}) > ./build/env
-  # - make pydtnn-test PROCS=1
-
-  # artifacts:
-  #   reports:
-  #     dotenv: ./build/env
-  #     junit: ./build/tests
-  #     coverage_report:
-  #       coverage_format: cobertura
-  #       path: ./build/coverage
-  #   paths:
-  #   - ./build/pydtnn/
-  #   expire_in: 1d
-  #   when: always
+  artifacts:
+    reports:
+      dotenv: ./build/env
+      junit: ./build/tests
+      coverage_report:
+        coverage_format: cobertura
+        path: ./build/coverage
+    paths:
+    - ./build/pydtnn/
+    expire_in: 1d
+    when: always
 
 # job_merge:
 #   stage: merge
