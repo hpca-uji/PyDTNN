@@ -33,11 +33,12 @@ job_make:
 
   script:
   - apt-get update
+  - apt-get install -y time
   - make vendor-clean pydtnn-clean
   - export $(make env | xargs)
   - make tvm-deps
   - make tvm-src
-  - make tvm-build PROCS=1
+  - /usr/bin/time -v make tvm-build PROCS=1
   - make tvm-install
 
   # before_script:
