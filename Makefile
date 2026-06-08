@@ -585,7 +585,7 @@ pydtnn-check:
 	pytest -v -n "$(PROCS)" \
 		--dist=loadscope \
 		--junitxml="$(PYDTNN_SRC)/build/tests" \
-		--cov="$(PYDTNN_SRC)/pydtnn" --cov-report=term --cov-report=xml:"$(PYDTNN_SRC)/build/coverage" \
+		--cov --cov-report=term --cov-report=xml:"$(PYDTNN_SRC)/build/coverage" \
 		--pyargs pydtnn.tests.groups.all
 	flake8 \
 		--exit-zero \
