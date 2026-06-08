@@ -37,8 +37,8 @@ job_make:
   - apt-get update
   - mkdir -p ./build
   - export $(make env | xargs)
-  - make pydtnn-deps  # vendor-deps
-  # - make vendor-install PROCS=1
+  - make pydtnn-deps vendor-deps
+  - make vendor-install PROCS=1 &> ./build/vendor.log
   script:
   - make pydtnn-clean
   - make pydtnn-build PROCS=1
@@ -60,7 +60,7 @@ job_make:
       codequality: ./build/quality
     paths:
     - ./build/pydtnn/
-    # - ./build/vendor.log
+    - ./build/vendor.log
     expire_in: 1d
     when: always
 
