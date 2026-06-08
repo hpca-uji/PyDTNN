@@ -43,10 +43,12 @@ job_make:
   - make pydtnn-clean
   - make pydtnn-build PROCS=1
   - WHEEL=$(echo ./build/pydtnn/*.whl)
-  - pip install ${WHEEL:?}[build,test]
+  - pip install ${WHEEL:?}[build,test,quality]
   - TAG=v$(python -c "from importlib.metadata import version; print(version('pydtnn'))")
   - printf '%s\n' GIT_TAG=${TAG:?} PUBLIC_TAG=$(git tag | grep -xF ${TAG:?}) > ./build/env
-  - make pydtnn-test PROCS=1
+  - make pydtnn-check PROCS=1
+
+  coverage: '/TOTAL.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
 
   artifacts:
     reports:

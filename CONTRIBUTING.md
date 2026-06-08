@@ -1,62 +1,71 @@
 # Guidelines
+Things to do & not to do
+
+## Exports
 - Do not re-export symbols (ie from `__init__.py`), always import from the original module.
 - Avoid star imports (`from x import *`), they break type checking and IDE support.
 - Avoid defining `__init__.py` unless strictly necessary (it can easily introduce circular imports).
 
-  ---
+## NumPy
 - Prefer `numpy` functions over operators when possible (they may offer better numerical precision).
 - Do not create arrays using `np.ndarray()`, use explicit initializers such as `np.zeros()`, `np.ones()`, `np.arange()`, or `np.empty()`.
 - Avoid magic numbers in `np.transpose(ary, format)`, use `format_transpose(ary, src, dst)` instead.
 
-  ---
+## Cython
 - Cython's `.pyx` can be included anywhere, but must be accompanied by a `.pyi` typing interface.
 
-  ---
-- Use `pydtnn.utils.random` for random number generation, other generators are not multi-thread aware.
-
-  ---
+## CUDA
 - Each CUDA kernel must have a unique name, duplicate names will cause incorrect kernel resolution.
 
-  ---
+## Randomness
+- Use `pydtnn.utils.random` for random number generation, other generators are not multi-thread aware.
+
+## Test
 - Test all changes across backends (CPU, GPU, etc.), changes in base classes may introduce backend-specific issues.
 - When comparing outputs between layers or models, always copy outputs before passing them to the next layer, some layers perform in-place operations.
 
-  ---
+## Documentation
 - Keep `README.md` and `parser.py` in sync, any change in options must be reflected in both.
 
-  ---
+## Environment
 - Use `from __future__ import annotations` instead of string type annotations, it is more legible and will be default moving forward.
 
-  ---
+## Components
 - If model or components structure changes, update the `Structure` section of this document accordingly.
 - If the Model components or components hierarchy structure changes, update the model's `__init__` diagram.
 
 # Knowledge
+Things you should keep in mind
+
+## Bootstrapping
 - In components, `__init__` is used for model-agnostic configuration, and `_model_init` for model specific configuration, and `_post_init` and resource allocation.
 
-  ---
+## GPU
 - `--enable-gpudirect` moves data from CPU (`ndarray`) to GPU (`GPUArray`), requires `enable-cudnn`
 - `--enable-nccl` moves reductions from CPU (`MPI`) to GPU (`NCCL`), requires `enable-gpudirect`
 
-  ---
-- Requires `NCCL` to be disabled (otherwise it will be skipped), typically requires
-  `--use-mpi-buffers=False` (crypto libraries usually do not expose buffer access) and
-  `--use-blocking-mpi=True` (MPI like `mpi4py` does not support async object reductions)
+## FHE
+- `--enable-encryption` requires `NCCL` to be disabled (otherwise it will be skipped),
+  typically requires `--use-mpi-buffers=False` (crypto libraries usually do not expose buffer access)
+  and `--use-blocking-mpi=True` (MPI like `mpi4py` does not support async object reductions)
 
-  ---
+## Cython
+- Multiple Cython optimizations are enabled by default, check for them in `setup.py`, and if desired disabled them locally with `@cython.{option}(value)`.
+
+## Memory
 - When using `PreallocMemory`, temporary memory in block layers will overlap its child layers, therefore it may be overwritten.
 
-  ---
+## Environment
 - If using `conda` and `pip install` fails with `no such option: --config-settings`, deactivate all environments and reactivate only the target environment.
 
-  ---
-- Multiple Cython optimizations are enabled by default, check for them in `setup.py`, and disabled them locally with `@cython.{option}(value)` if desired.
-
 # Structure
+How is the project organized
+
 ## Repository root
 ```
 ├── README.md
 ├── CONTRIBUTING.md
+├── Makefile
 ├── pyproject.toml
 ├── setup.py
 ├── .editor
@@ -180,16 +189,18 @@
 ```
 
 # Planned
+Things to do
+
 - Migrate `libs/{cuda,cudadrv,cudart}` to `cuda-bindings` (and/or `nvidia-cuda-runtime-cu12`)
 - Migrate `libs/nccl` to `nvidia-nccl-cu12`
 - Migrate `libs/cudnn` to `nvidia-cudnn-cu12`
 - Migrate `libs/cublas` to `nvidia-cublas-cu12`
 - Add PyCUDA parameter quantization (operate on `model.dtype`, weights on `model.param_dtype`)
-- Update CuDNN to graph implementation
+- Add CuDNN graph implementation
 - Fix NLP support
 - Add model tensor parallelism (previously implemented on a prototype)
 
-# Vendor
+# Vendoring
 Acquire their dependencies, build them and install them with:
 ```sh
 export $(make env | xargs)  # update environment
@@ -209,8 +220,7 @@ Dependencies: `gcc patchelf` and `build twine auditwheel`
 ## Cleanup sources
 ```sh
 ./scripts/srcs/format.sh pydtnn
-git add .
-git commit -m 'format codebase'
+git commit -am 'format codebase'
 git push
 ```
 
@@ -224,10 +234,8 @@ git checkout develop
 
 ### Build distribution
 ```sh
-rm -rf ./build/
-python -m build --outdir ./build/ --sdist
-python -m build --outdir ./build/wheel/ --wheel
-python -m auditwheel repair --wheel-dir ./build/ ./build/wheel/*.whl
+make pydtnn-clean
+make pydtnn-build
 ```
 
 ### Publish distribution

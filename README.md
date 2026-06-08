@@ -117,7 +117,7 @@ install it in editable mode:
 ```sh
 git clone https://github.com/hpca-uji/PyDTNN.git
 cd PyDTNN
-pip install --config-settings editable_mode=compat -e .
+make
 ```
 
 For more information on how to work on the project,
@@ -213,7 +213,7 @@ The PyDTNN framework comes with a utility launcher called
   - `--augment-scale`: Resize the images. `True` if specified.
   - `--augment-scale-size`: New size of the images. Default: `300`.
   - `--augment-perspective`: Probability to change the perspective in training images. If the value is less or equal to 0 it is disabled. Default: `0.0`.
-  - `--augment-perspective-factor`: The perspective distorsion factor. The ranges are from 0.0 to 0.5. Default: `0.25`.
+  - `--augment-perspective-factor`: The perspective distortion factor. The ranges are from 0.0 to 0.5. Default: `0.25`.
   - `--augment-normalize`: Normalize dataset. Default: `False`.
   - `--augment-normalize-offset`: Offset samples by a value. Default: `-0.45`.
   - `--augment-normalize-scale`: Scale samples by a value. Default: `3.75`.
@@ -230,7 +230,7 @@ The PyDTNN framework comes with a utility launcher called
   - `--conv-direct-method`: ConvDirect algorithm to use in Conv2D layers.
     Default: `convdirect_original_{tensor_format}_default`.
 - Optimizer parameters:
-  - `--optimizer`: Optimizers: `sgd`, `rmsprop`, `adam`, `nadam`.
+  - `--optimizer`: Optimizers: `sgd`, `rmsprop`, `adam`, `nadam`, ...
     Default: `sgd`.
   - `--learning-rate`: Learning rate. Default: `0.01`.
   - `--learning-rate-scaling`: Scale learning rate in data parallelism:
@@ -257,7 +257,7 @@ The PyDTNN framework comes with a utility launcher called
     `multiclass_confusion_matrix`, `precision`, `recall`, `f1_score`.
     Default: `categorical_accuracy`.
 - Schedulers parameters:
-  - `--schedulers`: List of comma-separated LR schedulers: `warm_up`,
+  - `--schedulers`: List of comma-separated schedulers: `warm_up`,
     `early_stopping`, `reduce_lr_on_plateau`, `reduce_lr_every_nepochs`,
     `model_checkpoint`. Default:
     `early_stopping,reduce_lr_on_plateau,model_checkpoint`.

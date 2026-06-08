@@ -585,7 +585,7 @@ class ArgumentParser(argparse.ArgumentParser):
             type=float,
             default=0.25,
             help=(
-                "The perspective distorsion factor. The ranges are from 0.0 to 0.5. Default: 0.25."
+                "The perspective distortion factor. The ranges are from 0.0 to 0.5. Default: 0.25."
             ),
         )
         _ds_group.add_argument(
@@ -653,7 +653,7 @@ class ArgumentParser(argparse.ArgumentParser):
             dest="optimizer_name",
             type=str,
             default="sgd",
-            help="Optimizers: 'sgd', 'rmsprop', 'adam', 'nadam', 'oktopk'. Default: 'sgd'.",
+            help="Optimizers: 'sgd', 'rmsprop', 'adam', 'nadam', ... Default: 'sgd'.",
         )
         _op_group.add_argument(
             "--learning-rate",
@@ -762,7 +762,7 @@ class ArgumentParser(argparse.ArgumentParser):
             type=str,
             default="early_stopping,reduce_lr_on_plateau,model_checkpoint",
             help=(
-                "List of comma-separated LR schedulers: 'warm_up', 'early_stopping',"
+                "List of comma-separated schedulers: 'warm_up', 'early_stopping',"
                 " 'reduce_lr_on_plateau', 'reduce_lr_every_nepochs', 'model_checkpoint'."
                 " Default: 'early_stopping,reduce_lr_on_plateau,model_checkpoint'."
             ),

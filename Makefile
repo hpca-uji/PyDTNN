@@ -51,9 +51,41 @@ PYDTNN_DST := $(DST)/pydtnn
 # Global
 # ============================================================================
 
-.PHONY: format test clean env
+.PHONY: help format check clean env
 
 .DEFAULT_GOAL := pydtnn-develop
+
+help:
+	@echo PyDTNN Makefile
+	@echo
+	@echo Targets:
+	@printf -- '- %s\n' \
+		deps \
+		src \
+		build \
+		install \
+		clean
+	@echo
+	@echo Packages:
+	@printf -- '- %s\n' \
+		blis \
+		tvm \
+		convgemm \
+		convwinograd \
+		convdirect \
+		openfhe \
+		openfhe-python \
+		uarchfhe \
+		pydtnn
+	@echo
+	@echo Special:
+	@printf -- '- %s\n' \
+		env \
+		pydtnn-check \
+		pydtnn-format \
+		'vendor-{target}' \
+		'{package}-{target}'
+
 format: pydtnn-format
 test: pydtnn-test
 clean: pydtnn-clean
@@ -520,7 +552,7 @@ uarchfhe-clean:
 	pydtnn-install \
 	pydtnn-develop \
 	pydtnn-format \
-	pydtnn-test \
+	pydtnn-check \
 	pydtnn-clean
 
 pydtnn: pydtnn-build
@@ -549,12 +581,15 @@ pydtnn-develop:
 pydtnn-format:
 	"$(PYDTNN_SRC)/scripts/srcs/format.sh" pydtnn
 
-pydtnn-test:
+pydtnn-check:
 	pytest -v -n "$(PROCS)" \
 		--dist=loadscope \
 		--junitxml="$(PYDTNN_SRC)/build/tests" \
 		--cov=pydtnn --cov-report=term --cov-report=xml:"$(PYDTNN_SRC)/build/coverage" \
 		--pyargs pydtnn.tests.groups.all
+	flake8 \
+		--format=gl-codeclimate \
+		--output-file="$(PYDTNN_SRC)/build/quality"
 
 pydtnn-clean:
 	cd "$(PYDTNN_SRC)" && \

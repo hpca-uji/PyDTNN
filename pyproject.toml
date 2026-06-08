@@ -63,16 +63,6 @@ gpu = [
 fhe = [
     "polyhe~=1.0"
 ]
-editor = [
-    "flake8~=7.3",
-    "flake8-docstrings~=1.7",
-    "mccabe~=0.7",
-    "pep8-naming~=0.15",
-    "pipdeptree~=2.35",
-    "pycodestyle~=2.14",
-    "pydocstyle~=6.3",
-    "pyflakes~=3.4",
-]
 format = [
     "autopep8~=2.3",
     "absolufy-imports~=0.3",
@@ -87,6 +77,18 @@ test = [
     "pytest-xdist~=3.8",
     "pytest-cov~=7.1"
 ]
+quality = [
+    "flake8~=7.3",
+    "flake8-gl-codeclimate~=0.2",
+    "flake8-docstrings~=1.7",
+    "flake8-annotations~=3.2",
+    "flake8-pyproject~=1.2",
+    "mccabe~=0.7",
+    "pep8-naming~=0.15",
+    "pycodestyle~=2.14",
+    "pydocstyle~=6.3",
+    "pyflakes~=3.4"
+]
 profile = [
     "memray~=1.19"
 ]
@@ -95,11 +97,10 @@ build = [
     "auditwheel~=6.6",
     "twine~=6.2"
 ]
-
 dev = [
-    "pydtnn[editor]",
     "pydtnn[format]",
     "pydtnn[test]",
+    "pydtnn[quality]",
     "pydtnn[profile]",
     "pydtnn[build]"
 ]
@@ -121,3 +122,21 @@ include = [
     "pydtnn",
     "pydtnn.*"
 ]
+
+[tool.flake8]
+max-line-length = 128
+max-complexity = 16
+ignore = [
+    "D400",
+    "D401",
+    "W503",
+    "ANN101"
+]
+exclude = [
+    ".venv",
+    "build",
+    "vendor"
+]
+
+[tool.autopep8]
+max-line-length = 100

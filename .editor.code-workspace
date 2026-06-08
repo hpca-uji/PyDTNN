@@ -8,21 +8,13 @@
 		"python.analysis.typeCheckingMode": "basic",
 		"editor.tabSize": 4,
 		"files.exclude": {
-			"pydtnn.egg-info": true,
 			"pydtnn/**/*.c": true,
 			"datasets/**/*.idx": true,
+			"**/*.egg-info": true,
 			"**/__pycache__": true,
 			"**/*.so": true,
 		},
 		"flake8.importStrategy": "fromEnvironment",
-		"flake8.args": [
-			"--max-line-length=200",
-			"--max-complexity=16",
-			"--ignore=D400,D401,W504"
-		],
 		"autopep8.importStrategy": "fromEnvironment",
-		"autopep8.args": [
-			"--max-line-length=200"
-		]
 	}
 }
