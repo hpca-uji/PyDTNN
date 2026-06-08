@@ -87,7 +87,8 @@ quality = [
     "pep8-naming~=0.15",
     "pycodestyle~=2.14",
     "pydocstyle~=6.3",
-    "pyflakes~=3.4"
+    "pyflakes~=3.4",
+    "radon~=6.0"
 ]
 profile = [
     "memray~=1.19"
@@ -139,7 +140,7 @@ exclude = [
 ]
 
 [project.entry-points."flake8.extension"]
-MI1 = "scripts.utils.flake8_maintain:MaintainabilityChecker"
+MI1 = "pydtnn.utils.flake8_maintain:MaintainabilityChecker"
 
 [tool.autopep8]
 max-line-length = 100

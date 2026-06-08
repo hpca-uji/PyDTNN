@@ -582,15 +582,17 @@ pydtnn-format:
 	"$(PYDTNN_SRC)/scripts/srcs/format.sh" pydtnn
 
 pydtnn-check:
-	pytest -v -n "$(PROCS)" \
-		--dist=loadscope \
-		--junitxml="$(PYDTNN_SRC)/build/tests" \
-		--cov --cov-report=term --cov-report=xml:"$(PYDTNN_SRC)/build/coverage" \
-		--pyargs pydtnn.tests.groups.all
-	flake8 \
-		--exit-zero \
-		--format=gl-codeclimate \
-		--output-file="$(PYDTNN_SRC)/build/quality"
+	mkdir -p "$(PYDTNN_SRC)/build/.tmp"
+	cd "$(PYDTNN_SRC)/build/.tmp" && \
+		pytest -v -n "$(PROCS)" \
+			--dist=loadscope \
+			--junitxml="$(PYDTNN_SRC)/build/tests" \
+			--cov=pydtnn --cov-report=term --cov-report=xml:"$(PYDTNN_SRC)/build/coverage" \
+			--pyargs pydtnn.tests.groups.all && \
+		flake8 \
+			--exit-zero \
+			--format=gl-codeclimate \
+			--output-file="$(PYDTNN_SRC)/build/quality"
 
 pydtnn-clean:
 	cd "$(PYDTNN_SRC)" && \
