@@ -57,6 +57,7 @@ job_make:
       coverage_report:
         coverage_format: cobertura
         path: ./build/coverage
+      codequality: ./build/quality
     paths:
     - ./build/pydtnn/
     # - ./build/vendor.log
