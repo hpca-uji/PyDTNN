@@ -6,7 +6,7 @@ export PYTHONUNBUFFERED="True"
 
 MPI_ARGS=()
 export MPICH_UNBUFFERED_STDIO="true"
-if $(mpirun --version | grep -q 'Open MPI) [5-9].'); then
+if mpirun --version | grep -q 'Open MPI) [5-9].'; then
   MPI_ARGS+=("--output=:raw")
 fi
 

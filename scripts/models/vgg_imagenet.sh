@@ -3,8 +3,7 @@
 export OMP_NUM_THREADS=1
 export PYTHONOPTIMIZE=2
 export PYTHONUNBUFFERED="True"
-#mpirun --use-hwthread-cpus -np 16 \
-#  --steps-per-epoch=10 \
+
 pydtnn-benchmark \
   --model=vgg11_imagenet \
   --dataset=imagenet \

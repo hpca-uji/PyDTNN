@@ -3,6 +3,7 @@
 export OMP_NUM_THREADS=4
 export PYTHONOPTIMIZE=2
 export PYTHONUNBUFFERED="True"
+
 pydtnn-benchmark \
   --model=simplemlp \
   --dataset=mnist \

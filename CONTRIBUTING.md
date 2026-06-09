@@ -196,7 +196,7 @@ Things to do
 - Migrate `libs/cudnn` to `nvidia-cudnn-cu12`
 - Migrate `libs/cublas` to `nvidia-cublas-cu12`
 - Add PyCUDA parameter quantization (operate on `model.dtype`, weights on `model.param_dtype`)
-- Add CuDNN graph implementation
+- Add cuDNN graph backend
 - Fix NLP support
 - Add model tensor parallelism (previously implemented on a prototype)
 
@@ -212,10 +212,37 @@ For specific dependencies, prefix the target with their name, for example:
 make blis-install
 ```
 
-*Note*: `make *-deps` uses Debian-based package names.
+_Note: `make *-deps` uses Debian-based package names_
+
+# Tests
+Do things work?
+
+## All
+```sh
+python -m unittest pydtnn.tests.groups.all
+```
+
+_Note: include `-v` for verbose mode_  
+_Note: exhaustive tests are skipped_  
+
+## Exhaustive
+```sh
+python -m unittest pydtnn.tests.conv_2d_cython.Conv2DCythonTestCase
+mpirun python -m unittest pydtnn.tests.conv_2d_conv_gemm_long.Conv2DConvGemmLongTestCase.test_forward_backward_multiple_params
+```
+
+## GPU
+```sh
+python -m unittest pydtnn.tests.model_gpu
+```
+
+## Specific
+```sh
+python -m unittest pydtnn.tests.${TEST_NAME}
+```
 
 # Publishing
-Dependencies: `gcc patchelf` and `build twine auditwheel`  
+Making things public
 
 ## Cleanup sources
 ```sh
@@ -224,21 +251,12 @@ git commit -am 'format codebase'
 git push
 ```
 
-## Publish sources
-```sh
-git checkout master
-git merge develop
-git push
-git checkout develop
-```
-
 ### Build distribution
 ```sh
-make pydtnn-clean
-make pydtnn-build
+make pydtnn-deps pydtnn-clean pydtnn-build
 ```
 
 ### Publish distribution
 ```sh
-python -m twine upload --repository pypi ./build/pydtnn-*
+twine upload ./build/pydtnn/*
 ```

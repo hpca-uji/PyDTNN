@@ -227,12 +227,16 @@ function run_benchmark() {
     PARALLEL=data
     # Example of Intel MPI CMD: mpirun -np $procs -iface ib0 -ppn 1 -host $hosts
     MPI_RUN=${MPI_RUN:-mpirun}
+    export MPICH_UNBUFFERED_STDIO="true"
     if ${MPI_RUN} --version | grep -q "Intel(R) MPI"; then
       # shellcheck disable=SC2086  # MPI_EXTRA_FLAGS must be without ""
       CMD="mpirun -np ${NODES} -ppn ${MPI_PPN:-1} -iface ${MPI_IFACE:-ib0} ${MPI_EXTRA_FLAGS}"
     elif ${MPI_RUN} --version | grep -q "Open MPI"; then
       # shellcheck disable=SC2086  # MPI_EXTRA_FLAGS must be without ""
       CMD="mpirun -np ${NODES} -N ${MPI_PPN:-1} --bind-to none ${MPI-EXTRA-FLAGS}"
+      if ${MPI_RUN} --version | grep -q 'Open MPI) [5-9].'; then
+        CMD="${CMD} --output=:raw"
+      fi
     else
       echo "Error: current MPI version is not yet supported!"
       echo "Output of ${MPI_RUN} --version is:"

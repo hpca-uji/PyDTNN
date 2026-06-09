@@ -7,7 +7,7 @@ export PYTHONOPTIMIZE=2
 #export OMP_DISPLAY_ENV=True
 #export OMP_DISPLAY_AFFINITY=True
 export PYTHONUNBUFFERED="True"
-#mpirun -np 2 \
+
 pydtnn-benchmark \
   --model=vgg3dobn \
   --dataset=cifar10 \

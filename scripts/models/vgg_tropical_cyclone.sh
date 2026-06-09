@@ -11,9 +11,7 @@ export PYTHONOPTIMIZE=2
 #export OMP_DISPLAY_AFFINITY=True
 export PYTHONUNBUFFERED="True"
 export OMP_MAX_ACTIVE_LEVELS=1
-#mpirun -np 2 \
-#  --model=tsunamis_eflows_UMA \
-#  --dataset=tsunamis \
+
 pydtnn-benchmark \
   --model=vgg_tropical_cyclone \
   --dataset=cyclones \

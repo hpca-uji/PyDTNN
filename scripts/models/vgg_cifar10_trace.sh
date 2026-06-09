@@ -18,7 +18,13 @@ export OMP_NUM_THREADS=$thrds
 export PYTHONOPTIMIZE=2
 export PYTHONUNBUFFERED="True"
 
-mpirun -iface ib0 -genv LD_PRELOAD $EXTRAELIB -ppn 1 -np $procs -host $hosts \
+MPI_ARGS=()
+export MPICH_UNBUFFERED_STDIO="true"
+if mpirun --version | grep -q 'Open MPI) [5-9].'; then
+  MPI_ARGS+=("--output=:raw")
+fi
+
+mpirun -iface ib0 -genv LD_PRELOAD $EXTRAELIB -ppn 1 -np $procs -host $hosts "${MPI_ARGS[@]}" \
   pydtnn-benchmark \
   --model=vgg11bn_cifar10 \
   --dataset=cifar10 \

@@ -2,6 +2,7 @@
 
 export PYTHONOPTIMIZE=0
 export PYTHONUNBUFFERED="True"
+
 pydtnn-benchmark \
   --model=iwslt \
   --dataset=iwslt \

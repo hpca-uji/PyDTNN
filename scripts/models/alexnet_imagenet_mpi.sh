@@ -20,8 +20,14 @@ HOSTS=$(for i in $(seq 0 $LASTH); do printf "%s%02d," ${NODETYPE} ${i}; done)
 export PYTHONOPTIMIZE=2
 export PYTHONUNBUFFERED="True"
 
+MPI_ARGS=()
+export MPICH_UNBUFFERED_STDIO="true"
+if mpirun --version | grep -q 'Open MPI) [5-9].'; then
+  MPI_ARGS+=("--output=:raw")
+fi
+
 # -genv LD_PRELOAD $EXTRAELIB
-mpirun -iface ib0 -hosts $HOSTS -ppn $PROCS_PER_NODE -np $NUMPROCS \
+mpirun -iface ib0 -hosts $HOSTS -ppn $PROCS_PER_NODE -np $NUMPROCS "${MPI_ARGS[@]}" \
   pydtnn-benchmark \
   --model=alexnet \
   --dataset=imagenet \
