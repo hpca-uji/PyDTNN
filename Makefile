@@ -51,9 +51,14 @@ PYDTNN_DST := $(DST)/pydtnn
 # Global
 # ============================================================================
 
-.PHONY: help format check clean env
-
 .DEFAULT_GOAL := pydtnn-develop
+
+.PHONY: \
+	help \
+	format \
+	check \
+	clean \
+	env
 
 help:
 	@echo PyDTNN Makefile
@@ -87,11 +92,12 @@ help:
 		'{package}-{target}'
 
 format: pydtnn-format
-test: pydtnn-test
+check: pydtnn-check
 clean: pydtnn-clean
 
 define LD_ADD
-	[[ ":$${LD_LIBRARY_PATH}:" = *":$(1):"* ]] || LD_LIBRARY_PATH="$${LD_LIBRARY_PATH:+"$${LD_LIBRARY_PATH:?}:"}$(1)"
+	[[ ":$${LD_LIBRARY_PATH}:" = *":$(1):"* ]] \
+	|| LD_LIBRARY_PATH="$${LD_LIBRARY_PATH:+"$${LD_LIBRARY_PATH:?}:"}$(1)"
 endef
 
 env:
@@ -108,7 +114,13 @@ env:
 # Vendor
 # ============================================================================
 
-.PHONY: vendor vendor-deps vendor-src vendor-build vendor-install vendor-clean
+.PHONY: \
+	vendor \
+	vendor-deps \
+	vendor-src \
+	vendor-build \
+	vendor-install \
+	vendor-clean
 
 vendor: vendor-build
 
@@ -501,7 +513,10 @@ openfhe-python-install: $(OPENFHE_PYTHON_DST)/.build
 openfhe-python-clean:
 	cd "$(OPENFHE_PYTHON_SRC)" && \
 		rm -rf "$(OPENFHE_PYTHON_DST)" && \
-		rm -rf "$(OPENFHE_PYTHON_SRC)/build" "$(OPENFHE_PYTHON_SRC)/pyproject.toml" "$(OPENFHE_PYTHON_SRC)/openfhe"
+		rm -rf \
+			"$(OPENFHE_PYTHON_SRC)/build" \
+			"$(OPENFHE_PYTHON_SRC)/pyproject.toml" \
+			"$(OPENFHE_PYTHON_SRC)/openfhe"
 
 # ============================================================================
 # uArchFHE
