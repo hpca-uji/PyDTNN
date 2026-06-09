@@ -613,4 +613,9 @@ pydtnn-clean:
 	cd "$(PYDTNN_SRC)" && \
 		rm -rf "$(PYDTNN_DST)" && \
 		rm -rf "$(PYDTNN_SRC)/build"/pydtnn-*.whl && \
-		find "$(PYDTNN_SRC)/pydtnn" -name "*.so" -delete
+		find "$(PYDTNN_SRC)/pydtnn" \
+			-iname "*.pyc" \
+			-iname "*.so" \
+			-iname "*.dll" \
+			-iname "*.dsym" \
+			-delete
