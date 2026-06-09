@@ -1,5 +1,5 @@
 # Guidelines
-Things to do & not to do
+_Things to do & not to do_
 
 ## Exports
 - Do not re-export symbols (ie from `__init__.py`), always import from the original module.
@@ -20,7 +20,7 @@ Things to do & not to do
 ## Randomness
 - Use `pydtnn.utils.random` for random number generation, other generators are not multi-thread aware.
 
-## Test
+## Tests
 - Test all changes across backends (CPU, GPU, etc.), changes in base classes may introduce backend-specific issues.
 - When comparing outputs between layers or models, always copy outputs before passing them to the next layer, some layers perform in-place operations.
 
@@ -35,7 +35,7 @@ Things to do & not to do
 - If the Model components or components hierarchy structure changes, update the model's `__init__` diagram.
 
 # Knowledge
-Things you should keep in mind
+_Things you should keep in mind_
 
 ## Bootstrapping
 - In components, `__init__` is used for model-agnostic configuration, and `_model_init` for model specific configuration, and `_post_init` and resource allocation.
@@ -50,6 +50,7 @@ Things you should keep in mind
   and `--use-blocking-mpi=True` (MPI like `mpi4py` does not support async object reductions)
 
 ## Cython
+- Shared interface and typing code can be defined in `.pyd` files.
 - Multiple Cython optimizations are enabled by default, check for them in `setup.py`, and if desired disabled them locally with `@cython.{option}(value)`.
 
 ## Memory
@@ -59,7 +60,7 @@ Things you should keep in mind
 - If using `conda` and `pip install` fails with `no such option: --config-settings`, deactivate all environments and reactivate only the target environment.
 
 # Structure
-How is the project organized
+_How is the project organized_
 
 ## Repository root
 ```
@@ -189,7 +190,7 @@ How is the project organized
 ```
 
 # Planned
-Things to do
+_Things to do_
 
 - Migrate `libs/{cuda,cudadrv,cudart}` to `cuda-bindings` (and/or `nvidia-cuda-runtime-cu12`)
 - Migrate `libs/nccl` to `nvidia-nccl-cu12`
@@ -215,7 +216,7 @@ make blis-install
 _Note: `make *-deps` uses Debian-based package names_
 
 # Tests
-Do things work?
+_Do things work?_
 
 ## All
 ```sh
@@ -242,7 +243,7 @@ python -m unittest pydtnn.tests.${TEST_NAME}
 ```
 
 # Publishing
-Making things public
+_Making things public_
 
 ## Cleanup sources
 ```sh
@@ -251,12 +252,12 @@ git commit -am 'format codebase'
 git push
 ```
 
-### Build distribution
+## Build distribution
 ```sh
 make pydtnn-deps pydtnn-clean pydtnn-build
 ```
 
-### Publish distribution
+## Publish distribution
 ```sh
 twine upload ./build/pydtnn/*
 ```
