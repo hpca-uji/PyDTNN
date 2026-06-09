@@ -47,8 +47,6 @@ job_make:
   - printf '%s\n' GIT_TAG=${TAG:?} PUBLIC_TAG=$(git tag | grep -xF ${TAG:?}) > ./build/env
   - make pydtnn-check PROCS=1
 
-  coverage: '/TOTAL.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
-
   artifacts:
     reports:
       dotenv: ./build/env
@@ -62,6 +60,7 @@ job_make:
     - ./build/vendor.log
     expire_in: 1d
     when: always
+  coverage: '/TOTAL.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
 
 # job_merge:
 #   stage: merge
