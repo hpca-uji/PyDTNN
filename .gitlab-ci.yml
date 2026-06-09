@@ -30,14 +30,13 @@ job_make:
       - pyproject.toml
     paths:
     - build
-    - /var/cache/apt/archives
     when: always
 
   before_script:
   - apt-get update
   - mkdir -p ./build
   - export $(make env | xargs)
-  - make pydtnn-deps vendor-deps
+  - make pydtnn-deps vendor-deps APT="apt-get -o dir::cache::archives=./build/apt"
   - make vendor-install PROCS=1 &> ./build/vendor.log
   script:
   - make pydtnn-clean
