@@ -159,7 +159,6 @@ class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], AbstractPool
     def _forward_nhwc(self, x: np.ndarray) -> np.ndarray:
         """Execute forward pass for NHWC and emit tracing events."""
         y: np.ndarray = np.ascontiguousarray(self.y[: x.shape[0], :], dtype=self.model.dtype)
-        self.mask = np.ascontiguousarray(self._mask[: x.shape[0], :], dtype=self.model.dtype)
 
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT,

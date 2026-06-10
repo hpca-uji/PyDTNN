@@ -13,7 +13,7 @@ __all__ = ("AdaptiveAveragePool2D",)
 logger = logging.getLogger(__name__)
 
 
-class AdaptiveAveragePool2D[T: Array](Layer):
+class AdaptiveAveragePool2D[T: Array](Layer[T]):
     """
     Applies a 2D adaptive average pooling over an input signal composed of several input planes.
 

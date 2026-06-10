@@ -52,7 +52,7 @@ class Conv2DDepthwiseNumpy(AbstractConv2DNumpy, Conv2DDepthwise):
                 )
 
         _y_shape = self.model.encode_shape((self.model.batch_size, self.co, self.ho, self.wo))
-        dx_shape = self.model.encode_shape((self.model.batch_size, self.hi, self.wi, self.ci))
+        dx_shape = self.model.encode_shape((self.model.batch_size, self.ci, self.hi, self.wi))
 
         self._y = np.zeros(shape=_y_shape, dtype=self.model.dtype)
         self.memory_used += self._y.nbytes
