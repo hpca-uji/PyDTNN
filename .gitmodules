@@ -19,6 +19,3 @@
 [submodule "vendor/openfhe-python"]
 	path = vendor/openfhe-python
 	url = https://github.com/openfheorg/openfhe-python.git
-[submodule "vendor/uarchfhe"]
-	path = vendor/uarchfhe
-	url = https://github.com/darwinquezada/he_hpc
