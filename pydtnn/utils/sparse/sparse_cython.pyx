@@ -64,18 +64,16 @@ def summ_coo_cython(np.ndarray [np.float32_t, ndim=1] self_data,
                     summ_row[count] = other_rows[i_other]
                     summ_col[count] = other_cols[i_other]
                     i_other += 1
-                else:
+                elif (self_data[i_self] + other_data[i_other]) != 0:
                     # Set self + other data, any row, any col
                     summ_val[count] = self_data[i_self] + other_data[i_other]
                     summ_row[count] = self_rows[i_self]
                     summ_col[count] = self_cols[i_self]
-                    i_other += 1                    
+                    i_other += 1
                     i_self += 1
             count += 1
 
     return summ_val[:count], summ_row[:count], summ_col[:count]
-
-    
 
 
 def top_threshold_selection_dense_cython(np.ndarray[np.float32_t, ndim=2] matrix, 
@@ -88,7 +86,7 @@ def top_threshold_selection_dense_cython(np.ndarray[np.float32_t, ndim=2] matrix
 
     for i in prange(rows, nogil=True):
         for j in range(cols):
-            if abs(matrix[i, j]) >= threshold:
+            if abs(matrix[i, j]) > threshold:
                 count_vector[i + 1] += 1
 
     for i in range(rows):
@@ -101,7 +99,7 @@ def top_threshold_selection_dense_cython(np.ndarray[np.float32_t, ndim=2] matrix
 
     for i in prange(rows, nogil=True):
         for j in range(cols):
-            if abs(matrix[i, j]) >= threshold:
+            if abs(matrix[i, j]) > threshold:
                 top_values[count_vector[i]] = matrix[i, j]
                 row_indices[count_vector[i]] = i
                 col_indices[count_vector[i]] = j
@@ -118,7 +116,7 @@ def top_threshold_selection_coo_cython(np.ndarray[np.float32_t, ndim=1] values,
     cdef int len_values = len(values)
 
     for i in prange(len_values, nogil=True):
-        if abs(values[i]) >= threshold:
+        if abs(values[i]) > threshold:
             count += 1
 
     cdef np.ndarray[np.float32_t, ndim=1] top_values = np.empty(count, dtype=np.float32)
@@ -127,11 +125,10 @@ def top_threshold_selection_coo_cython(np.ndarray[np.float32_t, ndim=1] values,
 
     count = 0
     for i in range(len_values):
-        if abs(values[i]) >= threshold:
+        if abs(values[i]) > threshold:
             top_values[count] = values[i]
             row_indices[count] = rows[i]
             col_indices[count] = cols[i]
             count += 1
             
     return top_values, row_indices, col_indices
-

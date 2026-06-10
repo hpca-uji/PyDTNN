@@ -245,8 +245,10 @@ The PyDTNN framework comes with a utility launcher called
     Default: `0.999`.
   - `--optimizer-epsilon`: Variable for `rmsprop`, `adam`, `nadam`.
     Default: `1e-7`.
-  - `--optimizer-rho`: Variable for `rmsprop` optimizers. Default:
-    `0.99`.
+  - `--optimizer-rho`: Variable for `rmsprop` optimizers.
+    Default: `0.99`.
+  - `--oktopk-min-k`: Variable for `oktopk` optimizers.
+    Default: `10`.
   - `--loss-func`: Loss functions that is evaluated on each trained
     batch: `categorical_cross_entropy`, `binary_cross_entropy` or `kl_divergence`.
     Default: `categorical_cross_entropy`.

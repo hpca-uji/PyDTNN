@@ -111,4 +111,5 @@ class OkTopkSP[T: Array](Optimizer[T]):
             tau=model.optimizer_tau,
             tau_prime=model.optimizer_tau_prime,
             density=model.optimizer_density,
+            min_k_layer=model.oktopk_min_k
         )

@@ -6,14 +6,16 @@ stages:
 variables:
   BRANCH_MAIN: main
   BRANCH_WORK: develop
+  GIT_DEPTH: 3
   GIT_STRATEGY: clone
-  GIT_SUBMODULE_STRATEGY: none
+  GIT_SUBMODULE_STRATEGY: recursive
 
 job_make:
   stage: make
 
   variables:
     PYTHON_VERSION: latest
+    PIP_ROOT_USER_ACTION: ignore
     PIP_DISABLE_PIP_VERSION_CHECK: "1"
     PIP_CACHE_DIR: "$CI_PROJECT_DIR/build/pip"
 

@@ -11,54 +11,70 @@ SRC := $(CURDIR)/vendor
 DST := $(CURDIR)/build
 LOG := $(DST)/make.log
 
-BLIS_VER := 68b88aca6692c75a9f686187e6c4a4e196ae60a9
+define GIT_VER
+$(shell git rev-parse "HEAD:$$(realpath -m --relative-base "$(CURDIR)" "$(1)" | grep -vxF ".")")
+endef
+
 BLIS_SRC := $(SRC)/blis
 BLIS_DST := $(DST)/blis
+BLIS_VER := $(call GIT_VER,$(BLIS_SRC))
 
-TVM_VER := 43e9c275b6e85d7631e54c8468b49b4706cd674a
 TVM_SRC := $(SRC)/tvm
 TVM_DST := $(DST)/tvm
+TVM_VER := $(call GIT_VER,$(TVM_SRC))
 
-CONVGEMM_VER := 1ebea3c77cd961cb207f5964025733913765b0e6
 CONVGEMM_SRC := $(SRC)/convGemm
 CONVGEMM_DST := $(DST)/convGemm
+CONVGEMM_VER := $(call GIT_VER,$(CONVGEMM_SRC))
 
-CONVWINOGRAD_VER := fc2d5af8d0ee551e508b97082ee7aab3bbff0244
 CONVWINOGRAD_SRC := $(SRC)/convWinograd
 CONVWINOGRAD_DST := $(DST)/convWinograd
+CONVWINOGRAD_VER := $(call GIT_VER,$(CONVWINOGRAD_SRC))
 
-CONVDIRECT_VER := 25937a6b3e06cf06089e7403798547c31528cba3
 CONVDIRECT_SRC := $(SRC)/convDirect
 CONVDIRECT_DST := $(DST)/convDirect
+CONVDIRECT_VER := $(call GIT_VER,$(CONVDIRECT_SRC))
 
-OPENFHE_VER := aa391988d354d4360f390f223a90e0d1b98839d7
 OPENFHE_SRC := $(SRC)/openfhe
 OPENFHE_DST := $(DST)/openfhe
+OPENFHE_VER := $(call GIT_VER,$(OPENFHE_SRC))
 
-OPENFHE_PYTHON_VER := 59312e0eb490ffe9dc200e8426df72a533a1542a
 OPENFHE_PYTHON_SRC := $(SRC)/openfhe-python
 OPENFHE_PYTHON_DST := $(DST)/openfhe-python
+OPENFHE_PYTHON_VER := $(call GIT_VER,$(OPENFHE_PYTHON_SRC))
 
-UARCHFHE_VER := 7970d0dfad5b74939da492cf61c5d9c4a9753c19
 UARCHFHE_SRC := $(SRC)/uarchfhe
 UARCHFHE_DST := $(DST)/uarchfhe
+UARCHFHE_VER := $(call GIT_VER,$(UARCHFHE_SRC))
 
-PYDTNN_VER := 
 PYDTNN_SRC := $(CURDIR)
 PYDTNN_DST := $(DST)/pydtnn
+PYDTNN_VER := $(call GIT_VER,$(PYDTNN_SRC))
 
 # ============================================================================
 # Global
 # ============================================================================
 
-.DEFAULT_GOAL := pydtnn-develop
-
 .PHONY: \
 	help \
+	deps \
+	src \
+	build \
+	install \
 	format \
 	check \
 	clean \
 	env
+
+.DEFAULT_GOAL := pydtnn-develop
+
+deps: pydtnn-deps
+src: pydtnn-src
+build: pydtnn-build
+install: pydtnn-install
+format: pydtnn-format
+check: pydtnn-check
+clean: pydtnn-clean
 
 help:
 	@echo PyDTNN Makefile
@@ -73,31 +89,25 @@ help:
 	@echo
 	@echo Packages:
 	@printf -- '- %s\n' \
-		blis \
-		tvm \
-		convgemm \
-		convwinograd \
-		convdirect \
-		openfhe \
-		openfhe-python \
-		uarchfhe \
-		pydtnn
+		'blis ($(BLIS_VER))' \
+		'tvm ($(TVM_VER))' \
+		'convgemm ($(CONVGEMM_VER))' \
+		'convwinograd ($(CONVWINOGRAD_VER))' \
+		'convdirect ($(CONVDIRECT_VER))' \
+		'openfhe ($(OPENFHE_VER))' \
+		'openfhe-python ($(OPENFHE_PYTHON_VER))' \
+		'uarchfhe ($(UARCHFHE_VER))' \
+		'pydtnn ($(PYDTNN_VER))'
 	@echo
 	@echo Special:
 	@printf -- '- %s\n' \
 		env \
-		pydtnn-check \
-		pydtnn-format \
-		'vendor-{target}' \
-		'{package}-{target}'
-
-format: pydtnn-format
-check: pydtnn-check
-clean: pydtnn-clean
+		pydtnn-{check,format} \
+		'$${package}-$${target}'
 
 define LD_ADD
-	[[ ":$${LD_LIBRARY_PATH}:" = *":$(1):"* ]] \
-	|| LD_LIBRARY_PATH="$${LD_LIBRARY_PATH:+"$${LD_LIBRARY_PATH:?}:"}$(1)"
+[[ ":$${LD_LIBRARY_PATH}:" = *":$(1):"* ]] \
+|| LD_LIBRARY_PATH="$${LD_LIBRARY_PATH:+"$${LD_LIBRARY_PATH:?}:"}$(1)"
 endef
 
 env:
@@ -198,7 +208,7 @@ $(BLIS_SRC)/.git:
 		git checkout "$(BLIS_VER)"
 
 blis-build: $(BLIS_DST)/.build
-$(BLIS_DST)/.build: $(BLIS_SRC)/.git
+$(BLIS_DST)/.build: | $(BLIS_SRC)/.git
 	mkdir -p "$(BLIS_DST)"
 	cd "$(BLIS_SRC)" && \
 		./configure \
@@ -208,11 +218,11 @@ $(BLIS_DST)/.build: $(BLIS_SRC)/.git
 		make -j "$(PROCS)"
 	cd "$(BLIS_SRC)" && \
 		make install
-	touch "$(BLIS_DST)/.build"
+	echo "$(BLIS_VER)" > "$(BLIS_DST)/.build"
 
 blis-install: $(BLIS_DST)/.build
 	$(call LD_ADD,$(BLIS_DST)/lib); \
-	export LD_LIBRARY_PATH=$${LD_LIBRARY_PATH:?}
+	echo LD_LIBRARY_PATH=$${LD_LIBRARY_PATH:?}
 
 blis-clean:
 	cd "$(BLIS_SRC)" && \
@@ -244,7 +254,7 @@ $(TVM_SRC)/.git:
 		git checkout "$(TVM_VER)"
 
 tvm-build: $(TVM_DST)/.build
-$(TVM_DST)/.build: $(TVM_SRC)/.git
+$(TVM_DST)/.build: | $(TVM_SRC)/.git
 	mkdir -p "$(TVM_DST)"
 	cd "$(TVM_SRC)" && \
 		mkdir -p build && \
@@ -258,11 +268,11 @@ $(TVM_DST)/.build: $(TVM_SRC)/.git
 		cmake --install build && \
 		python3 -m build -wo "$(TVM_DST)" ./3rdparty/tvm-ffi && \
 		python3 -m build -wo "$(TVM_DST)" ./python
-	touch "$(TVM_DST)/.build"
+	echo "$(TVM_VER)" > "$(TVM_DST)/.build"
 
 tvm-install: $(TVM_DST)/.build
 	$(call LD_ADD,$(TVM_DST)/lib); \
-	export LD_LIBRARY_PATH=$${LD_LIBRARY_PATH:?}
+	echo LD_LIBRARY_PATH=$${LD_LIBRARY_PATH:?}
 	$(PIP) install "$(TVM_DST)"/*.whl
 
 tvm-clean:
@@ -295,7 +305,7 @@ $(CONVGEMM_SRC)/.git:
 		git checkout "$(CONVGEMM_VER)"
 
 convgemm-build: $(CONVGEMM_DST)/.build
-$(CONVGEMM_DST)/.build: $(CONVGEMM_SRC)/.git
+$(CONVGEMM_DST)/.build: | $(CONVGEMM_SRC)/.git
 	mkdir -p "$(CONVGEMM_DST)" "$(CONVGEMM_SRC)/build"
 	cd "$(CONVGEMM_SRC)" && \
 		cd build && \
@@ -306,11 +316,11 @@ $(CONVGEMM_DST)/.build: $(CONVGEMM_SRC)/.git
 		cmake --build . --parallel "$(PROCS)"
 	cd "$(CONVGEMM_SRC)" && \
 		cmake --install build
-	touch "$(CONVGEMM_DST)/.build"
+	echo "$(CONVGEMM_VER)" > "$(CONVGEMM_DST)/.build"
 
 convgemm-install: $(CONVGEMM_DST)/.build
 	$(call LD_ADD,$(CONVGEMM_DST)/lib); \
-	export LD_LIBRARY_PATH=$${LD_LIBRARY_PATH:?}
+	echo LD_LIBRARY_PATH=$${LD_LIBRARY_PATH:?}
 
 convgemm-clean:
 	cd "$(CONVGEMM_SRC)" && \
@@ -342,7 +352,7 @@ $(CONVWINOGRAD_SRC)/.git:
 		git checkout "$(CONVWINOGRAD_VER)"
 
 convwinograd-build: $(CONVWINOGRAD_DST)/.build
-$(CONVWINOGRAD_DST)/.build: $(CONVWINOGRAD_SRC)/.git
+$(CONVWINOGRAD_DST)/.build: | $(CONVWINOGRAD_SRC)/.git
 	mkdir -p "$(CONVWINOGRAD_DST)" "$(CONVWINOGRAD_SRC)/build"
 	cd "$(CONVWINOGRAD_SRC)" && \
 		cd build && \
@@ -354,11 +364,11 @@ $(CONVWINOGRAD_DST)/.build: $(CONVWINOGRAD_SRC)/.git
 		cmake --build . --parallel "$(PROCS)"
 	cd "$(CONVWINOGRAD_SRC)" && \
 		cmake --install build
-	touch "$(CONVWINOGRAD_DST)/.build"
+	echo "$(CONVWINOGRAD_VER)" > "$(CONVWINOGRAD_DST)/.build"
 
 convwinograd-install: $(CONVWINOGRAD_DST)/.build
 	$(call LD_ADD,$(CONVWINOGRAD_DST)/lib); \
-	export LD_LIBRARY_PATH=$${LD_LIBRARY_PATH:?}
+	echo LD_LIBRARY_PATH=$${LD_LIBRARY_PATH:?}
 
 convwinograd-clean:
 	cd "$(CONVWINOGRAD_SRC)" && \
@@ -390,7 +400,7 @@ $(CONVDIRECT_SRC)/.git:
 		git checkout "$(CONVDIRECT_VER)"
 
 convdirect-build: $(CONVDIRECT_DST)/.build
-$(CONVDIRECT_DST)/.build: $(CONVDIRECT_SRC)/.git
+$(CONVDIRECT_DST)/.build: | $(CONVDIRECT_SRC)/.git
 	mkdir -p "$(CONVDIRECT_DST)" "$(CONVDIRECT_SRC)/build"
 	cd "$(CONVDIRECT_SRC)" && \
 		cd build && \
@@ -401,11 +411,11 @@ $(CONVDIRECT_DST)/.build: $(CONVDIRECT_SRC)/.git
 		cmake --build . --parallel "$(PROCS)"
 	cd "$(CONVDIRECT_SRC)" && \
 		cmake --install build
-	touch "$(CONVDIRECT_DST)/.build"
+	echo "$(CONVDIRECT_VER)" > "$(CONVDIRECT_DST)/.build"
 
 convdirect-install: $(CONVDIRECT_DST)/.build
 	$(call LD_ADD,$(CONVDIRECT_DST)/lib); \
-	export LD_LIBRARY_PATH=$${LD_LIBRARY_PATH:?}
+	echo LD_LIBRARY_PATH=$${LD_LIBRARY_PATH:?}
 
 convdirect-clean:
 	cd "$(CONVDIRECT_SRC)" && \
@@ -436,7 +446,7 @@ $(OPENFHE_SRC)/.git:
 		git checkout "$(OPENFHE_VER)"
 
 openfhe-build: $(OPENFHE_DST)/.build
-$(OPENFHE_DST)/.build: $(OPENFHE_SRC)/.git
+$(OPENFHE_DST)/.build: | $(OPENFHE_SRC)/.git
 	mkdir -p "$(OPENFHE_DST)" "$(OPENFHE_SRC)/build"
 	cd "$(OPENFHE_SRC)" && \
 		cd build && \
@@ -446,11 +456,11 @@ $(OPENFHE_DST)/.build: $(OPENFHE_SRC)/.git
 		cmake --build . --parallel "$(PROCS)"
 	cd "$(OPENFHE_SRC)" && \
 		cmake --install build
-	touch "$(OPENFHE_DST)/.build"
+	echo "$(OPENFHE_VER)" > "$(OPENFHE_DST)/.build"
 
 openfhe-install: $(OPENFHE_DST)/.build
 	$(call LD_ADD,$(OPENFHE_DST)/lib); \
-	export LD_LIBRARY_PATH=$${LD_LIBRARY_PATH:?}
+	echo LD_LIBRARY_PATH=$${LD_LIBRARY_PATH:?}
 
 openfhe-clean:
 	cd "$(OPENFHE_SRC)" && \
@@ -483,7 +493,7 @@ $(OPENFHE_PYTHON_SRC)/.git:
 		git checkout "$(OPENFHE_PYTHON_VER)"
 
 openfhe-python-build: $(OPENFHE_PYTHON_DST)/.build
-$(OPENFHE_PYTHON_DST)/.build: $(OPENFHE_PYTHON_SRC)/.git
+$(OPENFHE_PYTHON_DST)/.build: | $(OPENFHE_PYTHON_SRC)/.git
 	mkdir -p "$(OPENFHE_PYTHON_DST)" "$(OPENFHE_PYTHON_SRC)/build"
 	cd "$(OPENFHE_PYTHON_SRC)" && \
 		cd build && \
@@ -505,7 +515,7 @@ $(OPENFHE_PYTHON_DST)/.build: $(OPENFHE_PYTHON_SRC)/.git
 			'packages.find.include = ["openfhe", "openfhe.*"]' \
 			'package-data.openfhe = ["*"]' && \
 		python3 -m build -wo "$(OPENFHE_PYTHON_DST)"
-	touch "$(OPENFHE_PYTHON_DST)/.build"
+	echo "$(OPENFHE_PYTHON_VER)" > "$(OPENFHE_PYTHON_DST)/.build"
 
 openfhe-python-install: $(OPENFHE_PYTHON_DST)/.build
 	$(PIP) install "$(OPENFHE_PYTHON_DST)"/*.whl
@@ -543,11 +553,11 @@ $(UARCHFHE_SRC)/.git:
 		git checkout "$(UARCHFHE_VER)"
 
 uarchfhe-build: $(UARCHFHE_DST)/.build
-$(UARCHFHE_DST)/.build: $(UARCHFHE_SRC)/.git
+$(UARCHFHE_DST)/.build: | $(UARCHFHE_SRC)/.git
 	mkdir -p "$(UARCHFHE_DST)"
 	cd "$(UARCHFHE_SRC)/crates/fhe_py_binding" && \
 		python3 -m build -wo "$(UARCHFHE_DST)"
-	touch "$(UARCHFHE_DST)/.build"
+	echo "$(UARCHFHE_VER)" > "$(UARCHFHE_DST)/.build"
 
 uarchfhe-install: $(UARCHFHE_DST)/.build
 	$(PIP) install "$(UARCHFHE_DST)"/*.whl
@@ -563,6 +573,7 @@ uarchfhe-clean:
 .PHONY: \
 	pydtnn \
 	pydtnn-deps \
+	pydtnn-src \
 	pydtnn-build \
 	pydtnn-install \
 	pydtnn-develop \
@@ -576,14 +587,19 @@ pydtnn-deps:
 	$(APT) install -y python3 gcc patchelf
 	$(PIP) install build auditwheel
 
+pydtnn-src: $(PYDTNN_SRC)/.git
+$(PYDTNN_SRC)/.git:
+	cd "$(PYDTNN_SRC)" && \
+		git checkout "$(PYDTNN_VER)"
+
 pydtnn-build: $(PYDTNN_DST)/.build
-$(PYDTNN_DST)/.build: $(PYDTNN_SRC)/.git
+$(PYDTNN_DST)/.build: | $(PYDTNN_SRC)/.git
 	mkdir -p "$(PYDTNN_DST)" "$(PYDTNN_SRC)/build"
 	cd "$(PYDTNN_SRC)" && \
 		python3 -m build -so "$(PYDTNN_DST)" && \
 		python3 -m build -wo "$(PYDTNN_SRC)/build" && \
 		python3 -m auditwheel repair -w "$(PYDTNN_DST)" "$(PYDTNN_SRC)/build"/pydtnn-*.whl && \
-	touch "$(PYDTNN_DST)/.build"
+	echo "$(PYDTNN_VER)" > "$(PYDTNN_DST)/.build"
 
 pydtnn-install: $(PYDTNN_DST)/.build
 	$(PIP) install "$(PYDTNN_DST)"/pydtnn-*.whl

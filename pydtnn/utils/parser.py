@@ -731,6 +731,12 @@ class ArgumentParser(argparse.ArgumentParser):
             help="Variable for 'oktopk' optimizers. Default: 0.01.",
         )
         _op_group.add_argument(
+            "--oktopk-min-k",
+            type=int,
+            default=10,
+            help="Variable for 'oktopk' optimizers. Default: 10.",
+        )
+        _op_group.add_argument(
             "--loss-func",
             dest="loss_func_name",
             type=str,
