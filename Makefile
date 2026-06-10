@@ -3,13 +3,13 @@
 # ============================================================================
 
 SHELL := $(shell which bash)
+PROCS := $(shell nproc)
+
 APT := $(shell which apt-get)
 PIP := $(shell which pip3)
-PROCS := $(shell nproc)
 
 SRC := $(CURDIR)/vendor
 DST := $(CURDIR)/build
-LOG := $(DST)/make.log
 
 define GIT_VER
 $(shell git rev-parse "HEAD:$$(realpath -m --relative-base "$(CURDIR)" "$(1)" | grep -vxF ".")")
@@ -120,6 +120,10 @@ env:
 	$(call LD_ADD,$(OPENFHE_DST)/lib); \
 	echo export LD_LIBRARY_PATH=$${LD_LIBRARY_PATH:?}
 
+$(DST)/.gitignore:
+	mkdir -p "$(DST)"
+	echo "*" > "$@"
+
 # ============================================================================
 # Vendor
 # ============================================================================
@@ -208,7 +212,7 @@ $(BLIS_SRC)/.git:
 		git checkout "$(BLIS_VER)"
 
 blis-build: $(BLIS_DST)/.build
-$(BLIS_DST)/.build: | $(BLIS_SRC)/.git
+$(BLIS_DST)/.build: | $(BLIS_SRC)/.git $(DST)/.gitignore
 	mkdir -p "$(BLIS_DST)"
 	cd "$(BLIS_SRC)" && \
 		./configure \
@@ -218,7 +222,7 @@ $(BLIS_DST)/.build: | $(BLIS_SRC)/.git
 		make -j "$(PROCS)"
 	cd "$(BLIS_SRC)" && \
 		make install
-	echo "$(BLIS_VER)" > "$(BLIS_DST)/.build"
+	echo "$(BLIS_VER)" > "$@"
 
 blis-install: $(BLIS_DST)/.build
 	@ \
@@ -255,7 +259,7 @@ $(TVM_SRC)/.git:
 		git checkout "$(TVM_VER)"
 
 tvm-build: $(TVM_DST)/.build
-$(TVM_DST)/.build: | $(TVM_SRC)/.git
+$(TVM_DST)/.build: | $(TVM_SRC)/.git $(DST)/.gitignore
 	mkdir -p "$(TVM_DST)"
 	cd "$(TVM_SRC)" && \
 		mkdir -p build && \
@@ -269,7 +273,7 @@ $(TVM_DST)/.build: | $(TVM_SRC)/.git
 		cmake --install build && \
 		python3 -m build -wo "$(TVM_DST)" ./3rdparty/tvm-ffi && \
 		python3 -m build -wo "$(TVM_DST)" ./python
-	echo "$(TVM_VER)" > "$(TVM_DST)/.build"
+	echo "$(TVM_VER)" > "$@"
 
 tvm-install: $(TVM_DST)/.build
 	@ \
@@ -307,7 +311,7 @@ $(CONVGEMM_SRC)/.git:
 		git checkout "$(CONVGEMM_VER)"
 
 convgemm-build: $(CONVGEMM_DST)/.build
-$(CONVGEMM_DST)/.build: | $(CONVGEMM_SRC)/.git
+$(CONVGEMM_DST)/.build: | $(CONVGEMM_SRC)/.git $(DST)/.gitignore
 	mkdir -p "$(CONVGEMM_DST)" "$(CONVGEMM_SRC)/build"
 	cd "$(CONVGEMM_SRC)" && \
 		cd build && \
@@ -318,7 +322,7 @@ $(CONVGEMM_DST)/.build: | $(CONVGEMM_SRC)/.git
 		cmake --build . --parallel "$(PROCS)"
 	cd "$(CONVGEMM_SRC)" && \
 		cmake --install build
-	echo "$(CONVGEMM_VER)" > "$(CONVGEMM_DST)/.build"
+	echo "$(CONVGEMM_VER)" > "$@"
 
 convgemm-install: $(CONVGEMM_DST)/.build
 	@ \
@@ -355,7 +359,7 @@ $(CONVWINOGRAD_SRC)/.git:
 		git checkout "$(CONVWINOGRAD_VER)"
 
 convwinograd-build: $(CONVWINOGRAD_DST)/.build
-$(CONVWINOGRAD_DST)/.build: | $(CONVWINOGRAD_SRC)/.git
+$(CONVWINOGRAD_DST)/.build: | $(CONVWINOGRAD_SRC)/.git $(DST)/.gitignore
 	mkdir -p "$(CONVWINOGRAD_DST)" "$(CONVWINOGRAD_SRC)/build"
 	cd "$(CONVWINOGRAD_SRC)" && \
 		cd build && \
@@ -367,7 +371,7 @@ $(CONVWINOGRAD_DST)/.build: | $(CONVWINOGRAD_SRC)/.git
 		cmake --build . --parallel "$(PROCS)"
 	cd "$(CONVWINOGRAD_SRC)" && \
 		cmake --install build
-	echo "$(CONVWINOGRAD_VER)" > "$(CONVWINOGRAD_DST)/.build"
+	echo "$(CONVWINOGRAD_VER)" > "$@"
 
 convwinograd-install: $(CONVWINOGRAD_DST)/.build
 	@ \
@@ -404,7 +408,7 @@ $(CONVDIRECT_SRC)/.git:
 		git checkout "$(CONVDIRECT_VER)"
 
 convdirect-build: $(CONVDIRECT_DST)/.build
-$(CONVDIRECT_DST)/.build: | $(CONVDIRECT_SRC)/.git
+$(CONVDIRECT_DST)/.build: | $(CONVDIRECT_SRC)/.git $(DST)/.gitignore
 	mkdir -p "$(CONVDIRECT_DST)" "$(CONVDIRECT_SRC)/build"
 	cd "$(CONVDIRECT_SRC)" && \
 		cd build && \
@@ -415,7 +419,7 @@ $(CONVDIRECT_DST)/.build: | $(CONVDIRECT_SRC)/.git
 		cmake --build . --parallel "$(PROCS)"
 	cd "$(CONVDIRECT_SRC)" && \
 		cmake --install build
-	echo "$(CONVDIRECT_VER)" > "$(CONVDIRECT_DST)/.build"
+	echo "$(CONVDIRECT_VER)" > "$@"
 
 convdirect-install: $(CONVDIRECT_DST)/.build
 	@ \
@@ -451,7 +455,7 @@ $(OPENFHE_SRC)/.git:
 		git checkout "$(OPENFHE_VER)"
 
 openfhe-build: $(OPENFHE_DST)/.build
-$(OPENFHE_DST)/.build: | $(OPENFHE_SRC)/.git
+$(OPENFHE_DST)/.build: | $(OPENFHE_SRC)/.git $(DST)/.gitignore
 	mkdir -p "$(OPENFHE_DST)" "$(OPENFHE_SRC)/build"
 	cd "$(OPENFHE_SRC)" && \
 		cd build && \
@@ -461,7 +465,7 @@ $(OPENFHE_DST)/.build: | $(OPENFHE_SRC)/.git
 		cmake --build . --parallel "$(PROCS)"
 	cd "$(OPENFHE_SRC)" && \
 		cmake --install build
-	echo "$(OPENFHE_VER)" > "$(OPENFHE_DST)/.build"
+	echo "$(OPENFHE_VER)" > "$@"
 
 openfhe-install: $(OPENFHE_DST)/.build
 	@ \
@@ -499,7 +503,7 @@ $(OPENFHE_PYTHON_SRC)/.git:
 		git checkout "$(OPENFHE_PYTHON_VER)"
 
 openfhe-python-build: $(OPENFHE_PYTHON_DST)/.build
-$(OPENFHE_PYTHON_DST)/.build: | $(OPENFHE_PYTHON_SRC)/.git
+$(OPENFHE_PYTHON_DST)/.build: | $(OPENFHE_PYTHON_SRC)/.git $(DST)/.gitignore
 	mkdir -p "$(OPENFHE_PYTHON_DST)" "$(OPENFHE_PYTHON_SRC)/build"
 	cd "$(OPENFHE_PYTHON_SRC)" && \
 		cd build && \
@@ -521,7 +525,7 @@ $(OPENFHE_PYTHON_DST)/.build: | $(OPENFHE_PYTHON_SRC)/.git
 			'packages.find.include = ["openfhe", "openfhe.*"]' \
 			'package-data.openfhe = ["*"]' && \
 		python3 -m build -wo "$(OPENFHE_PYTHON_DST)"
-	echo "$(OPENFHE_PYTHON_VER)" > "$(OPENFHE_PYTHON_DST)/.build"
+	echo "$(OPENFHE_PYTHON_VER)" > "$@"
 
 openfhe-python-install: $(OPENFHE_PYTHON_DST)/.build
 	$(PIP) install "$(OPENFHE_PYTHON_DST)"/*.whl
@@ -559,11 +563,11 @@ $(UARCHFHE_SRC)/.git:
 		git checkout "$(UARCHFHE_VER)"
 
 uarchfhe-build: $(UARCHFHE_DST)/.build
-$(UARCHFHE_DST)/.build: | $(UARCHFHE_SRC)/.git
+$(UARCHFHE_DST)/.build: | $(UARCHFHE_SRC)/.git $(DST)/.gitignore
 	mkdir -p "$(UARCHFHE_DST)"
 	cd "$(UARCHFHE_SRC)/crates/fhe_py_binding" && \
 		python3 -m build -wo "$(UARCHFHE_DST)"
-	echo "$(UARCHFHE_VER)" > "$(UARCHFHE_DST)/.build"
+	echo "$(UARCHFHE_VER)" > "$@"
 
 uarchfhe-install: $(UARCHFHE_DST)/.build
 	$(PIP) install "$(UARCHFHE_DST)"/*.whl
@@ -599,13 +603,13 @@ $(PYDTNN_SRC)/.git:
 		git checkout "$(PYDTNN_VER)"
 
 pydtnn-build: $(PYDTNN_DST)/.build
-$(PYDTNN_DST)/.build: | $(PYDTNN_SRC)/.git
+$(PYDTNN_DST)/.build: | $(PYDTNN_SRC)/.git $(DST)/.gitignore
 	mkdir -p "$(PYDTNN_DST)" "$(PYDTNN_SRC)/build"
 	cd "$(PYDTNN_SRC)" && \
 		python3 -m build -so "$(PYDTNN_DST)" && \
 		python3 -m build -wo "$(PYDTNN_SRC)/build" && \
 		python3 -m auditwheel repair -w "$(PYDTNN_DST)" "$(PYDTNN_SRC)/build"/pydtnn-*.whl && \
-	echo "$(PYDTNN_VER)" > "$(PYDTNN_DST)/.build"
+	echo "$(PYDTNN_VER)" > "$@"
 
 pydtnn-install: $(PYDTNN_DST)/.build
 	$(PIP) install "$(PYDTNN_DST)"/pydtnn-*.whl

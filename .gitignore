@@ -1,13 +1,10 @@
-/build/
-/.venv/
-__pycache__/
-
 *.c
 *.so
+*.dll
+*.dsym
+*.pyc
+*.egg-info
 *.idx
 *.log
-*.whl
-*.egg-info
-.coverage*
 
 /datasets/*/
