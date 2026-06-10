@@ -6,6 +6,7 @@
 *.egg-info
 *.idx
 *.log
+*.npz
 
 /datasets/*/
 /vendor/*/

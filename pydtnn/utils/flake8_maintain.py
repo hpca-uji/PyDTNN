@@ -3,14 +3,17 @@ Flake8 plugin to enforce code maintainability standards using Radon.
 """
 
 try:
-    from radon.metrics import mi_visit, mi_rank
-except ModuleNotFoundError:
+    from radon.metrics import mi_rank, mi_visit
+except ModuleNotFoundError as exc:
+    _exc = exc
+
     def mi_visit(*args, **kwds):
-        raise e
+        raise _exc
 
 
 class MaintainabilityChecker:
     """Flake8 plugin class to check the Maintainability Index of Python files"""
+
     name = "flake8-maintain"
     version = "0.1.0"
 
@@ -24,10 +27,7 @@ class MaintainabilityChecker:
             type=float,
             parse_from_config=True,
             default=cls.DEFAULT_THRESHOLD,
-            help=(
-                "Minimum Maintainability Index allowed "
-                f"(default: {cls.DEFAULT_THRESHOLD})"
-            ),
+            help=(f"Minimum Maintainability Index allowed (default: {cls.DEFAULT_THRESHOLD})"),
         )
 
     @classmethod
@@ -50,6 +50,7 @@ class MaintainabilityChecker:
             yield (
                 1,  # line
                 0,  # column
-                f"MI100 Maintainability index {mi_rank(score)!r} ({score:.2f}) is below threshold ({self.threshold})",
+                f"MI100 Maintainability index {mi_rank(score)!r} ({score:.2f})"
+                f" is below threshold ({self.threshold})",
                 type(self),
             )

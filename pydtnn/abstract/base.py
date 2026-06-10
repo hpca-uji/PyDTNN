@@ -198,7 +198,7 @@ class Base[T: Array]:
 
         props["name"] = self.canonical_name
 
-        if self.name != self.canonical_name:
+        if self.backend_name:
             props["backend"] = self.backend_name
 
         if self.memory_used > 0:

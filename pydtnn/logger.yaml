@@ -6,15 +6,17 @@ formatters:
     format: '[%(asctime)s] [%(name)s] [%(levelname)s]: %(message)s'
 handlers:
   console:
+    level: INFO
     class: logging.StreamHandler
     formatter: brief
     stream: ext://sys.stderr
   file:
+    level: DEBUG
     class: logging.FileHandler
     formatter: precise
     filename: pydtnn.log
     mode: w
 loggers:
   pydtnn:
-    level: INFO
+    level: DEBUG
     handlers: [console, file]

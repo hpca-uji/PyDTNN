@@ -21,7 +21,7 @@ from pydtnn.utils import random
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import TensorFormat
 
-__all__ = ("Transform",)
+__all__ = ("Augment",)
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 type TransformFunc = Callable[[np.ndarray, np.ndarray], tuple[np.ndarray, np.ndarray]]
 
 
-class Transform(Init):
+class Augment(Init):
     """
     Base class for handling datasets in PyDTNN.
 
@@ -84,20 +84,13 @@ class Transform(Init):
         augments_training = list[TransformFunc]()
         augments_always = list[TransformFunc]()
 
-        # --------------------------
-        # | AREA UNDER CONSTUCTION |
-        # --------------------------
-        self.to_transform = set() #set([2, 3, 4])
-
-        if len(self.to_transform) != 0:
-            self._augment_data_generator = self._augment_data_some_classes_generator
-        # else: self._augment_data_generator = self._augment_data_generator
-        # --------------------------
-
+        # TODO: AREA UNDER CONSTUCTION
+        self._augment_classes = set()  # set([2, 3, 4])
 
         if self.model.augment_crop:
             # type: ignore (The cropped input shape will be a tuple[int, int])
-            crop, size = self._calculate_crop(self.input_shape[1:])  # type: ignore (It's the right shape)
+            # type: ignore (It's the right shape)
+            crop, size = self._calculate_crop(self.input_shape[1:])
             self.input_shape = (self.input_shape[0], *size)
             augments_training.append(self._x_augment_adaptor(self._do_augment_crop))
             augments_always.append(self._x_augment_adaptor(self._do_augment_crop))
@@ -144,6 +137,7 @@ class Transform(Init):
 
         if self.model.augment_shuffle:
             augments_training.append(self._do_augment_shuffle)
+            augments_always.append(self._do_augment_shuffle)
 
         self._augments[Base.Part.TRAIN] = augments_training
         self._augments[Base.Part.TEST] = augments_always
@@ -188,29 +182,16 @@ class Transform(Init):
         """
         for x, y in self._data_generator(part):
             x, y = x.copy(), y.copy()
-            for transformation in self._augments[part]:
+            augments = self._augments[part]
+
+            # TODO: AREA UNDER CONSTUCTION
+            if part == Base.Part.TRAIN and self._augment_classes:
+                classes = set(y.nonzero()[0].flatten())
+                if classes.isdisjoint(self._augment_classes):
+                    augments = self._augments[Base.Part.VAL]
+
+            for transformation in augments:
                 x, y = transformation(x, y)
-            yield x, y
-
-    def _augment_data_some_classes_generator(self, part: Base.Part) -> Generator[tuple[np.ndarray, np.ndarray]]:
-        """
-        Yield transformed data from the dataset partition.
-
-        This generator applies all registered transformations for a given dataset
-        partition to the raw data before yielding it.
-
-        Args:
-            part: The dataset partition (TRAIN, VAL, or TEST) to generate data from.
-
-        Yields:
-            Tuples of transformed input (x) and output (y) data.
-        """
-        for x, y in self._data_generator(part):
-            x, y = x.copy(), y.copy()
-            classes = set(y.nonzero()[0].flatten())
-            if len(classes.intersection(self.to_transform)) != 0:
-                for transformation in self._augments[part]:
-                    x, y = transformation(x, y)
             yield x, y
 
     def _do_augment_normalize(self, data: np.ndarray) -> np.ndarray:
@@ -275,7 +256,9 @@ class Transform(Init):
             case _:
                 raise NotImplementedError(
                     f"Dataset _do_augment_horizontal_flip is not implemented for {
-                        self.model.tensor_format} format.")
+                        self.model.tensor_format
+                    } format."
+                )
 
         return self._do_augment_flip(
             data=data, augment_probability=self.model.augment_horizontal_flip, axis=width_dim
@@ -305,7 +288,9 @@ class Transform(Init):
             case _:
                 raise NotImplementedError(
                     f"Dataset _do_augment_vertical_flip is not implemented for {
-                        self.model.tensor_format} format.")
+                        self.model.tensor_format
+                    } format."
+                )
 
         return self._do_augment_flip(
             data=data, augment_probability=self.model.augment_vertical_flip, axis=height_dim
@@ -367,7 +352,9 @@ class Transform(Init):
                 case _:
                     raise NotImplementedError(
                         f"Dataset _do_augment_mask is not implemented for {
-                            self.model.tensor_format} format.")
+                            self.model.tensor_format
+                        } format."
+                    )
             data[ri, ...] = np.roll(data[ri, ...], random.integers(-t[i], (h - b)), axis=1)
             data[ri, ...] = np.roll(data[ri, ...], random.integers(-ll[i], (w - r)), axis=2)
         return data

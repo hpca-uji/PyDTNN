@@ -671,9 +671,9 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
             void (None):
         """
         if self.model.rank == 0:
-            if message not in self.info_messages:
-                self.info_messages.add(message)
-                logger.info(message)
+            if message not in self._info_messages:
+                self._info_messages.add(message)
+                logger.debug(message)
 
     def _has_canonical_format(self, indexes: tuple[np.ndarray, np.ndarray]) -> bool:
         """

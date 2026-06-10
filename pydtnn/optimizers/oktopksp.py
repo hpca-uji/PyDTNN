@@ -58,7 +58,7 @@ class OkTopkSP[T: Array](Optimizer[T]):
         self.all_global_th = {}
         self.all_residuals = {}
         self.all_boundaries = {}
-        self.info_messages = set()
+        self._info_messages = set()
 
     def _show_props(self) -> dict:
         """
@@ -111,5 +111,5 @@ class OkTopkSP[T: Array](Optimizer[T]):
             tau=model.optimizer_tau,
             tau_prime=model.optimizer_tau_prime,
             density=model.optimizer_density,
-            min_k_layer=model.oktopk_min_k
+            min_k_layer=model.oktopk_min_k,
         )

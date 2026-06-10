@@ -15,17 +15,7 @@ from pathlib import Path
 
 import yaml
 
-from pydtnn import timestamp, utils
-from pydtnn.utils.debug import traceback_context
-from pydtnn.utils.parser import ArgumentParser
-from pydtnn.utils.serial import NumpyYaml
-
 __all__ = ("main",)
-
-logger = logging.getLogger(__name__)
-log_conf = yaml.safe_load(resources.read_text("pydtnn", "logger.yaml"))
-logging.config.dictConfig(log_conf)
-
 
 ompi_stdout_rank = os.environ.get("OMPI_STDOUT_RANK", None)
 if ompi_stdout_rank and os.environ.get("OMPI_COMM_WORLD_RANK", "0") != ompi_stdout_rank:
@@ -39,9 +29,16 @@ if os.environ.get("EXTRAE_ON", None) == "1":
     pyextrae.startTracing(TracingLibrary)
     Extrae_tracing = True
 
+logger = logging.getLogger(__name__)
+log_conf = yaml.safe_load(resources.read_text("pydtnn", "logger.yaml"))
+logging.config.dictConfig(log_conf)
+
 
 def _start() -> int:
     """System entry point"""
+    from pydtnn.utils.debug import traceback_context
+    from pydtnn.utils.parser import ArgumentParser
+
     parser = ArgumentParser()
     config = parser.parse_args()
 
@@ -55,15 +52,20 @@ def _start() -> int:
 
 def main(config):
     """Application entry point"""
+
     # Initialize random seed
     from pydtnn.utils import random
 
     random.seed(config.random_seed)
+
     # Create model
     from pydtnn.model import Model
 
     model = Model(**vars(config))
     model._ensure_model_runnable()
+
+    from pydtnn import timestamp, utils
+
     # Print model
     if model.comm_rank == 0:
         logger.info(str(config))
@@ -132,6 +134,8 @@ def main(config):
     if model.history_file:
         history_file = utils.string_substitute(model.history_file, rank=model.comm_rank)
         if history_file != model.history_file or model.comm_rank == 0:
+            from pydtnn.utils.serial import NumpyYaml
+
             path = Path(history_file).resolve()
             events = []
             epochs = max(len(v) for v in history.values())
