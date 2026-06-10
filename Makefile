@@ -118,7 +118,7 @@ env:
 	$(call LD_ADD,$(CONVWINOGRAD_DST)/lib); \
 	$(call LD_ADD,$(CONVDIRECT_DST)/lib); \
 	$(call LD_ADD,$(OPENFHE_DST)/lib); \
-	echo LD_LIBRARY_PATH=$${LD_LIBRARY_PATH:?}
+	echo export LD_LIBRARY_PATH=$${LD_LIBRARY_PATH:?}
 
 # ============================================================================
 # Vendor
@@ -221,8 +221,9 @@ $(BLIS_DST)/.build: | $(BLIS_SRC)/.git
 	echo "$(BLIS_VER)" > "$(BLIS_DST)/.build"
 
 blis-install: $(BLIS_DST)/.build
+	@ \
 	$(call LD_ADD,$(BLIS_DST)/lib); \
-	echo LD_LIBRARY_PATH=$${LD_LIBRARY_PATH:?}
+	echo export LD_LIBRARY_PATH=$${LD_LIBRARY_PATH:?}
 
 blis-clean:
 	cd "$(BLIS_SRC)" && \
@@ -271,8 +272,9 @@ $(TVM_DST)/.build: | $(TVM_SRC)/.git
 	echo "$(TVM_VER)" > "$(TVM_DST)/.build"
 
 tvm-install: $(TVM_DST)/.build
+	@ \
 	$(call LD_ADD,$(TVM_DST)/lib); \
-	echo LD_LIBRARY_PATH=$${LD_LIBRARY_PATH:?}
+	echo export LD_LIBRARY_PATH=$${LD_LIBRARY_PATH:?}
 	$(PIP) install "$(TVM_DST)"/*.whl
 
 tvm-clean:
@@ -295,7 +297,7 @@ tvm-clean:
 convgemm: convgemm-build
 
 convgemm-deps:
-	@echo REQUIRES: blis-install
+	@echo make blis-install
 	$(APT) install -y cmake gcc
 
 convgemm-src: $(CONVGEMM_SRC)/.git
@@ -319,8 +321,9 @@ $(CONVGEMM_DST)/.build: | $(CONVGEMM_SRC)/.git
 	echo "$(CONVGEMM_VER)" > "$(CONVGEMM_DST)/.build"
 
 convgemm-install: $(CONVGEMM_DST)/.build
+	@ \
 	$(call LD_ADD,$(CONVGEMM_DST)/lib); \
-	echo LD_LIBRARY_PATH=$${LD_LIBRARY_PATH:?}
+	echo export LD_LIBRARY_PATH=$${LD_LIBRARY_PATH:?}
 
 convgemm-clean:
 	cd "$(CONVGEMM_SRC)" && \
@@ -342,7 +345,7 @@ convgemm-clean:
 convwinograd: convwinograd-build
 
 convwinograd-deps:
-	@echo REQUIRES: blis-install
+	@echo make blis-install
 	$(APT) install -y cmake gcc
 
 convwinograd-src: $(CONVWINOGRAD_SRC)/.git
@@ -367,8 +370,9 @@ $(CONVWINOGRAD_DST)/.build: | $(CONVWINOGRAD_SRC)/.git
 	echo "$(CONVWINOGRAD_VER)" > "$(CONVWINOGRAD_DST)/.build"
 
 convwinograd-install: $(CONVWINOGRAD_DST)/.build
+	@ \
 	$(call LD_ADD,$(CONVWINOGRAD_DST)/lib); \
-	echo LD_LIBRARY_PATH=$${LD_LIBRARY_PATH:?}
+	echo export LD_LIBRARY_PATH=$${LD_LIBRARY_PATH:?}
 
 convwinograd-clean:
 	cd "$(CONVWINOGRAD_SRC)" && \
@@ -390,7 +394,7 @@ convwinograd-clean:
 convdirect: convdirect-build
 
 convdirect-deps:
-	@echo REQUIRES: blis-install tvm-install convgemm-install
+	@echo make blis-install tvm-install convgemm-install
 	$(APT) install -y cmake gcc
 
 convdirect-src: $(CONVDIRECT_SRC)/.git
@@ -414,8 +418,9 @@ $(CONVDIRECT_DST)/.build: | $(CONVDIRECT_SRC)/.git
 	echo "$(CONVDIRECT_VER)" > "$(CONVDIRECT_DST)/.build"
 
 convdirect-install: $(CONVDIRECT_DST)/.build
+	@ \
 	$(call LD_ADD,$(CONVDIRECT_DST)/lib); \
-	echo LD_LIBRARY_PATH=$${LD_LIBRARY_PATH:?}
+	echo export LD_LIBRARY_PATH=$${LD_LIBRARY_PATH:?}
 
 convdirect-clean:
 	cd "$(CONVDIRECT_SRC)" && \
@@ -459,8 +464,9 @@ $(OPENFHE_DST)/.build: | $(OPENFHE_SRC)/.git
 	echo "$(OPENFHE_VER)" > "$(OPENFHE_DST)/.build"
 
 openfhe-install: $(OPENFHE_DST)/.build
+	@ \
 	$(call LD_ADD,$(OPENFHE_DST)/lib); \
-	echo LD_LIBRARY_PATH=$${LD_LIBRARY_PATH:?}
+	echo export LD_LIBRARY_PATH=$${LD_LIBRARY_PATH:?}
 
 openfhe-clean:
 	cd "$(OPENFHE_SRC)" && \
@@ -482,7 +488,7 @@ openfhe-clean:
 openfhe-python: openfhe-python-build
 
 openfhe-python-deps:
-	@echo REQUIRES: openfhe-install
+	@echo make openfhe-install
 	$(APT) install -y python3 cmake gcc
 	$(PIP) install pybind11[global]
 
