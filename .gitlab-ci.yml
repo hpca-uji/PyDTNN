@@ -1,5 +1,5 @@
 stages:
-- make
+- build
 - merge
 - push
 
@@ -10,8 +10,8 @@ variables:
   GIT_STRATEGY: clone
   GIT_SUBMODULE_STRATEGY: recursive
 
-job_make:
-  stage: make
+job_build:
+  stage: build
 
   variables:
     PYTHON_VERSION: latest
@@ -37,30 +37,30 @@ job_make:
   before_script:
   - apt-get update
   - mkdir -p ./build
-  # - export $(make env | xargs)
-  # - make vendor-deps APT="apt-get -o dir::cache::archives=$PWD/build/apt"
+  - export $(make env | xargs)
+  - make vendor-deps APT="apt-get -o dir::cache::archives=$PWD/build/apt"
   - make pydtnn-deps APT="apt-get -o dir::cache::archives=$PWD/build/apt"
-  # - make vendor-install PROCS=1 &> ./build/vendor.log
+  - make vendor-install PROCS=1 &> ./build/make.log
   script:
   - make pydtnn-clean
   - make pydtnn-build PROCS=1
   - WHEEL=$(echo ./build/pydtnn/*.whl)
   - pip install ${WHEEL:?}[build,test,quality]
   - TAG=v$(python -c "from importlib.metadata import version; print(version('pydtnn'))")
-  - printf '%s\n' GIT_TAG=${TAG:?} PUBLIC_TAG=$(git tag | grep -xF ${TAG:?}) > ./build/env
+  - printf '%s\n' GIT_TAG=${TAG:?} PUBLIC_TAG=$(git tag | grep -xF ${TAG:?}) > ./build/gitlab-ci.env
   - make pydtnn-check PROCS=1
 
   artifacts:
     reports:
-      dotenv: ./build/env
-      junit: ./build/tests
+      dotenv: ./build/gitlab-ci.env
+      junit: ./build/pydtnn-check/tests.xml
       coverage_report:
         coverage_format: cobertura
-        path: ./build/coverage
-      codequality: ./build/quality
+        path: ./build/pydtnn-check/coverage.xml
+      codequality: ./build/pydtnn-check/quality.json
     paths:
-    - ./build/pydtnn/
-    - ./build/vendor.log
+    - ./build/pydtnn/pydtnn-*
+    - ./build/make.log
     expire_in: 1d
     when: always
   coverage: '/TOTAL.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
@@ -108,4 +108,4 @@ job_push:
   - glab auth login --hostname lorca.act.uji.es/gitlab --token "${CI_JOB_TOKEN:?}"
   script:
   - glab release delete "${GIT_TAG:?}" --yes || true
-  - glab release create "${GIT_TAG:?}" ./build/pydtnn/* --ref "${CI_COMMIT_SHA:?}" --name "PyDTNN ${GIT_TAG:?}"
+  - glab release create "${GIT_TAG:?}" ./build/pydtnn/pydtnn-* --ref "${CI_COMMIT_SHA:?}" --name "PyDTNN ${GIT_TAG:?}"

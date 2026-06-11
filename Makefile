@@ -609,6 +609,7 @@ $(PYDTNN_DST)/.build: | $(PYDTNN_SRC)/.git $(DST)/.gitignore
 		python3 -m build -so "$(PYDTNN_DST)" && \
 		python3 -m build -wo "$(PYDTNN_SRC)/build" && \
 		python3 -m auditwheel repair -w "$(PYDTNN_DST)" "$(PYDTNN_SRC)/build"/pydtnn-*.whl && \
+		rm "$(PYDTNN_SRC)/build"/pydtnn-*.whl
 	echo "$(PYDTNN_VER)" > "$@"
 
 pydtnn-install: $(PYDTNN_DST)/.build
@@ -617,23 +618,23 @@ pydtnn-install: $(PYDTNN_DST)/.build
 pydtnn-develop:
 	$(PIP) install \
 		--config-settings editable_mode=compat \
-		-e "$(PYDTNN_SRC)"[dev]
+		-e "$(PYDTNN_SRC)[dev]"
 
 pydtnn-format:
 	"$(PYDTNN_SRC)/scripts/srcs/format.sh" pydtnn
+
 pydtnn-check:
-	# --dist=loadscope
-	mkdir -p "$(PYDTNN_SRC)/build/.tmp"
-	cd "$(PYDTNN_SRC)/build/.tmp" && \
+	mkdir -p "$(PYDTNN_SRC)/build/$@"
+	cd "$(PYDTNN_SRC)/build/$@" && \
 		pytest -v -n "$(PROCS)" \
-			--junitxml="$(PYDTNN_SRC)/build/tests" \
-			--cov --cov-config="$(PYDTNN_SRC)/pyproject.toml" \
-			--cov-report=term --cov-report=xml:"$(PYDTNN_SRC)/build/coverage" \
+			--junitxml="$(PYDTNN_SRC)/build/$@/tests.xml" \
+			--cov=pydtnn --cov-config="$(PYDTNN_SRC)/pyproject.toml" \
+			--cov-report=term --cov-report=xml:"$(PYDTNN_SRC)/build/$@/coverage.xml" \
 			--pyargs pydtnn.tests.groups.all && \
 		flake8 \
 			--exit-zero \
 			--format=gl-codeclimate \
-			--output-file="$(PYDTNN_SRC)/build/quality"
+			--output-file="$(PYDTNN_SRC)/build/$@/quality.json"
 
 pydtnn-clean:
 	cd "$(PYDTNN_SRC)" && \
