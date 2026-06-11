@@ -101,7 +101,7 @@ job_push:
   image: registry.gitlab.com/gitlab-org/cli:latest
 
   needs:
-  - job: job_make
+  - job: job_build
     artifacts: true
 
   before_script:
