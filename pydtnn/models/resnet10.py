@@ -32,11 +32,12 @@ def resnet10(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Laye
     model = list[Layerable]()
     _ = model.append
 
+    first_filters = 32
     _(Input(shape=input_shape))
-    _(Conv2D(nfilters=64, filter_shape=(3, 3), stride=1, padding=1, weights_initializer=he_uniform))
+    _(Conv2D(nfilters=first_filters, filter_shape=(3, 3), stride=1, padding=1, weights_initializer=he_uniform))
     _(BatchNormalization())
 
-    layout = [[32, 1, 1], [64, 1, 2], [128, 1, 2], [256, 1, 2]]  # Resnet-10
+    layout = [[first_filters, 1, 1], [first_filters * 2, 1, 2], [first_filters * 4 , 1, 2], [first_filters * 8, 1, 2]]  # Resnet-10
     for n_filt, res_blocks, stride in layout:
         for r in range(res_blocks):
             if r > 0:
