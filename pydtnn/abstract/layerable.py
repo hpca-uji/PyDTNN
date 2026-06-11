@@ -111,7 +111,8 @@ class Layerable[T: Array](Base[T]):
         """
         props = {}
 
-        props["id"] = self.id
+        if self.id is not None:
+            props["id"] = self.id
 
         paths = []
         curr = self
@@ -129,7 +130,7 @@ class Layerable[T: Array](Base[T]):
         if self.nparams > 0:
             props["params"] = self.nparams
 
-        if self.prev_shape:
+        if self.prev_shape is not None:
             props["input"] = self.prev_shape
 
         props["output"] = self.shape

@@ -35,11 +35,6 @@ class Utils(Base, Baser):
     shape management, and format conversion.
     """
 
-    @property
-    def canonical_name(self) -> str:
-        """Return the class name of the frontend instance."""
-        return "Dataset"
-
     def _show_props(self) -> dict:
         """
         Returns a dictionary containing the dataset properties for inspection.
