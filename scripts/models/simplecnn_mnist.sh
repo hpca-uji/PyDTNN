@@ -5,9 +5,9 @@ export PYTHONOPTIMIZE=2
 export PYTHONUNBUFFERED="True"
 
 pydtnn-benchmark \
-  --model=resnet10 \
-  --dataset=cifar10 \
-  --dataset-path=datasets/cifar10 \
+  --model=simplecnn \
+  --dataset=mnist \
+  --dataset-path=datasets/mnist \
   --test-as-validation=False \
   --augment-crop=False \
   --augment-crop-perc=0.8 \
