@@ -17,31 +17,31 @@ endef
 
 BLIS_SRC := $(SRC)/blis
 BLIS_DST := $(DST)/blis
-BLIS_VER := $(call GIT_VER,$(BLIS_SRC))
+BLIS_VER := b04de636c1702e4cb8e7ad82bab3cf43d2dbdfc6
 
 TVM_SRC := $(SRC)/tvm
 TVM_DST := $(DST)/tvm
-TVM_VER := $(call GIT_VER,$(TVM_SRC))
+TVM_VER := 43e9c275b6e85d7631e54c8468b49b4706cd674a
 
 CONVGEMM_SRC := $(SRC)/convGemm
 CONVGEMM_DST := $(DST)/convGemm
-CONVGEMM_VER := $(call GIT_VER,$(CONVGEMM_SRC))
+CONVGEMM_VER := 1ebea3c77cd961cb207f5964025733913765b0e6
 
 CONVWINOGRAD_SRC := $(SRC)/convWinograd
 CONVWINOGRAD_DST := $(DST)/convWinograd
-CONVWINOGRAD_VER := $(call GIT_VER,$(CONVWINOGRAD_SRC))
+CONVWINOGRAD_VER := fc2d5af8d0ee551e508b97082ee7aab3bbff0244
 
 CONVDIRECT_SRC := $(SRC)/convDirect
 CONVDIRECT_DST := $(DST)/convDirect
-CONVDIRECT_VER := $(call GIT_VER,$(CONVDIRECT_SRC))
+CONVDIRECT_VER := 25937a6b3e06cf06089e7403798547c31528cba3
 
 OPENFHE_SRC := $(SRC)/openfhe
 OPENFHE_DST := $(DST)/openfhe
-OPENFHE_VER := $(call GIT_VER,$(OPENFHE_SRC))
+OPENFHE_VER := aa391988d354d4360f390f223a90e0d1b98839d7
 
 OPENFHE_PYTHON_SRC := $(SRC)/openfhe-python
 OPENFHE_PYTHON_DST := $(DST)/openfhe-python
-OPENFHE_PYTHON_VER := $(call GIT_VER,$(OPENFHE_PYTHON_SRC))
+OPENFHE_PYTHON_VER := 59312e0eb490ffe9dc200e8426df72a533a1542a
 
 UARCHFHE_SRC := $(SRC)/uarchfhe
 UARCHFHE_DST := $(DST)/uarchfhe
@@ -621,14 +621,14 @@ pydtnn-develop:
 
 pydtnn-format:
 	"$(PYDTNN_SRC)/scripts/srcs/format.sh" pydtnn
-
 pydtnn-check:
+	# --dist=loadscope
 	mkdir -p "$(PYDTNN_SRC)/build/.tmp"
 	cd "$(PYDTNN_SRC)/build/.tmp" && \
 		pytest -v -n "$(PROCS)" \
-			--dist=loadscope \
 			--junitxml="$(PYDTNN_SRC)/build/tests" \
-			--cov=pydtnn --cov-report=term --cov-report=xml:"$(PYDTNN_SRC)/build/coverage" \
+			--cov --cov-config="$(PYDTNN_SRC)/pyproject.toml" \
+			--cov-report=term --cov-report=xml:"$(PYDTNN_SRC)/build/coverage" \
 			--pyargs pydtnn.tests.groups.all && \
 		flake8 \
 			--exit-zero \

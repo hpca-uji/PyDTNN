@@ -76,10 +76,10 @@ SEED = 1234
 random.seed(SEED)
 # Constant values
 
-N = 64
+N = 8
 C = 3
-H = 224
-W = 224
+H = 32
+W = 32
 
 ADAPTIVE_AVG_POOL_OUTPUT_SIZE = (3, 3)
 

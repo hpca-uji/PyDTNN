@@ -29,6 +29,7 @@ _Things to do & not to do_
 
 ## Environment
 - Use `from __future__ import annotations` instead of string type annotations, it is more legible and will be default moving forward.
+- Keep `Makefile` and submodules in sync, any changes in commit versions must be reflected in both.
 
 ## Components
 - If model or components structure changes, update the `Structure` section of this document accordingly.

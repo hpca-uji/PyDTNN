@@ -443,32 +443,26 @@ class ModelCommonTestCase(TestCase):
         """
         self.do_test_model("alexnet_cifar10")
 
-    def test_vgg11(self):
+    def test_resnet10(self):
         """
-        Compares results between a VGG-11 BN model using A and other using B.
+        Compares results between a Resnet10 model using A and other using B.
         """
-        self.do_test_model("vgg11_cifar10")
+        self.do_test_model("resnet10")
 
-    def test_vgg16bn(self):
+    def test_densenet21k8(self):
         """
-        Compares results between a VGG-16 BN model using A and other using B.
+        Compares results between a Densenet21 (k=8) model using A and other using B.
         """
-        self.do_test_model("vgg16bn_cifar10")
+        self.do_test_model("densenet21k8")
 
-    def test_resnet34(self):
+    def test_mobilenetv1_tiny(self):
         """
-        Compares results between a Densenet model using A and other using B.
+        Compares results between a MobileNetV1 (Tiny) model using A and other using B.
         """
-        self.do_test_model("resnet34_cifar10")
+        self.do_test_model("mobilenetv1_tiny")
 
-    def test_densenet(self):
+    def test_mobilenetv2_tiny(self):
         """
-        Compares results between a Densenet model using A and other using B.
+        Compares results between a MobileNetV2 (Tiny) model using A and other using B.
         """
-        self.do_test_model("densenet_cifar10")
-
-    def test_simplecnn(self):
-        """
-        Compares results between a SimpleCNN model using A and other using B.
-        """
-        self.do_test_model("simplecnn")
+        self.do_test_model("mobilenetv2_tiny")

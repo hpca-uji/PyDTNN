@@ -38,7 +38,7 @@ setup(
             "cdivision": True,
             "overflowcheck": False,
             "wraparound": False,
-            'boundscheck': False,
+            "boundscheck": False,
             "initializedcheck": False
         },
         nthreads=process_cpu_count(),

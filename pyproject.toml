@@ -144,3 +144,20 @@ MI1 = "pydtnn.utils.flake8_maintain:MaintainabilityChecker"
 
 [tool.autopep8]
 max-line-length = 100
+
+[tool.coverage.run]
+branch = true
+
+[tool.coverage.report]
+include = [
+    "*/pydtnn/*"
+]
+omit = [
+    "*/pydtnn/converters/*",
+    "*/pydtnn/datasets/*",
+    "*/pydtnn/libs/*",
+    "*/pydtnn/models/*",
+    "*/pydtnn/tests/*",
+    "*/pydtnn/tracers/*",
+    "*/pydtnn/utils/*"
+]

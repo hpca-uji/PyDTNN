@@ -64,12 +64,12 @@ class ModelConvGemmTestCase(ModelCommonTestCase):
         model2._model_init()
         return model2
 
-    @unittest.skip("FIXME: Test error (disabled)")
-    def test_resnet34(self):
-        """Compares results between a Densenet model using A and other using B."""
-        super().test_resnet34()
+    # @unittest.skip("FIXME: Test error (disabled)")
+    # def test_resnet34(self):
+    #     """Compares results between a Densenet model using A and other using B."""
+    #     super().test_resnet34()
 
-    @unittest.skip("FIXME: Test error (disabled)")
-    def test_densenet(self):
-        """Compares results between a Densenet model using CPU and other using GEMM."""
-        super().test_densenet()
+    # @unittest.skip("FIXME: Test error (disabled)")
+    # def test_densenet(self):
+    #     """Compares results between a Densenet model using CPU and other using GEMM."""
+    #     super().test_densenet()

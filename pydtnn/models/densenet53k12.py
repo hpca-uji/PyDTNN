@@ -1,5 +1,5 @@
 """
-DenseNet implementation for CIFAR-10 dataset.
+DenseNet121 model architecture implementation for PyDTNN.
 """
 
 from collections.abc import Sequence
@@ -17,26 +17,26 @@ from pydtnn.layers.input import Input
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.initializers import he_uniform
 
-__all__ = ("densenet_cifar10",)
+__all__ = ("densenet53k12",)
 
 
-def densenet_cifar10(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
+def densenet53k12(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
     """
-    Constructs a DenseNet architecture tailored for the CIFAR-10 dataset.
+    Constructs a DenseNet53 model architecture.
 
     Args:
-        input_shape: The shape of the input data (channels, height, width).
+        input_shape: The shape of the input data.
         output_shape: The shape of the output layer.
 
     Returns:
-        A sequence of layers forming the DenseNet model.
+        A sequence of layers representing the DenseNet53 model.
     """
     model = list[Layerable]()
     _ = model.append
 
     _(Input(shape=input_shape))
 
-    blocks, growth_rate = [6, 12, 24, 16], 12
+    blocks, growth_rate = [4, 6, 8, 6], 12  # DenseNet53
 
     reduction = 0.5
     num_planes = 2 * growth_rate
