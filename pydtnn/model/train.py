@@ -93,11 +93,7 @@ class Train[T: Array](Eval[T]):
             loss, dx = self.loss_func.compute(x, y_targ, self.real_batch_size)
         else:
             if y_targ.shape[0] != x_batch.shape[0]:
-                raise ValueError(
-                    f"y_targ.shape[0] ({y_targ.shape[0]}) and x_batch.shape[0] ({
-                        x_batch.shape[0]
-                    }) must have the same value."
-                )
+                raise ValueError(f"y_targ.shape[0] ({y_targ.shape[0]}) and x_batch.shape[0] ({x_batch.shape[0]}) must have the same value.")
             loss, dx = 0.0, y_targ
 
         total_metrics = None
@@ -209,7 +205,7 @@ class Train[T: Array](Eval[T]):
             if local_batch_size <= 0:
                 if self.comm_rank == 0:
                     # type: ignore (Here is a 'tqdm', only is None in self.comm_rank != 0)
-                    pbar.set_postfix_str(s=f"{string}, waiting…", refresh=True)
+                    pbar.set_postfix_str(s=f"{string}, waiting…", refresh=True)  # type: ignore (in comm_rank 0 , pbar is not None)
                 continue
 
             total_loss, batch_count, string = self._update_status(
