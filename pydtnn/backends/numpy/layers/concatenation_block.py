@@ -51,7 +51,7 @@ class ConcatenationBlockNumpy(ConcatenationBlock, AbstractBlockLayerNumpy):
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_REPLICATE
         )
-        _x: list[np.ndarray] = [np.zeros((0,))] * len(self.paths)
+        _x: list[np.ndarray] = [np.zeros((0,), dtype=self.model.dtype, order="C")] * len(self.paths)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         y = self.y[: x.shape[0], :]
 
@@ -89,7 +89,7 @@ class ConcatenationBlockNumpy(ConcatenationBlock, AbstractBlockLayerNumpy):
             self.model.tracer.emit_event(
                 PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.BACKWARD
             )
-            dx[0] = layer.backward(dx[0])
+            dx[0] = layer.backward(np.asarray(dx[0], dtype=self.model.dtype, order="C"))
             self.model.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
         for i in range(1, num_paths):
@@ -98,7 +98,7 @@ class ConcatenationBlockNumpy(ConcatenationBlock, AbstractBlockLayerNumpy):
                 self.model.tracer.emit_event(
                     PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.BACKWARD
                 )
-                dx[i] = layer.backward(dx[i])
+                dx[i] = layer.backward(np.asarray(dx[i], dtype=self.model.dtype, order="C"))
                 self.model.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
             self.model.tracer.emit_event(

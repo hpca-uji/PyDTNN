@@ -40,6 +40,7 @@ class TanhNumpy(Tanh[np.ndarray], ActivationNumpy):
         """
         self.y = self._y[: x.shape[0], :]
         np.tanh(x, out=self.y, casting="unsafe", dtype=self.model.dtype)
+        self.y = np.asarray(self.y, dtype=self.model.dtype, order="C")
         return self.y
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
@@ -51,4 +52,4 @@ class TanhNumpy(Tanh[np.ndarray], ActivationNumpy):
         np.power(dy, 2, out=dy, dtype=self.model.dtype)
         np.subtract(1, dy, out=dy, dtype=self.model.dtype)
 
-        return dy
+        return np.asarray(dy, dtype=self.model.dtype, order="C")

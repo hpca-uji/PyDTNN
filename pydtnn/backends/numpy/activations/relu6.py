@@ -43,10 +43,11 @@ class Relu6Numpy(Relu6[np.ndarray], ActivationNumpy):
         np.clip(x, 0, self.cap, out=self.y)
         np.greater(x, 0, out=self.mask, dtype=np.int8)
 
+        self.y = np.asarray(self.y, dtype=self.model.dtype, order="C")
         return self.y
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
         """Perform the backward pass of ReLU6."""
         # return dy * self.mask
         np.multiply(dy, self.mask, out=dy, dtype=self.model.dtype)
-        return dy
+        return np.asarray(dy, dtype=self.model.dtype, order="C")

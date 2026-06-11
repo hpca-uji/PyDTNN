@@ -30,8 +30,8 @@ class LogNumpy(Log[np.ndarray], ActivationNumpy):
         # NOTE: These attributes only store data, their value before the operation
         # doesn't matter; they're initalized due avoid warnings in
         # "LayerAndActivationBase.export".
-        self.y = np.zeros(shape=(self.model.batch_size, *self.shape), dtype=self.model.dtype)
-        self.memory_used += self.y.nbytes
+        self._y = np.zeros(shape=(self.model.batch_size, *self.shape), dtype=self.model.dtype)
+        self.memory_used += self._y.nbytes
 
         if not self.model.evaluate_only:
             self.dx = np.zeros(shape=(self.model.batch_size, *self.shape), dtype=self.model.dtype)
@@ -42,15 +42,16 @@ class LogNumpy(Log[np.ndarray], ActivationNumpy):
         Compute the forward pass of the Log activation.
         """
         # def forward(self, x: np.ndarray) -> np.ndarray:
-        y = self.y[: x.shape[0], :]
+        self.y = self._y[: x.shape[0], :]
         # y = np.log(1 / (1 + np.exp(-x)))
         np.multiply(x, -1, out=x, dtype=self.model.dtype)
         np.exp(x, out=x, dtype=self.model.dtype)
         np.add(x, 1, out=x, dtype=self.model.dtype)
-        np.log(x, out=y, dtype=self.model.dtype)
+        np.log(x, out=self.y, dtype=self.model.dtype)
         # NOTE: Log propierty: "log(a / b) = log(a) - log(b)", and "log(1) = 0"
-        np.multiply(y, -1, out=y, dtype=self.model.dtype)
-        return y
+        np.multiply(self.y, -1, out=self.y, dtype=self.model.dtype)
+        self.y = np.asarray(self.y, dtype=self.model.dtype, order="C")
+        return self.y
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
         """
@@ -60,4 +61,4 @@ class LogNumpy(Log[np.ndarray], ActivationNumpy):
         np.exp(dy, out=dy)
         np.add(dy, 1, out=dy)
         np.reciprocal(dy, out=dy)
-        return dy
+        return np.asarray(dy, dtype=self.model.dtype, order="C")

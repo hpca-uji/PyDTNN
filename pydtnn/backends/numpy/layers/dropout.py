@@ -65,7 +65,8 @@ class DropoutNumpy(Dropout[np.ndarray], LayerNumpy):
                 pass  # Just returns x.
             case _:
                 raise RuntimeError(f"Unexpected model mode '{self.model.mode}'.")
-        return x
+            
+        return np.asarray(x, dtype=self.model.dtype, order="C")
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
         """
@@ -78,4 +79,4 @@ class DropoutNumpy(Dropout[np.ndarray], LayerNumpy):
             The gradient scaled by the dropout mask.
         """
         np.multiply(dy, self.mask, out=dy, dtype=self.model.dtype)
-        return dy
+        return np.asarray(dy, dtype=self.model.dtype, order="C")

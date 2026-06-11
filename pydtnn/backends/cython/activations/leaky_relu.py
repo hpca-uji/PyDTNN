@@ -38,4 +38,4 @@ class LeakyReluCython(LeakyReluNumpy, ActivationCython):
             self.mask.reshape(-1, copy=False),
             self.negative_slope,
         )
-        return self.y
+        return np.asarray(self.y, dtype=self.model.dtype, order="C")

@@ -63,6 +63,7 @@ class LeakyReluNumpy(LeakyRelu[np.ndarray], ActivationNumpy):
         np.greater(x, 0, out=self.mask, dtype=np.int8)
         self.mask[negatives] = self.negative_slope
 
+        self.y = np.asarray(self.y, dtype=self.model.dtype, order="C")
         return self.y
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
@@ -77,4 +78,4 @@ class LeakyReluNumpy(LeakyRelu[np.ndarray], ActivationNumpy):
         """
         # return dy * self.mask
         np.multiply(dy, self.mask, out=dy, dtype=self.model.dtype)
-        return dy
+        return np.asarray(dy, dtype=self.model.dtype, order="C")

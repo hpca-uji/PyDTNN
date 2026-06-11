@@ -134,7 +134,7 @@ class AveragePool2DCython(AveragePool2DNumpy, AbstractPool2DLayerCython):
         )
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         y: np.ndarray = np.mean(x_rows, axis=1, dtype=self.model.dtype)
-        return y.reshape((-1, self.ho, self.wo, self.co))
+        return np.asarray(y.reshape((-1, self.ho, self.wo, self.co)), dtype=self.model.dtype, order="C")
 
     def _forward_nchw_i2c(self, x: np.ndarray) -> np.ndarray:
         """Perform forward pass in NCHW format using im2col transformation."""
@@ -162,7 +162,7 @@ class AveragePool2DCython(AveragePool2DNumpy, AbstractPool2DLayerCython):
         )
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         y: np.ndarray = np.mean(x_cols, axis=1, dtype=self.model.dtype)
-        return y.reshape((-1, self.co, self.ho, self.wo))
+        return np.asarray(y.reshape((-1, self.co, self.ho, self.wo)), dtype=self.model.dtype, order="C")
 
     def _backward_nhwc_i2c(self, dy: np.ndarray) -> np.ndarray:
         """Perform backward pass in NHWC format using row2im transformation."""
@@ -193,7 +193,7 @@ class AveragePool2DCython(AveragePool2DNumpy, AbstractPool2DLayerCython):
             self.wdilation,
         )
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return dx.reshape((-1, self.hi, self.wi, self.ci))
+        return np.asarray(dx.reshape((-1, self.hi, self.wi, self.ci)), dtype=self.model.dtype, order="C")
 
     def _backward_nchw_i2c(self, dy: np.ndarray) -> np.ndarray:
         """Perform backward pass in NCHW format using col2im transformation."""
@@ -225,4 +225,5 @@ class AveragePool2DCython(AveragePool2DNumpy, AbstractPool2DLayerCython):
             self.wdilation,
         )
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return dx.reshape((-1, self.ci, self.hi, self.wi))
+        return np.asarray(dx.reshape((-1, self.ci, self.hi, self.wi)), dtype=self.model.dtype, order="C")
+

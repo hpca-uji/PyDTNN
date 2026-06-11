@@ -77,6 +77,7 @@ class SoftmaxNumpy(Softmax[np.ndarray], ActivationNumpy):
         np.exp(x, out=self.y, dtype=self.model.dtype)
         np.sum(self.y, axis=self.axis_dim, keepdims=True, out=sum_y)
         np.divide(self.y, sum_y, out=self.y, dtype=self.model.dtype)
+        self.y = np.asarray(self.y, dtype=self.model.dtype, order="C")
         return self.y
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
@@ -90,4 +91,4 @@ class SoftmaxNumpy(Softmax[np.ndarray], ActivationNumpy):
         np.subtract(dy, sum_dy, out=dy, dtype=self.model.dtype)
         np.multiply(self.y, dy, out=dy, dtype=self.model.dtype)
 
-        return dy
+        return np.asarray(dy, dtype=self.model.dtype, order="C")

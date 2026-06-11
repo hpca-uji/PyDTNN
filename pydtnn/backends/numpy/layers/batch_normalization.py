@@ -245,5 +245,4 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
             dx = dx.reshape((n, self.hi, self.wi, self.ci))
             dx = format_transpose(dx, TensorFormat.NHWC, self.model.tensor_format)
         # else: nothing special (It has the right format)
-
         return np.asarray(dx, dtype=self.model.dtype, order="C")

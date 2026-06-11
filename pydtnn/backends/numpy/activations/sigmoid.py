@@ -43,6 +43,7 @@ class SigmoidNumpy(Sigmoid[np.ndarray], ActivationNumpy):
         np.exp(self.y, out=self.y)
         np.add(1, self.y, out=self.y)
         np.reciprocal(self.y, out=self.y)
+        self.y = np.asarray(self.y, dtype=self.model.dtype, order="C")
         return self.y
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
@@ -52,4 +53,5 @@ class SigmoidNumpy(Sigmoid[np.ndarray], ActivationNumpy):
         np.subtract(1, self.y, out=dx)
         np.multiply(self.y, dx, out=dx)
         np.multiply(dy, dx, out=dx)
-        return dx
+
+        return np.asarray(dx, dtype=self.model.dtype, order="C")

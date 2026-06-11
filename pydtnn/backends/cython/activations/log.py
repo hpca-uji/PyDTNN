@@ -29,9 +29,9 @@ class LogCython(LogNumpy, ActivationCython):
         Returns:
             The natural logarithm of the input.
         """
-        y: np.ndarray = self.y[: x.shape[0], :]
-        log_fwd_cython(x.reshape(-1, copy=False), y.reshape(-1, copy=False))
-        return y
+        self.y: np.ndarray = self._y[: x.shape[0], :]
+        log_fwd_cython(x.reshape(-1, copy=False), self.y.reshape(-1, copy=False))
+        return np.asarray(self.y, dtype=self.model.dtype, order="C")
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
         """
@@ -45,4 +45,4 @@ class LogCython(LogNumpy, ActivationCython):
         """
         dx: np.ndarray = self.dx[: dy.shape[0], :]
         log_bwd_cython(dy.reshape(-1, copy=False), dx.reshape(-1, copy=False))
-        return dx
+        return np.asarray(dx, dtype=self.model.dtype, order="C")

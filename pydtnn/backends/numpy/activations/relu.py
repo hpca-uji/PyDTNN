@@ -44,9 +44,10 @@ class ReluNumpy(Relu[np.ndarray], ActivationNumpy):
         np.clip(x, 0, None, out=self.y)
         np.greater(x, 0, out=self.mask)
 
+        self.y = np.asarray(self.y, dtype=self.model.dtype, order="C")
         return self.y
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
         """Computes the backward pass of the ReLU activation."""
         np.multiply(dy, self.mask, out=dy, dtype=self.model.dtype)
-        return dy
+        return np.asarray(dy, dtype=self.model.dtype, order="C")

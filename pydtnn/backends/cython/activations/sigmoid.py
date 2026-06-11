@@ -27,7 +27,7 @@ class SigmoidCython(SigmoidNumpy, ActivationCython):
         """
         self.y: np.ndarray = self._y[: x.shape[0], :]
         sigmoid_fwd_cython(x.reshape(-1, copy=False), self.y.reshape(-1, copy=False))
-        return self.y
+        return np.asarray(self.y, dtype=self.model.dtype, order="C")
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
         """
@@ -43,4 +43,4 @@ class SigmoidCython(SigmoidNumpy, ActivationCython):
         sigmoid_bwd_cython(
             dy.reshape(-1, copy=False), self.y.reshape(-1, copy=False), dx.reshape(-1, copy=False)
         )
-        return dx
+        return np.asarray(dx, dtype=self.model.dtype, order="C")

@@ -158,7 +158,7 @@ class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], AbstractPool
 
     def _forward_nhwc(self, x: np.ndarray) -> np.ndarray:
         """Execute forward pass for NHWC and emit tracing events."""
-        y: np.ndarray = np.ascontiguousarray(self.y[: x.shape[0], :], dtype=self.model.dtype)
+        y: np.ndarray = np.asarray(self.y[: x.shape[0], :], dtype=self.model.dtype, order="C")
 
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT,
@@ -170,7 +170,7 @@ class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], AbstractPool
 
     def _forward_nchw(self, x: np.ndarray) -> np.ndarray:
         """Execute forward pass for NCHW and emit tracing events."""
-        y: np.ndarray = np.ascontiguousarray(self.y[: x.shape[0], :], dtype=self.model.dtype)
+        y: np.ndarray = np.asarray(self.y[: x.shape[0], :], dtype=self.model.dtype, order="C")
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT,
             self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_ADP_AVG_POOL,
@@ -181,7 +181,7 @@ class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], AbstractPool
 
     def _backward_nhwc(self, dy: np.ndarray) -> np.ndarray:
         """Execute backward pass for NHWC and emit tracing events."""
-        dx: np.ndarray = np.ascontiguousarray(self.dx[: dy.shape[0], :], dtype=self.model.dtype)
+        dx: np.ndarray = np.asarray(self.dx[: dy.shape[0], :], dtype=self.model.dtype, order="C")
         dx.fill(0)
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT,
@@ -193,7 +193,7 @@ class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], AbstractPool
 
     def _backward_nchw(self, dy: np.ndarray) -> np.ndarray:
         """Execute backward pass for NCHW and emit tracing events."""
-        dx: np.ndarray = np.ascontiguousarray(self.dx[: dy.shape[0], :], dtype=self.model.dtype)
+        dx: np.ndarray = np.asarray(self.dx[: dy.shape[0], :], dtype=self.model.dtype, order="C")
         dx.fill(0)
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT,

@@ -34,4 +34,4 @@ class ReluCython(ReluNumpy, ActivationCython):
         self.mask = self._mask[:n, :]
         mask: np.ndarray[tuple[int], np.int8] = self.mask.reshape(-1, copy=False)
         relu_cython(x.reshape(-1, copy=False), self.y.reshape(-1, copy=False), mask)
-        return self.y
+        return np.asarray(self.y, dtype=self.model.dtype, order="C")
