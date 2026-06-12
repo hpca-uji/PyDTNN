@@ -7,7 +7,7 @@ variables:
   BRANCH_MAIN: main
   BRANCH_WORK: develop
   GIT_STRATEGY: fetch
-  GIT_SUBMODULE_STRATEGY: recursive
+  GIT_SUBMODULE_STRATEGY: none
 
 job_build:
   stage: build
@@ -35,7 +35,7 @@ job_build:
 
   before_script:
   - apt-get update
-  - rm -rf .
+  - rm -rf $PWD
   - "false"
   - mkdir -p ./build
   - export $(make env | xargs)
