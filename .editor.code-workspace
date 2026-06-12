@@ -8,10 +8,12 @@
 		"python.analysis.typeCheckingMode": "basic",
 		"editor.tabSize": 4,
 		"files.exclude": {
+			".ruff_cache": true,
+			".pytest_cache": true,
 			"pydtnn/**/*.c": true,
 			"datasets/**/*.idx": true,
-			"**/*.egg-info": true,
 			"**/__pycache__": true,
+			"**/*.egg-info": true,
 			"**/*.so": true,
 		},
 		"flake8.importStrategy": "fromEnvironment",

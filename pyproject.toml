@@ -77,7 +77,7 @@ test = [
     "pytest-xdist~=3.8",
     "pytest-cov~=7.1"
 ]
-quality = [
+lint = [
     "flake8~=7.3",
     "flake8-gl-codeclimate~=0.2",
     "flake8-docstrings~=1.7",
@@ -99,10 +99,10 @@ build = [
     "twine~=6.2"
 ]
 dev = [
+    "pydtnn[profile]",
     "pydtnn[format]",
     "pydtnn[test]",
-    "pydtnn[quality]",
-    "pydtnn[profile]",
+    "pydtnn[lint]",
     "pydtnn[build]"
 ]
 

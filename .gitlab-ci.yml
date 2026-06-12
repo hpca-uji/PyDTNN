@@ -7,7 +7,7 @@ variables:
   BRANCH_MAIN: main
   BRANCH_WORK: develop
   GIT_DEPTH: 3
-  GIT_STRATEGY: clone
+  GIT_STRATEGY: fetch
   GIT_SUBMODULE_STRATEGY: recursive
 
 job_build:
@@ -36,31 +36,26 @@ job_build:
 
   before_script:
   - apt-get update
-  - mkdir -p ./build
   - export $(make env | xargs)
-  - make vendor-deps APT="apt-get -o dir::cache::archives=$PWD/build/apt"
-  - make pydtnn-deps APT="apt-get -o dir::cache::archives=$PWD/build/apt"
-  - make vendor-install PROCS=1 &> ./build/make.log
+  - make deps APT="apt-get -o dir::cache::archives=$CI_PROJECT_DIR/build/apt"
+  - make sync
   script:
-  - make pydtnn-clean
-  - make pydtnn-build PROCS=1
-  - WHEEL=$(echo ./build/pydtnn/*.whl)
-  - pip install ${WHEEL:?}[build,test,quality]
+  - make install NPROC=1 PYDTNN_PKG=build,test,lint
   - TAG=v$(python -c "from importlib.metadata import version; print(version('pydtnn'))")
-  - printf '%s\n' GIT_TAG=${TAG:?} PUBLIC_TAG=$(git tag | grep -xF ${TAG:?}) > ./build/gitlab-ci.env
-  - make pydtnn-check PROCS=1
+  - printf '%s\n' GIT_TAG=${TAG:?} PUBLIC_TAG=$(git tag | grep -xF ${TAG:?}) > ./build/gitlab.env
+  - make test NPROC=1
+  - make lint
 
   artifacts:
     reports:
-      dotenv: ./build/gitlab-ci.env
-      junit: ./build/pydtnn-check/tests.xml
+      dotenv: ./build/gitlab.env
+      junit: ./build/pydtnn/tests.xml
       coverage_report:
         coverage_format: cobertura
-        path: ./build/pydtnn-check/coverage.xml
-      codequality: ./build/pydtnn-check/quality.json
+        path: ./build/pydtnn/coverage.xml
+      codequality: ./build/pydtnn/quality.json
     paths:
     - ./build/pydtnn/pydtnn-*
-    - ./build/make.log
     expire_in: 1d
     when: always
   coverage: '/TOTAL.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'

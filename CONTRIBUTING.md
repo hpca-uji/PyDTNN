@@ -205,8 +205,8 @@ _Things to do_
 # Vendoring
 Acquire their dependencies, build them and install them with:
 ```sh
-export $(make env | xargs)  # update environment
-make vendor-deps vendor-build vendor-install APT="sudo apt" PIP="pip"
+export $(make env | xargs)
+make deps build install
 ```
 
 For specific dependencies, prefix the target with their name, for example:
@@ -246,19 +246,24 @@ python -m unittest pydtnn.tests.${TEST_NAME}
 # Publishing
 _Making things public_
 
-## Cleanup sources
+## Cleanup
 ```sh
-./scripts/srcs/format.sh pydtnn
-git commit -am 'format codebase'
+make format
+git commit -am format
 git push
 ```
 
-## Build distribution
+## Build
 ```sh
-make pydtnn-deps pydtnn-clean pydtnn-build
+make build
 ```
 
-## Publish distribution
+## Test
 ```sh
-twine upload ./build/pydtnn/*
+make test
+```
+
+## Publish
+```sh
+twine upload ./build/pydtnn/pydtnn-*
 ```
