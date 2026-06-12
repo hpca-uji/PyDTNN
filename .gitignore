@@ -7,6 +7,3 @@
 *.idx
 *.log
 *.npz
-
-/datasets/*/
-/vendor/*/

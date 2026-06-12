@@ -147,6 +147,9 @@ max-line-length = 100
 
 [tool.coverage.run]
 branch = true
+source_pkgs = [
+    "pydtnn"
+]
 
 [tool.coverage.report]
 include = [
