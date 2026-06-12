@@ -6,8 +6,7 @@ stages:
 variables:
   BRANCH_MAIN: main
   BRANCH_WORK: develop
-  GIT_DEPTH: 0
-  GIT_STRATEGY: clone
+  GIT_STRATEGY: fetch
   GIT_SUBMODULE_STRATEGY: recursive
 
 job_build:
@@ -36,6 +35,9 @@ job_build:
 
   before_script:
   - apt-get update
+  - rm -rf .
+  - "false"
+  - mkdir -p ./build
   - export $(make env | xargs)
   - make deps APT="apt-get -o dir::cache::archives=$CI_PROJECT_DIR/build/apt"
   - make sync
