@@ -88,16 +88,17 @@ help:
 		env
 
 deps: \
+	pydtnn-deps \
 	blis-deps \
 	tvm-deps \
 	convgemm-deps \
 	convwinograd-deps \
 	convdirect-deps \
 	openfhe-deps \
-	openfhe-python-deps \
-	pydtnn-deps
+	openfhe-python-deps
 
 src: \
+	pydtnn-src \
 	blis-src \
 	tvm-src \
 	convgemm-src \
@@ -137,14 +138,14 @@ lint: \
 	pydtnn-lint
 
 clean: \
-	blis-clean \
-	tvm-clean \
-	convgemm-clean \
-	convwinograd-clean \
-	convdirect-clean \
-	openfhe-clean \
+	pydtnn-clean \
 	openfhe-python-clean \
-	pydtnn-clean
+	openfhe-clean \
+	convdirect-clean \
+	convwinograd-clean \
+	convgemm-clean \
+	tvm-clean \
+	blis-clean
 	rm -rf "$(DST)"
 
 define VER_SYNC
