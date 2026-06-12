@@ -7,7 +7,7 @@ variables:
   BRANCH_MAIN: main
   BRANCH_WORK: develop
   GIT_STRATEGY: fetch
-  GIT_SUBMODULE_STRATEGY: none
+  GIT_SUBMODULE_STRATEGY: recursive
 
 job_build:
   stage: build
@@ -35,8 +35,6 @@ job_build:
 
   before_script:
   - apt-get update
-  - rm -rf $PWD
-  - "false"
   - mkdir -p ./build
   - export $(make env | xargs)
   - make deps APT="apt-get -o dir::cache::archives=$CI_PROJECT_DIR/build/apt"
