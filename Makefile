@@ -148,14 +148,14 @@ clean: \
 	rm -rf "$(DST)"
 
 define VER_SYNC
-	[ ! -e "$(1)/.git" ] || \
+	[ ! -e "$(1)/.git" ] || { \
 		COMMIT=$$(git -C "$(1)" rev-parse HEAD) && \
 		DATE=$$(git -C "$(1)" show -s --format=%ci $${COMMIT:?}) && \
-		touch -d "$${DATE:?}" "$(1)/.git"
-	[ ! -e "$(2)/.build" ] || \
+		touch -d "$${DATE:?}" "$(1)/.git"; }
+	[ ! -e "$(2)/.build" ] || { \
 		COMMIT=$$(cat "$(2)/.build") && \
 		DATE=$$(git -C "$(1)" show -s --format=%ci $${COMMIT:?}) && \
-		touch -d "$${DATE:?}" "$(2)/.build"
+		touch -d "$${DATE:?}" "$(2)/.build"; }
 endef
 
 sync:

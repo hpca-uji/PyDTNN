@@ -37,7 +37,7 @@ job_build:
   - apt-get update
   - mkdir -p ./build
   - export $(make env | xargs)
-  - make deps APT="apt-get -o dir::cache::archives=$CI_PROJECT_DIR/build/apt"
+  - make deps APT="apt-get -o dir::cache::archives=$PWD/build/apt"
   - make sync
   script:
   - make install NPROC=1 PYDTNN_PKG=build,test,lint
