@@ -37,14 +37,12 @@ job_build:
   - apt-get update
   - mkdir -p ./build
   - export $(make env | xargs)
-  - make deps APT="apt-get -o dir::cache::archives=$PWD/build/apt"
-  - make sync
+  - make sync deps APT="apt-get -o dir::cache::archives=$PWD/build/apt"
   script:
-  - make install NPROC=1 PYDTNN_PKG=build,test,lint
+  - make build install NPROC=1 PYDTNN_PKG=build,test,lint
   - TAG=v$(python -c "from importlib.metadata import version; print(version('pydtnn'))")
   - printf '%s\n' GIT_TAG=${TAG:?} PUBLIC_TAG=$(git tag | grep -xF ${TAG:?}) > ./build/gitlab.env
-  - make test NPROC=1
-  - make lint
+  - make test lint NPROC=1
 
   artifacts:
     reports:
