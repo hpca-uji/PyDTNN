@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from pydtnn.activations.abstract.activation import Activation
+from pydtnn.layers.abstract.layer import Layer
 from pydtnn.layers.addition_block import AdditionBlock
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.concatenation_block import ConcatenationBlock
@@ -18,7 +19,6 @@ from pydtnn.layers.conv_2d_depthwise import Conv2DDepthwise
 from pydtnn.layers.conv_2d_pointwise import Conv2DPointwise
 from pydtnn.layers.flatten import Flatten
 from pydtnn.layers.input import Input
-from pydtnn.layers.abstract.layer import Layer
 from pydtnn.model import Model
 from pydtnn.optimizers.abstract.optimizer import Optimizer
 from pydtnn.optimizers.sgd import SGD
@@ -84,8 +84,14 @@ list_activations = [
 ]
 
 # list_optimizers = [Adam(), Nadam(), RMSProp(), SGD()]
-addition_test_layers = ("AdditionBlock", AdditionBlock([Conv2D(), BatchNormalization()], [Conv2D()]))
-concatenation_test_layers = ("ConcatenationBlock", ConcatenationBlock([Conv2D(), BatchNormalization()], [Conv2D()]))
+addition_test_layers = (
+    "AdditionBlock",
+    AdditionBlock([Conv2D(), BatchNormalization()], [Conv2D()]),
+)
+concatenation_test_layers = (
+    "ConcatenationBlock",
+    ConcatenationBlock([Conv2D(), BatchNormalization()], [Conv2D()]),
+)
 
 dict_test: dict[str, Activation | tuple[str, Layer]] = {
     "Layers": list_layers,
@@ -144,7 +150,9 @@ def test_layers_activations(_x: np.ndarray, opt: Optimizer) -> None:
 
             for i in range(NUM_REPETITIONS):
                 if True:
-                    # with memray.Tracker(f"./z_memray/{KWARGS['tensor_format']}/fwd/{name}_{i}.bin", native_traces=True):
+                    # with
+                    # memray.Tracker(f"./z_memray/{KWARGS['tensor_format']}/fwd/{name}_{i}.bin",
+                    # native_traces=True):
 
                     t = time()
                     for layer in model.layers:
@@ -155,14 +163,18 @@ def test_layers_activations(_x: np.ndarray, opt: Optimizer) -> None:
                     x = x.copy()
 
                 if True:
-                    # with memray.Tracker(f"./z_memray/{KWARGS['tensor_format']}/bwd/{name}_{i}.bin", native_traces=True):
+                    # with
+                    # memray.Tracker(f"./z_memray/{KWARGS['tensor_format']}/bwd/{name}_{i}.bin",
+                    # native_traces=True):
                     t = time()
                     for layer in reversed(model.layers):
                         x = layer.backward(x)
                     t_backward += time() - t
 
                 if True:
-                    # with memray.Tracker(f"./z_memray/{KWARGS['tensor_format']}/opt/{name}_{opt.name}_{i}.bin", native_traces=True):
+                    # with
+                    # memray.Tracker(f"./z_memray/{KWARGS['tensor_format']}/opt/{name}_{opt.name}_{i}.bin",
+                    # native_traces=True):
                     t = time()
                     for layer in reversed(model.layers):
                         layer.update_weights(opt)
@@ -199,7 +211,9 @@ def test_add_concat(_x: np.ndarray, opt: Optimizer) -> None:
 
         for i in range(NUM_REPETITIONS):
             if True:
-                # with memray.Tracker(f"./z_memray/{KWARGS['tensor_format']}/fwd/{test}_{i}.bin", native_traces=True):
+                # with
+                # memray.Tracker(f"./z_memray/{KWARGS['tensor_format']}/fwd/{test}_{i}.bin",
+                # native_traces=True):
 
                 t = time()
                 for layer in model.layers:
@@ -210,13 +224,17 @@ def test_add_concat(_x: np.ndarray, opt: Optimizer) -> None:
                 x = x.copy()
 
             if True:
-                # with memray.Tracker(f"./z_memray/{KWARGS['tensor_format']}/bwd/{test}_{i}.bin", native_traces=True):
+                # with
+                # memray.Tracker(f"./z_memray/{KWARGS['tensor_format']}/bwd/{test}_{i}.bin",
+                # native_traces=True):
                 t = time()
                 for layer in reversed(model.layers):
                     x = layer.backward(x)
                 t_backward += time() - t
             if True:
-                # with memray.Tracker(f"./z_memray/{KWARGS['tensor_format']}/opt/{test}_{opt.name}_{i}.bin", native_traces=True, ):
+                # with
+                # memray.Tracker(f"./z_memray/{KWARGS['tensor_format']}/opt/{test}_{opt.name}_{i}.bin",
+                # native_traces=True, ):
                 t = time()
                 for layer in reversed(model.layers):
                     layer.update_weights(opt)

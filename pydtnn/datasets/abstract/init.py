@@ -140,6 +140,10 @@ class Init(Utils):
                 self._compute_local_workload(self._nsamples[part])
             )
 
+        if not self.test_as_validation:
+            self._local_offset[Base.Part.VAL] += self._initial_nsamples[Base.Part.TRAIN]
+        # self._local_offset[Base.Part.TEST] += self._initial_nsamples[Base.Part.TRAIN]
+
         if self.debug:
             self._print_report()
 

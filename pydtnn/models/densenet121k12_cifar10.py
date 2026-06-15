@@ -20,7 +20,9 @@ from pydtnn.utils.initializers import he_uniform
 __all__ = ("densenet121k12_cifar10",)
 
 
-def densenet121k12_cifar10(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
+def densenet121k12_cifar10(
+    input_shape: ArrayShape, output_shape: ArrayShape
+) -> Sequence[Layerable]:
     """
     Constructs a DenseNet architecture tailored for the CIFAR-10 dataset.
 
