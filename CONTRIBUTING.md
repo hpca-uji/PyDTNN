@@ -193,6 +193,7 @@ _How is the project organized_
 # Planned
 _Things to do_
 
+- Fix CuPy PreallocMemory support
 - Migrate `libs/{cuda,cudadrv,cudart}` to `cuda-bindings` (and/or `nvidia-cuda-runtime-cu12`)
 - Migrate `libs/nccl` to `nvidia-nccl-cu12`
 - Migrate `libs/cudnn` to `nvidia-cudnn-cu12`

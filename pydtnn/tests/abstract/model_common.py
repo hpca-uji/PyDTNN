@@ -441,7 +441,7 @@ class ModelCommonTestCase(TestCase):
         """
         Compares results between an Alexnet model using A and other using B.
         """
-        self.do_test_model("alexnet_cifar10")
+        self.do_test_model("alexnet")
 
     def test_resnet10(self):
         """

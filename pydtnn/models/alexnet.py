@@ -33,14 +33,14 @@ def alexnet(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layer
     _ = model.append
 
     _(Input(shape=input_shape))
-    _(Conv2D(nfilters=96, filter_shape=(11, 11), padding=0, stride=4, activation=Relu))
+    _(Conv2D(nfilters=96, filter_shape=(11, 11), padding=0, stride=2, activation=Relu))
     _(MaxPool2D(pool_shape=(3, 3), stride=2))
     _(Conv2D(nfilters=256, filter_shape=(5, 5), padding=2, stride=1, activation=Relu))
     _(MaxPool2D(pool_shape=(3, 3), stride=2))
     _(Conv2D(nfilters=384, filter_shape=(3, 3), padding=1, stride=1, activation=Relu))
     _(Conv2D(nfilters=384, filter_shape=(3, 3), padding=1, stride=1, activation=Relu))
     _(Conv2D(nfilters=256, filter_shape=(3, 3), padding=1, stride=1, activation=Relu))
-    _(MaxPool2D(pool_shape=(3, 3), stride=2))
+    _(MaxPool2D(pool_shape=(2, 2), stride=2))
     _(Flatten())
     _(FC(shape=(4096,), activation=Relu))
     _(Dropout(rate=0.5))
