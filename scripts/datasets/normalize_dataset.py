@@ -62,13 +62,22 @@ def get_full_x(dataset: Dataset) -> abc.Iterable[np.ndarray]:
     Yields:
         Numpy arrays containing the input features (x) from the dataset.
     """
-    xy = itertools.chain(dataset._data_generator(Dataset.Part.TRAIN), dataset._data_generator(Dataset.Part.VAL), dataset._data_generator(Dataset.Part.TEST))
+    xy = itertools.chain(
+        dataset._data_generator(Dataset.Part.TRAIN),
+        dataset._data_generator(Dataset.Part.VAL),
+        dataset._data_generator(Dataset.Part.TEST),
+    )
     for x, y in xy:
         yield x
 
 
 parser = ArgumentParser()
-args = {**vars(parser.parse_args()), "tensor_format": TensorFormat.NCHW, "batch_size": 1, "augment_shuffle": False}
+args = {
+    **vars(parser.parse_args()),
+    "tensor_format": TensorFormat.NCHW,
+    "batch_size": 1,
+    "augment_shuffle": False,
+}
 model = Model(**args)
 
 dataset = get_full_x(model.dataset)

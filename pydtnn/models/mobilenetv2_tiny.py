@@ -47,7 +47,7 @@ def mobileNet(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Lay
         [1, 8, 1, 1],
         [4, 16, 1, 2],
         [4, 24, 1, 2],
-        [4, 32, 1, 2],
+        [4, 32, 1, 1],
     ]
     prev_n_filt = first_filters
 

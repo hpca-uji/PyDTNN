@@ -16,6 +16,7 @@ from pydtnn import MPI, gpuarray
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.datasets.abstract import Dataset
 from pydtnn.layers.input import Input
+from pydtnn.model.base import Base
 from pydtnn.model.eval import Eval
 from pydtnn.schedulers import select as select_scheduler
 from pydtnn.schedulers.abstract.scheduler import Scheduler
@@ -68,17 +69,19 @@ class Train[T: Array](Eval[T]):
         for scheduler in self.schedulers:
             scheduler.model = self
 
-    def _train_batch(self, x_batch: np.ndarray, y_batch: np.ndarray, sync_model=True) -> np.ndarray:
+    def _train_batch(
+        self, x_batch: np.ndarray, y_batch: np.ndarray, sync_model: bool = True
+    ) -> np.ndarray:
         """Executes a single training batch including forward pass, backward pass, and weight updates."""
-        self.mode = Eval.Mode.TRAIN
+        self.mode = Base.Mode.TRAIN
 
         # Schedulers begin
         for sched in self.schedulers:
             sched.on_batch_begin()
 
         self.real_batch_size = x_batch.shape[0]
-        inpt_layer: Input[T] = self.layers[0]  # type: ignore (casting to the right type)
-        x, y_targ = inpt_layer._sync_x_y(x_batch, y_batch)
+        input_layer: Input[T] = self.layers[0]  # type: ignore (casting to the right type)
+        x, y_targ = input_layer._sync_x_y(x_batch, y_batch)
 
         has_batch = x_batch.shape[0] > 0
 
@@ -93,7 +96,11 @@ class Train[T: Array](Eval[T]):
             loss, dx = self.loss_func.compute(x, y_targ, self.real_batch_size)
         else:
             if y_targ.shape[0] != x_batch.shape[0]:
-                raise ValueError(f"y_targ.shape[0] ({y_targ.shape[0]}) and x_batch.shape[0] ({x_batch.shape[0]}) must have the same value.")
+                raise ValueError(
+                    f"y_targ.shape[0] ({y_targ.shape[0]})"
+                    " and x_batch.shape[0] ({x_batch.shape[0]})"
+                    " must have the same value."
+                )
             loss, dx = 0.0, y_targ
 
         total_metrics = None
@@ -152,11 +159,11 @@ class Train[T: Array](Eval[T]):
         model_sync_count: int,
         batches_min: float,
         total_loss: np.ndarray,
-        batch_count: int,
+        total_size: int,
         terminate: bool = False,
         prev_string: str = "",
         out_prefix: str = "",
-    ) -> tuple[np.ndarray, int, bool, str]:
+    ) -> tuple[np.ndarray, int, int, bool, str]:
         """Executes a full training round over the provided batch generator."""
         sync_epoch = False
         string = ""
@@ -205,14 +212,15 @@ class Train[T: Array](Eval[T]):
             if local_batch_size <= 0:
                 if self.comm_rank == 0:
                     # type: ignore (Here is a 'tqdm', only is None in self.comm_rank != 0)
-                    pbar.set_postfix_str(s=f"{string}, waiting…", refresh=True)  # type: ignore (in comm_rank 0 , pbar is not None)
+                    # type: ignore (in comm_rank 0 , pbar is not None)
+                    pbar.set_postfix_str(s=f"{string}, waiting…", refresh=True)
                 continue
 
-            total_loss, batch_count, string = self._update_status(
+            total_loss, total_size, string = self._update_status(
                 pbar=pbar,
                 batch_loss=train_batch_loss,
                 total_loss=total_loss,
-                batch_count=batch_count,
+                total_size=total_size,
                 batch_size=batch_size,
                 output_prefix=out_prefix,
                 current_round=self._training_round,
@@ -222,7 +230,7 @@ class Train[T: Array](Eval[T]):
 
         # Increment self._train_round
         self._training_round += 1
-        return (total_loss, model_sync_count, sync_epoch, string)
+        return (total_loss, total_size, model_sync_count, sync_epoch, string)
 
     def train(self) -> dict[str, list[np.ndarray]]:
         """Runs the full training process over multiple epochs."""
@@ -269,8 +277,8 @@ class Train[T: Array](Eval[T]):
             train_batch_generator, val_batch_generator = self.dataset.get_train_val_generator()
             sync_epoch = False
 
-            train_total_loss, train_batch_count = np.zeros(len(self.loss_and_metrics)), 0
-            val_total_loss, val_batch_count = np.zeros(len(self.loss_and_metrics)), 0
+            train_total_loss, train_total_size = np.zeros(len(self.loss_and_metrics)), 0
+            val_total_loss, val_total_size = np.zeros(len(self.loss_and_metrics)), 0
 
             if self.comm_rank == 0:
                 string = ""
@@ -291,15 +299,17 @@ class Train[T: Array](Eval[T]):
                 sched.on_epoch_begin(self, self.rank)
 
             # --- TRAIN ---
-            train_total_loss, model_sync_count, train_sync_epoch, string = self._train_round(
-                pbar=pbar,
-                batch_generator=train_batch_generator,
-                model_sync_count=model_sync_count,
-                batches_min=train_batches_min,
-                total_loss=train_total_loss,
-                batch_count=train_batch_count,
-                prev_string="",
-                out_prefix=f"{Dataset.Part.TRAIN._name_.lower()}_",
+            train_total_loss, train_total_size, model_sync_count, train_sync_epoch, string = (
+                self._train_round(
+                    pbar=pbar,
+                    batch_generator=train_batch_generator,
+                    model_sync_count=model_sync_count,
+                    batches_min=train_batches_min,
+                    total_loss=train_total_loss,
+                    total_size=train_total_size,
+                    prev_string="",
+                    out_prefix=f"{Dataset.Part.TRAIN._name_.lower()}_",
+                )
             )
             sync_epoch = sync_epoch or train_sync_epoch
             train_string = string
@@ -310,15 +320,17 @@ class Train[T: Array](Eval[T]):
                 ].append(train_total_loss[c])
 
             # --- VAL ---
-            val_total_loss, model_sync_count, val_sync_epoch, string = self._evalutate_round(
-                pbar=pbar,
-                batch_generator=val_batch_generator,
-                model_sync_count=model_sync_count,
-                batches_min=val_batches_min,
-                total_loss=val_total_loss,
-                batch_count=val_batch_count,
-                prev_string=f"{train_string}, ",
-                out_prefix="val_",
+            val_total_loss, val_total_size, model_sync_count, val_sync_epoch, string = (
+                self._evalutate_round(
+                    pbar=pbar,
+                    batch_generator=val_batch_generator,
+                    model_sync_count=model_sync_count,
+                    batches_min=val_batches_min,
+                    total_loss=val_total_loss,
+                    total_size=val_total_size,
+                    prev_string=f"{train_string}, ",
+                    out_prefix=f"{Dataset.Part.VAL._name_.lower()}_",
+                )
             )
             sync_epoch = sync_epoch or val_sync_epoch
 

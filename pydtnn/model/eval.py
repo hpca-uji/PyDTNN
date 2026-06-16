@@ -16,6 +16,8 @@ from tqdm import tqdm
 from pydtnn import MPI, gpuarray
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.datasets.abstract import Dataset
+from pydtnn.layers.input import Input
+from pydtnn.model.base import Base
 from pydtnn.model.sync import Sync
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT,
                                    PYDTNN_MDL_EVENTS, PYDTNN_MDL_EVENT_enum)
@@ -85,7 +87,12 @@ class Eval[T: Array](Sync[T]):
         return _losses, loss_req  # type: ignore
 
     def _update_running_average(
-        self, curr: np.ndarray, total: np.ndarray, count: int, batch_size: int, prefix=""
+        self,
+        batch_metric: np.ndarray,
+        total_metric: np.ndarray,
+        total_size: int,
+        batch_size: int,
+        prefix="",
     ) -> tuple[np.ndarray, int, str]:
         """
         Updates the running average of metrics and generates a status string.
@@ -101,16 +108,19 @@ class Eval[T: Array](Sync[T]):
             Updated total metrics, updated count, and formatted status string.
         """
         string = ""
-        total = ((curr * batch_size) + (total * count)) / (count + batch_size)
+        total_metric = ((batch_metric * batch_size) + (total_metric * total_size)) / (
+            total_size + batch_size
+        )
+        total_size += batch_size
         for c in range(len(self.loss_and_metrics)):
             loss_str = self.loss_and_metrics_format[c]
             if loss_str:
-                string += ("%s, " % (prefix + loss_str)) % total[c]
+                string += ("%s, " % (prefix + loss_str)) % total_metric[c]
         string = string[:-2]
-        return total, count + batch_size, string
+        return total_metric, total_size, string
 
     def _evaluate_batch(
-        self, x_batch: np.ndarray, y_batch: np.ndarray, sync_model=True
+        self, x_batch: np.ndarray, y_batch: np.ndarray, sync_model: bool = True
     ) -> np.ndarray:
         """
         Performs a forward pass and metric computation for a single batch.
@@ -123,10 +133,11 @@ class Eval[T: Array](Sync[T]):
         Returns:
             The computed metrics for the batch.
         """
-        self.mode = Sync.Mode.EVALUATE
+        self.mode = Base.Mode.EVALUATE
 
         self.real_batch_size = x_batch.shape[0]
-        x, y_targ = self.layers[0]._sync_x_y(x_batch, y_batch)
+        input_layer: Input[T] = self.layers[0]  # type: ignore (casting to the right type)
+        x, y_targ = input_layer._sync_x_y(x_batch, y_batch)
 
         has_batch = x_batch.shape[0] > 0
 
@@ -139,16 +150,18 @@ class Eval[T: Array](Sync[T]):
                 )
                 x = self.layers[i].forward(x)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
-
-            y_pred = self.layers[-1].y
-            loss, _ = self.loss_func.compute(y_pred, y_targ, self.real_batch_size)
+            loss, _ = self.loss_func.compute(x, y_targ, self.real_batch_size)
         else:
-            y_pred = self.layers[-1].y
-            loss = 0.0
-        assert y_pred is not None
+            if y_targ.shape[0] != x_batch.shape[0]:
+                raise ValueError(
+                    f"y_targ.shape[0] ({y_targ.shape[0]})"
+                    f" and x_batch.shape[0] ({x_batch.shape[0]})"
+                    " must have the same value."
+                )
+            loss, _ = 0.0, y_targ
 
         total_metrics = None
-        total_metrics, _ = self._compute_metrics_funcs(y_pred, y_targ, loss, comm=sync_model)
+        total_metrics, _ = self._compute_metrics_funcs(x, y_targ, loss, comm=sync_model)
         assert total_metrics is not None
         self.total_metrics = total_metrics
 
@@ -159,7 +172,7 @@ class Eval[T: Array](Sync[T]):
         pbar: tqdm | None,
         batch_loss: np.ndarray,
         total_loss: np.ndarray,
-        batch_count: int,
+        total_size: int,
         batch_size: int,
         output_prefix: str,
         current_round: int,
@@ -173,7 +186,7 @@ class Eval[T: Array](Sync[T]):
             pbar: Tqdm progress bar instance.
             batch_loss: Loss/metrics for the current batch.
             total_loss: Accumulated loss/metrics.
-            batch_count: Total samples processed.
+            total_size: Total samples processed.
             batch_size: Size of the current batch.
             output_prefix: Prefix for logging.
             current_round: The current training/evaluation round.
@@ -187,8 +200,12 @@ class Eval[T: Array](Sync[T]):
         part = Dataset.Part[output_prefix.strip("_").upper()]
 
         # noinspection PyUnboundLocalVariable
-        total_loss, batch_count, string = self._update_running_average(
-            batch_loss, total_loss, batch_count, batch_size, prefix=output_prefix
+        total_loss, total_size, string = self._update_running_average(
+            batch_metric=batch_loss,
+            total_metric=total_loss,
+            total_size=total_size,
+            batch_size=batch_size,
+            prefix=output_prefix,
         )
 
         self.perf_counter._add_time_and_batch_size(part, current_round, delta, batch_size)
@@ -202,7 +219,7 @@ class Eval[T: Array](Sync[T]):
                 # self.comm_rank != 0)
                 pbar.update(batch_size)
 
-        return total_loss, batch_count, string
+        return total_loss, total_size, string
 
     def _evalutate_round(
         self,
@@ -211,11 +228,11 @@ class Eval[T: Array](Sync[T]):
         model_sync_count: int,
         batches_min: float,
         total_loss: np.ndarray,
-        batch_count: int,
+        total_size: int,
         terminate: bool = False,
         prev_string: str = "",
         out_prefix: str = "",
-    ) -> tuple[np.ndarray, int, bool, str]:
+    ) -> tuple[np.ndarray, int, int, bool, str]:
         """
         Executes a single evaluation round over the provided batch generator.
 
@@ -273,11 +290,11 @@ class Eval[T: Array](Sync[T]):
             if batch_size <= 0:
                 continue
 
-            total_loss, batch_count, string = self._update_status(
+            total_loss, total_size, string = self._update_status(
                 pbar=pbar,
                 batch_loss=test_batch_loss,
                 total_loss=total_loss,
-                batch_count=batch_count,
+                total_size=total_size,
                 batch_size=batch_size,
                 output_prefix=out_prefix,
                 current_round=self._evaluate_round,
@@ -287,7 +304,7 @@ class Eval[T: Array](Sync[T]):
 
         # Increment self._evaluate_round
         self._evaluate_round += 1
-        return (total_loss, model_sync_count, sync_epoch, string)
+        return (total_loss, total_size, model_sync_count, sync_epoch, string)
 
     def evaluate(self):
         """
@@ -321,7 +338,7 @@ class Eval[T: Array](Sync[T]):
         test_batches_min: float = min(self.comm_nsamples[Dataset.Part.TEST]) / (
             self.batch_size * self.nprocs
         )
-        test_total_loss, test_batch_count = np.zeros(len(self.loss_and_metrics), np.float32), 0
+        test_total_loss, test_total_size = np.zeros(len(self.loss_and_metrics), np.float32), 0
 
         if self.comm_rank == 0:
             pbar = tqdm(
@@ -341,7 +358,7 @@ class Eval[T: Array](Sync[T]):
             model_sync_count=0,
             batches_min=test_batches_min,
             total_loss=test_total_loss,
-            batch_count=test_batch_count,
+            total_size=test_total_size,
             out_prefix=f"{Dataset.Part.TEST._name_.lower()}_",
         )
 

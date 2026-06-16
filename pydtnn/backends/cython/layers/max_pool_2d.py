@@ -150,7 +150,9 @@ class MaxPool2DCython(MaxPool2DNumpy, AbstractPool2DLayerCython):
         idx_max: np.ndarray
         if self.model.mode is Model.Mode.TRAIN:
             self.idx_max = idx_max
-        return np.asarray(y.reshape((-1, self.ho, self.wo, self.co)), dtype=self.model.dtype, order="C")
+        return np.asarray(
+            y.reshape((-1, self.ho, self.wo, self.co)), dtype=self.model.dtype, order="C"
+        )
 
     def _forward_nchw_i2c(self, x: np.ndarray) -> np.ndarray:
         """Perform forward pass for NCHW format using im2col approach."""
@@ -183,7 +185,9 @@ class MaxPool2DCython(MaxPool2DNumpy, AbstractPool2DLayerCython):
         idx_max: np.ndarray = argmax_cython(x_cols, y, amax, rng, axis=0)  # type: ignore
         if self.model.mode is Model.Mode.TRAIN:
             self.idx_max = idx_max
-        return np.asarray(y.reshape((-1, self.co, self.ho, self.wo)), dtype=self.model.dtype, order="C")
+        return np.asarray(
+            y.reshape((-1, self.co, self.ho, self.wo)), dtype=self.model.dtype, order="C"
+        )
 
     def _backward_nhwc_i2c(self, dy: np.ndarray) -> np.ndarray:
         """Perform backward pass for NHWC format using col2im approach."""
@@ -214,7 +218,9 @@ class MaxPool2DCython(MaxPool2DNumpy, AbstractPool2DLayerCython):
             self.wdilation,
         )
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return np.asarray(dx.reshape((-1, self.hi, self.wi, self.ci)), dtype=self.model.dtype, order="C")
+        return np.asarray(
+            dx.reshape((-1, self.hi, self.wi, self.ci)), dtype=self.model.dtype, order="C"
+        )
 
     def _backward_nchw_i2c(self, dy: np.ndarray) -> np.ndarray:
         """Perform backward pass for NCHW format using col2im approach."""
@@ -246,4 +252,6 @@ class MaxPool2DCython(MaxPool2DNumpy, AbstractPool2DLayerCython):
             self.wdilation,
         )
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return np.asarray(dx.reshape((-1, self.ci, self.hi, self.wi)), dtype=self.model.dtype, order="C")
+        return np.asarray(
+            dx.reshape((-1, self.ci, self.hi, self.wi)), dtype=self.model.dtype, order="C"
+        )

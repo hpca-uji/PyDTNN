@@ -15,7 +15,7 @@ handlers:
     class: logging.FileHandler
     formatter: precise
     filename: pydtnn.log
-    mode: w
+    mode: a
 loggers:
   pydtnn:
     level: DEBUG

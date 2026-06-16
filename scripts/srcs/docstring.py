@@ -20,7 +20,10 @@ config = {
     "reasoning_effort": "minimal",
     "temperature": 0.1,
 }
-client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"), base_url="https://generativelanguage.googleapis.com/v1beta/openai/")
+client = OpenAI(
+    api_key=os.environ.get("OPENAI_API_KEY"),
+    base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
+)
 
 
 def should_process_file(code: str) -> bool:

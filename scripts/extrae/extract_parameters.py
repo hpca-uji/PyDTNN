@@ -170,7 +170,10 @@ def extract_parameters():
             param,
         ]
         for model in models_files.keys():
-            if parameters_overwritten[param][model] != "-" and value_for[model] != parameters_overwritten[param][model]:
+            if (
+                parameters_overwritten[param][model] != "-"
+                and value_for[model] != parameters_overwritten[param][model]
+            ):
                 row.append(f"[bold]*{parameters_overwritten[param][model]}")
             else:
                 row.append(value_for[model])
@@ -189,7 +192,10 @@ def extract_parameters():
             param,
         ]
         for model in models_files.keys():
-            if parameters_overwritten[param][model] != "-" and value_for[model] != parameters_overwritten[param][model]:
+            if (
+                parameters_overwritten[param][model] != "-"
+                and value_for[model] != parameters_overwritten[param][model]
+            ):
                 row.append(f"{parameters_overwritten[param][model]}")
             else:
                 row.append(value_for[model])

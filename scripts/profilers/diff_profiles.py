@@ -109,7 +109,9 @@ def do_diff():
             _dict, _total_time = file_to_dict(file)
             data.append(_dict)
             total_times.append(_total_time)
-    t = PrettyTable(["ncalls", "tottime", "percall", "cumtime", "percall2", "filename:lineno(function)"])
+    t = PrettyTable(
+        ["ncalls", "tottime", "percall", "cumtime", "percall2", "filename:lineno(function)"]
+    )
     t.set_style(PLAIN_COLUMNS)
     t.align = "r"
     t.align["filename:lineno(function)"] = "l"
@@ -129,7 +131,9 @@ def do_diff():
                         x0, x1 = x.split("/")
                         y0, y1 = y.split("/")
                         # values.append(f"{int(x0)-int(y0)}/{int(x1)-int(y1)}")
-                        values.append(int(x0) - int(y0))  # PrettyTable sort does not work with the previous version
+                        values.append(
+                            int(x0) - int(y0)
+                        )  # PrettyTable sort does not work with the previous version
                     else:
                         values.append(round(x - y, 3))
             if values == [0, 0.0, 0.0, 0.0, 0.0]:
