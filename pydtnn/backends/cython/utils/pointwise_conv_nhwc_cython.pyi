@@ -1,15 +1,13 @@
 """
-Cython-accelerated depthwise convolution utilities for NHWC data layout.
+Cython-accelerated pointwise convolution utilities for NCHW data layout.
 """
 
 from pydtnn.backends.cython.utils.base import _npDT, _npDT_3Dims, _npDT_4Dims
 
-def depthwise_conv_nhwc_cython[T: _npDT](
+def fwd_pointwise_conv_cython_nhwc[T: _npDT](
     x: _npDT_4Dims[T],
     k: _npDT_3Dims[T],
     res: _npDT_4Dims[T],
-    ho: int,
-    wo: int,
     vpadding: int,
     hpadding: int,
     vstride: int,
@@ -18,14 +16,12 @@ def depthwise_conv_nhwc_cython[T: _npDT](
     hdilation: int,
 ) -> None:
     """
-    Performs a depthwise convolution in NHWC format using Cython.
+    Performs a pointwise convolution in NCHW format using Cython.
 
     Args:
         x (npDT_4Dims): The 4 dimensional input's ndarray.
         k (npDT_3Dims): The 3dimensions ndarray that contains the kernel.
-        res (npDT_4Dims): The 4 dimensional output's ndarray. Must be filled with zeros.
-        ho: (int): Output's height value.
-        wo: (int): Output's width value.
+        out (npDT_4Dims): The 4 dimensional output's ndarray. Must be filled with zeros.
         vpadding (int): vertical padding value.
         hpadding (int): horizontal padding value.
         vstride (int): vertical stride value.
@@ -34,10 +30,10 @@ def depthwise_conv_nhwc_cython[T: _npDT](
         hdilation (int): horizontal dilation value.
 
     Returns:
-        Nothing. The value is stored in `res`.
+        Nothing. The value is stored in `out`.
     """
 
-def depthwise_conv_backward_nhwc_cython[T: _npDT](
+def bwd_pointwise_conv_cython_nhwc[T: _npDT](
     dy: _npDT_4Dims[T],
     x: _npDT_4Dims[T],
     k: _npDT_3Dims[T],
@@ -51,7 +47,7 @@ def depthwise_conv_backward_nhwc_cython[T: _npDT](
     hdilation: int,
 ) -> None:
     """
-    Computes the gradients for depthwise convolution in NHWC format using Cython.
+    Computes the gradients for pointwise convolution in NCHW format using Cython.
 
     Args:
         dy (npDT_4Dims): The 4 dimensional array that contains the gradient of the backward's input.

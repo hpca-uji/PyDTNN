@@ -75,6 +75,6 @@ def depthwise_conv_backward_nhwc_cython(npDT[:,:,:,::1] dy,
                                 x_y = wstride * yy + wdilation * jj - wpadding
                                 val_dy = dy[nn, xx, yy, cc]
                                 if 0 <= x_y < w:
-                                    dw[cc, ii, jj] = x[nn, x_x, x_y, cc] * val_dy
+                                    dw[cc, ii, jj] += x[nn, x_x, x_y, cc] * val_dy
                                     dx[nn, x_x, x_y, cc] += val_k * val_dy
 

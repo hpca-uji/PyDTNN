@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     import numpy as np
 
 
-class Conv2DDepthwiseNumpy(AbstractConv2DNumpy, Conv2DDepthwise):
+class Conv2DDepthwiseNumpy(AbstractConv2DNumpy, Conv2DDepthwise[np.ndarray]):
     """Numpy-based implementation of a 2D depthwise convolution layer."""
 
     def _initializing_special_parameters(self):
@@ -83,9 +83,7 @@ class Conv2DDepthwiseNumpy(AbstractConv2DNumpy, Conv2DDepthwise):
                                 for yy in range(self.wo):
                                     x_y = self.wstride * yy + self.wdilation * jj - self.wpadding
                                     if 0 <= x_y < self.wi:
-                                        y[nn, cc, xx, yy] += (
-                                            self.weights[cc, ii, jj] * x[nn, cc, x_x, x_y]
-                                        )
+                                        y[nn, xx, yy, cc] += (self.weights[cc, ii, jj] * x[nn, cc, x_x, x_y])
 
     def _conv_fwd_nchw(self, x: np.ndarray, y: np.ndarray) -> None:
         """Perform NCHW depthwise convolution forward pass."""
@@ -117,7 +115,7 @@ class Conv2DDepthwiseNumpy(AbstractConv2DNumpy, Conv2DDepthwise):
                                     x_y = self.wstride * yy + self.wdilation * jj - self.wpadding
                                     val_dy = dy[nn, xx, yy, cc]
                                     if 0 <= x_y < self.wi:
-                                        self.dw[cc, ii, jj] = self.x[nn, x_x, x_y, cc] * val_dy
+                                        self.dw[cc, ii, jj] += self.x[nn, x_x, x_y, cc] * val_dy
                                         dx[nn, x_x, x_y, cc] += val_k * val_dy
 
     def _conv_bwd_nchw(self, dx: np.ndarray, dy: np.ndarray) -> None:
@@ -134,14 +132,14 @@ class Conv2DDepthwiseNumpy(AbstractConv2DNumpy, Conv2DDepthwise):
                                     x_y = self.wstride * yy + self.wdilation * jj - self.wpadding
                                     val_dy = dy[nn, cc, xx, yy]
                                     if 0 <= x_y < self.wi:
-                                        self.dw[cc, ii, jj] = self.x[nn, cc, x_x, x_y] * val_dy
+                                        self.dw[cc, ii, jj] += self.x[nn, cc, x_x, x_y] * val_dy
                                         dx[nn, cc, x_x, x_y] += val_k * val_dy
 
     def _forward_nhwc(self, x: np.ndarray) -> np.ndarray:
         """Version of the forward that perform a depthwise convolution"""
 
         self.x = x
-        y: np.ndarray = np.ascontiguousarray(self._y[: x.shape[0],], dtype=self.model.dtype)
+        y: np.ndarray = np.asarray(self._y[: x.shape[0],], dtype=self.model.dtype, order="C")
         y.fill(0)
 
         self.model.tracer.emit_event(
@@ -172,7 +170,7 @@ class Conv2DDepthwiseNumpy(AbstractConv2DNumpy, Conv2DDepthwise):
     def _forward_nchw(self, x: np.ndarray) -> np.ndarray:
         """Version of the forward that perform a depthwise convolution"""
         self.x = x
-        y: np.ndarray = np.ascontiguousarray(self._y[: x.shape[0],], dtype=self.model.dtype)
+        y: np.ndarray = np.asarray(self._y[: x.shape[0],], dtype=self.model.dtype, order="C")
         y.fill(0)
 
         self.model.tracer.emit_event(
@@ -203,7 +201,7 @@ class Conv2DDepthwiseNumpy(AbstractConv2DNumpy, Conv2DDepthwise):
     def _backward_nhwc(self, dy: np.ndarray) -> np.ndarray:
         """Perform NHWC backward pass for depthwise convolution."""
 
-        dx: np.ndarray = np.ascontiguousarray(self.dx[: dy.shape[0],], dtype=self.model.dtype)
+        dx: np.ndarray = np.asarray(self.dx[: dy.shape[0],], dtype=self.model.dtype, order="C")
         dx.fill(0)
 
         self._conv_bwd_nhwc(dx, dy)
@@ -221,7 +219,7 @@ class Conv2DDepthwiseNumpy(AbstractConv2DNumpy, Conv2DDepthwise):
     def _backward_nchw(self, dy: np.ndarray) -> np.ndarray:
         """Perform NCHW backward pass for depthwise convolution."""
 
-        dx: np.ndarray = np.ascontiguousarray(self.dx[: dy.shape[0],], dtype=self.model.dtype)
+        dx: np.ndarray = np.asarray(self.dx[: dy.shape[0],], dtype=self.model.dtype, order="C")
         dx.fill(0)
 
         self._conv_bwd_nhwc(dx, dy)

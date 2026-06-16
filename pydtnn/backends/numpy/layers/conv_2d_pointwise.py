@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     import numpy as np
 
 
-class Conv2DPointwiseNumpy(Conv2DPointwise, AbstractConv2DNumpy):
+class Conv2DPointwiseNumpy(Conv2DPointwise[np.ndarray], AbstractConv2DNumpy):
     """
     NumPy-based implementation of a pointwise 2D convolution layer.
     """
