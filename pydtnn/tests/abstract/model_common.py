@@ -188,6 +188,9 @@ class ModelCommonTestCase(TestCase):
             f"\t{x1.mean()=}\n"
             f"\t{x2.mean()=}\n"
             f"\t{diff.mean()=}\n"
+            f"\t{np.sum(x1)=}\n"
+            f"\t{np.sum(x2)=}\n"
+            f"\t{np.sum(diff)=}\n"
         )
 
     def do_model1_forward_pass(self, model1: Model, x0: list[np.ndarray]) -> list[np.ndarray]:
@@ -313,15 +316,13 @@ class ModelCommonTestCase(TestCase):
                 rtol, atol = self.get_tolerance(layer)
                 self.assertTrue(
                     x1[i].size == x2[i].size,
-                    f"Both tensors doesn't have the same number of elements (x1[{i}].size = {
-                        x1[i].size
-                    } != {x2[i].size} = x2[{i}].size)",
+                    f"Both tensors doesn't have the same number of elements "
+                    f"(x1[{i}].size = {x1[i].size} != {x2[i].size} = x2[{i}].size)",
                 )
                 self.assertTrue(
                     np.allclose(x1[i], x2[i].reshape(x1[i].shape), rtol=rtol, atol=atol),
-                    f"Forward result from layers {layer.name_with_id} differ ({
-                        self.print_stats(x1[i], x2[i], rtol, atol)
-                    })",
+                    f"Forward result from layers {layer.name_with_id} differ "
+                    f"({self.print_stats(x1[i], x2[i], rtol, atol)})",
                 )
 
     def compare_backward(
@@ -360,25 +361,22 @@ class ModelCommonTestCase(TestCase):
                     allclose = np.allclose(dx1[i], dx2[i], rtol=rtol, atol=atol)
                 else:
                     logger.warning(
-                        f"dx shape on both models for {layer.name_with_id} differ: [dx1.shape: {
-                            dx1[i].shape
-                        }, dx2.shape: {dx2[i].shape}]"
+                        f"dx shape on both models for {layer.name_with_id} differ: "
+                        f"[dx1.shape: {dx1[i].shape}, dx2.shape: {dx2[i].shape}]"
                     )
                     # Try flattening both
                     self.assertTrue(
                         dx1[i].size == dx2[i].size,
-                        f"Both tensors doesn't have the same number of elements (dx1[{i}].size = {
-                            dx1[i].size
-                        } != {dx2[i].size} = dx2[{i}].size)",
+                        f"Both tensors doesn't have the same number of elements "
+                        f"(dx1[{i}].size = {dx1[i].size} != {dx2[i].size} = dx2[{i}].size)",
                     )
                     allclose = np.allclose(
                         dx1[i], dx2[i].reshape(dx1[i].shape), rtol=rtol, atol=atol
                     )
                 self.assertTrue(
                     allclose,
-                    f"Backward result from layer {layer.name_with_id} differ ({
-                        self.print_stats(dx1[i], dx2[i], rtol, atol)
-                    })",
+                    f"Backward result from layer {layer.name_with_id} differ "
+                    f"({self.print_stats(dx1[i], dx2[i], rtol, atol)})",
                 )
 
     def do_test_model(self, model_name: str):
