@@ -46,9 +46,8 @@ class Conv2DDepthwiseNumpy(AbstractConv2DNumpy, Conv2DDepthwise):
                 _y_shape = None
                 dx_shape = None
                 raise NotImplementedError(
-                    f"Format {
-                        self.model.tensor_format
-                    } is not supported in Conv2DDepthwiseNumpy layer."
+                    f"Format {self.model.tensor_format}"
+                    " is not supported in Conv2DDepthwiseNumpy layer."
                 )
 
         _y_shape = self.model.encode_shape((self.model.batch_size, self.co, self.ho, self.wo))
@@ -83,9 +82,7 @@ class Conv2DDepthwiseNumpy(AbstractConv2DNumpy, Conv2DDepthwise):
                                 for yy in range(self.wo):
                                     x_y = self.wstride * yy + self.wdilation * jj - self.wpadding
                                     if 0 <= x_y < self.wi:
-                                        y[nn, cc, xx, yy] += (
-                                            self.weights[cc, ii, jj] * x[nn, cc, x_x, x_y]
-                                        )
+                                        y[nn, xx, yy, cc] += self.weights[cc, ii, jj] * x[nn, x_x, x_y, cc]
 
     def _conv_fwd_nchw(self, x: np.ndarray, y: np.ndarray) -> None:
         """Perform NCHW depthwise convolution forward pass."""
@@ -99,9 +96,7 @@ class Conv2DDepthwiseNumpy(AbstractConv2DNumpy, Conv2DDepthwise):
                                 for yy in range(self.wo):
                                     x_y = self.wstride * yy + self.wdilation * jj - self.wpadding
                                     if 0 <= x_y < self.wi:
-                                        y[nn, xx, yy, cc] += (
-                                            self.weights[cc, ii, jj] * x[nn, x_x, x_y, cc]
-                                        )
+                                        y[nn, cc, xx, yy] += self.weights[cc, ii, jj] * x[nn, cc, x_x, x_y]
 
     def _conv_bwd_nhwc(self, dx: np.ndarray, dy: np.ndarray) -> None:
         """Perform NHWC depthwise convolution backward pass."""
@@ -224,7 +219,7 @@ class Conv2DDepthwiseNumpy(AbstractConv2DNumpy, Conv2DDepthwise):
         dx: np.ndarray = np.ascontiguousarray(self.dx[: dy.shape[0],], dtype=self.model.dtype)
         dx.fill(0)
 
-        self._conv_bwd_nhwc(dx, dy)
+        self._conv_bwd_nchw(dx, dy)
 
         if self.use_bias:
             self.model.tracer.emit_event(

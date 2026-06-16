@@ -11,7 +11,7 @@ from pydtnn.libs import numpy as np
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
                                    PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
 from pydtnn.utils.constants import ArrayShape
-from pydtnn.utils.tensor import TensorFormat, format_transpose
+from pydtnn.utils.tensor import TensorFormat, format_reshape, format_transpose
 
 __all__ = ("Conv2DPointwiseNumpy",)
 
@@ -217,7 +217,8 @@ class Conv2DPointwiseNumpy(Conv2DPointwise, AbstractConv2DNumpy):
         np.matmul(w, reshaped_dy, out=dx, dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-        return np.asarray(dx.reshape(x_shape), dtype=self.model.dtype, order="C")
+        dx = dx.reshape(x_shape)
+        return np.asarray(dx, dtype=self.model.dtype, order="C")
 
     def _backward_nchw(self, dy: np.ndarray) -> np.ndarray:
         """
@@ -232,8 +233,8 @@ class Conv2DPointwiseNumpy(Conv2DPointwise, AbstractConv2DNumpy):
             PYDTNN_OPS_EVENT,
             self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_TRANSPOSE_DY,
         )
-        reshaped_dy = dy.reshape((_dim, _c))
-        self.x = self.x.reshape((-1, _dim))
+        reshaped_dy = format_transpose(dy, TensorFormat.NCHW, TensorFormat.NHWC).reshape((_dim, _c))
+        self.x = format_transpose(self.x, TensorFormat.NCHW, TensorFormat.NHWC).reshape((-1, _dim))
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(
@@ -254,10 +255,10 @@ class Conv2DPointwiseNumpy(Conv2DPointwise, AbstractConv2DNumpy):
             PYDTNN_OPS_EVENT,
             self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_TRANSPOSE_W,
         )
-        w = self.weights.reshape((self.co, -1)).T
+        w = format_transpose(self.weights, "IO", "OI").reshape((self.co, -1)).T
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-        reshaped_dy: np.ndarray = dy.reshape((self.co, -1))
+        reshaped_dy: np.ndarray = format_transpose(dy, TensorFormat.NCHW, TensorFormat.NHWC).reshape((self.co, -1))
 
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_MATMUL
@@ -265,4 +266,5 @@ class Conv2DPointwiseNumpy(Conv2DPointwise, AbstractConv2DNumpy):
         np.matmul(w, reshaped_dy, out=dx, dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-        return np.asarray(dx.reshape(x_shape), dtype=self.model.dtype, order="C")
+        dx = dx.reshape(format_reshape(x_shape, TensorFormat.NCHW, TensorFormat.NHWC))
+        return np.asarray(format_transpose(dx, TensorFormat.NHWC, TensorFormat.NCHW), dtype=self.model.dtype, order="C")

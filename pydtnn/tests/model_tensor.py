@@ -7,6 +7,7 @@ import unittest
 
 import numpy as np
 
+from pydtnn.layers.abstract.conv_2d import AbstractConv2D
 from pydtnn.layers.abstract.layer import LayerError
 from pydtnn.layers.addition_block import AdditionBlock
 from pydtnn.layers.concatenation_block import ConcatenationBlock
@@ -149,11 +150,24 @@ class ModelTensorTestCase(ModelCommonTestCase):
         if verbose_test():
             logger.info("\nComparing dw of both models...")
         for i, layer in reversed(list(enumerate(model2.layers, 0))):
-            if isinstance(layer, (Conv2D, FC)):
+            if isinstance(layer, (AbstractConv2D, FC)):
                 rtol, atol = self.get_tolerance(layer)
                 if len(layer.weights.shape) == 4:
                     # layer.dw: np.ndarray
                     transposed_dw = format_transpose(layer.dw, "OIHW", "IHWO")
+                    if transposed_dw.shape == model1.layers[i].dw.shape:
+                        allclose = np.allclose(
+                            transposed_dw, model1.layers[i].dw, rtol=rtol, atol=atol
+                        )
+                        self.assertTrue(
+                            allclose,
+                            f"Backward dw from layer {layer.name_with_id} differ ({
+                                self.print_stats(transposed_dw, model1.layers[i].dw, rtol, atol)
+                            })",
+                        )
+                elif len(layer.weights.shape) == 2:
+                    # layer.dw: np.ndarray
+                    transposed_dw = format_transpose(layer.dw, "OI", "IO")
                     if transposed_dw.shape == model1.layers[i].dw.shape:
                         allclose = np.allclose(
                             transposed_dw, model1.layers[i].dw, rtol=rtol, atol=atol
@@ -176,7 +190,7 @@ class ModelTensorTestCase(ModelCommonTestCase):
         if verbose_test():
             logger.info("\nComparing db of both models...")
         for i, layer in reversed(list(enumerate(model2.layers, 0))):
-            if isinstance(layer, (Conv2D, FC)) and layer.use_bias:
+            if isinstance(layer, (AbstractConv2D, FC)) and layer.use_bias:
                 rtol, atol = self.get_tolerance(layer)
                 # layer.db:np.ndarray
                 allclose = np.allclose(layer.db, model1.layers[i].db, rtol=rtol, atol=atol)
