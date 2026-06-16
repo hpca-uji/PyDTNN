@@ -24,31 +24,8 @@ if TYPE_CHECKING:
 
 class Conv2DPointwiseCython(Conv2DPointwiseNumpy):
     """
-    NumPy-based implementation of a pointwise 2D convolution layer.
+    Cython-based implementation of a pointwise 2D convolution layer.
     """
-    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
-        """
-        Initializes model buffers and assigns forward/backward methods based on tensor format.
-        """
-        super()._model_init(prev_shape, x)
-        match self.model.tensor_format:
-            case TensorFormat.NCHW:
-                self.forward = self._forward_nchw
-                self.backward = self._backward_nchw
-            case TensorFormat.NHWC:
-                self.forward = self._forward_nhwc
-                self.backward = self._backward_nhwc
-
-        y_shape = self.model.encode_shape((self.model.batch_size, self.co, self.ho, self.wo))
-        # NOTE: These attributes only store data, their values before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
-        # self.dw (this one too, but it's initalized in Conv2DNumpy)
-        self.y = np.zeros(shape=y_shape, dtype=self.model.dtype)
-        self.memory_used += self.y.nbytes
-
-        if not self.model.evaluate_only:
-            self.dx = np.zeros(shape=(self.ci, self.model.batch_size * self.hi * self.wi), dtype=self.model.dtype)
-            self.dx = self.dx.reshape(self.model.batch_size * self.ci * self.hi * self.wi)
-            self.memory_used += self.dx.nbytes
 
     def _forward_nhwc(self, x: np.ndarray) -> np.ndarray:
         """

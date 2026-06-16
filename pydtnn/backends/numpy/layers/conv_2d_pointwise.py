@@ -98,9 +98,7 @@ class Conv2DPointwiseNumpy(Conv2DPointwise[np.ndarray], AbstractConv2DNumpy):
         self.memory_used += self.y.nbytes
 
         if not self.model.evaluate_only:
-            self.dx = np.zeros(
-                shape=(self.ci, self.model.batch_size * self.hi * self.wi), dtype=self.model.dtype
-            )
+            self.dx = np.zeros(shape=(self.model.batch_size * self.ci * self.hi * self.wi), dtype=self.model.dtype)
             self.memory_used += self.dx.nbytes
 
     def _forward_nhwc(self, x: np.ndarray) -> np.ndarray:
@@ -175,17 +173,17 @@ class Conv2DPointwiseNumpy(Conv2DPointwise[np.ndarray], AbstractConv2DNumpy):
         """
         Performs the backward pass for NHWC tensor format.
         """
-        _n, _h, _w, _c = dy.shape
-        _dim = _n * _h * _w
+        n, h, w, c = dy.shape
+        dim = n * h * w
         x_shape = self.x.shape
-        dx: np.ndarray = np.asarray(self.dx[:, :_dim], dtype=self.model.dtype, order="C")
+        dx = np.asarray(self.dx[: dy.size].reshape(self.ci, dim), dtype=self.model.dtype, order="C")
 
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT,
             self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_TRANSPOSE_DY,
         )
-        reshaped_dy: np.ndarray = dy.reshape((_dim, _c))
-        self.x: np.ndarray = self.x.reshape((-1, _dim))
+        reshaped_dy: np.ndarray = dy.reshape((dim, c))
+        self.x: np.ndarray = self.x.reshape((-1, dim))
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(
@@ -193,14 +191,6 @@ class Conv2DPointwiseNumpy(Conv2DPointwise[np.ndarray], AbstractConv2DNumpy):
         )
         np.matmul(self.x, reshaped_dy, out=self.dw, dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-
-        if self.use_bias:
-            self.model.tracer.emit_event(
-                PYDTNN_OPS_EVENT,
-                self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_SUM_BIASES,
-            )
-            np.sum(dy, axis=(0, 1, 2), out=self.db)
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT,
@@ -216,25 +206,33 @@ class Conv2DPointwiseNumpy(Conv2DPointwise[np.ndarray], AbstractConv2DNumpy):
         )
         np.matmul(w, reshaped_dy, out=dx, dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-
         dx = dx.reshape(x_shape)
+
+        if self.use_bias:
+            self.model.tracer.emit_event(
+                PYDTNN_OPS_EVENT,
+                self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_SUM_BIASES,
+            )
+            np.sum(dy, axis=(0, 1, 2), out=self.db)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+
         return np.asarray(dx, dtype=self.model.dtype, order="C")
 
     def _backward_nchw(self, dy: np.ndarray) -> np.ndarray:
         """
         Performs the backward pass for NCHW tensor format.
         """
-        _n, _c, _h, _w = dy.shape
-        _dim = _n * _h * _w
+        n, c, h, w = dy.shape
+        dim = n * h * w
         x_shape = self.x.shape
-        dx = np.asarray(self.dx[:, :_dim], dtype=self.model.dtype, order="C")
+        dx = np.asarray(self.dx[: dy.size].reshape(self.ci, dim), dtype=self.model.dtype, order="C")
 
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT,
             self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_TRANSPOSE_DY,
         )
-        reshaped_dy = format_transpose(dy, TensorFormat.NCHW, TensorFormat.NHWC).reshape((_dim, _c))
-        self.x = format_transpose(self.x, TensorFormat.NCHW, TensorFormat.NHWC).reshape((-1, _dim))
+        reshaped_dy = format_transpose(dy, TensorFormat.NCHW, TensorFormat.NHWC).reshape((dim, c))
+        self.x = format_transpose(self.x, TensorFormat.NCHW, TensorFormat.NHWC).reshape((-1, dim))
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(
@@ -242,14 +240,6 @@ class Conv2DPointwiseNumpy(Conv2DPointwise[np.ndarray], AbstractConv2DNumpy):
         )
         np.matmul(self.x, reshaped_dy, out=self.dw.T, dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-
-        if self.use_bias:
-            self.model.tracer.emit_event(
-                PYDTNN_OPS_EVENT,
-                self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_SUM_BIASES,
-            )
-            np.sum(dy, axis=(0, 2, 3), out=self.db)
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT,
@@ -267,4 +257,14 @@ class Conv2DPointwiseNumpy(Conv2DPointwise[np.ndarray], AbstractConv2DNumpy):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         dx = dx.reshape(format_reshape(x_shape, TensorFormat.NCHW, TensorFormat.NHWC))
-        return np.asarray(format_transpose(dx, TensorFormat.NHWC, TensorFormat.NCHW), dtype=self.model.dtype, order="C")
+        dx = format_transpose(dx, TensorFormat.NHWC, TensorFormat.NCHW)
+
+        if self.use_bias:
+            self.model.tracer.emit_event(
+                PYDTNN_OPS_EVENT,
+                self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_SUM_BIASES,
+            )
+            np.sum(dy, axis=(0, 2, 3), out=self.db)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+
+        return np.asarray(dx, dtype=self.model.dtype, order="C")
