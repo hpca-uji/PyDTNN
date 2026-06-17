@@ -12,8 +12,7 @@ def fwd_pointwise_conv_cython_nchw(npDT[:,:,:,::1] x,
                                    npDT[:,::1] k,
                                    npDT[:,:,:,::1] out,
                                    int hpadding, int wpadding,
-                                   int hstride, int wstride,
-                                   int hdilation, int wdilation)-> None:
+                                   int hstride, int wstride)-> None:
 
     cdef int n = x.shape[0]
     cdef int c = x.shape[1]
@@ -31,10 +30,10 @@ def fwd_pointwise_conv_cython_nchw(npDT[:,:,:,::1] x,
     for nn in prange(n, nogil=True):
         for cco in range(co):
             for ii in range(ho):
-                x_x = hstride * ii + (hdilation - 1) - hpadding
+                x_x = hstride * ii - hpadding
                 if 0 <= x_x < h:
                     for jj in range(wo):
-                        x_y = wstride * jj + (wdilation - 1) - wpadding
+                        x_y = wstride * jj - wpadding
                         if 0 <= x_y < w:
                             for cc in range(c):
                                 out[nn, cco, ii, jj] += (k[cco, cc] * x[nn, cc, x_x, x_y])
@@ -45,8 +44,7 @@ def bwd_pointwise_conv_cython_nchw(npDT[:,:,:,::1] dy,
                                    npDT[:,:,:,::1] dx,
                                    npDT[:,::1] dw,
                                    int hpadding, int wpadding,
-                                   int hstride, int wstride,
-                                   int hdilation, int wdilation)-> None:
+                                   int hstride, int wstride)-> None:
 
     cdef int n = x.shape[0]
     cdef int c = x.shape[1]
@@ -63,10 +61,10 @@ def bwd_pointwise_conv_cython_nchw(npDT[:,:,:,::1] dy,
     for nn in prange(n, nogil=True):
         for cco in range(co):
             for xx in range(ho):
-                x_x = hstride * xx + (hdilation - 1) - hpadding
+                x_x = hstride * xx - hpadding
                 if 0 <= x_x < h:
                     for yy in range(wo):
-                        x_y = wstride * yy + (wdilation - 1) - wpadding
+                        x_y = wstride * yy - wpadding
                         val_dy = dy[nn, cco, xx, yy]
                         if 0 <= x_y < w:
                             for cc in range(c):

@@ -98,7 +98,7 @@ __global__ void cuda_depthwise_conv_2d_bwd(TYPE* dy, TYPE* x, TYPE* k,
                 if ((0 <= x_x) && (x_x < h) && (0 <= x_y) && (x_y < w)){
                     val_k = *(SHIFT_POINTER(k, c, h, w, 0, cc, khi, kwi));
                     val_x = *(SHIFT_POINTER(x, c, h, w, nn, cc, x_x, x_y));
-                    *(SHIFT_POINTER(dw, c, h, w, 0, cc, khi, kwi)) = (TYPE) (val_x * val_dy);
+                    *(SHIFT_POINTER(dw, c, h, w, 0, cc, khi, kwi)) += (TYPE) (val_x * val_dy);
                     *(SHIFT_POINTER(dx, c, h, w, nn, cc, x_x, x_y)) += (TYPE) (val_k * val_dy);
                 }
             }

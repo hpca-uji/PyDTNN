@@ -9,8 +9,6 @@ from pydtnn.backends.numpy.layers.conv_2d_pointwise import Conv2DPointwiseNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
                                    PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
-from pydtnn.utils.constants import ArrayShape
-from pydtnn.utils.tensor import TensorFormat
 from pydtnn.backends.cython.utils.pointwise_conv_nchw_cython import fwd_pointwise_conv_cython_nchw, bwd_pointwise_conv_cython_nchw
 from pydtnn.backends.cython.utils.pointwise_conv_nhwc_cython import fwd_pointwise_conv_cython_nhwc, bwd_pointwise_conv_cython_nhwc
 
@@ -26,19 +24,18 @@ class Conv2DPointwiseCython(Conv2DPointwiseNumpy):
     """
     Cython-based implementation of a pointwise 2D convolution layer.
     """
-
     def _forward_nhwc(self, x: np.ndarray) -> np.ndarray:
         """
         Performs the forward pass for NHWC tensor format.
         """
         self.x: np.ndarray = x
         y: np.ndarray = self.y[: x.shape[0], :]
+        y.fill(0)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_POINTWISE_CONV)
         fwd_pointwise_conv_cython_nhwc(x, self.weights, y,
                                        self.hpadding, self.wpadding,
-                                       self.hstride, self.wstride,
-                                       self.hdilation, self.wdilation)
+                                       self.hstride, self.wstride)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         
         if self.use_bias:
@@ -59,12 +56,12 @@ class Conv2DPointwiseCython(Conv2DPointwiseNumpy):
         self.x: np.ndarray = x
 
         y: np.ndarray = self.y[: x.shape[0], :]
+        y.fill(0)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_TRANSPOSE_Y)
         fwd_pointwise_conv_cython_nchw(x, self.weights, y,
                                        self.hpadding, self.wpadding,
-                                       self.hstride, self.wstride,
-                                       self.hdilation, self.wdilation)
+                                       self.hstride, self.wstride)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.use_bias:
@@ -82,11 +79,12 @@ class Conv2DPointwiseCython(Conv2DPointwiseNumpy):
         """
         #dx: np.ndarray = np.asarray(self.dx[:, :_dim], dtype=self.model.dtype, order="C")
         dx = np.asarray(self.dx[: self.x.size].reshape(self.x.shape), dtype=self.model.dtype, order="C")
+        dx.fill(0)
+        self.dw.fill(0)
 
         bwd_pointwise_conv_cython_nhwc(dy, self.x, self.weights, dx, self.dw,
                                        self.hpadding, self.wpadding,
-                                       self.hstride, self.wstride,
-                                       self.hdilation, self.wdilation)
+                                       self.hstride, self.wstride)
 
         if self.use_bias:
             self.model.tracer.emit_event(
@@ -103,12 +101,12 @@ class Conv2DPointwiseCython(Conv2DPointwiseNumpy):
         Performs the backward pass for NCHW tensor format.
         """
         dx = np.asarray(self.dx[: self.x.size].reshape(self.x.shape), dtype=self.model.dtype, order="C")
-
+        dx.fill(0)
+        self.dw.fill(0)
 
         bwd_pointwise_conv_cython_nchw(dy, self.x, self.weights, dx, self.dw,
                                        self.hpadding, self.wpadding,
-                                       self.hstride, self.wstride,
-                                       self.hdilation, self.wdilation)
+                                       self.hstride, self.wstride)
     
         if self.use_bias:
             self.model.tracer.emit_event(

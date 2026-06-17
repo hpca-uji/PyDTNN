@@ -89,7 +89,7 @@ __global__ void cuda_pointwise_conv_2d_bwd(TYPE* dy, TYPE* x, TYPE* k,
             // TODO: Check if this is correct,
             //dw = x * dy
             val_x = *(SHIFT_POINTER(x, xc, h, w, ni, xci, hi, wi));
-            *(SHIFT_POINTER_K(dw, c, xc, ci, xci)) = (TYPE) (val_x * val_dy);
+            *(SHIFT_POINTER_K(dw, c, xc, ci, xci)) += (TYPE) (val_x * val_dy);
 
             //dx = w * dy
             val_k = *(SHIFT_POINTER_K(k, c, xc, ci, xci));

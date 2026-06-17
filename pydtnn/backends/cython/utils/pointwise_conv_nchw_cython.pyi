@@ -12,8 +12,6 @@ def fwd_pointwise_conv_cython_nchw[T: _npDT](
     hpadding: int,
     vstride: int,
     hstride: int,
-    vdilation: int,
-    hdilation: int,
 ) -> None:
     """
     Performs a pointwise convolution in NHWC format using Cython.
@@ -26,8 +24,6 @@ def fwd_pointwise_conv_cython_nchw[T: _npDT](
         hpadding (int): horizontal padding value.
         vstride (int): vertical stride value.
         hstride (int): horizontal stride value.
-        vdilation (int): vertical dilation value.
-        hdilation (int): horizontal dilation value.
 
     Returns:
         Nothing. The value is stored in `out`.
@@ -43,8 +39,6 @@ def bwd_pointwise_conv_cython_nchw[T: _npDT](
     hpadding: int,
     vstride: int,
     hstride: int,
-    vdilation: int,
-    hdilation: int,
 ) -> None:
     """
     Computes the gradients for pointwise convolution in NHWC format using Cython.
@@ -59,8 +53,6 @@ def bwd_pointwise_conv_cython_nchw[T: _npDT](
         hpadding (int): horizontal padding value.
         vstride (int): vertical stride value.
         hstride (int): horizontal stride value.
-        vdilation (int): vertical dilation value.
-        hdilation (int): horizontal dilation value.
 
     Returns:
         Nothing. The outputs are stored in `dx` and `dw`.

@@ -12,8 +12,7 @@ def fwd_pointwise_conv_cython_nhwc(npDT[:,:,:,::1] x,
                                    npDT[:,::1] k,
                                    npDT[:,:,:,::1] out,
                                    int hpadding, int wpadding,
-                                   int hstride, int wstride,
-                                   int hdilation, int wdilation)-> None:
+                                   int hstride, int wstride)-> None:
 
     cdef int n = x.shape[0]
     cdef int h = x.shape[1]
@@ -28,10 +27,10 @@ def fwd_pointwise_conv_cython_nhwc(npDT[:,:,:,::1] x,
 
     for nn in prange(n, nogil=True):
         for ii in range(ho):
-            x_x = hstride * ii + (hdilation - 1) - hpadding
+            x_x = hstride * ii - hpadding
             if 0 <= x_x < h:
                 for jj in range(wo):
-                    x_y = wstride * jj + (wdilation - 1) - wpadding
+                    x_y = wstride * jj - wpadding
                     if 0 <= x_y < w:
                         for cco in range(co):
                             for cc in range(c):
@@ -43,8 +42,7 @@ def bwd_pointwise_conv_cython_nhwc(npDT[:,:,:,::1] dy,
                                    npDT[:,:,:,::1] dx,
                                    npDT[:,::1] dw,
                                    int hpadding, int wpadding,
-                                   int hstride, int wstride,
-                                   int hdilation, int wdilation)-> None:
+                                   int hstride, int wstride)-> None:
 
     cdef int n = x.shape[0]
     cdef int h = x.shape[1]
@@ -60,10 +58,10 @@ def bwd_pointwise_conv_cython_nhwc(npDT[:,:,:,::1] dy,
     
     for nn in prange(n, nogil=True):
         for xx in range(ho):
-            x_x = hstride * xx + (hdilation - 1) - hpadding
+            x_x = hstride * xx - hpadding
             if 0 <= x_x < h:
                 for yy in range(wo):
-                    x_y = wstride * yy + (wdilation - 1) - wpadding
+                    x_y = wstride * yy - wpadding
                     if 0 <= x_y < w:
                         for cco in range(co):
                             val_dy = dy[nn, xx, yy, cco]
