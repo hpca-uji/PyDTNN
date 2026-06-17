@@ -198,6 +198,7 @@ def POINTER(type: type) -> ctypes.c_void_p:
 
     return p
 
+
 # Classes corresponding to CUDA vector structures:
 
 

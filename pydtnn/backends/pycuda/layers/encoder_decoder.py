@@ -70,8 +70,7 @@ class EncoderDecoderPycuda(AbstractBlockLayerPycuda, EncoderDecoder):
             # type: ignore (encoder use more parameters)
             layer._model_init(prev_shape=enc_shape, x=(x_enc, mask_enc))
         for layer in self.decoder:
-            layer._model_init(prev_shape=dec_shape, x=(x_dec, x_enc, mask_dec)
-                              )  # type: ignore (decoder use more parameters)
+            layer._model_init(prev_shape=dec_shape, x=(x_dec, x_enc, mask_dec))  # type: ignore (decoder use more parameters)
 
         for layer in self.children:
             self.fwd_time += layer.fwd_time

@@ -8,6 +8,7 @@ except ModuleNotFoundError as exc:
     _exc = exc
 
     def mi_visit(*args, **kwds):
+        """Rank the score with a letter."""
         raise _exc
 
 

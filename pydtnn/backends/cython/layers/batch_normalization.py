@@ -32,5 +32,4 @@ class BatchNormalizationCython(BatchNormalizationNumpy, LayerCython):
 
     def _training_bwd(self, dx: np.ndarray, dy: np.ndarray) -> None:
         """Performs the backward pass during training using Cython kernels."""
-        bn_training_bwd_cython(dx, dy, self.xn, self.std, self.gamma,
-                               self.dgamma, self.dbeta)  # type: ignore
+        bn_training_bwd_cython(dx, dy, self.xn, self.std, self.gamma, self.dgamma, self.dbeta)  # type: ignore

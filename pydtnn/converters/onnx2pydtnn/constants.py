@@ -74,6 +74,12 @@ def not_implemented(name: str) -> Callable:
 
     # Normal usage of this: switch_pytorch_pydtnn([not_implemented_layer_name])(args)
     def _not_implemented(args: dict[str, Any]) -> None:
+        """
+        Convert layer.
+
+        Args:
+            args: The arguments passed to the layer.
+        """
         raise NotImplementedError(f"Layer {name} not implemented - Args received:\n{args} ")
 
     return _not_implemented

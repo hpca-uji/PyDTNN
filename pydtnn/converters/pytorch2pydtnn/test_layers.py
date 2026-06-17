@@ -144,11 +144,13 @@ class TEST_PyTorch_Model(PyTorch_Model):
     """A wrapper class for PyTorch models to facilitate testing individual layers."""
 
     def __init__(self, layer):
+        """Initializes the test model with a specific PyTorch layer."""
         super().__init__()
         self.layer = layer
         print(f"self.layer: {self.layer}")
 
     def forward(self, x):
+        """Performs a forward pass through the wrapped layer."""
         return self.layer(x)
 
 
@@ -156,6 +158,7 @@ class Addition_Test_PyTorch_Model(PyTorch_Model):
     """A PyTorch model containing addition operations for testing conversion logic."""
 
     def __init__(self):
+        """Initializes the addition test model with predefined layers."""
         super().__init__()
         self.op0: nn.Module = DICT_SUPPORTED_LAYERS["AdaptiveAvgPool2d"][0]
         self.op1: nn.Module = DICT_SUPPORTED_LAYERS["MaxPool2d"][0]
@@ -163,6 +166,7 @@ class Addition_Test_PyTorch_Model(PyTorch_Model):
         self.act: nn.Module = DICT_SUPPORTED_LAYERS["Tanh"][0]
 
     def forward(self, x):
+        """Performs a forward pass with addition operations."""
         dict_forwards = dict()
         ro = self.op0(x)
         dict_forwards["AvgPool2d"] = ro
@@ -181,6 +185,7 @@ class Concat_Test_PyTorch_Model(PyTorch_Model):
     """A PyTorch model containing concatenation operations for testing conversion logic."""
 
     def __init__(self):
+        """Initializes the concatenation test model with predefined layers."""
         super().__init__()
         self.op0: nn.Module = DICT_SUPPORTED_LAYERS["AdaptiveAvgPool2d"][0]
         self.op1: nn.Module = DICT_SUPPORTED_LAYERS["MaxPool2d"][0]
@@ -190,6 +195,7 @@ class Concat_Test_PyTorch_Model(PyTorch_Model):
         self.act: nn.Module = DICT_SUPPORTED_LAYERS["Tanh"][0]
 
     def forward(self, x):
+        """Performs a forward pass with concatenation operations."""
         dict_forwards = dict()
         ro = self.op0(x)
         dict_forwards["AdaptiveAvgPool2d"] = ro

@@ -1,4 +1,3 @@
-from __future__ import annotations
 """
 Sparse matrix utilities for the PyDTNN framework.
 
@@ -6,9 +5,12 @@ This module provides the SparseMatrixCOO class, which implements a Coordinate (C
 sparse matrix format optimized for performance using Cython-backed operations.
 """
 
+from __future__ import annotations
+
 import logging
 
 import numpy as np
+
 from pydtnn.utils.sparse.sparse_cython import (summ_coo_cython, top_threshold_selection_coo_cython,
                                                top_threshold_selection_dense_cython)
 
@@ -29,8 +31,14 @@ class SparseMatrixCOO:
     This class is not designed to store explict zeros so, len(self.data) should always be equal to nnz.
     """
 
-    def __init__(self, data: np.ndarray, row: np.ndarray[tuple[int], np.dtype[np.int32]],
-                 col: np.ndarray[tuple[int], np.dtype[np.int32]], shape: tuple, has_canonical_format: bool):
+    def __init__(
+        self,
+        data: np.ndarray,
+        row: np.ndarray[tuple[int], np.dtype[np.int32]],
+        col: np.ndarray[tuple[int], np.dtype[np.int32]],
+        shape: tuple,
+        has_canonical_format: bool,
+    ):
         """
         Primary initializer for SparseMatrixCOO.
 
@@ -88,7 +96,9 @@ class SparseMatrixCOO:
         return cls(data, row, col, dense_array.shape, has_canonical_format=True)
 
     @classmethod
-    def from_dense_top_selection(cls, dense_array: np.ndarray, threshold: float) -> "SparseMatrixCOO":
+    def from_dense_top_selection(
+        cls, dense_array: np.ndarray, threshold: float
+    ) -> "SparseMatrixCOO":
         """
         Alternative constructor to create a SparseMatrixCOO from a dense array,
         considering only elements with absolute value greater than or equal to the threshold.
@@ -153,7 +163,9 @@ class SparseMatrixCOO:
         """
         return self.data, self.row, self.col
 
-    def slice(self, row_start: int, row_end: int, reset_indexes: bool | None = False) -> "SparseMatrixCOO":
+    def slice(
+        self, row_start: int, row_end: int, reset_indexes: bool | None = False
+    ) -> "SparseMatrixCOO":
         """
         Perform a slice by row of the sparse matrix.
 

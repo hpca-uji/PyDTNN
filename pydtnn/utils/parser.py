@@ -175,7 +175,8 @@ class ArgumentParser(argparse.ArgumentParser):
                 " Format: [module[,module[,...]]:]backend[,backend[,...]][;...]."
                 " Example: 'all:numpy;conv_2d:gemm;layers,optimizers:numpy,cython'."
                 " Selection: More specific modules are attempted first, backend order goes from least to most priority."
-                " Default: 'cpu'."),
+                " Default: 'cpu'."
+            ),
         )
         self.add_argument(
             "--batch-size",

@@ -98,7 +98,9 @@ class Conv2DPointwiseNumpy(Conv2DPointwise[np.ndarray], AbstractConv2DNumpy):
         self.memory_used += self.y.nbytes
 
         if not self.model.evaluate_only:
-            self.dx = np.zeros(shape=(self.model.batch_size * self.ci * self.hi * self.wi), dtype=self.model.dtype)
+            self.dx = np.zeros(
+                shape=(self.model.batch_size * self.ci * self.hi * self.wi), dtype=self.model.dtype
+            )
             self.memory_used += self.dx.nbytes
 
     def _forward_nhwc(self, x: np.ndarray) -> np.ndarray:
@@ -176,7 +178,9 @@ class Conv2DPointwiseNumpy(Conv2DPointwise[np.ndarray], AbstractConv2DNumpy):
         n, h, w, c = dy.shape
         dim = n * h * w
         x_shape = self.x.shape
-        dx = np.asarray(self.dx[: self.x.size].reshape(self.ci, -1), dtype=self.model.dtype, order="C")
+        dx = np.asarray(
+            self.dx[: self.x.size].reshape(self.ci, -1), dtype=self.model.dtype, order="C"
+        )
         dx.fill(0)
         self.dw.fill(0)
 
@@ -227,7 +231,9 @@ class Conv2DPointwiseNumpy(Conv2DPointwise[np.ndarray], AbstractConv2DNumpy):
         n, c, h, w = dy.shape
         dim = n * h * w
         x_shape = self.x.shape
-        dx = np.asarray(self.dx[: self.x.size].reshape(self.ci, -1), dtype=self.model.dtype, order="C")
+        dx = np.asarray(
+            self.dx[: self.x.size].reshape(self.ci, -1), dtype=self.model.dtype, order="C"
+        )
         dx.fill(0)
         self.dw.fill(0)
 
@@ -252,7 +258,9 @@ class Conv2DPointwiseNumpy(Conv2DPointwise[np.ndarray], AbstractConv2DNumpy):
         w = format_transpose(self.weights, "IO", "OI").reshape((self.co, -1)).T
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-        reshaped_dy: np.ndarray = format_transpose(dy, TensorFormat.NCHW, TensorFormat.NHWC).reshape((self.co, -1))
+        reshaped_dy: np.ndarray = format_transpose(
+            dy, TensorFormat.NCHW, TensorFormat.NHWC
+        ).reshape((self.co, -1))
 
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_MATMUL

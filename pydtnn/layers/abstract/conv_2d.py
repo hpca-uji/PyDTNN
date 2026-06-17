@@ -96,7 +96,9 @@ class AbstractConv2D[T: Array](Layer[T]):
         self.kh, self.kw = self.filter_shape
         self._initializing_special_parameters()
 
-        self.ho = (self.hi + 2 * self.hpadding - self.hdilation * (self.kh - 1) - 1) // self.hstride + 1
+        self.ho = (
+            self.hi + 2 * self.hpadding - self.hdilation * (self.kh - 1) - 1
+        ) // self.hstride + 1
         self.wo = (
             self.wi + 2 * self.wpadding - self.wdilation * (self.kw - 1) - 1
         ) // self.wstride + 1

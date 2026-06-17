@@ -41,8 +41,7 @@ class RMSPropNumpy(RMSProp[np.ndarray], OptimizerNumpy):
                     # NOTE: int(math.prod(w.shape)): temp_.nbytes = w.nbytes
 
                     self.context[layer.id]["cache_%s" % w_] = cache
-                    self.context[layer.id]["temp_%s" %
-                                           w_] = temp  # type: ignore (it is the right type)
+                    self.context[layer.id]["temp_%s" % w_] = temp  # type: ignore (it is the right type)
 
         self.tmp_memory_used += self.model.memory_cls._total(*temp_memory_size)
         self.memory_used += self.tmp_memory_used
@@ -55,8 +54,7 @@ class RMSPropNumpy(RMSProp[np.ndarray], OptimizerNumpy):
                 for key in self.context[layer_id].keys():
                     if "temp_" in key:
                         w_ = key.split("temp_")[-1]
-                        w_shape = self.context[layer_id]["cache_%s" %
-                                                         w_].shape  # type: ignore (it is correct)
+                        w_shape = self.context[layer_id]["cache_%s" % w_].shape  # type: ignore (it is correct)
                         w_shape = self.context[layer_id][key] = self.model.memory.ndarray(
                             w_shape, dtype=self.model.dtype
                         )

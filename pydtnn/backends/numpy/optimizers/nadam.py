@@ -43,10 +43,8 @@ class NadamNumpy(Nadam[np.ndarray], OptimizerNumpy):
                 # w.nbytes ==> temp_w.nbytes + temp_dw.nbytes = 2 * w.nbytes
                 self.context[layer.id]["m_%s" % w_] = momentum
                 self.context[layer.id]["v_%s" % w_] = velocity
-                self.context[layer.id]["temp_w_%s" %
-                                       w_] = vt_temp_w  # type: ignore (it is the right type)
-                self.context[layer.id]["temp_dw_%s" %
-                                       w_] = mt_temp_dw  # type: ignore (it is the right type)
+                self.context[layer.id]["temp_w_%s" % w_] = vt_temp_w  # type: ignore (it is the right type)
+                self.context[layer.id]["temp_dw_%s" % w_] = mt_temp_dw  # type: ignore (it is the right type)
 
         self.tmp_memory_used += self.model.memory_cls._total(*temp_memory_size)
         self.memory_used += self.tmp_memory_used
@@ -68,8 +66,7 @@ class NadamNumpy(Nadam[np.ndarray], OptimizerNumpy):
                         continue
                     # if w_ is not None:
 
-                    w_shape = self.context[layer_id]["m_%s" %
-                                                     w_].shape  # type: ignore (it is correct)
+                    w_shape = self.context[layer_id]["m_%s" % w_].shape  # type: ignore (it is correct)
                     w_shape = self.context[layer_id][key] = self.model.memory.ndarray(
                         w_shape, dtype=self.model.dtype
                     )

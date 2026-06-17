@@ -11,7 +11,7 @@ def fwd_pointwise_conv_cython_nhwc[T: _npDT](
     vpadding: int,
     hpadding: int,
     vstride: int,
-    hstride: int
+    hstride: int,
 ) -> None:
     """
     Performs a pointwise convolution in NCHW format using Cython.
@@ -38,7 +38,7 @@ def bwd_pointwise_conv_cython_nhwc[T: _npDT](
     vpadding: int,
     hpadding: int,
     vstride: int,
-    hstride: int
+    hstride: int,
 ) -> None:
     """
     Computes the gradients for pointwise convolution in NCHW format using Cython.

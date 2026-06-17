@@ -82,7 +82,9 @@ class Conv2DDepthwiseNumpy(Conv2DDepthwise[np.ndarray], AbstractConv2DNumpy):
                                 for yy in range(self.wo):
                                     x_y = self.wstride * yy + self.wdilation * jj - self.wpadding
                                     if 0 <= x_y < self.wi:
-                                        y[nn, xx, yy, cc] += self.weights[cc, ii, jj] * x[nn, x_x, x_y, cc]
+                                        y[nn, xx, yy, cc] += (
+                                            self.weights[cc, ii, jj] * x[nn, x_x, x_y, cc]
+                                        )
 
     def _conv_fwd_nchw(self, x: np.ndarray, y: np.ndarray) -> None:
         """Perform NCHW depthwise convolution forward pass."""
@@ -96,7 +98,9 @@ class Conv2DDepthwiseNumpy(Conv2DDepthwise[np.ndarray], AbstractConv2DNumpy):
                                 for yy in range(self.wo):
                                     x_y = self.wstride * yy + self.wdilation * jj - self.wpadding
                                     if 0 <= x_y < self.wi:
-                                        y[nn, cc, xx, yy] += self.weights[cc, ii, jj] * x[nn, cc, x_x, x_y]
+                                        y[nn, cc, xx, yy] += (
+                                            self.weights[cc, ii, jj] * x[nn, cc, x_x, x_y]
+                                        )
 
     def _conv_bwd_nhwc(self, dx: np.ndarray, dy: np.ndarray) -> None:
         """Perform NHWC depthwise convolution backward pass."""

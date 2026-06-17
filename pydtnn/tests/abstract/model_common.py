@@ -246,7 +246,9 @@ class ModelCommonTestCase(TestCase):
                 print(f"{x1[i].mean()=}", end=" - ")
                 print(f"{x1[i].sum()=}", end=" - ")
                 print(f"{x1[i].std()=}")
-            x2.append(layer.forward(np.asarray(x1[i].copy(), dtype=model2.dtype, order="C").copy()).copy())
+            x2.append(
+                layer.forward(np.asarray(x1[i].copy(), dtype=model2.dtype, order="C").copy()).copy()
+            )
             if verbose_test():
                 print("output", end=" - ")
                 print(f"{x2[-1].max()=}", end=" - ")
@@ -279,7 +281,10 @@ class ModelCommonTestCase(TestCase):
                 print(f"{dx1[0].sum()=}", end=" - ")
                 print(f"{dx1[0].std()=}")
             dx1.insert(
-                0, layer.backward(np.asarray(dx1[0].copy(), dtype=model1.dtype, order="C").copy()).copy()
+                0,
+                layer.backward(
+                    np.asarray(dx1[0].copy(), dtype=model1.dtype, order="C").copy()
+                ).copy(),
             )
             if verbose_test():
                 print("output", end=" - ")
@@ -314,7 +319,9 @@ class ModelCommonTestCase(TestCase):
                 print(f"{dx1[i + 1].std()=}")
             dx2.insert(
                 0,
-                layer.backward(np.asarray(dx1[i + 1].copy(), dtype=model2.dtype, order="C").copy()).copy(),
+                layer.backward(
+                    np.asarray(dx1[i + 1].copy(), dtype=model2.dtype, order="C").copy()
+                ).copy(),
             )
             if verbose_test():
                 print("output", end=" - ")

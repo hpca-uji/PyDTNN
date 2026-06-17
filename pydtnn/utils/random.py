@@ -2,8 +2,8 @@
 
 import logging
 import threading
-from typing import Any
 import weakref
+from typing import Any
 
 import numpy as np
 

@@ -645,7 +645,15 @@ class Augment(Init):
         return data
 
     def _do_augment_perspective(self, data: np.ndarray) -> np.ndarray:
+        """
+        Apply random perspective augmentation to images.
 
+        Args:
+            data: The input numpy array (batch of images).
+
+        Returns:
+            The array of images with some perspective change.
+        """
         data = self.model.decode_tensor(data)
         N, C, H, W = data.shape
         # NOTE: C not included so all channels in a sample rotate by the same amount
@@ -673,6 +681,16 @@ class Augment(Init):
     def _perspective_coeffs(
         src_points: np.ndarray | list, dst_points: np.ndarray | list
     ) -> np.ndarray[tuple[int]]:
+        """
+        Calculate perspective transformation coefficients.
+
+        Args:
+            src_points: Source points for the transformation.
+            dst_points: Destination points for the transformation.
+
+        Returns:
+            A numpy array containing the transformation coefficients.
+        """
         # Source:
         # A) https://stackoverflow.com/questions/14177744/how-does-perspective-transformation-work-in-pil
         # B) https://web.archive.org/web/20150222120106/xenia.media.mit.edu/~cwren/interpolator/
@@ -688,6 +706,16 @@ class Augment(Init):
         return np.array(res).reshape(8)
 
     def _image_perspective(self, image: Image.Image, factor: float) -> Image.Image:
+        """
+        Apply perspective transformation to a PIL image.
+
+        Args:
+            image: The input PIL image.
+            factor: The intensity factor of the perspective transformation.
+
+        Returns:
+            The transformed PIL image.
+        """
         # NOTE:
         # top_left     = [0, 0]
         # top_right    = [width, 0]

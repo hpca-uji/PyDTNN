@@ -218,7 +218,10 @@ class TorchConcatenationBlock(torch.nn.Module):
 
 
 class TorchDepthPointConv(torch.nn.Module):
+    """PyTorch model representing a depthwise-pointwise convolution sequence."""
+
     def __init__(self, *args, **kwargs):
+        """Initializes the depthwise and pointwise convolution layers."""
         super().__init__(*args, **kwargs)
 
         input_filt = CONV2D_IN_C_TORCH
@@ -250,6 +253,7 @@ class TorchDepthPointConv(torch.nn.Module):
         #              )
 
     def forward(self, x):
+        """Applies the depthwise followed by the pointwise convolution."""
         x = self.conv_depth(x)
         x = self.conv_point(x)
         # x = self.layers(x)
@@ -465,8 +469,7 @@ class LayerPyTorchTestCase(TestCase):
             x, self.params.tensor_format.upper(), TensorFormat.NCHW.upper()
         ).copy()
 
-        x = torch.from_numpy(_x.reshape((N, C, H, W), copy=False)).to(
-            torch.device("cpu")).float()  # type: ignore (It's fine)
+        x = torch.from_numpy(_x.reshape((N, C, H, W), copy=False)).to(torch.device("cpu")).float()  # type: ignore (It's fine)
         x_torch: torch.Tensor = torch_model(x)
         x_torch = np.asarray(
             x_torch.cpu().detach().numpy(), dtype=pydtnn_model.dtype, order="C"
@@ -827,6 +830,7 @@ class LayerPyTorchTestCase(TestCase):
         self.do_test(_x=_x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="Softmax")
 
     def test_Depthwise_Pointwise(self):
+        """Tests Depthwise and Pointwise convolution sequence."""
         input_filt = CONV2D_IN_C_TORCH
         output_filt = CONV2D_N_FILTERS
 

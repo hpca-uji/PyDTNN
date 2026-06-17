@@ -51,7 +51,9 @@ class RMSPropPycuda(RMSProp[TensorArray], OptimizerPycuda):
         operations_gpu = (
             "cache[i] = rho * cache[i] + (1 - rho) * {func}(dw[i], 2);                             "
             "                 w[i] -= lr * (decay * w[i] + (dw[i] / sqrtf(cache[i] + epsilon)))".format(
-                func=pow_func))
+                func=pow_func
+            )
+        )
         self.update_kernel = ElementwiseKernel(parameters_gpu, operations_gpu, "RMSProp_kernel")
 
         # GPU DIRECT -

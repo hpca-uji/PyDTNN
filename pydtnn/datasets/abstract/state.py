@@ -1,8 +1,8 @@
 """
-Dataset module for PyDTNN.
+State module for PyDTNN.
 
-Provides the base Dataset class and utility functions for managing,
-transforming, and generating data batches for machine learning models.
+Provides the State class for managing dataset exports, splitting, and
+archiving operations within the PyDTNN framework.
 """
 
 import itertools
@@ -19,6 +19,13 @@ __all__ = ("State",)
 
 
 class State(Init):
+    """
+    Handles dataset state management, including exporting and archiving.
+
+    Extends the Init class to provide functionality for converting dataset
+    generators into static numpy arrays and saving them to disk.
+    """
+
     def export(self) -> dict[str, np.ndarray]:
         """
         Export dataset to a dictionary of numpy arrays.
