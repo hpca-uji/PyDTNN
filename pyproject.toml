@@ -127,16 +127,24 @@ include = [
 [tool.flake8]
 max-line-length = 128
 max-complexity = 16
+allow-untyped-nested = true
+respect-type-ignore = true
 ignore = [
+    "D202",
     "D400",
     "D401",
     "W503",
-    "ANN101"
+    "ANN101",
+    "ANN102",
+    "ANN401"
 ]
 exclude = [
     ".venv",
     "build",
     "vendor"
+]
+per-file-ignores = [
+    "pydtnn/libs/*:N802"
 ]
 
 [project.entry-points."flake8.extension"]
@@ -144,6 +152,9 @@ MI1 = "pydtnn.utils.flake8_maintain:MaintainabilityChecker"
 
 [tool.autopep8]
 max-line-length = 100
+ignore = [
+    "E501"
+]
 
 [tool.coverage.run]
 branch = true

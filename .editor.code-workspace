@@ -18,5 +18,7 @@
 		},
 		"flake8.importStrategy": "fromEnvironment",
 		"autopep8.importStrategy": "fromEnvironment",
+		"flake8.args": [],
+		"autopep8.args": [],
 	}
 }
