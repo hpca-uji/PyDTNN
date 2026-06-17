@@ -1,7 +1,7 @@
 """Utilities for managing and loading CUDA kernel code within the PyDTNN framework."""
 
 import functools
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from pydtnn.utils import read_file
 
@@ -18,7 +18,7 @@ type Abs_Function = "Function | cp.RawKernel"
 class UsesCudaCode[M: Abs_Module, F: Abs_Function]:
     """Mixin class providing functionality to load, compile, and retrieve CUDA kernels."""
 
-    def __init__(self, *args, **kwds) -> None:
+    def __init__(self, *args: Any, **kwds: Any) -> None:
         """Initializes the base path and defines replacement dictionary."""
         super().__init__(*args, **kwds)
         self.base_path_code = "/".join([*self.__module__.split(".")[1:3], "utils"])
@@ -63,7 +63,7 @@ class UsesCudaCode[M: Abs_Module, F: Abs_Function]:
 
     @staticmethod
     @functools.cache
-    def _get_module(module, code):
+    def _get_module(module: M, code: str) -> M:
         """Compiles CUDA code into a module, cached by code content."""
         return module(code)
 

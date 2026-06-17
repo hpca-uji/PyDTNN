@@ -2,6 +2,7 @@
 
 import logging
 import threading
+from typing import Any
 import weakref
 
 import numpy as np
@@ -14,12 +15,12 @@ logger = logging.getLogger(__name__)
 class SafeGenerator:
     """Provides a thread-local wrapper around numpy random generators."""
 
-    def __init__(self, seed=0) -> None:
+    def __init__(self, seed: int = 0) -> None:
         """Initialize the generator with a base seed."""
         self._generators = weakref.WeakKeyDictionary[threading.Thread, np.random.Generator]()
         self.seed(seed)
 
-    def seed(self, seed) -> None:
+    def seed(self, seed: int) -> None:
         """Reset the seed and clear existing thread-local generators."""
         self._seed = seed
         self._generators.clear()
@@ -34,11 +35,11 @@ class SafeGenerator:
 
         return self._generators[thread]
 
-    def __getattr__(self, key: str):
+    def __getattr__(self, key: str) -> Any:
         """Delegate attribute access to the thread-local generator."""
         return getattr(self._generator, key)
 
-    def shuffle(self, x: list | np.ndarray, axis=0) -> None:
+    def shuffle(self, x: list | np.ndarray, axis: int = 0) -> None:
         """Modify an array or sequence in-place by shuffling its contents."""
         # NOTE: CuPy does not provide an implementation
 
@@ -59,6 +60,6 @@ class SafeGenerator:
 _global = SafeGenerator()
 
 
-def __getattr__(key):
+def __getattr__(key: str) -> Any:
     """Expose global SafeGenerator methods at the module level."""
     return getattr(_global, key)

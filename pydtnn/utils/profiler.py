@@ -7,6 +7,8 @@ import logging
 import tempfile
 import time
 from pathlib import Path
+import types
+from typing import Any
 
 import memray  # type: ignore
 from memray._memray import compute_statistics as memray_statistics  # type: ignore
@@ -40,7 +42,7 @@ class Profiler:
         self.start()
         return self
 
-    def __exit__(self, cls, exc, tb):
+    def __exit__[T: Exception](self, cls: type[T], exc: T, tb: types.TracebackType):
         """Exit the context manager."""
         self.stop()
 
