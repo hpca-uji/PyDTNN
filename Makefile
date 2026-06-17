@@ -254,7 +254,7 @@ $(TVM_SRC)/.git:
 	git submodule update --init --recursive "$(TVM_SRC)"
 
 tvm-build: $(TVM_DST)/.build
-$(TVM_DST)/.build: | $(TVM_SRC)/.git $(DST)/.gitignore
+$(TVM_DST)/.build: $(TVM_SRC)/.git | $(DST)/.gitignore
 	mkdir -p "$(TVM_DST)" "$(TVM_SRC)/build"
 	cd "$(TVM_SRC)/build" && \
 		cp ../cmake/config.cmake . && \
@@ -304,7 +304,7 @@ $(CONVGEMM_SRC)/.git:
 	git submodule update --init --recursive "$(CONVGEMM_SRC)"
 
 convgemm-build: $(CONVGEMM_DST)/.build
-$(CONVGEMM_DST)/.build: | $(CONVGEMM_SRC)/.git $(DST)/.gitignore
+$(CONVGEMM_DST)/.build: $(CONVGEMM_SRC)/.git | $(DST)/.gitignore
 	mkdir -p "$(CONVGEMM_DST)" "$(CONVGEMM_SRC)/build"
 	cd "$(CONVGEMM_SRC)/build" && \
 		cmake \
@@ -349,7 +349,7 @@ $(CONVWINOGRAD_SRC)/.git:
 	git submodule update --init --recursive "$(CONVWINOGRAD_SRC)"
 
 convwinograd-build: $(CONVWINOGRAD_DST)/.build
-$(CONVWINOGRAD_DST)/.build: | $(CONVWINOGRAD_SRC)/.git $(DST)/.gitignore
+$(CONVWINOGRAD_DST)/.build: $(CONVWINOGRAD_SRC)/.git | $(DST)/.gitignore
 	mkdir -p "$(CONVWINOGRAD_DST)" "$(CONVWINOGRAD_SRC)/build"
 	cd "$(CONVWINOGRAD_SRC)/build" && \
 		cmake \
@@ -395,7 +395,7 @@ $(CONVDIRECT_SRC)/.git:
 	git submodule update --init --recursive "$(CONVDIRECT_SRC)"
 
 convdirect-build: $(CONVDIRECT_DST)/.build
-$(CONVDIRECT_DST)/.build: | $(CONVDIRECT_SRC)/.git $(DST)/.gitignore
+$(CONVDIRECT_DST)/.build: $(CONVDIRECT_SRC)/.git | $(DST)/.gitignore
 	mkdir -p "$(CONVDIRECT_DST)" "$(CONVDIRECT_SRC)/build"
 	cd "$(CONVDIRECT_SRC)/build" && \
 		cmake \
@@ -439,7 +439,7 @@ $(OPENFHE_SRC)/.git:
 	git submodule update --init --recursive "$(OPENFHE_SRC)"
 
 openfhe-build: $(OPENFHE_DST)/.build
-$(OPENFHE_DST)/.build: | $(OPENFHE_SRC)/.git $(DST)/.gitignore
+$(OPENFHE_DST)/.build: $(OPENFHE_SRC)/.git | $(DST)/.gitignore
 	mkdir -p "$(OPENFHE_DST)" "$(OPENFHE_SRC)/build"
 	cd "$(OPENFHE_SRC)/build" && \
 		cmake \
@@ -484,7 +484,7 @@ $(OPENFHE_PYTHON_SRC)/.git:
 	git submodule update --init --recursive "$(OPENFHE_PYTHON_SRC)"
 
 openfhe-python-build: $(OPENFHE_PYTHON_DST)/.build
-$(OPENFHE_PYTHON_DST)/.build: | $(OPENFHE_PYTHON_SRC)/.git $(DST)/.gitignore
+$(OPENFHE_PYTHON_DST)/.build: $(OPENFHE_PYTHON_SRC)/.git | $(DST)/.gitignore
 	mkdir -p "$(OPENFHE_PYTHON_DST)" "$(OPENFHE_PYTHON_SRC)/build"
 	cd "$(OPENFHE_PYTHON_SRC)/build" && \
 		cmake \
@@ -541,7 +541,7 @@ $(UARCHFHE_SRC)/.git:
 	git submodule update --init --recursive "$(UARCHFHE_SRC)"
 
 uarchfhe-build: $(UARCHFHE_DST)/.build
-$(UARCHFHE_DST)/.build: | $(UARCHFHE_SRC)/.git $(DST)/.gitignore
+$(UARCHFHE_DST)/.build: $(UARCHFHE_SRC)/.git | $(DST)/.gitignore
 	mkdir -p "$(UARCHFHE_DST)"
 	cd "$(UARCHFHE_SRC)/crates/fhe_py_binding" && \
 		python3 -m build -wo "$(UARCHFHE_DST)"
@@ -581,7 +581,7 @@ $(PYDTNN_SRC)/.git:
 	git clone "https://github.com/hpca-uji/PyDTNN.git" .
 
 pydtnn-build: $(PYDTNN_DST)/.build
-$(PYDTNN_DST)/.build: | $(PYDTNN_SRC)/.git $(DST)/.gitignore
+$(PYDTNN_DST)/.build: $(PYDTNN_SRC)/.git | $(DST)/.gitignore
 	mkdir -p "$(PYDTNN_DST)"
 	TMPDIR=$$(mktemp -d) && \
 	trap "rm -r $${TMPDIR:?}" EXIT && \
