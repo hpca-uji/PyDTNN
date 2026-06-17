@@ -10,9 +10,11 @@ from __future__ import absolute_import
 
 import ctypes
 import ctypes.util
+import functools
 import re
 import sys
 from string import Template
+from typing import Callable
 
 import numpy as np
 
@@ -406,7 +408,7 @@ class _types:
     stream = ctypes.c_void_p
 
 
-def cublasCheckStatus(status):
+def cublasCheckStatus(status: int) -> None:
     """
     Raise CUBLAS exception based on status code.
 
@@ -443,7 +445,7 @@ _libcublas.cublasCreate_v2.restype = int
 _libcublas.cublasCreate_v2.argtypes = [_types.handle]
 
 
-def cublasCreate():
+def cublasCreate() -> int:
     """
     Initialize CUBLAS and create a handle.
 
@@ -472,7 +474,7 @@ _libcublas.cublasDestroy_v2.restype = int
 _libcublas.cublasDestroy_v2.argtypes = [_types.handle]
 
 
-def cublasDestroy(handle):
+def cublasDestroy(handle: int) -> int:
     """
     Destroy a CUBLAS handle and release resources.
 
@@ -498,7 +500,7 @@ _libcublas.cublasGetVersion_v2.restype = int
 _libcublas.cublasGetVersion_v2.argtypes = [_types.handle, ctypes.c_void_p]
 
 
-def cublasGetVersion(handle):
+def cublasGetVersion(handle: int) -> int:
     """
     Get the CUBLAS library version.
 
@@ -526,7 +528,7 @@ def cublasGetVersion(handle):
     return version.value
 
 
-def _get_cublas_version():
+def _get_cublas_version() -> str:
     """
     Get and save CUBLAS version using the CUBLAS library's SONAME.
 
@@ -566,7 +568,7 @@ def _get_cublas_version():
 _cublas_version = int(_get_cublas_version())
 
 
-class _cublas_version_req(object):
+class _cublas_version_req(object):  # noqa: N801
     """
     Decorator to conditionally enable functions based on CUBLAS version.
 
@@ -575,7 +577,7 @@ class _cublas_version_req(object):
     than the required version `v`. Otherwise, it returns the original function.
     """
 
-    def __init__(self, v):
+    def __init__(self, v: float | int) -> None:
         """
         Initialize the version requirement.
 
@@ -594,7 +596,7 @@ class _cublas_version_req(object):
             major, minor = match.groups()
         self.vi = major.ljust(len(major) + 1, "0") + minor.ljust(2, "0")
 
-    def __call__(self, f):
+    def __call__[T: Callable](self, f: T) -> T:
         """
         Apply the decorator to a function.
 
@@ -610,6 +612,7 @@ class _cublas_version_req(object):
             otherwise a placeholder function that raises `NotImplementedError`.
         """
 
+        @functools.wraps(f)
         def f_new(*args, **kwargs):
             raise NotImplementedError("CUBLAS " + self.vs + " required")
 
@@ -625,7 +628,7 @@ _libcublas.cublasSetStream_v2.restype = int
 _libcublas.cublasSetStream_v2.argtypes = [_types.handle, _types.stream]
 
 
-def cublasSetStream(handle, id):
+def cublasSetStream(handle: int, id: int) -> None:
     """
     Set the current CUBLAS library stream.
 
@@ -653,7 +656,7 @@ _libcublas.cublasGetStream_v2.restype = int
 _libcublas.cublasGetStream_v2.argtypes = [_types.handle, ctypes.c_void_p]
 
 
-def cublasGetStream(handle):
+def cublasGetStream(handle: int) -> int:
     """
     Get the current CUBLAS library stream.
 
@@ -685,7 +688,7 @@ _libcublas.cublasGetPointerMode_v2.restype = int
 _libcublas.cublasGetPointerMode_v2.argtypes = [_types.handle, ctypes.c_void_p]
 
 
-def cublasGetPointerMode(handle):
+def cublasGetPointerMode(handle: int) -> int:
     """
     Get the current CUBLAS pointer mode.
 
@@ -717,7 +720,7 @@ _libcublas.cublasSetPointerMode_v2.restype = int
 _libcublas.cublasSetPointerMode_v2.argtypes = [_types.handle, ctypes.c_int]
 
 
-def cublasSetPointerMode(handle, mode):
+def cublasSetPointerMode(handle: int, mode: int) -> None:
     """
     Set the CUBLAS pointer mode.
 
@@ -800,7 +803,7 @@ _libcublas.cublasIsamax_v2.argtypes = [
 ]
 
 
-def cublasIsamax(handle, n, x, incx):
+def cublasIsamax(handle: int, n: int, x: ctypes.c_void_p, incx: int) -> int:
     """Finds the index of the maximum magnitude element (single precision real)."""
     result = ctypes.c_int()
     assert _libcublas
@@ -826,7 +829,7 @@ _libcublas.cublasIdamax_v2.argtypes = [
 ]
 
 
-def cublasIdamax(handle, n, x, incx):
+def cublasIdamax(handle: int, n: int, x: ctypes.c_void_p, incx: int) -> int:
     """Finds the index of the maximum magnitude element (double precision real)."""
     result = ctypes.c_int()
     assert _libcublas
@@ -852,7 +855,7 @@ _libcublas.cublasIcamax_v2.argtypes = [
 ]
 
 
-def cublasIcamax(handle, n, x, incx):
+def cublasIcamax(handle: int, n: int, x: ctypes.c_void_p, incx: int) -> int:
     """Finds the index of the maximum magnitude element (single precision complex)."""
     result = ctypes.c_int()
     assert _libcublas
@@ -878,7 +881,7 @@ _libcublas.cublasIzamax_v2.argtypes = [
 ]
 
 
-def cublasIzamax(handle, n, x, incx):
+def cublasIzamax(handle: int, n: int, x: ctypes.c_void_p, incx: int) -> int:
     """Finds the index of the maximum magnitude element (double precision complex)."""
     result = ctypes.c_int()
     assert _libcublas
@@ -952,7 +955,7 @@ _libcublas.cublasIsamin_v2.argtypes = [
 ]
 
 
-def cublasIsamin(handle, n, x, incx):
+def cublasIsamin(handle: int, n: int, x: ctypes.c_void_p, incx: int) -> int:
     """Finds the index of the minimum magnitude element (single precision real)."""
     result = ctypes.c_int()
     assert _libcublas
@@ -978,7 +981,7 @@ _libcublas.cublasIdamin_v2.argtypes = [
 ]
 
 
-def cublasIdamin(handle, n, x, incx):
+def cublasIdamin(handle: int, n: int, x: ctypes.c_void_p, incx: int) -> int:
     """Finds the index of the minimum magnitude element (double precision real)."""
     result = ctypes.c_int()
     assert _libcublas
@@ -1004,7 +1007,7 @@ _libcublas.cublasIcamin_v2.argtypes = [
 ]
 
 
-def cublasIcamin(handle, n, x, incx):
+def cublasIcamin(handle: int, n: int, x: ctypes.c_void_p, incx: int) -> int:
     """Finds the index of the minimum magnitude element (single precision complex)."""
     result = ctypes.c_int()
     assert _libcublas
@@ -1030,7 +1033,7 @@ _libcublas.cublasIzamin_v2.argtypes = [
 ]
 
 
-def cublasIzamin(handle, n, x, incx):
+def cublasIzamin(handle: int, n: int, x: ctypes.c_void_p, incx: int) -> int:
     """Finds the index of the minimum magnitude element (double precision complex)."""
     result = ctypes.c_int()
     assert _libcublas
@@ -1100,7 +1103,7 @@ _libcublas.cublasSasum_v2.argtypes = [
 ]
 
 
-def cublasSasum(handle, n, x, incx):
+def cublasSasum(handle: int, n: int, x: ctypes.c_void_p, incx: int) -> np.float32:
     """Computes the sum of absolute values (single precision real)."""
     result = ctypes.c_float()
     assert _libcublas
@@ -1127,7 +1130,7 @@ _libcublas.cublasDasum_v2.argtypes = [
 ]
 
 
-def cublasDasum(handle, n, x, incx):
+def cublasDasum(handle: int, n: int, x: ctypes.c_void_p, incx: int) -> np.float64:
     """Computes the sum of absolute values (double precision real)."""
     result = ctypes.c_double()
     assert _libcublas
@@ -1154,7 +1157,7 @@ _libcublas.cublasScasum_v2.argtypes = [
 ]
 
 
-def cublasScasum(handle, n, x, incx):
+def cublasScasum(handle: int, n: int, x: ctypes.c_void_p, incx: int) -> np.float32:
     """Computes the sum of absolute values (single precision complex)."""
     result = ctypes.c_float()
     assert _libcublas
@@ -1181,7 +1184,7 @@ _libcublas.cublasDzasum_v2.argtypes = [
 ]
 
 
-def cublasDzasum(handle, n, x, incx):
+def cublasDzasum(handle: int, n: int, x: ctypes.c_void_p, incx: int) -> np.float64:
     """Computes the sum of absolute values (double precision complex)."""
     result = ctypes.c_double()
     assert _libcublas
@@ -1260,7 +1263,15 @@ _libcublas.cublasSaxpy_v2.argtypes = [
 ]
 
 
-def cublasSaxpy(handle, n, alpha, x, incx, y, incy):
+def cublasSaxpy(
+    handle: int,
+    n: int,
+    alpha: np.float32,
+    x: ctypes.c_void_p,
+    incx: int,
+    y: ctypes.c_void_p,
+    incy: int,
+) -> None:
     """Computes y = alpha*x + y (single precision real)."""
     assert _libcublas
     status = _libcublas.cublasSaxpy_v2(
@@ -1290,7 +1301,15 @@ _libcublas.cublasDaxpy_v2.argtypes = [
 ]
 
 
-def cublasDaxpy(handle, n, alpha, x, incx, y, incy):
+def cublasDaxpy(
+    handle: int,
+    n: int,
+    alpha: np.float64,
+    x: ctypes.c_void_p,
+    incx: int,
+    y: ctypes.c_void_p,
+    incy: int,
+) -> None:
     """Computes y = alpha*x + y (double precision real)."""
     assert _libcublas
     status = _libcublas.cublasDaxpy_v2(
@@ -1320,7 +1339,15 @@ _libcublas.cublasCaxpy_v2.argtypes = [
 ]
 
 
-def cublasCaxpy(handle, n, alpha, x, incx, y, incy):
+def cublasCaxpy(
+    handle: int,
+    n: int,
+    alpha: np.complex64,
+    x: ctypes.c_void_p,
+    incx: int,
+    y: ctypes.c_void_p,
+    incy: int,
+) -> None:
     """Computes y = alpha*x + y (single precision complex)."""
     assert _libcublas
     status = _libcublas.cublasCaxpy_v2(
@@ -1356,7 +1383,15 @@ _libcublas.cublasZaxpy_v2.argtypes = [
 ]
 
 
-def cublasZaxpy(handle, n, alpha, x, incx, y, incy):
+def cublasZaxpy(
+    handle: int,
+    n: int,
+    alpha: np.complex128,
+    x: ctypes.c_void_p,
+    incx: int,
+    y: ctypes.c_void_p,
+    incy: int,
+) -> None:
     """Computes y = alpha*x + y (double precision complex)."""
     assert _libcublas
     status = _libcublas.cublasZaxpy_v2(
@@ -1436,7 +1471,9 @@ _libcublas.cublasScopy_v2.argtypes = [
 ]
 
 
-def cublasScopy(handle, n, x, incx, y, incy):
+def cublasScopy(
+    handle: int, n: int, x: ctypes.c_void_p, incx: int, y: ctypes.c_void_p, incy: int
+) -> None:
     """Copies vector x to vector y (single precision real)."""
     assert _libcublas
     status = _libcublas.cublasScopy_v2(handle, n, int(x), incx, int(y), incy)
@@ -1461,7 +1498,9 @@ _libcublas.cublasDcopy_v2.argtypes = [
 ]
 
 
-def cublasDcopy(handle, n, x, incx, y, incy):
+def cublasDcopy(
+    handle: int, n: int, x: ctypes.c_void_p, incx: int, y: ctypes.c_void_p, incy: int
+) -> None:
     """Copies vector x to vector y (double precision real)."""
     assert _libcublas
     status = _libcublas.cublasDcopy_v2(handle, n, int(x), incx, int(y), incy)
@@ -1486,7 +1525,9 @@ _libcublas.cublasCcopy_v2.argtypes = [
 ]
 
 
-def cublasCcopy(handle, n, x, incx, y, incy):
+def cublasCcopy(
+    handle: int, n: int, x: ctypes.c_void_p, incx: int, y: ctypes.c_void_p, incy: int
+) -> None:
     """Copies vector x to vector y (single precision complex)."""
     assert _libcublas
     status = _libcublas.cublasCcopy_v2(handle, n, int(x), incx, int(y), incy)
@@ -1511,7 +1552,9 @@ _libcublas.cublasZcopy_v2.argtypes = [
 ]
 
 
-def cublasZcopy(handle, n, x, incx, y, incy):
+def cublasZcopy(
+    handle: int, n: int, x: ctypes.c_void_p, incx: int, y: ctypes.c_void_p, incy: int
+) -> None:
     """Copies vector x to vector y (double precision complex)."""
     assert _libcublas
     status = _libcublas.cublasZcopy_v2(handle, n, int(x), incx, int(y), incy)
@@ -1589,7 +1632,9 @@ _libcublas.cublasSdot_v2.argtypes = [
 ]
 
 
-def cublasSdot(handle, n, x, incx, y, incy):
+def cublasSdot(
+    handle: int, n: int, x: ctypes.c_void_p, incx: int, y: ctypes.c_void_p, incy: int
+) -> np.float32:
     """Computes the dot product of two vectors (single precision real)."""
     result = ctypes.c_float()
     assert _libcublas
@@ -1619,7 +1664,9 @@ _libcublas.cublasDdot_v2.argtypes = [
 ]
 
 
-def cublasDdot(handle, n, x, incx, y, incy):
+def cublasDdot(
+    handle: int, n: int, x: ctypes.c_void_p, incx: int, y: ctypes.c_void_p, incy: int
+) -> np.float64:
     """Computes the dot product of two vectors (double precision real)."""
     result = ctypes.c_double()
     assert _libcublas
@@ -1649,7 +1696,9 @@ _libcublas.cublasCdotu_v2.argtypes = [
 ]
 
 
-def cublasCdotu(handle, n, x, incx, y, incy):
+def cublasCdotu(
+    handle: int, n: int, x: ctypes.c_void_p, incx: int, y: ctypes.c_void_p, incy: int
+) -> np.complex64:
     """Computes the dot product of two vectors (single precision complex, non-conjugate)."""
     result = cuda.cuFloatComplex()
     assert _libcublas
@@ -1679,7 +1728,9 @@ _libcublas.cublasCdotc_v2.argtypes = [
 ]
 
 
-def cublasCdotc(handle, n, x, incx, y, incy):
+def cublasCdotc(
+    handle: int, n: int, x: ctypes.c_void_p, incx: int, y: ctypes.c_void_p, incy: int
+) -> np.complex64:
     """Computes the dot product of two vectors (single precision complex, conjugate)."""
     result = cuda.cuFloatComplex()
     assert _libcublas
@@ -1709,7 +1760,9 @@ _libcublas.cublasZdotu_v2.argtypes = [
 ]
 
 
-def cublasZdotu(handle, n, x, incx, y, incy):
+def cublasZdotu(
+    handle: int, n: int, x: ctypes.c_void_p, incx: int, y: ctypes.c_void_p, incy: int
+) -> np.complex128:
     """Computes the dot product of two vectors (double precision complex, non-conjugate)."""
     result = cuda.cuDoubleComplex()
     assert _libcublas
@@ -1739,7 +1792,9 @@ _libcublas.cublasZdotc_v2.argtypes = [
 ]
 
 
-def cublasZdotc(handle, n, x, incx, y, incy):
+def cublasZdotc(
+    handle: int, n: int, x: ctypes.c_void_p, incx: int, y: ctypes.c_void_p, incy: int
+) -> np.complex128:
     """Computes the dot product of two vectors (double precision complex, conjugate)."""
     result = cuda.cuDoubleComplex()
     assert _libcublas
@@ -1807,7 +1862,7 @@ _libcublas.cublasSnrm2_v2.argtypes = [
 ]
 
 
-def cublasSnrm2(handle, n, x, incx):
+def cublasSnrm2(handle: int, n: int, x: ctypes.c_void_p, incx: int) -> np.float32:
     """Computes the Euclidean norm of a vector (single precision real)."""
     result = ctypes.c_float()
     assert _libcublas
@@ -1834,7 +1889,7 @@ _libcublas.cublasDnrm2_v2.argtypes = [
 ]
 
 
-def cublasDnrm2(handle, n, x, incx):
+def cublasDnrm2(handle: int, n: int, x: ctypes.c_void_p, incx: int) -> np.float64:
     """Computes the Euclidean norm of a vector (double precision real)."""
     result = ctypes.c_double()
     assert _libcublas
@@ -1861,7 +1916,7 @@ _libcublas.cublasScnrm2_v2.argtypes = [
 ]
 
 
-def cublasScnrm2(handle, n, x, incx):
+def cublasScnrm2(handle: int, n: int, x: ctypes.c_void_p, incx: int) -> np.float32:
     """Computes the Euclidean norm of a vector (single precision complex)."""
     result = ctypes.c_float()
     assert _libcublas
@@ -1888,7 +1943,7 @@ _libcublas.cublasDznrm2_v2.argtypes = [
 ]
 
 
-def cublasDznrm2(handle, n, x, incx):
+def cublasDznrm2(handle: int, n: int, x: ctypes.c_void_p, incx: int) -> np.float64:
     """Computes the Euclidean norm of a vector (double precision complex)."""
     result = ctypes.c_double()
     assert _libcublas
@@ -1972,7 +2027,16 @@ _libcublas.cublasSrot_v2.argtypes = [
 ]
 
 
-def cublasSrot(handle, n, x, incx, y, incy, c, s):
+def cublasSrot(
+    handle: int,
+    n: int,
+    x: ctypes.c_void_p,
+    incx: int,
+    y: ctypes.c_void_p,
+    incy: int,
+    c: np.float32,
+    s: np.float32,
+) -> None:
     """Applies a Givens rotation to two real vectors (single precision)."""
     assert _libcublas
     status = _libcublas.cublasSrot_v2(
@@ -1985,7 +2049,6 @@ def cublasSrot(handle, n, x, incx, y, incy, c, s):
         ctypes.byref(ctypes.c_float(c)),
         ctypes.byref(ctypes.c_float(s)),
     )
-
     cublasCheckStatus(status)
 
 
@@ -2013,7 +2076,16 @@ _libcublas.cublasDrot_v2.argtypes = [
 ]
 
 
-def cublasDrot(handle, n, x, incx, y, incy, c, s):
+def cublasDrot(
+    handle: int,
+    n: int,
+    x: ctypes.c_void_p,
+    incx: int,
+    y: ctypes.c_void_p,
+    incy: int,
+    c: np.float64,
+    s: np.float64,
+) -> None:
     """Applies a Givens rotation to two real vectors (double precision)."""
     assert _libcublas
     status = _libcublas.cublasDrot_v2(
@@ -2053,7 +2125,16 @@ _libcublas.cublasCrot_v2.argtypes = [
 ]
 
 
-def cublasCrot(handle, n, x, incx, y, incy, c, s):
+def cublasCrot(
+    handle: int,
+    n: int,
+    x: ctypes.c_void_p,
+    incx: int,
+    y: ctypes.c_void_p,
+    incy: int,
+    c: np.float32,
+    s: np.complex64,
+) -> None:
     """Applies a Givens rotation to two complex vectors (single precision)."""
     assert _libcublas
     status = _libcublas.cublasCrot_v2(
@@ -2093,7 +2174,16 @@ _libcublas.cublasCsrot_v2.argtypes = [
 ]
 
 
-def cublasCsrot(handle, n, x, incx, y, incy, c, s):
+def cublasCsrot(
+    handle: int,
+    n: int,
+    x: ctypes.c_void_p,
+    incx: int,
+    y: ctypes.c_void_p,
+    incy: int,
+    c: np.float32,
+    s: np.float32,
+) -> None:
     """Applies a Givens rotation to two complex vectors (single precision real scalar)."""
     assert _libcublas
     status = _libcublas.cublasCsrot_v2(
@@ -2133,7 +2223,16 @@ _libcublas.cublasZrot_v2.argtypes = [
 ]
 
 
-def cublasZrot(handle, n, x, incx, y, incy, c, s):
+def cublasZrot(
+    handle: int,
+    n: int,
+    x: ctypes.c_void_p,
+    incx: int,
+    y: ctypes.c_void_p,
+    incy: int,
+    c: np.float64,
+    s: np.complex128,
+) -> None:
     """Applies a Givens rotation to two complex vectors (double precision)."""
     assert _libcublas
     status = _libcublas.cublasZrot_v2(
@@ -2173,7 +2272,16 @@ _libcublas.cublasZdrot_v2.argtypes = [
 ]
 
 
-def cublasZdrot(handle, n, x, incx, y, incy, c, s):
+def cublasZdrot(
+    handle: int,
+    n: int,
+    x: ctypes.c_void_p,
+    incx: int,
+    y: ctypes.c_void_p,
+    incy: int,
+    c: np.float64,
+    s: np.float64,
+) -> None:
     """Applies a Givens rotation to two complex vectors (double precision real scalar)."""
     assert _libcublas
     status = _libcublas.cublasZdrot_v2(
@@ -2259,7 +2367,9 @@ _libcublas.cublasSrotg_v2.argtypes = [
 ]
 
 
-def cublasSrotg(handle, a, b):
+def cublasSrotg(
+    handle: int, a: np.float32, b: np.float32
+) -> tuple[np.float32, np.float32, np.float32]:
     """Constructs a Givens rotation matrix (single precision real)."""
     _a = ctypes.c_float(a)
     _b = ctypes.c_float(b)
@@ -2294,7 +2404,9 @@ _libcublas.cublasDrotg_v2.argtypes = [
 ]
 
 
-def cublasDrotg(handle, a, b):
+def cublasDrotg(
+    handle: int, a: np.float64, b: np.float64
+) -> tuple[np.float64, np.float64, np.float64]:
     """Constructs a Givens rotation matrix (double precision real)."""
     _a = ctypes.c_double(a)
     _b = ctypes.c_double(b)
@@ -2329,7 +2441,9 @@ _libcublas.cublasCrotg_v2.argtypes = [
 ]
 
 
-def cublasCrotg(handle, a, b):
+def cublasCrotg(
+    handle: int, a: np.complex64, b: np.complex64
+) -> tuple[np.complex64, np.float32, np.complex64]:
     """Constructs a Givens rotation matrix (single precision complex)."""
     _a = cuda.cuFloatComplex(a.real, a.imag)
     _b = cuda.cuFloatComplex(b.real, b.imag)
@@ -2364,7 +2478,9 @@ _libcublas.cublasZrotg_v2.argtypes = [
 ]
 
 
-def cublasZrotg(handle, a, b):
+def cublasZrotg(
+    handle: int, a: np.complex128, b: np.complex128
+) -> tuple[np.complex128, np.float64, np.complex128]:
     """Constructs a Givens rotation matrix (double precision complex)."""
     _a = cuda.cuDoubleComplex(a.real, a.imag)
     _b = cuda.cuDoubleComplex(b.real, b.imag)
@@ -2444,7 +2560,15 @@ _libcublas.cublasSrotm_v2.argtypes = [
 ]
 
 
-def cublasSrotm(handle, n, x, incx, y, incy, sparam):
+def cublasSrotm(
+    handle: int,
+    n: int,
+    x: ctypes.c_void_p,
+    incx: int,
+    y: ctypes.c_void_p,
+    incy: int,
+    sparam: np.ndarray[np.float32],
+) -> None:
     """Applies a real modified Givens rotation (single precision)."""
     assert _libcublas
     status = _libcublas.cublasSrotm_v2(
@@ -2467,7 +2591,15 @@ _libcublas.cublasDrotm_v2.argtypes = [
 ]
 
 
-def cublasDrotm(handle, n, x, incx, y, incy, sparam):
+def cublasDrotm(
+    handle: int,
+    n: int,
+    x: ctypes.c_void_p,
+    incx: int,
+    y: ctypes.c_void_p,
+    incy: int,
+    sparam: np.ndarray[np.float64],
+) -> None:
     """Applies a real modified Givens rotation (double precision)."""
     assert _libcublas
     status = _libcublas.cublasDrotm_v2(
@@ -2532,7 +2664,9 @@ _libcublas.cublasSrotmg_v2.argtypes = [
 ]
 
 
-def cublasSrotmg(handle, d1, d2, x1, y1):
+def cublasSrotmg(
+    handle: int, d1: np.float32, d2: np.float32, x1: np.float32, y1: np.float32
+) -> np.ndarray[np.float32]:
     """Constructs a real modified Givens rotation matrix (single precision)."""
     _d1 = ctypes.c_float(d1)
     _d2 = ctypes.c_float(d2)
@@ -2565,7 +2699,9 @@ _libcublas.cublasDrotmg_v2.argtypes = [
 ]
 
 
-def cublasDrotmg(handle, d1, d2, x1, y1):
+def cublasDrotmg(
+    handle: int, d1: np.float64, d2: np.float64, x1: np.float64, y1: np.float64
+) -> np.ndarray[np.float64]:
     """Constructs a real modified Givens rotation matrix (double precision)."""
     _d1 = ctypes.c_double(d1)
     _d2 = ctypes.c_double(d2)
@@ -2635,7 +2771,7 @@ _libcublas.cublasSscal_v2.argtypes = [
 ]
 
 
-def cublasSscal(handle, n, alpha, x, incx):
+def cublasSscal(handle: int, n: int, alpha: np.float32, x: ctypes.c_void_p, incx: int) -> None:
     """Scales a vector by a scalar (single precision real)."""
     assert _libcublas
     status = _libcublas.cublasSscal_v2(handle, n, ctypes.byref(ctypes.c_float(alpha)), int(x), incx)
@@ -2662,7 +2798,7 @@ _libcublas.cublasDscal_v2.argtypes = [
 ]
 
 
-def cublasDscal(handle, n, alpha, x, incx):
+def cublasDscal(handle: int, n: int, alpha: np.float64, x: ctypes.c_void_p, incx: int) -> None:
     """Scales a vector by a scalar (double precision real)."""
     assert _libcublas
     status = _libcublas.cublasDscal_v2(
@@ -2691,7 +2827,7 @@ _libcublas.cublasCscal_v2.argtypes = [
 ]
 
 
-def cublasCscal(handle, n, alpha, x, incx):
+def cublasCscal(handle: int, n: int, alpha: np.complex64, x: ctypes.c_void_p, incx: int) -> None:
     """Scales a vector by a scalar (single precision complex)."""
     assert _libcublas
     status = _libcublas.cublasCscal_v2(
@@ -2720,7 +2856,7 @@ _libcublas.cublasCsscal_v2.argtypes = [
 ]
 
 
-def cublasCsscal(handle, n, alpha, x, incx):
+def cublasCsscal(handle: int, n: int, alpha: np.float32, x: ctypes.c_void_p, incx: int) -> None:
     """Scales a complex vector by a real scalar (single precision)."""
     assert _libcublas
     status = _libcublas.cublasCsscal_v2(
@@ -2749,7 +2885,7 @@ _libcublas.cublasZscal_v2.argtypes = [
 ]
 
 
-def cublasZscal(handle, n, alpha, x, incx):
+def cublasZscal(handle: int, n: int, alpha: np.complex128, x: ctypes.c_void_p, incx: int) -> None:
     """Scales a vector by a scalar (double precision complex)."""
     assert _libcublas
     status = _libcublas.cublasZscal_v2(
@@ -2778,7 +2914,7 @@ _libcublas.cublasZdscal_v2.argtypes = [
 ]
 
 
-def cublasZdscal(handle, n, alpha, x, incx):
+def cublasZdscal(handle: int, n: int, alpha: np.float64, x: ctypes.c_void_p, incx: int) -> None:
     """Scales a complex vector by a real scalar (double precision)."""
     assert _libcublas
     status = _libcublas.cublasZdscal_v2(
@@ -2856,7 +2992,9 @@ _libcublas.cublasSswap_v2.argtypes = [
 ]
 
 
-def cublasSswap(handle, n, x, incx, y, incy):
+def cublasSswap(
+    handle: int, n: int, x: ctypes.c_void_p, incx: int, y: ctypes.c_void_p, incy: int
+) -> None:
     """Swaps the contents of two vectors (single precision real)."""
     assert _libcublas
     status = _libcublas.cublasSswap_v2(handle, n, int(x), incx, int(y), incy)
@@ -2881,7 +3019,9 @@ _libcublas.cublasDswap_v2.argtypes = [
 ]
 
 
-def cublasDswap(handle, n, x, incx, y, incy):
+def cublasDswap(
+    handle: int, n: int, x: ctypes.c_void_p, incx: int, y: ctypes.c_void_p, incy: int
+) -> None:
     """Swaps the contents of two vectors (double precision real)."""
     assert _libcublas
     status = _libcublas.cublasDswap_v2(handle, n, int(x), incx, int(y), incy)
@@ -2906,7 +3046,9 @@ _libcublas.cublasCswap_v2.argtypes = [
 ]
 
 
-def cublasCswap(handle, n, x, incx, y, incy):
+def cublasCswap(
+    handle: int, n: int, x: ctypes.c_void_p, incx: int, y: ctypes.c_void_p, incy: int
+) -> None:
     """Swaps the contents of two vectors (single precision complex)."""
     assert _libcublas
     status = _libcublas.cublasCswap_v2(handle, n, int(x), incx, int(y), incy)
@@ -2931,7 +3073,9 @@ _libcublas.cublasZswap_v2.argtypes = [
 ]
 
 
-def cublasZswap(handle, n, x, incx, y, incy):
+def cublasZswap(
+    handle: int, n: int, x: ctypes.c_void_p, incx: int, y: ctypes.c_void_p, incy: int
+) -> None:
     """Swaps the contents of two vectors (double precision complex)."""
     assert _libcublas
     status = _libcublas.cublasZswap_v2(handle, n, int(x), incx, int(y), incy)
@@ -2967,7 +3111,22 @@ _libcublas.cublasSgbmv_v2.argtypes = [
 ]
 
 
-def cublasSgbmv(handle, trans, m, n, kl, ku, alpha, A, lda, x, incx, beta, y, incy):
+def cublasSgbmv(
+    handle: int,
+    trans: str,
+    m: int,
+    n: int,
+    kl: int,
+    ku: int,
+    alpha: np.float32,
+    A: ctypes.c_void_p,
+    lda: int,
+    x: ctypes.c_void_p,
+    incx: int,
+    beta: np.float32,
+    y: ctypes.c_void_p,
+    incy: int,
+) -> None:
     """
     Matrix-vector product for real single precision general banded matrix.
 
@@ -3019,7 +3178,22 @@ _libcublas.cublasDgbmv_v2.argtypes = [
 ]
 
 
-def cublasDgbmv(handle, trans, m, n, kl, ku, alpha, A, lda, x, incx, beta, y, incy):
+def cublasDgbmv(
+    handle: int,
+    trans: str,
+    m: int,
+    n: int,
+    kl: int,
+    ku: int,
+    alpha: np.float64,
+    A: ctypes.c_void_p,
+    lda: int,
+    x: ctypes.c_void_p,
+    incx: int,
+    beta: np.float64,
+    y: ctypes.c_void_p,
+    incy: int,
+) -> None:
     """
     Matrix-vector product for real double precision general banded matrix.
 
@@ -3040,12 +3214,12 @@ def cublasDgbmv(handle, trans, m, n, kl, ku, alpha, A, lda, x, incx, beta, y, in
         n,
         kl,
         ku,
-        ctypes.byref(ctypes.c_float(alpha)),
+        ctypes.byref(ctypes.c_double(alpha)),
         int(A),
         lda,
         int(x),
         incx,
-        ctypes.byref(ctypes.c_float(beta)),
+        ctypes.byref(ctypes.c_double(beta)),
         int(y),
         incy,
     )
@@ -3071,7 +3245,22 @@ _libcublas.cublasCgbmv_v2.argtypes = [
 ]
 
 
-def cublasCgbmv(handle, trans, m, n, kl, ku, alpha, A, lda, x, incx, beta, y, incy):
+def cublasCgbmv(
+    handle: int,
+    trans: str,
+    m: int,
+    n: int,
+    kl: int,
+    ku: int,
+    alpha: np.complex64,
+    A: ctypes.c_void_p,
+    lda: int,
+    x: ctypes.c_void_p,
+    incx: int,
+    beta: np.complex64,
+    y: ctypes.c_void_p,
+    incy: int,
+) -> None:
     """
     Matrix-vector product for complex single precision general banded matrix.
 
@@ -3122,7 +3311,22 @@ _libcublas.cublasZgbmv_v2.argtypes = [
 ]
 
 
-def cublasZgbmv(handle, trans, m, n, kl, ku, alpha, A, lda, x, incx, beta, y, incy):
+def cublasZgbmv(
+    handle: int,
+    trans: str,
+    m: int,
+    n: int,
+    kl: int,
+    ku: int,
+    alpha: np.complex128,
+    A: ctypes.c_void_p,
+    lda: int,
+    x: ctypes.c_void_p,
+    incx: int,
+    beta: np.complex128,
+    y: ctypes.c_void_p,
+    incy: int,
+) -> None:
     """
     Matrix-vector product for complex double precision general banded matrix.
 
@@ -3215,7 +3419,20 @@ _libcublas.cublasSgemv_v2.argtypes = [
 ]
 
 
-def cublasSgemv(handle, trans, m, n, alpha, A, lda, x, incx, beta, y, incy):
+def cublasSgemv(
+    handle: int,
+    trans: str | int,
+    m: int,
+    n: int,
+    alpha: np.float32,
+    A: ctypes.c_void_p,
+    lda: int,
+    x: ctypes.c_void_p,
+    incx: int,
+    beta: np.float32,
+    y: ctypes.c_void_p,
+    incy: int,
+) -> None:
     """Matrix-vector product (single precision real)."""
     assert _libcublas
     status = _libcublas.cublasSgemv_v2(
@@ -3256,7 +3473,20 @@ _libcublas.cublasDgemv_v2.argtypes = [
 ]
 
 
-def cublasDgemv(handle, trans, m, n, alpha, A, lda, x, incx, beta, y, incy):
+def cublasDgemv(
+    handle: int,
+    trans: str | int,
+    m: int,
+    n: int,
+    alpha: np.float64,
+    A: ctypes.c_void_p,
+    lda: int,
+    x: ctypes.c_void_p,
+    incx: int,
+    beta: np.float64,
+    y: ctypes.c_void_p,
+    incy: int,
+) -> None:
     """Matrix-vector product (double precision real)."""
     assert _libcublas
     status = _libcublas.cublasDgemv_v2(
@@ -3297,7 +3527,20 @@ _libcublas.cublasCgemv_v2.argtypes = [
 ]
 
 
-def cublasCgemv(handle, trans, m, n, alpha, A, lda, x, incx, beta, y, incy):
+def cublasCgemv(
+    handle: int,
+    trans: str | int,
+    m: int,
+    n: int,
+    alpha: np.complex64,
+    A: ctypes.c_void_p,
+    lda: int,
+    x: ctypes.c_void_p,
+    incx: int,
+    beta: np.complex64,
+    y: ctypes.c_void_p,
+    incy: int,
+) -> None:
     """Matrix-vector product (single precision complex)."""
     assert _libcublas
     status = _libcublas.cublasCgemv_v2(
@@ -3338,7 +3581,20 @@ _libcublas.cublasZgemv_v2.argtypes = [
 ]
 
 
-def cublasZgemv(handle, trans, m, n, alpha, A, lda, x, incx, beta, y, incy):
+def cublasZgemv(
+    handle: int,
+    trans: str | int,
+    m: int,
+    n: int,
+    alpha: np.complex128,
+    A: ctypes.c_void_p,
+    lda: int,
+    x: ctypes.c_void_p,
+    incx: int,
+    beta: np.complex128,
+    y: ctypes.c_void_p,
+    incy: int,
+) -> None:
     """Matrix-vector product (double precision complex)."""
     assert _libcublas
     status = _libcublas.cublasZgemv_v2(
@@ -3413,7 +3669,18 @@ _libcublas.cublasSger_v2.argtypes = [
 ]
 
 
-def cublasSger(handle, m, n, alpha, x, incx, y, incy, A, lda):
+def cublasSger(
+    handle: int,
+    m: int,
+    n: int,
+    alpha: np.float32,
+    x: ctypes.c_void_p,
+    incx: int,
+    y: ctypes.c_void_p,
+    incy: int,
+    A: ctypes.c_void_p,
+    lda: int,
+) -> None:
     """Rank-1 operation (single precision real)."""
     assert _libcublas
     status = _libcublas.cublasSger_v2(
@@ -3439,7 +3706,18 @@ _libcublas.cublasDger_v2.argtypes = [
 ]
 
 
-def cublasDger(handle, m, n, alpha, x, incx, y, incy, A, lda):
+def cublasDger(
+    handle: int,
+    m: int,
+    n: int,
+    alpha: np.float64,
+    x: ctypes.c_void_p,
+    incx: int,
+    y: ctypes.c_void_p,
+    incy: int,
+    A: ctypes.c_void_p,
+    lda: int,
+) -> None:
     """Rank-1 operation (double precision real)."""
     assert _libcublas
     status = _libcublas.cublasDger_v2(
@@ -3465,7 +3743,18 @@ _libcublas.cublasCgerc_v2.argtypes = [
 ]
 
 
-def cublasCgerc(handle, m, n, alpha, x, incx, y, incy, A, lda):
+def cublasCgerc(
+    handle: int,
+    m: int,
+    n: int,
+    alpha: np.complex64,
+    x: ctypes.c_void_p,
+    incx: int,
+    y: ctypes.c_void_p,
+    incy: int,
+    A: ctypes.c_void_p,
+    lda: int,
+) -> None:
     """Rank-1 operation (single precision complex, conjugate)."""
     assert _libcublas
     status = _libcublas.cublasCgerc_v2(
@@ -3500,7 +3789,18 @@ _libcublas.cublasCgeru_v2.argtypes = [
 ]
 
 
-def cublasCgeru(handle, m, n, alpha, x, incx, y, incy, A, lda):
+def cublasCgeru(
+    handle: int,
+    m: int,
+    n: int,
+    alpha: np.complex64,
+    x: ctypes.c_void_p,
+    incx: int,
+    y: ctypes.c_void_p,
+    incy: int,
+    A: ctypes.c_void_p,
+    lda: int,
+) -> None:
     """Rank-1 operation (single precision complex, non-conjugate)."""
     assert _libcublas
     status = _libcublas.cublasCgeru_v2(
@@ -3535,7 +3835,18 @@ _libcublas.cublasZgerc_v2.argtypes = [
 ]
 
 
-def cublasZgerc(handle, m, n, alpha, x, incx, y, incy, A, lda):
+def cublasZgerc(
+    handle: int,
+    m: int,
+    n: int,
+    alpha: np.complex128,
+    x: ctypes.c_void_p,
+    incx: int,
+    y: ctypes.c_void_p,
+    incy: int,
+    A: ctypes.c_void_p,
+    lda: int,
+) -> None:
     """Rank-1 operation (double precision complex, conjugate)."""
     assert _libcublas
     status = _libcublas.cublasZgerc_v2(
@@ -3570,7 +3881,18 @@ _libcublas.cublasZgeru_v2.argtypes = [
 ]
 
 
-def cublasZgeru(handle, m, n, alpha, x, incx, y, incy, A, lda):
+def cublasZgeru(
+    handle: int,
+    m: int,
+    n: int,
+    alpha: np.complex128,
+    x: ctypes.c_void_p,
+    incx: int,
+    y: ctypes.c_void_p,
+    incy: int,
+    A: ctypes.c_void_p,
+    lda: int,
+) -> None:
     """Rank-1 operation (double precision complex, non-conjugate)."""
     assert _libcublas
     status = _libcublas.cublasZgeru_v2(
@@ -3649,7 +3971,20 @@ _libcublas.cublasSsbmv_v2.argtypes = [
 ]
 
 
-def cublasSsbmv(handle, uplo, n, k, alpha, A, lda, x, incx, beta, y, incy):
+def cublasSsbmv(
+    handle: int,
+    uplo: int | str,
+    n: int,
+    k: int,
+    alpha: np.float32,
+    A: ctypes.c_void_p,
+    lda: int,
+    x: ctypes.c_void_p,
+    incx: int,
+    beta: np.float32,
+    y: ctypes.c_void_p,
+    incy: int,
+) -> None:
     """Matrix-vector product (single precision real symmetric-banded)."""
     assert _libcublas
     status = _libcublas.cublasSsbmv_v2(
@@ -3690,7 +4025,20 @@ _libcublas.cublasDsbmv_v2.argtypes = [
 ]
 
 
-def cublasDsbmv(handle, uplo, n, k, alpha, A, lda, x, incx, beta, y, incy):
+def cublasDsbmv(
+    handle: int,
+    uplo: int | str,
+    n: int,
+    k: int,
+    alpha: np.float64,
+    A: ctypes.c_void_p,
+    lda: int,
+    x: ctypes.c_void_p,
+    incx: int,
+    beta: np.float64,
+    y: ctypes.c_void_p,
+    incy: int,
+) -> None:
     """Matrix-vector product (double precision real symmetric-banded)."""
     assert _libcublas
     status = _libcublas.cublasDsbmv_v2(
@@ -3767,7 +4115,18 @@ _libcublas.cublasSspmv_v2.argtypes = [
 ]
 
 
-def cublasSspmv(handle, uplo, n, alpha, AP, x, incx, beta, y, incy):
+def cublasSspmv(
+    handle: int,
+    uplo: int | str,
+    n: int,
+    alpha: np.float32,
+    AP: np.float32,
+    x: ctypes.c_void_p,
+    incx: int,
+    beta: np.float32,
+    y: ctypes.c_void_p,
+    incy: int,
+) -> None:
     """Matrix-vector product (single precision real symmetric packed)."""
     assert _libcublas
     status = _libcublas.cublasSspmv_v2(
@@ -3804,7 +4163,18 @@ _libcublas.cublasDspmv_v2.argtypes = [
 ]
 
 
-def cublasDspmv(handle, uplo, n, alpha, AP, x, incx, beta, y, incy):
+def cublasDspmv(
+    handle: int,
+    uplo: int | str,
+    n: int,
+    alpha: np.float64,
+    AP: np.float64,
+    x: ctypes.c_void_p,
+    incx: int,
+    beta: np.float64,
+    y: ctypes.c_void_p,
+    incy: int,
+) -> None:
     """Matrix-vector product (double precision real symmetric packed)."""
     assert _libcublas
     status = _libcublas.cublasDspmv_v2(
@@ -3870,7 +4240,15 @@ _libcublas.cublasSspr_v2.argtypes = [
 ]
 
 
-def cublasSspr(handle, uplo, n, alpha, x, incx, AP):
+def cublasSspr(
+    handle: int,
+    uplo: int | str,
+    n: int,
+    alpha: np.float32,
+    x: ctypes.c_void_p,
+    incx: int,
+    AP: ctypes.c_void_p,
+) -> None:
     """Rank-1 operation (single precision real symmetric packed)."""
     assert _libcublas
     status = _libcublas.cublasSspr_v2(
@@ -3899,7 +4277,15 @@ _libcublas.cublasDspr_v2.argtypes = [
 ]
 
 
-def cublasDspr(handle, uplo, n, alpha, x, incx, AP):
+def cublasDspr(
+    handle: int,
+    uplo: int | str,
+    n: int,
+    alpha: np.float64,
+    x: ctypes.c_void_p,
+    incx: int,
+    AP: ctypes.c_void_p,
+) -> None:
     """Rank-1 operation (double precision real symmetric packed)."""
     assert _libcublas
     status = _libcublas.cublasDspr_v2(
@@ -3967,7 +4353,17 @@ _libcublas.cublasSspr2_v2.argtypes = [
 ]
 
 
-def cublasSspr2(handle, uplo, n, alpha, x, incx, y, incy, AP):
+def cublasSspr2(
+    handle: int,
+    uplo: int | str,
+    n: int,
+    alpha: np.float32,
+    x: ctypes.c_void_p,
+    incx: int,
+    y: ctypes.c_void_p,
+    incy: int,
+    AP: ctypes.c_void_p,
+) -> None:
     """Rank-2 operation (single precision real symmetric packed)."""
     assert _libcublas
     status = _libcublas.cublasSspr2_v2(
@@ -3981,7 +4377,6 @@ def cublasSspr2(handle, uplo, n, alpha, x, incx, y, incy, AP):
         incy,
         int(AP),
     )
-
     cublasCheckStatus(status)
 
 
@@ -4001,7 +4396,17 @@ _libcublas.cublasDspr2_v2.argtypes = [
 ]
 
 
-def cublasDspr2(handle, uplo, n, alpha, x, incx, y, incy, AP):
+def cublasDspr2(
+    handle: int,
+    uplo: int | str,
+    n: int,
+    alpha: np.float64,
+    x: ctypes.c_void_p,
+    incx: int,
+    y: ctypes.c_void_p,
+    incy: int,
+    AP: ctypes.c_void_p,
+) -> None:
     """Rank-2 operation (double precision real symmetric packed)."""
     assert _libcublas
     status = _libcublas.cublasDspr2_v2(
@@ -4075,7 +4480,19 @@ _libcublas.cublasSsymv_v2.argtypes = [
 ]
 
 
-def cublasSsymv(handle, uplo, n, alpha, A, lda, x, incx, beta, y, incy):
+def cublasSsymv(
+    handle: int,
+    uplo: int | str,
+    n: int,
+    alpha: np.float32,
+    A: ctypes.c_void_p,
+    lda: int,
+    x: ctypes.c_void_p,
+    incx: int,
+    beta: np.float32,
+    y: ctypes.c_void_p,
+    incy: int,
+) -> None:
     """Matrix-vector product (single precision real symmetric)."""
     assert _libcublas
     status = _libcublas.cublasSsymv_v2(
@@ -4114,7 +4531,19 @@ _libcublas.cublasDsymv_v2.argtypes = [
 ]
 
 
-def cublasDsymv(handle, uplo, n, alpha, A, lda, x, incx, beta, y, incy):
+def cublasDsymv(
+    handle: int,
+    uplo: int | str,
+    n: int,
+    alpha: np.float64,
+    A: ctypes.c_void_p,
+    lda: int,
+    x: ctypes.c_void_p,
+    incx: int,
+    beta: np.float64,
+    y: ctypes.c_void_p,
+    incy: int,
+) -> None:
     """Matrix-vector product (double precision real symmetric)."""
     assert _libcublas
     status = _libcublas.cublasDsymv_v2(
@@ -4156,7 +4585,19 @@ if _cublas_version >= 5000:
 
 
 @_cublas_version_req(5.0)
-def cublasCsymv(handle, uplo, n, alpha, A, lda, x, incx, beta, y, incy):
+def cublasCsymv(
+    handle: int,
+    uplo: int | str,
+    n: int,
+    alpha: np.complex64,
+    A: ctypes.c_void_p,
+    lda: int,
+    x: ctypes.c_void_p,
+    incx: int,
+    beta: np.complex64,
+    y: ctypes.c_void_p,
+    incy: int,
+) -> None:
     """Matrix-vector product (single precision complex symmetric)."""
     assert _libcublas
     status = _libcublas.cublasCsymv_v2(
@@ -4193,7 +4634,19 @@ if _cublas_version >= 5000:
 
 
 @_cublas_version_req(5.0)
-def cublasZsymv(handle, uplo, n, alpha, A, lda, x, incx, beta, y, incy):
+def cublasZsymv(
+    handle: int,
+    uplo: int | str,
+    n: int,
+    alpha: np.complex128,
+    A: ctypes.c_void_p,
+    lda: int,
+    x: ctypes.c_void_p,
+    incx: int,
+    beta: np.complex128,
+    y: ctypes.c_void_p,
+    incy: int,
+) -> None:
     """Matrix-vector product (double precision complex symmetric)."""
     assert _libcublas
     status = _libcublas.cublasZsymv_v2(
@@ -4258,7 +4711,16 @@ _libcublas.cublasSsyr_v2.argtypes = [
 ]
 
 
-def cublasSsyr(handle, uplo, n, alpha, x, incx, A, lda):
+def cublasSsyr(
+    handle: int,
+    uplo: int | str,
+    n: int,
+    alpha: np.float32,
+    x: ctypes.c_void_p,
+    incx: int,
+    A: ctypes.c_void_p,
+    lda: int,
+) -> None:
     """Rank-1 operation (single precision real symmetric)."""
     assert _libcublas
     status = _libcublas.cublasSsyr_v2(
@@ -4289,7 +4751,16 @@ _libcublas.cublasDsyr_v2.argtypes = [
 ]
 
 
-def cublasDsyr(handle, uplo, n, alpha, x, incx, A, lda):
+def cublasDsyr(
+    handle: int,
+    uplo: int | str,
+    n: int,
+    alpha: np.float64,
+    x: ctypes.c_void_p,
+    incx: int,
+    A: ctypes.c_void_p,
+    lda: int,
+) -> None:
     """Rank-1 operation (double precision real symmetric)."""
     assert _libcublas
     status = _libcublas.cublasDsyr_v2(
@@ -4323,7 +4794,16 @@ if _cublas_version >= 5000:
 
 
 @_cublas_version_req(5.0)
-def cublasCsyr(handle, uplo, n, alpha, x, incx, A, lda):
+def cublasCsyr(
+    handle: int,
+    uplo: int | str,
+    n: int,
+    alpha: np.complex64,
+    x: ctypes.c_void_p,
+    incx: int,
+    A: ctypes.c_void_p,
+    lda: int,
+) -> None:
     """Rank-1 operation (single precision complex symmetric)."""
     assert _libcublas
     status = _libcublas.cublasCsyr_v2(
@@ -4354,7 +4834,16 @@ if _cublas_version >= 5000:
 
 
 @_cublas_version_req(5.0)
-def cublasZsyr(handle, uplo, n, alpha, x, incx, A, lda):
+def cublasZsyr(
+    handle: int,
+    uplo: int | str,
+    n: int,
+    alpha: np.complex128,
+    x: ctypes.c_void_p,
+    incx: int,
+    A: ctypes.c_void_p,
+    lda: int,
+) -> None:
     """Rank-1 operation (double precision complex symmetric)."""
     assert _libcublas
     status = _libcublas.cublasZsyr_v2(
@@ -4423,7 +4912,18 @@ _libcublas.cublasSsyr2_v2.argtypes = [
 ]
 
 
-def cublasSsyr2(handle, uplo, n, alpha, x, incx, y, incy, A, lda):
+def cublasSsyr2(
+    handle: int,
+    uplo: int | str,
+    n: int,
+    alpha: np.float32,
+    x: ctypes.c_void_p,
+    incx: int,
+    y: ctypes.c_void_p,
+    incy: int,
+    A: ctypes.c_void_p,
+    lda: int,
+) -> None:
     """Rank-2 operation (single precision real symmetric)."""
     assert _libcublas
     status = _libcublas.cublasSsyr2_v2(
@@ -4458,7 +4958,18 @@ _libcublas.cublasDsyr2_v2.argtypes = [
 ]
 
 
-def cublasDsyr2(handle, uplo, n, alpha, x, incx, y, incy, A, lda):
+def cublasDsyr2(
+    handle: int,
+    uplo: int | str,
+    n: int,
+    alpha: np.float64,
+    x: ctypes.c_void_p,
+    incx: int,
+    y: ctypes.c_void_p,
+    incy: int,
+    A: ctypes.c_void_p,
+    lda: int,
+) -> None:
     """Rank-2 operation (double precision real symmetric)."""
     assert _libcublas
     status = _libcublas.cublasDsyr2_v2(
@@ -4496,7 +5007,18 @@ if _cublas_version >= 5000:
 
 
 @_cublas_version_req(5.0)
-def cublasCsyr2(handle, uplo, n, alpha, x, incx, y, incy, A, lda):
+def cublasCsyr2(
+    handle: int,
+    uplo: int | str,
+    n: int,
+    alpha: np.complex64,
+    x: ctypes.c_void_p,
+    incx: int,
+    y: ctypes.c_void_p,
+    incy: int,
+    A: ctypes.c_void_p,
+    lda: int,
+) -> None:
     """Rank-2 operation (single precision complex symmetric)."""
     assert _libcublas
     status = _libcublas.cublasCsyr2_v2(
@@ -4531,7 +5053,18 @@ if _cublas_version >= 5000:
 
 
 @_cublas_version_req(5.0)
-def cublasZsyr2(handle, uplo, n, alpha, x, incx, y, incy, A, lda):
+def cublasZsyr2(
+    handle: int,
+    uplo: int | str,
+    n: int,
+    alpha: np.complex128,
+    x: ctypes.c_void_p,
+    incx: int,
+    y: ctypes.c_void_p,
+    incy: int,
+    A: ctypes.c_void_p,
+    lda: int,
+) -> None:
     """Rank-2 operation (double precision complex symmetric)."""
     assert _libcublas
     status = _libcublas.cublasZsyr2_v2(
@@ -4605,7 +5138,18 @@ _libcublas.cublasStbmv_v2.argtypes = [
 ]
 
 
-def cublasStbmv(handle, uplo, trans, diag, n, k, A, lda, x, incx):
+def cublasStbmv(
+    handle: int,
+    uplo: int | str,
+    trans: int | str,
+    diag: int | str,
+    n: int,
+    k: int,
+    A: ctypes.c_void_p,
+    lda: int,
+    x: ctypes.c_void_p,
+    incx: int,
+) -> None:
     """Matrix-vector product (single precision real triangular banded)."""
     assert _libcublas
     status = _libcublas.cublasStbmv_v2(
@@ -4640,7 +5184,18 @@ _libcublas.cublasDtbmv_v2.argtypes = [
 ]
 
 
-def cublasDtbmv(handle, uplo, trans, diag, n, k, A, lda, x, incx):
+def cublasDtbmv(
+    handle: int,
+    uplo: int | str,
+    trans: int | str,
+    diag: int | str,
+    n: int,
+    k: int,
+    A: ctypes.c_void_p,
+    lda: int,
+    x: ctypes.c_void_p,
+    incx: int,
+) -> None:
     """Matrix-vector product (double precision real triangular banded)."""
     assert _libcublas
     status = _libcublas.cublasDtbmv_v2(
@@ -4675,7 +5230,18 @@ _libcublas.cublasCtbmv_v2.argtypes = [
 ]
 
 
-def cublasCtbmv(handle, uplo, trans, diag, n, k, A, lda, x, incx):
+def cublasCtbmv(
+    handle: int,
+    uplo: int | str,
+    trans: int | str,
+    diag: int | str,
+    n: int,
+    k: int,
+    A: ctypes.c_void_p,
+    lda: int,
+    x: ctypes.c_void_p,
+    incx: int,
+) -> None:
     """Matrix-vector product (single precision complex triangular banded)."""
     assert _libcublas
     status = _libcublas.cublasCtbmv_v2(
@@ -4710,7 +5276,18 @@ _libcublas.cublasZtbmv_v2.argtypes = [
 ]
 
 
-def cublasZtbmv(handle, uplo, trans, diag, n, k, A, lda, x, incx):
+def cublasZtbmv(
+    handle: int,
+    uplo: int | str,
+    trans: int | str,
+    diag: int | str,
+    n: int,
+    k: int,
+    A: ctypes.c_void_p,
+    lda: int,
+    x: ctypes.c_void_p,
+    incx: int,
+) -> None:
     """Matrix-vector product (double precision complex triangular banded)."""
     assert _libcublas
     status = _libcublas.cublasZtbmv_v2(
@@ -4787,7 +5364,18 @@ _libcublas.cublasStbsv_v2.argtypes = [
 ]
 
 
-def cublasStbsv(handle, uplo, trans, diag, n, k, A, lda, x, incx):
+def cublasStbsv(
+    handle: int,
+    uplo: int | str,
+    trans: int | str,
+    diag: int,
+    n: int,
+    k: int,
+    A: ctypes.c_void_p,
+    lda: int,
+    x: ctypes.c_void_p,
+    incx: int,
+) -> None:
     """Solves a triangular banded system (single precision real)."""
     assert _libcublas
     status = _libcublas.cublasStbsv_v2(
@@ -4822,7 +5410,18 @@ _libcublas.cublasDtbsv_v2.argtypes = [
 ]
 
 
-def cublasDtbsv(handle, uplo, trans, diag, n, k, A, lda, x, incx):
+def cublasDtbsv(
+    handle: int,
+    uplo: int | str,
+    trans: int | str,
+    diag: int | str,
+    n: int,
+    k: int,
+    A: ctypes.c_void_p,
+    lda: int,
+    x: ctypes.c_void_p,
+    incx: int,
+) -> None:
     """Solves a triangular banded system (double precision real)."""
     assert _libcublas
     status = _libcublas.cublasDtbsv_v2(
@@ -4857,7 +5456,18 @@ _libcublas.cublasCtbsv_v2.argtypes = [
 ]
 
 
-def cublasCtbsv(handle, uplo, trans, diag, n, k, A, lda, x, incx):
+def cublasCtbsv(
+    handle: int,
+    uplo: int | str,
+    trans: int | str,
+    diag: int | str,
+    n: int,
+    k: int,
+    A: ctypes.c_void_p,
+    lda: int,
+    x: int,
+    incx: int,
+) -> None:
     """Solves a triangular banded system (single precision complex)."""
     assert _libcublas
     status = _libcublas.cublasCtbsv_v2(
@@ -4892,7 +5502,18 @@ _libcublas.cublasZtbsv_v2.argtypes = [
 ]
 
 
-def cublasZtbsv(handle, uplo, trans, diag, n, k, A, lda, x, incx):
+def cublasZtbsv(
+    handle: int,
+    uplo: int | str,
+    trans: int | str,
+    diag: int | str,
+    n: int,
+    k: int,
+    A: ctypes.c_void_p,
+    lda: int,
+    x: ctypes.c_void_p,
+    incx: int,
+) -> None:
     """Solves a triangular banded system (double precision complex)."""
     assert _libcublas
     status = _libcublas.cublasZtbsv_v2(
@@ -4963,7 +5584,16 @@ _libcublas.cublasStpmv_v2.argtypes = [
 ]
 
 
-def cublasStpmv(handle, uplo, trans, diag, n, AP, x, incx):
+def cublasStpmv(
+    handle: int,
+    uplo: int | str,
+    trans: int | str,
+    diag: int | str,
+    n: int,
+    AP: ctypes.c_void_p,
+    x: ctypes.c_void_p,
+    incx: int,
+) -> None:
     """Matrix-vector product (single precision real triangular packed)."""
     assert _libcublas
     status = _libcublas.cublasStpmv_v2(
@@ -4994,7 +5624,16 @@ _libcublas.cublasCtpmv_v2.argtypes = [
 ]
 
 
-def cublasCtpmv(handle, uplo, trans, diag, n, AP, x, incx):
+def cublasCtpmv(
+    handle: int,
+    uplo: int | str,
+    trans: int | str,
+    diag: int | str,
+    n: int,
+    AP: ctypes.c_void_p,
+    x: ctypes.c_void_p,
+    incx: int,
+) -> None:
     """Matrix-vector product (single precision complex triangular packed)."""
     assert _libcublas
     status = _libcublas.cublasCtpmv_v2(
@@ -5025,7 +5664,16 @@ _libcublas.cublasDtpmv_v2.argtypes = [
 ]
 
 
-def cublasDtpmv(handle, uplo, trans, diag, n, AP, x, incx):
+def cublasDtpmv(
+    handle: int,
+    uplo: int | str,
+    trans: int | str,
+    diag: int | str,
+    n: int,
+    AP: ctypes.c_void_p,
+    x: ctypes.c_void_p,
+    incx: int,
+) -> None:
     """Matrix-vector product (double precision real triangular packed)."""
     assert _libcublas
     status = _libcublas.cublasDtpmv_v2(
@@ -5056,7 +5704,16 @@ _libcublas.cublasZtpmv_v2.argtypes = [
 ]
 
 
-def cublasZtpmv(handle, uplo, trans, diag, n, AP, x, incx):
+def cublasZtpmv(
+    handle: int,
+    uplo: int | str,
+    trans: int | str,
+    diag: int | str,
+    n: int,
+    AP: ctypes.c_void_p,
+    x: ctypes.c_void_p,
+    incx: int,
+) -> None:
     """Matrix-vector product (double precision complex triangular packed)."""
     assert _libcublas
     status = _libcublas.cublasZtpmv_v2(
@@ -5125,7 +5782,16 @@ _libcublas.cublasStpsv_v2.argtypes = [
 ]
 
 
-def cublasStpsv(handle, uplo, trans, diag, n, AP, x, incx):
+def cublasStpsv(
+    handle: int,
+    uplo: int | str,
+    trans: int | str,
+    diag: int | str,
+    n: int,
+    AP: ctypes.c_void_p,
+    x: ctypes.c_void_p,
+    incx: int,
+) -> None:
     """Solves a triangular packed system (single precision real)."""
     assert _libcublas
     status = _libcublas.cublasStpsv_v2(
@@ -5156,7 +5822,16 @@ _libcublas.cublasDtpsv_v2.argtypes = [
 ]
 
 
-def cublasDtpsv(handle, uplo, trans, diag, n, AP, x, incx):
+def cublasDtpsv(
+    handle: int,
+    uplo: int | str,
+    trans: int | str,
+    diag: int | str,
+    n: int,
+    AP: ctypes.c_void_p,
+    x: ctypes.c_void_p,
+    incx: int,
+) -> None:
     """Solves a triangular packed system (double precision real)."""
     assert _libcublas
     status = _libcublas.cublasDtpsv_v2(
@@ -5187,7 +5862,16 @@ _libcublas.cublasCtpsv_v2.argtypes = [
 ]
 
 
-def cublasCtpsv(handle, uplo, trans, diag, n, AP, x, incx):
+def cublasCtpsv(
+    handle: int,
+    uplo: int | str,
+    trans: int | str,
+    diag: int | str,
+    n: int,
+    AP: ctypes.c_void_p,
+    x: ctypes.c_void_p,
+    incx: int,
+) -> None:
     """Solves a triangular packed system (single precision complex)."""
     assert _libcublas
     status = _libcublas.cublasCtpsv_v2(
@@ -5218,7 +5902,16 @@ _libcublas.cublasZtpsv_v2.argtypes = [
 ]
 
 
-def cublasZtpsv(handle, uplo, trans, diag, n, AP, x, incx):
+def cublasZtpsv(
+    handle: int,
+    uplo: int | str,
+    trans: int | str,
+    diag: int | str,
+    n: int,
+    AP: ctypes.c_void_p,
+    x: ctypes.c_void_p,
+    incx: int,
+) -> None:
     """Solves a triangular packed system (double precision complex)."""
     assert _libcublas
     status = _libcublas.cublasZtpsv_v2(
@@ -5290,7 +5983,17 @@ _libcublas.cublasStrmv_v2.argtypes = [
 ]
 
 
-def cublasStrmv(handle, uplo, trans, diag, n, A, lda, x, inx):
+def cublasStrmv(
+    handle: int,
+    uplo: int | str,
+    trans: int | str,
+    diag: int | str,
+    n: int,
+    A: ctypes.c_void_p,
+    lda: int,
+    x: ctypes.c_void_p,
+    inx: int,
+) -> None:
     """Matrix-vector product (single precision real triangular)."""
     assert _libcublas
     status = _libcublas.cublasStrmv_v2(
@@ -5323,7 +6026,17 @@ _libcublas.cublasCtrmv_v2.argtypes = [
 ]
 
 
-def cublasCtrmv(handle, uplo, trans, diag, n, A, lda, x, incx):
+def cublasCtrmv(
+    handle: int,
+    uplo: int | str,
+    trans: int | str,
+    diag: int | str,
+    n: int,
+    A: ctypes.c_void_p,
+    lda: int,
+    x: ctypes.c_void_p,
+    incx: int,
+) -> None:
     """Matrix-vector product (single precision complex triangular)."""
     assert _libcublas
     status = _libcublas.cublasCtrmv_v2(
@@ -5356,7 +6069,17 @@ _libcublas.cublasDtrmv_v2.argtypes = [
 ]
 
 
-def cublasDtrmv(handle, uplo, trans, diag, n, A, lda, x, inx):
+def cublasDtrmv(
+    handle: int,
+    uplo: int | str,
+    trans: int | str,
+    diag: int | str,
+    n: int,
+    A: ctypes.c_void_p,
+    lda: int,
+    x: ctypes.c_void_p,
+    inx: int,
+) -> None:
     """Matrix-vector product (double precision real triangular)."""
     assert _libcublas
     status = _libcublas.cublasDtrmv_v2(
@@ -5389,7 +6112,17 @@ _libcublas.cublasZtrmv_v2.argtypes = [
 ]
 
 
-def cublasZtrmv(handle, uplo, trans, diag, n, A, lda, x, incx):
+def cublasZtrmv(
+    handle: int,
+    uplo: int | str,
+    trans: int | str,
+    diag: int | str,
+    n: int | str,
+    A: ctypes.c_void_p,
+    lda: int,
+    x: ctypes.c_void_p,
+    incx: int,
+) -> None:
     """Matrix-vector product (double precision complex triangular)."""
     assert _libcublas
     status = _libcublas.cublasZtrmv_v2(
@@ -5462,7 +6195,17 @@ _libcublas.cublasStrsv_v2.argtypes = [
 ]
 
 
-def cublasStrsv(handle, uplo, trans, diag, n, A, lda, x, incx):
+def cublasStrsv(
+    handle: int,
+    uplo: int | str,
+    trans: int | str,
+    diag: int | str,
+    n: int,
+    A: ctypes.c_void_p,
+    lda: int,
+    x: ctypes.c_void_p,
+    incx: int,
+) -> None:
     """Solves a triangular system (single precision real)."""
     assert _libcublas
     status = _libcublas.cublasStrsv_v2(
@@ -5495,7 +6238,17 @@ _libcublas.cublasDtrsv_v2.argtypes = [
 ]
 
 
-def cublasDtrsv(handle, uplo, trans, diag, n, A, lda, x, incx):
+def cublasDtrsv(
+    handle: int,
+    uplo: int | str,
+    trans: int | str,
+    diag: int | str,
+    n: int,
+    A: ctypes.c_void_p,
+    lda: int,
+    x: ctypes.c_void_p,
+    incx: int,
+) -> None:
     """Solves a triangular system (double precision real)."""
     assert _libcublas
     status = _libcublas.cublasDtrsv_v2(
@@ -5528,7 +6281,17 @@ _libcublas.cublasCtrsv_v2.argtypes = [
 ]
 
 
-def cublasCtrsv(handle, uplo, trans, diag, n, A, lda, x, incx):
+def cublasCtrsv(
+    handle: int,
+    uplo: int | str,
+    trans: int | str,
+    diag: int | str,
+    n: int,
+    A: ctypes.c_void_p,
+    lda: int,
+    x: ctypes.c_void_p,
+    incx: int,
+) -> None:
     """Solves a triangular system (single precision complex)."""
     assert _libcublas
     status = _libcublas.cublasCtrsv_v2(
@@ -5561,7 +6324,17 @@ _libcublas.cublasZtrsv_v2.argtypes = [
 ]
 
 
-def cublasZtrsv(handle, uplo, trans, diag, n, A, lda, x, incx):
+def cublasZtrsv(
+    handle: int,
+    uplo: int | str,
+    trans: int | str,
+    diag: int | str,
+    n: int,
+    A: ctypes.c_void_p,
+    lda: int,
+    x: ctypes.c_void_p,
+    incx: int,
+) -> None:
     """Solves a triangular system (double precision complex)."""
     assert _libcublas
     status = _libcublas.cublasZtrsv_v2(
@@ -5635,7 +6408,19 @@ _libcublas.cublasChemv_v2.argtypes = [
 ]
 
 
-def cublasChemv(handle, uplo, n, alpha, A, lda, x, incx, beta, y, incy):
+def cublasChemv(
+    handle: int,
+    uplo: int | str,
+    n: int,
+    alpha: np.complex64,
+    A: ctypes.c_void_p,
+    lda: int,
+    x: ctypes.c_void_p,
+    incx: ctypes.c_void_p,
+    beta: np.complex64,
+    y: ctypes.c_void_p,
+    incy: int,
+) -> None:
     """Matrix-vector product (single precision complex Hermitian)."""
     assert _libcublas
     status = _libcublas.cublasChemv_v2(
@@ -5672,7 +6457,19 @@ _libcublas.cublasZhemv_v2.argtypes = [
 ]
 
 
-def cublasZhemv(handle, uplo, n, alpha, A, lda, x, incx, beta, y, incy):
+def cublasZhemv(
+    handle: int,
+    uplo: int | str,
+    n: int,
+    alpha: np.complex128,
+    A: ctypes.c_void_p,
+    lda: int,
+    x: ctypes.c_void_p,
+    incx: int,
+    beta: np.complex128,
+    y: ctypes.c_void_p,
+    incy: int,
+) -> None:
     """Matrix-vector product (double precision complex Hermitian)."""
     assert _libcublas
     status = _libcublas.cublasZhemv_v2(
@@ -5752,7 +6549,20 @@ _libcublas.cublasChbmv_v2.argtypes = [
 ]
 
 
-def cublasChbmv(handle, uplo, n, k, alpha, A, lda, x, incx, beta, y, incy):
+def cublasChbmv(
+    handle: int,
+    uplo: int | str,
+    n: int,
+    k: int,
+    alpha: np.complex64,
+    A: ctypes.c_void_p,
+    lda: int,
+    x: ctypes.c_void_p,
+    incx: int,
+    beta: np.complex64,
+    y: ctypes.c_void_p,
+    incy: int,
+) -> None:
     """Matrix-vector product (single precision complex Hermitian banded)."""
     assert _libcublas
     status = _libcublas.cublasChbmv_v2(
@@ -5791,7 +6601,20 @@ _libcublas.cublasZhbmv_v2.argtypes = [
 ]
 
 
-def cublasZhbmv(handle, uplo, n, k, alpha, A, lda, x, incx, beta, y, incy):
+def cublasZhbmv(
+    handle: int,
+    uplo: int | str,
+    n: int,
+    k: int,
+    alpha: np.complex128,
+    A: ctypes.c_void_p,
+    lda: int,
+    x: ctypes.c_void_p,
+    incx: int,
+    beta: np.complex128,
+    y: ctypes.c_void_p,
+    incy: int,
+) -> None:
     """Matrix-vector product (double precision complex Hermitian banded)."""
     assert _libcublas
     status = _libcublas.cublasZhbmv_v2(
@@ -5866,7 +6689,18 @@ _libcublas.cublasChpmv_v2.argtypes = [
 ]
 
 
-def cublasChpmv(handle, uplo, n, alpha, AP, x, incx, beta, y, incy):
+def cublasChpmv(
+    handle: int,
+    uplo: int | str,
+    n: int,
+    alpha: np.complex64,
+    AP: ctypes.c_void_p,
+    x: ctypes.c_void_p,
+    incx: int,
+    beta: np.complex64,
+    y: ctypes.c_void_p,
+    incy: int,
+) -> None:
     """Matrix-vector product (single precision complex Hermitian packed)."""
     assert _libcublas
     status = _libcublas.cublasChpmv_v2(
@@ -5901,7 +6735,18 @@ _libcublas.cublasZhpmv_v2.argtypes = [
 ]
 
 
-def cublasZhpmv(handle, uplo, n, alpha, AP, x, incx, beta, y, incy):
+def cublasZhpmv(
+    handle: int,
+    uplo: int | str,
+    n: int,
+    alpha: np.complex128,
+    AP: ctypes.c_void_p,
+    x: ctypes.c_void_p,
+    incx: int,
+    beta: np.complex128,
+    y: ctypes.c_void_p,
+    incy: int,
+) -> None:
     """Matrix-vector product (double precision complex Hermitian packed)."""
     assert _libcublas
     status = _libcublas.cublasZhpmv_v2(
@@ -5968,7 +6813,16 @@ _libcublas.cublasCher_v2.argtypes = [
 ]
 
 
-def cublasCher(handle, uplo, n, alpha, x, incx, A, lda):
+def cublasCher(
+    handle: int,
+    uplo: int | str,
+    n: int,
+    alpha: np.float32,
+    x: ctypes.c_void_p,
+    incx: int,
+    A: ctypes.c_void_p,
+    lda: int,
+) -> None:
     """Rank-1 operation (single precision complex Hermitian)."""
     assert _libcublas
     status = _libcublas.cublasCher_v2(
@@ -5992,7 +6846,16 @@ _libcublas.cublasZher_v2.argtypes = [
 ]
 
 
-def cublasZher(handle, uplo, n, alpha, x, incx, A, lda):
+def cublasZher(
+    handle: int,
+    uplo: int | str,
+    n: int,
+    alpha: np.float64,
+    x: ctypes.c_void_p,
+    incx: int,
+    A: ctypes.c_void_p,
+    lda: int,
+) -> None:
     """Rank-1 operation (double precision complex Hermitian)."""
     assert _libcublas
     status = _libcublas.cublasZher_v2(
@@ -6056,7 +6919,18 @@ _libcublas.cublasCher2_v2.argtypes = [
 ]
 
 
-def cublasCher2(handle, uplo, n, alpha, x, incx, y, incy, A, lda):
+def cublasCher2(
+    handle: int,
+    uplo: int,
+    n: int,
+    alpha: np.complex64,
+    x: ctypes.c_void_p,
+    incx: int,
+    y: ctypes.c_void_p,
+    incy: int,
+    A: ctypes.c_void_p,
+    lda: int,
+) -> None:
     """Rank-2 operation (single precision complex Hermitian)."""
     assert _libcublas
     status = _libcublas.cublasCher2_v2(
@@ -6091,7 +6965,18 @@ _libcublas.cublasZher2_v2.argtypes = [
 ]
 
 
-def cublasZher2(handle, uplo, n, alpha, x, incx, y, incy, A, lda):
+def cublasZher2(
+    handle: int,
+    uplo: int | str,
+    n: int,
+    alpha: np.complex128,
+    x: ctypes.c_void_p,
+    incx: int,
+    y: ctypes.c_void_p,
+    incy: int,
+    A: ctypes.c_void_p,
+    lda: int,
+) -> None:
     """Rank-2 operation (double precision complex Hermitian)."""
     assert _libcublas
     status = _libcublas.cublasZher2_v2(
@@ -6155,7 +7040,15 @@ _libcublas.cublasChpr_v2.argtypes = [
 ]
 
 
-def cublasChpr(handle, uplo, n, alpha, x, incx, AP):
+def cublasChpr(
+    handle: int,
+    uplo: int | str,
+    n: int,
+    alpha: np.float32,
+    x: ctypes.c_void_p,
+    incx: int,
+    AP: ctypes.c_void_p,
+) -> None:
     """Rank-1 operation (single precision complex Hermitian packed)."""
     assert _libcublas
     status = _libcublas.cublasChpr_v2(
@@ -6184,7 +7077,15 @@ _libcublas.cublasZhpr_v2.argtypes = [
 ]
 
 
-def cublasZhpr(handle, uplo, n, alpha, x, incx, AP):
+def cublasZhpr(
+    handle: int,
+    uplo: int | str,
+    n: int,
+    alpha: np.float64,
+    x: ctypes.c_void_p,
+    incx: int,
+    AP: ctypes.c_void_p,
+) -> None:
     """Rank-1 operation (double precision complex Hermitian packed)."""
     assert _libcublas
     status = _libcublas.cublasZhpr_v2(
@@ -6251,7 +7152,17 @@ _libcublas.cublasChpr2.argtypes = [
 ]
 
 
-def cublasChpr2(handle, uplo, n, alpha, x, incx, y, incy, AP):
+def cublasChpr2(
+    handle: int,
+    uplo: int | str,
+    n: int,
+    alpha: np.complex64,
+    x: ctypes.c_void_p,
+    incx: int,
+    y: ctypes.c_void_p,
+    incy: int,
+    AP: ctypes.c_void_p,
+) -> None:
     """Rank-2 operation (single precision complex Hermitian packed)."""
     assert _libcublas
     status = _libcublas.cublasChpr2_v2(
@@ -6284,7 +7195,17 @@ _libcublas.cublasZhpr2_v2.argtypes = [
 ]
 
 
-def cublasZhpr2(handle, uplo, n, alpha, x, incx, y, incy, AP):
+def cublasZhpr2(
+    handle: int,
+    uplo: int | str,
+    n: int,
+    alpha: np.complex128,
+    x: ctypes.c_void_p,
+    incx: int,
+    y: ctypes.c_void_p,
+    incy: int,
+    AP: ctypes.c_void_p,
+) -> None:
     """Rank-2 operation (double precision complex Hermitian packed)."""
     assert _libcublas
     status = _libcublas.cublasZhpr2_v2(
@@ -6372,7 +7293,22 @@ _libcublas.cublasSgemm_v2.argtypes = [
 ]
 
 
-def cublasSgemm(handle, transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc):
+def cublasSgemm(
+    handle: int,
+    transa: int | str,
+    transb: int | str,
+    m: int,
+    n: int,
+    k: int,
+    alpha: np.float32,
+    A: ctypes.c_void_p,
+    lda: int,
+    B: ctypes.c_void_p,
+    ldb: int,
+    beta: np.float32,
+    C: ctypes.c_void_p,
+    ldc: int,
+) -> None:
     """Matrix-matrix product (single precision real)."""
     assert _libcublas
     status = _libcublas.cublasSgemm_v2(
@@ -6415,7 +7351,22 @@ _libcublas.cublasCgemm_v2.argtypes = [
 ]
 
 
-def cublasCgemm(handle, transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc):
+def cublasCgemm(
+    handle: int,
+    transa: int | str,
+    transb: int | str,
+    m: int,
+    n: int,
+    k: int | str,
+    alpha: np.complex64,
+    A: ctypes.c_void_p,
+    lda: int,
+    B: ctypes.c_void_p,
+    ldb: int,
+    beta: np.complex64,
+    C: ctypes.c_void_p,
+    ldc: int,
+) -> None:
     """Matrix-matrix product (single precision complex)."""
     assert _libcublas
     status = _libcublas.cublasCgemm_v2(
@@ -6458,7 +7409,22 @@ _libcublas.cublasDgemm_v2.argtypes = [
 ]
 
 
-def cublasDgemm(handle, transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc):
+def cublasDgemm(
+    handle: int,
+    transa: int | str,
+    transb: int | str,
+    m: int,
+    n: int,
+    k: int,
+    alpha: np.float64,
+    A: ctypes.c_void_p,
+    lda: int,
+    B: ctypes.c_void_p,
+    ldb: int,
+    beta: np.float64,
+    C: ctypes.c_void_p,
+    ldc: int,
+) -> None:
     """Matrix-matrix product (double precision real)."""
     assert _libcublas
     status = _libcublas.cublasDgemm_v2(
@@ -6501,7 +7467,22 @@ _libcublas.cublasZgemm_v2.argtypes = [
 ]
 
 
-def cublasZgemm(handle, transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc):
+def cublasZgemm(
+    handle: int,
+    transa: int | str,
+    transb: int | str,
+    m: int,
+    n: int,
+    k: int,
+    alpha: np.complex128,
+    A: ctypes.c_void_p,
+    lda: int,
+    B: ctypes.c_void_p,
+    ldb: int,
+    beta: np.complex128,
+    C: ctypes.c_void_p,
+    ldc: int,
+) -> None:
     """Matrix-matrix product (double precision complex)."""
     assert _libcublas
     status = _libcublas.cublasZgemm_v2(
@@ -6590,7 +7571,21 @@ _libcublas.cublasSsymm_v2.argtypes = [
 ]
 
 
-def cublasSsymm(handle, side, uplo, m, n, alpha, A, lda, B, ldb, beta, C, ldc):
+def cublasSsymm(
+    handle: int,
+    side: int | str,
+    uplo: int | str,
+    m: int,
+    n: int,
+    alpha: np.float32,
+    A: ctypes.c_void_p,
+    lda: int,
+    B: ctypes.c_void_p,
+    ldb: int,
+    beta: np.float32,
+    C: ctypes.c_void_p,
+    ldc: int,
+) -> None:
     """Matrix-matrix product (single precision real symmetric)."""
     assert _libcublas
     status = _libcublas.cublasSsymm_v2(
@@ -6631,7 +7626,21 @@ _libcublas.cublasDsymm_v2.argtypes = [
 ]
 
 
-def cublasDsymm(handle, side, uplo, m, n, alpha, A, lda, B, ldb, beta, C, ldc):
+def cublasDsymm(
+    handle: int,
+    side: int | str,
+    uplo: int | str,
+    m: int,
+    n: int,
+    alpha: np.float64,
+    A: ctypes.c_void_p,
+    lda: int,
+    B: ctypes.c_void_p,
+    ldb: int,
+    beta: np.float64,
+    C: ctypes.c_void_p,
+    ldc: int,
+) -> None:
     """Matrix-matrix product (double precision real symmetric)."""
     assert _libcublas
     status = _libcublas.cublasDsymm_v2(
@@ -6672,7 +7681,21 @@ _libcublas.cublasCsymm_v2.argtypes = [
 ]
 
 
-def cublasCsymm(handle, side, uplo, m, n, alpha, A, lda, B, ldb, beta, C, ldc):
+def cublasCsymm(
+    handle: int,
+    side: int | str,
+    uplo: int | str,
+    m: int,
+    n: int,
+    alpha: np.complex64,
+    A: ctypes.c_void_p,
+    lda: int,
+    B: ctypes.c_void_p,
+    ldb: int,
+    beta: np.complex64,
+    C: ctypes.c_void_p,
+    ldc: int,
+) -> None:
     """Matrix-matrix product (single precision complex symmetric)."""
     assert _libcublas
     status = _libcublas.cublasCsymm_v2(
@@ -6713,7 +7736,21 @@ _libcublas.cublasZsymm_v2.argtypes = [
 ]
 
 
-def cublasZsymm(handle, side, uplo, m, n, alpha, A, lda, B, ldb, beta, C, ldc):
+def cublasZsymm(
+    handle: int,
+    side: int | str,
+    uplo: int | str,
+    m: int,
+    n: int,
+    alpha: np.complex128,
+    A: ctypes.c_void_p,
+    lda: int,
+    B: ctypes.c_void_p,
+    ldb: int,
+    beta: np.complex128,
+    C: ctypes.c_void_p,
+    ldc: int,
+) -> None:
     """Matrix-matrix product (double precision complex symmetric)."""
     assert _libcublas
     status = _libcublas.cublasZsymm_v2(
@@ -6796,7 +7833,19 @@ _libcublas.cublasSsyrk_v2.argtypes = [
 ]
 
 
-def cublasSsyrk(handle, uplo, trans, n, k, alpha, A, lda, beta, C, ldc):
+def cublasSsyrk(
+    handle: int,
+    uplo: int | str,
+    trans: int | str,
+    n: int,
+    k: int,
+    alpha: np.float32,
+    A: ctypes.c_void_p,
+    lda: int,
+    beta: np.float32,
+    C: ctypes.c_void_p,
+    ldc: int,
+) -> None:
     """Rank-k operation (single precision real symmetric)."""
     assert _libcublas
     status = _libcublas.cublasSsyrk_v2(
@@ -6833,7 +7882,19 @@ _libcublas.cublasDsyrk_v2.argtypes = [
 ]
 
 
-def cublasDsyrk(handle, uplo, trans, n, k, alpha, A, lda, beta, C, ldc):
+def cublasDsyrk(
+    handle: int,
+    uplo: int | str,
+    trans: int | str,
+    n: int,
+    k: int,
+    alpha: np.float64,
+    A: ctypes.c_void_p,
+    lda: int,
+    beta: np.float64,
+    C: ctypes.c_void_p,
+    ldc: int,
+) -> None:
     """Rank-k operation (double precision real symmetric)."""
     assert _libcublas
     status = _libcublas.cublasDsyrk_v2(
@@ -6870,7 +7931,19 @@ _libcublas.cublasCsyrk_v2.argtypes = [
 ]
 
 
-def cublasCsyrk(handle, uplo, trans, n, k, alpha, A, lda, beta, C, ldc):
+def cublasCsyrk(
+    handle: int,
+    uplo: int | str,
+    trans: int | str,
+    n: int,
+    k: int,
+    alpha: np.complex64,
+    A: ctypes.c_void_p,
+    lda: int,
+    beta: np.complex64,
+    C: ctypes.c_void_p,
+    ldc: int,
+) -> None:
     """Rank-k operation (single precision complex symmetric)."""
     assert _libcublas
     status = _libcublas.cublasCsyrk_v2(
@@ -6907,7 +7980,19 @@ _libcublas.cublasZsyrk_v2.argtypes = [
 ]
 
 
-def cublasZsyrk(handle, uplo, trans, n, k, alpha, A, lda, beta, C, ldc):
+def cublasZsyrk(
+    handle: int,
+    uplo: int | str,
+    trans: int | str,
+    n: int,
+    k: int,
+    alpha: np.complex128,
+    A: ctypes.c_void_p,
+    lda: int,
+    beta: np.complex128,
+    C: ctypes.c_void_p,
+    ldc: int,
+) -> None:
     """Rank-k operation (double precision complex symmetric)."""
     assert _libcublas
     status = _libcublas.cublasZsyrk_v2(
@@ -6994,7 +8079,21 @@ _libcublas.cublasSsyr2k_v2.argtypes = [
 ]
 
 
-def cublasSsyr2k(handle, uplo, trans, n, k, alpha, A, lda, B, ldb, beta, C, ldc):
+def cublasSsyr2k(
+    handle: int,
+    uplo: int | str,
+    trans: int | str,
+    n: int,
+    k: int,
+    alpha: np.float32,
+    A: ctypes.c_void_p,
+    lda: int,
+    B: ctypes.c_void_p,
+    ldb: int,
+    beta: np.float32,
+    C: ctypes.c_void_p,
+    ldc: int,
+) -> None:
     """Rank-2k operation (single precision real symmetric)."""
     assert _libcublas
     status = _libcublas.cublasSsyr2k_v2(
@@ -7035,7 +8134,21 @@ _libcublas.cublasDsyr2k_v2.argtypes = [
 ]
 
 
-def cublasDsyr2k(handle, uplo, trans, n, k, alpha, A, lda, B, ldb, beta, C, ldc):
+def cublasDsyr2k(
+    handle: int,
+    uplo: int | str,
+    trans: int | str,
+    n: int,
+    k: int,
+    alpha: np.float64,
+    A: ctypes.c_void_p,
+    lda: int,
+    B: ctypes.c_void_p,
+    ldb: int,
+    beta: np.float64,
+    C: ctypes.c_void_p,
+    ldc: int,
+) -> None:
     """Rank-2k operation (double precision real symmetric)."""
     assert _libcublas
     status = _libcublas.cublasDsyr2k_v2(
@@ -7076,7 +8189,21 @@ _libcublas.cublasCsyr2k_v2.argtypes = [
 ]
 
 
-def cublasCsyr2k(handle, uplo, trans, n, k, alpha, A, lda, B, ldb, beta, C, ldc):
+def cublasCsyr2k(
+    handle: int,
+    uplo: int | str,
+    trans: int | str,
+    n: int,
+    k: int,
+    alpha: np.complex64,
+    A: ctypes.c_void_p,
+    lda: int,
+    B: ctypes.c_void_p,
+    ldb: int,
+    beta: np.complex64,
+    C: ctypes.c_void_p,
+    ldc: int,
+) -> None:
     """Rank-2k operation on complex single precision symmetric matrix."""
     assert _libcublas
     status = _libcublas.cublasCsyr2k_v2(
@@ -7118,7 +8245,21 @@ _libcublas.cublasZsyr2k_v2.argtypes = [
 ]
 
 
-def cublasZsyr2k(handle, uplo, trans, n, k, alpha, A, lda, B, ldb, beta, C, ldc):
+def cublasZsyr2k(
+    handle: int,
+    uplo: int | str,
+    trans: int | str,
+    n: int,
+    k: int,
+    alpha: np.complex128,
+    A: ctypes.c_void_p,
+    lda: int,
+    B: ctypes.c_void_p,
+    ldb: int,
+    beta: np.complex128,
+    C: ctypes.c_void_p,
+    ldc: int,
+) -> None:
     """Rank-2k operation on complex double precision symmetric matrix."""
     assert _libcublas
     status = _libcublas.cublasZsyr2k_v2(
@@ -7217,7 +8358,22 @@ _libcublas.cublasStrmm_v2.argtypes = [
 ]
 
 
-def cublasStrmm(handle, side, uplo, trans, diag, m, n, alpha, A, lda, B, ldb, C, ldc):
+def cublasStrmm(
+    handle: int,
+    side: int | str,
+    uplo: int | str,
+    trans: int | str,
+    diag: int | str,
+    m: int,
+    n: int,
+    alpha: np.float32,
+    A: ctypes.c_void_p,
+    lda: int,
+    B: ctypes.c_void_p,
+    ldb: int,
+    C: ctypes.c_void_p,
+    ldc: int,
+) -> None:
     """Matrix-matrix product for real single precision triangular matrix"""
     assert _libcublas
     status = _libcublas.cublasStrmm_v2(
@@ -7260,7 +8416,22 @@ _libcublas.cublasDtrmm_v2.argtypes = [
 ]
 
 
-def cublasDtrmm(handle, side, uplo, trans, diag, m, n, alpha, A, lda, B, ldb, C, ldc):
+def cublasDtrmm(
+    handle: int,
+    side: int | str,
+    uplo: int | str,
+    trans: int | str,
+    diag: int | str,
+    m: int,
+    n: int,
+    alpha: np.float64,
+    A: ctypes.c_void_p,
+    lda: int,
+    B: ctypes.c_void_p,
+    ldb: int,
+    C: ctypes.c_void_p,
+    ldc: int,
+) -> None:
     """Matrix-matrix product for real double precision triangular matrix"""
     assert _libcublas
     status = _libcublas.cublasDtrmm_v2(
@@ -7303,7 +8474,22 @@ _libcublas.cublasCtrmm_v2.argtypes = [
 ]
 
 
-def cublasCtrmm(handle, side, uplo, trans, diag, m, n, alpha, A, lda, B, ldb, C, ldc):
+def cublasCtrmm(
+    handle: int,
+    side: int | str,
+    uplo: int | str,
+    trans: int | str,
+    diag: int | str,
+    m: int,
+    n: int,
+    alpha: np.complex64,
+    A: ctypes.c_void_p,
+    lda: int,
+    B: ctypes.c_void_p,
+    ldb: int,
+    C: ctypes.c_void_p,
+    ldc: int,
+) -> None:
     """Matrix-matrix product for complex single precision triangular matrix"""
     assert _libcublas
     status = _libcublas.cublasCtrmm_v2(
@@ -7346,7 +8532,22 @@ _libcublas.cublasZtrmm_v2.argtypes = [
 ]
 
 
-def cublasZtrmm(handle, side, uplo, trans, diag, m, n, alpha, A, lda, B, ldb, C, ldc):
+def cublasZtrmm(
+    handle: int,
+    side: int | str,
+    uplo: int | str,
+    trans: int | str,
+    diag: int | str,
+    m: int,
+    n: int,
+    alpha: np.complex128,
+    A: ctypes.c_void_p,
+    lda: int,
+    B: ctypes.c_void_p,
+    ldb: int,
+    C: ctypes.c_void_p,
+    ldc: int,
+) -> None:
     """Matrix-matrix product for complex double precision triangular matrix"""
     assert _libcublas
     status = _libcublas.cublasZtrmm_v2(
@@ -7439,7 +8640,20 @@ _libcublas.cublasStrsm_v2.argtypes = [
 ]
 
 
-def cublasStrsm(handle, side, uplo, trans, diag, m, n, alpha, A, lda, B, ldb):
+def cublasStrsm(
+    handle: int,
+    side: int | str,
+    uplo: int | str,
+    trans: int | str,
+    diag: int | str,
+    m: int,
+    n: int,
+    alpha: np.float32,
+    A: ctypes.c_void_p,
+    lda: int,
+    B: ctypes.c_void_p,
+    ldb: int,
+) -> None:
     """Solve a real single precision triangular system with multiple right-hand sides"""
     assert _libcublas
     status = _libcublas.cublasStrsm_v2(
@@ -7478,7 +8692,20 @@ _libcublas.cublasDtrsm_v2.argtypes = [
 ]
 
 
-def cublasDtrsm(handle, side, uplo, trans, diag, m, n, alpha, A, lda, B, ldb):
+def cublasDtrsm(
+    handle: int,
+    side: int | str,
+    uplo: int | str,
+    trans: int | str,
+    diag: int | str,
+    m: int,
+    n: int,
+    alpha: np.float64,
+    A: ctypes.c_void_p,
+    lda: int,
+    B: ctypes.c_void_p,
+    ldb: int,
+) -> None:
     """Solve a real double precision triangular system with multiple right-hand sides"""
     assert _libcublas
     status = _libcublas.cublasDtrsm_v2(
@@ -7517,7 +8744,20 @@ _libcublas.cublasCtrsm_v2.argtypes = [
 ]
 
 
-def cublasCtrsm(handle, side, uplo, trans, diag, m, n, alpha, A, lda, B, ldb):
+def cublasCtrsm(
+    handle: int,
+    side: int | str,
+    uplo: int | str,
+    trans: int | str,
+    diag: int | str,
+    m: int,
+    n: int,
+    alpha: np.complex64,
+    A: ctypes.c_void_p,
+    lda: int,
+    B: ctypes.c_void_p,
+    ldb: int,
+) -> None:
     """Solve a complex single precision triangular system with multiple right-hand sides"""
     assert _libcublas
     status = _libcublas.cublasCtrsm_v2(
@@ -7556,7 +8796,20 @@ _libcublas.cublasZtrsm_v2.argtypes = [
 ]
 
 
-def cublasZtrsm(handle, side, uplo, trans, diag, m, n, alpha, A, lda, B, ldb):
+def cublasZtrsm(
+    handle: int,
+    side: int | str,
+    uplo: int | str,
+    trans: int | str,
+    diag: int | str,
+    m: int,
+    n: int,
+    alpha: np.complex128,
+    A: ctypes.c_void_p,
+    lda: int,
+    B: ctypes.c_void_p,
+    ldb: int,
+) -> None:
     """Solve complex double precision triangular system with multiple right-hand sides"""
     assert _libcublas
     status = _libcublas.cublasZtrsm_v2(
@@ -7646,7 +8899,21 @@ _libcublas.cublasChemm_v2.argtypes = [
 ]
 
 
-def cublasChemm(handle, side, uplo, m, n, alpha, A, lda, B, ldb, beta, C, ldc):
+def cublasChemm(
+    handle: int,
+    side: int | str,
+    uplo: int | str,
+    m: int,
+    n: int,
+    alpha: np.complex64,
+    A: ctypes.c_void_p,
+    lda: int,
+    B: ctypes.c_void_p,
+    ldb: int,
+    beta: np.complex64,
+    C: ctypes.c_void_p,
+    ldc: int,
+) -> None:
     """Matrix-matrix product for single precision Hermitian matrix."""
     assert _libcublas
     status = _libcublas.cublasChemm_v2(
@@ -7687,7 +8954,21 @@ _libcublas.cublasZhemm_v2.argtypes = [
 ]
 
 
-def cublasZhemm(handle, side, uplo, m, n, alpha, A, lda, B, ldb, beta, C, ldc):
+def cublasZhemm(
+    handle: int,
+    side: int | str,
+    uplo: int | str,
+    m: int,
+    n: int,
+    alpha: np.complex128,
+    A: ctypes.c_void_p,
+    lda: int,
+    B: ctypes.c_void_p,
+    ldb: int,
+    beta: np.complex128,
+    C: ctypes.c_void_p,
+    ldc: int,
+) -> None:
     """Matrix-matrix product for double precision Hermitian matrix."""
     assert _libcublas
     status = _libcublas.cublasZhemm_v2(
@@ -7769,7 +9050,19 @@ _libcublas.cublasCherk_v2.argtypes = [
 ]
 
 
-def cublasCherk(handle, uplo, trans, n, k, alpha, A, lda, beta, C, ldc):
+def cublasCherk(
+    handle: int,
+    uplo: int | str,
+    trans: int | str,
+    n: int,
+    k: int,
+    alpha: np.float32,
+    A: ctypes.c_void_p,
+    lda: int,
+    beta: np.float32,
+    C: ctypes.c_void_p,
+    ldc: int,
+) -> None:
     """Rank-k operation on single precision Hermitian matrix."""
     assert _libcublas
     status = _libcublas.cublasCherk_v2(
@@ -7806,7 +9099,19 @@ _libcublas.cublasZherk_v2.argtypes = [
 ]
 
 
-def cublasZherk(handle, uplo, trans, n, k, alpha, A, lda, beta, C, ldc):
+def cublasZherk(
+    handle: int,
+    uplo: int | str,
+    trans: int | str,
+    n: int,
+    k: int,
+    alpha: np.float64,
+    A: ctypes.c_void_p,
+    lda: int,
+    beta: np.float64,
+    C: ctypes.c_void_p,
+    ldc: int,
+) -> None:
     """Rank-k operation on double precision Hermitian matrix."""
     assert _libcublas
     status = _libcublas.cublasZherk_v2(
@@ -7892,7 +9197,21 @@ _libcublas.cublasCher2k_v2.argtypes = [
 ]
 
 
-def cublasCher2k(handle, uplo, trans, n, k, alpha, A, lda, B, ldb, beta, C, ldc):
+def cublasCher2k(
+    handle: int,
+    uplo: int | str,
+    trans: int | str,
+    n: int,
+    k: int,
+    alpha: np.complex64,
+    A: ctypes.c_void_p,
+    lda: int,
+    B: ctypes.c_void_p,
+    ldb: int,
+    beta: np.float32,
+    C: ctypes.c_void_p,
+    ldc: int,
+) -> None:
     """Rank-2k operation on single precision Hermitian matrix."""
     assert _libcublas
     status = _libcublas.cublasCher2k_v2(
@@ -7936,7 +9255,21 @@ _libcublas.cublasZher2k_v2.argtypes = [
 ]
 
 
-def cublasZher2k(handle, uplo, trans, n, k, alpha, A, lda, B, ldb, beta, C, ldc):
+def cublasZher2k(
+    handle: int,
+    uplo: int | str,
+    trans: int | str,
+    n: int,
+    k: int,
+    alpha: np.complex128,
+    A: ctypes.c_void_p,
+    lda: int,
+    B: ctypes.c_void_p,
+    ldb: int,
+    beta: np.float64,
+    C: ctypes.c_void_p,
+    ldc: int,
+) -> None:
     """Rank-2k operation on double precision Hermitian matrix."""
     assert _libcublas
     status = _libcublas.cublasZher2k_v2(
@@ -8054,7 +9387,21 @@ if _cublas_version >= 5000:
 
 
 @_cublas_version_req(5.0)
-def cublasSgeam(handle, transa, transb, m, n, alpha, A, lda, beta, B, ldb, C, ldc):
+def cublasSgeam(
+    handle: int,
+    transa: int | str,
+    transb: int | str,
+    m: int,
+    n: int,
+    alpha: np.float32,
+    A: ctypes.c_void_p,
+    lda: int,
+    beta: np.float32,
+    B: ctypes.c_void_p,
+    ldb: int,
+    C: ctypes.c_void_p,
+    ldc: int,
+) -> None:
     """Real matrix-matrix addition/transposition."""
     assert _libcublas
     status = _libcublas.cublasSgeam(
@@ -8110,7 +9457,21 @@ if _cublas_version >= 5000:
 
 
 @_cublas_version_req(5.0)
-def cublasDgeam(handle, transa, transb, m, n, alpha, A, lda, beta, B, ldb, C, ldc):
+def cublasDgeam(
+    handle: int,
+    transa: int | str,
+    transb: int | str,
+    m: int,
+    n: int,
+    alpha: np.float64,
+    A: ctypes.c_void_p,
+    lda: int,
+    beta: np.float64,
+    B: ctypes.c_void_p,
+    ldb: int,
+    C: ctypes.c_void_p,
+    ldc: int,
+) -> None:
     """Real matrix-matrix addition/transposition."""
     assert _libcublas
     status = _libcublas.cublasDgeam(
@@ -8166,7 +9527,21 @@ if _cublas_version >= 5000:
 
 
 @_cublas_version_req(5.0)
-def cublasCgeam(handle, transa, transb, m, n, alpha, A, lda, beta, B, ldb, C, ldc):
+def cublasCgeam(
+    handle: int,
+    transa: int | str,
+    transb: int | str,
+    m: int,
+    n: int,
+    alpha: np.complex64,
+    A: ctypes.c_void_p,
+    lda: int,
+    beta: np.complex64,
+    B: ctypes.c_void_p,
+    ldb: int,
+    C: ctypes.c_void_p,
+    ldc: int,
+) -> None:
     """Complex matrix-matrix addition/transposition."""
     assert _libcublas
     status = _libcublas.cublasCgeam(
@@ -8222,7 +9597,21 @@ if _cublas_version >= 5000:
 
 
 @_cublas_version_req(5.0)
-def cublasZgeam(handle, transa, transb, m, n, alpha, A, lda, beta, B, ldb, C, ldc):
+def cublasZgeam(
+    handle: int,
+    transa: int | str,
+    transb: int | str,
+    m: int,
+    n: int,
+    alpha: np.complex128,
+    A: ctypes.c_void_p,
+    lda: int,
+    beta: np.complex128,
+    B: ctypes.c_void_p,
+    ldb: int,
+    C: ctypes.c_void_p,
+    ldc: int,
+) -> None:
     """Complex matrix-matrix addition/transposition."""
     assert _libcublas
     status = _libcublas.cublasZgeam(
@@ -8329,8 +9718,22 @@ if _cublas_version >= 5000:
 
 @_cublas_version_req(5.0)
 def cublasSgemmBatched(
-    handle, transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc, batchCount
-):
+    handle: int,
+    transa: int | str,
+    transb: int | str,
+    m: int,
+    n: int,
+    k: int,
+    alpha: np.float32,
+    A: ctypes.c_void_p,
+    lda: int,
+    B: ctypes.c_void_p,
+    ldb: int,
+    beta: np.float32,
+    C: ctypes.c_void_p,
+    ldc: int,
+    batchCount: int,
+) -> None:
     """Matrix-matrix product for arrays of real single precision general matrices."""
 
     assert _libcublas
@@ -8383,8 +9786,22 @@ if _cublas_version >= 5000:
 
 @_cublas_version_req(5.0)
 def cublasDgemmBatched(
-    handle, transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc, batchCount
-):
+    handle: int,
+    transa: int | str,
+    transb: int | str,
+    m: int,
+    n: int,
+    k: int,
+    alpha: np.float64,
+    A: ctypes.c_void_p,
+    lda: int,
+    B: ctypes.c_void_p,
+    ldb: int,
+    beta: np.float64,
+    C: ctypes.c_void_p,
+    ldc: int,
+    batchCount: int,
+) -> None:
     """Matrix-matrix product for arrays of real double precision general matrices."""
 
     assert _libcublas
@@ -8437,8 +9854,22 @@ if _cublas_version >= 5000:
 
 @_cublas_version_req(5.0)
 def cublasCgemmBatched(
-    handle, transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc, batchCount
-):
+    handle: int,
+    transa: int | str,
+    transb: int | str,
+    m: int,
+    n: int,
+    k: int,
+    alpha: np.complex64,
+    A: ctypes.c_void_p,
+    lda: int,
+    B: ctypes.c_void_p,
+    ldb: ctypes.c_void_p,
+    beta: np.complex64,
+    C: ctypes.c_void_p,
+    ldc: int,
+    batchCount: int,
+) -> None:
     """Matrix-matrix product for arrays of complex single precision general matrices."""
 
     assert _libcublas
@@ -8491,8 +9922,22 @@ if _cublas_version >= 5000:
 
 @_cublas_version_req(5.0)
 def cublasZgemmBatched(
-    handle, transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc, batchCount
-):
+    handle: int,
+    transa: int | str,
+    transb: int | str,
+    m: int,
+    n: int,
+    k: int,
+    alpha: np.complex128,
+    A: ctypes.c_void_p,
+    lda: int,
+    B: ctypes.c_void_p,
+    ldb: int,
+    beta: np.complex128,
+    C: ctypes.c_void_p,
+    ldc: int,
+    batchCount: int,
+) -> None:
     """Matrix-matrix product for arrays of complex double precision general matrices."""
 
     assert _libcublas
@@ -8590,7 +10035,21 @@ if _cublas_version >= 5000:
 
 
 @_cublas_version_req(5.0)
-def cublasStrsmBatched(handle, side, uplo, trans, diag, m, n, alpha, A, lda, B, ldb, batchCount):
+def cublasStrsmBatched(
+    handle: int,
+    side: int | str,
+    uplo: int | str,
+    trans: int | str,
+    diag: int | str,
+    m: int,
+    n: int,
+    alpha: np.float32,
+    A: ctypes.c_void_p,
+    lda: int,
+    B: ctypes.c_void_p,
+    ldb: int,
+    batchCount: int,
+) -> None:
     """This function solves an array of triangular linear systems with multiple right-hand-sides."""
 
     assert _libcublas
@@ -8638,7 +10097,21 @@ if _cublas_version >= 5000:
 
 
 @_cublas_version_req(5.0)
-def cublasDtrsmBatched(handle, side, uplo, trans, diag, m, n, alpha, A, lda, B, ldb, batchCount):
+def cublasDtrsmBatched(
+    handle: int,
+    side: int | str,
+    uplo: int | str,
+    trans: int | str,
+    diag: int | str,
+    m: int,
+    n: int,
+    alpha: np.float64,
+    A: ctypes.c_void_p,
+    lda: int,
+    B: ctypes.c_void_p,
+    ldb: int,
+    batchCount: int,
+) -> None:
     """This function solves an array of triangular linear systems with multiple right-hand-sides."""
 
     assert _libcublas
@@ -8712,7 +10185,15 @@ if _cublas_version >= 5000:
 
 
 @_cublas_version_req(5.0)
-def cublasSgetrfBatched(handle, n, A, lda, P, info, batchSize):
+def cublasSgetrfBatched(
+    handle: int,
+    n: int,
+    A: ctypes.c_void_p,
+    lda: int,
+    P: ctypes.c_void_p,
+    info: ctypes.c_void_p,
+    batchSize: int,
+) -> None:
     """This function performs the LU factorization of an array of n x n matrices."""
 
     assert _libcublas
@@ -8739,7 +10220,15 @@ if _cublas_version >= 5000:
 
 
 @_cublas_version_req(5.0)
-def cublasDgetrfBatched(handle, n, A, lda, P, info, batchSize):
+def cublasDgetrfBatched(
+    handle: int,
+    n: int,
+    A: ctypes.c_void_p,
+    lda: int,
+    P: ctypes.c_void_p,
+    info: ctypes.c_void_p,
+    batchSize: int,
+) -> None:
     """This function performs the LU factorization of an array of n x n matrices."""
 
     assert _libcublas
@@ -8766,7 +10255,15 @@ if _cublas_version >= 5000:
 
 
 @_cublas_version_req(5.0)
-def cublasCgetrfBatched(handle, n, A, lda, P, info, batchSize):
+def cublasCgetrfBatched(
+    handle: int,
+    n: int,
+    A: ctypes.c_void_p,
+    lda: int,
+    P: ctypes.c_void_p,
+    info: ctypes.c_void_p,
+    batchSize: int,
+) -> None:
     """This function performs the LU factorization of an array of n x n matrices."""
 
     assert _libcublas
@@ -8793,7 +10290,15 @@ if _cublas_version >= 5000:
 
 
 @_cublas_version_req(5.0)
-def cublasZgetrfBatched(handle, n, A, lda, P, info, batchSize):
+def cublasZgetrfBatched(
+    handle: int,
+    n: int,
+    A: ctypes.c_void_p,
+    lda: int,
+    P: ctypes.c_void_p,
+    info: ctypes.c_void_p,
+    batchSize: int,
+) -> None:
     """This function performs the LU factorization of an array of n x n matrices."""
 
     assert _libcublas
@@ -8862,7 +10367,19 @@ if _cublas_version >= 5000:
 
 
 @_cublas_version_req(5.0)
-def cublasSgetrsBatched(handle, trans, n, nrhs, Aarray, lda, devIpiv, Barray, ldb, info, batchSize):
+def cublasSgetrsBatched(
+    handle: int,
+    trans: int | str,
+    n: int,
+    nrhs: int,
+    Aarray: ctypes.c_void_p,
+    lda: int,
+    devIpiv: ctypes.c_void_p,
+    Barray: ctypes.c_void_p,
+    ldb: int,
+    info: ctypes.c_void_p,
+    batchSize: int,
+) -> None:
     """This function solves an array of LU factored linear systems."""
 
     assert _libcublas
@@ -8905,7 +10422,19 @@ if _cublas_version >= 5000:
 
 
 @_cublas_version_req(5.0)
-def cublasDgetrsBatched(handle, trans, n, nrhs, Aarray, lda, devIpiv, Barray, ldb, info, batchSize):
+def cublasDgetrsBatched(
+    handle: int,
+    trans: int | str,
+    n: int,
+    nrhs: int,
+    Aarray: ctypes.c_void_p,
+    lda: int,
+    devIpiv: ctypes.c_void_p,
+    Barray: ctypes.c_void_p,
+    ldb: int,
+    info: ctypes.c_void_p,
+    batchSize: int,
+) -> None:
     """This function solves an array of LU factored linear systems."""
 
     assert _libcublas
@@ -8948,7 +10477,19 @@ if _cublas_version >= 5000:
 
 
 @_cublas_version_req(5.0)
-def cublasCgetrsBatched(handle, trans, n, nrhs, Aarray, lda, devIpiv, Barray, ldb, info, batchSize):
+def cublasCgetrsBatched(
+    handle: int,
+    trans: int | str,
+    n: int,
+    nrhs: int,
+    Aarray: ctypes.c_void_p,
+    lda: int,
+    devIpiv: ctypes.c_void_p,
+    Barray: ctypes.c_void_p,
+    ldb: int,
+    info: ctypes.c_void_p,
+    batchSize: int,
+) -> None:
     """This function solves an array of LU factored linear systems."""
 
     assert _libcublas
@@ -8991,7 +10532,19 @@ if _cublas_version >= 5000:
 
 
 @_cublas_version_req(5.0)
-def cublasZgetrsBatched(handle, trans, n, nrhs, Aarray, lda, devIpiv, Barray, ldb, info, batchSize):
+def cublasZgetrsBatched(
+    handle: int,
+    trans: int | str,
+    n: int,
+    nrhs: int,
+    Aarray: ctypes.c_void_p,
+    lda: int,
+    devIpiv: ctypes.c_void_p,
+    Barray: ctypes.c_void_p,
+    ldb: int,
+    info: ctypes.c_void_p,
+    batchSize: int,
+) -> None:
     """This function solves an array of LU factored linear systems."""
 
     assert _libcublas
@@ -9069,7 +10622,17 @@ if _cublas_version >= 5050:
 
 
 @_cublas_version_req(5.5)
-def cublasSgetriBatched(handle, n, A, lda, P, C, ldc, info, batchSize):
+def cublasSgetriBatched(
+    handle: int,
+    n: int,
+    A: ctypes.c_void_p,
+    lda: int,
+    P: ctypes.c_void_p,
+    C: ctypes.c_void_p,
+    ldc: int,
+    info: ctypes.c_void_p,
+    batchSize: int,
+) -> None:
     """This function performs the inversion of an array of n x n matrices."""
 
     assert _libcublas
@@ -9101,7 +10664,17 @@ if _cublas_version >= 5050:
 
 
 @_cublas_version_req(5.5)
-def cublasDgetriBatched(handle, n, A, lda, P, C, ldc, info, batchSize):
+def cublasDgetriBatched(
+    handle: int,
+    n: int,
+    A: ctypes.c_void_p,
+    lda: int,
+    P: ctypes.c_void_p,
+    C: ctypes.c_void_p,
+    ldc: int,
+    info: ctypes.c_void_p,
+    batchSize: int,
+) -> None:
     """This function performs the inversion of an array of n x n matrices."""
 
     assert _libcublas
@@ -9133,7 +10706,17 @@ if _cublas_version >= 5050:
 
 
 @_cublas_version_req(5.5)
-def cublasCgetriBatched(handle, n, A, lda, P, C, ldc, info, batchSize):
+def cublasCgetriBatched(
+    handle: int,
+    n: int,
+    A: ctypes.c_void_p,
+    lda: int,
+    P: ctypes.c_void_p,
+    C: ctypes.c_void_p,
+    ldc: int,
+    info: ctypes.c_void_p,
+    batchSize: int,
+) -> None:
     """This function performs the inversion of an array of n x n matrices."""
 
     assert _libcublas
@@ -9165,7 +10748,17 @@ if _cublas_version >= 5050:
 
 
 @_cublas_version_req(5.5)
-def cublasZgetriBatched(handle, n, A, lda, P, C, ldc, info, batchSize):
+def cublasZgetriBatched(
+    handle: int,
+    n: int,
+    A: ctypes.c_void_p,
+    lda: int,
+    P: ctypes.c_void_p,
+    C: ctypes.c_void_p,
+    ldc: int,
+    info: ctypes.c_void_p,
+    batchSize: int,
+) -> None:
     """This function performs the inversion of an array of n x n matrices."""
 
     assert _libcublas
@@ -9245,8 +10838,19 @@ if _cublas_version >= 5000:
 
 @_cublas_version_req(5.0)
 def cublasSgelsBatched(
-    handle, trans, m, n, nrhs, Aarray, lda, Carray, ldc, info, devInfoArray, batchSize
-):
+    handle: int,
+    trans: int | str,
+    m: int,
+    n: int,
+    nrhs: int,
+    Aarray: ctypes.c_void_p,
+    lda: int,
+    Carray: ctypes.c_void_p,
+    ldc: int,
+    info: ctypes.c_void_p,
+    devInfoArray: ctypes.c_void_p,
+    batchSize: int,
+) -> None:
     """This function finds the least squares solution of a batch of overdetermined systems."""
 
     assert _libcublas
@@ -9275,8 +10879,19 @@ cublasSgelsBatched.__doc__ = _GELS_BATCHED_doc.substitute(
 
 @_cublas_version_req(5.0)
 def cublasDgelsBatched(
-    handle, trans, m, n, nrhs, Aarray, lda, Carray, ldc, info, devInfoArray, batchSize
-):
+    handle: int,
+    trans: int | str,
+    m: int,
+    n: int,
+    nrhs: int,
+    Aarray: ctypes.c_void_p,
+    lda: int,
+    Carray: ctypes.c_void_p,
+    ldc: int,
+    info: ctypes.c_void_p,
+    devInfoArray: ctypes.c_void_p,
+    batchSize: int,
+) -> None:
     """This function finds the least squares solution of a batch of overdetermined systems."""
 
     assert _libcublas
@@ -9305,8 +10920,19 @@ cublasDgelsBatched.__doc__ = _GELS_BATCHED_doc.substitute(
 
 @_cublas_version_req(5.0)
 def cublasCgelsBatched(
-    handle, trans, m, n, nrhs, Aarray, lda, Carray, ldc, info, devInfoArray, batchSize
-):
+    handle: int,
+    trans: int | str,
+    m: int,
+    n: int,
+    nrhs: int,
+    Aarray: ctypes.c_void_p,
+    lda: int,
+    Carray: ctypes.c_void_p,
+    ldc: int,
+    info: ctypes.c_void_p,
+    devInfoArray: ctypes.c_void_p,
+    batchSize: int,
+) -> None:
     """This function finds the least squares solution of a batch of overdetermined systems."""
 
     assert _libcublas
@@ -9335,8 +10961,19 @@ cublasCgelsBatched.__doc__ = _GELS_BATCHED_doc.substitute(
 
 @_cublas_version_req(5.0)
 def cublasZgelsBatched(
-    handle, trans, m, n, nrhs, Aarray, lda, Carray, ldc, info, devInfoArray, batchSize
-):
+    handle: int,
+    trans: int | str,
+    m: int,
+    n: int,
+    nrhs: int,
+    Aarray: ctypes.c_void_p,
+    lda: int,
+    Carray: ctypes.c_void_p,
+    ldc: int,
+    info: ctypes.c_void_p,
+    devInfoArray: ctypes.c_void_p,
+    batchSize: int,
+) -> None:
     """This function finds the least squares solution of a batch of overdetermined systems."""
 
     assert _libcublas
@@ -9426,7 +11063,18 @@ _DGMM_doc = Template("""
 
 
 @_cublas_version_req(5.0)
-def cublasSdgmm(handle, side, m, n, A, lda, x, incx, C, ldc):
+def cublasSdgmm(
+    handle: int,
+    side: int | str,
+    m: int,
+    n: int,
+    A: ctypes.c_void_p,
+    lda: int,
+    x: ctypes.c_void_p,
+    incx: int,
+    C: ctypes.c_void_p,
+    ldc: int,
+) -> None:
     """Multiplies a matrix with a diagonal matrix."""
 
     assert _libcublas
@@ -9443,7 +11091,18 @@ cublasSdgmm.__doc__ = _DGMM_doc.substitute(
 
 
 @_cublas_version_req(5.0)
-def cublasDdgmm(handle, side, m, n, A, lda, x, incx, C, ldc):
+def cublasDdgmm(
+    handle: int,
+    side: int | str,
+    m: int,
+    n: int,
+    A: ctypes.c_void_p,
+    lda: int,
+    x: ctypes.c_void_p,
+    incx: int,
+    C: ctypes.c_void_p,
+    ldc: int,
+) -> None:
     """Multiplies a matrix with a diagonal matrix."""
 
     assert _libcublas
@@ -9460,7 +11119,18 @@ cublasDdgmm.__doc__ = _DGMM_doc.substitute(
 
 
 @_cublas_version_req(5.0)
-def cublasCdgmm(handle, side, m, n, A, lda, x, incx, C, ldc):
+def cublasCdgmm(
+    handle: int,
+    side: int | str,
+    m: int,
+    n: int,
+    A: ctypes.c_void_p,
+    lda: int,
+    x: ctypes.c_void_p,
+    incx: int,
+    C: ctypes.c_void_p,
+    ldc: int,
+) -> None:
     """Multiplies a matrix with a diagonal matrix."""
 
     assert _libcublas
@@ -9477,7 +11147,18 @@ cublasCdgmm.__doc__ = _DGMM_doc.substitute(
 
 
 @_cublas_version_req(5.0)
-def cublasZdgmm(handle, side, m, n, A, lda, x, incx, C, ldc):
+def cublasZdgmm(
+    handle: int,
+    side: int | str,
+    m: int,
+    n: int,
+    A: ctypes.c_void_p,
+    lda: int,
+    x: ctypes.c_void_p,
+    incx: int,
+    C: ctypes.c_void_p,
+    ldc: int,
+) -> None:
     """Multiplies a matrix with a diagonal matrix."""
 
     assert _libcublas
@@ -9576,25 +11257,25 @@ if _cublas_version >= 8000:
 
 @_cublas_version_req(8.0)
 def cublasSgemmStridedBatched(
-    handle,
-    transa,
-    transb,
-    m,
-    n,
-    k,
-    alpha,
-    A,
-    lda,
-    strideA,
-    B,
-    ldb,
-    strideB,
-    beta,
-    C,
-    ldc,
-    strideC,
-    batchCount,
-):
+    handle: int,
+    transa: int | str,
+    transb: int | str,
+    m: int,
+    n: int,
+    k: int,
+    alpha: np.float32,
+    A: ctypes.c_void_p,
+    lda: int,
+    strideA: int,
+    B: ctypes.c_void_p,
+    ldb: int,
+    strideB: int,
+    beta: np.float32,
+    C: ctypes.c_void_p,
+    ldc: int,
+    strideC: int,
+    batchCount: int,
+) -> None:
     """Matrix-matrix multiplication of a batch of matrices."""
 
     assert _libcublas
@@ -9630,25 +11311,25 @@ cublasSgemmStridedBatched.__doc__ = _GEMM_STRIDED_BATCHED_doc.substitute(
 
 @_cublas_version_req(8.0)
 def cublasDgemmStridedBatched(
-    handle,
-    transa,
-    transb,
-    m,
-    n,
-    k,
-    alpha,
-    A,
-    lda,
-    strideA,
-    B,
-    ldb,
-    strideB,
-    beta,
-    C,
-    ldc,
-    strideC,
-    batchCount,
-):
+    handle: int,
+    transa: int | str,
+    transb: int | str,
+    m: int,
+    n: int,
+    k: int,
+    alpha: np.float64,
+    A: ctypes.c_void_p,
+    lda: int,
+    strideA: int,
+    B: ctypes.c_void_p,
+    ldb: int,
+    strideB: int,
+    beta: np.float64,
+    C: ctypes.c_void_p,
+    ldc: int,
+    strideC: int,
+    batchCount: int,
+) -> None:
     """Matrix-matrix multiplication of a batch of matrices."""
 
     assert _libcublas
@@ -9684,25 +11365,25 @@ cublasDgemmStridedBatched.__doc__ = _GEMM_STRIDED_BATCHED_doc.substitute(
 
 @_cublas_version_req(8.0)
 def cublasCgemmStridedBatched(
-    handle,
-    transa,
-    transb,
-    m,
-    n,
-    k,
-    alpha,
-    A,
-    lda,
-    strideA,
-    B,
-    ldb,
-    strideB,
-    beta,
-    C,
-    ldc,
-    strideC,
-    batchCount,
-):
+    handle: int,
+    transa: int | str,
+    transb: int | str,
+    m: int,
+    n: int,
+    k: int,
+    alpha: np.complex64,
+    A: ctypes.c_void_p,
+    lda: int,
+    strideA: int,
+    B: ctypes.c_void_p,
+    ldb: int,
+    strideB: int,
+    beta: np.complex64,
+    C: ctypes.c_void_p,
+    ldc: int,
+    strideC: int,
+    batchCount: int,
+) -> None:
     """Matrix-matrix multiplication of a batch of matrices."""
 
     assert _libcublas
@@ -9738,25 +11419,25 @@ cublasCgemmStridedBatched.__doc__ = _GEMM_STRIDED_BATCHED_doc.substitute(
 
 @_cublas_version_req(8.0)
 def cublasZgemmStridedBatched(
-    handle,
-    transa,
-    transb,
-    m,
-    n,
-    k,
-    alpha,
-    A,
-    lda,
-    strideA,
-    B,
-    ldb,
-    strideB,
-    beta,
-    C,
-    ldc,
-    strideC,
-    batchCount,
-):
+    handle: int,
+    transa: int | str,
+    transb: int | str,
+    m: int,
+    n: int,
+    k: int,
+    alpha: np.complex128,
+    A: ctypes.c_void_p,
+    lda: int,
+    strideA: int,
+    B: ctypes.c_void_p,
+    ldb: int,
+    strideB: int,
+    beta: np.complex128,
+    C: ctypes.c_void_p,
+    ldc: int,
+    strideC: int,
+    batchCount: int,
+) -> None:
     """Matrix-matrix multiplication of a batch of matrices."""
 
     assert _libcublas
