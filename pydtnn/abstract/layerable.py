@@ -160,8 +160,7 @@ class Layerable[T: Array](Base[T]):
         super()._model_init()
         self.id = next(self.model.layer_id_generator)
         self.prev_shape = prev_shape
-        # type: ignore (If it's used, it will be type "T"; if not, it will never be accesed)
-        self.x = x
+        self.x = x # type: ignore (If it's used, it will be type "T"; if not, it will never be accesed)
         self.fwd_time = np.zeros((4,), dtype=np.float32)
         self.bwd_time = np.zeros((4,), dtype=np.float32)
 

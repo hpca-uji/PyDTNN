@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 class Conv2DPointwise[T: Array](AbstractConv2D[T]):
     """
     A 2D pointwise convolution layer that performs a 1x1 convolution across input channels.
+    NOTE: 'dilation' and 'filter_shape' will be ignored.
     """
 
     def __init__(
@@ -26,7 +27,7 @@ class Conv2DPointwise[T: Array](AbstractConv2D[T]):
         filter_shape: tuple[int, int] | int = (1, 1),
         padding: tuple[int, int] | int = 0,
         stride: tuple[int, int] | int = 1,
-        dilation: tuple[int, int] | int = 1,
+        dilation: tuple[int, int] | int = 0,
         activation: Optional[type["Activation"]] = None,
         use_bias=True,
         weights_initializer: InitializerFunc = glorot_uniform,
