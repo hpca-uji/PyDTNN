@@ -176,7 +176,7 @@ class Conv2DPointwiseNumpy(Conv2DPointwise[np.ndarray], AbstractConv2DNumpy):
         n, h, w, c = dy.shape
         dim = n * h * w
         x_shape = self.x.shape
-        dx = np.asarray(self.dx[: dy.size].reshape(self.ci, dim), dtype=self.model.dtype, order="C")
+        dx = np.asarray(self.dx[: self.x.size].reshape(self.ci, -1), dtype=self.model.dtype, order="C")
         dx.fill(0)
         self.dw.fill(0)
 
@@ -227,7 +227,7 @@ class Conv2DPointwiseNumpy(Conv2DPointwise[np.ndarray], AbstractConv2DNumpy):
         n, c, h, w = dy.shape
         dim = n * h * w
         x_shape = self.x.shape
-        dx = np.asarray(self.dx[: dy.size].reshape(self.ci, dim), dtype=self.model.dtype, order="C")
+        dx = np.asarray(self.dx[: self.x.size].reshape(self.ci, -1), dtype=self.model.dtype, order="C")
         dx.fill(0)
         self.dw.fill(0)
 
