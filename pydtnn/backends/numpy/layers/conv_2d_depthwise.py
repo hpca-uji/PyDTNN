@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     import numpy as np
 
 
-class Conv2DDepthwiseNumpy(AbstractConv2DNumpy, Conv2DDepthwise[np.ndarray]):
+class Conv2DDepthwiseNumpy(Conv2DDepthwise[np.ndarray], AbstractConv2DNumpy):
     """Numpy-based implementation of a 2D depthwise convolution layer."""
 
     def _initializing_special_parameters(self):
@@ -200,6 +200,7 @@ class Conv2DDepthwiseNumpy(AbstractConv2DNumpy, Conv2DDepthwise[np.ndarray]):
 
         dx: np.ndarray = np.asarray(self.dx[: dy.shape[0],], dtype=self.model.dtype, order="C")
         dx.fill(0)
+        self.dw.fill(0)
 
         self._conv_bwd_nhwc(dx, dy)
 
@@ -218,6 +219,7 @@ class Conv2DDepthwiseNumpy(AbstractConv2DNumpy, Conv2DDepthwise[np.ndarray]):
 
         dx: np.ndarray = np.asarray(self.dx[: dy.shape[0],], dtype=self.model.dtype, order="C")
         dx.fill(0)
+        self.dw.fill(0)
 
         self._conv_bwd_nchw(dx, dy)
 

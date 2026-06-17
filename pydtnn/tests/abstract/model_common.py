@@ -212,6 +212,7 @@ class ModelCommonTestCase(TestCase):
                 print(f"{x1[i].max()=}", end=" - ")
                 print(f"{x1[i].min()=}", end=" - ")
                 print(f"{x1[i].mean()=}", end=" - ")
+                print(f"{x1[i].sum()=}", end=" - ")
                 print(f"{x1[i].std()=}")
             x1.append(layer.forward(np.asarray(x1[i], dtype=model1.dtype, order="C").copy()).copy())
             if verbose_test():
@@ -219,6 +220,7 @@ class ModelCommonTestCase(TestCase):
                 print(f"{x1[-1].max()=}", end=" - ")
                 print(f"{x1[-1].min()=}", end=" - ")
                 print(f"{x1[-1].mean()=}", end=" - ")
+                print(f"{x1[-1].sum()=}", end=" - ")
                 print(f"{x1[-1].std()=}")
         return x1
 
@@ -242,13 +244,15 @@ class ModelCommonTestCase(TestCase):
                 print(f"{x1[i].max()=}", end=" - ")
                 print(f"{x1[i].min()=}", end=" - ")
                 print(f"{x1[i].mean()=}", end=" - ")
+                print(f"{x1[i].sum()=}", end=" - ")
                 print(f"{x1[i].std()=}")
-            x2.append(layer.forward(np.asarray(x1[i], dtype=model2.dtype, order="C").copy()).copy())
+            x2.append(layer.forward(np.asarray(x1[i].copy(), dtype=model2.dtype, order="C").copy()).copy())
             if verbose_test():
                 print("output", end=" - ")
                 print(f"{x2[-1].max()=}", end=" - ")
                 print(f"{x2[-1].min()=}", end=" - ")
                 print(f"{x2[-1].mean()=}", end=" - ")
+                print(f"{x2[-1].sum()=}", end=" - ")
                 print(f"{x2[-1].std()=}")
         return x2
 
@@ -265,12 +269,25 @@ class ModelCommonTestCase(TestCase):
             List of gradients after each layer.
         """
         dx1 = [dx0[0]]
-        for _, layer in reversed(list(enumerate(model1.layers))):
+        for i, layer in reversed(list(enumerate(model1.layers))):
             if verbose_test():
                 print(layer)
+                print(f"\n{layer.name} - {layer.id} - input {model1.tensor_format=}", end=" - ")
+                print(f"{dx1[0].max()=}", end=" - ")
+                print(f"{dx1[0].min()=}", end=" - ")
+                print(f"{dx1[0].mean()=}", end=" - ")
+                print(f"{dx1[0].sum()=}", end=" - ")
+                print(f"{dx1[0].std()=}")
             dx1.insert(
-                0, layer.backward(np.asarray(dx1[0], dtype=model1.dtype, order="C").copy()).copy()
+                0, layer.backward(np.asarray(dx1[0].copy(), dtype=model1.dtype, order="C").copy()).copy()
             )
+            if verbose_test():
+                print("output", end=" - ")
+                print(f"{dx1[0].max()=}", end=" - ")
+                print(f"{dx1[0].min()=}", end=" - ")
+                print(f"{dx1[0].mean()=}", end=" - ")
+                print(f"{dx1[0].sum()=}", end=" - ")
+                print(f"{dx1[0].std()=}")
         return dx1
 
     def do_model2_backward_pass(self, model2: Model, dx1: list[np.ndarray]) -> list[np.ndarray]:
@@ -287,11 +304,25 @@ class ModelCommonTestCase(TestCase):
         dx2 = [dx1[-1]]
         for i, layer in reversed(list(enumerate(model2.layers))):
             if verbose_test():
-                print(layer)
+                print(f"\n{layer}")
+                print(f"\n{layer.name} - {layer.id} - input {model2.tensor_format=}", end=" - ")
+                print(f"{dx1[i + 1].shape=}", end=" - ")
+                print(f"{dx1[i + 1].max()=}", end=" - ")
+                print(f"{dx1[i + 1].min()=}", end=" - ")
+                print(f"{dx1[i + 1].mean()=}", end=" - ")
+                print(f"{dx1[i + 1].sum()=}", end=" - ")
+                print(f"{dx1[i + 1].std()=}")
             dx2.insert(
                 0,
-                layer.backward(np.asarray(dx1[i + 1], dtype=model2.dtype, order="C").copy()).copy(),
+                layer.backward(np.asarray(dx1[i + 1].copy(), dtype=model2.dtype, order="C").copy()).copy(),
             )
+            if verbose_test():
+                print("output", end=" - ")
+                print(f"{dx2[0].max()=}", end=" - ")
+                print(f"{dx2[0].min()=}", end=" - ")
+                print(f"{dx2[0].mean()=}", end=" - ")
+                print(f"{dx2[0].sum()=}", end=" - ")
+                print(f"{dx2[0].std()=}")
         return dx2
 
     def compare_forward(
