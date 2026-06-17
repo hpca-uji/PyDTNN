@@ -8,7 +8,6 @@ import tempfile
 import time
 from pathlib import Path
 import types
-from typing import Any
 
 import memray  # type: ignore
 from memray._memray import compute_statistics as memray_statistics  # type: ignore
