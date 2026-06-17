@@ -81,7 +81,7 @@ class Conv2DPointwiseCython(Conv2DPointwiseNumpy):
         Performs the backward pass for NHWC tensor format.
         """
         #dx: np.ndarray = np.asarray(self.dx[:, :_dim], dtype=self.model.dtype, order="C")
-        dx = np.asarray(self.dx[: dy.size].reshape(self.x.shape), dtype=self.model.dtype, order="C")
+        dx = np.asarray(self.dx[: self.x.size].reshape(self.x.shape), dtype=self.model.dtype, order="C")
 
         bwd_pointwise_conv_cython_nhwc(dy, self.x, self.weights, dx, self.dw,
                                        self.hpadding, self.wpadding,
@@ -102,7 +102,7 @@ class Conv2DPointwiseCython(Conv2DPointwiseNumpy):
         """
         Performs the backward pass for NCHW tensor format.
         """
-        dx = np.asarray(self.dx[: dy.size].reshape(self.x.shape), dtype=self.model.dtype, order="C")
+        dx = np.asarray(self.dx[: self.x.size].reshape(self.x.shape), dtype=self.model.dtype, order="C")
 
 
         bwd_pointwise_conv_cython_nchw(dy, self.x, self.weights, dx, self.dw,
