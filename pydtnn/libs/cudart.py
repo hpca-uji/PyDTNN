@@ -6,10 +6,16 @@ Python interface to CUDA runtime functions.
 # Source: https://github.com/lebedov/scikit-cuda
 
 import ctypes
+import functools
 import re
 import sys
+from typing import TYPE_CHECKING, Callable
 
 import numpy as np
+
+if TYPE_CHECKING:
+    import gpuarray  # type: ignore
+
 
 # Load library:
 __all__ = (
@@ -167,7 +173,8 @@ if _libcudart is None:
 # Code adapted from PARRET:
 
 
-def POINTER(obj):
+@functools.wraps(ctypes.POINTER)
+def POINTER(type: type) -> ctypes.c_void_p:
     """
     Create ctypes pointer to object.
 
@@ -178,7 +185,7 @@ def POINTER(obj):
 
     """
 
-    p = ctypes.POINTER(obj)
+    p = ctypes.POINTER(type)
     if not isinstance(p.from_param, classmethod):
 
         def from_param(cls, x):
@@ -187,10 +194,9 @@ def POINTER(obj):
             else:
                 return x
 
-        p.from_param = classmethod(from_param)
+        p.from_param = classmethod(from_param)  # type: ignore
 
     return p
-
 
 # Classes corresponding to CUDA vector structures:
 
@@ -205,7 +211,7 @@ class cuFloatComplex(float2):
     """CUDA cuFloatComplex structure."""
 
     @property
-    def value(self):
+    def value(self) -> complex:
         """Return the complex representation of the structure."""
         return complex(self.x, self.y)
 
@@ -220,12 +226,12 @@ class cuDoubleComplex(double2):
     """CUDA cuDoubleComplex structure."""
 
     @property
-    def value(self):
+    def value(self) -> complex:
         """Return the complex representation of the structure."""
         return complex(self.x, self.y)
 
 
-def gpuarray_ptr(g):
+def gpuarray_ptr(g: gpuarray.GPUArray) -> ctypes.c_void_p:
     """
     Return ctypes pointer to data in GPUAarray object.
 
@@ -247,29 +253,29 @@ def gpuarray_ptr(g):
 
     addr = int(g.gpudata)
     if g.dtype == np.int8:
-        return ctypes.cast(addr, POINTER(ctypes.c_byte))
+        return ctypes.cast(addr, POINTER(ctypes.c_byte))  # type: ignore
     if g.dtype == np.uint8:
-        return ctypes.cast(addr, POINTER(ctypes.c_ubyte))
+        return ctypes.cast(addr, POINTER(ctypes.c_ubyte))  # type: ignore
     if g.dtype == np.int16:
-        return ctypes.cast(addr, POINTER(ctypes.c_short))
+        return ctypes.cast(addr, POINTER(ctypes.c_short))  # type: ignore
     if g.dtype == np.uint16:
-        return ctypes.cast(addr, POINTER(ctypes.c_ushort))
+        return ctypes.cast(addr, POINTER(ctypes.c_ushort))  # type: ignore
     if g.dtype == np.int32:
-        return ctypes.cast(addr, POINTER(ctypes.c_int))
+        return ctypes.cast(addr, POINTER(ctypes.c_int))  # type: ignore
     if g.dtype == np.uint32:
-        return ctypes.cast(addr, POINTER(ctypes.c_uint))
+        return ctypes.cast(addr, POINTER(ctypes.c_uint))  # type: ignore
     if g.dtype == np.int64:
-        return ctypes.cast(addr, POINTER(ctypes.c_long))
+        return ctypes.cast(addr, POINTER(ctypes.c_long))  # type: ignore
     if g.dtype == np.uint64:
-        return ctypes.cast(addr, POINTER(ctypes.c_ulong))
+        return ctypes.cast(addr, POINTER(ctypes.c_ulong))  # type: ignore
     if g.dtype == np.float32:
-        return ctypes.cast(addr, POINTER(ctypes.c_float))
+        return ctypes.cast(addr, POINTER(ctypes.c_float))  # type: ignore
     elif g.dtype == np.float64:
-        return ctypes.cast(addr, POINTER(ctypes.c_double))
+        return ctypes.cast(addr, POINTER(ctypes.c_double))  # type: ignore
     elif g.dtype == np.complex64:
-        return ctypes.cast(addr, POINTER(cuFloatComplex))
+        return ctypes.cast(addr, POINTER(cuFloatComplex))  # type: ignore
     elif g.dtype == np.complex128:
-        return ctypes.cast(addr, POINTER(cuDoubleComplex))
+        return ctypes.cast(addr, POINTER(cuDoubleComplex))  # type: ignore
     else:
         raise ValueError("unrecognized type")
 
@@ -278,7 +284,7 @@ _libcudart.cudaGetErrorString.restype = ctypes.c_char_p
 _libcudart.cudaGetErrorString.argtypes = [ctypes.c_int]
 
 
-def cudaGetErrorString(e):
+def cudaGetErrorString(e: int) -> str:
     """
     Retrieve CUDA error string.
 
@@ -314,387 +320,919 @@ class cudaError(Exception):
 
 
 class cudaErrorMissingConfiguration(cudaError):
+    """
+    cudaErrorMissingConfiguration
+
+    The device function being invoked (usually via
+    cudaLaunchKernel()) was not previously configured via the
+    cudaConfigureCall() function.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(1)
-    pass
 
 
 class cudaErrorMemoryAllocation(cudaError):
+    """
+    cudaErrorMemoryAllocation
+
+    The API call failed because it was unable to allocate enough
+    memory or other resources to perform the requested operation.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(2)
-    pass
 
 
 class cudaErrorInitializationError(cudaError):
+    """
+    cudaErrorInitializationError
+
+    The API call failed because the CUDA driver and runtime could
+    not be initialized.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(3)
-    pass
 
 
 class cudaErrorLaunchFailure(cudaError):
+    """
+    cudaErrorLaunchFailure
+
+    An exception occurred on the device while executing a kernel.
+    Common causes include dereferencing an invalid device pointer
+    and accessing out of bounds shared memory. Less common cases
+    can be system specific - more information about these cases
+    can be found in the system specific user guide. This leaves
+    the process in an inconsistent state and any further CUDA work
+    will return the same error. To continue using CUDA, the process
+    must be terminated and relaunched.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(4)
-    pass
 
 
 class cudaErrorPriorLaunchFailure(cudaError):
+    """
+    cudaErrorPriorLaunchFailure
+
+
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(5)
-    pass
 
 
 class cudaErrorLaunchTimeout(cudaError):
+    """
+    cudaErrorLaunchTimeout
+
+    This indicates that the device kernel took too long to execute.
+    This can only occur if timeouts are enabled - see the device attribute
+    cudaDevAttrKernelExecTimeout for more information. This leaves the
+    process in an inconsistent state and any further CUDA work will
+    return the same error. To continue using CUDA, the process must
+    be terminated and relaunched.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(6)
-    pass
 
 
 class cudaErrorLaunchOutOfResources(cudaError):
+    """
+    cudaErrorLaunchOutOfResources
+
+    This indicates that a launch did not occur because it did not have
+    appropriate resources. Although this error is similar to
+    cudaErrorInvalidConfiguration, this error usually indicates that
+    the user has attempted to pass too many arguments to the device kernel,
+    or the kernel launch specifies too many threads for the kernel's
+    register count.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(7)
-    pass
 
 
 class cudaErrorInvalidDeviceFunction(cudaError):
+    """
+    cudaErrorInvalidDeviceFunction
+
+    The requested device function does not exist or is not compiled for
+    the proper device architecture.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(8)
-    pass
 
 
 class cudaErrorInvalidConfiguration(cudaError):
+    """
+    cudaErrorInvalidConfiguration
+
+    This indicates that a kernel launch is requesting resources that can
+    never be satisfied by the current device. Requesting more shared memory
+    per block than the device supports will trigger this error, as will
+    requesting too many threads or blocks. See cudaDeviceProp for more
+    device limitations.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(9)
-    pass
 
 
 class cudaErrorInvalidDevice(cudaError):
+    """
+    cudaErrorInvalidDevice
+
+    This indicates that the device ordinal supplied by the user does not
+    correspond to a valid CUDA device or that the action requested is
+    invalid for the specified device.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(10)
-    pass
 
 
 class cudaErrorInvalidValue(cudaError):
+    """
+    cudaErrorInvalidValue
+
+    This indicates that one or more of the parameters passed to the API
+    call is not within an acceptable range of values.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(11)
-    pass
 
 
 class cudaErrorInvalidPitchValue(cudaError):
+    """
+    cudaErrorInvalidPitchValue
+
+    This indicates that one or more of the pitch-related parameters passed
+    to the API call is not within the acceptable range for pitch.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(12)
-    pass
 
 
 class cudaErrorInvalidSymbol(cudaError):
+    """
+    cudaErrorInvalidSymbol
+
+    This indicates that the symbol name/identifier passed to the API call
+    is not a valid name or identifier.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(13)
-    pass
 
 
 class cudaErrorMapBufferObjectFailed(cudaError):
+    """
+    cudaErrorMapBufferObjectFailed
+
+    This indicates that the buffer object could not be mapped.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(14)
-    pass
 
 
 class cudaErrorUnmapBufferObjectFailed(cudaError):
+    """
+    cudaErrorUnmapBufferObjectFailed
+
+    This indicates that the buffer object could not be unmapped.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(15)
-    pass
 
 
 class cudaErrorInvalidHostPointer(cudaError):
+    """
+    cudaErrorInvalidHostPointer
+
+
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(16)
-    pass
 
 
 class cudaErrorInvalidDevicePointer(cudaError):
+    """
+    cudaErrorInvalidDevicePointer
+
+
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(17)
-    pass
 
 
 class cudaErrorInvalidTexture(cudaError):
+    """
+    cudaErrorInvalidTexture
+
+    This indicates that the texture passed to the API call is not a valid
+    texture.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(18)
-    pass
 
 
 class cudaErrorInvalidTextureBinding(cudaError):
+    """
+    cudaErrorInvalidTextureBinding
+
+    This indicates that the texture binding is not valid. This occurs if
+    you call cudaGetTextureAlignmentOffset() with an unbound texture.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(19)
-    pass
 
 
 class cudaErrorInvalidChannelDescriptor(cudaError):
+    """
+    cudaErrorInvalidChannelDescriptor
+
+    This indicates that the channel descriptor passed to the API call is
+    not valid. This occurs if the format is not one of the formats
+    specified by cudaChannelFormatKind, or if one of the dimensions
+    is invalid.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(20)
-    pass
 
 
 class cudaErrorInvalidMemcpyDirection(cudaError):
+    """
+    cudaErrorInvalidMemcpyDirection
+
+    This indicates that the direction of the memcpy passed to the API
+    call is not one of the types specified by cudaMemcpyKind.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(21)
-    pass
 
 
 class cudaErrorTextureFetchFailed(cudaError):
+    """
+    cudaErrorTextureFetchFailed
+
+
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(23)
-    pass
 
 
 class cudaErrorTextureNotBound(cudaError):
+    """
+    cudaErrorTextureNotBound
+
+
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(24)
-    pass
 
 
 class cudaErrorSynchronizationError(cudaError):
+    """
+    cudaErrorSynchronizationError
+
+
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(25)
-    pass
 
 
 class cudaErrorInvalidFilterSetting(cudaError):
+    """
+    cudaErrorInvalidFilterSetting
+
+    This indicates that a non-float texture was being accessed with
+    linear filtering. This is not supported by CUDA.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(26)
-    pass
 
 
 class cudaErrorInvalidNormSetting(cudaError):
+    """
+    cudaErrorInvalidNormSetting
+
+    This indicates that an attempt was made to read an unsupported data
+    type as a normalized float. This is not supported by CUDA.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(27)
-    pass
 
 
 class cudaErrorMixedDeviceExecution(cudaError):
+    """
+    cudaErrorMixedDeviceExecution
+
+
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(28)
-    pass
 
 
 class cudaErrorCudartUnloading(cudaError):
+    """
+    cudaErrorCudartUnloading
+
+    This indicates that a CUDA Runtime API call cannot be executed
+    because it is being called during process shut down, at a point
+    in time after CUDA driver has been unloaded.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(29)
-    pass
 
 
 class cudaErrorUnknown(cudaError):
+    """
+    cudaErrorUnknown
+
+    This indicates that an unknown internal error has occurred.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(30)
-    pass
 
 
 class cudaErrorNotYetImplemented(cudaError):
+    """
+    cudaErrorNotYetImplemented
+
+
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(31)
-    pass
 
 
 class cudaErrorMemoryValueTooLarge(cudaError):
+    """
+    cudaErrorMemoryValueTooLarge
+
+
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(32)
-    pass
 
 
 class cudaErrorInvalidResourceHandle(cudaError):
+    """
+    cudaErrorInvalidResourceHandle
+
+    This indicates that a resource handle passed to the API call was
+    not valid. Resource handles are opaque types like cudaStream_t
+    and cudaEvent_t.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(33)
-    pass
 
 
 class cudaErrorNotReady(cudaError):
+    """
+    cudaErrorNotReady
+
+    This indicates that asynchronous operations issued previously have
+    not completed yet. This result is not actually an error, but must
+    be indicated differently than cudaSuccess (which indicates completion).
+    Calls that may return this value include cudaEventQuery() and
+    cudaStreamQuery().
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(34)
-    pass
 
 
 class cudaErrorInsufficientDriver(cudaError):
+    """
+    cudaErrorInsufficientDriver
+
+    This indicates that the installed NVIDIA CUDA driver is older than
+    the CUDA runtime library. This is not a supported configuration.
+    Users should install an updated NVIDIA display driver to allow the
+    application to run.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(35)
-    pass
 
 
 class cudaErrorSetOnActiveProcess(cudaError):
+    """
+    cudaErrorSetOnActiveProcess
+
+    This indicates that the user has called cudaSetValidDevices(),
+    cudaSetDeviceFlags(), cudaD3D9SetDirect3DDevice(),
+    cudaD3D10SetDirect3DDevice, cudaD3D11SetDirect3DDevice(),
+    or cudaVDPAUSetVDPAUDevice() after initializing the CUDA runtime
+    by calling non-device management operations (allocating memory and
+    launching kernels are examples of non-device management operations).
+    This error can also be returned if using runtime/driver interoperability
+    and there is an existing CUcontext active on the host thread.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(36)
-    pass
 
 
 class cudaErrorInvalidSurface(cudaError):
+    """
+    cudaErrorInvalidSurface
+
+    This indicates that the surface passed to the API call is not
+    a valid surface.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(37)
-    pass
 
 
 class cudaErrorNoDevice(cudaError):
+    """
+    cudaErrorNoDevice
+
+    This indicates that no CUDA-capable devices were detected by
+    the installed CUDA driver.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(38)
-    pass
 
 
 class cudaErrorECCUncorrectable(cudaError):
+    """
+    cudaErrorECCUncorrectable
+
+    This indicates that an uncorrectable ECC error was detected
+    during execution.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(39)
-    pass
 
 
 class cudaErrorSharedObjectSymbolNotFound(cudaError):
+    """
+    cudaErrorSharedObjectSymbolNotFound
+
+    This indicates that a link to a shared object failed to resolve.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(40)
-    pass
 
 
 class cudaErrorSharedObjectInitFailed(cudaError):
+    """
+    cudaErrorSharedObjectInitFailed
+
+    This indicates that initialization of a shared object failed.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(41)
-    pass
 
 
 class cudaErrorUnsupportedLimit(cudaError):
+    """
+    cudaErrorUnsupportedLimit
+
+    This indicates that the cudaLimit passed to the API call is
+    not supported by the active device.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(42)
-    pass
 
 
 class cudaErrorDuplicateVariableName(cudaError):
+    """
+    cudaErrorDuplicateVariableName
+
+    This indicates that multiple global or constant variables
+    (across separate CUDA source files in the application) share
+    the same string name.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(43)
-    pass
 
 
 class cudaErrorDuplicateTextureName(cudaError):
+    """
+    cudaErrorDuplicateTextureName
+
+    This indicates that multiple textures (across separate CUDA
+    source files in the application) share the same string name.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(44)
-    pass
 
 
 class cudaErrorDuplicateSurfaceName(cudaError):
+    """
+    cudaErrorDuplicateSurfaceName
+
+    This indicates that multiple surfaces (across separate CUDA
+    source files in the application) share the same string name.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(45)
-    pass
 
 
 class cudaErrorDevicesUnavailable(cudaError):
+    """
+    cudaErrorDevicesUnavailable
+
+    This indicates that all CUDA devices are busy or unavailable
+    at the current time. Devices are often busy/unavailable due to
+    use of cudaComputeModeProhibited, cudaComputeModeExclusiveProcess,
+    or when long running CUDA kernels have filled up the GPU and are
+    blocking new work from starting. They can also be unavailable
+    due to memory constraints on a device that already has active
+    CUDA work being performed.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(46)
-    pass
 
 
 class cudaErrorInvalidKernelImage(cudaError):
+    """
+    cudaErrorInvalidKernelImage
+
+    This indicates that the device kernel image is invalid.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(47)
-    pass
 
 
 class cudaErrorNoKernelImageForDevice(cudaError):
+    """
+    cudaErrorNoKernelImageForDevice
+
+    This indicates that there is no kernel image available that is
+    suitable for the device. This can occur when a user specifies
+    code generation options for a particular CUDA source file that
+    do not include the corresponding device configuration.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(48)
-    pass
 
 
 class cudaErrorIncompatibleDriverContext(cudaError):
+    """
+    cudaErrorIncompatibleDriverContext
+
+    This indicates that the current context is not compatible with
+    this the CUDA Runtime. This can only occur if you are using CUDA
+    Runtime/Driver interoperability and have created an existing Driver
+    context using the driver API. The Driver context may be incompatible
+    either because the Driver context was created using an older
+    version of the API, because the Runtime API call expects a primary
+    driver context and the Driver context is not primary, or because
+    the Driver context has been destroyed. Please see Interactions with
+    the CUDA Driver API" for more information.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(49)
-    pass
 
 
 class cudaErrorPeerAccessAlreadyEnabled(cudaError):
+    """
+    cudaErrorPeerAccessAlreadyEnabled
+
+    This error indicates that a call to cudaDeviceEnablePeerAccess() is
+    trying to re-enable peer addressing on from a context which has
+    already had peer addressing enabled.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(50)
-    pass
 
 
 class cudaErrorPeerAccessNotEnabled(cudaError):
+    """
+    cudaErrorPeerAccessNotEnabled
+
+    This error indicates that cudaDeviceDisablePeerAccess() is trying
+    to disable peer addressing which has not been enabled yet via
+    cudaDeviceEnablePeerAccess().
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(51)
-    pass
 
 
 class cudaErrorDeviceAlreadyInUse(cudaError):
+    """
+    cudaErrorDeviceAlreadyInUse
+
+    This indicates that a call tried to access an exclusive-thread
+    device that is already in use by a different thread.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(54)
-    pass
 
 
 class cudaErrorProfilerDisabled(cudaError):
+    """
+    cudaErrorProfilerDisabled
+
+    This indicates profiler is not initialized for this run. This can
+    happen when the application is running with external profiling
+    tools like visual profiler.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(55)
-    pass
 
 
 class cudaErrorProfilerNotInitialized(cudaError):
+    """
+    cudaErrorProfilerNotInitialized
+
+
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(56)
-    pass
 
 
 class cudaErrorProfilerAlreadyStarted(cudaError):
+    """
+    cudaErrorProfilerAlreadyStarted
+
+
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(57)
-    pass
 
 
 class cudaErrorProfilerAlreadyStopped(cudaError):
+    """
+    cudaErrorProfilerAlreadyStopped
+
+
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(58)
-    pass
 
 
 class cudaErrorAssert(cudaError):
+    """
+    cudaErrorAssert
+
+    An assert triggered in device code during kernel execution. The device
+    cannot be used again. All existing allocations are invalid. To continue
+    using CUDA, the process must be terminated and relaunched.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(59)
-    pass
 
 
 class cudaErrorTooManyPeers(cudaError):
+    """
+    cudaErrorTooManyPeers
+
+    This error indicates that the hardware resources required to enable
+    peer access have been exhausted for one or more of the devices
+    passed to cudaEnablePeerAccess().
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(60)
-    pass
 
 
 class cudaErrorHostMemoryAlreadyRegistered(cudaError):
+    """
+    cudaErrorHostMemoryAlreadyRegistered
+
+    This error indicates that the memory range passed to cudaHostRegister()
+    has already been registered.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(61)
-    pass
 
 
 class cudaErrorHostMemoryNotRegistered(cudaError):
+    """
+    cudaErrorHostMemoryNotRegistered
+
+    This error indicates that the pointer passed to cudaHostUnregister()
+    does not correspond to any currently registered memory region.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(62)
-    pass
 
 
 class cudaErrorOperatingSystem(cudaError):
+    """
+    cudaErrorOperatingSystem
+
+    This error indicates that an OS call failed.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(63)
-    pass
 
 
 class cudaErrorPeerAccessUnsupported(cudaError):
+    """
+    cudaErrorPeerAccessUnsupported
+
+    This error indicates that P2P access is not supported across the
+    given devices.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(64)
-    pass
 
 
 class cudaErrorLaunchMaxDepthExceeded(cudaError):
+    """
+    cudaErrorLaunchMaxDepthExceeded
+
+    This error indicates that a device runtime grid launch did not occur
+    because the depth of the child grid would exceed the maximum supported
+    number of nested grid launches.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(65)
-    pass
 
 
 class cudaErrorLaunchFileScopedTex(cudaError):
+    """
+    cudaErrorLaunchFileScopedTex
+
+    This error indicates that a grid launch did not occur because the
+    kernel uses file-scoped textures which are unsupported by the device
+    runtime. Kernels launched via the device runtime only support textures
+    created with the Texture Object API's.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(66)
-    pass
 
 
 class cudaErrorLaunchFileScopedSurf(cudaError):
+    """
+    cudaErrorLaunchFileScopedSurf
+
+    This error indicates that a grid launch did not occur because the
+    kernel uses file-scoped surfaces which are unsupported by the device
+    runtime. Kernels launched via the device runtime only support surfaces
+    created with the Surface Object API's.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(67)
-    pass
 
 
 class cudaErrorSyncDepthExceeded(cudaError):
+    """
+    cudaErrorSyncDepthExceeded
+
+    This error indicates that a call to cudaDeviceSynchronize made from
+    the device runtime failed because the call was made at grid depth
+    greater than than either the default (2 levels of grids) or user
+    specified device limit cudaLimitDevRuntimeSyncDepth. To be able to
+    synchronize on launched grids at a greater depth successfully, the
+    maximum nested depth at which cudaDeviceSynchronize will be called
+    must be specified with the cudaLimitDevRuntimeSyncDepth limit to the
+    cudaDeviceSetLimit api before the host-side launch of a kernel using
+    the device runtime. Keep in mind that additional levels of sync depth
+    require the runtime to reserve large amounts of device memory that
+    cannot be used for user allocations. Note that cudaDeviceSynchronize
+    made from device runtime is only supported on devices of compute
+    capability < 9.0.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(68)
-    pass
 
 
 class cudaErrorLaunchPendingCountExceeded(cudaError):
+    """
+    cudaErrorLaunchPendingCountExceeded
+
+    This error indicates that a device runtime grid launch failed because
+    the launch would exceed the limit cudaLimitDevRuntimePendingLaunchCount.
+    For this launch to proceed successfully, cudaDeviceSetLimit must be
+    called to set the cudaLimitDevRuntimePendingLaunchCount to be higher
+    than the upper bound of outstanding launches that can be issued to
+    the device runtime. Keep in mind that raising the limit of pending
+    device runtime launches will require the runtime to reserve device
+    memory that cannot be used for user allocations.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(69)
-    pass
 
 
 class cudaErrorNotPermitted(cudaError):
+    """
+    cudaErrorNotPermitted
+
+    This error indicates the attempted operation is not permitted.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(70)
-    pass
 
 
 class cudaErrorNotSupported(cudaError):
+    """
+    cudaErrorNotSupported
+
+    This error indicates the attempted operation is not supported on the
+    current system or device.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(71)
-    pass
 
 
 class cudaErrorHardwareStackError(cudaError):
+    """
+    cudaErrorHardwareStackError
+
+    Device encountered an error in the call stack during kernel execution,
+    possibly due to stack corruption or exceeding the stack size limit.
+    This leaves the process in an inconsistent state and any further CUDA
+    work will return the same error. To continue using CUDA, the process
+    must be terminated and relaunched.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(72)
-    pass
 
 
 class cudaErrorIllegalInstruction(cudaError):
+    """
+    cudaErrorIllegalInstruction
+
+    The device encountered an illegal instruction during kernel execution
+    This leaves the process in an inconsistent state and any further CUDA
+    work will return the same error. To continue using CUDA, the process
+    must be terminated and relaunched.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(73)
-    pass
 
 
 class cudaErrorMisalignedAddress(cudaError):
+    """
+    cudaErrorMisalignedAddress
+
+    The device encountered a load or store instruction on a memory address
+    which is not aligned. This leaves the process in an inconsistent state
+    and any further CUDA work will return the same error. To continue using
+    CUDA, the process must be terminated and relaunched.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(74)
-    pass
 
 
 class cudaErrorInvalidAddressSpace(cudaError):
+    """
+    cudaErrorInvalidAddressSpace
+
+    While executing a kernel, the device encountered an instruction which
+    can only operate on memory locations in certain address spaces (global,
+    shared, or local), but was supplied a memory address not belonging to
+    an allowed address space. This leaves the process in an inconsistent
+    state and any further CUDA work will return the same error. To continue
+    using CUDA, the process must be terminated and relaunched.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(75)
-    pass
 
 
 class cudaErrorInvalidPc(cudaError):
+    """
+    cudaErrorInvalidPc
+
+    The device encountered an invalid program counter. This leaves the process
+    in an inconsistent state and any further CUDA work will return the same
+    error. To continue using CUDA, the process must be terminated and relaunched.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(76)
-    pass
 
 
 class cudaErrorIllegalAddress(cudaError):
+    """
+    cudaErrorIllegalAddress
+
+    The device encountered a load or store instruction on an invalid memory
+    address. This leaves the process in an inconsistent state and any further
+    CUDA work will return the same error. To continue using CUDA, the process
+    must be terminated and relaunched.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(77)
-    pass
 
 
 class cudaErrorInvalidPtx(cudaError):
+    """
+    cudaErrorInvalidPtx
+
+    A PTX compilation failed. The runtime may fall back to compiling PTX
+    if an application does not contain a suitable binary for the current
+    device.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(78)
-    pass
 
 
 class cudaErrorInvalidGraphicsContext(cudaError):
+    """
+    cudaErrorInvalidGraphicsContext
+
+    This indicates an error with the OpenGL or DirectX context.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(79)
 
 
 class cudaErrorStartupFailure(cudaError):
+    """
+    cudaErrorStartupFailure
+
+    This indicates an internal startup failure in the CUDA runtime.
+    """
+
     __doc__ = _libcudart.cudaGetErrorString(127)
-    pass
 
 
 cudaExceptions = {
@@ -781,7 +1319,7 @@ cudaExceptions = {
 }
 
 
-def cudaCheckStatus(status):
+def cudaCheckStatus(status: int) -> None:
     """
     Raise CUDA exception.
 
@@ -812,7 +1350,7 @@ _libcudart.cudaMalloc.restype = int
 _libcudart.cudaMalloc.argtypes = [ctypes.POINTER(ctypes.c_void_p), ctypes.c_size_t]
 
 
-def cudaMalloc(count, ctype=None):
+def cudaMalloc(count: int, ctype: type | None = None) -> ctypes.c_void_p:
     """
     Allocate device memory.
 
@@ -839,14 +1377,14 @@ def cudaMalloc(count, ctype=None):
     cudaCheckStatus(status)
     if ctype is not None:
         ptr = ctypes.cast(ptr, ctypes.POINTER(ctype))
-    return ptr
+    return ptr  # type: ignore
 
 
 _libcudart.cudaFree.restype = int
 _libcudart.cudaFree.argtypes = [ctypes.c_void_p]
 
 
-def cudaFree(ptr):
+def cudaFree(ptr: ctypes.c_void_p) -> None:
     """
     Free device memory.
 
@@ -874,7 +1412,7 @@ _libcudart.cudaMallocPitch.argtypes = [
 ]
 
 
-def cudaMallocPitch(pitch, rows, cols, elesize):
+def cudaMallocPitch(pitch: int, rows: int, cols: int, elesize: int) -> tuple[ctypes.c_void_p, int]:
     """
     Allocate pitched device memory.
 
@@ -921,7 +1459,7 @@ _libcudart.cudaMemcpy.restype = int
 _libcudart.cudaMemcpy.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_size_t, ctypes.c_int]
 
 
-def cudaMemcpy_htod(dst, src, count):
+def cudaMemcpy_htod(dst: ctypes.c_void_p, src: ctypes.c_void_p, count: int) -> None:
     """
     Copy memory from host to device.
 
@@ -943,7 +1481,7 @@ def cudaMemcpy_htod(dst, src, count):
     cudaCheckStatus(status)
 
 
-def cudaMemcpy_dtoh(dst, src, count):
+def cudaMemcpy_dtoh(dst: ctypes.c_void_p, src: ctypes.c_void_p, count: int) -> None:
     """
     Copy memory from device to host.
 
@@ -969,7 +1507,7 @@ _libcudart.cudaMemGetInfo.restype = int
 _libcudart.cudaMemGetInfo.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
 
 
-def cudaMemGetInfo():
+def cudaMemGetInfo() -> tuple[int, int]:
     """
     Return the amount of free and total device memory.
 
@@ -994,7 +1532,7 @@ _libcudart.cudaSetDevice.restype = int
 _libcudart.cudaSetDevice.argtypes = [ctypes.c_int]
 
 
-def cudaSetDevice(dev):
+def cudaSetDevice(dev: int) -> None:
     """
     Set current CUDA device.
 
@@ -1016,7 +1554,7 @@ _libcudart.cudaGetDevice.restype = int
 _libcudart.cudaGetDevice.argtypes = [ctypes.POINTER(ctypes.c_int)]
 
 
-def cudaGetDevice():
+def cudaGetDevice() -> int:
     """
     Get current CUDA device.
 
@@ -1041,7 +1579,7 @@ _libcudart.cudaDriverGetVersion.restype = int
 _libcudart.cudaDriverGetVersion.argtypes = [ctypes.POINTER(ctypes.c_int)]
 
 
-def cudaDriverGetVersion():
+def cudaDriverGetVersion() -> int:
     """
     Get installed CUDA driver version.
 
@@ -1065,7 +1603,7 @@ _libcudart.cudaRuntimeGetVersion.restype = int
 _libcudart.cudaRuntimeGetVersion.argtypes = [ctypes.POINTER(ctypes.c_int)]
 
 
-def cudaRuntimeGetVersion():
+def cudaRuntimeGetVersion() -> int:
     """
     Get installed CUDA runtime version.
 
@@ -1093,11 +1631,13 @@ except BaseException:
 
 class _cudart_version_req(object):
     """
+    Required CUDA Runtime decorator
+
     Decorator to replace function with a placeholder that raises an exception
     if the installed CUDA Runtime version is not greater than `v`.
     """
 
-    def __init__(self, v):
+    def __init__(self, v: int | float) -> None:
         self.vs = str(v)
         if isinstance(v, int):
             major = str(v)
@@ -1108,7 +1648,8 @@ class _cudart_version_req(object):
             major, minor = match.groups()
         self.vi = int(major.ljust(len(major) + 1, "0") + minor.ljust(2, "0"))
 
-    def __call__(self, f):
+    def __call__[T: Callable](self, f: T) -> T:
+        @functools.wraps(f)
         def f_new(*args, **kwargs):
             raise NotImplementedError("CUDART " + self.vs + " required")
 
@@ -1117,7 +1658,7 @@ class _cudart_version_req(object):
         if _cudart_version >= self.vi:
             return f
         else:
-            return f_new
+            return f_new  # type: ignore
 
 
 # Memory types:
@@ -1140,7 +1681,7 @@ _libcudart.cudaPointerGetAttributes.restype = int
 _libcudart.cudaPointerGetAttributes.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
 
 
-def cudaPointerGetAttributes(ptr):
+def cudaPointerGetAttributes(ptr: ctypes.c_void_p) -> tuple[int, int]:
     """
     Get memory pointer attributes.
 

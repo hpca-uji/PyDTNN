@@ -508,7 +508,7 @@ CUDA_EXCEPTIONS = {
 }
 
 
-def cuCheckStatus(status):
+def cuCheckStatus(status: int) -> None:
     """
     Raise CUDA exception.
 
@@ -543,7 +543,7 @@ _libcuda.cuPointerGetAttribute.restype = int
 _libcuda.cuPointerGetAttribute.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_uint]
 
 
-def cuPointerGetAttribute(attribute, ptr):
+def cuPointerGetAttribute(attribute: int, ptr: int) -> ctypes.c_void_p:
     """
     Get a pointer attribute.
 

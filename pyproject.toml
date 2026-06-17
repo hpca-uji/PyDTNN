@@ -144,7 +144,7 @@ exclude = [
     "vendor"
 ]
 per-file-ignores = [
-    "pydtnn/libs/*:N802,N803"
+    "pydtnn/libs/*:N801,N802,N803,N816,N818"
 ]
 
 [project.entry-points."flake8.extension"]
