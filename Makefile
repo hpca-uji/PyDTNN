@@ -613,9 +613,10 @@ pydtnn-test:
 	trap "rm -r $${TMPDIR:?}" EXIT && \
 	cd "$${TMPDIR:?}" && \
 		pytest -v -n "$(NPROC)" \
+			--full-trace --showlocals \
 			--junitxml="$(PYDTNN_DST)/tests.xml" \
 			--cov=pydtnn --cov-config="$(PYDTNN_SRC)/pyproject.toml" \
-			--cov-report=term --cov-report=xml:"$(PYDTNN_DST)/coverage.xml" \
+			--cov-report=term --cov-report="xml:$(PYDTNN_DST)/coverage.xml" \
 			--pyargs "$(PYDTNN_PKG)"
 
 pydtnn-lint: PYDTNN_PKG := pydtnn

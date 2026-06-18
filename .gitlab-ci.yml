@@ -25,11 +25,7 @@ job_build:
   image: python:$PYTHON_VERSION
 
   cache:
-  - key:
-      files:
-      - Makefile
-      - pyproject.toml
-    paths:
+  - paths:
     - build
     when: always
 
