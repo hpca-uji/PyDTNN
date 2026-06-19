@@ -2,6 +2,7 @@
 """
 Python interface to CUDA runtime functions.
 """
+from __future__ import annotations
 
 # Source: https://github.com/lebedov/scikit-cuda
 
