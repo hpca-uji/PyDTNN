@@ -4,6 +4,8 @@ PyCUDA backend implementation for loss functions.
 
 import logging
 
+import numpy as np
+
 from pycuda import gpuarray  # type: ignore
 from pycuda.driver import Function  # type: ignore
 
@@ -22,17 +24,26 @@ class LossPycuda(Loss[TensorArray], BasePycuda):
     Extends a Loss class with the attributes and methods required by GPU Losses.
     """
 
-    def __init__(self, eps=1e-8):
+    def __init__(self, weights: list[float] | None = None, eps: float = 1e-8):
         """
         Initializes the PyCUDA loss base class.
 
         Args:
+            weights (list[float] | None): The list of the weight of every class. 
+             If it's None, all classes will have the same weight. default: None.
             eps (float): Small value to prevent division by zero.
         """
-        super().__init__(eps)
+        super().__init__(weights, eps)
         # NOTE: The following attributes will be initialized later.
         self.grid = None
         self.block = None
+
+    def _weights_to_tensor(self, weights: list[float] | None) -> TensorArray:
+        w = super()._weights_to_tensor(weights)
+        w = TensorArray.to_gpu(ary=w,
+                               tensor_format=self.model.tensor_format,
+                               cudnn_dtype=self.model.cudnn_dtype)
+        return w
 
     def _model_init(self) -> None:
         """

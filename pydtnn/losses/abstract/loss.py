@@ -7,6 +7,8 @@ loss implementations.
 
 import logging
 
+import numpy as np
+
 from pydtnn.abstract.base import Base
 from pydtnn.utils.constants import Array
 
@@ -26,7 +28,16 @@ class Loss[T: Array](Base):
 
     format = ""
 
-    def __init__(self, eps=1e-8):
+    def _weights_to_tensor(self, weights: list[float] | None) -> np.ndarray:
+        w = None
+        dtype = np.float32
+        if weights is not None:
+            w = np.ascontiguousarray(weights, dtype=dtype)
+        else:
+            w = np.ones(self.model.output_shape, dtype=dtype, order="C")
+        return w
+
+    def __init__(self, weights: list[float] | None = None, eps: float = 1e-8):
         """
         Initializes the Loss instance.
 
@@ -35,6 +46,7 @@ class Loss[T: Array](Base):
         """
         super().__init__()
         self.eps = eps
+        self.weights = weights  # type: ignore (It will be initalized later)
 
     def _model_init(self) -> None:
         """
@@ -42,6 +54,7 @@ class Loss[T: Array](Base):
         """
         super()._model_init()
         self.shape = (self.model.batch_size, *self.model.output_shape)
+        self.weights: T = self._weights_to_tensor(self.weights) # type: ignore (It will be initalized here)
 
     def compute(self, y_pred: T, y_targ: T, batch_size: int) -> tuple[float, T]:
         """

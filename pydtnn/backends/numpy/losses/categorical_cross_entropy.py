@@ -76,6 +76,7 @@ class CategoricalCrossEntropyNumpy(CategoricalCrossEntropy[np.ndarray], LossNump
 
         # Loss
         np.log(_y_pred[b_range, _argmax], out=_y_pred_op)
+        np.multiply(_y_pred_op, self.weights[_argmax], out=_y_pred_op)
         loss: float = float(-np.sum(_y_pred_op) / b)
 
         # DX

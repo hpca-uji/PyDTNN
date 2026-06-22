@@ -8,6 +8,7 @@ import copy
 import ctypes
 import logging
 from enum import StrEnum, auto
+from typing import Callable
 
 import numpy as np
 
@@ -77,6 +78,52 @@ class TensorArray:
     ):
         """Creates a zero-initialized TensorArray."""
         gpu_arr = gpuarray.zeros(shape, dtype)
+        return TensorArray(
+            gpu_arr=gpu_arr,
+            tensor_format=tensor_format,
+            cudnn_dtype=cudnn_dtype,
+            tensor_type=tensor_type,
+            desc=desc,
+            gpudirect=gpudirect,
+            cublas=cublas,
+        )
+
+    @staticmethod
+    def to_gpu(
+        ary: np.ndarray,
+        tensor_format: TensorFormat,
+        cudnn_dtype: int,
+        tensor_type: TensorType = TensorType.TENSOR,
+        desc: int | None = None,
+        gpudirect: bool = False,
+        cublas: bool = False,
+        allocator: Callable | None = None,
+    ):
+        """Creates a zero-initialized TensorArray."""
+        gpu_arr = gpuarray.to_gpu(ary, allocator)
+        return TensorArray(
+            gpu_arr=gpu_arr,
+            tensor_format=tensor_format,
+            cudnn_dtype=cudnn_dtype,
+            tensor_type=tensor_type,
+            desc=desc,
+            gpudirect=gpudirect,
+            cublas=cublas,
+        )
+    
+    @staticmethod
+    def new_ones(
+        shape: ArrayShape,
+        dtype: np.dtype,
+        tensor_format: TensorFormat,
+        cudnn_dtype: int,
+        tensor_type: TensorType = TensorType.TENSOR,
+        desc: int | None = None,
+        gpudirect: bool = False,
+        cublas: bool = False,
+    ):
+        """Creates a zero-initialized TensorArray."""
+        gpu_arr = gpuarray.ones(shape, dtype)
         return TensorArray(
             gpu_arr=gpu_arr,
             tensor_format=tensor_format,
