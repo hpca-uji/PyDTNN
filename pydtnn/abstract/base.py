@@ -234,6 +234,6 @@ class Base[T: Array]:
         self.model = model  # Set on backend
 
     @classmethod
-    def from_model[I](cls: type[I], model: model_module.Base[T]) -> T:
+    def from_model[I](cls: type[I], model: model_module.Base[T]) -> I:
         """Create object from a given model"""
-        raise NotImplementedError("Use a concrete optimizer!")
+        return cls()

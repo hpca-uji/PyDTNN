@@ -366,13 +366,13 @@ class Init[T: Array](Layers[T]):
 
         temp_memory_size = []
 
-        self.loss_func = select_loss(self.loss_func_name)()
+        self.loss_func = select_loss(self.loss_func_name).from_model(self)
         self.loss_func._init_backend_with_model(self)
         self.loss_func._model_init()
         self.memory_used += self.loss_func.memory_used
         temp_memory_size.append(self.loss_func.tmp_memory_used)
 
-        metrics = [(m, select_metric(m)()) for m in self.metrics_list]
+        metrics = [(m, select_metric(m).from_model(self)) for m in self.metrics_list]
         metrics.sort(key=lambda metric: metric[1].order)
         self.metrics_list, self.metrics_funcs = map(list, zip(*metrics))
 
