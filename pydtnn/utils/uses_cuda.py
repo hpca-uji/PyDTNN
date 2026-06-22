@@ -84,7 +84,7 @@ class UsesCudaCode[M: Abs_Module, F: Abs_Function]:
     ) -> F:
         """Loads, compiles, and returns a CUDA kernel function."""
         # NOTE: If you are searching for the source files, go to "{self.base_path_code}/{file_name_without_exception}.cu"
-        # NOTE (cont.) e.g.: if you are searching for the relu6 source files, go
+        # NOTE (cont.) e.g.: if you are searching for the leaky relu source files, go
         # to "/pydtnn/backends/{backend}/leaky_relu.cu"
 
         code = self._get_code(

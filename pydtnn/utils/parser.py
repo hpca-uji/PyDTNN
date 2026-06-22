@@ -749,6 +749,24 @@ class ArgumentParser(argparse.ArgumentParser):
             ),
         )
         _op_group.add_argument(
+            "--loss-eps",
+            type=float,
+            default=1e-8,
+            help=(
+                "Value for numerical stability. Default '1e-8'."
+            ),
+        )
+        _op_group.add_argument(
+            "--loss-weights",
+            type=str,
+            default=None,
+            help=(
+                "List modifiers separated by a comma to indicate the weights of every class."
+                " Example, with 3 classes: '0.4, 0.8, 0.2'."
+                " Default: 'None'."
+            ),
+        )
+        _op_group.add_argument(
             "--metrics",
             type=str,
             default="categorical_accuracy",

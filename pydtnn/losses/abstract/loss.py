@@ -30,11 +30,10 @@ class Loss[T: Array](Base):
 
     def _weights_to_tensor(self, weights: list[float] | None) -> np.ndarray:
         w = None
-        dtype = np.float32
         if weights is not None:
-            w = np.ascontiguousarray(weights, dtype=dtype)
+            w = np.ascontiguousarray(weights, dtype=self.model.dtype)
         else:
-            w = np.ones(self.model.output_shape, dtype=dtype, order="C")
+            w = np.ones(self.model.output_shape, dtype=self.model.dtype, order="C")
         return w
 
     def __init__(self, weights: list[float] | None = None, eps: float = 1e-8):
