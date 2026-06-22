@@ -66,12 +66,11 @@ class Init[T: Array](Layers[T]):
         self.kwargs.update(kwargs)
 
         # Attributes related to the given arguments
-        self.blocking_mpi: bool = self.use_blocking_mpi  # TODO: MIRAR de dónde sale esto.
+        self.blocking_mpi: bool = self.use_blocking_mpi
         self.enable_cudnn = gpuarray is not None and drv is not None and cublas is not None
         self.gpudirect: bool = self.enable_gpudirect
         self.enable_nccl: bool = self.enable_nccl
-        # type: ignore (it will be intialized later if "self.use_memory_pool" is True)
-        self.memory: PrivateMemory = None
+        self.memory: PrivateMemory = None # type: ignore (it will be intialized later if "self.use_memory_pool" is True)
         self.dtype: np.dtype = np.dtype(self.dtype)
         self.param_dtype: np.dtype = np.dtype(self.quantize_dtype) if self.quantize else self.dtype
         self.network_algo = NetworkAlgoEnum(self.network_algo.lower())
