@@ -49,6 +49,7 @@ class Base:
     y_empty_batch: np.ndarray[tuple[int, ...]]
     input_shape: ArrayShape
     output_shape: ArrayShape
+    weight_classes: list[float] | None = None
     _nsamples: list[int]
     _augments: dict[Base.Part, list[TransformFunc]]
     _initial_nsamples: list[int]

@@ -365,6 +365,11 @@ class Init[T: Array](Layers[T]):
 
         temp_memory_size = []
 
+        if self.loss_weights is None:
+            self.loss_weights = self.dataset.weight_classes
+        else:
+            self.loss_weights = list(map(float, self.loss_weights.split(",")))  # type: ignore (until here, self.loss_weights is str)
+        
         self.loss_func = select_loss(self.loss_func_name).from_model(self)
         self.loss_func._init_backend_with_model(self)
         self.loss_func._model_init()

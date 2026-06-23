@@ -5,12 +5,19 @@ Provides the base class for loss functions and utility functions for selecting
 loss implementations.
 """
 
+from __future__ import annotations
+
 import logging
 
 import numpy as np
 
 from pydtnn.abstract.base import Base
 from pydtnn.utils.constants import Array
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pydtnn.model.base import Base as Model
 
 __all__ = ("Loss",)
 
@@ -30,6 +37,7 @@ class Loss[T: Array](Base):
 
     def _weights_to_tensor(self, weights: list[float] | None) -> np.ndarray:
         w = None
+        # NOTE: This may not work very well in case self.model.dtype is an int
         if weights is not None:
             w = np.ascontiguousarray(weights, dtype=self.model.dtype)
         else:
@@ -71,3 +79,20 @@ class Loss[T: Array](Base):
             NotImplementedError: If the subclass does not implement this method.
         """
         raise NotImplementedError()
+    
+
+    @classmethod
+    def from_model(cls, model: Model[T]) -> Loss[T]:
+        """
+        Create an CategoricalCrossEntropy instance from a model configuration.
+
+        Args:
+            model: The model instance to extract parameters from.
+
+        Returns:
+            An initialized CategoricalCrossEntropy optimizer.
+        """
+        return Loss( 
+            weights=model.loss_weights,
+            eps=model.loss_eps
+        )

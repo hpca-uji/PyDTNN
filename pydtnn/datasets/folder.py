@@ -58,6 +58,7 @@ class Folder(Dataset):
         # self.new_size = (new_size, new_size) if isinstance(new_size, int) else new_size
         self._nsamples = [0, 0, 0]  # train, val, test
         self.labels_and_images = dict[Dataset.Part, list[tuple[ClassName, DataPath]]]()
+        self.folder_class_elems = dict[int, int]()
 
         (
             self.labels_and_images[Dataset.Part.TRAIN],
@@ -75,6 +76,12 @@ class Folder(Dataset):
                 f"The number of train classes ({num_classes_train}) must be the same as the number"
                 f" of test classes {num_classes_test}."
             )
+
+        self.weight_classes: list[float] = [0.0] * num_classes_train
+
+        num_elementos = sum(self.folder_class_elems.values())
+        for folder_class in self.folder_class_elems.keys():
+            self.weight_classes[folder_class] = self.folder_class_elems[folder_class] / num_elementos
 
         input_shape = (3, 10, 10)  # synthetic
         output_shape = (num_classes_train,)
@@ -134,6 +141,10 @@ class Folder(Dataset):
             for class_name, set_path_image in dict_class_file.items()
             for path_image in set_path_image
         ]
+        for folder_class in dict_class_file.keys():
+            if folder_class not in self.folder_class_elems:
+                self.folder_class_elems[folder_class] = 0
+            self.folder_class_elems[folder_class] += len(dict_class_file[folder_class])
 
         return (labels_and_images, num_classes, num_images)
 

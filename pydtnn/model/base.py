@@ -143,6 +143,8 @@ class Base[T: Array]:
     optimizer_tau_prime: int
     optimizer_density: float
     loss_func_name: str
+    loss_eps: float
+    loss_weights: list[float] | None
     metrics: str
     schedulers_names: str
     early_stopping_metric: str
@@ -212,7 +214,7 @@ class Base[T: Array]:
     tmp_memory_used: int
 
     total_metrics: np.ndarray
-    metrics_funcs: list[Metric]
+    metrics_funcs: list[Metric[T]]
     loss_and_metrics: list[str]
     layers: list[Layerable]
 
@@ -237,6 +239,6 @@ class Base[T: Array]:
     dataset_test_path: str
     use_synthetic_data: bool
     y_batch: T
-    optimizer: Optimizer
-    loss_func: Loss
+    optimizer: Optimizer[T]
+    loss_func: Loss[T]
     _is_model_init: bool

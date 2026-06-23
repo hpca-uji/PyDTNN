@@ -762,7 +762,9 @@ class ArgumentParser(argparse.ArgumentParser):
             default=None,
             help=(
                 "List modifiers separated by a comma to indicate the weights of every class."
-                " Example, with 3 classes: '0.4, 0.8, 0.2'."
+                " If the value is 'None' it will use the default dataset's value; "
+                " if the dataset has not a default value, all classes will weight '1'."
+                " Example, with 3 classes: '0.4,1.8,0.2'."
                 " Default: 'None'."
             ),
         )
