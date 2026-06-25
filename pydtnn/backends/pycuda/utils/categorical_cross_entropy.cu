@@ -1,6 +1,6 @@
 #define TYPE "TYPE"
 
-__global__ void categorical_cross_entropy(TYPE *y_targ, TYPE *y_pred, TYPE *res,
+__global__ void categorical_cross_entropy(TYPE *y_targ, TYPE *y_pred, TYPE *loss,
                                           TYPE *weights, TYPE *dx, int b,
                                           int n, float eps)
 {
@@ -24,8 +24,8 @@ __global__ void categorical_cross_entropy(TYPE *y_targ, TYPE *y_pred, TYPE *res,
         if ( pred < eps )          pred = eps;
         else if ( pred > (1-eps) ) pred = (1-eps);
         
-        res[idx] = logf(pred);
-        res[idx] = (TYPE) (weights[max] * res[idx]);
+        loss[idx] = logf(pred);
+        loss[idx] = (TYPE) (weights[max] * loss[idx]);
         dx[idx * n + max] /= -(pred * b);
     }
     return;

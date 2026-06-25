@@ -41,6 +41,7 @@ class CategoricalCrossEntropyPycuda(CategoricalCrossEntropy[TensorArray], LossPy
             y_targ.ary,
             y_pred.ary,
             self.loss,
+            self.weights,
             self.dx.ary,
             np.int32(batch_size),
             np.int32(self.shape[1]),
