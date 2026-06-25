@@ -17,7 +17,7 @@ __all__ = ("CategoricalCrossEntropyPycuda",)
 logger = logging.getLogger(__name__)
 
 
-class CategoricalCrossEntropyPycuda(LossPycuda, CategoricalCrossEntropy[TensorArray]):
+class CategoricalCrossEntropyPycuda(CategoricalCrossEntropy[TensorArray], LossPycuda):
     """
     Categorical Cross-Entropy loss implementation for PyCUDA backends.
     """

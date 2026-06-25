@@ -96,11 +96,10 @@ class TensorArray:
         tensor_type: TensorType = TensorType.TENSOR,
         desc: int | None = None,
         gpudirect: bool = False,
-        cublas: bool = False,
-        allocator: Callable | None = None,
+        cublas: bool = False
     ):
         """Creates a zero-initialized TensorArray."""
-        gpu_arr = gpuarray.to_gpu(ary, allocator)
+        gpu_arr = gpuarray.to_gpu(ary)
         return TensorArray(
             gpu_arr=gpu_arr,
             tensor_format=tensor_format,

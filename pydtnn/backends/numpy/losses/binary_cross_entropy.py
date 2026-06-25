@@ -22,7 +22,8 @@ class BinaryCrossEntropyNumpy(BinaryCrossEntropy[np.ndarray], LossNumpy):
     def _model_init(self) -> None:
         """Initialize model-specific memory requirements for the loss."""
         super()._model_init()
-
+        
+        # NOTE: 5 = |{self.neg_targ, self.log_maximum, self._y_pred, self.div_y, self.neg_pred}|
         self.tmp_memory_used += int(5 * math.prod(self.shape)) * self.model.dtype.itemsize
         self.memory_used += self.tmp_memory_used
 

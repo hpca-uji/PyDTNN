@@ -13,6 +13,7 @@ __all__ = ("Base",)
 
 if typing.TYPE_CHECKING:
     from pydtnn.model import base as model_module
+    from pydtnn.model import Model
 
 
 class Base[T: Array]:
@@ -24,6 +25,9 @@ class Base[T: Array]:
     _frontend: typing.Self
 
     _map_backend = {"all": "pydtnn", "cpu": "numpy,cython", "gpu": "pycuda"}
+
+    # Base class
+    model: Model
 
     def __new__(cls, *args, **kwds):
         """
@@ -173,9 +177,6 @@ class Base[T: Array]:
         self._backend = cls(*args, **kwds)
         self._frontend = self
 
-    # Base class
-    model: model_module.Base
-
     @property
     def name(self) -> str:
         """Return the class name of the current instance."""
@@ -229,9 +230,11 @@ class Base[T: Array]:
 
     def _init_backend_with_model(self, model: model_module.Base[T]) -> None:
         """Initialize backend and link a new model instance"""
-        self.model = model  # Set on frontend
+        # Set on frontend: 
+        self.model = model  # type: ignore (it's the right class) 
         self._init_backend()
-        self.model = model  # Set on backend
+        # Set on backend
+        self.model = model  # type: ignore (it's the right class) 
 
     @classmethod
     def from_model[I](cls: type[I], model: model_module.Base[T]) -> I:

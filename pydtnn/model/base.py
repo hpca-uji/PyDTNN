@@ -145,6 +145,7 @@ class Base[T: Array]:
     loss_func_name: str
     loss_eps: float
     loss_weights: list[float] | None
+    use_loss_weights: bool
     metrics: str
     schedulers_names: str
     early_stopping_metric: str

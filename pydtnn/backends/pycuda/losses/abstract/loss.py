@@ -24,7 +24,7 @@ class LossPycuda(Loss[TensorArray], BasePycuda):
     Extends a Loss class with the attributes and methods required by GPU Losses.
     """
 
-    def __init__(self, weights: list[float] | None = None, eps: float = 1e-8):
+    def __init__(self, eps: float = 1e-8):
         """
         Initializes the PyCUDA loss base class.
 
@@ -33,7 +33,7 @@ class LossPycuda(Loss[TensorArray], BasePycuda):
              If it's None, all classes will have the same weight. default: None.
             eps (float): Small value to prevent division by zero.
         """
-        super().__init__(weights, eps)
+        super().__init__(eps)
         # NOTE: The following attributes will be initialized later.
         self.grid = None
         self.block = None

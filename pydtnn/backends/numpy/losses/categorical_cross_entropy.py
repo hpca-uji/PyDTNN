@@ -33,9 +33,6 @@ class CategoricalCrossEntropyNumpy(CategoricalCrossEntropy[np.ndarray], LossNump
             * self.model.dtype.itemsize
         )
 
-        # _y_pred_sliced_size = self.model.batch_size
-        # + _y_pred_sliced_size
-
         self.memory_used += self.tmp_memory_used
 
     def _post_init(self) -> None:

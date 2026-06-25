@@ -44,7 +44,7 @@ class Loss[T: Array](Base):
             w = np.ones(self.model.output_shape, dtype=self.model.dtype, order="C")
         return w
 
-    def __init__(self, weights: list[float] | None = None, eps: float = 1e-8):
+    def __init__(self, eps: float = 1e-8):
         """
         Initializes the Loss instance.
 
@@ -53,15 +53,21 @@ class Loss[T: Array](Base):
         """
         super().__init__()
         self.eps = eps
-        self.weights = weights  # type: ignore (It will be initalized later)
-
     def _model_init(self) -> None:
         """
         Initializes model-specific parameters for the loss function.
         """
         super()._model_init()
         self.shape = (self.model.batch_size, *self.model.output_shape)
-        self.weights: T = self._weights_to_tensor(self.weights) # type: ignore (It will be initalized here)
+        if self.model.use_loss_weights:
+            if self.model.loss_weights is None:
+                weights = self.model.dataset.weight_classes
+            else:
+                weights = list(map(float, self.model.loss_weights.split(",")))  # type: ignore (until here, self.loss_weights is str)
+        else:
+            weights = None
+                
+        self.weights: T = self._weights_to_tensor(weights) # type: ignore (It will be initalized here)
 
     def compute(self, y_pred: T, y_targ: T, batch_size: int) -> tuple[float, T]:
         """
@@ -82,7 +88,7 @@ class Loss[T: Array](Base):
     
 
     @classmethod
-    def from_model(cls, model: Model[T]) -> Loss[T]:
+    def from_model[Y: Loss](cls: type[Y], model: Model[T]) -> Y:
         """
         Create an CategoricalCrossEntropy instance from a model configuration.
 
@@ -92,7 +98,6 @@ class Loss[T: Array](Base):
         Returns:
             An initialized CategoricalCrossEntropy optimizer.
         """
-        return Loss( 
-            weights=model.loss_weights,
+        return cls(
             eps=model.loss_eps
         )

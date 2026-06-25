@@ -769,6 +769,16 @@ class ArgumentParser(argparse.ArgumentParser):
             ),
         )
         _op_group.add_argument(
+            "--use-loss-weights",
+            type=bool_lambda,
+            default=False,
+            help=(
+                "True if use the loss-weights parameter, "
+                " False to set all classes' weights with the same value."
+                " Default: 'False'."
+            ),
+        )
+        _op_group.add_argument(
             "--metrics",
             type=str,
             default="categorical_accuracy",

@@ -254,6 +254,7 @@ The PyDTNN framework comes with a utility launcher called
     Default: `categorical_cross_entropy`.
   - `--loss-eps`: Value for numerical stability. Default `1e-8`.
   - `--loss-weights`: List modifiers separated by a comma to indicate the weights of every class. If the value is 'None' it will use the default dataset's value; if the dataset has not a default value, all classes will weight '1'. Example, with 3 classes: `0.4,1.8,0.2`. Default: `None`.
+  - `--use-loss-weights`:  True if use the loss-weights parameter, False to set all classes' weights with the same value. Default: `False`.
   - `--metrics`: List of comma-separated metrics that are evaluated on
     each trained batch: `categorical_accuracy`, `categorical_hinge`,
     `categorical_mse`, `categorical_mae`, `regression_mse`,
