@@ -63,7 +63,7 @@ pmlib.print_data_text("pmlib_example_output.txt", -1)
 print()
 
 
-def print_joules(start_time, end_time):
+def print_joules(start_time: float, end_time: float) -> None:
     """
     Calculate and print the total energy in joules for a given time interval.
 
@@ -73,13 +73,10 @@ def print_joules(start_time, end_time):
     """
     print(f"Computing joules between {start_time:f} and {end_time:f}...")
     joules = pmlib.get_joules(start_time, end_time, debug=True)
-    print(f"Joules = {joules}")
-    print(
-        f"Number of intermediate samples = {
-            pmlib.get_number_of_intermediate_samples(
-                start_time,
-                end_time)}")
-    print()
+    print(f"Joules = {joules}\n"
+          f"Number of intermediate samples = "
+          f"{pmlib.get_number_of_intermediate_samples(start_time, end_time)}"
+          "\n")
 
 
 for pairs in [(pmlib.times[0], pmlib.times[-1]), (pmlib.times[0] + 0.25, pmlib.times[0] + 0.3)]:

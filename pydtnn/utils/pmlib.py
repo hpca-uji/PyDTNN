@@ -3,9 +3,9 @@ Python interface to the PMLib library
 """
 
 import ctypes
-import ctypes.util
 import functools
 import logging
+from typing import Callable
 
 import numpy as np
 
@@ -90,7 +90,7 @@ class PMLibException(Exception):
         return f"{self.error}"
 
 
-def check_pmlib_returned_status(func):
+def check_pmlib_returned_status(func: Callable) -> Callable:
     """Decorator to check the return status of PMLib C functions.
 
     This decorator wraps a function that calls a PMLib C function.
@@ -120,7 +120,7 @@ class PMLib:
 
     _pmlib = None
 
-    def __init__(self, server_ip, port, verbose=False):
+    def __init__(self, server_ip: str, port: int, verbose:bool = False):
         """Initialize the PMLib interface with server details.
 
         Loads the PMLib shared library and sets up the connection parameters
@@ -184,15 +184,15 @@ class PMLib:
         self.set_server(server_ip, port)
         self.create_lines("0-15")
         # Class properties that will be initialized later
-        self.counter_start_time = None
-        self.counter_end_time = None
-        self.period = None
-        self.len_lines = None
-        self.len_samples = None
-        self.times = None
+        self.counter_start_time: float = None  # type: ignore (It will be initalized later)
+        self.counter_end_time: float = None  # type: ignore (It will be initalized later)
+        self.period: float = None  # type: ignore (It will be initalized later)
+        self.len_lines: int = None  # type: ignore (It will be initalized later)
+        self.len_samples: int = None  # type: ignore (It will be initalized later)
+        self.times: np.ndarray = None  # type: ignore (It will be initalized later)
         self.watts = None
 
-    def info(self, msg):
+    def info(self, msg: str) -> None:
         """Log informational messages if verbose mode is enabled.
 
         Args:
@@ -202,7 +202,7 @@ class PMLib:
             logger.info("[PMLib]:", msg)
 
     @check_pmlib_returned_status
-    def set_server(self, server_ip, port):
+    def set_server(self, server_ip: str, port: int) -> None:
         """Configure the server connection.
 
         Sets the IP address and port for the PMLib server.
@@ -222,7 +222,7 @@ class PMLib:
         return self._pmlib.pm_set_server(server_ip.encode("utf-8"), port, ctypes.byref(self.server))
 
     @check_pmlib_returned_status
-    def create_lines(self, lines_string):
+    def create_lines(self, lines_string: str) -> None:
         """Define the lines to be monitored.
 
         Parses a string representing the lines to be measured and configures
@@ -242,7 +242,7 @@ class PMLib:
         return self._pmlib.pm_set_lines(lines_string.encode("utf-8"), ctypes.byref(self.lines))
 
     @check_pmlib_returned_status
-    def create_counter(self, counter_string, aggregate=0, interval=0):
+    def create_counter(self, counter_string: str, aggregate: int = 0, interval: int = 0) -> None:
         """Initialize a power measurement counter.
 
         Creates a counter object in the PMLib library, associated with a
@@ -271,7 +271,7 @@ class PMLib:
         )
 
     @check_pmlib_returned_status
-    def start_counter(self):
+    def start_counter(self) -> None:
         """Start the power measurement counter.
 
         Begins the data acquisition process for the configured counter.
@@ -287,7 +287,7 @@ class PMLib:
         return self._pmlib.pm_start_counter(ctypes.byref(self.counter))
 
     @check_pmlib_returned_status
-    def stop_counter(self):
+    def stop_counter(self) -> None:
         """Stop the power measurement counter.
 
         Halts the data acquisition process for the configured counter.
@@ -303,7 +303,7 @@ class PMLib:
         return self._pmlib.pm_stop_counter(ctypes.byref(self.counter))
 
     @check_pmlib_returned_status
-    def _get_counter_data(self):
+    def _get_counter_data(self) -> None:
         """Internal method to fetch raw counter data from the library.
 
         Retrieves the latest measurement data from the PMLib counter.
@@ -319,7 +319,7 @@ class PMLib:
         return self._pmlib.pm_get_counter_data(ctypes.byref(self.counter))
 
     @check_pmlib_returned_status
-    def print_data_text(self, output_string, set_value):
+    def print_data_text(self, output_string: str, set_value: int) -> None:
         """Export counter data to a text file.
 
         Saves the current counter data to a specified text file.
@@ -341,7 +341,7 @@ class PMLib:
         )
 
     @check_pmlib_returned_status
-    def finalize_counter(self):
+    def finalize_counter(self) -> None:
         """Finalize and clean up the counter resources.
 
         Releases resources associated with the PMLib counter.
@@ -356,7 +356,7 @@ class PMLib:
         assert self._pmlib
         return self._pmlib.pm_finalize_counter(ctypes.byref(self.counter))
 
-    def get_counter_data(self):
+    def get_counter_data(self) -> None:
         """Fetch, parse, and store counter data into numpy arrays.
 
         Retrieves raw data from the PMLib counter, parses it into time series
@@ -384,11 +384,11 @@ class PMLib:
             )
         ).reshape((self.len_lines, self.len_samples))
         if self.counter.aggregate == 0:
-            _sum = np.sum(self.watts, axis=0).reshape(1, -1)
+            _sum: np.ndarray = np.sum(self.watts, axis=0).reshape(1, -1)
             self.watts = np.concatenate((_sum, self.watts))
             self.len_lines += 1
 
-    def _next_sample_from_start(self, start_time):
+    def _next_sample_from_start(self, start_time: float) -> int:
         """Calculate the index of the next sample relative to start_time.
 
         Determines the index of the sample in the `self.times` array that
@@ -404,7 +404,7 @@ class PMLib:
         assert self.times
         return min(self.len_samples - 1, int((start_time - self.times[0]) / self.period) + 1)
 
-    def _previous_sample_from_end(self, end_time):
+    def _previous_sample_from_end(self, end_time: float) -> int:
         """Calculate the index of the previous sample relative to end_time.
 
         Determines the index of the sample in the `self.times` array that
@@ -419,7 +419,7 @@ class PMLib:
         assert self.times
         return max(0, int(np.ceil((end_time - self.times[0]) / self.period)) - 1)
 
-    def get_number_of_intermediate_samples(self, start_time, end_time):
+    def get_number_of_intermediate_samples(self, start_time: float, end_time: float) -> int:
         """Return the count of samples between the given time range.
 
         Calculates the number of discrete time samples that fall strictly
@@ -437,7 +437,7 @@ class PMLib:
         previous_sample_from_end = self._previous_sample_from_end(end_time)
         return max(0, previous_sample_from_end + 1 - next_sample_from_start)
 
-    def get_joules(self, start_time, end_time, debug=False):
+    def get_joules(self, start_time: float, end_time: float, debug: bool = False) -> np.ndarray:
         """Calculate total energy in Joules for a specified time interval.
 
         Integrates the power measurements (Watts) over the given time interval
@@ -471,7 +471,8 @@ class PMLib:
         logger.debug(f">> {next_sample_from_start=}")
         logger.debug(f">> {previous_sample_from_end=}")
         # Interpolate watts for start and end time
-        watts_on_start_time, watts_on_end_time = [], []
+        watts_on_start_time = list[np.float64]()
+        watts_on_end_time = list[np.float64]()
         assert self.watts
         for watts in self.watts:
             a, b = np.interp([start_time, end_time], self.times, watts)
@@ -487,9 +488,9 @@ class PMLib:
             # Integrate the energy between the two interpolated samples
             joules = ((watts_on_start_time + watts_on_end_time) / 2) * (end_time - start_time)
         else:
-            joules = 0
+            joules: np.ndarray = 0  # type: ignore (It will change it's type later)
             # Integrate the energy between start_time and times[next_sample_from_start]
-            elapsed_time = self.times[next_sample_from_start] - start_time
+            elapsed_time: float = self.times[next_sample_from_start] - start_time
             if elapsed_time > 0:
                 joules += (
                     (watts_on_start_time + self.watts[:, next_sample_from_start]) / 2

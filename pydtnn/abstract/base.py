@@ -27,7 +27,7 @@ class Base[T: Array]:
     _map_backend = {"all": "pydtnn", "cpu": "numpy,cython", "gpu": "pycuda"}
 
     # Base class
-    model: Model
+    model: Model[T]
 
     def __new__(cls, *args, **kwds):
         """

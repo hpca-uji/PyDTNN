@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from pydtnn.activations.abstract.activation import Activation
 from pydtnn.layers.abstract.layer import Layer
 from pydtnn.layers.addition_block import AdditionBlock
 from pydtnn.layers.batch_normalization import BatchNormalization
@@ -25,9 +24,9 @@ from pydtnn.optimizers.sgd import SGD
 from pydtnn.utils import random
 
 if TYPE_CHECKING:
-    import pycuda.gpuarray as gpuarray
+    import pycuda.gpuarray as gpuarray  # type: ignore (it's correct)
 
-from pydtnn.backends.gpu import TensorGPU
+from pydtnn.backends.gpu import TensorGPU  # type: ignore (it's correct)
 
 # setting random seed
 SEED = 1234
@@ -59,7 +58,7 @@ KWARGS = {
 
 ignore_model = Model(**KWARGS)
 
-list_layers = [
+list_layers: list[tuple[str, Layer]] = [
     # ("AdaptiveAveragePool2D",AdaptiveAveragePool2D(output_shape=(3, 3))), # Not in older versions
     # ("AveragePool2D",AveragePool2D()),
     # ("BatchNormalization",BatchNormalization()),
@@ -72,7 +71,7 @@ list_layers = [
     # ("MaxPool2D",MaxPool2D()),
     # ("BatchNormalizationRelu",BatchNormalizationRelu()),
 ]
-list_activations = [
+list_activations: list[tuple[str, Layer]] = [
     # ("Sigmoid", Sigmoid()),
     # ("Relu", Relu()),
     # ("Relu6", Relu6()), # Not in older versions.
@@ -93,13 +92,13 @@ concatenation_test_layers = (
     ConcatenationBlock([Conv2D(), BatchNormalization()], [Conv2D()]),
 )
 
-dict_test: dict[str, Activation | tuple[str, Layer]] = {
+dict_test: dict[str, list[tuple[str, Layer]]] = {
     "Layers": list_layers,
     "Activations": list_activations,
 }
 
 
-def test_keras(_x: np.ndarray):
+def test_keras(_x: np.ndarray) -> None:
     """
     Performs a basic forward pass test on a Keras-like model structure.
     """
@@ -209,7 +208,7 @@ def test_add_concat(_x: np.ndarray, opt: Optimizer) -> None:
         if KWARGS["enable_cudnn"]:
             x = TensorGPU(gpuarray.to_gpu(x), model.tensor_format, model.cudnn_dtype)
 
-        for i in range(NUM_REPETITIONS):
+        for _ in range(NUM_REPETITIONS):
             if True:
                 # with
                 # memray.Tracker(f"./z_memray/{KWARGS['tensor_format']}/fwd/{test}_{i}.bin",
@@ -247,7 +246,7 @@ def test_add_concat(_x: np.ndarray, opt: Optimizer) -> None:
         print("------------")
 
 
-def main():
+def main() -> None:
     """
     Entry point for executing layer and activation performance tests.
     """

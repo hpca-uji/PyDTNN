@@ -67,7 +67,7 @@ class Train[T: Array](Eval[T]):
             for scheduler_name in filter(None, self.schedulers_names.split(","))
         ]
         for scheduler in self.schedulers:
-            scheduler.model = self
+            scheduler.model = self  # type: ignore (It's fine)
 
     def _train_batch(
         self, x_batch: np.ndarray, y_batch: np.ndarray, sync_model: bool = True
@@ -211,9 +211,8 @@ class Train[T: Array](Eval[T]):
 
             if local_batch_size <= 0:
                 if self.comm_rank == 0:
-                    # type: ignore (Here is a 'tqdm', only is None in self.comm_rank != 0)
-                    # type: ignore (in comm_rank 0 , pbar is not None)
-                    pbar.set_postfix_str(s=f"{string}, waiting…", refresh=True)
+                    # (in comm_rank 0 , pbar is not None)
+                    pbar.set_postfix_str(s=f"{string}, waiting…", refresh=True) # type: ignore
                 continue
 
             total_loss, total_size, string = self._update_status(

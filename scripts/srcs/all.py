@@ -24,7 +24,7 @@ def get_names(source: str) -> list[str]:
 
 def remove_all(source: str) -> str:
     """Removes existing __all__ definitions from the provided source code."""
-    to_remove = set()
+    to_remove = set[int]()
 
     try:
         tree = ast.parse(source)
@@ -87,7 +87,7 @@ def add_all(source: str, names: list[str]) -> str:
     return source
 
 
-def process_file(path: Path, replace=False):
+def process_file(path: Path, replace: bool = False) -> None:
     """Processes a single file to update its __all__ definition."""
     source = path.read_text()
     clean = remove_all(source)
@@ -102,7 +102,7 @@ def process_file(path: Path, replace=False):
     print(f"Updated {path}")
 
 
-def process_project(root: Path, name="*.py", replace=False):
+def process_project(root: Path, name: str = "*.py", replace: bool = False) -> None:
     """Recursively processes all Python files in the given directory."""
     for path in root.rglob(name):
         process_file(path, replace)
