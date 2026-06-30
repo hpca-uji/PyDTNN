@@ -7,6 +7,7 @@ import os
 import string
 import sys
 import threading
+from typing import Any, Literal, Mapping, Self
 import zipfile
 from collections.abc import Iterable
 from ctypes.util import find_library
@@ -37,7 +38,7 @@ logger = logging.getLogger(__name__)
 class BackgroundGenerator[T](threading.Thread):
     """Decorate a iterable to use a separate thread for compute"""
 
-    def __init__(self, generator: Iterable[T], max_prefetch=0):
+    def __init__(self, generator: Iterable[T], max_prefetch: int = 0) -> None:
         """Initialize the background generator thread."""
         super().__init__()
         self.queue = Queue(max_prefetch)
@@ -46,7 +47,7 @@ class BackgroundGenerator[T](threading.Thread):
         self.done = False
         self.start()
 
-    def run(self):
+    def run(self) -> None:
         """Run the generator in a background thread."""
         for item in self.generator:
             self.queue.put(item)
@@ -63,12 +64,12 @@ class BackgroundGenerator[T](threading.Thread):
             raise StopIteration()
         return next_item
 
-    def __iter__(self):
+    def __iter__(self) -> Self:
         """Return the iterator object."""
         return self
 
 
-def print_with_header(header: str, to_be_printed=None) -> None:
+def print_with_header(header: str, to_be_printed: Any | None = None) -> None:
     """Print header with and optional value"""
     to_print = list[str]()
     to_print.append(f"# {header}")
@@ -78,12 +79,12 @@ def print_with_header(header: str, to_be_printed=None) -> None:
     logger.info(info_to_print)
 
 
-def parse_bool(x) -> bool:
+def parse_bool(x: Literal["true", "1", "yes", "y", "t"]) -> bool:
     """Returns True if value is a user truthy value"""
     return str(x).lower() in {"true", "1", "yes", "y", "t"}
 
 
-def string_substitute(template: str, /, **mappings) -> str:
+def string_substitute(template: str, /, **mappings: Mapping[str, Any]) -> str:
     """Shell-like opportunistic substitution"""
     return string.Template(template).safe_substitute(mappings)
 
@@ -106,7 +107,7 @@ def convert_size_bytes(size_bytes: int) -> str:
     return f"{convert_size(size_bytes, scale=1024)}B"
 
 
-def find_component(package: str, name: str):
+def find_component(package: str, name: str) -> Any:
     """Find a file+class combo inside a package (with normalization)"""
 
     def normalize(text: str) -> str:
@@ -125,7 +126,7 @@ def find_component(package: str, name: str):
         raise ValueError(f"{name!r} not found in {module!r}!")
 
 
-def load_library(name: str):
+def load_library(name: str) -> ctypes.CDLL:
     """
     Loads an external library using ctypes.CDLL.
 
@@ -172,11 +173,11 @@ def load_library(name: str):
     return ctypes.CDLL(path)
 
 
-def get_npz_shape(f):
+def get_npz_shape(file: str) -> dict[str, tuple[int, ...]]:
     """Get NPZ member shapes without loading the archive"""
-    shapes = {}
+    shapes = dict[str, tuple[int, ...]]()
 
-    with zipfile.ZipFile(f, "r") as z:
+    with zipfile.ZipFile(file, "r") as z:
         for name in z.namelist():
             stem = PurePath(name).stem
 

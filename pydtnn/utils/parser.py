@@ -15,9 +15,8 @@ be available as a Model attribute.
 
 import argparse
 import logging
-import multiprocessing
 import os
-from typing import Any, Sequence
+from typing import Sequence
 
 import numpy as np
 

@@ -21,6 +21,7 @@ from pydtnn.optimizers.abstract.optimizer import Optimizer
 from pydtnn.utils.constants import Array, ArrayShape, NetworkAlgoEnum
 from pydtnn.utils.memory_pool import PrivateMemory
 from pydtnn.utils.tensor import TensorFormat
+from pydtnn.tracers.tracer import Tracer
 
 __all__ = ("Base",)
 
@@ -176,6 +177,7 @@ class Base[T: Array]:
     encryption_scale: int
     encryption_security: int
     tracing: bool
+    tracer: Tracer
     tracer_output: str
     tracer_pmlib_server: str
     tracer_pmlib_port: int

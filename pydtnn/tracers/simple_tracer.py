@@ -1,6 +1,4 @@
-"""
-Simple tracer implementation for PyDTNN.
-"""
+"""Simple tracer implementation for PyDTNN."""
 
 import atexit
 import logging
@@ -11,7 +9,7 @@ from types import ModuleType
 from typing import TYPE_CHECKING
 
 from pydtnn import utils
-from pydtnn.tracers.tracer import Tracer
+from pydtnn.tracers.tracer import StreamType, Tracer
 
 __all__ = ("SimpleTracer",)
 
@@ -19,19 +17,17 @@ logger = logging.getLogger(__name__)
 
 
 if TYPE_CHECKING:
-    from pympi.MPI import Comm as MPI_COMM  # type: ignore
+    from pympi.MPI import Comm  # type: ignore
 else:
     from types import ModuleType
 
-    MPI_COMM = ModuleType
+    Comm = ModuleType
 
 
 class SimpleTracer(Tracer):
-    """
-    A basic tracer implementation that records event durations and writes them to a CSV file.
-    """
+    """A basic tracer implementation that records event durations and writes them to a CSV file."""
 
-    def __init__(self, tracing: bool, output_filename: str, comm: MPI_COMM | None):
+    def __init__(self, tracing: bool, output_filename: str, comm: Comm | None) -> None:
         """
         Initialize the SimpleTracer.
 
@@ -50,15 +46,13 @@ class SimpleTracer(Tracer):
         )  # TODO: use tuple or structure
         self.pending_events = []
 
-    def enable_tracing(self):
-        """
-        Enable tracing and register the output writer to run at exit.
-        """
+    def enable_tracing(self) -> None:
+        """Enable tracing and register the output writer to run at exit."""
         super().enable_tracing()
         # If tracing is enabled at least once, register self.write_output to be executed at exit
         atexit.register(self._write_output)
 
-    def _emit_event(self, evt_type_val: int, evt_val: int, stream=None):
+    def _emit_event(self, evt_type_val: int, evt_val: int, stream: StreamType | None = None) -> None:
         """
         Record the start or end of an event.
 
@@ -82,7 +76,7 @@ class SimpleTracer(Tracer):
             self.events[_evt_type_val][_evt_val][0] += 1  # type: ignore
             self.events[_evt_type_val][_evt_val][1].append(toc - tic)  # type: ignore
 
-    def _emit_nevent(self, evt_type_val_list: list[int], evt_val_list: list[int], stream=None):
+    def _emit_nevent(self, evt_type_val_list: list[int], evt_val_list: list[int], stream: StreamType | None = None) -> None:
         """
         Record multiple events simultaneously.
 
@@ -99,9 +93,8 @@ class SimpleTracer(Tracer):
             self.emit_event(evt_type_val, evt_val)
 
     def _output_header(self) -> str:
-        """
-        Return the CSV header string for the output file.
-        """
+        """Return the CSV header string for the output file."""
+
         return "Event type,Event value,Event name,Calls,Total time,Median of times"
         # return "Event type;Event value;Event name;Calls;Total time;Median of times"
 
@@ -126,12 +119,12 @@ class SimpleTracer(Tracer):
         # return
         # f"{event_type_name};{event_value};{event_type[event_value]};{_calls};{total_time};{mean_of_times}"
 
-    def _write_output(self):
+    def _write_output(self) -> None:
         """
         Write the collected trace data to the output file.
         """
         """This method will be called at exit only if tracing has been enabled at any time"""
-        output_filename = utils.string_substitute(self.output_filename, rank=self.rank)
+        output_filename = utils.string_substitute(self.output_filename, rank=self.rank)  # type: ignore (It's fine)
         if output_filename != self.output_filename or self.rank == 0:
             if len(self.pending_events):
                 logger.warning(

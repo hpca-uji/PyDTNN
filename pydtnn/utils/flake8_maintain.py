@@ -1,9 +1,11 @@
-"""
-Flake8 plugin to enforce code maintainability standards using Radon.
-"""
+"""Flake8 plugin to enforce code maintainability standards using Radon."""
+
+from typing import Any, Generator, Literal, Self
+
 
 try:
-    from radon.metrics import mi_rank, mi_visit
+    from radon.metrics import mi_rank
+    from radon.metrics import mi_visit  # type: ignore (It's fine)
 except ModuleNotFoundError as exc:
     _exc = exc
 
@@ -21,7 +23,7 @@ class MaintainabilityChecker:
     DEFAULT_THRESHOLD = 19
 
     @classmethod
-    def add_options(cls, parser):
+    def add_options(cls, parser) -> None:
         """Registers the custom command-line option for the maintainability checks"""
         parser.add_option(
             "--min-maintain-index",
@@ -32,15 +34,15 @@ class MaintainabilityChecker:
         )
 
     @classmethod
-    def parse_options(cls, options):
+    def parse_options(cls, options) -> None:
         """Parses and stores the maintainability threshold from options"""
         cls.threshold = options.min_maintain_index
 
-    def __init__(self, tree, lines):
+    def __init__(self, tree, lines) -> None:
         """Initializes the checker with the tree mode"""
         self.lines = lines
 
-    def run(self):
+    def run(self) -> Generator[tuple[Literal[1], Literal[0], str, type[Self]], Any, None]:
         """Calculates the Maintainability Index and yields a violation if below threshold."""
         try:
             score = mi_visit("".join(self.lines), multi=True)

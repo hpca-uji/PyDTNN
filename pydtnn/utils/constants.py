@@ -1,6 +1,4 @@
-"""
-Constants and type definitions for the PyDTNN framework.
-"""
+"""Constants and type definitions for the PyDTNN framework."""
 
 import logging
 import typing

@@ -24,10 +24,10 @@ from pydtnn.utils.initializers import glorot_uniform, zeros
 
 
 class D:
-    "Container for Conv2D layer configuration parameters."
+    """Container for Conv2D layer configuration parameters."""
 
-    def __init__(self):
-        "Default parameters"
+    def __init__(self) -> None:
+        """Default parameters"""
         self.b = 1  # Batch size
         self.c = 1  # Channels per layer
         self.h = 128  # Layers height

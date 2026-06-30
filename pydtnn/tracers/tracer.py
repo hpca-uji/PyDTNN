@@ -1,6 +1,4 @@
-"""
-PyDTNN tracer module for monitoring model execution and memory usage.
-"""
+"""PyDTNN tracer module for monitoring model execution and memory usage."""
 
 from __future__ import annotations
 
@@ -8,7 +6,7 @@ import abc
 import logging
 import resource
 import sys
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Iterable
 
 from pydtnn.tracers.events import (PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT,
                                    PYDTNN_OPS_EVENTS, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum)
@@ -19,6 +17,7 @@ __all__ = (
     "PostInitCaller",
     "Tracer",
     "select",
+    "StreamType"
 )
 
 logger = logging.getLogger(__name__)
@@ -27,6 +26,11 @@ logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from pydtnn.abstract.layerable import Layerable
     from pydtnn.model.layers import Layers as Model
+    import cupy  # type: ignore
+    import pycuda.driver as drv  # type: ignore
+    type StreamType = cupy.cuda.Stream | drv.Stream
+else:
+    type StreamType = Any
 
 
 class EventType:
@@ -34,7 +38,7 @@ class EventType:
     Container for managing and retrieving event descriptions by code.
     """
 
-    def __init__(self, name):
+    def __init__(self, name: str) -> None:
         """
         Initialize the EventType container.
 
@@ -44,7 +48,7 @@ class EventType:
         self.name = name
         self._events = {}
 
-    def __getitem__(self, item):
+    def __getitem__(self, item: Any) -> Any:
         """
         Retrieve the description for a given event code.
 
@@ -65,7 +69,7 @@ class EventType:
             return f"Unknown code {self.name}"
         return description
 
-    def __setitem__(self, value, description):
+    def __setitem__(self, value: Any, description: str) -> None:
         """
         Register an event description.
 
@@ -75,13 +79,13 @@ class EventType:
         """
         self._events[value] = description
 
-    def __len__(self):
+    def __len__(self) -> int:
         """
         Return the number of registered events.
         """
         return len(self._events)
 
-    def items(self):
+    def items(self) -> Iterable:
         """
         Return the items in the event dictionary.
         """
@@ -93,7 +97,7 @@ class PostInitCaller(type):
     Metaclass that triggers __post_init__ after object instantiation.
     """
 
-    def __call__(cls, *args, **kwargs):
+    def __call__(cls, *args: Any, **kwargs: dict) -> Any:
         """
         Create an instance and call its __post_init__ method.
         """
@@ -107,7 +111,7 @@ class Tracer(metaclass=PostInitCaller):
     Base class for implementing model execution and memory tracers.
     """
 
-    def __init__(self, tracing: bool):
+    def __init__(self, tracing: bool) -> None:
         """
         Initialize the tracer.
 
@@ -120,7 +124,7 @@ class Tracer(metaclass=PostInitCaller):
         }
         self.tracing = tracing
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """
         Perform post-initialization setup to enable or disable tracing and memory monitoring.
         """
@@ -135,39 +139,39 @@ class Tracer(metaclass=PostInitCaller):
             self.disable_tracing()
             self.disable_print_memory_usage()
 
-    def enable_tracing(self):
+    def enable_tracing(self) -> None:
         """Enable tracing methods by binding them to the instance."""
         setattr(self, "define_event_types", self._define_event_types)
         setattr(self, "emit_event", self._emit_event)
         setattr(self, "emit_nevent", self._emit_nevent)
 
-    def disable_tracing(self):
+    def disable_tracing(self) -> None:
         """Disable tracing methods by binding them to no-op lambdas."""
         setattr(self, "define_event_types", lambda *args, **kwargs: None)
         setattr(self, "emit_event", lambda *args, **kwargs: None)
         setattr(self, "emit_nevent", lambda *args, **kwargs: None)
 
-    def enable_print_memory_usage(self):
+    def enable_print_memory_usage(self) -> None:
         """Enable memory usage printing by binding the method."""
         setattr(self, "print_memory_usage", self._print_memory_usage)
 
-    def disable_print_memory_usage(self):
+    def disable_print_memory_usage(self) -> None:
         """Disable memory usage printing by binding to a no-op lambda."""
         setattr(self, "print_memory_usage", lambda *args, **kwargs: None)
 
-    def define_event_types(self, model: Model):
+    def define_event_types(self, model: Model) -> None:
         """Placeholder for defining event types, replaced at runtime."""
         pass
 
-    def emit_event(self, evt_type: int, evt_val: int, stream=None):
+    def emit_event(self, evt_type: int, evt_val: int, stream: StreamType | None = None) -> None:
         """Placeholder for emitting a single event, replaced at runtime."""
         pass
 
-    def emit_nevent(self, evt_evt: list[int], evt_val: list[int], stream=None):
+    def emit_nevent(self, evt_evt: list[int], evt_val: list[int], stream: StreamType | None = None) -> None:
         """Placeholder for emitting multiple events, replaced at runtime."""
         pass
 
-    def print_memory_usage(self, text: str):
+    def print_memory_usage(self, text: str) -> None:
         """Placeholder for printing memory usage, replaced at runtime."""
         pass
 
@@ -211,17 +215,17 @@ class Tracer(metaclass=PostInitCaller):
                 )
 
     @abc.abstractmethod
-    def _emit_event(self, evt_type: int, evt_val: int, stream=None):
+    def _emit_event(self, evt_type: int, evt_val: int, stream: StreamType | None = None) -> None:
         """Abstract method to emit a single event."""
         pass
 
     @abc.abstractmethod
-    def _emit_nevent(self, evt_evt: list[int], evt_val: list[int], stream=None):
+    def _emit_nevent(self, evt_evt: list[int], evt_val: list[int], stream: StreamType | None = None) -> None:
         """Abstract method to emit multiple events."""
         pass
 
     @staticmethod
-    def _print_memory_usage(text=""):
+    def _print_memory_usage(text: str = "") -> None:
         """
         Log the current process memory usage.
 
@@ -235,7 +239,7 @@ class Tracer(metaclass=PostInitCaller):
             f">>>{text} user time={u[0]:.2f}, sys time={u[1]:.2f}, mem={u[2] / 1024:.2f} MiB"
         )
 
-    def set_stream(self, stream):
+    def set_stream(self, stream: StreamType) -> None:
         """
         Set the output stream for the tracer.
 

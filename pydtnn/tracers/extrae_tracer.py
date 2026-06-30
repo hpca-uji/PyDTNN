@@ -1,6 +1,4 @@
-"""
-Extrae tracer implementation for PyDTNN.
-"""
+"""Extrae tracer implementation for PyDTNN."""
 
 from __future__ import annotations
 
@@ -10,7 +8,7 @@ import os
 from importlib import import_module
 from typing import TYPE_CHECKING
 
-from pydtnn.tracers.tracer import Tracer
+from pydtnn.tracers.tracer import StreamType, Tracer
 
 __all__ = ("ExtraeTracer",)
 
@@ -22,11 +20,9 @@ if TYPE_CHECKING:
 
 
 class ExtraeTracer(Tracer):
-    """
-    Tracer implementation using the Extrae instrumentation library.
-    """
+    """Tracer implementation using the Extrae instrumentation library."""
 
-    def __init__(self, tracing: bool):
+    def __init__(self, tracing: bool) -> None:
         """
         Initialize the Extrae tracer.
 
@@ -36,14 +32,12 @@ class ExtraeTracer(Tracer):
         super().__init__(tracing)
         self.pyextrae = None  # Declared here, will be initialized on enable_tracing()
 
-    def enable_tracing(self):
-        """
-        Enable tracing and load the pyextrae module.
-        """
+    def enable_tracing(self) -> None:
+        """Enable tracing and load the pyextrae module."""
         super().enable_tracing()
         self.pyextrae = import_module("pyextrae.common.extrae")
 
-    def _define_event_types(self, model: Model):
+    def _define_event_types(self, model: Model) -> None:
         """
         Define event types in Extrae.
 
@@ -68,7 +62,7 @@ class ExtraeTracer(Tracer):
                 ctypes.pointer(descriptions),
             )
 
-    def _emit_event(self, evt_type: int, val: int, stream=None):
+    def _emit_event(self, evt_type: int, val: int, stream: StreamType | None = None) -> None:
         """
         Emit a single event to Extrae.
 
@@ -80,7 +74,7 @@ class ExtraeTracer(Tracer):
         assert self.pyextrae
         self.pyextrae.eventandcounters(evt_type, val)
 
-    def _emit_nevent(self, evt: int, val: int, stream=None):
+    def _emit_nevent(self, evt: int, val: int, stream: StreamType | None = None) -> None:
         """
         Emit a nested event to Extrae.
 

@@ -1,14 +1,12 @@
 """Module providing the BestOfVariant class for dynamic convolution implementation selection."""
 
 import logging
-from typing import Callable, List
+from typing import Any, Callable, List
 
 import numpy as np
 
-from pydtnn.backends.numpy.layers.conv_2d.direct_cpu import \
-    Conv2DDirectNumpy  # type: ignore  # FIXME: too old
-# type: ignore  # FIXME: too old
-from pydtnn.backends.numpy.layers.conv_2d.winograd_cpu import Conv2DWinogradNumpy
+from pydtnn.backends.numpy.layers.conv_2d.direct_cpu import Conv2DDirectNumpy  # type: ignore  # FIXME: too old
+from pydtnn.backends.numpy.layers.conv_2d.winograd_cpu import Conv2DWinogradNumpy  # type: ignore  # FIXME: too old
 from pydtnn.model import Model
 from pydtnn.utils.best_of.best_of import BestOf
 from pydtnn.utils.constants import ArrayShape
@@ -25,7 +23,7 @@ class BestOfVariant(Conv2DWinogradNumpy, Conv2DDirectNumpy):
     at runtime based on performance profiling.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: dict) -> None:
         """Initializes the BestOfVariant layer with default attributes."""
         super().__init__(*args, **kwargs)
         # best_of related attributes (will be initialized in initialize())
@@ -34,7 +32,7 @@ class BestOfVariant(Conv2DWinogradNumpy, Conv2DDirectNumpy):
         # Other parameters
         self.variant = None
 
-    def initialize(self, prev_shape: ArrayShape, x: np.ndarray | None = None):
+    def initialize(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
         """
         Initializes the layer and configures the BestOf selectors for forward and backward passes.
 
@@ -127,7 +125,9 @@ class BestOfVariant(Conv2DWinogradNumpy, Conv2DDirectNumpy):
                 ),
             )
 
-    def _get_class_forward_and_backward(self, variant) -> List[Callable]:
+    def _get_class_forward_and_backward(self,
+                                        variant  # TODO: Fix this.
+                                        ) -> List[Callable]:
         """
         Retrieves the forward and backward method references for a given variant.
 
@@ -142,7 +142,7 @@ class BestOfVariant(Conv2DWinogradNumpy, Conv2DDirectNumpy):
             getattr(self.__class__, f"_backward_{variant}_{self.model.tensor_format}"),
         ]
 
-    def _fw_bw_best_of(self, stage, x_or_y):
+    def _fw_bw_best_of(self, stage: int, x_or_y: np.ndarray) -> BestOf:
         """
         Executes the best performing implementation for the specified stage.
 
@@ -161,18 +161,18 @@ class BestOfVariant(Conv2DWinogradNumpy, Conv2DDirectNumpy):
                     " or ModelModeEnum.TRAIN"
                 )
 
-    def _forward_best_of_nhwc(self, x):
+    def _forward_best_of_nhwc(self, x: np.ndarray) -> BestOf:
         """Performs forward pass using the best variant for NHWC format."""
         return self._fw_bw_best_of(0, x)
 
-    def _forward_best_of_nchw(self, x):
+    def _forward_best_of_nchw(self, x: np.ndarray) -> BestOf:
         """Performs forward pass using the best variant for NCHW format."""
         return self._fw_bw_best_of(0, x)
 
-    def _backward_best_of_nhwc(self, y):
+    def _backward_best_of_nhwc(self, y: np.ndarray) -> BestOf:
         """Performs backward pass using the best variant for NHWC format."""
         return self._fw_bw_best_of(1, y)
 
-    def _backward_best_of_nchw(self, y):
+    def _backward_best_of_nchw(self, y: np.ndarray) -> BestOf:
         """Performs backward pass using the best variant for NCHW format."""
         return self._fw_bw_best_of(1, y)

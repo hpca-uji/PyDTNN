@@ -6,6 +6,7 @@ import tempfile
 import time
 import types
 from pathlib import Path
+from typing import Self
 
 import memray  # type: ignore
 from memray._memray import compute_statistics as memray_statistics  # type: ignore
@@ -34,12 +35,12 @@ class Profiler:
         """Stop the profiling session and record the result."""
         raise NotImplementedError()
 
-    def __enter__(self) -> "Profiler":
+    def __enter__(self) -> Self:
         """Enter the context manager."""
         self.start()
         return self
 
-    def __exit__[T: Exception](self, cls: type[T], exc: T, tb: types.TracebackType) -> None:
+    def __exit__[T: Exception](self, cls: type[T], exc: T, tb: types.TracebackType) -> None | bool:
         """Exit the context manager."""
         self.stop()
 

@@ -1,6 +1,4 @@
-"""
-Tracer implementation for PyDTNN that integrates with PMLib for power monitoring.
-"""
+"""Tracer implementation for PyDTNN that integrates with PMLib for power monitoring."""
 
 import logging
 import time
@@ -11,6 +9,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from pydtnn.tracers.simple_tracer import SimpleTracer
+from pydtnn.tracers.tracer import StreamType
 from pydtnn.utils.pmlib import PMLib
 
 __all__ = ("SimpleTracerPMLib",)
@@ -19,27 +18,25 @@ logger = logging.getLogger(__name__)
 
 
 if TYPE_CHECKING:
-    from pympi.MPI import Comm as MPI_COMM  # type: ignore
+    from pympi.MPI import Comm  # type: ignore
 else:
     from types import ModuleType
 
-    MPI_COMM = ModuleType
+    Comm = ModuleType
 
 
 class SimpleTracerPMLib(SimpleTracer):
-    """
-    A tracer that extends SimpleTracer to record power consumption data using PMLib.
-    """
+    """A tracer that extends SimpleTracer to record power consumption data using PMLib."""
 
     def __init__(
         self,
         tracing: bool,
         output_filename: str,
-        comm: MPI_COMM | None,
+        comm: Comm | None,
         pmlib_server_ip: str,
         pmlib_port: int,
         pmlib_device: str,
-    ):
+    ) -> None:
         """
         Initializes the PMLib tracer.
 
@@ -58,7 +55,7 @@ class SimpleTracerPMLib(SimpleTracer):
         self.times = defaultdict(lambda: defaultdict(lambda: []))
         self.pending_times = []
 
-    def enable_tracing(self):
+    def enable_tracing(self) -> None:
         """
         Enables tracing and initializes the PMLib power counter.
         """
@@ -68,7 +65,7 @@ class SimpleTracerPMLib(SimpleTracer):
             self.pmlib.create_counter(self.pmlib_device)
             self.pmlib.start_counter()
 
-    def _emit_event(self, evt_type_val: int, evt_val: int, stream=None):
+    def _emit_event(self, evt_type_val: int, evt_val: int, stream: StreamType | None = None) -> None:
         """
         Records the start or end time of an event for power calculation.
 
@@ -126,10 +123,8 @@ class SimpleTracerPMLib(SimpleTracer):
         output += ";".join([f"{x}" for x in joules])
         return output + f";{intermediate_samples}"
 
-    def _write_output(self):
-        """
-        Finalizes power monitoring and writes the power consumption logs to disk.
-        """
+    def _write_output(self) -> None:
+        """Finalizes power monitoring and writes the power consumption logs to disk."""
         if self.rank == 0:
             self.pmlib.stop_counter()
             self.pmlib.get_counter_data()

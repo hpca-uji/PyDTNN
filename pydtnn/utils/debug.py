@@ -13,6 +13,7 @@ import threading
 from contextlib import contextmanager
 from pathlib import Path
 from traceback import TracebackException
+from typing import Any, Callable, Generator
 
 from pydtnn import timestamp
 
@@ -26,7 +27,7 @@ __all__ = (
 logger = logging.getLogger(__name__)
 
 
-def debug_line(*args) -> None:
+def debug_line(*args: Any) -> None:
     """
     Print the current file, function, and line number to standard output.
 
@@ -46,7 +47,7 @@ def debug_line(*args) -> None:
     log(f"{context} from {os.getpid()}:{threading.get_native_id()}", *args)
 
 
-def debug_stack(*args, sep="|") -> None:
+def debug_stack(*args: Any, sep: str = "|") -> None:
     """
     Print the current call stack trace to standard output.
 
@@ -68,7 +69,7 @@ def debug_stack(*args, sep="|") -> None:
     log(f"{context} from {os.getpid()}:{threading.get_native_id()}", *args)
 
 
-def debug_func(func):
+def debug_func(func: Callable) -> Callable:
     """
     Decorator to trace function calls, arguments, return values, and exceptions.
 
@@ -81,7 +82,7 @@ def debug_func(func):
     log = print
 
     @functools.wraps(func)
-    def wrapper(*args, **kwds):
+    def wrapper(*args: Any, **kwds: dict) -> Any:
         header = "DEBUG"
         frame_info = inspect.stack()[1]
         try:
@@ -106,7 +107,7 @@ def debug_func(func):
 
 
 @contextmanager
-def traceback_context():
+def traceback_context() -> Generator[None, Any, None]:
     """
     Context manager that catches exceptions and writes a detailed traceback to a log file.
 

@@ -34,7 +34,7 @@ class _BestOfExecution:
         best_of: Optional["BestOf"],
         execution_id: Optional[Hashable],
         parent: Optional["_BestOfExecution"],
-    ):
+    ) -> None:
         """
         Initializes an execution node in the BestOf hierarchy.
         """
@@ -57,17 +57,17 @@ class _BestOfExecution:
         self._blocked_by = defaultdict(lambda: defaultdict(lambda: 50))
         self._current_problem_size = None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Returns the name of the execution node."""
         return self.name
 
-    def block_parent(self):
+    def block_parent(self) -> None:
         """Blocks the parent execution node until this node completes."""
         assert self.parent
         if not self.parent._is_root:
             self.parent._blocked_by[self.parent._current_problem_size][self] = 50
 
-    def unblock_parent(self):
+    def unblock_parent(self) -> None:
         """Unblocks the parent execution node."""
         assert self.parent
         if not self.parent._is_root:
@@ -75,7 +75,7 @@ class _BestOfExecution:
                 self.parent._blocked_by[self.parent._current_problem_size].pop(self)
 
     @property
-    def is_blocked(self):
+    def is_blocked(self) -> bool:
         """
         Determines whether this BestOfExecution is blocked or not. To get rid of stale blockers, each block_by counter
         is decreased by one every time this function is called.
@@ -95,18 +95,18 @@ class _BestOfExecution:
                 self._blocked_by[self._current_problem_size].pop(k)
         return len(self._blocked_by[self._current_problem_size]) > 0
 
-    def set_problem_size(self, problem_size):
+    def set_problem_size(self, problem_size: Hashable) -> None:
         """Sets the current problem size for this execution node."""
         self._current_problem_size = problem_size
         self.problem_sizes[problem_size] += 1
 
-    def print_as_table(self, time_format="6.4f"):
+    def print_as_table(self, time_format: str = "6.4f") -> None:
         """Prints the performance table for this execution node."""
         assert self.best_of
         self.best_of.print_as_table(execution=self, time_format=time_format)
 
     @property
-    def summary(self):
+    def summary(self) -> str:
         """Returns a summary string of the best alternative distribution."""
         assert self.best_of
         count = [0] * len(self.best_of.alternatives)
@@ -128,7 +128,7 @@ class _BestOfExecution:
         return "\\[{}]/{}".format(" ".join(parts), total)
 
     @property
-    def max_speedup(self):
+    def max_speedup(self) -> float | None:
         """Calculates the weighted average speedup for this execution node."""
         # Get the obtained speedups for this execution problem sizes
         assert self.best_of
@@ -147,7 +147,7 @@ class _BestOfExecution:
         return speedup / total
 
     @staticmethod
-    def _walk_nodes(node: "_BestOfExecution", tree: Tree):
+    def _walk_nodes(node: "_BestOfExecution", tree: Tree) -> None:
         """Recursively builds the execution tree for reporting."""
         for child in node.children:
             txt = f"{child.name:{_BestOfExecution._longest_name}s}   {child.summary}"
@@ -157,7 +157,7 @@ class _BestOfExecution:
             branch = tree.add(txt)
             _BestOfExecution._walk_nodes(child, branch)
 
-    def print_report(self):
+    def print_report(self) -> None:
         """Prints the hierarchical execution report."""
         tree = Tree("BestOf execution graph")
         _BestOfExecution._walk_nodes(self, tree)
@@ -167,7 +167,7 @@ class _BestOfExecution:
     # Protected members
 
     @property
-    def _is_root(self):
+    def _is_root(self) -> bool:
         """Checks if this node is the root of the execution tree."""
         return self.parent is None
 
@@ -215,7 +215,7 @@ class BestOf:
         rounds: int = 10,
         pruning_speedup: float = 10.0,
         prune_after_round: int = 4,
-    ):
+    ) -> None:
         """
         Initializes the BestOf selector.
         """
@@ -247,7 +247,7 @@ class BestOf:
                     )
         # Assign its initial value to each property
         self.name = name
-        self.alternatives = alternatives
+        self.alternatives: list[tuple[str, Union[Callable, list[Callable]]]] = alternatives
         self.get_problem_size = get_problem_size
         self.total_rounds = rounds
         self.stages = stages
@@ -262,7 +262,7 @@ class BestOf:
         self._current_round = defaultdict(lambda: 0)
         self._current_alternative = defaultdict(lambda: 0)
         self._executions: dict[Any, list[_BestOfExecution]] = defaultdict(lambda: [])
-        self._times = defaultdict(self._times_arrays)
+        self._times = defaultdict[Hashable, list[list]](self._times_arrays)
         self._stages_times = defaultdict(self._stages_times_arrays)
         self._stages_executions = defaultdict(lambda: [0] * self.stages)
         # Set __call__() for this instance
@@ -285,7 +285,7 @@ class BestOf:
             v.append([])
         return v
 
-    def _register(self, execution_id) -> _BestOfExecution:
+    def _register(self, execution_id: tuple) -> _BestOfExecution:
         """Registers a new execution node."""
         current_parent = self._current_parents[-1]
         if execution_id in self._executions:
@@ -299,7 +299,7 @@ class BestOf:
         return current_execution
 
     @classmethod
-    def use_always_the_first_alternative(cls, value: bool = True, update: bool = False):
+    def use_always_the_first_alternative(cls, value: bool = True, update: bool = False) -> None:
         """
         Forces all BestOf classes to always call the first alternative,
         deactivating any competition among the different alternatives.
@@ -313,30 +313,30 @@ class BestOf:
             if isinstance(obj, cls):
                 obj._set_instance_call()
 
-    def _set_instance_call(self):
+    def _set_instance_call(self) -> None:
         """Configures the instance call method based on the current mode."""
         if self.__class__._use_first_alternative:
             setattr(self, "__call__", self.__call_first_alternative__)
         else:
             setattr(self, "__call__", self.__call_best__)
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args: Any, **kwargs: dict):
         """
         __call__ is defined as an object's type. It simply calls the instance __call__.
         """
         return self.__call__(*args, **kwargs)
 
-    def __call_first_alternative__(self, *args, **kwargs):
+    def __call_first_alternative__(self, *_args: tuple, **kwargs: dict):
         """
         The first of the provided alternatives is called. The received
         parameters will be passed to it and its output will be returned.
         """
 
         if self.stages == 1:
-            return self.alternatives[0][1](*args, **kwargs)  # type: ignore
+            return self.alternatives[0][1](*_args, **kwargs)  # type: ignore
         else:
             # Get stage and remove stage argument from args
-            args = list(args)  # Convert args to a list (so that its first element can be removed)
+            args: list = list(_args)  # Convert args to a list (so that its first element can be removed)
             stage = int(args.pop(0))
             assert stage < self.stages, (
                 f"The stage number ({stage}) must be less than the specified number of stages"
@@ -344,7 +344,7 @@ class BestOf:
             )
             return self.alternatives[0][1][stage](*args, **kwargs)  # type: ignore
 
-    def __call_best__(self, *args, **kwargs):
+    def __call_best__(self, *_args: tuple, **kwargs: dict):
         """
         Each time this instance is called, it will call one of the different
         methods provided as alternatives. The received parameters will be passed
@@ -376,16 +376,14 @@ class BestOf:
         """
 
         # Get stage
-        args = list(
-            args
-        )  # Convert args to a list (so that its first element can be removed if in a pipeline)
+        args: list = list(_args)  # Convert args to a list (so that its first element can be removed if in a pipeline)
         stage = int(args.pop(0)) if self.stages > 1 else 0
         assert stage < self.stages, (
             f"The stage number ({stage}) must be less than the specified number of stages"
             f" ({self.stages})."
         )
         # Get problem size and current execution
-        problem_size: Any = self.get_problem_size(*args, **kwargs)
+        problem_size: Hashable = self.get_problem_size(*args, **kwargs)
         # If best method has been already found, call it and return
         if self.stages == 1:
             with suppress(TypeError):
@@ -491,13 +489,13 @@ class BestOf:
                         min_time
                     )  # first of the minimums
                     if self.stages == 1:
-                        self.best_name[problem_size], self.best_method[problem_size] = (
+                        self.best_name[problem_size], self.best_method[problem_size] = (  # type: ignore
                             self.alternatives[self.best_idx[problem_size]]
-                        )  # type: ignore
+                        )
                     else:
-                        self.best_name[problem_size], self.best_pipeline[problem_size] = (
+                        self.best_name[problem_size], self.best_pipeline[problem_size] = (  # type: ignore
                             self.alternatives[self.best_idx[problem_size]]
-                        )  # type: ignore
+                        )
                     # Best method/pipeline set, unblock parent
                     current_execution.unblock_parent()
             # 3) Update self._current_alternative and self._current_round for the
@@ -507,17 +505,17 @@ class BestOf:
         # Return output
         return output
 
-    def best_method_has_been_found(self, *args, **kwargs):
+    def best_method_has_been_found(self, *args: Any, **kwargs: dict) -> bool:
         """Checks if the best method has been identified for the given problem size."""
         problem_size: Hashable = self.get_problem_size(*args, **kwargs)
         return problem_size in self.best_idx.keys()
 
-    def medians(self):
+    def medians(self) -> dict[Hashable, list[float]]:
         """Calculates the median execution times for each alternative per problem size."""
-        out = {}
+        out = dict[Hashable, list[float]]()
         for problem_size, times in self._times.items():
-            medians = []
-            for i, alternative_times in enumerate(times):
+            medians = list[float]()
+            for _, alternative_times in enumerate(times):
                 if len(alternative_times):
                     medians.append(np.median(alternative_times))
                 else:
@@ -525,9 +523,9 @@ class BestOf:
             out[problem_size] = medians
         return out
 
-    def speedups(self):
+    def speedups(self) -> dict[Hashable, float]:
         """Calculates the speedup of the best alternative relative to others."""
-        out = {}
+        out = dict[Hashable, float]()
         medians = self.medians()
         for problem_size, times in self._times.items():
             best_idx = self.best_idx[problem_size]
@@ -535,7 +533,7 @@ class BestOf:
                 out[problem_size] = max(medians[problem_size]) / medians[problem_size][best_idx]
         return out
 
-    def print_as_table(self, execution=None, time_format="6.4f"):
+    def print_as_table(self, execution: _BestOfExecution | None = None, time_format: str = "6.4f") -> None:
         """Prints a performance table for the current BestOf instance."""
         c = Console(force_terminal=True, width=100)
         caption = self.name if execution is None else execution.name
@@ -569,19 +567,19 @@ class BestOf:
         c.print(t)
 
     @staticmethod
-    def _walk_nodes_and_print_as_table(node: _BestOfExecution):
+    def _walk_nodes_and_print_as_table(node: _BestOfExecution) -> None:
         """Recursively prints tables for all execution nodes."""
         for child in node.children:
             child.print_as_table()
             BestOf._walk_nodes_and_print_as_table(child)
 
     @staticmethod
-    def print_tables():
+    def print_tables() -> None:
         """Prints performance tables for the entire execution tree."""
         BestOf._walk_nodes_and_print_as_table(BestOf._root)
 
     @staticmethod
-    def print_report():
+    def print_report() -> None:
         """Prints the full execution report and tables."""
         BestOf._root.print_report()
         BestOf.print_tables()

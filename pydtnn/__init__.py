@@ -35,7 +35,6 @@ __all__ = (
     "supported_gpu",
     "nccl_comm",
     "context",
-    "stream",
     "stream_handle",
     "cudnn_handle",
     "cublas_handle",

@@ -180,11 +180,8 @@ class Init[T: Array](Layers[T]):
             batch_size = default
 
         if batch_size < 1:
-            raise ValueError(
-                f"'batch_size' ({batch_size}) too small or too many processes (num processes: {
-                    self.comm_size
-                })"
-            )
+            raise ValueError(f"'batch_size' ({batch_size}) "
+                             f"too small or too many processes (num processes: {self.comm_size})")
 
         self.batch_size = batch_size
 
