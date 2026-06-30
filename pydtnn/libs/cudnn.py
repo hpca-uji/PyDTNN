@@ -1265,9 +1265,10 @@ _libcudnn.cudnnGetConvolution2dDescriptor.argtypes = [ctypes.c_void_p]
 
 
 def cudnnGetConvolution2dDescriptor(conv_desc: int) -> tuple[int, int, int, int, int, int, int, int]:
-    """ "
-    Get a convolution descriptor.
+    """Get a convolution descriptor.
+
     This function queries a previously initialized 2D convolution descriptor object.
+
     Parameters
     ----------
     conv_desc : cudnnConvolutionDescriptor
@@ -1342,12 +1343,13 @@ _libcudnn.cudnnGetConvolution2dForwardOutputDim.argtypes = [
 
 
 def cudnnGetConvolution2dForwardOutputDim(conv_desc: int, input_tensor_desc: int, w_desc: int) -> tuple[int, int, int, int]:
-    """ "
-    Return the dimensions of the output tensor given a convolution descriptor.
+    """Return the dimensions of the output tensor given a convolution descriptor.
+
     This function returns the dimensions of the resulting 4D tensor of a 2D
     convolution, given the convolution descriptor, the input tensor descriptor and
     the filter descriptor. This function can help to setup the output tensor and allocate
     the proper amount of memory prior to launching the actual convolution.
+
     Parameters
     ----------
     conv_desc : cudnnConvolutionDescriptor
@@ -1540,66 +1542,66 @@ def cudnnFindConvolutionForwardAlgorithm(
     return perf_results[0: returned_algo_count.value]
 
 
-_libcudnn.cudnnGetConvolutionForwardAlgorithm.restype = int
-_libcudnn.cudnnGetConvolutionForwardAlgorithm.argtypes = [
-    ctypes.c_void_p,
-    ctypes.c_void_p,
-    ctypes.c_void_p,
-    ctypes.c_void_p,
-    ctypes.c_void_p,
-    ctypes.c_int,
-    ctypes.c_size_t,
-    ctypes.c_void_p
-]
-
-
-def cudnnGetConvolutionForwardAlgorithm(
-    handle: int, src_desc: int, w_desc: int, conv_desc: int, dest_desc: int, preference: int, memoryLimitInbytes: int
-) -> int:
-    """Find the best algorithm for forward convolution.
-
-    This function returns the best algorithm to choose for the forward convolution
-    depending on the criteria expressed in the cudnnConvolutionFwdPreference_t enumerant.
-
-    Parameters
-    ----------
-    handle : cudnnHandle
-        Handle to a previously created cuDNN context.
-    src_desc : cudnnTensorDescriptor
-        Handle to a previously initialized tensor descriptor.
-    w_desc : cudnnFilterDescriptor
-        Handle to a previously initialized filter descriptor.
-    conv_desc : cudnnConvolutionDescriptor
-        Previously initialized convolution descriptor.
-    dest_desc : cudnnTensorDescriptor
-        Handle to a previously initialized tensor descriptor.
-    preference : cudnnConvolutionFwdPreference
-        Enumerant to express the preference criteria in terms of memory
-        requirement and speed.
-    memoryLimitInbytes: size_t
-        The maximum amount of GPU memory the user is willing to use as a workspace
-        when preference is CUDNN_CONVOLUTION_FWD_SPECIFY_WORKSPACE_LIMIT.
-    Returns
-    -------
-    algo: cudnnConvolutionFwdAlgo
-        Enumerant that specifies which convolution algorithm should be used to
-        compute the results according to the specified preference.
-    """
-    algo = ctypes.c_int()
-
-    status = _libcudnn.cudnnGetConvolutionForwardAlgorithm(
-        handle,
-        src_desc,
-        w_desc,
-        conv_desc,
-        dest_desc,
-        preference,
-        ctypes.c_size_t(memoryLimitInbytes),
-        ctypes.byref(algo)
-    )
-    cudnnCheckStatus(status)
-
-    return algo.value
+# _libcudnn.cudnnGetConvolutionForwardAlgorithm.restype = int
+# _libcudnn.cudnnGetConvolutionForwardAlgorithm.argtypes = [
+#     ctypes.c_void_p,
+#     ctypes.c_void_p,
+#     ctypes.c_void_p,
+#     ctypes.c_void_p,
+#     ctypes.c_void_p,
+#     ctypes.c_int,
+#     ctypes.c_size_t,
+#     ctypes.c_void_p
+# ]
+#
+#
+# def cudnnGetConvolutionForwardAlgorithm(
+#     handle: int, src_desc: int, w_desc: int, conv_desc: int, dest_desc: int, preference: int, memoryLimitInbytes: int
+# ) -> int:
+#     """Find the best algorithm for forward convolution.
+#
+#     This function returns the best algorithm to choose for the forward convolution
+#     depending on the criteria expressed in the cudnnConvolutionFwdPreference_t enumerant.
+#
+#     Parameters
+#     ----------
+#     handle : cudnnHandle
+#         Handle to a previously created cuDNN context.
+#     src_desc : cudnnTensorDescriptor
+#         Handle to a previously initialized tensor descriptor.
+#     w_desc : cudnnFilterDescriptor
+#         Handle to a previously initialized filter descriptor.
+#     conv_desc : cudnnConvolutionDescriptor
+#         Previously initialized convolution descriptor.
+#     dest_desc : cudnnTensorDescriptor
+#         Handle to a previously initialized tensor descriptor.
+#     preference : cudnnConvolutionFwdPreference
+#         Enumerant to express the preference criteria in terms of memory
+#         requirement and speed.
+#     memoryLimitInbytes: size_t
+#         The maximum amount of GPU memory the user is willing to use as a workspace
+#         when preference is CUDNN_CONVOLUTION_FWD_SPECIFY_WORKSPACE_LIMIT.
+#     Returns
+#     -------
+#     algo: cudnnConvolutionFwdAlgo
+#         Enumerant that specifies which convolution algorithm should be used to
+#         compute the results according to the specified preference.
+#     """
+#     algo = ctypes.c_int()
+#
+#     status = _libcudnn.cudnnGetConvolutionForwardAlgorithm(
+#         handle,
+#         src_desc,
+#         w_desc,
+#         conv_desc,
+#         dest_desc,
+#         preference,
+#         ctypes.c_size_t(memoryLimitInbytes),
+#         ctypes.byref(algo)
+#     )
+#     cudnnCheckStatus(status)
+#
+#     return algo.value
 
 
 _libcudnn.cudnnSetConvolutionGroupCount.restype = int
@@ -1627,9 +1629,7 @@ _libcudnn.cudnnSetConvolutionMathType.argtypes = [ctypes.c_void_p, ctypes.c_int]
 
 
 def cudnnSetConvolutionMathType(conv_desc: int, math_type: int) -> None:
-    """ "
-    This function allows the user to specify whether or not the use of tensor op is permitted in the library
-    routines associated with a given convolution descriptor.
+    """This function allows the user to specify whether or not the use of tensor op is permitted in the library routines associated with a given convolution descriptor.
 
     Parameters
     ----------
