@@ -12,7 +12,6 @@ from typing import TYPE_CHECKING, Generator, override
 import numpy as np
 
 from pydtnn.datasets.abstract import Dataset
-from pydtnn.utils import random
 from pydtnn.utils.constants import ArrayShape
 
 __all__ = ("Folder",)
@@ -40,7 +39,7 @@ class Folder(Dataset):
     The Dataset is composed by img1 and img2, which belongs to the class A; img3, img4 and img5, which belong to class the class B; and img6, which belongs to class C.
     """
 
-    def __init__(self, model: Model, force_test_as_validation=False, debug=False):
+    def __init__(self, model: Model, force_test_as_validation: bool = False, debug: bool = False):
         """
         Args:
             model (Model): Model's object.
@@ -70,6 +69,9 @@ class Folder(Dataset):
             num_classes_test,
             self._nsamples[Dataset.Part.TEST],
         ) = self._get_dict_class_and_file(path=dataset_test_path)
+
+        # Mix train and validation
+        self.model.random.shuffle(self.labels_and_images[Dataset.Part.TRAIN])
 
         if num_classes_train != num_classes_test:
             raise ValueError(
@@ -170,7 +172,7 @@ class Folder(Dataset):
         labels_and_images = self.labels_and_images[part]
 
         if part is Dataset.Part.TRAIN and self.model.augment_shuffle:
-            random.shuffle(labels_and_images)
+            self.model.random.shuffle(labels_and_images)
 
         labels_and_images = labels_and_images[offset: offset + nsamples]
 

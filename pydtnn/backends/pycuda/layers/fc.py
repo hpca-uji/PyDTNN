@@ -70,14 +70,14 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
         self.stream_2 = drv.Stream()
 
         # Weights
-        self.weights_cpu = self.weights_initializer(self.weights_shape, self.model.dtype)
+        self.weights_cpu = self.weights_initializer(self.weights_shape, self.model.dtype, self.model.random)
         weights_gpu = gpuarray.to_gpu(self.weights_cpu)
         self.weights = TensorArray(weights_gpu, self.model.tensor_format, self.model.cudnn_dtype)
         self.memory_used += self.weights.nbytes
 
         if self.use_bias:
             # Biases
-            self.biases_cpu = self.biases_initializer((1, *self.shape), self.model.dtype)
+            self.biases_cpu = self.biases_initializer((1, *self.shape), self.model.dtype, self.model.random)
             biases_gpu = gpuarray.to_gpu(self.biases_cpu)
             self.biases = TensorArray(biases_gpu, self.model.tensor_format, self.model.cudnn_dtype)
             self.memory_used += self.biases.nbytes

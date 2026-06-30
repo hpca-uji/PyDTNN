@@ -10,7 +10,6 @@ from pydtnn.backends.numpy.layers.abstract.layer import LayerNumpy
 from pydtnn.layers.dropout import Dropout
 from pydtnn.libs import numpy as np
 from pydtnn.model import Model
-from pydtnn.utils import random
 
 __all__ = ("DropoutNumpy",)
 
@@ -55,7 +54,7 @@ class DropoutNumpy(Dropout[np.ndarray], LayerNumpy):
                 # NOTE: Remember, it's necessary a new random mask every training's forward call.
                 # self.mask = random.binomial(1, (1 - self.rate), size=self.shape).astype(self.model.dtype) / (1 - self.rate)
                 self.mask = np.asarray(
-                    random.binomial(n=1, p=(1 - self.rate), size=self.shape),
+                    self.model.random.binomial(n=1, p=(1 - self.rate), size=self.shape),
                     dtype=self.model.dtype,
                     order="C",
                 )

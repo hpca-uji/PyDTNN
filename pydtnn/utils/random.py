@@ -7,12 +7,12 @@ from typing import Any
 
 import numpy as np
 
-__all__ = ("SafeGenerator",)
+__all__ = ("Generator",)
 
 logger = logging.getLogger(__name__)
 
 
-class SafeGenerator:
+class Generator:
     """Provides a thread-local wrapper around numpy random generators."""
 
     def __init__(self, seed: int = 0) -> None:
@@ -21,7 +21,7 @@ class SafeGenerator:
         self.seed(seed)
 
     def seed(self, seed: int) -> None:
-        """Reset the seed and clear existing thread-local generators."""
+        """Reset the seed and existing thread-local generators."""
         self._seed = seed
         self._generators.clear()
 
@@ -57,9 +57,9 @@ class SafeGenerator:
         x[:] = x[tuple(slc)]
 
 
-_global = SafeGenerator()
+_global = Generator()
 
 
 def __getattr__(key: str) -> Any:
-    """Expose global SafeGenerator methods at the module level."""
+    """Expose global Generator methods at the module level."""
     return getattr(_global, key)

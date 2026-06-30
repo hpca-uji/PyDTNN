@@ -16,7 +16,6 @@ from typing import TYPE_CHECKING, Generator
 import numpy as np
 
 from pydtnn.datasets.abstract import Dataset
-from pydtnn.utils import random
 
 __all__ = (
     "ChestXRay",
@@ -177,6 +176,10 @@ class ChestXRay(Dataset):
         self._xy_filenames[Dataset.Part.TEST] = [
             (f"images/{name}", self._get_labels(name)) for name in test
         ]
+
+        # Mix train and validation
+        self.model.random.shuffle(self._xy_filenames[Dataset.Part.TRAIN])
+
         self._xy_filenames[Dataset.Part.VAL] = (
             self._xy_filenames[Dataset.Part.TEST]
             if self.model.test_as_validation
@@ -199,7 +202,7 @@ class ChestXRay(Dataset):
 
         if part is Dataset.Part.TRAIN and self.model.augment_shuffle:
             # type: ignore (numpy shuffle's typing wasn't well defined.)
-            random.shuffle(xy_filenames)
+            self.model.random.shuffle(xy_filenames)
 
         xy_filenames = xy_filenames[offset: offset + nsamples]
 

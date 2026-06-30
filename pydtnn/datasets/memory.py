@@ -97,6 +97,12 @@ class Memory(Dataset):
 
         test_as_validation = model.test_as_validation or force_test_as_validation
 
+        # Mix train and validation
+        idx = np.arange(x_train.shape[0])
+        model.random.shuffle(idx)
+        x_train = np.ascontiguousarray(x_train[idx])
+        y_train = np.ascontiguousarray(y_train[idx])
+
         self.__x_source: list[np.ndarray] = []
         self.__y_source: list[np.ndarray] = []
         # Sources for the training part

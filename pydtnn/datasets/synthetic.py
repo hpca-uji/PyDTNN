@@ -31,7 +31,7 @@ class Synthetic(Dataset):
     - `model.synthetic_output_shape` (coma separated)
     """
 
-    def __init__(self, model: Model, force_test_as_validation=False, debug=False):
+    def __init__(self, model: Model, force_test_as_validation: bool = False, debug: bool = False):
         """
         Initializes the Synthetic dataset with model parameters.
 

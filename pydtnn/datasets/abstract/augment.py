@@ -17,7 +17,6 @@ from scipy.ndimage import gaussian_filter
 
 from pydtnn.datasets.abstract.base import Base
 from pydtnn.datasets.abstract.init import Init
-from pydtnn.utils import random
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import TensorFormat
 
@@ -55,9 +54,9 @@ class Augment(Init):
         test_nsamples: int = 0,
         input_shape: ArrayShape = (),
         output_shape: ArrayShape = (),
-        force_test_as_validation=False,
-        debug=False,
-    ):
+        force_test_as_validation: bool = False,
+        debug: bool = False,
+    ) -> None:
         """
         Initialize the Transform dataset handler.
 
@@ -227,7 +226,7 @@ class Augment(Init):
         """
         n = data.shape[0]
 
-        s = np.where(random.random(n) <= augment_probability)[0]
+        s = np.where(self.model.random.random(n) <= augment_probability)[0]
         data[s, ...] = np.flip(data[s, ...], axis=axis)
 
         return data
@@ -311,7 +310,7 @@ class Augment(Init):
             A tuple containing the shuffled input data and label batches.
         """
         idx = np.arange(x.shape[0])
-        random.shuffle(idx)
+        self.model.random.shuffle(idx)
         x[:] = x[idx]
         y[:] = y[idx]
         return x, y
@@ -336,10 +335,10 @@ class Augment(Init):
         n, c, h, w = self.model.decode_shape(data.shape)
         mask_size = min(self.model.augment_mask_size, h, w)
 
-        s = np.where(random.random(n) <= self.model.augment_mask)[0]
+        s = np.where(self.model.random.random(n) <= self.model.augment_mask)[0]
 
-        t = random.integers(0, h - mask_size, (len(s),))
-        ll = random.integers(0, w - mask_size, (len(s),))
+        t = self.model.random.integers(0, h - mask_size, (len(s),))
+        ll = self.model.random.integers(0, w - mask_size, (len(s),))
         for i, ri in enumerate(s):
             b, r = t[i] + mask_size, ll[i] + mask_size
             match self.model.tensor_format:
@@ -355,8 +354,8 @@ class Augment(Init):
                             self.model.tensor_format
                         } format."
                     )
-            data[ri, ...] = np.roll(data[ri, ...], random.integers(-t[i], (h - b)), axis=1)
-            data[ri, ...] = np.roll(data[ri, ...], random.integers(-ll[i], (w - r)), axis=2)
+            data[ri, ...] = np.roll(data[ri, ...], self.model.random.integers(-t[i], (h - b)), axis=1)
+            data[ri, ...] = np.roll(data[ri, ...], self.model.random.integers(-ll[i], (w - r)), axis=2)
         return data
 
     def _do_augment_rotate(self, data: np.ndarray) -> np.ndarray:
@@ -378,9 +377,9 @@ class Augment(Init):
         data = self.model.decode_tensor(data)
         N, C, H, W = data.shape
         # NOTE: C not included so all channels in a sample rotate by the same amount
-        rotation = (random.random(N) - 0.5) * (2 * self.model.augment_rotate_degree)
+        rotation = (self.model.random.random(N) - 0.5) * (2 * self.model.augment_rotate_degree)
 
-        s = np.where(random.random(N) <= self.model.augment_rotate)[0]
+        s = np.where(self.model.random.random(N) <= self.model.augment_rotate)[0]
 
         for n in s:
             for c in range(C):
@@ -413,7 +412,7 @@ class Augment(Init):
         data = self.model.decode_tensor(data)
         N, C, H, W = data.shape
 
-        s = np.where(random.random(N) <= self.model.augment_blur)[0]
+        s = np.where(self.model.random.random(N) <= self.model.augment_blur)[0]
 
         for n in s:
             data[n] = gaussian_filter(
@@ -542,9 +541,9 @@ class Augment(Init):
         data = self.model.decode_tensor(data)
         N, C, H, W = data.shape
         # NOTE: C not included so all channels in a sample rotate by the same amount
-        brightness: np.ndarray = random.random(N) * self.model.augment_brightness_factor
+        brightness: np.ndarray = self.model.random.random(N) * self.model.augment_brightness_factor
 
-        s = np.where(random.random(N) <= self.model.augment_brightness)[0]
+        s = np.where(self.model.random.random(N) <= self.model.augment_brightness)[0]
 
         for n in s:
             for c in range(C):
@@ -583,9 +582,9 @@ class Augment(Init):
         data = self.model.decode_tensor(data)
         N, C, H, W = data.shape
         # NOTE: C not included so all channels in a sample rotate by the same amount
-        contrast: np.ndarray = random.random(N) * self.model.augment_contrast_factor
+        contrast: np.ndarray = self.model.random.random(N) * self.model.augment_contrast_factor
 
-        s = np.where(random.random(N) <= self.model.augment_contrast)[0]
+        s = np.where(self.model.random.random(N) <= self.model.augment_contrast)[0]
 
         for n in s:
             for c in range(C):
@@ -623,9 +622,9 @@ class Augment(Init):
         data = self.model.decode_tensor(data)
         N, C, H, W = data.shape
         # NOTE: C not included so all channels in a sample rotate by the same amount
-        saturation: np.ndarray = random.random(N) * self.model.augment_saturation_factor
+        saturation: np.ndarray = self.model.random.random(N) * self.model.augment_saturation_factor
 
-        s = np.where(random.random(N) <= self.model.augment_saturation)[0]
+        s = np.where(self.model.random.random(N) <= self.model.augment_saturation)[0]
 
         for n in s:
             for c in range(C):
@@ -657,9 +656,9 @@ class Augment(Init):
         data = self.model.decode_tensor(data)
         N, C, H, W = data.shape
         # NOTE: C not included so all channels in a sample rotate by the same amount
-        persepctive: np.ndarray = random.random(N) * self.model.augment_perspective_factor
+        persepctive: np.ndarray = self.model.random.random(N) * self.model.augment_perspective_factor
 
-        s = np.where(random.random(N) <= self.model.augment_perspective)[0]
+        s = np.where(self.model.random.random(N) <= self.model.augment_perspective)[0]
 
         for n in s:
             for c in range(C):
@@ -723,10 +722,10 @@ class Augment(Init):
         # bottom_right = [width, height]
         width, height = image.size
 
-        top_left = (random.uniform(0, factor), random.uniform(0, factor))
-        top_right = (1 - random.uniform(0, factor), random.uniform(0, factor))
-        bottom_left = (random.uniform(0, factor), 1 - random.uniform(0, factor))
-        bottom_right = (1 - random.uniform(0, factor), 1 - random.uniform(0, factor))
+        top_left = (self.model.random.uniform(0, factor), self.model.random.uniform(0, factor))
+        top_right = (1 - self.model.random.uniform(0, factor), self.model.random.uniform(0, factor))
+        bottom_left = (self.model.random.uniform(0, factor), 1 - self.model.random.uniform(0, factor))
+        bottom_right = (1 - self.model.random.uniform(0, factor), 1 - self.model.random.uniform(0, factor))
 
         transformed_points = list(zip(*[top_left, top_right, bottom_left, bottom_right]))
         widths = transformed_points[0]

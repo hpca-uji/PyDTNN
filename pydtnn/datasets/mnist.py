@@ -4,7 +4,6 @@ MNIST dataset implementation for PyDTNN.
 
 from __future__ import annotations
 
-import itertools
 import logging
 import math
 import os
@@ -13,6 +12,7 @@ from typing import IO, TYPE_CHECKING, Generator
 import numpy as np
 
 from pydtnn.datasets.abstract import Dataset
+from pydtnn.datasets.memory import Memory
 
 __all__ = ("MNIST",)
 
@@ -28,7 +28,7 @@ INPUT_SHAPE = (1, 28, 28)
 OUTPUT_SHAPE = (10,)
 
 
-class MNIST(Dataset):
+class MNIST(Memory):
     """
     MNIST Dataset
 
@@ -45,7 +45,7 @@ class MNIST(Dataset):
     scale:  +3.237
     """
 
-    def __init__(self, model: Model, force_test_as_validation=False, debug=False):
+    def __init__(self, model: Model, force_test_as_validation: bool = False, debug: bool = False) -> None:
         """
         Initialize the MNIST dataset.
 
@@ -54,43 +54,49 @@ class MNIST(Dataset):
             force_test_as_validation: Whether to use test set as validation set.
             debug: Whether to enable debug mode.
         """
+        images_header_offset = 16  # 4 + 4 * 3
+        labels_header_offset = 8  # 4 + 4 * 1
+
+        x_train_filename = os.path.join(model.dataset_path, "train-images-idx3-ubyte.gz")
+        y_train_filename = os.path.join(model.dataset_path, "train-labels-idx1-ubyte.gz")
+        x_test_filename = os.path.join(model.dataset_path, "t10k-images-idx3-ubyte.gz")
+        y_test_filename = os.path.join(model.dataset_path, "t10k-labels-idx1-ubyte.gz")
+
+        with self._gzip_open(x_train_filename) as f:
+            size = math.prod(INPUT_SHAPE)
+            offset = images_header_offset + 0 * size
+            x_train = self._read_file(f, offset, size * TRAIN_NSAMPLES).reshape((TRAIN_NSAMPLES, *INPUT_SHAPE))
+
+        y_train = np.zeros((TRAIN_NSAMPLES, *OUTPUT_SHAPE), dtype=np.uint8)
+        with self._gzip_open(y_train_filename) as f:
+            size = 1
+            offset = labels_header_offset + 0 * size
+            y_class = self._read_file(f, offset, size * TRAIN_NSAMPLES)
+            self._decode_class(y_train, y_class)
+
+        with self._gzip_open(x_test_filename) as f:
+            size = math.prod(INPUT_SHAPE)
+            offset = images_header_offset + 0 * size
+            x_test = self._read_file(f, offset, size * TEST_NSAMPLES).reshape((TEST_NSAMPLES, *INPUT_SHAPE))
+
+        y_test = np.zeros((TEST_NSAMPLES, *OUTPUT_SHAPE), dtype=np.uint8)
+        with self._gzip_open(y_test_filename) as f:
+            size = 1
+            offset = labels_header_offset + 0 * size
+            y_class = self._read_file(f, offset, size * TEST_NSAMPLES)
+            self._decode_class(y_test, y_class)
+
         super().__init__(
             model,
-            TRAIN_NSAMPLES,
-            TEST_NSAMPLES,
+            x_train,
+            y_train,
+            x_test,
+            y_test,
             INPUT_SHAPE,
             OUTPUT_SHAPE,
             force_test_as_validation=force_test_as_validation,
             debug=debug,
         )
-
-    def _model_init(self) -> None:
-        """
-        Initialize file paths and offsets for MNIST data.
-        """
-        self._x_filename = [
-            os.path.join(self.model.dataset_path, "train-images-idx3-ubyte.gz"),
-            None,
-            os.path.join(self.model.dataset_path, "t10k-images-idx3-ubyte.gz"),
-        ]
-        self._y_filename = [
-            os.path.join(self.model.dataset_path, "train-labels-idx1-ubyte.gz"),
-            None,
-            os.path.join(self.model.dataset_path, "t10k-labels-idx1-ubyte.gz"),
-        ]
-        if self.test_as_validation:
-            self._x_filename[Dataset.Part.VAL] = self._x_filename[Dataset.Part.TEST]
-            self._y_filename[Dataset.Part.VAL] = self._y_filename[Dataset.Part.TEST]
-        else:
-            self._x_filename[Dataset.Part.VAL] = self._x_filename[Dataset.Part.TRAIN]
-            self._y_filename[Dataset.Part.VAL] = self._y_filename[Dataset.Part.TRAIN]
-
-        self._images_header_offset = 16  # 4 + 4 * 3
-        self._labels_header_offset = 8  # 4 + 4 * 1
-
-        # Pregenerate gZIP indexes
-        for gz in itertools.chain(self._x_filename, self._y_filename):
-            self._gzip_open(gz).close()
 
     def _data_generator(self, part: Dataset.Part) -> Generator[tuple[np.ndarray, np.ndarray]]:
         """
@@ -99,28 +105,11 @@ class MNIST(Dataset):
         Args:
             part: The dataset partition to generate.
         """
-        size = int(math.prod(INPUT_SHAPE))
-        offset = self._images_header_offset + self._local_offset[part] * size
-        nbytes = self._local_nsamples[part] * size
-        filename = self._x_filename[part]
-        with self._gzip_open(filename) as f:
-            x = self._read_file(f, offset, nbytes).reshape(self._local_nsamples[part], *INPUT_SHAPE)
-
-        x = self.model.encode_tensor(x)
-        x = np.divide(x, 255.0, dtype=self.model.dtype, casting="unsafe")
-
-        offset = (
-            self._labels_header_offset + self._local_offset[part] * 1
-        )  # The output class is encoded as a number
-        nbytes = self._local_nsamples[part] * 1  # The output class is encoded as a number
-
-        with self._gzip_open(self._y_filename[part]) as f:
-            y_classes = self._read_file(f, offset, nbytes)
-
-        y = np.zeros((self._local_nsamples[part], *self.output_shape), dtype=self.model.dtype)
-        self._decode_class(y, y_classes)
-
-        yield x, y
+        for x, y in super()._data_generator(part):
+            x = self.model.encode_tensor(x)
+            x = np.divide(x, 255.0, dtype=self.model.dtype, casting="unsafe")
+            y = np.asarray(y, dtype=self.model.dtype)
+            yield x, y
 
     def _read_file(self, f: IO[bytes], offset: int, nbytes: int) -> np.ndarray:
         """

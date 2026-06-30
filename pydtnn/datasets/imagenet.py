@@ -21,7 +21,6 @@ import numpy as np
 from scipy.io import loadmat
 
 from pydtnn.datasets.abstract import Dataset
-from pydtnn.utils import random
 
 __all__ = ("ImageNet",)
 
@@ -225,6 +224,9 @@ class ImageNet(Dataset):
                 f"Mismatch test samples (got: {len(val_lables)}, expect: {TEST_NSAMPLES})"
             )
 
+        # Mix train and validation
+        self.model.random.shuffle(train_xy)
+
         self._xy_filenames = [
             train_xy,
             copy.copy(val_xy if self.test_as_validation else train_xy),
@@ -244,7 +246,7 @@ class ImageNet(Dataset):
 
         if part is Dataset.Part.TRAIN and self.model.augment_shuffle:
             # type: ignore (numpy shuffle's typing wasn't well defined.)
-            random.shuffle(xy_filenames)
+            self.model.random.shuffle(xy_filenames)
 
         xy_filenames = xy_filenames[offset: offset + nsamples]
 

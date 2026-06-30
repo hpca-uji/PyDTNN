@@ -1,6 +1,4 @@
-"""
-PyDTNN initializers
-"""
+"""PyDTNN initializers"""
 
 import logging
 import math
@@ -70,6 +68,7 @@ def _generate_distribution(
     mode: DistributionModeEnum,
     distribution: ProbabilisticDistribution,
     dtype: np.dtype,
+    random: np.random.Generator = random  # type: ignore
 ) -> np.ndarray:
     """Generates a weight tensor based on the specified distribution and scaling mode."""
     fan_in, fan_out = _compute_fans(shape)
@@ -101,56 +100,56 @@ def _generate_distribution(
     return x
 
 
-def glorot_uniform(shape: ArrayShape, dtype: np.dtype) -> np.ndarray:
+def glorot_uniform(shape: ArrayShape, dtype: np.dtype, random: np.random.Generator = random) -> np.ndarray:  # type: ignore
     """Initializes weights using the Glorot uniform distribution."""
     return _generate_distribution(
-        shape, 1.0, DistributionModeEnum.FAN_AVG, ProbabilisticDistribution.UNIFORM, dtype
+        shape, 1.0, DistributionModeEnum.FAN_AVG, ProbabilisticDistribution.UNIFORM, dtype, random
     )
 
 
-def glorot_normal(shape: ArrayShape, dtype: np.dtype) -> np.ndarray:
+def glorot_normal(shape: ArrayShape, dtype: np.dtype, random: np.random.Generator = random) -> np.ndarray:  # type: ignore
     """Initializes weights using the Glorot normal distribution."""
     return _generate_distribution(
-        shape, 1.0, DistributionModeEnum.FAN_AVG, ProbabilisticDistribution.NORMAL, dtype
+        shape, 1.0, DistributionModeEnum.FAN_AVG, ProbabilisticDistribution.NORMAL, dtype, random
     )
 
 
-def he_uniform(shape: ArrayShape, dtype: np.dtype) -> np.ndarray:
+def he_uniform(shape: ArrayShape, dtype: np.dtype, random: np.random.Generator = random) -> np.ndarray:  # type: ignore
     """Initializes weights using the He uniform distribution."""
     return _generate_distribution(
-        shape, 2.0, DistributionModeEnum.FAN_IN, ProbabilisticDistribution.UNIFORM, dtype
+        shape, 2.0, DistributionModeEnum.FAN_IN, ProbabilisticDistribution.UNIFORM, dtype, random
     )
 
 
-def he_normal(shape: ArrayShape, dtype: np.dtype) -> np.ndarray:
+def he_normal(shape: ArrayShape, dtype: np.dtype, random: np.random.Generator = random) -> np.ndarray:  # type: ignore
     """Initializes weights using the He normal distribution."""
     return _generate_distribution(
-        shape, 2.0, DistributionModeEnum.FAN_IN, ProbabilisticDistribution.NORMAL, dtype
+        shape, 2.0, DistributionModeEnum.FAN_IN, ProbabilisticDistribution.NORMAL, dtype, random
     )
 
 
-def lecun_uniform(shape: ArrayShape, dtype: np.dtype) -> np.ndarray:
+def lecun_uniform(shape: ArrayShape, dtype: np.dtype, random: np.random.Generator = random) -> np.ndarray:  # type: ignore
     """Initializes weights using the LeCun uniform distribution."""
     return _generate_distribution(
-        shape, 1.0, DistributionModeEnum.FAN_IN, ProbabilisticDistribution.UNIFORM, dtype
+        shape, 1.0, DistributionModeEnum.FAN_IN, ProbabilisticDistribution.UNIFORM, dtype, random
     )
 
 
-def lecun_normal(shape: ArrayShape, dtype: np.dtype) -> np.ndarray:
+def lecun_normal(shape: ArrayShape, dtype: np.dtype, random: np.random.Generator = random) -> np.ndarray:  # type: ignore
     """Initializes weights using the LeCun normal distribution."""
     return _generate_distribution(
-        shape, 1.0, DistributionModeEnum.FAN_IN, ProbabilisticDistribution.NORMAL, dtype
+        shape, 1.0, DistributionModeEnum.FAN_IN, ProbabilisticDistribution.NORMAL, dtype, random
     )
 
 
-def ones(shape: ArrayShape, dtype: np.dtype) -> np.ndarray:
+def ones(shape: ArrayShape, dtype: np.dtype, random: np.random.Generator = random) -> np.ndarray:  # type: ignore
     """Initializes weights with ones."""
     return np.ones(shape, dtype=dtype)
 
 
-def zeros(shape: ArrayShape, dtype: np.dtype) -> np.ndarray:
+def zeros(shape: ArrayShape, dtype: np.dtype, random: np.random.Generator = random) -> np.ndarray:  # type: ignore
     """Initializes weights with zeros."""
     return np.zeros(shape, dtype=dtype)
 
 
-type InitializerFunc = Callable[[ArrayShape, np.dtype], np.ndarray]
+type InitializerFunc = Callable[[ArrayShape, np.dtype, np.random.Generator], np.ndarray]

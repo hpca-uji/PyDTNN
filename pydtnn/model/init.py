@@ -23,6 +23,7 @@ from pydtnn.model.layers import Layers
 from pydtnn.model.utils import DEFAULT_BACH_SIZE, LIMIT_THREADS_AND_BLOCKS
 from pydtnn.models import select as select_model
 from pydtnn.optimizers import select as select_optimizer
+from pydtnn.utils import random
 from pydtnn.utils.gpu import CudnnDataType
 from pydtnn.utils.memory_pool import PreallocMemory, PrivateMemory
 from pydtnn.utils.parser import ArgumentParser
@@ -89,7 +90,7 @@ class Init[T: Array](Layers[T]):
 
         # Set current mode to unspecified
         self.mode: Base.Mode = None  # type: ignore # Base.Mode.UNSPECIFIED
-
+        self.random: np.random.Generator = random.Generator(self.random_seed)  # type: ignore
         self.memory_cls = PreallocMemory if self.shared_tmp_memory else PrivateMemory
 
         # Set tracer
@@ -416,3 +417,4 @@ class Init[T: Array](Layers[T]):
         elif not self.dataset:
             raise ValueError("There is no dataset and the model has layers.")
         self._model_init()
+        self.random.seed(self.random_seed)

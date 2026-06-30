@@ -11,7 +11,6 @@ import numpy as np
 from spacy.language import Language
 
 from pydtnn.datasets.abstract import Dataset
-from pydtnn.utils import random
 
 __all__ = ("MaskLang",)
 
@@ -149,7 +148,7 @@ class MaskLang(Dataset):
         if self.train_nsamples is None:
             s = np.arange(self.train_val_nsamples)
             if self.model.augment_shuffle:
-                random.shuffle(s)
+                self.model.random.shuffle(s)
             self.train_nsamples = int(self.train_val_nsamples * (1 - val_split) // 1)
             self.train_indices = s[: self.train_nsamples]
             self.val_indices = s[self.train_nsamples:]
@@ -177,7 +176,7 @@ class MaskLang(Dataset):
                 (batch_size, 1, self.max_sentence, self.embedl), dtype=self.dtype
             )
             for i, doc in enumerate(self.dictionary.pipe(self.lines[window[0]: window[1]])):
-                mask = np.random.randint(0, len(doc))
+                mask = self.model.random.integers(0, len(doc))
                 for j, word in enumerate(doc):
                     if j > self.max_sentence:
                         break
@@ -235,7 +234,7 @@ class MaskLang(Dataset):
         self.src_embeddings = np.zeros((size, 1, self.max_sentence, self.embedl), dtype=self.dtype)
         self.tgt_embeddings = np.zeros((size, 1, self.max_sentence, self.embedl), dtype=self.dtype)
         for i, doc in enumerate(self.dictionary.pipe(self.lines[0:size])):
-            mask = np.random.randint(0, len(doc))
+            mask = self.model.random.integers(0, len(doc))
             # self.src_embeddings[i,0,0:len(doc)] = doc
             # self.tgt_embeddings[i,0,]
             # self.src_embeddings[i,0,mask] = self.mask

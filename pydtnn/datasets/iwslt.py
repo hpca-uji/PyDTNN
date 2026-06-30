@@ -12,7 +12,6 @@ import numpy as np
 from spacy.language import Language
 
 from pydtnn.datasets.abstract import Dataset
-from pydtnn.utils import random
 
 __all__ = ("IWSLT",)
 
@@ -150,7 +149,7 @@ class IWSLT(Dataset):
         if self.train_nsamples is None:
             s = np.arange(self.train_val_nsamples)
             if self.model.augment_shuffle:
-                random.shuffle(s)
+                self.model.random.shuffle(s)
             self.train_nsamples = int(self.train_val_nsamples * (1 - val_split) // 1)
             self.train_indices = s[: self.train_nsamples]
             self.val_indices = s[self.train_nsamples:]
@@ -221,10 +220,10 @@ class IWSLT(Dataset):
         if getattr(self, "src_embeddings", None):
             pass
         else:
-            self.src_embeddings: np.ndarray = random.random(
+            self.src_embeddings: np.ndarray = self.model.random.random(
                 (1000, 1, self.max_sentence, self.embedl)
             ).astype(dtype=self.dtype)
-            self.tgt_embeddings: np.ndarray = random.random(
+            self.tgt_embeddings: np.ndarray = self.model.random.random(
                 (1000, 1, self.max_sentence, self.embedl)
             ).astype(dtype=self.dtype)
 
