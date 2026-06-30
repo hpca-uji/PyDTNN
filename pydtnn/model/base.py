@@ -78,6 +78,7 @@ class Base[T: Array]:
     model_state_filename: str
     history_file: str
     tensor_format: TensorFormat
+    random: np.random.Generator
     random_seed: int
     shared_tmp_memory: bool
     shared_data: bool

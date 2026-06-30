@@ -182,7 +182,7 @@ class ImageNet(Dataset):
         member = "ILSVRC2012_devkit_t12/data/ILSVRC2012_validation_ground_truth.txt"
         with (
             tarfile.open(path) as tar,
-            tar.extractfile(member) as fp,
+            tar.extractfile(member) as fp,  # type: ignore (It's not None)
             io.TextIOWrapper(buffer=fp) as lines,
         ):  # type: ignore
             return {i: int(line) for i, line in enumerate(lines, 1)}

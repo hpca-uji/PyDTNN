@@ -417,4 +417,4 @@ class Init[T: Array](Layers[T]):
         elif not self.dataset:
             raise ValueError("There is no dataset and the model has layers.")
         self._model_init()
-        self.random.seed(self.random_seed)
+        self.random.seed(self.random_seed)  # type: ignore (seed exists)
