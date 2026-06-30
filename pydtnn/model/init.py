@@ -277,21 +277,23 @@ class Init[T: Array](Layers[T]):
 
     def _cudnn_init(self) -> None:
         """Initializes CUDA, cuDNN, and NCCL backend handles."""
-        self.cuda_threads = min(self.batch_size, LIMIT_THREADS_AND_BLOCKS)
-        self.cuda_blocks = (max(self.batch_size, LIMIT_THREADS_AND_BLOCKS) // self.cuda_threads) + 1
-        # NOTE: Seems that in PyDTNN, usually the ".x" (blockIdx.x, threadIdx.x,
-        # ...) is the only dimension used.
-        self.cuda_grid = (self.cuda_blocks, 1, 1)
-        self.cuda_block = (self.cuda_threads, 1, 1)
 
+        if not self.gpudirect and self.enable_nccl:
+            raise RuntimeError("It is necessary to have gpudirect active to work with NCCL.")
+
+        assert cudnn is not None
         assert drv is not None
         assert context is not None
         assert cudnn_handle is not None
         assert cublas_handle is not None
         assert stream is not None
 
-        if not self.gpudirect and self.enable_nccl:
-            raise RuntimeError("It is necessary to have gpudirect active to work with NCCL.")
+        self.cuda_threads = min(self.batch_size, LIMIT_THREADS_AND_BLOCKS)
+        self.cuda_blocks = (max(self.batch_size, LIMIT_THREADS_AND_BLOCKS) // self.cuda_threads) + 1
+        # NOTE: Seems that in PyDTNN, usually the ".x" (blockIdx.x, threadIdx.x,
+        # ...) is the only dimension used.
+        self.cuda_grid = (self.cuda_blocks, 1, 1)
+        self.cuda_block = (self.cuda_threads, 1, 1)
 
         if self.comm and self.enable_nccl:
             assert nccl is not None
