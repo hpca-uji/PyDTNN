@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 
-"""
-PyDTNN print in convdirect format script
-"""
+"""PyDTNN print in convdirect format script"""
 
 from pydtnn.model import Model
 from pydtnn.utils.parser import ArgumentParser

@@ -15,7 +15,7 @@ from pydtnn import (MPI, context, cublas, cublas_handle, cudnn, cudnn_handle, dr
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.datasets import select as select_dataset
 from pydtnn.datasets.abstract import Dataset
-from pydtnn.libs.mpi.rc import proto as PROTOCOL
+from pydtnn.libs.mpi.rc import proto as proto
 from pydtnn.losses import select as select_loss
 from pydtnn.metrics import select as select_metric
 from pydtnn.model.base import Base
@@ -269,7 +269,7 @@ class Init[T: Array](Layers[T]):
         # Communication method
         match self.use_mpi_buffers:
             case None:
-                self.use_mpi_buffers = PROTOCOL is None
+                self.use_mpi_buffers = proto is None
             case bool():
                 pass
             case _:

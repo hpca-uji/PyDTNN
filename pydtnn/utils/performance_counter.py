@@ -3,6 +3,7 @@
 import logging
 import resource
 from collections import defaultdict
+from typing import Any
 
 import numpy as np
 
@@ -18,7 +19,7 @@ class PerformanceCounter:
 
     # Originally: TRAINING, TESTING = range(2); Changed to Dataset.Part
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initializes the performance counter with empty records."""
         self._times_record = defaultdict(lambda: defaultdict(lambda: []))
         self._batch_sizes_record = defaultdict(lambda: defaultdict(lambda: []))
@@ -26,13 +27,11 @@ class PerformanceCounter:
 
     #  Public methods and properties
 
-    def add_training_time_and_batch_size(self, epoch: int, elapsed_time: float, batch_size: int):
+    def add_training_time_and_batch_size(self, epoch: int, elapsed_time: float, batch_size: int) -> None:
         """Records training metrics for a specific epoch."""
         self._add_time_and_batch_size(Dataset.Part.TRAIN, epoch, elapsed_time, batch_size)
 
-    def add_testing_time_and_batch_size(
-        self, test_round: int, elapsed_time: float, batch_size: int
-    ):
+    def add_testing_time_and_batch_size(self, test_round: int, elapsed_time: float, batch_size: int) -> None:
         """Records testing metrics for a specific test round."""
         self._add_time_and_batch_size(Dataset.Part.TEST, test_round, elapsed_time, batch_size)
 
@@ -82,7 +81,7 @@ class PerformanceCounter:
         return self._throughput(Dataset.Part.TEST)
 
     @property
-    def testing_time(self):
+    def testing_time(self) -> float:
         """Returns the total testing time in seconds."""
         return self._time(Dataset.Part.TEST)
 
@@ -160,12 +159,12 @@ class PerformanceCounter:
         )
         self._memory_record[where][epoch].append(mem)  # KiB in GNU/Linux
 
-    def _time(self, where: Dataset.Part, last_half=False) -> float:
+    def _time(self, where: Dataset.Part, last_half: bool = False) -> float:
         """Calculates total time for a given phase."""
         return self._sum(self._times_record[where].values(), last_half)
 
     @staticmethod
-    def _sum(arrays, last_half: bool) -> int | float:
+    def _sum(arrays: Any, last_half: bool) -> int | float:
         """Sums values across records, optionally estimating from the last half of data."""
         # When last_half is True, the total size is estimated from the last half
         # steps of each epoch size
@@ -181,11 +180,11 @@ class PerformanceCounter:
                     )
         return np.sum(records_per_epoch)
 
-    def _size(self, where: Dataset.Part, last_half=False) -> int | float:
+    def _size(self, where: Dataset.Part, last_half: bool = False) -> int | float:
         """Calculates total batch size for a given phase."""
         return self._sum(self._batch_sizes_record[where].values(), last_half)
 
-    def _throughput(self, where: Dataset.Part, last_half=False) -> float:
+    def _throughput(self, where: Dataset.Part, last_half: bool = False) -> float:
         """Calculates throughput for a given phase."""
         return self._size(where, last_half) / self._time(where, last_half)
 

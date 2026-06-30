@@ -1,6 +1,4 @@
-"""
-Test suite for PyDTNN layers and activation functions.
-"""
+"""Test suite for PyDTNN layers and activation functions."""
 
 # import memray
 
@@ -99,9 +97,7 @@ dict_test: dict[str, list[tuple[str, Layer]]] = {
 
 
 def test_keras(_x: np.ndarray) -> None:
-    """
-    Performs a basic forward pass test on a Keras-like model structure.
-    """
+    """Performs a basic forward pass test on a Keras-like model structure."""
 
     model = Model(**KWARGS)
     model.add(Input(SHAPE))
@@ -121,9 +117,7 @@ def test_keras(_x: np.ndarray) -> None:
 
 
 def test_layers_activations(_x: np.ndarray, opt: Optimizer) -> None:
-    """
-    Benchmarks forward, backward, and weight update passes for registered layers and activations.
-    """
+    """Benchmarks forward, backward, and weight update passes for registered layers and activations."""
     # Testing Layers and activations:
     for test in dict_test.keys():
         print(f"=====\nTesting {test}\n=====")
@@ -187,9 +181,7 @@ def test_layers_activations(_x: np.ndarray, opt: Optimizer) -> None:
 
 
 def test_add_concat(_x: np.ndarray, opt: Optimizer) -> None:
-    """
-    Benchmarks forward, backward, and weight update passes for Addition and Concatenation blocks.
-    """
+    """Benchmarks forward, backward, and weight update passes for Addition and Concatenation blocks."""
     # Testing Addition and Concatenation layers
     for test, layer in [addition_test_layers, concatenation_test_layers]:
         print(f"=====\nTesting the: {test}\n=====")
@@ -247,9 +239,7 @@ def test_add_concat(_x: np.ndarray, opt: Optimizer) -> None:
 
 
 def main() -> None:
-    """
-    Entry point for executing layer and activation performance tests.
-    """
+    """Entry point for executing layer and activation performance tests."""
     shape = (N, *SHAPE)
     quarter_elements = np.prod(shape) / 4
     _x_p: np.ndarray = np.arange(np.ceil(quarter_elements), dtype=KWARGS["dtype"])

@@ -20,13 +20,14 @@ import numpy as np
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.model import Model
 from pydtnn.utils import random
+from pydtnn.utils.initializers import glorot_uniform, zeros
 
 
 class D:
-    """Container for Conv2D layer configuration parameters."""
+    "Container for Conv2D layer configuration parameters."
 
     def __init__(self):
-        """Default parameters"""
+        "Default parameters"
         self.b = 1  # Batch size
         self.c = 1  # Channels per layer
         self.h = 128  # Layers height
@@ -42,16 +43,16 @@ class D:
         self.hdilation = 1  # Horizontal dilation
 
     @property
-    def ho(self):
+    def ho(self) -> int:
         """Calculates output height."""
         return (self.h + 2 * self.vpadding - self.vdilation * (self.kh - 1) - 1) // self.vstride + 1
 
     @property
-    def wo(self):
+    def wo(self) -> int:
         """Calculates output width."""
         return (self.w + 2 * self.hpadding - self.hdilation * (self.kw - 1) - 1) // self.hstride + 1
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Returns string representation of parameters."""
         return f"""\
 x, weights, and y parameters:
@@ -64,7 +65,7 @@ x, weights, and y parameters:
 """
 
 
-def _print_with_header(header, to_be_printed=None):
+def _print_with_header(header: str, to_be_printed: str | None = None) -> None:
     """Prints a formatted header and optional content."""
     print()
     print("-" * (len(header) + 2))
@@ -83,11 +84,11 @@ class Params:
 def get_conv2d_layers(d: D) -> tuple[Conv2D, Conv2D]:
     """Initializes and returns im2col and convGemm Conv2D layers."""
     params = Params()
-    params.batch_size = d.b
-    params.backend = "cpu"
+    params.batch_size = d.b  # type: ignore (It's fine)
+    params.backend = "cpu"  # type: ignore (It's fine)
     model_i2c = Model(**vars(params))
     params_gc = deepcopy(params)
-    params_gc.backend = "cpu;conv_2d:gemm"
+    params_gc.backend = "cpu;conv_2d:gemm"  # type: ignore (It's fine)
     model_cg = Model(**vars(params_gc))
     conv2d_i2c = Conv2D(
         nfilters=d.kn,
@@ -96,8 +97,8 @@ def get_conv2d_layers(d: D) -> tuple[Conv2D, Conv2D]:
         stride=(d.vstride, d.hstride),
         dilation=(d.vdilation, d.hdilation),
         use_bias=True,
-        weights_initializer="glorot_uniform",
-        biases_initializer="zeros",
+        weights_initializer=glorot_uniform,
+        biases_initializer=zeros,
     )
     conv2d_i2c._init_backend_with_model(model_i2c)
     conv2d_i2c.debug = True
@@ -108,13 +109,13 @@ def get_conv2d_layers(d: D) -> tuple[Conv2D, Conv2D]:
         stride=(d.vstride, d.hstride),
         dilation=(d.vdilation, d.hdilation),
         use_bias=True,
-        weights_initializer="glorot_uniform",
-        biases_initializer="zeros",
+        weights_initializer=glorot_uniform,
+        biases_initializer=zeros,
     )
     conv2d_cg._init_backend_with_model(model_cg)
     conv2d_cg.debug = True
     for layer in (conv2d_i2c, conv2d_cg):
-        layer._model_init(prev_shape=(d.c, d.h, d.w))
+        layer._model_init(prev_shape=(d.c, d.h, d.w), x=None)
     # Set the same initial weights and biases to both layers
     conv2d_cg.weights = conv2d_i2c.weights.copy()
     conv2d_cg.biases = conv2d_i2c.biases.copy()
@@ -122,11 +123,9 @@ def get_conv2d_layers(d: D) -> tuple[Conv2D, Conv2D]:
 
 
 class PerfTestConv2DConvGemm:
-    """
-    Performance test for Conv2D that compares Conv2d with mm and i2c.T
-    """
+    """Performance test for Conv2D that compares Conv2d with mm and i2c.T"""
 
-    def _test_forward_backward(self, d, x, weights, print_times=False):
+    def _test_forward_backward(self, d: D, x: np.ndarray, weights: np.ndarray, print_times: bool = False) -> None:
         """Executes forward and backward passes and profiles performance."""
         conv2d_i2c, conv2d_cg = get_conv2d_layers(d)
         conv2d_i2c.weights = weights.copy()
@@ -212,7 +211,7 @@ class PerfTestConv2DConvGemm:
         print("dx all close:", np.allclose(dx_i2c, dx_cg))
         print("Y all close:", np.allclose(y_i2c, y_cg, rtol=1e-5, atol=1e-6))
 
-    def test_forward_backward_alexnet_cifar10_first_conv2d(self):
+    def test_forward_backward_alexnet_cifar10_first_conv2d(self) -> None:
         """Tests that the AlexNet Cifar10 first Conv2d lead to the same solution on i2c and on conv_gemm"""
         d = D()
         d.b = 64
@@ -225,7 +224,7 @@ class PerfTestConv2DConvGemm:
         weights = random.random((d.kn, d.c, d.kh, d.kw)).astype(np.float32, order="C")
         self._test_forward_backward(d, x, weights, print_times=True)
 
-    def test_forward_backward_alexnet_cifar10_second_conv2d(self):
+    def test_forward_backward_alexnet_cifar10_second_conv2d(self) -> None:
         """Tests that the AlexNet Cifar10 second Conv2d lead to the same solution on i2c and on conv_gemm"""
         d = D()
         d.b = 64
@@ -238,7 +237,7 @@ class PerfTestConv2DConvGemm:
         weights = random.random((d.kn, d.c, d.kh, d.kw)).astype(np.float32, order="C")
         self._test_forward_backward(d, x, weights, print_times=True)
 
-    def test_forward_backward_alexnet_cifar10_third_conv2d(self):
+    def test_forward_backward_alexnet_cifar10_third_conv2d(self) -> None:
         """Tests that the AlexNet Cifar10 third Conv2d lead to the same solution on i2c and on conv_gemm"""
         d = D()
         d.b = 64
@@ -251,7 +250,7 @@ class PerfTestConv2DConvGemm:
         weights = random.random((d.kn, d.c, d.kh, d.kw)).astype(np.float32, order="C")
         self._test_forward_backward(d, x, weights, print_times=True)
 
-    def test_forward_backward_alexnet_imagenet_first_conv2d(self):
+    def test_forward_backward_alexnet_imagenet_first_conv2d(self) -> None:
         """Tests that the AlexNet Imagenet first Conv2d lead to the same solution on i2c and on conv_gemm"""
         # id;height;width;channels;kernel_height;kernel_width;kernel_num;stride;padding
         # 2;227;227;3;11;11;96;4;0

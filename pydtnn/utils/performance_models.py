@@ -42,7 +42,7 @@ __all__ = (
 logger = logging.getLogger(__name__)
 
 
-def roofline(intensity, cpu_speed, memory_bw):
+def roofline(intensity: float, cpu_speed: float, memory_bw: float) -> float:
     """Calculate the maximum achievable performance based on the roofline model."""
     # print ("COMPUTE_BOUND") if (cpu_speed < memory_bw * intens) else print ("MEMORY_BOUND")
     return min(cpu_speed, memory_bw * intensity)

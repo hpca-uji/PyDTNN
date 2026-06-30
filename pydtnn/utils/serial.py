@@ -1,6 +1,4 @@
-"""
-Utilities for serializing NumPy objects to YAML format.
-"""
+"""Utilities for serializing NumPy objects to YAML format."""
 
 import numpy as np
 import yaml
@@ -9,20 +7,14 @@ __all__ = ("NumpyYaml",)
 
 
 class NumpyYaml(yaml.SafeDumper):
-    """
-    Custom YAML dumper that supports serialization of NumPy arrays and data types.
-    """
+    """Custom YAML dumper that supports serialization of NumPy arrays and data types."""
 
     def represent_dtype(self, data: np.ndarray) -> yaml.ScalarNode:
-        """
-        Represent a NumPy data type as a YAML scalar.
-        """
+        """Represent a NumPy data type as a YAML scalar."""
         return self.represent_scalar("!np.type", repr(data))
 
     def represent_ndarray(self, data: np.ndarray) -> yaml.ScalarNode:
-        """
-        Represent a NumPy array as a YAML scalar using block style.
-        """
+        """Represent a NumPy array as a YAML scalar using block style."""
         return self.represent_scalar("!np.array", repr(data), style="|")
 
 

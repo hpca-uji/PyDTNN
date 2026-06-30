@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 
-"""
-Exports a PyDTNN dataset.
-"""
+"""Exports a PyDTNN dataset."""
 
 from pydtnn.model import Model
 from pydtnn.utils.parser import ArgumentParser

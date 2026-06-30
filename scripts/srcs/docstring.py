@@ -168,7 +168,7 @@ def process_file(path: Path) -> bool:
     return True
 
 
-def process_project(root: Path, name="*.py", delay: float = 5.0) -> None:
+def process_project(root: Path, name: str = "*.py", delay: float = 5.0) -> None:
     """
     Recursively process all Python files in a directory.
 

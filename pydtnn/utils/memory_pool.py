@@ -2,6 +2,7 @@
 
 import logging
 import math
+import types
 
 import pydtnn.libs.numpy as np
 from pydtnn.utils.constants import ArrayShape
@@ -31,11 +32,11 @@ class PrivateMemory:
         """Create a new numpy array."""
         return np.zeros(shape, dtype, order)  # type: ignore
 
-    def __enter__(self):
+    def __enter__(self) -> "PrivateMemory":
         """Enter the context manager."""
         return self
 
-    def __exit__(self, cls, exc, tb):
+    def __exit__[T: Exception](self, cls: type[T], exc: T, tb: types.TracebackType) -> None:
         """Exit the context manager."""
         pass
 
@@ -80,12 +81,12 @@ class PreallocMemory(PrivateMemory):
 
         self._used = new_offset
 
-    def __enter__(self):
+    def __enter__(self) -> "PreallocMemory":
         """Enter the context manager and save current offset."""
         self._stack.append(self._used)
         return self
 
-    def __exit__(self, cls, exc, tb):
+    def __exit__[T: Exception](self, cls: type[T], exc: T, tb: types.TracebackType) -> None:
         """Exit the context manager and restore previous offset."""
         self._used = self._stack.pop()
 

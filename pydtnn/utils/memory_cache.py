@@ -6,6 +6,7 @@ and global cache control mechanisms.
 """
 
 import logging
+from typing import Any, Callable
 
 __all__ = ("MemoryCache",)
 
@@ -27,7 +28,7 @@ class MemoryCache(dict):
 
     _preserve_values = True
 
-    def __init__(self, default_factory=None, **kwargs):
+    def __init__(self, default_factory: Callable | None = None, **kwargs: dict) -> None:
         """
         Initialize the MemoryCache.
 
@@ -38,7 +39,7 @@ class MemoryCache(dict):
         super().__init__(self, **kwargs)
         self.default_factory = default_factory
 
-    def __missing__(self, key):
+    def __missing__(self, key: Any) -> Any:
         """
         Handle missing keys by invoking the default_factory.
 
@@ -60,7 +61,7 @@ class MemoryCache(dict):
             return ret
 
     @classmethod
-    def disable(cls, update: bool = False):
+    def disable(cls, update: bool = False) -> None:
         """
         Disable caching and optionally clear all existing instances.
 
@@ -77,6 +78,6 @@ class MemoryCache(dict):
                 obj.clear()
 
     @classmethod
-    def enable(cls):
+    def enable(cls) -> None:
         """Enable caching for all MemoryCache instances."""
         cls._preserve_values = True

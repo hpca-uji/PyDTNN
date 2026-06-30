@@ -1,6 +1,4 @@
-"""
-Python interface to the PMLib library
-"""
+"""Python interface to the PMLib library"""
 
 import ctypes
 import functools
@@ -81,11 +79,11 @@ class PMLibCounter(ctypes.Structure):
 class PMLibException(Exception):
     """Exception raised for errors occurring within the PMLib interface."""
 
-    def __init__(self, error):
+    def __init__(self, error: str) -> None:
         """Initialize the exception with an error message."""
         self.error = error
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Return the string representation of the exception."""
         return f"{self.error}"
 
@@ -120,7 +118,7 @@ class PMLib:
 
     _pmlib = None
 
-    def __init__(self, server_ip: str, port: int, verbose:bool = False):
+    def __init__(self, server_ip: str, port: int, verbose: bool = False) -> None:
         """Initialize the PMLib interface with server details.
 
         Loads the PMLib shared library and sets up the connection parameters

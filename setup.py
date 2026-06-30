@@ -8,7 +8,7 @@ from setuptools.command.build_ext import build_ext
 
 
 class BuildExt(build_ext):
-    def initialize_options(self):
+    def initialize_options(self) -> None:
         super().initialize_options()
         if self.parallel is None:
             self.parallel = process_cpu_count()

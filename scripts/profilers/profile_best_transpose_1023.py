@@ -11,7 +11,7 @@ from pydtnn.utils.best_of.best_transpose_1023 import best_transpose_1023
 from pydtnn.utils.best_of_profiler import BestOfProfiler
 
 
-def main():
+def main() -> None:
     """
     Executes the profiling routine for the transpose 1023 operation.
 

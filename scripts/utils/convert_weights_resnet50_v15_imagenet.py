@@ -1,6 +1,4 @@
-"""
-PyDTNN: TF to PyDTNN ResNet-50-v1.5 weights converter
-"""
+"PyDTNN: TF to PyDTNN ResNet-50-v1.5 weights converter"
 
 import logging
 import os

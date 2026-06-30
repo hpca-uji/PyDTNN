@@ -17,7 +17,7 @@ import argparse
 import logging
 import multiprocessing
 import os
-from typing import Sequence
+from typing import Any, Sequence
 
 import numpy as np
 
@@ -41,15 +41,15 @@ __all__ = (
 logger = logging.getLogger(__name__)
 
 
-def factor(x):
+def factor(_x: str) -> float:
     """Returns x, which must be 0.0 < x <= 1.0"""
-    x = float(x)
+    x = float(_x)
     if not (0.0 < x <= 1.0):
         raise ValueError("Provided value must be greater than 0.0 and less or equal to 1.0")
     return x
 
 
-def np_dtype(x):
+def np_dtype(x: str) -> np.object_:
     """Returns a numpy object from a string representing the data type"""
     return getattr(np, x)
 
@@ -61,7 +61,7 @@ and evaluating different neural network models with different datasets are
 available at 'scripts'."""
 
 
-def _get_mpi_processes():
+def _get_mpi_processes() -> int:
     """Returns the number of MPI processes from the environment."""
     try:
         from pympi import MPI  # type: ignore
@@ -72,32 +72,32 @@ def _get_mpi_processes():
     return mpi_processes
 
 
-def _get_threads_per_process():
+def _get_threads_per_process() -> int:
     """Returns the number of OpenMP threads per process."""
     #  From IBM OpenMP documentation: If you do not set OMP_NUM_THREADS, the number of processors available is the
     #  default value to form a new team for the first encountered parallel construct.
-    threads_per_process = os.environ.get("OMP_NUM_THREADS", multiprocessing.cpu_count())
-    return threads_per_process
+    threads_per_process = os.environ.get("OMP_NUM_THREADS", os.process_cpu_count())
+    return int(threads_per_process)
 
 
-def _get_mpi_protocol():
+def _get_mpi_protocol() -> str | None:
     """Returns the MPI communication protocol string."""
     try:
-        from pydtnn.libs.mpi.rc import proto as PROTOCOL
-        from pydtnn.libs.mpi.rc import ssl as SSL
+        from pydtnn.libs.mpi.rc import proto
+        from pydtnn.libs.mpi.rc import ssl
     except Exception:
-        PROTOCOL = None
-        SSL = None
-    if PROTOCOL:
-        protocol = str(PROTOCOL)
+        proto = None
+        ssl = None
+    if proto:
+        protocol = str(proto)
     else:
         protocol = "native"
-    if PROTOCOL and SSL:
+    if proto and ssl:
         protocol = f"{protocol}+tls"
     return protocol
 
 
-def _get_mpi_server():
+def _get_mpi_server() -> str | None:
     """Returns the MPI server address."""
     try:
         from pydtnn.libs.mpi.rc import addr
@@ -106,7 +106,7 @@ def _get_mpi_server():
     return addr
 
 
-def _get_mpi_port():
+def _get_mpi_port() -> int | None:
     """Returns the MPI port number."""
     try:
         from pydtnn.libs.mpi.rc import port
@@ -149,7 +149,7 @@ class Namespace(argparse.Namespace):
 class ArgumentParser(argparse.ArgumentParser):
     """Custom argument parser for PyDTNN configuration."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initializes the parser with all supported PyDTNN configuration arguments."""
         super().__init__(description=_desc, epilog=_epilogue)
         # Parser and the supported arguments with their default values
@@ -1075,7 +1075,7 @@ class ArgumentParser(argparse.ArgumentParser):
         _cm_group.add_argument("--mpi-server", type=str, default="", help=argparse.SUPPRESS)
         _cm_group.add_argument("--mpi-port", type=int, default=-1, help=argparse.SUPPRESS)
 
-    def parse_args(self, args: Sequence[str] | None = None):
+    def parse_args(self, args: Sequence[str] | None = None) -> Namespace:
         """Parses command line arguments and injects runtime environment data."""
         # Call super.parse_args
         namespace = Namespace()

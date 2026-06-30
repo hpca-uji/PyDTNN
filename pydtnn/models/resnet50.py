@@ -9,6 +9,7 @@ from pydtnn.layers.addition_block import AdditionBlock
 from pydtnn.layers.average_pool_2d import AveragePool2D
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.conv_2d import Conv2D
+from pydtnn.layers.dropout import Dropout
 from pydtnn.layers.fc import FC
 from pydtnn.layers.flatten import Flatten
 from pydtnn.layers.input import Input
@@ -91,7 +92,8 @@ def resnet50(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Laye
     _(Flatten())
     _(FC(shape=(512 * expansion,)))
     _(BatchNormalization())
-    _(Relu())
+    #_(Relu())
+    _(Dropout(0.2))
     _(FC(shape=output_shape, activation=Softmax))
 
     return model
