@@ -12,10 +12,8 @@ handlers:
     stream: ext://sys.stderr
   file:
     level: DEBUG
-    class: logging.FileHandler
+    class: pydtnn.utils.logs.TimestampedFileHandler
     formatter: precise
-    filename: pydtnn.log
-    mode: a
 loggers:
   pydtnn:
     level: DEBUG

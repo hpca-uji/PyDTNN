@@ -21,7 +21,7 @@ from pydtnn.model.base import Base
 from pydtnn.model.sync import Sync
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT,
                                    PYDTNN_MDL_EVENTS, PYDTNN_MDL_EVENT_enum)
-from pydtnn.utils import TqdmLogger
+from pydtnn.utils.logs import TqdmLogger
 from pydtnn.utils.constants import Array
 from pydtnn.utils.performance_models import allreduce_time
 
