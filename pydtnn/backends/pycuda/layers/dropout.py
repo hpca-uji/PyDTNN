@@ -76,7 +76,7 @@ class DropoutPycuda(Dropout[TensorArray], LayerPycuda):
             self.rate,
             self.states.ptr_voidp,
             self.states_size,
-            seed=0,
+            seed=self.model.random_seed,
         )
 
     def forward(self, x: TensorArray) -> TensorArray:

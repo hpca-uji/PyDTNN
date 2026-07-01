@@ -15,7 +15,6 @@ mpirun -np 3 "${MPI_ARGS[@]}" \
   --model=simplecnn \
   --dataset=mnist \
   --dataset-path=datasets/mnist \
-  --learning-rate-scaling=True \
   --test-as-validation=False \
   --batch-size=64 \
   --validation-split=0.2 \
