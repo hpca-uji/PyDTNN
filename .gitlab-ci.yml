@@ -4,6 +4,7 @@ stages:
 - push
 
 variables:
+  GIT_DEPTH: 0
   BRANCH_MAIN: master
   BRANCH_WORK: develop
   GIT_STRATEGY: fetch
@@ -79,9 +80,12 @@ job_merge:
   - git config --global user.email "ci@lorca.act.uji.es"
   - git config --global user.name "GitLab CI"
   script:
-  - git checkout ${BRANCH_MAIN:?}
-  - git merge origin/${BRANCH_WORK:?} --ff-only
-  - git push origin ${BRANCH_MAIN:?}
+  - GIT_REMOTE=$(git remote)
+  - git fetch ${GIT_REMOTE:?} ${BRANCH_MAIN:?}
+  - git checkout -B ${BRANCH_MAIN:?} ${GIT_REMOTE:?}/${BRANCH_MAIN:?}
+  - git merge ${CI_COMMIT_SHA:?} --ff-only
+  - git push ${GIT_REMOTE:?} ${BRANCH_MAIN:?}
+  - git checkout ${CI_COMMIT_SHA:?}
 
 job_push:
   stage: push
