@@ -1655,7 +1655,7 @@ _libcudnn.cudnnGetConvolutionForwardWorkspaceSize.argtypes = [
 ]
 
 
-def cudnnGetConvolutionForwardWorkspaceSize(handle, src_desc, w_desc, conv_desc, dest_desc, algo):
+def cudnnGetConvolutionForwardWorkspaceSize(handle: int, src_desc: int, w_desc: int, conv_desc: int, dest_desc: int, algo: int) -> int:
     """ "
     This function returns the amount of GPU memory workspace the user needs
     to allocate to be able to call cudnnConvolutionForward with the specified algorithm.
@@ -1687,7 +1687,7 @@ def cudnnGetConvolutionForwardWorkspaceSize(handle, src_desc, w_desc, conv_desc,
     )
     cudnnCheckStatus(status)
 
-    return size_in_bytes
+    return size_in_bytes.value
 
 
 _libcudnn.cudnnConvolutionForward.restype = int
@@ -1709,25 +1709,26 @@ _libcudnn.cudnnConvolutionForward.argtypes = [
 
 
 def cudnnConvolutionForward(
-    handle,
-    alpha,
-    src_desc,
-    src_data,
-    w_desc,
-    w,
-    conv_desc,
-    algo,
-    workspace,
-    workspace_size_in_bytes,
-    beta,
-    dest_desc,
-    dest_data,
-):
-    """ "
-    Perform forward convolution. All of the form "output = alpha * Op(inputs) + beta * output".
+    handle: int,
+    alpha: float,
+    src_desc: int,
+    src_data: int,
+    w_desc: int,
+    w: ctypes.c_void_p,
+    conv_desc: int,
+    algo: int,
+    workspace: ctypes.c_void_p,
+    workspace_size_in_bytes: int,
+    beta: float,
+    dest_desc: int,
+    dest_data: ctypes.c_void_p,
+) -> None:
+    """Perform forward convolution. All of the form "output = alpha * Op(inputs) + beta * output".
+
     This function executes convolutions or cross-correlations over src using the specified
     filters, returning results in dest. Scaling factors alpha and beta can be used to scale
     the input tensor and the output tensor respectively.
+
     Parameters
     ----------
     handle : cudnnHandle
@@ -1801,13 +1802,14 @@ _libcudnn.cudnnConvolutionBackwardBias.argtypes = [
 ]
 
 
-def cudnnConvolutionBackwardBias(handle, alpha, src_desc, src_data, beta, dest_desc, dest_data):
-    """ "
-    Compute the gradient wrt the bias.
+def cudnnConvolutionBackwardBias(handle: int, alpha: float, src_desc: int, src_data: ctypes.c_void_p, beta: float, dest_desc: int, dest_data: ctypes.c_void_p) -> None:
+    """Compute the gradient wrt the bias.
+
     This function computes the convolution gradient with respect to the bias, which is the
     sum of every element belonging to the same feature map across all of the images of the
     input tensor. Therefore, the number of elements produced is equal to the number of
     features maps of the input tensor.
+
     Parameters
     ----------
     handle : cudnnHandle
@@ -1856,7 +1858,8 @@ class CudnnConvolutionBwdDataAlgoPerf(ctypes.Structure):
         ("memory", ctypes.c_size_t),
     ]
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """Performance result structure for backward data convolution algorithms representation."""
         return "(algo=%d, status=%d, time=%f, memory=%d)" % (
             self.algo,
             self.status,
@@ -1864,31 +1867,34 @@ class CudnnConvolutionBwdDataAlgoPerf(ctypes.Structure):
             self.memory,
         )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
+        """Performance result structure for backward data convolution algorithms representation."""
         return self.__str__()
 
 
 _libcudnn.cudnnFindConvolutionBackwardDataAlgorithm.restype = int
 _libcudnn.cudnnFindConvolutionBackwardDataAlgorithm.argtypes = [
-    ctypes.c_void_p,  # handle
-    ctypes.c_void_p,  # w_desc
-    ctypes.c_void_p,  # dy_desc
-    ctypes.c_void_p,  # conv_desc
-    ctypes.c_void_p,  # dx_desc
-    ctypes.c_int,  # requestAlgoCount
-    ctypes.c_void_p,  # returned_algo_count
     ctypes.c_void_p,
-]  # perf_results
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+]
 
 
 def cudnnFindConvolutionBackwardDataAlgorithm(
-    handle, w_desc, dy_desc, conv_desc, dx_desc, requested_algo_count
-):
-    """
-    Find the best algorithm for backward data convolution.
+    handle: int, w_desc: int, dy_desc: int, conv_desc: int, dx_desc: int, requested_algo_count: int
+) -> list[int]:
+    """Find the best algorithm for backward data convolution.
+
     This function searches for the best algorithm to execute the backward data convolution operation
-    given the filter descriptor, input differential tensor descriptor, convolution descriptor, and output differential tensor descriptor.
-    It returns a list of performance results for the requested number of algorithms.
+    given the filter descriptor, input differential tensor descriptor, convolution descriptor,
+    and output differential tensor descriptor. It returns a list of performance results for the
+    requested number of algorithms.
+
     Parameters
     ----------
     handle : cudnnHandle
@@ -1935,8 +1941,39 @@ def cudnnFindConvolutionBackwardDataAlgorithm(
 #                                                                ctypes.c_int,
 #                                                                ctypes.c_size_t,
 #                                                                ctypes.c_void_p]
-# def cudnnGetConvolutionBackwardDataAlgorithm(handle, w_desc, dy_desc, conv_desc,
-#                                              dx_desc, preference, memoryLimitInbytes):
+#
+#
+# def cudnnGetConvolutionBackwardDataAlgorithm(handle: int, w_desc: int, dy_desc: int, conv_desc: int,
+#                                              dx_desc: int, preference: int, memoryLimitInbytes: int) -> int:
+#     """This function serves as a heuristic for obtaining the best suited algorithm for cudnnConvolutionBackwardData for the given layer specifications.
+#
+#     Based on the input preference, this function will either return the fastest algorithm or the fastest
+#     algorithm within a given memory limit. For an exhaustive search for the fastest
+#     algorithm, please use cudnnFindConvolutionBackwardDataAlgorithm.
+#
+#     Parameters
+#     ----------
+#     handle : cudnnHandle
+#         Handle to a previously created cuDNN context.
+#     wDesc : cudnnFilterDescriptor
+#         Handle to a previously initialized filter descriptor.
+#     dyDesc : cuddnTensorDescriptor
+#         Handle to the previously initialized input differential tensor descriptor.
+#     convDesc : cudnnConvolutionDescriptor
+#         Previously initialized convolution descriptor.
+#     dxDesc : cuddnTensorDescriptor
+#         Handle to the previously initialized output tensor descriptor
+#     preference : cudnnConvolutionBwdPreference
+#         Enumerant to express the preference criteria in terms of memory requirement and speed.
+#     memoryLimitInbytes : size_t
+#         It is to specify the maximum amount of GPU memory the user is willing to use
+#         as a workspace. This is currently a placeholder and is not used.
+#     Returns
+#     -------
+#     algo : cudnnConvolutionBwdPreference
+#         Enumerant that specifies which convolution algorithm should be used to
+#         compute the results according to the specified preference.
+#     """
 #     algo = ctypes.c_int()
 #     status = _libcudnn.cudnnGetConvolutionBackwardDataAlgorithm(handle,
 #                                                                 w_desc,
@@ -1948,7 +1985,7 @@ def cudnnFindConvolutionBackwardDataAlgorithm(
 #                                                                 ctypes.byref(algo))
 #     cudnnCheckStatus(status)
 #     return algo
-#
+
 _libcudnn.cudnnGetConvolutionBackwardDataWorkspaceSize.restype = int
 _libcudnn.cudnnGetConvolutionBackwardDataWorkspaceSize.argtypes = [
     ctypes.c_void_p,
@@ -1956,16 +1993,17 @@ _libcudnn.cudnnGetConvolutionBackwardDataWorkspaceSize.argtypes = [
     ctypes.c_void_p,
     ctypes.c_void_p,
     ctypes.c_void_p,
-    ctypes.c_int,  # algo
+    ctypes.c_int,
     ctypes.c_void_p,
 ]
 
 
-def cudnnGetConvolutionBackwardDataWorkspaceSize(handle, w_desc, dy_desc, conv_desc, dx_desc, algo):
-    """
-    Get the workspace size for backward data convolution.
+def cudnnGetConvolutionBackwardDataWorkspaceSize(handle: int, w_desc: int, dy_desc: int, conv_desc: int, dx_desc: int, algo: int) -> int:
+    """Get the workspace size for backward data convolution.
+
     This function returns the amount of GPU memory workspace required to execute
     the backward data convolution operation with the specified algorithm.
+
     Parameters
     ----------
     handle : cudnnHandle
@@ -1991,7 +2029,7 @@ def cudnnGetConvolutionBackwardDataWorkspaceSize(handle, w_desc, dy_desc, conv_d
         handle, w_desc, dy_desc, conv_desc, dx_desc, algo, ctypes.byref(size_in_bytes)
     )
     cudnnCheckStatus(status)
-    return size_in_bytes
+    return size_in_bytes.value
 
 
 _libcudnn.cudnnConvolutionBackwardData.restype = int
@@ -2013,24 +2051,25 @@ _libcudnn.cudnnConvolutionBackwardData.argtypes = [
 
 
 def cudnnConvolutionBackwardData(
-    handle,
-    alpha,
-    w_desc,
-    w,
-    dy_desc,
-    dy,
-    conv_desc,
-    algo,
-    workspace,
-    workspace_size_in_bytes,
-    beta,
-    dx_desc,
-    dx,
-):
-    """
-    Perform backward data convolution.
+    handle: int,
+    alpha: float,
+    w_desc: int,
+    w: ctypes.c_void_p,
+    dy_desc: int,
+    dy: ctypes.c_void_p,
+    conv_desc: int,
+    algo: int,
+    workspace: ctypes.c_void_p,
+    workspace_size_in_bytes: int,
+    beta: float,
+    dx_desc: int,
+    dx: ctypes.c_void_p,
+) -> None:
+    """Perform backward data convolution.
+
     This function computes the gradient of the convolution operation with respect to the input data.
     The operation is of the form "output = alpha * Op(inputs) + beta * output".
+
     Parameters
     ----------
     handle : cudnnHandle
@@ -2099,7 +2138,8 @@ class CudnnConvolutionBwdFilterAlgoPerf(ctypes.Structure):
         ("memory", ctypes.c_size_t),
     ]
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """Performance result structure for backward filter convolution algorithms representation."""
         return "(algo=%d, status=%d, time=%f, memory=%d)" % (
             self.algo,
             self.status,
@@ -2107,31 +2147,34 @@ class CudnnConvolutionBwdFilterAlgoPerf(ctypes.Structure):
             self.memory,
         )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
+        """Performance result structure for backward filter convolution algorithms representation."""
         return self.__str__()
 
 
 _libcudnn.cudnnFindConvolutionBackwardFilterAlgorithm.restype = int
 _libcudnn.cudnnFindConvolutionBackwardFilterAlgorithm.argtypes = [
-    ctypes.c_void_p,  # handle
-    ctypes.c_void_p,  # x_desc
-    ctypes.c_void_p,  # dy_desc
-    ctypes.c_void_p,  # conv_desc
-    ctypes.c_void_p,  # dw_desc
-    ctypes.c_int,  # requestAlgoCount
-    ctypes.c_void_p,  # returned_algo_count
     ctypes.c_void_p,
-]  # perf_results
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+]
 
 
 def cudnnFindConvolutionBackwardFilterAlgorithm(
-    handle, x_desc, dy_desc, conv_desc, dw_desc, requested_algo_count
-):
-    """
-    Find the best algorithm for backward filter convolution.
+    handle: int, x_desc: int, dy_desc: int, conv_desc: int, dw_desc: int, requested_algo_count: int
+) -> list[int]:
+    """Find the best algorithm for backward filter convolution.
+
     This function searches for the best algorithm to execute the backward filter convolution operation
-    given the input tensor descriptor, input differential tensor descriptor, convolution descriptor, and output differential filter descriptor.
-    It returns a list of performance results for the requested number of algorithms.
+    given the input tensor descriptor, input differential tensor descriptor, convolution descriptor,
+    and output differential filter descriptor. It returns a list of performance results for the requested
+    number of algorithms.
+
     Parameters
     ----------
     handle : cudnnHandle
@@ -2171,28 +2214,59 @@ def cudnnFindConvolutionBackwardFilterAlgorithm(
 
 # _libcudnn.cudnnGetConvolutionBackwardFilterAlgorithm.restype = int
 # _libcudnn.cudnnGetConvolutionBackwardFilterAlgorithm.argtypes = [ctypes.c_void_p,
-#                                                                 ctypes.c_void_p,
-#                                                                 ctypes.c_void_p,
-#                                                                 ctypes.c_void_p,
-#                                                                 ctypes.c_void_p,
-#                                                                 ctypes.c_int,
-#                                                                 ctypes.c_size_t,
-#                                                                 ctypes.c_void_p]
-# def cudnnGetConvolutionBackwardFilterAlgorithm(handle, x_desc, dy_desc, conv_desc,
-#                                               dw_desc, preference, memoryLimitInbytes):
-#    algo = ctypes.c_int()
-#    status = _libcudnn.cudnnGetConvolutionBackwardFilterAlgorithm(handle,
-#                                                                  x_desc,
-#                                                                  dy_desc,
-#                                                                  conv_desc,
-#                                                                  dw_desc,
-#                                                                  preference,
-#                                                                  ctypes.c_size_t(memoryLimitInbytes),
-#                                                                  ctypes.byref(algo))
-#    cudnnCheckStatus(status)
-#    return algo
+#                                                                  ctypes.c_void_p,
+#                                                                  ctypes.c_void_p,
+#                                                                  ctypes.c_void_p,
+#                                                                  ctypes.c_void_p,
+#                                                                  ctypes.c_int,
+#                                                                  ctypes.c_size_t,
+#                                                                  ctypes.c_void_p]
 #
 #
+# def cudnnGetConvolutionBackwardFilterAlgorithm(handle: int, x_desc: int, dy_desc: int, conv_desc: int,
+#                                                dw_desc: int, preference: int, memoryLimitInbytes: int) -> int:
+#     """This function serves as a heuristic for obtaining the best suited algorithm for cudnnConvolutionBackwardFilter for the given layer specifications.
+#
+#     Based on the input preference, this function will either return the fastest algorithm or the
+#     fastest algorithm within a given memory limit. For an exhaustive search for the fastest
+#     algorithm, please use cudnnFindConvolutionBackwardFilterAlgorithm.
+#
+#     Parameters
+#     ----------
+#     handle : cudnnHandle
+#         Handle to a previously created cuDNN context.
+#     x_desc : cuddnTensorDescriptor
+#         Handle to the previously initialized input tensor descriptor.
+#     dy_desc : cuddnTensorDescriptor
+#         Handle to the previously initialized input differential tensor descriptor.
+#     conv_desc : cudnnConvolutionDescriptor
+#         Previously initialized convolution descriptor.
+#     dw_desc : cudnnFilterDescriptor
+#         Handle to a previously initialized filter descriptor.
+#     preference : cudnnConvolutionBwdPreference
+#         Enumerant to express the preference criteria in terms of memory requirement and speed.
+#     memoryLimitInbytes : size_t
+#         It is to specify the maximum amount of GPU memory the user is willing to use
+#         as a workspace. This is currently a placeholder and is not used.
+#     Returns
+#     -------
+#     algo : cudnnConvolutionBwdPreference
+#         Enumerant that specifies which convolution algorithm should be used to
+#         compute the results according to the specified preference.
+#     """
+#     algo = ctypes.c_int()
+#     status = _libcudnn.cudnnGetConvolutionBackwardFilterAlgorithm(handle,
+#                                                                   x_desc,
+#                                                                   dy_desc,
+#                                                                   conv_desc,
+#                                                                   dw_desc,
+#                                                                   preference,
+#                                                                   ctypes.c_size_t(memoryLimitInbytes),
+#                                                                   ctypes.byref(algo))
+#     cudnnCheckStatus(status)
+#     return algo
+
+
 _libcudnn.cudnnGetConvolutionBackwardFilterWorkspaceSize.restype = int
 _libcudnn.cudnnGetConvolutionBackwardFilterWorkspaceSize.argtypes = [
     ctypes.c_void_p,
@@ -2200,18 +2274,19 @@ _libcudnn.cudnnGetConvolutionBackwardFilterWorkspaceSize.argtypes = [
     ctypes.c_void_p,
     ctypes.c_void_p,
     ctypes.c_void_p,
-    ctypes.c_int,  # algo
+    ctypes.c_int,
     ctypes.c_void_p,
 ]
 
 
 def cudnnGetConvolutionBackwardFilterWorkspaceSize(
-    handle, x_desc, dy_desc, conv_desc, grad_desc, algo
-):
-    """
-    Get the workspace size for backward filter convolution.
+    handle: int, x_desc: int, dy_desc: int, conv_desc: int, grad_desc: int, algo: int
+) -> int:
+    """Get the workspace size for backward filter convolution.
+
     This function returns the amount of GPU memory workspace required to execute
     the backward filter convolution operation with the specified algorithm.
+
     Parameters
     ----------
     handle : cudnnHandle
@@ -2237,7 +2312,7 @@ def cudnnGetConvolutionBackwardFilterWorkspaceSize(
         handle, x_desc, dy_desc, conv_desc, grad_desc, algo, ctypes.byref(size_in_bytes)
     )
     cudnnCheckStatus(status)
-    return size_in_bytes
+    return size_in_bytes.value
 
 
 _libcudnn.cudnnConvolutionBackwardFilter.restype = int
@@ -2259,24 +2334,25 @@ _libcudnn.cudnnConvolutionBackwardFilter.argtypes = [
 
 
 def cudnnConvolutionBackwardFilter(
-    handle,
-    alpha,
-    x_desc,
-    x,
-    dy_desc,
-    dy,
-    conv_desc,
-    algo,
-    workspace,
-    workspace_size_in_bytes,
-    beta,
-    dw_desc,
-    dw,
-):
-    """
-    Perform backward filter convolution.
+    handle: int,
+    alpha: float,
+    x_desc: int,
+    x: ctypes.c_void_p,
+    dy_desc: int,
+    dy: ctypes.c_void_p,
+    conv_desc: int,
+    algo: int,
+    workspace: ctypes.c_void_p,
+    workspace_size_in_bytes: int,
+    beta: float,
+    dw_desc: int,
+    dw: ctypes.c_void_p,
+) -> None:
+    """Perform backward filter convolution.
+
     This function computes the gradient of the convolution operation with respect to the filter weights.
     The operation is of the form "output = alpha * Op(inputs) + beta * output".
+
     Parameters
     ----------
     handle : cudnnHandle
@@ -2350,10 +2426,10 @@ _libcudnn.cudnnSoftmaxForward.argtypes = [
 
 
 def cudnnSoftmaxForward(
-    handle, algorithm, mode, alpha, src_desc, src_data, beta, dest_desc, dest_data
-):
-    """ "
-    This routing computes the softmax function
+    handle: int, algorithm: int, mode: int, alpha: float, src_desc: int, src_data: ctypes.c_void_p, beta: float, dest_desc: int, dest_data: ctypes.c_void_p
+) -> None:
+    """This routing computes the softmax function
+
     Parameters
     ----------
     handle : cudnnHandle
@@ -2412,20 +2488,20 @@ _libcudnn.cudnnSoftmaxBackward.argtypes = [
 
 
 def cudnnSoftmaxBackward(
-    handle,
-    algorithm,
-    mode,
-    alpha,
-    src_desc,
-    src_data,
-    src_diff_esc,
-    src_diff_data,
-    beta,
-    dest_diff_desc,
-    dest_diff_data,
-):
-    """ "
-    This routine computes the gradient of the softmax function.
+    handle: int,
+    algorithm: int,
+    mode: int,
+    alpha: float,
+    src_desc: int,
+    src_data: int,
+    src_diff_esc: int,
+    src_diff_data: ctypes.c_void_p,
+    beta: float,
+    dest_diff_desc: int,
+    dest_diff_data: ctypes.c_void_p,
+) -> None:
+    """This routine computes the gradient of the softmax function.
+
     Parameters
     ----------
     handle : cudnnHandle
@@ -2486,11 +2562,12 @@ _libcudnn.cudnnCreateDropoutDescriptor.restype = int
 _libcudnn.cudnnCreateDropoutDescriptor.argtypes = [ctypes.c_void_p]
 
 
-def cudnnCreateDropoutDescriptor():
-    """ "
-    Create dropout descriptor.
+def cudnnCreateDropoutDescriptor() -> int:
+    """Create dropout descriptor.
+
     This function creates a dropout descriptor object by allocating the memory needed to
     hold its opaque structure,
+
     Returns
     -------
     dropout_esc : cudnnDropoutDescriptor
@@ -2501,8 +2578,9 @@ def cudnnCreateDropoutDescriptor():
     assert _libcudnn
     status = _libcudnn.cudnnCreateDropoutDescriptor(ctypes.byref(dropout_esc))
     cudnnCheckStatus(status)
-
-    return dropout_esc.value
+    value = dropout_esc.value
+    assert value
+    return value
 
 
 _libcudnn.cudnnSetDropoutDescriptor.restype = int
@@ -2516,9 +2594,9 @@ _libcudnn.cudnnSetDropoutDescriptor.argtypes = [
 ]
 
 
-def cudnnSetDropoutDescriptor(drop_desc, handle, dropout, states, state_size_in_bytes, seed):
-    """
-    Set dropout descriptor parameters.
+def cudnnSetDropoutDescriptor(drop_desc: int, handle: int, dropout: float, states: ctypes.c_void_p, state_size_in_bytes: int, seed: int) -> None:
+    """Set dropout descriptor parameters.
+
     Parameters
     ----------
     drop_desc : cudnnDropoutDescriptor
@@ -2545,10 +2623,9 @@ _libcudnn.cudnnDropoutGetReserveSpaceSize.restype = int
 _libcudnn.cudnnDropoutGetReserveSpaceSize.argtypes = [ctypes.c_void_p]
 
 
-def cudnnDropoutGetReserveSpaceSize(x_desc):
-    """ "
-    This function is used to query the amount of reserve needed to run dropout
-    with the input dimensions given by x_desc
+def cudnnDropoutGetReserveSpaceSize(x_desc: int) -> int:
+    """This function is used to query the amount of reserve needed to run dropout with the input dimensions given by x_desc
+
     Returns
     -------
     The size in bytes
@@ -2560,17 +2637,16 @@ def cudnnDropoutGetReserveSpaceSize(x_desc):
     status = _libcudnn.cudnnDropoutGetReserveSpaceSize(x_desc, ctypes.byref(size_in_bytes))
     cudnnCheckStatus(status)
 
-    return size_in_bytes
+    return size_in_bytes.value
 
 
 _libcudnn.cudnnDropoutGetStatesSize.restype = int
 _libcudnn.cudnnDropoutGetStatesSize.argtypes = [ctypes.c_void_p]
 
 
-def cudnnDropoutGetStatesSize(handle):
-    """ "
-    This function is used to query the amount of space required to store
-    the states of the random number generators used by cudnnDropoutForward() function
+def cudnnDropoutGetStatesSize(handle: int) -> int:
+    """This function is used to query the amount of space required to store the states of the random number generators used by cudnnDropoutForward() function
+
     Returns
     -------
     The size in bytes
@@ -2582,7 +2658,7 @@ def cudnnDropoutGetStatesSize(handle):
     status = _libcudnn.cudnnDropoutGetStatesSize(handle, ctypes.byref(size_in_bytes))
     cudnnCheckStatus(status)
 
-    return size_in_bytes
+    return size_in_bytes.value
 
 
 _libcudnn.cudnnDropoutForward.restype = int
@@ -2599,10 +2675,10 @@ _libcudnn.cudnnDropoutForward.argtypes = [
 
 
 def cudnnDropoutForward(
-    handle, dropout_esc, x_desc, x, y_desc, y, reserve_space, reserve_space_size_in_bytes
-):
-    """
-    Perform dropout forward pass.
+    handle: int, dropout_esc: int, x_desc: int, x: ctypes.c_void_p, y_desc: int, y: ctypes.c_void_p, reserve_space: ctypes.c_void_p, reserve_space_size_in_bytes: int
+) -> None:
+    """Perform dropout forward pass.
+
     Parameters
     ----------
     handle : cudnnHandle
@@ -2650,10 +2726,10 @@ _libcudnn.cudnnDropoutBackward.argtypes = [
 
 
 def cudnnDropoutBackward(
-    handle, dropout_esc, dy_desc, dy, dx_desc, dx, reserve_space, reserve_space_size_in_bytes
-):
-    """
-    Perform dropout backward pass.
+    handle: int, dropout_esc: int, dy_desc: int, dy: ctypes.c_void_p, dx_desc: int, dx: ctypes.c_void_p, reserve_space: ctypes.c_void_p, reserve_space_size_in_bytes: int
+) -> None:
+    """Perform dropout backward pass.
+
     Parameters
     ----------
     handle : cudnnHandle
@@ -2685,11 +2761,12 @@ _libcudnn.cudnnCreatePoolingDescriptor.restype = int
 _libcudnn.cudnnCreatePoolingDescriptor.argtypes = [ctypes.c_void_p]
 
 
-def cudnnCreatePoolingDescriptor():
-    """ "
-    Create pooling descriptor.
+def cudnnCreatePoolingDescriptor() -> int:
+    """Create pooling descriptor.
+
     This function creates a pooling descriptor object by allocating the memory needed to
     hold its opaque structure,
+
     Returns
     -------
     pooling_desc : cudnnPoolingDescriptor
@@ -2700,8 +2777,9 @@ def cudnnCreatePoolingDescriptor():
     assert _libcudnn
     status = _libcudnn.cudnnCreatePoolingDescriptor(ctypes.byref(pooling_desc))
     cudnnCheckStatus(status)
-
-    return pooling_desc.value
+    value = pooling_desc.value
+    assert value
+    return value
 
 
 _libcudnn.cudnnSetPooling2dDescriptor.restype = int
@@ -2719,19 +2797,20 @@ _libcudnn.cudnnSetPooling2dDescriptor.argtypes = [
 
 
 def cudnnSetPooling2dDescriptor(
-    pooling_desc,
-    mode,
-    nan,
-    window_height,
-    window_width,
-    vertical_padding,
-    horizontal_padding,
-    vertical_stride,
-    horizontal_stride,
-):
-    """ "
-    Initialize a 2D pooling descriptor.
+    pooling_desc: int,
+    mode: int,
+    nan: int,
+    window_height: int,
+    window_width: int,
+    vertical_padding: int,
+    horizontal_padding: int,
+    vertical_stride: int,
+    horizontal_stride: int,
+) -> None:
+    """Initialize a 2D pooling descriptor.
+
     This function initializes a previously created pooling descriptor object.
+
     Parameters
     ----------
     pooling_desc : cudnnPoolingDescriptor
@@ -2782,9 +2861,9 @@ _libcudnn.cudnnGetPooling2dDescriptor.argtypes = [
 ]
 
 
-def cudnnGetPooling2dDescriptor(pooling_desc):
-    """ "
-    This function queries a previously created pooling descriptor object.
+def cudnnGetPooling2dDescriptor(pooling_desc: int) -> tuple[int, int, int, int, int, int, int, int]:
+    """This function queries a previously created pooling descriptor object.
+
     Parameters
     ----------
     pooling_desc : cudnnPoolingDescriptor
@@ -2848,9 +2927,9 @@ _libcudnn.cudnnDestroyPoolingDescriptor.restype = int
 _libcudnn.cudnnDestroyPoolingDescriptor.argtypes = [ctypes.c_void_p]
 
 
-def cudnnDestroyPoolingDescriptor(pooling_desc):
-    """ "
-    This function destroys a previously created pooling descriptor object.
+def cudnnDestroyPoolingDescriptor(pooling_desc: int) -> None:
+    """This function destroys a previously created pooling descriptor object.
+
     Parameters
     ----------
     pooling_desc : cudnnPoolingDescriptor
@@ -2872,21 +2951,18 @@ _libcudnn.cudnnGetPooling2dForwardOutputDim.argtypes = [
 ]
 
 
-def cudnnGetPooling2dForwardOutputDim(pooling_desc, input_desc):
-    """ "
-    This function provides the output dimensions of a tensor after 2d pooling has been applied.
+def cudnnGetPooling2dForwardOutputDim(pooling_desc: int, input_desc: int) -> tuple[int, int, int, int]:
+    """This function provides the output dimensions of a tensor after 2d pooling has been applied.
 
     Each dimension h and w of the output images is computed as follows:
         outputDim = 1 + (inputDim + 2*padding - windowDim)/poolingStride;
 
     Parameters
     ----------
-    pooling_desc : Input
+    pooling_desc : cudnnPoolingDescriptor
         Handle to a previously initialized pooling descriptor.
-
-    input_desc : Input
+    input_desc : cudnnTensorDescriptor
         Handle to the previously initialized input tensor descriptor.
-
 
     Returns
     -------
@@ -2927,12 +3003,13 @@ _libcudnn.cudnnPoolingForward.argtypes = [
 
 
 def cudnnPoolingForward(
-    handle, pooling_desc, alpha, src_desc, src_data, beta, dest_desc, dest_data
-):
-    """ "
-    Perform pooling.
+    handle: int, pooling_desc: int, alpha: float, src_desc: int, src_data: ctypes.c_void_p, beta: float, dest_desc: int, dest_data: ctypes.c_void_p
+) -> None:
+    """Perform pooling.
+
     This function computes pooling of input values (i.e., the maximum or average of several
     adjacent values) to produce an output with smaller height and/or width.
+
     Parameters
     ----------
     handle : cudnnHandle
@@ -2990,21 +3067,21 @@ _libcudnn.cudnnPoolingBackward.argtypes = [
 
 
 def cudnnPoolingBackward(
-    handle,
-    pooling_desc,
-    alpha,
-    src_desc,
-    src_data,
-    src_diff_esc,
-    src_diff_data,
-    dest_desc,
-    dest_data,
-    beta,
-    dest_diff_desc,
-    dest_diff_data,
-):
-    """ "
-    Gradients wrt the pooling operation.
+    handle: int,
+    pooling_desc: int,
+    alpha: float,
+    src_desc: int,
+    src_data: ctypes.c_void_p,
+    src_diff_esc: int,
+    src_diff_data: ctypes.c_void_p,
+    dest_desc: int,
+    dest_data: ctypes.c_void_p,
+    beta: float,
+    dest_diff_desc: int,
+    dest_diff_data: ctypes.c_void_p,
+) -> None:
+    """Gradients wrt the pooling operation.
+
     This function computes the gradient of a pooling operation.
     Parameters
     ----------
@@ -3070,19 +3147,17 @@ _libcudnn.cudnnDeriveBNTensorDescriptor.restype = int
 _libcudnn.cudnnDeriveBNTensorDescriptor.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int]
 
 
-def cudnnDeriveBNTensorDescriptor(derive_bn_desc, x_desc, mode):
-    """
-    This function derives a secondary tensor descriptor for the batch normalization
-    scale, invVariance, bn_bias, and bn_scale subtensors from the layer's x data descriptor.
+def cudnnDeriveBNTensorDescriptor(derive_bn_desc: int, x_desc: int, mode: int) -> None:
+    """This function derives a secondary tensor descriptor for the batch normalization scale, invVariance, bn_bias, and bn_scale subtensors from the layer's x data descriptor.
 
     Parameters
     ----------
-    derive_bn_desc : cudnnTensorDescriptor_t
-        Output. Handle to a previously created tensor descriptor.
-    x_desc : cudnnTensorDescriptor_t
-        Input. Handle to a previously created and initialized layer's x data descriptor.
+    derive_bn_desc : cudnnTensorDescriptor
+        Handle to a previously created tensor descriptor.
+    x_desc : cudnnTensorDescriptor
+        Handle to a previously created and initialized layer's x data descriptor.
     mode : int
-        Input. Batch normalization layer mode of operation.
+        Batch normalization layer mode of operation.
     """
     assert _libcudnn
     status = _libcudnn.cudnnDeriveBNTensorDescriptor(derive_bn_desc, x_desc, mode)
@@ -3090,110 +3165,91 @@ def cudnnDeriveBNTensorDescriptor(derive_bn_desc, x_desc, mode):
     cudnnCheckStatus(status)
 
 
-_libcudnn.cudnnBatchNormalizationBackward.restype = int
-_libcudnn.cudnnBatchNormalizationBackward.argtypes = [
-    ctypes.c_void_p,
-    ctypes.c_int,
-    ctypes.c_void_p,
-    ctypes.c_void_p,
-    ctypes.c_void_p,
-    ctypes.c_void_p,
-    ctypes.c_void_p,
-    ctypes.c_void_p,
-    ctypes.c_void_p,
-    ctypes.c_void_p,
-    ctypes.c_void_p,
-    ctypes.c_void_p,
-    ctypes.c_void_p,
-    ctypes.c_void_p,
-    ctypes.c_void_p,
-    ctypes.c_void_p,
-    ctypes.c_double,
-    ctypes.c_void_p,
-    ctypes.c_void_p,
-]
-
 _libcudnn.cudnnCreateSeqDataDescriptor.restype = int
 _libcudnn.cudnnCreateSeqDataDescriptor.argtypes = [ctypes.c_void_p]
 
 
-def cudnnCreateSeqDataDescriptor():
-    """
-    Create a SeqData descriptor object.
+def cudnnCreateSeqDataDescriptor() -> int:
+    """Create a SeqData descriptor object.
+
     Allocates a cudnnSeqDataDescriptor_t structure and returns a pointer to it.
+
     Returns
     -------
     seqdata_descriptor : int
         SeqData descriptor.
     """
 
-    seqdata = ctypes.c_void_p()
+    seq_data = ctypes.c_void_p()
     assert _libcudnn
-    status = _libcudnn.cudnnCreateSeqDataDescriptor(ctypes.byref(seqdata))
+    status = _libcudnn.cudnnCreateSeqDataDescriptor(ctypes.byref(seq_data))
     cudnnCheckStatus(status)
-    return seqdata.value
+    value = seq_data.value
+    assert value
+    return value
 
 
 _libcudnn.cudnnSetSeqDataDescriptor.restype = int
 _libcudnn.cudnnSetSeqDataDescriptor.argtypes = [
-    ctypes.c_void_p,  # seqDataDesc
-    ctypes.c_int,  # dataType
-    ctypes.c_int,  # nbDims
-    ctypes.c_void_p,  # dimA[]
-    ctypes.c_void_p,  # axes[]
-    ctypes.c_size_t,  # seqLengthArraySize
-    ctypes.c_void_p,  # seqLengthArray
     ctypes.c_void_p,
-]  # paddingFill
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_size_t,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+]
 
 
 def cudnnSetSeqDataDescriptor(
-    seqDataDesc, dataType, nbDims, dimA, axes, seqLengthArraySize, seqLengthArray, paddingFill
-):
-    """
-    Initialize a previously created SeqData object.
+    seq_data_desc: int, data_type: int, nb_dims: int, dim_a: tuple[int, ...], axes: tuple[int, ...], seq_length_array_size: int, seq_length_array: int, padding_fill: int
+) -> None:
+    """Initialize a previously created SeqData object.
+
     This function initializes a previously created sequence data descriptor object. In the most
     simplified view, this descriptor defines dimensions (dimA) and the data layout (axes) of a
     four-dimensional tensor. All four dimensions of the sequence data descriptor have unique
     identifiers that can be used to index the dimA[] array.
+
     Parameters
     ----------
-    seqDataDesc : cudnnSeqDataDescriptor
+    seq_data_desc : cudnnSeqDataDescriptor
         Pointer to a previously created sequence data descriptor.
-    dataType : cudnnDataType
+    data_type : cudnnDataType
         Data type of the sequence data buffer (CUDNN_DATA_HALF, CUDNN_DATA_FLOAT or
         CUDNN_DATA_DOUBLE).
-    nbDims : int
+    nb_dims : int
         Must be 4. The number of active dimensions in dimA[] and axes[] arrays. Both arrays should
         be declared to contain at least CUDNN_SEQDATA_DIM_COUNT elements.
-    dimA : int[]
-        Integer array specifying sequence data dimensions. Use the cudnnSeqDataAxis_t enumerated
+    dim_a : int[]
+        Integer array specifying sequence data dimensions. Use the cudnnSeqDataAxis enumerated
         type to index all active dimA[] elements.
     axes : cudnnSeqDataAxis[]
-        Array of cudnnSeqDataAxis_t that defines the layout of sequence data in memory. The first
+        Array of cudnnSeqDataAxis that defines the layout of sequence data in memory. The first
         nbDims elements of axes[] should be initialized with the outermost dimension in axes[0] and
         the innermost dimension in axes[nbDims-1].
-    seqLengthArraySize : int
+    seq_length_array_size : int
         Number of elements in the sequence length array, seqLengthArray[].
-    seqLengthArray : int
+    seq_length_array : int[]
         An integer array that defines all sequence lengths of the container.
-    paddingFill : void
+    padding_fill : void
         Must be NULL. Pointer to a value of dataType that is used to fill up output vectors beyond
         the valid length of each sequence or NULL to ignore this setting.
     """
-    dimARef = dimA.ctypes.data_as(ctypes.POINTER(ctypes.c_int32))
-    axesRef = axes.ctypes.data_as(ctypes.POINTER(ctypes.c_int32))
-    seqLengthArrayRef = seqLengthArray.ctypes.data_as(ctypes.POINTER(ctypes.c_int32))
+    dim_a_ref = (ctypes.c_int32 * len(dim_a))(dim_a)
+    axes_ref = (ctypes.c_int32 * len(axes))(axes)
+    seq_length_array_ref = (ctypes.c_int32 * seq_length_array_size)(seq_length_array)
     assert _libcudnn
     status = _libcudnn.cudnnSetSeqDataDescriptor(
-        seqDataDesc,
-        dataType,
-        nbDims,
-        dimARef,
-        axesRef,
-        seqLengthArraySize,
-        seqLengthArrayRef,
-        paddingFill,
+        seq_data_desc,
+        data_type,
+        nb_dims,
+        dim_a_ref,
+        axes_ref,
+        seq_length_array_size,
+        seq_length_array_ref,
+        padding_fill,
     )
     cudnnCheckStatus(status)
 
@@ -3202,18 +3258,19 @@ _libcudnn.cudnnDestroySeqDataDescriptor.restype = int
 _libcudnn.cudnnDestroySeqDataDescriptor.argtypes = [ctypes.c_void_p]
 
 
-def cudnnDestroySeqDataDescriptor(seqDataDesc):
-    """ "
-    Destroy a SeqData descriptor.
+def cudnnDestroySeqDataDescriptor(seq_data_desc: int) -> None:
+    """Destroy a SeqData descriptor.
+
     This function destroys a previously created SeqData descriptor object.
+
     Parameters
     ----------
-    seqDataDesc : cudnnSeqDataDescriptor
+    seq_data_desc : cudnnSeqDataDescriptor
         Previously allocated SeqData descriptor object.
     """
 
     assert _libcudnn
-    status = _libcudnn.cudnnDestroySeqDataDescriptor(seqDataDesc)
+    status = _libcudnn.cudnnDestroySeqDataDescriptor(seq_data_desc)
     cudnnCheckStatus(status)
 
 
@@ -3221,138 +3278,142 @@ _libcudnn.cudnnCreateAttnDescriptor.restype = int
 _libcudnn.cudnnCreateAttnDescriptor.argtypes = [ctypes.c_void_p]
 
 
-def cudnnCreateAttnDescriptor():
-    """
-    Create a attnDesc descriptor object.
+def cudnnCreateAttnDescriptor() -> int:
+    """Create a attnDesc descriptor object.
+
     Allocates a cudnnAttnDescriptor_t structure and returns a pointer to it.
+
     Returns
     -------
     cudnnAttnDescriptor : int
         attnDesc descriptor.
     """
 
-    attnDesc = ctypes.c_void_p()
+    attn_desc = ctypes.c_void_p()
     assert _libcudnn
-    status = _libcudnn.cudnnCreateAttnDescriptor(ctypes.byref(attnDesc))
+    status = _libcudnn.cudnnCreateAttnDescriptor(ctypes.byref(attn_desc))
     cudnnCheckStatus(status)
-    return attnDesc.value
+    value = attn_desc.value
+    assert value
+    return value
 
 
 _libcudnn.cudnnSetAttnDescriptor.restype = int
 _libcudnn.cudnnSetAttnDescriptor.argtypes = [
-    ctypes.c_void_p,  # attnDesc
-    ctypes.c_void_p,  # attnMode
-    ctypes.c_int,  # nHeads
-    ctypes.c_double,  # smScaler
-    ctypes.c_void_p,  # dataType
-    ctypes.c_void_p,  # computePrec
-    ctypes.c_void_p,  # mathType
     ctypes.c_void_p,
-    ctypes.c_void_p,  # attnDropoutDesc, postDropoutDesc
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_double,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
     ctypes.c_int,
     ctypes.c_int,
-    ctypes.c_int,  # qSize, kSize, vSize
     ctypes.c_int,
     ctypes.c_int,
-    ctypes.c_int,  # qProjSize, kProjSize, vProjSize
-    ctypes.c_int,
-    ctypes.c_int,  # qoMaxSeqLength, kvMaxSeqLength
     ctypes.c_int,
     ctypes.c_int,
-]  # maxBatchSize, maxBeamSize
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+]
 
 
 def cudnnSetAttnDescriptor(
-    attnDesc,
-    attnMode,
-    nHeads,
-    smScaler,
-    dataType,
-    computePrec,
-    mathType,
-    attnDropoutDesc,
-    postDropoutDesc,
-    qSize,
-    kSize,
-    vSize,
-    qProjSize,
-    kProjSize,
-    vProjSize,
-    oProjSize,
-    qoMaxSeqLength,
-    kvMaxSeqLength,
-    maxBatchSize,
-    maxBeamSize,
-):
-    """
-    This function configures a multi-head attention descriptor that was previously created using
-    the cudnnCreateAttnDescriptor() function. The function sets attention parameters that are
+    attn_desc: int,
+    attn_mode: int,
+    n_heads: int,
+    sm_scaler: float,
+    data_type: int,
+    compute_prec: int,
+    math_type: int,
+    attn_dropout_desc: int,
+    post_dropout_desc: int,
+    q_size: int,
+    k_size: int,
+    v_size: int,
+    q_proj_size: int,
+    k_proj_size: int,
+    v_proj_size: int,
+    o_proj_size: int,
+    qo_Max_seq_length: int,
+    kv_max_seq_length: int,
+    max_batch_size: int,
+    max_beam_size: int,
+) -> None:
+    """This function configures a multi-head attention descriptor that was previously created using the cudnnCreateAttnDescriptor() function.
+
+    The function sets attention parameters that are
     necessary to compute internal buffer sizes, dimensions of weight and bias tensors, or to
     select optimized code paths.
+
     Parameters
     ----------
-    attnDesc : cudnnAttnDescriptor_t
-        Output. Attention descriptor to be configured.
-    attnMode : unsigned
-        Input. Enables various attention options that do not require additional numerical values.
+    attn_desc : cudnnAttnDescriptor
+        Attention descriptor to be configured.
+    attn_mode : unsigned
+        Enables various attention options that do not require additional numerical values.
         The user should assign a preferred set of bitwise OR-ed flags to this argument.
-    nHeads : int
-        Input. Number of attention heads.
-    smScaler : double
-        Input. Softmax smoothing (1.0 >= smScaler >= 0.0) or sharpening (smScaler > 1.0) coefficient.
+    n_heads : int
+        Number of attention heads.
+    sm_scaler : double
+        Softmax smoothing (1.0 >= smScaler >= 0.0) or sharpening (smScaler > 1.0) coefficient.
         Negative values are not accepted.
-    dataType : cudnnDataType_t
-        Input. Data type used to represent attention inputs, attention weights and attention outputs.
-    computePrec : cudnnDataType_t
-        Input. Compute precision.
-    mathType : cudnnMathType_t
-        Input. NVIDIA Tensor Core settings.
-    attnDropoutDesc : cudnnDropoutDescriptor_t
-        Input. Descriptor of the dropout operation applied to the softmax output. See the table below
+    data_type : cudnnDataType
+        Data type used to represent attention inputs, attention weights and attention outputs.
+    compute_prec : cudnnDataType
+        Compute precision.
+    math_type : cudnnMathType
+        NVIDIA Tensor Core settings.
+    attn_dropout_desc : cudnnDropoutDescriptor
+        Descriptor of the dropout operation applied to the softmax output. See the table below
         for a list of unsupported features.
-    postDropoutDesc : cudnnDropoutDescriptor_t
-        Input. Descriptor of the dropout operation applied to the multi-head attention output, just
+    post_dropout_desc : cudnnDropoutDescriptor
+        Descriptor of the dropout operation applied to the multi-head attention output, just
         before the point where residual connections are added.
-    qSize, kSize, vSize : int
-        Input. Q , K , V embedding vector lengths.
-    qProjSize, kProjSize, vProjSize : int
-        Input. Q , K , V embedding vector lengths after input projections. Use zero to disable the
+    q_size, k_size, v_size : int
+        Q , K , V embedding vector lengths.
+    q_proj_size, k_proj_size, v_proj_size : int
+        Q , K , V embedding vector lengths after input projections. Use zero to disable the
         corresponding projection.
-    oProjSize : int
-        Input. The h i vector length after the output projection. Use zero to disable this projection.
-    qoMaxSeqLength : int
-        Input. Largest sequence length expected in sequence data descriptors related to Q , O , dQ
+    o_proj_size : int
+        The h i vector length after the output projection. Use zero to disable this projection.
+    qo_max_seq_length : int
+        Largest sequence length expected in sequence data descriptors related to Q , O , dQ
         and dO inputs and outputs.
-    kvMaxSeqLength : int
-        Input. Largest sequence length expected in sequence data descriptors related to K , V , dK
+    kv_max_seq_length : int
+        Largest sequence length expected in sequence data descriptors related to K , V , dK
         and dV inputs and outputs.
-    maxBatchSize : int
-        Input. Largest batch size expected in any cudnnSeqDataDescriptor_t container.
-    maxBeamSize : int
-        Input. Largest beam size expected in any cudnnSeqDataDescriptor_t container.
+    max_batch_size : int
+        Largest batch size expected in any cudnnSeqDataDescriptor_t container.
+    max_beam_size : int
+        Largest beam size expected in any cudnnSeqDataDescriptor_t container.
     """
     assert _libcudnn
     status = _libcudnn.cudnnSetAttnDescriptor(
-        attnDesc,
-        attnMode,
-        nHeads,
-        smScaler,
-        dataType,
-        computePrec,
-        mathType,
-        attnDropoutDesc,
-        postDropoutDesc,
-        qSize,
-        kSize,
-        vSize,
-        qProjSize,
-        kProjSize,
-        vProjSize,
-        oProjSize,
-        qoMaxSeqLength,
-        kvMaxSeqLength,
-        maxBatchSize,
-        maxBeamSize,
+        attn_desc,
+        attn_mode,
+        n_heads,
+        sm_scaler,
+        data_type,
+        compute_prec,
+        math_type,
+        attn_dropout_desc,
+        post_dropout_desc,
+        q_size,
+        k_size,
+        v_size,
+        q_proj_size,
+        k_proj_size,
+        v_proj_size,
+        o_proj_size,
+        qo_Max_seq_length,
+        kv_max_seq_length,
+        max_batch_size,
+        max_beam_size,
     )
     cudnnCheckStatus(status)
 
@@ -3361,18 +3422,19 @@ _libcudnn.cudnnDestroyAttnDescriptor.restype = int
 _libcudnn.cudnnDestroyAttnDescriptor.argtypes = [ctypes.c_void_p]
 
 
-def cudnnDestroyAttnDescriptor(attnDesc):
-    """ "
-    Destroy a Attn descriptor.
+def cudnnDestroyAttnDescriptor(attn_desc: int) -> None:
+    """Destroy a Attn descriptor.
+
     This function destroys a previously created Attn descriptor object.
+
     Parameters
     ----------
-    attnDesc : cudnnAttnDescriptor
+    attn_desc : cudnnAttnDescriptor
         Previously allocated Attn descriptor object.
     """
 
     assert _libcudnn
-    status = _libcudnn.cudnnDestroyAttnDescriptor(attnDesc)
+    status = _libcudnn.cudnnDestroyAttnDescriptor(attn_desc)
     cudnnCheckStatus(status)
 
 
@@ -3388,62 +3450,62 @@ _libcudnn.cudnnGetMultiHeadAttnWeights.argtypes = [
 ]
 
 
-def cudnnGetMultiHeadAttnWeights(handle, attnDesc, wKind, weightSizeInBytes, weights):
-    """ "
-    This function obtains the shape of the weight or bias tensor. It also retrieves the start address
-    of tensor data located in the weight buffer. Use the wKind argument to select a particular tensor.
-    For more information, see cudnnMultiHeadAttnWeightKind_t for the description of the enumerant type.
+def cudnnGetMultiHeadAttnWeights(handle: int, attn_desc: int, w_kind: int, weight_size_in_bytes: int, weights: ctypes.c_void_p) -> tuple[int, ctypes.c_void_p]:
+    """This function obtains the shape of the weight or bias tensor.
+
+    It also retrieves the start address of tensor data located in the weight buffer.
+    Use the wKind argument to select a particular tensor. For more information,
+    see cudnnMultiHeadAttnWeightKind for the description of the enumerant type.
 
     Parameters
     ----------
-    handle : cudnnHandle_t
+    handle : cudnnHandle
         The current cuDNN context handle.
-    attnDesc : cudnnAttnDescriptor_t
+    attn_desc : cudnnAttnDescriptor
         A previously configured attention descriptor.
-    wKind : cudnnMultiHeadAttnWeightKind_t
+    w_kind : cudnnMultiHeadAttnWeightKind
         Enumerant type to specify which weight or bias tensor should be retrieved.
-    weightSizeInBytes : size_t
+    weight_size_in_bytes : size_t
         Buffer size that stores all multi-head attention weights and biases.
     weights : void
     Input. Pointer to the weight buffer in the host or device memory.
     Returns
     -------
-    wDesc : cudnnTensorDescriptor_t
+    w_desc : cudnnTensorDescriptor
         The descriptor specifying weight or bias tensor shape. For weights, the wDesc.dimA[] array has
         three elements: [nHeads, projected size, original size]. For biases, the wDesc.dimA[] array also
         has three elements: [nHeads, projected size, 1]. The wDesc.strideA[] array describes how tensor
         elements are arranged in memory.
-    wAddr : void
+    w_addr : void_p
         Pointer to a location where the start address of the requested tensor should be written. When the
         corresponding projection is disabled, the address written to wAddr is NULL.
     """
-    wDesc = ctypes.c_void_p()
+    w_desc = ctypes.c_void_p()
     assert _libcudnn
-    status = _libcudnn.cudnnCreateTensorDescriptor(ctypes.byref(wDesc))
-    wAddr = (ctypes.POINTER(ctypes.c_void_p) * 1)()
+    status = _libcudnn.cudnnCreateTensorDescriptor(ctypes.byref(w_desc))
+    w_addr = (ctypes.POINTER(ctypes.c_void_p) * 1)()
 
     assert _libcudnn
     status = _libcudnn.cudnnGetMultiHeadAttnWeights(
-        handle, attnDesc, wKind, weightSizeInBytes, weights, wDesc, ctypes.byref(wAddr)
+        handle, attn_desc, w_kind, weight_size_in_bytes, weights, w_desc, ctypes.byref(w_addr)
     )
     cudnnCheckStatus(status)
-    wAddr = wAddr[0]
-    return wDesc, wAddr
+    w_addr = w_addr[0]
+    value = w_desc.value
+    assert value
+    return value, w_addr
 
 
 _libcudnn.cudnnGetMultiHeadAttnBuffers.restype = int
 _libcudnn.cudnnGetMultiHeadAttnBuffers.argtypes = [
-    ctypes.c_void_p,  # handle
     ctypes.c_void_p,
-]  # attnDesc
+    ctypes.c_void_p,
+]
 
 
-def cudnnGetMultiHeadAttnBuffers(handle, attnDesc):
-    """ "
-    This function computes weight, work, and reserve space buffer sizes used by the following functions:
-        cudnnMultiHeadAttnForward()
-        cudnnMultiHeadAttnBackwardData()
-        cudnnMultiHeadAttnBackwardWeights()
+def cudnnGetMultiHeadAttnBuffers(handle: int, attn_desc: int) -> tuple[int, int, int]:
+    """This function computes weight, work, and reserve space buffer sizes used by the following functions: cudnnMultiHeadAttnForward(), cudnnMultiHeadAttnBackwardData(), cudnnMultiHeadAttnBackwardWeights()
+
     Returns
     -------
     weightSizeInBytes : size_t
@@ -3454,21 +3516,21 @@ def cudnnGetMultiHeadAttnBuffers(handle, attnDesc):
         The size in bytes
     """
 
-    weightSizeInBytes = ctypes.c_size_t()
-    workSpaceSizeInBytes = ctypes.c_size_t()
-    reserveSpaceSizeInBytes = ctypes.c_size_t()
+    weight_size_in_bytes = ctypes.c_size_t()
+    work_space_size_in_bytes = ctypes.c_size_t()
+    reserve_space_size_in_bytes = ctypes.c_size_t()
 
     assert _libcudnn
     status = _libcudnn.cudnnGetMultiHeadAttnBuffers(
         handle,
-        attnDesc,
-        ctypes.byref(weightSizeInBytes),
-        ctypes.byref(workSpaceSizeInBytes),
-        ctypes.byref(reserveSpaceSizeInBytes),
+        attn_desc,
+        ctypes.byref(weight_size_in_bytes),
+        ctypes.byref(work_space_size_in_bytes),
+        ctypes.byref(reserve_space_size_in_bytes),
     )
     cudnnCheckStatus(status)
 
-    return weightSizeInBytes, workSpaceSizeInBytes, reserveSpaceSizeInBytes
+    return weight_size_in_bytes.value, work_space_size_in_bytes.value, reserve_space_size_in_bytes.value
 
 
 _libcudnn.cudnnMultiHeadAttnForward.restype = int
@@ -3499,111 +3561,112 @@ _libcudnn.cudnnMultiHeadAttnForward.argtypes = [
 
 
 def cudnnMultiHeadAttnForward(
-    handle,
-    attnDesc,
-    currIdx,
-    loWinIdx,
-    hiWinIdx,
-    devSeqLengthsQO,
-    devSeqLengthsKV,
-    qDesc,
-    queries,
-    residuals,
-    kDesc,
-    keys,
-    vDesc,
-    values,
-    oDesc,
-    out,
-    weightSizeInBytes,
-    weights,
-    workSpaceSizeInBytes,
-    workSpace,
-    reserveSpaceSizeInBytes,
-    reserveSpace,
-):
-    """ "
-    The cudnnMultiHeadAttnForward() function computes the forward responses of the multi-head attention layer.
+    handle: int,
+    attn_desc: int,
+    curr_idx: int,
+    lo_win_idx: tuple[int, ...],
+    hi_win_idx: tuple[int, ...],
+    dev_seq_lengths_qO: tuple[int, ...],
+    dev_seq_lengths_kv: tuple[int, ...],
+    q_desc: int,
+    queries: ctypes.c_void_p,
+    residuals: ctypes.c_void_p,
+    k_desc: int,
+    keys: ctypes.c_void_p,
+    v_desc: int,
+    values: ctypes.c_void_p,
+    o_desc: int,
+    out: ctypes.c_void_p,
+    weight_size_in_bytes: int,
+    weights: ctypes.c_void_p,
+    work_space_size_in_bytes: int,
+    work_space: ctypes.c_void_p,
+    reserve_space_size_in_bytes: int,
+    reserve_space: ctypes.c_void_p,
+) -> None:
+    """The cudnnMultiHeadAttnForward() function computes the forward responses of the multi-head attention layer.
+
     When reserveSpaceSizeInBytes=0 and reserveSpace=NULL, the function operates in the inference mode in which
     backward (gradient) functions are not invoked, otherwise, the training mode is assumed. In the training mode,
     the reserve space is used to pass intermediate results from cudnnMultiHeadAttnForward() to
     cudnnMultiHeadAttnBackwardData() and from cudnnMultiHeadAttnBackwardData() to cudnnMultiHeadAttnBackwardWeights().
+
     Parameters
     ----------
-    handle
-        Input. The current cuDNN context handle.
-    attnDesc
-        Input. A previously initialized attention descriptor.
-    currIdx
-        Input. Time-step in queries to process. When the currIdx argument is negative, all Q time-steps are processed.
+    handle : cudnnHandle
+        The current cuDNN context handle.
+    attn_desc : cudnnAttnDescriptor
+        A previously initialized attention descriptor.
+    curr_idx : int
+        Time-step in queries to process. When the curr_idx argument is negative, all Q time-steps are processed.
         When currIdx is zero or positive, the forward response is computed for the selected time-step only. The latter
         input can be used in inference mode only, to process one time-step while updating the next attention window and
         Q, R, K, V inputs in-between calls.
-    loWinIdx[], hiWinIdx[]
-        Input. Two host integer arrays specifying the start and end indices of the attention window for each Q time-step.
+    lo_win_idx[], hi_win_idx[] : int[]
+        Two host integer arrays specifying the start and end indices of the attention window for each Q time-step.
         The start index in K, V sets is inclusive, and the end index is exclusive.
-    devSeqLengthsQO[]
-        Input. Device array specifying sequence lengths of query, residual, and output sequence data.
-    devSeqLengthsKV[]
-        Input. Device array specifying sequence lengths of key and value input data.
-    qDesc
-        Input. Descriptor for the query and residual sequence data.
-    queries
-        Input. Pointer to queries data in the device memory.
-    residuals
-        Input. Pointer to residual data in device memory. Set this argument to NULL if no residual connections are
+    dev_seq_lengths_qO[] : int[]
+        Device array specifying sequence lengths of query, residual, and output sequence data.
+    dev_seq_lengths_kv[] : int[]
+        Device array specifying sequence lengths of key and value input data.
+    q_desc : cudnnSeqDataDescriptor
+        Descriptor for the query and residual sequence data.
+    queries : void_p
+        Pointer to queries data in the device memory.
+    residuals : void_p
+        Pointer to residual data in device memory. Set this argument to NULL if no residual connections are
         required.
-    kDesc
-        Input. Descriptor for the keys sequence data.
-    keys
-        Input. Pointer to keys data in device memory.
-    vDesc
-        Input. Descriptor for the values sequence data.
-    values
-        Input. Pointer to values data in device memory.
-    oDesc
-        Input. Descriptor for the multi-head attention output sequence data.
-    out
-        Output. Pointer to device memory where the output response should be written.
-    weightSizeInBytes
-        Input. Size of the weight buffer in bytes where all multi-head attention trainable parameters are stored.
-    weights
-        Input. Pointer to the weight buffer in device memory.
-    workSpaceSizeInBytes
-        Input. Size of the work-space buffer in bytes used for temporary API storage.
-    workSpace
-        Input/Output. Pointer to the work-space buffer in device memory.
-    reserveSpaceSizeInBytes
-        Input. Size of the reserve-space buffer in bytes used for data exchange between forward and backward (gradient)
+    k_desc : cudnnSeqDataDescriptor
+        Descriptor for the keys sequence data.
+    keys : void_p
+        Pointer to keys data in device memory.
+    v_desc : cudnnSeqDataDescriptor
+        Descriptor for the values sequence data.
+    values : void_p
+        Pointer to values data in device memory.
+    o_desc : cudnnSeqDataDescriptor
+        Descriptor for the multi-head attention output sequence data.
+    out : void_p
+        Pointer to device memory where the output response should be written.
+    weight_size_in_bytes : int
+        Size of the weight buffer in bytes where all multi-head attention trainable parameters are stored.
+    weights : void_p
+        Pointer to the weight buffer in device memory.
+    work_space_size_in_bytes : int
+        Size of the work-space buffer in bytes used for temporary API storage.
+    work_space : void_p
+        Pointer to the work-space buffer in device memory.
+    reserve_space_size_in_bytes : int
+        Size of the reserve-space buffer in bytes used for data exchange between forward and backward (gradient)
         API calls. This parameter should be zero in the inference mode and non-zero in the training mode.
-    reserveSpace
-        Input/Output. Pointer to the reserve-space buffer in device memory. This argument should be NULL in inference mode
+    reserve_space : void_p
+        Pointer to the reserve-space buffer in device memory. This argument should be NULL in inference mode
         and non-NULL in the training mode.
     """
     assert _libcudnn
     status = _libcudnn.cudnnMultiHeadAttnForward(
         handle,
-        attnDesc,
-        currIdx,
-        loWinIdx.ctypes.data,
-        hiWinIdx.ctypes.data,
-        devSeqLengthsQO,
-        devSeqLengthsKV,
-        qDesc,
+        attn_desc,
+        curr_idx,
+        (ctypes.c_int * len(lo_win_idx))(lo_win_idx),
+        (ctypes.c_int * len(hi_win_idx))(hi_win_idx),
+        (ctypes.c_int * len(dev_seq_lengths_qO))(dev_seq_lengths_qO),
+        (ctypes.c_int * len(dev_seq_lengths_kv))(dev_seq_lengths_kv),
+        q_desc,
         queries,
         residuals,
-        kDesc,
+        k_desc,
         keys,
-        vDesc,
+        v_desc,
         values,
-        oDesc,
+        o_desc,
         out,
-        weightSizeInBytes,
+        weight_size_in_bytes,
         weights,
-        workSpaceSizeInBytes,
-        workSpace,
-        reserveSpaceSizeInBytes,
-        reserveSpace,
+        work_space_size_in_bytes,
+        work_space,
+        reserve_space_size_in_bytes,
+        reserve_space,
     )
     cudnnCheckStatus(status)
 
@@ -3637,33 +3700,33 @@ _libcudnn.cudnnMultiHeadAttnBackwardData.argtypes = [
 
 
 def cudnnMultiHeadAttnBackwardData(
-    handle,
-    attnDesc,
-    loWinIdx,
-    hiWinIdx,
-    devSeqLengthsDQDO,
-    devSeqLengthsDKDV,
-    doDesc,
-    dout,
-    dqDesc,
-    dqueries,
-    queries,
-    dkDesc,
-    dkeys,
-    keys,
-    dvDesc,
-    dvalues,
-    values,
-    weightSizeInBytes,
-    weights,
-    workSpaceSizeInBytes,
-    workSpace,
-    reserveSpaceSizeInBytes,
-    reserveSpace,
-):
-    """ "
-    This function computes exact, first-order derivatives of the multi-head attention block with respect to its inputs:
-    Q, K, V. If y=F(x) is a vector-valued function that represents the multi-head attention layer and it takes some vector
+    handle: int,
+    attn_desc: int,
+    lo_win_idx: tuple[int, ...],
+    hi_win_idx: tuple[int, ...],
+    dev_seq_lengths_dqdO: tuple[int, ...],
+    dev_seq_lengths_dkdv: tuple[int, ...],
+    do_desc: int,
+    dout: ctypes.c_void_p,
+    dq_desc: int,
+    dqueries: ctypes.c_void_p,
+    queries: ctypes.c_void_p,
+    dk_desc: int,
+    dkeys: ctypes.c_void_p,
+    keys: ctypes.c_void_p,
+    dv_desc: int,
+    dvalues: ctypes.c_void_p,
+    values: ctypes.c_void_p,
+    weight_size_in_bytes: int,
+    weights: ctypes.c_void_p,
+    work_space_size_in_bytes: int,
+    work_space: ctypes.c_void_p,
+    reserve_space_size_in_bytes: int,
+    reserve_space: ctypes.c_void_p,
+) -> None:
+    """This function computes exact, first-order derivatives of the multi-head attention block with respect to its inputs: Q, K, V.
+
+    If y=F(x) is a vector-valued function that represents the multi-head attention layer and it takes some vector
     x ϵ ℝ n as an input (with all other parameters and inputs constant), and outputs vector y ϵ ℝ m , then
     cudnnMultiHeadAttnBackwardData() computes the result of ∂ y i / ∂ x j T δ out where δ out is the m × 1 gradient of the
     loss function with respect to multi-head attention outputs. The δ out gradient is back propagated through prior layers
@@ -3671,85 +3734,80 @@ def cudnnMultiHeadAttnBackwardData(
     and gradient results for Q, K, V are written to the dqueries, dkeys, and dvalues buffers.
     Parameters
     ----------
-    handle
-        Input. The current cuDNN context handle.
-    attnDesc
-        Input. A previously initialized attention descriptor.
-    currIdx
-        Input. Time-step in queries to process. When the currIdx argument is negative, all Q time-steps are processed.
-        When currIdx is zero or positive, the forward response is computed for the selected time-step only. The latter
-        input can be used in inference mode only, to process one time-step while updating the next attention window and
-        Q, R, K, V inputs in-between calls.
-    loWinIdx[], hiWinIdx[]
-        Input. Two host integer arrays specifying the start and end indices of the attention window for each Q time-step.
+    handle : cudnnHandle
+        The current cuDNN context handle.
+    attn_desc : cudnnAttnDescriptor
+        A previously initialized attention descriptor.
+    lo_win_idx[], hi_wini_dx[] : int[]
+        Two host integer arrays specifying the start and end indices of the attention window for each Q time-step.
         The start index in K, V sets is inclusive, and the end index is exclusive.
-    devSeqLengthsDQDO[]
-        Input. Device array containing a copy of the sequence length array from the dqDesc or doDesc sequence data descriptor.
-    devSeqLengthsDKDV[]
-        Input. Device array containing a copy of the sequence length array from the dkDesc or dvDesc sequence data descriptor.
-    doDesc
-        Input. Descriptor for the δ out gradients (vectors of partial derivatives of the loss function with respect to the multi-head attention outputs).
-    dout
+    dev_seq_lengths_dqdO[]: int[]
+        Device array containing a copy of the sequence length array from the dqDesc or doDesc sequence data descriptor.
+    dev_seq_lengths_dkdv[]: int[]
+        Device array containing a copy of the sequence length array from the dkDesc or dvDesc sequence data descriptor.
+    do_desc: cudnnSeqDataDescriptor
+        Descriptor for the δ out gradients (vectors of partial derivatives of the loss function with respect to the multi-head attention outputs).
+    dout : void_p
         Pointer to δ out gradient data in the device memory.
-    dqDesc
-        Input. Descriptor for queries and dqueries sequence data.
-    dqueries
-        Output. Device pointer to gradients of the loss function computed with respect to queries vectors.
-    queries
-        Input. Pointer to queries data in the device memory. This is the same input as in cudnnMultiHeadAttnForward().
-    dkDesc
-        Input. Descriptor for keys and dkeys sequence data.
-    dkeys
-        Output. Device pointer to gradients of the loss function computed with respect to keys vectors.
-    keys
-        Input. Pointer to keys data in the device memory. This is the same input as in cudnnMultiHeadAttnForward().
-    dvDesc
-        Input. Descriptor for values and dvalues sequence data.
-    dvalues
-        Output. Device pointer to gradients of the loss function computed with respect to values vectors.
-    values
-        Input. Pointer to values data in the device memory. This is the same input as in cudnnMultiHeadAttnForward().
-    weightSizeInBytes
-        Input. Size of the weight buffer in bytes where all multi-head attention trainable parameters are stored.
-    weights
-        Input. Pointer to the weight buffer in device memory.
-    workSpaceSizeInBytes
-        Input. Size of the work-space buffer in bytes used for temporary API storage.
-    workSpace
-        Input/Output. Pointer to the work-space buffer in device memory.
-    reserveSpaceSizeInBytes
-        Input. Size of the reserve-space buffer in bytes used for data exchange between forward and backward (gradient)
+    dq_desc : int
+        Descriptor for queries and dqueries sequence data.
+    dqueries : void_p
+        Device pointer to gradients of the loss function computed with respect to queries vectors.
+    queries : void_p
+        Pointer to queries data in the device memory. This is the same input as in cudnnMultiHeadAttnForward().
+    dk_desc : int
+        Descriptor for keys and dkeys sequence data.
+    dkeys : void_p
+        Device pointer to gradients of the loss function computed with respect to keys vectors.
+    keys : void_p
+        Pointer to keys data in the device memory. This is the same input as in cudnnMultiHeadAttnForward().
+    dv_desc : int
+        Descriptor for values and dvalues sequence data.
+    dvalues : void_p
+        Device pointer to gradients of the loss function computed with respect to values vectors.
+    values : void_p
+        Pointer to values data in the device memory. This is the same input as in cudnnMultiHeadAttnForward().
+    weight_size_in_bytes
+        Size of the weight buffer in bytes where all multi-head attention trainable parameters are stored.
+    weights : void_p
+        Pointer to the weight buffer in device memory.
+    work_space_size_in_bytes
+        Size of the work-space buffer in bytes used for temporary API storage.
+    work_space : void_p
+        Pointer to the work-space buffer in device memory.
+    reserve_space_size_in_bytes : int
+        Size of the reserve-space buffer in bytes used for data exchange between forward and backward (gradient)
         API calls. This parameter should be zero in the inference mode and non-zero in the training mode.
-    reserveSpace
-        Input/Output. Pointer to the reserve-space buffer in device memory. This argument should be NULL in inference mode
+    reserve_space : void_p
+        Pointer to the reserve-space buffer in device memory. This argument should be NULL in inference mode
         and non-NULL in the training mode.
     """
 
     assert _libcudnn
     status = _libcudnn.cudnnMultiHeadAttnBackwardData(
         handle,
-        attnDesc,
-        loWinIdx.ctypes.data,
-        hiWinIdx.ctypes.data,
-        devSeqLengthsDQDO,
-        devSeqLengthsDKDV,
-        doDesc,
+        attn_desc,
+        (ctypes.c_int * len(lo_win_idx))(lo_win_idx),
+        (ctypes.c_int * len(hi_win_idx))(hi_win_idx),
+        (ctypes.c_int * len(dev_seq_lengths_dqdO))(dev_seq_lengths_dqdO),
+        (ctypes.c_int * len(dev_seq_lengths_dkdv))(dev_seq_lengths_dkdv),
+        do_desc,
         dout,
-        dqDesc,
+        dq_desc,
         dqueries,
         queries,
-        dkDesc,
+        dk_desc,
         dkeys,
         keys,
-        dvDesc,
+        dv_desc,
         dvalues,
         values,
-        weightSizeInBytes,
+        weight_size_in_bytes,
         weights,
-        workSpaceSizeInBytes,
-        workSpace,
-        reserveSpaceSizeInBytes,
-        reserveSpace,
+        work_space_size_in_bytes,
+        work_space,
+        reserve_space_size_in_bytes,
+        reserve_space,
     )
     cudnnCheckStatus(status)
 
@@ -3778,94 +3836,96 @@ _libcudnn.cudnnMultiHeadAttnBackwardWeights.argtypes = [
 
 
 def cudnnMultiHeadAttnBackwardWeights(
-    handle,
-    attnDesc,
-    addGrad,
-    qDesc,
-    queries,
-    kDesc,
-    keys,
-    vDesc,
-    values,
-    doDesc,
-    dout,
-    weightSizeInBytes,
-    weights,
-    dweights,
-    workSpaceSizeInBytes,
-    workSpace,
-    reserveSpaceSizeInBytes,
-    reserveSpace,
-):
-    """ "
-    This function computes exact, first-order derivatives of the multi-head attention block with respect to its trainable parameters:
-    projection weights and projection biases. If y=F(w) is a vector-valued function that represents the multi-head attention layer
-    and it takes some vector x ϵ ℝ n of flatten weights or biases as an input (with all other parameters and inputs fixed), and
-    outputs vector y ϵ ℝ m , then cudnnMultiHeadAttnBackwardWeights() computes the result of ∂ y i / ∂ x j T δ out where δ out is the
-    m × 1 gradient of the loss function with respect to multi-head attention outputs. The δ out gradient is back propagated through
-    prior layers of the deep learning model. ∂ y i / ∂ x j is the m × n Jacobian matrix of F(w). The δ out input is supplied via the
-    dout argument.
+    handle: int,
+    attn_desc: int,
+    add_grad: int,
+    q_desc: int,
+    queries: ctypes.c_void_p,
+    k_desc: int,
+    keys: ctypes.c_void_p,
+    v_desc: int,
+    values: ctypes.c_void_p,
+    do_desc: int,
+    dout: ctypes.c_void_p,
+    weight_size_in_bytes: int,
+    weights: ctypes.c_void_p,
+    dweights: ctypes.c_void_p,
+    work_space_size_in_bytes: int,
+    work_space: ctypes.c_void_p,
+    reserve_space_size_in_bytes: int,
+    reserve_space: ctypes.c_void_p,
+) -> None:
+    """This function computes exact, first-order derivatives of the multi-head attention block with respect to its trainable parameters: projection weights and projection biases.
+
+    If y=F(w) is a vector-valued function that represents the multi-head attention layer and it takes some vector
+    w ϵ ℝⁿ of flattened weights or biases as an input (with all other parameters and inputs fixed), and outputs
+    vector y ϵ ℝᵐ, then cudnnMultiHeadAttnBackwardWeights() computes the result of
+    ∂yᵢ/∂wⱼᵀ δout, where δout is the m × 1 gradient of the loss function with respect to the multi-head attention
+    outputs. The δout gradient is back propagated through prior layers of the deep learning model.
+    ∂yᵢ/∂wⱼ is the m × n Jacobian matrix of F(w). The δout input is supplied via the dout argument.
+
     Parameters
     ----------
-    handle
-        Input. The current cuDNN context handle.
-    attnDesc
-        Input. A previously initialized attention descriptor.
-    addGrad
-        Input. Weight gradient output mode.
-    qDesc
-        Input. Descriptor for queries sequence data.
-    queries
-        Input. Pointer to queries data in the device memory.
-    kDesc
-        Input. Descriptor for keys sequence data.
-    keys
-        Input. Pointer to keys data in the device memory.
-    vDesc
-        Input. Descriptor for values sequence data.
-    values
-        Input. Pointer to values data in the device memory.
-    doDesc
-        Input. Descriptor for the δ out gradients (vectors of partial derivatives of the loss function with respect to the multi-head attention outputs).
-    dout
-        Pointer to δ out gradient data in the device memory.
-    weightSizeInBytes
-        Input. Size of the weight buffer in bytes where all multi-head attention trainable parameters are stored.
-    weights
-        Input. Pointer to the weight buffer in device memory.
-    dweights
-        Output. Address of the weight gradient buffer in the device memory.
-    workSpaceSizeInBytes
-        Input. Size of the work-space buffer in bytes used for temporary API storage.
-    workSpace
-        Input/Output. Pointer to the work-space buffer in device memory.
-    reserveSpaceSizeInBytes
-        Input. Size of the reserve-space buffer in bytes used for data exchange between forward and backward (gradient)
+    handle : cudnnHandle
+        The current cuDNN context handle.
+    attn_desc : cudnnAttnDescriptor
+        A previously initialized attention descriptor.
+    add_grad : cudnnWgradMode
+        Weight gradient accumulation mode.
+    q_desc : cudnnSeqDataDescriptor
+        Descriptor for queries sequence data.
+    queries : void_p
+        Pointer to queries data in the device memory.
+    k_desc : cudnnSeqDataDescriptor
+        Descriptor for keys sequence data.
+    keys : void_p
+        Pointer to keys data in the device memory.
+    v_desc : cudnnSeqDataDescriptor
+        Descriptor for values sequence data.
+    values : void_p
+        Pointer to values data in the device memory.
+    do_desc : cudnnSeqDataDescriptor
+        Descriptor for the δout gradients (vectors of partial derivatives of the loss function with respect to the
+        multi-head attention outputs).
+    dout : void_p
+        Pointer to δout gradient data in the device memory.
+    weight_size_in_bytes : int
+        Size of the weight buffer in bytes where all multi-head attention trainable parameters are stored.
+    weights : void_p
+        Pointer to the weight buffer in device memory.
+    dweights : void_p
+        Pointer to the weight gradient buffer in device memory.
+    work_space_size_in_bytes : int
+        Size of the work-space buffer in bytes used for temporary API storage.
+    work_space : void_p
+        Pointer to the work-space buffer in device memory.
+    reserve_space_size_in_bytes : int
+        Size of the reserve-space buffer in bytes used for data exchange between forward and backward (gradient)
         API calls.
-    reserveSpace
-        Input/Output. Pointer to the reserve-space buffer in device memory.
+    reserve_space : void_p
+        Pointer to the reserve-space buffer in device memory.
     """
 
     assert _libcudnn
     status = _libcudnn.cudnnMultiHeadAttnBackwardWeights(
         handle,
-        attnDesc,
-        addGrad,
-        qDesc,
+        attn_desc,
+        add_grad,
+        q_desc,
         queries,
-        kDesc,
+        k_desc,
         keys,
-        vDesc,
+        v_desc,
         values,
-        doDesc,
+        do_desc,
         dout,
-        weightSizeInBytes,
+        weight_size_in_bytes,
         weights,
         dweights,
-        workSpaceSizeInBytes,
-        workSpace,
-        reserveSpaceSizeInBytes,
-        reserveSpace,
+        work_space_size_in_bytes,
+        work_space,
+        reserve_space_size_in_bytes,
+        reserve_space,
     )
     cudnnCheckStatus(status)
 
@@ -3914,121 +3974,139 @@ _libcudnn.cudnnNormalizationForwardTraining.argtypes = [
 
 
 def cudnnNormalizationForwardTraining(
-    handle,
-    mode,
-    normOps,
-    algo,
-    alpha,
-    beta,
-    xDesc,
-    xData,
-    normScaleBiasDesc,
-    normScale,
-    normBias,
-    exponentialAverageFactor,
-    normMeanVarDesc,
-    resultRunningMean,
-    resultRunningVariance,
-    epsilon,
-    resultSaveMean,
-    resultSaveInvVariance,
-    activationDesc,
-    zDesc,
-    zData,
-    yDesc,
-    yData,
-    workspace,
-    workSpaceSizeInBytes,
-    reserveSpace,
-    reserveSpaceSizeInBytes,
-    groupCnt,
-):
-    """
-    This function performs the forward normalization layer computation for the training phase.
+    handle: int,
+    mode: int,
+    norm_ops: int,
+    algo: int,
+    alpha: float,
+    beta: float,
+    x_desc: int,
+    x_data: ctypes.c_void_p,
+    norm_scale_bias_desc: int,
+    norm_scale: ctypes.c_void_p,
+    norm_bias: ctypes.c_void_p,
+    exponential_average_factor: float,
+    norm_mean_var_desc: int,
+    result_running_mean: ctypes.c_void_p,
+    result_running_variance: ctypes.c_void_p,
+    epsilon: float,
+    result_save_mean: ctypes.c_void_p,
+    result_save_inv_variance: ctypes.c_void_p,
+    activation_desc: int,
+    z_desc: int,
+    z_data: ctypes.c_void_p,
+    y_desc: int,
+    y_data: ctypes.c_void_p,
+    work_space: ctypes.c_void_p,
+    work_space_size_in_bytes: int,
+    reserve_space: ctypes.c_void_p,
+    reserve_space_size_in_bytes: int,
+    group_cnt: int,
+) -> None:
+    """This function performs the forward normalization layer computation for the training phase.
+
     Depending on mode, different normalization operations will be performed.
+
     Parameters
     ----------
-    handle
-        Input. Handle to a previously created cuDNN library descriptor. For more information, see cudnnHandle_t.
-    mode
-        Input. Mode of operation (per-channel or per-activation). For more information, see cudnnNormMode_t.
-    normOps
-        Input. Mode of post-operative. Currently CUDNN_NORM_OPS_NORM_ACTIVATION and CUDNN_NORM_OPS_NORM_ADD_ACTIVATION are only supported in the NHWC layout. For more information, see cudnnNormOps_t. This input can be used to set this function to perform either only the normalization, or normalization followed by activation, or normalization followed by element-wise addition and then activation.
-    algo
-        Input. Algorithm to be performed. For more information, see cudnnNormAlgo_t.
-    *alpha, *beta
-        Inputs. Pointers to scaling factors (in host memory) used to blend the layer output value with prior value in the destination tensor as follows:
-        dstValue = alpha[0]*resultValue + beta[0]*priorDstValue
-    xDesc, yDesc
-        Input. Handles to the previously initialized tensor descriptors.
-    *xData
-        Input. Data pointer to GPU memory associated with the tensor descriptor xDesc, for the layer’s x input data.
-    *yData
-        Output. Data pointer to GPU memory associated with the tensor descriptor yDesc, for the y output of the normalization layer.
-    zDesc, *zData
-        Input. Tensor descriptors and pointers in device memory for residual addition to the result of the normalization operation, prior to the activation. zDesc and *zData are optional and are only used when normOps is CUDNN_NORM_OPS_NORM_ADD_ACTIVATION, otherwise the user may pass NULL. When in use, z should have exactly the same dimension as xData and the final output yData. For more information, see cudnnTensorDescriptor_t.
-    normScaleBiasDesc, normScale, normBias
-        Inputs. Tensor descriptors and pointers in device memory for the normalization scale and bias parameters (in the original paper bias is referred to as beta and scale as gamma). The dimensions for the tensor descriptor are dependent on the normalization mode.
-    exponentialAverageFactor
-        Input. Factor used in the moving average computation as follows:
-        runningMean = runningMean*(1-factor) + newMean*factor
-    normMeanVarDesc
-        Inputs. Tensor descriptor used for following tensors: resultRunningMean, resultRunningVariance, resultSaveMean, resultSaveInvVariance.
-    *resultRunningMean, *resultRunningVariance
-        Inputs/Outputs. Pointers to the running mean and running variance data. Both these pointers can be NULL but only at the same time. The value stored in resultRunningVariance (or passed as an input in inference mode) is the sample variance and is the moving average of variance[x] where the variance is computed either over batch or spatial+batch dimensions depending on the mode. If these pointers are not NULL, the tensors should be initialized to some reasonable values or to 0.
-    epsilon
-        Input. Epsilon value used in the normalization formula. Its value should be equal to or greater than zero.
-    *resultSaveMean, *resultSaveInvVariance
-        Outputs. Optional cache parameters containing saved intermediate results computed during the forward pass. For this to work correctly, the layer's x and normScale, normBias data has to remain unchanged until this backward function is called. Note that both these parameters can be NULL but only at the same time. It is recommended to use this cache since the memory overhead is relatively small.
-    activationDesc
-        Input. The tensor descriptor for the activation operation. When the normOps input is set to either CUDNN_NORM_OPS_NORM_ACTIVATION or CUDNN_NORM_OPS_NORM_ADD_ACTIVATION then this activation is used, otherwise the user may pass NULL.
-    *workspace, workSpaceSizeInBytes
-        Inputs. *workspace is a pointer to the GPU workspace, and workSpaceSizeInBytes is the size of the workspace. When *workspace is not NULL and *workSpaceSizeInBytes is large enough, and the tensor layout is NHWC and the data type configuration is supported, then this function will trigger a semi-persistent NHWC kernel for normalization. The workspace is not required to be clean. Also, the workspace does not need to remain unchanged between the forward and backward passes.
-    *reserveSpace
-        Input. Pointer to the GPU workspace for the reserveSpace.
-    reserveSpaceSizeInBytes
-        Input. The size of the reserveSpace. Must be equal or larger than the amount required by cudnnGetNormalizationTrainingReserveSpaceSize().
-    groutCnt
-        Input. Only support 1 for now.
+    handle : cudnnHandle
+        Handle to a previously created cuDNN library descriptor.
+    mode : cudnnNormMode
+        Mode of operation (per-channel or per-activation).
+    norm_ops : cudnnNormOps
+        Mode of post-operation. This input can be used to perform either only the normalization,
+        normalization followed by activation, or normalization followed by element-wise addition
+        and then activation.
+    algo : cudnnNormAlgo
+        Normalization algorithm.
+    alpha, beta : float
+        Scaling factors used to blend the layer output value with the previous destination value:
+
+            dst = alpha * result + beta * prior_dst
+
+    x_desc : cudnnTensorDescriptor
+        Descriptor for the input tensor.
+    x_data : void_p
+        Pointer to the input tensor data in device memory.
+    norm_scale_bias_desc : cudnnTensorDescriptor
+        Descriptor for the normalization scale and bias tensors.
+    norm_scale : void_p
+        Pointer to the normalization scale (gamma) in device memory.
+    norm_bias : void_p
+        Pointer to the normalization bias (beta) in device memory.
+    exponential_average_factor : float
+        Factor used for updating the running mean and variance.
+    norm_mean_var_desc : cudnnTensorDescriptor
+        Descriptor for the running and saved mean/variance tensors.
+    result_running_mean : void_p
+        Pointer to the running mean tensor in device memory.
+    result_running_variance : void_p
+        Pointer to the running variance tensor in device memory.
+    epsilon : float
+        Epsilon value used in the normalization formula.
+    result_save_mean : void_p
+        Pointer to the saved mean tensor used during the backward pass.
+    result_save_inv_variance : void_p
+        Pointer to the saved inverse variance tensor used during the backward pass.
+    activation_desc : cudnnActivationDescriptor
+        Activation descriptor used when activation is enabled.
+    z_desc : cudnnTensorDescriptor
+        Descriptor for the residual input tensor.
+    z_data : void_p
+        Pointer to the residual input tensor in device memory.
+    y_desc : cudnnTensorDescriptor
+        Descriptor for the output tensor.
+    y_data : void_p
+        Pointer to the output tensor in device memory.
+    work_space : void_p
+        Pointer to the workspace buffer in device memory.
+    work_space_size_in_bytes : int
+        Size of the workspace buffer in bytes.
+    reserve_space : void_p
+        Pointer to the reserve-space buffer in device memory.
+    reserve_space_size_in_bytes : int
+        Size of the reserve-space buffer in bytes.
+    group_cnt : int
+        Number of groups. Currently only the value 1 is supported.
     """
 
-    dataType = cudnnGetTensor4dDescriptor(xDesc)[0]
-    if dataType == cudnnDataType["CUDNN_DATA_DOUBLE"]:
-        alphaRef = ctypes.byref(ctypes.c_double(alpha))
-        betaRef = ctypes.byref(ctypes.c_double(beta))
+    data_type = cudnnGetTensor4dDescriptor(x_desc)[0]
+    if data_type == cudnnDataType["CUDNN_DATA_DOUBLE"]:
+        alpha_ref = ctypes.byref(ctypes.c_double(alpha))
+        beta_ref = ctypes.byref(ctypes.c_double(beta))
     else:
-        alphaRef = ctypes.byref(ctypes.c_float(alpha))
-        betaRef = ctypes.byref(ctypes.c_float(beta))
+        alpha_ref = ctypes.byref(ctypes.c_float(alpha))
+        beta_ref = ctypes.byref(ctypes.c_float(beta))
     assert _libcudnn
     status = _libcudnn.cudnnNormalizationForwardTraining(
         handle,
         mode,
-        normOps,
+        norm_ops,
         algo,
-        alphaRef,
-        betaRef,
-        xDesc,
-        xData,
-        normScaleBiasDesc,
-        normScale,
-        normBias,
-        exponentialAverageFactor,
-        normMeanVarDesc,
-        resultRunningMean,
-        resultRunningVariance,
+        alpha_ref,
+        beta_ref,
+        x_desc,
+        x_data,
+        norm_scale_bias_desc,
+        norm_scale,
+        norm_bias,
+        exponential_average_factor,
+        norm_mean_var_desc,
+        result_running_mean,
+        result_running_variance,
         epsilon,
-        resultSaveMean,
-        resultSaveInvVariance,
-        activationDesc,
-        zDesc,
-        zData,
-        yDesc,
-        yData,
-        workspace,
-        workSpaceSizeInBytes,
-        reserveSpace,
-        reserveSpaceSizeInBytes,
-        groupCnt,
+        result_save_mean,
+        result_save_inv_variance,
+        activation_desc,
+        z_desc,
+        z_data,
+        y_desc,
+        y_data,
+        work_space,
+        work_space_size_in_bytes,
+        reserve_space,
+        reserve_space_size_in_bytes,
+        group_cnt,
     )
     cudnnCheckStatus(status)
 
@@ -4060,86 +4138,104 @@ _libcudnn.cudnnNormalizationForwardInference.argtypes = [
 
 
 def cudnnNormalizationForwardInference(
-    handle,
-    mode,
-    normOps,
-    algo,
-    alpha,
-    beta,
-    xDesc,
-    x,
-    normScaleBiasDesc,
-    normScale,
-    normBias,
-    normMeanVarDesc,
-    estimatedMean,
-    estimatedVariance,
-    zDesc,
-    z,
-    activationDesc,
-    yDesc,
-    y,
-    epsilon,
-    groupCnt,
-):
-    """
-    This function performs the forward normalization layer computation for the inference phase.
+    handle: int,
+    mode: int,
+    norm_ops: int,
+    algo: int,
+    alpha: float,
+    beta: float,
+    x_desc: int,
+    x: ctypes.c_void_p,
+    norm_scale_bias_desc: int,
+    norm_scale: ctypes.c_void_p,
+    norm_bias: ctypes.c_void_p,
+    norm_mean_var_desc: int,
+    estimated_mean: ctypes.c_void_p,
+    estimated_variance: ctypes.c_void_p,
+    z_desc: int,
+    z: ctypes.c_void_p,
+    activation_desc: int,
+    y_desc: int,
+    y: ctypes.c_void_p,
+    epsilon: float,
+    group_cnt: int,
+) -> None:
+    """This function performs the forward normalization layer computation for the inference phase.
+
     Parameters
     ----------
-    handle
-        Input. Handle to a previously created cuDNN library descriptor. For more information, see cudnnHandle_t.
-    mode
-        Input. Mode of operation (per-channel or per-activation). For more information, see cudnnNormMode_t.
-    normOps
-        Input. Mode of post-operative. Currently, CUDNN_NORM_OPS_NORM_ACTIVATION and CUDNN_NORM_OPS_NORM_ADD_ACTIVATION are not supported.
-    algo
-        Input. Algorithm to be performed. For more information, see cudnnNormAlgo_t.
-    alpha, beta
-        Inputs. Pointers to scaling factors (in host memory) used to blend the layer output value with prior value in the destination tensor as follows:
-        dstValue = alpha[0]*resultValue + beta[0]*priorDstValue
-    xDesc, yDesc
-        Input. Handles to the previously initialized tensor descriptors.
-    *x
-        Input. Data pointer to GPU memory associated with the tensor descriptor xDesc, for the layer’s x input data.
-    *y
-        Output. Data pointer to GPU memory associated with the tensor descriptor yDesc, for the y output of the normalization layer.
-    zDesc, *z
-        Input. Tensor descriptors and pointers in device memory for residual addition to the result of the normalization operation, prior to the activation. zDesc and *z are optional and are only used when normOps is CUDNN_NORM_OPS_NORM_ADD_ACTIVATION, otherwise users may pass NULL. When in use, z should have exactly the same dimension as x and the final output y. For more information, see cudnnTensorDescriptor_t.
-     normScaleBiasDesc, normScale, normBias
-        Inputs. Tensor descriptors and pointers in device memory for the normalization scale and bias parameters (in the original paper bias is referred to as beta and scale as gamma).
-    normMeanVarDesc, estimatedMean, estimatedVariance
-        Inputs. Mean and variance tensors and their tensor descriptors. The estimatedMean and estimatedVariance inputs, accumulated during the training phase from the cudnnNormalizationForwardTraining() call, should be passed as inputs here.
-    activationDesc
-        Input. Descriptor for the activation operation. When the normOps input is set to either CUDNN_NORM_OPS_NORM_ACTIVATION or CUDNN_NORM_OPS_NORM_ADD_ACTIVATION then this activation is used, otherwise the user may pass NULL. Since normOps is only supported for CUDNN_NORM_OPS_NORM, we can set these to NULL for now.
-    epsilon
-        Input. Epsilon value used in the normalization formula. Its value should be equal to or greater than zero.
-    groutCnt
-        Input. Only support 1 for now.
+    handle : cudnnHandle
+        Handle to a previously created cuDNN library descriptor.
+    mode : cudnnNormMode
+        Mode of operation (per-channel or per-activation).
+    norm_ops : cudnnNormOps
+        Mode of post-operation. Currently only CUDNN_NORM_OPS_NORM is supported.
+    algo : cudnnNormAlgo
+        Normalization algorithm.
+    alpha, beta : float
+        Scaling factors used to blend the layer output value with the previous destination value:
+        dst = alpha * result + beta * prior_dst
+    x_desc : cudnnTensorDescriptor
+        Descriptor for the input tensor.
+    x : void_p
+        Pointer to the input tensor data in device memory.
+    norm_scale_bias_desc : cudnnTensorDescriptor
+        Descriptor for the normalization scale and bias tensors.
+    norm_scale : void_p
+        Pointer to the normalization scale (gamma) in device memory.
+    norm_bias : void_p
+        Pointer to the normalization bias (beta) in device memory.
+    norm_mean_var_desc : cudnnTensorDescriptor
+        Descriptor for the mean and variance tensors.
+    estimated_mean : void_p
+        Pointer to the estimated mean tensor computed during training.
+    estimated_variance : void_p
+        Pointer to the estimated variance tensor computed during training.
+    z_desc : cudnnTensorDescriptor
+        Descriptor for the residual input tensor.
+    z : void_p
+        Pointer to the residual input tensor in device memory.
+    activation_desc : cudnnActivationDescriptor
+        Descriptor for the activation operation.
+    y_desc : cudnnTensorDescriptor
+        Descriptor for the output tensor.
+    y : void_p
+        Pointer to the output tensor in device memory.
+    epsilon : float
+        Epsilon value used in the normalization formula.
+    group_cnt : int
+        Number of groups. Currently only the value 1 is supported.
     """
-
+    data_type = cudnnGetTensor4dDescriptor(x_desc)[0]
+    if data_type == cudnnDataType["CUDNN_DATA_DOUBLE"]:
+        alpha_ref = ctypes.byref(ctypes.c_double(alpha))
+        beta_ref = ctypes.byref(ctypes.c_double(beta))
+    else:
+        alpha_ref = ctypes.byref(ctypes.c_float(alpha))
+        beta_ref = ctypes.byref(ctypes.c_float(beta))
     assert _libcudnn
     status = _libcudnn.cudnnNormalizationForwardInference(
         handle,
         mode,
-        normOps,
+        norm_ops,
         algo,
-        alpha,
-        beta,
-        xDesc,
+        alpha_ref,
+        beta_ref,
+        x_desc,
         x,
-        normScaleBiasDesc,
-        normScale,
-        normBias,
-        normMeanVarDesc,
-        estimatedMean,
-        estimatedVariance,
-        zDesc,
+        norm_scale_bias_desc,
+        norm_scale,
+        norm_bias,
+        norm_mean_var_desc,
+        estimated_mean,
+        estimated_variance,
+        z_desc,
         z,
-        activationDesc,
-        yDesc,
+        activation_desc,
+        y_desc,
         y,
         epsilon,
-        groupCnt,
+        group_cnt
     )
     cudnnCheckStatus(status)
 
@@ -4183,126 +4279,164 @@ _libcudnn.cudnnNormalizationBackward.argtypes = [
 
 
 def cudnnNormalizationBackward(
-    handle,
-    mode,
-    normOps,
-    algo,
-    alphaDataDiff,
-    betaDataDiff,
-    alphaParamDiff,
-    betaParamDiff,
-    xDesc,
-    xData,
-    yDesc,
-    yData,
-    dyDesc,
-    dyData,
-    dzDesc,
-    dzData,
-    dxDesc,
-    dxData,
-    dNormScaleBiasDesc,
-    normScaleData,
-    normBiasData,
-    dNormScaleData,
-    dNormBiasData,
-    epsilon,
-    normMeanVarDesc,
-    savedMean,
-    savedInvVariance,
-    activationDesc,
-    workSpace,
-    workSpaceSizeInBytes,
-    reserveSpace,
-    reserveSpaceSizeInBytes,
-    groupCnt,
-):
-    """
-    This function performs backward normalization layer computation that is specified by mode.
+    handle: int,
+    mode: int,
+    norm_ops: int,
+    algo: int,
+    alpha_data_diff: float,
+    beta_data_diff: float,
+    alpha_param_diff: float,
+    beta_param_diff: float,
+    x_desc: int,
+    x_data: ctypes.c_void_p,
+    y_desc: int,
+    y_data: ctypes.c_void_p,
+    dy_desc: int,
+    dy_data: ctypes.c_void_p,
+    dz_desc: int,
+    dz_data: ctypes.c_void_p,
+    dx_desc: int,
+    dx_data: ctypes.c_void_p,
+    dnorm_scale_bias_desc: int,
+    norm_scale_data: ctypes.c_void_p,
+    norm_bias_data: ctypes.c_void_p,
+    dnorm_scale_data: ctypes.c_void_p,
+    dnorm_bias_data: ctypes.c_void_p,
+    epsilon: float,
+    norm_mean_var_desc: int,
+    saved_mean: ctypes.c_void_p,
+    saved_inv_variance: ctypes.c_void_p,
+    activation_desc: int,
+    work_space: ctypes.c_void_p,
+    work_space_size_in_bytes: int,
+    reserve_space: ctypes.c_void_p,
+    reserve_space_size_in_bytes: int,
+    group_cnt: int,
+) -> None:
+    """This function performs backward normalization layer computation.
+
     Parameters
     ----------
-    handle
-        Input. Handle to a previously created cuDNN library descriptor. For more information, see cudnnHandle_t.
-    mode
-        Input. Mode of operation (per-channel or per-activation). For more information, see cudnnNormMode_t.
-    normOps
-        Input. Mode of post-operative. Currently CUDNN_NORM_OPS_NORM_ACTIVATION and CUDNN_NORM_OPS_NORM_ADD_ACTIVATION are only supported in the NHWC layout. For more information, see cudnnNormOps_t. This input can be used to set this function to perform either only the normalization, or normalization followed by activation, or normalization followed by element-wise addition and then activation.
-    algo
-        Input. Algorithm to be performed. For more information, see cudnnNormAlgo_t.
-    *alphaDataDiff, *betaDataDiff
-        Inputs. Pointers to scaling factors (in host memory) used to blend the gradient
-        output dx with a prior value in the destination tensor as follows:
-        dstValue = alpha[0]*resultValue + beta[0]*priorDstValue
-    *alphaParamDiff, *betaParamDiff
-        Inputs. Pointers to scaling factors (in host memory) used to blend the gradient outputs
-        dNormScaleData and dNormBiasData with prior values in the destination tensor as follows:
-        dstValue = alpha[0]*resultValue + beta[0]*priorDstValue
-    xDesc, *xData, yDesc, *yData, dyDesc, *dyData
-        Inputs. Tensor descriptors and pointers in the device memory for the layer's x data, backpropagated gradient input dy, the original forward output y data. yDesc and yData are not needed if normOps is set to CUDNN_NORM_OPS_NORM, users may pass NULL. For more information, see cudnnTensorDescriptor_t.
-    dzDesc, *dzData, dxDesc, *dxData
-        Outputs. Tensor descriptors and pointers in the device memory for the computed gradient output dz and dx. dzDesc and *dzData is not needed when normOps is CUDNN_NORM_OPS_NORM or CUDNN_NORM_OPS_NORM_ACTIVATION, users may pass NULL. For more information, see cudnnTensorDescriptor_t.
-    dNormScaleBiasDesc
-        Input. Shared tensor descriptor for the following six tensors: normScaleData, normBiasData, dNormScaleData, and dNormBiasData. The dimensions for this tensor descriptor are dependent on normalization mode.
-    *normScaleData
-        Input. Pointer in the device memory for the normalization scale parameter (in the original paper the quantity scale is referred to as gamma).
-    *normBiasData
-        Input. Pointers in the device memory for the normalization bias parameter (in the original paper bias is referred to as beta). This parameter is used only when activation should be performed.
-    *dNormScaleData, dNormBiasData
-        Inputs. Pointers in the device memory for the gradients of normScaleData and normBiasData, respectively.
-    epsilon
-        Input. Epsilon value used in normalization formula. Its value should be equal to or greater than zero. The same epsilon value should be used in forward and backward functions.
-    normMeanVarDesc
-        Input. Shared tensor descriptor for the following tensors: savedMean and savedInvVariance. The dimensions for this tensor descriptor are dependent on normalization mode.
-    *savedMean, *savedInvVariance
-        Inputs. Optional cache parameters containing saved intermediate results computed during the forward pass. For this to work correctly, the layer's x and normScaleData, normBiasData data has to remain unchanged until this backward function is called. Note that both these parameters can be NULL but only at the same time. It is recommended to use this cache since the memory overhead is relatively small.
-    activationDesc
-        Input. Descriptor for the activation operation. When the normOps input is set to either CUDNN_NORM_OPS_NORM_ACTIVATION or CUDNN_NORM_OPS_NORM_ADD_ACTIVATION then this activation is used, otherwise the user may pass NULL.
-    workspace
-        Input. Pointer to the GPU workspace.
-    workSpaceSizeInBytes
-        Input. The size of the workspace. It must be large enough to trigger the fast NHWC semi-persistent kernel by this function.
-    *reserveSpace
-        Input. Pointer to the GPU workspace for the reserveSpace.
-    reserveSpaceSizeInBytes
-        Input. The size of the reserveSpace. It must be equal or larger than the amount required by cudnnGetNormalizationTrainingReserveSpaceSize().
-    groutCnt
-        Input. Only support 1 for now.
+    handle : cudnnHandle
+        Handle to a previously created cuDNN library descriptor.
+    mode : cudnnNormMode
+        Mode of operation (per-channel or per-activation).
+    norm_ops : cudnnNormOps
+        Mode of post-operation. This input can be used to perform either only the normalization,
+        normalization followed by activation, or normalization followed by element-wise addition
+        and then activation.
+    algo : cudnnNormAlgo
+        Normalization algorithm.
+    alpha_data_diff, beta_data_diff : float
+        Scaling factors used to blend the computed input gradient with the previous destination
+        value:
+
+            dst = alpha * result + beta * prior_dst
+
+    alpha_param_diff, beta_param_diff : float
+        Scaling factors used to blend the computed parameter gradients with the previous
+        destination values:
+
+            dst = alpha * result + beta * prior_dst
+
+    x_desc : cudnnTensorDescriptor
+        Descriptor for the input tensor.
+    x_data : void_p
+        Pointer to the input tensor in device memory.
+    y_desc : cudnnTensorDescriptor
+        Descriptor for the forward output tensor.
+    y_data : void_p
+        Pointer to the forward output tensor in device memory.
+    dy_desc : cudnnTensorDescriptor
+        Descriptor for the output gradient tensor.
+    dy_data : void_p
+        Pointer to the output gradient tensor in device memory.
+    dz_desc : cudnnTensorDescriptor
+        Descriptor for the residual gradient tensor.
+    dz_data : void_p
+        Pointer to the residual gradient tensor in device memory.
+    dx_desc : cudnnTensorDescriptor
+        Descriptor for the input gradient tensor.
+    dx_data : void_p
+        Pointer to the input gradient tensor in device memory.
+    dnorm_scale_bias_desc : cudnnTensorDescriptor
+        Shared descriptor for the normalization parameter tensors.
+    norm_scale_data : void_p
+        Pointer to the normalization scale (gamma) in device memory.
+    norm_bias_data : void_p
+        Pointer to the normalization bias (beta) in device memory.
+    dnorm_scale_data : void_p
+        Pointer to the normalization scale gradient in device memory.
+    dnorm_bias_data : void_p
+        Pointer to the normalization bias gradient in device memory.
+    epsilon : float
+        Epsilon value used in the normalization formula. The same value should be used during
+        both the forward and backward passes.
+    norm_mean_var_desc : cudnnTensorDescriptor
+        Descriptor for the saved mean and inverse variance tensors.
+    saved_mean : void_p
+        Pointer to the saved mean tensor computed during the forward pass.
+    saved_inv_variance : void_p
+        Pointer to the saved inverse variance tensor computed during the forward pass.
+    activation_desc : cudnnActivationDescriptor
+        Descriptor for the activation operation.
+    work_space : void_p
+        Pointer to the workspace buffer in device memory.
+    work_space_size_in_bytes : int
+        Size of the workspace buffer in bytes.
+    reserve_space : void_p
+        Pointer to the reserve-space buffer in device memory.
+    reserve_space_size_in_bytes : int
+        Size of the reserve-space buffer in bytes.
+    group_cnt : int
+        Number of groups. Currently only the value 1 is supported.
     """
+    data_type = cudnnGetTensor4dDescriptor(x_desc)[0]
+    if data_type == cudnnDataType["CUDNN_DATA_DOUBLE"]:
+        alpha_data_diff_ref = ctypes.byref(ctypes.c_double(alpha_data_diff))
+        beta_data_diff_ref = ctypes.byref(ctypes.c_double(beta_data_diff))
+        alpha_param_diff_ref = ctypes.byref(ctypes.c_double(alpha_param_diff))
+        beta_param_diff_ref = ctypes.byref(ctypes.c_double(beta_param_diff))
+    else:
+        alpha_data_diff_ref = ctypes.byref(ctypes.c_float(alpha_data_diff))
+        beta_data_diff_ref = ctypes.byref(ctypes.c_float(beta_data_diff))
+        alpha_param_diff_ref = ctypes.byref(ctypes.c_float(alpha_param_diff))
+        beta_param_diff_ref = ctypes.byref(ctypes.c_float(beta_param_diff))
     assert _libcudnn
     status = _libcudnn.cudnnNormalizationBackward(
         handle,
         mode,
-        normOps,
+        norm_ops,
         algo,
-        alphaDataDiff,
-        betaDataDiff,
-        alphaParamDiff,
-        betaParamDiff,
-        xDesc,
-        xData,
-        yDesc,
-        yData,
-        dyDesc,
-        dyData,
-        dzDesc,
-        dzData,
-        dxDesc,
-        dxData,
-        dNormScaleBiasDesc,
-        normScaleData,
-        normBiasData,
-        dNormScaleData,
-        dNormBiasData,
+        alpha_data_diff_ref,
+        beta_data_diff_ref,
+        alpha_param_diff_ref,
+        beta_param_diff_ref,
+        x_desc,
+        x_data,
+        y_desc,
+        y_data,
+        dy_desc,
+        dy_data,
+        dz_desc,
+        dz_data,
+        dx_desc,
+        dx_data,
+        dnorm_scale_bias_desc,
+        norm_scale_data,
+        norm_bias_data,
+        dnorm_scale_data,
+        dnorm_bias_data,
         epsilon,
-        normMeanVarDesc,
-        savedMean,
-        savedInvVariance,
-        activationDesc,
-        workSpace,
-        workSpaceSizeInBytes,
-        reserveSpace,
-        reserveSpaceSizeInBytes,
-        groupCnt,
+        norm_mean_var_desc,
+        saved_mean,
+        saved_inv_variance,
+        activation_desc,
+        work_space,
+        work_space_size_in_bytes,
+        reserve_space,
+        reserve_space_size_in_bytes,
+        group_cnt,
     )
     cudnnCheckStatus(status)
 
@@ -4327,75 +4461,76 @@ _libcudnn.cudnnGetNormalizationBackwardWorkspaceSize.argtypes = [
 
 
 def cudnnGetNormalizationBackwardWorkspaceSize(
-    handle,
-    mode,
-    normOps,
-    algo,
-    xDesc,
-    yDesc,
-    dyDesc,
-    dzDesc,
-    dxDesc,
-    dNormScaleBiasDesc,
-    activationDesc,
-    normMeanVarDesc,
-    groupCnt,
-):
-    """
-    Get the workspace size for backward normalization.
+    handle: int,
+    mode: int,
+    norm_ops: int,
+    algo: int,
+    x_desc: int,
+    y_desc: int,
+    dy_desc: int,
+    dz_desc: int,
+    dx_desc: int,
+    dnorm_scale_bias_desc: int,
+    activation_desc: int,
+    norm_mean_var_desc: int,
+    group_cnt: int,
+) -> int:
+    """Returns the workspace size required for backward normalization.
+
     Parameters
     ----------
     handle : cudnnHandle
         Handle to a previously created cuDNN library descriptor.
-    mode : cudnnNormMode_t
+    mode : cudnnNormMode
         Mode of operation (per-channel or per-activation).
-    normOps : cudnnNormOps_t
-        Mode of post-operative.
-    algo : cudnnNormAlgo_t
-        Algorithm to be performed.
-    xDesc : cudnnTensorDescriptor_t
-        Handle to the previously initialized input tensor descriptor.
-    yDesc : cudnnTensorDescriptor_t
-        Handle to the previously initialized output tensor descriptor.
-    dyDesc : cudnnTensorDescriptor_t
-        Handle to the previously initialized input differential tensor descriptor.
-    dzDesc : cudnnTensorDescriptor_t
-        Handle to the previously initialized output differential tensor descriptor for residual addition.
-    dxDesc : cudnnTensorDescriptor_t
-        Handle to the previously initialized output differential tensor descriptor for dx.
-    dNormScaleBiasDesc : cudnnTensorDescriptor_t
-        Shared tensor descriptor for scale, bias, and their gradients.
-    activationDesc : cudnnActivationDescriptor_t
+    norm_ops : cudnnNormOps
+        Mode of post-operation.
+    algo : cudnnNormAlgo
+        Normalization algorithm.
+    x_desc : cudnnTensorDescriptor
+        Descriptor for the input tensor.
+    y_desc : cudnnTensorDescriptor
+        Descriptor for the output tensor.
+    dy_desc : cudnnTensorDescriptor
+        Descriptor for the output gradient tensor.
+    dz_desc : cudnnTensorDescriptor
+        Descriptor for the residual gradient tensor.
+    dx_desc : cudnnTensorDescriptor
+        Descriptor for the input gradient tensor.
+    dnorm_scale_bias_desc : cudnnTensorDescriptor
+        Shared descriptor for the normalization parameter tensors and their gradients.
+    activation_desc : cudnnActivationDescriptor
         Descriptor for the activation operation.
-    normMeanVarDesc : cudnnTensorDescriptor_t
-        Shared tensor descriptor for saved mean and inverse variance.
-    groupCnt : int
-        Number of groups (currently only supports 1).
+    norm_mean_var_desc : cudnnTensorDescriptor
+        Shared descriptor for the saved mean and inverse variance tensors.
+    group_cnt : int
+        Number of groups. Currently only the value 1 is supported.
+
     Returns
     -------
-    sizeInBytes : c_size_t
-        The size of the workspace in bytes.
+    ctypes.c_size_t
+        Workspace size in bytes.
     """
-    sizeInBytes = ctypes.c_size_t()
+    size_in_bytes = ctypes.c_size_t()
     assert _libcudnn
     status = _libcudnn.cudnnGetNormalizationBackwardWorkspaceSize(
         handle,
         mode,
-        normOps,
+        norm_ops,
         algo,
-        xDesc,
-        yDesc,
-        dyDesc,
-        dzDesc,
-        dxDesc,
-        dNormScaleBiasDesc,
-        activationDesc,
-        normMeanVarDesc,
-        ctypes.byref(sizeInBytes),
-        groupCnt,
+        x_desc,
+        y_desc,
+        dy_desc,
+        dz_desc,
+        dx_desc,
+        dnorm_scale_bias_desc,
+        activation_desc,
+        norm_mean_var_desc,
+        ctypes.byref(size_in_bytes),
+        group_cnt,
     )
     cudnnCheckStatus(status)
-    return sizeInBytes
+    return size_in_bytes.value
 
 
 _libcudnn.cudnnGetNormalizationForwardTrainingWorkspaceSize.restype = int
@@ -4416,67 +4551,68 @@ _libcudnn.cudnnGetNormalizationForwardTrainingWorkspaceSize.argtypes = [
 
 
 def cudnnGetNormalizationForwardTrainingWorkspaceSize(
-    handle,
-    mode,
-    normOps,
-    algo,
-    xDesc,
-    zDesc,
-    yDesc,
-    normScaleBiasDesc,
-    activationDesc,
-    normMeanVarDesc,
-    groupCnt,
-):
-    """
-    Get the workspace size for forward training normalization.
+    handle: int,
+    mode: int,
+    norm_ops: int,
+    algo: int,
+    x_desc: int,
+    z_desc: int,
+    y_desc: int,
+    norm_scale_bias_desc: int,
+    activation_desc: int,
+    norm_mean_var_desc: int,
+    group_cnt: int,
+) -> int:
+    """Returns the workspace size required for forward training normalization.
+
     Parameters
     ----------
     handle : cudnnHandle
         Handle to a previously created cuDNN library descriptor.
-    mode : cudnnNormMode_t
+    mode : cudnnNormMode
         Mode of operation (per-channel or per-activation).
-    normOps : cudnnNormOps_t
-        Mode of post-operative.
-    algo : cudnnNormAlgo_t
-        Algorithm to be performed.
-    xDesc : cudnnTensorDescriptor_t
-        Handle to the previously initialized input tensor descriptor.
-    zDesc : cudnnTensorDescriptor_t
-        Handle to the previously initialized residual tensor descriptor.
-    yDesc : cudnnTensorDescriptor_t
-        Handle to the previously initialized output tensor descriptor.
-    normScaleBiasDesc : cudnnTensorDescriptor_t
-        Handle to the previously initialized scale and bias tensor descriptor.
-    activationDesc : cudnnActivationDescriptor_t
+    norm_ops : cudnnNormOps
+        Mode of post-operation.
+    algo : cudnnNormAlgo
+        Normalization algorithm.
+    x_desc : cudnnTensorDescriptor
+        Descriptor for the input tensor.
+    z_desc : cudnnTensorDescriptor
+        Descriptor for the residual input tensor.
+    y_desc : cudnnTensorDescriptor
+        Descriptor for the output tensor.
+    norm_scale_bias_desc : cudnnTensorDescriptor
+        Descriptor for the normalization scale and bias tensors.
+    activation_desc : cudnnActivationDescriptor
         Descriptor for the activation operation.
-    normMeanVarDesc : cudnnTensorDescriptor_t
-        Shared tensor descriptor for running mean and variance.
-    groupCnt : int
-        Number of groups (currently only supports 1).
+    norm_mean_var_desc : cudnnTensorDescriptor
+        Shared descriptor for the running mean and variance tensors.
+    group_cnt : int
+        Number of groups. Currently only the value 1 is supported.
+
     Returns
     -------
-    sizeInBytes : c_size_t
-        The size of the workspace in bytes.
+    ctypes.c_size_t
+        Workspace size in bytes.
     """
-    sizeInBytes = ctypes.c_size_t()
+    size_in_bytes = ctypes.c_size_t()
     assert _libcudnn
     status = _libcudnn.cudnnGetNormalizationForwardTrainingWorkspaceSize(
         handle,
         mode,
-        normOps,
+        norm_ops,
         algo,
-        xDesc,
-        zDesc,
-        yDesc,
-        normScaleBiasDesc,
-        activationDesc,
-        normMeanVarDesc,
-        ctypes.byref(sizeInBytes),
-        groupCnt,
+        x_desc,
+        z_desc,
+        y_desc,
+        norm_scale_bias_desc,
+        activation_desc,
+        norm_mean_var_desc,
+        ctypes.byref(size_in_bytes),
+        group_cnt,
     )
     cudnnCheckStatus(status)
-    return sizeInBytes
+    return size_in_bytes.value
 
 
 _libcudnn.cudnnGetNormalizationTrainingReserveSpaceSize.restype = int
@@ -4493,137 +4629,173 @@ _libcudnn.cudnnGetNormalizationTrainingReserveSpaceSize.argtypes = [
 
 
 def cudnnGetNormalizationTrainingReserveSpaceSize(
-    handle, mode, normOps, algo, activationDesc, xDesc, groupCnt
-):
-    """
-    Get the reserve space size for training normalization.
+    handle: int,
+    mode: int,
+    norm_ops: int,
+    algo: int,
+    activation_desc: int,
+    x_desc: int,
+    group_cnt: int,
+) -> int:
+    """Returns the reserve-space size required for training normalization.
+
     Parameters
     ----------
     handle : cudnnHandle
         Handle to a previously created cuDNN library descriptor.
-    mode : cudnnNormMode_t
+    mode : cudnnNormMode
         Mode of operation (per-channel or per-activation).
-    normOps : cudnnNormOps_t
-        Mode of post-operative.
-    algo : cudnnNormAlgo_t
-        Algorithm to be performed.
-    activationDesc : cudnnActivationDescriptor_t
+    norm_ops : cudnnNormOps
+        Mode of post-operation.
+    algo : cudnnNormAlgo
+        Normalization algorithm.
+    activation_desc : cudnnActivationDescriptor
         Descriptor for the activation operation.
-    xDesc : cudnnTensorDescriptor_t
-        Handle to the previously initialized input tensor descriptor.
-    groupCnt : int
-        Number of groups (currently only supports 1).
+    x_desc : cudnnTensorDescriptor
+        Descriptor for the input tensor.
+    group_cnt : int
+        Number of groups. Currently only the value 1 is supported.
+
     Returns
     -------
-    sizeInBytes : c_size_t
-        The size of the reserve space in bytes.
+    ctypes.c_size_t
+        Reserve-space size in bytes.
     """
-    sizeInBytes = ctypes.c_size_t()
+
+    size_in_bytes = ctypes.c_size_t()
+
     assert _libcudnn
     status = _libcudnn.cudnnGetNormalizationTrainingReserveSpaceSize(
-        handle, mode, normOps, algo, activationDesc, xDesc, ctypes.byref(sizeInBytes), groupCnt
+        handle,
+        mode,
+        norm_ops,
+        algo,
+        activation_desc,
+        x_desc,
+        ctypes.byref(size_in_bytes),
+        group_cnt,
     )
     cudnnCheckStatus(status)
-    return sizeInBytes
+    return size_in_bytes.value
+
+
+_libcudnn.cudnnBatchNormalizationBackward.restype = int
+_libcudnn.cudnnBatchNormalizationBackward.argtypes = [
+    ctypes.c_void_p,
+    ctypes.c_int,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+    ctypes.c_double,
+    ctypes.c_void_p,
+    ctypes.c_void_p,
+]
 
 
 def cudnnBatchNormalizationBackward(
-    handle,
-    mode,
-    alpha_data_diff,
-    beta_data_diff,
-    alpha_param_diff,
-    beta_param_diff,
-    x_desc,
-    x,
-    dy_desc,
-    dy,
-    dx_desc,
-    dx,
-    bn_scale_bias_diff_desc,
-    bn_scale,
-    result_bn_scale_diff,
-    result_bn_bias_diff,
-    epsilon,
-    saved_mean,
-    saved_inv_variance,
-):
-    """
-    This function performs the backward batch normalization layer computation.
-    This layer is based on the paper Batch Normalization: Accelerating
-    Deep Network Training by Reducing Internal Covariate Shift, S. Ioffe, C. Szegedy, 2015. .
+    handle: int,
+    mode: int,
+    alpha_data_diff: float,
+    beta_data_diff: float,
+    alpha_param_diff: float,
+    beta_param_diff: float,
+    x_desc: int,
+    x: ctypes.c_void_p,
+    dy_desc: int,
+    dy: ctypes.c_void_p,
+    dx_desc: int,
+    dx: ctypes.c_void_p,
+    bn_scale_bias_diff_desc: int,
+    bn_scale: ctypes.c_void_p,
+    result_bn_scale_diff: ctypes.c_void_p,
+    result_bn_bias_diff: ctypes.c_void_p,
+    epsilon: float,
+    saved_mean: ctypes.c_void_p,
+    saved_inv_variance: ctypes.c_void_p,
+) -> None:
+    """This function performs the backward batch normalization computation.
 
-    The epsilon value has to be the same during training, backpropagation, and inference.
+    This layer is based on the paper *Batch Normalization: Accelerating Deep Network Training
+    by Reducing Internal Covariate Shift*, S. Ioffe and C. Szegedy, 2015.
+
+    The same epsilon value must be used during training, backpropagation, and inference.
+
     Parameters
     ----------
-    handle
-        Input. Handle to a previously created cuDNN library descriptor.
-    mode
-        Input. Mode of operation (spatial or per-activation).
-    alpha_data_diff, beta_data_diff
-        Inputs. Pointers to scaling factors (in host memory) used to blend the gradient
-        output dx with a prior value in the destination tensor as follows:
-                dstValue = alpha_data_diff[0]*resultValue + beta_data_diff[0]*priorDstValue
-    alpha_param_diff, *beta_param_diff
-        Inputs. Pointers to scaling factors (in host memory) used to blend the gradient outputs
-        result_bn_scale_diff and result_bn_bias_diff with prior values in the destination tensor as follows:
-                dstValue = alpha_param_diff[0]*resultValue + beta_param_diff[0]*priorDstValue
-    x_desc, dx_desc, dy_desc
-        Inputs. Handles to the previously initialized tensor descriptors.
-    x
-        Input. Data pointer to GPU memory associated with the tensor descriptor x_desc, for the layer’s x data.
-    dy
-        Inputs. Data pointer to GPU memory associated with the tensor descriptor dy_desc,
-        for the backpropagated differential dy input.
-    dx
-        Outputs. Data pointer to GPU memory associated with the tensor descriptor dx_desc,
-        for the resulting differential output with respect to x.
-    bn_scale_bias_diff_desc
-        Input. Shared tensor descriptor for the following five tensors: bn_scale, result_bn_scale_diff,
-        result_bn_bias_diff, saved_mean, saved_inv_variance. The dimensions for this tensor descriptor
-        are dependent on normalization mode.
+    handle : cudnnHandle
+        Handle to a previously created cuDNN library descriptor.
+    mode : cudnnBatchNormMode
+        Batch normalization mode (spatial or per-activation).
+    alpha_data_diff, beta_data_diff : float
+        Scaling factors used to blend the computed input gradient with the previous destination
+        value:
 
-    *bn_scale
-        Input. Pointer in the device memory for the batch normalization scale parameter
-        (in the original paper the quantity scale is referred to as gamma).
-        Note: The bn_bias parameter is not needed for this layer's computation.
+            dst = alpha * result + beta * prior_dst
 
-    result_bn_scale_diff, result_bn_bias_diff
-        Outputs. Pointers in device memory for the resulting scale and bias differentials
-        computed by this routine. Note that these scale and bias gradients are weight gradients
-        specific to this batch normalization operation, and by definition are not backpropagated.
+    alpha_param_diff, beta_param_diff : float
+        Scaling factors used to blend the computed parameter gradients with the previous
+        destination values:
 
-    epsilon
-        Input. Epsilon value used in batch normalization formula.
-        Its value should be equal to or greater than the value defined for
-        CUDNN_BN_MIN_EPSILON in cudnn.h. The same epsilon value should be
-        used in forward and backward functions.
-    *saved_mean, *saved_inv_variance
-        Inputs. Optional cache parameters containing saved intermediate results that were
-        computed during the forward pass. For this to work correctly, the layer's x and
-        bn_scale data have to remain unchanged until this backward function is called.
+            dst = alpha * result + beta * prior_dst
+
+    x_desc : cudnnTensorDescriptor
+        Descriptor for the input tensor.
+    x : void_p
+        Pointer to the input tensor in device memory.
+    dy_desc : cudnnTensorDescriptor
+        Descriptor for the output gradient tensor.
+    dy : void_p
+        Pointer to the output gradient tensor in device memory.
+    dx_desc : cudnnTensorDescriptor
+        Descriptor for the input gradient tensor.
+    dx : void_p
+        Pointer to the input gradient tensor in device memory.
+    bn_scale_bias_diff_desc : cudnnTensorDescriptor
+        Shared descriptor for the batch normalization parameter tensors and their gradients.
+    bn_scale : void_p
+        Pointer to the batch normalization scale (gamma) in device memory.
+    result_bn_scale_diff : void_p
+        Pointer to the computed scale gradient in device memory.
+    result_bn_bias_diff : void_p
+        Pointer to the computed bias gradient in device memory.
+    epsilon : float
+        Epsilon value used in the batch normalization formula. The same value should be used
+        during both the forward and backward passes.
+    saved_mean : void_p
+        Pointer to the saved mean tensor computed during the forward pass.
+    saved_inv_variance : void_p
+        Pointer to the saved inverse variance tensor computed during the forward pass.
     """
-
     data_type = cudnnGetTensor4dDescriptor(x_desc)[0]
     if data_type == cudnnDataType["CUDNN_DATA_DOUBLE"]:
-        alpha_data_ref = ctypes.byref(ctypes.c_double(alpha_data_diff))
-        beta_data_ref = ctypes.byref(ctypes.c_double(beta_data_diff))
-        alpha_param_ref = ctypes.byref(ctypes.c_double(alpha_param_diff))
-        beta_param_ref = ctypes.byref(ctypes.c_double(beta_param_diff))
-
+        alpha_data_diff_ref = ctypes.byref(ctypes.c_double(alpha_data_diff))
+        beta_data_diff_ref = ctypes.byref(ctypes.c_double(beta_data_diff))
+        alpha_param_diff_ref = ctypes.byref(ctypes.c_double(alpha_param_diff))
+        beta_param_diff_ref = ctypes.byref(ctypes.c_double(beta_param_diff))
     else:
-        alpha_data_ref = ctypes.byref(ctypes.c_float(alpha_data_diff))
-        beta_data_ref = ctypes.byref(ctypes.c_float(beta_data_diff))
-        alpha_param_ref = ctypes.byref(ctypes.c_float(alpha_param_diff))
-        beta_param_ref = ctypes.byref(ctypes.c_float(beta_param_diff))
+        alpha_data_diff_ref = ctypes.byref(ctypes.c_float(alpha_data_diff))
+        beta_data_diff_ref = ctypes.byref(ctypes.c_float(beta_data_diff))
+        alpha_param_diff_ref = ctypes.byref(ctypes.c_float(alpha_param_diff))
+        beta_param_diff_ref = ctypes.byref(ctypes.c_float(beta_param_diff))
     assert _libcudnn
     status = _libcudnn.cudnnBatchNormalizationBackward(
         handle,
         mode,
-        alpha_data_ref,
-        beta_data_ref,
-        alpha_param_ref,
-        beta_param_ref,
+        alpha_data_diff_ref,
+        beta_data_diff_ref,
+        alpha_param_diff_ref,
+        beta_param_diff_ref,
         x_desc,
         x,
         dy_desc,
@@ -4638,7 +4810,6 @@ def cudnnBatchNormalizationBackward(
         saved_mean,
         saved_inv_variance,
     )
-
     cudnnCheckStatus(status)
 
 
@@ -4662,66 +4833,64 @@ _libcudnn.cudnnBatchNormalizationForwardInference.argtypes = [
 
 
 def cudnnBatchNormalizationForwardInference(
-    handle,
-    mode,
-    alpha,
-    beta,
-    x_desc,
-    x,
-    y_desc,
-    y,
-    bn_scale_bias_mean_var_desc,
-    bn_scale,
-    bn_bias,
-    estimated_mean,
-    estimated_variance,
-    epsilon,
-):
-    """
-    This function performs the forward batch normalization layer
-    computation for the inference phase. This layer is based on the
-    paper Batch Normalization: Accelerating Deep Network Training by
-    Reducing Internal Covariate Shift, S. Ioffe, C. Szegedy, 2015.
+    handle: int,
+    mode: int,
+    alpha: float,
+    beta: float,
+    x_desc: int,
+    x: ctypes.c_void_p,
+    y_desc: int,
+    y: ctypes.c_void_p,
+    bn_scale_bias_mean_var_desc: int,
+    bn_scale: ctypes.c_void_p,
+    bn_bias: ctypes.c_void_p,
+    estimated_mean: ctypes.c_void_p,
+    estimated_variance: ctypes.c_void_p,
+    epsilon: float,
+) -> None:
+    """This function performs the forward batch normalization computation for the inference phase.
+
+    This layer is based on the paper *Batch Normalization: Accelerating Deep Network Training
+    by Reducing Internal Covariate Shift*, S. Ioffe and C. Szegedy, 2015.
+
     Parameters
     ----------
-    handle
-        Input. Handle to a previously created cuDNN library descriptor.
-        For more information, see cudnnHandle_t.
-    mode
-        Input. Mode of operation (spatial or per-activation).
-        For more information, see cudnnBatchNormMode_t.
-    alpha, beta
-        Inputs. Pointers to scaling factors (in host memory) used to blend the layer
-        output value with prior value in the destination tensor as follows:
-            dstValue = alpha[0]*resultValue + beta[0]*priorDstValue
-    x_desc, y_desc
-        Input. Handles to the previously initialized tensor descriptors.
-    x
-        Input. Data pointer to GPU memory associated with the tensor
-        descriptor x_desc, for the layer’s x input data.
-    y
-        Output. Data pointer to GPU memory associated with the tensor
-        descriptor y_desc, for the youtput of the batch normalization layer.
-    bn_scale_bias_mean_var_desc, bn_scale, bn_bias
-        Inputs. Tensor descriptors and pointers in device memory for the
-        batch normalization scale and bias parameters (in the original paper
-        bias is referred to as beta and scale as gamma).
-    estimated_mean, estimated_variance
-        Inputs. Mean and variance tensors (these have the same descriptor as
-        the bias and scale). The result_running_mean and result_running_variance,
-        accumulated during the training phase from the cudnnBatchNormalizationForwardTraining()
-        call, should be passed as inputs here.
-    epsilon
-        Input. Epsilon value used in the batch normalization formula. Its value
-        should be equal to or greater than the value defined for CUDNN_BN_MIN_EPSILON in cudnn.h.
+    handle : cudnnHandle
+        Handle to a previously created cuDNN library descriptor.
+    mode : cudnnBatchNormMode
+        Batch normalization mode (spatial or per-activation).
+    alpha, beta : float
+        Scaling factors used to blend the layer output value with the previous destination
+        value:
 
+            dst = alpha * result + beta * prior_dst
+
+    x_desc : cudnnTensorDescriptor
+        Descriptor for the input tensor.
+    x : void_p
+        Pointer to the input tensor in device memory.
+    y_desc : cudnnTensorDescriptor
+        Descriptor for the output tensor.
+    y : void_p
+        Pointer to the output tensor in device memory.
+    bn_scale_bias_mean_var_desc : cudnnTensorDescriptor
+        Shared descriptor for the batch normalization scale, bias, mean, and variance tensors.
+    bn_scale : void_p
+        Pointer to the batch normalization scale (gamma) in device memory.
+    bn_bias : void_p
+        Pointer to the batch normalization bias (beta) in device memory.
+    estimated_mean : void_p
+        Pointer to the estimated mean tensor computed during training.
+    estimated_variance : void_p
+        Pointer to the estimated variance tensor computed during training.
+    epsilon : float
+        Epsilon value used in the batch normalization formula.
     """
 
     data_type = cudnnGetTensor4dDescriptor(x_desc)[0]
     if data_type == cudnnDataType["CUDNN_DATA_DOUBLE"]:
         alpha_ref = ctypes.byref(ctypes.c_double(alpha))
         beta_ref = ctypes.byref(ctypes.c_double(beta))
-
     else:
         alpha_ref = ctypes.byref(ctypes.c_float(alpha))
         beta_ref = ctypes.byref(ctypes.c_float(beta))
@@ -4742,7 +4911,6 @@ def cudnnBatchNormalizationForwardInference(
         estimated_variance,
         epsilon,
     )
-
     cudnnCheckStatus(status)
 
 
@@ -4769,76 +4937,68 @@ _libcudnn.cudnnBatchNormalizationForwardTraining.argtypes = [
 
 
 def cudnnBatchNormalizationForwardTraining(
-    handle,
-    mode,
-    alpha,
-    beta,
-    x_desc,
-    x,
-    y_desc,
-    y,
-    bn_scale_bias_mean_var_desc,
-    bn_scale,
-    bn_bias,
-    exponential_average_factor,
-    result_running_mean,
-    result_running_variance,
-    epsilon,
-    result_save_mean,
-    result_save_inv_variance,
-):
-    """
-       This function performs the forward batch normalization layer computation
-       for the training phase. This layer is based on the paper
-       Batch Normalization: Accelerating Deep Network Training by Reducing
-       Internal Covariate Shift, S. Ioffe, C. Szegedy, 2015.
-       Parameters
-       ----------
-       handle: Handle to a previously created cuDNN library descriptor.
-           For more information, see cudnnHandle_t.
-       mode: Mode of operation (spatial or per-activation).
-           For more information, see cudnnBatchNormMode_t.
-       alpha, beta: Inputs. Pointers to scaling factors (in host memory) used to
-           blend the layer output value with prior value in the destination tensor as follows:
-           dstValue = alpha[0]*resultValue + beta[0]*priorDstValue
-       x_desc, y_desc: Tensor descriptors and pointers in device memory for the
-           layer's x and y data. For more information, see cudnnTensorDescriptor_t.
-       *x: Input. Data pointer to GPU memory associated with the tensor descriptor x_desc,
-           for the layer’s x input data.
-       *y: Output. Data pointer to GPU memory associated with the tensor descriptor y_desc,
-           for the y output of the batch normalization layer.
-       bn_scale_bias_mean_var_desc: Shared tensor descriptor desc for the secondary tensor
-           that was derived by cudnnDeriveBNTensorDescriptor().
-       bn_scale, bn_bias: Inputs. Pointers in device memory for the batch normalization
-           scale and bias parameters (in the original paper bias is referred to
-           as beta and scale as gamma).
+    handle: int,
+    mode: int,
+    alpha: float,
+    beta: float,
+    x_desc: int,
+    x: ctypes.c_void_p,
+    y_desc: int,
+    y: ctypes.c_void_p,
+    bn_scale_bias_mean_var_desc: int,
+    bn_scale: ctypes.c_void_p,
+    bn_bias: ctypes.c_void_p,
+    exponential_average_factor: float,
+    result_running_mean: ctypes.c_void_p,
+    result_running_variance: ctypes.c_void_p,
+    epsilon: float,
+    result_save_mean: ctypes.c_void_p,
+    result_save_inv_variance: ctypes.c_void_p,
+) -> None:
+    """This function performs the forward batch normalization computation for the training phase.
 
-       exponential_average_factor: Input. Factor used in the moving average computation as follows:
-           runningMean = runningMean*(1-factor) + newMean*factor
+    This layer is based on the paper *Batch Normalization: Accelerating Deep Network Training
+    by Reducing Internal Covariate Shift*, S. Ioffe and C. Szegedy, 2015.
 
-       result_running_mean, result_running_variance: Inputs/Outputs. Running mean and variance tensors
-            (these have the same descriptor as the bias and scale). Both of these pointers
-            can be NULL but only at the same time. The value stored in result_running_variance
-            (or passed as an input in inference mode) is the sample variance and is the
-            moving average of variance[x] where the variance is computed either over batch
-            or spatial+batch dimensions depending on the mode.
-            If these pointers are not NULL, the tensors should be initialized to some reasonable values or to 0.
-       epsilon: Input. Epsilon value used in the batch normalization formula.
-            Its value should be equal to or greater than the value defined for
-            CUDNN_BN_MIN_EPSILON in cudnn.h (1e-5).
-            The same epsilon value should be used in forward and backward functions.
-       result_save_mean, result_save_inv_variance: Outputs. Optional cache to save intermediate
-            results computed during the forward pass. These buffers can be used to speed up
-            the backward pass when supplied to the cudnnBatchNormalizationBackward() function.
-    The intermediate results stored in result_save_mean and result_save_inv_variance buffers
-            should not be used directly by the user. Depending on the batch normalization mode,
-            the results stored in result_save_inv_variance may vary. For the cache to work
-            correctly, the input layer data must remain unchanged until the backward function
-            is called. Note that both parameters can be NULL but only at the same time.
-            In such a case, intermediate statistics will not be saved, and
-            cudnnBatchNormalizationBackward() will have to re-compute them. It is recommended
-            to use this cache as the memory overhead is relatively small because these tensors
-            have a much lower product of dimensions than the data tensors.
+    Parameters
+    ----------
+    handle : cudnnHandle
+        Handle to a previously created cuDNN library descriptor.
+    mode : cudnnBatchNormMode
+        Batch normalization mode (spatial or per-activation).
+    alpha, beta : float
+        Scaling factors used to blend the layer output value with the previous destination
+        value:
+
+            dst = alpha * result + beta * prior_dst
+
+    x_desc : cudnnTensorDescriptor
+        Descriptor for the input tensor.
+    x : void_p
+        Pointer to the input tensor in device memory.
+    y_desc : cudnnTensorDescriptor
+        Descriptor for the output tensor.
+    y : void_p
+        Pointer to the output tensor in device memory.
+    bn_scale_bias_mean_var_desc : cudnnTensorDescriptor
+        Shared descriptor for the batch normalization scale, bias, mean, and variance tensors.
+    bn_scale : void_p
+        Pointer to the batch normalization scale (gamma) in device memory.
+    bn_bias : void_p
+        Pointer to the batch normalization bias (beta) in device memory.
+    exponential_average_factor : float
+        Factor used to update the running mean and variance.
+    result_running_mean : void_p
+        Pointer to the running mean tensor in device memory.
+    result_running_variance : void_p
+        Pointer to the running variance tensor in device memory.
+    epsilon : float
+        Epsilon value used in the batch normalization formula. The same value should be used
+        during both the forward and backward passes.
+    result_save_mean : void_p
+        Pointer to the saved mean tensor used during the backward pass.
+    result_save_inv_variance : void_p
+        Pointer to the saved inverse variance tensor used during the backward pass.
     """
 
     data_type = cudnnGetTensor4dDescriptor(x_desc)[0]
@@ -4868,7 +5028,6 @@ def cudnnBatchNormalizationForwardTraining(
         result_save_mean,
         result_save_inv_variance,
     )
-
     cudnnCheckStatus(status)
 
 
@@ -4886,50 +5045,59 @@ _libcudnn.cudnnActivationForward.argtypes = [
 
 
 def cudnnActivationForward(
-    handle, act_descriptor, alpha, src_desc, src_data, beta, dest_desc, dest_data
-):
-    """ "
-    Apply activation function.
-    This routine applies a specified neuron activation function element-wise over each input
-    value.
-    In-place operation is allowed for this routine; i.e., src_data and dest_data pointers
-    may be equal. However, this requires src_desc and dest_desc descriptors to be
-    identical (particularly, the strides of the input and output must match for in-place
-    operation to be allowed).
+    handle: int,
+    activation_desc: int,
+    alpha: float,
+    x_desc: int,
+    x_data: ctypes.c_void_p,
+    beta: float,
+    y_desc: int,
+    y_data: ctypes.c_void_p,
+) -> None:
+    """Applies an activation function element-wise to the input tensor.
+
+    In-place operation is supported. In that case, ``x_data`` and ``y_data`` may point
+    to the same memory location, provided that ``x_desc`` and ``y_desc`` are identical.
+
     Parameters
     ----------
     handle : cudnnHandle
         Handle to a previously created cuDNN context.
-    act_descriptor : cudnnActivationDescriptor
-        Handle to the previously initialized activation descriptor.
-    alpha: float
-        Scaling factor with which every element of the input tensor is multiplied.
-    src_desc : cudnnTensor4dDescription
-        Handle to the previously initialized input tensor descriptor.
-    src_data : void_p
-        Data pointer to GPU memory associated with the tensor descriptor
-        src_desc.
-    beta: float
-        Scaling factor which is applied on every element of the output tensor prior
-        to adding the result of the activation Note that if beta is zero, the output
-        is not read and can contain any uninitialized data (including Nan numbers).
-    dest_desc : cudnnTensor4dDescription
-        Handle to the previously initialized output tensor descriptor.
-    dest_data : void_p
-        Data pointer to GPU memory associated with the output tensor descriptor
-        dest_desc.
+    activation_desc : cudnnActivationDescriptor
+        Previously initialized activation descriptor.
+    alpha : float
+        Scaling factor applied to each element of the input tensor.
+    x_desc : cudnnTensorDescriptor
+        Descriptor for the input tensor.
+    x_data : void_p
+        Pointer to the input tensor in device memory.
+    beta : float
+        Scaling factor applied to the output tensor before adding the activation result.
+        If zero, the output tensor is not read before writing the result.
+    y_desc : cudnnTensorDescriptor
+        Descriptor for the output tensor.
+    y_data : void_p
+        Pointer to the output tensor in device memory.
     """
 
-    data_type = cudnnGetTensor4dDescriptor(dest_desc)[0]
+    data_type = cudnnGetTensor4dDescriptor(y_desc)[0]
     if data_type == cudnnDataType["CUDNN_DATA_DOUBLE"]:
         alpha_ref = ctypes.byref(ctypes.c_double(alpha))
         beta_ref = ctypes.byref(ctypes.c_double(beta))
     else:
         alpha_ref = ctypes.byref(ctypes.c_float(alpha))
         beta_ref = ctypes.byref(ctypes.c_float(beta))
+
     assert _libcudnn
     status = _libcudnn.cudnnActivationForward(
-        handle, act_descriptor, alpha_ref, src_desc, src_data, beta_ref, dest_desc, dest_data
+        handle,
+        activation_desc,
+        alpha_ref,
+        x_desc,
+        x_data,
+        beta_ref,
+        y_desc,
+        y_data,
     )
     cudnnCheckStatus(status)
 
@@ -4952,62 +5120,54 @@ _libcudnn.cudnnActivationBackward.argtypes = [
 
 
 def cudnnActivationBackward(
-    handle,
-    act_desc,
-    alpha,
-    src_desc,
-    src_data,
-    src_diff_esc,
-    src_diff_data,
-    dest_desc,
-    dest_data,
-    beta,
-    dest_diff_desc,
-    dest_diff_data,
-):
-    """ "
-    Gradient of activation function.
-    This routine computes the gradient of a neuron activation function.
-    In-place operation is allowed for this routine; i.e., src_data and dest_data
-    pointers may be equal and src_diff_data and dest_diff_data pointers may be equal.
-    However, this requires the corresponding tensor descriptors to be identical
-    (particularly, the strides of the input and output must match for in-place operation
-    to be allowed).
+    handle: int,
+    activation_desc: int,
+    alpha: float,
+    y_desc: int,
+    y_data: ctypes.c_void_p,
+    dy_desc: int,
+    dy_data: ctypes.c_void_p,
+    x_desc: int,
+    x_data: ctypes.c_void_p,
+    beta: float,
+    dx_desc: int,
+    dx_data: ctypes.c_void_p,
+) -> None:
+    """Computes the gradient of an activation function.
+
+    In-place operation is supported. In that case, the input and output tensors, as well as
+    their corresponding gradient tensors, may share the same memory locations, provided that
+    their tensor descriptors are identical.
+
     Parameters
     ----------
     handle : cudnnHandle
         Handle to a previously created cuDNN context.
-    act_desc : cudnnActivationDescriptor
-        Handle to the previously initialized activation descriptor.
-    alpha: float
-        Scaling factor with which every element of the input tensor is multiplied.
-    src_desc : cudnnTensorDescriptor
-        Handle to the previously initialized input tensor descriptor.
-    src_data : void_p
-        Data pointer to GPU memory associated with the tensor descriptor
-        src_desc.
-    src_diff_esc : cudnnTensorDescriptor
-        Handle to the previously initialized input differential tensor descriptor.
-    src_diff_data : void_p
-        Data pointer to GPU memory associated with the tensor descriptor
-        src_diff_data.
-    dest_desc : cudnnTensorDescriptor
-        Handle to the previously initialized output tensor descriptor.
-    dest_data : void_p
-        Data pointer to GPU memory associated with the output tensor descriptor
-        dest_desc.
-    beta: float
-        Scaling factor which is applied on every element of the output tensor prior
-        to adding the result of the activation gradient. Note that if beta is zero, the
-        output is not read and can contain any uninitialized data (including Nan numbers).
-    dest_diff_desc : cudnnTensorDescriptor
-        Handle to the previously initialized output differential tensor descriptor.
-    dest_diff_data : void_p
-        Data pointer to GPU memory associated with the output tensor descriptor
-        dest_diff_desc.
+    activation_desc : cudnnActivationDescriptor
+        Previously initialized activation descriptor.
+    alpha : float
+        Scaling factor applied to the computed activation gradient.
+    y_desc : cudnnTensorDescriptor
+        Descriptor for the forward output tensor.
+    y_data : void_p
+        Pointer to the forward output tensor in device memory.
+    dy_desc : cudnnTensorDescriptor
+        Descriptor for the output gradient tensor.
+    dy_data : void_p
+        Pointer to the output gradient tensor in device memory.
+    x_desc : cudnnTensorDescriptor
+        Descriptor for the forward input tensor.
+    x_data : void_p
+        Pointer to the forward input tensor in device memory.
+    beta : float
+        Scaling factor applied to the destination gradient tensor before adding the computed
+        activation gradient. If zero, the destination tensor is not read before writing.
+    dx_desc : cudnnTensorDescriptor
+        Descriptor for the input gradient tensor.
+    dx_data : void_p
+        Pointer to the input gradient tensor in device memory.
     """
-
-    data_type = cudnnGetTensor4dDescriptor(dest_desc)[0]
+    data_type = cudnnGetTensor4dDescriptor(x_desc)[0]
     if data_type == cudnnDataType["CUDNN_DATA_DOUBLE"]:
         alpha_ref = ctypes.byref(ctypes.c_double(alpha))
         beta_ref = ctypes.byref(ctypes.c_double(beta))
@@ -5017,16 +5177,16 @@ def cudnnActivationBackward(
     assert _libcudnn
     status = _libcudnn.cudnnActivationBackward(
         handle,
-        act_desc,
+        activation_desc,
         alpha_ref,
-        src_desc,
-        src_data,
-        src_diff_esc,
-        src_diff_data,
-        dest_desc,
-        dest_data,
+        y_desc,
+        y_data,
+        dy_desc,
+        dy_data,
+        x_desc,
+        x_data,
         beta_ref,
-        dest_diff_desc,
-        dest_diff_data,
+        dx_desc,
+        dx_data,
     )
     cudnnCheckStatus(status)

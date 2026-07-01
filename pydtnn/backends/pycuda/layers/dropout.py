@@ -27,8 +27,8 @@ class DropoutPycuda(Dropout[TensorArray], LayerPycuda):
         super().__init__(*args, **kwargs)
 
         # The following values will be initalized later:
-        self.states_size: ctypes.c_size_t = None  # type: ignore
-        self.space_size: ctypes.c_size_t = None  # type: ignore
+        self.states_size: int = None  # type: ignore
+        self.space_size: int = None  # type: ignore
         self.space: TensorArray = None  # type: ignore
         self.states: TensorArray = None  # type: ignore
         self.drop_desc: int | None = None
@@ -47,10 +47,10 @@ class DropoutPycuda(Dropout[TensorArray], LayerPycuda):
         self.dx = TensorArray(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
         self.memory_used += self.dx.nbytes
 
-        self.states_size = cudnn.cudnnDropoutGetStatesSize(self.model.cudnn_handle)
+        self.states_size = cudnn.cudnnDropoutGetStatesSize(self.model.cudnn_handle)  # type: ignore
         self.space_size = cudnn.cudnnDropoutGetReserveSpaceSize(self.y.desc)
 
-        space_gpu = gpuarray.zeros((self.space_size.value,), np.byte)
+        space_gpu = gpuarray.zeros((self.space_size,), np.byte)
         self.space = TensorArray(
             space_gpu,
             self.model.tensor_format,
@@ -59,7 +59,7 @@ class DropoutPycuda(Dropout[TensorArray], LayerPycuda):
         )
         self.memory_used += self.space.nbytes
 
-        states_gpu = gpuarray.zeros((self.states_size.value,), np.byte)
+        states_gpu = gpuarray.zeros((self.states_size,), np.byte)
         self.states = TensorArray(
             states_gpu,
             self.model.tensor_format,
@@ -92,7 +92,7 @@ class DropoutPycuda(Dropout[TensorArray], LayerPycuda):
             self.y.desc,
             self.y.ptr_voidp,
             self.space.ptr_voidp,
-            self.space_size.value,
+            self.space_size,
         )
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.y
@@ -111,7 +111,7 @@ class DropoutPycuda(Dropout[TensorArray], LayerPycuda):
             self.dx.desc,
             self.dx.ptr_voidp,
             self.space.ptr_voidp,
-            self.space_size.value,
+            self.space_size,
         )
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.dx
