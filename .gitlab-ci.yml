@@ -67,7 +67,7 @@ job_merge:
   tags: [ lorca-ubuntu ]
 
   needs:
-  - job: job_test
+  - job: job_build
 
   rules:
   - if: '$CI_COMMIT_BRANCH == $BRANCH_WORK'
@@ -95,6 +95,7 @@ job_push:
   needs:
   - job: job_build
     artifacts: true
+  - job: job_merge
 
   before_script:
   - glab auth login --hostname lorca.act.uji.es/gitlab --token "${CI_JOB_TOKEN:?}"
