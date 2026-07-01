@@ -58,7 +58,7 @@ class Layerable[T: Array](Base[T]):
         self.fwd_time: np.ndarray = None  # type: ignore
         self.bwd_time: np.ndarray = None  # type: ignore
         self.paths: list[list[Layerable[T]]] = []
-        self.reqs_allred = dict[str, Request]()
+        self.reqs_allred: dict[str, Request] = {}
         self.parent_layer: Layerable | None = None
 
         # The following attributes will be initialized later

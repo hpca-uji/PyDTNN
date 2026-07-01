@@ -17,6 +17,7 @@ try:
     import elftools.construct.macros as macros  # type: ignore
     import elftools.elf.elffile as elffile  # type: ignore
     import elftools.elf.structs as structs  # type: ignore
+    import elftools.elf.sections as sections  # type: ignore
 
 except ImportError:
     import re
@@ -112,7 +113,7 @@ else:
 
             # The following value for the SONAME tag is specified in elf.h:
             if result.d_tag == 14:
-                assert dynstr
+                assert isinstance(dynstr, sections.StringTableSection)
                 return dynstr.get_string(result.d_val)
 
         # No SONAME found:

@@ -1,5 +1,7 @@
 """Module for handling distributed synchronization operations in PyDTNN."""
 
+from __future__ import annotations
+
 import logging
 
 import numpy as np
