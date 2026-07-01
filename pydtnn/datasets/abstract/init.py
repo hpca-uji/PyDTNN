@@ -177,25 +177,6 @@ class Init(Utils):
         """
         return self._get_batch_generator(Base.Part.TEST)
 
-    def _print_report(self):
-        """Print a summary report of the dataset configuration."""
-        report = list[str]()
-        if self.model.comm_rank == 0:
-            report.append("Initial nsamples:")
-            report.append(f" train: {self._initial_nsamples[Base.Part.TRAIN]} ")
-            report.append(f" val: {self._initial_nsamples[Base.Part.VAL]} ")
-            report.append(f" test: {self._initial_nsamples[Base.Part.TEST]} ")
-
-        desc = ["train", "val", "test"]
-        for part in (Base.Part.TRAIN, Base.Part.VAL, Base.Part.TEST):
-            prefix = f"{self.model.rank}: " if part is Base.Part.TRAIN else "   "
-            report.append(f"{prefix}")
-            report.append(f" {desc[part]} offset: {self._local_offset[part]}")
-            report.append(f" {desc[part]} local nsamples: {self._local_nsamples[part]}")
-            report.append(f" {desc[part]} nsamples: {self._nsamples[part]}")
-
-        logger.info("\n".join(report))
-
     def _compute_local_workload(self, nsamples: int):
         """
         Computes the offset and number of samples for the current rank.

@@ -7,7 +7,7 @@ export PYTHONUNBUFFERED="True"
 pydtnn-benchmark \
   --model=simplecnn \
   --dataset=archive \
-  --dataset-path=datasets/mnist \
+  --dataset-path=datasets/mnist/archive.npz \
   --test-as-validation=False \
   --augment-horizontal-flip=0.5 \
   --batch-size=64 \

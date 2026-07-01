@@ -10,7 +10,7 @@ if mpirun --version | grep -q 'Open MPI) [5-9].'; then
   MPI_ARGS+=("--output=:raw")
 fi
 
-mpirun -np 128 --oversubscribe "${MPI_ARGS[@]}" \
+mpirun -np 1 --oversubscribe "${MPI_ARGS[@]}" \
   pydtnn-benchmark \
   --model=simplecnn \
   --dataset=mnist \
@@ -22,10 +22,10 @@ mpirun -np 128 --oversubscribe "${MPI_ARGS[@]}" \
   --steps-per-epoch=0 \
   --validation-split=0.2 \
   --evaluate=True \
-  --model-sync-freq=-1 \
+  --model-sync-freq=0 \
   --initial-model-sync=False \
   --final-model-sync=False \
-  --optimizer=oktopksp \
+  --optimizer=sgd \
   --learning-rate=0.001 \
   --optimizer-momentum=0.9 \
   --optimizer-decay=0.0005 \

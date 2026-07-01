@@ -15,7 +15,6 @@ import numpy as np
 import rapidgzip
 from PIL import Image
 
-from pydtnn.abstract.base import Base as Baser
 from pydtnn.datasets.abstract.base import Base
 from pydtnn.utils.tensor import ChannelFormat, SampleFormat, TensorFormat, format_transpose
 
@@ -27,25 +26,13 @@ logger = logging.getLogger(__name__)
 type TransformFunc = Callable[[np.ndarray, np.ndarray], tuple[np.ndarray, np.ndarray]]
 
 
-class Utils(Base, Baser):
+class Utils(Base):
     """
     Abstract base class for all datasets in PyDTNN.
 
     Defines the interface and common utilities for data partitioning,
     shape management, and format conversion.
     """
-
-    def _show_props(self) -> dict:
-        """
-        Returns a dictionary containing the dataset properties for inspection.
-        """
-        props = super()._show_props()
-
-        props["train"] = (self.train_nsamples, *self.input_shape)
-        props["val"] = (self.val_nsamples, *self.input_shape)
-        props["test"] = (self.test_nsamples, *self.output_shape)
-
-        return props
 
     @property
     def train_nsamples(self):

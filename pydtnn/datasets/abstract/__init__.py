@@ -6,12 +6,13 @@ transforming, and generating data batches for machine learning models.
 """
 
 from pydtnn.datasets.abstract.augment import Augment
+from pydtnn.datasets.abstract.repr import Repr
 from pydtnn.datasets.abstract.state import State
 
 __all__ = ("Dataset",)
 
 
-class Dataset(Augment, State):
+class Dataset(Augment, State, Repr):
     """
     Base class for handling datasets in PyDTNN.
 

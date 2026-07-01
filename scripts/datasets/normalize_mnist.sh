@@ -11,4 +11,4 @@ python3 "${dir:?}/normalize_dataset.py" \
   --dataset=mnist \
   --dataset-path=datasets/mnist \
   --parallel-data=False \
-  --shared-storage=True
+  --shared-data=True
