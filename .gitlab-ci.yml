@@ -76,7 +76,7 @@ job_merge:
   resource_group: $BRANCH_MAIN
 
   before_script:
-  - glab auth login --hostname lorca.act.uji.es/gitlab --token "${CI_JOB_TOKEN:?}"
+  - glab auth login --hostname lorca.act.uji.es/gitlab
   - git config --global user.email "ci@lorca.act.uji.es"
   - git config --global user.name "GitLab CI"
   script:
@@ -102,7 +102,7 @@ job_push:
   - job: job_merge
 
   before_script:
-  - glab auth login --hostname lorca.act.uji.es/gitlab --token "${CI_JOB_TOKEN:?}"
+  - glab auth login --hostname lorca.act.uji.es/gitlab
   script:
   - glab release delete "${GIT_TAG:?}" --yes || true
   - glab release create "${GIT_TAG:?}" ./build/pydtnn/pydtnn-* --ref "${CI_COMMIT_SHA:?}" --name "PyDTNN ${GIT_TAG:?}"
