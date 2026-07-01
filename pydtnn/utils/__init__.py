@@ -213,20 +213,3 @@ def read_file(path: str, replaces: dict[str, str] = {}) -> str:
         text = text.replace(*rep)
 
     return text
-
-
-class TqdmLogger:
-    """Logger wrapper to redirect tqdm output to the logging system."""
-
-    def __init__(self, csi: bool = True) -> None:
-        """Pad string to the logger."""
-        self._csi = csi
-        logger.info(self.__class__.__name__)
-
-    def write(self, s: str) -> int:
-        """Write string to the logger."""
-        if not self._csi:
-            s = s.strip("\r")
-        if s := s.replace("\r", "\x1b[F").replace("\n", ""):
-            logger.info(s.replace("\r", "\x1b[F").replace("\n", ""))
-        return len(s)

@@ -92,7 +92,7 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
             self.dropout_rate,
             self.states.ptr_voidp,
             self.states_size.value,
-            seed=0,
+            seed=self.model.random_seed,
         )
 
         # Attention Descriptor

@@ -4,7 +4,7 @@ stages:
 - push
 
 variables:
-  BRANCH_MAIN: main
+  BRANCH_MAIN: master
   BRANCH_WORK: develop
   GIT_STRATEGY: fetch
   GIT_SUBMODULE_STRATEGY: recursive
@@ -57,31 +57,31 @@ job_build:
     when: always
   coverage: '/TOTAL.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
 
-# job_merge:
-#   stage: merge
-# 
-#   rules:
-#   - if: '$CI_COMMIT_BRANCH == $BRANCH_WORK'
-# 
-#   image: registry.gitlab.com/gitlab-org/cli:latest
-#   tags: [ lorca-ubuntu ]
-# 
-#   needs:
-#   - job: job_test
-# 
-#   rules:
-#   - if: '$CI_COMMIT_BRANCH == $BRANCH_WORK'
-# 
-#   resource_group: merge
-# 
-#   before_script:
-#   - glab auth login --hostname lorca.act.uji.es/gitlab --token "${CI_JOB_TOKEN:?}"
-#   - git config --global user.email "ci@lorca.act.uji.es"
-#   - git config --global user.name "GitLab CI"
-#   script:
-#   - git checkout ${$BRANCH_MAIN:?}
-#   - git merge origin/${BRANCH_WORK:?} --ff-only
-#   - git push origin ${$BRANCH_MAIN:?}
+job_merge:
+  stage: merge
+
+  rules:
+  - if: '$CI_COMMIT_BRANCH == $BRANCH_WORK'
+
+  image: registry.gitlab.com/gitlab-org/cli:latest
+  tags: [ lorca-ubuntu ]
+
+  needs:
+  - job: job_build
+
+  rules:
+  - if: '$CI_COMMIT_BRANCH == $BRANCH_WORK'
+
+  resource_group: $BRANCH_MAIN
+
+  before_script:
+  - glab auth login --hostname lorca.act.uji.es/gitlab --token "${CI_JOB_TOKEN:?}"
+  - git config --global user.email "ci@lorca.act.uji.es"
+  - git config --global user.name "GitLab CI"
+  script:
+  - git checkout ${BRANCH_MAIN:?}
+  - git merge origin/${BRANCH_WORK:?} --ff-only
+  - git push origin ${BRANCH_MAIN:?}
 
 job_push:
   stage: push
@@ -95,6 +95,7 @@ job_push:
   needs:
   - job: job_build
     artifacts: true
+  - job: job_merge
 
   before_script:
   - glab auth login --hostname lorca.act.uji.es/gitlab --token "${CI_JOB_TOKEN:?}"

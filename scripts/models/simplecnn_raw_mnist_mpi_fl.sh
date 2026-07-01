@@ -34,7 +34,7 @@ mpirun -np 4 "${MPI_ARGS[@]}" \
   --early-stopping-metric=val_categorical_cross_entropy \
   --early-stopping-patience=20 \
   --parallel-data=True \
-  --shared-storage=False \
+  --shared-data=False \
   --use-blocking-mpi=True \
   --tracing=False \
   --profile=False \

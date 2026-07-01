@@ -1,10 +1,11 @@
 """Utilities for profiling performance and memory usage in PyDTNN."""
 
 import gc
-import logging
-import tempfile
+import os
 import time
 import types
+import logging
+import tempfile
 from pathlib import Path
 from typing import Self
 
@@ -40,7 +41,7 @@ class Profiler:
         self.start()
         return self
 
-    def __exit__[T: Exception](self, cls: type[T], exc: T, tb: types.TracebackType) -> None | bool:
+    def __exit__[T: Exception](self, cls: type[T], exc: T, tb: types.TracebackType) -> None:
         """Exit the context manager."""
         self.stop()
 
@@ -64,7 +65,9 @@ class MemoryProfiler(Profiler):
 
     def start(self) -> None:
         """Initialize memory tracking."""
-        self._tmp = tempfile.mktemp()
+        fd, self._tmp = tempfile.mkstemp()
+        os.close(fd)
+        Path(self._tmp).unlink()
         self._tracer = memray.Tracker(self._tmp, native_traces=True, follow_fork=True)
         gc.collect()
         self._tracer.__enter__()

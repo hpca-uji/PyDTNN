@@ -4,6 +4,7 @@ In-memory dataset implementation for PyDTNN.
 
 from __future__ import annotations
 
+from collections.abc import Generator
 import logging
 import operator
 from typing import TYPE_CHECKING
@@ -129,14 +130,20 @@ class Memory(Dataset):
             debug=debug,
         )
 
-    def _model_init(self) -> None:
-        """
-        Initialize the internal data buffers by slicing the source arrays.
-        """
-        super()._model_init()
-        for part in Dataset.Part:
-            local_offset = self._local_offset[part]
-            local_nsamples = self._local_nsamples[part]
-            local_slice = slice(local_offset, local_offset + local_nsamples)
-            self._x[part] = self.__x_source[part][local_slice, ...]
-            self._y[part] = self.__y_source[part][local_slice, ...]
+    def _data_generator(self, part: Dataset.Part) -> Generator[tuple[np.ndarray, np.ndarray]]:
+        """Yield raw data from the dataset partition."""
+        x = self.__x_source[part]
+        y = self.__y_source[part]
+
+        if part is Dataset.Part.TRAIN and self.model.augment_shuffle and False:
+            idx = np.arange(x.shape[0])
+            self.model.random.shuffle(idx[:self.train_nsamples])
+            x = x[idx]
+            y = y[idx]
+
+        local_offset = self._local_offset[part]
+        local_nsamples = self._local_nsamples[part]
+        local_slice = slice(local_offset, local_offset + local_nsamples)
+        x = x[local_slice, ...]
+        y = y[local_slice, ...]
+        yield x, y
