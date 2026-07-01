@@ -1,6 +1,4 @@
-"""
-AlexNet architecture implementation for CIFAR-10 dataset.
-"""
+"""AlexNet architecture implementation for CIFAR-10 dataset."""
 
 from collections.abc import Sequence
 

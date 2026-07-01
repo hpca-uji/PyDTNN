@@ -2,6 +2,7 @@
 
 import os as _os
 import sys as _sys
+from typing import Any
 
 # Select implementation
 # NOTE: Make sure global package is not confused with current package
@@ -21,6 +22,6 @@ if hasattr(_module, "__all__"):
     __all__ = _module.__all__  # type: ignore
 
 
-def __getattr__(key):
+def __getattr__(key: Any) -> Any:
     """Proxy all attributes to module"""
     return getattr(_module, key)

@@ -1,6 +1,4 @@
-"""
-Module for computing and managing binary confusion matrices in PyDTNN.
-"""
+"""Module for computing and managing binary confusion matrices in PyDTNN."""
 
 import logging
 
@@ -13,8 +11,6 @@ logger = logging.getLogger(__name__)
 
 
 class BinaryConfusionMatrix[T: Array](ConfusionMatrix[T]):
-    """
-    A confusion matrix implementation specifically for binary classification tasks.
-    """
+    """A confusion matrix implementation specifically for binary classification tasks."""
 
     conf_matrix: T = None  # type: ignore

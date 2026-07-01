@@ -1,6 +1,4 @@
-"""
-OkTopkSP optimizer implementation for distributed training.
-"""
+"""OkTopkSP optimizer implementation for distributed training."""
 
 from __future__ import annotations
 
@@ -21,9 +19,7 @@ if TYPE_CHECKING:
 
 
 class OkTopkSP[T: Array](Optimizer[T]):
-    """
-    OkTopkSP Optimizer
-    """
+    """OkTopkSP Optimizer"""
 
     def __init__(
         self,
@@ -33,7 +29,7 @@ class OkTopkSP[T: Array](Optimizer[T]):
         tau_prime: int = 32,
         density: float = 0.01,
         min_k_layer: int = 10,
-    ):
+    ) -> None:
         """
         Initialize the Ok-Topk optimizer.
 

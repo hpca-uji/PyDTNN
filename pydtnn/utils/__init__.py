@@ -84,7 +84,7 @@ def parse_bool(x: Literal["true", "1", "yes", "y", "t"]) -> bool:
     return str(x).lower() in {"true", "1", "yes", "y", "t"}
 
 
-def string_substitute(template: str, /, **mappings: Mapping[str, Any]) -> str:
+def string_substitute(template: str, /, **mappings: Any) -> str:
     """Shell-like opportunistic substitution"""
     return string.Template(template).safe_substitute(mappings)
 

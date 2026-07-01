@@ -9,7 +9,7 @@ import sys
 from typing import TYPE_CHECKING, Any, Iterable
 
 from pydtnn.tracers.events import (PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT,
-                                   PYDTNN_OPS_EVENTS, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum)
+                                   PYDTNN_OPS_EVENTS, MdlEventEnum, OpsEventEnum)
 from pydtnn.utils import find_component
 
 __all__ = (
@@ -34,9 +34,7 @@ else:
 
 
 class EventType:
-    """
-    Container for managing and retrieving event descriptions by code.
-    """
+    """Container for managing and retrieving event descriptions by code."""
 
     def __init__(self, name: str) -> None:
         """
@@ -80,36 +78,26 @@ class EventType:
         self._events[value] = description
 
     def __len__(self) -> int:
-        """
-        Return the number of registered events.
-        """
+        """Return the number of registered events."""
         return len(self._events)
 
     def items(self) -> Iterable:
-        """
-        Return the items in the event dictionary.
-        """
+        """Return the items in the event dictionary."""
         return self._events.items()
 
 
 class PostInitCaller(type):
-    """
-    Metaclass that triggers __post_init__ after object instantiation.
-    """
+    """Metaclass that triggers __post_init__ after object instantiation."""
 
-    def __call__(cls, *args: Any, **kwargs: dict) -> Any:
-        """
-        Create an instance and call its __post_init__ method.
-        """
+    def __call__[T](cls: type[T], *args: Any, **kwargs: Any) -> T:
+        """Create an instance and call its __post_init__ method."""
         obj = type.__call__(cls, *args, **kwargs)
         obj.__post_init__()
         return obj
 
 
 class Tracer(metaclass=PostInitCaller):
-    """
-    Base class for implementing model execution and memory tracers.
-    """
+    """Base class for implementing model execution and memory tracers."""
 
     def __init__(self, tracing: bool) -> None:
         """
@@ -125,9 +113,7 @@ class Tracer(metaclass=PostInitCaller):
         self.tracing = tracing
 
     def __post_init__(self) -> None:
-        """
-        Perform post-initialization setup to enable or disable tracing and memory monitoring.
-        """
+        """Perform post-initialization setup to enable or disable tracing and memory monitoring."""
         # NOTE: This method will be called AFTER all the derived classes __init__ methods are completed.
         # By proceeding in this way, when the derived classes enable/disable methods are called, all the attributes
         # they require will already have been defined on their corresponding __init__ methods.
@@ -191,7 +177,7 @@ class Tracer(metaclass=PostInitCaller):
             all_layers += self._get_layers_recursively(layer.children)
         return all_layers
 
-    def _define_event_types(self, model: Model):
+    def _define_event_types(self, model: Model) -> None:
         """
         Populate event types based on the provided model structure.
 
@@ -202,8 +188,8 @@ class Tracer(metaclass=PostInitCaller):
         ops_event = self.event_types[PYDTNN_OPS_EVENT]
         mdl_event[0] = "End"
         ops_event[0] = "End"
-        mdl_constants = [(event._name_, event._value_) for event in PYDTNN_MDL_EVENT_enum]
-        ops_constants = [(event._name_, event._value_) for event in PYDTNN_OPS_EVENT_enum]
+        mdl_constants = [(event._name_, event._value_) for event in MdlEventEnum]
+        ops_constants = [(event._name_, event._value_) for event in OpsEventEnum]
         for layer in model.get_all_layers():
             for name, val in mdl_constants:
                 mdl_event[layer.id * PYDTNN_MDL_EVENTS + val] = (

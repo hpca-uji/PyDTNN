@@ -4,7 +4,7 @@ from pydtnn.abstract.layerable import Layerable
 from pydtnn.backends.pycuda.abstract.base import BasePycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
-                                   PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
+                                   PYDTNN_OPS_EVENTS, OpsEventEnum)
 
 try:
     import pydtnn.libs.nccl as nccl
@@ -78,7 +78,7 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
                 dw_cpu = getattr(self, f"{dw_}_cpu")
                 self.model.tracer.emit_event(
                     PYDTNN_OPS_EVENT,
-                    self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.LAYER_ENCODE,
+                    self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.LAYER_ENCODE,
                 )
                 dw_cpu = self.model._layer_reduce_encode(dw_cpu)
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
@@ -109,7 +109,7 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
 
                 self.model.tracer.emit_event(
                     PYDTNN_OPS_EVENT,
-                    self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.LAYER_DECODE,
+                    self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.LAYER_DECODE,
                 )
                 dw_cpu = self.model._layer_reduce_decode(
                     dw_cpu
@@ -144,6 +144,7 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
         # NOTE: Keep in sync with Layer
         if not self.model.comm:
             return
+        assert nccl is not None
 
         for w_, dw_ in self.grad_vars.items():
             dw_ = dw_ if gradient else w_
@@ -156,7 +157,7 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
                 # TODO: self.model._encode_reduce
                 self.model.tracer.emit_event(
                     PYDTNN_OPS_EVENT,
-                    self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.OPS_ALLREDUCE_DW,
+                    self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.OPS_ALLREDUCE_DW,
                 )
                 nccl.ncclAllReduce(
                     dw.ptr,
@@ -208,21 +209,21 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
 
                 self.model.tracer.emit_event(
                     PYDTNN_OPS_EVENT,
-                    self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.LAYER_ENCODE,
+                    self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.LAYER_ENCODE,
                 )
                 dw_cpu = self.model._layer_reduce_encode(dw_cpu)
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
                 self.model.tracer.emit_event(
                     PYDTNN_OPS_EVENT,
-                    self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.OPS_ALLREDUCE_DW,
+                    self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.OPS_ALLREDUCE_DW,
                 )
                 dw_cpu = self.model._layer_reduce_sync(dw_cpu)
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
                 self.model.tracer.emit_event(
                     PYDTNN_OPS_EVENT,
-                    self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.LAYER_DECODE,
+                    self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.LAYER_DECODE,
                 )
                 dw_cpu = self.model._layer_reduce_decode(dw_cpu)
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)

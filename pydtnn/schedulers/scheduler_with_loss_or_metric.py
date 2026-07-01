@@ -1,6 +1,4 @@
-"""
-Module for schedulers that depend on model loss or metric values.
-"""
+"""Module for schedulers that depend on model loss or metric values."""
 
 import logging
 import operator
@@ -13,11 +11,9 @@ logger = logging.getLogger(__name__)
 
 
 class SchedulerWithLossOrMetric(Scheduler):
-    """
-    Base class for schedulers that adjust based on specific loss or metric values.
-    """
+    """Base class for schedulers that adjust based on specific loss or metric values."""
 
-    def __init__(self, loss_or_metric: str, verbose: bool):
+    def __init__(self, loss_or_metric: str, verbose: bool) -> None:
         """
         Initializes the scheduler with a target metric and verbosity setting.
 
@@ -32,7 +28,7 @@ class SchedulerWithLossOrMetric(Scheduler):
         self.loss_or_metric = metric
         self.compare = operator.lt if "accuracy" in self.loss_or_metric else operator.gt
 
-    def _get_idx(self):
+    def _get_idx(self) -> int:
         """
         Retrieves the index of the tracked metric within the model's metrics list.
 

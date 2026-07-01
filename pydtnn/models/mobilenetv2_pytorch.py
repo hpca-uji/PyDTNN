@@ -1,6 +1,4 @@
-"""
-MobileNetV2 implementation for the PyDTNN framework.
-"""
+"""MobileNetV2 implementation for the PyDTNN framework."""
 
 from collections.abc import Sequence
 

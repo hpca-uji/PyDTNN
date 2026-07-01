@@ -56,9 +56,7 @@ class SimpleTracerPMLib(SimpleTracer):
         self.pending_times = []
 
     def enable_tracing(self) -> None:
-        """
-        Enables tracing and initializes the PMLib power counter.
-        """
+        """Enables tracing and initializes the PMLib power counter."""
         super().enable_tracing()
         # Start counter
         if self.rank == 0:

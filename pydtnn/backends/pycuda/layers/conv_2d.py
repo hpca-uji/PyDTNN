@@ -10,7 +10,7 @@ from pydtnn.backends.pycuda.layers.abstract.conv_2d import AbstractConv2DPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.libs import cudnn as cudnn
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
-                                   PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
+                                   PYDTNN_OPS_EVENTS, OpsEventEnum)
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import TensorFormat, format_transpose
 
@@ -169,7 +169,7 @@ class Conv2DPycuda(AbstractConv2DPycuda):
         alpha, beta = 1.0, 0.0
         # Compute a' = x x weights
         self.model.tracer.emit_event(
-            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_CUDNN
         )
         cudnn.cudnnConvolutionForward(
             self.model.cudnn_handle,
@@ -192,7 +192,7 @@ class Conv2DPycuda(AbstractConv2DPycuda):
             alpha, beta = 1.0, 1.0
             self.model.tracer.emit_event(
                 PYDTNN_OPS_EVENT,
-                self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN_SUM_BIASES,
+                self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_CUDNN_SUM_BIASES,
             )
             # Compute a = a' + biases
             cudnn.cudnnAddTensor(
@@ -211,7 +211,7 @@ class Conv2DPycuda(AbstractConv2DPycuda):
         """Perform backward pass using cuDNN convolution gradients."""
         alpha, beta = 1.0, 0.0
         self.model.tracer.emit_event(
-            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DW
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.BACKWARD_CUDNN_DW
         )
         # Compute dw
         cudnn.cudnnConvolutionBackwardFilter(
@@ -239,7 +239,7 @@ class Conv2DPycuda(AbstractConv2DPycuda):
         if self.use_bias:
             self.model.tracer.emit_event(
                 PYDTNN_OPS_EVENT,
-                self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DB,
+                self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.BACKWARD_CUDNN_DB,
             )
             # Compute db
             cudnn.cudnnConvolutionBackwardBias(
@@ -259,7 +259,7 @@ class Conv2DPycuda(AbstractConv2DPycuda):
                 self.db.get_async(self.stream_2, self.db_cpu)
 
         self.model.tracer.emit_event(
-            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.BACKWARD_CUDNN_DX
         )
         # Compute dx
         cudnn.cudnnConvolutionBackwardData(

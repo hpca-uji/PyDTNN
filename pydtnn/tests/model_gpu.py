@@ -1,6 +1,4 @@
-"""
-Module for testing PyDTNN model consistency between CPU and GPU backends.
-"""
+"""Module for testing PyDTNN model consistency between CPU and GPU backends."""
 
 from __future__ import annotations
 
@@ -29,9 +27,7 @@ logger = logging.getLogger(__name__)
 
 @unittest.skipUnless(pycuda and supported_gpu, "requires GPU")
 class ModelGpuTestCase(ModelCommonTestCase):
-    """
-    Test case for verifying model parity between CPU and GPU implementations.
-    """
+    """Test case for verifying model parity between CPU and GPU implementations."""
 
     global ModelCommonTestCase
 
@@ -80,7 +76,7 @@ class ModelGpuTestCase(ModelCommonTestCase):
         model2._model_init()
         return model2
 
-    def copy_weights_and_biases(self, model1: Model, model2: Model):
+    def copy_weights_and_biases(self, model1: Model, model2: Model) -> None:
         """
         Copy weights and biases from a CPU model to a GPU model.
 

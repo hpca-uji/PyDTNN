@@ -10,7 +10,7 @@ from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.layers.adaptive_average_pool_2d import AdaptiveAveragePool2D
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
-                                   PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
+                                   PYDTNN_OPS_EVENTS, OpsEventEnum)
 from pydtnn.utils.performance_models import col2im_time, im2col_time
 
 __all__ = ("AdaptiveAveragePool2DPycuda",)
@@ -71,7 +71,7 @@ class AdaptiveAveragePool2DPycuda(AdaptiveAveragePool2D[TensorArray], LayerPycud
     def forward(self, x: TensorArray) -> TensorArray:
         """Perform the forward pass of the adaptive average pooling operation."""
         self.model.tracer.emit_event(
-            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_CUDNN
         )
 
         if self.pooling_not_needed:
@@ -121,7 +121,7 @@ class AdaptiveAveragePool2DPycuda(AdaptiveAveragePool2D[TensorArray], LayerPycud
     def backward(self, dy: TensorArray) -> TensorArray:
         """Perform the backward pass of the adaptive average pooling operation."""
         self.model.tracer.emit_event(
-            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.BACKWARD_CUDNN_DX
         )
         n, c, h, w = self.model.decode_shape(dy.shape)
 

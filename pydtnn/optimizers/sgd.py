@@ -1,6 +1,4 @@
-"""
-Stochastic Gradient Descent (SGD) optimizer implementation for PyDTNN.
-"""
+"""Stochastic Gradient Descent (SGD) optimizer implementation for PyDTNN."""
 
 from __future__ import annotations
 
@@ -20,17 +18,10 @@ if TYPE_CHECKING:
 
 
 class SGD[T: Array](Optimizer[T]):
-    """
-    Stochastic Gradient Descent optimizer with support for momentum, Nesterov acceleration, and weight decay.
-    """
+    """Stochastic Gradient Descent optimizer with support for momentum, Nesterov acceleration, and weight decay."""
 
-    def __init__(
-        self,
-        learning_rate: float = 1e-2,
-        momentum: float = 0.9,
-        nesterov: bool = False,
-        decay: float = 0.0,
-    ):
+    def __init__(self, learning_rate: float = 1e-2, momentum: float = 0.9,
+                 nesterov: bool = False, decay: float = 0.0) -> None:
         """
         Initialize the SGD optimizer.
 

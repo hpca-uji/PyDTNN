@@ -10,7 +10,7 @@ from pydtnn.backends.numpy.layers.abstract.conv_2d_standard import AbstractConv2
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.libs import numpy as np
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
-                                   PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
+                                   PYDTNN_OPS_EVENTS, OpsEventEnum)
 from pydtnn.utils.constants import ArrayShape
 
 __all__ = ("Conv2DReluFuse",)
@@ -49,7 +49,7 @@ class Conv2DReluFuse(LayerFuse, Conv2D[np.ndarray], AbstractConv2DStandardNumpy)
         """
 
         self.model.tracer.emit_event(
-            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVGEMM
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_CONVGEMM
         )
         res: np.ndarray = self.cg.conv_gemm_nchw(
             self.weights,
@@ -73,7 +73,7 @@ class Conv2DReluFuse(LayerFuse, Conv2D[np.ndarray], AbstractConv2DStandardNumpy)
         """
 
         self.model.tracer.emit_event(
-            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVGEMM
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_CONVGEMM
         )
         res: np.ndarray = self.cg.conv_gemm_nhwc(
             self.weights,
@@ -96,7 +96,7 @@ class Conv2DReluFuse(LayerFuse, Conv2D[np.ndarray], AbstractConv2DStandardNumpy)
         Version of the forward function that uses the convWinograd + Relu
         """
         self.model.tracer.emit_event(
-            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVGEMM
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_CONVGEMM
         )
         y: np.ndarray = self.cw.conv_winograd_nchw(
             self.weights,

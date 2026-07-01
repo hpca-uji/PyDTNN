@@ -1,6 +1,4 @@
-"""
-Module for model selection and component retrieval within the PyDTNN framework.
-"""
+"""Module for model selection and component retrieval within the PyDTNN framework."""
 
 from collections.abc import Callable, Sequence
 

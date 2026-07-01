@@ -19,7 +19,7 @@ import sys
 #
 # MISCELLANEOUS FUNCTIONS
 #
-def my_help():
+def my_help() -> None:
     """Print the the command line usage help."""
     print("""Usage: extract_profile_from_output.py [OPTION]... FILE
 
@@ -34,12 +34,12 @@ Please, report bugs to <barrachi@uji.es>.
 """)
 
 
-def log(text):
+def log(text: str) -> None:
     """Log a message to stderr."""
     print(f">>> {text}\n", file=sys.stderr)
 
 
-def error(text):
+def error(text: str) -> None:
     """Report an error message and exit."""
     print(f"ERROR: {text}\n", file=sys.stderr)
     raise SystemExit(-1)
@@ -51,7 +51,7 @@ VERBOSE = 0
 SCRIPT_PATH = pathlib.Path(__file__).parent.absolute()
 
 
-def get_opts():
+def get_opts() -> None:
     """Read command line options."""
     global INPUT_FILE_NAME, VERBOSE
     optlist, args = getopt.getopt(sys.argv[1:], "hv", ["VERBOSE", "help"])
@@ -71,7 +71,7 @@ def get_opts():
 #
 # APPLICATION SPECIFIC FUNCTIONS
 #
-def print_profile_from_file(file):
+def print_profile_from_file(file) -> None:
     """Do print the profile part from file."""
     first_line_re = re.compile("ncalls *tottime")
     in_profile_section = False
@@ -86,7 +86,7 @@ def print_profile_from_file(file):
             print(",".join(line))
 
 
-def print_profile():
+def print_profile() -> None:
     """Get the file and print the profile"""
     if INPUT_FILE_NAME is None:
         with sys.stdin as file:
@@ -97,7 +97,7 @@ def print_profile():
             print_profile_from_file(file)
 
 
-def main():
+def main() -> None:
     """Do the work (main function, called when not imported)."""
     get_opts()
     # Main part of the application

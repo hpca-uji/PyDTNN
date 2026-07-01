@@ -1,6 +1,4 @@
-"""
-Multiclass confusion matrix implementation for PyDTNN.
-"""
+"""Multiclass confusion matrix implementation for PyDTNN."""
 
 import logging
 
@@ -13,8 +11,6 @@ logger = logging.getLogger(__name__)
 
 
 class MulticlassConfusionMatrix[T: Array](ConfusionMatrix[T]):
-    """
-    Computes and stores the confusion matrix for multiclass classification tasks.
-    """
+    """Computes and stores the confusion matrix for multiclass classification tasks."""
 
     pass

@@ -92,7 +92,7 @@ def resnet50(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Laye
     _(Flatten())
     _(FC(shape=(512 * expansion,)))
     _(BatchNormalization())
-    #_(Relu())
+    _(Relu())
     _(Dropout(0.2))
     _(FC(shape=output_shape, activation=Softmax))
 

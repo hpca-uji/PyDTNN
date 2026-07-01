@@ -1,6 +1,4 @@
-"""
-ResNet-101 model architecture implementation for ImageNet classification.
-"""
+"""ResNet-101 model architecture implementation for ImageNet classification."""
 
 from collections.abc import Sequence
 

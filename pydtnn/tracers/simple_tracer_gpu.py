@@ -53,9 +53,7 @@ class SimpleTracerPycuda(SimpleTracer):
         return self.event_vars.pop()
 
     def _release_start_end_event(self, start: drvEvent, end: drvEvent) -> None:
-        """
-        Return a pair of PyCUDA events to the pool for reuse.
-        """
+        """Return a pair of PyCUDA events to the pool for reuse."""
         self.event_vars.append((start, end))
 
     def _emit_event(self, evt_type_val: int, evt_val: int, stream: StreamType | None = None) -> None:

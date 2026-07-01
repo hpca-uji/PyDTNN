@@ -1,6 +1,6 @@
 """Flake8 plugin to enforce code maintainability standards using Radon."""
 
-from typing import Any, Generator, Literal, Self
+from typing import Any, Generator, Literal, NoReturn, Self
 
 
 try:
@@ -9,7 +9,7 @@ try:
 except ModuleNotFoundError as exc:
     _exc = exc
 
-    def mi_visit(*args, **kwds):
+    def mi_visit(*args: tuple, **kwds: dict) -> NoReturn:
         """Rank the score with a letter."""
         raise _exc
 

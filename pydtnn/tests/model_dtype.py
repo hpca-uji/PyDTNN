@@ -1,6 +1,4 @@
-"""
-Tests for verifying model behavior and consistency across different data types.
-"""
+"""Tests for verifying model behavior and consistency across different data types."""
 
 import logging
 import unittest
@@ -22,9 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 class ModelDTypeTestCase(ModelCommonTestCase):
-    """
-    Tests that two models with different parameters lead to the same results
-    """
+    """Tests that two models with different parameters lead to the same results"""
 
     # NOTE: Delete parent test to prevent re-export and re-testing
     global ModelCommonTestCase

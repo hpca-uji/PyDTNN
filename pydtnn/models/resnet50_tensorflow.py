@@ -1,6 +1,4 @@
-"""
-ResNet50 architecture implementation compatible with TensorFlow specifications.
-"""
+"""ResNet50 architecture implementation compatible with TensorFlow specifications."""
 
 from collections.abc import Sequence
 

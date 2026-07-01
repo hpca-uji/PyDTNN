@@ -9,7 +9,7 @@ from pycuda import gpuarray  # type: ignore
 from pydtnn.activations.relu6 import Relu6
 from pydtnn.backends.pycuda.activations.abstract.activation import ActivationPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
+from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, OpsEventEnum
 from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
 from pydtnn.utils.performance_models import col2im_time, im2col_time
 
@@ -50,7 +50,7 @@ class Relu6Pycuda(Relu6[TensorArray], ActivationPycuda):
     def forward(self, x: TensorArray) -> TensorArray:
         """Perform the forward pass of the ReLU6 activation."""
         self.model.tracer.emit_event(
-            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_CUDNN
         )
 
         n = np.int32(math.prod(x.shape))
@@ -76,7 +76,7 @@ class Relu6Pycuda(Relu6[TensorArray], ActivationPycuda):
     def backward(self, dy: TensorArray) -> TensorArray:
         """Perform the backward pass of the ReLU6 activation."""
         self.model.tracer.emit_event(
-            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.BACKWARD_CUDNN_DX
         )
 
         n = np.int32(math.prod(dy.shape))

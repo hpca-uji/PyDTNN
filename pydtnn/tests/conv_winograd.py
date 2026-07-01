@@ -1,6 +1,4 @@
-"""
-Unit tests for Winograd convolution implementation in PyDTNN.
-"""
+"""Unit tests for Winograd convolution implementation in PyDTNN."""
 
 import inspect
 import logging
@@ -28,9 +26,7 @@ logger = logging.getLogger(__name__)
 
 @unittest.skipUnless(is_conv_winograd_available, "requires ConvWinograd")
 class ConvWinogradTestCase(ConvCommonTestCase):
-    """
-    Tests that conv_winograd leads to the same results as i2c and mm.
-    """
+    """Tests that conv_winograd leads to the same results as i2c and mm."""
 
     # NOTE: Delete parent test to prevent re-export and re-testing
     global ConvCommonTestCase
@@ -42,16 +38,14 @@ class ConvWinogradTestCase(ConvCommonTestCase):
         weights: np.ndarray,
         x: np.ndarray,
         biases: np.ndarray | None = None,
-        vpadding=0,
-        hpadding=0,
-        vstride=1,
-        hstride=1,
-        vdilation=1,
-        hdilation=1,
+        vpadding: int = 0,
+        hpadding: int = 0,
+        vstride: int = 1,
+        hstride: int = 1,
+        vdilation: int = 1,
+        hdilation: int = 1,
     ) -> tuple[np.ndarray, np.ndarray]:
-        """
-        Computes convolution using both Winograd and im2row/matmul methods for comparison.
-        """
+        """Computes convolution using both Winograd and im2row/matmul methods for comparison."""
         c, kh, kw, kn = weights.shape
         # b, c, h, w = x.shape
         cw_biases = biases.copy() if biases is not None else None
@@ -82,7 +76,7 @@ class ConvWinogradTestCase(ConvCommonTestCase):
 
         im2row_nhwc_cython(
             x.copy(),
-            x_c,  # type: ignore
+            x_c,
             kh,
             kw,
             ho,
@@ -146,18 +140,16 @@ class ConvWinogradTestCase(ConvCommonTestCase):
         weights: np.ndarray,
         x: np.ndarray,
         biases: np.ndarray | None = None,
-        kh=1,
-        kw=1,
-        vpadding=0,
-        hpadding=0,
-        vstride=1,
-        hstride=1,
-        vdilation=1,
-        hdilation=1,
-    ):
-        """
-        Executes the Winograd convolution operation.
-        """
+        kh: int = 1,
+        kw: int = 1,
+        vpadding: int = 0,
+        hpadding: int = 0,
+        vstride: int = 1,
+        hstride: int = 1,
+        vdilation: int = 1,
+        hdilation: int = 1,
+    ) -> np.ndarray:
+        """Executes the Winograd convolution operation."""
         return ConvWinograd(
             kh,
             kw,
@@ -173,42 +165,30 @@ class ConvWinogradTestCase(ConvCommonTestCase):
 
     @staticmethod
     def _get_config() -> D:
-        """
-        Returns the default configuration for Winograd tests.
-        """
+        """Returns the default configuration for Winograd tests."""
         return D(h=100, w=100, kh=3, kw=3)
 
     @unittest.skip("Winograd only supports stride 1x1")
-    def test_raise_on_different_strides(self):
-        """
-        Verifies that non-unit strides raise an error.
-        """
+    def test_raise_on_different_strides(self) -> None:
+        """Verifies that non-unit strides raise an error."""
         raise NotImplementedError()
 
     @unittest.skip("Winograd only supports stride 1x1")
-    def test_with_different_stride(self):
-        """
-        Verifies behavior with non-unit stride.
-        """
+    def test_with_different_stride(self) -> None:
+        """Verifies behavior with non-unit stride."""
         raise NotImplementedError()
 
     @unittest.skip("Winograd only supports stride 1x1")
-    def test_with_different_strides(self):
-        """
-        Verifies behavior with non-unit strides.
-        """
+    def test_with_different_strides(self) -> None:
+        """Verifies behavior with non-unit strides."""
         raise NotImplementedError()
 
     @unittest.skip("Winograd only supports dilation 1x1")
-    def test_with_different_dilation(self):
-        """
-        Verifies behavior with non-unit dilation.
-        """
+    def test_with_different_dilation(self) -> None:
+        """Verifies behavior with non-unit dilation."""
         raise NotImplementedError()
 
     @unittest.skip("Winograd only supports a subset of kernel sizes")
-    def test_alexnet_layers(self):
-        """
-        Tests compatibility with AlexNet layer configurations.
-        """
+    def test_alexnet_layers(self) -> None:
+        """Tests compatibility with AlexNet layer configurations."""
         raise NotImplementedError()

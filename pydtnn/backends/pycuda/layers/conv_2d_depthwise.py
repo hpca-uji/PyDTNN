@@ -10,7 +10,7 @@ from pycuda.driver import Function  # type: ignore
 from pydtnn.backends.pycuda.layers.abstract.conv_2d import AbstractConv2DPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
-                                   PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
+                                   PYDTNN_OPS_EVENTS, OpsEventEnum)
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import TensorFormat
 
@@ -77,7 +77,7 @@ class Conv2DDepthwisePycuda(AbstractConv2DPycuda):
         n, c, h, w = x.shape
 
         self.model.tracer.emit_event(
-            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_CUDNN
         )
         self.fwd_func(
             x.ary,
@@ -109,7 +109,7 @@ class Conv2DDepthwisePycuda(AbstractConv2DPycuda):
             self.biases: TensorArray
             self.model.tracer.emit_event(
                 PYDTNN_OPS_EVENT,
-                self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN_SUM_BIASES,
+                self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_CUDNN_SUM_BIASES,
             )
             self.bias_sum_fwd(
                 x.ary,
@@ -135,7 +135,7 @@ class Conv2DDepthwisePycuda(AbstractConv2DPycuda):
         self.y.fill(0)
 
         self.model.tracer.emit_event(
-            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_CUDNN
         )
         self.fwd_func(
             x.ary,
@@ -167,7 +167,7 @@ class Conv2DDepthwisePycuda(AbstractConv2DPycuda):
             self.biases: TensorArray
             self.model.tracer.emit_event(
                 PYDTNN_OPS_EVENT,
-                self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN_SUM_BIASES,
+                self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_CUDNN_SUM_BIASES,
             )
             self.bias_sum_fwd(
                 x.ary,
@@ -193,7 +193,7 @@ class Conv2DDepthwisePycuda(AbstractConv2DPycuda):
         self.dx.fill(0)
 
         self.model.tracer.emit_event(
-            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.BACKWARD_CUDNN_DX
         )
         self.fwd_func(
             dy.ary,
@@ -226,7 +226,7 @@ class Conv2DDepthwisePycuda(AbstractConv2DPycuda):
             self.biases: TensorArray
             self.model.tracer.emit_event(
                 PYDTNN_OPS_EVENT,
-                self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DB,
+                self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.BACKWARD_CUDNN_DB,
             )
             self.bias_sum_bwd(
                 dy.ary,
@@ -250,7 +250,7 @@ class Conv2DDepthwisePycuda(AbstractConv2DPycuda):
         self.dx.fill(0)
 
         self.model.tracer.emit_event(
-            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.BACKWARD_CUDNN_DX
         )
         self.fwd_func(
             dy.ary,
@@ -283,7 +283,7 @@ class Conv2DDepthwisePycuda(AbstractConv2DPycuda):
             self.biases: TensorArray
             self.model.tracer.emit_event(
                 PYDTNN_OPS_EVENT,
-                self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DB,
+                self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.BACKWARD_CUDNN_DB,
             )
             self.bias_sum_bwd(
                 dy.ary,

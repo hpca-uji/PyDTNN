@@ -1,6 +1,4 @@
-"""
-VGG-style neural network architecture for tropical cyclone intensity estimation.
-"""
+"""VGG-style neural network architecture for tropical cyclone intensity estimation."""
 
 from collections.abc import Sequence
 

@@ -1,6 +1,4 @@
-"""
-Multi-head attention layer implementation for PyDTNN.
-"""
+"""Multi-head attention layer implementation for PyDTNN."""
 
 import logging
 
@@ -14,9 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class MultiHeadAttention[T: Array](AbstractBlockLayer[T]):
-    """
-    Multi-head attention mechanism layer.
-    """
+    """Multi-head attention mechanism layer."""
 
     def __init__(
         self,
@@ -24,9 +20,9 @@ class MultiHeadAttention[T: Array](AbstractBlockLayer[T]):
         d_k: int = 3,
         heads: int = 10,
         dropout_rate: float = 0.5,
-        weights_initializer=initializers.glorot_uniform,
-        biases_initializer=initializers.zeros,
-    ):
+        weights_initializer: initializers.InitializerFunc = initializers.glorot_uniform,
+        biases_initializer: initializers.InitializerFunc = initializers.zeros,
+    ) -> None:
         """
         Initializes the MultiHeadAttention layer.
 

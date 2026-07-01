@@ -1,6 +1,4 @@
-"""
-F1-Score metric implementation for binary classification tasks.
-"""
+"""F1-Score metric implementation for binary classification tasks."""
 
 import logging
 
@@ -14,18 +12,14 @@ logger = logging.getLogger(__name__)
 
 
 class F1Score[T: Array](Metric[T]):
-    """
-    Computes the F1-score based on a BinaryConfusionMatrix.
-    """
+    """Computes the F1-score based on a BinaryConfusionMatrix."""
 
     order = BinaryConfusionMatrix.order + 1
     conf_matrix_metric: BinaryConfusionMatrix = None  # type: ignore
     format = "f1: %.4f"
 
     def _model_init(self) -> None:
-        """
-        Initializes the metric by locating the required BinaryConfusionMatrix in the model.
-        """
+        """Initializes the metric by locating the required BinaryConfusionMatrix in the model."""
 
         for metric in self.model.metrics_funcs:
             if isinstance(metric, BinaryConfusionMatrix):

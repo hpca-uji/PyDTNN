@@ -17,7 +17,7 @@ from pydtnn.backends.numpy.layers.max_pool_2d import MaxPool2DNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.model import Model
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
-                                   PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
+                                   PYDTNN_OPS_EVENTS, OpsEventEnum)
 
 __all__ = ("MaxPool2DCython",)
 
@@ -128,7 +128,7 @@ class MaxPool2DCython(MaxPool2DNumpy, AbstractPool2DLayerCython):
         )
 
         self.model.tracer.emit_event(
-            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_IM2COL
         )
         im2row_1ch_nhwc_cython(
             x,
@@ -165,7 +165,7 @@ class MaxPool2DCython(MaxPool2DNumpy, AbstractPool2DLayerCython):
         rng: np.ndarray = np.zeros((n,), dtype=np.int32)
 
         self.model.tracer.emit_event(
-            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_IM2COL
         )
         im2col_1ch_nchw_cython(
             x,
@@ -197,7 +197,7 @@ class MaxPool2DCython(MaxPool2DNumpy, AbstractPool2DLayerCython):
         dy_rows[self.idx_max] = dy.flatten()
         dx: np.ndarray = np.zeros_like(dy, dtype=self.model.dtype)
         self.model.tracer.emit_event(
-            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.COMP_DX_COL2IM
         )
         row2im_1ch_nhwc_cython(
             dy_rows,
@@ -231,7 +231,7 @@ class MaxPool2DCython(MaxPool2DNumpy, AbstractPool2DLayerCython):
         dx: np.ndarray = np.zeros((dy.shape[0], self.ci, self.hi, self.wi), dtype=self.model.dtype)
 
         self.model.tracer.emit_event(
-            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.COMP_DX_COL2IM
         )
         col2im_1ch_nchw_cython(
             dy_cols,

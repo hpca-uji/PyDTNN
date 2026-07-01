@@ -1,9 +1,8 @@
-"""
-Common test suite for convolution operations in PyDTNN.
-"""
+"""Common test suite for convolution operations in PyDTNN."""
 
 import inspect
 import logging
+from typing import Any
 
 import numpy as np
 
@@ -17,58 +16,33 @@ logger = logging.getLogger(__name__)
 
 
 class ConvCommonTestCase(TestCase):
-    """
-    Tests that conv leads to the same results as i2c and mm.
-    """
+    """Tests that conv leads to the same results as i2c and mm."""
 
     @classmethod
     def _compute_both(
-        cls,
-        weights: np.ndarray,
-        x: np.ndarray,
-        biases: np.ndarray | None = None,
-        vpadding=0,
-        hpadding=0,
-        vstride=1,
-        hstride=1,
-        vdilation=1,
-        hdilation=1,
+        cls, weights: np.ndarray, x: np.ndarray, biases: np.ndarray | None = None,
+        vpadding: int = 0, hpadding: int = 0, vstride: int = 1, hstride: int = 1,
+        vdilation: int = 1, hdilation: int = 1,
     ) -> tuple[np.ndarray, np.ndarray]:
-        """
-        Computes convolution using two different methods for comparison.
-        """
+        """Computes convolution using two different methods for comparison."""
         raise NotImplementedError()
 
     @staticmethod
     def _get_config() -> D:
-        """
-        Returns the configuration object for the test case.
-        """
+        """Returns the configuration object for the test case."""
         return D()
 
     @staticmethod
     def _compute(
-        weights: np.ndarray,
-        x: np.ndarray,
-        biases: np.ndarray | None = None,
-        kh=1,
-        kw=1,
-        vpadding=0,
-        hpadding=0,
-        vstride=1,
-        hstride=1,
-        vdilation=1,
-        hdilation=1,
-    ):
-        """
-        Computes the convolution operation.
-        """
+        weights: np.ndarray, x: np.ndarray, biases: np.ndarray | None = None,
+        kh: int = 1, kw: int = 1, vpadding: int = 0, hpadding: int = 0,
+        vstride: int = 1, hstride: int = 1, vdilation: int = 1, hdilation: int = 1,
+    ) -> Any:
+        """Computes the convolution operation."""
         raise NotImplementedError()
 
-    def test_raise_on_different_strides(self):
-        """
-        Verifies that convolution handles different vertical and horizontal strides correctly.
-        """
+    def test_raise_on_different_strides(self) -> None:
+        """Verifies that convolution handles different vertical and horizontal strides correctly."""
         d = self._get_config()
         weights = np.ones((d.c, d.kh, d.kw, d.kn)).astype(np.float32, order="C")
         x = np.ones((d.b, d.h, d.w, d.c)).astype(np.float32, order="C")
@@ -84,10 +58,8 @@ class ConvCommonTestCase(TestCase):
         )
         self.assertTrue(np.allclose(test_result, ref_result))
 
-    def test_defaults_with_ones(self):
-        """
-        Test that the default parameters on ones matrices lead to the same solution
-        """
+    def test_defaults_with_ones(self) -> None:
+        """Test that the default parameters on ones matrices lead to the same solution"""
         d = self._get_config()
         weights = np.ones((d.c, d.kh, d.kw, d.kn)).astype(np.float32, order="C")
         x = np.ones((d.b, d.h, d.w, d.c)).astype(np.float32, order="C")
@@ -103,10 +75,8 @@ class ConvCommonTestCase(TestCase):
         )
         self.assertTrue(np.allclose(test_result, ref_result))
 
-    def test_defaults_with_random(self):
-        """
-        Test that the default parameters on random matrices lead to the same solution
-        """
+    def test_defaults_with_random(self) -> None:
+        """Test that the default parameters on random matrices lead to the same solution"""
         d = self._get_config()
         weights = random.random((d.c, d.kh, d.kw, d.kn)).astype(np.float32, order="C")
         x = random.random((d.b, d.h, d.w, d.c)).astype(np.float32, order="C")
@@ -122,10 +92,8 @@ class ConvCommonTestCase(TestCase):
         )
         self.assertTrue(np.allclose(test_result, ref_result))
 
-    def test_defaults_including_biases_with_random(self):
-        """
-        Test that the default parameters on random matrices, including b, lead to the same solution
-        """
+    def test_defaults_including_biases_with_random(self) -> None:
+        """Test that the default parameters on random matrices, including b, lead to the same solution"""
         d = self._get_config()
         weights = random.random((d.c, d.kh, d.kw, d.kn)).astype(np.float32, order="C")
         x = random.random((d.b, d.h, d.w, d.c)).astype(np.float32, order="C")
@@ -151,10 +119,8 @@ class ConvCommonTestCase(TestCase):
             f" {diff.min()}",
         )
 
-    def test_with_different_kn(self):
-        """
-        Tests convolution correctness across varying numbers of output kernels.
-        """
+    def test_with_different_kn(self) -> None:
+        """Tests convolution correctness across varying numbers of output kernels."""
         d = self._get_config()
         if verbose_test():
             print_with_header("{}".format(inspect.stack()[1][3]), None)
@@ -222,10 +188,8 @@ class ConvCommonTestCase(TestCase):
             )
         self.assertTrue(np_all_close_for_all_cases)
 
-    def test_with_different_b(self):
-        """
-        Tests convolution correctness across varying batch sizes.
-        """
+    def test_with_different_b(self) -> None:
+        """Tests convolution correctness across varying batch sizes."""
         d = self._get_config()
         if verbose_test():
             print_with_header("{}".format(inspect.stack()[1][3]), None)
@@ -292,10 +256,8 @@ class ConvCommonTestCase(TestCase):
             )
         self.assertTrue(np_all_close_for_all_cases)
 
-    def test_with_different_padding(self):
-        """
-        Tests convolution correctness across varying padding values.
-        """
+    def test_with_different_padding(self) -> None:
+        """Tests convolution correctness across varying padding values."""
         d = self._get_config()
         if verbose_test():
             print_with_header("{}".format(inspect.stack()[1][3]), None)
@@ -362,10 +324,8 @@ class ConvCommonTestCase(TestCase):
             )
         self.assertTrue(np_all_close_for_all_cases)
 
-    def test_with_different_stride(self):
-        """
-        Tests convolution correctness across varying stride values.
-        """
+    def test_with_different_stride(self) -> None:
+        """Tests convolution correctness across varying stride values."""
         d = self._get_config()
         if verbose_test():
             print_with_header("{}".format(inspect.stack()[1][3]), None)
@@ -432,10 +392,8 @@ class ConvCommonTestCase(TestCase):
             )
         self.assertTrue(np_all_close_for_all_cases)
 
-    def test_with_different_strides(self):
-        """
-        Tests convolution correctness across varying combinations of vertical and horizontal strides.
-        """
+    def test_with_different_strides(self) -> None:
+        """Tests convolution correctness across varying combinations of vertical and horizontal strides."""
         d = self._get_config()
         if verbose_test():
             print_with_header("{}".format(inspect.stack()[1][3]), None)
@@ -505,10 +463,8 @@ class ConvCommonTestCase(TestCase):
                     f"Results differ with vstride {vstride} and hstride {hstride}",
                 )
 
-    def test_with_different_dilation(self):
-        """
-        Tests convolution correctness across varying dilation values.
-        """
+    def test_with_different_dilation(self) -> None:
+        """Tests convolution correctness across varying dilation values."""
         d = self._get_config()
         if verbose_test():
             print_with_header("{}".format(inspect.stack()[1][3]), None)
@@ -575,10 +531,8 @@ class ConvCommonTestCase(TestCase):
             )
         self.assertTrue(np_all_close_for_all_cases)
 
-    def test_alexnet_layers(self):
-        """
-        Tests convolution correctness using parameters derived from AlexNet layers.
-        """
+    def test_alexnet_layers(self) -> None:
+        """Tests convolution correctness using parameters derived from AlexNet layers."""
         if verbose_test():
             print_with_header("{}".format(inspect.stack()[1][3]), None)
             print(" layer   Maximum difference")

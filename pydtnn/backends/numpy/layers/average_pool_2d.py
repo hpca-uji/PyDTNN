@@ -9,7 +9,7 @@ from pydtnn.backends.numpy.layers.abstract.pool_2d_layer import AbstractPool2DLa
 from pydtnn.layers.average_pool_2d import AveragePool2D
 from pydtnn.libs import numpy as np
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
-                                   PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
+                                   PYDTNN_OPS_EVENTS, OpsEventEnum)
 
 __all__ = ("AveragePool2DNumpy",)
 
@@ -127,7 +127,7 @@ class AveragePool2DNumpy(AveragePool2D[np.ndarray], AbstractPool2DLayerNumpy):
         # y:np.ndarray = self.y[:x.shape[0], :]
         y = self.get_y(x.shape[0])
         self.model.tracer.emit_event(
-            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_IM2COL
         )
         self._fwd_avg_pool_nchw(x, y)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
@@ -138,7 +138,7 @@ class AveragePool2DNumpy(AveragePool2D[np.ndarray], AbstractPool2DLayerNumpy):
         Executes forward pass for NHWC data.
         """
         self.model.tracer.emit_event(
-            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_IM2COL
         )
         # y:np.ndarray = self.y[:x.shape[0], :]
         y = self.get_y(x.shape[0])
@@ -155,7 +155,7 @@ class AveragePool2DNumpy(AveragePool2D[np.ndarray], AbstractPool2DLayerNumpy):
         dx = self.get_dx(dy.shape[0])
         dx.fill(0)
         self.model.tracer.emit_event(
-            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.COMP_DX_COL2IM
         )
         self._bwd_avg_pool_nhwc(dx, dy)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
@@ -170,7 +170,7 @@ class AveragePool2DNumpy(AveragePool2D[np.ndarray], AbstractPool2DLayerNumpy):
         dx = self.get_dx(dy.shape[0])
         dx.fill(0)
         self.model.tracer.emit_event(
-            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.COMP_DX_COL2IM
         )
         self._bwd_avg_pool_nchw(dx, dy)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)

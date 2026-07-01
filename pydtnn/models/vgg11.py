@@ -1,6 +1,4 @@
-"""
-VGG11 model architecture implementation for PyDTNN.
-"""
+"""VGG11 model architecture implementation for PyDTNN."""
 
 from collections.abc import Sequence
 

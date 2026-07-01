@@ -1,6 +1,4 @@
-"""
-Categorical Mean Absolute Error metric implementation for PyDTNN.
-"""
+"""Categorical Mean Absolute Error metric implementation for PyDTNN."""
 
 import logging
 
@@ -13,8 +11,6 @@ logger = logging.getLogger(__name__)
 
 
 class CategoricalMAE[T: Array](Metric[T]):
-    """
-    Computes the Mean Absolute Error for categorical data.
-    """
+    """Computes the Mean Absolute Error for categorical data."""
 
     format = "mae: %.7f"

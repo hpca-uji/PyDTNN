@@ -1,6 +1,4 @@
-"""
-Test suite for verifying Conv2D Cython implementation consistency.
-"""
+"""Test suite for verifying Conv2D Cython implementation consistency."""
 
 import logging
 from copy import deepcopy
@@ -19,16 +17,14 @@ logger = logging.getLogger(__name__)
 
 
 class Conv2DCythonTestCase(Conv2DCommonTestCase):
-    """
-    Tests that Conv2D with cython leads to the same results than Conv2d with mm and i2c.T
-    """
+    """Tests that Conv2D with cython leads to the same results than Conv2d with mm and i2c.T"""
 
     # NOTE: Delete parent test to prevent re-export and re-testing
     global Conv2DCommonTestCase
     del Conv2DCommonTestCase
 
     @staticmethod
-    def _get_layers(d: D, deconv=False, trans=False) -> tuple[Conv2D, Conv2D]:
+    def _get_layers(d: D, deconv: bool = False, trans: bool = False) -> tuple[Conv2D, Conv2D]:
         """
         Initializes and returns two Conv2D layers with identical weights, one using
         im2col and the other using Cython backend.

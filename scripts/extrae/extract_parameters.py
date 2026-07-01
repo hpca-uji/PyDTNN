@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""
-Extracts parameters from PyDTNN run_model_dataset.sh files.
-"""
+"""Extracts parameters from PyDTNN run_model_dataset.sh files."""
 
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
@@ -36,7 +34,7 @@ from rich.console import Console
 from rich.table import Table
 
 
-def my_help():
+def my_help() -> None:
     """Print the command line usage help."""
     print("""Usage: extract_parameters.py [OPTION]...
 
@@ -50,12 +48,12 @@ Please, report bugs to <barrachi@uji.es>.
 """)
 
 
-def log(text):
+def log(text: str) -> None:
     """Log a message to stderr."""
     sys.stderr.write(">>> %s\n" % text)
 
 
-def error(text):
+def error(text: str) -> None:
     """Report an error message and exit."""
     sys.stderr.write("ERROR: %s\n" % text)
     sys.exit(-1)
@@ -66,7 +64,7 @@ VERBOSE = 0
 SCRIPT_PATH = pathlib.Path(__file__).parent.absolute()
 
 
-def get_opts():
+def get_opts() -> None:
     """Read command line options."""
     global VERBOSE
     optlist, args = getopt.getopt(sys.argv[1:], "hv", ["VERBOSE", "help"])
@@ -78,7 +76,7 @@ def get_opts():
             VERBOSE = 1
 
 
-def extract_parameters():
+def extract_parameters() -> None:
     """Parse shell scripts to extract and display model configuration parameters."""
     models_files = {
         "alexnet_cifar10": "run_alexnet_cifar10.sh",
@@ -202,7 +200,7 @@ def extract_parameters():
         print(";".join(row))
 
 
-def main():
+def main() -> None:
     """Do the work (main function, called when not imported)."""
     get_opts()
     # Main part of the application

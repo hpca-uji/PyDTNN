@@ -8,7 +8,7 @@ from pydtnn.backends.gemm.layers.abstract.conv_2d import AbstractConv2DGemm
 from pydtnn.backends.numpy.layers.conv_2d import Conv2DNumpy
 from pydtnn.libs.convGemm import ConvGemm
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
-                                   PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
+                                   PYDTNN_OPS_EVENTS, OpsEventEnum)
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import TensorFormat
 
@@ -48,7 +48,7 @@ class Conv2DGemm(Conv2DNumpy, AbstractConv2DGemm):
         self.cg_x = x
 
         self.model.tracer.emit_event(
-            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVGEMM
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_CONVGEMM
         )
         y = self.get_y(x.shape[0])
         w = np.asarray(self.weights, dtype=self.model.dtype)
@@ -75,7 +75,7 @@ class Conv2DGemm(Conv2DNumpy, AbstractConv2DGemm):
         self.cg_x = x
 
         self.model.tracer.emit_event(
-            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVGEMM
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_CONVGEMM
         )
         y = self.get_y(x.shape[0])
         w = np.asarray(self.weights, dtype=self.model.dtype)
@@ -98,7 +98,7 @@ class Conv2DGemm(Conv2DNumpy, AbstractConv2DGemm):
     def _backward_cg_nhwc(self, dy: np.ndarray) -> np.ndarray:
         """Version of the backward function that uses the convGemm library"""
         self.model.tracer.emit_event(
-            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CONVGEMM
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.BACKWARD_CONVGEMM
         )
         res: np.ndarray = np.zeros(self.weights.shape, dtype=dy.dtype)
         self.cg.conv_gemm_nhwc(
@@ -118,7 +118,7 @@ class Conv2DGemm(Conv2DNumpy, AbstractConv2DGemm):
 
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT,
-            self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_SUM_BIASES,
+            self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.BACKWARD_SUM_BIASES,
         )
         if self.use_bias:
             self.db[:] = np.sum(dy, axis=(0, 1, 2))
@@ -126,7 +126,7 @@ class Conv2DGemm(Conv2DNumpy, AbstractConv2DGemm):
 
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT,
-            self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_DECONV_GEMM,
+            self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.BACKWARD_DECONV_GEMM,
         )
         dx = self.get_dx(dy.shape[0])
         dx.fill(0)  # NOTE: It is necessary that dx is filled with 0s.
@@ -148,7 +148,7 @@ class Conv2DGemm(Conv2DNumpy, AbstractConv2DGemm):
     def _backward_cg_nchw(self, dy: np.ndarray) -> np.ndarray:
         """Version of the backward function that uses the convGemm library"""
         self.model.tracer.emit_event(
-            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CONVGEMM
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.BACKWARD_CONVGEMM
         )
         res = np.zeros(self.weights.shape, dtype=dy.dtype)
         # NOTE: conv_gemm_nchw, in this context seems that is being used as a
@@ -170,7 +170,7 @@ class Conv2DGemm(Conv2DNumpy, AbstractConv2DGemm):
 
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT,
-            self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_SUM_BIASES,
+            self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.BACKWARD_SUM_BIASES,
         )
         if self.use_bias:
             self.db[:] = np.sum(dy, axis=(0, 2, 3))
@@ -178,7 +178,7 @@ class Conv2DGemm(Conv2DNumpy, AbstractConv2DGemm):
 
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT,
-            self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_DECONV_GEMM,
+            self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.BACKWARD_DECONV_GEMM,
         )
         dx = self.get_dx(dy.shape[0])
         dx.fill(0)  # NOTE: It is necessary that dx is filled with 0s.

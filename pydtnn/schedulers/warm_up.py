@@ -29,7 +29,8 @@ class WarmUp(Scheduler):
     Learning rate scheduler that linearly increases the learning rate during an initial warm-up phase.
     """
 
-    def __init__(self, warmup_epochs=5, base_lr=1e-4, init_lr=1e-3, verbose=False):
+    def __init__(self, warmup_epochs: int = 5, base_lr: float = 1e-4,
+                 init_lr: float = 1e-3, verbose: bool = False) -> None:
         """
         Initialize the WarmUp scheduler.
 

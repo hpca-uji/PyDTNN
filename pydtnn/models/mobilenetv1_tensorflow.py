@@ -1,6 +1,4 @@
-"""
-MobileNetV1 implementation for PyDTNN using TensorFlow-style architecture.
-"""
+"""MobileNetV1 implementation for PyDTNN using TensorFlow-style architecture."""
 
 from collections.abc import Sequence
 

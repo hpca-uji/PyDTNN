@@ -1,6 +1,4 @@
-"""
-Categorical Mean Squared Error metric implementation for PyDTNN.
-"""
+"""Categorical Mean Squared Error metric implementation for PyDTNN."""
 
 import logging
 
@@ -13,8 +11,6 @@ logger = logging.getLogger(__name__)
 
 
 class CategoricalMSE[T: Array](Metric[T]):
-    """
-    Computes the Mean Squared Error between categorical predictions and targets.
-    """
+    """Computes the Mean Squared Error between categorical predictions and targets."""
 
     format = "mse: %.7f"

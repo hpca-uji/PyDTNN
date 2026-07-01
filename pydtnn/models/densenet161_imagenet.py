@@ -1,6 +1,4 @@
-"""
-DenseNet-161 model implementation for ImageNet.
-"""
+"""DenseNet-161 model implementation for ImageNet."""
 
 from pydtnn.models.densenet161 import densenet161 as densenet161_imagenet
 

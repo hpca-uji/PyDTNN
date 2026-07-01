@@ -1,6 +1,4 @@
-"""
-Module for handling distributed synchronization operations in PyDTNN.
-"""
+"""Module for handling distributed synchronization operations in PyDTNN."""
 
 import logging
 
@@ -11,13 +9,16 @@ from pydtnn.datasets.abstract import Dataset
 from pydtnn.model.base import Base
 from pydtnn.model.init import Init
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT,
-                                   PYDTNN_MDL_EVENTS, PYDTNN_MDL_EVENT_enum)
+                                   PYDTNN_MDL_EVENTS, MdlEventEnum)
 from pydtnn.utils.constants import Array
 
 __all__ = ("Sync",)
 
 logger = logging.getLogger(__name__)
+from typing import TYPE_CHECKING
 
+if TYPE_CHECKING:
+    from pympi.MPI import Request
 
 class Sync[T: Array](Init[T]):
     """
@@ -25,7 +26,7 @@ class Sync[T: Array](Init[T]):
     encoding, decoding, and performing collective communication reductions.
     """
 
-    def _layer_reduce_encode(self, data: np.ndarray):
+    def _layer_reduce_encode(self, data: np.ndarray) -> np.ndarray:
         """
         Prepares data for reduction by applying weights, quantization, and encryption.
 
@@ -45,7 +46,7 @@ class Sync[T: Array](Init[T]):
 
         return data
 
-    def _layer_reduce_decode(self, data) -> np.ndarray:
+    def _layer_reduce_decode(self, data: np.ndarray) -> np.ndarray:
         """
         Decodes data after reduction by performing decryption and dequantization.
 
@@ -81,7 +82,7 @@ class Sync[T: Array](Init[T]):
             data = self.comm.allreduce(data, op=MPI.SUM)
         return data
 
-    def _layer_reduce_async(self, data):
+    def _layer_reduce_async(self, data: np.ndarray) -> Request:
         """
         Initiates an asynchronous all-reduce operation.
 
@@ -98,7 +99,7 @@ class Sync[T: Array](Init[T]):
             req = self.comm.iallreduce(data, op=MPI.SUM)
         return req
 
-    def _layer_reduce_wait(self, data, request):
+    def _layer_reduce_wait(self, data: np.ndarray, request: Request) -> np.ndarray:
         """
         Waits for the completion of an asynchronous reduction operation.
 
@@ -113,35 +114,36 @@ class Sync[T: Array](Init[T]):
             data = response
         return data
 
-    def _model_reduce_sync(self, gradient=True):
+    def _model_reduce_sync(self, gradient: bool = True) -> None:
         """Performs a synchronous all-reduce operation on model weights or gradients."""
         for layer in self.layers:
             self.tracer.emit_event(
-                PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.ALLREDUCE_DW
+                PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + MdlEventEnum.ALLREDUCE_DW
             )
             layer.reduce_weights_sync(gradient=gradient)
             self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
-    def _model_reduce_async(self, gradient=True):
+    def _model_reduce_async(self, gradient: bool = True) -> None:
         """Initiates an asynchronous all-reduce operation on model weights or gradients."""
         for layer in self.layers:
             self.tracer.emit_event(
-                PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.ALLREDUCE_DW
+                PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + MdlEventEnum.ALLREDUCE_DW
             )
             layer.reduce_weights_async(gradient=gradient)
             self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
-    def _model_reduce_wait(self, gradient=True):
+    def _model_reduce_wait(self, gradient: bool = True) -> None:
         """Waits for completion of pending asynchronous all-reduce operations."""
         for layer in self.layers:
             self.tracer.emit_event(
-                PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.WAIT_DW
+                PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + MdlEventEnum.WAIT_DW
             )
             layer.wait_allreduce_async(gradient=gradient)
             self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
     # TODO: Modify the method's name.
-    def _weight_update(self, gradient=True, blocking=True, pipeline=False):
+    def _weight_update(self, gradient: bool = True, blocking: bool = True,
+                       pipeline: bool = False) -> None:
         """Updates model weights or gradients based on the configured synchronization strategy."""
         if blocking:
             self._model_reduce_sync(gradient)

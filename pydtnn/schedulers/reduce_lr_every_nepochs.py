@@ -1,6 +1,4 @@
-"""
-Module for the ReduceLREveryNEpochs learning rate scheduler.
-"""
+"""Module for the ReduceLREveryNEpochs learning rate scheduler."""
 
 from __future__ import annotations
 
@@ -21,11 +19,10 @@ if TYPE_CHECKING:
 
 
 class ReduceLREveryNEpochs(Scheduler):
-    """
-    ReduceLREveryNEpochs LRScheduler
-    """
+    """ReduceLREveryNEpochs LRScheduler"""
 
-    def __init__(self, factor=0.1, nepochs=5, min_lr=0, verbose=True):
+    def __init__(self, factor: float = 0.1, nepochs: int = 5,
+                 min_lr: float = 0.0, verbose: bool = True) -> None:
         """
         Initialize the scheduler.
 

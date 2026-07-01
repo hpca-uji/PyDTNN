@@ -38,7 +38,9 @@ class ModelCheckpoint(SchedulerWithLossOrMetric):
 
     model: Model
 
-    def __init__(self, loss_or_metric: str = "", epoch_save_frequency=1, verbose=True):
+    def __init__(self, loss_or_metric: str = "",
+                 epoch_save_frequency: int = 1,
+                 verbose: bool = True) -> None:
         """
         Initializes the ModelCheckpoint scheduler.
 

@@ -20,7 +20,7 @@ from pydtnn.layers.input import Input
 from pydtnn.model.base import Base
 from pydtnn.model.sync import Sync
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT,
-                                   PYDTNN_MDL_EVENTS, PYDTNN_MDL_EVENT_enum)
+                                   PYDTNN_MDL_EVENTS, MdlEventEnum)
 from pydtnn.utils import TqdmLogger
 from pydtnn.utils.constants import Array
 from pydtnn.utils.performance_models import allreduce_time
@@ -38,15 +38,14 @@ class Eval[T: Array](Sync[T]):
     metric aggregation across distributed processes.
     """
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, **kwargs: Any) -> None:
         """Initializes the Eval instance."""
         super().__init__(**kwargs)
         # Private attributes
         self._evaluate_round: int = 0
 
-    def _compute_metrics_funcs(
-        self, y_pred: T, y_targ: T, loss: float, blocking=True, comm=True
-    ) -> tuple[np.ndarray, None] | tuple[None, Any]:
+    def _compute_metrics_funcs(self, y_pred: T, y_targ: T, loss: float, blocking: bool = True,
+                               comm: bool = True) -> tuple[np.ndarray, None] | tuple[None, Any]:
         """
         Computes metrics and loss, optionally synchronizing across processes.
 
@@ -92,7 +91,7 @@ class Eval[T: Array](Sync[T]):
         total_metric: np.ndarray,
         total_size: int,
         batch_size: int,
-        prefix="",
+        prefix: str = "",
     ) -> tuple[np.ndarray, int, str]:
         """
         Updates the running average of metrics and generates a status string.
@@ -146,7 +145,7 @@ class Eval[T: Array](Sync[T]):
             for i in range(len(self.layers)):
                 self.tracer.emit_event(
                     PYDTNN_MDL_EVENT,
-                    self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.FORWARD,
+                    self.layers[i].id * PYDTNN_MDL_EVENTS + MdlEventEnum.FORWARD,
                 )
                 x = self.layers[i].forward(x)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
@@ -306,7 +305,7 @@ class Eval[T: Array](Sync[T]):
         self._evaluate_round += 1
         return (total_loss, total_size, model_sync_count, sync_epoch, string)
 
-    def evaluate(self):
+    def evaluate(self) -> None:
         """
         Runs the full evaluation process on the test dataset.
 

@@ -11,12 +11,14 @@ import ctypes
 import logging
 import math
 import platform
+from typing import Any, Callable
 import weakref
 from collections import defaultdict
 from functools import partial
 
 import numpy as np
 
+from pydtnn.abstract.layerable import Layerable
 from pydtnn.backends.cython.utils.im2col_nchw_cython import im2col_nchw_cython
 from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython
 from pydtnn.utils import load_library
@@ -75,10 +77,10 @@ class ConvWinograd:
         vdilation: int,
         hdilation: int,
         dtype: np.dtype = np.dtype(np.float32),
-        tensor_format=TensorFormat.NCHW,
-        debug=False,
-        parent_layer=None,
-    ):
+        tensor_format: TensorFormat = TensorFormat.NCHW,
+        debug : bool = False,
+        parent_layer : Layerable | None = None,
+    ) -> None:
         """
         Initializes the ConvWinograd layer, loading the necessary library and
         registering available Winograd routines.
@@ -323,7 +325,7 @@ class ConvWinograd:
         except AttributeError:
             logger.error("Winograd conv_winograd_workspace_alloc_pre/kernel routines not found.")
 
-        def winograd_workspace_alloc_pre(m, r, k, c):
+        def winograd_workspace_alloc_pre(m: int, r: int, k: int, c: int) -> tuple[np.ndarray, ctypes._Pointer[ctypes.c_float]]:
             """
             Allocates workspace memory for the Winograd pre-processing step.
 
@@ -353,7 +355,10 @@ class ConvWinograd:
             )
             return np.array([False]), _u
 
-        def winograd_workspace_alloc_kernel(m, r, n, k, c, hi, wi, kh, kw, vpadding, hpadding):
+        def winograd_workspace_alloc_kernel(m: int, r: int, n: int, k: int, c: int,
+                                            hi: int, wi: int, kh: int, kw: int,
+                                            vpadding: int, hpadding: int
+                                            ) -> tuple[ctypes._Pointer[ctypes.c_float], ctypes._Pointer[ctypes.c_float]]:
             """
             Allocates workspace memory for the Winograd kernel execution step.
 
@@ -401,7 +406,7 @@ class ConvWinograd:
                 ctypes.c_uint(kw),
                 ctypes.c_uint(vpadding),
                 ctypes.c_uint(hpadding),
-                ctypes.byref(_v),
+                ctypes.byref(_v),  # type: ignore
                 ctypes.byref(_m),  # type: ignore
             )
             return _v, _m
@@ -449,7 +454,7 @@ class ConvWinograd:
         hpadding: ctypes.c_uint,
         _v: ctypes.c_void_p,
         _m: ctypes.c_void_p,
-    ):
+    ) -> Any:
         """
         Placeholder for the C function to allocate kernel workspace memory.
         This method is intended to be overridden or called by the C library.
@@ -463,7 +468,7 @@ class ConvWinograd:
         k: ctypes.c_uint,
         c: ctypes.c_uint,
         _u: ctypes.c_void_p,
-    ):
+    ) -> Any:
         """
         Placeholder for the C function to allocate pre-processing workspace memory.
         This method is intended to be overridden or called by the C library.
@@ -572,7 +577,7 @@ class ConvWinograd:
         """
         raise NotImplementedError("Abstract method called!")
 
-    def encode_shape(self, shape):
+    def encode_shape(self, shape: tuple) -> tuple:
         """
         Encodes a shape tuple according to the configured tensor format.
 
@@ -588,7 +593,7 @@ class ConvWinograd:
         """
         return encode_shape(shape, self.tensor_format)
 
-    def decode_shape(self, shape):
+    def decode_shape(self, shape: tuple) -> tuple:
         """
         Decodes a shape tuple according to the configured tensor format.
 
@@ -611,19 +616,19 @@ class ConvWinograd:
         g: np.ndarray,
         bt: np.ndarray,
         at: np.ndarray,
-        pre,
-        kernel,
+        pre: Callable,
+        kernel: Callable,
         weights: np.ndarray,
         x: np.ndarray,
         biases: np.ndarray | None = None,
-        vpadding=0,
-        hpadding=0,
-        vstride=1,
-        hstride=1,
-        vdilation=1,
-        hdilation=1,
-        relu=False,
-        bn=False,
+        vpadding: int = 0,
+        hpadding: int = 0,
+        vstride: int = 1,
+        hstride: int = 1,
+        vdilation: int = 1,
+        hdilation: int = 1,
+        relu: bool = False,
+        bn: bool = False,
         running_mean: np.ndarray | None = None,
         inv_std: np.ndarray | None = None,
         gamma: np.ndarray | None = None,
@@ -879,19 +884,19 @@ class ConvWinograd:
         g: np.ndarray,
         bt: np.ndarray,
         at: np.ndarray,
-        x_winograd_pre,
-        x_winograd_kernel,
+        x_winograd_pre : Callable,
+        x_winograd_kernel : Callable,
         weights: np.ndarray,
         x: np.ndarray,
         biases: np.ndarray | None = None,
-        vpadding=0,
-        hpadding=0,
-        vstride=1,
-        hstride=1,
-        vdilation=1,
-        hdilation=1,
-        relu=False,
-        bn=False,
+        vpadding: int = 0,
+        hpadding: int = 0,
+        vstride: int = 1,
+        hstride: int = 1,
+        vdilation: int = 1,
+        hdilation: int = 1,
+        relu: bool = False,
+        bn: bool = False,
         running_mean: np.ndarray | None = None,
         inv_std: np.ndarray | None = None,
         gamma: np.ndarray | None = None,
@@ -1071,22 +1076,12 @@ class ConvWinograd:
 
 
 def time_it_func(
-    x: np.ndarray,
-    w_c: np.ndarray,
-    biases: np.ndarray,
-    b: int,
-    kn: int,
-    ho: int,
-    wo: int,
-    kh: int,
-    kw: int,
-    vpadding: int,
-    hpadding: int,
-    vstride: int,
-    hstride: int,
-    vdilation: int,
-    hdilation: int,
-):
+    x: np.ndarray, w_c: np.ndarray, biases: np.ndarray,
+    b: int, kn: int, ho: int, wo: int, kh: int, kw: int,
+    vpadding: int, hpadding: int,
+    vstride: int, hstride: int,
+    vdilation: int, hdilation: int,
+) -> None:
     """
     Times the execution of a convolution operation using im2row (NHWC format) and matrix multiplication.
 
@@ -1147,22 +1142,12 @@ def time_it_func(
 
 
 def time_it_im2col(
-    x: np.ndarray,
-    w_c: np.ndarray,
-    biases: np.ndarray,
-    b: int,
-    kn: int,
-    ho: int,
-    wo: int,
-    kh: int,
-    kw: int,
-    vpadding: int,
-    hpadding: int,
-    vstride: int,
-    hstride: int,
-    vdilation: int,
-    hdilation: int,
-):
+    x: np.ndarray, w_c: np.ndarray, biases: np.ndarray,
+    b: int, kn: int, ho: int, wo: int, kh: int, kw: int,
+    vpadding: int, hpadding: int,
+    vstride: int, hstride: int,
+    vdilation: int, hdilation: int,
+) -> None:
     """
     Times the execution of a convolution operation using im2col (NCHW format) and matrix multiplication.
 
@@ -1223,21 +1208,12 @@ def time_it_im2col(
 
 
 def time_it_im2col_4_dims(
-    x: np.ndarray,
-    w_c: np.ndarray,
-    biases: np.ndarray,
-    kk: int,
-    ho: int,
-    wo: int,
-    kh: int,
-    kw: int,
-    vpadding: int,
-    hpadding: int,
-    vstride: int,
-    hstride: int,
-    vdilation: int,
-    hdilation: int,
-):
+    x: np.ndarray, w_c: np.ndarray, biases: np.ndarray,
+    kk: int, ho: int, wo: int, kh: int, kw: int,
+    vpadding: int, hpadding: int,
+    vstride: int, hstride: int,
+    vdilation: int, hdilation: int,
+) -> None:
     """
     Times the execution of a convolution operation using im2col (NCHW format) and matrix multiplication,
     specifically for a 4-dimensional output shape.
@@ -1297,7 +1273,7 @@ def time_it_im2col_4_dims(
     res += biases.reshape(kk, -1, ho, wo).transpose(1, 0, 2, 3)
 
 
-def __usage_example__():
+def __usage_example__() -> None:
     """
     Provides a usage example for the ConvWinograd class.
 

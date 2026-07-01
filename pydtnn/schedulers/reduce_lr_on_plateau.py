@@ -1,6 +1,4 @@
-"""
-Reduce learning rate when a metric has stopped improving.
-"""
+"""Reduce learning rate when a metric has stopped improving."""
 
 from __future__ import annotations
 
@@ -21,11 +19,10 @@ if TYPE_CHECKING:
 
 
 class ReduceLROnPlateau(SchedulerWithLossOrMetric):
-    """
-    ReduceLROnPlateau LRScheduler
-    """
+    """ReduceLROnPlateau LRScheduler"""
 
-    def __init__(self, loss_or_metric: str = "", factor=0.1, patience=5, min_lr=0, verbose=True):
+    def __init__(self, loss_or_metric: str = "", factor: float = 0.1, patience: float = 5,
+                 min_lr: float = 0.0, verbose: bool = True) -> None:
         """
         Initialize the ReduceLROnPlateau scheduler.
 

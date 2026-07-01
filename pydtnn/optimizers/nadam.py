@@ -1,6 +1,4 @@
-"""
-Nadam optimizer implementation for PyDTNN.
-"""
+"""Nadam optimizer implementation for PyDTNN."""
 
 from __future__ import annotations
 
@@ -35,7 +33,7 @@ class Nadam[T: Array](Optimizer[T]):
         beta2: float = 0.999,
         epsilon: float = 1e-7,
         decay: float = 0.0,
-    ):
+    ) -> None:
         """
         Initialize the Nadam optimizer.
 

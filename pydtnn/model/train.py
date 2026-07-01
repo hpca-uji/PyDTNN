@@ -8,6 +8,7 @@ import logging
 import time
 from collections.abc import Generator
 from timeit import default_timer as timer
+from typing import Any
 
 import numpy as np
 from tqdm import tqdm
@@ -21,7 +22,7 @@ from pydtnn.model.eval import Eval
 from pydtnn.schedulers import select as select_scheduler
 from pydtnn.schedulers.abstract.scheduler import Scheduler
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT,
-                                   PYDTNN_MDL_EVENTS, PYDTNN_MDL_EVENT_enum)
+                                   PYDTNN_MDL_EVENTS, MdlEventEnum)
 from pydtnn.utils import TqdmLogger
 from pydtnn.utils.constants import Array
 
@@ -49,7 +50,7 @@ class Train[T: Array](Eval[T]):
         WAVG = enum.auto()
         INVAVG = enum.auto()
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, **kwargs: Any) -> None:
         """Initializes the training instance with synchronization parameters and schedulers."""
         super().__init__(**kwargs)
         self._training_round: int = 0
@@ -89,7 +90,7 @@ class Train[T: Array](Eval[T]):
             # Forward pass (FP)
             for layer in self.layers:
                 self.tracer.emit_event(
-                    PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.FORWARD
+                    PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + MdlEventEnum.FORWARD
                 )
                 x = layer.forward(x)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
@@ -112,7 +113,7 @@ class Train[T: Array](Eval[T]):
             # Backward pass (BP)
             for layer in reversed(self.layers):
                 self.tracer.emit_event(
-                    PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.BACKWARD
+                    PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + MdlEventEnum.BACKWARD
                 )
                 dx = layer.backward(dx)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
@@ -130,7 +131,7 @@ class Train[T: Array](Eval[T]):
             # Optimizer
             for layer in self.layers:
                 self.tracer.emit_event(
-                    PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.UPDATE_DW
+                    PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + MdlEventEnum.UPDATE_DW
                 )
                 layer.update_weights(self.optimizer)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
@@ -212,7 +213,7 @@ class Train[T: Array](Eval[T]):
             if local_batch_size <= 0:
                 if self.comm_rank == 0:
                     # (in comm_rank 0 , pbar is not None)
-                    pbar.set_postfix_str(s=f"{string}, waiting…", refresh=True) # type: ignore
+                    pbar.set_postfix_str(s=f"{string}, waiting…", refresh=True)  # type: ignore
                 continue
 
             total_loss, total_size, string = self._update_status(

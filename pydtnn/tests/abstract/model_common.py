@@ -27,9 +27,7 @@ logger = logging.getLogger(__name__)
 
 
 class ModelCommonTestCase(TestCase):
-    """
-    Tests that two models with different parameters lead to the same results
-    """
+    """Tests that two models with different parameters lead to the same results"""
 
     # Compares results between an XX model {self.model1_desc} and other {self.model1_desc}
     model1_desc = "using A"
@@ -128,7 +126,7 @@ class ModelCommonTestCase(TestCase):
         """
         raise NotImplementedError()
 
-    def copy_weights_and_biases(self, model1: Model, model2: Model):
+    def copy_weights_and_biases(self, model1: Model, model2: Model) -> None:
         """
         Copies weights and biases from Model 1 to Model 2.
 
@@ -334,7 +332,7 @@ class ModelCommonTestCase(TestCase):
 
     def compare_forward(
         self, model1: Model, x1: list[np.ndarray], model2: Model, x2: list[np.ndarray]
-    ):
+    ) -> None:
         """
         Compares the forward pass outputs of two models.
 
@@ -365,7 +363,7 @@ class ModelCommonTestCase(TestCase):
 
     def compare_backward(
         self, model1: Model, dx1: list[np.ndarray], model2: Model, dx2: list[np.ndarray]
-    ):
+    ) -> None:
         """
         Compares the backward pass gradients of two models.
 
@@ -417,7 +415,7 @@ class ModelCommonTestCase(TestCase):
                     f"({self.print_stats(dx1[i], dx2[i], rtol, atol)})",
                 )
 
-    def do_test_model(self, model_name: str):
+    def do_test_model(self, model_name: str) -> None:
         """
         Executes the full comparison test for a given model.
 
@@ -473,32 +471,22 @@ class ModelCommonTestCase(TestCase):
         # Compare backward results
         self.compare_backward(model1, dx1, model2, dx2)
 
-    def test_alexnet(self):
-        """
-        Compares results between an Alexnet model using A and other using B.
-        """
+    def test_alexnet(self) -> None:
+        """Compares results between an Alexnet model using A and other using B."""
         self.do_test_model("alexnet")
 
-    def test_resnet10(self):
-        """
-        Compares results between a Resnet10 model using A and other using B.
-        """
+    def test_resnet10(self) -> None:
+        """Compares results between a Resnet10 model using A and other using B."""
         self.do_test_model("resnet10")
 
-    def test_densenet21k8(self):
-        """
-        Compares results between a Densenet21 (k=8) model using A and other using B.
-        """
+    def test_densenet21k8(self) -> None:
+        """Compares results between a Densenet21 (k=8) model using A and other using B."""
         self.do_test_model("densenet21k8")
 
-    def test_mobilenetv1_tiny(self):
-        """
-        Compares results between a MobileNetV1 (Tiny) model using A and other using B.
-        """
+    def test_mobilenetv1_tiny(self) -> None:
+        """Compares results between a MobileNetV1 (Tiny) model using A and other using B."""
         self.do_test_model("mobilenetv1_tiny")
 
-    def test_mobilenetv2_tiny(self):
-        """
-        Compares results between a MobileNetV2 (Tiny) model using A and other using B.
-        """
+    def test_mobilenetv2_tiny(self) -> None:
+        """Compares results between a MobileNetV2 (Tiny) model using A and other using B."""
         self.do_test_model("mobilenetv2_tiny")

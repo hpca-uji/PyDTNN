@@ -1,6 +1,4 @@
-"""
-ResNet-34 architecture implementation for ImageNet classification.
-"""
+"""ResNet-34 architecture implementation for ImageNet classification."""
 
 from collections.abc import Sequence
 

@@ -10,7 +10,7 @@ from pydtnn.layers.addition_block import AdditionBlock
 from pydtnn.libs import numpy as np
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT,
                                    PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS,
-                                   PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum)
+                                   MdlEventEnum, OpsEventEnum)
 
 __all__ = ("AdditionBlockNumpy",)
 
@@ -42,7 +42,7 @@ class AdditionBlockNumpy(AdditionBlock[np.ndarray], AbstractBlockLayerNumpy):
         x_forward = x
         for layer in p:
             self.model.tracer.emit_event(
-                PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.FORWARD
+                PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + MdlEventEnum.FORWARD
             )
             x_forward = layer.forward(x_forward)
             self.model.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
@@ -53,13 +53,13 @@ class AdditionBlockNumpy(AdditionBlock[np.ndarray], AbstractBlockLayerNumpy):
             x_forward = x
             for layer in p:
                 self.model.tracer.emit_event(
-                    PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.FORWARD
+                    PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + MdlEventEnum.FORWARD
                 )
                 x_forward = layer.forward(x_forward)
                 self.model.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
             self.model.tracer.emit_event(
                 PYDTNN_OPS_EVENT,
-                self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_ELTW_SUM,
+                self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_ELTW_SUM,
             )
             np.add(sum_forwards, x_forward, out=sum_forwards, dtype=self.model.dtype)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
@@ -81,7 +81,7 @@ class AdditionBlockNumpy(AdditionBlock[np.ndarray], AbstractBlockLayerNumpy):
         dx_backward = dy
         for layer in reversed(p):
             self.model.tracer.emit_event(
-                PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.FORWARD
+                PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + MdlEventEnum.FORWARD
             )
             dx_backward = layer.backward(dx_backward)
             self.model.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
@@ -92,14 +92,14 @@ class AdditionBlockNumpy(AdditionBlock[np.ndarray], AbstractBlockLayerNumpy):
             dx_backward = dy
             for layer in reversed(p):
                 self.model.tracer.emit_event(
-                    PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.BACKWARD
+                    PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + MdlEventEnum.BACKWARD
                 )
                 dx_backward = layer.backward(dx_backward)
                 self.model.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
             self.model.tracer.emit_event(
                 PYDTNN_OPS_EVENT,
-                self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ELTW_SUM,
+                self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.BACKWARD_ELTW_SUM,
             )
             np.add(dx, dx_backward, out=dx, dtype=self.model.dtype)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)

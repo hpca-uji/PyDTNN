@@ -122,8 +122,8 @@ class SimpleTracer(Tracer):
     def _write_output(self) -> None:
         """
         Write the collected trace data to the output file.
+        This method will be called at exit only if tracing has been enabled at any time
         """
-        """This method will be called at exit only if tracing has been enabled at any time"""
         output_filename = utils.string_substitute(self.output_filename, rank=self.rank)  # type: ignore (It's fine)
         if output_filename != self.output_filename or self.rank == 0:
             if len(self.pending_events):

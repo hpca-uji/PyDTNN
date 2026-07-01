@@ -1,6 +1,4 @@
-"""
-Categorical hinge loss metric implementation.
-"""
+"""Categorical hinge loss metric implementation."""
 
 import logging
 
@@ -13,8 +11,6 @@ logger = logging.getLogger(__name__)
 
 
 class CategoricalHinge[T: Array](Metric[T]):
-    """
-    Computes the categorical hinge loss between y_true and y_pred.
-    """
+    """Computes the categorical hinge loss between y_true and y_pred."""
 
     format = "hin: %.7f"

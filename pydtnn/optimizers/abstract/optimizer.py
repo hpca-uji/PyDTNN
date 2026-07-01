@@ -27,7 +27,7 @@ class Optimizer[T: Array](Base):
         context (dict): Internal state storage for optimizer-specific parameters.
     """
 
-    def __init__(self, learning_rate: float = 1e-2):
+    def __init__(self, learning_rate: float = 1e-2) -> None:
         """
         Initializes the optimizer with a learning rate.
 

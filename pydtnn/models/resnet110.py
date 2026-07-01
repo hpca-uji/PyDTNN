@@ -1,6 +1,4 @@
-"""
-ResNet-110 model architecture implementation for PyDTNN.
-"""
+"""ResNet-110 model architecture implementation for PyDTNN."""
 
 from collections.abc import Sequence
 

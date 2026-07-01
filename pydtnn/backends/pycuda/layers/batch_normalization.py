@@ -13,7 +13,7 @@ from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.libs import cudnn as cudnn
 from pydtnn.model import Model
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
-                                   PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
+                                   PYDTNN_OPS_EVENTS, OpsEventEnum)
 from pydtnn.utils.constants import ArrayShape, Parameters
 
 __all__ = ("BatchNormalizationPycuda",)
@@ -145,7 +145,7 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
             case Model.Mode.TRAIN:
                 self.model.tracer.emit_event(
                     PYDTNN_OPS_EVENT,
-                    self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN,
+                    self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_CUDNN,
                 )
                 cudnn.cudnnBatchNormalizationForwardTraining(
                     self.model.cudnn_handle,
@@ -170,7 +170,7 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
             case Model.Mode.EVALUATE:
                 self.model.tracer.emit_event(
                     PYDTNN_OPS_EVENT,
-                    self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN,
+                    self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_CUDNN,
                 )
                 cudnn.cudnnBatchNormalizationForwardInference(
                     self.model.cudnn_handle,
@@ -199,7 +199,7 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
 
         alpha_dx, beta_dx, alpha_dgb, beta_dgb = 1.0, 0.0, 1.0, 0.0
         self.model.tracer.emit_event(
-            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.BACKWARD_CUDNN_DX
         )
         # Compute dx, dgamma, dbeta
         cudnn.cudnnBatchNormalizationBackward(

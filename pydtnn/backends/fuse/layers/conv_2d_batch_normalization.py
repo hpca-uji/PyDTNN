@@ -12,7 +12,7 @@ from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.libs import numpy as np
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
-                                   PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
+                                   PYDTNN_OPS_EVENTS, OpsEventEnum)
 from pydtnn.utils.constants import ArrayShape, Parameters
 
 __all__ = ("Conv2DBatchNormalizationFuse",)
@@ -65,7 +65,7 @@ class Conv2DBatchNormalizationFuse(
         Performs the forward pass using Winograd convolution fused with Batch Normalization (NCHW).
         """
         self.model.tracer.emit_event(
-            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVGEMM
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_CONVGEMM
         )
         y: np.ndarray = self.cw.conv_winograd_nchw(
             self.weights,
@@ -93,7 +93,7 @@ class Conv2DBatchNormalizationFuse(
         Performs the forward pass using GEMM-based convolution fused with Batch Normalization (NCHW).
         """
         self.model.tracer.emit_event(
-            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVGEMM
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_CONVGEMM
         )
         res: np.ndarray = self.cg.conv_gemm_nchw(
             self.weights,
@@ -119,7 +119,7 @@ class Conv2DBatchNormalizationFuse(
         Performs the forward pass using GEMM-based convolution fused with Batch Normalization (NHWC).
         """
         self.model.tracer.emit_event(
-            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVGEMM
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_CONVGEMM
         )
         res: np.ndarray = self.cg.conv_gemm_nhwc(
             self.weights,

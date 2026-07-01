@@ -19,9 +19,7 @@ logger = logging.getLogger(__name__)
 
 @skipUnless(is_conv_gemm_available, "requires ConvGemm")
 class Conv2DConvGemmLongTestCase(Conv2DConvGemmTestCase):
-    """
-    Tests that Conv2D with conv_gemm leads to the same results than Conv2d with mm and i2c.T (exhaustive version)
-    """
+    """Tests that Conv2D with conv_gemm leads to the same results than Conv2d with mm and i2c.T (exhaustive version)"""
 
     # NOTE: Delete parent test to prevent re-export and re-testing
     global Conv2DConvGemmTestCase
@@ -64,7 +62,7 @@ class Conv2DConvGemmLongTestCase(Conv2DConvGemmTestCase):
         )
     ).astype(dtype)
 
-    def test_forward_backward_multiple_params(self):
+    def test_forward_backward_multiple_params(self) -> None:
         """Tests that different input matrices, paddings and strides, lead to the same solution"""
         start = time.time()
 
@@ -87,19 +85,10 @@ class Conv2DConvGemmLongTestCase(Conv2DConvGemmTestCase):
             print(f"{perc:.5%} (eta: {d:2.0f}d {h:2.0f}h {m:2.0f}m {s:2.0f}s)", end="\r")
 
     def _test_forward_backward_multiple_params(
-        self,
-        kn: int,
-        b: int,
-        c: int,
-        h: int,
-        w: int,
-        kh: int,
-        kw: int,
-        vpadding: int,
-        hpadding: int,
-        vstride: int,
-        hstride: int,
-    ):
+        self, kn: int, b: int, c: int, h: int, w: int,
+        kh: int, kw: int, vpadding: int, hpadding: int,
+        vstride: int, hstride: int
+    ) -> None:
         """
         Executes forward and backward pass verification for a specific set of convolution parameters.
 

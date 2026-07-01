@@ -7,7 +7,7 @@ from pydtnn.backends.numpy.layers.abstract.conv_2d import AbstractConv2DNumpy
 from pydtnn.layers.conv_2d_depthwise import Conv2DDepthwise
 from pydtnn.libs import numpy as np
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
-                                   PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
+                                   PYDTNN_OPS_EVENTS, OpsEventEnum)
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import TensorFormat
 
@@ -145,7 +145,7 @@ class Conv2DDepthwiseNumpy(Conv2DDepthwise[np.ndarray], AbstractConv2DNumpy):
 
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT,
-            self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_DEPTHWISE_CONV,
+            self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_DEPTHWISE_CONV,
         )
         self._conv_fwd_nhwc(x, y)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
@@ -153,7 +153,7 @@ class Conv2DDepthwiseNumpy(Conv2DDepthwise[np.ndarray], AbstractConv2DNumpy):
         if self.use_bias:
             self.model.tracer.emit_event(
                 PYDTNN_OPS_EVENT,
-                self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_SUM_BIASES,
+                self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_SUM_BIASES,
             )
             y: np.ndarray = y.reshape((self.co, -1))
             for i in range(self.co):
@@ -161,7 +161,7 @@ class Conv2DDepthwiseNumpy(Conv2DDepthwise[np.ndarray], AbstractConv2DNumpy):
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(
-            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_Y
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_RESHAPE_Y
         )
         y: np.ndarray = y.reshape((-1, self.ho, self.wo, self.co))
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
@@ -176,7 +176,7 @@ class Conv2DDepthwiseNumpy(Conv2DDepthwise[np.ndarray], AbstractConv2DNumpy):
 
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT,
-            self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_DEPTHWISE_CONV,
+            self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_DEPTHWISE_CONV,
         )
         self._conv_fwd_nchw(x, y)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
@@ -184,7 +184,7 @@ class Conv2DDepthwiseNumpy(Conv2DDepthwise[np.ndarray], AbstractConv2DNumpy):
         if self.use_bias:
             self.model.tracer.emit_event(
                 PYDTNN_OPS_EVENT,
-                self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_SUM_BIASES,
+                self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_SUM_BIASES,
             )
             y: np.ndarray = y.reshape((self.co, -1))
             for i in range(self.co):
@@ -192,7 +192,7 @@ class Conv2DDepthwiseNumpy(Conv2DDepthwise[np.ndarray], AbstractConv2DNumpy):
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(
-            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_Y
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_RESHAPE_Y
         )
         y: np.ndarray = y.reshape((-1, self.co, self.ho, self.wo))
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
@@ -211,7 +211,7 @@ class Conv2DDepthwiseNumpy(Conv2DDepthwise[np.ndarray], AbstractConv2DNumpy):
         if self.use_bias:
             self.model.tracer.emit_event(
                 PYDTNN_OPS_EVENT,
-                self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_SUM_BIASES,
+                self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.BACKWARD_SUM_BIASES,
             )
             np.sum(dy, axis=(0, 1, 2), out=self.db)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
@@ -230,7 +230,7 @@ class Conv2DDepthwiseNumpy(Conv2DDepthwise[np.ndarray], AbstractConv2DNumpy):
         if self.use_bias:
             self.model.tracer.emit_event(
                 PYDTNN_OPS_EVENT,
-                self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_SUM_BIASES,
+                self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.BACKWARD_SUM_BIASES,
             )
             np.sum(dy, axis=(0, 2, 3), out=self.db)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)

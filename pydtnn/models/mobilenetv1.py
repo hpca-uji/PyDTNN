@@ -1,6 +1,4 @@
-"""
-MobileNetV1 architecture implementation for PyDTNN.
-"""
+"""MobileNetV1 architecture implementation for PyDTNN."""
 
 from collections.abc import Sequence
 

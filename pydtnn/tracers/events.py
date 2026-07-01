@@ -1,16 +1,14 @@
-"""
-Tracer events for PyDTNN.
-"""
+"""Tracer events for PyDTNN."""
 
 import logging
 from enum import IntEnum, auto
 
 __all__ = (
     "PYDTNN_EVENT_FINISHED",
-    "PYDTNN_MDL_EVENT_enum",
+    "MdlEventEnum",
     "PYDTNN_MDL_EVENT",
     "PYDTNN_MDL_EVENTS",
-    "PYDTNN_OPS_EVENT_enum",
+    "OpsEventEnum",
     "PYDTNN_OPS_EVENT",
     "PYDTNN_OPS_EVENTS",
 )
@@ -23,7 +21,7 @@ PYDTNN_EVENT_FINISHED = 0
 
 
 # ==== PYDTNN_MODEL_EVENT ====
-class PYDTNN_MDL_EVENT_enum(IntEnum):
+class MdlEventEnum(IntEnum):
     """Enumeration of model-level tracer events."""
 
     FORWARD = auto()  # Originally: 1
@@ -34,12 +32,12 @@ class PYDTNN_MDL_EVENT_enum(IntEnum):
 
 
 PYDTNN_MDL_EVENT = 60000001
-PYDTNN_MDL_EVENTS = len(PYDTNN_MDL_EVENT_enum)
+PYDTNN_MDL_EVENTS = len(MdlEventEnum)
 
 # ==== PYDTNN_OPERATION_EVENT ====
 
 
-class PYDTNN_OPS_EVENT_enum(IntEnum):
+class OpsEventEnum(IntEnum):
     """Enumeration of operation-level tracer events."""
 
     OPS_ALLREDUCE_DW = auto()  # Orginally: 1
@@ -100,4 +98,4 @@ class PYDTNN_OPS_EVENT_enum(IntEnum):
 
 
 PYDTNN_OPS_EVENT = 60000002
-PYDTNN_OPS_EVENTS = len(PYDTNN_OPS_EVENT_enum)
+PYDTNN_OPS_EVENTS = len(OpsEventEnum)

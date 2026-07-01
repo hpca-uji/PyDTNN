@@ -1,6 +1,4 @@
-"""
-ResNet-32 model implementation for the PyDTNN framework.
-"""
+"""ResNet-32 model implementation for the PyDTNN framework."""
 
 from collections.abc import Sequence
 

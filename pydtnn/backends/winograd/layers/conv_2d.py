@@ -10,7 +10,7 @@ from pydtnn.backends.numpy.layers.conv_2d import Conv2DNumpy
 from pydtnn.backends.winograd.layers.abstract.conv_2d import AbstractConv2DWinograd
 from pydtnn.libs.convWinograd import ConvWinograd
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
-                                   PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
+                                   PYDTNN_OPS_EVENTS, OpsEventEnum)
 from pydtnn.utils.tensor import TensorFormat
 
 __all__ = ("Conv2DWinograd",)
@@ -62,7 +62,7 @@ class Conv2DWinograd(Conv2DNumpy, AbstractConv2DWinograd):
         biases = np.asarray(self.biases, dtype=self.model.dtype) if self.use_bias else self.biases
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT,
-            self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVWINOGRAD,
+            self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_CONVWINOGRAD,
         )
         y: np.ndarray = self.cw.conv_winograd_nhwc(
             w,
@@ -85,7 +85,7 @@ class Conv2DWinograd(Conv2DNumpy, AbstractConv2DWinograd):
 
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT,
-            self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVWINOGRAD,
+            self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_CONVWINOGRAD,
         )
         w = np.asarray(self.weights, dtype=self.model.dtype)
         biases = np.asarray(self.biases, dtype=self.model.dtype) if self.use_bias else self.biases
@@ -107,7 +107,7 @@ class Conv2DWinograd(Conv2DNumpy, AbstractConv2DWinograd):
         """Perform backward pass using im2row transformation for NHWC format."""
 
         self.model.tracer.emit_event(
-            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_IM2COL
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.BACKWARD_IM2COL
         )
 
         self.x_rows = np.zeros(
@@ -137,7 +137,7 @@ class Conv2DWinograd(Conv2DNumpy, AbstractConv2DWinograd):
         n, c, _, _ = dy.shape
         self.x_cols = np.zeros((c * self.kh * self.kw, n * self.ho * self.wo))
         self.model.tracer.emit_event(
-            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_IM2COL
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.BACKWARD_IM2COL
         )
         im2col_nchw_cython(
             self.cw_x,

@@ -1,6 +1,4 @@
-"""
-2D Max Pooling layer implementation for the PyDTNN framework.
-"""
+"""2D Max Pooling layer implementation for the PyDTNN framework."""
 
 import logging
 
@@ -13,8 +11,6 @@ logger = logging.getLogger(__name__)
 
 
 class MaxPool2D[T: Array](AbstractPool2DLayer[T]):
-    """
-    Performs 2D max pooling on the input tensor.
-    """
+    """Performs 2D max pooling on the input tensor."""
 
     pass

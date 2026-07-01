@@ -1,3 +1,5 @@
+"""PyDTNN's Setup"""
+
 from pathlib import Path
 from os import process_cpu_count
 
@@ -8,7 +10,11 @@ from setuptools.command.build_ext import build_ext
 
 
 class BuildExt(build_ext):
+    """Provides the configuration for some non-python libraries."""
+
     def initialize_options(self) -> None:
+        """Set the extern libraries' initialize options so the compilation is made in parallel."""
+
         super().initialize_options()
         if self.parallel is None:
             self.parallel = process_cpu_count()

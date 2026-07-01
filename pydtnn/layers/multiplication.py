@@ -1,6 +1,4 @@
-"""
-Multiplication layer module for PyDTNN.
-"""
+"""Multiplication layer module for PyDTNN."""
 
 import logging
 
@@ -13,8 +11,6 @@ logger = logging.getLogger(__name__)
 
 
 class Multiplication[T: Array](Layer[T]):
-    """
-    Layer that performs element-wise multiplication of input tensors.
-    """
+    """Layer that performs element-wise multiplication of input tensors."""
 
     pass

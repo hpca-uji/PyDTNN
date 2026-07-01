@@ -1,6 +1,4 @@
-"""
-VGG16 with Batch Normalization architecture implementation for PyDTNN.
-"""
+"""VGG16 with Batch Normalization architecture implementation for PyDTNN."""
 
 from collections.abc import Sequence
 

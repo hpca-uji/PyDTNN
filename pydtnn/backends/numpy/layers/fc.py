@@ -7,7 +7,7 @@ from pydtnn.backends.numpy.layers.abstract.layer import LayerNumpy
 from pydtnn.layers.fc import FC
 from pydtnn.libs import numpy as np
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
-                                   PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
+                                   PYDTNN_OPS_EVENTS, OpsEventEnum)
 from pydtnn.utils.performance_models import matmul_time
 
 __all__ = ("FCNumpy",)
@@ -96,7 +96,7 @@ class FCNumpy(FC[np.ndarray], LayerNumpy):
         self.x = x
         y = np.ascontiguousarray(self.y[: x.shape[0], :], dtype=self.model.dtype)
         self.model.tracer.emit_event(
-            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_MATMUL
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_MATMUL
         )
         np.matmul(x, self.weights, out=y, dtype=self.model.dtype)
 
@@ -112,7 +112,7 @@ class FCNumpy(FC[np.ndarray], LayerNumpy):
 
         # self.model.mode = ModelModeEnum.TRAIN is asumed from this point.
         self.model.tracer.emit_event(
-            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DW_MATMUL
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.COMP_DW_MATMUL
         )
         # self.dw = np.matmul(self.x.T, dy)
         np.matmul(self.x.T, dy, self.dw, dtype=self.model.dtype)
@@ -124,7 +124,7 @@ class FCNumpy(FC[np.ndarray], LayerNumpy):
 
         dx = np.asarray(self.dx[: self.x.shape[0], :], dtype=self.model.dtype, order="C")
         self.model.tracer.emit_event(
-            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_MATMUL
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.COMP_DX_MATMUL
         )
         # dx = np.matmul(dy, self.weights.T)
         np.matmul(dy, self.weights.T, out=dx, dtype=self.model.dtype)

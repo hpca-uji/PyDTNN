@@ -1,6 +1,4 @@
-"""
-DenseNet201 model architecture implementation for PyDTNN.
-"""
+"""DenseNet201 model architecture implementation for PyDTNN."""
 
 from collections.abc import Sequence
 

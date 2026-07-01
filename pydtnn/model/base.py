@@ -44,7 +44,7 @@ class Base[T: Array]:
     handling.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         """Initialize the base model instance."""
         pass
 

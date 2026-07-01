@@ -1,6 +1,4 @@
-"""
-Module for the Tsunamis Eflows UMA model architecture.
-"""
+"""Module for the Tsunamis Eflows UMA model architecture."""
 
 from collections.abc import Sequence
 
@@ -17,10 +15,10 @@ from pydtnn.layers.max_pool_2d import MaxPool2D
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.initializers import he_uniform
 
-__all__ = ("tsunamis_eflows_UMA",)
+__all__ = ("tsunamis_eflows_uma",)
 
 
-def tsunamis_eflows_UMA(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
+def tsunamis_eflows_uma(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
     """
     Constructs the Tsunamis Eflows UMA model architecture.
 
@@ -38,9 +36,9 @@ def tsunamis_eflows_UMA(input_shape: ArrayShape, output_shape: ArrayShape) -> Se
     _(Conv2D(nfilters=32, filter_shape=(3, 3), padding=1, weights_initializer=he_uniform))
     _(Conv2D(nfilters=32, filter_shape=(3, 3), padding=1, weights_initializer=he_uniform))
 
-    UMA_blocks = [[32, 64, 64], [64, 128, 128], [128, 256, 256]]
+    uma_blocks = [[32, 64, 64], [64, 128, 128], [128, 256, 256]]
 
-    for n3x3, n3x3red, n2x2 in UMA_blocks:
+    for n3x3, n3x3red, n2x2 in uma_blocks:
         _(
             ConcatenationBlock(
                 [
@@ -70,9 +68,9 @@ def tsunamis_eflows_UMA(input_shape: ArrayShape, output_shape: ArrayShape) -> Se
             )
         )
 
-    UMA_dense_blocks = [[128, 256, 512], [128, 256, 512]]
+    uma_dense_blocks = [[128, 256, 512], [128, 256, 512]]
 
-    for n3x3, n3x3red, n3x3fin in UMA_dense_blocks:
+    for n3x3, n3x3red, n3x3fin in uma_dense_blocks:
         _(
             ConcatenationBlock(
                 [

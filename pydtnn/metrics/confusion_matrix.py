@@ -1,6 +1,4 @@
-"""
-Module for computing and managing confusion matrices in PyDTNN.
-"""
+"""Module for computing and managing confusion matrices in PyDTNN."""
 
 import logging
 
@@ -13,8 +11,6 @@ logger = logging.getLogger(__name__)
 
 
 class ConfusionMatrix[T: Array](Metric[T]):
-    """
-    A metric class for calculating the confusion matrix of classification predictions.
-    """
+    """A metric class for calculating the confusion matrix of classification predictions."""
 
     pass

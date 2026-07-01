@@ -1,6 +1,4 @@
-"""
-Test suite for verifying model consistency across different tensor formats.
-"""
+"""Test suite for verifying model consistency across different tensor formats."""
 
 import logging
 import unittest
@@ -26,9 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 class ModelTensorTestCase(ModelCommonTestCase):
-    """
-    Tests that two models with different parameters lead to the same results
-    """
+    """Tests that two models with different parameters lead to the same results"""
 
     global ModelCommonTestCase
 
@@ -50,7 +46,7 @@ class ModelTensorTestCase(ModelCommonTestCase):
     model1_desc = "using the CPU backend tensor format NHWC"
     model2_desc = "using the CPU backend tensor format NCHW"
 
-    def get_model2(self, model_name: str):
+    def get_model2(self, model_name: str) -> Model:
         """
         Instantiates a model configured for NCHW tensor format.
 
@@ -76,7 +72,7 @@ class ModelTensorTestCase(ModelCommonTestCase):
         return model2
 
     @staticmethod
-    def nhwc2nchw(x: np.ndarray):
+    def nhwc2nchw(x: np.ndarray) -> np.ndarray:
         """
         Transposes a tensor from NHWC to NCHW format.
 
@@ -91,23 +87,17 @@ class ModelTensorTestCase(ModelCommonTestCase):
         return np.asarray(x, order="C")
 
     def do_model2_forward_pass(self, model2: Model, x1: list[np.ndarray]) -> list[np.ndarray]:
-        """
-        Model 2 forward pass in NCHW format
-        """
+        """Model 2 forward pass in NCHW format"""
 
         x1_format = list(map(self.nhwc2nchw, x1))
         return super().do_model2_forward_pass(model2, x1_format)
 
     def do_model2_backward_pass(self, model2: Model, dx1: list[np.ndarray]) -> list[np.ndarray]:
-        """
-        Model 2 backward pass in NCHW format
-        """
+        """Model 2 backward pass in NCHW format"""
         dx1_format = list(map(self.nhwc2nchw, dx1))
         return super().do_model2_backward_pass(model2, dx1_format)
 
-    def compare_forward(
-        self, model1: Model, x1: list[np.ndarray], model2: Model, x2: list[np.ndarray]
-    ):
+    def compare_forward(self, model1: Model, x1: list[np.ndarray], model2: Model, x2: list[np.ndarray]) -> None:
         """
         Compares forward pass outputs between two models.
 
@@ -135,7 +125,7 @@ class ModelTensorTestCase(ModelCommonTestCase):
                     f"({self.print_stats(x1_i, x2[i], rtol, atol)})",
                 )
 
-    def compare_backward(self, model1: Model, dx1, model2: Model, dx2):
+    def compare_backward(self, model1: Model, dx1: list[np.ndarray], model2: Model, dx2: list[np.ndarray]) -> None:
         """
         Compares backward pass gradients between two models.
 

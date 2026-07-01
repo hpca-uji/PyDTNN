@@ -1,10 +1,10 @@
-"""
-Test suite for verifying the fused Conv2D-BatchNormalization-Relu layer implementation.
-"""
+"""Test suite for verifying the fused Conv2D-BatchNormalization-Relu layer implementation."""
 
 import logging
 import unittest
 from copy import deepcopy
+
+import numpy as np
 
 from pydtnn.activations.relu import Relu
 from pydtnn.backends.numpy.layers.abstract.conv_2d import AbstractConv2DNumpy
@@ -19,23 +19,13 @@ from pydtnn.tests.abstract.conv_2d_common import Conv2DCommonTestCase
 from pydtnn.utils.initializers import glorot_uniform, zeros
 from pydtnn.utils.tensor import TensorFormat
 
-"""
-Test suite for verifying the fused Conv2D-BatchNormalization-Relu layer implementation.
-"""
-
 __all__ = ("Conv2DBatchNormalizationReluTestCase",)
 
 logger = logging.getLogger(__name__)
 
-
-# TODO: Mirar esto
-
-
 @unittest.skipUnless(is_conv_gemm_available, "requires ConvGemm")
 class Conv2DBatchNormalizationReluTestCase(Conv2DCommonTestCase):
-    """
-    Tests that Conv2D+BatchNormalization+Relu leads to the same results than Conv2DBatchNormalizationRelu
-    """
+    """Tests that Conv2D+BatchNormalization+Relu leads to the same results than Conv2DBatchNormalizationRelu"""
 
     # NOTE: Delete parent test to prevent re-export and re-testing
     global Conv2DCommonTestCase
@@ -43,7 +33,7 @@ class Conv2DBatchNormalizationReluTestCase(Conv2DCommonTestCase):
 
     @staticmethod
     def _get_layers(
-        d: D, deconv=False, trans=False
+        d: D, deconv: bool = False, trans: bool = False
     ) -> tuple[AbstractConv2DNumpy, AbstractConv2DNumpy]:
         """
         Constructs and initializes a standard layer chain and a fused layer for comparison.
@@ -79,7 +69,7 @@ class Conv2DBatchNormalizationReluTestCase(Conv2DCommonTestCase):
         model_chain.add(chain)
 
         params_fuse = deepcopy(params_chain)
-        params_fuse.enable_fused_conv_bn_relu = True
+        params_fuse.enable_fused_conv_bn_relu = True  # type: ignore
         model_fuse = Model(**vars(params_fuse))
         model_fuse.mode = Model.Mode.EVALUATE
         model_fuse.add(Input(model_fuse.encode_shape((d.c, d.h, d.w))))
@@ -108,7 +98,7 @@ class Conv2DBatchNormalizationReluTestCase(Conv2DCommonTestCase):
         return chain, fuse  # type: ignore
 
     @staticmethod
-    def _set_state(layer: Conv2D, weights) -> None:
+    def _set_state(layer: Conv2D, weights: np.ndarray) -> None:
         """
         Sets the weights for the provided layer or concatenation block.
 
@@ -122,56 +112,56 @@ class Conv2DBatchNormalizationReluTestCase(Conv2DCommonTestCase):
             layer.weights = weights.copy()
 
     @unittest.skip("Backward not implemented")
-    def test_forward_backward_larger_handmade_array_stride3(self):
+    def test_forward_backward_larger_handmade_array_stride3(self) -> None:
         """Tests forward and backward pass with stride 3."""
         raise NotImplementedError()
 
     @unittest.skip("Backward not implemented")
-    def test_forward_backward_larger_handmade_array_stride2(self):
+    def test_forward_backward_larger_handmade_array_stride2(self) -> None:
         """Tests forward and backward pass with stride 2."""
         raise NotImplementedError()
 
     @unittest.skip("Backward not implemented")
-    def test_forward_backward_handmade_array(self):
+    def test_forward_backward_handmade_array(self) -> None:
         """Tests forward and backward pass with standard handmade array."""
         raise NotImplementedError()
 
     @unittest.skip("Backward not implemented")
-    def test_forward_backward_even_larger_handmade_array_stride3_filter1x2(self):
+    def test_forward_backward_even_larger_handmade_array_stride3_filter1x2(self) -> None:
         """Tests forward and backward pass with stride 3 and 1x2 filter."""
         raise NotImplementedError()
 
     @unittest.skip("Backward not implemented")
-    def test_forward_backward_even_larger_handmade_array_stride3_filter1x1(self):
+    def test_forward_backward_even_larger_handmade_array_stride3_filter1x1(self) -> None:
         """Tests forward and backward pass with stride 3 and 1x1 filter."""
         raise NotImplementedError()
 
     @unittest.skip("Backward not implemented")
-    def test_forward_backward_defaults(self):
+    def test_forward_backward_defaults(self) -> None:
         """Tests forward and backward pass with default parameters."""
         raise NotImplementedError()
 
     @unittest.skip("Backward not implemented")
-    def test_forward_backward_handmade_array_stride2(self):
+    def test_forward_backward_handmade_array_stride2(self) -> None:
         """Tests forward and backward pass with handmade array and stride 2."""
         raise NotImplementedError()
 
     @unittest.skip("Backward not implemented")
-    def test_forward_backward_even_larger_handmade_array_stride3(self):
+    def test_forward_backward_even_larger_handmade_array_stride3(self) -> None:
         """Tests forward and backward pass with even larger array and stride 3."""
         raise NotImplementedError()
 
     @unittest.skip("Backward not implemented")
-    def test_forward_backward_even_larger_handmade_array_stride12(self):
+    def test_forward_backward_even_larger_handmade_array_stride12(self) -> None:
         """Tests forward and backward pass with even larger array and stride 12."""
         raise NotImplementedError()
 
     @unittest.skip("Backward not implemented")
-    def test_forward_backward_alexnet_imagenet_first_conv2d(self):
+    def test_forward_backward_alexnet_imagenet_first_conv2d(self) -> None:
         """Tests forward and backward pass using AlexNet ImageNet configuration."""
         raise NotImplementedError()
 
     @unittest.skip("Backward not implemented")
-    def test_forward_backward_alexnet_cifar10_first_conv2d(self):
+    def test_forward_backward_alexnet_cifar10_first_conv2d(self) -> None:
         """Tests forward and backward pass using AlexNet CIFAR10 configuration."""
         raise NotImplementedError()

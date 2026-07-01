@@ -1,6 +1,4 @@
-"""
-VGG-style convolutional neural network architecture implementation.
-"""
+"""VGG-style convolutional neural network architecture implementation."""
 
 from collections.abc import Sequence
 

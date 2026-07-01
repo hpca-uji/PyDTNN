@@ -1,6 +1,4 @@
-"""
-Tests for verifying the equivalence of convolution implementations using Im2Col+MM versus ConvGemm.
-"""
+"""Tests for verifying the equivalence of convolution implementations using Im2Col+MM versus ConvGemm."""
 
 import logging
 import unittest
@@ -19,9 +17,7 @@ logger = logging.getLogger(__name__)
 
 @unittest.skipUnless(is_conv_gemm_available, "requires ConvGemm")
 class ModelConvGemmTestCase(ModelCommonTestCase):
-    """
-    Tests that two models with different parameters lead to the same results
-    """
+    """Tests that two models with different parameters lead to the same results"""
 
     # NOTE: Delete parent test to prevent re-export and re-testing
     global ModelCommonTestCase

@@ -53,7 +53,7 @@ class Init[T: Array](Layers[T]):
     dataset loading, and model layer construction.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         """
         Initializes the model environment and configuration.
 
@@ -71,7 +71,7 @@ class Init[T: Array](Layers[T]):
         self.enable_cudnn = gpuarray is not None and drv is not None and cublas is not None
         self.gpudirect: bool = self.enable_gpudirect
         self.enable_nccl: bool = self.enable_nccl
-        self.memory: PrivateMemory = None # type: ignore (it will be intialized later if "self.use_memory_pool" is True)
+        self.memory: PrivateMemory = None  # type: ignore (it will be intialized later if "self.use_memory_pool" is True)
         self.dtype: np.dtype = np.dtype(self.dtype)
         self.param_dtype: np.dtype = np.dtype(self.quantize_dtype) if self.quantize else self.dtype
         self.network_algo = NetworkAlgoEnum(self.network_algo.lower())
@@ -364,7 +364,7 @@ class Init[T: Array](Layers[T]):
         self._apply_layer_fusion()
 
         temp_memory_size = []
-        
+
         self.loss_func = select_loss(self.loss_func_name).from_model(self)
         self.loss_func._init_backend_with_model(self)
         self.loss_func._model_init()

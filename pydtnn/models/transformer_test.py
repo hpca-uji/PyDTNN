@@ -1,6 +1,4 @@
-"""
-Module for testing and defining transformer-based model architectures within the PyDTNN framework.
-"""
+"""Module for testing and defining transformer-based model architectures within the PyDTNN framework."""
 
 from collections.abc import Sequence
 

@@ -31,7 +31,7 @@ class Metric[T: Array](Base):
     format = ""
     order = 0  # No need of special order.
 
-    def __init__(self, eps=1e-8):
+    def __init__(self, eps: float = 1e-8) -> None:
         """
         Initializes the metric with a stability constant.
 
@@ -42,9 +42,7 @@ class Metric[T: Array](Base):
         self.eps = eps
 
     def _model_init(self) -> None:
-        """
-        Initializes metric-specific properties based on the associated model.
-        """
+        """Initializes metric-specific properties based on the associated model."""
         self.dtype: np.dtype = (
             np.dtype(np.float32) if np.issubdtype(self.model.dtype, np.int32) else self.model.dtype
         )

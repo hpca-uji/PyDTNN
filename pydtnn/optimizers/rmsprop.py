@@ -1,6 +1,4 @@
-"""
-RMSProp optimizer implementation for the PyDTNN framework.
-"""
+"""RMSProp optimizer implementation for the PyDTNN framework."""
 
 from __future__ import annotations
 
@@ -12,9 +10,7 @@ from pydtnn.utils.constants import Array
 
 __all__ = ("RMSProp",)
 
-"""
-RMSProp optimizer implementation for the PyDTNN framework.
-"""
+"""RMSProp optimizer implementation for the PyDTNN framework."""
 
 logger = logging.getLogger(__name__)
 
@@ -24,9 +20,7 @@ if TYPE_CHECKING:
 
 
 class RMSProp[T: Array](Optimizer[T]):
-    """
-    RMSProp optimizer that maintains a moving average of squared gradients.
-    """
+    """RMSProp optimizer that maintains a moving average of squared gradients."""
 
     def __init__(
         self,
@@ -34,7 +28,7 @@ class RMSProp[T: Array](Optimizer[T]):
         rho: float = 0.9,
         epsilon: float = 1e-7,
         decay: float = 0.0,
-    ):
+    ) -> None:
         """
         Initialize the RMSProp optimizer.
 

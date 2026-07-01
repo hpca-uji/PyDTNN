@@ -1,6 +1,4 @@
-"""
-Module for defining a simple Multi-Layer Perceptron (MLP) architecture.
-"""
+"""Module for defining a simple Multi-Layer Perceptron (MLP) architecture."""
 
 from collections.abc import Sequence
 

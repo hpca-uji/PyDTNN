@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 # Source: https://github.com/lebedov/scikit-cuda
 
-"""
-Utility functions.
-"""
+"""Utility functions."""
 
 import ctypes.util
 import os
@@ -11,6 +9,7 @@ import re
 import struct
 import subprocess
 import sys
+from typing import Any
 
 __all__ = ("get_soname", "find_lib_path")
 
@@ -22,7 +21,7 @@ try:
 except ImportError:
     import re
 
-    def get_soname(filename):
+    def get_soname(filename: str) -> str | Any:
         """
         Retrieve SONAME of shared library.
 
@@ -68,7 +67,7 @@ except ImportError:
 else:
     import ctypes
 
-    def get_soname(filename):  # type: ignore
+    def get_soname(filename: str) -> str | Any:
         """
         Retrieve SONAME of shared library.
 
@@ -120,7 +119,7 @@ else:
         return ""
 
 
-def find_lib_path(name):
+def find_lib_path(name: str) -> str | None:
     """
     Find full path of a shared library.
 

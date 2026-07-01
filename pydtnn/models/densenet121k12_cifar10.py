@@ -1,6 +1,4 @@
-"""
-DenseNet implementation for CIFAR-10 dataset.
-"""
+"""DenseNet implementation for CIFAR-10 dataset."""
 
 from collections.abc import Sequence
 

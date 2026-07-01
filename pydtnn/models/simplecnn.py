@@ -1,6 +1,4 @@
-"""
-Module for defining a standard simple convolutional neural network architecture.
-"""
+"""Module for defining a standard simple convolutional neural network architecture."""
 
 from collections.abc import Sequence
 

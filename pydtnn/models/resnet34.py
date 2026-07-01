@@ -1,6 +1,4 @@
-"""
-ResNet-34 model architecture implementation for PyDTNN.
-"""
+"""ResNet-34 model architecture implementation for PyDTNN."""
 
 from collections.abc import Sequence
 

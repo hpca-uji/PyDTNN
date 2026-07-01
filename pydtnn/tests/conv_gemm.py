@@ -1,6 +1,4 @@
-"""
-Test suite for verifying the correctness of the ConvGemm implementation.
-"""
+"""Test suite for verifying the correctness of the ConvGemm implementation."""
 
 import inspect
 import logging
@@ -21,9 +19,7 @@ logger = logging.getLogger(__name__)
 
 @skipUnless(is_conv_gemm_available, "requires ConvGemm")
 class ConvGemmTestCase(ConvCommonTestCase):
-    """
-    Tests that conv_gemm leads to the same results as i2c and mm.
-    """
+    """Tests that conv_gemm leads to the same results as i2c and mm."""
 
     # NOTE: Delete parent test to prevent re-export and re-testing
     global ConvCommonTestCase
@@ -35,12 +31,12 @@ class ConvGemmTestCase(ConvCommonTestCase):
         weights: np.ndarray,
         x: np.ndarray,
         biases: np.ndarray | None = None,
-        vpadding=0,
-        hpadding=0,
-        vstride=1,
-        hstride=1,
-        vdilation=1,
-        hdilation=1,
+        vpadding: int = 0,
+        hpadding: int = 0,
+        vstride: int = 1,
+        hstride: int = 1,
+        vdilation: int = 1,
+        hdilation: int = 1,
     ) -> tuple[np.ndarray, np.ndarray]:
         """
         Computes convolution results using both ConvGemm and im2row + matrix multiplication for comparison.
@@ -78,7 +74,7 @@ class ConvGemmTestCase(ConvCommonTestCase):
 
         im2row_nhwc_cython(
             x.copy(),
-            x_c,  # type: ignore
+            x_c,
             kh,
             kw,
             ho,
@@ -137,9 +133,7 @@ class ConvGemmTestCase(ConvCommonTestCase):
 
     @staticmethod
     def _get_config() -> D:
-        """
-        Returns the configuration dictionary for the test case.
-        """
+        """Returns the configuration dictionary for the test case."""
         return D()
 
     @staticmethod
@@ -147,18 +141,16 @@ class ConvGemmTestCase(ConvCommonTestCase):
         weights: np.ndarray,
         x: np.ndarray,
         biases: np.ndarray | None = None,
-        kh=1,
-        kw=1,
-        vpadding=0,
-        hpadding=0,
-        vstride=1,
-        hstride=1,
-        vdilation=1,
-        hdilation=1,
-    ):
-        """
-        Executes the ConvGemm operation for the given inputs.
-        """
+        kh: int = 1,
+        kw: int = 1,
+        vpadding: int = 0,
+        hpadding: int = 0,
+        vstride: int = 1,
+        hstride: int = 1,
+        vdilation: int = 1,
+        hdilation: int = 1,
+    ) -> np.ndarray:
+        """Executes the ConvGemm operation for the given inputs."""
         return ConvGemm(debug=False).conv_gemm_nhwc(
             weights, x, None, vpadding, hpadding, vstride, hstride, vdilation, hdilation, biases
         )

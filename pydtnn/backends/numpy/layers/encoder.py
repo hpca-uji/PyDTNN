@@ -12,7 +12,7 @@ from pydtnn.layers.feed_forward import FeedForward
 from pydtnn.layers.layer_normalization import LayerNormalization
 from pydtnn.layers.multi_head_attention import MultiHeadAttention
 from pydtnn.libs import numpy as np
-from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
+from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, OpsEventEnum
 
 __all__ = ("EncoderNumpy",)
 
@@ -126,7 +126,7 @@ class EncoderNumpy(Encoder[np.ndarray], AbstractBlockLayerNumpy):
         """
         # Self Attention
         self.model.tracer.emit_event(
-            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_MHA
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_MHA
         )
         # type: ignore (encoder has multiple parameters)
         x_1 = self.multiheadattention.forward(x, x, x, mask)
@@ -137,7 +137,7 @@ class EncoderNumpy(Encoder[np.ndarray], AbstractBlockLayerNumpy):
         # Feed Forward
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT,
-            self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_FEEDFORWARD,
+            self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_FEEDFORWARD,
         )
         x_2 = self.feedforward.forward(x_1)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
@@ -155,7 +155,7 @@ class EncoderNumpy(Encoder[np.ndarray], AbstractBlockLayerNumpy):
         dx_2 = self.dropout_2.backward(dx_1)
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT,
-            self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_FEEDFORWARD,
+            self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.BACKWARD_FEEDFORWARD,
         )
         dx_2 = self.feedforward.backward(dx_2)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
@@ -164,7 +164,7 @@ class EncoderNumpy(Encoder[np.ndarray], AbstractBlockLayerNumpy):
         dx_2 = self.layernormalization_1.backward(dx_2)
         dx_3 = self.dropout_1.backward(dx_2)
         self.model.tracer.emit_event(
-            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_MHA
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.BACKWARD_MHA
         )
         dx_3 = self.multiheadattention.backward(dx_3)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)

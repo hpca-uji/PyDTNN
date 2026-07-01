@@ -1,6 +1,4 @@
-"""
-Module for managing the state of PyDTNN models, including serialization and initialization.
-"""
+"""Module for managing the state of PyDTNN models, including serialization and initialization."""
 
 from __future__ import annotations
 
@@ -100,7 +98,7 @@ class State[T: Array](Init[T]):
         with np.load(filename, allow_pickle=True) as data:
             self.import_(data)
 
-    def save_model_state(self, filename: str, compress=True) -> None:
+    def save_model_state(self, filename: str, compress: bool = True) -> None:
         """
         Saves the current model weights and biases to a file.
 

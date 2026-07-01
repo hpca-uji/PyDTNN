@@ -27,13 +27,12 @@ if TYPE_CHECKING:
 
 
 class EarlyStopping(SchedulerWithLossOrMetric):
-    """
-    Early stopping scheduler to terminate training when a monitored metric stops improving.
-    """
+    """Early stopping scheduler to terminate training when a monitored metric stops improving."""
 
     model: Model
 
-    def __init__(self, loss_or_metric="", patience=10, minimize=True, verbose=True):
+    def __init__(self, loss_or_metric: str = "", patience: int = 10,
+                 minimize: bool = True, verbose: bool = True) -> None:
         """
         Initialize the EarlyStopping scheduler.
 

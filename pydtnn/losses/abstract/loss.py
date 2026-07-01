@@ -53,17 +53,18 @@ class Loss[T: Array](Base):
         """
         super().__init__()
         self.eps = eps
+
     def _model_init(self) -> None:
-        """
-        Initializes model-specific parameters for the loss function.
-        """
+        """Initializes model-specific parameters for the loss function."""
+
         super()._model_init()
         self.shape = (self.model.batch_size, *self.model.output_shape)
         if self.model.use_loss_weights:
             if self.model.loss_weights is None:
                 weights = self.model.dataset.weight_classes
             else:
-                weights = list(map(float, self.model.loss_weights.split(",")))  # type: ignore (until here, self.loss_weights is str)
+                # (until here, self.loss_weights is str)
+                weights = list(map(float, self.model.loss_weights.split(",")))  # type: ignore
         else:
             weights = None
                 
@@ -85,7 +86,6 @@ class Loss[T: Array](Base):
             NotImplementedError: If the subclass does not implement this method.
         """
         raise NotImplementedError()
-    
 
     @classmethod
     def from_model[Y: Loss](cls: type[Y], model: Model[T]) -> Y:
@@ -98,6 +98,4 @@ class Loss[T: Array](Base):
         Returns:
             An initialized CategoricalCrossEntropy optimizer.
         """
-        return cls(
-            eps=model.loss_eps
-        )
+        return cls(eps=model.loss_eps)

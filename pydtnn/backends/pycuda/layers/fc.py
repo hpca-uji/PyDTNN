@@ -13,7 +13,7 @@ from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.layers.fc import FC
 from pydtnn.libs import cudnn as cudnn
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
-                                   PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
+                                   PYDTNN_OPS_EVENTS, OpsEventEnum)
 from pydtnn.utils.constants import ArrayShape, Parameters
 from pydtnn.utils.performance_models import matmul_time
 
@@ -153,7 +153,7 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
         # Compute a' = x @ weights
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT,
-            self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUBLAS_MATMUL,
+            self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_CUBLAS_MATMUL,
         )
         self.matmul(
             self.model.cublas_handle,
@@ -179,7 +179,7 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
             alpha, beta = 1.0, 1.0
             self.model.tracer.emit_event(
                 PYDTNN_OPS_EVENT,
-                self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN_SUM_BIASES,
+                self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_CUDNN_SUM_BIASES,
             )
             # Compute a = a' + biases
             cudnn.cudnnAddTensor(
@@ -204,7 +204,7 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
 
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT,
-            self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUBLAS_MATMUL_DW,
+            self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.BACKWARD_CUBLAS_MATMUL_DW,
         )
         self.matmul(
             self.model.cublas_handle,
@@ -239,7 +239,7 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
 
             self.model.tracer.emit_event(
                 PYDTNN_OPS_EVENT,
-                self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUBLAS_MATVEC_DB,
+                self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.BACKWARD_CUBLAS_MATVEC_DB,
             )
             self.matvec(
                 self.model.cublas_handle,
@@ -271,7 +271,7 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
 
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT,
-            self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUBLAS_MATMUL_DX,
+            self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.BACKWARD_CUBLAS_MATMUL_DX,
         )
         self.matmul(
             self.model.cublas_handle,

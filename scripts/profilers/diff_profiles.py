@@ -21,7 +21,7 @@ from prettytable import PLAIN_COLUMNS, PrettyTable
 #
 
 
-def my_help():
+def my_help() -> None:
     """Print the the command line usage help."""
     print("""Usage: diff_profiles.py [OPTION]... FILE1 FILE2
 
@@ -36,12 +36,12 @@ Please, report bugs to <barrachi@uji.es>.
 """)
 
 
-def log(text):
+def log(text: str) -> None:
     """Log a message to stderr."""
     sys.stderr.write(">>> %s\n" % text)
 
 
-def error(text):
+def error(text: str) -> None:
     """Report an error message and exit."""
     sys.stderr.write("ERROR: %s\n" % text)
     raise SystemExit(-1)
@@ -53,7 +53,7 @@ VERBOSE = 0
 SCRIPT_PATH = pathlib.Path(__file__).parent.absolute()
 
 
-def get_opts():
+def get_opts() -> None:
     """Read command line options."""
     global INPUT_FILE_NAME, VERBOSE
     optlist, args = getopt.getopt(sys.argv[1:], "hv", ["VERBOSE", "help"])
@@ -74,7 +74,7 @@ def get_opts():
 #
 # APPLICATION SPECIFIC FUNCTIONS
 #
-def file_to_dict(file):
+def file_to_dict(file) -> tuple[dict, float]:
     """Convert the CSV file to a dict."""
     _dict = {}
     total_time = 0.0
@@ -98,7 +98,7 @@ def file_to_dict(file):
     return _dict, total_time
 
 
-def do_diff():
+def do_diff() -> None:
     """Do the diff"""
     data = []
     total_times = []
@@ -158,7 +158,7 @@ def do_diff():
     print(f"{t}\n")
 
 
-def main():
+def main() -> None:
     """Do the work (main function, called when not imported)."""
     get_opts()
     # Main part of the application

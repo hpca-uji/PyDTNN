@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 
-"""
-Provides utilities to calculate normalization statistics for PyDTNN datasets.
-"""
+"""Provides utilities to calculate normalization statistics for PyDTNN datasets."""
 
 import itertools
 from collections import abc
@@ -27,27 +25,27 @@ def compute_stats(iterator: abc.Iterable[np.ndarray]) -> tuple[float, float]:
     """
     n_total = 0
     mean = 0.0
-    M2 = 0.0
+    m2 = 0.0
 
     for batch in iterator:
         batch_size = batch.size
 
         batch_mean = batch.mean()
-        batch_M2 = ((batch - batch_mean) ** 2).sum()
+        batch_m2 = ((batch - batch_mean) ** 2).sum()
 
         if n_total == 0:
             mean = batch_mean
-            M2 = batch_M2
+            m2 = batch_m2
             n_total = batch_size
         else:
             delta = batch_mean - mean
             total = n_total + batch_size
 
             mean += delta * batch_size / total
-            M2 += batch_M2 + delta**2 * n_total * batch_size / total
+            m2 += batch_m2 + delta**2 * n_total * batch_size / total
             n_total = total
 
-    variance = M2 / n_total
+    variance = m2 / n_total
     std = np.sqrt(variance)
     return float(mean), float(std)
 

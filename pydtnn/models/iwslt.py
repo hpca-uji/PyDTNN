@@ -1,8 +1,6 @@
 # https://aclanthology.org/W18-2509.pdf
 
-"""
-Module for defining the IWSLT transformer model architecture.
-"""
+"""Module for defining the IWSLT transformer model architecture."""
 
 from collections.abc import Sequence
 
@@ -11,9 +9,7 @@ from pydtnn.layers.encoder_decoder import EncoderDecoder
 from pydtnn.layers.input import Input
 from pydtnn.utils.constants import ArrayShape
 
-"""
-Module for defining the IWSLT transformer model architecture.
-"""
+"""Module for defining the IWSLT transformer model architecture."""
 
 __all__ = ("iwslt",)
 

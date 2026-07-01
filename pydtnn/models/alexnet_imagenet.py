@@ -1,6 +1,4 @@
-"""
-Module for AlexNet architecture configured for ImageNet datasets.
-"""
+"""Module for AlexNet architecture configured for ImageNet datasets."""
 
 from pydtnn.models.alexnet import alexnet as alexnet_imagenet
 

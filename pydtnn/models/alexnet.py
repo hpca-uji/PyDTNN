@@ -1,6 +1,4 @@
-"""
-AlexNet architecture implementation for the PyDTNN framework.
-"""
+"""AlexNet architecture implementation for the PyDTNN framework."""
 
 from collections.abc import Sequence
 

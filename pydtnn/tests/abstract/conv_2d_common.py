@@ -1,6 +1,4 @@
-"""
-Common test suite for 2D convolution layer implementations.
-"""
+"""Common test suite for 2D convolution layer implementations."""
 
 import inspect
 import logging
@@ -18,22 +16,16 @@ logger = logging.getLogger(__name__)
 
 
 class Conv2DCommonTestCase[T: Conv2D](TestCase):
-    """
-    Abstract base class for testing and comparing two Conv2D layer implementations.
-    """
+    """Abstract base class for testing and comparing two Conv2D layer implementations."""
 
     @staticmethod
     def _get_layers(d: D) -> tuple[T, T]:
-        """
-        Factory method to return the reference and test layers.
-        """
+        """Factory method to return the reference and test layers."""
         raise NotImplementedError()
 
     @staticmethod
-    def _set_state(layer: Conv2D, weights) -> None:
-        """
-        Sets the weights for a given Conv2D layer.
-        """
+    def _set_state(layer: Conv2D, weights: np.ndarray) -> None:
+        """Sets the weights for a given Conv2D layer."""
         layer.weights = weights.copy()
 
     x_2x4 = np.array([[[[1, 2, 4, 8], [16, 32, 64, 128]]]]).astype(np.float32, order="C")
@@ -80,10 +72,8 @@ class Conv2DCommonTestCase[T: Conv2D](TestCase):
 
     w_3x3 = np.array([[[[1, 1, 1], [1, 1, 1], [1, 1, 1]]]]).astype(np.float32, order="C")
 
-    def _test_forward_backward(self, d: D, x: np.ndarray, weights: np.ndarray, print_times=False):
-        """
-        Executes forward and backward passes on both layers and asserts equality.
-        """
+    def _test_forward_backward(self, d: D, x: np.ndarray, weights: np.ndarray, print_times: bool = False) -> None:
+        """Executes forward and backward passes on both layers and asserts equality."""
         from timeit import timeit
 
         conv2d_ref, conv2d_test = self._get_layers(d)
@@ -148,10 +138,8 @@ class Conv2DCommonTestCase[T: Conv2D](TestCase):
         self.assertTrue(dw_allclose, "dw matrices differ")
         self.assertTrue(dx_allclose, "dx return matrices differ")
 
-    def test_forward_defaults(self):
-        """
-        Test that the default parameters lead to the same solution on the forward step
-        """
+    def test_forward_defaults(self) -> None:
+        """Test that the default parameters lead to the same solution on the forward step"""
         d = D()
         conv2d_ref, conv2d_test = self._get_layers(d)
         x = random.random((d.b, d.c, d.h, d.w)).astype(np.float32, order="C")
@@ -167,16 +155,14 @@ class Conv2DCommonTestCase[T: Conv2D](TestCase):
         allclose = np.allclose(y_ref, y_test, rtol=1e-5, atol=1e-6)
         self.assertTrue(allclose)
 
-    def test_forward_backward_defaults(self):
-        """
-        Test that the default parameters lead to the same solution on the backward step
-        """
+    def test_forward_backward_defaults(self) -> None:
+        """Test that the default parameters lead to the same solution on the backward step"""
         d = D()
         x = random.random((d.b, d.c, d.h, d.w)).astype(np.float32, order="C")
         weights = random.random((d.kn, d.c, d.kh, d.kw)).astype(np.float32, order="C")
         self._test_forward_backward(d, x, weights)
 
-    def test_forward_backward_handmade_array(self):
+    def test_forward_backward_handmade_array(self) -> None:
         """Tests that manual matrices lead to the same solution"""
         x = self.x_2x4
         weights = self.w_2x2
@@ -189,7 +175,7 @@ class Conv2DCommonTestCase[T: Conv2D](TestCase):
         d.vdilation = d.hdilation = 1
         self._test_forward_backward(d, x, weights)
 
-    def test_forward_backward_handmade_array_stride2(self):
+    def test_forward_backward_handmade_array_stride2(self) -> None:
         """Tests that manual matrices with stride 2 lead to the same solution"""
         x = self.x_2x4
         weights = self.w_2x2
@@ -202,7 +188,7 @@ class Conv2DCommonTestCase[T: Conv2D](TestCase):
         d.vdilation = d.hdilation = 1
         self._test_forward_backward(d, x, weights)
 
-    def test_forward_backward_larger_handmade_array_stride2(self):
+    def test_forward_backward_larger_handmade_array_stride2(self) -> None:
         """Tests that larger manual matrices with stride 2 lead to the same solution"""
         x = self.x_4x4
         weights = self.w_2x2
@@ -215,7 +201,7 @@ class Conv2DCommonTestCase[T: Conv2D](TestCase):
         d.vdilation = d.hdilation = 1
         self._test_forward_backward(d, x, weights)
 
-    def test_forward_backward_larger_handmade_array_stride3(self):
+    def test_forward_backward_larger_handmade_array_stride3(self) -> None:
         """Tests that larger manual matrices with stride 3 lead to the same solution"""
         x = self.x_4x4
         weights = self.w_2x2
@@ -228,7 +214,7 @@ class Conv2DCommonTestCase[T: Conv2D](TestCase):
         d.vdilation = d.hdilation = 1
         self._test_forward_backward(d, x, weights)
 
-    def test_forward_backward_even_larger_handmade_array_stride3(self):
+    def test_forward_backward_even_larger_handmade_array_stride3(self) -> None:
         """Tests that even larger manual matrices with stride 3 lead to the same solution on i2c and on conv_gemm"""
         x = self.x_4x8
         weights = self.w_2x2
@@ -241,7 +227,7 @@ class Conv2DCommonTestCase[T: Conv2D](TestCase):
         d.vdilation = d.hdilation = 1
         self._test_forward_backward(d, x, weights)
 
-    def test_forward_backward_even_larger_handmade_array_stride3_filter1x2(self):
+    def test_forward_backward_even_larger_handmade_array_stride3_filter1x2(self) -> None:
         """Tests that even larger manual matrices with stride 3 lead to the same solution on i2c and on conv_gemm"""
         x = self.x_4x8
         weights = self.w_1x2
@@ -254,7 +240,7 @@ class Conv2DCommonTestCase[T: Conv2D](TestCase):
         d.vdilation = d.hdilation = 1
         self._test_forward_backward(d, x, weights)
 
-    def test_forward_backward_even_larger_handmade_array_stride3_filter1x1(self):
+    def test_forward_backward_even_larger_handmade_array_stride3_filter1x1(self) -> None:
         """Tests that even larger manual matrices with stride 3 lead to the same solution on i2c and on conv_gemm"""
         x = self.x_4x8
         weights = self.w_1x1
@@ -267,7 +253,7 @@ class Conv2DCommonTestCase[T: Conv2D](TestCase):
         d.vdilation = d.hdilation = 1
         self._test_forward_backward(d, x, weights)
 
-    def test_forward_backward_even_larger_handmade_array_stride12(self):
+    def test_forward_backward_even_larger_handmade_array_stride12(self) -> None:
         """Tests that even larger manual matrices with strides 1, 2 lead to the same solution on i2c and on conv_gemm"""
         x = self.x_8x8
         weights = self.w_3x3
@@ -281,7 +267,7 @@ class Conv2DCommonTestCase[T: Conv2D](TestCase):
         d.vdilation = d.hdilation = 1
         self._test_forward_backward(d, x, weights)
 
-    def test_forward_backward_alexnet_cifar10_first_conv2d(self):
+    def test_forward_backward_alexnet_cifar10_first_conv2d(self) -> None:
         """Tests that the AlexNet cifar10 first Conv2d lead to the same solution on i2c and on conv_gemm"""
         d = D()
         d.b = 64
@@ -294,7 +280,7 @@ class Conv2DCommonTestCase[T: Conv2D](TestCase):
         weights = random.random((d.kn, d.c, d.kh, d.kw)).astype(np.float32, order="C")
         self._test_forward_backward(d, x, weights, print_times=True)
 
-    def test_forward_backward_alexnet_imagenet_first_conv2d(self):
+    def test_forward_backward_alexnet_imagenet_first_conv2d(self) -> None:
         """Tests that the AlexNet ImageNet first Conv2d lead to the same solution on i2c and on conv_gemm"""
         # id;height;width;channels;kernel_height;kernel_width;kernel_num;stride;padding
         # 2;227;227;3;11;11;96;4;0

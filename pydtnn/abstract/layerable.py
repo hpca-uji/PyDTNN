@@ -21,6 +21,7 @@ if TYPE_CHECKING:
     from pydtnn.activations.abstract.activation import Activation
     from pydtnn.model import Model
     from pydtnn.optimizers.abstract.optimizer import Optimizer
+    from pympi.MPI import Request
 
 
 try:
@@ -57,7 +58,7 @@ class Layerable[T: Array](Base[T]):
         self.fwd_time: np.ndarray = None  # type: ignore
         self.bwd_time: np.ndarray = None  # type: ignore
         self.paths: list[list[Layerable[T]]] = []
-        self.reqs_allred = {}
+        self.reqs_allred = dict[str, Request]()
         self.parent_layer: Layerable | None = None
 
         # The following attributes will be initialized later

@@ -11,7 +11,7 @@ from pydtnn.utils.best_of.best_transpose_0312 import best_transpose_0312
 from pydtnn.utils.best_of_profiler import BestOfProfiler
 
 
-def main():
+def main() -> None:
     """
     Executes performance profiling for the best_transpose_0312 implementation
     across all defined AlexNet layers and prints the results.

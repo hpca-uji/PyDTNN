@@ -9,7 +9,7 @@ from pydtnn.backends.numpy.layers.abstract.layer import LayerNumpy
 from pydtnn.layers.flatten import Flatten
 from pydtnn.libs import numpy as np
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
-                                   PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum)
+                                   PYDTNN_OPS_EVENTS, OpsEventEnum)
 
 __all__ = ("FlattenNumpy",)
 
@@ -36,7 +36,7 @@ class FlattenNumpy(Flatten[np.ndarray], LayerNumpy):
             Flattened tensor of shape (batch_size, *self.shape).
         """
         self.model.tracer.emit_event(
-            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_Y
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_RESHAPE_Y
         )
         y: np.ndarray = x.reshape((x.shape[0], *self.shape))
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
@@ -54,7 +54,7 @@ class FlattenNumpy(Flatten[np.ndarray], LayerNumpy):
         """
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT,
-            self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_RESHAPE_DX,
+            self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.BACKWARD_RESHAPE_DX,
         )
         dx: np.ndarray = dy.reshape((dy.shape[0], *self.prev_shape))
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)

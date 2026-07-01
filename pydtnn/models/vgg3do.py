@@ -1,6 +1,4 @@
-"""
-VGG-style 3-block deep neural network architecture implementation.
-"""
+"""VGG-style 3-block deep neural network architecture implementation."""
 
 from collections.abc import Sequence
 

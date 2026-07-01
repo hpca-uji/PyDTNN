@@ -1,6 +1,4 @@
-"""
-ResNet-50 v1.5 implementation for ImageNet classification.
-"""
+"""ResNet-50 v1.5 implementation for ImageNet classification."""
 
 from collections.abc import Sequence
 

@@ -1,6 +1,4 @@
-"""
-Adam optimizer implementation for the PyDTNN framework.
-"""
+"""Adam optimizer implementation for the PyDTNN framework."""
 
 from __future__ import annotations
 
@@ -34,7 +32,7 @@ class Adam[T: Array](Optimizer[T]):
         beta2: float = 0.999,
         epsilon: float = 1e-7,
         decay: float = 0.0,
-    ):
+    ) -> None:
         """
         Initialize the Adam optimizer.
 
