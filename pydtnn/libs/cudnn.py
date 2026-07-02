@@ -3305,7 +3305,7 @@ def cudnnSetSeqDataDescriptor(
     axes: tuple[int, ...],
     seq_length_array_size: int,
     seq_length_array: tuple[int, ...],
-    padding_fill: int,
+    padding_fill: None,
 ) -> None:
     """Initialize a previously created SeqData object.
 

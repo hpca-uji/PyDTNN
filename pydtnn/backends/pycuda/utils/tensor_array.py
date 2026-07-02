@@ -352,26 +352,24 @@ class TensorArray:
                 desc = cudnn.cudnnCreateSeqDataDescriptor()
                 assert desc
                 self.desc = desc
-                dimA = np.array([0, 0, 0, 0], dtype=np.int32)
-                dimA[cudnn.cudnnSeqDataAxis["CUDNN_SEQDATA_BATCH_DIM"]] = self.shape[0]
-                dimA[cudnn.cudnnSeqDataAxis["CUDNN_SEQDATA_BEAM_DIM"]] = self.shape[1]
-                dimA[cudnn.cudnnSeqDataAxis["CUDNN_SEQDATA_TIME_DIM"]] = self.shape[2]
-                dimA[cudnn.cudnnSeqDataAxis["CUDNN_SEQDATA_VECT_DIM"]] = self.shape[3]
-                axes = np.array([0, 0, 0, 0], dtype=np.int32)
+                dim_a = [0, 0, 0, 0]
+                dim_a[cudnn.cudnnSeqDataAxis["CUDNN_SEQDATA_BATCH_DIM"]] = self.shape[0]
+                dim_a[cudnn.cudnnSeqDataAxis["CUDNN_SEQDATA_BEAM_DIM"]] = self.shape[1]
+                dim_a[cudnn.cudnnSeqDataAxis["CUDNN_SEQDATA_TIME_DIM"]] = self.shape[2]
+                dim_a[cudnn.cudnnSeqDataAxis["CUDNN_SEQDATA_VECT_DIM"]] = self.shape[3]
+                axes = [0, 0, 0, 0]
                 axes[0] = cudnn.cudnnSeqDataAxis["CUDNN_SEQDATA_BATCH_DIM"]
                 axes[1] = cudnn.cudnnSeqDataAxis["CUDNN_SEQDATA_BEAM_DIM"]
                 axes[2] = cudnn.cudnnSeqDataAxis["CUDNN_SEQDATA_TIME_DIM"]
                 axes[3] = cudnn.cudnnSeqDataAxis["CUDNN_SEQDATA_VECT_DIM"]
-                self.seq_length_array = np.full(
-                    shape=(self.shape[0] * self.shape[1]), fill_value=self.shape[-2], dtype=np.int32
-                )
+                self.seq_length_array = (self.shape[-2],) * (self.shape[0] * self.shape[1])
                 cudnn.cudnnSetSeqDataDescriptor(
                     self.desc,
                     self.cudnn_dtype,
-                    np.int32(4),
-                    dimA,
-                    axes,
-                    np.int32(len(self.seq_length_array)),
+                    4,
+                    tuple(dim_a),
+                    tuple(axes),
+                    len(self.seq_length_array),
                     self.seq_length_array,
                     None,
                 )
@@ -605,11 +603,11 @@ class TensorArray:
         other = self._operable(other)
         return self._view(self.ary.__rpow__(other))
 
-    def __getitem__(self, index: int) -> TensorArray:
+    def __getitem__(self, index: int | tuple | slice | np.ndarray) -> TensorArray:
         """Indexing operator."""
         return self._view(self.ary.__getitem__(index), keep_shape=False)
 
-    def __setitem__(self, key: Any, value: TensorArray | gpuarray.GPUArray | np.ndarray) -> None:
+    def __setitem__(self, key: int | tuple | slice | np.ndarray, value: TensorArray | gpuarray.GPUArray | np.ndarray) -> None:
         """Set item operator."""
         value = self._operable(value)
         return self.ary.__setitem__(key, value)
