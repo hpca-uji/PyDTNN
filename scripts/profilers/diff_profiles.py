@@ -1,24 +1,14 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+"""Given two profiles extracted with extract_profile_from_output, prints the differences between them."""
 
-"""
-Given two profiles extracted with extract_profile_from_output, prints the
-differences between them.
-"""
-
-#
-# IMPORTS
-#
 import getopt
 import gzip
 import pathlib
 import sys
+from typing import Any
+import typing
 
 from prettytable import PLAIN_COLUMNS, PrettyTable
-
-#
-# MISCELLANEOUS FUNCTIONS
-#
 
 
 def my_help() -> None:
@@ -55,7 +45,7 @@ SCRIPT_PATH = pathlib.Path(__file__).parent.absolute()
 
 def get_opts() -> None:
     """Read command line options."""
-    global INPUT_FILE_NAME, VERBOSE
+    global VERBOSE
     optlist, args = getopt.getopt(sys.argv[1:], "hv", ["VERBOSE", "help"])
     for opt, arg in optlist:
         if opt in ("-h", "--help"):
@@ -74,14 +64,16 @@ def get_opts() -> None:
 #
 # APPLICATION SPECIFIC FUNCTIONS
 #
-def file_to_dict(file) -> tuple[dict, float]:
+def file_to_dict(file: typing.TextIO) -> tuple[dict, float]:
     """Convert the CSV file to a dict."""
     _dict = {}
     total_time = 0.0
+
     # ncalls, tottime, percall, cumtime, percall, filename:lineno(function)
     file.readline()  # Ignore header
+
     for line in file.readlines():
-        values = line.split(",", 5)
+        values: list[Any] = line.split(",", 5)
         for i in range(5):
             try:
                 values[i] = int(values[i])
@@ -90,11 +82,13 @@ def file_to_dict(file) -> tuple[dict, float]:
                     values[i] = float(values[i])
                 except ValueError:
                     pass
+
         # Remove part of the path from values[5]
         splat_by_slash = values[5].split("/")
         values[5] = "/".join(splat_by_slash[-3:])
         _dict[values[5]] = values[0:5]
         total_time += values[1]
+
     return _dict, total_time
 
 
