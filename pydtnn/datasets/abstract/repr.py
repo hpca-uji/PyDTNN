@@ -6,14 +6,15 @@ transforming, and generating data batches for machine learning models.
 """
 
 import logging
+from typing import Any
 
 from pydtnn.abstract.base import Base as Baser
-from pydtnn.datasets.abstract.base import Base
+from pydtnn.datasets.abstract.init import Init
 
 logger = logging.getLogger(__name__)
 
 
-class Repr(Base, Baser):
+class Repr(Init, Baser):
     """
     Abstract base class for all datasets in PyDTNN.
 
@@ -21,8 +22,10 @@ class Repr(Base, Baser):
     shape management, and format conversion.
     """
 
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, *args: Any, **kwds: Any) -> None:
+        """Print debug information on construction if enabled"""
+        super().__init__(*args, **kwds)
+
         if self.debug:
             self._print_report()
 

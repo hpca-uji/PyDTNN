@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Print all parser options
+"""Print all parser options"""
 
 from pydtnn.utils.parser import ArgumentParser
 

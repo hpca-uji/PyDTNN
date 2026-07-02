@@ -1,29 +1,19 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
-"""
-Given an output file from pydtnn_benchmark.py with the profile option
-activated, prints a csv file with the profile information.
-"""
+"""Given an output file from pydtnn-benchmark's profile and prints csv with the information."""
 
 import getopt
 import gzip
 import pathlib
-#
-# IMPORTS
-#
 import re
 import sys
+import typing
 
 
-#
-# MISCELLANEOUS FUNCTIONS
-#
 def my_help() -> None:
     """Print the the command line usage help."""
     print("""Usage: extract_profile_from_output.py [OPTION]... FILE
 
-Given an output file from pydtnn_benchmark.py with the profile option
+Given an output file from pydtnn-benchmark with the profile option
 activated, prints a csv file with the profile information.
 
 Options:
@@ -55,26 +45,28 @@ def get_opts() -> None:
     """Read command line options."""
     global INPUT_FILE_NAME, VERBOSE
     optlist, args = getopt.getopt(sys.argv[1:], "hv", ["VERBOSE", "help"])
+
     for opt, arg in optlist:
         if opt in ("-h", "--help"):
             my_help()
             raise SystemExit()
         elif opt in ("-v", "--verbosity"):
             VERBOSE = 1
+
     # Check required arguments
     if len(args) == 0:
         my_help()
         error("At least a FILE is required")
+
     INPUT_FILE_NAME = args[0]
 
 
-#
 # APPLICATION SPECIFIC FUNCTIONS
-#
-def print_profile_from_file(file) -> None:
+def print_profile_from_file(file: typing.TextIO) -> None:
     """Do print the profile part from file."""
     first_line_re = re.compile("ncalls *tottime")
     in_profile_section = False
+
     for line in file.readlines():
         if first_line_re.search(line):
             in_profile_section = True
@@ -89,8 +81,7 @@ def print_profile_from_file(file) -> None:
 def print_profile() -> None:
     """Get the file and print the profile"""
     if INPUT_FILE_NAME is None:
-        with sys.stdin as file:
-            print_profile_from_file(file)
+        print_profile_from_file(sys.stdin)
     else:
         file_open = open if INPUT_FILE_NAME[-3:] != ".gz" else gzip.open
         with file_open(INPUT_FILE_NAME, "rt") as file:

@@ -1,9 +1,7 @@
 #!/usr/bin/env python
+"""PyDTNN Benchmark script."""
 
-"""
-PyDTNN Benchmark script.
-"""
-
+from argparse import Namespace
 import cProfile
 import logging
 import logging.config
@@ -50,7 +48,7 @@ def _start() -> int:
         return main(config)  # type: ignore
 
 
-def main(config):
+def main(config: Namespace) -> None:  # noqa: C901
     """Application entry point"""
 
     # Initialize random seed
@@ -71,6 +69,7 @@ def main(config):
         logger.info(str(config))
         model.show_model()
         model.show_layers()
+
     # First (or unique) evaluation
     if model.evaluate_on_train or model.evaluate_only:
         if model.comm_rank == 0:
@@ -89,10 +88,11 @@ def main(config):
         if model.evaluate_only:
             model.perf_counter.print_report()
             raise SystemExit(0)
+
     # Barrier
-    if model.parallel_data:
-        assert model.comm
+    if model.comm is not None:
         model.comm.Barrier()
+
     # Training
     if model.comm_rank == 0:
         # print('**** Model time: ', model.calculate_time())
@@ -105,10 +105,11 @@ def main(config):
     # or alternatively, define any custom data
     # mode.dataset = CustomDataset(model, x, y)
     history = model.train()
+
     # Barrier
-    if model.parallel_data:
-        assert model.comm
+    if model.comm is not None:
         model.comm.Barrier()
+
     # Print performance results and evaluation history
     if model.comm_rank == 0:
         if model.profile:
@@ -130,6 +131,7 @@ def main(config):
                     (model.dataset.train_nsamples * model.perf_counter.num_epochs)
                     / total_time:5.4f} samples/s"
             )
+
     # Store history information
     if model.history_file:
         history_file = utils.string_substitute(model.history_file, rank=model.comm_rank)
@@ -144,6 +146,7 @@ def main(config):
             with open(path, "w") as f:
                 yaml.dump_all(events, f, NumpyYaml, allow_unicode=True, sort_keys=False)
             logger.info(f"Dumped metric history to: {path}")
+
     # Second (and last) evaluation
     if model.evaluate_on_train:
         if model.comm_rank == 0:
@@ -159,9 +162,11 @@ def main(config):
                 logger.info(
                     f"Testing throughput: {model.dataset.test_nsamples / total_time:5.4f} samples/s"
                 )
+
     # Print model reports
     if model.comm_rank == 0:
         model.perf_counter.print_report()
+
     # Barrier and finalize
     if model.comm is not None and model.MPI is not None:
         model.comm.Barrier()

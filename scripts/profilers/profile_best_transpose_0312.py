@@ -12,15 +12,12 @@ from pydtnn.utils.best_of_profiler import BestOfProfiler
 
 
 def main() -> None:
-    """
-    Executes performance profiling for the best_transpose_0312 implementation
-    across all defined AlexNet layers and prints the results.
-    """
+    """Executes performance profiling for the best_transpose_0312 implementation across all defined AlexNet layers."""
     layers = alexnet_layers
-    bop = BestOfProfiler("Transpose 0312 comparison", best_transpose_0312)
+    bop = BestOfProfiler("Transpose 0312 comparison", best_transpose_0312)  # type: ignore
     for layer in layers:
         d0, d1, d2, d3 = layer.shape
-        original = random.random((d0, d1, d2, d3)).astype(layer.dtype)
+        original = random.random((d0, d1, d2, d3)).astype(layer.dtype)  # type: ignore
         bop(original)
     bop.print_results()
 
