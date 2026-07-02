@@ -863,7 +863,8 @@ _libcudnn.cudnnTransformTensor.argtypes = [
 ]
 
 
-def cudnnTransformTensor(handle: int, alpha: float, src_desc: int, src_data: ctypes.c_void_p, beta: float, dest_desc: int, dest_data: ctypes.c_void_p) -> None:
+def cudnnTransformTensor(handle: int, alpha: float, src_desc: int, src_data: ctypes.c_void_p,
+                         beta: float, dest_desc: int, dest_data: ctypes.c_void_p) -> None:
     """Tensor layout conversion helper (dest = alpha * src + beta * dest).
 
     This function copies the scaled data from one tensor to another tensor with a different
@@ -920,7 +921,8 @@ _libcudnn.cudnnAddTensor.argtypes = [
 ]
 
 
-def cudnnAddTensor(handle: int, alpha: float, bias_desc: int, bias_data: ctypes.c_void_p, beta: float, src_dest_desc: int, src_dest_data: ctypes.c_void_p) -> None:
+def cudnnAddTensor(handle: int, alpha: float, bias_desc: int, bias_data: ctypes.c_void_p,
+                   beta: float, src_dest_desc: int, src_dest_data: ctypes.c_void_p) -> None:
     """Tensor Bias addition : srcDest = alpha * bias + beta * src_dest_desc.
 
     This function adds the scaled values of one tensor to another tensor. The amount
@@ -1401,7 +1403,8 @@ _libcudnn.cudnnSetConvolutionNdDescriptor.argtypes = [
 ]  # data_type
 
 
-def cudnnSetConvolutionNdDescriptor(conv_desc: int, pad_a: tuple[int, ...], filter_stride_a: tuple[int, ...], dilation_a: tuple[int, ...], mode: int, data_type: int) -> None:
+def cudnnSetConvolutionNdDescriptor(conv_desc: int, pad_a: tuple[int, ...], filter_stride_a: tuple[int, ...],
+                                    dilation_a: tuple[int, ...], mode: int, data_type: int) -> None:
     """Initialize a N-dimensional convolution descriptor.
 
     This function initializes a previously created convolution descriptor object into an N-D
@@ -1629,7 +1632,8 @@ _libcudnn.cudnnSetConvolutionMathType.argtypes = [ctypes.c_void_p, ctypes.c_int]
 
 
 def cudnnSetConvolutionMathType(conv_desc: int, math_type: int) -> None:
-    """This function allows the user to specify whether or not the use of tensor op is permitted in the library routines associated with a given convolution descriptor.
+    """This function allows the user to specify whether or not the use of tensor op is permitted
+    in the library routines associated with a given convolution descriptor.
 
     Parameters
     ----------
@@ -1655,8 +1659,9 @@ _libcudnn.cudnnGetConvolutionForwardWorkspaceSize.argtypes = [
 ]
 
 
-def cudnnGetConvolutionForwardWorkspaceSize(handle: int, src_desc: int, w_desc: int, conv_desc: int, dest_desc: int, algo: int) -> int:
-    """ "
+def cudnnGetConvolutionForwardWorkspaceSize(handle: int, src_desc: int, w_desc: int, conv_desc: int,
+                                            dest_desc: int, algo: int) -> int:
+    """
     This function returns the amount of GPU memory workspace the user needs
     to allocate to be able to call cudnnConvolutionForward with the specified algorithm.
     Parameters
@@ -1802,7 +1807,8 @@ _libcudnn.cudnnConvolutionBackwardBias.argtypes = [
 ]
 
 
-def cudnnConvolutionBackwardBias(handle: int, alpha: float, src_desc: int, src_data: ctypes.c_void_p, beta: float, dest_desc: int, dest_data: ctypes.c_void_p) -> None:
+def cudnnConvolutionBackwardBias(handle: int, alpha: float, src_desc: int, src_data: ctypes.c_void_p,
+                                 beta: float, dest_desc: int, dest_data: ctypes.c_void_p) -> None:
     """Compute the gradient wrt the bias.
 
     This function computes the convolution gradient with respect to the bias, which is the
@@ -1945,7 +1951,8 @@ def cudnnFindConvolutionBackwardDataAlgorithm(
 #
 # def cudnnGetConvolutionBackwardDataAlgorithm(handle: int, w_desc: int, dy_desc: int, conv_desc: int,
 #                                              dx_desc: int, preference: int, memoryLimitInbytes: int) -> int:
-#     """This function serves as a heuristic for obtaining the best suited algorithm for cudnnConvolutionBackwardData for the given layer specifications.
+#     """This function serves as a heuristic for obtaining the best suited algorithm for cudnnConvolutionBackwardData
+#        for the given layer specifications.
 #
 #     Based on the input preference, this function will either return the fastest algorithm or the fastest
 #     algorithm within a given memory limit. For an exhaustive search for the fastest
@@ -1998,7 +2005,8 @@ _libcudnn.cudnnGetConvolutionBackwardDataWorkspaceSize.argtypes = [
 ]
 
 
-def cudnnGetConvolutionBackwardDataWorkspaceSize(handle: int, w_desc: int, dy_desc: int, conv_desc: int, dx_desc: int, algo: int) -> int:
+def cudnnGetConvolutionBackwardDataWorkspaceSize(handle: int, w_desc: int, dy_desc: int, conv_desc: int,
+                                                 dx_desc: int, algo: int) -> int:
     """Get the workspace size for backward data convolution.
 
     This function returns the amount of GPU memory workspace required to execute
@@ -2225,7 +2233,8 @@ def cudnnFindConvolutionBackwardFilterAlgorithm(
 #
 # def cudnnGetConvolutionBackwardFilterAlgorithm(handle: int, x_desc: int, dy_desc: int, conv_desc: int,
 #                                                dw_desc: int, preference: int, memoryLimitInbytes: int) -> int:
-#     """This function serves as a heuristic for obtaining the best suited algorithm for cudnnConvolutionBackwardFilter for the given layer specifications.
+#     """This function serves as a heuristic for obtaining the best suited algorithm for cudnnConvolutionBackwardFilter
+#        for the given layer specifications.
 #
 #     Based on the input preference, this function will either return the fastest algorithm or the
 #     fastest algorithm within a given memory limit. For an exhaustive search for the fastest
@@ -2426,7 +2435,8 @@ _libcudnn.cudnnSoftmaxForward.argtypes = [
 
 
 def cudnnSoftmaxForward(
-    handle: int, algorithm: int, mode: int, alpha: float, src_desc: int, src_data: ctypes.c_void_p, beta: float, dest_desc: int, dest_data: ctypes.c_void_p
+    handle: int, algorithm: int, mode: int, alpha: float, src_desc: int, src_data: ctypes.c_void_p,
+    beta: float, dest_desc: int, dest_data: ctypes.c_void_p
 ) -> None:
     """This routing computes the softmax function
 
@@ -2594,7 +2604,8 @@ _libcudnn.cudnnSetDropoutDescriptor.argtypes = [
 ]
 
 
-def cudnnSetDropoutDescriptor(drop_desc: int, handle: int, dropout: float, states: ctypes.c_void_p, state_size_in_bytes: int, seed: int) -> None:
+def cudnnSetDropoutDescriptor(drop_desc: int, handle: int, dropout: float, states: ctypes.c_void_p,
+                              state_size_in_bytes: int, seed: int) -> None:
     """Set dropout descriptor parameters.
 
     Parameters
@@ -2645,7 +2656,8 @@ _libcudnn.cudnnDropoutGetStatesSize.argtypes = [ctypes.c_void_p]
 
 
 def cudnnDropoutGetStatesSize(handle: int) -> int:
-    """This function is used to query the amount of space required to store the states of the random number generators used by cudnnDropoutForward() function
+    """This function is used to query the amount of space required to store the states
+    of the random number generators used by cudnnDropoutForward() function
 
     Returns
     -------
@@ -2675,7 +2687,8 @@ _libcudnn.cudnnDropoutForward.argtypes = [
 
 
 def cudnnDropoutForward(
-    handle: int, dropout_esc: int, x_desc: int, x: ctypes.c_void_p, y_desc: int, y: ctypes.c_void_p, reserve_space: ctypes.c_void_p, reserve_space_size_in_bytes: int
+    handle: int, dropout_esc: int, x_desc: int, x: ctypes.c_void_p, y_desc: int, y: ctypes.c_void_p,
+    reserve_space: ctypes.c_void_p, reserve_space_size_in_bytes: int
 ) -> None:
     """Perform dropout forward pass.
 
@@ -2726,7 +2739,8 @@ _libcudnn.cudnnDropoutBackward.argtypes = [
 
 
 def cudnnDropoutBackward(
-    handle: int, dropout_esc: int, dy_desc: int, dy: ctypes.c_void_p, dx_desc: int, dx: ctypes.c_void_p, reserve_space: ctypes.c_void_p, reserve_space_size_in_bytes: int
+    handle: int, dropout_esc: int, dy_desc: int, dy: ctypes.c_void_p, dx_desc: int, dx: ctypes.c_void_p,
+    reserve_space: ctypes.c_void_p, reserve_space_size_in_bytes: int
 ) -> None:
     """Perform dropout backward pass.
 
@@ -3003,7 +3017,8 @@ _libcudnn.cudnnPoolingForward.argtypes = [
 
 
 def cudnnPoolingForward(
-    handle: int, pooling_desc: int, alpha: float, src_desc: int, src_data: ctypes.c_void_p, beta: float, dest_desc: int, dest_data: ctypes.c_void_p
+    handle: int, pooling_desc: int, alpha: float, src_desc: int, src_data: ctypes.c_void_p,
+    beta: float, dest_desc: int, dest_data: ctypes.c_void_p
 ) -> None:
     """Perform pooling.
 
@@ -3148,7 +3163,8 @@ _libcudnn.cudnnDeriveBNTensorDescriptor.argtypes = [ctypes.c_void_p, ctypes.c_vo
 
 
 def cudnnDeriveBNTensorDescriptor(derive_bn_desc: int, x_desc: int, mode: int) -> None:
-    """This function derives a secondary tensor descriptor for the batch normalization scale, invVariance, bn_bias, and bn_scale subtensors from the layer's x data descriptor.
+    """This function derives a secondary tensor descriptor for the batch normalization scale,
+    invVariance, bn_bias, and bn_scale subtensors from the layer's x data descriptor.
 
     Parameters
     ----------
@@ -3203,7 +3219,8 @@ _libcudnn.cudnnSetSeqDataDescriptor.argtypes = [
 
 
 def cudnnSetSeqDataDescriptor(
-    seq_data_desc: int, data_type: int, nb_dims: int, dim_a: tuple[int, ...], axes: tuple[int, ...], seq_length_array_size: int, seq_length_array: int, padding_fill: int
+    seq_data_desc: int, data_type: int, nb_dims: int, dim_a: tuple[int, ...], axes: tuple[int, ...],
+    seq_length_array_size: int, seq_length_array: int, padding_fill: int
 ) -> None:
     """Initialize a previously created SeqData object.
 
@@ -3344,7 +3361,8 @@ def cudnnSetAttnDescriptor(
     max_batch_size: int,
     max_beam_size: int,
 ) -> None:
-    """This function configures a multi-head attention descriptor that was previously created using the cudnnCreateAttnDescriptor() function.
+    """This function configures a multi-head attention descriptor
+    that was previously created using the cudnnCreateAttnDescriptor() function.
 
     The function sets attention parameters that are
     necessary to compute internal buffer sizes, dimensions of weight and bias tensors, or to
@@ -3450,7 +3468,8 @@ _libcudnn.cudnnGetMultiHeadAttnWeights.argtypes = [
 ]
 
 
-def cudnnGetMultiHeadAttnWeights(handle: int, attn_desc: int, w_kind: int, weight_size_in_bytes: int, weights: ctypes.c_void_p) -> tuple[int, ctypes.c_void_p]:
+def cudnnGetMultiHeadAttnWeights(handle: int, attn_desc: int, w_kind: int, weight_size_in_bytes: int,
+                                 weights: ctypes.c_void_p) -> tuple[int, ctypes.c_void_p]:
     """This function obtains the shape of the weight or bias tensor.
 
     It also retrieves the start address of tensor data located in the weight buffer.
@@ -3504,7 +3523,8 @@ _libcudnn.cudnnGetMultiHeadAttnBuffers.argtypes = [
 
 
 def cudnnGetMultiHeadAttnBuffers(handle: int, attn_desc: int) -> tuple[int, int, int]:
-    """This function computes weight, work, and reserve space buffer sizes used by the following functions: cudnnMultiHeadAttnForward(), cudnnMultiHeadAttnBackwardData(), cudnnMultiHeadAttnBackwardWeights()
+    """This function computes weight, work, and reserve space buffer sizes used by the following functions:
+    cudnnMultiHeadAttnForward(), cudnnMultiHeadAttnBackwardData(), cudnnMultiHeadAttnBackwardWeights()
 
     Returns
     -------
@@ -3724,7 +3744,8 @@ def cudnnMultiHeadAttnBackwardData(
     reserve_space_size_in_bytes: int,
     reserve_space: ctypes.c_void_p,
 ) -> None:
-    """This function computes exact, first-order derivatives of the multi-head attention block with respect to its inputs: Q, K, V.
+    """This function computes exact, first-order derivatives of the multi-head attention block
+    with respect to its inputs: Q, K, V.
 
     If y=F(x) is a vector-valued function that represents the multi-head attention layer and it takes some vector
     x ϵ ℝ n as an input (with all other parameters and inputs constant), and outputs vector y ϵ ℝ m , then
@@ -3746,7 +3767,8 @@ def cudnnMultiHeadAttnBackwardData(
     dev_seq_lengths_dkdv[]: int[]
         Device array containing a copy of the sequence length array from the dkDesc or dvDesc sequence data descriptor.
     do_desc: cudnnSeqDataDescriptor
-        Descriptor for the δ out gradients (vectors of partial derivatives of the loss function with respect to the multi-head attention outputs).
+        Descriptor for the δ out gradients
+        (vectors of partial derivatives of the loss function with respect to the multi-head attention outputs).
     dout : void_p
         Pointer to δ out gradient data in the device memory.
     dq_desc : int
@@ -3855,14 +3877,15 @@ def cudnnMultiHeadAttnBackwardWeights(
     reserve_space_size_in_bytes: int,
     reserve_space: ctypes.c_void_p,
 ) -> None:
-    """This function computes exact, first-order derivatives of the multi-head attention block with respect to its trainable parameters: projection weights and projection biases.
+    """This function computes exact, first-order derivatives of the multi-head attention block
+    with respect to its trainable parameters: projection weights and projection biases.
 
     If y=F(w) is a vector-valued function that represents the multi-head attention layer and it takes some vector
     w ϵ ℝⁿ of flattened weights or biases as an input (with all other parameters and inputs fixed), and outputs
     vector y ϵ ℝᵐ, then cudnnMultiHeadAttnBackwardWeights() computes the result of
-    ∂yᵢ/∂wⱼᵀ δout, where δout is the m × 1 gradient of the loss function with respect to the multi-head attention
+    ∂yᵢ/∂wⱼᵀ δout, where δout is the m x 1 gradient of the loss function with respect to the multi-head attention
     outputs. The δout gradient is back propagated through prior layers of the deep learning model.
-    ∂yᵢ/∂wⱼ is the m × n Jacobian matrix of F(w). The δout input is supplied via the dout argument.
+    ∂yᵢ/∂wⱼ is the m x n Jacobian matrix of F(w). The δout input is supplied via the dout argument.
 
     Parameters
     ----------

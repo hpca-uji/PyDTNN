@@ -1,6 +1,7 @@
 """Message Passing Interface"""
 
 import sys as _sys
+from typing import Any
 
 from pydtnn.libs.mpi import rc as _rc
 
@@ -17,6 +18,6 @@ if hasattr(_module, "__all__"):
     __all__ = _module.__all__  # type: ignore
 
 
-def __getattr__(key):
+def __getattr__(key: Any) -> Any:
     """Proxy all attributes to module"""
     return getattr(_module, key)

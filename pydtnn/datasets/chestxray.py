@@ -90,7 +90,7 @@ class ChestXRay(Dataset):
     scale:  +4.002
     """
 
-    def __init__(self, model: Model, force_test_as_validation=False, debug=False):
+    def __init__(self, model: Model, force_test_as_validation: bool = False, debug: bool = False) -> None:
         """
         Initializes the ChestXRay dataset.
 
@@ -125,10 +125,8 @@ class ChestXRay(Dataset):
             mask[self.labels2classes[label]] = 1
         return mask
 
-    def _model_init(self):
-        """
-        Initializes the dataset by parsing metadata and mapping images to archives.
-        """
+    def _model_init(self) -> None:
+        """Initializes the dataset by parsing metadata and mapping images to archives."""
         self._xy_filenames: list[list[tuple[str, Class]]] = [
             [("", np.empty((0,)))] for _ in Dataset.Part
         ]
@@ -211,7 +209,7 @@ class ChestXRay(Dataset):
             with (
                 self._gzip_open(src_path) as g,
                 tarfile.TarFile(fileobj=g) as t,
-                t.extractfile(path) as fp,
+                t.extractfile(path) as fp,  # type: ignore (t is not None)
             ):  # type: ignore
                 x = self._load_gray_image(fp)
 

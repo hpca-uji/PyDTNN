@@ -35,32 +35,32 @@ class Utils(Base):
     """
 
     @property
-    def train_nsamples(self):
+    def train_nsamples(self) -> int:
         """Get number of training samples."""
         return self._nsamples[Base.Part.TRAIN]
 
     @train_nsamples.setter
-    def train_nsamples(self, value):
+    def train_nsamples(self, value: int) -> None:
         """Set number of training samples."""
         self._nsamples[Base.Part.TRAIN] = value
 
     @property
-    def val_nsamples(self):
+    def val_nsamples(self) -> int:
         """Get number of validation samples."""
         return self._nsamples[Base.Part.VAL]
 
     @val_nsamples.setter
-    def val_nsamples(self, value):
+    def val_nsamples(self, value: int) -> None:
         """Set number of validation samples."""
         self._nsamples[Base.Part.VAL] = value
 
     @property
-    def test_nsamples(self):
+    def test_nsamples(self) -> int:
         """Get number of test samples."""
         return self._nsamples[Base.Part.TEST]
 
     @test_nsamples.setter
-    def test_nsamples(self, value):
+    def test_nsamples(self, value) -> None:
         """Set number of test samples."""
         self._nsamples[Base.Part.TEST] = value
 

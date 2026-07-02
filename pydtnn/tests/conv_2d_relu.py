@@ -4,6 +4,8 @@ import logging
 import unittest
 from copy import deepcopy
 
+import numpy as np
+
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.activations.relu import Relu
 from pydtnn.layers.concatenation_block import ConcatenationBlock
@@ -17,6 +19,7 @@ from pydtnn.utils.initializers import glorot_uniform, zeros
 from pydtnn.utils.tensor import TensorFormat
 
 __all__ = ("Conv2DReluTestCase",)
+
 
 logger = logging.getLogger(__name__)
 
@@ -91,7 +94,7 @@ class Conv2DReluTestCase(Conv2DCommonTestCase):
         return chain, fuse
 
     @staticmethod
-    def _set_state(layer: Conv2D, weights) -> None:
+    def _set_state(layer: Conv2D, weights: np.ndarray) -> None:
         """
         Synchronizes weights between the standard layer and the fused layer.
 

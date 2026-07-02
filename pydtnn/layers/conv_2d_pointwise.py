@@ -1,6 +1,4 @@
-"""
-Pointwise 2D convolution layer implementation for the PyDTNN framework.
-"""
+"""Pointwise 2D convolution layer implementation for the PyDTNN framework."""
 
 import logging
 from typing import Optional
@@ -29,10 +27,10 @@ class Conv2DPointwise[T: Array](AbstractConv2D[T]):
         stride: tuple[int, int] | int = 1,
         dilation: tuple[int, int] | int = 0,
         activation: Optional[type["Activation"]] = None,
-        use_bias=True,
+        use_bias: bool = True,
         weights_initializer: InitializerFunc = glorot_uniform,
         biases_initializer: InitializerFunc = zeros,
-    ):
+    ) -> None:
         """
         Initializes the Conv2DPointwise layer.
 

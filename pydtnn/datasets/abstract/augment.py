@@ -87,9 +87,7 @@ class Augment(Init):
         self._augment_classes = set()  # set([2, 3, 4])
 
         if self.model.augment_crop:
-            # type: ignore (The cropped input shape will be a tuple[int, int])
-            # type: ignore (It's the right shape)
-            crop, size = self._calculate_crop(self.input_shape[1:])
+            crop, size = self._calculate_crop(self.input_shape[1:])  # type: ignore (It's the right shape)
             self.input_shape = (self.input_shape[0], *size)
             augments_training.append(self._x_augment_adaptor(self._do_augment_crop))
             augments_always.append(self._x_augment_adaptor(self._do_augment_crop))
@@ -375,14 +373,14 @@ class Augment(Init):
             NotImplementedError: If the `self.model.tensor_format` is not supported.
         """
         data = self.model.decode_tensor(data)
-        N, C, H, W = data.shape
-        # NOTE: C not included so all channels in a sample rotate by the same amount
-        rotation = (self.model.random.random(N) - 0.5) * (2 * self.model.augment_rotate_degree)
+        _n, _c, _h, _w = data.shape
+        # NOTE: _c not included so all channels in a sample rotate by the same amount
+        rotation = (self.model.random.random(_n) - 0.5) * (2 * self.model.augment_rotate_degree)
 
-        s = np.where(self.model.random.random(N) <= self.model.augment_rotate)[0]
+        s = np.where(self.model.random.random(_n) <= self.model.augment_rotate)[0]
 
         for n in s:
-            for c in range(C):
+            for c in range(_c):
                 channel: np.ndarray = data[n, c]
                 # NOTE: PIL mode F is WH in float32
                 channel = channel.transpose().astype(np.float32)
@@ -410,9 +408,9 @@ class Augment(Init):
             NotImplementedError: If the `self.model.tensor_format` is not supported.
         """
         data = self.model.decode_tensor(data)
-        N, C, H, W = data.shape
+        _n, _c, _h, _w = data.shape
 
-        s = np.where(self.model.random.random(N) <= self.model.augment_blur)[0]
+        s = np.where(self.model.random.random(_n) <= self.model.augment_blur)[0]
 
         for n in s:
             data[n] = gaussian_filter(
@@ -440,12 +438,12 @@ class Augment(Init):
 
         size = (self.model.augment_scale_size, self.model.augment_scale_size)
         shape = (*data.shape[:2], *size)
-        N, C, H, W = shape
+        _n, _c, _h, _w = shape
 
         new_data = np.empty(shape=shape, dtype=self.model.dtype)
 
-        for n in range(N):
-            for c in range(C):
+        for n in range(_n):
+            for c in range(_c):
                 channel: np.ndarray = data[n, c]
                 # NOTE: PIL mode F is WH in float32
                 channel = channel.transpose().astype(np.float32)
@@ -503,12 +501,12 @@ class Augment(Init):
         size = data.shape[2:4]
         crop, size = self._calculate_crop(size)
         shape = (*data.shape[:2], *size)
-        N, C, H, W = shape
+        _n, _c, _h, _w = shape
 
         new_data = np.empty(shape=shape, dtype=self.model.dtype)
 
-        for n in range(N):
-            for c in range(C):
+        for n in range(_n):
+            for c in range(_c):
                 channel: np.ndarray = data[n, c]
                 # NOTE: PIL mode F is WH in float32
                 channel = channel.transpose().astype(np.float32)
@@ -539,14 +537,14 @@ class Augment(Init):
             NotImplementedError: If the `self.model.tensor_format` is not supported.
         """
         data = self.model.decode_tensor(data)
-        N, C, H, W = data.shape
-        # NOTE: C not included so all channels in a sample rotate by the same amount
-        brightness: np.ndarray = self.model.random.random(N) * self.model.augment_brightness_factor
+        _n, _c, _h, _w = data.shape
+        # NOTE: _c not included so all channels in a sample rotate by the same amount
+        brightness: np.ndarray = self.model.random.random(_n) * self.model.augment_brightness_factor
 
-        s = np.where(self.model.random.random(N) <= self.model.augment_brightness)[0]
+        s = np.where(self.model.random.random(_n) <= self.model.augment_brightness)[0]
 
         for n in s:
-            for c in range(C):
+            for c in range(_c):
                 channel: np.ndarray = data[n, c]
                 # NOTE: PIL mode F is WH in float32
                 channel = np.interp(channel, (0, 1), (0, 255))
@@ -580,14 +578,14 @@ class Augment(Init):
             NotImplementedError: If the `self.model.tensor_format` is not supported.
         """
         data = self.model.decode_tensor(data)
-        N, C, H, W = data.shape
-        # NOTE: C not included so all channels in a sample rotate by the same amount
-        contrast: np.ndarray = self.model.random.random(N) * self.model.augment_contrast_factor
+        _n, _c, _h, _w = data.shape
+        # NOTE: _c not included so all channels in a sample rotate by the same amount
+        contrast: np.ndarray = self.model.random.random(_n) * self.model.augment_contrast_factor
 
-        s = np.where(self.model.random.random(N) <= self.model.augment_contrast)[0]
+        s = np.where(self.model.random.random(_n) <= self.model.augment_contrast)[0]
 
         for n in s:
-            for c in range(C):
+            for c in range(_c):
                 channel: np.ndarray = data[n, c]
                 channel = np.interp(channel, (0, 1), (0, 255))
                 channel = channel.transpose().astype(np.uint8)
@@ -620,14 +618,14 @@ class Augment(Init):
             NotImplementedError: If the `self.model.tensor_format` is not supported.
         """
         data = self.model.decode_tensor(data)
-        N, C, H, W = data.shape
-        # NOTE: C not included so all channels in a sample rotate by the same amount
-        saturation: np.ndarray = self.model.random.random(N) * self.model.augment_saturation_factor
+        _n, _c, _h, _w = data.shape
+        # NOTE: _c not included so all channels in a sample rotate by the same amount
+        saturation: np.ndarray = self.model.random.random(_n) * self.model.augment_saturation_factor
 
-        s = np.where(self.model.random.random(N) <= self.model.augment_saturation)[0]
+        s = np.where(self.model.random.random(_n) <= self.model.augment_saturation)[0]
 
         for n in s:
-            for c in range(C):
+            for c in range(_c):
                 channel: np.ndarray = data[n, c]
                 channel = np.interp(channel, (0, 1), (0, 255))
                 channel = channel.transpose().astype(np.uint8)
@@ -654,14 +652,14 @@ class Augment(Init):
             The array of images with some perspective change.
         """
         data = self.model.decode_tensor(data)
-        N, C, H, W = data.shape
-        # NOTE: C not included so all channels in a sample rotate by the same amount
-        persepctive: np.ndarray = self.model.random.random(N) * self.model.augment_perspective_factor
+        _n, _c, _h, _w = data.shape
+        # NOTE: _c not included so all channels in a sample rotate by the same amount
+        persepctive: np.ndarray = self.model.random.random(_n) * self.model.augment_perspective_factor
 
-        s = np.where(self.model.random.random(N) <= self.model.augment_perspective)[0]
+        s = np.where(self.model.random.random(_n) <= self.model.augment_perspective)[0]
 
         for n in s:
-            for c in range(C):
+            for c in range(_c):
                 channel: np.ndarray = data[n, c]
                 channel = np.interp(channel, (0, 1), (0, 255))
                 channel = channel.transpose().astype(np.uint8)

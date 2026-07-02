@@ -19,6 +19,7 @@ __all__ = ("BatchNormalizationReluTestCase",)
 
 logger = logging.getLogger(__name__)
 
+
 class BatchNormalizationReluTestCase(Conv2DCommonTestCase):
     """Tests that BatchNormalization+Relu leads to the same results than BatchNormalizationRelu"""
 

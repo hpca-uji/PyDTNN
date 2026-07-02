@@ -1,6 +1,4 @@
-"""
-Warm-up learning rate scheduler module for PyDTNN.
-"""
+"""Warm-up learning rate scheduler module for PyDTNN."""
 
 from __future__ import annotations
 
@@ -11,9 +9,7 @@ from numpy import ndarray
 
 from pydtnn.schedulers.abstract.scheduler import Scheduler
 
-"""
-Warm-up learning rate scheduler module for PyDTNN.
-"""
+"""Warm-up learning rate scheduler module for PyDTNN."""
 
 __all__ = ("WarmUp",)
 
@@ -25,9 +21,7 @@ if TYPE_CHECKING:
 
 
 class WarmUp(Scheduler):
-    """
-    Learning rate scheduler that linearly increases the learning rate during an initial warm-up phase.
-    """
+    """Learning rate scheduler that linearly increases the learning rate during an initial warm-up phase."""
 
     def __init__(self, warmup_epochs: int = 5, base_lr: float = 1e-4,
                  init_lr: float = 1e-3, verbose: bool = False) -> None:

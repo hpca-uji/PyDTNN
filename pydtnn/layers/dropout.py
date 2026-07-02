@@ -1,6 +1,4 @@
-"""
-Dropout layer implementation for PyDTNN.
-"""
+"""Dropout layer implementation for PyDTNN."""
 
 import logging
 
@@ -13,11 +11,9 @@ logger = logging.getLogger(__name__)
 
 
 class Dropout[T: Array](Layer[T]):
-    """
-    A layer that randomly sets input units to 0 with a frequency of rate during training.
-    """
+    """A layer that randomly sets input units to 0 with a frequency of rate during training."""
 
-    def __init__(self, rate=0.5):
+    def __init__(self, rate: float = 0.5) -> None:
         """
         Initializes the Dropout layer.
 
@@ -27,7 +23,7 @@ class Dropout[T: Array](Layer[T]):
         super().__init__()
         self.rate = min(1.0, max(0.0, rate))
 
-    def _model_init(self, prev_shape: ArrayShape, x: T | None):
+    def _model_init(self, prev_shape: ArrayShape, x: T | None) -> None:
         """
         Initializes layer parameters and shape.
 

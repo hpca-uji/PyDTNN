@@ -9347,7 +9347,8 @@ _GEAM_doc = Template("""
     >>> b_gpu = gpuarray.to_gpu(b)
     >>> c_gpu = gpuarray.empty(c.shape, c.dtype)
     >>> h = cublasCreate()
-    >>> ${func}(h, 'n', 'n', c.shape[0], c.shape[1], alpha, a_gpu.gpudata, a.shape[0], beta, b_gpu.gpudata, b.shape[0], c_gpu.gpudata, c.shape[0])
+    >>> ${func}(h, 'n', 'n', c.shape[0], c.shape[1], alpha, a_gpu.gpudata, a.shape[0], beta, b_gpu.gpudata, \
+                     b.shape[0], c_gpu.gpudata, c.shape[0])
     >>> np.allclose(c_gpu.get(), c)
     True
     >>> a = ${a_data_2}
@@ -9357,7 +9358,8 @@ _GEAM_doc = Template("""
     >>> b_gpu = gpuarray.to_gpu(b.T.copy())
     >>> c_gpu = gpuarray.empty(c.T.shape, c.dtype)
     >>> transa = 'c' if np.iscomplexobj(a) else 't'
-    >>> ${func}(h, transa, 'n', c.shape[0], c.shape[1], alpha, a_gpu.gpudata, a.shape[0], beta, b_gpu.gpudata, b.shape[0], c_gpu.gpudata, c.shape[0])
+    >>> ${func}(h, transa, 'n', c.shape[0], c.shape[1], alpha, a_gpu.gpudata, a.shape[0], beta, b_gpu.gpudata, \
+                     b.shape[0], c_gpu.gpudata, c.shape[0])
     >>> np.allclose(c_gpu.get().T, c)
     True
     >>> cublasDestroy(h)

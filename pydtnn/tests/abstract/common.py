@@ -1,6 +1,4 @@
-"""
-Common methods and properties for various unitary tests
-"""
+"""Common methods and properties for various unitary tests"""
 
 import gc
 import logging
@@ -24,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 # @warning: must be a function, don't use a @property decorator
-def verbose_test():
+def verbose_test() -> bool:
     """Returns True if unittest has been called with -v or --verbose options."""
     return "-v" in sys.argv or "--verbose" in sys.argv
 
@@ -67,21 +65,12 @@ class D:
     """Container for convolution layer dimensions and parameters."""
 
     def __init__(
-        self,
-        b=1,
-        c=1,
-        h=128,
-        w=100,
-        kn=1,
-        kh=16,
-        kw=10,
-        vpadding=1,
-        hpadding=1,
-        vstride=1,
-        hstride=1,
-        vdilation=1,
-        hdilation=1,
-    ):
+        self, b: int = 1, c: int = 1, h: int = 128, w: int = 100,
+        kn: int = 1, kh: int = 16, kw: int = 10,
+        vpadding: int = 1, hpadding: int = 1,
+        vstride: int = 1, hstride: int = 1,
+        vdilation: int = 1, hdilation: int = 1,
+    ) -> None:
         """Initializes convolution dimensions and hyperparameters."""
         self.b = b  # Batch size
         self.c = c  # Channels per layer
@@ -98,17 +87,17 @@ class D:
         self.hdilation = hdilation  # Horizontal dilation
 
     @property
-    def ho(self):
+    def ho(self) -> int:
         """Calculates the output height."""
         return (self.h + 2 * self.vpadding - self.vdilation * (self.kh - 1) - 1) // self.vstride + 1
 
     @property
-    def wo(self):
+    def wo(self) -> int:
         """Calculates the output width."""
         return (self.w + 2 * self.hpadding - self.hdilation * (self.kw - 1) - 1) // self.hstride + 1
 
     @property
-    def shape(self):
+    def shape(self) -> tuple[int, int, int, int]:
         """Returns the input shape as a tuple (b, c, h, w)."""
         return self.b, self.c, self.h, self.w
 

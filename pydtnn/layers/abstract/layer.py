@@ -1,6 +1,4 @@
-"""
-PyDTNN Layer base class
-"""
+"""PyDTNN Layer base class"""
 
 import logging
 

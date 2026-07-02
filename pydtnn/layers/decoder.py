@@ -1,6 +1,4 @@
-"""
-Decoder module for the PyDTNN framework.
-"""
+"""Decoder module for the PyDTNN framework."""
 
 import logging
 
@@ -13,9 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class Decoder[T: Array](AbstractBlockLayer[T]):
-    """
-    Decoder layer implementation for transformer-based architectures.
-    """
+    """Decoder layer implementation for transformer-based architectures."""
 
     def __init__(
         self,
@@ -24,7 +20,7 @@ class Decoder[T: Array](AbstractBlockLayer[T]):
         d_ff: int = 256,
         heads: int = 10,
         dropout_rate: float = 0.5,
-    ):
+    ) -> None:
         """
         Initializes the Decoder layer.
 

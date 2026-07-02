@@ -350,14 +350,12 @@ def pydtnn_training(model: PyDTNN_Model, dataset: Dataset, num_samples=64 * 2):
     print(f"history: {history}")
 
 
-def main():
-    """
-    Main entry point for the conversion and testing pipeline.
-    """
+def main() -> None:
+    """Main entry point for the conversion and testing pipeline."""
     test = TEST
 
     pytorch_model, create_pydtnn_model, shape, dataset, args, weight = dict_test[test]
-    pytorch_model: torch.Module = pytorch_model(**args)
+    pytorch_model: torch.nn.Module = pytorch_model(**args)
 
     KWARGS["dataset"] = dataset
     KWARGS["dataset_name"] = dataset

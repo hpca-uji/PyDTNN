@@ -1,6 +1,4 @@
-"""
-Input layer module for PyDTNN.
-"""
+"""Input layer module for PyDTNN."""
 
 import logging
 
@@ -15,11 +13,9 @@ logger = logging.getLogger(__name__)
 
 
 class Input[T: Array](Layer[T]):
-    """
-    Represents the input layer of a neural network.
-    """
+    """Represents the input layer of a neural network."""
 
-    def __init__(self, shape: tuple = (1,)):
+    def __init__(self, shape: tuple = (1,)) -> None:
         """
         Initializes the Input layer with a specific shape.
 

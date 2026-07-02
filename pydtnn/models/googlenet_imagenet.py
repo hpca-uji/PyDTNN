@@ -1,6 +1,4 @@
-"""
-GoogLeNet model implementation for ImageNet classification.
-"""
+"""GoogLeNet model implementation for ImageNet classification."""
 
 from pydtnn.models.googlenet import googlenet as googlenet_imagenet
 

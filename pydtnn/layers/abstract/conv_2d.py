@@ -18,9 +18,7 @@ if TYPE_CHECKING:
 
 
 class AbstractConv2D[T: Array](Layer[T]):
-    """
-    Base class for 2D convolutional layers providing common configuration and initialization logic.
-    """
+    """Base class for 2D convolutional layers providing common configuration and initialization logic."""
 
     def __init__(
         self,
@@ -30,10 +28,10 @@ class AbstractConv2D[T: Array](Layer[T]):
         stride: tuple[int, int] | int = 1,
         dilation: tuple[int, int] | int = 1,
         activation: Optional[type["Activation"]] = None,
-        use_bias=True,
+        use_bias: bool = True,
         weights_initializer: InitializerFunc = glorot_uniform,
         biases_initializer: InitializerFunc = zeros,
-    ):
+    ) -> None:
         """
         Initializes the 2D convolutional layer parameters.
 
@@ -78,12 +76,10 @@ class AbstractConv2D[T: Array](Layer[T]):
         # @warning: do not do this (affects the gpu version) self.forward = self.backward = None
 
     def _initializing_special_parameters(self):
-        """
-        Hook for subclasses to define or modify parameters required for initialization.
-        """
+        """Hook for subclasses to define or modify parameters required for initialization."""
         pass
 
-    def _model_init(self, prev_shape: ArrayShape, x: T | None):
+    def _model_init(self, prev_shape: ArrayShape, x: T | None) -> None:
         """
         Initializes layer dimensions and output shape based on input shape.
 

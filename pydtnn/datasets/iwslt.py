@@ -6,7 +6,7 @@ Provides data loading and processing utilities for the IWSLT 2017 translation ta
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Generator
+from typing import TYPE_CHECKING, Any, Generator, Literal
 
 import numpy as np
 from spacy.language import Language
@@ -54,15 +54,13 @@ class IWSLT(Dataset):
     def __init__(
         self,
         model: Model,
-        embedl=512,
-        max_sentence=512,
-        split_token="<translation>",
-        force_test_as_validation=False,
-        debug=False,
-    ):
-        """
-        Initialize the IWSLT dataset instance.
-        """
+        embedl: int = 512,
+        max_sentence: int = 512,
+        split_token: str = "<translation>",
+        force_test_as_validation: bool = False,
+        debug: bool = False,
+    ) -> None:
+        """Initialize the IWSLT dataset instance."""
 
         self.model = model
         self.split_token = split_token
@@ -87,9 +85,7 @@ class IWSLT(Dataset):
         )
 
     def _model_init(self) -> None:
-        """
-        Initialize actual dataset partitions from files.
-        """
+        """Initialize actual dataset partitions from files."""
         # Actual
         self.load_data(self.train_path, self.lang1, self.lang2)
         self.make_train_val_partitions()
@@ -108,13 +104,12 @@ class IWSLT(Dataset):
         # # self.src_mask = np.zeros((1000,1,self.max_sentence),dtype=bool)
         # # self.tgt_mask = np.zeros((1000,1,self.max_sentence),dtype=bool)
 
-    def load_data(self, file, lang1: str, lang2: str) -> None:
-        """
-        Load translation data from a text file.
-        """
+    def load_data(self, file_name: str, lang1: str, lang2: str) -> None:
+        """Load translation data from a text file."""
         self.dictionary1 = self.get_dictionary(lang1)
         self.dictionary2 = self.get_dictionary(lang2)
-        file = open(self.train_path, "r")
+        #file = open(self.train_path, "r")
+        file = open(file_name, "r")
         lines = file.readlines()
         file.close()
         lines = [line.replace("\n", "") for line in lines]
@@ -131,9 +126,7 @@ class IWSLT(Dataset):
         # pad = dictionary(pad).vector  # No hace falta si inicializamos a 0s
 
     def get_dictionary(self, language: str) -> Language:
-        """
-        Load a spaCy language model for tokenization and embeddings.
-        """
+        """Load a spaCy language model for tokenization and embeddings."""
         import spacy  # type: ignore
 
         table = {"en": "en_core_web_md", "de": "de_core_news_md"}
@@ -142,9 +135,7 @@ class IWSLT(Dataset):
         return spacy.load(language)
 
     def make_train_val_partitions(self) -> None:
-        """
-        Create train, validation, and test partitions from loaded data.
-        """
+        """Create train, validation, and test partitions from loaded data."""
         val_split = self.model.validation_split
         if self.train_nsamples is None:
             s = np.arange(self.train_val_nsamples)
@@ -172,9 +163,7 @@ class IWSLT(Dataset):
                     self.lines2_test = [self.lines2[i] for i in self.test_indices]
 
     def _data_generator(self, part: Dataset.Part) -> Generator[tuple[list[np.ndarray], np.ndarray]]:
-        """
-        Generate batches of real data for training, validation, or testing.
-        """
+        """Generate batches of real data for training, validation, or testing."""
         match part:
             case Dataset.Part.TRAIN:
                 lines1, lines2 = self.lines1_train, self.lines2_train
@@ -211,9 +200,7 @@ class IWSLT(Dataset):
     def _synthetic_data_generator(
         self,
     ) -> Generator[tuple[list[np.ndarray], np.ndarray], Any, None]:
-        """
-        Generate batches of synthetic data for testing purposes.
-        """
+        """Generate batches of synthetic data for testing purposes."""
         batch_size = self.model.batch_size
         rank = self.model.rank
 
@@ -242,15 +229,13 @@ class IWSLT(Dataset):
     # === Preprocess ===
     def preprocess(
         self,
-        original_file_lang1,
+        original_file_lang1: str,
         lang1: str,
-        original_file_lang2,
+        original_file_lang2: str,
         lang2: str,
-        destination_file="IWSLT.txt",
-    ):
-        """
-        Preprocess raw translation files into a unified format.
-        """
+        destination_file: str = "IWSLT.txt",
+    ) -> Literal[-1] | None:
+        """Preprocess raw translation files into a unified format."""
         self.load_data(destination_file, lang1, lang2)
         file = open(original_file_lang1, "r")
         lines1 = file.readlines()
@@ -277,10 +262,8 @@ class IWSLT(Dataset):
                 file.write(line1 + self.split_token + line2 + "\n")
         file.close()
 
-    def xml_to_txt(self, file_in, file_out) -> None:
-        """
-        Convert XML-formatted translation files to plain text.
-        """
+    def xml_to_txt(self, file_in: str, file_out: str) -> None:
+        """Convert XML-formatted translation files to plain text."""
         file = open(file_in, "r")
         # lines = file.read().splitlines()
         lines = file.readlines()

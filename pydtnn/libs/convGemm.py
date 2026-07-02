@@ -15,6 +15,7 @@ import weakref
 
 import numpy as np
 
+from pydtnn.abstract.layerable import Layerable
 from pydtnn.backends.cython.utils.im2col_nchw_cython import im2col_nchw_cython
 from pydtnn.utils import load_library
 
@@ -101,8 +102,9 @@ class ConvGemm:
     lib_cg = None  # will link to the libconvGemm.so library
 
     def __init__(
-        self, dtype: np.dtype = np.dtype(np.float32), debug: bool = False, parent_layer=None
-    ):
+        self, dtype: np.dtype = np.dtype(np.float32), debug: bool = False,
+        parent_layer: Layerable | None = None
+    ) -> None:
         """
         Initializes the ConvGemm instance.
 
@@ -161,7 +163,7 @@ class ConvGemm:
                 f"Type '{str(self.dtype)}' not supported by this version of libconvGemm!"
             )
 
-    def __del__(self):
+    def __del__(self) -> None:
         """
         Frees the allocated internal auxiliary buffers.
 
@@ -182,21 +184,21 @@ class ConvGemm:
         x: np.ndarray,
         # res originaly was called "biases"
         out: np.ndarray | None = None,  # type: ignore
-        vpadding=0,
-        hpadding=0,
-        vstride=1,
-        hstride=1,
-        vdilation=1,
-        hdilation=1,
+        vpadding: int = 0,
+        hpadding: int = 0,
+        vstride: int = 1,
+        hstride: int = 1,
+        vdilation: int = 1,
+        hdilation: int = 1,
         # biases originaly was called "biases_vector"
         biases: np.ndarray | None = None,  # type: ignore
-        trans=False,
+        trans: bool = False,
         bn_running_mean: np.ndarray | None = None,  # type: ignore
         bn_inv_std: np.ndarray | None = None,  # type: ignore
         bn_gamma: np.ndarray | None = None,  # type: ignore
         bn_beta: np.ndarray | None = None,  # type: ignore
-        relu=False,
-    ):
+        relu: bool = False,
+    ) -> np.ndarray:
         """
         Performs a convolution operation using the NCHW data format via GEMM.
 
@@ -364,20 +366,20 @@ class ConvGemm:
         weights: np.ndarray,
         x: np.ndarray,
         out: np.ndarray | None = None,  # type: ignore
-        vpadding=0,
-        hpadding=0,
-        vstride=1,
-        hstride=1,
-        vdilation=1,
-        hdilation=1,
+        vpadding: int = 0,
+        hpadding: int = 0,
+        vstride: int = 1,
+        hstride: int = 1,
+        vdilation: int = 1,
+        hdilation: int = 1,
         biases: np.ndarray | None = None,  # type: ignore
-        trans=False,
+        trans: bool = False,
         bn_running_mean: np.ndarray | None = None,  # type: ignore
         bn_inv_std: np.ndarray | None = None,  # type: ignore
         bn_gamma: np.ndarray | None = None,  # type: ignore
         bn_beta: np.ndarray | None = None,  # type: ignore
-        relu=False,
-    ):
+        relu: bool = False,
+    ) -> np.ndarray:
         """
         Performs a convolution operation using the NHWC data format via GEMM.
 
@@ -544,13 +546,13 @@ class ConvGemm:
         weights: np.ndarray,
         dy: np.ndarray,
         dx: np.ndarray,
-        vpadding=0,
-        hpadding=0,
-        vstride=1,
-        hstride=1,
-        vdilation=1,
-        hdilation=1,
-    ):
+        vpadding: int = 0,
+        hpadding: int = 0,
+        vstride: int = 1,
+        hstride: int = 1,
+        vdilation: int = 1,
+        hdilation: int = 1,
+    ) -> np.ndarray:
         """
         Performs a transposed convolution (deconvolution) operation using NCHW format.
 
@@ -637,13 +639,13 @@ class ConvGemm:
         weights: np.ndarray,
         dy: np.ndarray,
         dx: np.ndarray,
-        vpadding=0,
-        hpadding=0,
-        vstride=1,
-        hstride=1,
-        vdilation=1,
-        hdilation=1,
-    ):
+        vpadding: int = 0,
+        hpadding: int = 0,
+        vstride: int = 1,
+        hstride: int = 1,
+        vdilation: int = 1,
+        hdilation: int = 1,
+    ) -> np.ndarray:
         """
         Performs a transposed convolution (deconvolution) operation using NHWC format.
 
@@ -725,7 +727,7 @@ class ConvGemm:
         return dx
 
 
-def __free__(pack):
+def __free__(pack: ctypes._Pointer) -> None:
     """
     Frees a memory buffer allocated by `libc` on different platforms.
 
@@ -855,7 +857,7 @@ def time_it_func(
     return res  # type: ignore
 
 
-def __usage_example__():
+def __usage_example__() -> None:
     """
     Provides a usage example for the `ConvGemm` class.
 

@@ -52,9 +52,9 @@ class Init(Utils):
         test_nsamples: int = 0,
         input_shape: ArrayShape = (),
         output_shape: ArrayShape = (),
-        force_test_as_validation=False,
-        debug=False,
-    ):
+        force_test_as_validation: bool = False,
+        debug: bool = False,
+    ) -> None:
         """
         Initialize the dataset with model configuration and sample parameters.
 
@@ -144,9 +144,6 @@ class Init(Utils):
             self._local_offset[Base.Part.VAL] += self._initial_nsamples[Base.Part.TRAIN]
         # self._local_offset[Base.Part.TEST] += self._initial_nsamples[Base.Part.TRAIN]
 
-        if self.debug:
-            self._print_report()
-
     def get_train_val_generator(
         self,
     ) -> tuple[
@@ -177,7 +174,7 @@ class Init(Utils):
         """
         return self._get_batch_generator(Base.Part.TEST)
 
-    def _compute_local_workload(self, nsamples: int):
+    def _compute_local_workload(self, nsamples: int) -> tuple[int, int, int]:
         """
         Computes the offset and number of samples for the current rank.
 
@@ -224,7 +221,7 @@ class Init(Utils):
 
         return int(local_offset), int(local_nsamples), int(_nsamples)
 
-    def _model_init(self):
+    def _model_init(self) -> None:
         """Generates initial self._x[] and self._y[]. To be implemented in derived classes."""
         self.x_empty_batch = np.zeros(
             shape=self.model.encode_shape((0, *self.input_shape)), dtype=self.model.dtype

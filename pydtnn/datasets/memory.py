@@ -1,6 +1,4 @@
-"""
-In-memory dataset implementation for PyDTNN.
-"""
+"""In-memory dataset implementation for PyDTNN."""
 
 from __future__ import annotations
 
@@ -46,9 +44,9 @@ class Memory(Dataset):
         y_test: np.ndarray | None = None,
         input_shape: ArrayShape | None = None,
         output_shape: ArrayShape | None = None,
-        force_test_as_validation=False,
-        debug=False,
-    ):
+        force_test_as_validation: bool = False,
+        debug: bool = False,
+    ) -> None:
         """
         Initialize the in-memory dataset.
 

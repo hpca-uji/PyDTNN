@@ -1,6 +1,4 @@
-"""
-Synthetic dataset module for generating random data for model training and testing.
-"""
+"""Synthetic dataset module for generating random data for model training and testing."""
 
 from __future__ import annotations
 
@@ -31,7 +29,7 @@ class Synthetic(Dataset):
     - `model.synthetic_output_shape` (coma separated)
     """
 
-    def __init__(self, model: Model, force_test_as_validation: bool = False, debug: bool = False):
+    def __init__(self, model: Model, force_test_as_validation: bool = False, debug: bool = False) -> None:
         """
         Initializes the Synthetic dataset with model parameters.
 
@@ -56,9 +54,7 @@ class Synthetic(Dataset):
         )
 
     def _model_init(self) -> None:
-        """
-        Initializes the internal synthetic data arrays based on model shapes and batch sizes.
-        """
+        """Initializes the internal synthetic data arrays based on model shapes and batch sizes."""
         super()._model_init()
 
         for part in Dataset.Part:

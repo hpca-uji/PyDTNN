@@ -11,11 +11,12 @@ import logging
 import math
 import os
 import tarfile
-from typing import TYPE_CHECKING, Generator
+from typing import IO, TYPE_CHECKING, Generator
 
 import numpy as np
 
 from pydtnn.datasets.abstract import Dataset
+from pydtnn.datasets.memory import Memory
 
 __all__ = ("Tsunamis",)
 
@@ -32,7 +33,7 @@ OUTPUT_SHAPE = (1,)
 IMAGES_PER_FILE = 10000
 
 
-class Tsunamis(Dataset):
+class Tsunamis(Memory):
     """
     Tsunamis Dataset
 
@@ -43,7 +44,7 @@ class Tsunamis(Dataset):
     scale:  ???
     """
 
-    def __init__(self, model: Model, force_test_as_validation: bool = False, debug: bool = False):
+    def __init__(self, model: Model, force_test_as_validation: bool = False, debug: bool = False) -> None:
         """
         Initialize the Tsunamis dataset.
 

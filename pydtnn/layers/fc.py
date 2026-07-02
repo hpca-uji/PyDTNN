@@ -24,10 +24,10 @@ class FC[T: Array](Layer[T]):
         self,
         shape: ArrayShape = (1,),
         activation: type[Activation] | None = None,
-        use_bias=True,
+        use_bias: bool = True,
         weights_initializer: InitializerFunc = glorot_uniform,
         biases_initializer: InitializerFunc = zeros,
-    ):
+    ) -> None:
         """Initializes the FC layer.
 
         Args:

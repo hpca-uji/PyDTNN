@@ -1,6 +1,4 @@
-"""
-Module for handling datasets organized in a folder-based structure.
-"""
+"""Module for handling datasets organized in a folder-based structure."""
 
 from __future__ import annotations
 
@@ -28,18 +26,19 @@ type ClassName = int
 
 class Folder(Dataset):
     """
-    This class will receive the path to a dataset divided in different sub-folders where every sub-folder is a different data class, and will
-    generate the samples.
+    This class will receive the path to a dataset divided in different sub-folders
+     where every sub-folder is a different data class, and will generate the samples.
     For example:
     - Dataset:
         - A: img1, img2
         - B: img3, img4, img5
         - C: img6
 
-    The Dataset is composed by img1 and img2, which belongs to the class A; img3, img4 and img5, which belong to class the class B; and img6, which belongs to class C.
+    The Dataset is composed by img1 and img2, which belongs to the class A; img3, img4 and img5,
+     which belong to class the class B; and img6, which belongs to class C.
     """
 
-    def __init__(self, model: Model, force_test_as_validation: bool = False, debug: bool = False):
+    def __init__(self, model: Model, force_test_as_validation: bool = False, debug: bool = False) -> None:
         """
         Args:
             model (Model): Model's object.

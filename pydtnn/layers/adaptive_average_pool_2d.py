@@ -1,6 +1,4 @@
-"""
-Adaptive Average Pooling 2D layer implementation for PyDTNN.
-"""
+"""Adaptive Average Pooling 2D layer implementation for PyDTNN."""
 
 import logging
 import math
@@ -20,13 +18,15 @@ class AdaptiveAveragePool2D[T: Array](Layer[T]):
     The output size is fixed to the provided output_shape, regardless of the input size.
     """
 
-    # This layer will calculate the pool shape and the stride from the output shape (passed as parameter) and the previous layer shape.
+    # This layer will calculate the pool shape and the stride from the output shape (passed as parameter)
+    #  and the previous layer shape.
+    #
     # output_shape:
     #  -> None: if the output shape is equal to the input
     #  -> int: if all the output shape's dimensions share values
     #  -> Tuple[int, int]: if it is necessary or it is preferred to define each output dimension individually
 
-    def __init__(self, output_shape: int | ArrayShape | None = None):
+    def __init__(self, output_shape: int | ArrayShape | None = None) -> None:
         """
         Initializes the AdaptiveAveragePool2D layer.
 
@@ -76,14 +76,10 @@ class AdaptiveAveragePool2D[T: Array](Layer[T]):
 
     @staticmethod
     def _index_first_element(index: int, dim_in: int, dim_out: int) -> int:
-        """
-        Calculates the starting index of the input window for a given output index.
-        """
+        """Calculates the starting index of the input window for a given output index."""
         return (index * dim_in) // dim_out
 
     @staticmethod
     def _index_last_element(index: int, dim_in: int, dim_out: int) -> int:
-        """
-        Calculates the ending index of the input window for a given output index.
-        """
+        """Calculates the ending index of the input window for a given output index."""
         return (((index + 1) * dim_in) + dim_out - 1) // dim_out

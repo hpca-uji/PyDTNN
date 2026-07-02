@@ -1,6 +1,4 @@
-"""
-CIFAR-10 dataset implementation for PyDTNN.
-"""
+"""CIFAR-10 dataset implementation for PyDTNN."""
 
 from __future__ import annotations
 
@@ -44,7 +42,7 @@ class CIFAR10(Memory):
     scale:  +3.964
     """
 
-    def __init__(self, model: Model, force_test_as_validation: bool = False, debug: bool = False):
+    def __init__(self, model: Model, force_test_as_validation: bool = False, debug: bool = False) -> None:
         """
         Initialize the CIFAR10 dataset.
 

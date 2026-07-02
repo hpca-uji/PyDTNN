@@ -1,6 +1,4 @@
-"""
-MNIST dataset implementation for PyDTNN.
-"""
+"""MNIST dataset implementation for PyDTNN."""
 
 from __future__ import annotations
 

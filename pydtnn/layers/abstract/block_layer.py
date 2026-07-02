@@ -1,8 +1,10 @@
 """Abstract base class for layers composed of multiple sequential paths."""
 
 import logging
+from typing import Any
 
 from pydtnn.layers.abstract.layer import Layer
+from pydtnn.optimizers.abstract.optimizer import Optimizer
 from pydtnn.utils.constants import Array, ArrayShape
 
 __all__ = ("AbstractBlockLayer",)
@@ -13,7 +15,7 @@ logger = logging.getLogger(__name__)
 class AbstractBlockLayer[T: Array](Layer[T]):
     """Base class for layers that manage multiple parallel execution paths."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initializes the block layer with a collection of paths."""
         super().__init__(**kwargs)
         self.paths = []
@@ -22,7 +24,7 @@ class AbstractBlockLayer[T: Array](Layer[T]):
         self.is_block_layer = True
         self.out_shapes: list[ArrayShape] = []
 
-    def _model_init(self, prev_shape, x):
+    def _model_init(self, prev_shape: ArrayShape, x: T) -> None:
         """Initializes the model structure and calculates memory requirements."""
         super()._model_init(prev_shape, x)
         self.initialize_block_layer()
@@ -34,7 +36,7 @@ class AbstractBlockLayer[T: Array](Layer[T]):
                 temp_memory_size.append(layer.tmp_memory_used)
         self.tmp_memory_used += self.model.memory_cls._total(*temp_memory_size)
 
-    def initialize_block_layer(self):
+    def initialize_block_layer(self) -> None:
         """Initializes all layers within the block paths and sets output shapes."""
         for p_i, p in enumerate(self.paths):
             prev_shape = self.prev_shape
@@ -53,31 +55,31 @@ class AbstractBlockLayer[T: Array](Layer[T]):
             self.out_shapes.append(prev_shape)
         self.shape = self.out_shapes[0]
 
-    def update_weights(self, optimizer):
+    def update_weights(self, optimizer: Optimizer[T]) -> None:
         """Updates weights for all layers in all paths using the provided optimizer."""
         for p in self.paths:
             for layer in p:
                 layer.update_weights(optimizer)
 
-    def reduce_weights_async(self, gradient=True):
+    def reduce_weights_async(self, gradient: bool = True) -> None:
         """Initiates asynchronous weight reduction for all layers."""
         for p in self.paths:
             for layer in p:
                 layer.reduce_weights_async(gradient=gradient)
 
-    def wait_allreduce_async(self, gradient=True):
+    def wait_allreduce_async(self, gradient: bool = True) -> None:
         """Waits for completion of asynchronous weight reductions."""
         for p in self.paths:
             for layer in p:
                 layer.wait_allreduce_async(gradient=gradient)
 
-    def reduce_weights_sync(self, gradient=True):
+    def reduce_weights_sync(self, gradient: bool = True) -> None:
         """Performs synchronous weight reduction for all layers."""
         for p in self.paths:
             for layer in p:
                 layer.reduce_weights_sync(gradient=gradient)
 
-    def print_in_convdirect_format(self):
+    def print_in_convdirect_format(self) -> None:
         """Prints the layer configuration in convdirect format."""
         for p in self.paths:
             for layer in p:

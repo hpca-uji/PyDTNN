@@ -1,6 +1,4 @@
-"""
-Module for handling archived datasets stored in NPZ format.
-"""
+"""Module for handling archived datasets stored in NPZ format."""
 
 from __future__ import annotations
 
@@ -65,9 +63,7 @@ class Archive(Dataset):
         )
 
     def _ensure_data_init(self) -> None:
-        """
-        Lazy load and process dataset from disk if not already initialized.
-        """
+        """Lazy load and process dataset from disk if not already initialized."""
         if len(self._x[Dataset.Part.TRAIN]):
             return
 

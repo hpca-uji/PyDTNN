@@ -34,7 +34,7 @@ class Encoder[T: Array](AbstractBlockLayer[T]):
         d_ff: int = 256,
         heads: int = 10,
         dropout_rate: float = 0.5,
-    ):
+    ) -> None:
         """
         Initializes the Encoder layer with specified hyperparameters.
 

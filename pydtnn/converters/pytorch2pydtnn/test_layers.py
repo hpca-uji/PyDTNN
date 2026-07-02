@@ -11,7 +11,7 @@ from typing import Any, Callable
 import torch  # type: ignore
 import torch.nn as nn  # type: ignore
 from model_convertor import convert_model
-from torch.nn import Module as PyTorch_Model  # type: ignore
+from torch.nn import Module as PyTorchModel  # type: ignore
 
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
@@ -35,9 +35,9 @@ from pydtnn.converters.pytorch2pydtnn.common import TRANSPOSE_WEIGHTS_LAYERS
 from pydtnn.utils import random
 
 __all__ = (
-    "Addition_Test_PyTorch_Model",
-    "Concat_Test_PyTorch_Model",
-    "TEST_PyTorch_Model",
+    "AdditionTestPyTorchModel",
+    "ConcatTestPyTorchModel",
+    "PyTorchModelTest",
     "are_all_below_threshold",
     "are_all_zeros",
     "forward_pydtnn_model",
@@ -131,33 +131,29 @@ DICT_SUPPORTED_LAYERS: dict[str, tuple[nn.Module, float]] = {
 # END CONSTANTS
 
 
-def print_model_reports(model: PyDTNN_Model):
+def print_model_reports(model: PyDTNN_Model) -> None:
     """Prints performance reports for the given PyDTNN model."""
     model.perf_counter.print_report()
-    # Print BestOf report
-    # if model.enable_best_of:
-    #     print()
-    #     BestOf.print_report()
 
 
-class TEST_PyTorch_Model(PyTorch_Model):
+class PyTorchModelTest(PyTorchModel):
     """A wrapper class for PyTorch models to facilitate testing individual layers."""
 
-    def __init__(self, layer):
+    def __init__(self, layer: torch.nn.Module) -> None:
         """Initializes the test model with a specific PyTorch layer."""
         super().__init__()
         self.layer = layer
         print(f"self.layer: {self.layer}")
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Performs a forward pass through the wrapped layer."""
         return self.layer(x)
 
 
-class Addition_Test_PyTorch_Model(PyTorch_Model):
+class AdditionTestPyTorchModel(PyTorchModel):
     """A PyTorch model containing addition operations for testing conversion logic."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initializes the addition test model with predefined layers."""
         super().__init__()
         self.op0: nn.Module = DICT_SUPPORTED_LAYERS["AdaptiveAvgPool2d"][0]
@@ -165,7 +161,7 @@ class Addition_Test_PyTorch_Model(PyTorch_Model):
         self.op2: nn.Module = DICT_SUPPORTED_LAYERS["AvgPool2d"][0]
         self.act: nn.Module = DICT_SUPPORTED_LAYERS["Tanh"][0]
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, dict]:
         """Performs a forward pass with addition operations."""
         dict_forwards = dict()
         ro = self.op0(x)
@@ -181,10 +177,10 @@ class Addition_Test_PyTorch_Model(PyTorch_Model):
         return (res, dict_forwards)
 
 
-class Concat_Test_PyTorch_Model(PyTorch_Model):
+class ConcatTestPyTorchModel(PyTorchModel):
     """A PyTorch model containing concatenation operations for testing conversion logic."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initializes the concatenation test model with predefined layers."""
         super().__init__()
         self.op0: nn.Module = DICT_SUPPORTED_LAYERS["AdaptiveAvgPool2d"][0]
@@ -194,7 +190,7 @@ class Concat_Test_PyTorch_Model(PyTorch_Model):
         self.activation2: nn.Module = DICT_SUPPORTED_LAYERS["Softmax"][0]
         self.act: nn.Module = DICT_SUPPORTED_LAYERS["Tanh"][0]
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, dict]:
         """Performs a forward pass with concatenation operations."""
         dict_forwards = dict()
         ro = self.op0(x)
@@ -276,7 +272,7 @@ def test_layers_gpu(model: PyDTNN_Model, dataset: np.ndarray) -> TensorArray:
 
 def test_layers(
     name: str,
-    pytorch_model: TEST_PyTorch_Model,
+    pytorch_model: PyTorchModelTest,
     kwargs: dict[str, Any],
     input_shape: tuple[int, int, int],
     device: torch.device,
@@ -364,10 +360,10 @@ def test_layers(
     print("=====================\n== Testing Forward ==\n=====================")
     print(f"pytorch_model: {pytorch_model}")
 
-    pytorch_output: torch.Tensor = pytorch_model(torch_dataset)
+    pytorch_output_T: torch.Tensor = pytorch_model(torch_dataset)
     pydtnn_output: np.ndarray = function_to_test_layers(model=new_model, dataset=dataset)
 
-    pytorch_output = pytorch_output.detach().to("cpu").numpy()
+    pytorch_output = pytorch_output_T.detach().to("cpu").numpy()
 
     diff = abs(pytorch_output) - abs(pydtnn_output)
 
@@ -391,7 +387,7 @@ def test_layers(
 
 def test_add_and_concat(
     name: str,
-    pytorch_model: TEST_PyTorch_Model,
+    pytorch_model: PyTorchModelTest,
     kwargs: dict[str, Any],
     input_shape: tuple[int, int, int],
     device: torch.device,
@@ -427,13 +423,13 @@ def test_add_and_concat(
     print("=====================\n== Testing Forward ==\n=====================")
     print(f"pytorch_model: {pytorch_model}")
 
-    pytorch_output, _ = pytorch_model(torch_dataset)
-    pytorch_output: torch.Tensor
+    pytorch_output_T, _ = pytorch_model(torch_dataset)
+    pytorch_output_T: torch.Tensor
     # pydtnn_model.dataset = dataset  # FIXME: Paul dice que si la utiliza, MiguelA que no, revisar
     pydtnn_output = forward_pydtnn_model(pydtnn_model, dataset)  # type: ignore
     pydtnn_output: np.ndarray
 
-    pytorch_output = pytorch_output.detach().to("cpu").numpy()
+    pytorch_output = pytorch_output_T.detach().to("cpu").numpy()
 
     diff = abs(pytorch_output) - abs(pydtnn_output)
     # print(f"pytorch_output - pydtnn_output:\n{diff}")
@@ -451,7 +447,7 @@ def test_add_and_concat(
     print("=========================================\n")
 
 
-def main():
+def main() -> None:
     """Main entry point for running the layer conversion test suite."""
     kwargs = KWARGS
     quarter_elements = prod((N, *SHAPE)) / 4
@@ -467,7 +463,7 @@ def main():
     function_to_test_layers = test_layers_gpu if device.type == "cuda" else forward_pydtnn_model
     for name in DICT_SUPPORTED_LAYERS.keys():
         layer, threshold = DICT_SUPPORTED_LAYERS[name]
-        model = TEST_PyTorch_Model(layer)
+        model = PyTorchModelTest(layer)
         print(f"Testing: {name}")
         print(f"{dataset.shape=}")
         print(f"{dataset.min()=}")
@@ -487,8 +483,8 @@ def main():
     print("\n\n\n========================\n TESTING ADD AND CONCAT \n========================")
 
     for name, model in [
-        ("Addition", Addition_Test_PyTorch_Model()),
-        ("Concat", Concat_Test_PyTorch_Model()),
+        ("Addition", AdditionTestPyTorchModel()),
+        ("Concat", ConcatTestPyTorchModel()),
     ]:
         print(f"Testing: {name}")
         test_add_and_concat(

@@ -15,20 +15,18 @@ logger = logging.getLogger(__name__)
 
 
 class BatchNormalization[T: Array](Layer[T]):
-    """
-    Batch Normalization layer that normalizes the inputs to have zero mean and unit variance.
-    """
+    """Batch Normalization layer that normalizes the inputs to have zero mean and unit variance."""
 
     def __init__(
         self,
-        beta=0.0,
-        gamma=1.0,
-        momentum=0.9,
-        epsilon=1e-5,
+        beta: float = 0.0,
+        gamma: float = 1.0,
+        momentum: float = 0.9,
+        epsilon: float = 1e-5,
         moving_mean_initializer: Callable = zeros,
         moving_variance_initializer: Callable = ones,
-        sync_stats=False,
-    ):
+        sync_stats: bool = False,
+    ) -> None:
         """
         Initializes the BatchNormalization layer.
 
@@ -93,7 +91,7 @@ class BatchNormalization[T: Array](Layer[T]):
 
         return super().import_(data)
 
-    def _model_init(self, prev_shape: ArrayShape, x: T | None):
+    def _model_init(self, prev_shape: ArrayShape, x: T | None) -> None:
         """
         Initializes layer-specific shapes and spatial flags.
 

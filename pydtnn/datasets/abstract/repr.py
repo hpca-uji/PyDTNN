@@ -21,6 +21,11 @@ class Repr(Base, Baser):
     shape management, and format conversion.
     """
 
+    def __init__(self) -> None:
+        super().__init__()
+        if self.debug:
+            self._print_report()
+
     def _show_props(self) -> dict:
         """Returns a dictionary containing the dataset properties for inspection."""
         props = super()._show_props()

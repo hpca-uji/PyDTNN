@@ -1,6 +1,4 @@
-"""
-Module for 2D average pooling layer implementation.
-"""
+"""Module for 2D average pooling layer implementation."""
 
 import logging
 
@@ -13,8 +11,6 @@ logger = logging.getLogger(__name__)
 
 
 class AveragePool2D[T: Array](AbstractPool2DLayer[T]):
-    """
-    2D Average Pooling layer that computes the average of values in each window.
-    """
+    """2D Average Pooling layer that computes the average of values in each window."""
 
     pass

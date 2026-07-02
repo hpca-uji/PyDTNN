@@ -1,11 +1,9 @@
-"""
-Encoder-Decoder architecture module for PyDTNN.
-"""
+"""Encoder-Decoder architecture module for PyDTNN."""
 
 import logging
 
 from pydtnn.layers.abstract.block_layer import AbstractBlockLayer
-from pydtnn.utils.constants import Array
+from pydtnn.utils.constants import Array, ArrayShape
 
 __all__ = ("EncoderDecoder",)
 
@@ -13,9 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class EncoderDecoder[T: Array](AbstractBlockLayer[T]):
-    """
-    A generic Encoder-Decoder block layer implementation.
-    """
+    """A generic Encoder-Decoder block layer implementation."""
 
     def __init__(
         self,
@@ -26,10 +22,8 @@ class EncoderDecoder[T: Array](AbstractBlockLayer[T]):
         heads: int = 10,
         d_ff: int = 256,
         dropout_rate: float = 0.5,
-    ):
-        """
-        Initializes the EncoderDecoder layer with specified hyperparameters.
-        """
+    ) -> None:
+        """Initializes the EncoderDecoder layer with specified hyperparameters."""
         super().__init__()
         self.embedl = embedl
         self.enc_layers = enc_layers
@@ -46,19 +40,15 @@ class EncoderDecoder[T: Array](AbstractBlockLayer[T]):
         ]
         self.paths = [self.encoder + self.decoder]  # type: ignore
 
-    def _model_init(self, prev_shape, x):
-        """
-        Initializes model parameters and shape based on input dimensions.
-        """
+    def _model_init(self, prev_shape: ArrayShape, x: T) -> None:
+        """Initializes model parameters and shape based on input dimensions."""
         super()._model_init(prev_shape, x)
 
-        if self.shape == ():
-            self.shape = prev_shape[0]
+        if len(self.shape) == 0:
+            self.shape = prev_shape[0]  # type: ignore (It's the right type)
 
     def _show_props(self) -> dict:
-        """
-        Returns a dictionary containing the layer properties for inspection.
-        """
+        """Returns a dictionary containing the layer properties for inspection."""
         props = super()._show_props()
 
         props["encodes"] = self.enc_layers

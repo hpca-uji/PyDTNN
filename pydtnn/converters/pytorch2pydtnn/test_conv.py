@@ -23,8 +23,6 @@ from pydtnn.utils import random
 
 try:
     import pycuda.gpuarray as gpuarray  # type: ignore
-
-    from pydtnn.libs import cudnn as cudnn
 except BaseException:
     pass
 
@@ -59,17 +57,17 @@ KWARGS = {
 random.seed(SEED)
 
 
-def main():
+def main() -> None:
     """
     Executes the main test routine for convolution layers.
 
     Initializes multiple model configurations, performs forward and backward
     passes through various layer types, and validates output shapes.
     """
-    model_I2C = Model(**KWARGS)
-    model_DEPTH = Model(**KWARGS)
-    model_POINT = Model(**KWARGS)
-    model_RELU = Model(**KWARGS)
+    model_i2c = Model(**KWARGS)
+    model_depth = Model(**KWARGS)
+    model_point = Model(**KWARGS)
+    model_relu = Model(**KWARGS)
 
     shape = (N, *SHAPE)
     dataset = np.arange(np.prod(shape), dtype=DTYPE).reshape(shape)
@@ -81,41 +79,41 @@ def main():
     use_bias = True
 
     models = [
-        ("=============\n==== I2C ====\n=============", model_I2C),
-        ("=============\n= POINTWISE =\n=============", model_POINT),
-        ("=============\n= DEPTHWISE =\n=============", model_DEPTH),
-        ("=============\n= LEAKY RELU =\n=============", model_RELU),
+        ("=============\n==== I2C ====\n=============", model_i2c),
+        ("=============\n= POINTWISE =\n=============", model_point),
+        ("=============\n= DEPTHWISE =\n=============", model_depth),
+        ("=============\n= LEAKY RELU =\n=============", model_relu),
     ]
 
     for _, model in models:
         model: Model
 
-    model_RELU.add(Input(SHAPE))
-    model_RELU.add(LeakyRelu(negative_slope=-32))
-    model_RELU.add(Relu6())
-    model_RELU._model_init()
+    model_relu.add(Input(SHAPE))
+    model_relu.add(LeakyRelu(negative_slope=-32))
+    model_relu.add(Relu6())
+    model_relu._model_init()
 
-    model_DEPTH.add(Input(SHAPE))
-    model_DEPTH.add(
+    model_depth.add(Input(SHAPE))
+    model_depth.add(
         Conv2DDepthwise(
             nfilters=CONV_OUT_CHANNELS, filter_shape=CONV_KERNEL_SIZE, use_bias=use_bias
         )
     )
-    model_DEPTH._model_init()
+    model_depth._model_init()
 
-    model_POINT.add(Input(SHAPE))
-    model_POINT.add(
+    model_point.add(Input(SHAPE))
+    model_point.add(
         Conv2DPointwise(
             nfilters=CONV_OUT_CHANNELS, filter_shape=CONV_KERNEL_SIZE, use_bias=use_bias
         )
     )
-    model_POINT._model_init()
+    model_point._model_init()
 
-    model_I2C.add(Input(SHAPE))
-    model_I2C.add(
+    model_i2c.add(Input(SHAPE))
+    model_i2c.add(
         Conv2D(nfilters=CONV_OUT_CHANNELS, filter_shape=CONV_KERNEL_SIZE, use_bias=use_bias)
     )
-    model_I2C._model_init()
+    model_i2c._model_init()
 
     for name, model in models:
         print(f"{name}")

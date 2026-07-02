@@ -78,8 +78,8 @@ class ConvWinograd:
         hdilation: int,
         dtype: np.dtype = np.dtype(np.float32),
         tensor_format: TensorFormat = TensorFormat.NCHW,
-        debug : bool = False,
-        parent_layer : Layerable | None = None,
+        debug: bool = False,
+        parent_layer: Layerable | None = None,
     ) -> None:
         """
         Initializes the ConvWinograd layer, loading the necessary library and
@@ -87,25 +87,25 @@ class ConvWinograd:
 
         Parameters
         ----------
-        kh : int
+        kh: int
             Kernel height.
-        kw : int
+        kw: int
             Kernel width.
-        vstride : int
+        vstride: int
             Vertical stride.
-        hstride : int
+        hstride: int
             Horizontal stride.
-        vdilation : int
+        vdilation: int
             Vertical dilation.
-        hdilation : int
+        hdilation: int
             Horizontal dilation.
-        dtype : np.dtype, optional
+        dtype: np.dtype, optional
             The element data type being used on all the matrices. Defaults to np.float32.
-        tensor_format : TensorFormat, optional
+        tensor_format: TensorFormat, optional
             The format of the input and output tensors (NCHW or NHWC). Defaults to TensorFormat.NCHW.
-        debug : bool, optional
+        debug: bool, optional
             Whether to print debug information or not. Defaults to False.
-        parent_layer : object, optional
+        parent_layer: object, optional
             The layer that is using this Winograd implementation (for tracing purposes). Defaults to None.
         """
 
@@ -121,15 +121,15 @@ class ConvWinograd:
 
             Parameters
             ----------
-            m : int
+            m: int
                 The 'm' parameter of the Winograd transform (output tile size).
-            r : int
+            r: int
                 The 'r' parameter of the Winograd transform (input tile size).
-            g : np.ndarray
+            g: np.ndarray
                 The transformation matrix G for the input data.
-            bt : np.ndarray
+            bt: np.ndarray
                 The transformation matrix B_T for the input data.
-            at : np.ndarray
+            at: np.ndarray
                 The transformation matrix A_T for the output data.
             """
             # choose the appropriate convWinograd function depending on the
@@ -331,13 +331,13 @@ class ConvWinograd:
 
             Parameters
             ----------
-            m : int
+            m: int
                 Winograd transform parameter 'm'.
-            r : int
+            r: int
                 Winograd transform parameter 'r'.
-            k : int
+            k: int
                 Number of output channels.
-            c : int
+            c: int
                 Number of input channels.
 
             Returns
@@ -364,27 +364,27 @@ class ConvWinograd:
 
             Parameters
             ----------
-            m : int
+            m: int
                 Winograd transform parameter 'm'.
-            r : int
+            r: int
                 Winograd transform parameter 'r'.
-            n : int
+            n: int
                 Batch size.
-            k : int
+            k: int
                 Number of output channels.
-            c : int
+            c: int
                 Number of input channels.
-            hi : int
+            hi: int
                 Input height.
-            wi : int
+            wi: int
                 Input width.
-            kh : int
+            kh: int
                 Kernel height.
-            kw : int
+            kw: int
                 Kernel width.
-            vpadding : int
+            vpadding: int
                 Vertical padding.
-            hpadding : int
+            hpadding: int
                 Horizontal padding.
 
             Returns
@@ -495,23 +495,23 @@ class ConvWinograd:
 
         Parameters
         ----------
-        weights : np.ndarray
+        weights: np.ndarray
             The convolution weights.
-        x : np.ndarray
+        x: np.ndarray
             The input tensor.
-        biases : np.ndarray or None
+        biases: np.ndarray or None
             The bias tensor.
-        vpadding : int
+        vpadding: int
             Vertical padding.
-        hpadding : int
+        hpadding: int
             Horizontal padding.
-        vstride : int
+        vstride: int
             Vertical stride.
-        hstride : int
+        hstride: int
             Horizontal stride.
-        vdilation : int
+        vdilation: int
             Vertical dilation.
-        hdilation : int
+        hdilation: int
             Horizontal dilation.
 
         Returns
@@ -546,23 +546,23 @@ class ConvWinograd:
 
         Parameters
         ----------
-        weights : np.ndarray
+        weights: np.ndarray
             The convolution weights.
-        x : np.ndarray
+        x: np.ndarray
             The input tensor.
-        biases : np.ndarray or None
+        biases: np.ndarray or None
             The bias tensor.
-        vpadding : int
+        vpadding: int
             Vertical padding.
-        hpadding : int
+        hpadding: int
             Horizontal padding.
-        vstride : int
+        vstride: int
             Vertical stride.
-        hstride : int
+        hstride: int
             Horizontal stride.
-        vdilation : int
+        vdilation: int
             Vertical dilation.
-        hdilation : int
+        hdilation: int
             Horizontal dilation.
 
         Returns
@@ -583,7 +583,7 @@ class ConvWinograd:
 
         Parameters
         ----------
-        shape : tuple
+        shape: tuple
             The shape tuple to encode.
 
         Returns
@@ -599,7 +599,7 @@ class ConvWinograd:
 
         Parameters
         ----------
-        shape : tuple
+        shape: tuple
             The shape tuple to decode.
 
         Returns
@@ -643,49 +643,49 @@ class ConvWinograd:
 
         Parameters
         ----------
-        m : int
+        m: int
             Winograd transform parameter 'm' (output tile size).
-        r : int
+        r: int
             Winograd transform parameter 'r' (input tile size).
-        g : np.ndarray
+        g: np.ndarray
             Transformation matrix G for input data.
-        bt : np.ndarray
+        bt: np.ndarray
             Transformation matrix B_T for input data.
-        at : np.ndarray
+        at: np.ndarray
             Transformation matrix A_T for output data.
-        pre : callable
+        pre: callable
             Function for pre-processing (e.g., workspace allocation).
-        kernel : callable
+        kernel: callable
             Function for kernel execution (e.g., workspace allocation).
-        weights : np.ndarray
+        weights: np.ndarray
             The convolution weights (shape depends on tensor_format).
-        x : np.ndarray
+        x: np.ndarray
             The input tensor (shape depends on tensor_format).
-        biases : np.ndarray or None, optional
+        biases: np.ndarray or None, optional
             The bias tensor. Defaults to None.
-        vpadding : int, optional
+        vpadding: int, optional
             Vertical padding. Defaults to 0.
-        hpadding : int, optional
+        hpadding: int, optional
             Horizontal padding. Defaults to 0.
-        vstride : int, optional
+        vstride: int, optional
             Vertical stride. Defaults to 1.
-        hstride : int, optional
+        hstride: int, optional
             Horizontal stride. Defaults to 1.
-        vdilation : int, optional
+        vdilation: int, optional
             Vertical dilation. Defaults to 1.
-        hdilation : int, optional
+        hdilation: int, optional
             Horizontal dilation. Defaults to 1.
-        relu : bool, optional
+        relu: bool, optional
             Whether to apply ReLU activation. Defaults to False.
-        bn : bool, optional
+        bn: bool, optional
             Whether to apply Batch Normalization. Defaults to False.
-        running_mean : np.ndarray or None, optional
+        running_mean: np.ndarray or None, optional
             Running mean for Batch Normalization. Defaults to None.
-        inv_std : np.ndarray or None, optional
+        inv_std: np.ndarray or None, optional
             Inverse standard deviation for Batch Normalization. Defaults to None.
-        gamma : np.ndarray or None, optional
+        gamma: np.ndarray or None, optional
             Scale parameter for Batch Normalization. Defaults to None.
-        beta : np.ndarray or None, optional
+        beta: np.ndarray or None, optional
             Shift parameter for Batch Normalization. Defaults to None.
 
         Returns
@@ -761,7 +761,7 @@ class ConvWinograd:
         #             for w in range(tile_w):
         #                 hh, ww = h * s, w * s
         #                 th, tw = min(hi-hh,t), min(wi-ww,t)
-        #                 d[:th, :tw] = x_padded[b, c, hh:hh+th, ww:ww+tw]
+        #                 d[:th,:tw] = x_padded[b, c, hh:hh+th, ww:ww+tw]
         #                 v[..., c, b * tile_h * tile_w + h * tile_w + w] = (self.bt @ d) @ self.bt.T
 
         # 1.2) Second alternative: avoid padding
@@ -808,7 +808,7 @@ class ConvWinograd:
                         #   0  X  X
                         #   0  0  0
                         if 0 <= fw:
-                            d[fh: fh + oh, :fw] = 0
+                            d[fh: fh + oh,:fw] = 0
 
                         #   0  0  0
                         #   0  X  0
@@ -884,8 +884,8 @@ class ConvWinograd:
         g: np.ndarray,
         bt: np.ndarray,
         at: np.ndarray,
-        x_winograd_pre : Callable,
-        x_winograd_kernel : Callable,
+        x_winograd_pre: Callable,
+        x_winograd_kernel: Callable,
         weights: np.ndarray,
         x: np.ndarray,
         biases: np.ndarray | None = None,
@@ -911,49 +911,49 @@ class ConvWinograd:
 
         Parameters
         ----------
-        m : int
+        m: int
             Winograd transform parameter 'm' (output tile size).
-        r : int
+        r: int
             Winograd transform parameter 'r' (input tile size).
-        g : np.ndarray
+        g: np.ndarray
             Transformation matrix G for input data.
-        bt : np.ndarray
+        bt: np.ndarray
             Transformation matrix B_T for input data.
-        at : np.ndarray
+        at: np.ndarray
             Transformation matrix A_T for output data.
-        x_winograd_pre : callable
+        x_winograd_pre: callable
             The C function pointer for Winograd pre-processing (e.g., weight transformation).
-        x_winograd_kernel : callable
+        x_winograd_kernel: callable
             The C function pointer for Winograd kernel execution.
-        weights : np.ndarray
+        weights: np.ndarray
             The convolution weights (shape depends on tensor_format).
-        x : np.ndarray
+        x: np.ndarray
             The input tensor (shape depends on tensor_format).
-        biases : np.ndarray or None, optional
+        biases: np.ndarray or None, optional
             The bias tensor. Defaults to None.
-        vpadding : int, optional
+        vpadding: int, optional
             Vertical padding. Defaults to 0.
-        hpadding : int, optional
+        hpadding: int, optional
             Horizontal padding. Defaults to 0.
-        vstride : int, optional
+        vstride: int, optional
             Vertical stride. Defaults to 1.
-        hstride : int, optional
+        hstride: int, optional
             Horizontal stride. Defaults to 1.
-        vdilation : int, optional
+        vdilation: int, optional
             Vertical dilation. Defaults to 1.
-        hdilation : int, optional
+        hdilation: int, optional
             Horizontal dilation. Defaults to 1.
-        relu : bool, optional
+        relu: bool, optional
             Whether to apply ReLU activation. Defaults to False.
-        bn : bool, optional
+        bn: bool, optional
             Whether to apply Batch Normalization. Defaults to False.
-        running_mean : np.ndarray or None, optional
+        running_mean: np.ndarray or None, optional
             Running mean for Batch Normalization. Defaults to None.
-        inv_std : np.ndarray or None, optional
+        inv_std: np.ndarray or None, optional
             Inverse standard deviation for Batch Normalization. Defaults to None.
-        gamma : np.ndarray or None, optional
+        gamma: np.ndarray or None, optional
             Scale parameter for Batch Normalization. Defaults to None.
-        beta : np.ndarray or None, optional
+        beta: np.ndarray or None, optional
             Shift parameter for Batch Normalization. Defaults to None.
 
         Returns
@@ -1090,35 +1090,35 @@ def time_it_func(
 
     Parameters
     ----------
-    x : np.ndarray
+    x: np.ndarray
         Input tensor in NHWC format.
-    w_c : np.ndarray
+    w_c: np.ndarray
         Weights reshaped for matrix multiplication.
-    biases : np.ndarray
+    biases: np.ndarray
         Bias vector.
-    b : int
+    b: int
         Batch size.
-    kn : int
+    kn: int
         Number of output channels (filters).
-    ho : int
+    ho: int
         Output height.
-    wo : int
+    wo: int
         Output width.
-    kh : int
+    kh: int
         Kernel height.
-    kw : int
+    kw: int
         Kernel width.
-    vpadding : int
+    vpadding: int
         Vertical padding.
-    hpadding : int
+    hpadding: int
         Horizontal padding.
-    vstride : int
+    vstride: int
         Vertical stride.
-    hstride : int
+    hstride: int
         Horizontal stride.
-    vdilation : int
+    vdilation: int
         Vertical dilation.
-    hdilation : int
+    hdilation: int
         Horizontal dilation.
     """
 
@@ -1156,35 +1156,35 @@ def time_it_im2col(
 
     Parameters
     ----------
-    x : np.ndarray
+    x: np.ndarray
         Input tensor in NCHW format.
-    w_c : np.ndarray
+    w_c: np.ndarray
         Weights reshaped for matrix multiplication.
-    biases : np.ndarray
+    biases: np.ndarray
         Bias vector.
-    b : int
+    b: int
         Batch size.
-    kn : int
+    kn: int
         Number of output channels (filters).
-    ho : int
+    ho: int
         Output height.
-    wo : int
+    wo: int
         Output width.
-    kh : int
+    kh: int
         Kernel height.
-    kw : int
+    kw: int
         Kernel width.
-    vpadding : int
+    vpadding: int
         Vertical padding.
-    hpadding : int
+    hpadding: int
         Horizontal padding.
-    vstride : int
+    vstride: int
         Vertical stride.
-    hstride : int
+    hstride: int
         Horizontal stride.
-    vdilation : int
+    vdilation: int
         Vertical dilation.
-    hdilation : int
+    hdilation: int
         Horizontal dilation.
     """
 
@@ -1224,33 +1224,33 @@ def time_it_im2col_4_dims(
 
     Parameters
     ----------
-    x : np.ndarray
+    x: np.ndarray
         Input tensor in NCHW format.
-    w_c : np.ndarray
+    w_c: np.ndarray
         Weights reshaped for matrix multiplication.
-    biases : np.ndarray
+    biases: np.ndarray
         Bias vector.
-    kk : int
+    kk: int
         Number of output channels (filters).
-    ho : int
+    ho: int
         Output height.
-    wo : int
+    wo: int
         Output width.
-    kh : int
+    kh: int
         Kernel height.
-    kw : int
+    kw: int
         Kernel width.
-    vpadding : int
+    vpadding: int
         Vertical padding.
-    hpadding : int
+    hpadding: int
         Horizontal padding.
-    vstride : int
+    vstride: int
         Vertical stride.
-    hstride : int
+    hstride: int
         Horizontal stride.
-    vdilation : int
+    vdilation: int
         Vertical dilation.
-    hdilation : int
+    hdilation: int
         Horizontal dilation.
     """
 

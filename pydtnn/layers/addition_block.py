@@ -1,6 +1,4 @@
-"""
-Module for the AdditionBlock layer in the PyDTNN framework.
-"""
+"""Module for the AdditionBlock layer in the PyDTNN framework."""
 
 import logging
 
@@ -13,8 +11,6 @@ logger = logging.getLogger(__name__)
 
 
 class AdditionBlock[T: Array](AbstractBlockLayer[T]):
-    """
-    A layer that performs element-wise addition of input tensors.
-    """
+    """A layer that performs element-wise addition of input tensors."""
 
     pass

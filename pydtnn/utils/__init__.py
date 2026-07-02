@@ -7,7 +7,7 @@ import os
 import string
 import sys
 import threading
-from typing import Any, Literal, Mapping, Self
+from typing import Any, Literal, Self
 import zipfile
 from collections.abc import Iterable
 from ctypes.util import find_library

@@ -1,6 +1,6 @@
 """
 Initialization module for the PyDTNN framework, providing the core Init class
-to configure models, hardware backends, and training environments.
+ to configure models, hardware backends, and training environments.
 """
 
 import itertools

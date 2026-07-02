@@ -11,8 +11,10 @@ import weakref
 
 import numpy as np
 
+from pydtnn.abstract.layerable import Layerable
 from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython
 from pydtnn.utils import load_library
+from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import TensorFormat, decode_shape, encode_shape
 
 __all__ = ("ConvDirect", "is_conv_direct_available")
@@ -63,7 +65,7 @@ class ConvDirect:
 
     lib_cd = None  # will link to the libconvDirect.so library
 
-    def _set_methods(self, method_name):
+    def _set_methods(self, method_name: str) -> None:
         """
         Placeholder method. Currently does nothing.
         """
@@ -73,9 +75,9 @@ class ConvDirect:
         self,
         method_name,
         dtype: np.dtype = np.dtype(np.float32),
-        tensor_format=TensorFormat.NHWC,
-        debug=False,
-        parent_layer=None,
+        tensor_format: TensorFormat = TensorFormat.NHWC,
+        debug: bool = False,
+        parent_layer: Layerable | None = None,
     ):
         """
         Initializes the ConvDirect wrapper and loads the `libconvDirect.so` library.
@@ -144,7 +146,7 @@ class ConvDirect:
             self._reuse_processed_weights = True
         self._weights_already_processed = False
 
-    def encode_shape(self, shape):
+    def encode_shape(self, shape: ArrayShape) -> ArrayShape:
         """
         Encodes a tensor shape according to the configured tensor format.
 
@@ -160,7 +162,7 @@ class ConvDirect:
         """
         return encode_shape(shape, self.tensor_format)
 
-    def decode_shape(self, shape):
+    def decode_shape(self, shape: ArrayShape) -> ArrayShape:
         """
         Decodes a tensor shape from the configured tensor format.
 
@@ -184,19 +186,19 @@ class ConvDirect:
         x: np.ndarray,
         # NOTE: "out" originally was called "biases"
         out: np.ndarray | None = None,  # type: ignore
-        vpadding=0,
-        hpadding=0,
-        vstride=1,
-        hstride=1,
-        vdilation=1,
-        hdilation=1,
-        relu=False,
-        bn=False,
-        running_mean=None,
-        inv_std=None,
-        gamma=None,
-        beta=None,
-    ):
+        vpadding: int = 0,
+        hpadding: int = 0,
+        vstride: int = 1,
+        hstride: int = 1,
+        vdilation: int = 1,
+        hdilation: int = 1,
+        relu: bool = False,
+        bn: bool = False,
+        running_mean: np.ndarray | None = None,
+        inv_std: np.ndarray | None = None,
+        gamma: np.ndarray | None = None,
+        beta: np.ndarray | None = None,
+    ) -> np.ndarray:
         """
         Performs a direct convolution operation using the loaded `libconvDirect.so` library.
 
@@ -467,7 +469,7 @@ def time_it_func(
     return res  # type: ignore
 
 
-def __usage_example__():
+def __usage_example__() -> None:
     """
     Provides a usage example for the `ConvDirect` class.
 

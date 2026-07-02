@@ -1,13 +1,11 @@
-"""
-Layer normalization implementation for PyDTNN.
-"""
+"""Layer normalization implementation for PyDTNN."""
 
 import logging
 
 import numpy as np
 
 from pydtnn.layers.abstract.layer import Layer
-from pydtnn.utils.constants import Array
+from pydtnn.utils.constants import Array, ArrayShape
 
 __all__ = ("LayerNormalization",)
 
@@ -18,18 +16,16 @@ logger = logging.getLogger(__name__)
 
 
 class LayerNormalization[T: Array](Layer[T]):
-    """
-    Applies Layer Normalization over a mini-batch of inputs.
-    """
+    """Applies Layer Normalization over a mini-batch of inputs."""
 
     def __init__(
         self,
-        axis=(-2, -1),
+        axis: tuple = (-2, -1),
         beta: float = 0.0,
         gamma: float = 1.0,
         epsilon: float = 1e-5,
         sync_stats: bool = False,
-    ):
+    ) -> None:
         """
         Initializes the LayerNormalization layer.
 
@@ -58,7 +54,7 @@ class LayerNormalization[T: Array](Layer[T]):
         self.dgamma: np.ndarray = None  # type: ignore
         self.dbeta: np.ndarray = None  # type: ignore
 
-    def _model_init(self, prev_shape, x):
+    def _model_init(self, prev_shape: ArrayShape, x: T) -> None:
         """
         Initializes layer parameters based on the input shape.
 

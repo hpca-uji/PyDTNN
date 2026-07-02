@@ -131,7 +131,7 @@ class ImageNet(Dataset):
     scale:  +3.471
     """
 
-    def __init__(self, model: Model, force_test_as_validation=False, debug=False):
+    def __init__(self, model: Model, force_test_as_validation: bool = False, debug: bool = False) -> None:
         """Initialize the ImageNet dataset."""
         super().__init__(
             model,
@@ -187,7 +187,7 @@ class ImageNet(Dataset):
         ):  # type: ignore
             return {i: int(line) for i, line in enumerate(lines, 1)}
 
-    def _model_init(self):
+    def _model_init(self) -> None:
         """Initialize dataset metadata and file paths."""
         if not self.model.augment_scale:
             raise ValueError("Model augment_resize must be enabled for dataset!")

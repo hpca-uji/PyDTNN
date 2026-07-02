@@ -249,8 +249,10 @@ class TorchDepthPointConv(torch.nn.Module):
         )
 
         # self.layers = torch.nn.Sequential(
-        #                torch.nn.Conv2d(in_channels=input_filt, out_channels=input_filt, kernel_size=CONV2D_FILTER_SHAPE, stride=stride, padding=1, groups=input_filt),
-        #                torch.nn.Conv2d(in_channels=input_filt, out_channels=output_filt, kernel_size=(1,1), stride=1, padding=0, dilation=1, groups=1),
+        #                torch.nn.Conv2d(in_channels=input_filt, out_channels=input_filt, kernel_size=CONV2D_FILTER_SHAPE,
+        #                                stride=stride, padding=1, groups=input_filt),
+        #                torch.nn.Conv2d(in_channels=input_filt, out_channels=output_filt, kernel_size=(1,1),
+        #                                 stride=1, padding=0, dilation=1, groups=1),
         #              )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -275,7 +277,7 @@ class D:
 class ParamsLayerPytorch(Params):
     """Configuration parameters for PyTorch layer tests."""
 
-    def __init__(self, d=D()) -> None:
+    def __init__(self, d: D = D()) -> None:
         """Initializes test parameters based on provided dimensions."""
         super().__init__()
         self.batch_size = d.b
@@ -312,11 +314,11 @@ class LayerPyTorchTestCase(TestCase):
 
     @staticmethod
     def get_test_data(
-        no_zeros=False,
-        normalize=True,
-        positives_and_negatives=True,
-        shape_with_elements=(params.batch_size, *params.shape),
-        dtype=params.dtype,
+        no_zeros: bool = False,
+        normalize: bool = True,
+        positives_and_negatives: bool = True,
+        shape_with_elements: tuple = (params.batch_size, *params.shape),
+        dtype: np.dtype = params.dtype,
     ) -> np.ndarray:
         """Generates synthetic test data for layer verification."""
         num_elems = math.prod(shape_with_elements) // 4
@@ -347,7 +349,8 @@ class LayerPyTorchTestCase(TestCase):
         return np.asarray(x, dtype=dtype, order="C").copy()
 
     @staticmethod
-    def initialize_pydtnn_model(list_layers: list[Layerable], params=params) -> Model:
+    def initialize_pydtnn_model(list_layers: list[Layerable],
+                                params: ParamsLayerPytorch = params) -> Model:
         """Initializes a PyDTNN model with the provided layers."""
         model = Model(**params.asdict())
         model.add(Input(params.shape))
@@ -449,8 +452,8 @@ class LayerPyTorchTestCase(TestCase):
         pydtnn_model: Model,
         torch_model: torch.nn.Module,
         name_test: str,
-        rtol=1e-6,
-        atol=1e-6,
+        rtol: float = 1e-6,
+        atol: float = 1e-6,
     ) -> None:
         """Executes the comparison test between PyDTNN and PyTorch."""
         self.copy_grad_vars(pydtnn_model, torch_model)
@@ -479,7 +482,8 @@ class LayerPyTorchTestCase(TestCase):
         if verbose_test():
             logger.info(
                 f"[{rtol=},"
-                f" {atol=}]\n{x_pydtnn.max()=}\n{x_torch.max()=}\n{x_pydtnn.min()=}\n{x_torch.min()=}\n{x_pydtnn.std()=}\n{x_torch.std()=}\n{x_pydtnn.mean()=}\n{x_torch.mean()=}"
+                f" {atol=}]\n{x_pydtnn.max()=}\n{x_torch.max()=}\n{x_pydtnn.min()=}\n{x_torch.min()=}"
+                f"\n{x_pydtnn.std()=}\n{x_torch.std()=}\n{x_pydtnn.mean()=}\n{x_torch.mean()=}"
             )
 
         diff = x_pydtnn - x_torch
@@ -491,7 +495,8 @@ class LayerPyTorchTestCase(TestCase):
         #    print(f"x_torch:\n{x_torch}")
         #    print(f"diff:\n{diff}")
 
-        # self.assertTrue((diff < rtol).all()), f"Not all values are below the rtol. Max. difference: {diff.max()}. Std. deviation: {diff.std()}. Min. difference: {diff.min()}."
+        # self.assertTrue((diff < rtol).all()), f"Not all values are below the rtol. Max. difference: {diff.max()}."
+        #                                       f"Std. deviation: {diff.std()}. Min. difference: {diff.min()}."
         self.assertTrue(np.allclose(x_pydtnn, x_torch, rtol=rtol, atol=atol))
 
     # Unitary Test methods

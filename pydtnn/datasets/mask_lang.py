@@ -1,6 +1,4 @@
-"""
-Masked Language Model dataset implementation for PyDTNN.
-"""
+"""Masked Language Model dataset implementation for PyDTNN."""
 
 from __future__ import annotations
 
@@ -43,12 +41,12 @@ class MaskLang(Dataset):
     def __init__(
         self,
         model: Model,
-        preprocess=0,
-        embedl=512,
-        max_sentence=512,
-        split_token="<translation>",
-        force_test_as_validation=False,
-        debug=False,
+        preprocess: int = 0,
+        embedl: int = 512,
+        max_sentence: int = 512,
+        split_token: str = "<translation>",
+        force_test_as_validation: bool = False,
+        debug: bool = False,
     ):
         """
         Initialize the MaskLang dataset.
@@ -90,9 +88,7 @@ class MaskLang(Dataset):
         )
 
     def _model_init(self) -> None:
-        """
-        Initialize actual data by loading, partitioning, and optionally preprocessing.
-        """
+        """Initialize actual data by loading, partitioning, and optionally preprocessing."""
         # Actual
         self.load_data()
         self.make_train_val_partitions()
@@ -108,9 +104,7 @@ class MaskLang(Dataset):
         # self.tgt_embeddings = random.random((self.train_val_nsamples, 1, self.max_sentence, self.embedl)).astype(dtype=self.dtype)
 
     def load_data(self) -> None:
-        """
-        Load raw text data from the dataset path.
-        """
+        """Load raw text data from the dataset path."""
         self.dictionary = self.get_dictionary(self.lang)
         self.mask = self.dictionary("Mask")[0]
         self.mask = np.zeros(self.mask.vector.shape, dtype=self.dtype)
@@ -141,9 +135,7 @@ class MaskLang(Dataset):
         return spacy.load(language)
 
     def make_train_val_partitions(self) -> None:
-        """
-        Create training and validation partitions based on model configuration.
-        """
+        """Create training and validation partitions based on model configuration."""
         val_split = self.model.validation_split
         if self.train_nsamples is None:
             s = np.arange(self.train_val_nsamples)
@@ -208,9 +200,7 @@ class MaskLang(Dataset):
             yield x, y
 
     def _synthetic_data_generator(self) -> Generator[tuple[np.ndarray, np.ndarray], Any, None]:
-        """
-        Generator for synthetic data.
-        """
+        """Generator for synthetic data."""
         batch_size = self.model.batch_size
         rank = self.model.rank
 
