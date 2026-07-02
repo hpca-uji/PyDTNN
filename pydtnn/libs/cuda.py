@@ -1,7 +1,5 @@
 #!/usr/bin/env python
-"""
-Python interface to CUDA functions.
-"""
+"""Python interface to CUDA functions."""
 
 # Source: https://github.com/lebedov/scikit-cuda
 
