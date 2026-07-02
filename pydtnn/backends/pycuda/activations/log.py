@@ -9,7 +9,6 @@ from pycuda.elementwise import ElementwiseKernel  # type: ignore
 from pydtnn.activations.log import Log
 from pydtnn.backends.pycuda.activations.abstract.activation import ActivationPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.libs import cudnn as cudnn
 from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
 
 __all__ = ("LogPycuda",)

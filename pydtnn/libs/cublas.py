@@ -1,9 +1,6 @@
 #!/usr/bin/env python
-"""
-Python interface to CUBLAS functions.
-Note: this module does not explicitly depend on PyCUDA.
-"""
-
+"""Python interface to CUBLAS functions."""
+# Note: this module does not explicitly depend on PyCUDA.
 # Source: https://github.com/lebedov/scikit-cuda
 
 from __future__ import absolute_import

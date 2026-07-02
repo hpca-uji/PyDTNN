@@ -3,13 +3,12 @@
 
 """Utility functions."""
 
-import ctypes.util
 import os
 import re
+import sys
 import struct
 import subprocess
-import sys
-from typing import Any
+import ctypes.util
 
 __all__ = ("get_soname", "find_lib_path")
 

@@ -1,7 +1,5 @@
 #!/usr/bin/env python
-"""
-Python interface to CUDA runtime functions.
-"""
+"""Python interface to CUDA runtime functions."""
 from __future__ import annotations
 
 # Source: https://github.com/lebedov/scikit-cuda
@@ -373,11 +371,7 @@ class cudaErrorLaunchFailure(cudaError):
 
 
 class cudaErrorPriorLaunchFailure(cudaError):
-    """
-    cudaErrorPriorLaunchFailure
-
-
-    """
+    """cudaErrorPriorLaunchFailure"""
 
     __doc__ = _libcudart.cudaGetErrorString(5)
 
@@ -503,21 +497,13 @@ class cudaErrorUnmapBufferObjectFailed(cudaError):
 
 
 class cudaErrorInvalidHostPointer(cudaError):
-    """
-    cudaErrorInvalidHostPointer
-
-
-    """
+    """cudaErrorInvalidHostPointer"""
 
     __doc__ = _libcudart.cudaGetErrorString(16)
 
 
 class cudaErrorInvalidDevicePointer(cudaError):
-    """
-    cudaErrorInvalidDevicePointer
-
-
-    """
+    """cudaErrorInvalidDevicePointer"""
 
     __doc__ = _libcudart.cudaGetErrorString(17)
 
@@ -569,31 +555,19 @@ class cudaErrorInvalidMemcpyDirection(cudaError):
 
 
 class cudaErrorTextureFetchFailed(cudaError):
-    """
-    cudaErrorTextureFetchFailed
-
-
-    """
+    """cudaErrorTextureFetchFailed"""
 
     __doc__ = _libcudart.cudaGetErrorString(23)
 
 
 class cudaErrorTextureNotBound(cudaError):
-    """
-    cudaErrorTextureNotBound
-
-
-    """
+    """cudaErrorTextureNotBound"""
 
     __doc__ = _libcudart.cudaGetErrorString(24)
 
 
 class cudaErrorSynchronizationError(cudaError):
-    """
-    cudaErrorSynchronizationError
-
-
-    """
+    """cudaErrorSynchronizationError"""
 
     __doc__ = _libcudart.cudaGetErrorString(25)
 
@@ -621,11 +595,7 @@ class cudaErrorInvalidNormSetting(cudaError):
 
 
 class cudaErrorMixedDeviceExecution(cudaError):
-    """
-    cudaErrorMixedDeviceExecution
-
-
-    """
+    """cudaErrorMixedDeviceExecution"""
 
     __doc__ = _libcudart.cudaGetErrorString(28)
 
@@ -653,21 +623,13 @@ class cudaErrorUnknown(cudaError):
 
 
 class cudaErrorNotYetImplemented(cudaError):
-    """
-    cudaErrorNotYetImplemented
-
-
-    """
+    """cudaErrorNotYetImplemented"""
 
     __doc__ = _libcudart.cudaGetErrorString(31)
 
 
 class cudaErrorMemoryValueTooLarge(cudaError):
-    """
-    cudaErrorMemoryValueTooLarge
-
-
-    """
+    """cudaErrorMemoryValueTooLarge"""
 
     __doc__ = _libcudart.cudaGetErrorString(32)
 
@@ -931,31 +893,19 @@ class cudaErrorProfilerDisabled(cudaError):
 
 
 class cudaErrorProfilerNotInitialized(cudaError):
-    """
-    cudaErrorProfilerNotInitialized
-
-
-    """
+    """cudaErrorProfilerNotInitialized"""
 
     __doc__ = _libcudart.cudaGetErrorString(56)
 
 
 class cudaErrorProfilerAlreadyStarted(cudaError):
-    """
-    cudaErrorProfilerAlreadyStarted
-
-
-    """
+    """cudaErrorProfilerAlreadyStarted"""
 
     __doc__ = _libcudart.cudaGetErrorString(57)
 
 
 class cudaErrorProfilerAlreadyStopped(cudaError):
-    """
-    cudaErrorProfilerAlreadyStopped
-
-
-    """
+    """cudaErrorProfilerAlreadyStopped"""
 
     __doc__ = _libcudart.cudaGetErrorString(58)
 

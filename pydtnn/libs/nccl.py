@@ -491,7 +491,7 @@ _libnccl.ncclBroadcast.argtypes = [
 ]
 
 
-def ncclBroadcast(sendbuff: ctypes.c_void_p, recvbuff: ctypes.c_void_p, count: int, datatype: DataType , root: int, comm: ctypes._Pointer[NcclComm], stream: ctypes.c_void_p) -> None:
+def ncclBroadcast(sendbuff: ctypes.c_void_p, recvbuff: ctypes.c_void_p, count: int, datatype: DataType, root: int, comm: ctypes._Pointer[NcclComm], stream: ctypes.c_void_p) -> None:
     """Broadcasts data from a root to all other devices.
 
     Copies `count` values from the `root` device to all other devices.

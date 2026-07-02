@@ -23,8 +23,6 @@ from pydtnn.utils import random
 
 try:
     import pycuda.gpuarray as gpuarray  # type: ignore
-
-    from pydtnn.libs import cudnn as cudnn
 except BaseException:
     pass
 

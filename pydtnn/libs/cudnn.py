@@ -1051,14 +1051,15 @@ def cudnnCreateFilterDescriptor() -> int:
     -------
     w_desc : cudnnFilterDescriptor
         Handle to a newly allocated filter descriptor.
-    """
+    """  # noqa: D414
 
     w_desc = ctypes.c_void_p()
     assert _libcudnn
     status = _libcudnn.cudnnCreateFilterDescriptor(ctypes.byref(w_desc))
     cudnnCheckStatus(status)
-
-    return w_desc.value
+    value = w_desc.value
+    assert value
+    return value
 
 
 _libcudnn.cudnnSetFilter4dDescriptor.restype = int
@@ -1656,9 +1657,8 @@ _libcudnn.cudnnGetConvolutionForwardWorkspaceSize.argtypes = [
 
 
 def cudnnGetConvolutionForwardWorkspaceSize(handle: int, src_desc: int, w_desc: int, conv_desc: int, dest_desc: int, algo: int) -> int:
-    """ "
-    This function returns the amount of GPU memory workspace the user needs
-    to allocate to be able to call cudnnConvolutionForward with the specified algorithm.
+    """This function returns the amount of GPU memory workspace the user needs to allocate to be able to call cudnnConvolutionForward with the specified algorithm.
+
     Parameters
     ----------
     handle : cudnnHandle
@@ -3584,7 +3584,7 @@ def cudnnMultiHeadAttnForward(
     reserve_space_size_in_bytes: int,
     reserve_space: ctypes.c_void_p,
 ) -> None:
-    """The cudnnMultiHeadAttnForward() function computes the forward responses of the multi-head attention layer.
+    """The cudnnMultiHeadAttnForward function computes the forward responses of the multi-head attention layer.
 
     When reserveSpaceSizeInBytes=0 and reserveSpace=NULL, the function operates in the inference mode in which
     backward (gradient) functions are not invoked, otherwise, the training mode is assumed. In the training mode,
