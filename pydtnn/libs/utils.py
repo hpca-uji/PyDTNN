@@ -1,24 +1,25 @@
 #!/usr/bin/env python
-# Source: https://github.com/lebedov/scikit-cuda
-
 """Utility functions."""
 
+# Source: https://github.com/lebedov/scikit-cuda
+
+import ctypes.util
 import os
 import re
-import sys
 import struct
 import subprocess
-import ctypes.util
+import sys
 
 __all__ = ("get_soname", "find_lib_path")
 
 try:
     import elftools.construct.macros as macros  # type: ignore
     import elftools.elf.elffile as elffile  # type: ignore
-    import elftools.elf.structs as structs  # type: ignore
     import elftools.elf.sections as sections  # type: ignore
+    import elftools.elf.structs as structs  # type: ignore
 
 except ImportError:
+
     def get_soname(filename: str) -> str:
         """
         Retrieve SONAME of shared library.

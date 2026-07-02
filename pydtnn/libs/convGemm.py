@@ -102,8 +102,10 @@ class ConvGemm:
     lib_cg = None  # will link to the libconvGemm.so library
 
     def __init__(
-        self, dtype: np.dtype = np.dtype(np.float32), debug: bool = False,
-        parent_layer: Layerable | None = None
+        self,
+        dtype: np.dtype = np.dtype(np.float32),
+        debug: bool = False,
+        parent_layer: Layerable | None = None,
     ) -> None:
         """
         Initializes the ConvGemm instance.

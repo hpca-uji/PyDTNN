@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 """Python interface to CUDA runtime functions."""
+
 from __future__ import annotations
 
 # Source: https://github.com/lebedov/scikit-cuda
@@ -11,6 +12,9 @@ import sys
 from typing import TYPE_CHECKING, Callable
 
 import numpy as np
+
+
+
 
 if TYPE_CHECKING:
     import gpuarray  # type: ignore

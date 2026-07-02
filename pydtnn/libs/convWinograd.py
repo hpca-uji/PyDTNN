@@ -11,10 +11,10 @@ import ctypes
 import logging
 import math
 import platform
-from typing import Any, Callable
 import weakref
 from collections import defaultdict
 from functools import partial
+from typing import Any, Callable
 
 import numpy as np
 
@@ -325,7 +325,9 @@ class ConvWinograd:
         except AttributeError:
             logger.error("Winograd conv_winograd_workspace_alloc_pre/kernel routines not found.")
 
-        def winograd_workspace_alloc_pre(m: int, r: int, k: int, c: int) -> tuple[np.ndarray, ctypes._Pointer[ctypes.c_float]]:
+        def winograd_workspace_alloc_pre(
+            m: int, r: int, k: int, c: int
+        ) -> tuple[np.ndarray, ctypes._Pointer[ctypes.c_float]]:
             """
             Allocates workspace memory for the Winograd pre-processing step.
 
@@ -355,10 +357,19 @@ class ConvWinograd:
             )
             return np.array([False]), _u
 
-        def winograd_workspace_alloc_kernel(m: int, r: int, n: int, k: int, c: int,
-                                            hi: int, wi: int, kh: int, kw: int,
-                                            vpadding: int, hpadding: int
-                                            ) -> tuple[ctypes._Pointer[ctypes.c_float], ctypes._Pointer[ctypes.c_float]]:
+        def winograd_workspace_alloc_kernel(
+            m: int,
+            r: int,
+            n: int,
+            k: int,
+            c: int,
+            hi: int,
+            wi: int,
+            kh: int,
+            kw: int,
+            vpadding: int,
+            hpadding: int,
+        ) -> tuple[ctypes._Pointer[ctypes.c_float], ctypes._Pointer[ctypes.c_float]]:
             """
             Allocates workspace memory for the Winograd kernel execution step.
 
@@ -808,7 +819,7 @@ class ConvWinograd:
                         #   0  X  X
                         #   0  0  0
                         if 0 <= fw:
-                            d[fh: fh + oh,:fw] = 0
+                            d[fh: fh + oh, :fw] = 0
 
                         #   0  0  0
                         #   0  X  0
@@ -1076,11 +1087,21 @@ class ConvWinograd:
 
 
 def time_it_func(
-    x: np.ndarray, w_c: np.ndarray, biases: np.ndarray,
-    b: int, kn: int, ho: int, wo: int, kh: int, kw: int,
-    vpadding: int, hpadding: int,
-    vstride: int, hstride: int,
-    vdilation: int, hdilation: int,
+    x: np.ndarray,
+    w_c: np.ndarray,
+    biases: np.ndarray,
+    b: int,
+    kn: int,
+    ho: int,
+    wo: int,
+    kh: int,
+    kw: int,
+    vpadding: int,
+    hpadding: int,
+    vstride: int,
+    hstride: int,
+    vdilation: int,
+    hdilation: int,
 ) -> None:
     """
     Times the execution of a convolution operation using im2row (NHWC format) and matrix multiplication.
@@ -1142,11 +1163,21 @@ def time_it_func(
 
 
 def time_it_im2col(
-    x: np.ndarray, w_c: np.ndarray, biases: np.ndarray,
-    b: int, kn: int, ho: int, wo: int, kh: int, kw: int,
-    vpadding: int, hpadding: int,
-    vstride: int, hstride: int,
-    vdilation: int, hdilation: int,
+    x: np.ndarray,
+    w_c: np.ndarray,
+    biases: np.ndarray,
+    b: int,
+    kn: int,
+    ho: int,
+    wo: int,
+    kh: int,
+    kw: int,
+    vpadding: int,
+    hpadding: int,
+    vstride: int,
+    hstride: int,
+    vdilation: int,
+    hdilation: int,
 ) -> None:
     """
     Times the execution of a convolution operation using im2col (NCHW format) and matrix multiplication.
@@ -1208,11 +1239,20 @@ def time_it_im2col(
 
 
 def time_it_im2col_4_dims(
-    x: np.ndarray, w_c: np.ndarray, biases: np.ndarray,
-    kk: int, ho: int, wo: int, kh: int, kw: int,
-    vpadding: int, hpadding: int,
-    vstride: int, hstride: int,
-    vdilation: int, hdilation: int,
+    x: np.ndarray,
+    w_c: np.ndarray,
+    biases: np.ndarray,
+    kk: int,
+    ho: int,
+    wo: int,
+    kh: int,
+    kw: int,
+    vpadding: int,
+    hpadding: int,
+    vstride: int,
+    hstride: int,
+    vdilation: int,
+    hdilation: int,
 ) -> None:
     """
     Times the execution of a convolution operation using im2col (NCHW format) and matrix multiplication,

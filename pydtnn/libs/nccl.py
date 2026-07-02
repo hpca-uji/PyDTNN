@@ -438,7 +438,16 @@ _libnccl.ncclReduce.argtypes = [
 ]
 
 
-def ncclReduce(sendbuff: ctypes.c_void_p, recvbuff: ctypes.c_void_p, count: int, datatype: DataType, op: RedOp, root: int, comm: ctypes._Pointer[NcclComm], stream: ctypes.c_void_p) -> None:
+def ncclReduce(
+    sendbuff: ctypes.c_void_p,
+    recvbuff: ctypes.c_void_p,
+    count: int,
+    datatype: DataType,
+    op: RedOp,
+    root: int,
+    comm: ctypes._Pointer[NcclComm],
+    stream: ctypes.c_void_p,
+) -> None:
     """Performs a reduction operation on data arrays.
 
     Reduces data arrays of length `count` in `sendbuff` into `recvbuff` using the specified `op` operation.
@@ -491,7 +500,15 @@ _libnccl.ncclBroadcast.argtypes = [
 ]
 
 
-def ncclBroadcast(sendbuff: ctypes.c_void_p, recvbuff: ctypes.c_void_p, count: int, datatype: DataType, root: int, comm: ctypes._Pointer[NcclComm], stream: ctypes.c_void_p) -> None:
+def ncclBroadcast(
+    sendbuff: ctypes.c_void_p,
+    recvbuff: ctypes.c_void_p,
+    count: int,
+    datatype: DataType,
+    root: int,
+    comm: ctypes._Pointer[NcclComm],
+    stream: ctypes.c_void_p,
+) -> None:
     """Broadcasts data from a root to all other devices.
 
     Copies `count` values from the `root` device to all other devices.
@@ -539,7 +556,15 @@ _libnccl.ncclAllReduce.argtypes = [
 ]
 
 
-def ncclAllReduce(sendbuff: ctypes.c_void_p, recvbuff: ctypes.c_void_p, count: int, datatype: DataType, op: RedOp, comm: ctypes._Pointer[NcclComm], stream: ctypes.c_void_p) -> None:
+def ncclAllReduce(
+    sendbuff: ctypes.c_void_p,
+    recvbuff: ctypes.c_void_p,
+    count: int,
+    datatype: DataType,
+    op: RedOp,
+    comm: ctypes._Pointer[NcclComm],
+    stream: ctypes.c_void_p,
+) -> None:
     """Performs an all-reduce operation.
 
     Reduces data arrays of length `count` in `sendbuff` using the specified `op` operation,
@@ -590,7 +615,15 @@ _libnccl.ncclReduceScatter.argtypes = [
 ]
 
 
-def ncclReduceScatter(sendbuff: ctypes.c_void_p, recvbuff: ctypes.c_void_p, recvcount: int, datatype: DataType, op: RedOp, comm: ctypes._Pointer[NcclComm], stream: ctypes.c_void_p) -> None:
+def ncclReduceScatter(
+    sendbuff: ctypes.c_void_p,
+    recvbuff: ctypes.c_void_p,
+    recvcount: int,
+    datatype: DataType,
+    op: RedOp,
+    comm: ctypes._Pointer[NcclComm],
+    stream: ctypes.c_void_p,
+) -> None:
     """Performs a reduce-scatter operation.
 
     Reduces data in `sendbuff` using the `op` operation and scatters the reduced result
@@ -641,7 +674,14 @@ _libnccl.ncclAllGather.argtypes = [
 ]
 
 
-def ncclAllGather(sendbuff: ctypes.c_void_p, recvbuff: ctypes.c_void_p, sendcount: int, datatype: DataType, comm: ctypes._Pointer[NcclComm], stream: ctypes.c_void_p) -> None:
+def ncclAllGather(
+    sendbuff: ctypes.c_void_p,
+    recvbuff: ctypes.c_void_p,
+    sendcount: int,
+    datatype: DataType,
+    comm: ctypes._Pointer[NcclComm],
+    stream: ctypes.c_void_p,
+) -> None:
     """Performs an all-gather operation.
 
     Each device gathers `sendcount` values from other GPUs into `recvbuff`.
@@ -688,7 +728,14 @@ _libnccl.ncclSend.argtypes = [
 ]
 
 
-def ncclSend(sendbuff: ctypes.c_void_p, count: int, datatype: DataType, peer: int, comm: ctypes._Pointer[NcclComm], stream: ctypes.c_void_p) -> None:
+def ncclSend(
+    sendbuff: ctypes.c_void_p,
+    count: int,
+    datatype: DataType,
+    peer: int,
+    comm: ctypes._Pointer[NcclComm],
+    stream: ctypes.c_void_p,
+) -> None:
     """Sends data from a buffer to a specific peer rank.
 
     The peer rank must call `ncclRecv` with the same `datatype` and `count` from this rank.
@@ -733,7 +780,14 @@ _libnccl.ncclRecv.argtypes = [
 ]
 
 
-def ncclRecv(recvbuff: ctypes.c_void_p, count: int, datatype: DataType, peer: int, comm: ctypes._Pointer[NcclComm], stream: ctypes.c_void_p) -> None:
+def ncclRecv(
+    recvbuff: ctypes.c_void_p,
+    count: int,
+    datatype: DataType,
+    peer: int,
+    comm: ctypes._Pointer[NcclComm],
+    stream: ctypes.c_void_p,
+) -> None:
     """Receives data into a buffer from a specific peer rank.
 
     The peer rank must call `ncclSend` with the same `datatype` and `count` to this rank.
