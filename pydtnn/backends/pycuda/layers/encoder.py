@@ -1,6 +1,7 @@
 """PyCUDA implementation of the Transformer Encoder layer."""
 
 import logging
+from typing import Any
 
 import numpy as np
 
@@ -12,6 +13,7 @@ from pydtnn.layers.encoder import Encoder
 from pydtnn.layers.feed_forward import FeedForward
 from pydtnn.layers.layer_normalization import LayerNormalization
 from pydtnn.layers.multi_head_attention import MultiHeadAttention
+from pydtnn.utils.constants import ArrayShape
 
 __all__ = ("EncoderPycuda",)
 
@@ -19,10 +21,10 @@ __all__ = ("EncoderPycuda",)
 logger = logging.getLogger(__name__)
 
 
-class EncoderPycuda(AbstractBlockLayerPycuda, Encoder):
+class EncoderPycuda(Encoder[TensorArray], AbstractBlockLayerPycuda):
     """PyCUDA-accelerated Transformer Encoder layer."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initializes the EncoderPycuda layer with sub-layers and placeholders."""
         super().__init__(*args, **kwargs)
         self.multiheadattention = MultiHeadAttention(
@@ -49,7 +51,7 @@ class EncoderPycuda(AbstractBlockLayerPycuda, Encoder):
         self.y: TensorArray = None  # type: ignore
         self.dx: TensorArray = None  # type: ignore
 
-    def _model_init(self, prev_shape, x):
+    def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
         """Initializes the backend model and sub-layers with input shapes."""
         super()._model_init(prev_shape, x)
         self.y = x
@@ -62,7 +64,7 @@ class EncoderPycuda(AbstractBlockLayerPycuda, Encoder):
             mask_enc = None
             mask_enc_shape = ()  # noqa: F841
 
-        self.shape = x_enc_shape
+        self.shape = x_enc_shape  # type: ignore (This layer has special shape)
         self.first_dims = x_enc.shape[:-1]
 
         # Initialize all sublayers
@@ -117,27 +119,27 @@ class EncoderPycuda(AbstractBlockLayerPycuda, Encoder):
             self.bwd_time += layer.bwd_time
             self.nparams += layer.nparams
 
-    def initialize_block_layer(self):
+    def initialize_block_layer(self) -> None:
         """Placeholder for block layer initialization."""
         pass
 
-    def flatten(self, x):
+    def flatten(self, x: TensorArray) -> TensorArray:
         """Flattens the input tensor to 2D."""
         last_dim = x.shape[-1]
         return x.reshape((int(np.prod(self.first_dims)), last_dim))
 
-    def unflatten(self, x):
+    def unflatten(self, x: TensorArray) -> TensorArray:
         """Restores the input tensor to its original dimensions."""
         last_dim = x.shape[-1]
         return x.reshape((*self.first_dims, last_dim))
 
-    def forward(self, x, mask=None):
+    def forward(self, x: TensorArray, mask: TensorArray | None = None) -> TensorArray:
         """Performs the forward pass through the encoder block."""
         # self.model.test("Forward")
         alpha, beta = 1.0, 1.0
         # Self Attention
         # type: ignore (multiheadattention uses more parameters)
-        self.multiheadattention.forward(x, x, x, mask, x)
+        self.multiheadattention.forward(x, x, x, mask, x)  # type: ignore
         self.layernormalization_1.forward(self.multiheadattention.y)
         # self.layernormalization_1.forward(x)
 
@@ -158,7 +160,7 @@ class EncoderPycuda(AbstractBlockLayerPycuda, Encoder):
         self.layernormalization_2.forward(self.feedforward_y_unflatten)
         return self.y
 
-    def backward(self, dy):
+    def backward(self, dy: TensorArray) -> TensorArray:
         """Performs the backward pass through the encoder block."""
         # self.model.test("Backward")
         alpha, beta = 1.0, 1.0

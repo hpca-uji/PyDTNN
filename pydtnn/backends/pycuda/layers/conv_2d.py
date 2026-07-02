@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 class Conv2DPycuda(AbstractConv2DPycuda):
     """PyCUDA-accelerated 2D Convolution layer using cuDNN."""
 
-    def _initializing_special_parameters(self):
+    def _initializing_special_parameters(self) -> None:
         """Initialize layer-specific weight shapes based on tensor format."""
         match self.model.tensor_format:
             case TensorFormat.NCHW:

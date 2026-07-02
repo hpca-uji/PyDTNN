@@ -1,6 +1,4 @@
-"""
-PyDTNN PyCUDA Adam optimizer implementation.
-"""
+"""PyDTNN PyCUDA Adam optimizer implementation."""
 
 import logging
 
@@ -20,20 +18,15 @@ logger = logging.getLogger(__name__)
 
 
 class AdamPycuda(Adam[TensorArray], OptimizerPycuda):
-    """
-    PyCUDA implementation of the Adam optimizer.
-    """
+    """PyCUDA implementation of the Adam optimizer."""
 
-    def __init__(self, learning_rate=1e-2, beta1=0.99, beta2=0.999, epsilon=1e-7, decay=0.0):
-        """
-        Initialize the AdamPycuda optimizer.
-        """
+    def __init__(self, learning_rate: float = 1e-2, beta1: float = 0.99, beta2: float = 0.999,
+                 epsilon: float = 1e-7, decay: float = 0.0) -> None:
+        """Initialize the AdamPycuda optimizer."""
         super().__init__(learning_rate, beta1, beta2, epsilon, decay)
 
     def _kernel_init(self) -> None:
-        """
-        Initialize PyCUDA elementwise kernels for Adam updates.
-        """
+        """Initialize PyCUDA elementwise kernels for Adam updates."""
         func_pow = {np.dtype(np.float32): "powf", np.dtype(np.float64): "pow"}
 
         # --- GPU ---
@@ -57,9 +50,7 @@ class AdamPycuda(Adam[TensorArray], OptimizerPycuda):
         self.update_gpudirect = self._get_kernel(func_name_subfix="_gpudirect")
 
     def _model_init(self, list_layers: list[LayerPycuda]) -> None:
-        """
-        Initialize optimizer state buffers for each layer on the GPU.
-        """
+        """Initialize optimizer state buffers for each layer on the GPU."""
         super()._model_init(list_layers)  # type: ignore (The type is correct: LayerPycuda extends LayerBase)
 
         for layer in list_layers:
@@ -75,15 +66,13 @@ class AdamPycuda(Adam[TensorArray], OptimizerPycuda):
                     w.shape, dtype=layer.model.dtype
                 )
 
+                # type: ignore (They are both "gpuarray" and not "int")
                 self.memory_used += (
-                    self.context[layer.id]["m_%s" % w_].nbytes
-                    + self.context[layer.id]["v_%s" % w_].nbytes
-                )  # type: ignore (They are both "gpuarray" and not "int")
+                    self.context[layer.id]["m_%s" % w_].nbytes  # type: ignore
+                    + self.context[layer.id]["v_%s" % w_].nbytes)  # type: ignore
 
-    def update(self, layer: LayerPycuda):
-        """
-        Perform a single optimization step for the given layer.
-        """
+    def update(self, layer: LayerPycuda) -> None:
+        """Perform a single optimization step for the given layer."""
         self.context[layer.id]["it"] += 1  # type: ignore ("it" is an "int".)
         it: int = self.context[layer.id]["it"]  # type: ignore ("it" is an "int".)
 

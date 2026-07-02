@@ -1,6 +1,4 @@
-"""
-PyCUDA implementation of the Categorical Cross-Entropy loss function.
-"""
+"""PyCUDA implementation of the Categorical Cross-Entropy loss function."""
 
 import logging
 
@@ -18,9 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 class CategoricalCrossEntropyPycuda(CategoricalCrossEntropy[TensorArray], LossPycuda):
-    """
-    Categorical Cross-Entropy loss implementation for PyCUDA backends.
-    """
+    """Categorical Cross-Entropy loss implementation for PyCUDA backends."""
 
     def compute(
         self, y_pred: TensorArray, y_targ: TensorArray, batch_size: int

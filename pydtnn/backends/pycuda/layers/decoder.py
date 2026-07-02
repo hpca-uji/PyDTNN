@@ -1,8 +1,7 @@
-"""
-PyCUDA implementation of the Transformer Decoder block.
-"""
+"""PyCUDA implementation of the Transformer Decoder block."""
 
 import logging
+from typing import Any
 
 import numpy as np
 
@@ -14,21 +13,18 @@ from pydtnn.layers.dropout import Dropout
 from pydtnn.layers.feed_forward import FeedForward
 from pydtnn.layers.layer_normalization import LayerNormalization
 from pydtnn.layers.multi_head_attention import MultiHeadAttention
+from pydtnn.utils.constants import ArrayShape
 
 __all__ = ("DecoderPycuda",)
 
 logger = logging.getLogger(__name__)
 
 
-class DecoderPycuda(AbstractBlockLayerPycuda, Decoder):
-    """
-    PyCUDA-accelerated Transformer Decoder layer.
-    """
+class DecoderPycuda(Decoder[TensorArray], AbstractBlockLayerPycuda):
+    """PyCUDA-accelerated Transformer Decoder layer."""
 
-    def __init__(self, *args, **kwargs):
-        """
-        Initializes the DecoderPycuda layer with sub-layers and internal buffers.
-        """
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Initializes the DecoderPycuda layer with sub-layers and internal buffers."""
         super().__init__(*args, **kwargs)
         self.multiheadattention = MultiHeadAttention(
             embedl=self.embedl, d_k=self.d_k, heads=self.heads, dropout_rate=self.dropout_rate
@@ -61,16 +57,14 @@ class DecoderPycuda(AbstractBlockLayerPycuda, Decoder):
         self.y: TensorArray = None  # type: ignore
         self.dx: TensorArray = None  # type: ignore
 
-    def _model_init(self, prev_shape, x):
-        """
-        Initializes the backend model and sub-layer structures.
-        """
+    def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
+        """Initializes the backend model and sub-layer structures."""
         super()._model_init(prev_shape, x)
         x_dec, x_enc, mask_dec = x
         x_dec_shape, x_enc_shape, mask_dec_shape = prev_shape
         mha_shape = (x_dec_shape, mask_dec_shape)
 
-        self.shape = x_enc_shape
+        self.shape = x_enc_shape  # type: ignore (This layer has a special shape)
         self.first_dims = x_dec.shape[:-1]
 
         # Initialize all sublayers
@@ -130,40 +124,33 @@ class DecoderPycuda(AbstractBlockLayerPycuda, Decoder):
             self.bwd_time += layer.bwd_time
             self.nparams += layer.nparams
 
-    def initialize_block_layer(self):
-        """
-        Placeholder for block layer initialization.
-        """
+    def initialize_block_layer(self) -> None:
+        """Placeholder for block layer initialization."""
         pass
 
-    def flatten(self, x):
-        """
-        Flattens the input tensor to 2D.
-        """
+    def flatten(self, x: TensorArray) -> TensorArray:
+        """Flattens the input tensor to 2D."""
         last_dim = x.shape[-1]
         return x.reshape((int(np.prod(self.first_dims)), last_dim))
 
-    def unflatten(self, x):
-        """
-        Restores the original shape of the flattened tensor.
-        """
+    def unflatten(self, x: TensorArray) -> TensorArray:
+        """Restores the original shape of the flattened tensor."""
         last_dim = x.shape[-1]
         return x.reshape((*self.first_dims, last_dim))
 
-    def forward(self, x, x_enc, mask=None):
-        """
-        Performs the forward pass through the decoder block.
-        """
+    def forward(self, x: TensorArray, x_enc: TensorArray, mask: TensorArray | None = None) -> TensorArray:
+        """Performs the forward pass through the decoder block."""
         alpha, beta = 1.0, 1.0
         # Self Attention
         # type: ignore (multiheadattention uses more parameters)
-        self.multiheadattention.forward(x, x, x, mask, x)
+        self.multiheadattention.forward(x, x, x, mask, x)  # type: ignore
         self.layernormalization_1.forward(self.multiheadattention.y)
 
         # Self Attention Encoder
-        # type: ignore (multiheadattention uses more parameters)
         self.multiheadattention_enc.forward(
-            self.layernormalization_1.y, x_enc, x_enc, mask, self.layernormalization_1.y
+            self.layernormalization_1.y, 
+            x_enc,  # type: ignore (multiheadattention uses more parameters)
+            x_enc, mask, self.layernormalization_1.y
         )
         self.layernormalization_enc.forward(self.multiheadattention_enc.y)
 
@@ -183,10 +170,8 @@ class DecoderPycuda(AbstractBlockLayerPycuda, Decoder):
         self.layernormalization_2.forward(self.dropout_2.y)
         return self.y
 
-    def backward(self, dy):
-        """
-        Performs the backward pass through the decoder block.
-        """
+    def backward(self, dy: TensorArray) -> tuple[TensorArray, TensorArray]:
+        """Performs the backward pass through the decoder block."""
 
         alpha, beta = 1.0, 1.0
         # Feed Forward

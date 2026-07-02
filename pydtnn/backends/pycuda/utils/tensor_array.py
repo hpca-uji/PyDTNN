@@ -473,7 +473,7 @@ class TensorArray:
         """Converts TensorArray to a NumPy array."""
         return np.asarray(self.get(), dtype=dtype)
 
-    def _view(self, ary: gpuarray.GPUArray, keep_shape: bool  = True) -> TensorArray:
+    def _view(self, ary: gpuarray.GPUArray, keep_shape: bool = True) -> TensorArray:
         """Creates a new TensorArray instance sharing the same underlying configuration."""
         # NOTE: In some cases, it would be possible to share the descriptor more
         # aggressively, but we don't have enough information to decide when.

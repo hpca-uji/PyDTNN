@@ -8,6 +8,7 @@ from pycuda import gpuarray  # type: ignore
 from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.layers.layer_normalization import LayerNormalization
+from pydtnn.utils.constants import ArrayShape
 
 __all__ = ("LayerNormalizationPycuda",)
 
@@ -17,7 +18,7 @@ logger = logging.getLogger(__name__)
 class LayerNormalizationPycuda(LayerNormalization[TensorArray], LayerPycuda):
     """PyCUDA-accelerated Layer Normalization layer."""
 
-    def _model_init(self, prev_shape, x):
+    def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
         """Initialize layer parameters and GPU buffers."""
         super()._model_init(prev_shape, x)
         self.shape = prev_shape
@@ -92,7 +93,7 @@ class LayerNormalizationPycuda(LayerNormalization[TensorArray], LayerPycuda):
             max(self.kernel_dim_params[1], 1024) // self.threads_backward_weights + 1
         )
 
-    def forward(self, x):
+    def forward(self, x: TensorArray) -> TensorArray:
         """Perform forward pass on GPU."""
         self.kernel_forward(
             x.ary,
@@ -109,7 +110,7 @@ class LayerNormalizationPycuda(LayerNormalization[TensorArray], LayerPycuda):
         )
         return self.y
 
-    def backward(self, dy):
+    def backward(self, dy: TensorArray) -> TensorArray:
         """Perform backward pass on GPU."""
         self.kernel_backward(
             dy.ary,
@@ -139,7 +140,7 @@ class LayerNormalizationPycuda(LayerNormalization[TensorArray], LayerPycuda):
         # print(np.sum(self.beta.get()), np.sum(self.dbeta.get()))
         return self.dx
 
-    def __init_kernels_gpu__(self):
+    def __init_kernels_gpu__(self) -> None:
         """Initialize CUDA kernels for forward and backward passes."""
 
         self.kernel_forward = self._fwd_kernel()

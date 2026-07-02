@@ -23,8 +23,7 @@ except Exception:
 def matmul_gpu(handle: Cublas_Handle_Type, trans_a: int | str, trans_b: int | str,
                m: int, n: int, k: int, alpha: float, a: ctypes.c_void_p, lda: int,
                b: ctypes.c_void_p, ldb: int, beta: float,
-               c: ctypes.c_void_p, ldc: int, dtype: np.dtype
-            ) -> None:
+               c: ctypes.c_void_p, ldc: int, dtype: np.dtype) -> None:
     """
     Perform matrix-matrix multiplication on GPU using cuBLAS.
 
@@ -58,8 +57,7 @@ def matmul_gpu(handle: Cublas_Handle_Type, trans_a: int | str, trans_b: int | st
 def matvec_gpu(handle: int, trans_a: str | int, m: int, n: int,
                alpha: np.float64, a: ctypes.c_void_p, lda: int,
                b: ctypes.c_void_p, ldb: int, beta: np.float64,
-               c: ctypes.c_void_p, ldc: int, dtype: np.dtype
-    ) -> None:
+               c: ctypes.c_void_p, ldc: int, dtype: np.dtype) -> None:
     """
     Perform matrix-vector multiplication on GPU using cuBLAS.
 

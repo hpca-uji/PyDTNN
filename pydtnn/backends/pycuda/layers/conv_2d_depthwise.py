@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 class Conv2DDepthwisePycuda(AbstractConv2DPycuda):
     """Depthwise 2D Convolution layer implementation for PyCUDA backend."""
 
-    def _initializing_special_parameters(self):
+    def _initializing_special_parameters(self) -> None:
         """Initialize layer-specific parameters and weight shapes."""
         # Setting other parameters
         self.co = self.ci

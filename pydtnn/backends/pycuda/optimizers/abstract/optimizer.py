@@ -1,8 +1,7 @@
-"""
-PyCUDA implementation of the base Optimizer class for PyDTNN.
-"""
+"""PyCUDA implementation of the base Optimizer class for PyDTNN."""
 
 import logging
+from typing import Any
 
 import numpy as np
 from pycuda.driver import Function  # type: ignore
@@ -19,14 +18,10 @@ logger = logging.getLogger(__name__)
 
 
 class OptimizerPycuda(Optimizer[TensorArray], BasePycuda):
-    """
-    Extends an Optimizer class with the attributes and methods required by GPU Optimizers.
-    """
+    """Extends an Optimizer class with the attributes and methods required by GPU Optimizers."""
 
-    def __init__(self, *args, **kwargs):
-        """
-        Initializes the PyCUDA optimizer with update kernels and GPU-direct functions.
-        """
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Initializes the PyCUDA optimizer with update kernels and GPU-direct functions."""
         super().__init__(*args, **kwargs)
         self.update_kernel: ElementwiseKernel = None  # type: ignore (It will be intialized later)
         self.update_gpudirect: Function = None  # type: ignore (It will be intialized later)

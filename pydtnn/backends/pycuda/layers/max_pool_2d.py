@@ -1,6 +1,4 @@
-"""
-PyCUDA implementation of the 2D Max Pooling layer.
-"""
+"""PyCUDA implementation of the 2D Max Pooling layer."""
 
 import logging
 
@@ -16,9 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 class MaxPool2DPycuda(MaxPool2D[TensorArray], AbstractPool2DLayerPycuda):
-    """
-    2D Max Pooling layer implementation using PyCUDA and cuDNN.
-    """
+    """2D Max Pooling layer implementation using PyCUDA and cuDNN."""
 
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
         """

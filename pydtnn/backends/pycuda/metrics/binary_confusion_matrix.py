@@ -1,6 +1,4 @@
-"""
-PyCUDA implementation of the binary confusion matrix metric.
-"""
+"""PyCUDA implementation of the binary confusion matrix metric."""
 
 import logging
 
@@ -16,14 +14,10 @@ logger = logging.getLogger(__name__)
 
 
 class BinaryConfusionMatrixPycuda(BinaryConfusionMatrix[TensorArray], MetricPycuda):
-    """
-    PyCUDA-accelerated binary confusion matrix calculation.
-    """
+    """PyCUDA-accelerated binary confusion matrix calculation."""
 
     def _model_init(self) -> None:
-        """
-        Initializes the confusion matrix buffers on the GPU.
-        """
+        """Initializes the confusion matrix buffers on the GPU."""
         super()._model_init()
         n = self.model.batch_size
         target_classes = self.model.output_shape[0]

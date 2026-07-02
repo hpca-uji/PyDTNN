@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 class FCPycuda(FC[TensorArray], LayerPycuda):
     """Fully connected layer implementation for PyCUDA backend."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the FCPycuda layer."""
         super().__init__(*args, **kwargs)
         self.matmul = matmul_gpu
@@ -39,7 +39,7 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
         attribute.set(cpu_ary)
         return
 
-    def _import_prop(self, key: str, value) -> None:
+    def _import_prop(self, key: str, value: Any) -> None:
         """Import layer property from CPU to GPU."""
         match key:
             case Parameters.BIASES | Parameters.DB:

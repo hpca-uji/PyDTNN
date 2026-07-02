@@ -1,6 +1,4 @@
-"""
-PyCUDA implementation of categorical accuracy metric.
-"""
+"""PyCUDA implementation of categorical accuracy metric."""
 
 import logging
 
@@ -17,14 +15,10 @@ logger = logging.getLogger(__name__)
 
 
 class CategoricalAccuracyPycuda(CategoricalAccuracy[TensorArray], MetricPycuda):
-    """
-    Categorical accuracy metric implemented for PyCUDA backends.
-    """
+    """Categorical accuracy metric implemented for PyCUDA backends."""
 
     def _model_init(self) -> None:
-        """
-        Initializes the metric buffers on the GPU.
-        """
+        """Initializes the metric buffers on the GPU."""
         super()._model_init()
         self.cost = gpuarray.zeros((self.model.batch_size,), self.model.dtype)
 

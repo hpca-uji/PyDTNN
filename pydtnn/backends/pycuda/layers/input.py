@@ -23,7 +23,7 @@ class InputPycuda(Input[TensorArray], LayerPycuda):
     ws_size = 0
     ws: drv.DeviceAllocation = None
 
-    def _model_init(self, prev_shape: ArrayShape, x: TensorArray):
+    def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
         """Initialize layer memory and GPU buffers."""
         super()._model_init(prev_shape, x)
 
@@ -77,7 +77,7 @@ class InputPycuda(Input[TensorArray], LayerPycuda):
         """Return the pointer to the workspace memory."""
         return ctypes.c_void_p(int(self.ws))
 
-    def checkConvolutionMemory(self, size: int) -> None:
+    def check_convolution_memory(self, size: int) -> None:
         """Allocate or reallocate workspace memory if required."""
         if size < self.ws_size:
             return
@@ -88,10 +88,10 @@ class InputPycuda(Input[TensorArray], LayerPycuda):
         self.ws_size = max(1, size)
         self.ws = drv.mem_alloc(self.ws_size)
 
-    def getConvolutionWorkspacePtr(self) -> ctypes.c_void_p:
+    def get_convolution_workspace_ptr(self) -> ctypes.c_void_p:
         """Return the workspace pointer."""
         return self.ws_ptr
 
-    def getConvolutionWorkspaceSize(self) -> int:
+    def get_convolution_workspace_size(self) -> int:
         """Return the workspace size in bytes."""
         return self.ws_size

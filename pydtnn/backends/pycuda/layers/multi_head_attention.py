@@ -1,10 +1,9 @@
-"""
-PyDTNN PyCUDA backend implementation for Multi-Head Attention layers.
-"""
+"""PyDTNN PyCUDA backend implementation for Multi-Head Attention layers."""
 
 # https://github.com/storypku/cuda-support-for-bazel/blob/9a9c90c7d73fdafb3fbc8713232405cae4ae66d8/examples/cudnn-samples/multiHeadAttention/multiHeadAttention.cpp
 
 import logging
+from typing import Any
 
 import numpy as np
 import pycuda
@@ -15,6 +14,7 @@ from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.layers.multi_head_attention import MultiHeadAttention
 from pydtnn.libs import cudnn as cudnn
+from pydtnn.utils.constants import ArrayShape
 
 __all__ = ("MultiHeadAttentionPycuda",)
 
@@ -22,14 +22,10 @@ logger = logging.getLogger(__name__)
 
 
 class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
-    """
-    PyCUDA implementation of the Multi-Head Attention layer using cuDNN.
-    """
+    """PyCUDA implementation of the Multi-Head Attention layer using cuDNN."""
 
-    def __init__(self, *args, **kwargs):
-        """
-        Initializes the MultiHeadAttentionPycuda layer.
-        """
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Initializes the MultiHeadAttentionPycuda layer."""
         super().__init__(*args, **kwargs)
         self.beam = 1  # Number of hypothesis we keep
 
@@ -39,10 +35,8 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
         self.y: TensorArray = None  # type: ignore
         self.dx: TensorArray = None  # type: ignore
 
-    def _model_init(self, prev_shape, x):
-        """
-        Initializes model parameters, cuDNN descriptors, and GPU memory buffers.
-        """
+    def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
+        """Initializes model parameters, cuDNN descriptors, and GPU memory buffers."""
         super()._model_init(prev_shape, x)
         self.query, self.key, self.value, self.mask = x
         self.shape = prev_shape
@@ -217,10 +211,8 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
         dev_seq_lengths_KV = np.copy(self.dkey.seq_length_array)
         self.dev_seq_lengths_KV = gpuarray.to_gpu(dev_seq_lengths_KV)
 
-    def copy_weights(self):
-        """
-        Copies weights from CPU to GPU memory.
-        """
+    def copy_weights(self) -> None:
+        """Copies weights from CPU to GPU memory."""
         _weights_types = [
             "CUDNN_MH_ATTN_Q_WEIGHTS",
             "CUDNN_MH_ATTN_K_WEIGHTS",
@@ -260,10 +252,9 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
             if dest is not None:
                 pycuda.driver.memcpy_htod(dest[0], _weights[i])
 
-    def forward(self, query, key, value, mask=None, residuals=None):
-        """
-        Performs the forward pass of the Multi-Head Attention layer.
-        """
+    def forward(self, query: TensorArray, key: TensorArray, value: TensorArray,
+                mask: TensorArray | None = None, residuals: TensorArray | None = None) -> TensorArray:
+        """Performs the forward pass of the Multi-Head Attention layer."""
         if True:  # self.model.mode == Model.Mode.TRAIN:
             self.query, self.key, self.value = query, key, value
             # return self.query
@@ -319,10 +310,8 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
             )
         return self.y
 
-    def backward(self, dy):
-        """
-        Performs the backward pass to compute gradients for data and weights.
-        """
+    def backward(self, dy: TensorArray) -> tuple[TensorArray, TensorArray, TensorArray]:
+        """Performs the backward pass to compute gradients for data and weights."""
         cudnn.cudnnMultiHeadAttnBackwardData(
             self.model.cudnn_handle,
             self.attn_desc,

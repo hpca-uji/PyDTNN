@@ -1,6 +1,4 @@
-"""
-PyCUDA implementation of metric calculations for the PyDTNN framework.
-"""
+"""PyCUDA implementation of metric calculations for the PyDTNN framework."""
 
 import logging
 
@@ -17,11 +15,9 @@ logger = logging.getLogger(__name__)
 
 
 class MetricPycuda(Metric[TensorArray], BasePycuda):
-    """
-    Extends a Metric class with the attributes and methods required by GPU Metrics.
-    """
+    """Extends a Metric class with the attributes and methods required by GPU Metrics."""
 
-    def __init__(self, eps=1e-8):
+    def __init__(self, eps: float = 1e-8) -> None:
         """
         Initializes the PyCUDA metric with a small epsilon value for numerical stability.
 
@@ -34,9 +30,7 @@ class MetricPycuda(Metric[TensorArray], BasePycuda):
         self.block = None
 
     def _model_init(self) -> None:
-        """
-        Initializes the CUDA grid and block dimensions from the associated model.
-        """
+        """Initializes the CUDA grid and block dimensions from the associated model."""
         super()._model_init()
         self.grid = self.model.cuda_grid
         self.block = self.model.cuda_block

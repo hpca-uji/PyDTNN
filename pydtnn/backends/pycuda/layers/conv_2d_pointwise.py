@@ -1,6 +1,4 @@
-"""
-PyCUDA implementation of a 2D pointwise convolution layer.
-"""
+"""PyCUDA implementation of a 2D pointwise convolution layer."""
 
 import logging
 from typing import Any, override
@@ -22,14 +20,10 @@ logger = logging.getLogger(__name__)
 
 
 class Conv2DPointwisePycuda(AbstractConv2DPycuda):
-    """
-    PyCUDA-accelerated 2D pointwise convolution layer (1x1 kernel).
-    """
+    """PyCUDA-accelerated 2D pointwise convolution layer (1x1 kernel)."""
 
-    def _initializing_special_parameters(self):
-        """
-        Initializes kernel dimensions and weight shapes for pointwise convolution.
-        """
+    def _initializing_special_parameters(self) -> None:
+        """Initializes kernel dimensions and weight shapes for pointwise convolution."""
         self.kh = self.kw = 1
         # Setting weights
         match self.model.tensor_format:
@@ -41,9 +35,7 @@ class Conv2DPointwisePycuda(AbstractConv2DPycuda):
                 raise NotImplementedError(f"{self.model.tensor_format} format not implemented.")
 
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
-        """
-        Initializes model buffers, kernels, and memory allocations for the layer.
-        """
+        """Initializes model buffers, kernels, and memory allocations for the layer."""
         super()._model_init(prev_shape, x)
         self.bias_sum_bwd: Function = None
 
@@ -85,9 +77,7 @@ class Conv2DPointwisePycuda(AbstractConv2DPycuda):
         self.bias_sum_fwd: Function = self._get_kernel(func_name="cuda_bias_sum_fwd_pointwise_conv")
 
     def _forward_pointwise(self, x: TensorArray) -> TensorArray:
-        """
-        Performs the forward pass of the pointwise convolution.
-        """
+        """Performs the forward pass of the pointwise convolution."""
 
         self.x = x
         self.y.fill(0)
@@ -138,9 +128,7 @@ class Conv2DPointwisePycuda(AbstractConv2DPycuda):
         return self.y
 
     def _backward_pointwise(self, dy: TensorArray) -> TensorArray:
-        """
-        Performs the backward pass of the pointwise convolution.
-        """
+        """Performs the backward pass of the pointwise convolution."""
         n, c, h, w = self.model.decode_shape(dy.shape)  # type: ignore (it's okay)
         self.dx.fill(0)
 
@@ -198,9 +186,7 @@ class Conv2DPointwisePycuda(AbstractConv2DPycuda):
 
     @override
     def _export_weights_dw(self, key: str) -> Any:
-        """
-        Exports weights or gradients to CPU, handling format transposition if necessary.
-        """
+        """Exports weights or gradients to CPU, handling format transposition if necessary."""
         value = getattr(self, key)
 
         match self.model.tensor_format:
@@ -223,9 +209,7 @@ class Conv2DPointwisePycuda(AbstractConv2DPycuda):
 
     @override
     def _import_weights_dw(self, key: str, value: Any) -> None:
-        """
-        Imports weights or gradients from CPU, handling format transposition if necessary.
-        """
+        """Imports weights or gradients from CPU, handling format transposition if necessary."""
         attribute = getattr(self, key)
         match self.model.tensor_format:
             case TensorFormat.NHWC:

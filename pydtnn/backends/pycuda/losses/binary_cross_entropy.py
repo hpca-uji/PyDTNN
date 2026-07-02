@@ -1,6 +1,4 @@
-"""
-PyCUDA implementation of the Binary Cross Entropy loss function.
-"""
+"""PyCUDA implementation of the Binary Cross Entropy loss function."""
 
 import logging
 
@@ -16,9 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 class BinaryCrossEntropyPycuda(LossPycuda, BinaryCrossEntropy[TensorArray]):
-    """
-    PyCUDA-accelerated Binary Cross Entropy loss implementation.
-    """
+    """PyCUDA-accelerated Binary Cross Entropy loss implementation."""
 
     def compute(
         self, y_pred: TensorArray, y_targ: TensorArray, batch_size: int

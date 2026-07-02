@@ -1,6 +1,7 @@
 """PyCUDA implementation of the Encoder-Decoder architecture."""
 
 import logging
+from typing import Any
 
 from pydtnn.backends.pycuda.layers.abstract.block_layer import AbstractBlockLayerPycuda
 from pydtnn.backends.pycuda.libs import libcudnn as cudnn  # type: ignore
@@ -8,16 +9,17 @@ from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.layers.decoder import Decoder
 from pydtnn.layers.encoder import Encoder
 from pydtnn.layers.encoder_decoder import EncoderDecoder
+from pydtnn.utils.constants import ArrayShape
 
 __all__ = ("EncoderDecoderPycuda",)
 
 logger = logging.getLogger(__name__)
 
 
-class EncoderDecoderPycuda(AbstractBlockLayerPycuda, EncoderDecoder):
+class EncoderDecoderPycuda(EncoderDecoder[TensorArray], AbstractBlockLayerPycuda):
     """PyCUDA-accelerated Encoder-Decoder block layer."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initializes the EncoderDecoderPycuda layer with PyCUDA-specific sublayers."""
         super().__init__(*args, **kwargs)
         self.encoder = [
@@ -46,7 +48,7 @@ class EncoderDecoderPycuda(AbstractBlockLayerPycuda, EncoderDecoder):
         self.y: TensorArray = None  # type: ignore
         self.dx: TensorArray = None  # type: ignore
 
-    def _model_init(self, prev_shape, x):
+    def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
         """Initializes the model structure and sublayers for PyCUDA execution."""
         super()._model_init(prev_shape, x)
         if len(x) == 2:
@@ -65,10 +67,10 @@ class EncoderDecoderPycuda(AbstractBlockLayerPycuda, EncoderDecoder):
             layer._init_backend_with_model(self.model)
 
         # type: ignore (encoder use more parameters)
-        self.encoder[0]._model_init(prev_shape=enc_shape, x=(x_enc, mask_enc))
+        self.encoder[0]._model_init(prev_shape=enc_shape, x=(x_enc, mask_enc)) # type: ignore
         for layer in self.encoder[1:]:
             # type: ignore (encoder use more parameters)
-            layer._model_init(prev_shape=enc_shape, x=(x_enc, mask_enc))
+            layer._model_init(prev_shape=enc_shape, x=(x_enc, mask_enc)) # type: ignore
         for layer in self.decoder:
             layer._model_init(prev_shape=dec_shape, x=(x_dec, x_enc, mask_dec))  # type: ignore (decoder use more parameters)
 
@@ -77,11 +79,11 @@ class EncoderDecoderPycuda(AbstractBlockLayerPycuda, EncoderDecoder):
             self.bwd_time += layer.bwd_time
             self.nparams += layer.nparams
 
-    def initialize_block_layer(self):
+    def initialize_block_layer(self) -> None:
         """Placeholder for block layer initialization."""
         pass
 
-    def forward(self, x):
+    def forward(self, x: TensorArray) -> TensorArray:
         """Performs the forward pass through the encoder and decoder stacks."""
         if len(x) == 2:
             x, y = x
@@ -95,8 +97,11 @@ class EncoderDecoderPycuda(AbstractBlockLayerPycuda, EncoderDecoder):
         self.y = y
         return self.y
 
-    def backward(self, prev_dx):
+    def backward(self, prev_dx: TensorArray) -> tuple[TensorArray, TensorArray] | None:
         """Performs the backward pass through the decoder and encoder stacks."""
+        dx_tgt: TensorArray
+        dx_enc: TensorArray
+
         alpha, beta = 1.0, 1.0
         dx_tgt, dx_enc = self.decoder[self.dec_layers - 1].backward(prev_dx)
         for i in range(self.dec_layers - 1, 0, -1):  # Decoding layers

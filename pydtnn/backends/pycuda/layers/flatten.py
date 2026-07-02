@@ -7,6 +7,7 @@ from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.layers.flatten import Flatten
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
                                    PYDTNN_OPS_EVENTS, OpsEventEnum)
+from pydtnn.utils.constants import ArrayShape
 
 __all__ = ("FlattenPycuda",)
 
@@ -16,7 +17,7 @@ logger = logging.getLogger(__name__)
 class FlattenPycuda(Flatten[TensorArray], LayerPycuda):
     """PyCUDA-accelerated Flatten layer implementation."""
 
-    def _model_init(self, prev_shape, x):
+    def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
         """Initialize layer parameters and output reference."""
         super()._model_init(prev_shape, x)
         self.y = x  # type: ignore (it's okay)
