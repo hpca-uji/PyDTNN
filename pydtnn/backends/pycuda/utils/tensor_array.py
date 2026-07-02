@@ -532,7 +532,7 @@ class TensorArray:
         """Returns the length of the underlying array."""
         return len(self.ary)
 
-    def _operable(self, other: TensorArray | gpuarray.gpuarray.GPUArray | np.ndarray) -> gpuarray.GPUArray | np.ndarray:
+    def _operable(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> gpuarray.GPUArray | np.ndarray:
         """Prepares operand for arithmetic operations."""
         if isinstance(other, TensorArray):
             other = other.ary
@@ -540,67 +540,67 @@ class TensorArray:
             other = other.astype(self.ary.dtype)
         return other
 
-    def __add__(self, other: TensorArray | gpuarray.gpuarray.GPUArray | np.ndarray) -> TensorArray:
+    def __add__(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> TensorArray:
         """Addition operator."""
         other = self._operable(other)
         return self._view(self.ary.__add__(other))
 
-    def __radd__(self, other: TensorArray | gpuarray.gpuarray.GPUArray | np.ndarray) -> TensorArray:
+    def __radd__(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> TensorArray:
         """Right-side addition operator."""
         other = self._operable(other)
         return self._view(self.ary.__radd__(other))
 
-    def __sub__(self, other: TensorArray | gpuarray.gpuarray.GPUArray | np.ndarray) -> TensorArray:
+    def __sub__(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> TensorArray:
         """Subtraction operator."""
         other = self._operable(other)
         return self._view(self.ary.__sub__(other))
 
-    def __rsub__(self, other: TensorArray | gpuarray.gpuarray.GPUArray | np.ndarray) -> TensorArray:
+    def __rsub__(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> TensorArray:
         """Right-side subtraction operator."""
         other = self._operable(other)
         return self._view(self.ary.__rsub__(other))
 
-    def __iadd__(self, other: TensorArray | gpuarray.gpuarray.GPUArray | np.ndarray) -> TensorArray:
+    def __iadd__(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> TensorArray:
         """In-place addition operator."""
         other = self._operable(other)
         return self._view(self.ary.__iadd__(other))
 
-    def __isub__(self, other: TensorArray | gpuarray.gpuarray.GPUArray | np.ndarray) -> TensorArray:
+    def __isub__(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> TensorArray:
         """In-place subtraction operator."""
         other = self._operable(other)
         return self._view(self.ary.__isub__(other))
 
-    def __neg__(self, other: TensorArray | gpuarray.gpuarray.GPUArray | np.ndarray) -> TensorArray:
+    def __neg__(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> TensorArray:
         """Negation operator."""
         other = self._operable(other)
         return self._view(self.ary.__neg__(other))
 
-    def __mul__(self, other: TensorArray | gpuarray.gpuarray.GPUArray | np.ndarray) -> TensorArray:
+    def __mul__(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> TensorArray:
         """Multiplication operator."""
         other = self._operable(other)
         return self._view(self.ary.__mul__(other))
 
-    def __rmul__(self, other: TensorArray | gpuarray.gpuarray.GPUArray | np.ndarray) -> TensorArray:
+    def __rmul__(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> TensorArray:
         """Right-side multiplication operator."""
         other = self._operable(other)
         return self._view(self.ary.__rmul__(other))
 
-    def __truediv__(self, other: TensorArray | gpuarray.gpuarray.GPUArray | np.ndarray) -> TensorArray:
+    def __truediv__(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> TensorArray:
         """Division operator."""
         other = self._operable(other)
         return self._view(self.ary.__truediv__(other))
 
-    def __rtruediv__(self, other: TensorArray | gpuarray.gpuarray.GPUArray | np.ndarray) -> TensorArray:
+    def __rtruediv__(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> TensorArray:
         """Right-side division operator."""
         other = self._operable(other)
         return self._view(self.ary.__rtruediv__(other))
 
-    def __pow__(self, other: TensorArray | gpuarray.gpuarray.GPUArray | np.ndarray) -> TensorArray:
+    def __pow__(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> TensorArray:
         """Power operator."""
         other = self._operable(other)
         return self._view(self.ary.__pow__(other))
 
-    def __rpow__(self, other: TensorArray | gpuarray.gpuarray.GPUArray | np.ndarray) -> TensorArray:
+    def __rpow__(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> TensorArray:
         """Right-side power operator."""
         other = self._operable(other)
         return self._view(self.ary.__rpow__(other))
@@ -609,7 +609,7 @@ class TensorArray:
         """Indexing operator."""
         return self._view(self.ary.__getitem__(index), keep_shape=False)
 
-    def __setitem__(self, key: Any, value: TensorArray | gpuarray.gpuarray.GPUArray | np.ndarray) -> None:
+    def __setitem__(self, key: Any, value: TensorArray | gpuarray.GPUArray | np.ndarray) -> None:
         """Set item operator."""
         value = self._operable(value)
         return self.ary.__setitem__(key, value)
