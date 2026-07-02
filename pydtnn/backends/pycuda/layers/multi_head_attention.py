@@ -252,7 +252,7 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
                 self.model.cudnn_handle,
                 self.attn_desc,
                 cudnn.cudnnMultiHeadAttnWeightKind[_weights_types[i]],
-                self.weights_size.value,
+                self.weights_size,
                 self.weights.ptr_voidp,
             )
             print(_weights_types[i], dest)
@@ -285,11 +285,11 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
                 value.ptr,
                 self.y.desc,
                 self.y.ptr_voidp,
-                self.weights_size.value,
+                self.weights_size,
                 self.weights.ptr_voidp,
                 self.model.layers[0].getConvolutionWorkspaceSize(),
                 self.model.layers[0].getConvolutionWorkspacePtr(),
-                self.reserve_backward_size.value,
+                self.reserve_backward_size,
                 self.reserve_backward.ptr_voidp,
             )
         else:
@@ -310,7 +310,7 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
                 value.ptr,
                 self.y.desc,
                 self.y.ptr_voidp,
-                self.weights_size.value,
+                self.weights_size,
                 self.weights.ptr_voidp,
                 self.model.layers[0].getConvolutionWorkspaceSize(),
                 self.model.layers[0].getConvolutionWorkspacePtr(),
@@ -341,11 +341,11 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
             self.dvalue.desc,
             self.dvalue.ptr_voidp,
             self.value.ptr,
-            self.weights_size.value,
+            self.weights_size,
             self.weights.ptr_voidp,
             self.model.layers[0].getConvolutionWorkspaceSize(),
             self.model.layers[0].getConvolutionWorkspacePtr(),
-            self.reserve_backward_size.value,
+            self.reserve_backward_size,
             self.reserve_backward.ptr_voidp,
         )
 
@@ -361,12 +361,12 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
             self.value.ptr,
             self.y.desc,
             dy.ptr_voidp,
-            self.weights_size.value,
+            self.weights_size,
             self.weights.ptr_voidp,
             self.dw.ptr_voidp,
             self.model.layers[0].getConvolutionWorkspaceSize(),
             self.model.layers[0].getConvolutionWorkspacePtr(),
-            self.reserve_backward_size.value,
+            self.reserve_backward_size,
             self.reserve_backward.ptr_voidp,
         )
 
