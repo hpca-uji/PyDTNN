@@ -6,7 +6,7 @@ import copy
 import ctypes
 import logging
 from enum import StrEnum, auto
-from typing import Any
+from typing import Any, Literal
 
 import numpy as np
 
@@ -48,7 +48,7 @@ class TensorArray:
         desc: int | None = None,
         gpudirect: bool = False,
         cublas: bool = False,
-    ):
+    ) -> TensorArray:
         """Creates an uninitialized TensorArray."""
         gpu_arr = gpuarray.empty(shape, dtype)
         return TensorArray(
@@ -71,7 +71,7 @@ class TensorArray:
         desc: int | None = None,
         gpudirect: bool = False,
         cublas: bool = False,
-    ):
+    ) -> TensorArray:
         """Creates a zero-initialized TensorArray."""
         gpu_arr = gpuarray.zeros(shape, dtype)
         return TensorArray(
@@ -93,7 +93,7 @@ class TensorArray:
         desc: int | None = None,
         gpudirect: bool = False,
         cublas: bool = False
-    ):
+    ) -> TensorArray:
         """Creates a zero-initialized TensorArray."""
         gpu_arr = gpuarray.to_gpu(ary)
         return TensorArray(
@@ -105,7 +105,7 @@ class TensorArray:
             gpudirect=gpudirect,
             cublas=cublas,
         )
-    
+
     @staticmethod
     def new_ones(
         shape: ArrayShape,
@@ -116,8 +116,8 @@ class TensorArray:
         desc: int | None = None,
         gpudirect: bool = False,
         cublas: bool = False,
-    ):
-        """Creates a zero-initialized TensorArray."""
+    ) -> TensorArray:
+        """Creates a initialized TensorArray filled with ones."""
         gpu_arr = gpuarray.ones(shape, dtype)
         return TensorArray(
             gpu_arr=gpu_arr,
@@ -228,7 +228,7 @@ class TensorArray:
         gpudirect: bool = False,
         cublas: bool = False,
         cpu_shape: ArrayShape | None = None,
-    ):
+    ) -> None:
         """Initializes the TensorArray instance."""
 
         self.tensor_format = TensorFormat(tensor_format.lower())
@@ -252,11 +252,11 @@ class TensorArray:
         """Returns the cuDNN integer constant for the current tensor format."""
         return cudnn.cudnnTensorFormat[f"CUDNN_TENSOR_{self.tensor_format.upper()}"]
 
-    def _encode_shape(self, shape):
+    def _encode_shape(self, shape: ArrayShape) -> ArrayShape:
         """Encodes shape based on tensor format."""
         return encode_shape(shape, self.tensor_format)
 
-    def _decode_shape(self, shape):
+    def _decode_shape(self, shape: ArrayShape) -> ArrayShape:
         """Decodes shape based on tensor format."""
         return decode_shape(shape, self.tensor_format)
 
@@ -394,15 +394,15 @@ class TensorArray:
                 raise NotImplementedError(f"Tensor type not implemented! ({tensor_type})")
         self.desc = -1
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> Any:
         """Delegates attribute access to the underlying GPUArray."""
         return getattr(self.ary, name)
 
-    def reshape(self, shape, order="C") -> TensorArray:
+    def reshape(self, shape: ArrayShape, order: Literal["C", "F", "A"] = "C") -> TensorArray:
         """Returns a reshaped view of the TensorArray."""
         return self._view(self.ary.reshape(shape, order))
 
-    def squeeze(self, dtype=None) -> TensorArray:
+    def squeeze(self, dtype: np.dtype | None = None) -> TensorArray:
         """Squeeze operation is not supported for TensorArray."""
         raise ValueError("Can't squeeze TensorArray")
 
@@ -410,13 +410,13 @@ class TensorArray:
         """Copies data from CPU to GPU."""
         self.ary.set(np.asarray(value.reshape(self.ary.shape), dtype=self.ary.dtype))
 
-    def set_async(self, value: np.ndarray, stream=None) -> None:
+    def set_async(self, value: np.ndarray, stream: pycuda_driver | None = None) -> None:
         """Asynchronously copies data from CPU to GPU."""
         self.ary.set_async(
             np.asarray(value.reshape(self.ary.shape), dtype=self.ary.dtype), stream=stream
         )
 
-    def get(self, ary=None) -> np.ndarray:
+    def get(self, ary: gpuarray.GPUArray | None = None) -> np.ndarray:
         """Copies data from GPU to CPU and removes padding."""
         value = self.ary.get()
 
@@ -459,7 +459,7 @@ class TensorArray:
             ary[:] = value
             return None  # type: ignore
 
-    def get_async(self, stream=None, ary=None):
+    def get_async(self, stream: pycuda_driver | None = None, ary: gpuarray.GPUArray | None = None) -> None:
         """Asynchronously copies data from GPU to CPU."""
         if ary is None:
             raise ValueError("Destination must be defined!")
@@ -469,11 +469,11 @@ class TensorArray:
             raise TypeError("Destination must be same dtype!")
         self.ary.get_async(stream, ary=ary.reshape(self.ary.shape))
 
-    def __array__(self, dtype=None, *, copy=None):
+    def __array__(self, dtype: np.dtype | None = None, *, copy: bool | None = None) -> np.ndarray:
         """Converts TensorArray to a NumPy array."""
         return np.asarray(self.get(), dtype=dtype)
 
-    def _view(self, ary, keep_shape=True):
+    def _view(self, ary: gpuarray.GPUArray, keep_shape: bool  = True) -> TensorArray:
         """Creates a new TensorArray instance sharing the same underlying configuration."""
         # NOTE: In some cases, it would be possible to share the descriptor more
         # aggressively, but we don't have enough information to decide when.
@@ -488,15 +488,15 @@ class TensorArray:
             cpu_shape=self.cpu_shape if keep_shape else None,
         )
 
-    def copy(self):
+    def copy(self) -> TensorArray:
         """Returns a deep copy of the TensorArray."""
         return copy.deepcopy(self)
 
-    def __copy__(self):
+    def __copy__(self) -> TensorArray:
         """Returns a shallow copy of the TensorArray."""
         return self._view(self.ary)
 
-    def __deepcopy__(self, memo: dict):
+    def __deepcopy__(self, memo: dict) -> TensorArray:
         """Returns a deep copy of the TensorArray."""
         obj = TensorArray(
             gpu_arr=copy.deepcopy(self.ary, memo),

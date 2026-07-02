@@ -79,7 +79,7 @@ def print_with_header(header: str, to_be_printed: Any | None = None) -> None:
     logger.info(info_to_print)
 
 
-def parse_bool(x: Literal["true", "1", "yes", "y", "t"]) -> bool:
+def parse_bool(x: str | Literal["true", "1", "yes", "y", "t"]) -> bool:
     """Returns True if value is a user truthy value"""
     return str(x).lower() in {"true", "1", "yes", "y", "t"}
 

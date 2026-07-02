@@ -23,6 +23,7 @@ __all__ = ("Conv2DReluTestCase",)
 
 logger = logging.getLogger(__name__)
 
+
 @unittest.skipUnless(is_conv_gemm_available, "requires ConvGemm")
 class Conv2DReluTestCase(Conv2DCommonTestCase):
     """Tests that Conv2D+Relu leads to the same results than Conv2DRelu"""
