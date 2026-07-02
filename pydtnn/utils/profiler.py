@@ -41,7 +41,7 @@ class Profiler:
         self.start()
         return self
 
-    def __exit__[T: Exception](self, cls: type[T], exc: T, tb: types.TracebackType) -> None:
+    def __exit__[T: Exception](self, cls: type[T], exc: T, tb: types.TracebackType) -> None:  # noqa: D105
         """Exit the context manager."""
         self.stop()
 

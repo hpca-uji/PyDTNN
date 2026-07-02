@@ -1,7 +1,11 @@
 """Flake8 plugin to enforce code maintainability standards using Radon."""
 
-from typing import Any, Generator, Literal, NoReturn, Self
+import ast
+from typing import Any
+from argparse import Namespace
+from collections.abc import Generator
 
+from flake8.options.manager import OptionManager
 
 try:
     from radon.metrics import mi_rank
@@ -9,7 +13,7 @@ try:
 except ModuleNotFoundError as exc:
     _exc = exc
 
-    def mi_visit(*args: tuple, **kwds: dict) -> NoReturn:
+    def mi_visit(*args: Any, **kwds: Any) -> str:
         """Rank the score with a letter."""
         raise _exc
 
@@ -23,7 +27,7 @@ class MaintainabilityChecker:
     DEFAULT_THRESHOLD = 19
 
     @classmethod
-    def add_options(cls, parser) -> None:
+    def add_options(cls, parser: OptionManager) -> None:
         """Registers the custom command-line option for the maintainability checks"""
         parser.add_option(
             "--min-maintain-index",
@@ -34,15 +38,15 @@ class MaintainabilityChecker:
         )
 
     @classmethod
-    def parse_options(cls, options) -> None:
+    def parse_options(cls, options: Namespace) -> None:
         """Parses and stores the maintainability threshold from options"""
         cls.threshold = options.min_maintain_index
 
-    def __init__(self, tree, lines) -> None:
+    def __init__(self, tree: ast.AST, lines: list[str]) -> None:
         """Initializes the checker with the tree mode"""
         self.lines = lines
 
-    def run(self) -> Generator[tuple[Literal[1], Literal[0], str, type[Self]], Any, None]:
+    def run(self) -> Generator[tuple[int, int, str, type]]:
         """Calculates the Maintainability Index and yields a violation if below threshold."""
         try:
             score = mi_visit("".join(self.lines), multi=True)

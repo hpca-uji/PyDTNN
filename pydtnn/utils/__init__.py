@@ -198,7 +198,8 @@ def get_npz_shape(file: str) -> dict[str, tuple[int, ...]]:
 
 
 def read_file(path: str, replaces: dict[str, str] = {}) -> str:
-    """
+    """Read file's content from inside the package
+
     Args:
         path (str): Path to the file.
         replaces (dict[str, str] | None)

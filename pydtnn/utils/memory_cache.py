@@ -14,7 +14,8 @@ logger = logging.getLogger(__name__)
 
 
 class MemoryCache(dict):
-    """
+    """defaultdict with auto missing insertion
+
     Dictionary derived class that can use the provided factory function to
     obtain a default value for a missing key. It differs from defaultdict in:
 

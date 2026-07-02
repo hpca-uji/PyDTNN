@@ -1,7 +1,8 @@
 """Module providing the BestOfVariant class for dynamic convolution implementation selection."""
 
 import logging
-from typing import Any, Callable, List
+from typing import Any
+from collections.abc import Callable
 
 import numpy as np
 
@@ -18,10 +19,7 @@ logger = logging.getLogger(__name__)
 
 # FIXME: Broken since Conv2D to backend support
 class BestOfVariant(Conv2DWinogradNumpy, Conv2DDirectNumpy):
-    """
-    A convolution layer variant that dynamically selects the most efficient implementation
-    at runtime based on performance profiling.
-    """
+    """Convolution variant that dynamically selects the most efficient implementation"""
 
     def __init__(self, *args: Any, **kwargs: dict) -> None:
         """Initializes the BestOfVariant layer with default attributes."""
@@ -125,9 +123,7 @@ class BestOfVariant(Conv2DWinogradNumpy, Conv2DDirectNumpy):
                 ),
             )
 
-    def _get_class_forward_and_backward(self,
-                                        variant  # TODO: Fix this.
-                                        ) -> List[Callable]:
+    def _get_class_forward_and_backward(self, variant: str) -> list[Callable]:
         """
         Retrieves the forward and backward method references for a given variant.
 
