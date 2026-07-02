@@ -66,19 +66,17 @@ class ConvDirect:
     lib_cd = None  # will link to the libconvDirect.so library
 
     def _set_methods(self, method_name: str) -> None:
-        """
-        Placeholder method. Currently does nothing.
-        """
+        """Placeholder method. Currently does nothing."""
         return
 
     def __init__(
         self,
-        method_name,
+        method_name: str,
         dtype: np.dtype = np.dtype(np.float32),
         tensor_format: TensorFormat = TensorFormat.NHWC,
         debug: bool = False,
         parent_layer: Layerable | None = None,
-    ):
+    ) -> None:
         """
         Initializes the ConvDirect wrapper and loads the `libconvDirect.so` library.
 
@@ -290,9 +288,6 @@ class ConvDirect:
             assert n == bb, "Batch sizes must be the same!"
         out: np.ndarray
 
-        # int t = n, Co = co, Ci = ci, Ho = h, Wo = w, Hf = r, Wf = s;
-        t, Co, Ci, Ho, Wo, Hf, Wf = (n, co, ci, hi, wi, kh, kw)
-
         if self._reuse_processed_weights and self._weights_already_processed:
             self._DT = x.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
             self._YT = out.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
@@ -308,13 +303,13 @@ class ConvDirect:
             #     DTYPE **FT,               \
             #     DTYPE **YT
             self._conv_direct_pre(
-                ctypes.c_int(t),
-                ctypes.c_int(Co),
-                ctypes.c_int(Ci),
-                ctypes.c_int(Ho),
-                ctypes.c_int(Wo),
-                ctypes.c_int(Hf),
-                ctypes.c_int(Wf),
+                ctypes.c_int(n),
+                ctypes.c_int(co),
+                ctypes.c_int(ci),
+                ctypes.c_int(hi),
+                ctypes.c_int(wi),
+                ctypes.c_int(kh),
+                ctypes.c_int(kw),
                 ctypes.c_void_p(x.ctypes.data),
                 ctypes.c_void_p(weights.ctypes.data),
                 ctypes.c_void_p(out.ctypes.data),
@@ -337,13 +332,13 @@ class ConvDirect:
         #     DTYPE beta,                   \
         #     DTYPE *YT
         self._conv_direct_kernel(
-            ctypes.c_int(t),
-            ctypes.c_int(Co),
-            ctypes.c_int(Ci),
-            ctypes.c_int(Ho),
-            ctypes.c_int(Wo),
-            ctypes.c_int(Hf),
-            ctypes.c_int(Wf),
+            ctypes.c_int(n),
+            ctypes.c_int(co),
+            ctypes.c_int(ci),
+            ctypes.c_int(hi),
+            ctypes.c_int(wi),
+            ctypes.c_int(kh),
+            ctypes.c_int(kw),
             ctypes.c_int(vpadding),
             ctypes.c_int(hpadding),
             ctypes.c_int(vstride),
@@ -367,13 +362,13 @@ class ConvDirect:
             #     DTYPE **YT,                \
             #     DTYPE *Y
             self._conv_direct_post(
-                ctypes.c_int(t),
-                ctypes.c_int(Co),
-                ctypes.c_int(Ci),
-                ctypes.c_int(Ho),
-                ctypes.c_int(Wo),
-                ctypes.c_int(Hf),
-                ctypes.c_int(Wf),
+                ctypes.c_int(n),
+                ctypes.c_int(co),
+                ctypes.c_int(ci),
+                ctypes.c_int(hi),
+                ctypes.c_int(wi),
+                ctypes.c_int(kh),
+                ctypes.c_int(kw),
                 ctypes.c_float(1.0),
                 ctypes.byref(self._DT),
                 ctypes.byref(self._FT),
@@ -469,7 +464,7 @@ def time_it_func(
     return res  # type: ignore
 
 
-def __usage_example__() -> None:
+def main() -> None:
     """
     Provides a usage example for the `ConvDirect` class.
 
@@ -591,4 +586,4 @@ def __usage_example__() -> None:
 
 
 if __name__ == "__main__":
-    __usage_example__()
+    main()

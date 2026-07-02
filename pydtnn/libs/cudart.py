@@ -14,8 +14,6 @@ from typing import TYPE_CHECKING, Callable
 import numpy as np
 
 
-
-
 if TYPE_CHECKING:
     import gpuarray  # type: ignore
 

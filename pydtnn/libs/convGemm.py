@@ -175,8 +175,8 @@ class ConvGemm:
         """
         try:
             # Assuming __free__ is available and handles platform-specific freeing
-            __free__(self.ac_pack)
-            __free__(self.bc_pack)
+            libc_free(self.ac_pack)
+            libc_free(self.bc_pack)
         except AttributeError:
             pass
 
@@ -729,7 +729,7 @@ class ConvGemm:
         return dx
 
 
-def __free__(pack: ctypes._Pointer) -> None:
+def libc_free(pack: ctypes._Pointer) -> None:
     """
     Frees a memory buffer allocated by `libc` on different platforms.
 
@@ -859,7 +859,7 @@ def time_it_func(
     return res  # type: ignore
 
 
-def __usage_example__() -> None:
+def main() -> None:
     """
     Provides a usage example for the `ConvGemm` class.
 
@@ -995,4 +995,4 @@ def __usage_example__() -> None:
 
 
 if __name__ == "__main__":
-    __usage_example__()
+    main()

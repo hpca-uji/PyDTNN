@@ -1550,7 +1550,7 @@ _libcudnn.cudnnFindConvolutionForwardAlgorithm.argtypes = [
 
 def cudnnFindConvolutionForwardAlgorithm(
     handle: int, x_desc: int, w_desc: int, conv_desc: int, y_desc: int, requested_algo_count: int
-) -> list[int]:
+) -> list[CudnnConvolutionFwdAlgoPerf]:
     """Find the best algorithm for forward convolution.
 
     This function searches for the best algorithm to execute the forward convolution operation
@@ -1946,7 +1946,7 @@ _libcudnn.cudnnFindConvolutionBackwardDataAlgorithm.argtypes = [
 
 def cudnnFindConvolutionBackwardDataAlgorithm(
     handle: int, w_desc: int, dy_desc: int, conv_desc: int, dx_desc: int, requested_algo_count: int
-) -> list[int]:
+) -> list[CudnnConvolutionBwdDataAlgoPerf]:
     """Find the best algorithm for backward data convolution.
 
     This function searches for the best algorithm to execute the backward data convolution operation
@@ -2226,7 +2226,7 @@ _libcudnn.cudnnFindConvolutionBackwardFilterAlgorithm.argtypes = [
 
 def cudnnFindConvolutionBackwardFilterAlgorithm(
     handle: int, x_desc: int, dy_desc: int, conv_desc: int, dw_desc: int, requested_algo_count: int
-) -> list[int]:
+) -> list[CudnnConvolutionBwdFilterAlgoPerf]:
     """Find the best algorithm for backward filter convolution.
 
     This function searches for the best algorithm to execute the backward filter convolution operation

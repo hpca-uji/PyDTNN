@@ -68,6 +68,282 @@ class ConvWinograd:
 
     lib_cw = None  # will link to the libconvwinograd.so library
 
+    def winograd_workspace_alloc_pre(
+        self, m: int, r: int, k: int, c: int
+    ) -> tuple[np.ndarray, ctypes._Pointer[ctypes.c_float]]:
+        """
+        Allocates workspace memory for the Winograd pre-processing step.
+
+        Parameters
+        ----------
+        m: int
+            Winograd transform parameter 'm'.
+        r: int
+            Winograd transform parameter 'r'.
+        k: int
+            Number of output channels.
+        c: int
+            Number of input channels.
+
+        Returns
+        -------
+        tuple
+            A tuple containing a dummy numpy array and a ctypes pointer to the allocated memory.
+        """
+        _u = ctypes.POINTER(ctypes.c_float)()
+        self.conv_winograd_workspace_alloc_pre(
+            ctypes.c_uint(m),
+            ctypes.c_uint(r),
+            ctypes.c_uint(k),
+            ctypes.c_uint(c),
+            ctypes.byref(_u),  # type: ignore
+        )
+        return np.array([False]), _u
+
+    def winograd_workspace_alloc_kernel(
+        self,
+        m: int,
+        r: int,
+        n: int,
+        k: int,
+        c: int,
+        hi: int,
+        wi: int,
+        kh: int,
+        kw: int,
+        vpadding: int,
+        hpadding: int,
+    ) -> tuple[ctypes._Pointer[ctypes.c_float], ctypes._Pointer[ctypes.c_float]]:
+        """
+        Allocates workspace memory for the Winograd kernel execution step.
+
+        Parameters
+        ----------
+        m: int
+            Winograd transform parameter 'm'.
+        r: int
+            Winograd transform parameter 'r'.
+        n: int
+            Batch size.
+        k: int
+            Number of output channels.
+        c: int
+            Number of input channels.
+        hi: int
+            Input height.
+        wi: int
+            Input width.
+        kh: int
+            Kernel height.
+        kw: int
+            Kernel width.
+        vpadding: int
+            Vertical padding.
+        hpadding: int
+            Horizontal padding.
+
+        Returns
+        -------
+        tuple
+            A tuple containing two ctypes pointers to the allocated memory (_v and _m).
+        """
+        _v = ctypes.POINTER(ctypes.c_float)()
+        _m = ctypes.POINTER(ctypes.c_float)()
+        self.conv_winograd_workspace_alloc_kernel(
+            ctypes.c_uint(m),
+            ctypes.c_uint(r),
+            ctypes.c_uint(n),
+            ctypes.c_uint(k),
+            ctypes.c_uint(c),
+            ctypes.c_uint(hi),
+            ctypes.c_uint(wi),
+            ctypes.c_uint(kh),
+            ctypes.c_uint(kw),
+            ctypes.c_uint(vpadding),
+            ctypes.c_uint(hpadding),
+            ctypes.byref(_v),  # type: ignore
+            ctypes.byref(_m),  # type: ignore
+        )
+        return _v, _m
+
+    def register_winograd_function(
+        self, m: int, r: int, g: np.ndarray, bt: np.ndarray, at: np.ndarray
+    ) -> None:
+        """
+        Registers available Winograd routines for a given Winograd transform size (m, r).
+
+        It attempts to find optimized C/C++ routines in the loaded library
+        for the current architecture and data type. If no optimized routine
+        is found, it falls back to a NumPy implementation.
+
+        Parameters
+        ----------
+        m: int
+            The 'm' parameter of the Winograd transform (output tile size).
+        r: int
+            The 'r' parameter of the Winograd transform (input tile size).
+        g: np.ndarray
+            The transformation matrix G for the input data.
+        bt: np.ndarray
+            The transformation matrix B_T for the input data.
+        at: np.ndarray
+            The transformation matrix A_T for the output data.
+        """
+        # choose the appropriate convWinograd function depending on the
+        # architecture and the data type being used
+        if platform.machine() == "aarch64":
+            if self.dtype == np.float32:
+                routine_names = [
+                    ("neon", f"conv_winograd_{m}x{m}_{r}x{r}_neon_fp32_{self.tensor_format}")
+                ]
+            else:
+                raise NotImplementedError(
+                    f"Type {str(self.dtype)} not supported by this version of libconvWinograd!"
+                )
+        elif platform.machine() == "x86_64":
+            if self.dtype == np.float32:
+                routine_names = [
+                    (intr, f"conv_winograd_{m}x{m}_{r}x{r}_{intr}_fp32_{self.tensor_format}")
+                    for intr in ["native", "sse", "avx", "avx512"]
+                ]
+            else:
+                raise NotImplementedError(
+                    f"Type {str(self.dtype)} not supported by this version of libconvWinograd!"
+                )
+        else:
+            raise NotImplementedError(f"Platform '{str(platform.machine())}' not yet supported")
+
+        funcs = []
+        for rn in routine_names:
+            try:
+                funcs.append(
+                    (
+                        rn[0],
+                        (
+                            self._conv_winograd_c,
+                            getattr(self.__class__.lib_cw, f"{rn[1]}_pre"),
+                            getattr(self.__class__.lib_cw, f"{rn[1]}_kernel"),
+                        ),
+                    )
+                )
+            except AttributeError:
+                pass
+        if not funcs:
+            logger.warning("Winograd routine not found. Fallback to numpy version!")
+            funcs = [("numpy", (self._conv_winograd_numpy, None, None))]
+
+        for intr, f in funcs:
+            self.alternatives[r].append(
+                (f"cw{m}{r}{intr}", partial(f[0], m, r, g, bt, at, f[1], f[2]))
+            )
+
+    def register_winograd_function_3x3_2x2(self) -> None:
+        """Register 3x3 output from 2x2 input winograd function"""
+        m, r = 3, 2
+        self.register_winograd_function(
+            m,
+            r,
+            g=np.array(
+                [[1, 0], [1.0 / 2.0, 1.0 / 2.0], [1.0 / 2.0, -1.0 / 2.0], [0, 1]],
+                dtype=self.dtype,
+            ),
+            bt=np.array(
+                [[1, 0, -1, 0], [0, 1, 1, 0], [0, -1, 1, 0], [0, -1, 0, 1]], dtype=self.dtype
+            ),
+            at=np.array([[1, 1, 1, 0], [0, 1, -1, 0], [0, 1, 1, 1]], dtype=self.dtype),
+        )
+
+    def register_winograd_function_2x2_3x3(self) -> None:
+        """Register 2x2 output from 3x3 input winograd function"""
+        m, r = 2, 3
+        self.register_winograd_function(
+            m,
+            r,
+            g=np.array(
+                [
+                    [1, 0, 0],
+                    [1.0 / 2.0, 1.0 / 2.0, 1.0 / 2.0],
+                    [1.0 / 2.0, -1.0 / 2.0, 1.0 / 2.0],
+                    [0, 0, 1],
+                ],
+                dtype=self.dtype,
+            ),
+            bt=np.array(
+                [[1, 0, -1, 0], [0, 1, 1, 0], [0, -1, 1, 0], [0, 1, 0, -1]], dtype=self.dtype
+            ),
+            at=np.array([[1, 1, 1, 0], [0, 1, -1, -1]], dtype=self.dtype),
+        )
+
+    def register_winograd_function_4x4_3x3(self) -> None:
+        """Register 4x4 output from 3x3 input winograd function"""
+        m, r = 4, 3
+        self.register_winograd_function(
+            m,
+            r,
+            g=np.array(
+                [
+                    [1.0 / 4.0, 0, 0],
+                    [-1.0 / 6.0, -1.0 / 6.0, -1.0 / 6.0],
+                    [-1.0 / 6.0, 1.0 / 6.0, -1.0 / 6.0],
+                    [1.0 / 24.0, 1.0 / 12.0, 1.0 / 6.0],
+                    [1.0 / 24.0, -1.0 / 12.0, 1.0 / 6.0],
+                    [0, 0, 1],
+                ],
+                dtype=self.dtype,
+            ),
+            bt=np.array(
+                [
+                    [4, 0, -5, 0, 1, 0],
+                    [0, -4, -4, 1, 1, 0],
+                    [0, 4, -4, -1, 1, 0],
+                    [0, -2, -1, 2, 1, 0],
+                    [0, 2, -1, -2, 1, 0],
+                    [0, 4, 0, -5, 0, 1],
+                ],
+                dtype=self.dtype,
+            ),
+            at=np.array(
+                [
+                    [1, 1, 1, 1, 1, 0],
+                    [0, 1, -1, 2, -2, 0],
+                    [0, 1, 1, 4, 4, 0],
+                    [0, 1, -1, 8, -8, 1],
+                ],
+                dtype=self.dtype,
+            ),
+        )
+
+    def register_winograd_function_2x2_5x5(self) -> None:
+        """Register 2x2 output from 5x5 input winograd function"""
+        m, r = 2, 5
+        self.register_winograd_function(
+            m,
+            r,
+            g=np.array(
+                [
+                    [1.0 / 4.0, 0, 0, 0, 0],
+                    [-1.0 / 6.0, -1.0 / 6.0, -1.0 / 6.0, -1.0 / 6.0, -1.0 / 6.0],
+                    [-1.0 / 6.0, 1.0 / 6.0, -1.0 / 6.0, 1.0 / 6.0, -1.0 / 6.0],
+                    [1.0 / 24.0, 1.0 / 12.0, 1.0 / 6.0, 1.0 / 3.0, 2.0 / 3.0],
+                    [1.0 / 24.0, -1.0 / 12.0, 1.0 / 6.0, -1.0 / 3.0, 2.0 / 3.0],
+                    [0, 0, 0, 0, 1],
+                ],
+                dtype=self.dtype,
+            ),
+            bt=np.array(
+                [
+                    [4, 0, -5, 0, 1, 0],
+                    [0, -4, -4, 1, 1, 0],
+                    [0, 4, -4, -1, 1, 0],
+                    [0, -2, -1, 2, 1, 0],
+                    [0, 2, -1, -2, 1, 0],
+                    [0, 4, 0, -5, 0, 1],
+                ],
+                dtype=self.dtype,
+            ),
+            at=np.array([[1, 1, 1, 1, 1, 0], [0, 1, -1, 2, -2, 1]], dtype=self.dtype),
+        )
+
     def __init__(
         self,
         kh: int,
@@ -82,8 +358,9 @@ class ConvWinograd:
         parent_layer: Layerable | None = None,
     ) -> None:
         """
-        Initializes the ConvWinograd layer, loading the necessary library and
-        registering available Winograd routines.
+        Initializes the ConvWinograd layer.
+
+        Loading the necessary library and registering available Winograd routines.
 
         Parameters
         ----------
@@ -108,77 +385,6 @@ class ConvWinograd:
         parent_layer: object, optional
             The layer that is using this Winograd implementation (for tracing purposes). Defaults to None.
         """
-
-        def register_winograd_function(
-            m: int, r: int, g: np.ndarray, bt: np.ndarray, at: np.ndarray
-        ) -> None:
-            """
-            Registers available Winograd routines for a given Winograd transform size (m, r).
-
-            It attempts to find optimized C/C++ routines in the loaded library
-            for the current architecture and data type. If no optimized routine
-            is found, it falls back to a NumPy implementation.
-
-            Parameters
-            ----------
-            m: int
-                The 'm' parameter of the Winograd transform (output tile size).
-            r: int
-                The 'r' parameter of the Winograd transform (input tile size).
-            g: np.ndarray
-                The transformation matrix G for the input data.
-            bt: np.ndarray
-                The transformation matrix B_T for the input data.
-            at: np.ndarray
-                The transformation matrix A_T for the output data.
-            """
-            # choose the appropriate convWinograd function depending on the
-            # architecture and the data type being used
-            if platform.machine() == "aarch64":
-                if self.dtype == np.float32:
-                    routine_names = [
-                        ("neon", f"conv_winograd_{m}x{m}_{r}x{r}_neon_fp32_{self.tensor_format}")
-                    ]
-                else:
-                    raise NotImplementedError(
-                        f"Type {str(self.dtype)} not supported by this version of libconvWinograd!"
-                    )
-            elif platform.machine() == "x86_64":
-                if self.dtype == np.float32:
-                    routine_names = [
-                        (intr, f"conv_winograd_{m}x{m}_{r}x{r}_{intr}_fp32_{self.tensor_format}")
-                        for intr in ["native", "sse", "avx", "avx512"]
-                    ]
-                else:
-                    raise NotImplementedError(
-                        f"Type {str(self.dtype)} not supported by this version of libconvWinograd!"
-                    )
-            else:
-                raise NotImplementedError(f"Platform '{str(platform.machine())}' not yet supported")
-
-            funcs = []
-            for rn in routine_names:
-                try:
-                    funcs.append(
-                        (
-                            rn[0],
-                            (
-                                self._conv_winograd_c,
-                                getattr(self.__class__.lib_cw, f"{rn[1]}_pre"),
-                                getattr(self.__class__.lib_cw, f"{rn[1]}_kernel"),
-                            ),
-                        )
-                    )
-                except AttributeError:
-                    pass
-            if not funcs:
-                logger.warning("Winograd routine not found. Fallback to numpy version!")
-                funcs = [("numpy", (self._conv_winograd_numpy, None, None))]
-
-            for intr, f in funcs:
-                self.alternatives[r].append(
-                    (f"cw{m}{r}{intr}", partial(f[0], m, r, g, bt, at, f[1], f[2]))
-                )
 
         # Parent layer
         if parent_layer is not None:
@@ -206,111 +412,22 @@ class ConvWinograd:
         m, r = None, None
 
         if (kh, kw) == (2, 2) and (vstride, hstride) == (1, 1) and (vdilation, hdilation) == (1, 1):
-            # F(3x3, 2x2)
+            self.register_winograd_function_3x3_2x2()
             m, r = 3, 2
-            register_winograd_function(
-                m,
-                r,
-                g=np.array(
-                    [[1, 0], [1.0 / 2.0, 1.0 / 2.0], [1.0 / 2.0, -1.0 / 2.0], [0, 1]],
-                    dtype=self.dtype,
-                ),
-                bt=np.array(
-                    [[1, 0, -1, 0], [0, 1, 1, 0], [0, -1, 1, 0], [0, -1, 0, 1]], dtype=self.dtype
-                ),
-                at=np.array([[1, 1, 1, 0], [0, 1, -1, 0], [0, 1, 1, 1]], dtype=self.dtype),
-            )
 
         if (kh, kw) == (3, 3) and (vstride, hstride) == (1, 1) and (vdilation, hdilation) == (1, 1):
-            # F(2x2, 3x3)
+            self.register_winograd_function_2x2_3x3()
             m, r = 2, 3
-            register_winograd_function(
-                m,
-                r,
-                g=np.array(
-                    [
-                        [1, 0, 0],
-                        [1.0 / 2.0, 1.0 / 2.0, 1.0 / 2.0],
-                        [1.0 / 2.0, -1.0 / 2.0, 1.0 / 2.0],
-                        [0, 0, 1],
-                    ],
-                    dtype=self.dtype,
-                ),
-                bt=np.array(
-                    [[1, 0, -1, 0], [0, 1, 1, 0], [0, -1, 1, 0], [0, 1, 0, -1]], dtype=self.dtype
-                ),
-                at=np.array([[1, 1, 1, 0], [0, 1, -1, -1]], dtype=self.dtype),
-            )
 
         if (kh, kw) == (3, 3) and (vstride, hstride) == (1, 1) and (vdilation, hdilation) == (1, 1):
-            # F(4x4, 3x3)
+            self.register_winograd_function_4x4_3x3()
             m, r = 4, 3
-            register_winograd_function(
-                m,
-                r,
-                g=np.array(
-                    [
-                        [1.0 / 4.0, 0, 0],
-                        [-1.0 / 6.0, -1.0 / 6.0, -1.0 / 6.0],
-                        [-1.0 / 6.0, 1.0 / 6.0, -1.0 / 6.0],
-                        [1.0 / 24.0, 1.0 / 12.0, 1.0 / 6.0],
-                        [1.0 / 24.0, -1.0 / 12.0, 1.0 / 6.0],
-                        [0, 0, 1],
-                    ],
-                    dtype=self.dtype,
-                ),
-                bt=np.array(
-                    [
-                        [4, 0, -5, 0, 1, 0],
-                        [0, -4, -4, 1, 1, 0],
-                        [0, 4, -4, -1, 1, 0],
-                        [0, -2, -1, 2, 1, 0],
-                        [0, 2, -1, -2, 1, 0],
-                        [0, 4, 0, -5, 0, 1],
-                    ],
-                    dtype=self.dtype,
-                ),
-                at=np.array(
-                    [
-                        [1, 1, 1, 1, 1, 0],
-                        [0, 1, -1, 2, -2, 0],
-                        [0, 1, 1, 4, 4, 0],
-                        [0, 1, -1, 8, -8, 1],
-                    ],
-                    dtype=self.dtype,
-                ),
-            )
 
         if (kh, kw) == (5, 5) and (vstride, hstride) == (1, 1) and (vdilation, hdilation) == (1, 1):
-            # F(2x2, 5x5)
+            self.register_winograd_function_2x2_5x5()
             m, r = 2, 5
-            register_winograd_function(
-                m,
-                r,
-                g=np.array(
-                    [
-                        [1.0 / 4.0, 0, 0, 0, 0],
-                        [-1.0 / 6.0, -1.0 / 6.0, -1.0 / 6.0, -1.0 / 6.0, -1.0 / 6.0],
-                        [-1.0 / 6.0, 1.0 / 6.0, -1.0 / 6.0, 1.0 / 6.0, -1.0 / 6.0],
-                        [1.0 / 24.0, 1.0 / 12.0, 1.0 / 6.0, 1.0 / 3.0, 2.0 / 3.0],
-                        [1.0 / 24.0, -1.0 / 12.0, 1.0 / 6.0, -1.0 / 3.0, 2.0 / 3.0],
-                        [0, 0, 0, 0, 1],
-                    ],
-                    dtype=self.dtype,
-                ),
-                bt=np.array(
-                    [
-                        [4, 0, -5, 0, 1, 0],
-                        [0, -4, -4, 1, 1, 0],
-                        [0, 4, -4, -1, 1, 0],
-                        [0, -2, -1, 2, 1, 0],
-                        [0, 2, -1, -2, 1, 0],
-                        [0, 4, 0, -5, 0, 1],
-                    ],
-                    dtype=self.dtype,
-                ),
-                at=np.array([[1, 1, 1, 1, 1, 0], [0, 1, -1, 2, -2, 1]], dtype=self.dtype),
-            )
+
+        m  # type: ignore (fake m use)
 
         if r not in self.alternatives:
             raise NotImplementedError(f"Winograd not implemented for kernel {kh}x{kw}")
@@ -325,105 +442,8 @@ class ConvWinograd:
         except AttributeError:
             logger.error("Winograd conv_winograd_workspace_alloc_pre/kernel routines not found.")
 
-        def winograd_workspace_alloc_pre(
-            m: int, r: int, k: int, c: int
-        ) -> tuple[np.ndarray, ctypes._Pointer[ctypes.c_float]]:
-            """
-            Allocates workspace memory for the Winograd pre-processing step.
-
-            Parameters
-            ----------
-            m: int
-                Winograd transform parameter 'm'.
-            r: int
-                Winograd transform parameter 'r'.
-            k: int
-                Number of output channels.
-            c: int
-                Number of input channels.
-
-            Returns
-            -------
-            tuple
-                A tuple containing a dummy numpy array and a ctypes pointer to the allocated memory.
-            """
-            _u = ctypes.POINTER(ctypes.c_float)()
-            self.conv_winograd_workspace_alloc_pre(
-                ctypes.c_uint(m),
-                ctypes.c_uint(r),
-                ctypes.c_uint(k),
-                ctypes.c_uint(c),
-                ctypes.byref(_u),  # type: ignore
-            )
-            return np.array([False]), _u
-
-        def winograd_workspace_alloc_kernel(
-            m: int,
-            r: int,
-            n: int,
-            k: int,
-            c: int,
-            hi: int,
-            wi: int,
-            kh: int,
-            kw: int,
-            vpadding: int,
-            hpadding: int,
-        ) -> tuple[ctypes._Pointer[ctypes.c_float], ctypes._Pointer[ctypes.c_float]]:
-            """
-            Allocates workspace memory for the Winograd kernel execution step.
-
-            Parameters
-            ----------
-            m: int
-                Winograd transform parameter 'm'.
-            r: int
-                Winograd transform parameter 'r'.
-            n: int
-                Batch size.
-            k: int
-                Number of output channels.
-            c: int
-                Number of input channels.
-            hi: int
-                Input height.
-            wi: int
-                Input width.
-            kh: int
-                Kernel height.
-            kw: int
-                Kernel width.
-            vpadding: int
-                Vertical padding.
-            hpadding: int
-                Horizontal padding.
-
-            Returns
-            -------
-            tuple
-                A tuple containing two ctypes pointers to the allocated memory (_v and _m).
-            """
-            _v = ctypes.POINTER(ctypes.c_float)()
-            _m = ctypes.POINTER(ctypes.c_float)()
-            self.conv_winograd_workspace_alloc_kernel(
-                ctypes.c_uint(m),
-                ctypes.c_uint(r),
-                ctypes.c_uint(n),
-                ctypes.c_uint(k),
-                ctypes.c_uint(c),
-                ctypes.c_uint(hi),
-                ctypes.c_uint(wi),
-                ctypes.c_uint(kh),
-                ctypes.c_uint(kw),
-                ctypes.c_uint(vpadding),
-                ctypes.c_uint(hpadding),
-                ctypes.byref(_v),  # type: ignore
-                ctypes.byref(_m),  # type: ignore
-            )
-            return _v, _m
-
-        self.cw_cache_pre = lambda args: winograd_workspace_alloc_pre(*args)  # MemoryCache
-        self.cw_cache_kernel = lambda args: winograd_workspace_alloc_kernel(*args)  # MemoryCache
+        self.cw_cache_pre = lambda args: self.winograd_workspace_alloc_pre(*args)  # MemoryCache
+        self.cw_cache_kernel = lambda args: self.winograd_workspace_alloc_kernel(*args)  # MemoryCache
         self.y_cache = lambda shape: np.zeros(shape, self.dtype)  # MemoryCache
         self.d_cache = lambda shape: np.zeros(shape, self.dtype)  # MemoryCache
 
@@ -468,6 +488,7 @@ class ConvWinograd:
     ) -> Any:
         """
         Placeholder for the C function to allocate kernel workspace memory.
+
         This method is intended to be overridden or called by the C library.
         """
         pass
@@ -482,6 +503,7 @@ class ConvWinograd:
     ) -> Any:
         """
         Placeholder for the C function to allocate pre-processing workspace memory.
+
         This method is intended to be overridden or called by the C library.
         """
         pass
@@ -620,7 +642,7 @@ class ConvWinograd:
         """
         return decode_shape(shape, self.tensor_format)
 
-    def _conv_winograd_numpy(
+    def _conv_winograd_numpy(  # noqa: C901
         self,
         m: int,
         r: int,
@@ -1255,8 +1277,9 @@ def time_it_im2col_4_dims(
     hdilation: int,
 ) -> None:
     """
-    Times the execution of a convolution operation using im2col (NCHW format) and matrix multiplication,
-    specifically for a 4-dimensional output shape.
+    Times the execution of a convolution operation using im2col (NCHW format) and matrix multiplication.
+
+    (specifically for a 4-dimensional output shape)
 
     This function is primarily for benchmarking and comparison purposes. It reshapes
     the input data using im2col and then performs a matrix multiplication with weights,
@@ -1313,7 +1336,7 @@ def time_it_im2col_4_dims(
     res += biases.reshape(kk, -1, ho, wo).transpose(1, 0, 2, 3)
 
 
-def __usage_example__() -> None:
+def main() -> None:
     """
     Provides a usage example for the ConvWinograd class.
 
@@ -1749,4 +1772,4 @@ def __usage_example__() -> None:
 
 
 if __name__ == "__main__":
-    __usage_example__()
+    main()
