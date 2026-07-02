@@ -1,6 +1,4 @@
-"""
-Constants and mapping utilities for converting ONNX operations to PyDTNN layers.
-"""
+"""Constants and mapping utilities for converting ONNX operations to PyDTNN layers."""
 
 from typing import Any, Callable
 
@@ -29,7 +27,7 @@ CONST_WEIGHTS = "weights"
 CONST_PREV_LAYERS = "previous_layers"
 
 # Operations to do:
-# DenseNet169 - {'Conv', 'BatchNormalization', 'Unsqueeze', 'Add', 'Mul', 'Relu', 'MaxPool', 'AveragePool', 'GlobalAveragePool', 'Concat'}
+# DenseNet169- {'Conv','BatchNormalization','Unsqueeze','Add','Mul','Relu','MaxPool','AveragePool','GlobalAveragePool','Concat'}
 # ResNet50 - {'Conv', 'MaxPool', 'Relu', 'Add', 'BatchNormalization', 'GlobalAveragePool', 'Gemm', 'Flatten'}
 # VGG19 - {'Dropout', 'Gemm', 'Flatten', 'Relu', 'MaxPool', 'BatchNormalization', 'Conv'}
 # Union of the ones before - {'Add', 'AveragePool', 'BatchNormalization',
@@ -47,7 +45,8 @@ def pads_from_onnx_to_pydtnn(pads: list[int]) -> tuple[int, int]:
     Returns:
         A tuple representing the padding for PyDTNN.
     """
-    # "pads format should be as follow [x1_begin, x2_begin…x1_end, x2_end,…]" from, for example, https://onnx.ai/onnx/operators/onnx__AveragePool.html
+    # "pads format should be as follow [x1_begin, x2_begin…x1_end, x2_end,…]"
+    # from, for example, https://onnx.ai/onnx/operators/onnx__AveragePool.html
     # Onnx: [x1_begin, x2_begin, ..., x1_end, x2_end, ...] ==> "PyDTNN: [(x1_begin, x1_end), (x2_end, x2_begin), ...]"
     # ==> PyDTNN only admits a int or a (vpadding, hpadding) ==> It's assumed that is the first tuple.
 

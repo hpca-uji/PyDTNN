@@ -53,9 +53,11 @@ def extract_shape(data: onnx.ValueInfoProto) -> tuple[int]:
     """
     # The shape of the inputs/ouputs is more or less a list quite hidden.
     #   NOTE: ONNX allows to have shapes of undefined value, e.g.: (N, 3, 224, 224),
-    #       and, if it is not defined, that dimension is stored as 1. It's assumed that it is not relevant data and it will be removed, since "N" are the number of samples.
+    #       and, if it is not defined, that dimension is stored as 1.
+    # It's assumed that it is not relevant data and it will be removed, since "N" are the number of samples.
     #   NOTA:
-    #   Parece ser que se guarda como "1" ==> viendo cómo va PyDTNN, lo mejor es que, si detecto que hay una "N" (como la de arriba), eliminarla
+    #   Parece ser que se guarda como "1" ==> viendo cómo va PyDTNN, lo mejor es que,
+    # si detecto que hay una "N" (como la de arriba), eliminarla
     #   ==> Se va a sumir que el primer elemento es el "N" ==> TODO: Hacer esto bien.
     shape = [elem.dim_value for elem in data.type.tensor_type.shape.dim if elem.dim_value != 0]
     del shape[0]
@@ -161,7 +163,8 @@ def get_lists_operations_and_outputs(
         )
 
     # "Unenumerating" and sorting the intersection, and getting the first coincidence layer.
-    #   ==> NOTE: Due the list was sorting in reverse before, now it is necessary to sort it be reverse again (that's why the "-x[0]").
+    #   ==> NOTE: Due the list was sorting in reverse before,
+    # now it is necessary to sort it be reverse again (that's why the "-x[0]").
     coincidence = [elem[1] for elem in sorted(coincidences, key=lambda x: -x[0])][0]
 
     # Trimming the lists from that element (first coincidence)
@@ -190,7 +193,8 @@ def get_actual_inputs(list_inputs: list[str], weights_names: list[str]) -> list[
     Returns:
         A list of input names that are not weights.
     """
-    # This function' objective is to remove non layer-to-layer onnx inputs (e.g.: the weigth [_weight], the bias [_bias], etc. ).
+    # This function' objective is to remove non layer-to-layer onnx inputs
+    # (e.g.: the weigth [_weight], the bias [_bias], etc. )
     #   To do that, only the inputs that end with the accepted ending remains.
     return list(filter(lambda _input: _input not in weights_names, list_inputs))
 
@@ -290,8 +294,10 @@ def get_layers(
     )[0]
     print(f"Input: {inputs[list(inputs.keys())[0]]}")
 
-    # "[None]" indicates that it has no previous layers.
-    operations = {output_first_layer: (Input(shape=inputs[list(inputs.keys())[0]]), [None])}
+    # [] indicates that it has no previous layers.
+    operations: dict[str, tuple[Layerable, list[str]]] = {
+        output_first_layer: (Input(shape=inputs[list(inputs.keys())[0]]), [])
+    }
 
     for i in range(num_operations - 1):
         _get_and_put_layer(
@@ -299,7 +305,7 @@ def get_layers(
             opset_version=opset_version,
             operations=operations,
             weights=weights,
-        )  # type: ignore
+        )
         print("")  # TODO: Borrar
     _get_and_put_layer(
         node=onnx_model.graph.node[-1],
@@ -307,7 +313,7 @@ def get_layers(
         operations=operations,
         weights=weights,
         output=list(outputs.keys()),
-    )  # type: ignore
+    )
 
     # The list of layers is returned.
     return list(map(lambda x: x[0], operations.values()))
@@ -335,22 +341,20 @@ def load_layers(model: PyDTNN_Model, operations: list[Layerable]) -> None:
 
 def convert_model(
     onnx_model: onnx.ModelProto,
-    omm=None,
-    non_blocking_mpi=False,
-    enable_cudnn=False,
-    enable_gpudirect=False,
-    enable_nccl=False,
-    dtype=np.float32,
-    tracing=False,
-    tracer_output="",
-    **kwargs,
+    non_blocking_mpi: bool = False,
+    enable_cudnn: bool = False,
+    enable_gpudirect: bool = False,
+    enable_nccl: bool = False,
+    dtype: np.dtype = np.dtype(np.float32),
+    tracing: bool = False,
+    tracer_output: str = "",
+    **kwargs: Any,
 ) -> PyDTNN_Model:
     """
     Converts an ONNX model to a PyDTNN model.
 
     Args:
         onnx_model: The ONNX model to convert.
-        omm: Optional OMM configuration.
         non_blocking_mpi: Whether to use non-blocking MPI.
         enable_cudnn: Whether to enable cuDNN.
         enable_gpudirect: Whether to enable GPUDirect.
@@ -370,7 +374,6 @@ def convert_model(
     # NOTE: ¡¡¡¡IMPORTANT!!!!! Be sure that the "parser.model_name" from
     # pydtnn.parser import parser is None!!!!!!!!.
     model = PyDTNN_Model(
-        omm=omm,
         non_blocking_mpi=non_blocking_mpi,
         enable_cudnn=enable_cudnn,
         enable_gpudirect=enable_gpudirect,

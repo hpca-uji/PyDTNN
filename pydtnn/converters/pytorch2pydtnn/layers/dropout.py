@@ -1,9 +1,7 @@
+"""Module for converting PyTorch Dropout layers to PyDTNN Dropout layers."""
+
 # In this file must be implemented only the translation of PyTorch Dropout
 # layers to its PyDTNN equivalent.
-
-"""
-Module for converting PyTorch Dropout layers to PyDTNN Dropout layers.
-"""
 
 import logging
 from typing import Any

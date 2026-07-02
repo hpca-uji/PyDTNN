@@ -1,6 +1,4 @@
-"""
-Module providing factory functions to convert ONNX operations into PyDTNN layers.
-"""
+"""Module providing factory functions to convert ONNX operations into PyDTNN layers."""
 
 # Typing related (or non important) imports
 from typing import Any
@@ -10,6 +8,7 @@ import numpy as np
 import pydtnn.converters.onnx2pydtnn.constants as cons
 # Functionality imports
 from pydtnn.abstract.layerable import Layerable
+from pydtnn.utils.constants import ArrayShape
 
 # = A =
 
@@ -457,19 +456,15 @@ def Mul(info: dict[str, Any]) -> Layerable:
     from pydtnn.layers.abstract.block_layer import AbstractBlockLayer
 
     class _Mul(AbstractBlockLayer):
-        """
-        Internal multiplication block layer implementation.
-        """
+        """Internal multiplication block layer implementation."""
 
-        def initialize_block_layer(self):
-            """
-            Initializes the block layer by verifying output shapes and setting the layer shape.
-            """
+        def initialize_block_layer(self) -> None:
+            """Initializes the block layer by verifying output shapes and setting the layer shape."""
             super().initialize_block_layer()
             assert all([o == self.out_shapes[0] for o in self.out_shapes])
             self.shape = self.out_shapes[0]
 
-        def forward(self, x):
+        def forward(self, x: np.ndarray) -> np.ndarray:
             """
             Performs the forward pass of the multiplication block.
 
@@ -479,17 +474,17 @@ def Mul(info: dict[str, Any]) -> Layerable:
             Returns:
                 The result of the element-wise multiplication across paths.
             """
-            x = [x] * len(self.paths)
+            paths = [x] * len(self.paths)
             for i, p in enumerate(self.paths):
                 for layer in p:
-                    x[i] = layer.forward(x[i])
+                    paths[i] = layer.forward(paths[i])
 
                 if i > 0:
                     # TODO: do it with Cython.
-                    x[0] = multiply(x[0], x[i])
-            return x[0]
+                    paths[0] = multiply(paths[0], paths[i])
+            return paths[0]
 
-        def backward(self, dy):
+        def backward(self, dy: np.ndarray) -> np.ndarray:
             """
             Performs the backward pass of the multiplication block.
 
@@ -547,7 +542,6 @@ def Unsqueeze(info: dict[str, Any]) -> Layerable:
     # Onnx information: https://onnx.ai/onnx/operators/onnx__Unsqueeze.html
     print(f"attributes: {info[cons.CONST_ATTRIBUTES]}")
     ONNX_AXES = "axes"
-
     PYDTNN_AXES = "axis"
     dict_attributes = info[cons.CONST_ATTRIBUTES]
 
@@ -562,12 +556,10 @@ def Unsqueeze(info: dict[str, Any]) -> Layerable:
 
     from pydtnn.layers.abstract.block_layer import AbstractBlockLayer as Layer
 
-    class _Unsqueeze(Layer):
-        """
-        Internal unsqueeze layer implementation.
-        """
+    class _Unsqueeze(Layer[np.ndarray]):
+        """Internal unsqueeze layer implementation."""
 
-        def __init__(self, shape=(1,), axis=()):
+        def __init__(self, shape: ArrayShape = (1,), axis: ArrayShape = ()) -> None:
             """
             Initializes the _Unsqueeze layer.
 
@@ -578,29 +570,26 @@ def Unsqueeze(info: dict[str, Any]) -> Layerable:
             super().__init__(shape)
             self.axis = axis
 
-        def _model_init(self, prev_shape, need_dx=False):
+        def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
             """
             Initializes the model with the previous layer shape.
 
             Args:
                 prev_shape: Shape of the previous layer.
-                need_dx: Whether gradient calculation is required.
             """
-            super()._model_init(prev_shape, need_dx)
+            super()._model_init(prev_shape, x)
             self.shape = self.forward(
                 np.zeros(prev_shape)
             ).shape  # FIXME: revisar, estaba lo de antes
             # self.shape = self.shape + self.model.encode_shape(self.model.tensor_format)
 
-        def initialize_block_layer(self):
-            """
-            Initializes the block layer by verifying output shapes.
-            """
+        def initialize_block_layer(self) -> None:
+            """Initializes the block layer by verifying output shapes."""
             super().initialize_block_layer()
             assert all([o == self.out_shapes[0] for o in self.out_shapes])
             self.shape = self.out_shapes[0]
 
-        def forward(self, x):
+        def forward(self, x: np.ndarray) -> np.ndarray:
             """
             Performs the forward pass by expanding dimensions.
 

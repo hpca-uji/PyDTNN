@@ -252,6 +252,7 @@ def print_model_reports(model: PyDTNN_Model) -> None:
     # Print performance counter report
     model.perf_counter.print_report()
 
+
 def pydtnn_inference(model: PyDTNN_Model, metrics_list: list | None = None,
                      dataset: Dataset | None = None) -> None:
     """Runs inference on a PyDTNN model and prints reports."""

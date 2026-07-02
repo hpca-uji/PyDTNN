@@ -1,7 +1,4 @@
-"""
-This module provides translation functions to convert PyTorch functional operations
-into their corresponding PyDTNN layer implementations.
-"""
+"""Translation functions to convert PyTorch functional operations into their corresponding PyDTNN layer."""
 
 import logging
 from typing import Any
