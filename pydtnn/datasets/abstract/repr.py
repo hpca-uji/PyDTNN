@@ -44,13 +44,13 @@ class Repr(Init, Baser):
         report = list[str]()
         if self.model.comm_rank == 0:
             report.append("Initial nsamples:")
-            report.append(f" train: {self._initial_nsamples[Base.Part.TRAIN]} ")
-            report.append(f" val: {self._initial_nsamples[Base.Part.VAL]} ")
-            report.append(f" test: {self._initial_nsamples[Base.Part.TEST]} ")
+            report.append(f" train: {self._initial_nsamples[self.Part.TRAIN]} ")
+            report.append(f" val: {self._initial_nsamples[self.Part.VAL]} ")
+            report.append(f" test: {self._initial_nsamples[self.Part.TEST]} ")
 
         desc = ["train", "val", "test"]
-        for part in (Base.Part.TRAIN, Base.Part.VAL, Base.Part.TEST):
-            prefix = f"{self.model.rank}: " if part is Base.Part.TRAIN else "   "
+        for part in (self.Part.TRAIN, self.Part.VAL, self.Part.TEST):
+            prefix = f"{self.model.rank}: " if part is self.Part.TRAIN else "   "
             report.append(f"{prefix}")
             report.append(f" {desc[part]} offset: {self._local_offset[part]}")
             report.append(f" {desc[part]} local nsamples: {self._local_nsamples[part]}")
