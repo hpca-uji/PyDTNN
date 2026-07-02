@@ -4,24 +4,24 @@ import logging
 from typing import Any
 
 import pydtnn.converters.pytorch2pydtnn.common as cm
-from pydtnn.activations.arctanh import Arctanh as Arctanh
-from pydtnn.activations.leaky_relu import LeakyRelu
-from pydtnn.activations.log import Log
-from pydtnn.activations.relu import Relu
-from pydtnn.activations.relu6 import Relu6
-from pydtnn.activations.sigmoid import Sigmoid
-from pydtnn.activations.softmax import Softmax
-from pydtnn.activations.tanh import Tanh
+from pydtnn.activations.arctanh import Arctanh as Arctanh_PyDTNN
+from pydtnn.activations.leaky_relu import LeakyRelu as LeakyRelu_PyDTNN
+from pydtnn.activations.log import Log as Log_PyDTNN
+from pydtnn.activations.relu import Relu as Relu_PyDTNN
+from pydtnn.activations.relu6 import Relu6 as Relu6_PyDTNN
+from pydtnn.activations.sigmoid import Sigmoid as Sigmoid_PyDTNN
+from pydtnn.activations.softmax import Softmax as Softmax_PyDTNN
+from pydtnn.activations.tanh import Tanh as Tanh_PyDTNN
 
 __all__ = (
-    "arctanh",
-    "leaky_relu",
-    "log_sigmoid",
-    "relu",
-    "relu6",
-    "sigmoid",
-    "softmax",
-    "tanh",
+    "Arctanh",
+    "LeakyRelu",
+    "LogSigmoid",
+    "ReLU",
+    "ReLU6",
+    "Sigmoid",
+    "Softmax",
+    "Tanh",
 )
 
 logger = logging.getLogger(__name__)
@@ -31,22 +31,22 @@ logger = logging.getLogger(__name__)
 # Functionality imports
 
 
-def arctanh(args: dict[str, Any]) -> Arctanh:
+def Arctanh(args: dict[str, Any]) -> Arctanh_PyDTNN:
     """
-    Converts a PyTorch-like Arctanh configuration to a PyDTNN Arctanh layer.
+    Converts a PyTorch-like Arctanh_PyDTNN configuration to a PyDTNN Arctanh layer.
 
     Args:
         args: Dictionary containing layer configuration.
 
     Returns:
-        An instance of pydtnn.activations.arctanh.Arctanh.
+        An instance of pydtnn.activations.arctanh.Arctanh_PyDTNN.
     """
     # NOTE: There is no equivalent in PyTorch
     # not_used = args
-    return Arctanh()
+    return Arctanh_PyDTNN()
 
 
-def log_sigmoid(args: dict[str, Any]) -> Log:
+def LogSigmoid(args: dict[str, Any]) -> Log_PyDTNN:
     """
     Converts a PyTorch LogSigmoid layer to a PyDTNN Log layer.
 
@@ -54,14 +54,14 @@ def log_sigmoid(args: dict[str, Any]) -> Log:
         args: Dictionary containing layer configuration.
 
     Returns:
-        An instance of pydtnn.activations.log.Log.
+        An instance of pydtnn.activations.log.Log_PyDTNN.
     """
     # https://pytorch.org/docs/stable/generated/torch.nn.LogSigmoid.html#torch.nn.LogSigmoid
     # not_used = args
-    return Log()
+    return Log_PyDTNN()
 
 
-def relu(args: dict[str, Any]) -> Relu:
+def ReLU(args: dict[str, Any]) -> Relu_PyDTNN:
     """
     Converts a PyTorch ReLU layer to a PyDTNN Relu layer.
 
@@ -69,15 +69,15 @@ def relu(args: dict[str, Any]) -> Relu:
         args: Dictionary containing layer configuration.
 
     Returns:
-        An instance of pydtnn.activations.relu.Relu.
+        An instance of pydtnn.activations.relu.Relu_PyDTNN.
     """
     # https://pytorch.org/docs/stable/generated/torch.nn.ReLU.html#torch.nn.ReLU
     # Not used Pytorch's parameters: inplace.
     # not_used = args
-    return Relu()
+    return Relu_PyDTNN()
 
 
-def relu6(args: dict[str, Any]) -> Relu6:
+def ReLU6(args: dict[str, Any]) -> Relu6_PyDTNN:
     """
     Converts a PyTorch ReLU6 layer to a PyDTNN Relu6 layer.
 
@@ -85,7 +85,7 @@ def relu6(args: dict[str, Any]) -> Relu6:
         args: Dictionary containing layer configuration.
 
     Returns:
-        An instance of pydtnn.activations.relu6.Relu6.
+        An instance of pydtnn.activations.relu6.Relu6_PyDTNN.
     """
     # https://pytorch.org/docs/stable/generated/torch.nn.ReLU.html#torch.nn.ReLU
     # Not used Pytorch's parameters: inplace.
@@ -93,10 +93,10 @@ def relu6(args: dict[str, Any]) -> Relu6:
 
     # NOTE: max_val. A interal PyTorch variable that seems to set the cap.
 
-    return Relu6()
+    return Relu6_PyDTNN()
 
 
-def leaky_relu(args: dict[str, Any]) -> LeakyRelu:
+def LeakyRelu(args: dict[str, Any]) -> LeakyRelu_PyDTNN:
     """
     Converts a PyTorch LeakyReLU layer to a PyDTNN LeakyRelu layer.
 
@@ -104,7 +104,7 @@ def leaky_relu(args: dict[str, Any]) -> LeakyRelu:
         args: Dictionary containing layer configuration.
 
     Returns:
-        An instance of pydtnn.activations.leaky_relu.LeakyRelu.
+        An instance of pydtnn.activations.leaky_relu.LeakyRelu_PyDTNN.
     """
     # https://pytorch.org/docs/stable/generated/torch.nn.ReLU.html#torch.nn.ReLU
     # Not used Pytorch's parameters: inplace.
@@ -118,50 +118,50 @@ def leaky_relu(args: dict[str, Any]) -> LeakyRelu:
         pydtnn_dict_keys=pydtnn_dict_keys,
     )
 
-    return LeakyRelu(**layer_args)
+    return LeakyRelu_PyDTNN(**layer_args)
 
 
-def sigmoid(args: dict[str, Any]) -> Sigmoid:
+def Sigmoid(args: dict[str, Any]) -> Sigmoid_PyDTNN:
     """
-    Converts a PyTorch Sigmoid layer to a PyDTNN Sigmoid layer.
+    Converts a PyTorch Sigmoid layer to a PyDTNN Sigmoid_PyDTNN layer.
 
     Args:
         args: Dictionary containing layer configuration.
 
     Returns:
-        An instance of pydtnn.activations.sigmoid.Sigmoid.
+        An instance of pydtnn.activations.sigmoid.Sigmoid_PyDTNN.
     """
-    # https://pytorch.org/docs/stable/generated/torch.nn.Sigmoid.html#torch.nn.Sigmoid
+    # https://pytorch.org/docs/stable/generated/torch.nn.Sigmoid_PyDTNN.html#torch.nn.Sigmoid_PyDTNN
     # not_used = args
-    return Sigmoid()
+    return Sigmoid_PyDTNN()
 
 
-def softmax(args: dict[str, Any]) -> Softmax:
+def Softmax(args: dict[str, Any]) -> Softmax_PyDTNN:
     """
-    Converts a PyTorch Softmax layer to a PyDTNN Softmax layer.
+    Converts a PyTorch Softmax layer to a PyDTNN Softmax_PyDTNN layer.
 
     Args:
         args: Dictionary containing layer configuration.
 
     Returns:
-        An instance of pydtnn.activations.softmax.Softmax.
+        An instance of pydtnn.activations.softmax.Softmax_PyDTNN.
     """
-    # https://pytorch.org/docs/stable/generated/torch.nn.Softmax.html#torch.nn.Softmax
+    # https://pytorch.org/docs/stable/generated/torch.nn.Softmax_PyDTNN.html#torch.nn.Softmax_PyDTNN
     # Not used Pytorch's parameters: dim.
     # not_used = args
-    return Softmax()
+    return Softmax_PyDTNN()
 
 
-def tanh(args: dict[str, Any]) -> Tanh:
+def Tanh(args: dict[str, Any]) -> Tanh_PyDTNN:
     """
-    Converts a PyTorch Tanh layer to a PyDTNN Tanh layer.
+    Converts a PyTorch Tanh layer to a PyDTNN Tanh_PyDTNN layer.
 
     Args:
         args: Dictionary containing layer configuration.
 
     Returns:
-        An instance of pydtnn.activations.tanh.Tanh.
+        An instance of pydtnn.activations.tanh.Tanh_PyDTNN.
     """
-    # https://pytorch.org/docs/stable/generated/torch.nn.Tanh.html#torch.nn.Tanh
+    # https://pytorch.org/docs/stable/generated/torch.nn.Tanh_PyDTNN.html#torch.nn.Tanh_PyDTNN
     # not_used = args
-    return Tanh()
+    return Tanh_PyDTNN()

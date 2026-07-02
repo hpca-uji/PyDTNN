@@ -9,7 +9,7 @@ from typing import Any
 import pydtnn.converters.pytorch2pydtnn.common as cm
 from pydtnn.layers.batch_normalization import BatchNormalization
 
-__all__ = ("batch_norm_2d",)
+__all__ = ("BatchNorm2d",)
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 # Functionality imports
 
 
-def batch_norm_2d(args: dict[str, Any]) -> BatchNormalization:
+def BatchNorm2d(args: dict[str, Any]) -> BatchNormalization:
     """
     Converts a PyTorch BatchNorm2d layer configuration to a PyDTNN BatchNormalization layer.
 

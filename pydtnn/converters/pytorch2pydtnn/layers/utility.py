@@ -2,9 +2,9 @@
 
 import logging
 
-from pydtnn.layers.flatten import Flatten
+from pydtnn.layers.flatten import Flatten as Flatten_PyDTNN
 
-__all__ = ("flatten",)
+__all__ = ("Flatten",)
 
 logger = logging.getLogger(__name__)
 
@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 # import pydtnn.converters.pytorch2pydtnn.common as cm
 
 
-def flatten(args: dict[str, str]) -> Flatten:
+def Flatten(args: dict[str, str]) -> Flatten_PyDTNN:
     """
     Converts a PyTorch Flatten layer to a PyDTNN Flatten layer.
 
@@ -30,4 +30,4 @@ def flatten(args: dict[str, str]) -> Flatten:
     # PyDTNN attributes: None
     # not_used = args
 
-    return Flatten()
+    return Flatten_PyDTNN()

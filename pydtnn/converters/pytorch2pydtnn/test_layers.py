@@ -360,10 +360,10 @@ def test_layers(
     print("=====================\n== Testing Forward ==\n=====================")
     print(f"pytorch_model: {pytorch_model}")
 
-    pytorch_output_T: torch.Tensor = pytorch_model(torch_dataset)
+    pytorch_output_t: torch.Tensor = pytorch_model(torch_dataset)
     pydtnn_output: np.ndarray = function_to_test_layers(model=new_model, dataset=dataset)
 
-    pytorch_output = pytorch_output_T.detach().to("cpu").numpy()
+    pytorch_output = pytorch_output_t.detach().to("cpu").numpy()
 
     diff = abs(pytorch_output) - abs(pydtnn_output)
 

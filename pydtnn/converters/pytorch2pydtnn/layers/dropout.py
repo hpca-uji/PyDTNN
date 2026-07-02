@@ -10,9 +10,9 @@ from typing import Any
 
 # Typing related (or non important) imports
 import pydtnn.converters.pytorch2pydtnn.common as cm
-from pydtnn.layers.dropout import Dropout
+from pydtnn.layers.dropout import Dropout as Dropout_PyDTNN
 
-__all__ = ("dropout",)
+__all__ = ("Dropout",)
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 # Functionality imports
 
 
-def dropout(args: dict[str, Any]) -> Dropout:
+def Dropout(args: dict[str, Any]) -> Dropout_PyDTNN:
     """
     Converts a PyTorch Dropout layer configuration to a PyDTNN Dropout layer.
 
@@ -47,4 +47,4 @@ def dropout(args: dict[str, Any]) -> Dropout:
         pydtnn_dict_keys=pydtnn_dict_keys,
     )
 
-    return Dropout(**layer_args)
+    return Dropout_PyDTNN(**layer_args)

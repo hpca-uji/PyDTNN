@@ -166,7 +166,7 @@ def get_model_layers(model: torch.nn.Module, name: str = "self") -> dict[str, to
 
     def _get_model_layers(
         model: torch.nn.Module, name: str, dict_modules: dict[str, torch.nn.Module]
-    ):
+    ) -> None:
         """Internal recursive helper to traverse model children."""
         children = list(model.named_children())
         if len(children) > 0:
@@ -184,7 +184,7 @@ def get_model_layers(model: torch.nn.Module, name: str = "self") -> dict[str, to
 
 def pytorch_inference(
     model: torch.nn.Module,
-    dataloader : list,
+    dataloader: list,
     loss_func: torch.nn.modules.loss._Loss,
     device: torch.device,
     metrics_list: list,
@@ -252,7 +252,7 @@ def print_model_reports(model: PyDTNN_Model) -> None:
     # Print performance counter report
     model.perf_counter.print_report()
 
-def pydtnn_inference(model: PyDTNN_Model, metrics_list: list | None = None, 
+def pydtnn_inference(model: PyDTNN_Model, metrics_list: list | None = None,
                      dataset: Dataset | None = None) -> None:
     """Runs inference on a PyDTNN model and prints reports."""
     metrics_list = (

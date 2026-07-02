@@ -230,7 +230,7 @@ def log(args: dict[str, Any]) -> tuple[Log, str]:
     if inplace is not None:
         dict_params["inplace"] = inplace
 
-    return (activation.log_sigmoid(**dict_params), dict_params["input"])
+    return (activation.LogSigmoid(**dict_params), dict_params["input"])
 
 
 def relu(args: dict[str, str]) -> tuple[Relu, str]:
@@ -259,7 +259,7 @@ def relu(args: dict[str, str]) -> tuple[Relu, str]:
     if inplace is not None:
         dict_params["inplace"] = inplace
 
-    return (activation.relu(dict_params), dict_params[cm.ARGUMENTS]["input"])
+    return (activation.ReLU(dict_params), dict_params[cm.ARGUMENTS]["input"])
 
 
 def sigmoid(args: dict[str, Any]) -> tuple[Sigmoid, str]:
