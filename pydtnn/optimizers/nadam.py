@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from pydtnn.model import Model
 
 
-class Nadam[T: Array](Optimizer[T]):
+class Nadam[T: Array](Optimizer[T]):  # noqa: D101
     """
     Nadam (Nesterov-accelerated Adaptive Moment Estimation) optimizer.
 

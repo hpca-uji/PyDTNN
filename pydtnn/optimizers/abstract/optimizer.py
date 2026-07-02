@@ -18,7 +18,7 @@ __all__ = ("Optimizer",)
 logger = logging.getLogger(__name__)
 
 
-class Optimizer[T: Array](Base):
+class Optimizer[T: Array](Base):  # noqa: D101
     """
     Optimizer abstract base class for updating model parameters.
 

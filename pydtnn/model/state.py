@@ -15,7 +15,7 @@ __all__ = ("State",)
 logger = logging.getLogger(__name__)
 
 
-class State[T: Array](Init[T]):
+class State[T: Array](Init[T]):  # noqa: D101
     """
     Handles the state management, serialization, and deserialization of model parameters.
 

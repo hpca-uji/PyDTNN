@@ -18,7 +18,7 @@ DEFAULT_BACH_SIZE = 64
 LIMIT_THREADS_AND_BLOCKS = 1024
 
 
-class Utils[T: Array](Base[T]):
+class Utils[T: Array](Base[T]):  # noqa: D101
     """Base utility class for model operations, handling tensor format conversions and configuration access."""
 
     @property

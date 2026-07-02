@@ -22,10 +22,10 @@ from pydtnn.utils.constants import ArrayShape
 # NOTE: TensorFlow uses LeakyReLU
 
 
-__all__ = ("mobileNet",)
+__all__ = ("mobilenetv1",)
 
 
-def mobileNet(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
+def mobilenetv1(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
     """
     Constructs a MobileNetV1 model architecture.
 
@@ -71,6 +71,3 @@ def mobileNet(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Lay
     _(FC(shape=output_shape, activation=Softmax))
 
     return model
-
-
-mobilenetv1 = mobileNet

@@ -6,9 +6,10 @@ neural network models within the PyDTNN framework, providing common attributes,
 memory management, and infrastructure for distributed training.
 """
 
+from __future__ import annotations
+
 import enum
 import logging
-from types import ModuleType
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -30,12 +31,10 @@ logger = logging.getLogger(__name__)
 
 # NOTE: mpi4py has more functions, but no typing
 if TYPE_CHECKING:
-    from pympi.MPI import Comm as MPI_COMM  # type: ignore
-else:
-    MPI_COMM = ModuleType
+    from pympi.MPI import Comm as MPI_COMM  # type: ignore  # noqa: N814
 
 
-class Base[T: Array]:
+class Base[T: Array]:  # noqa: D101
     """
     Base class for all models in PyDTNN.
 

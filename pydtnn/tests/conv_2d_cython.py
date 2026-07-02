@@ -26,8 +26,9 @@ class Conv2DCythonTestCase(Conv2DCommonTestCase):
     @staticmethod
     def _get_layers(d: D, deconv: bool = False, trans: bool = False) -> tuple[Conv2D, Conv2D]:
         """
-        Initializes and returns two Conv2D layers with identical weights, one using
-        im2col and the other using Cython backend.
+        Initializes and returns two Conv2D layers with identical weights.
+
+        One using im2col and the other using Cython backend.
         """
         params_np = Params()
         params_np.tensor_format = TensorFormat.NHWC.upper()

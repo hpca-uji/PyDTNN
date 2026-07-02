@@ -29,8 +29,9 @@ class Conv2DConvGemmTestCase(Conv2DCommonTestCase):
     @staticmethod
     def _get_layers(d: D, deconv: bool = False, trans: bool = False) -> tuple[Conv2D, Conv2D]:
         """
-        Initializes and returns two Conv2D layers with identical weights, one using
-        im2col and the other using GEMM backend.
+        Initializes and returns two Conv2D layers with identical weights.
+
+        One using im2col and the other using GEMM backend.
         """
         params_i2c = Params()
         params_i2c.tensor_format = TensorFormat.NCHW.upper()

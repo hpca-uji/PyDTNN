@@ -1,11 +1,12 @@
 """Simple tracer implementation for PyDTNN."""
 
+from __future__ import annotations
+
 import atexit
 import logging
 from collections import defaultdict
 from pathlib import Path
 from timeit import default_timer as timer
-from types import ModuleType
 from typing import TYPE_CHECKING
 
 from pydtnn import utils
@@ -18,10 +19,6 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from pympi.MPI import Comm  # type: ignore
-else:
-    from types import ModuleType
-
-    Comm = ModuleType
 
 
 class SimpleTracer(Tracer):
@@ -122,6 +119,7 @@ class SimpleTracer(Tracer):
     def _write_output(self) -> None:
         """
         Write the collected trace data to the output file.
+
         This method will be called at exit only if tracing has been enabled at any time
         """
         output_filename = utils.string_substitute(self.output_filename, rank=self.rank)  # type: ignore (It's fine)

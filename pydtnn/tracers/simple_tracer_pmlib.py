@@ -1,9 +1,10 @@
 """Tracer implementation for PyDTNN that integrates with PMLib for power monitoring."""
 
+from __future__ import annotations
+
 import logging
 import time
 from collections import defaultdict
-from types import ModuleType
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -19,10 +20,6 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from pympi.MPI import Comm  # type: ignore
-else:
-    from types import ModuleType
-
-    Comm = ModuleType
 
 
 class SimpleTracerPMLib(SimpleTracer):

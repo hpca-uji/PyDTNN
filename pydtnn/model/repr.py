@@ -11,7 +11,7 @@ __all__ = ("Repr",)
 logger = logging.getLogger(__name__)
 
 
-class Repr[T: Array](Layers[T]):
+class Repr[T: Array](Layers[T]):  # noqa: D101
     """Mixin class providing string representation and summary visualization for models."""
 
     def _show_props(self) -> dict:

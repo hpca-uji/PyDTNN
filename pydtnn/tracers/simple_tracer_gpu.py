@@ -1,7 +1,8 @@
 """GPU-accelerated implementation of the SimpleTracer using PyCUDA."""
 
+from __future__ import annotations
+
 import logging
-from types import ModuleType
 from typing import TYPE_CHECKING, Any
 
 import pycuda.driver as drv  # type: ignore
@@ -18,10 +19,6 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from pympi.MPI import Comm  # type: ignore
-else:
-    from types import ModuleType
-
-    Comm = ModuleType
 
 
 class SimpleTracerPycuda(SimpleTracer):

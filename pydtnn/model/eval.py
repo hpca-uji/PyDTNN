@@ -30,7 +30,7 @@ __all__ = ("Eval",)
 logger = logging.getLogger(__name__)
 
 
-class Eval[T: Array](Sync[T]):
+class Eval[T: Array](Sync[T]):  # noqa: D101
     """
     Handles the evaluation logic for distributed models.
 

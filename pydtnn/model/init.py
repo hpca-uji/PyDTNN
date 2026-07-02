@@ -1,7 +1,4 @@
-"""
-Initialization module for the PyDTNN framework, providing the core Init class
- to configure models, hardware backends, and training environments.
-"""
+"""Initialization code for the PyDTNN model"""
 
 import itertools
 import logging
@@ -45,7 +42,7 @@ __all__ = ("Init",)
 logger = logging.getLogger(__name__)
 
 
-class Init[T: Array](Layers[T]):
+class Init[T: Array](Layers[T]):  # noqa: D101
     """
     Main initialization class for PyDTNN models.
 

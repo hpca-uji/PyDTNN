@@ -23,6 +23,7 @@ __all__ = ("Conv2DBatchNormalizationReluTestCase",)
 
 logger = logging.getLogger(__name__)
 
+
 @unittest.skipUnless(is_conv_gemm_available, "requires ConvGemm")
 class Conv2DBatchNormalizationReluTestCase(Conv2DCommonTestCase):
     """Tests that Conv2D+BatchNormalization+Relu leads to the same results than Conv2DBatchNormalizationRelu"""

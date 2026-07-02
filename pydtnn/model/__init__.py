@@ -8,7 +8,7 @@ from pydtnn.utils.constants import Array
 __all__ = ("Model",)
 
 
-class Model[T: Array](Train[T], State[T], Repr[T]):
+class Model[T: Array](Train[T], State[T], Repr[T]):  # noqa: D101
     """
     # PyDTNN model
     The Model class serves as the primary interface for PyDTNN, integrating

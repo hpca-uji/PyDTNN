@@ -11,7 +11,7 @@ __all__ = ("F1Score",)
 logger = logging.getLogger(__name__)
 
 
-class F1Score[T: Array](Metric[T]):
+class F1Score[T: Array](Metric[T]):  # noqa: D101
     """Computes the F1-score based on a BinaryConfusionMatrix."""
 
     order = BinaryConfusionMatrix.order + 1

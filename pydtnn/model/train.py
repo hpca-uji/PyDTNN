@@ -1,7 +1,4 @@
-"""
-Training module for the PyDTNN framework, providing functionality for model training,
-synchronization, and epoch-based execution.
-"""
+"""Training code for the PyDTNN model"""
 
 import enum
 import logging
@@ -31,7 +28,7 @@ __all__ = ("Train",)
 logger = logging.getLogger(__name__)
 
 
-class Train[T: Array](Eval[T]):
+class Train[T: Array](Eval[T]):  # noqa: D101
     """
     Handles the training process for a model, including weight synchronization,
     gradient updates, and training loop management.

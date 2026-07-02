@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from pydtnn.model import Model
 
 
-class Adam[T: Array](Optimizer[T]):
+class Adam[T: Array](Optimizer[T]):  # noqa: D101
     """
     Adam optimizer implementation.
 

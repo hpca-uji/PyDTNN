@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from pydtnn.model import Model
 
 
-class RMSProp[T: Array](Optimizer[T]):
+class RMSProp[T: Array](Optimizer[T]):  # noqa: D101
     """RMSProp optimizer that maintains a moving average of squared gradients."""
 
     def __init__(

@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from pydtnn.model import Model
 
 
-class OkTopkSP[T: Array](Optimizer[T]):
+class OkTopkSP[T: Array](Optimizer[T]):  # noqa: D101
     """OkTopkSP Optimizer"""
 
     def __init__(

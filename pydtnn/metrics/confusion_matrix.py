@@ -10,7 +10,5 @@ __all__ = ("ConfusionMatrix",)
 logger = logging.getLogger(__name__)
 
 
-class ConfusionMatrix[T: Array](Metric[T]):
+class ConfusionMatrix[T: Array](Metric[T]):  # noqa: D101
     """A metric class for calculating the confusion matrix of classification predictions."""
-
-    pass

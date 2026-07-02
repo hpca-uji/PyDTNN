@@ -11,7 +11,7 @@ __all__ = ("Precision",)
 logger = logging.getLogger(__name__)
 
 
-class Precision[T: Array](Metric[T]):
+class Precision[T: Array](Metric[T]):  # noqa: D101
     """
     Calculates the precision metric based on a binary confusion matrix.
 
@@ -24,10 +24,7 @@ class Precision[T: Array](Metric[T]):
     format = "prec: %.4f"
 
     def _model_init(self) -> None:
-        """
-        Initializes the metric by locating the required BinaryConfusionMatrix
-        within the model's metrics.
-        """
+        """Initializes the metric by locating the required BinaryConfusionMatrix within the model's metrics."""
         super()._model_init()
         for metric in self.model.metrics_funcs:
             if isinstance(metric, BinaryConfusionMatrix):

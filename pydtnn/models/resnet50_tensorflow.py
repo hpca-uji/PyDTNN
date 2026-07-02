@@ -22,10 +22,10 @@ from pydtnn.utils.initializers import he_uniform
 # NOTE: TensorFlow uses FC with 1024 shape
 
 
-__all__ = ("resNet50",)
+__all__ = ("resnet50_tensorflow",)
 
 
-def resNet50(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
+def resnet50_tensorflow(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
     """
     Constructs a ResNet50 model architecture.
 
@@ -101,6 +101,3 @@ def resNet50(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Laye
     _(FC(shape=output_shape, activation=Softmax))
 
     return model
-
-
-resnet = resNet50

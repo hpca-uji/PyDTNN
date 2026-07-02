@@ -15,10 +15,10 @@ from pydtnn.layers.max_pool_2d import MaxPool2D
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.initializers import he_uniform
 
-__all__ = ("resNet50",)
+__all__ = ("resnet50_pytorch",)
 
 
-def resNet50(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
+def resnet50_pytorch(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
     """
     Constructs a ResNet50 architecture.
 
@@ -78,6 +78,3 @@ def resNet50(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Laye
     _(FC(shape=output_shape, activation=Softmax))
 
     return model
-
-
-resnet50_pytorch = resNet50

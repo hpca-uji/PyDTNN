@@ -1,6 +1,4 @@
-"""
-Binary Cross Entropy loss implementation for the PyDTNN framework.
-"""
+"""Binary Cross Entropy loss implementation for the PyDTNN framework."""
 
 import logging
 
@@ -12,9 +10,7 @@ __all__ = ("BinaryCrossEntropy",)
 logger = logging.getLogger(__name__)
 
 
-class BinaryCrossEntropy[T: Array](Loss[T]):
-    """
-    Computes the binary cross-entropy loss between target and output logits.
-    """
+class BinaryCrossEntropy[T: Array](Loss[T]):  # noqa: D101
+    """Computes the binary cross-entropy loss between target and output logits."""
 
     format = "bce: %.7f"

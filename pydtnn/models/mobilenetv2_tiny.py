@@ -16,10 +16,10 @@ from pydtnn.layers.flatten import Flatten
 from pydtnn.layers.input import Input
 from pydtnn.utils.constants import ArrayShape
 
-__all__ = ("mobileNet",)
+__all__ = ("mobilenetv2_tiny",)
 
 
-def mobileNet(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
+def mobilenetv2_tiny(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
     """
     Constructs a MobileNetV2 architecture sequence.
 
@@ -94,6 +94,3 @@ def mobileNet(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Lay
     _(FC(shape=output_shape, activation=Softmax))
 
     return model
-
-
-mobilenetv2_tiny = mobileNet

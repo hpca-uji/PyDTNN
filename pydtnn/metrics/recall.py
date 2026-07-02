@@ -11,7 +11,7 @@ __all__ = ("Recall",)
 logger = logging.getLogger(__name__)
 
 
-class Recall[T: Array](Metric[T]):
+class Recall[T: Array](Metric[T]):  # noqa: D101
     """Calculates the recall score based on a binary confusion matrix."""
 
     order = BinaryConfusionMatrix.order + 1

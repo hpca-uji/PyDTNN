@@ -1,6 +1,4 @@
-"""
-ResNet-18 architecture implementation for ImageNet classification.
-"""
+"""ResNet-18 architecture implementation for ImageNet classification."""
 
 from collections.abc import Sequence
 

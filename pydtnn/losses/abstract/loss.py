@@ -24,7 +24,7 @@ __all__ = ("Loss",)
 logger = logging.getLogger(__name__)
 
 
-class Loss[T: Array](Base):
+class Loss[T: Array](Base):  # noqa: D101
     """
     Base class for all loss functions in PyDTNN.
 
@@ -44,7 +44,7 @@ class Loss[T: Array](Base):
             w = np.ones(self.model.output_shape, dtype=self.model.dtype, order="C")
         return w
 
-    def __init__(self, eps: float = 1e-8):
+    def __init__(self, eps: float = 1e-8) -> None:
         """
         Initializes the Loss instance.
 
@@ -67,8 +67,8 @@ class Loss[T: Array](Base):
                 weights = list(map(float, self.model.loss_weights.split(",")))  # type: ignore
         else:
             weights = None
-                
-        self.weights: T = self._weights_to_tensor(weights) # type: ignore (It will be initalized here)
+
+        self.weights: T = self._weights_to_tensor(weights)  # type: ignore (It will be initalized here)
 
     def compute(self, y_pred: T, y_targ: T, batch_size: int) -> tuple[float, T]:
         """

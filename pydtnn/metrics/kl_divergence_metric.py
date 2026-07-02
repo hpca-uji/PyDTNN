@@ -10,7 +10,7 @@ __all__ = ("KLDivergenceMetric",)
 logger = logging.getLogger(__name__)
 
 
-class KLDivergenceMetric[T: Array](Metric[T]):
+class KLDivergenceMetric[T: Array](Metric[T]):  # noqa: D101
     """Metric class for computing the Kullback-Leibler divergence between two distributions."""
 
     format = "kld: %.7f"
