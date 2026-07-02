@@ -603,11 +603,11 @@ class TensorArray:
         other = self._operable(other)
         return self._view(self.ary.__rpow__(other))
 
-    def __getitem__(self, index: int) -> TensorArray:
+    def __getitem__(self, index: int | tuple | slice | np.ndarray) -> TensorArray:
         """Indexing operator."""
         return self._view(self.ary.__getitem__(index), keep_shape=False)
 
-    def __setitem__(self, key: Any, value: TensorArray | gpuarray.GPUArray | np.ndarray) -> None:
+    def __setitem__(self, key: int | tuple | slice | np.ndarray, value: TensorArray | gpuarray.GPUArray | np.ndarray) -> None:
         """Set item operator."""
         value = self._operable(value)
         return self.ary.__setitem__(key, value)
