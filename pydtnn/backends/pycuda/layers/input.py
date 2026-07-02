@@ -77,15 +77,15 @@ class InputPycuda(Input[TensorArray], LayerPycuda):
         """Return the pointer to the workspace memory."""
         return ctypes.c_void_p(int(self.ws))
 
-    def checkConvolutionMemory(self, size) -> None:
+    def checkConvolutionMemory(self, size: int) -> None:
         """Allocate or reallocate workspace memory if required."""
-        if size.value < self.ws_size:
+        if size < self.ws_size:
             return
 
         if self.ws is not None:
             self.ws.free()
 
-        self.ws_size = max(1, size.value)
+        self.ws_size = max(1, size)
         self.ws = drv.mem_alloc(self.ws_size)
 
     def getConvolutionWorkspacePtr(self) -> ctypes.c_void_p:
