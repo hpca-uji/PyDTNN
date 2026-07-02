@@ -4,9 +4,12 @@ stages:
 - push
 
 variables:
-  GIT_DEPTH: 0
   BRANCH_MAIN: master
   BRANCH_WORK: develop
+  GLAB_HOSTNAME: lorca.act.uji.es/gitlab
+  GIT_NAME: GitLab at Lorca
+  GIT_EMAIL: lorca.act.uji.es@gmail.com
+  GIT_DEPTH: 0
   GIT_STRATEGY: fetch
   GIT_SUBMODULE_STRATEGY: recursive
 
@@ -31,6 +34,7 @@ job_build:
     when: always
 
   before_script:
+  - env | sort
   - make sync
   - apt-get update
   - mkdir -p ./build
@@ -76,22 +80,22 @@ job_merge:
   resource_group: $BRANCH_MAIN
 
   before_script:
-  - glab auth login --hostname lorca.act.uji.es/gitlab --token "${CI_JOB_TOKEN:?}"
-  - git config --global user.email "ci@lorca.act.uji.es"
-  - git config --global user.name "GitLab CI"
+  - glab auth login --hostname "${GLAB_HOSTNAME:?}" --token "${CI_JOB_TOKEN:?}"
+  - git config --global user.email "${GIT_EMAIL:?}"
+  - git config --global user.name "${GIT_NAME:?}"
   script:
   - GIT_REMOTE=$(git remote)
-  - git fetch ${GIT_REMOTE:?} ${BRANCH_MAIN:?}
-  - git checkout -B ${BRANCH_MAIN:?} ${GIT_REMOTE:?}/${BRANCH_MAIN:?}
-  - git merge ${CI_COMMIT_SHA:?} --ff-only
-  - git push ${GIT_REMOTE:?} ${BRANCH_MAIN:?}
-  - git checkout ${CI_COMMIT_SHA:?}
+  - git fetch "${GIT_REMOTE:?}" "${BRANCH_MAIN:?}"
+  - git checkout -B "${BRANCH_MAIN:?}" "${GIT_REMOTE:?}/${BRANCH_MAIN:?}"
+  - git merge "${CI_COMMIT_SHA:?}" --ff-only
+  - git push "${GIT_REMOTE:?}" "${BRANCH_MAIN:?}"
+  - git checkout "${CI_COMMIT_SHA:?}"
 
 job_push:
   stage: push
 
   rules:
-  - if: '$CI_COMMIT_BRANCH == $BRANCH_WORK && $PUBLIC_TAG == ""'
+  - if: '$CI_COMMIT_BRANCH == $BRANCH_WORK' # && $PUBLIC_TAG == ""'
 
   tags: [ lorca-ubuntu ]
   image: registry.gitlab.com/gitlab-org/cli:latest
@@ -102,7 +106,7 @@ job_push:
   - job: job_merge
 
   before_script:
-  - glab auth login --hostname lorca.act.uji.es/gitlab --token "${CI_JOB_TOKEN:?}"
+  - glab auth login --hostname "${GLAB_HOSTNAME:?}" --token "${CI_JOB_TOKEN:?}"
   script:
   - glab release delete "${GIT_TAG:?}" --yes || true
   - glab release create "${GIT_TAG:?}" ./build/pydtnn/pydtnn-* --ref "${CI_COMMIT_SHA:?}" --name "PyDTNN ${GIT_TAG:?}"

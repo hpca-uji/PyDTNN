@@ -2,7 +2,7 @@
 
 import os as _os
 import sys as _sys
-from typing import Any
+import typing as _typing
 
 # Select implementation
 # NOTE: Make sure global package is not confused with current package
@@ -22,6 +22,6 @@ if hasattr(_module, "__all__"):
     __all__ = _module.__all__  # type: ignore
 
 
-def __getattr__(key: Any) -> Any:
+def __getattr__(key: _typing.Any) -> _typing.Any:
     """Proxy all attributes to module"""
     return getattr(_module, key)

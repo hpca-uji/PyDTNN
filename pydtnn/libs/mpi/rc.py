@@ -1,7 +1,7 @@
 """Message Passing Interface"""
 
 import os as _os
-from typing import Any
+import typing as _typing
 
 try:
     import pympi.rc as _rc  # type: ignore
@@ -16,6 +16,6 @@ if _rc:
 proto = proto if (proto := _os.environ.get("PYMPI_PROTO")) else None
 
 
-def __getattr__(key: Any) -> Any:
+def __getattr__(key: _typing.Any) -> _typing.Any:
     """Proxy all attributes to module"""
     return getattr(_rc, key)
