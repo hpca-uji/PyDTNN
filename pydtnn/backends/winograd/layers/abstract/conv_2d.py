@@ -1,6 +1,4 @@
-"""
-Winograd-based 2D convolution abstract layer implementation.
-"""
+"""Winograd-based 2D convolution abstract layer implementation."""
 
 import logging
 
@@ -13,8 +11,6 @@ logger = logging.getLogger(__name__)
 
 
 class AbstractConv2DWinograd(AbstractConv2DNumpy, LayerWinograd):
-    """
-    Abstract base class for 2D convolution layers utilizing the Winograd algorithm.
-    """
+    """Abstract base class for 2D convolution layers utilizing the Winograd algorithm."""
 
     ...

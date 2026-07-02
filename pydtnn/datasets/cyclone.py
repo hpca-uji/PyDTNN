@@ -1,6 +1,4 @@
-"""
-Cyclone dataset implementation for the PyDTNN framework.
-"""
+"""Cyclone dataset implementation for the PyDTNN framework."""
 
 from __future__ import annotations
 

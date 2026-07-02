@@ -1,6 +1,4 @@
-"""
-Test suite for verifying PyTorch to PyDTNN model conversion and inference parity.
-"""
+"""Test suite for verifying PyTorch to PyDTNN model conversion and inference parity."""
 
 import torch  # type: ignore
 from model_convertor import convert_model
@@ -164,16 +162,12 @@ KWARGS = {
 
 
 def get_model_layers(model: torch.nn.Module, name: str = "self") -> dict[str, torch.nn.Module]:
-    """
-    Recursively extracts all leaf modules from a PyTorch model.
-    """
+    """Recursively extracts all leaf modules from a PyTorch model."""
 
     def _get_model_layers(
         model: torch.nn.Module, name: str, dict_modules: dict[str, torch.nn.Module]
     ):
-        """
-        Internal recursive helper to traverse model children.
-        """
+        """Internal recursive helper to traverse model children."""
         children = list(model.named_children())
         if len(children) > 0:
             for nom, module in children:
@@ -190,14 +184,12 @@ def get_model_layers(model: torch.nn.Module, name: str = "self") -> dict[str, to
 
 def pytorch_inference(
     model: torch.nn.Module,
-    dataloader,
+    dataloader : list,
     loss_func: torch.nn.modules.loss._Loss,
     device: torch.device,
     metrics_list: list,
 ) -> None:
-    """
-    Runs inference on a PyTorch model and evaluates metrics.
-    """
+    """Runs inference on a PyTorch model and evaluates metrics."""
 
     outputs_list = list()
     labels_list = list()
@@ -255,22 +247,14 @@ def pytorch_inference(
         print(f"{name}: {metric_result:.4f}")
 
 
-def print_model_reports(model):
-    """
-    Prints performance reports for the given PyDTNN model.
-    """
+def print_model_reports(model: PyDTNN_Model) -> None:
+    """Prints performance reports for the given PyDTNN model."""
     # Print performance counter report
     model.perf_counter.print_report()
-    # Print BestOf report
-    # if model.enable_best_of:
-    #     print()
-    #     BestOf.print_report()
 
-
-def pydtnn_inference(model: PyDTNN_Model, metrics_list=None, dataset=None) -> None:
-    """
-    Runs inference on a PyDTNN model and prints reports.
-    """
+def pydtnn_inference(model: PyDTNN_Model, metrics_list: list | None = None, 
+                     dataset: Dataset | None = None) -> None:
+    """Runs inference on a PyDTNN model and prints reports."""
     metrics_list = (
         [f for f in model.metrics.replace(" ", "").split(",")]
         if metrics_list is None
@@ -282,10 +266,9 @@ def pydtnn_inference(model: PyDTNN_Model, metrics_list=None, dataset=None) -> No
     print_model_reports(model)
 
 
-def _pydtnn_inference(new_model, old_model, dataset, old_first=None):
-    """
-    Internal helper to manage inference order between PyDTNN models.
-    """
+def _pydtnn_inference(new_model: PyDTNN_Model, old_model: PyDTNN_Model,
+                      dataset: Dataset, old_first: bool | None = None) -> None:
+    """Internal helper to manage inference order between PyDTNN models."""
     print("-------------------")
     print(" PyDTNN's inference")
     print("-------------------")
@@ -306,10 +289,8 @@ def _pydtnn_inference(new_model, old_model, dataset, old_first=None):
             pydtnn_inference(model=new_model, dataset=dataset)
 
 
-def _pytorch_inference(pytorch_model, dataloader, kwargs, device):
-    """
-    Internal helper to configure and run PyTorch inference.
-    """
+def _pytorch_inference(pytorch_model: torch.nn.Module, dataloader: list, kwargs: dict, device: torch.device) -> None:
+    """Internal helper to configure and run PyTorch inference."""
     print("-------------------")
     print("Pytorch's inference")
     print("-------------------")
@@ -338,10 +319,8 @@ def _pytorch_inference(pytorch_model, dataloader, kwargs, device):
     )
 
 
-def pydtnn_training(model: PyDTNN_Model, dataset: Dataset, num_samples=64 * 2):
-    """
-    Executes training on a PyDTNN model.
-    """
+def pydtnn_training(model: PyDTNN_Model, dataset: Dataset, num_samples: int = 64 * 2) -> None:
+    """Executes training on a PyDTNN model."""
 
     # history = model.train(x_train=dataset._x[DatasetEnum.TRAIN][:num_samples], x_val=dataset._x[VAL][:num_samples],
     # y_train=dataset._y[DatasetEnum.TRAIN][:num_samples],

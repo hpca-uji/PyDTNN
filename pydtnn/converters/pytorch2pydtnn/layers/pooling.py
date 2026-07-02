@@ -1,6 +1,4 @@
-"""
-Module for converting PyTorch pooling layers to PyDTNN equivalent layers.
-"""
+"""Module for converting PyTorch pooling layers to PyDTNN equivalent layers."""
 
 import logging
 from typing import Any
@@ -11,9 +9,9 @@ from pydtnn.layers.average_pool_2d import AveragePool2D
 from pydtnn.layers.max_pool_2d import MaxPool2D
 
 __all__ = (
-    "AdaptiveAvgPool2d",
-    "AvgPool2d",
-    "MaxPool2d",
+    "adaptive_avg_pool_2d",
+    "avg_pool_2d",
+    "max_pool_2d",
 )
 
 logger = logging.getLogger(__name__)
@@ -37,7 +35,7 @@ PYDTNN_PADDING = "padding"
 PYDTNN_DILATION = "dilation"
 
 
-def MaxPool2d(args: dict[str, Any]) -> MaxPool2D:
+def max_pool_2d(args: dict[str, Any]) -> MaxPool2D:
     """
     Converts a PyTorch MaxPool2d layer configuration to a PyDTNN MaxPool2D layer.
 
@@ -72,7 +70,7 @@ def MaxPool2d(args: dict[str, Any]) -> MaxPool2D:
     return MaxPool2D(**layer_args)
 
 
-def AvgPool2d(args: dict[str, Any]) -> AveragePool2D:
+def avg_pool_2d(args: dict[str, Any]) -> AveragePool2D:
     """
     Converts a PyTorch AvgPool2d layer configuration to a PyDTNN AveragePool2D layer.
 
@@ -106,7 +104,7 @@ def AvgPool2d(args: dict[str, Any]) -> AveragePool2D:
     return AveragePool2D(**layer_args)
 
 
-def AdaptiveAvgPool2d(args: dict[str, Any]) -> AdaptiveAveragePool2D:
+def adaptive_avg_pool_2d(args: dict[str, Any]) -> AdaptiveAveragePool2D:
     """
     Converts a PyTorch AdaptiveAvgPool2d layer configuration to a PyDTNN AdaptiveAveragePool2D layer.
 

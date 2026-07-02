@@ -1,6 +1,4 @@
-"""
-Winograd backend implementation for neural network layers.
-"""
+"""Winograd backend implementation for neural network layers."""
 
 import logging
 
@@ -13,8 +11,6 @@ logger = logging.getLogger(__name__)
 
 
 class LayerWinograd(LayerNumpy, LayerableWinograd):
-    """
-    Base class for layers utilizing Winograd convolution algorithms.
-    """
+    """Base class for layers utilizing Winograd convolution algorithms."""
 
     ...

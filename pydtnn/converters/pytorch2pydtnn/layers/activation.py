@@ -1,29 +1,27 @@
-"""
-This module provides converters to translate PyTorch activation layers to their PyDTNN equivalents.
-"""
+"""This module provides converters to translate PyTorch activation layers to their PyDTNN equivalents."""
 
 import logging
 from typing import Any
 
 import pydtnn.converters.pytorch2pydtnn.common as cm
-from pydtnn.activations.arctanh import Arctanh as _Arctanh
-from pydtnn.activations.leaky_relu import LeakyRelu as _LeakyRelu
-from pydtnn.activations.log import Log as _Log
-from pydtnn.activations.relu import Relu as _Relu
-from pydtnn.activations.relu6 import Relu6 as _Relu6
-from pydtnn.activations.sigmoid import Sigmoid as _Sigmoid
-from pydtnn.activations.softmax import Softmax as _Softmax
-from pydtnn.activations.tanh import Tanh as _Tanh
+from pydtnn.activations.arctanh import Arctanh as Arctanh
+from pydtnn.activations.leaky_relu import LeakyRelu
+from pydtnn.activations.log import Log
+from pydtnn.activations.relu import Relu
+from pydtnn.activations.relu6 import Relu6
+from pydtnn.activations.sigmoid import Sigmoid
+from pydtnn.activations.softmax import Softmax
+from pydtnn.activations.tanh import Tanh
 
 __all__ = (
-    "Arctanh",
-    "LeakyReLU",
-    "LogSigmoid",
-    "ReLU",
-    "ReLU6",
-    "Sigmoid",
-    "Softmax",
-    "Tanh",
+    "arctanh",
+    "leaky_relu",
+    "log_sigmoid",
+    "relu",
+    "relu6",
+    "sigmoid",
+    "softmax",
+    "tanh",
 )
 
 logger = logging.getLogger(__name__)
@@ -33,7 +31,7 @@ logger = logging.getLogger(__name__)
 # Functionality imports
 
 
-def Arctanh(args: dict[str, Any]) -> _Arctanh:
+def arctanh(args: dict[str, Any]) -> Arctanh:
     """
     Converts a PyTorch-like Arctanh configuration to a PyDTNN Arctanh layer.
 
@@ -45,10 +43,10 @@ def Arctanh(args: dict[str, Any]) -> _Arctanh:
     """
     # NOTE: There is no equivalent in PyTorch
     # not_used = args
-    return _Arctanh()
+    return Arctanh()
 
 
-def LogSigmoid(args: dict[str, Any]) -> _Log:
+def log_sigmoid(args: dict[str, Any]) -> Log:
     """
     Converts a PyTorch LogSigmoid layer to a PyDTNN Log layer.
 
@@ -60,10 +58,10 @@ def LogSigmoid(args: dict[str, Any]) -> _Log:
     """
     # https://pytorch.org/docs/stable/generated/torch.nn.LogSigmoid.html#torch.nn.LogSigmoid
     # not_used = args
-    return _Log()
+    return Log()
 
 
-def ReLU(args: dict[str, Any]) -> _Relu:
+def relu(args: dict[str, Any]) -> Relu:
     """
     Converts a PyTorch ReLU layer to a PyDTNN Relu layer.
 
@@ -76,10 +74,10 @@ def ReLU(args: dict[str, Any]) -> _Relu:
     # https://pytorch.org/docs/stable/generated/torch.nn.ReLU.html#torch.nn.ReLU
     # Not used Pytorch's parameters: inplace.
     # not_used = args
-    return _Relu()
+    return Relu()
 
 
-def ReLU6(args: dict[str, Any]) -> _Relu:
+def relu6(args: dict[str, Any]) -> Relu6:
     """
     Converts a PyTorch ReLU6 layer to a PyDTNN Relu6 layer.
 
@@ -95,10 +93,10 @@ def ReLU6(args: dict[str, Any]) -> _Relu:
 
     # NOTE: max_val. A interal PyTorch variable that seems to set the cap.
 
-    return _Relu6()
+    return Relu6()
 
 
-def LeakyReLU(args: dict[str, Any]) -> _Relu:
+def leaky_relu(args: dict[str, Any]) -> LeakyRelu:
     """
     Converts a PyTorch LeakyReLU layer to a PyDTNN LeakyRelu layer.
 
@@ -110,9 +108,9 @@ def LeakyReLU(args: dict[str, Any]) -> _Relu:
     """
     # https://pytorch.org/docs/stable/generated/torch.nn.ReLU.html#torch.nn.ReLU
     # Not used Pytorch's parameters: inplace.
-    NEGATIVE_SLOPE = "negative_slope"
-    torch_dict_keys = [NEGATIVE_SLOPE]
-    pydtnn_dict_keys = [NEGATIVE_SLOPE]
+    negative_slope = "negative_slope"
+    torch_dict_keys = [negative_slope]
+    pydtnn_dict_keys = [negative_slope]
 
     layer_args = cm.prepare_pydtnn_arguments(
         arguments=args[cm.ARGUMENTS],
@@ -120,10 +118,10 @@ def LeakyReLU(args: dict[str, Any]) -> _Relu:
         pydtnn_dict_keys=pydtnn_dict_keys,
     )
 
-    return _LeakyRelu(**layer_args)
+    return LeakyRelu(**layer_args)
 
 
-def Sigmoid(args: dict[str, Any]) -> _Sigmoid:
+def sigmoid(args: dict[str, Any]) -> Sigmoid:
     """
     Converts a PyTorch Sigmoid layer to a PyDTNN Sigmoid layer.
 
@@ -135,10 +133,10 @@ def Sigmoid(args: dict[str, Any]) -> _Sigmoid:
     """
     # https://pytorch.org/docs/stable/generated/torch.nn.Sigmoid.html#torch.nn.Sigmoid
     # not_used = args
-    return _Sigmoid()
+    return Sigmoid()
 
 
-def Softmax(args: dict[str, Any]) -> _Softmax:
+def softmax(args: dict[str, Any]) -> Softmax:
     """
     Converts a PyTorch Softmax layer to a PyDTNN Softmax layer.
 
@@ -151,10 +149,10 @@ def Softmax(args: dict[str, Any]) -> _Softmax:
     # https://pytorch.org/docs/stable/generated/torch.nn.Softmax.html#torch.nn.Softmax
     # Not used Pytorch's parameters: dim.
     # not_used = args
-    return _Softmax()
+    return Softmax()
 
 
-def Tanh(args: dict[str, Any]) -> _Tanh:
+def tanh(args: dict[str, Any]) -> Tanh:
     """
     Converts a PyTorch Tanh layer to a PyDTNN Tanh layer.
 
@@ -166,4 +164,4 @@ def Tanh(args: dict[str, Any]) -> _Tanh:
     """
     # https://pytorch.org/docs/stable/generated/torch.nn.Tanh.html#torch.nn.Tanh
     # not_used = args
-    return _Tanh()
+    return Tanh()

@@ -1,6 +1,4 @@
-"""
-Module for converting PyDTNN models to ONNX format and vice versa.
-"""
+"""Module for converting PyDTNN models to ONNX format and vice versa."""
 
 # Typing related
 from typing import Any
@@ -37,7 +35,7 @@ __all__ = (
 )
 
 
-def extract_shape(data: onnx.ValueInfoProto) -> tuple[int]:
+def extract_shape(data: onnx.ValueInfoProto) -> tuple[int, ...]:
     """
     Extracts the shape dimensions from an ONNX ValueInfoProto object.
 
@@ -49,10 +47,12 @@ def extract_shape(data: onnx.ValueInfoProto) -> tuple[int]:
     """
     # The shape of the inputs/ouputs is more or less a list quite hidden.
     #   Note: ONNX allows to have shapes of undefined value, for example: (N, 3, 224, 224),
-    #       and, if it is not defined, that dimension is stored as 0. I will assume that every loaded model has declared all theirs values.
+    #       and, if it is not defined, that dimension is stored as 0. I will assume
+    #       that every loaded model has declared all theirs values.
     # TODO: Mirar qué hacer en caso de que no se haya definido alguna dimensión ==>
     #   ==> Puesto que entiendo que solo son entradas y salidas, se podría pasar como parámetro
-    #   [==>] Alternativamente, como, por lo que he visto hasta ahora, son más el número de entradas/salidas que van a haber, saltarlas.
+    #   [==>] Alternativamente, como, por lo que he visto hasta ahora, son más el número de entradas/salidas
+    #          que van a haber, saltarlas.
     #   ==> TODO: cuando todo esté más o menos claro, preguntárselo a Manel
     #   (En cualquier caso, tenerlo en cuenta para la conversión en el sentido opuesto)
     return tuple(
@@ -159,7 +159,8 @@ def get_lists_operations_and_outputs(
         )
 
     # "Unenumerating" and sorting the intersection, and getting the first coincidence layer.
-    #   ==> NOTE: Due the list was sorting in reverse before, now it is necessary to sort it be reverse again (that's why the "-x[0]").
+    #   ==> NOTE: Due the list was sorting in reverse before, now it is necessary to sort it be reverse again
+    #       (that's why the "-x[0]").
     coincidence = [elem[1] for elem in sorted(coincidences, key=lambda x: -x[0])][0]
 
     # Trimming the lists from that element (first coincidence)
@@ -188,7 +189,8 @@ def get_actual_inputs(list_inputs: list[str], weights_names: list[str]) -> list[
     Returns:
         A filtered list of input names.
     """
-    # This function' objective is to remove non layer-to-layer onnx inputs (e.g.: the weigth [_weight], the bias [_bias], etc. ).
+    # This function' objective is to remove non layer-to-layer onnx inputs
+    #   (e.g.: the weigth [_weight], the bias [_bias], etc. ).
     #   To do that, only the inputs that end with the accepted ending remains.
     return list(filter(lambda _input: _input not in weights_names, list_inputs))
 

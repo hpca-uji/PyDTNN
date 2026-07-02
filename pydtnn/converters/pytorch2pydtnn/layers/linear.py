@@ -32,16 +32,16 @@ def Linear(args: dict[str, Any]) -> FC:
 
     # PyTorch attributes:
     # Not used: in_features (It's not used due the way the layer's initialization works in PyDTNN)
-    PYTORCH_BIAS = "bias"
-    PYTORCH_OUT_FEATURES = "out_features"
-    torch_dict_keys = [PYTORCH_BIAS, PYTORCH_OUT_FEATURES]
+    pytorch_bias = "bias"
+    pytorch_out_features = "out_features"
+    torch_dict_keys = [pytorch_bias, pytorch_out_features]
 
     # PyDTNN attributes:
     # Not used: activation
     # Used, but in a different place: weights_initializer, biases_initializer
-    PYDTNN_BIAS = "use_bias"
-    PYDTNN_SHAPE = "shape"
-    pydtnn_dict_keys = [PYDTNN_BIAS, PYDTNN_SHAPE]
+    pydtnn_bias = "use_bias"
+    pydtnn_shape = "shape"
+    pydtnn_dict_keys = [pydtnn_bias, pydtnn_shape]
 
     layer_args = cm.prepare_pydtnn_arguments(
         arguments=args[cm.ARGUMENTS],
@@ -50,7 +50,7 @@ def Linear(args: dict[str, Any]) -> FC:
     )
 
     # PyDTNN expects the shape as a tuple instead of an int.
-    if PYDTNN_SHAPE in layer_args and isinstance(layer_args[PYDTNN_SHAPE], int):
-        layer_args[PYDTNN_SHAPE] = (layer_args[PYDTNN_SHAPE],)
+    if pydtnn_shape in layer_args and isinstance(layer_args[pydtnn_shape], int):
+        layer_args[pydtnn_shape] = (layer_args[pydtnn_shape],)
 
     return FC(**layer_args)

@@ -1,6 +1,4 @@
-"""
-Module providing the abstract base class for Winograd-compatible layers in PyDTNN.
-"""
+"""Module providing the abstract base class for Winograd-compatible layers in PyDTNN."""
 
 from pydtnn.backends.numpy.abstract.layerable import LayerableNumpy
 from pydtnn.backends.winograd.abstract.base import BaseWinograd

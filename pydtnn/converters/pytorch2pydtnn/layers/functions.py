@@ -132,8 +132,9 @@ def concat(args: dict[str, Any]) -> tuple[ConcatenationBlock, str]:
     """
     # https://pytorch.org/docs/main/generated/torch.cat.html
 
-    # TODO: es necesario hacer un diccionario que sustituya los parámetros que ya han sido introducidos por la capa de concatenación/adición.
-    # También hay que haer que solo aparezca una única vez.
+    # TODO: es necesario hacer un diccionario que sustituya los parámetros que ya han sido introducidos
+    #   por la capa de concatenación/adición.
+    #   También hay que haer que solo aparezca una única vez.
     layer_name: str = args[cm.OPERATION_VAR]
     dict_equivalent_layers: dict[str, str] = args[cm.EQUIVALENT_LAYERS]
     parameters: list[str] = args[cm.PARAMETERS].split("],")
@@ -181,9 +182,7 @@ def flatten(args: dict[str, str]) -> tuple[Flatten, str]:
     # torch.flatten(input, start_dim=0, end_dim=-1)
 
     def switch(list_params: list[str], dict_params: dict[str, str] = dict()) -> dict[str, str]:
-        """
-        Helper to parse flatten parameters recursively.
-        """
+        """Helper to parse flatten parameters recursively."""
         # This is a switch with "fall through".
         match len(list_params):
             case 3:
@@ -231,7 +230,7 @@ def log(args: dict[str, Any]) -> tuple[Log, str]:
     if inplace is not None:
         dict_params["inplace"] = inplace
 
-    return (activation.LogSigmoid(**dict_params), dict_params["input"])
+    return (activation.log_sigmoid(**dict_params), dict_params["input"])
 
 
 def relu(args: dict[str, str]) -> tuple[Relu, str]:
@@ -260,7 +259,7 @@ def relu(args: dict[str, str]) -> tuple[Relu, str]:
     if inplace is not None:
         dict_params["inplace"] = inplace
 
-    return (activation.ReLU(dict_params), dict_params[cm.ARGUMENTS]["input"])
+    return (activation.relu(dict_params), dict_params[cm.ARGUMENTS]["input"])
 
 
 def sigmoid(args: dict[str, Any]) -> tuple[Sigmoid, str]:
@@ -282,7 +281,7 @@ def sigmoid(args: dict[str, Any]) -> tuple[Sigmoid, str]:
     # removing the input layer:
     dict_params["input"] = params.pop(0)
 
-    return (activation.Sigmoid(**dict_params), dict_params["input"])
+    return (activation.sigmoid(**dict_params), dict_params["input"])
 
 
 def softmax(args: dict[str, Any]) -> tuple[Softmax, str]:
@@ -299,9 +298,7 @@ def softmax(args: dict[str, Any]) -> tuple[Softmax, str]:
     # softmax(input, dim=None, _stacklevel=3, dtype=None)
 
     def switch(list_params: list[str], dict_params: dict[str, str] = dict()) -> dict[str, str]:
-        """
-        Helper to parse softmax parameters recursively.
-        """
+        """Helper to parse softmax parameters recursively."""
         # This is a switch with "fall through".
         match len(list_params):
             case 3:
@@ -321,7 +318,7 @@ def softmax(args: dict[str, Any]) -> tuple[Softmax, str]:
     params = args[cm.PARAMETERS].strip()
     dict_params = switch(params.split(cm.ARGS_SEPARATOR))
 
-    return (activation.Softmax(**dict_params), dict_params["input"])  # type: ignore
+    return (activation.softmax(**dict_params), dict_params["input"])  # type: ignore
 
 
 def tanh(args: dict[str, Any]) -> tuple[Tanh, str]:
@@ -341,4 +338,4 @@ def tanh(args: dict[str, Any]) -> tuple[Tanh, str]:
     # removing the input layer:
     dict_params["input"] = params.pop(0)
 
-    return (activation.Tanh(**dict_params), dict_params["input"])
+    return (activation.tanh(**dict_params), dict_params["input"])

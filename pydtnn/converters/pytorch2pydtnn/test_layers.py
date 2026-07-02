@@ -423,13 +423,13 @@ def test_add_and_concat(
     print("=====================\n== Testing Forward ==\n=====================")
     print(f"pytorch_model: {pytorch_model}")
 
-    pytorch_output_T, _ = pytorch_model(torch_dataset)
-    pytorch_output_T: torch.Tensor
+    pytorch_output_t, _ = pytorch_model(torch_dataset)
+    pytorch_output_t: torch.Tensor
     # pydtnn_model.dataset = dataset  # FIXME: Paul dice que si la utiliza, MiguelA que no, revisar
     pydtnn_output = forward_pydtnn_model(pydtnn_model, dataset)  # type: ignore
     pydtnn_output: np.ndarray
 
-    pytorch_output = pytorch_output_T.detach().to("cpu").numpy()
+    pytorch_output = pytorch_output_t.detach().to("cpu").numpy()
 
     diff = abs(pytorch_output) - abs(pydtnn_output)
     # print(f"pytorch_output - pydtnn_output:\n{diff}")

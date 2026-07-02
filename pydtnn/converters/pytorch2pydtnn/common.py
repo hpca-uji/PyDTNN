@@ -1,22 +1,20 @@
-"""
-Common utilities and mapping functions for converting PyTorch models to PyDTNN.
-"""
+"""Common utilities and mapping functions for converting PyTorch models to PyDTNN."""
 
 import logging
 from typing import Any, Callable
 
 from pydtnn.abstract.layerable import Layerable
-from pydtnn.converters.pytorch2pydtnn.layers.activation import (LeakyReLU, LogSigmoid, ReLU,
-                                                                ReLU6, Sigmoid, Softmax, Tanh)
-from pydtnn.converters.pytorch2pydtnn.layers.convolutional import Conv2d
-from pydtnn.converters.pytorch2pydtnn.layers.dropout import Dropout
+from pydtnn.converters.pytorch2pydtnn.layers.activation import (leaky_relu, log_sigmoid, relu,
+                                                                relu6, sigmoid, softmax, tanh)
+from pydtnn.converters.pytorch2pydtnn.layers.convolutional import conv2d
+from pydtnn.converters.pytorch2pydtnn.layers.dropout import dropout
 from pydtnn.converters.pytorch2pydtnn.layers.functions import (adaptive_avg_pool_2d, add,
                                                                concat, flatten, log, relu,
                                                                sigmoid, softmax, tanh)
 from pydtnn.converters.pytorch2pydtnn.layers.linear import Linear
-from pydtnn.converters.pytorch2pydtnn.layers.normalization import BatchNorm2d
-from pydtnn.converters.pytorch2pydtnn.layers.pooling import AdaptiveAvgPool2d, AvgPool2d, MaxPool2d
-from pydtnn.converters.pytorch2pydtnn.layers.utility import Flatten
+from pydtnn.converters.pytorch2pydtnn.layers.normalization import batch_norm_2d
+from pydtnn.converters.pytorch2pydtnn.layers.pooling import adaptive_avg_pool_2d, avg_pool_2d, max_pool_2d
+from pydtnn.converters.pytorch2pydtnn.layers.utility import flatten
 
 __all__ = (
     "function_operation_to_pydtnn",
@@ -66,7 +64,8 @@ PYTORCH_OUTPUT_SIZE = "output_size"
 
 SPECIAL_CASES = ["torchvision_models_googlenet_GoogLeNetOutputs"]
 # SPECIAL CASES:
-# -> torchvision_models_googlenet_GoogLeNetOutputs: is a "named tuple". If both aux layers exist and it is not expected their outputs, the actual output is only the FC's one.
+# -> torchvision_models_googlenet_GoogLeNetOutputs: is a "named tuple". If both aux layers exist
+#    and it is not expected their outputs, the actual output is only the FC's one.
 # END SPECIAL CASES
 
 
@@ -126,45 +125,45 @@ def switch_pytorch_pydtnn(name: str) -> Callable[[dict[str, Any]], Layerable]:
     #   if PyTorch change their layer's names, then it's necessary to change the names here.
     match name:
         case "AdaptiveAvgPool2d":
-            return AdaptiveAvgPool2d
+            return adaptive_avg_pool_2d
         case "AvgPool2d":
-            return AvgPool2d
+            return avg_pool_2d
         case "BatchNorm2d":
-            return BatchNorm2d
+            return batch_norm_2d
         case "Conv2d":
-            return Conv2d
+            return conv2d
         case "Dropout":
-            return Dropout
+            return dropout
         case "Linear":
             return Linear
         case "MaxPool2d":
-            return MaxPool2d
+            return max_pool_2d
         case "ReLU":
-            return ReLU
+            return relu  # type: ignore
         case "ReLU6":
-            return ReLU6
+            return relu6
         case "LeakyReLU":
-            return LeakyReLU
+            return leaky_relu
         case "LogSigmoid":
-            return LogSigmoid
+            return log_sigmoid
         case "Sigmoid":
-            return Sigmoid
+            return sigmoid  # type: ignore
         case "Softmax":
-            return Softmax
+            return softmax  # type: ignore
         case "Tanh":
-            return Tanh
+            return tanh  # type: ignore
         case "Flatten":
-            return Flatten
+            return flatten
 
         # Not actual PyTorch layers (are torch functions):
         case "Add":
             # type: ignore  # Possible FIXME: if the constants ADD values are changed,
             # change the case in order to have the same value.
-            return add
+            return add  # type: ignore
         case "Concat":
             # type: ignore  # Possible FIXME: if the constants CONCAT values are
             # changed, change the case in order to have the same value.
-            return concat
+            return concat  # type: ignore
         # Base case:
         case _:
             return not_implemented(name)
@@ -229,7 +228,7 @@ def function_operation_to_pydtnn(name: str) -> Callable[[dict[str, Any]], tuple[
     # operation.
     else:
         op = not_implemented(name)
-    return op
+    return op  # type: ignore
 
 
 def get_lists_operations_and_outputs(
@@ -266,7 +265,8 @@ def get_lists_operations_and_outputs(
     # NOTE: This is the flow of my thougths regarding the approach:
     #  > Sets are not ordered by insertion ==> keep order with enumerate ==>
     #  > ==> braches have different sizes, then the same node may have different order in different branches ==>
-    #  > ==> that's true from bottom to top, but from top to bottom the "intersection layers" -the ones to be searched- (the ones that coincide in all branches) must be in the same position in every branch.
+    #  > ==> that's true from bottom to top, but from top to bottom the "intersection layers" 
+#           -the ones to be searched- (the ones that coincide in all branches) must be in the same position in every branch.
     enumerated_reversed_inputs = enumerate(list(dict_branch[layer_inputs[0]].keys())[::-1])
     coincidences = set(
         enumerated_reversed_inputs
@@ -276,7 +276,8 @@ def get_lists_operations_and_outputs(
             set(enumerate(list(dict_branch[layer_inputs[i]].keys())[::-1]))
         )
     # "Unenumerating" and sorting the intersection, and getting the first coincidence layer.
-    #   ==> NOTE: Due the list was sorting in reverse before, now it is necessary to sort it be reverse again (that's why the "-x[0]").
+    #   ==> NOTE: Due the list was sorting in reverse before, 
+    #              now it is necessary to sort it be reverse again (that's why the "-x[0]").
     coincidences = [elem[1] for elem in sorted(coincidences, key=lambda x: -x[0])]
     new_previous_layer = coincidences[0]  # new_previous_layer = PyDTNN concat input
 
