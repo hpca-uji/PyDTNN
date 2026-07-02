@@ -20,9 +20,7 @@ try:
     import elftools.elf.sections as sections  # type: ignore
 
 except ImportError:
-    import re
-
-    def get_soname(filename: str) -> str | Any:
+    def get_soname(filename: str) -> str:
         """
         Retrieve SONAME of shared library.
 
@@ -68,7 +66,7 @@ except ImportError:
 else:
     import ctypes
 
-    def get_soname(filename: str) -> str | Any:
+    def get_soname(filename: str) -> str:
         """
         Retrieve SONAME of shared library.
 
@@ -92,7 +90,7 @@ else:
 
         """
 
-        Struct = structs.Struct  # type: ignore
+        Struct = structs.Struct  # type: ignore # noqa: N806
         stream = open(filename, "rb")
         f = elffile.ELFFile(stream)
         dynamic = f.get_section_by_name(".dynamic")
@@ -116,13 +114,11 @@ else:
                 assert isinstance(dynstr, sections.StringTableSection)
                 return dynstr.get_string(result.d_val)
 
-        # No SONAME found:
-        return ""
+        raise RuntimeError("no library name found for {0}".format((filename,)))
 
 
 def find_lib_path(name: str) -> str | None:
-    """
-    Find full path of a shared library.
+    """Find full path of a shared library.
 
     Searches for the full path of a shared library. On Posix operating systems
     other than MacOS, this function checks the directories listed in

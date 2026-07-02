@@ -1,6 +1,4 @@
-"""
-Python interface to the NVIDIA NCCL library
-"""
+"""Python interface to the NVIDIA NCCL library"""
 
 import ctypes
 import ctypes.util
@@ -65,13 +63,10 @@ _libnccl.ncclGetErrorString.argtypes = [ctypes.c_int]
 
 
 class NcclError(Exception):
-    """
-    Custom exception for NCCL errors.
-    """
+    """Custom exception for NCCL errors."""
 
-    def __init__(self, status):
-        """
-        Initializes NcclError with the NCCL status code.
+    def __init__(self, status: int) -> None:
+        """Initializes NcclError with the NCCL status code.
 
         Parameters
         ----------
@@ -80,18 +75,15 @@ class NcclError(Exception):
         """
         self.status = status
 
-    def __str__(self):
-        """
-        Returns a human-readable string representation of the NCCL error.
-        """
+    def __str__(self) -> str:
+        """Returns a human-readable string representation of the NCCL error."""
         assert _libnccl
         error = _libnccl.ncclGetErrorString(self.status)
         return f"{error.decode('utf-8')}"
 
 
-def ncclCheckStatus(status):
-    """
-    Raise NCCL exception if the status code indicates an error.
+def ncclCheckStatus(status: int) -> None:
+    """Raise NCCL exception if the status code indicates an error.
 
     Parameters
     ----------
@@ -107,19 +99,13 @@ NCCL_UNIQUE_ID_BYTES = 128
 
 
 class NcclUniqueId(ctypes.Structure):
-    """
-    Represents a unique identifier for NCCL communicators.
-    """
+    """Represents a unique identifier for NCCL communicators."""
 
     _fields_ = [("internal", ctypes.c_char * NCCL_UNIQUE_ID_BYTES)]
 
 
 class NcclComm(ctypes.Structure):
-    """
-    Represents an NCCL communicator.
-    """
-
-    pass
+    """Represents an NCCL communicator."""
 
 
 ncclComm_t = ctypes.POINTER(NcclComm)
@@ -135,9 +121,8 @@ _libnccl.ncclGetVersion.restype = ctypes.c_size_t
 _libnccl.ncclGetVersion.argtypes = []
 
 
-def ncclGetVersion():
-    """
-    Get the NCCL library version.
+def ncclGetVersion() -> int:
+    """Get the NCCL library version.
 
     The version is returned as an integer where bits represent major, minor, and patch versions.
 
@@ -157,9 +142,8 @@ _libnccl.ncclGetUniqueId.restype = int
 _libnccl.ncclGetUniqueId.argtypes = []
 
 
-def ncclGetUniqueId():
-    """
-    Generates a unique ID to be used in `ncclCommInitRank`.
+def ncclGetUniqueId() -> NcclUniqueId:
+    """Generates a unique ID to be used in `ncclCommInitRank`.
 
     This function should be called once, and the generated ID must be distributed
     to all ranks in the communicator before calling `ncclCommInitRank`.
@@ -187,9 +171,8 @@ _libnccl.ncclCommInitRank.argtypes = [
 ]
 
 
-def ncclCommInitRank(nranks, comm_id, rank):
-    """
-    Creates a new NCCL communicator for a given rank.
+def ncclCommInitRank(nranks: int, comm_id: NcclUniqueId, rank: int) -> ctypes._Pointer[NcclComm]:
+    """Creates a new NCCL communicator for a given rank.
 
     This is the multi-thread/process version of communicator initialization.
     The `rank` must be between 0 and `nranks`-1 and unique within a communicator clique.
@@ -224,9 +207,8 @@ _libnccl.ncclCommInitAll.restype = int
 _libnccl.ncclCommInitAll.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.POINTER(ctypes.c_int)]
 
 
-def ncclCommInitAll(dev_list):
-    """
-    Creates a clique of communicators for a single process.
+def ncclCommInitAll(dev_list: tuple[int, ...] | None) -> ctypes._Pointer[NcclComm]:
+    """Creates a clique of communicators for a single process.
 
     This is a convenience function to create a single-process communicator clique.
     It returns an array of `ndev` newly initialized communicators.
@@ -245,11 +227,12 @@ def ncclCommInitAll(dev_list):
     ncclComm_t
         The first communicator in the array of initialized NCCL communicators.
     """
-    comm = ncclComm_t() * len(dev_list)  # type: ignore
+    comms = (ncclComm_t * len(dev_list))()  # type: ignore
     assert _libnccl
-    status = _libnccl.ncclCommInitAll(ctypes.byref(comm), len(dev_list), dev_list)
+    status = _libnccl.ncclCommInitAll(comms, 0 if dev_list is None else len(dev_list), dev_list)
     ncclCheckStatus(status)
-    return comm.value
+    comm = comms[0]
+    return comm
 
 
 # ncclResult_t  ncclCommDestroy(ncclComm_t comm);
@@ -257,9 +240,8 @@ _libnccl.ncclCommDestroy.restype = int
 _libnccl.ncclCommDestroy.argtypes = [ncclComm_t]
 
 
-def ncclCommDestroy(comm):
-    """
-    Frees resources associated with a communicator object.
+def ncclCommDestroy(comm: ctypes._Pointer[NcclComm]) -> None:
+    """Frees resources associated with a communicator object.
 
     This function waits for any operations that might still be running on the
     device associated with the communicator to complete before freeing resources.
@@ -279,9 +261,8 @@ _libnccl.ncclCommAbort.restype = int
 _libnccl.ncclCommAbort.argtypes = [ctypes.c_void_p]
 
 
-def ncclCommAbort(comm):
-    """
-    Aborts all operations on a communicator and frees its resources.
+def ncclCommAbort(comm: ctypes._Pointer[NcclComm]) -> None:
+    """Aborts all operations on a communicator and frees its resources.
 
     This function is typically used to clean up a communicator in case of an error.
     It frees resources associated with the communicator object and waits for any
@@ -302,9 +283,8 @@ _libnccl.ncclCommGetAsyncError.restype = int
 _libnccl.ncclCommGetAsyncError.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
 
 
-def ncclCommGetAsyncError(comm):
-    """
-    Checks if the communicator has encountered any asynchronous errors.
+def ncclCommGetAsyncError(comm: ctypes._Pointer[NcclComm]) -> int:
+    """Checks if the communicator has encountered any asynchronous errors.
 
     Parameters
     ----------
@@ -328,9 +308,8 @@ _libnccl.ncclCommCount.restype = int
 _libnccl.ncclCommCount.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
 
 
-def ncclCommCount(comm):
-    """
-    Gets the number of ranks in the communicator clique.
+def ncclCommCount(comm: ctypes._Pointer[NcclComm]) -> int:
+    """Gets the number of ranks in the communicator clique.
 
     Parameters
     ----------
@@ -355,9 +334,8 @@ _libnccl.ncclCommCuDevice.restype = int
 _libnccl.ncclCommCuDevice.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
 
 
-def ncclCommCuDevice(comm):
-    """
-    Returns the CUDA device number associated with the communicator.
+def ncclCommCuDevice(comm: ctypes._Pointer[NcclComm]) -> int:
+    """Returns the CUDA device number associated with the communicator.
 
     Parameters
     ----------
@@ -382,9 +360,8 @@ _libnccl.ncclCommUserRank.restype = int
 _libnccl.ncclCommUserRank.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
 
 
-def ncclCommUserRank(comm):
-    """
-    Returns the user-ordered "rank" associated with the communicator.
+def ncclCommUserRank(comm: ctypes._Pointer[NcclComm]) -> int:
+    """Returns the user-ordered "rank" associated with the communicator.
 
     This is the rank that was passed during `ncclCommInitRank` or determined
     by the order in `dev_list` for `ncclCommInitAll`.
@@ -409,9 +386,7 @@ def ncclCommUserRank(comm):
 
 # Reduction operation selector
 class RedOp(Enum):
-    """
-    Enumeration for NCCL reduction operations.
-    """
+    """Enumeration for NCCL reduction operations."""
 
     Sum = 0
     Prod = 1
@@ -422,9 +397,7 @@ class RedOp(Enum):
 
 # Data types
 class DataType(Enum):
-    """
-    Enumeration for NCCL data types.
-    """
+    """Enumeration for NCCL data types."""
 
     Int8 = Char = 0
     Uint8 = 1
@@ -465,9 +438,8 @@ _libnccl.ncclReduce.argtypes = [
 ]
 
 
-def ncclReduce(sendbuff, recvbuff, count, datatype, op, root, comm, stream):
-    """
-    Performs a reduction operation on data arrays.
+def ncclReduce(sendbuff: ctypes.c_void_p, recvbuff: ctypes.c_void_p, count: int, datatype: DataType, op: RedOp, root: int, comm: ctypes._Pointer[NcclComm], stream: ctypes.c_void_p) -> None:
+    """Performs a reduction operation on data arrays.
 
     Reduces data arrays of length `count` in `sendbuff` into `recvbuff` using the specified `op` operation.
     `recvbuff` can be NULL on all calls except for the root device.
@@ -519,9 +491,8 @@ _libnccl.ncclBroadcast.argtypes = [
 ]
 
 
-def ncclBroadcast(sendbuff, recvbuff, count, datatype, root, comm, stream):
-    """
-    Broadcasts data from a root to all other devices.
+def ncclBroadcast(sendbuff: ctypes.c_void_p, recvbuff: ctypes.c_void_p, count: int, datatype: DataType , root: int, comm: ctypes._Pointer[NcclComm], stream: ctypes.c_void_p) -> None:
+    """Broadcasts data from a root to all other devices.
 
     Copies `count` values from the `root` device to all other devices.
     The `root` is the rank where the data resides before the operation is started.
@@ -568,9 +539,8 @@ _libnccl.ncclAllReduce.argtypes = [
 ]
 
 
-def ncclAllReduce(sendbuff, recvbuff, count, datatype, op, comm, stream):
-    """
-    Performs an all-reduce operation.
+def ncclAllReduce(sendbuff: ctypes.c_void_p, recvbuff: ctypes.c_void_p, count: int, datatype: DataType, op: RedOp, comm: ctypes._Pointer[NcclComm], stream: ctypes.c_void_p) -> None:
+    """Performs an all-reduce operation.
 
     Reduces data arrays of length `count` in `sendbuff` using the specified `op` operation,
     and leaves identical copies of the result on each `recvbuff`.
@@ -620,9 +590,8 @@ _libnccl.ncclReduceScatter.argtypes = [
 ]
 
 
-def ncclReduceScatter(sendbuff, recvbuff, recvcount, datatype, op, comm, stream):
-    """
-    Performs a reduce-scatter operation.
+def ncclReduceScatter(sendbuff: ctypes.c_void_p, recvbuff: ctypes.c_void_p, recvcount: int, datatype: DataType, op: RedOp, comm: ctypes._Pointer[NcclComm], stream: ctypes.c_void_p) -> None:
+    """Performs a reduce-scatter operation.
 
     Reduces data in `sendbuff` using the `op` operation and scatters the reduced result
     over the devices. `recvbuff` on rank `i` will contain the `i`-th block of the result.
@@ -672,9 +641,8 @@ _libnccl.ncclAllGather.argtypes = [
 ]
 
 
-def ncclAllGather(sendbuff, recvbuff, sendcount, datatype, comm, stream):
-    """
-    Performs an all-gather operation.
+def ncclAllGather(sendbuff: ctypes.c_void_p, recvbuff: ctypes.c_void_p, sendcount: int, datatype: DataType, comm: ctypes._Pointer[NcclComm], stream: ctypes.c_void_p) -> None:
+    """Performs an all-gather operation.
 
     Each device gathers `sendcount` values from other GPUs into `recvbuff`.
     Data from rank `i` is received at offset `i` * `sendcount` in `recvbuff`.
@@ -720,9 +688,8 @@ _libnccl.ncclSend.argtypes = [
 ]
 
 
-def ncclSend(sendbuff, count, datatype, peer, comm, stream):
-    """
-    Sends data from a buffer to a specific peer rank.
+def ncclSend(sendbuff: ctypes.c_void_p, count: int, datatype: DataType, peer: int, comm: ctypes._Pointer[NcclComm], stream: ctypes.c_void_p) -> None:
+    """Sends data from a buffer to a specific peer rank.
 
     The peer rank must call `ncclRecv` with the same `datatype` and `count` from this rank.
     This operation is blocking for the GPU. If multiple `ncclSend` and `ncclRecv` operations
@@ -766,9 +733,8 @@ _libnccl.ncclRecv.argtypes = [
 ]
 
 
-def ncclRecv(recvbuff, count, datatype, peer, comm, stream):
-    """
-    Receives data into a buffer from a specific peer rank.
+def ncclRecv(recvbuff: ctypes.c_void_p, count: int, datatype: DataType, peer: int, comm: ctypes._Pointer[NcclComm], stream: ctypes.c_void_p) -> None:
+    """Receives data into a buffer from a specific peer rank.
 
     The peer rank must call `ncclSend` with the same `datatype` and `count` to this rank.
     This operation is blocking for the GPU. If multiple `ncclSend` and `ncclRecv` operations
@@ -804,9 +770,8 @@ _libnccl.ncclGroupStart.restype = int
 _libnccl.ncclGroupStart.argtypes = []
 
 
-def ncclGroupStart():
-    """
-    Starts a group of NCCL operations.
+def ncclGroupStart() -> None:
+    """Starts a group of NCCL operations.
 
     All calls to NCCL functions until `ncclGroupEnd` will be fused into a single
     NCCL operation. Nothing will be started on the CUDA stream until `ncclGroupEnd` is called.
@@ -826,9 +791,8 @@ _libnccl.ncclGroupEnd.restype = int
 _libnccl.ncclGroupEnd.argtypes = []
 
 
-def ncclGroupEnd():
-    """
-    Ends a group of NCCL operations and starts the fused operation.
+def ncclGroupEnd() -> None:
+    """Ends a group of NCCL operations and starts the fused operation.
 
     Starts a fused NCCL operation consisting of all calls made since `ncclGroupStart`.
     Operations on the CUDA stream that depend on the NCCL operations need to be called
