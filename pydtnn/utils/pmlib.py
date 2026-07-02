@@ -12,7 +12,7 @@ from pydtnn.utils import load_library
 __all__ = (
     "PMLib",
     "PMLibCounter",
-    "PMLibException",
+    "PMLibError",
     "PMLibLines",
     "PMLibMeasures",
     "PMLibMeasuresWT",
@@ -76,7 +76,7 @@ class PMLibCounter(ctypes.Structure):
     ]
 
 
-class PMLibException(Exception):
+class PMLibError(Exception):
     """Exception raised for errors occurring within the PMLib interface."""
 
     def __init__(self, error: str) -> None:
@@ -101,7 +101,7 @@ def check_pmlib_returned_status(func: Callable) -> Callable:
         """Wrapper function to execute the decorated function and check its status."""
         status = func(*args, **kwargs)
         if status != 0:
-            raise PMLibException(f"Call to '{func.__name__}' failed!") from None
+            raise PMLibError(f"Call to '{func.__name__}' failed!") from None
         return None
 
     return wrapper

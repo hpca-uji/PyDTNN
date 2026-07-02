@@ -20,12 +20,13 @@ logger = logging.getLogger(__name__)
 
 
 class SparseMatrixCOO:
-    """
-    Represents a sparse matrix in COO format.
+    """Represents a sparse matrix in COO format.
+
     This format stores the matrix using three arrays:
         - data: the nonzero values.
         - row: the row indices corresponding to each value.
         - col: the column indices corresponding to each value.
+
     The matrix is assumed to be in canonical format: indices sorted by row and then by column,
     and no duplicate entries are present.
     This class is not designed to store explict zeros so, len(self.data) should always be equal to nnz.
@@ -37,8 +38,7 @@ class SparseMatrixCOO:
                  col: np.ndarray[tuple[int], np.dtype[np.int32]],
                  shape: tuple,
                  has_canonical_format: bool) -> None:
-        """
-        Primary initializer for SparseMatrixCOO.
+        """Primary initializer for SparseMatrixCOO.
 
         Parameters:
             data (np.ndarray): Array with the nonzero values.
@@ -68,8 +68,8 @@ class SparseMatrixCOO:
 
     @classmethod
     def from_dense(cls, dense_array: np.ndarray) -> "SparseMatrixCOO":
-        """
-        Alternative constructor to create a SparseMatrixCOO from a dense array.
+        """Constructs to create a SparseMatrixCOO from a dense array.
+
         Only stores non-zero values!
 
         Parameters:
@@ -97,9 +97,7 @@ class SparseMatrixCOO:
     def from_dense_top_selection(
         cls, dense_array: np.ndarray, threshold: float
     ) -> "SparseMatrixCOO":
-        """
-        Alternative constructor to create a SparseMatrixCOO from a dense array,
-        considering only elements with absolute value greater than or equal to the threshold.
+        """Constructor from a dense array considering only elements greater than or equal to the threshold.
 
         Parameters:
             dense_array (np.ndarray): A 2D dense matrix.
@@ -250,11 +248,13 @@ class SparseMatrixCOO:
             return self.__add__(other)
 
     def _has_canonical_format(self) -> bool:
-        """
-        Check if SparseMatrixCOO follows canonical format:
+        """Check if SparseMatrixCOO follows canonical format.
+
+        Canonical format:
             - Indexes are sorted by row and then by column
             - There are no duplicate entries
             - There may have explicit zero elements
+
         This function is computationally expensive and therefore should only be used for developing/debugging purposes.
         This function should only be used in developement to assert that sparse matrices have canonical format.
 

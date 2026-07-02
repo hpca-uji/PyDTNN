@@ -37,9 +37,8 @@ class PrivateMemory:
         """Enter the context manager."""
         return self
 
-    def __exit__[T: Exception](self, cls: type[T], exc: T, tb: types.TracebackType) -> None | bool:
+    def __exit__[T: Exception](self, cls: type[T], exc: T, tb: types.TracebackType) -> None:  # noqa: D105
         """Exit the context manager."""
-        pass
 
 
 class PreallocMemory(PrivateMemory):
@@ -87,7 +86,7 @@ class PreallocMemory(PrivateMemory):
         self._stack.append(self._used)
         return self
 
-    def __exit__[T: Exception](self, cls: type[T], exc: T, tb: types.TracebackType) -> None | bool:
+    def __exit__[T: Exception](self, cls: type[T], exc: T, tb: types.TracebackType) -> None:  # noqa: D105
         """Exit the context manager and restore previous offset."""
         self._used = self._stack.pop()
 
