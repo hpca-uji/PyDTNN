@@ -128,9 +128,9 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
             cudnn.cudnnGetMultiHeadAttnBuffers(self.model.cudnn_handle, self.attn_desc)
         )
         self.model.layers[0].checkConvolutionMemory(self.workspace_size)
-        weights_size = self.weights_size.value // np.dtype(self.model.dtype).itemsize
+        weights_size = self.weights_size // np.dtype(self.model.dtype).itemsize
         reserve_backward_size = (
-            self.reserve_backward_size.value // np.dtype(self.model.dtype).itemsize + 1
+            self.reserve_backward_size // np.dtype(self.model.dtype).itemsize + 1
         )
         self.weights = gpuarray.zeros((weights_size,), self.model.dtype)
         self.weights = TensorArray(
