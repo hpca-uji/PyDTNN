@@ -204,8 +204,8 @@ class Base[T: Array]:
     cudnn_dtype: int
     cuda_grid: tuple[int, int, int]
     cuda_block: tuple[int, int, int]
-    cudnn_handle: Cudnn_Handle_Type | None
-    cublas_handle: Cublas_Handle_Type | None
+    cudnn_handle: Cudnn_Handle_Type
+    cublas_handle: Cublas_Handle_Type
     gpudirect: bool
     nccl_comm: Any | None
     nccl_type: Any | None

@@ -1,6 +1,4 @@
-"""
-PyCUDA implementation of the Stochastic Gradient Descent (SGD) optimizer.
-"""
+"""PyCUDA implementation of the Stochastic Gradient Descent (SGD) optimizer."""
 
 import logging
 
@@ -20,11 +18,9 @@ logger = logging.getLogger(__name__)
 
 
 class SGDPycuda(SGD[TensorArray], OptimizerPycuda):
-    """
-    PyCUDA-accelerated Stochastic Gradient Descent optimizer.
-    """
+    """PyCUDA-accelerated Stochastic Gradient Descent optimizer."""
 
-    def __init__(self, learning_rate=1e-2, momentum=0.9, nesterov=False, decay=0.0):
+    def __init__(self, learning_rate: float = 1e-2, momentum: float = 0.9, nesterov: bool = False, decay: float = 0.0) -> None:
         """
         Initializes the SGDPycuda optimizer.
 
@@ -37,9 +33,7 @@ class SGDPycuda(SGD[TensorArray], OptimizerPycuda):
         super().__init__(learning_rate, momentum, nesterov, decay)
 
     def _kernel_init(self) -> None:
-        """
-        Initializes the PyCUDA elementwise kernels for parameter updates.
-        """
+        """Initializes the PyCUDA elementwise kernels for parameter updates."""
         # --- GPU ---
         parameters_gpu = "{T} *w, {T} * dw, {T} * v, float lr, float decay, float momentum".format(
             T=DTYPE2CTYPE[self.model.dtype]
@@ -80,11 +74,9 @@ class SGDPycuda(SGD[TensorArray], OptimizerPycuda):
                     self.context[layer.id]["velocity_%s" % w_] = gpuarray.zeros(
                         w.shape, dtype=w.dtype
                     )
+                    self.memory_used += self.context[layer.id]["velocity_%s" % w_].nbytes  # type: ignore (They are both "gpuarray" and not "int")
 
-                    # type: ignore (They are both "gpuarray" and not "int")
-                    self.memory_used += self.context[layer.id]["velocity_%s" % w_].nbytes
-
-    def update(self, layer: LayerPycuda):
+    def update(self, layer: LayerPycuda) -> None:
         """
         Performs a single optimization step on the provided layer.
 
