@@ -88,7 +88,7 @@ class ChestXRay(Dataset):
     Normalize (z-score):
     offset: -0.509
     scale:  +4.002
-    """
+    """  # noqa: E501
 
     def __init__(self, model: Model, force_test_as_validation: bool = False, debug: bool = False) -> None:
         """
