@@ -65,11 +65,12 @@ class EncoderDecoderNumpy(EncoderDecoder[np.ndarray], AbstractBlockLayerNumpy):
         for layer in self.children:
             layer._init_backend_with_model(self.model)
 
-        self.encoder[0]._model_init(prev_shape=enc_shape, x=(x_enc, mask_enc))  # type: ignore (encoder has multiple parameters)
+        # NOTE: encoder has multiple parameters
+        self.encoder[0]._model_init(prev_shape=enc_shape, x=(x_enc, mask_enc))  # type: ignore
         for layer in self.encoder[1:]:
-            layer._model_init(prev_shape=enc_shape, x=(x_enc, mask_enc))  # type: ignore (encoder has multiple parameters)
+            layer._model_init(prev_shape=enc_shape, x=(x_enc, mask_enc))  # type: ignore
         for layer in self.decoder:
-            layer._model_init(prev_shape=dec_shape, x=(x_dec, x_enc, mask_dec))  # type: ignore (encoder has multiple parameters)
+            layer._model_init(prev_shape=dec_shape, x=(x_dec, x_enc, mask_dec))  # type: ignore
 
         for layer in self.children:
             self.fwd_time += layer.fwd_time

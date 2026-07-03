@@ -210,9 +210,11 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
         self.perf_counter._add_time_and_batch_size(part, current_round, delta, batch_size)
 
         if self.comm_rank == 0:
-            pbar.set_postfix_str(s=f"{prev_string}{string}", refresh=True)  # type: ignore (pbar is a 'tqdm', it only is None in self.comm_rank != 0)
+            # NOTE: pbar is a 'tqdm', it only is None in self.comm_rank != 0
+            pbar.set_postfix_str(s=f"{prev_string}{string}", refresh=True)  # type: ignore
             if part != Dataset.Part.VAL:
-                pbar.update(batch_size)  # type: ignore (Here there is a 'tqdm' object, pbar only is None in self.comm_rank != 0)
+                # NOTE: Here there is a 'tqdm' object, pbar only is None in self.comm_rank != 0
+                pbar.update(batch_size)  # type: ignore
 
         return total_loss, total_size, string
 

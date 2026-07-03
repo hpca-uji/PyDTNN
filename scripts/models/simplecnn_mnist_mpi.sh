@@ -10,7 +10,7 @@ if mpirun --version | grep -q 'Open MPI) [5-9].'; then
   MPI_ARGS+=("--output=:raw")
 fi
 
-mpirun -np 3 "${MPI_ARGS[@]}" \
+mpirun -np 8 "${MPI_ARGS[@]}" \
   pydtnn-benchmark \
   --model=simplecnn \
   --dataset=mnist \

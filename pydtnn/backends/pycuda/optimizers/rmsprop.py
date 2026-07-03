@@ -83,7 +83,8 @@ class RMSPropPycuda(RMSProp[TensorArray], OptimizerPycuda):
                         w.shape, dtype=layer.model.dtype
                     )
 
-                    self.memory_used += self.context[layer.id]["cache_%s" % w_].nbytes  # type: ignore (They are both "gpuarray" and not "int")
+                    # NOTE: They are both "gpuarray" and not "int"
+                    self.memory_used += self.context[layer.id]["cache_%s" % w_].nbytes  # type: ignore
 
     def update(self, layer: LayerPycuda) -> None:
         """
