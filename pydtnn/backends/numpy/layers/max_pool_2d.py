@@ -29,7 +29,7 @@ class MaxPool2DNumpy(MaxPool2D[np.ndarray], AbstractPool2DLayerNumpy):
         self.idx_max: np.ndarray = None  # type: ignore
         self.y: np.ndarray  # NOTE: Defined and initalized in AbstractPool2DLayerNumpy's init and initialize, respectively
 
-    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None):
+    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
         """Initialize model parameters and allocate memory for indices."""
         super()._model_init(prev_shape, x)
         self.minval = (

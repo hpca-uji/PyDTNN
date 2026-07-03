@@ -38,7 +38,7 @@ class LayerPycuda(Layer[TensorArray], LayerablePycuda):
         self.grid: tuple[int, int, int] = None  # type: ignore
         self.block: tuple[int, int, int] = None  # type: ignore
 
-    def _model_init(self, prev_shape: ArrayShape, x: TensorArray | None = None) -> None:
+    def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
         """Initializes model parameters and validates CUDNN requirements."""
         super()._model_init(prev_shape, x)
 

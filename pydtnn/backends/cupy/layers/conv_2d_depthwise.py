@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 class Conv2DDepthwiseCython(Conv2DDepthwiseNumpy, AbstractConv2DCupy, LayerCupy):
     """CuPy-accelerated 2D depthwise convolution layer."""
 
-    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
+    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
         """Initialize model parameters and compile CUDA kernels."""
         super()._model_init(prev_shape, x)
         self.defines_replaces = {

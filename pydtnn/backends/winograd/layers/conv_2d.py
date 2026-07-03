@@ -29,7 +29,7 @@ class Conv2DWinograd(Conv2DNumpy, AbstractConv2DWinograd):
         # convWinograd related attributes (will be initialized in initialize())
         self.cw: ConvWinograd = None  # type: ignore
 
-    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
+    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
         """Initialize model parameters and select backend implementation based on tensor format."""
         super()._model_init(prev_shape, x)
         # ConvWinograd parameters

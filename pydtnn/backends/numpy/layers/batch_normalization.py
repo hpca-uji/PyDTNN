@@ -43,7 +43,7 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
         np.reciprocal(inv_std, out=inv_std, dtype=dtype)
         return inv_std
 
-    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None):
+    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
         """
         Initializes layer parameters and memory buffers.
         """

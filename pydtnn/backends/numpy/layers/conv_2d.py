@@ -27,7 +27,7 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
     Numpy-based 2D Convolution layer implementation using im2col/im2row transformations.
     """
 
-    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
+    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
         """
         Initializes layer parameters, memory buffers, and selects forward/backward strategies.
         """

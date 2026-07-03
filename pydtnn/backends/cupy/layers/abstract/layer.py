@@ -22,7 +22,7 @@ class LayerCupy(LayerNumpy, LayerableCupy):
     Base class for layers using the CuPy backend.
     """
 
-    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None):
+    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
         """
         Initialize the layer model parameters and verify backend compatibility.
 

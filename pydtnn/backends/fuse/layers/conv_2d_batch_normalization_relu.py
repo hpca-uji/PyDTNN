@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 if TYPE_CHECKING:
-    import numpy as np
+    import numpy as np  # noqa: F811 (override typing)
 
 
 class Conv2DBatchNormalizationReluFuse(
@@ -36,7 +36,7 @@ class Conv2DBatchNormalizationReluFuse(
     # NOTE: The "__init__" method is being made (more or less) in Model (in
     # _apply_layer_fusion) and in FusedLayerMixIn.
 
-    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
+    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
         """Initializes layer parameters and selects the appropriate forward pass implementation."""
         super()._model_init(prev_shape, x)
 

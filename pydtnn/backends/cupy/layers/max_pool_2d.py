@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 class MaxPool2DCupy(MaxPool2DNumpy, AbstractPool2DLayerCupy, LayerCupy):
     """CuPy-accelerated 2D Max Pooling layer."""
 
-    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
+    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
         """Initialize model parameters and CUDA kernels."""
         super()._model_init(prev_shape, x)
         self.fwd_kernel = self._fwd_kernel()

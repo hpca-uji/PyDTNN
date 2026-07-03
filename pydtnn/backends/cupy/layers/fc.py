@@ -21,7 +21,7 @@ class FCCupy(FCNumpy, LayerCupy):
     Fully connected layer implementation using CuPy for GPU acceleration.
     """
 
-    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
+    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
         """
         Initializes the layer parameters and allocates a dedicated CUDA stream.
 

@@ -34,7 +34,7 @@ class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], AbstractPool
         self.y: np.ndarray = None  # type: ignore
 
     # Method from AbstractPool2DLayerNumpy
-    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None):
+    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
         """Initialize model parameters and allocate memory for forward/backward passes."""
         # The objective is following lines is to override the
         # AbstractPool2DLayer's initialize method, that is avoiding call to

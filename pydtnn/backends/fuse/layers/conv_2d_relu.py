@@ -1,6 +1,4 @@
-"""
-Fused 2D Convolution and ReLU layer implementation.
-"""
+"""Fused 2D Convolution and ReLU layer implementation."""
 
 import logging
 from typing import TYPE_CHECKING
@@ -20,21 +18,17 @@ logger = logging.getLogger(__name__)
 
 
 if TYPE_CHECKING:
-    import numpy as np
+    import numpy as np  # noqa: F811 (override typing)
 
 
 class Conv2DReluFuse(LayerFuse, Conv2D[np.ndarray], AbstractConv2DStandardNumpy):
-    """
-    Numpy-based implementation of a fused 2D Convolution and ReLU layer.
-    """
+    """Numpy-based implementation of a fused 2D Convolution and ReLU layer."""
 
     # NOTE: The "__init__" method is being made (more or less) in Model (in
     # _apply_layer_fusion) and in FusedLayerMixIn.
 
-    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
-        """
-        Initializes the layer model and maps forward/backward methods.
-        """
+    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
+        """Initializes the layer model and maps forward/backward methods."""
         super()._model_init(prev_shape, x)
         self.forward = {
             "_forward_cg_nchw": self._forward_nchw_cg,
@@ -44,9 +38,7 @@ class Conv2DReluFuse(LayerFuse, Conv2D[np.ndarray], AbstractConv2DStandardNumpy)
         self.backward = self._backward
 
     def _forward_nchw_cg(self, x: np.ndarray) -> np.ndarray:
-        """
-        Version of the forward function that uses the convGemm + Relu
-        """
+        """Version of the forward function that uses the convGemm + Relu"""
 
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_CONVGEMM
@@ -68,9 +60,7 @@ class Conv2DReluFuse(LayerFuse, Conv2D[np.ndarray], AbstractConv2DStandardNumpy)
         return np.asarray(res, dtype=self.model.dtype, order="C")
 
     def _forward_nhwc_cg(self, x: np.ndarray) -> np.ndarray:
-        """
-        Version of the forward function that uses the convGemm + Relu
-        """
+        """Version of the forward function that uses the convGemm + Relu"""
 
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_CONVGEMM
@@ -92,9 +82,7 @@ class Conv2DReluFuse(LayerFuse, Conv2D[np.ndarray], AbstractConv2DStandardNumpy)
         return np.asarray(res, dtype=self.model.dtype, order="C")
 
     def _forward_nchw_cw(self, x: np.ndarray) -> np.ndarray:
-        """
-        Version of the forward function that uses the convWinograd + Relu
-        """
+        """Version of the forward function that uses the convWinograd + Relu"""
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_CONVGEMM
         )
@@ -115,9 +103,7 @@ class Conv2DReluFuse(LayerFuse, Conv2D[np.ndarray], AbstractConv2DStandardNumpy)
         return np.asarray(y, dtype=self.model.dtype, order="C")
 
     def _backward(self, dy: np.ndarray) -> np.ndarray:
-        """
-        Placeholder for backward pass, currently raises NotImplementedError.
-        """
+        """Placeholder for backward pass, currently raises NotImplementedError."""
         raise NotImplementedError("Use a real backwards variant!")
 
 

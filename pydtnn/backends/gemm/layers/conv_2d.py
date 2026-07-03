@@ -26,7 +26,7 @@ class Conv2DGemm(Conv2DNumpy, AbstractConv2DGemm):
         # convGemm related attributes (will be initialized in initialize())
         self.cg = None  # type: ignore
 
-    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None):
+    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
         """Initialize layer parameters and select the appropriate GEMM kernels based on tensor format."""
         super()._model_init(prev_shape, x)
         # ConvGemm parameters

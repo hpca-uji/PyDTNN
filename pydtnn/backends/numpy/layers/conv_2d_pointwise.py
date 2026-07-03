@@ -78,7 +78,7 @@ class Conv2DPointwiseNumpy(Conv2DPointwise[np.ndarray], AbstractConv2DNumpy):
             case _:
                 raise NotImplementedError(f"{self.model.tensor_format} format not implemented.")
 
-    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
+    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
         """
         Initializes model buffers and assigns forward/backward methods based on tensor format.
         """

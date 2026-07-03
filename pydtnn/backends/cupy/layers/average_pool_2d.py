@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 class AveragePool2DCupy(AveragePool2DNumpy, AbstractPool2DLayerCupy, LayerCupy):
     """CuPy-accelerated 2D average pooling layer."""
 
-    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
+    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
         """Initialize model parameters and CUDA kernels."""
         super()._model_init(prev_shape, x)
         self.defines_replaces = {

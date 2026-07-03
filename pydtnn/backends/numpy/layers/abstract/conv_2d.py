@@ -31,7 +31,7 @@ class AbstractConv2DNumpy(AbstractConv2D[np.ndarray], LayerNumpy):
         self.fwd_time = None  # type: ignore
         self.bwd_time = None  # type: ignore
 
-    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
+    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
         """Initialize model parameters, memory buffers, and performance models."""
         super()._model_init(prev_shape, x)
         if self.use_bias:

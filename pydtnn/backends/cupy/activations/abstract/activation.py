@@ -22,7 +22,7 @@ class ActivationCupy(ActivationNumpy, LayerableCupy):
     Base class for activation layers implemented using CuPy for GPU acceleration.
     """
 
-    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None):
+    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
         """
         Initializes the activation layer, compiling CUDA kernels for forward and backward passes.
 

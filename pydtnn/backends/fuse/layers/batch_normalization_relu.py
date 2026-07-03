@@ -1,6 +1,4 @@
-"""
-Fused Batch Normalization and ReLU layer implementation for PyDTNN.
-"""
+"""Fused Batch Normalization and ReLU layer implementation for PyDTNN."""
 
 import logging
 from typing import TYPE_CHECKING
@@ -19,21 +17,17 @@ logger = logging.getLogger(__name__)
 
 
 if TYPE_CHECKING:
-    import numpy as np
+    import numpy as np  # noqa: F811 (override typing)
 
 
 class BatchNormalizationReluFuse(LayerFuse, BatchNormalizationNumpy):
-    """
-    Numpy-based implementation of fused Batch Normalization and ReLU for inference.
-    """
+    """Numpy-based implementation of fused Batch Normalization and ReLU for inference."""
 
     # NOTE: The "__init__" method is being made (more or less) in Model (in
     # _apply_layer_fusion) and in FusedLayerMixIn.
 
-    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None):
-        """
-        Initializes layer parameters and precomputes inverse standard deviation.
-        """
+    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
+        """Initializes layer parameters and precomputes inverse standard deviation."""
         super()._model_init(prev_shape, x)
 
         self.inv_std = BatchNormalizationNumpy.get_inv_std(
@@ -52,9 +46,7 @@ class BatchNormalizationReluFuse(LayerFuse, BatchNormalizationNumpy):
         self.memory_used += self.y.nbytes + self.inv_std.nbytes
 
     def _forward(self, x: np.ndarray) -> np.ndarray:
-        """
-        Performs the fused forward pass using Cython-optimized BN + ReLU operations.
-        """
+        """Performs the fused forward pass using Cython-optimized BN + ReLU operations."""
 
         n = x.shape[0]
         if self.spatial:
@@ -63,13 +55,13 @@ class BatchNormalizationReluFuse(LayerFuse, BatchNormalizationNumpy):
 
         y: np.ndarray = self.y[:n, :]
         bn_relu_inference_cython(
-            x,
-            y.reshape((-1, self.ci), copy=False),
-            self.running_mean,
-            self.inv_std,
-            self.gamma,
-            self.beta,
-        )  # type: ignore (it's fine)
+            x,  # type: ignore (revise)
+            y.reshape((-1, self.ci), copy=False),  # type: ignore (revise)
+            self.running_mean,  # type: ignore (revise)
+            self.inv_std,  # type: ignore (revise)
+            self.gamma,  # type: ignore (revise)
+            self.beta,  # type: ignore (revise)
+        )
 
         if self.spatial:
             y = y.reshape((n, self.hi, self.wi, self.ci))
@@ -78,9 +70,7 @@ class BatchNormalizationReluFuse(LayerFuse, BatchNormalizationNumpy):
         return np.asarray(y, dtype=self.model.dtype, order="C")
 
     def _backward(self, dy: np.ndarray) -> np.ndarray:
-        """
-        Raises NotImplementedError as this layer is intended for inference only.
-        """
+        """Raises NotImplementedError as this layer is intended for inference only."""
         raise NotImplementedError("Use a real backwards variant!")
 
 

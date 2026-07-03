@@ -1,10 +1,9 @@
-"""
-Module for handling layer fusion operations in PyDTNN.
-"""
+"""Module for handling layer fusion operations in PyDTNN."""
 
 from __future__ import annotations
 
 import logging
+from typing import Any
 
 import numpy as np
 
@@ -16,11 +15,9 @@ logger = logging.getLogger(__name__)
 
 
 class LayerFuse(Layer[np.ndarray]):
-    """
-    Base class for fused layers, allowing initialization from existing layer states.
-    """
+    """Base class for fused layers, allowing initialization from existing layer states."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """
         Initializes the fused layer, optionally inheriting state from a parent layer.
 

@@ -57,7 +57,7 @@ class Conv2DDirect(Conv2DNumpy, AbstractConv2DDirect):
             new(f"_forward_cd{n}_{self.model.tensor_format}", partial(self._forward_cd, n=n))
             new(f"_backward_cd{n}_{self.model.tensor_format}", partial(self._forward_cd, n=n))
 
-    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None):
+    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
         """Initialize model parameters and select the convolution algorithm."""
         super()._model_init(prev_shape, x)
         self._algo_init()

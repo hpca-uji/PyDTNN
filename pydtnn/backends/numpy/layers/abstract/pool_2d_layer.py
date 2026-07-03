@@ -27,7 +27,7 @@ class AbstractPool2DLayerNumpy(AbstractPool2DLayer[np.ndarray], LayerNumpy):
         """Initialize the 2D pooling layer."""
         super().__init__(*args, **kwargs)
 
-    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None):
+    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
         """Initialize model parameters, memory buffers, and performance estimates."""
         super()._model_init(prev_shape, x)
 
