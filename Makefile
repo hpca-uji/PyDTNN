@@ -623,6 +623,7 @@ pydtnn-lint: PYDTNN_PKG := pydtnn
 pydtnn-lint:
 	mkdir -p "$(PYDTNN_DST)"
 	cd "$(PYDTNN_SRC)" && \
+		rm -f "$(PYDTNN_DST)/quality.json" && \
 		flake8 \
 			--tee --exit-zero \
 			--jobs "$(NPROC)" \
