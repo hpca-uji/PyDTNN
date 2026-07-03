@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 if TYPE_CHECKING:
-    import numpy as np
+    import numpy as np  # noqa: F811 (override typing)
 
 
 try:
@@ -130,7 +130,9 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
         self, acc: np.ndarray, indexes: tuple[np.ndarray, np.ndarray], method: str = "cython"
     ) -> np.ndarray:
         """
-        Update residuals: set zero value if it is in indexes, else acc value is set.
+        Update residuals.
+
+        Set zero value if it is in indexes, else acc value is set.
         If density is 100% and some gradients are zero, scipy will be removing those indexes even if no sparsity is applied.
         Thus, to simulate 100% density, residuals must be always zero.
         This means that a slightly sparse factor will may remove more values because the gradients are already zero.
@@ -162,8 +164,10 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
         self, layer: Layerable, w_type: str, w: np.ndarray, coo_u: SparseMatrixCOO, method: str = "cython"
     ) -> None:
         """
-        Update weights: w -= (u / self.model.nprocs)
-        and set to weight layer attribute: setattr(layer, w_type, w)
+        Update weights and set to weight layer attribute.
+
+        w -= (u / self.model.nprocs)
+        setattr(layer, w_type, w)
 
         Parameters:
             layer (int): layer id
@@ -241,6 +245,7 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
     ) -> tuple[SparseMatrixCOO, tuple[np.ndarray, np.ndarray]]:
         """
         Performs the Ok-Topk sparse allreduce operation.
+
         This method executes the Ok-Topk sparse allreduce algorithm, which
         optimizes communication by only exchanging the most significant
         gradient values (top-k) across distributed processes. The method
@@ -407,9 +412,10 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
 
     def _split_and_reduce(
         self, acc: np.ndarray, local_th: float, boundaries: np.ndarray
-    ) -> tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[SparseMatrixCOO, tuple[np.ndarray, np.ndarray]]:
         """
         First main phase of ok_sparse_allreduce.
+
         Split the gradients into partitions and reduce them by selecting top-k values.
         Each worker receives sparse regions from the other workers and and then conducts the reduction locally.
 
@@ -430,9 +436,10 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
 
     def _balance_and_allgather(
         self, coo_reduced_region_topk: SparseMatrixCOO, global_th: float
-    ) -> tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[SparseMatrixCOO, tuple[np.ndarray, np.ndarray]]:
         """
         Second main phase of ok_sparse_allreduce.
+
         Performs the allgather of the coo_reduced_region_topk values among workers.
 
         Parameters:
@@ -450,6 +457,7 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
         coo_reduced_region_global_topk = coo_reduced_region_topk.top_selection(
             global_th, inplace=False
         )
+        assert coo_reduced_region_global_topk
 
         # 2. Data packaging
         # TODO
@@ -458,7 +466,7 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
         # TODO
 
         # 4. Allgatherv using recursive doubling
-        coo_allgather_topk = self._allgather(coo_reduced_region_global_topk)
+        coo_allgather_topk: SparseMatrixCOO = self._allgather(coo_reduced_region_global_topk)
         return coo_allgather_topk, coo_reduced_region_global_topk.get_indexes()
 
     def _intersect_indexes(
@@ -468,6 +476,7 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
     ) -> tuple[np.ndarray, np.ndarray]:
         """
         Calculates the intersection of two sets of indices of 2D.
+
         The assertion statement is only executed when the script is not run in optimized mode (python3 -O script.py).
         Remember that '_has_canonical_format' should only be used for debugging/development purposes
          to assert that indexes are correct.
@@ -634,9 +643,9 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
         raise NotImplementedError(f"Method '{method}' not implemented")
 
     # TODO: Move this to different methods.
-    def _allgather(
-        self, local_data: np.ndarray | SparseMatrixCOO, input_format: str = "SparseMatrixCOO"
-    ) -> np.ndarray | SparseMatrixCOO:
+    def _allgather[T](  # : np.ndarray | SparseMatrixCOO
+        self, local_data: T, input_format: str = "SparseMatrixCOO"
+    ) -> T:
         """
         Gathers data from all processes.
 
@@ -683,9 +692,12 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
 
     def _has_canonical_format(self, indexes: tuple[np.ndarray, np.ndarray]) -> bool:
         """
-        Check if indexes follows the COO canonical format:
+        Check if indexes follows the COO canonical format.
+
+        Format:
             - Indexes are sorted by row and then by column
             - There are no duplicate entries
+
         This function is computationally expensive and therefore should only be used for developing/debugging purposes.
         This function should only be used in developement to assert that sparse matrices have canonical format.
 

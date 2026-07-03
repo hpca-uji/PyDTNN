@@ -12,7 +12,7 @@ __all__ = ("InputNumpy",)
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    import numpy as np
+    import numpy as np  # noqa: F811 (override typing)
 
 
 class InputNumpy(Input[np.ndarray], LayerNumpy):

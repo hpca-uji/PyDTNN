@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 if TYPE_CHECKING:
-    import numpy as np
+    import numpy as np  # noqa: F811 (override typing)
 
 TRUE_POSITIVE = (0, 0)
 TRUE_NEGATIVE = (1, 1)
@@ -50,6 +50,8 @@ class BinaryConfusionMatrixNumpy(BinaryConfusionMatrix[np.ndarray], MetricNumpy)
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> np.ndarray:
         """
+        Compute the binary confusion matrix metric.
+
         For every label in target class, the output will have one confusion matrix like this:
                 |Predicted|
         ________| T  | F  |

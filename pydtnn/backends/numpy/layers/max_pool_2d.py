@@ -16,7 +16,7 @@ __all__ = ("MaxPool2DNumpy",)
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    import numpy as np
+    import numpy as np  # noqa: F811 (override typing)
 
 
 class MaxPool2DNumpy(MaxPool2D[np.ndarray], AbstractPool2DLayerNumpy):
@@ -26,7 +26,7 @@ class MaxPool2DNumpy(MaxPool2D[np.ndarray], AbstractPool2DLayerNumpy):
         """Initialize the MaxPool2DNumpy layer."""
         super().__init__(*args, **kwargs)
         # The following attribute will be intialized later.
-        self.idx_max: np.ndarray = None  # type: ignore
+        self.idx_max: np.ndarray[tuple[int, int, int, int], np.int32] = None  # type: ignore
         self.y: np.ndarray  # NOTE: Defined and initalized in AbstractPool2DLayerNumpy's init and initialize, respectively
 
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
@@ -42,7 +42,7 @@ class MaxPool2DNumpy(MaxPool2D[np.ndarray], AbstractPool2DLayerNumpy):
         # NOTE: This attribute only stores data, its value before the operation
         # doesn't matter; it's initalized due avoid warnings in
         # "LayerAndActivationBase.export".
-        self._idx_max: np.ndarray = np.zeros(idx_max_shape, dtype=np.int32)
+        self._idx_max: np.ndarray[tuple[int, int, int, int], np.int32] = np.zeros(idx_max_shape, dtype=np.int32)  # type: ignore
         self.memory_used += self._idx_max.nbytes
 
     def _fwd_max_pool_nhwc(self, x: np.ndarray, y: np.ndarray) -> None:
@@ -119,7 +119,7 @@ class MaxPool2DNumpy(MaxPool2D[np.ndarray], AbstractPool2DLayerNumpy):
         """Execute forward pass in NHWC format."""
         # y:np.ndarray = self.y[:x.shape[0], :]
         y = self.get_y(x.shape[0])
-        self.idx_max: np.ndarray = self._idx_max[: x.shape[0], :]
+        self.idx_max = self._idx_max[: x.shape[0], :]
 
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_IM2COL

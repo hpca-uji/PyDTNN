@@ -39,7 +39,7 @@ class MaxPool2DCython(MaxPool2DNumpy, AbstractPool2DLayerCython):
         max_pool_2d_fwd_nhwc_cython(
             x,
             y,
-            self.idx_max,  # type: ignore
+            self.idx_max,
             self.kh,
             self.kw,
             self.ho,
@@ -58,7 +58,7 @@ class MaxPool2DCython(MaxPool2DNumpy, AbstractPool2DLayerCython):
         max_pool_2d_fwd_nchw_cython(
             x,
             y,
-            self.idx_max,  # type: ignore
+            self.idx_max,
             self.kh,
             self.kw,
             self.ho,
@@ -77,7 +77,7 @@ class MaxPool2DCython(MaxPool2DNumpy, AbstractPool2DLayerCython):
         max_pool_2d_bwd_nhwc_cython(
             dy,
             self.idx_max,
-            dx,  # type: ignore
+            dx,
             dy.shape[0],
             self.hi,
             self.wi,
@@ -99,7 +99,7 @@ class MaxPool2DCython(MaxPool2DNumpy, AbstractPool2DLayerCython):
         max_pool_2d_bwd_nchw_cython(
             dy,
             self.idx_max,
-            dx,  # type: ignore
+            dx,
             dy.shape[0],
             self.hi,
             self.wi,
@@ -132,7 +132,7 @@ class MaxPool2DCython(MaxPool2DNumpy, AbstractPool2DLayerCython):
         )
         im2row_1ch_nhwc_cython(
             x,
-            x_rows,  # type: ignore
+            x_rows,
             self.kh,
             self.kw,
             self.ho,
@@ -145,11 +145,10 @@ class MaxPool2DCython(MaxPool2DNumpy, AbstractPool2DLayerCython):
             self.wdilation,
         )
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        idx_max: np.ndarray = argmax_cython(x_rows, y, amax, rng, axis=1)  # type: ignore
+        idx_max = argmax_cython(x_rows, y, amax, rng, axis=1)  # type: ignore
 
-        idx_max: np.ndarray
         if self.model.mode is Model.Mode.TRAIN:
-            self.idx_max = idx_max
+            self.idx_max = idx_max  # type: ignore
         return np.asarray(
             y.reshape((-1, self.ho, self.wo, self.co)), dtype=self.model.dtype, order="C"
         )
@@ -169,7 +168,7 @@ class MaxPool2DCython(MaxPool2DNumpy, AbstractPool2DLayerCython):
         )
         im2col_1ch_nchw_cython(
             x,
-            x_cols,  # type: ignore
+            x_cols,
             self.kh,
             self.kw,
             self.ho,
@@ -184,7 +183,7 @@ class MaxPool2DCython(MaxPool2DNumpy, AbstractPool2DLayerCython):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         idx_max: np.ndarray = argmax_cython(x_cols, y, amax, rng, axis=0)  # type: ignore
         if self.model.mode is Model.Mode.TRAIN:
-            self.idx_max = idx_max
+            self.idx_max = idx_max  # type: ignore
         return np.asarray(
             y.reshape((-1, self.co, self.ho, self.wo)), dtype=self.model.dtype, order="C"
         )
@@ -194,14 +193,14 @@ class MaxPool2DCython(MaxPool2DNumpy, AbstractPool2DLayerCython):
         dy_rows: np.ndarray = np.zeros(
             (np.prod(dy.shape), self.kh * self.kw), dtype=self.model.dtype
         )
-        dy_rows[self.idx_max] = dy.flatten()
+        dy_rows[self.idx_max] = dy.flatten()  # type: ignore
         dx: np.ndarray = np.zeros_like(dy, dtype=self.model.dtype)
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.COMP_DX_COL2IM
         )
         row2im_1ch_nhwc_cython(
             dy_rows,
-            dx,  # type: ignore
+            dx,
             dy.shape[0],
             self.hi,
             self.wi,
@@ -227,7 +226,7 @@ class MaxPool2DCython(MaxPool2DNumpy, AbstractPool2DLayerCython):
         dy_cols: np.ndarray = np.zeros(
             (self.kh * self.kw, np.prod(dy.shape)), dtype=self.model.dtype
         )
-        dy_cols[self.idx_max] = dy.flatten(order="C").view(dtype=self.model.dtype)
+        dy_cols[self.idx_max] = dy.flatten(order="C").view(dtype=self.model.dtype)  # type: ignore
         dx: np.ndarray = np.zeros((dy.shape[0], self.ci, self.hi, self.wi), dtype=self.model.dtype)
 
         self.model.tracer.emit_event(
@@ -235,7 +234,7 @@ class MaxPool2DCython(MaxPool2DNumpy, AbstractPool2DLayerCython):
         )
         col2im_1ch_nchw_cython(
             dy_cols,
-            dx,  # type: ignore
+            dx,
             dy.shape[0],
             self.hi,
             self.wi,

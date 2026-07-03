@@ -15,7 +15,7 @@ __all__ = ("F1ScoreNumpy",)
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    import numpy as np
+    import numpy as np  # noqa: F811 (override typing)
 
 
 class F1ScoreNumpy(F1Score[np.ndarray], MetricNumpy):

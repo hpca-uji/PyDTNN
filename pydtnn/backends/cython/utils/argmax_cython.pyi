@@ -12,7 +12,7 @@ def argmax_cython[T: _npDT](
     amax: _npDT_1Dims[_np.int32],
     rng: _npDT_1Dims[_np.int32],
     axis: int = 0,
-) -> tuple[_npDT_1Dims[T], _npDT_1Dims[T]]:
+) -> tuple[_npDT_1Dims[_np.int32], _npDT_1Dims[_np.int32]]:
     """
     Computes the argmax of a 2D array along a specified axis using Cython.
 

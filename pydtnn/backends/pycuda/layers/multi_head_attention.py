@@ -2,6 +2,7 @@
 
 # https://github.com/storypku/cuda-support-for-bazel/blob/9a9c90c7d73fdafb3fbc8713232405cae4ae66d8/examples/cudnn-samples/multiHeadAttention/multiHeadAttention.cpp
 
+import ctypes
 import logging
 from typing import Any
 
@@ -101,8 +102,8 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
             self.model.cudnn_dtype,
             self.model.cudnn_dtype,
             cudnn.cudnnMathType["CUDNN_DEFAULT_MATH"],
-            None,
-            None,
+            0,  # NOTE: We have a Dropout but we don't use it because the author of this layer didn't use it
+            0,  # NOTE: We have a Dropout but we don't use it because the author of this layer didn't use it
             self.embedl,
             self.embedl,
             self.embedl,
@@ -262,8 +263,8 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
                 self.model.cudnn_handle,
                 self.attn_desc,
                 self.current_index,
-                self.low_window_index,
-                self.high_window_index,
+                self.low_window_index.ctypes.data_as(ctypes.c_void_p),
+                self.high_window_index.ctypes.data_as(ctypes.c_void_p),
                 self.dev_seq_lengths_qo.ptr,
                 self.dev_seq_lengths_kv.ptr,
                 self.dquery.desc,
@@ -314,8 +315,8 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
         cudnn.cudnnMultiHeadAttnBackwardData(
             self.model.cudnn_handle,
             self.attn_desc,
-            self.low_window_index,
-            self.high_window_index,
+            self.low_window_index.ctypes.data_as(ctypes.c_void_p),
+            self.high_window_index.ctypes.data_as(ctypes.c_void_p),
             self.dev_seq_lengths_qo.ptr,
             self.dev_seq_lengths_kv.ptr,
             self.y.desc,

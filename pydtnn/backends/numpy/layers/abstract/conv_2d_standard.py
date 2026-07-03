@@ -12,13 +12,14 @@ __all__ = ("AbstractConv2DStandardNumpy",)
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    import numpy as np
+    import numpy as np  # noqa: F811 (override typing)
 
 
 class AbstractConv2DStandardNumpy(AbstractConv2DNumpy):
     """
-    Base class for standard 2D convolution layers implementing weight shape
-    initialization and format-aware weight export/import.
+    Base class for standard 2D convolution layers.
+
+    Implementing weight shape initialization and format-aware weight export/import.
     """
 
     def _initializing_special_parameters(self) -> None:

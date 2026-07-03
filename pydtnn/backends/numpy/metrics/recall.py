@@ -14,7 +14,7 @@ __all__ = ("RecallNumpy",)
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    import numpy as np
+    import numpy as np  # noqa: F811 (override typing)
 
 # from pydtnn.backends.numpy.utils.div_arrays_set_if_zero import div_arrays_set_if_zero
 

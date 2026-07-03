@@ -16,7 +16,7 @@ __all__ = ("FCNumpy",)
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    import numpy as np
+    import numpy as np  # noqa: F811 (override typing)
 
 
 class FCNumpy(FC[np.ndarray], LayerNumpy):

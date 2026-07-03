@@ -17,7 +17,7 @@ __all__ = ("Conv2DNumpy",)
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    import numpy as np
+    import numpy as np  # noqa: F811 (override typing)
 
 
 class Conv2DNumpy(AbstractConv2DStandardNumpy):

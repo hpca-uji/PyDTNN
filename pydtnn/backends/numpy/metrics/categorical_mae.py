@@ -13,7 +13,7 @@ __all__ = ("CategoricalMAENumpy",)
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    import numpy as np
+    import numpy as np  # noqa: F811 (override typing)
 
 
 class CategoricalMAENumpy(CategoricalMAE[np.ndarray], MetricNumpy):

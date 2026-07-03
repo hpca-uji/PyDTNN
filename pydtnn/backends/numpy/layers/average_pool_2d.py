@@ -15,7 +15,7 @@ __all__ = ("AveragePool2DNumpy",)
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    import numpy as np
+    import numpy as np  # noqa: F811 (override typing)
 
 
 class AveragePool2DNumpy(AveragePool2D[np.ndarray], AbstractPool2DLayerNumpy):

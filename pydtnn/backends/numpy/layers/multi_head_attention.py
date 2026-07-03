@@ -21,7 +21,7 @@ __all__ = ("MultiHeadAttentionNumpy",)
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    import numpy as np
+    import numpy as np  # noqa: F811 (override typing)
 
 
 class MultiHeadAttentionNumpy(MultiHeadAttention[np.ndarray], AbstractBlockLayerNumpy):
@@ -137,7 +137,7 @@ class MultiHeadAttentionNumpy(MultiHeadAttention[np.ndarray], AbstractBlockLayer
         """Transposes the last two dimensions of the input."""
         return x.swapaxes(-2, -1)
 
-    def forward(self, query: np.ndarray, key: np.ndarray,value: np.ndarray,
+    def forward(self, query: np.ndarray, key: np.ndarray, value: np.ndarray,
                 mask: np.ndarray | None = None) -> np.ndarray:
         """Performs the forward pass of the multi-head attention mechanism."""
         if self.model.mode == Model.Mode.TRAIN:

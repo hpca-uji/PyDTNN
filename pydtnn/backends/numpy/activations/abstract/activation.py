@@ -13,10 +13,8 @@ logger = logging.getLogger(__name__)
 
 
 if TYPE_CHECKING:
-    import numpy as np
+    import numpy as np  # noqa: F811 (override typing)
 
 
 class ActivationNumpy(Activation[np.ndarray], LayerableNumpy):
     """Base class for activation layers using the NumPy backend."""
-
-    ...

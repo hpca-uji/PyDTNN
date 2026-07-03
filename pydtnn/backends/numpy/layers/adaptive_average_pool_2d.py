@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 # Imports for the methods from AveragePool2DNumpy
 if TYPE_CHECKING:
-    import numpy as np
+    import numpy as np  # noqa: F811 (override typing)
 
 
 class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], AbstractPool2DLayerNumpy):
