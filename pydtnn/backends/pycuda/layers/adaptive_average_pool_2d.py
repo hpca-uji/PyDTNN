@@ -2,6 +2,7 @@
 
 import logging
 import math
+from typing import Any
 
 import numpy as np
 from pycuda import gpuarray  # type: ignore
@@ -11,6 +12,7 @@ from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.layers.adaptive_average_pool_2d import AdaptiveAveragePool2D
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
                                    PYDTNN_OPS_EVENTS, OpsEventEnum)
+from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.performance_models import col2im_time, im2col_time
 
 __all__ = ("AdaptiveAveragePool2DPycuda",)
@@ -24,13 +26,13 @@ logger = logging.getLogger(__name__)
 class AdaptiveAveragePool2DPycuda(AdaptiveAveragePool2D[TensorArray], LayerPycuda):
     """PyCUDA-accelerated Adaptive Average Pooling 2D layer."""
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the AdaptiveAveragePool2DPycuda layer."""
         super().__init__(*args, **kwargs)
         # NOTE: Will be initalized later.
         self.y = None  # type: ignore
 
-    def _model_init(self, prev_shape, x: TensorArray) -> None:
+    def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
         """Initialize model parameters and CUDA kernels."""
         super()._model_init(prev_shape, x)
 
@@ -39,7 +41,7 @@ class AdaptiveAveragePool2DPycuda(AdaptiveAveragePool2D[TensorArray], LayerPycud
 
         self.initialize_pool_2d_gpu(prev_shape, x)
 
-    def initialize_pool_2d_gpu(self, prev_shape, x):
+    def initialize_pool_2d_gpu(self, prev_shape: ArrayShape, x: TensorArray) -> None:
         """Allocate GPU memory and initialize performance metrics for the pooling layer."""
         self.ci, self.hi, self.wi = self.model.decode_shape(prev_shape)
         self.shape = self.model.encode_shape((self.co, self.ho, self.wo))

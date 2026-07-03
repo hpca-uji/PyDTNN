@@ -2,6 +2,7 @@
 
 import logging
 import math
+from typing import Any
 
 import numpy as np
 from pycuda import gpuarray  # type: ignore
@@ -21,7 +22,7 @@ logger = logging.getLogger(__name__)
 class LeakyReluPycuda(LeakyRelu[TensorArray], ActivationPycuda):
     """PyCUDA-accelerated Leaky ReLU activation layer."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the LeakyReluPycuda layer."""
         super().__init__(*args, **kwargs)
         # The following attributes will be initialized later.

@@ -1,8 +1,7 @@
-"""
-PyDTNN PyCUDA backend implementation for 2D pooling layers.
-"""
+"""PyDTNN PyCUDA backend implementation for 2D pooling layers."""
 
 import logging
+from typing import Any
 
 from pycuda import gpuarray  # type: ignore
 
@@ -22,17 +21,13 @@ logger = logging.getLogger(__name__)
 
 
 class AbstractPool2DLayerPycuda(AbstractPool2DLayer[TensorArray], LayerPycuda):
-    """
-    Provides common methods to Pool2DPycuda classes.
-    """
+    """Provides common methods to Pool2DPycuda classes."""
 
-    def __init__(self, *args, **kwargs):
-        """
-        Initializes the abstract PyCUDA 2D pooling layer.
-        """
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Initializes the abstract PyCUDA 2D pooling layer."""
         super().__init__(*args, **kwargs)
         # The following attributes will be initalized later.
-        self.pool_desc = None  # TODO: set CDNN descripor type
+        self.pool_desc: int = None  # type: ignore
         self.ci: int = None  # type: ignore
         self.hi: int = None  # type: ignore
         self.wi: int = None  # type: ignore

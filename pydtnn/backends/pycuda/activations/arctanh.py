@@ -1,6 +1,7 @@
 """PyCUDA backend implementation for the Arctanh activation function."""
 
 import logging
+from typing import Any
 
 import numpy as np
 from pycuda import gpuarray  # type: ignore
@@ -19,7 +20,7 @@ logger = logging.getLogger(__name__)
 class ArctanhPycuda(Arctanh[TensorArray], ActivationPycuda):
     """PyCUDA implementation of the Arctanh activation layer."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the ArctanhPycuda layer."""
         super().__init__(*args, **kwargs)
         self.atanh: ElementwiseKernel = None

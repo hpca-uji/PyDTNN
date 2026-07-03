@@ -1,6 +1,7 @@
 """PyCUDA backend implementation for the Log activation function."""
 
 import logging
+from typing import Any
 
 import numpy as np
 from pycuda import gpuarray  # type: ignore
@@ -19,7 +20,7 @@ logger = logging.getLogger(__name__)
 class LogPycuda(Log[TensorArray], ActivationPycuda):
     """PyCUDA implementation of the Log activation layer."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the LogPycuda layer."""
         super().__init__(*args, **kwargs)
         self.log: ElementwiseKernel = None

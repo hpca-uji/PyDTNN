@@ -58,7 +58,7 @@ class LayerPycuda(Layer[TensorArray], LayerablePycuda):
         """Returns a set of attribute names representing GPU array properties."""
         return {*self.grad_vars.keys(), *self.grad_vars.values()}
 
-    def _export_prop(self, key: str) -> Any:
+    def _export_prop(self, key: str) -> np.ndarray:
         """Exports a GPU array property to a CPU-based numpy array."""
         if key not in self._ary_prop:
             return super()._export_prop(key)
@@ -67,7 +67,7 @@ class LayerPycuda(Layer[TensorArray], LayerablePycuda):
         cpu_ary = np.asarray(gpu_ary.get(), dtype=np.float64, order="C", copy=True)
         return cpu_ary
 
-    def _import_prop(self, key: str, value) -> None:
+    def _import_prop(self, key: str, value: np.ndarray) -> None:
         """Imports a CPU-based numpy array into a GPU array property."""
         if key not in self._ary_prop:
             return super()._import_prop(key, value)

@@ -206,8 +206,8 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
     cudnn_handle: Cudnn_Handle_Type
     cublas_handle: Cublas_Handle_Type
     gpudirect: bool
-    nccl_comm: Any | None
-    nccl_type: Any | None
+    nccl_comm: Any
+    nccl_type: Any
     stream: Any  # drv.Stream
 
     memory_used: int

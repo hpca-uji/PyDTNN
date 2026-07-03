@@ -21,8 +21,8 @@ class SoftmaxPycuda(Softmax[TensorArray], ActivationPycuda):
     def __init__(self, *args, **kwargs):
         """Initialize the SoftmaxPycuda layer."""
         super().__init__(*args, **kwargs)
-        self.mode = None
-        self.algo = None
+        self.mode: int = None  #type: ignore (It'll be initalized later)
+        self.algo: int = None  #type: ignore (It'll be initalized later)
 
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
         """Initialize layer buffers and cuDNN parameters."""

@@ -1,8 +1,7 @@
-"""
-PyCUDA backend implementation for activation layers.
-"""
+"""PyCUDA backend implementation for activation layers."""
 
 import logging
+from typing import Any
 
 from pydtnn.activations.abstract.activation import Activation
 from pydtnn.backends.pycuda.abstract.layerable import LayerablePycuda
@@ -24,10 +23,8 @@ class ActivationPycuda(Activation[TensorArray], LayerablePycuda):
       * reduce_weights_sync()
     """
 
-    def __init__(self, *args, **kwargs):
-        """
-        Initializes the PyCUDA activation layer.
-        """
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Initializes the PyCUDA activation layer."""
         super().__init__(*args, **kwargs)
         # The following attributes will be initalized later.
         self.x: TensorArray = None  # type: ignore
@@ -35,7 +32,7 @@ class ActivationPycuda(Activation[TensorArray], LayerablePycuda):
         self.grid: tuple[int, int, int] = None  # type: ignore
         self.block: tuple[int, int, int] = None  # type: ignore
 
-    def _model_init(self, prev_shape: ArrayShape, x: TensorArray):
+    def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
         """
         Initializes model-specific CUDA grid and block dimensions.
 

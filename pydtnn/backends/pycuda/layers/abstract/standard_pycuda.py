@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
     """Abstract base class for standard PyCUDA 2D convolution layers."""
 
-    def _initializing_special_parameters(self):
+    def _initializing_special_parameters(self) -> None:
         """Initialize layer-specific weight shapes based on tensor format."""
         match self.model.tensor_format:
             case TensorFormat.NCHW:

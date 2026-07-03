@@ -17,7 +17,7 @@ __all__ = ("LayerablePycuda",)
 class LayerablePycuda(Layerable[TensorArray], BasePycuda):
     """Provides PyCUDA-specific weight reduction capabilities for distributed layers."""
 
-    def reduce_weights_async(self, gradient=True):
+    def reduce_weights_async(self, gradient: bool = True) -> None:
         """Initiates asynchronous weight reduction across distributed processes."""
         # NOTE: Keep in sync with Layer
         if not self.model.comm:
@@ -34,6 +34,8 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
             dw = getattr(self, dw_)
 
             if self.model.enable_nccl:
+                assert nccl is not None
+
                 # self.model.stream.synchronize()
                 dw *= self.model.rank_weight
                 # TODO: self.model._encode_reduce
@@ -87,7 +89,7 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
                 req = self.model._layer_reduce_async(dw_cpu)
                 self.reqs_allred[dw_] = req
 
-    def wait_allreduce_async(self, gradient=True):
+    def wait_allreduce_async(self, gradient: bool = True) -> None:
         """Waits for completion of asynchronous weight reduction operations."""
         # NOTE: Keep in sync with Layer
         if not self.model.comm:
@@ -139,7 +141,7 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
                 # If there is no CUDA-aware MPI, copy data back to GPU
                 dw.set_async(dw_cpu, self.stream_2)
 
-    def reduce_weights_sync(self, gradient=True):
+    def reduce_weights_sync(self, gradient: bool = True) -> None:
         """Performs synchronous weight reduction across distributed processes."""
         # NOTE: Keep in sync with Layer
         if not self.model.comm:

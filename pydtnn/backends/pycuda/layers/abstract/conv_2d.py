@@ -1,6 +1,4 @@
-"""
-PyCUDA backend implementation for 2D Convolutional layers.
-"""
+"""PyCUDA backend implementation for 2D Convolutional layers."""
 
 import logging
 from typing import Any
@@ -22,14 +20,10 @@ logger = logging.getLogger(__name__)
 
 
 class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
-    """
-    Abstract base class for 2D Convolutional layers using the PyCUDA backend.
-    """
+    """Abstract base class for 2D Convolutional layers using the PyCUDA backend."""
 
-    def __init__(self, *args, **kwargs):
-        """
-        Initializes the abstract PyCUDA 2D convolution layer.
-        """
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Initializes the abstract PyCUDA 2D convolution layer."""
         super().__init__(*args, **kwargs)
 
         # The following attributes will be initalized later.
@@ -150,7 +144,7 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
         )
         raise NotImplementedError(f"Conv2DPycuda backward: {msg}")
 
-    def _export_weights_dw(self, key: str) -> Any:
+    def _export_weights_dw(self, key: str) -> np.ndarray:
         """
         Exports weights or gradients of weights. Must be implemented by subclasses.
 
@@ -162,7 +156,7 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
         msg = "This is a fake function. It must be overrided by the child classes."
         raise NotImplementedError(f"Conv2DPycuda export: {msg}")
 
-    def _export_biases_db(self, key: str) -> Any:
+    def _export_biases_db(self, key: str) -> np.ndarray:
         """
         Exports biases or gradients of biases to CPU.
 
@@ -181,7 +175,7 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
             case tensor_format:
                 raise TypeError(f"Unsupported tensor format ({tensor_format})")
 
-    def _export_prop(self, key: str) -> Any:
+    def _export_prop(self, key: str) -> np.ndarray | Any:
         """
         Routes property export requests to the appropriate handler.
 
@@ -196,7 +190,7 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
             case _:
                 return super()._export_prop(key)
 
-    def _import_biases_db(self, key: str, value: Any) -> None:
+    def _import_biases_db(self, key: str, value: np.ndarray) -> None:
         """
         Imports biases or gradients of biases from CPU.
 
@@ -218,7 +212,7 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
             case tensor_format:
                 raise TypeError(f"Unsupported tensor format ({tensor_format})")
 
-    def _import_weights_dw(self, key: str, value: Any) -> None:
+    def _import_weights_dw(self, key: str, value: np.ndarray) -> None:
         """
         Imports weights or gradients of weights. Must be implemented by subclasses.
 
@@ -231,7 +225,7 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
         msg = "This is a fake function. It must be overrided by the child classes"
         raise NotImplementedError(f"Conv2DPycuda forward: {msg}")
 
-    def _import_prop(self, key: str, value) -> None:
+    def _import_prop(self, key: str, value: np.ndarray | Any) -> None:
         """
         Routes property import requests to the appropriate handler.
 

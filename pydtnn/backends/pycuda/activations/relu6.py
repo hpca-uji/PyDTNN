@@ -2,6 +2,7 @@
 
 import logging
 import math
+from typing import Any
 
 import numpy as np
 from pycuda import gpuarray  # type: ignore
@@ -21,7 +22,7 @@ logger = logging.getLogger(__name__)
 class Relu6Pycuda(Relu6[TensorArray], ActivationPycuda):
     """PyCUDA-accelerated ReLU6 activation layer."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the Relu6Pycuda layer."""
         super().__init__(*args, **kwargs)
         self.mask: TensorArray = None  # type: ignore
