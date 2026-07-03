@@ -43,7 +43,7 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
         self.save_inv_var: TensorArray = None  # type: ignore
         self.factor: float = None  # type: ignore
 
-    def _model_init(self, prev_shape: ArrayShape, x: TensorArray):
+    def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
         """Initializes GPU memory and cuDNN descriptors for the layer."""
         super()._model_init(prev_shape, x)
         self.stream_2 = drv.Stream()

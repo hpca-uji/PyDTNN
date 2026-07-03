@@ -1,6 +1,4 @@
-"""
-Numpy backend implementation of the Categorical Mean Absolute Error metric.
-"""
+"""Numpy backend implementation of the Categorical Mean Absolute Error metric."""
 
 import logging
 import math
@@ -19,14 +17,10 @@ if TYPE_CHECKING:
 
 
 class CategoricalMAENumpy(CategoricalMAE[np.ndarray], MetricNumpy):
-    """
-    Numpy-based implementation of Categorical Mean Absolute Error.
-    """
+    """Numpy-based implementation of Categorical Mean Absolute Error."""
 
     def _model_init(self) -> None:
-        """
-        Initializes model parameters and calculates memory requirements.
-        """
+        """Initializes model parameters and calculates memory requirements."""
         super()._model_init()
 
         self.error: np.ndarray = None  # type: ignore (It will be initialized later)
@@ -34,9 +28,7 @@ class CategoricalMAENumpy(CategoricalMAE[np.ndarray], MetricNumpy):
         self.memory_used += self.tmp_memory_used
 
     def _post_init(self) -> None:
-        """
-        Allocates memory for error storage after model initialization.
-        """
+        """Allocates memory for error storage after model initialization."""
         super()._post_init()
         with self.model.memory:
             self.error = self.model.memory.ndarray(self.shape, dtype=self.model.dtype)

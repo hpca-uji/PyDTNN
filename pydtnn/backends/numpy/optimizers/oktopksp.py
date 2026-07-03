@@ -1,6 +1,4 @@
-"""
-Module for the OkTopkSP optimizer implementation using NumPy.
-"""
+"""Module for the OkTopkSP optimizer implementation using NumPy."""
 
 import logging
 from typing import TYPE_CHECKING
@@ -27,9 +25,7 @@ except (ImportError, ModuleNotFoundError):
 
 
 class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
-    """
-    NumPy-based implementation of the OkTopkSP optimizer for distributed training.
-    """
+    """NumPy-based implementation of the OkTopkSP optimizer for distributed training."""
 
     def _model_init(self, list_layers: list[Layerable]) -> None:
         """
@@ -53,7 +49,7 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
             self.all_residuals[layer.id] = {dw_: None for dw_ in layer.grad_vars.values()}
             self.all_boundaries[layer.id] = {dw_: None for dw_ in layer.grad_vars.values()}
 
-    def update(self, layer: Layerable):
+    def update(self, layer: Layerable) -> None:
         """
         Performs the optimization update step for a given layer.
 
@@ -105,7 +101,7 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
         self.iterations[layer.id] += 1
 
     def _compute_acc(
-        self, residuals: np.ndarray, dw: np.ndarray, learning_rate: float, method="cython"
+        self, residuals: np.ndarray, dw: np.ndarray, learning_rate: float, method: str = "cython"
     ) -> np.ndarray:
         """
         Compute acc, where: acc = residuals + (learning_rate * dw)
@@ -114,7 +110,8 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
             residuals (np.array): 2D dense matrix with the current layer residuals
             dw (np.array): 2D dense matrix with the current layer gradients
             learning_rate (float): learning rate float value
-            method (string, optional): The method to use for updating the weights. It can be 'cython' or 'numpy'. Default is 'cython'.
+            method (string, optional): The method to use for updating the weights. It can be 'cython' or 'numpy'.
+                Default is 'cython'.
 
         Warning:
             'cython' method does not provide the same exact accuracy as 'numpy'.
@@ -130,7 +127,7 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
         return residuals + (learning_rate * dw)
 
     def _reset_residuals(
-        self, acc: np.ndarray, indexes: tuple[np.ndarray, np.ndarray], method="cython"
+        self, acc: np.ndarray, indexes: tuple[np.ndarray, np.ndarray], method: str = "cython"
     ) -> np.ndarray:
         """
         Update residuals: set zero value if it is in indexes, else acc value is set.
@@ -141,7 +138,8 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
         Parameters:
             acc (np.array): 2D dense matrix
             indexes (tuple(np.array, np.array)): a tuple with rows and cols
-            method (string, optional): The method to use for updating the weights. It can be 'cython' or 'numpy'. Default is 'cython'.
+            method (string, optional): The method to use for updating the weights. It can be 'cython' or 'numpy'.
+             Default is 'cython'.
 
         Returns:
             residuals (np.array): which is the same as acc with the values in indexes set to zero.
@@ -161,7 +159,7 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
 
     # TODO: Move this to 3 different methods.
     def _update_weights(
-        self, layer: Layerable, w_type: str, w: np.ndarray, coo_u: SparseMatrixCOO, method="cython"
+        self, layer: Layerable, w_type: str, w: np.ndarray, coo_u: SparseMatrixCOO, method: str = "cython"
     ) -> None:
         """
         Update weights: w -= (u / self.model.nprocs)
@@ -172,7 +170,8 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
             w_type (string): weight param type (bias, weight, ...)
             w (np.array): N dimensional dense weights matrix/tensor
             coo_u (SparseMatrixCOO): Sparse 2D gradient matrix in COO format to update w
-            method (string, optional): The method to use for updating the weights. It can be 'cython' or 'numpy'. Default is 'cython'.
+            method (string, optional): The method to use for updating the weights. It can be 'cython' or 'numpy'.
+                Default is 'cython'.
 
         Returns:
             (void): instead it directly applies the result to the weight layer attribute
@@ -287,13 +286,14 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
         matrix: np.ndarray | SparseMatrixCOO,
         k: int,
         input_format: str | None = None,
-        method="numpy_sort",
+        method: str = "numpy_sort",
     ) -> float:
         """
         Return the absolute gradient threshold for a given matrix.
 
         Parameters:
-            matrix (np.array or SparseMatrixCOO): A 2D gradient matrix, in np.array for 'dense' input_format or SparseMatrixCOO for 'coo' input_format.
+            matrix (np.array or SparseMatrixCOO): A 2D gradient matrix, in np.array for 'dense' input_format or
+                SparseMatrixCOO for 'coo' input_format.
             k (int): Indicating the number of top gradient values to consider.
             input_format (string): Either 'dense' for a dense matrix or 'coo' for a sparse matrix in COO format.
             method (string, optional): The method to use for threshold selection. It can be 'numpy_sort' or 'numpy_partition'.
@@ -338,7 +338,7 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
 
         raise NotImplementedError(f"Method '{method}' with format '{input_format}' not implemented")
 
-    def _space_repartition(self, acc: np.ndarray, local_th: float, balanced=True) -> np.ndarray:
+    def _space_repartition(self, acc: np.ndarray, local_th: float, balanced: bool = True) -> np.ndarray:
         """
         Returns the boundaries of the regions of the gradient matrix for the split and reduce phase.
 
@@ -442,7 +442,8 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
         Returns:
             out (tuple with two elements:):
                 - coo_allgather_topk (SparseMatrixCOO): A 2D sparse gradient matrix with the global top-k selection.
-                - reduced_region_global_topk_indexes (tuple(np.array, np.array)): The indices of the top-k gradient values region reduced.
+                - reduced_region_global_topk_indexes (tuple(np.array, np.array)): The indices of the top-k gradient
+                    values region reduced.
         """
 
         # 1. Global topk selection
@@ -468,13 +469,16 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
         """
         Calculates the intersection of two sets of indices of 2D.
         The assertion statement is only executed when the script is not run in optimized mode (python3 -O script.py).
-        Remember that '_has_canonical_format' should only be used for debugging/development purposes to assert that indexes are correct.
+        Remember that '_has_canonical_format' should only be used for debugging/development purposes
+         to assert that indexes are correct.
         Indexes in scipy are usually in canonical format, so it should not be necessary to evaluate the indexes format.
         When optimized mode is enabled (python3 -O script.py), the assert sentences are not computed.
 
         Parameters:
-            local_indexes (tuple(np.array, np.array)): a tuple of two numpy arrays representing row and column indices, sorted by rows, then by columns.
-            global_indexes (tuple(np.array, np.array)): a tuple of two numpy arrays representing row and column indices, sorted by rows, then by columns.
+            local_indexes (tuple(np.array, np.array)): a tuple of two numpy arrays representing row and column indices,
+                sorted by rows, then by columns.
+            global_indexes (tuple(np.array, np.array)): a tuple of two numpy arrays representing row and column indices,
+                sorted by rows, then by columns.
 
         Returns:
             intersected_indexes (tuple(np.array, np.array)): Set of tuples representing the common indices.
@@ -523,14 +527,15 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
         self,
         coo_topk: SparseMatrixCOO,
         boundaries: np.ndarray,
-        method="p2p_region_wise_reduce_destination_rotation_and_bucketing",
+        method: str = "p2p_region_wise_reduce_destination_rotation_and_bucketing",
     ) -> SparseMatrixCOO:
         """
         Reduce the topk elements in regions defined by boundaries.
 
         Parameters:
             coo_topk (SparseMatrixCOO): a 2D sparse array in COO format with the values and indexes of topk.
-            boundaries (np.array): boundaries for partitioning the gradient space like [row_end_p0, row_end_p1, row_end_p2, ...].
+             boundaries (np.array): boundaries for partitioning the gradient space like
+             [row_end_p0, row_end_p1, row_end_p2, ...].
             method (str, optional): The method to use for reduce topk
 
         Returns:
@@ -567,7 +572,8 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
             return reduced_regions_coo[self.model.rank]
 
         if method == "collective_region_wise_reduce_async":
-            """It is not possible with the current mpi4py version to generate a buffer with indexes and values and operate with them"""
+            """It is not possible with the current mpi4py version to generate a buffer
+             with indexes and values and operate with them"""
             pass
 
         if method == "p2p_region_wise_reduce_static_destination":
@@ -629,7 +635,7 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
 
     # TODO: Move this to different methods.
     def _allgather(
-        self, local_data: np.ndarray | SparseMatrixCOO, input_format="SparseMatrixCOO"
+        self, local_data: np.ndarray | SparseMatrixCOO, input_format: str = "SparseMatrixCOO"
     ) -> np.ndarray | SparseMatrixCOO:
         """
         Gathers data from all processes.

@@ -1,6 +1,4 @@
-"""
-Numpy-based optimizer implementation for the PyDTNN framework.
-"""
+"""Numpy-based optimizer implementation for the PyDTNN framework."""
 
 import logging
 from typing import TYPE_CHECKING
@@ -18,9 +16,7 @@ if TYPE_CHECKING:
 
 
 class OptimizerNumpy(Optimizer[np.ndarray], BaseNumpy):
-    """
-    Extends an Optimizer class with the attributes and methods required by CPU Optimizers.
-    """
+    """Extends an Optimizer class with the attributes and methods required by CPU Optimizers."""
 
     def are_all_zeros(self, ndarray: np.ndarray) -> bool:
         """

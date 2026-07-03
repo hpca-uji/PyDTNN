@@ -1,6 +1,4 @@
-"""
-Numpy backend implementation for binary confusion matrix metrics.
-"""
+"""Numpy backend implementation for binary confusion matrix metrics."""
 
 import logging
 from typing import TYPE_CHECKING
@@ -40,14 +38,10 @@ _dict_indexes = {
 
 
 class BinaryConfusionMatrixNumpy(BinaryConfusionMatrix[np.ndarray], MetricNumpy):
-    """
-    Numpy-based implementation of the binary confusion matrix metric.
-    """
+    """Numpy-based implementation of the binary confusion matrix metric."""
 
     def _model_init(self) -> None:
-        """
-        Initializes the confusion matrix buffer.
-        """
+        """Initializes the confusion matrix buffer."""
         super()._model_init()
         _, target_classes = self.shape
         self.conf_matrix = np.zeros((target_classes, 2, 2), dtype=np.int32)
@@ -62,10 +56,12 @@ class BinaryConfusionMatrixNumpy(BinaryConfusionMatrix[np.ndarray], MetricNumpy)
         Target|T| TP | FN |
               |F| FP | TN |
         """
+
         y_targ = np.asarray(y_targ, dtype=self.model.dtype, order="C")
         # NOTE: y_pred.shape == y_targ.shape == (n<=self.model.batch_size, self.model.output_shape)
         n, target_classes = y_pred.shape
-        # assert target_classes == pred_classes, f"target_classes ({target_classes}) != pred_classes {pred_classes}, and must have the same value."
+        # assert target_classes == pred_classes, f"target_classes ({target_classes}) != pred_classes {pred_classes},"
+        #                                           " and must have the same value."
         self.conf_matrix.fill(0)
 
         for i in range(n):
@@ -78,26 +74,18 @@ class BinaryConfusionMatrixNumpy(BinaryConfusionMatrix[np.ndarray], MetricNumpy)
 
         return self.conf_matrix
 
-    def get_true_positives(self):
-        """
-        Returns the count of true positives for each label.
-        """
+    def get_true_positives(self) -> np.ndarray:
+        """Returns the count of true positives for each label."""
         return self.conf_matrix[:, *TRUE_POSITIVE]
 
-    def get_true_negatives(self):
-        """
-        Returns the count of true negatives for each label.
-        """
+    def get_true_negatives(self) -> np.ndarray:
+        """Returns the count of true negatives for each label."""
         return self.conf_matrix[:, *TRUE_NEGATIVE]
 
-    def get_false_positives(self):
-        """
-        Returns the count of false positives for each label.
-        """
+    def get_false_positives(self) -> np.ndarray:
+        """Returns the count of false positives for each label."""
         return self.conf_matrix[:, *FALSE_NEGATIVE]
 
-    def get_false_negatives(self):
-        """
-        Returns the count of false negatives for each label.
-        """
+    def get_false_negatives(self) -> np.ndarray:
+        """Returns the count of false negatives for each label."""
         return self.conf_matrix[:, *FALSE_POSITIVE]

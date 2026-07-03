@@ -94,7 +94,8 @@ class NadamNumpy(Nadam[np.ndarray], OptimizerNumpy):
                 or self.are_all_zeros(m)
                 or self.are_all_zeros(v)
             ):
-                # NOTE: The operations are unrolled in order to reduce the memory consumed by intermediate copies of the variables during the operations.
+                # NOTE: The operations are unrolled in order to reduce the memory consumed by intermediate
+                #   copies of the variables during the operations.
                 # m = self.beta1 * m + (1 - self.beta1) * dw
                 np.multiply((1 - self.beta1), dw, dtype=self.model.dtype, out=mt_temp_dw)
 
@@ -120,7 +121,8 @@ class NadamNumpy(Nadam[np.ndarray], OptimizerNumpy):
                 np.subtract(w, mt_temp_dw, dtype=self.model.dtype, out=w)
 
                 # (
-                # NOTE: mt actually is "m / (1 - self.beta1 ** it)", the following formula is a small optimization to reduce operations:
+                # NOTE: mt actually is "m / (1 - self.beta1 ** it)", the following formula is a
+                #  small optimization to reduce operations:
                 # mt = (m + (1 - self.beta1) * dw) / (1 - self.beta1 ** it)
                 np.multiply((1 - self.beta1), dw, dtype=self.model.dtype, out=mt_temp_dw)
                 np.divide(mt_temp_dw, (1 - self.beta1**it), dtype=self.model.dtype, out=mt_temp_dw)

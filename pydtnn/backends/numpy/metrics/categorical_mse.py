@@ -1,6 +1,4 @@
-"""
-Categorical Mean Squared Error metric implementation for the NumPy backend.
-"""
+"""Categorical Mean Squared Error metric implementation for the NumPy backend."""
 
 import logging
 import math
@@ -19,14 +17,10 @@ if TYPE_CHECKING:
 
 
 class CategoricalMSENumpy(CategoricalMSE[np.ndarray], MetricNumpy):
-    """
-    NumPy implementation of the Categorical Mean Squared Error metric.
-    """
+    """NumPy implementation of the Categorical Mean Squared Error metric."""
 
     def _model_init(self) -> None:
-        """
-        Initializes model-specific parameters and memory tracking for the metric.
-        """
+        """Initializes model-specific parameters and memory tracking for the metric."""
         super()._model_init()
 
         self.error: np.ndarray = None  # type: ignore (It will be initialized later)
@@ -34,9 +28,7 @@ class CategoricalMSENumpy(CategoricalMSE[np.ndarray], MetricNumpy):
         self.memory_used += self.tmp_memory_used
 
     def _post_init(self) -> None:
-        """
-        Allocates memory for the error buffer after model initialization.
-        """
+        """Allocates memory for the error buffer after model initialization."""
         super()._post_init()
         with self.model.memory:
             self.error = self.model.memory.ndarray(self.shape, dtype=self.model.dtype)

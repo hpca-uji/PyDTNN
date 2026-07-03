@@ -1,6 +1,4 @@
-"""
-Numpy backend implementation for Mean Squared Error regression metric.
-"""
+"""Numpy backend implementation for Mean Squared Error regression metric."""
 
 import logging
 import math
@@ -19,23 +17,17 @@ if TYPE_CHECKING:
 
 
 class RegressionMSENumpy(RegressionMSE[np.ndarray], MetricNumpy):
-    """
-    Numpy-based implementation of the Mean Squared Error metric.
-    """
+    """Numpy-based implementation of the Mean Squared Error metric."""
 
     def _model_init(self) -> None:
-        """
-        Initializes model-specific memory requirements for the metric.
-        """
+        """Initializes model-specific memory requirements for the metric."""
         super()._model_init()
 
         self.tmp_memory_used += int(math.prod(self.shape)) * self.model.dtype.itemsize
         self.memory_used += self.tmp_memory_used
 
     def _post_init(self) -> None:
-        """
-        Allocates memory buffers for difference calculations after model initialization.
-        """
+        """Allocates memory buffers for difference calculations after model initialization."""
         super()._post_init()
         with self.model.memory:
             self.diff = self.model.memory.ndarray(self.shape, dtype=self.model.dtype)

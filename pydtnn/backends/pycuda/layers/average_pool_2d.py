@@ -1,6 +1,4 @@
-"""
-PyCUDA implementation of the 2D Average Pooling layer.
-"""
+"""PyCUDA implementation of the 2D Average Pooling layer."""
 
 import logging
 
@@ -16,9 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 class AveragePool2DPycuda(AveragePool2D[TensorArray], AbstractPool2DLayerPycuda):
-    """
-    PyCUDA-accelerated 2D Average Pooling layer.
-    """
+    """PyCUDA-accelerated 2D Average Pooling layer."""
 
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
         """

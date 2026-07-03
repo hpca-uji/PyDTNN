@@ -22,7 +22,7 @@ class SigmoidPycuda(Sigmoid[TensorArray], ActivationPycuda):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the SigmoidPycuda layer."""
         super().__init__(*args, **kwargs)
-        self.act_desc: int = None  #type: ignore (it'll be intialized later)
+        self.act_desc: int = None  # type: ignore (it'll be intialized later)
 
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
         """Initialize cuDNN descriptors and allocate memory for forward and backward passes."""

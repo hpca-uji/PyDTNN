@@ -1,6 +1,4 @@
-"""
-Kullback-Leibler divergence metric implementation for the NumPy backend.
-"""
+"""Kullback-Leibler divergence metric implementation for the NumPy backend."""
 
 import logging
 import math
@@ -19,23 +17,17 @@ if TYPE_CHECKING:
 
 
 class KLDivergenceMetricNumpy(KLDivergenceMetric[np.ndarray], MetricNumpy):
-    """
-    NumPy implementation of the KL Divergence metric.
-    """
+    """NumPy implementation of the KL Divergence metric."""
 
     def _model_init(self) -> None:
-        """
-        Initializes model-specific memory requirements for the metric.
-        """
+        """Initializes model-specific memory requirements for the metric."""
         super()._model_init()
 
         self.tmp_memory_used += int(math.prod(self.shape)) * self.model.dtype.itemsize
         self.memory_used += self.tmp_memory_used
 
     def _post_init(self) -> None:
-        """
-        Allocates memory for the loss buffer after model initialization.
-        """
+        """Allocates memory for the loss buffer after model initialization."""
         super()._post_init()
         with self.model.memory:
             self.loss = self.model.memory.ndarray(self.shape, dtype=self.model.dtype)

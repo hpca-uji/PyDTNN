@@ -1,6 +1,4 @@
-"""
-Numpy backend implementation for metrics in the PyDTNN framework.
-"""
+"""Numpy backend implementation for metrics in the PyDTNN framework."""
 
 import logging
 
@@ -15,6 +13,4 @@ logger = logging.getLogger(__name__)
 
 
 class MetricNumpy(Metric[ndarray], BaseNumpy):
-    """
-    Extends a Metric class with the attributes and methods required by CPU Metrics.
-    """
+    """Extends a Metric class with the attributes and methods required by CPU Metrics."""

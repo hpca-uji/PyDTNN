@@ -22,7 +22,7 @@ class TanhPycuda(Tanh[TensorArray], ActivationPycuda):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the TanhPycuda layer."""
         super().__init__(*args, **kwargs)
-        self.act_desc: int = None  #type: ignore (it will be initialized later)
+        self.act_desc: int = None  # type: ignore (it will be initialized later)
 
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
         """Initialize cuDNN activation descriptor and allocate GPU memory for buffers."""

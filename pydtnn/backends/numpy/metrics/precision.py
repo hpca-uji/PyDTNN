@@ -1,6 +1,4 @@
-"""
-Numpy backend implementation for the Precision metric.
-"""
+"""Numpy backend implementation for the Precision metric."""
 
 import logging
 import math
@@ -22,16 +20,12 @@ if TYPE_CHECKING:
 
 
 class PrecisionNumpy(Precision[np.ndarray], MetricNumpy):
-    """
-    Numpy implementation of the Precision metric for binary classification.
-    """
+    """Numpy implementation of the Precision metric for binary classification."""
 
     conf_matrix_metric: BinaryConfusionMatrixNumpy
 
     def _model_init(self) -> None:
-        """
-        Initializes model-specific memory requirements for precision calculation.
-        """
+        """Initializes model-specific memory requirements for precision calculation."""
         super()._model_init()
         self.temp_var_shape = (self.shape[1],)
         self.tmp_memory_used += int(2 * math.prod(self.temp_var_shape)) * np.float32().itemsize
@@ -39,9 +33,7 @@ class PrecisionNumpy(Precision[np.ndarray], MetricNumpy):
         self.memory_used += self.tmp_memory_used
 
     def _post_init(self) -> None:
-        """
-        Allocates memory buffers for true positives, false positives, and zero-check masks.
-        """
+        """Allocates memory buffers for true positives, false positives, and zero-check masks."""
         super()._post_init()
         with self.model.memory:
             self.true_positives = self.model.memory.ndarray(self.temp_var_shape, dtype=np.float32)

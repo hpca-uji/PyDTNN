@@ -1,6 +1,4 @@
-"""
-Numpy backend implementation of the Kullback-Leibler Divergence loss.
-"""
+"""Numpy backend implementation of the Kullback-Leibler Divergence loss."""
 
 import logging
 from typing import TYPE_CHECKING
@@ -18,18 +16,14 @@ if TYPE_CHECKING:
 
 
 class KLDivergenceNumpy(KLDivergence[np.ndarray], LossNumpy):
-    """
-    Numpy-based implementation of the KL Divergence loss function.
-    """
+    """Numpy-based implementation of the KL Divergence loss function."""
 
     def _model_init(self) -> None:
-        """
-        Initializes the model and updates memory usage tracking.
-        """
+        """Initializes the model and updates memory usage tracking."""
         super()._model_init()
         self.memory_used += self.dx.nbytes
 
-    def compute(self, y_pred, y_targ, batch_size):
+    def compute(self, y_pred: np.ndarray, y_targ: np.ndarray, batch_size: int) -> tuple[float, np.ndarray]:
         """
         Computes the KL Divergence loss and the gradient with respect to predictions.
 
@@ -56,5 +50,5 @@ class KLDivergenceNumpy(KLDivergence[np.ndarray], LossNumpy):
         np.log(dx, out=dx)
         np.divide(dx, batch_size, out=dx)
 
-        loss = np.sum(dx)
+        loss: np.ndarray = np.sum(dx)
         return loss.item(), dx

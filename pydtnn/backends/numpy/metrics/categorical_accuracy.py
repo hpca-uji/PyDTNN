@@ -1,6 +1,4 @@
-"""
-Numpy backend implementation of the categorical accuracy metric.
-"""
+"""Numpy backend implementation of the categorical accuracy metric."""
 
 import logging
 import math
@@ -19,23 +17,17 @@ if TYPE_CHECKING:
 
 
 class CategoricalAccuracyNumpy(CategoricalAccuracy[np.ndarray], MetricNumpy):
-    """
-    Numpy-based implementation of categorical accuracy.
-    """
+    """Numpy-based implementation of categorical accuracy."""
 
     def _model_init(self) -> None:
-        """
-        Initializes model-specific parameters and calculates memory usage.
-        """
+        """Initializes model-specific parameters and calculates memory usage."""
         super()._model_init()
         self._argmax_shape = (self.model.batch_size,)
         self.tmp_memory_used = int(math.prod(self._argmax_shape)) * np.int32().itemsize
         self.memory_used += self.tmp_memory_used  # + arange_size = self.model.batch_size
 
     def _post_init(self) -> None:
-        """
-        Allocates memory for the argmax buffer after model initialization.
-        """
+        """Allocates memory for the argmax buffer after model initialization."""
         super()._post_init()
         with self.model.memory:
             self._argmax = self.model.memory.ndarray(self._argmax_shape, dtype=np.int32)

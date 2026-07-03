@@ -1,6 +1,4 @@
-"""
-Numpy backend implementation for Mean Absolute Error (MAE) regression metric.
-"""
+"""Numpy backend implementation for Mean Absolute Error (MAE) regression metric."""
 
 import logging
 import math
@@ -19,23 +17,17 @@ if TYPE_CHECKING:
 
 
 class RegressionMAENumpy(RegressionMAE[np.ndarray], MetricNumpy):
-    """
-    Numpy-based implementation of the Mean Absolute Error metric.
-    """
+    """Numpy-based implementation of the Mean Absolute Error metric."""
 
     def _model_init(self) -> None:
-        """
-        Initializes model memory requirements for the MAE calculation.
-        """
+        """Initializes model memory requirements for the MAE calculation."""
         super()._model_init()
 
         self.tmp_memory_used += int(math.prod(self.shape)) * self.model.dtype.itemsize
         self.memory_used += self.tmp_memory_used
 
     def _post_init(self) -> None:
-        """
-        Allocates temporary memory buffers for difference calculations.
-        """
+        """Allocates temporary memory buffers for difference calculations."""
         super()._post_init()
         with self.model.memory:
             self.diff = self.model.memory.ndarray(self.shape, dtype=self.model.dtype)

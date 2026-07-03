@@ -1,6 +1,4 @@
-"""
-Numpy implementation of the F1 Score metric for the PyDTNN framework.
-"""
+"""Numpy implementation of the F1 Score metric for the PyDTNN framework."""
 
 import logging
 import math
@@ -21,16 +19,12 @@ if TYPE_CHECKING:
 
 
 class F1ScoreNumpy(F1Score[np.ndarray], MetricNumpy):
-    """
-    Numpy-based F1 Score metric calculation.
-    """
+    """Numpy-based F1 Score metric calculation."""
 
     conf_matrix_metric: BinaryConfusionMatrixNumpy
 
     def _model_init(self) -> None:
-        """
-        Initializes model memory requirements for F1 score calculation.
-        """
+        """Initializes model memory requirements for F1 score calculation."""
         super()._model_init()
         shape = self.shape[1]
 
@@ -40,9 +34,7 @@ class F1ScoreNumpy(F1Score[np.ndarray], MetricNumpy):
         self.memory_used += self.tmp_memory_used
 
     def _post_init(self) -> None:
-        """
-        Allocates memory for intermediate buffers used during computation.
-        """
+        """Allocates memory for intermediate buffers used during computation."""
         super()._post_init()
         with self.model.memory:
             self.true_positives = self.model.memory.ndarray(self.temp_var_shape, dtype=np.float32)

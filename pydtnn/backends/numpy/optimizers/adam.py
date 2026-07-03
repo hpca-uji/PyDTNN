@@ -1,6 +1,4 @@
-"""
-Numpy implementation of the Adam optimizer.
-"""
+"""Numpy implementation of the Adam optimizer."""
 
 import logging
 import math
@@ -20,14 +18,10 @@ if TYPE_CHECKING:
 
 
 class AdamNumpy(Adam[np.ndarray], OptimizerNumpy):
-    """
-    Numpy-based Adam optimizer implementation.
-    """
+    """Numpy-based Adam optimizer implementation."""
 
     def _model_init(self, list_layers: list[LayerNumpy]) -> None:
-        """
-        Initializes the optimizer state for the given layers.
-        """
+        """Initializes the optimizer state for the given layers."""
         super()._model_init(list_layers)  # type: ignore (it is the right type)
 
         temp_memory_size = []
@@ -58,9 +52,7 @@ class AdamNumpy(Adam[np.ndarray], OptimizerNumpy):
         self.memory_used += self.tmp_memory_used
 
     def _post_init(self) -> None:
-        """
-        Allocates temporary memory buffers for optimization steps.
-        """
+        """Allocates temporary memory buffers for optimization steps."""
         super()._post_init()
         for layer_id in self.context.keys():
             with self.model.memory:
@@ -82,9 +74,7 @@ class AdamNumpy(Adam[np.ndarray], OptimizerNumpy):
                     )
 
     def update(self, layer: LayerNumpy) -> None:
-        """
-        Performs a single optimization step for the given layer.
-        """
+        """Performs a single optimization step for the given layer."""
         self.context[layer.id]["it"] += 1
         it: int = self.context[layer.id]["it"]  # type: ignore
 
@@ -106,7 +96,8 @@ class AdamNumpy(Adam[np.ndarray], OptimizerNumpy):
                 and self.are_all_zeros(m)
                 and self.are_all_zeros(v)
             ):
-                # NOTE: The operations are unrolled in order to reduce the memory consumed by intermediate copies of the variables during the operations.
+                # NOTE: The operations are unrolled in order to reduce the memory consumed by intermediate
+                #  copies of the variables during the operations.
                 # m = self.beta1 * m + (1 - self.beta1) * dw
                 np.multiply((1 - self.beta1), dw, dtype=self.model.dtype, out=mt_temp_dw)
 
