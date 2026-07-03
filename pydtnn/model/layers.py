@@ -19,7 +19,7 @@ __all__ = ("Layers",)
 logger = logging.getLogger(__name__)
 
 
-class Layers[T: Array](Utils[T]):  # noqa: D101
+class Layers[T: Array](Utils[T]):  # noqa: D101 (generics not detected)
     """Manages the collection and lifecycle of neural network layers."""
 
     def add(self, layer: Layerable[T]) -> None:

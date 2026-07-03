@@ -10,7 +10,7 @@ __all__ = ("CategoricalMSE",)
 logger = logging.getLogger(__name__)
 
 
-class CategoricalMSE[T: Array](Metric[T]):  # noqa: D101
+class CategoricalMSE[T: Array](Metric[T]):  # noqa: D101 (generics not detected)
     """Computes the Mean Squared Error between categorical predictions and targets."""
 
     format = "mse: %.7f"

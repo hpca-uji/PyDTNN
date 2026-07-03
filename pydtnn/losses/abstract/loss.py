@@ -24,7 +24,7 @@ __all__ = ("Loss",)
 logger = logging.getLogger(__name__)
 
 
-class Loss[T: Array](Base):  # noqa: D101
+class Loss[T: Array](Base):  # noqa: D101 (generics not detected)
     """
     Base class for all loss functions in PyDTNN.
 

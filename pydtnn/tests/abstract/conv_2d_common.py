@@ -15,7 +15,7 @@ __all__ = ("Conv2DCommonTestCase",)
 logger = logging.getLogger(__name__)
 
 
-class Conv2DCommonTestCase[T: Conv2D](TestCase):  # noqa: D101
+class Conv2DCommonTestCase[T: Conv2D](TestCase):  # noqa: D101 (generics not detected)
     """Abstract base class for testing and comparing two Conv2D layer implementations."""
 
     @staticmethod

@@ -10,5 +10,5 @@ __all__ = ("MulticlassConfusionMatrix",)
 logger = logging.getLogger(__name__)
 
 
-class MulticlassConfusionMatrix[T: Array](ConfusionMatrix[T]):  # noqa: D101
+class MulticlassConfusionMatrix[T: Array](ConfusionMatrix[T]):  # noqa: D101 (generics not detected)
     """Computes and stores the confusion matrix for multiclass classification tasks."""

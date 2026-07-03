@@ -10,7 +10,7 @@ __all__ = ("CategoricalMAE",)
 logger = logging.getLogger(__name__)
 
 
-class CategoricalMAE[T: Array](Metric[T]):  # noqa: D101
+class CategoricalMAE[T: Array](Metric[T]):  # noqa: D101 (generics not detected)
     """Computes the Mean Absolute Error for categorical data."""
 
     format = "mae: %.7f"

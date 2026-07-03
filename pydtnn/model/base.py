@@ -34,7 +34,7 @@ if TYPE_CHECKING:
     from pympi.MPI import Comm as MPI_COMM  # type: ignore  # noqa: N814
 
 
-class Base[T: Array]:  # noqa: D101
+class Base[T: Array]:  # noqa: D101 (generics not detected)
     """
     Base class for all models in PyDTNN.
 

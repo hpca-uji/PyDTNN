@@ -28,7 +28,7 @@ __all__ = ("Train",)
 logger = logging.getLogger(__name__)
 
 
-class Train[T: Array](Eval[T]):  # noqa: D101
+class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
     """
     Handles the training process for a model, including weight synchronization,
     gradient updates, and training loop management.

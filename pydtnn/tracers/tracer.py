@@ -89,7 +89,7 @@ class EventType:
 class PostInitCaller(type):
     """Metaclass that triggers __post_init__ after object instantiation."""
 
-    def __call__[T](cls: type[T], *args: Any, **kwargs: Any) -> T:  # noqa: D102
+    def __call__[T](cls: type[T], *args: Any, **kwargs: Any) -> T:  # noqa: D102 (generics not detected)
         """Create an instance and call its __post_init__ method."""
         obj = type.__call__(cls, *args, **kwargs)
         obj.__post_init__()

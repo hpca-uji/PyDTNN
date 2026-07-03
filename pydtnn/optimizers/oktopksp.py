@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from pydtnn.model import Model
 
 
-class OkTopkSP[T: Array](Optimizer[T]):  # noqa: D101
+class OkTopkSP[T: Array](Optimizer[T]):  # noqa: D101 (generics not detected)
     """OkTopkSP Optimizer"""
 
     def __init__(

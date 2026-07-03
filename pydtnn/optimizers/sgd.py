@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from pydtnn.model import Model
 
 
-class SGD[T: Array](Optimizer[T]):  # noqa: D101
+class SGD[T: Array](Optimizer[T]):  # noqa: D101 (generics not detected)
     """Stochastic Gradient Descent optimizer with support for momentum, Nesterov acceleration, and weight decay."""
 
     def __init__(self, learning_rate: float = 1e-2, momentum: float = 0.9,

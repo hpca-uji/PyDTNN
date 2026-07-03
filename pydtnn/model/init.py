@@ -42,7 +42,7 @@ __all__ = ("Init",)
 logger = logging.getLogger(__name__)
 
 
-class Init[T: Array](Layers[T]):  # noqa: D101
+class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
     """
     Main initialization class for PyDTNN models.
 

@@ -11,7 +11,7 @@ __all__ = ("Precision",)
 logger = logging.getLogger(__name__)
 
 
-class Precision[T: Array](Metric[T]):  # noqa: D101
+class Precision[T: Array](Metric[T]):  # noqa: D101 (generics not detected)
     """
     Calculates the precision metric based on a binary confusion matrix.
 

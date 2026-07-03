@@ -18,7 +18,7 @@ __all__ = ("Metric",)
 logger = logging.getLogger(__name__)
 
 
-class Metric[T: Array](Base):  # noqa: D101
+class Metric[T: Array](Base):  # noqa: D101 (generics not detected)
     """
     Abstract base class for all evaluation metrics in PyDTNN.
 

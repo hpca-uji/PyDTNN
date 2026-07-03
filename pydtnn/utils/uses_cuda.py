@@ -15,7 +15,7 @@ type Abs_Module = "Module | cp.RawModule"
 type Abs_Function = "Function | cp.RawKernel"
 
 
-class UsesCudaCode[M: Abs_Module, F: Abs_Function]:  # noqa: D101
+class UsesCudaCode[M: Abs_Module, F: Abs_Function]:  # noqa: D101 (generics not detected)
     """Mixin class providing functionality to load, compile, and retrieve CUDA kernels."""
 
     def __init__(self, *args: Any, **kwds: Any) -> None:
