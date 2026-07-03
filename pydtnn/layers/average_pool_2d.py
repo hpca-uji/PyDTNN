@@ -10,7 +10,5 @@ __all__ = ("AveragePool2D",)
 logger = logging.getLogger(__name__)
 
 
-class AveragePool2D[T: Array](AbstractPool2DLayer[T]):
+class AveragePool2D[T: Array](AbstractPool2DLayer[T]):  # noqa: D101 (generics not detected)
     """2D Average Pooling layer that computes the average of values in each window."""
-
-    pass

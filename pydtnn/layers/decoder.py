@@ -10,7 +10,7 @@ __all__ = ("Decoder",)
 logger = logging.getLogger(__name__)
 
 
-class Decoder[T: Array](AbstractBlockLayer[T]):
+class Decoder[T: Array](AbstractBlockLayer[T]):  # noqa: D101 (generics not detected)
     """Decoder layer implementation for transformer-based architectures."""
 
     def __init__(

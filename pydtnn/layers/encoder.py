@@ -15,7 +15,7 @@ __all__ = ("Encoder",)
 logger = logging.getLogger(__name__)
 
 
-class Encoder[T: Array](AbstractBlockLayer[T]):
+class Encoder[T: Array](AbstractBlockLayer[T]):  # noqa: D101 (generics not detected)
     """
     A transformer-based encoder block layer.
 

@@ -12,7 +12,7 @@ __all__ = ("Input",)
 logger = logging.getLogger(__name__)
 
 
-class Input[T: Array](Layer[T]):
+class Input[T: Array](Layer[T]):  # noqa: D101 (generics not detected)
     """Represents the input layer of a neural network."""
 
     def __init__(self, shape: tuple = (1,)) -> None:

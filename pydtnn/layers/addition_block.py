@@ -10,7 +10,5 @@ __all__ = ("AdditionBlock",)
 logger = logging.getLogger(__name__)
 
 
-class AdditionBlock[T: Array](AbstractBlockLayer[T]):
+class AdditionBlock[T: Array](AbstractBlockLayer[T]):  # noqa: D101 (generics not detected)
     """A layer that performs element-wise addition of input tensors."""
-
-    pass

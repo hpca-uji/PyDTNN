@@ -10,7 +10,5 @@ __all__ = ("Multiplication",)
 logger = logging.getLogger(__name__)
 
 
-class Multiplication[T: Array](Layer[T]):
+class Multiplication[T: Array](Layer[T]):  # noqa: D101 (generics not detected)
     """Layer that performs element-wise multiplication of input tensors."""
-
-    pass

@@ -16,10 +16,8 @@ if typing.TYPE_CHECKING:
     from pydtnn.model import Model
 
 
-class Base[T: Array]:
-    """
-    Abstract base class for PyDTNN components that supports backend dispatching.
-    """
+class Base[T: Array]:  # noqa: D101 (generics not detected)
+    """Abstract base class for PyDTNN components that supports backend dispatching."""
 
     _backend: typing.Self
     _frontend: typing.Self
@@ -29,26 +27,20 @@ class Base[T: Array]:
     # Base class
     model: Model[T]
 
-    def __new__(cls, *args, **kwds):
-        """
-        Create a new instance and store constructor arguments for backend initialization.
-        """
+    def __new__[I](cls: type[I], *args: typing.Any, **kwds: typing.Any) -> I:
+        """Create a new instance and store constructor arguments for backend initialization."""
         # Save top-level constructor arguments
-        self = super().__new__(cls)
-        self._new_backend = (args, kwds)  # type: ignore
+        self = super().__new__(cls)  # type: ignore
+        self._new_backend = (args, kwds)
         return self
 
     def __init__(self) -> None:
-        """
-        Initialize memory tracking attributes.
-        """
+        """Initialize memory tracking attributes."""
         self.memory_used: int = 0
         self.tmp_memory_used: int = 0
 
-    def __getattribute__(self, name: str):
-        """
-        Proxy attribute access to the backend instance if available.
-        """
+    def __getattribute__(self, name: str) -> typing.Any:
+        """Proxy attribute access to the backend instance if available."""
         ref = "_backend"
 
         # Get backend
@@ -66,6 +58,7 @@ class Base[T: Array]:
     def _parse_backend(self, spec: str) -> dict[str, list[str]]:
         """
         Parse a backend spec string.
+
         Format: [module[,module[,...]]:]backend[,backend[,...]][;...]
         Example: all:numpy;conv_2d:gemm;layers,optimizers:numpy,cython
         Selection: More specific modules are attempted first, backend order goes from least to most priority.
@@ -124,10 +117,8 @@ class Base[T: Array]:
 
         raise ValueError(f"Backend not found for {self} with {spec}")
 
-    def __setattr__(self, name: str, value) -> None:
-        """
-        Proxy attribute setting to the backend instance if available.
-        """
+    def __setattr__(self, name: str, value: typing.Any) -> None:
+        """Proxy attribute setting to the backend instance if available."""
         ref = "_backend"
 
         # Get backend
@@ -140,9 +131,7 @@ class Base[T: Array]:
             setattr(backend, name, value)
 
     def __delattr__(self, name: str) -> None:
-        """
-        Proxy attribute deletion to the backend instance if available.
-        """
+        """Proxy attribute deletion to the backend instance if available."""
         ref = "_backend"
 
         # Get backend
@@ -230,11 +219,11 @@ class Base[T: Array]:
 
     def _init_backend_with_model(self, model: model_module.Base[T]) -> None:
         """Initialize backend and link a new model instance"""
-        # Set on frontend: 
-        self.model = model  # type: ignore (it's the right class) 
+        # Set on frontend:
+        self.model = model  # type: ignore (it's the right class)
         self._init_backend()
         # Set on backend
-        self.model = model  # type: ignore (it's the right class) 
+        self.model = model  # type: ignore (it's the right class)
 
     @classmethod
     def from_model[I](cls: type[I], model: model_module.Base[T]) -> I:

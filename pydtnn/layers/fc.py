@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from pydtnn.activations.abstract.activation import Activation
 
 
-class FC[T: Array](Layer[T]):
+class FC[T: Array](Layer[T]):  # noqa: D101 (generics not detected)
     """Fully connected (dense) layer."""
 
     def __init__(

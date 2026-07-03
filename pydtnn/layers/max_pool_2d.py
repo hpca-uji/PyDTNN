@@ -10,7 +10,5 @@ __all__ = ("MaxPool2D",)
 logger = logging.getLogger(__name__)
 
 
-class MaxPool2D[T: Array](AbstractPool2DLayer[T]):
+class MaxPool2D[T: Array](AbstractPool2DLayer[T]):  # noqa: D101 (generics not detected)
     """Performs 2D max pooling on the input tensor."""
-
-    pass

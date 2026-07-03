@@ -13,7 +13,7 @@ __all__ = ("Conv2DPointwise",)
 logger = logging.getLogger(__name__)
 
 
-class Conv2DPointwise[T: Array](AbstractConv2D[T]):
+class Conv2DPointwise[T: Array](AbstractConv2D[T]):  # noqa: D101 (generics not detected)
     """
     A 2D pointwise convolution layer that performs a 1x1 convolution across input channels.
     NOTE: 'dilation' and 'filter_shape' will be ignored.

@@ -10,7 +10,7 @@ __all__ = ("EncoderDecoder",)
 logger = logging.getLogger(__name__)
 
 
-class EncoderDecoder[T: Array](AbstractBlockLayer[T]):
+class EncoderDecoder[T: Array](AbstractBlockLayer[T]):  # noqa: D101 (generics not detected)
     """A generic Encoder-Decoder block layer implementation."""
 
     def __init__(

@@ -11,7 +11,7 @@ __all__ = ("Flatten",)
 logger = logging.getLogger(__name__)
 
 
-class Flatten[T: Array](Layer[T]):
+class Flatten[T: Array](Layer[T]):  # noqa: D101 (generics not detected)
     """A layer that flattens the input tensor into a single dimension."""
 
     def _model_init(self, prev_shape: ArrayShape, x: T | None) -> None:

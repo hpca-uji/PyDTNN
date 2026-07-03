@@ -22,7 +22,5 @@ class ParameterException(LayerError):
     pass
 
 
-class Layer[T: Array](Layerable[T]):
+class Layer[T: Array](Layerable[T]):  # noqa: D101 (generics not detected)
     """Base class for all neural network layers in PyDTNN."""
-
-    pass

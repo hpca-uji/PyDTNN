@@ -10,7 +10,7 @@ __all__ = ("Dropout",)
 logger = logging.getLogger(__name__)
 
 
-class Dropout[T: Array](Layer[T]):
+class Dropout[T: Array](Layer[T]):  # noqa: D101 (generics not detected)
     """A layer that randomly sets input units to 0 with a frequency of rate during training."""
 
     def __init__(self, rate: float = 0.5) -> None:

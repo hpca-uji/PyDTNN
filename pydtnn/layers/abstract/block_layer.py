@@ -12,7 +12,7 @@ __all__ = ("AbstractBlockLayer",)
 logger = logging.getLogger(__name__)
 
 
-class AbstractBlockLayer[T: Array](Layer[T]):
+class AbstractBlockLayer[T: Array](Layer[T]):  # noqa: D101 (generics not detected)
     """Base class for layers that manage multiple parallel execution paths."""
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:

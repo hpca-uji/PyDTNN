@@ -10,7 +10,7 @@ __all__ = ("FeedForward",)
 logger = logging.getLogger(__name__)
 
 
-class FeedForward[T: Array](AbstractBlockLayer[T]):
+class FeedForward[T: Array](AbstractBlockLayer[T]):  # noqa: D101 (generics not detected)
     """
     A feed-forward neural network block layer.
 

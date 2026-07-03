@@ -18,10 +18,10 @@ CONCAT_DIM_NCHW = 1
 CONCAT_DIM_NHWC = -1
 
 
-class ConcatenationBlock[T: Array](AbstractBlockLayer[T]):
+class ConcatenationBlock[T: Array](AbstractBlockLayer[T]):  # noqa: D101 (generics not detected)
     """Layer that concatenates multiple input tensors along the channel dimension."""
 
-    def _model_init(self, prev_shape: ArrayShape, x: T | None = None) -> None:
+    def _model_init(self, prev_shape: ArrayShape, x: T) -> None:
         """Initialize the concatenation block layer parameters and output shape."""
         super()._model_init(prev_shape, x)
 

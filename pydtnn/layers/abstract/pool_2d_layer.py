@@ -11,7 +11,7 @@ __all__ = ("AbstractPool2DLayer",)
 logger = logging.getLogger(__name__)
 
 
-class AbstractPool2DLayer[T: Array](Layer[T]):
+class AbstractPool2DLayer[T: Array](Layer[T]):  # noqa: D101 (generics not detected)
     """Base class for 2D pooling operations providing shared configuration and shape inference."""
 
     def __init__(

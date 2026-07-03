@@ -22,7 +22,7 @@ class Activation[T: Array](Layerable[T]):  # noqa: D101 (generics not detected)
         """
         super().__init__(shape)
 
-    def _model_init(self, prev_shape: ArrayShape, x: T | None = None) -> None:
+    def _model_init(self, prev_shape: ArrayShape, x: T) -> None:
         """
         Initializes the layer parameters based on the previous layer's shape.
 

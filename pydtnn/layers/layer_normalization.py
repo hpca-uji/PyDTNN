@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 # https://melfm.github.io/posts/2018-08-Understanding-Normalization/
 
 
-class LayerNormalization[T: Array](Layer[T]):
+class LayerNormalization[T: Array](Layer[T]):  # noqa: D101 (generics not detected)
     """Applies Layer Normalization over a mini-batch of inputs."""
 
     def __init__(

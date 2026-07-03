@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from pydtnn.activations.abstract.activation import Activation
 
 
-class AbstractConv2D[T: Array](Layer[T]):
+class AbstractConv2D[T: Array](Layer[T]):  # noqa: D101 (generics not detected)
     """Base class for 2D convolutional layers providing common configuration and initialization logic."""
 
     def __init__(
@@ -75,9 +75,8 @@ class AbstractConv2D[T: Array](Layer[T]):
         self.db: T = None  # type: ignore
         # @warning: do not do this (affects the gpu version) self.forward = self.backward = None
 
-    def _initializing_special_parameters(self):
+    def _initializing_special_parameters(self) -> None:
         """Hook for subclasses to define or modify parameters required for initialization."""
-        pass
 
     def _model_init(self, prev_shape: ArrayShape, x: T | None) -> None:
         """

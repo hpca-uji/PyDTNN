@@ -28,7 +28,7 @@ except Exception:
     pass
 
 
-class Layerable[T: Array](Base[T]):
+class Layerable[T: Array](Base[T]):  # noqa: D101 (generics not detected)
     """
     Abstract base class for all neural network layers in the PyDTNN framework.
 
@@ -144,7 +144,7 @@ class Layerable[T: Array](Base[T]):
 
         return props
 
-    def _model_init(self, prev_shape: ArrayShape, x: T | None = None) -> None:
+    def _model_init(self, prev_shape: ArrayShape, x: T) -> None:
         """
         Initialize layer state within the model context.
 
@@ -288,7 +288,7 @@ class Layerable[T: Array](Base[T]):
             case _:
                 return getattr(self, key, None)
 
-    def _import_prop(self, key: str, value) -> None:
+    def _import_prop(self, key: str, value: Any) -> None:
         """
         Set a property value from imported data.
 

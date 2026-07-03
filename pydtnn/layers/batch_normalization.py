@@ -14,7 +14,7 @@ __all__ = ("BatchNormalization",)
 logger = logging.getLogger(__name__)
 
 
-class BatchNormalization[T: Array](Layer[T]):
+class BatchNormalization[T: Array](Layer[T]):  # noqa: D101 (generics not detected)
     """Batch Normalization layer that normalizes the inputs to have zero mean and unit variance."""
 
     def __init__(

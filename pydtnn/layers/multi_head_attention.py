@@ -11,7 +11,7 @@ __all__ = ("MultiHeadAttention",)
 logger = logging.getLogger(__name__)
 
 
-class MultiHeadAttention[T: Array](AbstractBlockLayer[T]):
+class MultiHeadAttention[T: Array](AbstractBlockLayer[T]):  # noqa: D101 (generics not detected)
     """Multi-head attention mechanism layer."""
 
     def __init__(
