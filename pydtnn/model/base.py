@@ -219,7 +219,7 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
     total_metrics: np.ndarray
     metrics_funcs: list[Metric[T]]
     loss_and_metrics: list[str]
-    layers: list[Layerable]
+    layers: list[Layerable[T]]
 
     nprocs: int
     blocking_mpi: bool

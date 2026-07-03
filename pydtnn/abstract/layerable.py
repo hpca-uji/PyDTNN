@@ -145,7 +145,7 @@ class Layerable[T: Array](Base[T]):  # noqa: D101 (generics not detected)
 
         return props
 
-    def _model_init(self, prev_shape: ArrayShape, x: T) -> None:
+    def _model_init(self, prev_shape: ArrayShape, x: T | None) -> None:
         """
         Initialize layer state within the model context.
 

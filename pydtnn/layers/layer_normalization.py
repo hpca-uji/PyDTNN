@@ -20,7 +20,7 @@ class LayerNormalization[T: Array](Layer[T]):  # noqa: D101 (generics not detect
 
     def __init__(
         self,
-        axis: tuple = (-2, -1),
+        axis: tuple | int = (-2, -1),
         beta: float = 0.0,
         gamma: float = 1.0,
         epsilon: float = 1e-5,
@@ -38,9 +38,9 @@ class LayerNormalization[T: Array](Layer[T]):  # noqa: D101 (generics not detect
         """
         super().__init__()
         if type(axis) is not tuple:
-            self.axis = (axis,)
+            self.axis: tuple = (axis,)
         else:
-            self.axis = axis
+            self.axis: tuple = axis
         self.gamma_init_val = gamma
         self.beta_init_val = beta
         self.epsilon = epsilon

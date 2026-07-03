@@ -223,7 +223,7 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
             self.x.gpudata,
             lda,
             beta,
-            self.dw.ptr_intp if self.model.gpudirect else self.dw.gpudata,
+            self.dw.ptr_intp if self.model.gpudirect else self.dw.gpudata,  # type: ignore (dw.gpudata has a correct type)
             ldc,
             self.model.dtype,
         )
@@ -256,7 +256,7 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
                 self.one_vec_gpu.gpudata,
                 inc_x,
                 beta,
-                self.db.ptr_intp if self.model.gpudirect else self.db.gpudata,
+                self.db.ptr_intp if self.model.gpudirect else self.db.gpudata,  # type: ignore (dw.gpudata has a correct type)
                 inc_y,
                 self.model.dtype,
             )

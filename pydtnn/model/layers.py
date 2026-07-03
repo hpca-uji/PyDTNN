@@ -132,8 +132,8 @@ class Layers[T: Array](Utils[T]):  # noqa: D101 (generics not detected)
                 )
                 fused_layer = select_layer(layer_name)
 
-                new_curr_layer = fused_layer(from_parent=dict_params)  # type: ignore (it's okay)
-                new_curr_layer._init_backend_with_model(self)
+                new_curr_layer = fused_layer(from_parent=dict_params)
+                new_curr_layer._init_backend_with_model(self)  # type: ignore (It's fine; this is a child class)
                 new_curr_layer.__dict__.update(dict_params)
                 try:
                     new_curr_layer._model_init(
