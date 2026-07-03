@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""PyDTNN Benchmark script"""
+"""PyDTNN Benchmark script."""
 
 import cProfile
 import logging
