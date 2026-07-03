@@ -1,9 +1,7 @@
-"""
-Numpy backend implementation of the FeedForward layer.
-"""
+"""Numpy backend implementation of the FeedForward layer."""
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from pydtnn.activations.relu import Relu
 from pydtnn.backends.numpy.layers.abstract.block_layer import AbstractBlockLayerNumpy
@@ -11,6 +9,7 @@ from pydtnn.layers.dropout import Dropout
 from pydtnn.layers.fc import FC
 from pydtnn.layers.feed_forward import FeedForward
 from pydtnn.libs import numpy as np
+from pydtnn.utils.constants import ArrayShape
 
 __all__ = ("FeedForwardNumpy",)
 
@@ -21,14 +20,10 @@ if TYPE_CHECKING:
 
 
 class FeedForwardNumpy(FeedForward[np.ndarray], AbstractBlockLayerNumpy):
-    """
-    Numpy-based FeedForward layer implementation.
-    """
+    """Numpy-based FeedForward layer implementation."""
 
-    def __init__(self, *args, **kwargs):
-        """
-        Initializes the FeedForwardNumpy layer with sublayers.
-        """
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Initializes the FeedForwardNumpy layer with sublayers."""
         super().__init__(*args, **kwargs)
         self.FC_1 = FC(shape=(self.d_ff,))
         self.relu = Relu()
@@ -36,10 +31,8 @@ class FeedForwardNumpy(FeedForward[np.ndarray], AbstractBlockLayerNumpy):
         self.FC_2 = FC(shape=(self.shape[-1],))
         self.paths = [[self.FC_1, self.relu, self.dropout, self.FC_2]]
 
-    def _model_init(self, prev_shape, x):
-        """
-        Initializes sublayers and model parameters.
-        """
+    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
+        """Initializes sublayers and model parameters."""
         super()._model_init(prev_shape, x)
 
         # Initialize all sublayers
@@ -59,26 +52,20 @@ class FeedForwardNumpy(FeedForward[np.ndarray], AbstractBlockLayerNumpy):
             self.bwd_time += layer.bwd_time
             self.nparams += layer.nparams
 
-    def initialize_block_layer(self):
-        """
-        Initializes the block layer components.
-        """
+    def initialize_block_layer(self) -> None:
+        """Initializes the block layer components."""
         pass
 
-    def forward(self, x):
-        """
-        Performs the forward pass through the feed-forward network.
-        """
+    def forward(self, x: np.ndarray) -> np.ndarray:
+        """Performs the forward pass through the feed-forward network."""
         x = self.FC_1.forward(x)
         x = self.relu.forward(x)
         x = self.dropout.forward(x)
         x = self.FC_2.forward(x)
         return x
 
-    def backward(self, dy):
-        """
-        Performs the backward pass through the feed-forward network.
-        """
+    def backward(self, dy: np.ndarray) -> np.ndarray:
+        """Performs the backward pass through the feed-forward network."""
         dx = self.FC_2.backward(dy)
         dx = self.dropout.backward(dx)
         dx = self.relu.backward(dx)

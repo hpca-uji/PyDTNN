@@ -1,7 +1,7 @@
 """NumPy backend implementation of the 2D Max Pooling layer."""
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from pydtnn.backends.numpy.layers.abstract.pool_2d_layer import AbstractPool2DLayerNumpy
 from pydtnn.layers.max_pool_2d import MaxPool2D
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 class MaxPool2DNumpy(MaxPool2D[np.ndarray], AbstractPool2DLayerNumpy):
     """NumPy-based 2D Max Pooling layer implementation."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the MaxPool2DNumpy layer."""
         super().__init__(*args, **kwargs)
         # The following attribute will be intialized later.

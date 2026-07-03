@@ -1,13 +1,14 @@
 """NumPy backend implementation of the Fully Connected (FC) layer."""
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from pydtnn.backends.numpy.layers.abstract.layer import LayerNumpy
 from pydtnn.layers.fc import FC
 from pydtnn.libs import numpy as np
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
                                    PYDTNN_OPS_EVENTS, OpsEventEnum)
+from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.performance_models import matmul_time
 
 __all__ = ("FCNumpy",)
@@ -23,7 +24,7 @@ class FCNumpy(FC[np.ndarray], LayerNumpy):
 
     biases: np.ndarray
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the FCNumpy layer."""
         super().__init__(*args, **kwargs)
         # The following attributes will be initalized in "initalize"
@@ -31,7 +32,7 @@ class FCNumpy(FC[np.ndarray], LayerNumpy):
         self.dw: np.ndarray = None  # type: ignore
         self.db: np.ndarray = None  # type: ignore
 
-    def _model_init(self, prev_shape, x=None):
+    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
         """Initialize layer parameters, buffers, and performance models."""
         super()._model_init(prev_shape, x)
         self.weights = np.asarray(

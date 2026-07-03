@@ -1,6 +1,4 @@
-"""
-Numpy backend implementation of the Flatten layer.
-"""
+"""Numpy backend implementation of the Flatten layer."""
 
 import logging
 from typing import TYPE_CHECKING
@@ -21,9 +19,7 @@ if TYPE_CHECKING:
 
 
 class FlattenNumpy(Flatten[np.ndarray], LayerNumpy):
-    """
-    Numpy-based Flatten layer implementation.
-    """
+    """Numpy-based Flatten layer implementation."""
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         """
