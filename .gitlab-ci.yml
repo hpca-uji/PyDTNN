@@ -77,17 +77,18 @@ job_merge:
 
   before_script:
   - git remote -v
-  - GIT_REMOTE=$(git remote)
+  - GIT_REMOTE_NAME=$(git remote)
+  - GIT_REMOTE_URL=$(git remote get-url "${GIT_REMOTE_NAME:?}")
   - git config --global user.name "${GITLAB_USER_NAME:?}"
   - git config --global user.email "${GITLAB_USER_EMAIL:?}"
-  - git remote set-url "${GIT_REMOTE}" "${CI_SERVER_PROTOCOL}://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_FQDN}/${CI_PROJECT_PATH}.git"
+  - git remote set-url "${GIT_REMOTE_NAME}" "${GIT_REMOTE_URL/gitlab-ci-token:[^@]*@/gitlab-ci-token:${CI_JOB_TOKEN:?}@}"
   - glab auth login --hostname "${CI_SERVER_FQDN:?}" --token "${CI_JOB_TOKEN:?}"
   - git remote -v
   script:
-  - git fetch "${GIT_REMOTE:?}" "${BRANCH_MAIN:?}"
-  - git checkout -B "${BRANCH_MAIN:?}" "${GIT_REMOTE:?}/${BRANCH_MAIN:?}"
+  - git fetch "${GIT_REMOTE_NAME:?}" "${BRANCH_MAIN:?}"
+  - git checkout -B "${BRANCH_MAIN:?}" "${GIT_REMOTE_NAME:?}/${BRANCH_MAIN:?}"
   - git merge "${CI_COMMIT_SHA:?}" --ff-only
-  - git push "${GIT_REMOTE:?}" "${BRANCH_MAIN:?}"
+  - git push "${GIT_REMOTE_NAME:?}" "${BRANCH_MAIN:?}"
   - git checkout "${CI_COMMIT_SHA:?}"
 
 job_push:
