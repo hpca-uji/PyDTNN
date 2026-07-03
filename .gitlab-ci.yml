@@ -34,7 +34,6 @@ job_build:
     when: always
 
   before_script:
-  - env | sort
   - make sync
   - apt-get update
   - mkdir -p ./build
@@ -47,6 +46,8 @@ job_build:
   - printf '%s\n' GIT_TAG=${TAG:?} PUBLIC_TAG=$(git tag | grep -xF ${TAG:?}) > ./build/gitlab.env
   - make test NPROC=1
   - make lint NPROC=1
+  - env | sort
+  - ls -lh ./build/pydtnn/
 
   artifacts:
     reports:
