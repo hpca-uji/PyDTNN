@@ -68,7 +68,8 @@ class SGDPycuda(SGD[TensorArray], OptimizerPycuda):
         Args:
             list_layers (list[LayerPycuda]): List of layers to track.
         """
-        super()._model_init(list_layers)  # type: ignore (The type is correct: LayerPycuda extends LayerBase)
+        # NOTE: The type is correct: LayerPycuda extends LayerBase
+        super()._model_init(list_layers)  # type: ignore
 
         for layer in list_layers:
             list_grad_vars = list(layer.grad_vars.keys())
@@ -81,7 +82,8 @@ class SGDPycuda(SGD[TensorArray], OptimizerPycuda):
                         w.shape, dtype=w.dtype
                     )
 
-                    self.memory_used += self.context[layer.id]["velocity_%s" % w_].nbytes  # type: ignore (They are both "gpuarray" and not "int")
+                    # NOTE: They are both "gpuarray" and not "int"
+                    self.memory_used += self.context[layer.id]["velocity_%s" % w_].nbytes  # type: ignore
 
     def update(self, layer: LayerPycuda) -> None:
         """

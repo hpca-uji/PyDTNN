@@ -60,6 +60,10 @@ _Things you should keep in mind_
 ## Environment
 - If using `conda` and `pip install` fails with `no such option: --config-settings`, deactivate all environments and reactivate only the target environment.
 
+## Typing
+- If sure, you can disable typing errors with `# typing: ignore (reason)`.
+- If sure, you can disable styling errors with `# noqa: {error} (reason)`.
+
 # Structure
 _How is the project organized_
 

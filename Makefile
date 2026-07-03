@@ -625,7 +625,7 @@ pydtnn-lint:
 	cd "$(PYDTNN_SRC)" && \
 		rm -f "$(PYDTNN_DST)/quality.json" && \
 		flake8 \
-			--tee --exit-zero \
+			--tee \
 			--jobs "$(NPROC)" \
 			--format=gl-codeclimate \
 			--output-file="$(PYDTNN_DST)/quality.json" \
