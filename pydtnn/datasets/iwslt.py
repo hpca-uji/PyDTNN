@@ -1,7 +1,4 @@
-"""
-IWSLT dataset module for PyDTNN.
-Provides data loading and processing utilities for the IWSLT 2017 translation task.
-"""
+"""IWSLT dataset module for PyDTNN. Provides data loading and processing utilities for the IWSLT 2017 translation task."""
 
 from __future__ import annotations
 
@@ -93,10 +90,15 @@ class IWSLT(Dataset):
         # Synthetic
         # self.train_val_nsamples = 10000
         # self.train_nsamples = None
-        # self.lines1 = self.lines2 = self.lines1_train = self.lines2_train = self.lines1_val = self.lines2_val = self.lines1_test = self.lines2_test = None
+        # self.lines1 = self.lines2 = self.lines1_train = self.lines2_train \
+        # = self.lines1_val = self.lines2_val = self.lines1_test = self.lines2_test = None
         # self.make_train_val_partitions()
-        # # self.src_embeddings = random.random(*self.train_val_nsamples, 1, self.max_sentence, self.embedl)).astype(dtype=self.dtype)
-        # # self.tgt_embeddings = random.random(*self.train_val_nsamples, 1, self.max_sentence, self.embedl)).astype(dtype=self.dtype)
+        # # self.src_embeddings = random.random(
+        # #     *self.train_val_nsamples, 1, self.max_sentence, self.embedl)
+        # # ).astype(dtype=self.dtype)
+        # # self.tgt_embeddings = random.random(
+        # #     *self.train_val_nsamples, 1, self.max_sentence, self.embedl)
+        # # ).astype(dtype=self.dtype)
         # # self.src_mask = np.zeros((self.train_val_nsamples,1,self.max_sentence),dtype=bool)
         # # self.tgt_mask = np.zeros((self.train_val_nsamples,1,self.max_sentence),dtype=bool)
         # self.src_embeddings = random.random((1000, 1, self.max_sentence, self.embedl)).astype(dtype=self.dtype)
@@ -217,7 +219,12 @@ class IWSLT(Dataset):
         for i in range(self.train_nsamples // batch_size):
             # window = (i * batch_size + rank * batch_size, i * batch_size + (rank + 1) * batch_size)
             window = (0 * batch_size + rank * batch_size, 0 * batch_size + (rank + 1) * batch_size)
-            # x = [self.src_embeddings[window[0]:window[1]], self.src_mask[window[0]:window[1]], self.tgt_embeddings[window[0]:window[1]], self.tgt_mask[window[0]:window[1]]]
+            # x = [
+            #     self.src_embeddings[window[0]:window[1]],
+            #     self.src_mask[window[0]:window[1]],
+            #     self.tgt_embeddings[window[0]:window[1]],
+            #     self.tgt_mask[window[0]:window[1]]
+            # ]
             # y = self.tgt_embeddings[window[0]:window[1]]
             x = [
                 self.src_embeddings[window[0]: window[1]],

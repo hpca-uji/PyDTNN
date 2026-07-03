@@ -41,7 +41,7 @@ class MNIST(Memory):
     Normalize (z-score):
     offset: -0.131
     scale:  +3.237
-    """
+    """  # noqa: E501
 
     def __init__(self, model: Model, force_test_as_validation: bool = False, debug: bool = False) -> None:
         """

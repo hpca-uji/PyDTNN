@@ -25,7 +25,8 @@ type ClassName = int
 
 
 class Folder(Dataset):
-    """
+    """File system dataset loader
+
     This class will receive the path to a dataset divided in different sub-folders
      where every sub-folder is a different data class, and will generate the samples.
     For example:
@@ -40,6 +41,8 @@ class Folder(Dataset):
 
     def __init__(self, model: Model, force_test_as_validation: bool = False, debug: bool = False) -> None:
         """
+        Initialize dataset
+
         Args:
             model (Model): Model's object.
             force_test_as_validation (bool): True to force the use of the test dataset as validation. default: False.

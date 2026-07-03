@@ -67,9 +67,9 @@ class Synthetic(Dataset):
             self._y[part] = np.zeros(y_shape, dtype=self.model.dtype)
 
     def _data_generator(self, part: Dataset.Part) -> Generator[tuple[np.ndarray, np.ndarray]]:
-        """
-        Generates synthetic data for each dataset part returning (slices of) _x[part] and _y[part] initialized in
-        _init_synthetic_data().
+        """Generates synthetic data for each dataset part
+
+        Returns (slices of) _x[part] and _y[part] initialized in _model_init().
 
         The _local_remaining_nsamples[part] vector is used to keep track of:
         - whether a fresh round of the given part should start (if it is -1), or

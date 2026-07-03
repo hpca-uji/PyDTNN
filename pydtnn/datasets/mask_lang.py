@@ -100,8 +100,12 @@ class MaskLang(Dataset):
         # self.train_val_nsamples = 10000
         # self.train_nsamples = None
         # self.make_train_val_partitions()
-        # self.src_embeddings = random.random((self.train_val_nsamples, 1, self.max_sentence, self.embedl)).astype(dtype=self.dtype)
-        # self.tgt_embeddings = random.random((self.train_val_nsamples, 1, self.max_sentence, self.embedl)).astype(dtype=self.dtype)
+        # self.src_embeddings = random.random(
+        #     (self.train_val_nsamples, 1, self.max_sentence, self.embedl)
+        # ).astype(dtype=self.dtype)
+        # self.tgt_embeddings = random.random(
+        #     (self.train_val_nsamples, 1, self.max_sentence, self.embedl)
+        # ).astype(dtype=self.dtype)
 
     def load_data(self) -> None:
         """Load raw text data from the dataset path."""
