@@ -1,6 +1,4 @@
-"""
-Abstract base class for 2D convolution layers in the direct backend.
-"""
+"""Abstract base class for 2D convolution layers in the direct backend."""
 
 import logging
 
@@ -13,8 +11,4 @@ logger = logging.getLogger(__name__)
 
 
 class AbstractConv2DDirect(AbstractConv2DNumpy, LayerDirect):
-    """
-    Base class for 2D convolution layers implementing the direct backend interface.
-    """
-
-    ...
+    """Base class for 2D convolution layers implementing the direct backend interface."""

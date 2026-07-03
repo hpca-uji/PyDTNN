@@ -1,6 +1,4 @@
-"""
-CuPy implementation of 2D Convolutional layers for the PyDTNN framework.
-"""
+"""CuPy implementation of 2D Convolutional layers for the PyDTNN framework."""
 
 import logging
 
@@ -14,8 +12,4 @@ logger = logging.getLogger(__name__)
 
 
 class Conv2DCupy(Conv2DNumpy, AbstractConv2DCupy, LayerCupy):
-    """
-    2D Convolutional layer implementation using CuPy for GPU acceleration.
-    """
-
-    ...
+    """2D Convolutional layer implementation using CuPy for GPU acceleration."""

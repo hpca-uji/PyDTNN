@@ -1,6 +1,4 @@
-"""
-CuPy-based metric implementations for the PyDTNN framework.
-"""
+"""CuPy-based metric implementations for the PyDTNN framework."""
 
 import logging
 
@@ -12,6 +10,4 @@ logger = logging.getLogger(__name__)
 
 
 class MetricCupy(MetricNumpy):
-    """
-    Extends a Metric class with the attributes and methods required by CPU Metrics.
-    """
+    """Extends a Metric class with the attributes and methods required by CPU Metrics."""

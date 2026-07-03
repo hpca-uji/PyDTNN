@@ -1,6 +1,4 @@
-"""
-Direct backend implementation for neural network layers.
-"""
+"""Direct backend implementation for neural network layers."""
 
 import logging
 
@@ -13,9 +11,4 @@ logger = logging.getLogger(__name__)
 
 
 class LayerDirect(LayerNumpy, LayerableDirect):
-    """
-    Base class for layers using the direct backend, inheriting from both
-    Numpy-based layer implementations and direct backend abstractions.
-    """
-
-    ...
+    """Base class for layers using the direct backend."""

@@ -1,6 +1,7 @@
 """2D Convolutional layer implementation using GEMM-based backends."""
 
 import logging
+from typing import Any
 
 import numpy as np
 
@@ -20,7 +21,7 @@ logger = logging.getLogger(__name__)
 class Conv2DGemm(Conv2DNumpy, AbstractConv2DGemm):
     """2D Convolutional layer optimized with GEMM (General Matrix Multiply) operations."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the GEMM-based 2D convolutional layer."""
         super().__init__(*args, **kwargs)
         # convGemm related attributes (will be initialized in initialize())

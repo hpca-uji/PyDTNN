@@ -9,9 +9,4 @@ __all__ = ("LayerableGemm",)
 
 
 class LayerableGemm(LayerableNumpy, BaseGemm):
-    """
-    A mixin or base class that combines NumPy layerable functionality
-    with General Matrix Multiply (GEMM) abstract interfaces.
-    """
-
-    ...
+    """Base class that combines NumPy layerable functionality with General Matrix Multiply (GEMM) abstract interfaces."""

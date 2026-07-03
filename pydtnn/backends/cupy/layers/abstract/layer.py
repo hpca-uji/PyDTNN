@@ -1,6 +1,4 @@
-"""
-CuPy backend implementation for neural network layers.
-"""
+"""CuPy backend implementation for neural network layers."""
 
 import logging
 
@@ -18,9 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 class LayerCupy(LayerNumpy, LayerableCupy):
-    """
-    Base class for layers using the CuPy backend.
-    """
+    """Base class for layers using the CuPy backend."""
 
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
         """

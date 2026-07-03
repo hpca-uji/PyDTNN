@@ -1,6 +1,4 @@
-"""
-CuPy implementation of the multiclass confusion matrix metric.
-"""
+"""CuPy implementation of the multiclass confusion matrix metric."""
 
 import logging
 
@@ -16,9 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 class MulticlassConfusionMatrixCupy(MulticlassConfusionMatrixNumpy, MetricCupy):
-    """
-    Computes the multiclass confusion matrix using CuPy-compatible arrays.
-    """
+    """Computes the multiclass confusion matrix using CuPy-compatible arrays."""
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> np.ndarray:
         """

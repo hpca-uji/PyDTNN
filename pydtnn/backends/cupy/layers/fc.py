@@ -1,6 +1,4 @@
-"""
-CuPy implementation of Fully Connected layers for the PyDTNN framework.
-"""
+"""CuPy implementation of Fully Connected layers for the PyDTNN framework."""
 
 import logging
 
@@ -17,9 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class FCCupy(FCNumpy, LayerCupy):
-    """
-    Fully connected layer implementation using CuPy for GPU acceleration.
-    """
+    """Fully connected layer implementation using CuPy for GPU acceleration."""
 
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
         """

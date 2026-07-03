@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 if TYPE_CHECKING:
-    import numpy as np
+    import numpy as np  # noqa: F811 (override typing)
 
 
 class Conv2DDepthwiseCython(Conv2DDepthwiseNumpy, AbstractConv2DCupy, LayerCupy):

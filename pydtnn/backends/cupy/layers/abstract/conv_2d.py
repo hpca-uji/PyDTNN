@@ -16,7 +16,7 @@ __all__ = ("AbstractConv2DCupy",)
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    import numpy as np
+    import numpy as np  # noqa: F811 (override typing)
 
 
 class AbstractConv2DCupy(AbstractConv2DNumpy, AbstractConv2D[np.ndarray], LayerCupy):

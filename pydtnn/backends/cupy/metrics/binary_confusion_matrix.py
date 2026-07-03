@@ -1,6 +1,4 @@
-"""
-CuPy implementation of the binary confusion matrix metric.
-"""
+"""CuPy implementation of the binary confusion matrix metric."""
 
 import logging
 
@@ -16,9 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 class BinaryConfusionMatrixCupy(BinaryConfusionMatrixNumpy, MetricCupy):
-    """
-    Computes the binary confusion matrix using CuPy-compatible operations.
-    """
+    """Computes the binary confusion matrix using CuPy-compatible operations."""
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> np.ndarray:
         """

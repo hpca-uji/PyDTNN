@@ -1,6 +1,4 @@
-"""
-CuPy-based activation layer implementations for the PyDTNN framework.
-"""
+"""CuPy-based activation layer implementations for the PyDTNN framework."""
 
 import logging
 
@@ -18,9 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 class ActivationCupy(ActivationNumpy, LayerableCupy):
-    """
-    Base class for activation layers implemented using CuPy for GPU acceleration.
-    """
+    """Base class for activation layers implemented using CuPy for GPU acceleration."""
 
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
         """

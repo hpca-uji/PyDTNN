@@ -1,6 +1,4 @@
-"""
-CuPy implementation of the F1-score metric for the PyDTNN framework.
-"""
+"""CuPy implementation of the F1-score metric for the PyDTNN framework."""
 
 import logging
 from typing import TYPE_CHECKING
@@ -14,13 +12,11 @@ __all__ = ("F1ScoreCupy",)
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    import numpy as np
+    import numpy as np  # noqa: F811 (override typing)
 
 
 class F1ScoreCupy(F1ScoreNumpy, MetricCupy):
-    """
-    F1-score metric implementation using CuPy for GPU-accelerated computation.
-    """
+    """F1-score metric implementation using CuPy for GPU-accelerated computation."""
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
         """

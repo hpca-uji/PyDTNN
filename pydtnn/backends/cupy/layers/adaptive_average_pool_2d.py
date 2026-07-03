@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 if TYPE_CHECKING:
-    import numpy as np
+    import numpy as np  # noqa: F811 (override typing)
 
 
 class AdaptiveAveragePool2DCupy(AdaptiveAveragePool2DNumpy, AbstractPool2DLayerCupy, LayerCupy):
@@ -35,20 +35,20 @@ class AdaptiveAveragePool2DCupy(AdaptiveAveragePool2DNumpy, AbstractPool2DLayerC
 
     def fwd(self, x: np.ndarray, y: np.ndarray) -> None:
         """Perform the forward pass using a CUDA kernel."""
-        N = x.shape[0] * self.ci * self.ho * self.wo  # y.size
+        n = x.shape[0] * self.ci * self.ho * self.wo  # y.size
         self.fwd_kernel(
             self.model.cuda_grid,
             self.model.cuda_block,
-            (x, y, x.shape[0], self.ci, self.hi, self.wi, self.ho, self.wo, N),
+            (x, y, x.shape[0], self.ci, self.hi, self.wi, self.ho, self.wo, n),
         )
 
     def bwd(self, dx: np.ndarray, dy: np.ndarray) -> None:
         """Perform the backward pass using a CUDA kernel."""
-        N = dx.shape[0] * self.ci * self.hi * self.wi  # dx.size
+        n = dx.shape[0] * self.ci * self.hi * self.wi  # dx.size
         self.bwd_kernel(
             self.model.cuda_grid,
             self.model.cuda_block,
-            (dx, dy, dx.shape[0], self.ci, self.hi, self.wi, self.ho, self.wo, N),
+            (dx, dy, dx.shape[0], self.ci, self.hi, self.wi, self.ho, self.wo, n),
         )
 
     def _fwd_nhwc(self, x: np.ndarray, y: np.ndarray) -> None:

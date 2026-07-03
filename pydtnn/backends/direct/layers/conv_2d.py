@@ -2,6 +2,7 @@
 
 import logging
 from functools import partial
+from typing import Any
 
 import numpy as np
 
@@ -21,13 +22,13 @@ logger = logging.getLogger(__name__)
 class Conv2DDirect(Conv2DNumpy, AbstractConv2DDirect):
     """2D Convolution layer utilizing the direct convolution backend."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the Conv2DDirect layer."""
         super().__init__(*args, **kwargs)
         # convDirect related attributes (will be initialized in initialize())
         self.cd = []
 
-    def _algo_init(self):
+    def _algo_init(self) -> None:
         """Add the different forward and backward methods to the class."""
 
         def new(name, func):
@@ -81,7 +82,7 @@ class Conv2DDirect(Conv2DNumpy, AbstractConv2DDirect):
         if self.use_bias:
             logger.warning(f"{self.__class__.__name__} never uses the biases.")
 
-    def _forward_cd(self, x: np.ndarray, n=0) -> np.ndarray:
+    def _forward_cd(self, x: np.ndarray, n: int = 0) -> np.ndarray:
         """Execute the forward pass using the convDirect library."""
 
         self.model.tracer.emit_event(
@@ -101,6 +102,6 @@ class Conv2DDirect(Conv2DNumpy, AbstractConv2DDirect):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return y
 
-    def _backward_cd(self, y: np.ndarray, n=0) -> np.ndarray:
+    def _backward_cd(self, y: np.ndarray, n: int = 0) -> np.ndarray:
         """Execute the backward pass using the convDirect library."""
         raise RuntimeError("Backward not implemented yet!")

@@ -13,9 +13,4 @@ logger = logging.getLogger(__name__)
 
 
 class AbstractConv2DGemm(AbstractConv2DNumpy, LayerGemm):
-    """
-    Abstract base class for 2D convolutional layers implemented via
-    General Matrix Multiply (GEMM) operations.
-    """
-
-    ...
+    """Abstract base class for 2D convolutional layers implemented via General Matrix Multiply (GEMM) operations."""
