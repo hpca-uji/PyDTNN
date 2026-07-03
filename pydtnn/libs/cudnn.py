@@ -880,11 +880,11 @@ _libcudnn.cudnnTransformTensor.argtypes = [
 def cudnnTransformTensor(
     handle: int,
     alpha: float,
-    src_desc: int,
-    src_data: ctypes.c_void_p,
+    x_desc: int,
+    x_data: ctypes.c_void_p,
     beta: float,
-    dest_desc: int,
-    dest_data: ctypes.c_void_p,
+    y_desc: int,
+    y_data: ctypes.c_void_p,
 ) -> None:
     """Tensor layout conversion helper (dest = alpha * src + beta * dest).
 
@@ -901,21 +901,21 @@ def cudnnTransformTensor(
     alpha : float
         Scalar factor to be applied to every element of the input tensor before it is added
         to the output tensor.
-    src_desc : cudnnTensorDescriptor
+    x_desc : cudnnTensorDescriptor
         Handle to a previously initialized tensor descriptor.
-    src_data : void_p
-        Pointer to data of the tensor described by src_desc descriptor.
+    x_data : void_p
+        Pointer to data of the tensor described by x_desc descriptor.
     beta: float
         Scaling factor which is applied on every element of the output tensor prior to adding
         the result of the operation. Note that if beta is zero, the output is not read and can
         contain any uninitialized data (including Nan numbers).
-    dest_desc : cudnnTensorDescriptor
+    y_desc : cudnnTensorDescriptor
         Handle to a previously initialized tensor descriptor.
-    dest_data : void_p
-        Pointer to data of the tensor described by dest_desc descriptor.
+    y_data : void_p
+        Pointer to data of the tensor described by y_desc descriptor.
     """
 
-    data_type, _, _, _, _, _, _, _, _ = cudnnGetTensor4dDescriptor(dest_desc)
+    data_type, _, _, _, _, _, _, _, _ = cudnnGetTensor4dDescriptor(y_desc)
     if data_type == cudnnDataType["CUDNN_DATA_DOUBLE"]:
         alpha_ref = ctypes.byref(ctypes.c_double(alpha))
         beta_ref = ctypes.byref(ctypes.c_double(beta))
@@ -925,7 +925,7 @@ def cudnnTransformTensor(
 
     assert _libcudnn
     status = _libcudnn.cudnnTransformTensor(
-        handle, alpha_ref, src_desc, src_data, beta_ref, dest_desc, dest_data
+        handle, alpha_ref, x_desc, x_data, beta_ref, y_desc, y_data
     )
     cudnnCheckStatus(status)
 
@@ -1002,29 +1002,29 @@ _libcudnn.cudnnSetTensor.argtypes = [
 ]
 
 
-def cudnnSetTensor(handle: int, src_desc: int, src_data: ctypes.c_void_p, value: float) -> None:
+def cudnnSetTensor(handle: int, y_desc: int, y_data: ctypes.c_void_p, value: float) -> None:
     """Set all data points of a tensor to a given value : srcDest = value.
 
     Parameters
     ----------
     handle : cudnnHandle
         Handle to a previously created cuDNN context.
-    src_desc : cudnnTensorDescriptor
+    y_desc : cudnnTensorDescriptor
         Handle to a previously initialized tensor descriptor.
-    src_data : void_p
-        Pointer to data of the tensor described by src_desc descriptor.
+    y_data : void_p
+        Pointer to data of the tensor described by y_desc descriptor.
     value : float
         Value that all elements of the tensor will be set to.
     """
 
-    data_type, _, _, _, _, _, _, _, _ = cudnnGetTensor4dDescriptor(src_desc)
+    data_type, _, _, _, _, _, _, _, _ = cudnnGetTensor4dDescriptor(y_desc)
     if data_type == cudnnDataType["CUDNN_DATA_DOUBLE"]:
         value_ref = ctypes.byref(ctypes.c_double(value))
     else:
         value_ref = ctypes.byref(ctypes.c_float(value))
 
     assert _libcudnn
-    status = _libcudnn.cudnnSetTensor(handle, src_desc, src_data, value_ref)
+    status = _libcudnn.cudnnSetTensor(handle, y_desc, y_data, value_ref)
     cudnnCheckStatus(status)
 
 
@@ -1037,7 +1037,7 @@ _libcudnn.cudnnScaleTensor.argtypes = [
 ]
 
 
-def cudnnScaleTensor(handle: int, src_desc: int, src_data: ctypes.c_void_p, alpha: float) -> None:
+def cudnnScaleTensor(handle: int, x_desc: int, x_data: ctypes.c_void_p, alpha: float) -> None:
     """This function scales all the elements of a tensor by a give factor.
 
     Set all data points of a tensor to scaled value : srcDest = alpha * srcDest.
@@ -1046,22 +1046,22 @@ def cudnnScaleTensor(handle: int, src_desc: int, src_data: ctypes.c_void_p, alph
     ----------
     handle : cudnnHandle
         Handle to a previously created cuDNN context.
-    src_desc : cudnnTensorDescriptor
+    x_desc : cudnnTensorDescriptor
         Handle to a previously initialized tensor descriptor.
-    src_data : void_p
-        Pointer to data of the tensor described by src_desc descriptor.
+    x_data : void_p
+        Pointer to data of the tensor described by x_desc descriptor.
     alpha : float
         Value that all elements of the tensor will be scaled with.
     """
 
-    data_type, _, _, _, _, _, _, _, _ = cudnnGetTensor4dDescriptor(src_desc)
+    data_type, _, _, _, _, _, _, _, _ = cudnnGetTensor4dDescriptor(x_desc)
     if data_type == cudnnDataType["CUDNN_DATA_DOUBLE"]:
         alpha_ref = ctypes.byref(ctypes.c_double(alpha))
     else:
         alpha_ref = ctypes.byref(ctypes.c_float(alpha))
 
     assert _libcudnn
-    status = _libcudnn.cudnnScaleTensor(handle, src_desc, src_data, alpha_ref)
+    status = _libcudnn.cudnnScaleTensor(handle, x_desc, x_data, alpha_ref)
     cudnnCheckStatus(status)
 
 
@@ -1608,7 +1608,7 @@ def cudnnFindConvolutionForwardAlgorithm(
 #
 #
 # def cudnnGetConvolutionForwardAlgorithm(
-#     handle: int, src_desc: int, w_desc: int, conv_desc: int, dest_desc: int, preference: int, memoryLimitInbytes: int
+#     handle: int, x_desc: int, w_desc: int, conv_desc: int, y_desc: int, preference: int, memoryLimitInbytes: int
 # ) -> int:
 #     """Find the best algorithm for forward convolution.
 #
@@ -1618,13 +1618,13 @@ def cudnnFindConvolutionForwardAlgorithm(
 #     Parameters
 #     handle : cudnnHandle
 #         Handle to a previously created cuDNN context.
-#     src_desc : cudnnTensorDescriptor
+#     x_desc : cudnnTensorDescriptor
 #         Handle to a previously initialized tensor descriptor.
 #     w_desc : cudnnFilterDescriptor
 #         Handle to a previously initialized filter descriptor.
 #     conv_desc : cudnnConvolutionDescriptor
 #         Previously initialized convolution descriptor.
-#     dest_desc : cudnnTensorDescriptor
+#     y_desc : cudnnTensorDescriptor
 #         Handle to a previously initialized tensor descriptor.
 #     preference : cudnnConvolutionFwdPreference
 #         Enumerant to express the preference criteria in terms of memory
@@ -1641,10 +1641,10 @@ def cudnnFindConvolutionForwardAlgorithm(
 #
 #     status = _libcudnn.cudnnGetConvolutionForwardAlgorithm(
 #         handle,
-#         src_desc,
+#         x_desc,
 #         w_desc,
 #         conv_desc,
-#         dest_desc,
+#         y_desc,
 #         preference,
 #         ctypes.c_size_t(memoryLimitInbytes),
 #         ctypes.byref(algo)
@@ -1706,7 +1706,7 @@ _libcudnn.cudnnGetConvolutionForwardWorkspaceSize.argtypes = [
 
 
 def cudnnGetConvolutionForwardWorkspaceSize(
-    handle: int, src_desc: int, w_desc: int, conv_desc: int, dest_desc: int, algo: int
+    handle: int, x_desc: int, w_desc: int, conv_desc: int, y_desc: int, algo: int
 ) -> int:
     """This function returns the amount of GPU memory workspace the user needs to allocate to be able to call cudnnConvolutionForward with the specified algorithm.
 
@@ -1714,13 +1714,13 @@ def cudnnGetConvolutionForwardWorkspaceSize(
     ----------
     handle : cudnnHandle
         Handle to a previously created cuDNN context.
-    src_desc : cudnnTensorDescriptor
+    x_desc : cudnnTensorDescriptor
         Handle to a previously initialized tensor descriptor.
     w_desc : cudnnFilterDescriptor
         Handle to a previously initialized filter descriptor.
     conv_desc : cudnnConvolutionDescriptor
         Previously initialized convolution descriptor.
-    dest_desc : cudnnTensorDescriptor
+    y_desc : cudnnTensorDescriptor
         Handle to a previously initialized tensor descriptor.
     algo : cudnnConvolutionFwdAlgo
         Enumerant that specifies the chosen convolution algorithm.
@@ -1734,7 +1734,7 @@ def cudnnGetConvolutionForwardWorkspaceSize(
 
     assert _libcudnn
     status = _libcudnn.cudnnGetConvolutionForwardWorkspaceSize(
-        handle, src_desc, w_desc, conv_desc, dest_desc, algo, ctypes.byref(size_in_bytes)
+        handle, x_desc, w_desc, conv_desc, y_desc, algo, ctypes.byref(size_in_bytes)
     )
     cudnnCheckStatus(status)
 
@@ -1762,8 +1762,8 @@ _libcudnn.cudnnConvolutionForward.argtypes = [
 def cudnnConvolutionForward(
     handle: int,
     alpha: float,
-    src_desc: int,
-    src_data: int,
+    x_desc: int,
+    x_data: ctypes.c_void_p,
     w_desc: int,
     w: ctypes.c_void_p,
     conv_desc: int,
@@ -1771,12 +1771,12 @@ def cudnnConvolutionForward(
     workspace: ctypes.c_void_p,
     workspace_size_in_bytes: int,
     beta: float,
-    dest_desc: int,
-    dest_data: ctypes.c_void_p,
+    y_desc: int,
+    y_data: ctypes.c_void_p,
 ) -> None:
     """Perform forward convolution. All of the form "output = alpha * Op(inputs) + beta * output".
 
-    This function executes convolutions or cross-correlations over src using the specified
+    This function executes convolutions or cross-correlations over x using the specified
     filters, returning results in dest. Scaling factors alpha and beta can be used to scale
     the input tensor and the output tensor respectively.
 
@@ -1786,10 +1786,10 @@ def cudnnConvolutionForward(
         Handle to a previously created cuDNN context.
     alpha: float
         Scaling factor with which every element of the input tensor is multiplied.
-    src_desc : cudnnTensorDescriptor
+    x_desc : cudnnTensorDescriptor
         Handle to a previously initialized tensor descriptor.
-    src_data : void_p
-        Data pointer to GPU memory associated with the tensor descriptor src_desc.
+    x_data : void_p
+        Data pointer to GPU memory associated with the tensor descriptor x_desc.
     w_desc : cudnnFilterDescriptor
         Handle to a previously initialized filter descriptor.
     w : void_p
@@ -1808,13 +1808,13 @@ def cudnnConvolutionForward(
     beta: float
         Scaling factor which is applied on every element of the output tensor prior
         to adding the result of the convolution.
-    dest_desc : cudnnTensorDescriptor
+    y_desc : cudnnTensorDescriptor
         Handle to a previously initialized tensor descriptor.
-    dest_data : void_p
-        Data pointer to GPU memory associated with the tensor descriptor dest_desc.
+    y_data : void_p
+        Data pointer to GPU memory associated with the tensor descriptor y_desc.
     """
 
-    data_type = cudnnGetTensor4dDescriptor(dest_desc)[0]
+    data_type = cudnnGetTensor4dDescriptor(y_desc)[0]
     if data_type == cudnnDataType["CUDNN_DATA_DOUBLE"]:
         alpha_ref = ctypes.byref(ctypes.c_double(alpha))
         beta_ref = ctypes.byref(ctypes.c_double(beta))
@@ -1826,8 +1826,8 @@ def cudnnConvolutionForward(
     status = _libcudnn.cudnnConvolutionForward(
         handle,
         alpha_ref,
-        src_desc,
-        src_data,
+        x_desc,
+        x_data,
         w_desc,
         w,
         conv_desc,
@@ -1835,8 +1835,8 @@ def cudnnConvolutionForward(
         workspace,
         ctypes.c_size_t(workspace_size_in_bytes),
         beta_ref,
-        dest_desc,
-        dest_data,
+        y_desc,
+        y_data,
     )
     cudnnCheckStatus(status)
 
@@ -1856,11 +1856,11 @@ _libcudnn.cudnnConvolutionBackwardBias.argtypes = [
 def cudnnConvolutionBackwardBias(
     handle: int,
     alpha: float,
-    src_desc: int,
-    src_data: ctypes.c_void_p,
+    dy_desc: int,
+    dy_data: ctypes.c_void_p,
     beta: float,
-    dest_desc: int,
-    dest_data: ctypes.c_void_p,
+    db_desc: int,
+    db_data: ctypes.c_void_p,
 ) -> None:
     """Compute the gradient wrt the bias.
 
@@ -1875,24 +1875,24 @@ def cudnnConvolutionBackwardBias(
         Handle to a previously created cuDNN context.
     alpha: float
         Scaling factor with which every element of the input tensor is multiplied.
-    src_desc : cudnnTensorDescriptor
+    dy_desc : cudnnTensorDescriptor
         Handle to the previously initialized input tensor descriptor.
-    src_data : void_p
+    dy_data : void_p
         Data pointer to GPU memory associated with the tensor descriptor
-        src_desc.
+        dy_desc.
     beta: float
         Scaling factor which is applied on every element of the output tensor prior
         to adding the result of the convolution gradient. Note that if beta is zero,
         the output is not read and can contain any uninitialized data (including
         Nan numbers).
-    dest_desc : cudnnTensorDescriptor
+    db_desc : cudnnTensorDescriptor
         Handle to the previously initialized output tensor descriptor.
-    dest_data : void_p
+    db_data : void_p
         Data pointer to GPU memory associated with the output tensor descriptor
-        dest_desc.
+        db_desc.
     """
 
-    data_type = cudnnGetTensor4dDescriptor(dest_desc)[0]
+    data_type = cudnnGetTensor4dDescriptor(db_desc)[0]
     if data_type == cudnnDataType["CUDNN_DATA_DOUBLE"]:
         alpha_ref = ctypes.byref(ctypes.c_double(alpha))
         beta_ref = ctypes.byref(ctypes.c_double(beta))
@@ -1902,7 +1902,7 @@ def cudnnConvolutionBackwardBias(
 
     assert _libcudnn
     status = _libcudnn.cudnnConvolutionBackwardBias(
-        handle, alpha_ref, src_desc, src_data, beta_ref, dest_desc, dest_data
+        handle, alpha_ref, dy_desc, dy_data, beta_ref, db_desc, db_data
     )
     cudnnCheckStatus(status)
 
@@ -2487,11 +2487,11 @@ def cudnnSoftmaxForward(
     algorithm: int,
     mode: int,
     alpha: float,
-    src_desc: int,
-    src_data: ctypes.c_void_p,
+    x_desc: int,
+    x_data: ctypes.c_void_p,
     beta: float,
-    dest_desc: int,
-    dest_data: ctypes.c_void_p,
+    y_desc: int,
+    y_data: ctypes.c_void_p,
 ) -> None:
     """This routing computes the softmax function
 
@@ -2505,23 +2505,23 @@ def cudnnSoftmaxForward(
         Enumerant to specify the softmax mode.
     alpha: float
         Scaling factor with which every element of the input tensors is multiplied.
-    src_desc : cudnnTensorDescriptor
+    x_desc : cudnnTensorDescriptor
         Handle to the previously initialized input tensor descriptor.
-    src_data : void_p
+    x_data : void_p
         Data pointer to GPU memory associated with the tensor descriptor
-        src_desc.
+        x_desc.
     beta: float
         Scaling factor which is applied on every element of the output tensor prior
         to adding the result of the activation Note that if beta is zero, the output
         is not read and can contain any uninitialized data (including Nan numbers).
-    dest_desc : cudnnTensorDescriptor
+    y_desc : cudnnTensorDescriptor
         Handle to the previously initialized output tensor descriptor.
-    dest_data : void_p
+    y_data : void_p
         Data pointer to GPU memory associated with the output tensor descriptor
-        dest_desc.
+        y_desc.
     """
 
-    data_type = cudnnGetTensor4dDescriptor(dest_desc)[0]
+    data_type = cudnnGetTensor4dDescriptor(y_desc)[0]
     if data_type == cudnnDataType["CUDNN_DATA_DOUBLE"]:
         alpha_ref = ctypes.byref(ctypes.c_double(alpha))
         beta_ref = ctypes.byref(ctypes.c_double(beta))
@@ -2531,7 +2531,7 @@ def cudnnSoftmaxForward(
 
     assert _libcudnn
     status = _libcudnn.cudnnSoftmaxForward(
-        handle, algorithm, mode, alpha_ref, src_desc, src_data, beta_ref, dest_desc, dest_data
+        handle, algorithm, mode, alpha_ref, x_desc, x_data, beta_ref, y_desc, y_data
     )
     cudnnCheckStatus(status)
 
@@ -2557,13 +2557,13 @@ def cudnnSoftmaxBackward(
     algorithm: int,
     mode: int,
     alpha: float,
-    src_desc: int,
-    src_data: int,
-    src_diff_esc: int,
-    src_diff_data: ctypes.c_void_p,
+    y_desc: int,
+    y_data: int,
+    dy_desc: int,
+    dy_data: ctypes.c_void_p,
     beta: float,
-    dest_diff_desc: int,
-    dest_diff_data: ctypes.c_void_p,
+    dx_desc: int,
+    dx_data: ctypes.c_void_p,
 ) -> None:
     """This routine computes the gradient of the softmax function.
 
@@ -2577,28 +2577,28 @@ def cudnnSoftmaxBackward(
         Enumerant to specify the softmax mode.
     alpha: float
         Scaling factor with which every element of the input tensors is multiplied.
-    src_desc : cudnnTensorDescriptor
+    y_desc : cudnnTensorDescriptor
         Handle to the previously initialized input tensor descriptor.
-    src_data : void_p
+    y_data : void_p
         Data pointer to GPU memory associated with the tensor descriptor
-        src_desc.
-    src_diff_esc : cudnnTensorDescriptor
+        y_desc.
+    dy_esc : cudnnTensorDescriptor
         Handle to the previously initialized input differential tensor descriptor.
-    src_diff_data : void_p
+    dy_data : void_p
         Data pointer to GPU memory associated with the tensor descriptor
-        src_diff_data.
+        dy_data.
     beta: float
         Scaling factor which is applied on every element of the output tensor prior
         to adding the result of the activation Note that if beta is zero, the output
         is not read and can contain any uninitialized data (including Nan numbers).
-    dest_diff_desc : cudnnTensorDescriptor
+    dx_desc : cudnnTensorDescriptor
         Handle to the previously initialized output differential tensor descriptor.
-    dest_diff_data : void_p
+    dx_data : void_p
         Data pointer to GPU memory associated with the output tensor descriptor
-        dest_diff_desc.
+        dx_desc.
     """
 
-    data_type = cudnnGetTensor4dDescriptor(dest_diff_desc)[0]
+    data_type = cudnnGetTensor4dDescriptor(dx_desc)[0]
     if data_type == cudnnDataType["CUDNN_DATA_DOUBLE"]:
         alpha_ref = ctypes.byref(ctypes.c_double(alpha))
         beta_ref = ctypes.byref(ctypes.c_double(beta))
@@ -2612,13 +2612,13 @@ def cudnnSoftmaxBackward(
         algorithm,
         mode,
         alpha_ref,
-        src_desc,
-        src_data,
-        src_diff_esc,
-        src_diff_data,
+        y_desc,
+        y_data,
+        dy_desc,
+        dy_data,
         beta_ref,
-        dest_diff_desc,
-        dest_diff_data,
+        dx_desc,
+        dx_data,
     )
     cudnnCheckStatus(status)
 
@@ -3094,11 +3094,11 @@ def cudnnPoolingForward(
     handle: int,
     pooling_desc: int,
     alpha: float,
-    src_desc: int,
-    src_data: ctypes.c_void_p,
+    x_desc: int,
+    x_data: ctypes.c_void_p,
     beta: float,
-    dest_desc: int,
-    dest_data: ctypes.c_void_p,
+    y_desc: int,
+    y_data: ctypes.c_void_p,
 ) -> None:
     """Perform pooling.
 
@@ -3113,23 +3113,23 @@ def cudnnPoolingForward(
         Handle to a previously initialized pooling descriptor.
     alpha: float
         Scaling factor with which every element of the input tensor is multiplied.
-    src_desc : cudnnTensorDescriptor
+    x_desc : cudnnTensorDescriptor
         Handle to the previously initialized input tensor descriptor.
-    src_data : void_p
+    x_data : void_p
         Data pointer to GPU memory associated with the tensor descriptor
-        src_desc.
+        x_desc.
     beta: float
         Scaling factor which is applied on every element of the output tensor prior
         to adding the result of the activation Note that if beta is zero, the output
         is not read and can contain any uninitialized data (including Nan numbers).
-    dest_desc : cudnnTensorDescriptor
+    y_desc : cudnnTensorDescriptor
         Handle to the previously initialized output tensor descriptor.
-    dest_data : void_p
+    y_data : void_p
         Data pointer to GPU memory associated with the output tensor descriptor
-        dest_desc.
+        y_desc.
     """
 
-    data_type = cudnnGetTensor4dDescriptor(dest_desc)[0]
+    data_type = cudnnGetTensor4dDescriptor(y_desc)[0]
     if data_type == cudnnDataType["CUDNN_DATA_DOUBLE"]:
         alpha_ref = ctypes.byref(ctypes.c_double(alpha))
         beta_ref = ctypes.byref(ctypes.c_double(beta))
@@ -3139,7 +3139,7 @@ def cudnnPoolingForward(
 
     assert _libcudnn
     status = _libcudnn.cudnnPoolingForward(
-        handle, pooling_desc, alpha_ref, src_desc, src_data, beta_ref, dest_desc, dest_data
+        handle, pooling_desc, alpha_ref, x_desc, x_data, beta_ref, y_desc, y_data
     )
     cudnnCheckStatus(status)
 
@@ -3165,15 +3165,15 @@ def cudnnPoolingBackward(
     handle: int,
     pooling_desc: int,
     alpha: float,
-    src_desc: int,
-    src_data: ctypes.c_void_p,
-    src_diff_esc: int,
-    src_diff_data: ctypes.c_void_p,
-    dest_desc: int,
-    dest_data: ctypes.c_void_p,
+    y_desc: int,
+    y_data: ctypes.c_void_p,
+    dy_desc: int,
+    dy_data: ctypes.c_void_p,
+    x_desc: int,
+    x_data: ctypes.c_void_p,
     beta: float,
-    dest_diff_desc: int,
-    dest_diff_data: ctypes.c_void_p,
+    dx_desc: int,
+    dx_data: ctypes.c_void_p,
 ) -> None:
     """Gradients wrt the pooling operation.
 
@@ -3186,33 +3186,33 @@ def cudnnPoolingBackward(
         Handle to the previously initialized pooling descriptor.
     alpha: float
         Scaling factor with which every element of the input tensors is multiplied.
-    src_desc : cudnnTensorDescriptor
+    y_desc : cudnnTensorDescriptor
         Handle to the previously initialized input tensor descriptor.
-    src_data : void_p
+    y_data : void_p
         Data pointer to GPU memory associated with the tensor descriptor
-        src_desc.
-    src_diff_esc : cudnnTensorDescriptor
+        y_desc.
+    dy_esc : cudnnTensorDescriptor
         Handle to the previously initialized input differential tensor descriptor.
-    src_diff_data : void_p
+    dy_data : void_p
         Data pointer to GPU memory associated with the tensor descriptor
-        src_diff_data.
-    dest_desc : cudnnTensorDescriptor
+        dy_data.
+    x_desc : cudnnTensorDescriptor
         Handle to the previously initialized output tensor descriptor.
-    dest_data : void_p
+    x_data : void_p
         Data pointer to GPU memory associated with the output tensor descriptor
-        dest_desc.
+        x_desc.
     beta: float
         Scaling factor which is applied on every element of the output tensor prior
         to adding the result of the activation Note that if beta is zero, the output
         is not read and can contain any uninitialized data (including Nan numbers).
-    dest_diff_desc : cudnnTensorDescriptor
+    dx_desc : cudnnTensorDescriptor
         Handle to the previously initialized output differential tensor descriptor.
-    dest_diff_data : void_p
+    dx_data : void_p
         Data pointer to GPU memory associated with the output tensor descriptor
-        dest_diff_desc.
+        dx_desc.
     """
 
-    data_type = cudnnGetTensor4dDescriptor(dest_desc)[0]
+    data_type = cudnnGetTensor4dDescriptor(x_desc)[0]
     if data_type == cudnnDataType["CUDNN_DATA_DOUBLE"]:
         alpha_ref = ctypes.byref(ctypes.c_double(alpha))
         beta_ref = ctypes.byref(ctypes.c_double(beta))
@@ -3225,15 +3225,15 @@ def cudnnPoolingBackward(
         handle,
         pooling_desc,
         alpha_ref,
-        src_desc,
-        src_data,
-        src_diff_esc,
-        src_diff_data,
-        dest_desc,
-        dest_data,
+        y_desc,
+        y_data,
+        dy_desc,
+        dy_data,
+        x_desc,
+        x_data,
         beta_ref,
-        dest_diff_desc,
-        dest_diff_data,
+        dx_desc,
+        dx_data,
     )
     cudnnCheckStatus(status)
 

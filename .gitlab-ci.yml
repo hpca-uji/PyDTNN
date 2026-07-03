@@ -6,9 +6,6 @@ stages:
 variables:
   BRANCH_MAIN: master
   BRANCH_WORK: develop
-  GLAB_HOSTNAME: lorca.act.uji.es/gitlab
-  GIT_NAME: GitLab at Lorca
-  GIT_EMAIL: lorca.act.uji.es@gmail.com
   GIT_DEPTH: 0
   GIT_STRATEGY: fetch
   GIT_SUBMODULE_STRATEGY: recursive
@@ -79,9 +76,9 @@ job_merge:
   resource_group: $BRANCH_MAIN
 
   before_script:
-  - glab auth login --hostname "${GLAB_HOSTNAME:?}" --token "${CI_JOB_TOKEN:?}"
-  - git config --global user.email "${GIT_EMAIL:?}"
-  - git config --global user.name "${GIT_NAME:?}"
+  - glab auth login --hostname "${CI_SERVER_FQDN:?}" --token "${CI_JOB_TOKEN:?}"
+  - git config --global user.email "${GITLAB_USER_EMAIL:?}"
+  - git config --global user.name "${GITLAB_USER_NAME:?}"
   script:
   - GIT_REMOTE=$(git remote)
   - git fetch "${GIT_REMOTE:?}" "${BRANCH_MAIN:?}"
@@ -105,7 +102,7 @@ job_push:
   - job: job_merge
 
   before_script:
-  - glab auth login --hostname "${GLAB_HOSTNAME:?}" --token "${CI_JOB_TOKEN:?}"
+  - glab auth login --hostname "${CI_SERVER_FQDN:?}" --token "${CI_JOB_TOKEN:?}"
   script:
   - glab release delete "${GIT_TAG:?}" --yes || true
-  - glab release create "${GIT_TAG:?}" ./build/pydtnn/pydtnn-* --ref "${CI_COMMIT_SHA:?}" --name "PyDTNN ${GIT_TAG:?}"
+  - glab release create "${GIT_TAG:?}" ./build/pydtnn/pydtnn-* --ref "${CI_COMMIT_SHA:?}" --name "${CI_PROJECT_TITLE:?} ${GIT_TAG:?}"
