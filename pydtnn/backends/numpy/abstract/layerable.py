@@ -1,6 +1,4 @@
-"""
-Numpy backend implementation for layerable components in PyDTNN.
-"""
+"""Numpy backend implementation for layerable components in PyDTNN."""
 
 import numpy as np
 
@@ -13,9 +11,7 @@ __all__ = ("LayerableNumpy",)
 
 
 class LayerableNumpy(Layerable[np.ndarray], BaseNumpy):
-    """
-    Numpy-specific implementation of a layerable component supporting distributed operations.
-    """
+    """Numpy-specific implementation of a layerable component supporting distributed operations."""
 
     def reduce_weights_async(self, gradient: bool = True) -> None:
         """

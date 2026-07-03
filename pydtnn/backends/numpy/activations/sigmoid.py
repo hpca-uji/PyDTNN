@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 from pydtnn.activations.sigmoid import Sigmoid
 from pydtnn.backends.numpy.activations.abstract.activation import ActivationNumpy
 from pydtnn.libs import numpy as np
+from pydtnn.utils.constants import ArrayShape
 
 __all__ = ("SigmoidNumpy",)
 
@@ -18,7 +19,7 @@ if TYPE_CHECKING:
 class SigmoidNumpy(Sigmoid[np.ndarray], ActivationNumpy):
     """NumPy-based Sigmoid activation layer."""
 
-    def _model_init(self, prev_shape, x=None):
+    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
         """Initialize layer buffers and memory tracking."""
         super()._model_init(prev_shape, x)
 

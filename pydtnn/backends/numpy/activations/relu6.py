@@ -1,11 +1,12 @@
 """NumPy backend implementation of the ReLU6 activation function."""
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from pydtnn.activations.relu6 import Relu6
 from pydtnn.backends.numpy.activations.abstract.activation import ActivationNumpy
 from pydtnn.libs import numpy as np
+from pydtnn.utils.constants import ArrayShape
 
 __all__ = ("Relu6Numpy",)
 
@@ -18,12 +19,12 @@ if TYPE_CHECKING:
 class Relu6Numpy(Relu6[np.ndarray], ActivationNumpy):
     """NumPy implementation of the ReLU6 activation layer."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the Relu6Numpy layer."""
         super().__init__(*args, **kwargs)
         self.mask: np.ndarray = None  # type: ignore (will be initalized in "initialize")
 
-    def _model_init(self, prev_shape, x=None):
+    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
         """Initialize internal buffers for forward and backward passes."""
         super()._model_init(prev_shape, x)
         # NOTE: These attributes only store data, their value before the operation

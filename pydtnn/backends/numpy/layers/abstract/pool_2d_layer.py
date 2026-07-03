@@ -2,7 +2,7 @@
 
 import logging
 import math
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from pydtnn.backends.numpy.layers.abstract.layer import LayerNumpy
 from pydtnn.layers.abstract.pool_2d_layer import AbstractPool2DLayer
@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 class AbstractPool2DLayerNumpy(AbstractPool2DLayer[np.ndarray], LayerNumpy):
     """Abstract base class for 2D pooling layers implemented with NumPy."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the 2D pooling layer."""
         super().__init__(*args, **kwargs)
 
@@ -53,7 +53,8 @@ class AbstractPool2DLayerNumpy(AbstractPool2DLayer[np.ndarray], LayerNumpy):
 
         # The following variable is only for NCHW implementation (not for i2c implementation)
         # y_shape = self.model.encode_shape((self.model.batch_size, self.co, self.ho, self.wo))
-        # NOTE: This attribute only stores data, its value before the operation doesn't matter; it's initalized due avoid warnings in "LayerAndActivationBase.export".
+        # NOTE: This attribute only stores data, its value before the operation doesn't matter;
+        #   it's initalized due avoid warnings in "LayerAndActivationBase.export".
         # self.y = np.zeros(y_shape, dtype=self.model.dtype)
         # self.real_memory_size += self.y.nbytes
         self.y_size = self.model.batch_size * self.co * self.ho * self.wo

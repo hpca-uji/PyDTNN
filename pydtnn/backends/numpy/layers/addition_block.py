@@ -1,6 +1,4 @@
-"""
-Numpy backend implementation of the AdditionBlock layer.
-"""
+"""Numpy backend implementation of the AdditionBlock layer."""
 
 import logging
 from typing import TYPE_CHECKING
@@ -22,9 +20,7 @@ if TYPE_CHECKING:
 
 
 class AdditionBlockNumpy(AdditionBlock[np.ndarray], AbstractBlockLayerNumpy):
-    """
-    Numpy implementation of an addition block that sums outputs from multiple parallel paths.
-    """
+    """Numpy implementation of an addition block that sums outputs from multiple parallel paths."""
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         """

@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from pydtnn.activations.softmax import Softmax
 from pydtnn.backends.numpy.activations.abstract.activation import ActivationNumpy
 from pydtnn.libs import numpy as np
+from pydtnn.utils.constants import ArrayShape
 
 __all__ = ("SoftmaxNumpy",)
 
@@ -19,7 +20,7 @@ if TYPE_CHECKING:
 class SoftmaxNumpy(Softmax[np.ndarray], ActivationNumpy):
     """NumPy-based Softmax activation layer."""
 
-    def _model_init(self, prev_shape, x=None):
+    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
         """Initialize model parameters and allocate memory for temporary buffers."""
         super()._model_init(prev_shape, x)
         self.y: np.ndarray
@@ -54,7 +55,7 @@ class SoftmaxNumpy(Softmax[np.ndarray], ActivationNumpy):
 
         self.memory_used += self.tmp_memory_used
 
-    def _post_init(self):
+    def _post_init(self) -> None:
         """Allocate memory buffers after model initialization."""
         super()._post_init()
         with self.model.memory:

@@ -1,6 +1,4 @@
-"""
-Module providing the base class for NumPy-based backends in PyDTNN.
-"""
+"""Module providing the base class for NumPy-based backends in PyDTNN."""
 
 import numpy as np
 
@@ -10,8 +8,6 @@ __all__ = ("BaseNumpy",)
 
 
 class BaseNumpy(Base[np.ndarray]):
-    """
-    Abstract base class for all NumPy-backed components in the framework.
-    """
+    """Abstract base class for all NumPy-backed components in the framework."""
 
     ...

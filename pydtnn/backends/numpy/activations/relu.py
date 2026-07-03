@@ -19,12 +19,12 @@ if TYPE_CHECKING:
 class ReluNumpy(Relu[np.ndarray], ActivationNumpy):
     """NumPy-based ReLU activation layer."""
 
-    def __init__(self, shape: ArrayShape = (1,)):
+    def __init__(self, shape: ArrayShape = (1,)) -> None:
         """Initializes the ReLU layer with a specific shape."""
         super().__init__(shape)
         self.mask: np.ndarray = None  # type: ignore (will be initalized in "initialize")
 
-    def _model_init(self, prev_shape, x=None):
+    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
         """Initializes internal buffers for forward and backward passes."""
         super()._model_init(prev_shape, x)
         # NOTE: These attributes only store data, their value before the operation

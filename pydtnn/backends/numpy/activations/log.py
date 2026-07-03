@@ -1,6 +1,4 @@
-"""
-Numpy backend implementation of the Log activation function.
-"""
+"""Numpy backend implementation of the Log activation function."""
 
 import logging
 from typing import TYPE_CHECKING
@@ -8,6 +6,7 @@ from typing import TYPE_CHECKING
 from pydtnn.activations.log import Log
 from pydtnn.backends.numpy.activations.abstract.activation import ActivationNumpy
 from pydtnn.libs import numpy as np
+from pydtnn.utils.constants import ArrayShape
 
 __all__ = ("LogNumpy",)
 
@@ -18,14 +17,10 @@ if TYPE_CHECKING:
 
 
 class LogNumpy(Log[np.ndarray], ActivationNumpy):
-    """
-    Numpy-based Log activation layer.
-    """
+    """Numpy-based Log activation layer."""
 
-    def _model_init(self, prev_shape, x=None):
-        """
-        Initialize layer buffers and memory tracking.
-        """
+    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
+        """Initialize layer buffers and memory tracking."""
         super()._model_init(prev_shape, x)
         # NOTE: These attributes only store data, their value before the operation
         # doesn't matter; they're initalized due avoid warnings in
@@ -38,9 +33,7 @@ class LogNumpy(Log[np.ndarray], ActivationNumpy):
             self.memory_used += self.dx.nbytes
 
     def forward(self, x: np.ndarray) -> np.ndarray:
-        """
-        Compute the forward pass of the Log activation.
-        """
+        """Compute the forward pass of the Log activation."""
         # def forward(self, x: np.ndarray) -> np.ndarray:
         self.y = self._y[: x.shape[0], :]
         # y = np.log(1 / (1 + np.exp(-x)))
@@ -54,9 +47,7 @@ class LogNumpy(Log[np.ndarray], ActivationNumpy):
         return self.y
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
-        """
-        Compute the backward pass of the Log activation.
-        """
+        """Compute the backward pass of the Log activation."""
         # return 1 / (np.exp(dy) + 1)
         np.exp(dy, out=dy)
         np.add(dy, 1, out=dy)

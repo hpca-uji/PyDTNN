@@ -1,6 +1,4 @@
-"""
-NumPy backend implementation for pointwise 2D convolution layers.
-"""
+"""NumPy backend implementation for pointwise 2D convolution layers."""
 
 import logging
 from typing import TYPE_CHECKING
@@ -22,14 +20,10 @@ if TYPE_CHECKING:
 
 
 class Conv2DPointwiseNumpy(Conv2DPointwise[np.ndarray], AbstractConv2DNumpy):
-    """
-    NumPy-based implementation of a pointwise 2D convolution layer.
-    """
+    """NumPy-based implementation of a pointwise 2D convolution layer."""
 
     def _export_weights_dw(self, key: str):
-        """
-        Exports weights or gradients to a standard format based on the model's tensor format.
-        """
+        """Exports weights or gradients to a standard format based on the model's tensor format."""
         value = getattr(self, key)
 
         match self.model.tensor_format:
@@ -44,10 +38,8 @@ class Conv2DPointwiseNumpy(Conv2DPointwise[np.ndarray], AbstractConv2DNumpy):
             case tensor_format:
                 raise TypeError(f"Unsupported tensor format ({tensor_format})")
 
-    def _import_weights_dw(self, key: str, value) -> None:
-        """
-        Imports weights or gradients into the layer, adjusting for the model's tensor format.
-        """
+    def _import_weights_dw(self, key: str, value: np.ndarray) -> None:
+        """Imports weights or gradients into the layer, adjusting for the model's tensor format."""
         ary = getattr(self, key)
 
         match self.model.tensor_format:
@@ -62,10 +54,8 @@ class Conv2DPointwiseNumpy(Conv2DPointwise[np.ndarray], AbstractConv2DNumpy):
             case tensor_format:
                 raise TypeError(f"Unsupported tensor format ({tensor_format})")
 
-    def _initializing_special_parameters(self):
-        """
-        Initializes layer-specific parameters including kernel dimensions and weight shapes.
-        """
+    def _initializing_special_parameters(self) -> None:
+        """Initializes layer-specific parameters including kernel dimensions and weight shapes."""
         super()._initializing_special_parameters()
         # Setting other parameters
         self.kh = self.kw = 1
@@ -79,9 +69,7 @@ class Conv2DPointwiseNumpy(Conv2DPointwise[np.ndarray], AbstractConv2DNumpy):
                 raise NotImplementedError(f"{self.model.tensor_format} format not implemented.")
 
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
-        """
-        Initializes model buffers and assigns forward/backward methods based on tensor format.
-        """
+        """Initializes model buffers and assigns forward/backward methods based on tensor format."""
         super()._model_init(prev_shape, x)
         match self.model.tensor_format:
             case TensorFormat.NCHW:
@@ -92,7 +80,8 @@ class Conv2DPointwiseNumpy(Conv2DPointwise[np.ndarray], AbstractConv2DNumpy):
                 self.backward = self._backward_nhwc
 
         y_shape = self.model.encode_shape((self.model.batch_size, self.co, self.ho, self.wo))
-        # NOTE: These attributes only store data, their values before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
+        # NOTE: These attributes only store data, their values before the operation doesn't matter;
+        #  they're initalized due avoid warnings in "LayerAndActivationBase.export".
         # self.dw (this one too, but it's initalized in Conv2DNumpy)
         self.y = np.zeros(shape=y_shape, dtype=self.model.dtype)
         self.memory_used += self.y.nbytes
@@ -104,9 +93,7 @@ class Conv2DPointwiseNumpy(Conv2DPointwise[np.ndarray], AbstractConv2DNumpy):
             self.memory_used += self.dx.nbytes
 
     def _forward_nhwc(self, x: np.ndarray) -> np.ndarray:
-        """
-        Performs the forward pass for NHWC tensor format.
-        """
+        """Performs the forward pass for NHWC tensor format."""
         self.x: np.ndarray = x
 
         y = self.y[: x.shape[0], :]
@@ -128,9 +115,7 @@ class Conv2DPointwiseNumpy(Conv2DPointwise[np.ndarray], AbstractConv2DNumpy):
         return np.asarray(y, dtype=self.model.dtype, order="C")
 
     def _forward_nchw(self, x: np.ndarray) -> np.ndarray:
-        """
-        Performs the forward pass for NCHW tensor format.
-        """
+        """Performs the forward pass for NCHW tensor format."""
 
         self.x: np.ndarray = x
 
@@ -172,9 +157,7 @@ class Conv2DPointwiseNumpy(Conv2DPointwise[np.ndarray], AbstractConv2DNumpy):
         return np.asarray(y, dtype=self.model.dtype, order="C")
 
     def _backward_nhwc(self, dy: np.ndarray) -> np.ndarray:
-        """
-        Performs the backward pass for NHWC tensor format.
-        """
+        """Performs the backward pass for NHWC tensor format."""
         n, h, w, c = dy.shape
         dim = n * h * w
         x_shape = self.x.shape
@@ -225,9 +208,7 @@ class Conv2DPointwiseNumpy(Conv2DPointwise[np.ndarray], AbstractConv2DNumpy):
         return np.asarray(dx, dtype=self.model.dtype, order="C")
 
     def _backward_nchw(self, dy: np.ndarray) -> np.ndarray:
-        """
-        Performs the backward pass for NCHW tensor format.
-        """
+        """Performs the backward pass for NCHW tensor format."""
         n, c, h, w = dy.shape
         dim = n * h * w
         x_shape = self.x.shape

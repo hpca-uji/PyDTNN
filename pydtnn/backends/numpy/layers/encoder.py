@@ -1,9 +1,7 @@
-"""
-Numpy backend implementation of the Transformer Encoder layer.
-"""
+"""Numpy backend implementation of the Transformer Encoder layer."""
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from pydtnn.backends.numpy.layers.abstract.block_layer import AbstractBlockLayerNumpy
 from pydtnn.layers.dropout import Dropout
@@ -13,6 +11,7 @@ from pydtnn.layers.layer_normalization import LayerNormalization
 from pydtnn.layers.multi_head_attention import MultiHeadAttention
 from pydtnn.libs import numpy as np
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, OpsEventEnum
+from pydtnn.utils.constants import ArrayShape
 
 __all__ = ("EncoderNumpy",)
 
@@ -24,14 +23,10 @@ if TYPE_CHECKING:
 
 
 class EncoderNumpy(Encoder[np.ndarray], AbstractBlockLayerNumpy):
-    """
-    Numpy-based implementation of the Transformer Encoder layer.
-    """
+    """Numpy-based implementation of the Transformer Encoder layer."""
 
-    def __init__(self, *args, **kwargs):
-        """
-        Initializes the EncoderNumpy layer with sub-layers.
-        """
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Initializes the EncoderNumpy layer with sub-layers."""
         super().__init__(*args, **kwargs)
         self.multiheadattention = MultiHeadAttention(
             embedl=self.embedl, d_k=self.d_k, heads=self.heads, dropout_rate=self.dropout_rate
@@ -55,10 +50,8 @@ class EncoderNumpy(Encoder[np.ndarray], AbstractBlockLayerNumpy):
             ]
         ]
 
-    def _model_init(self, prev_shape, x):
-        """
-        Initializes the model state and sub-layers for the Numpy backend.
-        """
+    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
+        """Initializes the model state and sub-layers for the Numpy backend."""
         super()._model_init(prev_shape, x)
         self.y = x
         if type(prev_shape[-1]) is tuple:
@@ -70,8 +63,8 @@ class EncoderNumpy(Encoder[np.ndarray], AbstractBlockLayerNumpy):
             mask_enc = None
             mask_enc_shape = ()  # noqa: F841
 
-        self.shape = x_enc_shape
-        self.first_dims = x_enc_shape[:-1]
+        self.shape = x_enc_shape  #type: ignore (This layer is special)
+        self.first_dims = x_enc_shape[:-1]  #type: ignore (This layer is special)
 
         # Initialize all sublayers
         for layer in self.children:
@@ -114,22 +107,18 @@ class EncoderNumpy(Encoder[np.ndarray], AbstractBlockLayerNumpy):
             self.bwd_time += layer.bwd_time
             self.nparams += layer.nparams
 
-    def initialize_block_layer(self):
-        """
-        Placeholder for block layer initialization.
-        """
+    def initialize_block_layer(self) -> None:
+        """Placeholder for block layer initialization."""
         pass
 
-    def forward(self, x, mask=None):
-        """
-        Performs the forward pass of the encoder layer.
-        """
+    def forward(self, x: np.ndarray, mask: np.ndarray | None = None) -> np.ndarray:
+        """Performs the forward pass of the encoder layer."""
         # Self Attention
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_MHA
         )
         # type: ignore (encoder has multiple parameters)
-        x_1 = self.multiheadattention.forward(x, x, x, mask)
+        x_1 = self.multiheadattention.forward(x, x, x, mask)  # type: ignore (This layer is special)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         x_1 = self.dropout_1.forward(x_1)
         x_1 = x_1 + x
@@ -146,10 +135,8 @@ class EncoderNumpy(Encoder[np.ndarray], AbstractBlockLayerNumpy):
         self.y = self.layernormalization_2.forward(x_2)
         return self.y
 
-    def backward(self, dy):
-        """
-        Performs the backward pass of the encoder layer.
-        """
+    def backward(self, dy: np.ndarray) -> np.ndarray:
+        """Performs the backward pass of the encoder layer."""
         # Feed Forward
         dx_1 = self.layernormalization_2.backward(dy)
         dx_2 = self.dropout_2.backward(dx_1)

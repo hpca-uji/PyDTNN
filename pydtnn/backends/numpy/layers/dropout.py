@@ -1,15 +1,14 @@
-"""
-Numpy backend implementation of the Dropout layer.
-"""
+"""Numpy backend implementation of the Dropout layer."""
 
 import logging
 import math
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from pydtnn.backends.numpy.layers.abstract.layer import LayerNumpy
 from pydtnn.layers.dropout import Dropout
 from pydtnn.libs import numpy as np
 from pydtnn.model import Model
+from pydtnn.utils.constants import ArrayShape
 
 __all__ = ("DropoutNumpy",)
 
@@ -20,21 +19,15 @@ if TYPE_CHECKING:
 
 
 class DropoutNumpy(Dropout[np.ndarray], LayerNumpy):
-    """
-    Numpy-based Dropout layer implementation.
-    """
+    """Numpy-based Dropout layer implementation."""
 
-    def __init__(self, *args, **kwargs):
-        """
-        Initializes the DropoutNumpy layer.
-        """
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Initializes the DropoutNumpy layer."""
         super().__init__(*args, **kwargs)
         self.mask: np.ndarray = None  # type: ignore (It will be initalized later.)
 
-    def _model_init(self, prev_shape, x=None):
-        """
-        Initializes layer parameters and calculates memory usage.
-        """
+    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
+        """Initializes layer parameters and calculates memory usage."""
         super()._model_init(prev_shape, x)
         self.memory_used += int(math.prod(self.shape)) * self.model.dtype.itemsize
 

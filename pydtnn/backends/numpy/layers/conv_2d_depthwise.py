@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 class Conv2DDepthwiseNumpy(Conv2DDepthwise[np.ndarray], AbstractConv2DNumpy):
     """Numpy-based implementation of a 2D depthwise convolution layer."""
 
-    def _initializing_special_parameters(self):
+    def _initializing_special_parameters(self) -> None:
         """Initialize layer-specific parameters for depthwise convolution."""
         super()._initializing_special_parameters()
         # Setting other parameters
@@ -31,7 +31,7 @@ class Conv2DDepthwiseNumpy(Conv2DDepthwise[np.ndarray], AbstractConv2DNumpy):
         # Setting weights
         self.weights_shape = (self.ci, *self.filter_shape)
 
-    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None):
+    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
         """Initialize model buffers and select forward/backward implementations."""
         super()._model_init(prev_shape, x)
 
@@ -60,12 +60,12 @@ class Conv2DDepthwiseNumpy(Conv2DDepthwise[np.ndarray], AbstractConv2DNumpy):
             self.dx = np.zeros(shape=dx_shape, dtype=self.model.dtype)
             self.memory_used += self.dx.nbytes
 
-    def _export_weights_dw(self, key: str):
+    def _export_weights_dw(self, key: str) -> np.ndarray:
         """Export weights to a standard numpy array."""
         value = getattr(self, key)
         return np.asarray(value, dtype=np.float64, order="C", copy=True)
 
-    def _import_weights_dw(self, key: str, value) -> None:
+    def _import_weights_dw(self, key: str, value: np.ndarray) -> None:
         """Import weights from a numpy array into the layer."""
         ary = getattr(self, key)
         ary[:] = value

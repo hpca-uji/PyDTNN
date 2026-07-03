@@ -1,13 +1,12 @@
-"""
-NumPy backend implementation of the Leaky ReLU activation function.
-"""
+"""NumPy backend implementation of the Leaky ReLU activation function."""
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from pydtnn.activations.leaky_relu import LeakyRelu
 from pydtnn.backends.numpy.activations.abstract.activation import ActivationNumpy
 from pydtnn.libs import numpy as np
+from pydtnn.utils.constants import ArrayShape
 
 __all__ = ("LeakyReluNumpy",)
 
@@ -19,20 +18,14 @@ if TYPE_CHECKING:
 
 
 class LeakyReluNumpy(LeakyRelu[np.ndarray], ActivationNumpy):
-    """
-    NumPy-based Leaky ReLU activation layer.
-    """
+    """NumPy-based Leaky ReLU activation layer."""
 
-    def __init__(self, *args, **kwargs):
-        """
-        Initialize the LeakyReluNumpy layer.
-        """
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Initialize the LeakyReluNumpy layer."""
         super().__init__(*args, **kwargs)
 
-    def _model_init(self, prev_shape, x=None):
-        """
-        Initialize internal buffers for the forward and backward passes.
-        """
+    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
+        """Initialize internal buffers for the forward and backward passes."""
         super()._model_init(prev_shape, x)
         # NOTE: These attributes only store data, their values before the
         # operation doesn't matter; they're initalized due avoid warnings in

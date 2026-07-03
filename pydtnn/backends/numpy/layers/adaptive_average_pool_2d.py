@@ -1,7 +1,7 @@
 """Numpy backend implementation for Adaptive Average Pooling 2D layer."""
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from pydtnn.backends.numpy.layers.abstract.pool_2d_layer import AbstractPool2DLayerNumpy
 from pydtnn.layers.adaptive_average_pool_2d import AdaptiveAveragePool2D
@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], AbstractPool2DLayerNumpy):
     """Numpy implementation of the Adaptive Average Pooling 2D layer."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the AdaptiveAveragePool2DNumpy layer."""
         super().__init__(*args, **kwargs)
         # The following atributte will be initalized in "initalize"

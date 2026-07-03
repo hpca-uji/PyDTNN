@@ -1,6 +1,4 @@
-"""
-Numpy backend implementation of the 2D Convolution layer.
-"""
+"""Numpy backend implementation of the 2D Convolution layer."""
 
 import logging
 import math
@@ -23,14 +21,10 @@ if TYPE_CHECKING:
 
 
 class Conv2DNumpy(AbstractConv2DStandardNumpy):
-    """
-    Numpy-based 2D Convolution layer implementation using im2col/im2row transformations.
-    """
+    """Numpy-based 2D Convolution layer implementation using im2col/im2row transformations."""
 
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
-        """
-        Initializes layer parameters, memory buffers, and selects forward/backward strategies.
-        """
+        """Initializes layer parameters, memory buffers, and selects forward/backward strategies."""
         super()._model_init(prev_shape, x)
 
         # dim_n: Dimension where the "n" of NCHW/NHWC is used in the calculations.
@@ -86,9 +80,7 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
         self.memory_used += self.tmp_memory_used
 
     def get_rows(self, batch_size: int) -> np.ndarray:
-        """
-        Retrieves a view of the im2row temporary output buffer.
-        """
+        """Retrieves a view of the im2row temporary output buffer."""
         dim_n = batch_size * self.ho * self.wo
         shape = (dim_n, self.dim_c)
         x_rows: np.ndarray = self.temp_c_r[: math.prod(shape)]
@@ -96,9 +88,7 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
         return x_rows
 
     def get_cols(self, batch_size: int) -> np.ndarray:
-        """
-        Retrieves a view of the im2col temporary output buffer.
-        """
+        """Retrieves a view of the im2col temporary output buffer."""
         dim_n = batch_size * self.ho * self.wo
         shape = (self.dim_c, dim_n)
         x_cols: np.ndarray = self.temp_c_r[: math.prod(shape)]
@@ -106,18 +96,14 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
         return x_cols
 
     def get_y(self, batch_size: int) -> np.ndarray:
-        """
-        Retrieves a view of the forward's output buffer for the current batch size.
-        """
+        """Retrieves a view of the forward's output buffer for the current batch size."""
         shape = (batch_size, *self.shape)
         y: np.ndarray = self.temp_y_dx[: math.prod(shape)]
         y = y.reshape(shape, order="C")
         return y
 
     def get_y_im2(self, batch_size: int) -> np.ndarray:
-        """
-        Retrieves a view of the forward's output buffer for the current batch size.
-        """
+        """Retrieves a view of the forward's output buffer for the current batch size."""
         dim_n = batch_size * self.ho * self.wo
         shape = (dim_n, self.co)
         y: np.ndarray = self.temp_y_dx[: math.prod(shape)]
@@ -125,18 +111,14 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
         return y
 
     def get_dx(self, batch_size: int) -> np.ndarray:
-        """
-        Retrieves a view of the backward's output gradient buffer for the current batch size.
-        """
+        """Retrieves a view of the backward's output gradient buffer for the current batch size."""
         shape = self.model.encode_shape((batch_size, self.ci, self.hi, self.wi))
         dx: np.ndarray = self.temp_y_dx[: math.prod(shape)]
         dx = dx.reshape(shape, order="C")
         return dx
 
     def _forward_i2c_nhwc(self, x: np.ndarray) -> np.ndarray:
-        """
-        Performs forward pass using im2row and matrix multiplication for NHWC format.
-        """
+        """Performs forward pass using im2row and matrix multiplication for NHWC format."""
         x_rows = self.get_rows(x.shape[0])
         x_rows.fill(0)
         y = self.get_y_im2(x.shape[0])
@@ -177,9 +159,7 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
         return np.asarray(y, dtype=self.model.dtype, order="C")
 
     def _forward_i2c_nchw(self, x: np.ndarray) -> np.ndarray:
-        """
-        Performs forward pass using im2col and matrix multiplication for NCHW format.
-        """
+        """Performs forward pass using im2col and matrix multiplication for NCHW format."""
         x_cols = self.get_cols(x.shape[0])
         x_cols.fill(0)
         y = self.get_y_im2(x.shape[0])
@@ -222,9 +202,7 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
         return np.asarray(y, dtype=self.model.dtype, order="C")
 
     def _backward_i2c_nhwc(self, dy: np.ndarray) -> np.ndarray:
-        """
-        Performs backward pass using im2row and matrix multiplication for NHWC format.
-        """
+        """Performs backward pass using im2row and matrix multiplication for NHWC format."""
 
         self.dw = self.dw.reshape(self._dw_shape)
 
@@ -288,9 +266,7 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
         return np.asarray(dx, dtype=self.model.dtype, order="C")
 
     def _backward_i2c_nchw(self, dy: np.ndarray) -> np.ndarray:
-        """
-        Performs backward pass using im2col and matrix multiplication for NCHW format.
-        """
+        """Performs backward pass using im2col and matrix multiplication for NCHW format."""
         # cols:np.ndarray = np.asarray(self.temp_bw[:, :(dy.shape[0] * self.ho * self.wo)], dtype=self.model.dtype, order="C")
         self.dw = self.dw.reshape(self._dw_shape)
 
