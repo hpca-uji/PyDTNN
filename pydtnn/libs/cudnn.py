@@ -2558,7 +2558,7 @@ def cudnnSoftmaxBackward(
     mode: int,
     alpha: float,
     y_desc: int,
-    y_data: int,
+    y_data: ctypes.c_void_p,
     dy_desc: int,
     dy_data: ctypes.c_void_p,
     beta: float,
