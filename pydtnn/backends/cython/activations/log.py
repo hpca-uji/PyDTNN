@@ -1,6 +1,4 @@
-"""
-Cython implementation of the Logarithmic activation function.
-"""
+"""Cython implementation of the Logarithmic activation function."""
 
 import logging
 
@@ -15,9 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class LogCython(LogNumpy, ActivationCython):
-    """
-    Cython-accelerated Logarithmic activation layer.
-    """
+    """Cython-accelerated Logarithmic activation layer."""
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         """

@@ -1,6 +1,4 @@
-"""
-Cython implementation of the Leaky ReLU activation function.
-"""
+"""Cython implementation of the Leaky ReLU activation function."""
 
 import logging
 
@@ -15,9 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class LeakyReluCython(LeakyReluNumpy, ActivationCython):
-    """
-    Leaky ReLU activation layer using Cython acceleration.
-    """
+    """Leaky ReLU activation layer using Cython acceleration."""
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         """

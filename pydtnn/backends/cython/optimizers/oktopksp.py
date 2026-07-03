@@ -1,6 +1,4 @@
-"""
-Cython-accelerated implementation of the OkTopkSP optimizer for PyDTNN.
-"""
+"""Cython-accelerated implementation of the OkTopkSP optimizer for PyDTNN."""
 
 import logging
 from typing import TYPE_CHECKING
@@ -22,13 +20,14 @@ logger = logging.getLogger(__name__)
 
 
 if TYPE_CHECKING:
-    import numpy as np
+    import numpy as np  # noqa: F811 (override typing)
 
 
 class OkTopkSPCython(OkTopkSPNumpy, OptimizerCython):
     """
-    Cython-optimized version of the OkTopkSP optimizer, inheriting from both
-    the NumPy implementation and the Cython optimizer base class.
+    Cython-optimized version of the OkTopkSP optimizer.
+
+    Inheriting from both the NumPy implementation and the Cython optimizer base class.
     """
 
     def _model_init(self, list_layers: list[Layerable]) -> None:
@@ -85,15 +84,20 @@ class OkTopkSPCython(OkTopkSPNumpy, OptimizerCython):
         self, acc: np.ndarray, indexes: tuple[np.ndarray, np.ndarray]
     ) -> np.ndarray:
         """
-        Update residuals: set zero value if it is in indexes, else acc value is set.
-        If density is 100% and some gradients are zero, scipy will be removing those indexes even if no sparsity is applied.
+        Update residuals.
+
+        Set zero value if it is in indexes, else acc value is set.
+        If density is 100% and some gradients are zero, scipy will
+        be removing those indexes even if no sparsity is applied.
         Thus, to simulate 100% density, residuals must be always zero.
-        This means that a slightly sparse factor will may remove more values because the gradients are already zero.
+        This means that a slightly sparse factor will may remove more
+        values because the gradients are already zero.
 
         Parameters:
             acc (np.array): 2D dense matrix
             indexes (tuple(np.array, np.array)): a tuple with rows and cols
-            method (string, optional): The method to use for updating the weights. It can be 'cython' or 'numpy'. Default is 'cython'.
+            method (string, optional): The method to use for updating the weights.
+            It can be 'cython' or 'numpy'. Default is 'cython'.
 
         Returns:
             residuals (np.array): which is the same as acc with the values in indexes set to zero.
@@ -114,8 +118,10 @@ class OkTopkSPCython(OkTopkSPNumpy, OptimizerCython):
         self, layer: Layerable, w_type: str, w: np.ndarray, coo_u: SparseMatrixCOO
     ) -> None:
         """
-        Update weights: w -= (u / self.model.nprocs)
-        and set to weight layer attribute: setattr(layer, w_type, w)
+        Update weights and set to weight layer attribute.
+
+        w -= (u / self.model.nprocs)
+        setattr(layer, w_type, w)
 
         Parameters:
             layer (int): layer id
@@ -196,20 +202,30 @@ class OkTopkSPCython(OkTopkSPNumpy, OptimizerCython):
     ) -> tuple[np.ndarray, np.ndarray]:
         """
         Calculates the intersection of two sets of indices of 2D.
-        The assertion statement is only executed when the script is not run in optimized mode (python3 -O script.py).
-        Remember that '_has_canonical_format' should only be used for debugging/development purposes to assert that indexes are correct.
-        Indexes in scipy are usually in canonical format, so it should not be necessary to evaluate the indexes format.
-        When optimized mode is enabled (python3 -O script.py), the assert sentences are not computed.
+
+        The assertion statement is only executed when the script
+        is not run in optimized mode (python3 -O script.py).
+        Remember that '_has_canonical_format' should only be
+        used for debugging/development purposes to assert that
+        indexes are correct. Indexes in scipy are usually in
+        canonical format, so it should not be necessary to evaluate
+        the indexes format. When optimized mode is enabled
+        (python3 -O script.py), the assert sentences are not computed.
 
         Parameters:
-            local_indexes (tuple(np.array, np.array)): a tuple of two numpy arrays representing row and column indices, sorted by rows, then by columns.
-            global_indexes (tuple(np.array, np.array)): a tuple of two numpy arrays representing row and column indices, sorted by rows, then by columns.
+            local_indexes (tuple(np.array, np.array)):
+                a tuple of two numpy arrays representing row
+                and column indices, sorted by rows, then by columns.
+            global_indexes (tuple(np.array, np.array)):
+                a tuple of two numpy arrays representing row
+                and column indices, sorted by rows, then by columns.
 
         Returns:
-            intersected_indexes (tuple(np.array, np.array)): Set of tuples representing the common indices.
+            intersected_indexes (tuple(np.array, np.array)):
+                Set of tuples representing the common indices.
 
         Example:
-            - local_indexes  = (np.array([0, 1, 2, 3, 3, 4]) , np.array([4, 6, 5, 1, 7, 3]))
+            - local_indexes  = (np.array([0, 1, 2, 3, 3, 4]), np.array([4, 6, 5, 1, 7, 3]))
             - global_indexes = (np.array([0, 1, 3, 3, 3]), np.array([1, 6, 1, 5, 7]))
             - output: (array([1, 3, 3]), array([6, 1, 7]))
         """

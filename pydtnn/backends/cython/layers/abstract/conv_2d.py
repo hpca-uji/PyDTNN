@@ -1,6 +1,4 @@
-"""
-Cython-accelerated abstract base class for 2D convolution layers.
-"""
+"""Cython-accelerated abstract base class for 2D convolution layers."""
 
 import logging
 from typing import TYPE_CHECKING
@@ -19,18 +17,14 @@ logger = logging.getLogger(__name__)
 
 
 if TYPE_CHECKING:
-    import numpy as np
+    import numpy as np  # noqa: F811 (override typing)
 
 
 class AbstractConv2DCython(AbstractConv2DNumpy, LayerCython):
-    """
-    Abstract base class for 2D convolution layers using Cython backends.
-    """
+    """Abstract base class for 2D convolution layers using Cython backends."""
 
     def im2row(self, x: np.ndarray, x_rows: np.ndarray) -> None:
-        """
-        Transform input image to row format using Cython implementation.
-        """
+        """Transform input image to row format using Cython implementation."""
         im2row_nhwc_cython(
             x,
             x_rows,  # type: ignore
@@ -47,9 +41,7 @@ class AbstractConv2DCython(AbstractConv2DNumpy, LayerCython):
         )
 
     def im2col(self, x: np.ndarray, x_cols: np.ndarray) -> None:
-        """
-        Transform input image to column format using Cython implementation.
-        """
+        """Transform input image to column format using Cython implementation."""
         im2col_nchw_cython(
             x,
             x_cols,  # type: ignore
@@ -66,9 +58,7 @@ class AbstractConv2DCython(AbstractConv2DNumpy, LayerCython):
         )
 
     def row2im(self, x_rows: np.ndarray, dx: np.ndarray) -> None:
-        """
-        Transform row format back to image using Cython implementation.
-        """
+        """Transform row format back to image using Cython implementation."""
         row2im_nhwc_cython(
             x_rows,
             dx,  # type: ignore
@@ -89,9 +79,7 @@ class AbstractConv2DCython(AbstractConv2DNumpy, LayerCython):
         )
 
     def col2im(self, x_cols: np.ndarray, dx: np.ndarray) -> None:
-        """
-        Transform column format back to image using Cython implementation.
-        """
+        """Transform column format back to image using Cython implementation."""
         col2im_nchw_cython(
             x_cols,
             dx,  # type: ignore

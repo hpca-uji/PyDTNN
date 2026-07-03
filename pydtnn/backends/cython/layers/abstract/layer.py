@@ -1,6 +1,4 @@
-"""
-Cython-based implementation of neural network layers for PyDTNN.
-"""
+"""Cython-based implementation of neural network layers for PyDTNN."""
 
 import logging
 
@@ -13,8 +11,4 @@ logger = logging.getLogger(__name__)
 
 
 class LayerCython(LayerNumpy, LayerableCython):
-    """
-    Base class for Cython-accelerated neural network layers.
-    """
-
-    ...
+    """Base class for Cython-accelerated neural network layers."""

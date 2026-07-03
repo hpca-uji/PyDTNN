@@ -1,6 +1,4 @@
-"""
-Cython-accelerated ReLU activation implementation.
-"""
+"""Cython-accelerated ReLU activation implementation."""
 
 import logging
 
@@ -15,9 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class ReluCython(ReluNumpy, ActivationCython):
-    """
-    ReLU activation layer using Cython for optimized computation.
-    """
+    """ReLU activation layer using Cython for optimized computation."""
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         """

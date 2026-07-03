@@ -1,6 +1,4 @@
-"""
-Cython-based optimizer backend for the PyDTNN framework.
-"""
+"""Cython-based optimizer backend for the PyDTNN framework."""
 
 import logging
 
@@ -12,6 +10,4 @@ logger = logging.getLogger(__name__)
 
 
 class OptimizerCython(OptimizerNumpy):
-    """
-    Extends an Optimizer class with the attributes and methods required by CPU Optimizers.
-    """
+    """Extends an Optimizer class with the attributes and methods required by CPU Optimizers."""

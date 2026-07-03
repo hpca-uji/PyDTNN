@@ -1,6 +1,4 @@
-"""
-Cython-based activation layer implementations for the PyDTNN framework.
-"""
+"""Cython-based activation layer implementations for the PyDTNN framework."""
 
 import logging
 
@@ -13,8 +11,4 @@ logger = logging.getLogger(__name__)
 
 
 class ActivationCython(ActivationNumpy, LayerableCython):
-    """
-    Base class for Cython-accelerated activation layers.
-    """
-
-    ...
+    """Base class for Cython-accelerated activation layers."""
