@@ -74,7 +74,7 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
             self.nparams += w.size
 
         # Dropout Descriptor
-        self.states_size = cudnn.cudnnDropoutGetStatesSize(self.model.cudnn_handle)  #  type: ignore
+        self.states_size = cudnn.cudnnDropoutGetStatesSize(self.model.cudnn_handle)  # type: ignore
         states_gpu = gpuarray.zeros((self.states_size,), self.model.dtype)
         self.states = TensorArray(
             states_gpu, self.model.tensor_fmt, self.model.cudnn_dtype, TensorArray.TensorType.OTHER

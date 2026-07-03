@@ -29,11 +29,11 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
         """Returns the set of parameter names that are stored as TensorArrays."""
         return {Parameters.RUNNING_MEAN, Parameters.RUNNING_VAR, *super()._ary_prop}
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initializes the BatchNormalizationPycuda layer."""
         super().__init__(*args, **kwargs)
         # NOTE: The next attributes will be initialized later
-        self.gamma_beta_mean_var_desc: int | None = None
+        self.gamma_beta_mean_var_desc: int = None   # type: ignore
         self.mode: int = None  # type: ignore
         self.gamma_cpu: np.ndarray = None  # type: ignore
         self.beta_cpu: np.ndarray = None  # type: ignore
@@ -232,7 +232,7 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
             self.dbeta.get_async(self.stream_2, self.dbeta_cpu)
         return self.dx
 
-    def _export_gamma_beta(self, key: str) -> Any:
+    def _export_gamma_beta(self, key: str) -> np.ndarray:
         """Exports gamma or beta parameters to CPU."""
         value = getattr(self, key)
         gpu_ary = value
@@ -247,13 +247,13 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
             case _:
                 return super()._export_prop(key)
 
-    def _import_gamma_beta(self, key: str, value: Any) -> None:
+    def _import_gamma_beta(self, key: str, value: np.ndarray) -> None:
         """Imports gamma or beta parameters from CPU."""
         attribute = getattr(self, key)
         attribute.set(value)
         return
 
-    def _import_prop(self, key: str, value) -> None:
+    def _import_prop(self, key: str, value: Any) -> None:
         """Imports layer properties."""
         match key:
             case Parameters.GAMMA | Parameters.DGAMMA | Parameters.BETA | Parameters.DBETA:

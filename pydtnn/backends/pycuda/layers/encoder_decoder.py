@@ -67,10 +67,10 @@ class EncoderDecoderPycuda(EncoderDecoder[TensorArray], AbstractBlockLayerPycuda
             layer._init_backend_with_model(self.model)
 
         # type: ignore (encoder use more parameters)
-        self.encoder[0]._model_init(prev_shape=enc_shape, x=(x_enc, mask_enc)) # type: ignore
+        self.encoder[0]._model_init(prev_shape=enc_shape, x=(x_enc, mask_enc))  # type: ignore
         for layer in self.encoder[1:]:
             # type: ignore (encoder use more parameters)
-            layer._model_init(prev_shape=enc_shape, x=(x_enc, mask_enc)) # type: ignore
+            layer._model_init(prev_shape=enc_shape, x=(x_enc, mask_enc))  # type: ignore
         for layer in self.decoder:
             layer._model_init(prev_shape=dec_shape, x=(x_dec, x_enc, mask_dec))  # type: ignore (decoder use more parameters)
 

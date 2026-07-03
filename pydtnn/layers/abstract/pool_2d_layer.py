@@ -4,7 +4,7 @@ import logging
 import math
 
 from pydtnn.layers.abstract.layer import Layer, LayerError
-from pydtnn.utils.constants import Array
+from pydtnn.utils.constants import Array, ArrayShape
 
 __all__ = ("AbstractPool2DLayer",)
 
@@ -42,7 +42,7 @@ class AbstractPool2DLayer[T: Array](Layer[T]):
         )
         self.ci = self.hi = self.wi = self.kh = self.kw = self.ho = self.wo = self.co = self.n = 0
 
-    def _model_init(self, prev_shape, x: T | None) -> None:
+    def _model_init(self, prev_shape: ArrayShape, x: T | None) -> None:
         """
         Infers output dimensions and initializes layer state based on input shape.
 

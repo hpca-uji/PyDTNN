@@ -1,6 +1,4 @@
-"""
-PyCUDA implementation of the F1-Score metric for the PyDTNN framework.
-"""
+"""PyCUDA implementation of the F1-Score metric for the PyDTNN framework."""
 
 import logging
 
@@ -16,14 +14,10 @@ logger = logging.getLogger(__name__)
 
 
 class F1ScorePycuda(F1Score[TensorArray], MetricPycuda):
-    """
-    PyCUDA-accelerated F1-Score metric implementation.
-    """
+    """PyCUDA-accelerated F1-Score metric implementation."""
 
     def _model_init(self) -> None:
-        """
-        Initializes the F1-Score metric buffers on the GPU.
-        """
+        """Initializes the F1-Score metric buffers on the GPU."""
         super()._model_init()
         target_classes = self.model.output_shape[0]
         self.f1 = TensorArray.new_zeros(

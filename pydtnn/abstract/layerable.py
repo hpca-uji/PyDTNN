@@ -1,6 +1,4 @@
-"""
-Module providing the base Layerable class for defining neural network layers.
-"""
+"""Module providing the base Layerable class for defining neural network layers."""
 
 from __future__ import annotations
 
@@ -195,7 +193,7 @@ class Layerable[T: Array](Base[T]):
         """
         return dy
 
-    def reduce_weights_async(self, gradient: bool = True):
+    def reduce_weights_async(self, gradient: bool = True) -> None:
         """
         Initiate asynchronous weight reduction.
 
@@ -209,7 +207,7 @@ class Layerable[T: Array](Base[T]):
         """
         pass
 
-    def wait_allreduce_async(self, gradient: bool = True):
+    def wait_allreduce_async(self, gradient: bool = True) -> None:
         """
         Wait for completion of asynchronous weight reduction.
 
@@ -222,7 +220,7 @@ class Layerable[T: Array](Base[T]):
         """
         pass
 
-    def reduce_weights_sync(self, gradient: bool = True):
+    def reduce_weights_sync(self, gradient: bool = True) -> None:
         """
         Perform synchronous weight reduction.
 
@@ -236,7 +234,7 @@ class Layerable[T: Array](Base[T]):
         """
         pass
 
-    def print_in_convdirect_format(self):
+    def print_in_convdirect_format(self) -> None:
         """
         Print layer configuration in convdirect format.
 
@@ -270,7 +268,7 @@ class Layerable[T: Array](Base[T]):
         """
         optimizer.update(self)
 
-    def _export_prop(self, key: str):
+    def _export_prop(self, key: str) -> Any:
         """
         Retrieve a property value for export.
 

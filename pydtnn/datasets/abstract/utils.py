@@ -60,7 +60,7 @@ class Utils(Base):
         return self._nsamples[Base.Part.TEST]
 
     @test_nsamples.setter
-    def test_nsamples(self, value) -> None:
+    def test_nsamples(self, value: int) -> None:
         """Set number of test samples."""
         self._nsamples[Base.Part.TEST] = value
 

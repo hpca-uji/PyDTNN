@@ -148,7 +148,7 @@ class DecoderPycuda(Decoder[TensorArray], AbstractBlockLayerPycuda):
 
         # Self Attention Encoder
         self.multiheadattention_enc.forward(
-            self.layernormalization_1.y, 
+            self.layernormalization_1.y,
             x_enc,  # type: ignore (multiheadattention uses more parameters)
             x_enc, mask, self.layernormalization_1.y
         )

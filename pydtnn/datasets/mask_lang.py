@@ -47,7 +47,7 @@ class MaskLang(Dataset):
         split_token: str = "<translation>",
         force_test_as_validation: bool = False,
         debug: bool = False,
-    ):
+    ) -> None:
         """
         Initialize the MaskLang dataset.
 

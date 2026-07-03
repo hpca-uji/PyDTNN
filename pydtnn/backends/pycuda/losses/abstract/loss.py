@@ -23,7 +23,7 @@ class LossPycuda(Loss[TensorArray], BasePycuda):
         Initializes the PyCUDA loss base class.
 
         Args:
-            weights (list[float] | None): The list of the weight of every class. 
+            weights (list[float] | None): The list of the weight of every class.
              If it's None, all classes will have the same weight. default: None.
             eps (float): Small value to prevent division by zero.
         """

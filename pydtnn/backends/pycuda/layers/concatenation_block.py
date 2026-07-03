@@ -1,6 +1,7 @@
 """PyCUDA implementation of the concatenation block layer."""
 
 import logging
+from typing import Any
 
 from pycuda import gpuarray  # type: ignore
 from pycuda.elementwise import ElementwiseKernel  # type: ignore
@@ -23,7 +24,7 @@ logger = logging.getLogger(__name__)
 class ConcatenationBlockPycuda(ConcatenationBlock[TensorArray], AbstractBlockLayerPycuda):
     """PyCUDA-accelerated concatenation block layer."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the concatenation block layer."""
         super().__init__(*args, **kwargs)
         self.concat: ElementwiseKernel = None

@@ -75,7 +75,7 @@ class NadamPycuda(Nadam[TensorArray], OptimizerPycuda):
         """Perform a single optimization step on the specified layer."""
         self.context[layer.id]["it"] += 1  # type: ignore (self.context[layer]["it"] is always an integer)
         # type: ignore (self.context[layer]["it"] is always an integer)
-        it: int = self.context[layer.id]["it"] # type: ignore
+        it: int = self.context[layer.id]["it"]  # type: ignore
 
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)

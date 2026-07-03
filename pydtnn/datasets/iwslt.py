@@ -108,13 +108,13 @@ class IWSLT(Dataset):
         """Load translation data from a text file."""
         self.dictionary1 = self.get_dictionary(lang1)
         self.dictionary2 = self.get_dictionary(lang2)
-        #file = open(self.train_path, "r")
+        # file = open(self.train_path, "r")
         file = open(file_name, "r")
         lines = file.readlines()
         file.close()
         lines = [line.replace("\n", "") for line in lines]
         self.train_val_nsamples = len(lines)
-        self.train_nsamples = None
+        self.train_nsamples = None  # type: ignore (it will be initialized later)
         self.lines1 = [line.split(self.split_token)[0] for line in lines]
         self.lines2 = [line.split(self.split_token)[1] for line in lines]
         # sos = None # <sos>
