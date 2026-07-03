@@ -1,13 +1,12 @@
-"""
-Numpy backend implementation for scalar multiplication layers.
-"""
+"""Numpy backend implementation for scalar multiplication layers."""
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from pydtnn.backends.numpy.layers.abstract.layer import LayerNumpy
 from pydtnn.layers.scalar import Scalar
 from pydtnn.libs import numpy as np
+from pydtnn.utils.constants import ArrayShape
 
 __all__ = ("ScalarNumpy",)
 
@@ -18,17 +17,13 @@ if TYPE_CHECKING:
 
 
 class ScalarNumpy(Scalar[np.ndarray], LayerNumpy):
-    """
-    Numpy-based scalar multiplication layer.
-    """
+    """Numpy-based scalar multiplication layer."""
 
-    def __init__(self, *args, **kwargs):
-        """
-        Initialize the ScalarNumpy layer.
-        """
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Initialize the ScalarNumpy layer."""
         super().__init__(*args, **kwargs)
 
-    def _model_init(self, prev_shape, x):
+    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
         """
         Initialize model performance metrics.
 
@@ -41,7 +36,7 @@ class ScalarNumpy(Scalar[np.ndarray], LayerNumpy):
         self.fwd_time: np.ndarray = None  # type: ignore # Not yet
         self.bwd_time: np.ndarray = None  # type: ignore # Not yet
 
-    def forward(self, x):
+    def forward(self, x: np.ndarray) -> np.ndarray:
         """
         Perform forward pass by scaling the input.
 
@@ -53,7 +48,7 @@ class ScalarNumpy(Scalar[np.ndarray], LayerNumpy):
         """
         return x * self.scale
 
-    def backward(self, dy):
+    def backward(self, dy: np.ndarray) -> np.ndarray:
         """
         Perform backward pass by scaling the gradient.
 

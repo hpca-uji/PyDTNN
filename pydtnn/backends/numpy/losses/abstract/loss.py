@@ -1,6 +1,4 @@
-"""
-Numpy backend implementation for loss functions.
-"""
+"""Numpy backend implementation for loss functions."""
 
 import logging
 from typing import TYPE_CHECKING
@@ -18,14 +16,10 @@ if TYPE_CHECKING:
 
 
 class LossNumpy(Loss[np.ndarray], BaseNumpy):
-    """
-    Extends a Loss class with the attributes and methods required by CPU Losses.
-    """
+    """Extends a Loss class with the attributes and methods required by CPU Losses."""
 
     def _model_init(self) -> None:
-        """
-        Initializes the loss model, allocating memory for the gradient buffer.
-        """
+        """Initializes the loss model, allocating memory for the gradient buffer."""
         super()._model_init()
         self.dx = np.ndarray(self.shape, dtype=self.model.dtype)
         self.memory_used += self.dx.nbytes
