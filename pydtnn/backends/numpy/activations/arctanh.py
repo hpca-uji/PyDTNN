@@ -23,7 +23,7 @@ class ArctanhNumpy(Arctanh[np.ndarray], ActivationNumpy):
         """Initialize the ArctanhNumpy layer."""
         super().__init__(*args, **kwargs)
 
-    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray):
+    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
         """Initialize model parameters and allocate memory for output."""
         super()._model_init(prev_shape, x)
         # NOTE: This attribute only stores data, its value before the operation

@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 class AbstractConv2DNumpy(AbstractConv2D[np.ndarray], LayerNumpy):
     """Abstract base class for 2D convolution layers using the NumPy backend."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the AbstractConv2DNumpy layer."""
         super().__init__(*args, **kwargs)
         # More parameters initialized in initialize()
@@ -268,7 +268,7 @@ class AbstractConv2DNumpy(AbstractConv2D[np.ndarray], LayerNumpy):
         msg = "This is a fake function. It must be overrided by the child classes"
         raise NotImplementedError(f"Conv2DNumpy import: {msg}")
 
-    def _import_prop(self, key: str, value) -> None:
+    def _import_prop(self, key: str, value: np.ndarray) -> None:
         """Import a property by key."""
         match key:
             case Parameters.WEIGHTS | Parameters.DW:

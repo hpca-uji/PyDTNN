@@ -63,8 +63,8 @@ class EncoderNumpy(Encoder[np.ndarray], AbstractBlockLayerNumpy):
             mask_enc = None
             mask_enc_shape = ()  # noqa: F841
 
-        self.shape = x_enc_shape  #type: ignore (This layer is special)
-        self.first_dims = x_enc_shape[:-1]  #type: ignore (This layer is special)
+        self.shape = x_enc_shape  # type: ignore (This layer is special)
+        self.first_dims = x_enc_shape[:-1]  # type: ignore (This layer is special)
 
         # Initialize all sublayers
         for layer in self.children:

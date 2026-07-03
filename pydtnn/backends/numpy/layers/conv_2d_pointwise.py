@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 class Conv2DPointwiseNumpy(Conv2DPointwise[np.ndarray], AbstractConv2DNumpy):
     """NumPy-based implementation of a pointwise 2D convolution layer."""
 
-    def _export_weights_dw(self, key: str):
+    def _export_weights_dw(self, key: str) -> np.ndarray:
         """Exports weights or gradients to a standard format based on the model's tensor format."""
         value = getattr(self, key)
 
