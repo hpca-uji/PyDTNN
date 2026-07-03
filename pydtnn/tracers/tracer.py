@@ -12,22 +12,18 @@ from pydtnn.tracers.events import (PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_O
                                    PYDTNN_OPS_EVENTS, MdlEventEnum, OpsEventEnum)
 from pydtnn.utils import find_component
 
-__all__ = (
-    "EventType",
-    "PostInitCaller",
-    "Tracer",
-    "select",
-    "StreamType"
-)
+__all__ = ("EventType", "PostInitCaller", "Tracer", "select", "StreamType")
 
 logger = logging.getLogger(__name__)
 
 
 if TYPE_CHECKING:
-    from pydtnn.abstract.layerable import Layerable
-    from pydtnn.model.layers import Layers as Model
     import cupy  # type: ignore
     import pycuda.driver as drv  # type: ignore
+
+    from pydtnn.abstract.layerable import Layerable
+    from pydtnn.model.layers import Layers as Model
+
     type StreamType = cupy.cuda.Stream | drv.Stream
 else:
     type StreamType = Any
@@ -153,7 +149,9 @@ class Tracer(metaclass=PostInitCaller):
         """Placeholder for emitting a single event, replaced at runtime."""
         pass
 
-    def emit_nevent(self, evt_evt: list[int], evt_val: list[int], stream: StreamType | None = None) -> None:
+    def emit_nevent(
+        self, evt_evt: list[int], evt_val: list[int], stream: StreamType | None = None
+    ) -> None:
         """Placeholder for emitting multiple events, replaced at runtime."""
         pass
 
@@ -206,7 +204,9 @@ class Tracer(metaclass=PostInitCaller):
         pass
 
     @abc.abstractmethod
-    def _emit_nevent(self, evt_evt: list[int], evt_val: list[int], stream: StreamType | None = None) -> None:
+    def _emit_nevent(
+        self, evt_evt: list[int], evt_val: list[int], stream: StreamType | None = None
+    ) -> None:
         """Abstract method to emit multiple events."""
         pass
 

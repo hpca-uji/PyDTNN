@@ -22,7 +22,9 @@ from pydtnn.utils.constants import ArrayShape
 __all__ = ("mobilenetv1_tensorflow",)
 
 
-def mobilenetv1_tensorflow(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
+def mobilenetv1_tensorflow(
+    input_shape: ArrayShape, output_shape: ArrayShape
+) -> Sequence[Layerable]:
     """
     Constructs a MobileNetV1 model architecture.
 

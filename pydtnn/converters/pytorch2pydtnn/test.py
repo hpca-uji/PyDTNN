@@ -253,8 +253,9 @@ def print_model_reports(model: PyDTNN_Model) -> None:
     model.perf_counter.print_report()
 
 
-def pydtnn_inference(model: PyDTNN_Model, metrics_list: list | None = None,
-                     dataset: Dataset | None = None) -> None:
+def pydtnn_inference(
+    model: PyDTNN_Model, metrics_list: list | None = None, dataset: Dataset | None = None
+) -> None:
     """Runs inference on a PyDTNN model and prints reports."""
     metrics_list = (
         [f for f in model.metrics.replace(" ", "").split(",")]
@@ -267,8 +268,12 @@ def pydtnn_inference(model: PyDTNN_Model, metrics_list: list | None = None,
     print_model_reports(model)
 
 
-def _pydtnn_inference(new_model: PyDTNN_Model, old_model: PyDTNN_Model,
-                      dataset: Dataset, old_first: bool | None = None) -> None:
+def _pydtnn_inference(
+    new_model: PyDTNN_Model,
+    old_model: PyDTNN_Model,
+    dataset: Dataset,
+    old_first: bool | None = None,
+) -> None:
     """Internal helper to manage inference order between PyDTNN models."""
     print("-------------------")
     print(" PyDTNN's inference")
@@ -290,7 +295,9 @@ def _pydtnn_inference(new_model: PyDTNN_Model, old_model: PyDTNN_Model,
             pydtnn_inference(model=new_model, dataset=dataset)
 
 
-def _pytorch_inference(pytorch_model: torch.nn.Module, dataloader: list, kwargs: dict, device: torch.device) -> None:
+def _pytorch_inference(
+    pytorch_model: torch.nn.Module, dataloader: list, kwargs: dict, device: torch.device
+) -> None:
     """Internal helper to configure and run PyTorch inference."""
     print("-------------------")
     print("Pytorch's inference")

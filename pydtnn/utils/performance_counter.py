@@ -27,11 +27,15 @@ class PerformanceCounter:
 
     #  Public methods and properties
 
-    def add_training_time_and_batch_size(self, epoch: int, elapsed_time: float, batch_size: int) -> None:
+    def add_training_time_and_batch_size(
+        self, epoch: int, elapsed_time: float, batch_size: int
+    ) -> None:
         """Records training metrics for a specific epoch."""
         self._add_time_and_batch_size(Dataset.Part.TRAIN, epoch, elapsed_time, batch_size)
 
-    def add_testing_time_and_batch_size(self, test_round: int, elapsed_time: float, batch_size: int) -> None:
+    def add_testing_time_and_batch_size(
+        self, test_round: int, elapsed_time: float, batch_size: int
+    ) -> None:
         """Records testing metrics for a specific test round."""
         self._add_time_and_batch_size(Dataset.Part.TEST, test_round, elapsed_time, batch_size)
 

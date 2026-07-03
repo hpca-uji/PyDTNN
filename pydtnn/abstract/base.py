@@ -12,8 +12,8 @@ from pydtnn.utils.constants import Array
 __all__ = ("Base",)
 
 if typing.TYPE_CHECKING:
-    from pydtnn.model import base as model_module
     from pydtnn.model import Model
+    from pydtnn.model import base as model_module
 
 
 class Base[T: Array]:  # noqa: D101 (generics not detected)

@@ -72,7 +72,9 @@ class Conv2DCommonTestCase[T: Conv2D](TestCase):  # noqa: D101 (generics not det
 
     w_3x3 = np.array([[[[1, 1, 1], [1, 1, 1], [1, 1, 1]]]]).astype(np.float32, order="C")
 
-    def _test_forward_backward(self, d: D, x: np.ndarray, weights: np.ndarray, print_times: bool = False) -> None:
+    def _test_forward_backward(
+        self, d: D, x: np.ndarray, weights: np.ndarray, print_times: bool = False
+    ) -> None:
         """Executes forward and backward passes on both layers and asserts equality."""
         from timeit import timeit
 

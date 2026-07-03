@@ -65,11 +65,20 @@ class D:
     """Container for convolution layer dimensions and parameters."""
 
     def __init__(
-        self, b: int = 1, c: int = 1, h: int = 128, w: int = 100,
-        kn: int = 1, kh: int = 16, kw: int = 10,
-        vpadding: int = 1, hpadding: int = 1,
-        vstride: int = 1, hstride: int = 1,
-        vdilation: int = 1, hdilation: int = 1,
+        self,
+        b: int = 1,
+        c: int = 1,
+        h: int = 128,
+        w: int = 100,
+        kn: int = 1,
+        kh: int = 16,
+        kw: int = 10,
+        vpadding: int = 1,
+        hpadding: int = 1,
+        vstride: int = 1,
+        hstride: int = 1,
+        vdilation: int = 1,
+        hdilation: int = 1,
     ) -> None:
         """Initializes convolution dimensions and hyperparameters."""
         self.b = b  # Batch size

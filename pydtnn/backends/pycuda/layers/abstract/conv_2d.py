@@ -44,7 +44,9 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
 
         self.stream_2 = drv.Stream()
 
-        self.weights_cpu = self.weights_initializer(self.weights_shape, self.model.dtype, self.model.random)
+        self.weights_cpu = self.weights_initializer(
+            self.weights_shape, self.model.dtype, self.model.random
+        )
         weights_gpu = gpuarray.to_gpu(self.weights_cpu)
         self.weights = TensorArray(
             weights_gpu,
@@ -57,7 +59,9 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
         # Biases
         if self.use_bias:
             biases_shape = self.model.encode_shape((1, self.co, 1, 1))
-            self.biases_cpu = self.biases_initializer(biases_shape, self.model.dtype, self.model.random)
+            self.biases_cpu = self.biases_initializer(
+                biases_shape, self.model.dtype, self.model.random
+            )
             biases_gpu = gpuarray.to_gpu(self.biases_cpu)
             self.biases = TensorArray(biases_gpu, self.model.tensor_format, self.model.cudnn_dtype)
             self.memory_used += self.biases.nbytes

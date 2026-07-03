@@ -44,7 +44,9 @@ class Tsunamis(Memory):
     scale:  ???
     """
 
-    def __init__(self, model: Model, force_test_as_validation: bool = False, debug: bool = False) -> None:
+    def __init__(
+        self, model: Model, force_test_as_validation: bool = False, debug: bool = False
+    ) -> None:
         """
         Initialize the Tsunamis dataset.
 
@@ -54,7 +56,9 @@ class Tsunamis(Memory):
             debug: Whether to enable debug mode.
         """
         src_filename = os.path.join(model.dataset_path, "tsunamis-binary.tar.gz")
-        train_filenames = [os.path.join("tsunamis-batches-bin", f"data_batch_{x}.bin") for x in range(1, 6)]
+        train_filenames = [
+            os.path.join("tsunamis-batches-bin", f"data_batch_{x}.bin") for x in range(1, 6)
+        ]
         test_filenames = [os.path.join("tsunamis-batches-bin", "test_batch.bin")]
 
         x_parts = []

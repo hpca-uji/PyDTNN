@@ -6,9 +6,8 @@ from typing import TYPE_CHECKING, Any
 from pydtnn.backends.numpy.layers.abstract.block_layer import AbstractBlockLayerNumpy
 from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.libs import numpy as np
-from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT,
-                                   PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS,
-                                   MdlEventEnum, OpsEventEnum)
+from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS,
+                                   PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, MdlEventEnum, OpsEventEnum)
 from pydtnn.utils.constants import ArrayShape
 
 __all__ = ("ConcatenationBlockNumpy",)

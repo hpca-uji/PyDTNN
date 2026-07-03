@@ -6,9 +6,8 @@ from pydtnn.backends.pycuda.layers.abstract.block_layer import AbstractBlockLaye
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.layers.addition_block import AdditionBlock
 from pydtnn.libs import cudnn as cudnn
-from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT,
-                                   PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS,
-                                   MdlEventEnum, OpsEventEnum)
+from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS,
+                                   PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, MdlEventEnum, OpsEventEnum)
 
 __all__ = ("AdditionBlockPycuda",)
 
@@ -46,7 +45,6 @@ class AdditionBlockPycuda(AdditionBlock[TensorArray], AbstractBlockLayerPycuda):
                     PYDTNN_OPS_EVENT,
                     self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_ELTW_SUM,
                 )
-                # noinspection PyUnboundLocalVariable
                 cudnn.cudnnAddTensor(
                     self.model.cudnn_handle,
                     alpha,
@@ -85,7 +83,6 @@ class AdditionBlockPycuda(AdditionBlock[TensorArray], AbstractBlockLayerPycuda):
                     PYDTNN_OPS_EVENT,
                     self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.BACKWARD_ELTW_SUM,
                 )
-                # noinspection PyUnboundLocalVariable
                 cudnn.cudnnAddTensor(
                     self.model.cudnn_handle,
                     alpha,

@@ -161,7 +161,12 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
 
     # TODO: Move this to 3 different methods.
     def _update_weights(
-        self, layer: Layerable, w_type: str, w: np.ndarray, coo_u: SparseMatrixCOO, method: str = "cython"
+        self,
+        layer: Layerable,
+        w_type: str,
+        w: np.ndarray,
+        coo_u: SparseMatrixCOO,
+        method: str = "cython",
     ) -> None:
         """
         Update weights and set to weight layer attribute.
@@ -343,7 +348,9 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
 
         raise NotImplementedError(f"Method '{method}' with format '{input_format}' not implemented")
 
-    def _space_repartition(self, acc: np.ndarray, local_th: float, balanced: bool = True) -> np.ndarray:
+    def _space_repartition(
+        self, acc: np.ndarray, local_th: float, balanced: bool = True
+    ) -> np.ndarray:
         """
         Returns the boundaries of the regions of the gradient matrix for the split and reduce phase.
 

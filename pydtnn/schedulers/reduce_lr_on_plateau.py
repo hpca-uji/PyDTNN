@@ -21,8 +21,14 @@ if TYPE_CHECKING:
 class ReduceLROnPlateau(SchedulerWithLossOrMetric):
     """ReduceLROnPlateau LRScheduler"""
 
-    def __init__(self, loss_or_metric: str = "", factor: float = 0.1, patience: float = 5,
-                 min_lr: float = 0.0, verbose: bool = True) -> None:
+    def __init__(
+        self,
+        loss_or_metric: str = "",
+        factor: float = 0.1,
+        patience: float = 5,
+        min_lr: float = 0.0,
+        verbose: bool = True,
+    ) -> None:
         """
         Initialize the ReduceLROnPlateau scheduler.
 

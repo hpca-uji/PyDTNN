@@ -21,8 +21,9 @@ if TYPE_CHECKING:
 class StopAtLoss(SchedulerWithLossOrMetric):
     """Scheduler that stops training when a specific loss or metric reaches a threshold."""
 
-    def __init__(self, loss_or_metric: str = "", threshold_value: float = 0.0,
-                 verbose: bool = True) -> None:
+    def __init__(
+        self, loss_or_metric: str = "", threshold_value: float = 0.0, verbose: bool = True
+    ) -> None:
         """
         Initialize the StopAtLoss scheduler.
 

@@ -138,8 +138,7 @@ class EncoderPycuda(Encoder[TensorArray], AbstractBlockLayerPycuda):
         # self.model.test("Forward")
         alpha, beta = 1.0, 1.0
         # Self Attention
-        # type: ignore (multiheadattention uses more parameters)
-        self.multiheadattention.forward(x, x, x, mask, x)  # type: ignore
+        self.multiheadattention.forward(x, x, x, mask, x)  # type: ignore (multiheadattention uses more parameters)
         self.layernormalization_1.forward(self.multiheadattention.y)
         # self.layernormalization_1.forward(x)
 

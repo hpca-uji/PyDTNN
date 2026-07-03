@@ -117,7 +117,6 @@ class EncoderNumpy(Encoder[np.ndarray], AbstractBlockLayerNumpy):
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_MHA
         )
-        # type: ignore (encoder has multiple parameters)
         x_1 = self.multiheadattention.forward(x, x, x, mask)  # type: ignore (This layer is special)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         x_1 = self.dropout_1.forward(x_1)

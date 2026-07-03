@@ -145,8 +145,9 @@ class Sync[T: Array](Init[T]):  # noqa: D101 (generics not detected)
             self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
     # TODO: Modify the method's name.
-    def _weight_update(self, gradient: bool = True, blocking: bool = True,
-                       pipeline: bool = False) -> None:
+    def _weight_update(
+        self, gradient: bool = True, blocking: bool = True, pipeline: bool = False
+    ) -> None:
         """Updates model weights or gradients based on the configured synchronization strategy."""
         if blocking:
             self._model_reduce_sync(gradient)

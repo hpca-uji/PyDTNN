@@ -53,7 +53,9 @@ class SimpleTracerPycuda(SimpleTracer):
         """Return a pair of PyCUDA events to the pool for reuse."""
         self.event_vars.append((start, end))
 
-    def _emit_event(self, evt_type_val: int, evt_val: int, stream: StreamType | None = None) -> None:
+    def _emit_event(
+        self, evt_type_val: int, evt_val: int, stream: StreamType | None = None
+    ) -> None:
         """
         Record a single GPU event duration.
 
@@ -86,7 +88,9 @@ class SimpleTracerPycuda(SimpleTracer):
                 previous_time + evt_time,
             ]  # type: ignore
 
-    def _emit_nevent(self, evt_type_val_list: list, evt_val_list: list, stream: StreamType | None = None) -> None:
+    def _emit_nevent(
+        self, evt_type_val_list: list, evt_val_list: list, stream: StreamType | None = None
+    ) -> None:
         """
         Record multiple GPU events.
 

@@ -20,7 +20,9 @@ class FeedForward[T: Array](AbstractBlockLayer[T]):  # noqa: D101 (generics not 
         dropout_rate (float): The dropout probability applied to the hidden layer.
     """
 
-    def __init__(self, shape: ArrayShape = (1,), d_ff: int = 256, dropout_rate: float = 0.5) -> None:
+    def __init__(
+        self, shape: ArrayShape = (1,), d_ff: int = 256, dropout_rate: float = 0.5
+    ) -> None:
         """
         Initializes the FeedForward layer.
 

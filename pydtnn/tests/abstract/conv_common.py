@@ -20,9 +20,16 @@ class ConvCommonTestCase(TestCase):
 
     @classmethod
     def _compute_both(
-        cls, weights: np.ndarray, x: np.ndarray, biases: np.ndarray | None = None,
-        vpadding: int = 0, hpadding: int = 0, vstride: int = 1, hstride: int = 1,
-        vdilation: int = 1, hdilation: int = 1,
+        cls,
+        weights: np.ndarray,
+        x: np.ndarray,
+        biases: np.ndarray | None = None,
+        vpadding: int = 0,
+        hpadding: int = 0,
+        vstride: int = 1,
+        hstride: int = 1,
+        vdilation: int = 1,
+        hdilation: int = 1,
     ) -> tuple[np.ndarray, np.ndarray]:
         """Computes convolution using two different methods for comparison."""
         raise NotImplementedError()
@@ -34,9 +41,17 @@ class ConvCommonTestCase(TestCase):
 
     @staticmethod
     def _compute(
-        weights: np.ndarray, x: np.ndarray, biases: np.ndarray | None = None,
-        kh: int = 1, kw: int = 1, vpadding: int = 0, hpadding: int = 0,
-        vstride: int = 1, hstride: int = 1, vdilation: int = 1, hdilation: int = 1,
+        weights: np.ndarray,
+        x: np.ndarray,
+        biases: np.ndarray | None = None,
+        kh: int = 1,
+        kw: int = 1,
+        vpadding: int = 0,
+        hpadding: int = 0,
+        vstride: int = 1,
+        hstride: int = 1,
+        vdilation: int = 1,
+        hdilation: int = 1,
     ) -> Any:
         """Computes the convolution operation."""
         raise NotImplementedError()

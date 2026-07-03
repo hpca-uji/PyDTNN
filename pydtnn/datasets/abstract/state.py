@@ -125,7 +125,9 @@ class State(Init):
                 "y_test": y_test,
             }
 
-    def export_archive(self, path: Path | None = None, split_weights: list[float] | None = None) -> None:
+    def export_archive(
+        self, path: Path | None = None, split_weights: list[float] | None = None
+    ) -> None:
         """
         Export dataset to an archive file.
 

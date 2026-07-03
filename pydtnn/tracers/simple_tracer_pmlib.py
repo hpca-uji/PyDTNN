@@ -60,7 +60,9 @@ class SimpleTracerPMLib(SimpleTracer):
             self.pmlib.create_counter(self.pmlib_device)
             self.pmlib.start_counter()
 
-    def _emit_event(self, evt_type_val: int, evt_val: int, stream: StreamType | None = None) -> None:
+    def _emit_event(
+        self, evt_type_val: int, evt_val: int, stream: StreamType | None = None
+    ) -> None:
         """
         Records the start or end time of an event for power calculation.
 

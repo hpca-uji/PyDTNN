@@ -19,10 +19,10 @@ from pydtnn.abstract.layerable import Layerable
 from pydtnn.losses.abstract.loss import Loss
 from pydtnn.metrics.abstract.metric import Metric
 from pydtnn.optimizers.abstract.optimizer import Optimizer
+from pydtnn.tracers.tracer import Tracer
 from pydtnn.utils.constants import Array, ArrayShape, NetworkAlgoEnum
 from pydtnn.utils.memory_pool import PrivateMemory
 from pydtnn.utils.tensor import TensorFormat
-from pydtnn.tracers.tracer import Tracer
 
 __all__ = ("Base",)
 

@@ -97,7 +97,9 @@ class ModelTensorTestCase(ModelCommonTestCase):
         dx1_format = list(map(self.nhwc2nchw, dx1))
         return super().do_model2_backward_pass(model2, dx1_format)
 
-    def compare_forward(self, model1: Model, x1: list[np.ndarray], model2: Model, x2: list[np.ndarray]) -> None:
+    def compare_forward(
+        self, model1: Model, x1: list[np.ndarray], model2: Model, x2: list[np.ndarray]
+    ) -> None:
         """
         Compares forward pass outputs between two models.
 
@@ -125,7 +127,9 @@ class ModelTensorTestCase(ModelCommonTestCase):
                     f"({self.print_stats(x1_i, x2[i], rtol, atol)})",
                 )
 
-    def compare_backward(self, model1: Model, dx1: list[np.ndarray], model2: Model, dx2: list[np.ndarray]) -> None:
+    def compare_backward(
+        self, model1: Model, dx1: list[np.ndarray], model2: Model, dx2: list[np.ndarray]
+    ) -> None:
         """
         Compares backward pass gradients between two models.
 

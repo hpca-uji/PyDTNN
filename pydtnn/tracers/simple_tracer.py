@@ -49,7 +49,9 @@ class SimpleTracer(Tracer):
         # If tracing is enabled at least once, register self.write_output to be executed at exit
         atexit.register(self._write_output)
 
-    def _emit_event(self, evt_type_val: int, evt_val: int, stream: StreamType | None = None) -> None:
+    def _emit_event(
+        self, evt_type_val: int, evt_val: int, stream: StreamType | None = None
+    ) -> None:
         """
         Record the start or end of an event.
 
@@ -73,7 +75,12 @@ class SimpleTracer(Tracer):
             self.events[_evt_type_val][_evt_val][0] += 1  # type: ignore
             self.events[_evt_type_val][_evt_val][1].append(toc - tic)  # type: ignore
 
-    def _emit_nevent(self, evt_type_val_list: list[int], evt_val_list: list[int], stream: StreamType | None = None) -> None:
+    def _emit_nevent(
+        self,
+        evt_type_val_list: list[int],
+        evt_val_list: list[int],
+        stream: StreamType | None = None,
+    ) -> None:
         """
         Record multiple events simultaneously.
 

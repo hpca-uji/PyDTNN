@@ -33,7 +33,7 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
         """Initializes the BatchNormalizationPycuda layer."""
         super().__init__(*args, **kwargs)
         # NOTE: The next attributes will be initialized later
-        self.gamma_beta_mean_var_desc: int = None   # type: ignore
+        self.gamma_beta_mean_var_desc: int = None  # type: ignore
         self.mode: int = None  # type: ignore
         self.gamma_cpu: np.ndarray = None  # type: ignore
         self.beta_cpu: np.ndarray = None  # type: ignore

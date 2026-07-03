@@ -1,11 +1,11 @@
 """Utilities for profiling performance and memory usage in PyDTNN."""
 
 import gc
+import logging
 import os
+import tempfile
 import time
 import types
-import logging
-import tempfile
 from pathlib import Path
 from typing import Self
 

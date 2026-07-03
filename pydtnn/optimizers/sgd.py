@@ -20,8 +20,13 @@ if TYPE_CHECKING:
 class SGD[T: Array](Optimizer[T]):  # noqa: D101 (generics not detected)
     """Stochastic Gradient Descent optimizer with support for momentum, Nesterov acceleration, and weight decay."""
 
-    def __init__(self, learning_rate: float = 1e-2, momentum: float = 0.9,
-                 nesterov: bool = False, decay: float = 0.0) -> None:
+    def __init__(
+        self,
+        learning_rate: float = 1e-2,
+        momentum: float = 0.9,
+        nesterov: bool = False,
+        decay: float = 0.0,
+    ) -> None:
         """
         Initialize the SGD optimizer.
 

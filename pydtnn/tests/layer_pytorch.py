@@ -349,8 +349,9 @@ class LayerPyTorchTestCase(TestCase):
         return np.asarray(x, dtype=dtype, order="C").copy()
 
     @staticmethod
-    def initialize_pydtnn_model(list_layers: list[Layerable],
-                                params: ParamsLayerPytorch = params) -> Model:
+    def initialize_pydtnn_model(
+        list_layers: list[Layerable], params: ParamsLayerPytorch = params
+    ) -> Model:
         """Initializes a PyDTNN model with the provided layers."""
         model = Model(**params.asdict())
         model.add(Input(params.shape))
@@ -503,7 +504,9 @@ class LayerPyTorchTestCase(TestCase):
 
     def test_adaptive_average_pool2d(self) -> None:
         """Tests AdaptiveAveragePool2D layer."""
-        pydtnn_layers: list[Layerable] = [AdaptiveAveragePool2D(output_shape=ADAPTIVE_AVG_POOL_OUTPUT_SIZE)]
+        pydtnn_layers: list[Layerable] = [
+            AdaptiveAveragePool2D(output_shape=ADAPTIVE_AVG_POOL_OUTPUT_SIZE)
+        ]
         torch_model = torch.nn.AdaptiveAvgPool2d(output_size=ADAPTIVE_AVG_POOL_OUTPUT_SIZE)
         pydtnn_model = LayerPyTorchTestCase.initialize_pydtnn_model(
             pydtnn_layers, params=self.params

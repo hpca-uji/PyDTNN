@@ -32,12 +32,14 @@ class SparseMatrixCOO:
     This class is not designed to store explict zeros so, len(self.data) should always be equal to nnz.
     """
 
-    def __init__(self,
-                 data: np.ndarray,
-                 row: np.ndarray[tuple[int], np.dtype[np.int32]],
-                 col: np.ndarray[tuple[int], np.dtype[np.int32]],
-                 shape: tuple,
-                 has_canonical_format: bool) -> None:
+    def __init__(
+        self,
+        data: np.ndarray,
+        row: np.ndarray[tuple[int], np.dtype[np.int32]],
+        col: np.ndarray[tuple[int], np.dtype[np.int32]],
+        shape: tuple,
+        has_canonical_format: bool,
+    ) -> None:
         """Primary initializer for SparseMatrixCOO.
 
         Parameters:
@@ -115,7 +117,9 @@ class SparseMatrixCOO:
         topk, topk_row, topk_col = top_threshold_selection_dense_cython(dense_array, threshold)
         return cls(topk, topk_row, topk_col, dense_array.shape, has_canonical_format=True)
 
-    def top_selection(self, threshold: float, inplace: bool | None = True) -> "SparseMatrixCOO | None":
+    def top_selection(
+        self, threshold: float, inplace: bool | None = True
+    ) -> "SparseMatrixCOO | None":
         """
         Performs top threshold selection on sparse array
 

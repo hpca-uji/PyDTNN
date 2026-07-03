@@ -137,8 +137,9 @@ class MultiHeadAttentionNumpy(MultiHeadAttention[np.ndarray], AbstractBlockLayer
         """Transposes the last two dimensions of the input."""
         return x.swapaxes(-2, -1)
 
-    def forward(self, query: np.ndarray, key: np.ndarray, value: np.ndarray,
-                mask: np.ndarray | None = None) -> np.ndarray:
+    def forward(
+        self, query: np.ndarray, key: np.ndarray, value: np.ndarray, mask: np.ndarray | None = None
+    ) -> np.ndarray:
         """Performs the forward pass of the multi-head attention mechanism."""
         if self.model.mode == Model.Mode.TRAIN:
             # TODO: Check this.
@@ -156,8 +157,8 @@ class MultiHeadAttentionNumpy(MultiHeadAttention[np.ndarray], AbstractBlockLayer
             PYDTNN_OPS_EVENT,
             self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_MHA_MATMUL_QK,
         )
-        # type: ignore (encoder has multiple parameters)
-        score = self.mult_qkt.forward(query, self.transpose(key))  # type: ignore
+
+        score = self.mult_qkt.forward(query, self.transpose(key))  # type: ignore (encoder has multiple parameters)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         self.model.tracer.emit_event(
@@ -177,8 +178,7 @@ class MultiHeadAttentionNumpy(MultiHeadAttention[np.ndarray], AbstractBlockLayer
             self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_MHA_MATMUL_SMV,
         )
 
-        # type: ignore (encoder has multiple parameters)
-        score = self.mult_smv.forward(score, value)  # type: ignore
+        score = self.mult_smv.forward(score, value)  # type: ignore (encoder has multiple parameters)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         self.model.tracer.emit_event(

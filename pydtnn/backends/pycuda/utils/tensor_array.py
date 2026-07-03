@@ -92,7 +92,7 @@ class TensorArray:
         tensor_type: TensorType = TensorType.TENSOR,
         desc: int | None = None,
         gpudirect: bool = False,
-        cublas: bool = False
+        cublas: bool = False,
     ) -> TensorArray:
         """Creates a zero-initialized TensorArray."""
         gpu_arr = gpuarray.to_gpu(ary)
@@ -459,7 +459,9 @@ class TensorArray:
             ary[:] = value
             return None  # type: ignore
 
-    def get_async(self, stream: pycuda_driver | None = None, ary: gpuarray.GPUArray | None = None) -> None:
+    def get_async(
+        self, stream: pycuda_driver | None = None, ary: gpuarray.GPUArray | None = None
+    ) -> None:
         """Asynchronously copies data from GPU to CPU."""
         if ary is None:
             raise ValueError("Destination must be defined!")
@@ -530,7 +532,9 @@ class TensorArray:
         """Returns the length of the underlying array."""
         return len(self.ary)
 
-    def _operable(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> gpuarray.GPUArray | np.ndarray:
+    def _operable(
+        self, other: TensorArray | gpuarray.GPUArray | np.ndarray
+    ) -> gpuarray.GPUArray | np.ndarray:
         """Prepares operand for arithmetic operations."""
         if isinstance(other, TensorArray):
             other = other.ary
@@ -607,7 +611,11 @@ class TensorArray:
         """Indexing operator."""
         return self._view(self.ary.__getitem__(index), keep_shape=False)
 
-    def __setitem__(self, key: int | tuple | slice | np.ndarray, value: TensorArray | gpuarray.GPUArray | np.ndarray) -> None:
+    def __setitem__(
+        self,
+        key: int | tuple | slice | np.ndarray,
+        value: TensorArray | gpuarray.GPUArray | np.ndarray,
+    ) -> None:
         """Set item operator."""
         value = self._operable(value)
         return self.ary.__setitem__(key, value)

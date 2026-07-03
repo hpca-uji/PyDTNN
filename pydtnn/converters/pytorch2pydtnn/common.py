@@ -15,6 +15,7 @@ from pydtnn.converters.pytorch2pydtnn.layers.linear import Linear
 from pydtnn.converters.pytorch2pydtnn.layers.normalization import BatchNorm2d
 from pydtnn.converters.pytorch2pydtnn.layers.pooling import AdaptiveAvgPool2d, AvgPool2d, MaxPool2d
 from pydtnn.converters.pytorch2pydtnn.layers.utility import Flatten
+
 __all__ = (
     "function_operation_to_pydtnn",
     "get_equivalent_layer",
@@ -265,7 +266,7 @@ def get_lists_operations_and_outputs(
     #  > Sets are not ordered by insertion ==> keep order with enumerate ==>
     #  > ==> braches have different sizes, then the same node may have different order in different branches ==>
     #  > ==> that's true from bottom to top, but from top to bottom the "intersection layers"
-#           -the ones to be searched- (the ones that coincide in all branches) must be in the same position in every branch.
+    #           -the ones to be searched- (the ones that coincide in all branches) must be in the same position in every branch.
     enumerated_reversed_inputs = enumerate(list(dict_branch[layer_inputs[0]].keys())[::-1])
     coincidences = set(
         enumerated_reversed_inputs

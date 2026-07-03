@@ -20,8 +20,14 @@ logger = logging.getLogger(__name__)
 class AdamPycuda(Adam[TensorArray], OptimizerPycuda):
     """PyCUDA implementation of the Adam optimizer."""
 
-    def __init__(self, learning_rate: float = 1e-2, beta1: float = 0.99, beta2: float = 0.999,
-                 epsilon: float = 1e-7, decay: float = 0.0) -> None:
+    def __init__(
+        self,
+        learning_rate: float = 1e-2,
+        beta1: float = 0.99,
+        beta2: float = 0.999,
+        epsilon: float = 1e-7,
+        decay: float = 0.0,
+    ) -> None:
         """Initialize the AdamPycuda optimizer."""
         super().__init__(learning_rate, beta1, beta2, epsilon, decay)
 
@@ -66,10 +72,10 @@ class AdamPycuda(Adam[TensorArray], OptimizerPycuda):
                     w.shape, dtype=layer.model.dtype
                 )
 
-                # type: ignore (They are both "gpuarray" and not "int")
                 self.memory_used += (
-                    self.context[layer.id]["m_%s" % w_].nbytes  # type: ignore
-                    + self.context[layer.id]["v_%s" % w_].nbytes)  # type: ignore
+                    self.context[layer.id]["m_%s" % w_].nbytes  # type: ignore (They are both "gpuarray" and not "int")
+                    + self.context[layer.id]["v_%s" % w_].nbytes  # type: ignore (They are both "gpuarray" and not "int")
+                )
 
     def update(self, layer: LayerPycuda) -> None:
         """Perform a single optimization step for the given layer."""

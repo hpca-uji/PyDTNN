@@ -7,13 +7,13 @@ import os
 import string
 import sys
 import threading
-from typing import Any, Literal, Self
 import zipfile
 from collections.abc import Iterable
 from ctypes.util import find_library
 from importlib import import_module, resources
 from pathlib import PurePath
 from queue import Queue
+from typing import Any, Literal, Self
 
 import numpy as np
 

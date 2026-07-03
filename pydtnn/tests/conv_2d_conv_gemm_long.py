@@ -85,9 +85,18 @@ class Conv2DConvGemmLongTestCase(Conv2DConvGemmTestCase):
             print(f"{perc:.5%} (eta: {d:2.0f}d {h:2.0f}h {m:2.0f}m {s:2.0f}s)", end="\r")
 
     def _test_forward_backward_multiple_params(
-        self, kn: int, b: int, c: int, h: int, w: int,
-        kh: int, kw: int, vpadding: int, hpadding: int,
-        vstride: int, hstride: int
+        self,
+        kn: int,
+        b: int,
+        c: int,
+        h: int,
+        w: int,
+        kh: int,
+        kw: int,
+        vpadding: int,
+        hpadding: int,
+        vstride: int,
+        hstride: int,
     ) -> None:
         """
         Executes forward and backward pass verification for a specific set of convolution parameters.

@@ -1,15 +1,15 @@
 """Flake8 plugin to enforce code maintainability standards using Radon."""
 
 import ast
-from typing import Any
 from argparse import Namespace
 from collections.abc import Generator
+from typing import Any
 
 from flake8.options.manager import OptionManager
 
 try:
-    from radon.metrics import mi_rank
     from radon.metrics import mi_visit  # type: ignore (It's fine)
+    from radon.metrics import mi_rank
 except ModuleNotFoundError as exc:
     _exc = exc
 

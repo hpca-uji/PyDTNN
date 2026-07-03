@@ -20,7 +20,7 @@ class AdaptiveAveragePool2D[T: Array](Layer[T]):  # noqa: D101 (generics not det
 
     # This layer will calculate the pool shape and the stride from the output shape (passed as parameter)
     #  and the previous layer shape.
-    #
+
     # output_shape:
     #  -> None: if the output shape is equal to the input
     #  -> int: if all the output shape's dimensions share values

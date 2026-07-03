@@ -42,7 +42,9 @@ class MaxPool2DNumpy(MaxPool2D[np.ndarray], AbstractPool2DLayerNumpy):
         # NOTE: This attribute only stores data, its value before the operation
         # doesn't matter; it's initalized due avoid warnings in
         # "LayerAndActivationBase.export".
-        self._idx_max: np.ndarray[tuple[int, int, int, int], np.int32] = np.zeros(idx_max_shape, dtype=np.int32)  # type: ignore
+        self._idx_max: np.ndarray[tuple[int, int, int, int], np.int32] = np.zeros(
+            idx_max_shape, dtype=np.int32
+        )  # type: ignore
         self.memory_used += self._idx_max.nbytes
 
     def _fwd_max_pool_nhwc(self, x: np.ndarray, y: np.ndarray) -> None:

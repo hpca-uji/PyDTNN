@@ -352,8 +352,12 @@ class Augment(Init):
                             self.model.tensor_format
                         } format."
                     )
-            data[ri, ...] = np.roll(data[ri, ...], self.model.random.integers(-t[i], (h - b)), axis=1)
-            data[ri, ...] = np.roll(data[ri, ...], self.model.random.integers(-ll[i], (w - r)), axis=2)
+            data[ri, ...] = np.roll(
+                data[ri, ...], self.model.random.integers(-t[i], (h - b)), axis=1
+            )
+            data[ri, ...] = np.roll(
+                data[ri, ...], self.model.random.integers(-ll[i], (w - r)), axis=2
+            )
         return data
 
     def _do_augment_rotate(self, data: np.ndarray) -> np.ndarray:
@@ -654,7 +658,9 @@ class Augment(Init):
         data = self.model.decode_tensor(data)
         _n, _c, _h, _w = data.shape
         # NOTE: _c not included so all channels in a sample rotate by the same amount
-        persepctive: np.ndarray = self.model.random.random(_n) * self.model.augment_perspective_factor
+        persepctive: np.ndarray = (
+            self.model.random.random(_n) * self.model.augment_perspective_factor
+        )
 
         s = np.where(self.model.random.random(_n) <= self.model.augment_perspective)[0]
 
@@ -722,8 +728,14 @@ class Augment(Init):
 
         top_left = (self.model.random.uniform(0, factor), self.model.random.uniform(0, factor))
         top_right = (1 - self.model.random.uniform(0, factor), self.model.random.uniform(0, factor))
-        bottom_left = (self.model.random.uniform(0, factor), 1 - self.model.random.uniform(0, factor))
-        bottom_right = (1 - self.model.random.uniform(0, factor), 1 - self.model.random.uniform(0, factor))
+        bottom_left = (
+            self.model.random.uniform(0, factor),
+            1 - self.model.random.uniform(0, factor),
+        )
+        bottom_right = (
+            1 - self.model.random.uniform(0, factor),
+            1 - self.model.random.uniform(0, factor),
+        )
 
         transformed_points = list(zip(*[top_left, top_right, bottom_left, bottom_right]))
         widths = transformed_points[0]

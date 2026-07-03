@@ -33,7 +33,9 @@ class Conv2DReluTestCase(Conv2DCommonTestCase):
     del Conv2DCommonTestCase
 
     @staticmethod
-    def _get_layers(d: D, deconv: bool = False, trans: bool = False) -> tuple[ConcatenationBlock, Layerable]:
+    def _get_layers(
+        d: D, deconv: bool = False, trans: bool = False
+    ) -> tuple[ConcatenationBlock, Layerable]:
         """
         Constructs and initializes a standard Conv2D+ReLU chain and a fused Conv2DRelu layer.
 

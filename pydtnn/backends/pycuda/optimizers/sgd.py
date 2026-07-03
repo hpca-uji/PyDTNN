@@ -20,7 +20,13 @@ logger = logging.getLogger(__name__)
 class SGDPycuda(SGD[TensorArray], OptimizerPycuda):
     """PyCUDA-accelerated Stochastic Gradient Descent optimizer."""
 
-    def __init__(self, learning_rate: float = 1e-2, momentum: float = 0.9, nesterov: bool = False, decay: float = 0.0) -> None:
+    def __init__(
+        self,
+        learning_rate: float = 1e-2,
+        momentum: float = 0.9,
+        nesterov: bool = False,
+        decay: float = 0.0,
+    ) -> None:
         """
         Initializes the SGDPycuda optimizer.
 
@@ -75,8 +81,7 @@ class SGDPycuda(SGD[TensorArray], OptimizerPycuda):
                         w.shape, dtype=w.dtype
                     )
 
-                    # type: ignore (They are both "gpuarray" and not "int")
-                    self.memory_used += self.context[layer.id]["velocity_%s" % w_].nbytes  # type: ignore
+                    self.memory_used += self.context[layer.id]["velocity_%s" % w_].nbytes  # type: ignore (They are both "gpuarray" and not "int")
 
     def update(self, layer: LayerPycuda) -> None:
         """

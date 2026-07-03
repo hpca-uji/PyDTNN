@@ -43,7 +43,9 @@ class MNIST(Memory):
     scale:  +3.237
     """  # noqa: E501
 
-    def __init__(self, model: Model, force_test_as_validation: bool = False, debug: bool = False) -> None:
+    def __init__(
+        self, model: Model, force_test_as_validation: bool = False, debug: bool = False
+    ) -> None:
         """
         Initialize the MNIST dataset.
 
@@ -63,7 +65,9 @@ class MNIST(Memory):
         with self._gzip_open(x_train_filename) as f:
             size = math.prod(INPUT_SHAPE)
             offset = images_header_offset + 0 * size
-            x_train = self._read_file(f, offset, size * TRAIN_NSAMPLES).reshape((TRAIN_NSAMPLES, *INPUT_SHAPE))
+            x_train = self._read_file(f, offset, size * TRAIN_NSAMPLES).reshape(
+                (TRAIN_NSAMPLES, *INPUT_SHAPE)
+            )
 
         y_train = np.zeros((TRAIN_NSAMPLES, *OUTPUT_SHAPE), dtype=np.uint8)
         with self._gzip_open(y_train_filename) as f:
@@ -75,7 +79,9 @@ class MNIST(Memory):
         with self._gzip_open(x_test_filename) as f:
             size = math.prod(INPUT_SHAPE)
             offset = images_header_offset + 0 * size
-            x_test = self._read_file(f, offset, size * TEST_NSAMPLES).reshape((TEST_NSAMPLES, *INPUT_SHAPE))
+            x_test = self._read_file(f, offset, size * TEST_NSAMPLES).reshape(
+                (TEST_NSAMPLES, *INPUT_SHAPE)
+            )
 
         y_test = np.zeros((TEST_NSAMPLES, *OUTPUT_SHAPE), dtype=np.uint8)
         with self._gzip_open(y_test_filename) as f:

@@ -443,7 +443,9 @@ class ConvWinograd:
             logger.error("Winograd conv_winograd_workspace_alloc_pre/kernel routines not found.")
 
         self.cw_cache_pre = lambda args: self.winograd_workspace_alloc_pre(*args)  # MemoryCache
-        self.cw_cache_kernel = lambda args: self.winograd_workspace_alloc_kernel(*args)  # MemoryCache
+        self.cw_cache_kernel = lambda args: self.winograd_workspace_alloc_kernel(
+            *args
+        )  # MemoryCache
         self.y_cache = lambda shape: np.zeros(shape, self.dtype)  # MemoryCache
         self.d_cache = lambda shape: np.zeros(shape, self.dtype)  # MemoryCache
 

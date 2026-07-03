@@ -29,7 +29,9 @@ class Archive(Dataset):
     Y must be in a NDArray with N (or more) and float64 dtype.
     """
 
-    def __init__(self, model: Model, force_test_as_validation: bool = False, debug: bool = False) -> None:
+    def __init__(
+        self, model: Model, force_test_as_validation: bool = False, debug: bool = False
+    ) -> None:
         """
         Initialize the Archive dataset by inspecting the NPZ file structure.
 

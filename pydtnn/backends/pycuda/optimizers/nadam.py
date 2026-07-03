@@ -20,8 +20,14 @@ logger = logging.getLogger(__name__)
 class NadamPycuda(Nadam[TensorArray], OptimizerPycuda):
     """Nadam optimizer implementation for PyCUDA backends."""
 
-    def __init__(self, learning_rate: float = 1e-2, beta1: float = 0.99, beta2: float = 0.999,
-                 epsilon: float = 1e-7, decay: float = 0.0) -> None:
+    def __init__(
+        self,
+        learning_rate: float = 1e-2,
+        beta1: float = 0.99,
+        beta2: float = 0.999,
+        epsilon: float = 1e-7,
+        decay: float = 0.0,
+    ) -> None:
         """Initialize the NadamPycuda optimizer."""
         super().__init__(learning_rate, beta1, beta2, epsilon, decay)
 
@@ -69,16 +75,15 @@ class NadamPycuda(Nadam[TensorArray], OptimizerPycuda):
                     w.shape, dtype=layer.model.dtype
                 )
 
-                # type: ignore (They are both "gpuarray" and not "int")
                 self.memory_used += (
-                    self.context[layer.id]["m_%s" % w_].nbytes  # type: ignore
-                    + self.context[layer.id]["v_%s" % w_].nbytes)  # type: ignore
+                    self.context[layer.id]["m_%s" % w_].nbytes  # type: ignore (They are both "gpuarray" and not "int")
+                    + self.context[layer.id]["v_%s" % w_].nbytes  # type: ignore (They are both "gpuarray" and not "int")
+                )
 
     def update(self, layer: LayerPycuda) -> None:
         """Perform a single optimization step on the specified layer."""
         self.context[layer.id]["it"] += 1  # type: ignore (self.context[layer]["it"] is always an integer)
-        # type: ignore (self.context[layer]["it"] is always an integer)
-        it: int = self.context[layer.id]["it"]  # type: ignore
+        it: int = self.context[layer.id]["it"]  # type: ignore (self.context[layer]["it"] is always an integer)
 
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)

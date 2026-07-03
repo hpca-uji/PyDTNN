@@ -42,7 +42,9 @@ class CIFAR10(Memory):
     scale:  +3.964
     """
 
-    def __init__(self, model: Model, force_test_as_validation: bool = False, debug: bool = False) -> None:
+    def __init__(
+        self, model: Model, force_test_as_validation: bool = False, debug: bool = False
+    ) -> None:
         """
         Initialize the CIFAR10 dataset.
 
@@ -52,7 +54,9 @@ class CIFAR10(Memory):
             debug: Whether to enable debug mode.
         """
         src_filename = os.path.join(model.dataset_path, "cifar-10-binary.tar.gz")
-        train_filenames = [os.path.join("cifar-10-batches-bin", f"data_batch_{x}.bin") for x in range(1, 6)]
+        train_filenames = [
+            os.path.join("cifar-10-batches-bin", f"data_batch_{x}.bin") for x in range(1, 6)
+        ]
         test_filenames = [os.path.join("cifar-10-batches-bin", "test_batch.bin")]
 
         x_parts = []

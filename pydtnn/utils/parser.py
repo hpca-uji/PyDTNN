@@ -82,8 +82,7 @@ def _get_threads_per_process() -> int:
 def _get_mpi_protocol() -> str | None:
     """Returns the MPI communication protocol string."""
     try:
-        from pydtnn.libs.mpi.rc import proto
-        from pydtnn.libs.mpi.rc import ssl
+        from pydtnn.libs.mpi.rc import proto, ssl
     except Exception:
         proto = None
         ssl = None
@@ -751,9 +750,7 @@ class ArgumentParser(argparse.ArgumentParser):
             "--loss-eps",
             type=float,
             default=1e-8,
-            help=(
-                "Value for numerical stability. Default '1e-8'."
-            ),
+            help=("Value for numerical stability. Default '1e-8'."),
         )
         _op_group.add_argument(
             "--loss-weights",

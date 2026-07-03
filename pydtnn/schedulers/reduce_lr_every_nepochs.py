@@ -21,8 +21,9 @@ if TYPE_CHECKING:
 class ReduceLREveryNEpochs(Scheduler):
     """ReduceLREveryNEpochs LRScheduler"""
 
-    def __init__(self, factor: float = 0.1, nepochs: int = 5,
-                 min_lr: float = 0.0, verbose: bool = True) -> None:
+    def __init__(
+        self, factor: float = 0.1, nepochs: int = 5, min_lr: float = 0.0, verbose: bool = True
+    ) -> None:
         """
         Initialize the scheduler.
 

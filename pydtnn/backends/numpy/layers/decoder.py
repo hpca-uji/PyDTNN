@@ -117,13 +117,14 @@ class DecoderNumpy(Decoder[np.ndarray], AbstractBlockLayerNumpy):
         last_dim = x.shape[-1]
         return x.reshape((*self.first_dims, last_dim))
 
-    def forward(self, x: np.ndarray, x_enc: np.ndarray, mask: np.ndarray | None = None) -> np.ndarray:
+    def forward(
+        self, x: np.ndarray, x_enc: np.ndarray, mask: np.ndarray | None = None
+    ) -> np.ndarray:
         """Performs the forward pass of the decoder layer."""
         # Self Attention
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_MHA
         )
-        # type: ignore (multiheadattention has more parameters)
         x_1 = self.multiheadattention.forward(x, x, x, mask)  # type: ignore (This layer is special)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         # x_1 = self.dropout_1.forward(x_1)
@@ -133,7 +134,6 @@ class DecoderNumpy(Decoder[np.ndarray], AbstractBlockLayerNumpy):
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_MHA
         )
-        # type: ignore (multiheadattention has more parameters)
         x_2 = self.multiheadattention_enc.forward(x_1, x_enc, x_enc, mask)  # type: ignore (This layer is special)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         # x_2 = self.dropout_enc.forward(x_2)

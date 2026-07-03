@@ -327,7 +327,9 @@ class BestOf:
             return self.alternatives[0][1](*_args, **kwargs)  # type: ignore
         else:
             # Get stage and remove stage argument from args
-            args: list = list(_args)  # Convert args to a list (so that its first element can be removed)
+            args: list = list(
+                _args
+            )  # Convert args to a list (so that its first element can be removed)
             stage = int(args.pop(0))
             assert stage < self.stages, (
                 f"The stage number ({stage}) must be less than the specified number of stages"
@@ -368,7 +370,9 @@ class BestOf:
         """
 
         # Get stage
-        args: list = list(_args)  # Convert args to a list (so that its first element can be removed if in a pipeline)
+        args: list = list(
+            _args
+        )  # Convert args to a list (so that its first element can be removed if in a pipeline)
         stage = int(args.pop(0)) if self.stages > 1 else 0
         assert stage < self.stages, (
             f"The stage number ({stage}) must be less than the specified number of stages"
@@ -462,7 +466,6 @@ class BestOf:
 
         # If evolve:
         if evolve:
-
             # 1) Evolve current alternative and round
             next_alternative = (current_alternative + 1) % self.total_alternatives
             current_round = self._current_round[problem_size]
@@ -498,7 +501,9 @@ class BestOf:
                 if next_round > current_round and (
                     next_round >= self.total_rounds or len(remaining_alternatives) == 1
                 ):
-                    self.best_idx[problem_size] = best_times.index(min_time)  # first of the minimums
+                    self.best_idx[problem_size] = best_times.index(
+                        min_time
+                    )  # first of the minimums
                     if self.stages == 1:
                         self.best_name[problem_size], self.best_method[problem_size] = (  # type: ignore
                             self.alternatives[self.best_idx[problem_size]]
@@ -547,7 +552,9 @@ class BestOf:
                 out[problem_size] = max(medians[problem_size]) / medians[problem_size][best_idx]
         return out
 
-    def print_as_table(self, execution: _BestOfExecution | None = None, time_format: str = "6.4f") -> None:
+    def print_as_table(
+        self, execution: _BestOfExecution | None = None, time_format: str = "6.4f"
+    ) -> None:
         """Prints a performance table for the current BestOf instance."""
         c = Console(force_terminal=True, width=100)
         caption = self.name if execution is None else execution.name

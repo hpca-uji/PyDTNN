@@ -8,13 +8,12 @@ loss implementations.
 from __future__ import annotations
 
 import logging
+from typing import TYPE_CHECKING
 
 import numpy as np
 
 from pydtnn.abstract.base import Base
 from pydtnn.utils.constants import Array
-
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from pydtnn.model.base import Base as Model

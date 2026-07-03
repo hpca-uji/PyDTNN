@@ -65,14 +65,11 @@ class EncoderDecoderNumpy(EncoderDecoder[np.ndarray], AbstractBlockLayerNumpy):
         for layer in self.children:
             layer._init_backend_with_model(self.model)
 
-        # type: ignore (encoder has multiple parameters)
-        self.encoder[0]._model_init(prev_shape=enc_shape, x=(x_enc, mask_enc))  # type: ignore
+        self.encoder[0]._model_init(prev_shape=enc_shape, x=(x_enc, mask_enc))  # type: ignore (encoder has multiple parameters)
         for layer in self.encoder[1:]:
-            # type: ignore (encoder has multiple parameters)
-            layer._model_init(prev_shape=enc_shape, x=(x_enc, mask_enc))  # type: ignore
+            layer._model_init(prev_shape=enc_shape, x=(x_enc, mask_enc))  # type: ignore (encoder has multiple parameters)
         for layer in self.decoder:
-            # type: ignore (encoder has multiple parameters)
-            layer._model_init(prev_shape=dec_shape, x=(x_dec, x_enc, mask_dec))  # type: ignore
+            layer._model_init(prev_shape=dec_shape, x=(x_dec, x_enc, mask_dec))  # type: ignore (encoder has multiple parameters)
 
         for layer in self.children:
             self.fwd_time += layer.fwd_time
@@ -94,7 +91,6 @@ class EncoderDecoderNumpy(EncoderDecoder[np.ndarray], AbstractBlockLayerNumpy):
         for i in range(self.enc_layers):  # Encoding layers
             x = self.encoder[i].forward(x, x_mask)  # type: ignore (encoder has multiple parameters)
         for i in range(self.dec_layers):  # Decoding layers
-            # type: ignore (encoder has multiple parameters)
             y = self.decoder[i].forward(y, x, y_mask)  # type: ignore (In transformer's layers is fine)
         self.y = y
         return y
@@ -107,7 +103,6 @@ class EncoderDecoderNumpy(EncoderDecoder[np.ndarray], AbstractBlockLayerNumpy):
             dx_tgt, dx2 = self.decoder[-1 * (i + 1)].backward(dx_tgt)
             dx_enc += dx2
         for i in range(self.enc_layers):  # Enconding layers
-            # type: ignore (encoder has multiple parameters)
-            dx_enc = self.encoder[-1 * (i + 1)].backward(dx_enc)
+            dx_enc = self.encoder[-1 * (i + 1)].backward(dx_enc)  # type: ignore (encoder has multiple parameters)
         # if self.need_dx:
         return dx_tgt, dx_enc

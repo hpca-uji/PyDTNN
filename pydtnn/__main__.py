@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 """PyDTNN Benchmark script."""
 
-from argparse import Namespace
 import cProfile
 import logging
 import logging.config
 import os
 import sys
 import time
+from argparse import Namespace
 from importlib import resources
 from pathlib import Path
 
@@ -78,7 +78,6 @@ def main(config: Namespace) -> None:  # noqa: C901
         _ = model.evaluate()
         if model.comm_rank == 0:
             t2 = time.time()
-            # noinspection PyUnboundLocalVariable
             total_time = t2 - t1
             if model.evaluate_only:
                 logger.info(f"Testing time: {total_time:5.4f} s")
@@ -155,7 +154,6 @@ def main(config: Namespace) -> None:  # noqa: C901
         _ = model.evaluate()
         if model.comm_rank == 0:
             t2 = time.time()
-            # noinspection PyUnboundLocalVariable
             total_time = t2 - t1
             if not model.evaluate_only:
                 logger.info(f"Testing time: {total_time:5.4f} s")

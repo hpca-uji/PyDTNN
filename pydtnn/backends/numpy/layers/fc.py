@@ -36,7 +36,8 @@ class FCNumpy(FC[np.ndarray], LayerNumpy):
         """Initialize layer parameters, buffers, and performance models."""
         super()._model_init(prev_shape, x)
         self.weights = np.asarray(
-            self.weights_initializer(self.weights_shape, self.model.param_dtype, self.model.random), order="C"
+            self.weights_initializer(self.weights_shape, self.model.param_dtype, self.model.random),
+            order="C",
         )
         self.nparams += self.weights.size
         self.memory_used += self.weights.nbytes
@@ -56,7 +57,8 @@ class FCNumpy(FC[np.ndarray], LayerNumpy):
 
         if self.use_bias:
             self.biases = np.asarray(
-                self.biases_initializer(self.shape, self.model.param_dtype, self.model.random), order="C"
+                self.biases_initializer(self.shape, self.model.param_dtype, self.model.random),
+                order="C",
             )
             self.nparams += self.biases.size
             self.memory_used += self.biases.nbytes

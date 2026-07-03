@@ -51,14 +51,30 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
         o_weights_shape = (self.heads * self.d_k, self.embedl)
         o_biases_shape = (1, self.embedl)
 
-        self.q_weights_cpu = self.weights_initializer(weights_shape, self.model.param_dtype, self.model.random)
-        self.k_weights_cpu = self.weights_initializer(weights_shape, self.model.param_dtype, self.model.random)
-        self.v_weights_cpu = self.weights_initializer(weights_shape, self.model.param_dtype, self.model.random)
-        self.q_biases_cpu = self.biases_initializer(biases_shape, self.model.param_dtype, self.model.random)
-        self.k_biases_cpu = self.biases_initializer(biases_shape, self.model.param_dtype, self.model.random)
-        self.v_biases_cpu = self.biases_initializer(biases_shape, self.model.param_dtype, self.model.random)
-        self.o_weights_cpu = self.weights_initializer(o_weights_shape, self.model.param_dtype, self.model.random)
-        self.o_biases_cpu = self.biases_initializer(o_biases_shape, self.model.param_dtype, self.model.random)
+        self.q_weights_cpu = self.weights_initializer(
+            weights_shape, self.model.param_dtype, self.model.random
+        )
+        self.k_weights_cpu = self.weights_initializer(
+            weights_shape, self.model.param_dtype, self.model.random
+        )
+        self.v_weights_cpu = self.weights_initializer(
+            weights_shape, self.model.param_dtype, self.model.random
+        )
+        self.q_biases_cpu = self.biases_initializer(
+            biases_shape, self.model.param_dtype, self.model.random
+        )
+        self.k_biases_cpu = self.biases_initializer(
+            biases_shape, self.model.param_dtype, self.model.random
+        )
+        self.v_biases_cpu = self.biases_initializer(
+            biases_shape, self.model.param_dtype, self.model.random
+        )
+        self.o_weights_cpu = self.weights_initializer(
+            o_weights_shape, self.model.param_dtype, self.model.random
+        )
+        self.o_biases_cpu = self.biases_initializer(
+            o_biases_shape, self.model.param_dtype, self.model.random
+        )
         self.nparams = 0
         _weights = [
             self.q_weights_cpu,
@@ -252,8 +268,14 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
         #     if dest is not None:
         #         pycuda.driver.memcpy_htod(dest[0], _weights[i])
 
-    def forward(self, query: TensorArray, key: TensorArray, value: TensorArray,
-                mask: TensorArray | None = None, residuals: TensorArray | None = None) -> TensorArray:
+    def forward(
+        self,
+        query: TensorArray,
+        key: TensorArray,
+        value: TensorArray,
+        mask: TensorArray | None = None,
+        residuals: TensorArray | None = None,
+    ) -> TensorArray:
         """Performs the forward pass of the Multi-Head Attention layer."""
         if True:  # self.model.mode == Model.Mode.TRAIN:
             self.query, self.key, self.value = query, key, value

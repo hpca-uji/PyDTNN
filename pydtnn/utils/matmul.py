@@ -32,7 +32,9 @@ def mkl() -> ctypes.CDLL:
     return mkl.lib
 
 
-def _matmul_xgemm(called_from: str, lib: ctypes.CDLL, a: np.ndarray, b: np.ndarray, c: np.ndarray | None = None) -> np.ndarray:
+def _matmul_xgemm(
+    called_from: str, lib: ctypes.CDLL, a: np.ndarray, b: np.ndarray, c: np.ndarray | None = None
+) -> np.ndarray:
     """Internal helper to perform matrix multiplication using BLAS xGEMM interface."""
     order = 101  # 101 for row-major, 102 for column major data structures
     m = a.shape[0]

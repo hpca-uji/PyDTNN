@@ -34,9 +34,9 @@ class LossPycuda(Loss[TensorArray], BasePycuda):
 
     def _weights_to_tensor(self, weights: list[float] | None) -> TensorArray:
         w = super()._weights_to_tensor(weights)
-        w = TensorArray.to_gpu(ary=w,
-                               tensor_format=self.model.tensor_format,
-                               cudnn_dtype=self.model.cudnn_dtype)
+        w = TensorArray.to_gpu(
+            ary=w, tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype
+        )
         return w
 
     def _model_init(self) -> None:

@@ -39,7 +39,9 @@ class Folder(Dataset):
      which belong to class the class B; and img6, which belongs to class C.
     """
 
-    def __init__(self, model: Model, force_test_as_validation: bool = False, debug: bool = False) -> None:
+    def __init__(
+        self, model: Model, force_test_as_validation: bool = False, debug: bool = False
+    ) -> None:
         """
         Initialize dataset
 
@@ -85,7 +87,9 @@ class Folder(Dataset):
 
         num_elementos = sum(self.folder_class_elems.values())
         for folder_class in self.folder_class_elems.keys():
-            self.weight_classes[folder_class] = self.folder_class_elems[folder_class] / num_elementos
+            self.weight_classes[folder_class] = (
+                self.folder_class_elems[folder_class] / num_elementos
+            )
 
         input_shape = (3, 10, 10)  # synthetic
         output_shape = (num_classes_train,)

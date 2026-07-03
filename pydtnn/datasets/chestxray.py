@@ -90,7 +90,9 @@ class ChestXRay(Dataset):
     scale:  +4.002
     """  # noqa: E501
 
-    def __init__(self, model: Model, force_test_as_validation: bool = False, debug: bool = False) -> None:
+    def __init__(
+        self, model: Model, force_test_as_validation: bool = False, debug: bool = False
+    ) -> None:
         """
         Initializes the ChestXRay dataset.
 
@@ -199,7 +201,6 @@ class ChestXRay(Dataset):
         xy_filenames = self._xy_filenames[part]
 
         if part is Dataset.Part.TRAIN and self.model.augment_shuffle:
-            # type: ignore (numpy shuffle's typing wasn't well defined.)
             self.model.random.shuffle(xy_filenames)
 
         xy_filenames = xy_filenames[offset: offset + nsamples]

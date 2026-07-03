@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from collections.abc import Generator
 import logging
 import operator
+from collections.abc import Generator
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -135,7 +135,7 @@ class Memory(Dataset):
 
         if part is Dataset.Part.TRAIN and self.model.augment_shuffle and False:
             idx = np.arange(x.shape[0])
-            self.model.random.shuffle(idx[:self.train_nsamples])
+            self.model.random.shuffle(idx[: self.train_nsamples])
             x = x[idx]
             y = y[idx]
 

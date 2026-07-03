@@ -3,8 +3,6 @@
 
 from __future__ import annotations
 
-# Source: https://github.com/lebedov/scikit-cuda
-
 import ctypes
 import functools
 import re
@@ -12,6 +10,8 @@ import sys
 from typing import TYPE_CHECKING, Callable
 
 import numpy as np
+
+# Source: https://github.com/lebedov/scikit-cuda
 
 
 if TYPE_CHECKING:

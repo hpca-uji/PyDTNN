@@ -172,7 +172,8 @@ class AveragePool2DCython(AveragePool2DNumpy, AbstractPool2DLayerCython):
         """Perform backward pass in NHWC format using row2im transformation."""
         pool_size = np.prod(self.pool_shape)
         dy_rows: np.ndarray = np.tile(
-            dy.reshape(-1, 1, copy=False) / pool_size, (1, pool_size)  # type: ignore (it is correct.)
+            dy.reshape(-1, 1, copy=False) / pool_size,
+            (1, pool_size),  # type: ignore (it is correct.)
         )
         dx: np.ndarray = np.zeros_like(dy, dtype=self.model.dtype)
 

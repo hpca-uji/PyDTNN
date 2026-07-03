@@ -138,19 +138,23 @@ class DecoderPycuda(Decoder[TensorArray], AbstractBlockLayerPycuda):
         last_dim = x.shape[-1]
         return x.reshape((*self.first_dims, last_dim))
 
-    def forward(self, x: TensorArray, x_enc: TensorArray, mask: TensorArray | None = None) -> TensorArray:
+    def forward(
+        self, x: TensorArray, x_enc: TensorArray, mask: TensorArray | None = None
+    ) -> TensorArray:
         """Performs the forward pass through the decoder block."""
         alpha, beta = 1.0, 1.0
         # Self Attention
-        # type: ignore (multiheadattention uses more parameters)
-        self.multiheadattention.forward(x, x, x, mask, x)  # type: ignore
+
+        self.multiheadattention.forward(x, x, x, mask, x)  # type: ignore (multiheadattention uses more parameters)
         self.layernormalization_1.forward(self.multiheadattention.y)
 
         # Self Attention Encoder
         self.multiheadattention_enc.forward(
             self.layernormalization_1.y,
             x_enc,  # type: ignore (multiheadattention uses more parameters)
-            x_enc, mask, self.layernormalization_1.y
+            x_enc,
+            mask,
+            self.layernormalization_1.y,
         )
         self.layernormalization_enc.forward(self.multiheadattention_enc.y)
 

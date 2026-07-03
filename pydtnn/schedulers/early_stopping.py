@@ -31,8 +31,13 @@ class EarlyStopping(SchedulerWithLossOrMetric):
 
     model: Model
 
-    def __init__(self, loss_or_metric: str = "", patience: int = 10,
-                 minimize: bool = True, verbose: bool = True) -> None:
+    def __init__(
+        self,
+        loss_or_metric: str = "",
+        patience: int = 10,
+        minimize: bool = True,
+        verbose: bool = True,
+    ) -> None:
         """
         Initialize the EarlyStopping scheduler.
 

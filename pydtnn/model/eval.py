@@ -21,8 +21,8 @@ from pydtnn.model.base import Base
 from pydtnn.model.sync import Sync
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT,
                                    PYDTNN_MDL_EVENTS, MdlEventEnum)
-from pydtnn.utils.logs import TqdmLogger
 from pydtnn.utils.constants import Array
+from pydtnn.utils.logs import TqdmLogger
 from pydtnn.utils.performance_models import allreduce_time
 
 __all__ = ("Eval",)
@@ -44,8 +44,9 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
         # Private attributes
         self._evaluate_round: int = 0
 
-    def _compute_metrics_funcs(self, y_pred: T, y_targ: T, loss: float, blocking: bool = True,
-                               comm: bool = True) -> tuple[np.ndarray, None] | tuple[None, Any]:
+    def _compute_metrics_funcs(
+        self, y_pred: T, y_targ: T, loss: float, blocking: bool = True, comm: bool = True
+    ) -> tuple[np.ndarray, None] | tuple[None, Any]:
         """
         Computes metrics and loss, optionally synchronizing across processes.
 
@@ -198,7 +199,6 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
 
         part = Dataset.Part[output_prefix.strip("_").upper()]
 
-        # noinspection PyUnboundLocalVariable
         total_loss, total_size, string = self._update_running_average(
             batch_metric=batch_loss,
             total_metric=total_loss,
@@ -210,13 +210,9 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
         self.perf_counter._add_time_and_batch_size(part, current_round, delta, batch_size)
 
         if self.comm_rank == 0:
-            # noinspection PyUnboundLocalVariable
-            # type: ignore (pbar is a 'tqdm', it only is None in self.comm_rank != 0)
-            pbar.set_postfix_str(s=f"{prev_string}{string}", refresh=True)
+            pbar.set_postfix_str(s=f"{prev_string}{string}", refresh=True)  # type: ignore (pbar is a 'tqdm', it only is None in self.comm_rank != 0)
             if part != Dataset.Part.VAL:
-                # type: ignore (Here there is a 'tqdm' object, pbar only is None in
-                # self.comm_rank != 0)
-                pbar.update(batch_size)
+                pbar.update(batch_size)  # type: ignore (Here there is a 'tqdm' object, pbar only is None in self.comm_rank != 0)
 
         return total_loss, total_size, string
 

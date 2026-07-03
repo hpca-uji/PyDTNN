@@ -68,7 +68,7 @@ def _generate_distribution(
     mode: DistributionModeEnum,
     distribution: ProbabilisticDistribution,
     dtype: np.dtype,
-    random: np.random.Generator = random  # type: ignore
+    random: np.random.Generator = random,  # type: ignore
 ) -> np.ndarray:
     """Generates a weight tensor based on the specified distribution and scaling mode."""
     fan_in, fan_out = _compute_fans(shape)
@@ -100,42 +100,54 @@ def _generate_distribution(
     return x
 
 
-def glorot_uniform(shape: ArrayShape, dtype: np.dtype, random: np.random.Generator = random) -> np.ndarray:  # type: ignore
+def glorot_uniform(
+    shape: ArrayShape, dtype: np.dtype, random: np.random.Generator = random
+) -> np.ndarray:  # type: ignore
     """Initializes weights using the Glorot uniform distribution."""
     return _generate_distribution(
         shape, 1.0, DistributionModeEnum.FAN_AVG, ProbabilisticDistribution.UNIFORM, dtype, random
     )
 
 
-def glorot_normal(shape: ArrayShape, dtype: np.dtype, random: np.random.Generator = random) -> np.ndarray:  # type: ignore
+def glorot_normal(
+    shape: ArrayShape, dtype: np.dtype, random: np.random.Generator = random
+) -> np.ndarray:  # type: ignore
     """Initializes weights using the Glorot normal distribution."""
     return _generate_distribution(
         shape, 1.0, DistributionModeEnum.FAN_AVG, ProbabilisticDistribution.NORMAL, dtype, random
     )
 
 
-def he_uniform(shape: ArrayShape, dtype: np.dtype, random: np.random.Generator = random) -> np.ndarray:  # type: ignore
+def he_uniform(
+    shape: ArrayShape, dtype: np.dtype, random: np.random.Generator = random
+) -> np.ndarray:  # type: ignore
     """Initializes weights using the He uniform distribution."""
     return _generate_distribution(
         shape, 2.0, DistributionModeEnum.FAN_IN, ProbabilisticDistribution.UNIFORM, dtype, random
     )
 
 
-def he_normal(shape: ArrayShape, dtype: np.dtype, random: np.random.Generator = random) -> np.ndarray:  # type: ignore
+def he_normal(
+    shape: ArrayShape, dtype: np.dtype, random: np.random.Generator = random
+) -> np.ndarray:  # type: ignore
     """Initializes weights using the He normal distribution."""
     return _generate_distribution(
         shape, 2.0, DistributionModeEnum.FAN_IN, ProbabilisticDistribution.NORMAL, dtype, random
     )
 
 
-def lecun_uniform(shape: ArrayShape, dtype: np.dtype, random: np.random.Generator = random) -> np.ndarray:  # type: ignore
+def lecun_uniform(
+    shape: ArrayShape, dtype: np.dtype, random: np.random.Generator = random
+) -> np.ndarray:  # type: ignore
     """Initializes weights using the LeCun uniform distribution."""
     return _generate_distribution(
         shape, 1.0, DistributionModeEnum.FAN_IN, ProbabilisticDistribution.UNIFORM, dtype, random
     )
 
 
-def lecun_normal(shape: ArrayShape, dtype: np.dtype, random: np.random.Generator = random) -> np.ndarray:  # type: ignore
+def lecun_normal(
+    shape: ArrayShape, dtype: np.dtype, random: np.random.Generator = random
+) -> np.ndarray:  # type: ignore
     """Initializes weights using the LeCun normal distribution."""
     return _generate_distribution(
         shape, 1.0, DistributionModeEnum.FAN_IN, ProbabilisticDistribution.NORMAL, dtype, random

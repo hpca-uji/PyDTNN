@@ -39,7 +39,9 @@ class Cyclone(Memory):
     scale:  ???
     """
 
-    def __init__(self, model: Model, force_test_as_validation: bool = False, debug: bool = False) -> None:
+    def __init__(
+        self, model: Model, force_test_as_validation: bool = False, debug: bool = False
+    ) -> None:
         """
         Initialize the Cyclone dataset.
 
@@ -49,7 +51,9 @@ class Cyclone(Memory):
             debug: Whether to enable debug mode.
         """
         src_filename = os.path.join(model.dataset_path, "cyclone-binary.tar.gz")
-        train_filenames = [os.path.join("cyclone-batches-bin", f"data_batch_{x}.bin") for x in range(1, 6)]
+        train_filenames = [
+            os.path.join("cyclone-batches-bin", f"data_batch_{x}.bin") for x in range(1, 6)
+        ]
         test_filenames = [os.path.join("cyclone-batches-bin", "test_batch.bin")]
 
         x_parts = []

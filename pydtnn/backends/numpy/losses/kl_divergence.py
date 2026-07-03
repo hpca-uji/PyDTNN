@@ -23,7 +23,9 @@ class KLDivergenceNumpy(KLDivergence[np.ndarray], LossNumpy):
         super()._model_init()
         self.memory_used += self.dx.nbytes
 
-    def compute(self, y_pred: np.ndarray, y_targ: np.ndarray, batch_size: int) -> tuple[float, np.ndarray]:
+    def compute(
+        self, y_pred: np.ndarray, y_targ: np.ndarray, batch_size: int
+    ) -> tuple[float, np.ndarray]:
         """
         Computes the KL Divergence loss and the gradient with respect to predictions.
 
