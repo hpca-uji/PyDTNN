@@ -1,6 +1,4 @@
-"""
-Softmax activation module for PyDTNN.
-"""
+"""Softmax activation module for PyDTNN."""
 
 import logging
 
@@ -12,12 +10,10 @@ __all__ = ("Softmax",)
 logger = logging.getLogger(__name__)
 
 
-class Softmax[T: Array](Activation[T]):
-    """
-    Softmax activation layer that computes the normalized exponential of the input.
-    """
+class Softmax[T: Array](Activation[T]):  # noqa: D101 (generics not detected)
+    """Softmax activation layer that computes the normalized exponential of the input."""
 
-    def __init__(self, shape: ArrayShape = (1,), axis: int = 1):
+    def __init__(self, shape: ArrayShape = (1,), axis: int = 1) -> None:
         """
         Initializes the Softmax layer.
 

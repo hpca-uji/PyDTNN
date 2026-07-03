@@ -1,6 +1,4 @@
-"""
-Sigmoid activation function module for PyDTNN.
-"""
+"""Sigmoid activation function module for PyDTNN."""
 
 import logging
 
@@ -12,9 +10,5 @@ __all__ = ("Sigmoid",)
 logger = logging.getLogger(__name__)
 
 
-class Sigmoid[T: Array](Activation[T]):
-    """
-    Sigmoid activation layer that squashes input values into the range (0, 1).
-    """
-
-    pass
+class Sigmoid[T: Array](Activation[T]):  # noqa: D101 (generics not detected)
+    """Sigmoid activation layer that squashes input values into the range (0, 1)."""

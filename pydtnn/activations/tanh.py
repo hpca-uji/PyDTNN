@@ -1,6 +1,4 @@
-"""
-Hyperbolic tangent activation function module.
-"""
+"""Hyperbolic tangent activation function module."""
 
 import logging
 
@@ -12,9 +10,5 @@ __all__ = ("Tanh",)
 logger = logging.getLogger(__name__)
 
 
-class Tanh[T: Array](Activation[T]):
-    """
-    Hyperbolic tangent activation layer.
-    """
-
-    pass
+class Tanh[T: Array](Activation[T]):  # noqa: D101 (generics not detected)
+    """Hyperbolic tangent activation layer."""

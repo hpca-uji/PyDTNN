@@ -1,6 +1,4 @@
-"""
-Module providing the Arctanh activation function for the PyDTNN framework.
-"""
+"""Module providing the Arctanh activation function for the PyDTNN framework."""
 
 import logging
 
@@ -12,9 +10,5 @@ __all__ = ("Arctanh",)
 logger = logging.getLogger(__name__)
 
 
-class Arctanh[T: Array](Activation[T]):
-    """
-    Arctanh activation layer that computes the inverse hyperbolic tangent of the input.
-    """
-
-    pass
+class Arctanh[T: Array](Activation[T]):  # noqa: D101 (generics not detected)
+    """Arctanh activation layer that computes the inverse hyperbolic tangent of the input."""

@@ -10,10 +10,10 @@ __all__ = ("Relu",)
 logger = logging.getLogger(__name__)
 
 
-class Relu[T: Array](Activation[T]):
+class Relu[T: Array](Activation[T]):  # noqa: D101 (generics not detected)
     """Rectified Linear Unit activation layer."""
 
-    def __init__(self, shape: ArrayShape = (1,)):
+    def __init__(self, shape: ArrayShape = (1,)) -> None:
         """Initializes the ReLU layer with a given shape.
 
         Args:

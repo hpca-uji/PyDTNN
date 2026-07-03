@@ -1,6 +1,4 @@
-"""
-Module for defining base activation layer functionality and component selection.
-"""
+"""Module for defining base activation layer functionality and component selection."""
 
 import logging
 
@@ -12,12 +10,10 @@ __all__ = ("Activation",)
 logger = logging.getLogger(__name__)
 
 
-class Activation[T: Array](Layerable[T]):
-    """
-    Base class for all activation layers in the PyDTNN framework.
-    """
+class Activation[T: Array](Layerable[T]):  # noqa: D101 (generics not detected)
+    """Base class for all activation layers in the PyDTNN framework."""
 
-    def __init__(self, shape: ArrayShape = (1,)):
+    def __init__(self, shape: ArrayShape = (1,)) -> None:
         """
         Initializes the activation layer with a specified shape.
 
@@ -26,7 +22,7 @@ class Activation[T: Array](Layerable[T]):
         """
         super().__init__(shape)
 
-    def _model_init(self, prev_shape: ArrayShape, x: T | None = None):
+    def _model_init(self, prev_shape: ArrayShape, x: T | None = None) -> None:
         """
         Initializes the layer parameters based on the previous layer's shape.
 

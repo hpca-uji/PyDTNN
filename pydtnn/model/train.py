@@ -229,7 +229,7 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
         self._training_round += 1
         return (total_loss, total_size, model_sync_count, sync_epoch, string)
 
-    def train(self) -> dict[str, list[np.ndarray]]:
+    def train(self) -> dict[str, list[np.ndarray]]:  # noqa: C901
         """Runs the full training process over multiple epochs."""
         self._ensure_model_runnable()
 
