@@ -35,19 +35,16 @@ job_build:
   - apt-get update
   - mkdir -p ./build
   - export $(make env | xargs)
-  - make deps APT="apt-get -o dir::cache::archives=$PWD/build/apt"
+  - make deps APT="apt-get -o dir::cache::archives=${PWD:?}/build/apt"
   script:
   - make pydtnn-clean
   - make build NPROC=1
-  - make install PYDTNN_PKG=build,test,lint
-  - TAG=v$(python -c "from importlib.metadata import version; print(version('pydtnn'))")
-  - printf '%s\n' GIT_TAG=${TAG:?} PUBLIC_TAG=$(git tag | grep -xF ${TAG:?}) > ./build/gitlab.env
+  - make install PYDTNN_PKG=test,lint
   - make test NPROC=1
   - make lint NPROC=1
 
   artifacts:
     reports:
-      dotenv: ./build/gitlab.env
       junit: ./build/pydtnn/tests.xml
       coverage_report:
         coverage_format: cobertura
@@ -94,7 +91,7 @@ job_push:
   stage: push
 
   rules:
-  - if: '$CI_COMMIT_BRANCH == $BRANCH_WORK && $PUBLIC_TAG == ""'
+  - if: '$CI_COMMIT_BRANCH == $BRANCH_WORK'
 
   tags: [ lorca-ubuntu ]
   image: registry.gitlab.com/gitlab-org/cli:latest
@@ -105,6 +102,7 @@ job_push:
   - job: job_merge
 
   before_script:
+  - GIT_TAG=$(basename ./build/pydtnn/pydtnn-*.tar.gz | sed -nE 's|^pydtnn-(.*)\.tar\.gz$|v\1|p')
   - glab auth login --hostname "${CI_SERVER_FQDN:?}" --token "${CI_JOB_TOKEN:?}"
   script:
   - glab release delete "${GIT_TAG:?}" --yes || true
