@@ -6,7 +6,6 @@ import logging
 from typing import Any
 
 import numpy as np
-import pycuda
 from pycuda import gpuarray  # type: ignore
 
 from pydtnn import drv
@@ -147,16 +146,16 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
 
         # Weights to GPU
         # self.copy_weights()
-        _weights_types = [
-            "CUDNN_MH_ATTN_Q_WEIGHTS",
-            "CUDNN_MH_ATTN_K_WEIGHTS",
-            "CUDNN_MH_ATTN_V_WEIGHTS",
-            "CUDNN_MH_ATTN_O_WEIGHTS",
-            "CUDNN_MH_ATTN_Q_BIASES",
-            "CUDNN_MH_ATTN_K_BIASES",
-            "CUDNN_MH_ATTN_V_BIASES",
-            "CUDNN_MH_ATTN_O_BIASES",
-        ]
+        # _weights_types = [
+        #     "CUDNN_MH_ATTN_Q_WEIGHTS",
+        #     "CUDNN_MH_ATTN_K_WEIGHTS",
+        #     "CUDNN_MH_ATTN_V_WEIGHTS",
+        #     "CUDNN_MH_ATTN_O_WEIGHTS",
+        #     "CUDNN_MH_ATTN_Q_BIASES",
+        #     "CUDNN_MH_ATTN_K_BIASES",
+        #     "CUDNN_MH_ATTN_V_BIASES",
+        #     "CUDNN_MH_ATTN_O_BIASES",
+        # ]
         _weights = [
             self.q_weights_cpu,
             self.k_weights_cpu,
@@ -205,24 +204,24 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
             shape=(self.batch, self.beam, self.seq), fill_value=self.seq, dtype=np.int32
         )
         # self.dev_seq_lengths_QO = np.full(shape=(self.batch*self.beam), fill_value=self.seq, dtype=np.int32)
-        dev_seq_lengths_QO = np.copy(self.y.seq_length_array)
-        self.dev_seq_lengths_QO = gpuarray.to_gpu(dev_seq_lengths_QO)
+        dev_seq_lengths_qo = np.copy(self.y.seq_length_array)
+        self.dev_seq_lengths_qo = gpuarray.to_gpu(dev_seq_lengths_qo)
         # self.dev_seq_lengths_KV = np.full(shape=(self.batch*self.beam), fill_value=self.seq, dtype=np.int32)
-        dev_seq_lengths_KV = np.copy(self.dkey.seq_length_array)
-        self.dev_seq_lengths_KV = gpuarray.to_gpu(dev_seq_lengths_KV)
+        dev_seq_lengths_kv = np.copy(self.dkey.seq_length_array)
+        self.dev_seq_lengths_kv = gpuarray.to_gpu(dev_seq_lengths_kv)
 
     def copy_weights(self) -> None:
         """Copies weights from CPU to GPU memory."""
-        _weights_types = [
-            "CUDNN_MH_ATTN_Q_WEIGHTS",
-            "CUDNN_MH_ATTN_K_WEIGHTS",
-            "CUDNN_MH_ATTN_V_WEIGHTS",
-            "CUDNN_MH_ATTN_O_WEIGHTS",
-            "CUDNN_MH_ATTN_Q_BIASES",
-            "CUDNN_MH_ATTN_K_BIASES",
-            "CUDNN_MH_ATTN_V_BIASES",
-            "CUDNN_MH_ATTN_O_BIASES",
-        ]
+        # _weights_types = [
+        #     "CUDNN_MH_ATTN_Q_WEIGHTS",
+        #     "CUDNN_MH_ATTN_K_WEIGHTS",
+        #     "CUDNN_MH_ATTN_V_WEIGHTS",
+        #     "CUDNN_MH_ATTN_O_WEIGHTS",
+        #     "CUDNN_MH_ATTN_Q_BIASES",
+        #     "CUDNN_MH_ATTN_K_BIASES",
+        #     "CUDNN_MH_ATTN_V_BIASES",
+        #     "CUDNN_MH_ATTN_O_BIASES",
+        # ]
         _weights = [
             self.q_weights_cpu,
             self.k_weights_cpu,
@@ -239,18 +238,18 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
         )
         return
 
-        for i in range(len(_weights)):
-            wDesc, dest = cudnn.cudnnGetMultiHeadAttnWeights(
-                self.model.cudnn_handle,
-                self.attn_desc,
-                cudnn.cudnnMultiHeadAttnWeightKind[_weights_types[i]],
-                self.weights_size,
-                self.weights.ptr_voidp,
-            )
-            print(_weights_types[i], dest)
-            # Check wDesc order matches
-            if dest is not None:
-                pycuda.driver.memcpy_htod(dest[0], _weights[i])
+        # for i in range(len(_weights)):
+        #     wDesc, dest = cudnn.cudnnGetMultiHeadAttnWeights(
+        #         self.model.cudnn_handle,
+        #         self.attn_desc,
+        #         cudnn.cudnnMultiHeadAttnWeightKind[_weights_types[i]],
+        #         self.weights_size,
+        #         self.weights.ptr_voidp,
+        #     )
+        #     print(_weights_types[i], dest)
+        #     # Check wDesc order matches
+        #     if dest is not None:
+        #         pycuda.driver.memcpy_htod(dest[0], _weights[i])
 
     def forward(self, query: TensorArray, key: TensorArray, value: TensorArray,
                 mask: TensorArray | None = None, residuals: TensorArray | None = None) -> TensorArray:
@@ -265,8 +264,8 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
                 self.current_index,
                 self.low_window_index,
                 self.high_window_index,
-                self.dev_seq_lengths_QO.ptr,
-                self.dev_seq_lengths_KV.ptr,
+                self.dev_seq_lengths_qo.ptr,
+                self.dev_seq_lengths_kv.ptr,
                 self.dquery.desc,
                 query.ptr,
                 residuals.ptr,
@@ -290,8 +289,8 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
                 self.current_index,
                 self.low_window_index,
                 self.high_window_index,
-                self.dev_seq_lengths_QO.ptr,
-                self.dev_seq_lengths_KV.ptr,
+                self.dev_seq_lengths_qo.ptr,
+                self.dev_seq_lengths_kv.ptr,
                 self.dquery.desc,
                 query.ptr,
                 residuals.ptr,
@@ -317,8 +316,8 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
             self.attn_desc,
             self.low_window_index,
             self.high_window_index,
-            self.dev_seq_lengths_QO.ptr,
-            self.dev_seq_lengths_KV.ptr,
+            self.dev_seq_lengths_qo.ptr,
+            self.dev_seq_lengths_kv.ptr,
             self.y.desc,
             dy.ptr_voidp,
             self.dquery.desc,

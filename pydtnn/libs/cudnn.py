@@ -3674,7 +3674,7 @@ def cudnnMultiHeadAttnForward(
     curr_idx: int,
     lo_win_idx: tuple[int, ...],
     hi_win_idx: tuple[int, ...],
-    dev_seq_lengths_qO: tuple[int, ...],
+    dev_seq_lengths_qo: tuple[int, ...],
     dev_seq_lengths_kv: tuple[int, ...],
     q_desc: int,
     queries: ctypes.c_void_p,
@@ -3713,7 +3713,7 @@ def cudnnMultiHeadAttnForward(
     lo_win_idx[], hi_win_idx[] : int[]
         Two host integer arrays specifying the start and end indices of the attention window for each Q time-step.
         The start index in K, V sets is inclusive, and the end index is exclusive.
-    dev_seq_lengths_qO[] : int[]
+    dev_seq_lengths_qo[] : int[]
         Device array specifying sequence lengths of query, residual, and output sequence data.
     dev_seq_lengths_kv[] : int[]
         Device array specifying sequence lengths of key and value input data.
@@ -3758,7 +3758,7 @@ def cudnnMultiHeadAttnForward(
         curr_idx,
         (ctypes.c_int * len(lo_win_idx))(lo_win_idx),
         (ctypes.c_int * len(hi_win_idx))(hi_win_idx),
-        (ctypes.c_int * len(dev_seq_lengths_qO))(dev_seq_lengths_qO),
+        (ctypes.c_int * len(dev_seq_lengths_qo))(dev_seq_lengths_qo),
         (ctypes.c_int * len(dev_seq_lengths_kv))(dev_seq_lengths_kv),
         q_desc,
         queries,

@@ -37,7 +37,10 @@ class NadamPycuda(Nadam[TensorArray], OptimizerPycuda):
         operations_gpu = """
             m[i] = beta1 * m[i] + (1 - beta1) * dw[i];
             v[i] = beta2 * v[i] + (1 - beta2) * {func}(dw[i], 2);
-            w[i] -= lr * (decay * w[i] + (((m[i] + (1 - beta1) * dw[i]) / (1 - {func}(beta1, it))) / sqrtf((v[i] / (1 - {func}(beta2, it))) + epsilon)))
+            w[i] -= lr * (decay * w[i] + (
+                ((m[i] + (1 - beta1) * dw[i]) / (1 - {func}(beta1, it)))
+                / sqrtf((v[i] / (1 - {func}(beta2, it))) + epsilon)
+            ))
         """.format(func=func_pow[self.model.dtype])
 
         self.update_kernel = ElementwiseKernel(parameters_gpu, operations_gpu, "Nadam_kernel")

@@ -47,7 +47,11 @@ class ConcatenationBlockPycuda(ConcatenationBlock[TensorArray], AbstractBlockLay
                        int w_ = i / C % W;
                        int h_ = i / (W*C) % H;
                        int n_ = i / (H*W*C) % N;
-                       int i_ = n_ * H * W * (last_c-first_c) + h_ * W * (last_c-first_c) + w_ * (last_c-first_c) + (c_-first_c);
+                       int i_ = \\
+                            (n_ * H * W * (last_c - first_c)) \\
+                            + (h_ * W * (last_c - first_c)) \\
+                            + (w_ * (last_c - first_c)) \\
+                            + (c_ - first_c);
                        dst[i] = src[i_];
                    }
                 """
@@ -58,7 +62,10 @@ class ConcatenationBlockPycuda(ConcatenationBlock[TensorArray], AbstractBlockLay
                        int w_ = i % W;
                        int h_ = i / W % H;
                        int n_ = i / (C*H*W) % N;
-                       int i_ = n_ * (last_c-first_c) * H * W + (c_-first_c) * H * W + h_ * W + w_;
+                       int i_ = \\
+                           (n_ * (last_c-first_c) * H * W) \\
+                           + ((c_-first_c) * H * W) \\
+                           + (h_ * W + w_);
                        dst[i] = src[i_];
                    }
                 """
@@ -78,7 +85,11 @@ class ConcatenationBlockPycuda(ConcatenationBlock[TensorArray], AbstractBlockLay
                        int w_ = i / C % W;
                        int h_ = i / (W*C) % H;
                        int n_ = i / (H*W*C) % N;
-                       int i_ = n_ * H * W * (last_c-first_c) + h_ * W * (last_c-first_c) + w_ * (last_c-first_c) + (c_-first_c);
+                       int i_ = \\
+                           (n_ * H * W * (last_c - first_c)) \\
+                           + (h_ * W * (last_c - first_c)) \\
+                           + (w_ * (last_c - first_c)) \\
+                           + (c_ - first_c);
                        dst[i_] = src[i];
                    }
                 """
@@ -89,7 +100,10 @@ class ConcatenationBlockPycuda(ConcatenationBlock[TensorArray], AbstractBlockLay
                        int w_ = i % W;
                        int h_ = i / W % H;
                        int n_ = i / (C*H*W) % N;
-                       int i_ = n_ * (last_c-first_c) * H * W + (c_-first_c) * H * W + h_ * W + w_;
+                       int i_ = \\
+                           (n_ * (last_c - first_c) * H * W) \\
+                           + ((c_ - first_c) * H * W) \\
+                           + (h_ * W + w_);
                        dst[i_] = src[i];
                    }
                 """
