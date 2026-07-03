@@ -76,14 +76,12 @@ job_merge:
   resource_group: $BRANCH_MAIN
 
   before_script:
-  - git remote -v
   - GIT_REMOTE_NAME=$(git remote)
   - GIT_REMOTE_URL=$(git remote get-url "${GIT_REMOTE_NAME:?}")
   - git config --global user.name "${GITLAB_USER_NAME:?}"
   - git config --global user.email "${GITLAB_USER_EMAIL:?}"
   - git remote set-url "${GIT_REMOTE_NAME}" "${GIT_REMOTE_URL/gitlab-ci-token:[^@]*@/gitlab-ci-token:${CI_JOB_TOKEN:?}@}"
   - glab auth login --hostname "${CI_SERVER_FQDN:?}" --token "${CI_JOB_TOKEN:?}"
-  - git remote -v
   script:
   - git fetch "${GIT_REMOTE_NAME:?}" "${BRANCH_MAIN:?}"
   - git checkout -B "${BRANCH_MAIN:?}" "${GIT_REMOTE_NAME:?}/${BRANCH_MAIN:?}"
