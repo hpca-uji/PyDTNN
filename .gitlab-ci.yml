@@ -93,7 +93,7 @@ job_push:
   stage: push
 
   rules:
-  - if: '$CI_COMMIT_BRANCH == $BRANCH_WORK' # && $PUBLIC_TAG == ""'
+  - if: '$CI_COMMIT_BRANCH == $BRANCH_WORK && $PUBLIC_TAG == ""'
 
   tags: [ lorca-ubuntu ]
   image: registry.gitlab.com/gitlab-org/cli:latest
