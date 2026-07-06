@@ -89,7 +89,7 @@ def main(config: Namespace) -> None:  # noqa: C901
             raise SystemExit(0)
 
     # Barrier
-    if model.comm is not None:
+    if model.comm:
         model.comm.Barrier()
 
     # Training
@@ -106,7 +106,7 @@ def main(config: Namespace) -> None:  # noqa: C901
     history = model.train()
 
     # Barrier
-    if model.comm is not None:
+    if model.comm:
         model.comm.Barrier()
 
     # Print performance results and evaluation history
@@ -166,7 +166,7 @@ def main(config: Namespace) -> None:  # noqa: C901
         model.perf_counter.print_report()
 
     # Barrier and finalize
-    if model.comm is not None and model.MPI is not None:
+    if model.comm and model.MPI:
         model.comm.Barrier()
         # The next line is required if running under SLURM (it seems it is not
         # automatically called at exit)

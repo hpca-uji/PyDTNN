@@ -249,7 +249,7 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
                 raise ValueError("Please, install mpi4py to allow parallel MPI execution!")
             self.MPI, self.comm = (MPI, MPI.COMM_WORLD)
         else:
-            self.MPI, self.comm = (None, None)
+            self.MPI, self.comm = (None, None)  # type: ignore (Excepcionally, they can be "None")
 
         # Communication size
         self.rank_weight = 1.0

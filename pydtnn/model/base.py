@@ -223,8 +223,8 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
 
     nprocs: int
     blocking_mpi: bool
-    MPI: MPI_MODULE | None
-    comm: MPI_COMM | None
+    MPI: MPI_MODULE
+    comm: MPI_COMM
     comm_size: int
     comm_rank: int
     comm_nsamples: list[tuple[int]]

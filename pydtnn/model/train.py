@@ -361,7 +361,7 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
                     )
 
             if sync_epoch:
-                if self.comm is not None:
+                if self.comm:
                     op = MPI.LAND  # type: ignore
                     global_terminate = self.comm.allreduce(terminate, op=op)
                 else:

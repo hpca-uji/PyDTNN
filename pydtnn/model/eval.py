@@ -70,7 +70,7 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
             _losses = self.total_metrics.copy()
             _losses[0] = loss
 
-        if self.comm is not None and comm:
+        if self.comm and comm:
             assert MPI
 
             _losses /= self.comm_size
