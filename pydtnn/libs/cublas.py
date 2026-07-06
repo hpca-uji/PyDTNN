@@ -465,14 +465,16 @@ def cublasCreate() -> int:
     assert _libcublas
     status = _libcublas.cublasCreate_v2(ctypes.byref(handle))
     cublasCheckStatus(status)
-    return handle.value
+    value = handle.value
+    assert value
+    return value
 
 
 _libcublas.cublasDestroy_v2.restype = int
 _libcublas.cublasDestroy_v2.argtypes = [_types.handle]
 
 
-def cublasDestroy(handle: int) -> int:
+def cublasDestroy(handle: int) -> None:
     """
     Destroy a CUBLAS handle and release resources.
 
@@ -549,6 +551,7 @@ def _get_cublas_version() -> str:
     """
 
     cublas_path = utils.find_lib_path("cublas")
+    assert cublas_path
     try:
         match = re.search(r"[\D\.]+\.+(\d+)\.(\d+)", utils.get_soname(cublas_path))
         assert match
@@ -619,7 +622,7 @@ class _cublas_version_req(object):  # noqa: N801
         if _cublas_version >= int(self.vi):
             return f
         else:
-            return f_new
+            return f_new  # type: ignore
 
 
 _libcublas.cublasSetStream_v2.restype = int
@@ -679,7 +682,9 @@ def cublasGetStream(handle: int) -> int:
     assert _libcublas
     status = _libcublas.cublasGetStream_v2(handle, ctypes.byref(id))
     cublasCheckStatus(status)
-    return id.value
+    value = id.value
+    assert value is not None
+    return value
 
 
 _libcublas.cublasGetPointerMode_v2.restype = int
@@ -1273,7 +1278,13 @@ def cublasSaxpy(
     """Computes y = alpha*x + y (single precision real)."""
     assert _libcublas
     status = _libcublas.cublasSaxpy_v2(
-        handle, n, ctypes.byref(ctypes.c_float(alpha)), int(x), incx, int(y), incy
+        handle,
+        n,
+        ctypes.byref(ctypes.c_float(alpha)),  # type: ignore
+        int(x),
+        incx,
+        int(y),
+        incy
     )
     cublasCheckStatus(status)
 
@@ -2044,8 +2055,8 @@ def cublasSrot(
         incx,
         int(y),
         incy,
-        ctypes.byref(ctypes.c_float(c)),
-        ctypes.byref(ctypes.c_float(s)),
+        ctypes.byref(ctypes.c_float(c)),  # type: ignore
+        ctypes.byref(ctypes.c_float(s)),  # type: ignore
     )
     cublasCheckStatus(status)
 
@@ -2142,7 +2153,7 @@ def cublasCrot(
         incx,
         int(y),
         incy,
-        ctypes.byref(ctypes.c_float(c)),
+        ctypes.byref(ctypes.c_float(c)),  # type: ignore
         ctypes.byref(cuda.cuFloatComplex(s.real, s.imag)),
     )
     cublasCheckStatus(status)
@@ -2191,8 +2202,8 @@ def cublasCsrot(
         incx,
         int(y),
         incy,
-        ctypes.byref(ctypes.c_float(c)),
-        ctypes.byref(ctypes.c_float(s)),
+        ctypes.byref(ctypes.c_float(c)),  # type: ignore
+        ctypes.byref(ctypes.c_float(s)),  # type: ignore
     )
     cublasCheckStatus(status)
 
@@ -2369,8 +2380,8 @@ def cublasSrotg(
     handle: int, a: np.float32, b: np.float32
 ) -> tuple[np.float32, np.float32, np.float32]:
     """Constructs a Givens rotation matrix (single precision real)."""
-    _a = ctypes.c_float(a)
-    _b = ctypes.c_float(b)
+    _a = ctypes.c_float(a)  # type: ignore
+    _b = ctypes.c_float(b)  # type: ignore
     _c = ctypes.c_float()
     _s = ctypes.c_float()
     assert _libcublas
@@ -2565,7 +2576,7 @@ def cublasSrotm(
     incx: int,
     y: ctypes.c_void_p,
     incy: int,
-    sparam: np.ndarray[np.float32],
+    sparam: np.ndarray[tuple, np.dtype[np.float32]],
 ) -> None:
     """Applies a real modified Givens rotation (single precision)."""
     assert _libcublas
@@ -2596,7 +2607,7 @@ def cublasDrotm(
     incx: int,
     y: ctypes.c_void_p,
     incy: int,
-    sparam: np.ndarray[np.float64],
+    sparam: np.ndarray[tuple, np.dtype[np.float64]],
 ) -> None:
     """Applies a real modified Givens rotation (double precision)."""
     assert _libcublas
@@ -2664,12 +2675,12 @@ _libcublas.cublasSrotmg_v2.argtypes = [
 
 def cublasSrotmg(
     handle: int, d1: np.float32, d2: np.float32, x1: np.float32, y1: np.float32
-) -> np.ndarray[np.float32]:
+) -> np.ndarray[tuple, np.dtype[np.float32]]:
     """Constructs a real modified Givens rotation matrix (single precision)."""
-    _d1 = ctypes.c_float(d1)
-    _d2 = ctypes.c_float(d2)
-    _x1 = ctypes.c_float(x1)
-    _y1 = ctypes.c_float(y1)
+    _d1 = ctypes.c_float(d1)  # type: ignore
+    _d2 = ctypes.c_float(d2)  # type: ignore
+    _x1 = ctypes.c_float(x1)  # type: ignore
+    _y1 = ctypes.c_float(y1)  # type: ignore
     sparam = np.empty(5, np.float32)
     assert _libcublas
     status = _libcublas.cublasSrotmg_v2(
@@ -2699,7 +2710,7 @@ _libcublas.cublasDrotmg_v2.argtypes = [
 
 def cublasDrotmg(
     handle: int, d1: np.float64, d2: np.float64, x1: np.float64, y1: np.float64
-) -> np.ndarray[np.float64]:
+) -> np.ndarray[tuple, np.dtype[np.float64]]:
     """Constructs a real modified Givens rotation matrix (double precision)."""
     _d1 = ctypes.c_double(d1)
     _d2 = ctypes.c_double(d2)
@@ -2772,7 +2783,13 @@ _libcublas.cublasSscal_v2.argtypes = [
 def cublasSscal(handle: int, n: int, alpha: np.float32, x: ctypes.c_void_p, incx: int) -> None:
     """Scales a vector by a scalar (single precision real)."""
     assert _libcublas
-    status = _libcublas.cublasSscal_v2(handle, n, ctypes.byref(ctypes.c_float(alpha)), int(x), incx)
+    status = _libcublas.cublasSscal_v2(
+        handle,
+        n,
+        ctypes.byref(ctypes.c_float(alpha)),  # type: ignore
+        int(x),
+        incx
+    )
     cublasCheckStatus(status)
 
 
@@ -2858,7 +2875,11 @@ def cublasCsscal(handle: int, n: int, alpha: np.float32, x: ctypes.c_void_p, inc
     """Scales a complex vector by a real scalar (single precision)."""
     assert _libcublas
     status = _libcublas.cublasCsscal_v2(
-        handle, n, ctypes.byref(ctypes.c_float(alpha)), int(x), incx
+        handle,
+        n,
+        ctypes.byref(ctypes.c_float(alpha)),  # type: ignore
+        int(x),
+        incx
     )
     cublasCheckStatus(status)
 
@@ -3136,21 +3157,21 @@ def cublasSgbmv(
     `cublas<t>gbmv <http://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-gbmv>`_
     """
 
-    trans = trans.encode("ascii")
+    trans_bytes = trans.encode("ascii")
     assert _libcublas
     status = _libcublas.cublasSgbmv_v2(
         handle,
-        trans,
+        trans_bytes,
         m,
         n,
         kl,
         ku,
-        ctypes.byref(ctypes.c_float(alpha)),
+        ctypes.byref(ctypes.c_float(alpha)),  # type: ignore
         int(A),
         lda,
         int(x),
         incx,
-        ctypes.byref(ctypes.c_float(beta)),
+        ctypes.byref(ctypes.c_float(beta)),  # type: ignore
         int(y),
         incy,
     )
@@ -3203,21 +3224,21 @@ def cublasDgbmv(
     `cublas<t>gbmv <http://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-gbmv>`_
     """
 
-    trans = trans.encode("ascii")
+    trans_bytes = trans.encode("ascii")
     assert _libcublas
     status = _libcublas.cublasDgbmv_v2(
         handle,
-        trans,
+        trans_bytes,
         m,
         n,
         kl,
         ku,
-        ctypes.byref(ctypes.c_double(alpha)),
+        ctypes.byref(ctypes.c_double(alpha)),  # type: ignore
         int(A),
         lda,
         int(x),
         incx,
-        ctypes.byref(ctypes.c_double(beta)),
+        ctypes.byref(ctypes.c_double(beta)),  # type: ignore
         int(y),
         incy,
     )
@@ -3270,11 +3291,11 @@ def cublasCgbmv(
     `cublas<t>gbmv <http://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-gbmv>`_
     """
 
-    trans = trans.encode("ascii")
+    trans_bytes = trans.encode("ascii")
     assert _libcublas
     status = _libcublas.cublasCgbmv_v2(
         handle,
-        trans,
+        trans_bytes,
         m,
         n,
         kl,
@@ -3335,11 +3356,11 @@ def cublasZgbmv(
     ----------
     `cublas<t>gbmv <http://docs.nvidia.com/cuda/cublas/#cublas-lt-t-gt-gbmv>`_
     """
-    trans = trans.encode("ascii")
+    trans_bytes = trans.encode("ascii")
     assert _libcublas
     status = _libcublas.cublasZgbmv_v2(
         handle,
-        trans,
+        trans_bytes,
         m,
         n,
         kl,
@@ -3438,12 +3459,12 @@ def cublasSgemv(
         _CUBLAS_OP[trans],
         m,
         n,
-        ctypes.byref(ctypes.c_float(alpha)),
+        ctypes.byref(ctypes.c_float(alpha)),  # type: ignore
         int(A),
         lda,
         int(x),
         incx,
-        ctypes.byref(ctypes.c_float(beta)),
+        ctypes.byref(ctypes.c_float(beta)),  # type: ignore
         int(y),
         incy,
     )
@@ -3682,7 +3703,16 @@ def cublasSger(
     """Rank-1 operation (single precision real)."""
     assert _libcublas
     status = _libcublas.cublasSger_v2(
-        handle, m, n, ctypes.byref(ctypes.c_float(alpha)), int(x), incx, int(y), incy, int(A), lda
+        handle,
+        m,
+        n,
+        ctypes.byref(ctypes.c_float(alpha)),  # type: ignore
+        int(x),
+        incx,
+        int(y),
+        incy,
+        int(A),
+        lda
     )
     cublasCheckStatus(status)
 
@@ -3990,12 +4020,12 @@ def cublasSsbmv(
         _CUBLAS_FILL_MODE[uplo],
         n,
         k,
-        ctypes.byref(ctypes.c_float(alpha)),
+        ctypes.byref(ctypes.c_float(alpha)),  # type: ignore
         int(A),
         lda,
         int(x),
         incx,
-        ctypes.byref(ctypes.c_float(beta)),
+        ctypes.byref(ctypes.c_float(beta)),  # type: ignore
         int(y),
         incy,
     )
@@ -4131,11 +4161,11 @@ def cublasSspmv(
         handle,
         _CUBLAS_FILL_MODE[uplo],
         n,
-        ctypes.byref(ctypes.c_float(alpha)),
-        ctypes.byref(ctypes.c_float(AP)),
+        ctypes.byref(ctypes.c_float(alpha)),  # type: ignore
+        ctypes.byref(ctypes.c_float(AP)),  # type: ignore
         int(x),
         incx,
-        ctypes.byref(ctypes.c_float(beta)),
+        ctypes.byref(ctypes.c_float(beta)),  # type: ignore
         int(y),
         incy,
     )
@@ -4253,7 +4283,7 @@ def cublasSspr(
         handle,
         _CUBLAS_FILL_MODE[uplo],
         n,
-        ctypes.byref(ctypes.c_float(alpha)),
+        ctypes.byref(ctypes.c_float(alpha)),  # type: ignore
         int(x),
         incx,
         int(AP),
@@ -4290,7 +4320,7 @@ def cublasDspr(
         handle,
         _CUBLAS_FILL_MODE[uplo],
         n,
-        ctypes.byref(ctypes.c_double(alpha)),
+        ctypes.byref(ctypes.c_double(alpha)),  # type: ignore
         int(x),
         incx,
         int(AP),
@@ -4368,7 +4398,7 @@ def cublasSspr2(
         handle,
         _CUBLAS_FILL_MODE[uplo],
         n,
-        ctypes.byref(ctypes.c_float(alpha)),
+        ctypes.byref(ctypes.c_float(alpha)),  # type: ignore
         int(x),
         incx,
         int(y),
@@ -4411,7 +4441,7 @@ def cublasDspr2(
         handle,
         _CUBLAS_FILL_MODE[uplo],
         n,
-        ctypes.byref(ctypes.c_double(alpha)),
+        ctypes.byref(ctypes.c_double(alpha)),  # type: ignore
         int(x),
         incx,
         int(y),
@@ -4497,12 +4527,12 @@ def cublasSsymv(
         handle,
         _CUBLAS_FILL_MODE[uplo],
         n,
-        ctypes.byref(ctypes.c_float(alpha)),
+        ctypes.byref(ctypes.c_float(alpha)),  # type: ignore
         int(A),
         lda,
         int(x),
         incx,
-        ctypes.byref(ctypes.c_float(beta)),
+        ctypes.byref(ctypes.c_float(beta)),  # type: ignore
         int(y),
         incy,
     )
@@ -4548,12 +4578,12 @@ def cublasDsymv(
         handle,
         _CUBLAS_FILL_MODE[uplo],
         n,
-        ctypes.byref(ctypes.c_double(alpha)),
+        ctypes.byref(ctypes.c_double(alpha)),  # type: ignore
         int(A),
         lda,
         int(x),
         incx,
-        ctypes.byref(ctypes.c_double(beta)),
+        ctypes.byref(ctypes.c_double(beta)),  # type: ignore
         int(y),
         incy,
     )
@@ -4725,7 +4755,7 @@ def cublasSsyr(
         handle,
         _CUBLAS_FILL_MODE[uplo],
         n,
-        ctypes.byref(ctypes.c_float(alpha)),
+        ctypes.byref(ctypes.c_float(alpha)),  # type: ignore
         int(x),
         incx,
         int(A),
@@ -4765,7 +4795,7 @@ def cublasDsyr(
         handle,
         _CUBLAS_FILL_MODE[uplo],
         n,
-        ctypes.byref(ctypes.c_double(alpha)),
+        ctypes.byref(ctypes.c_double(alpha)),  # type: ignore
         int(x),
         incx,
         int(A),
@@ -4928,7 +4958,7 @@ def cublasSsyr2(
         handle,
         _CUBLAS_FILL_MODE[uplo],
         n,
-        ctypes.byref(ctypes.c_float(alpha)),
+        ctypes.byref(ctypes.c_float(alpha)),  # type: ignore
         int(x),
         incx,
         int(y),
@@ -7053,7 +7083,7 @@ def cublasChpr(
         handle,
         _CUBLAS_FILL_MODE[uplo],
         n,
-        ctypes.byref(ctypes.c_float(alpha)),
+        ctypes.byref(ctypes.c_float(alpha)),  # type: ignore
         int(x),
         incx,
         int(AP),
@@ -7090,7 +7120,7 @@ def cublasZhpr(
         handle,
         _CUBLAS_FILL_MODE[uplo],
         n,
-        ctypes.byref(ctypes.c_double(alpha)),
+        ctypes.byref(ctypes.c_double(alpha)),  # type: ignore
         int(x),
         incx,
         int(AP),
@@ -7316,12 +7346,12 @@ def cublasSgemm(
         m,
         n,
         k,
-        ctypes.byref(ctypes.c_float(alpha)),
+        ctypes.byref(ctypes.c_float(alpha)),  # type: ignore
         int(A),
         lda,
         int(B),
         ldb,
-        ctypes.byref(ctypes.c_float(beta)),
+        ctypes.byref(ctypes.c_float(beta)),  # type: ignore
         int(C),
         ldc,
     )
@@ -7432,12 +7462,12 @@ def cublasDgemm(
         m,
         n,
         k,
-        ctypes.byref(ctypes.c_double(alpha)),
+        ctypes.byref(ctypes.c_double(alpha)),  # type: ignore
         int(A),
         lda,
         int(B),
         ldb,
-        ctypes.byref(ctypes.c_double(beta)),
+        ctypes.byref(ctypes.c_double(beta)),  # type: ignore
         int(C),
         ldc,
     )
@@ -7592,10 +7622,10 @@ def cublasSsymm(
         _CUBLAS_FILL_MODE[uplo],
         m,
         n,
-        ctypes.byref(ctypes.c_float(alpha)),
+        ctypes.byref(ctypes.c_float(alpha)),  # type: ignore
         int(A),
         lda,
-        ctypes.byref(ctypes.c_float(beta)),
+        ctypes.byref(ctypes.c_float(beta)),  # type: ignore
         int(B),
         ldb,
         int(C),
@@ -7647,10 +7677,10 @@ def cublasDsymm(
         _CUBLAS_FILL_MODE[uplo],
         m,
         n,
-        ctypes.byref(ctypes.c_double(alpha)),
+        ctypes.byref(ctypes.c_double(alpha)),  # type: ignore
         int(A),
         lda,
-        ctypes.byref(ctypes.c_double(beta)),
+        ctypes.byref(ctypes.c_double(beta)),  # type: ignore
         int(B),
         ldb,
         int(C),
@@ -7852,10 +7882,10 @@ def cublasSsyrk(
         _CUBLAS_OP[trans],
         n,
         k,
-        ctypes.byref(ctypes.c_float(alpha)),
+        ctypes.byref(ctypes.c_float(alpha)),  # type: ignore
         int(A),
         lda,
-        ctypes.byref(ctypes.c_float(beta)),
+        ctypes.byref(ctypes.c_float(beta)),  # type: ignore
         int(C),
         ldc,
     )
@@ -7901,10 +7931,10 @@ def cublasDsyrk(
         _CUBLAS_OP[trans],
         n,
         k,
-        ctypes.byref(ctypes.c_double(alpha)),
+        ctypes.byref(ctypes.c_double(alpha)),  # type: ignore
         int(A),
         lda,
-        ctypes.byref(ctypes.c_double(beta)),
+        ctypes.byref(ctypes.c_double(beta)),  # type: ignore
         int(C),
         ldc,
     )
@@ -8100,12 +8130,12 @@ def cublasSsyr2k(
         _CUBLAS_OP[trans],
         n,
         k,
-        ctypes.byref(ctypes.c_float(alpha)),
+        ctypes.byref(ctypes.c_float(alpha)),  # type: ignore
         int(A),
         lda,
         int(B),
         ldb,
-        ctypes.byref(ctypes.c_float(beta)),
+        ctypes.byref(ctypes.c_float(beta)),  # type: ignore
         int(C),
         ldc,
     )
@@ -8155,12 +8185,12 @@ def cublasDsyr2k(
         _CUBLAS_OP[trans],
         n,
         k,
-        ctypes.byref(ctypes.c_double(alpha)),
+        ctypes.byref(ctypes.c_double(alpha)),  # type: ignore
         int(A),
         lda,
         int(B),
         ldb,
-        ctypes.byref(ctypes.c_double(beta)),
+        ctypes.byref(ctypes.c_double(beta)),  # type: ignore
         int(C),
         ldc,
     )
@@ -8382,7 +8412,7 @@ def cublasStrmm(
         _CUBLAS_DIAG[diag],
         m,
         n,
-        ctypes.byref(ctypes.c_float(alpha)),
+        ctypes.byref(ctypes.c_float(alpha)),  # type: ignore
         int(A),
         lda,
         int(B),
@@ -8440,7 +8470,7 @@ def cublasDtrmm(
         _CUBLAS_DIAG[diag],
         m,
         n,
-        ctypes.byref(ctypes.c_double(alpha)),
+        ctypes.byref(ctypes.c_double(alpha)),  # type: ignore
         int(A),
         lda,
         int(B),
@@ -8662,7 +8692,7 @@ def cublasStrsm(
         _CUBLAS_DIAG[diag],
         m,
         n,
-        ctypes.byref(ctypes.c_float(alpha)),
+        ctypes.byref(ctypes.c_float(alpha)),  # type: ignore
         int(A),
         lda,
         int(B),
@@ -8714,7 +8744,7 @@ def cublasDtrsm(
         _CUBLAS_DIAG[diag],
         m,
         n,
-        ctypes.byref(ctypes.c_double(alpha)),
+        ctypes.byref(ctypes.c_double(alpha)),  # type: ignore
         int(A),
         lda,
         int(B),
@@ -9069,10 +9099,10 @@ def cublasCherk(
         _CUBLAS_OP[trans],
         n,
         k,
-        ctypes.byref(ctypes.c_float(alpha)),
+        ctypes.byref(ctypes.c_float(alpha)),  # type: ignore
         int(A),
         lda,
-        ctypes.byref(ctypes.c_float(beta)),
+        ctypes.byref(ctypes.c_float(beta)),  # type: ignore
         int(C),
         ldc,
     )
@@ -9118,10 +9148,10 @@ def cublasZherk(
         _CUBLAS_OP[trans],
         n,
         k,
-        ctypes.byref(ctypes.c_double(alpha)),
+        ctypes.byref(ctypes.c_double(alpha)),  # type: ignore
         int(A),
         lda,
-        ctypes.byref(ctypes.c_double(beta)),
+        ctypes.byref(ctypes.c_double(beta)),  # type: ignore
         int(C),
         ldc,
     )
@@ -9408,10 +9438,10 @@ def cublasSgeam(
         _CUBLAS_OP[transb],
         m,
         n,
-        ctypes.byref(ctypes.c_float(alpha)),
+        ctypes.byref(ctypes.c_float(alpha)),  # type: ignore
         int(A),
         lda,
-        ctypes.byref(ctypes.c_float(beta)),
+        ctypes.byref(ctypes.c_float(beta)),  # type: ignore
         int(B),
         ldb,
         int(C),
@@ -9478,10 +9508,10 @@ def cublasDgeam(
         _CUBLAS_OP[transb],
         m,
         n,
-        ctypes.byref(ctypes.c_double(alpha)),
+        ctypes.byref(ctypes.c_double(alpha)),  # type: ignore
         int(A),
         lda,
-        ctypes.byref(ctypes.c_double(beta)),
+        ctypes.byref(ctypes.c_double(beta)),  # type: ignore
         int(B),
         ldb,
         int(C),
@@ -9742,12 +9772,12 @@ def cublasSgemmBatched(
         m,
         n,
         k,
-        ctypes.byref(ctypes.c_float(alpha)),
+        ctypes.byref(ctypes.c_float(alpha)),  # type: ignore
         int(A),
         lda,
         int(B),
         ldb,
-        ctypes.byref(ctypes.c_float(beta)),
+        ctypes.byref(ctypes.c_float(beta)),  # type: ignore
         int(C),
         ldc,
         batchCount,
@@ -9810,12 +9840,12 @@ def cublasDgemmBatched(
         m,
         n,
         k,
-        ctypes.byref(ctypes.c_double(alpha)),
+        ctypes.byref(ctypes.c_double(alpha)),  # type: ignore
         int(A),
         lda,
         int(B),
         ldb,
-        ctypes.byref(ctypes.c_double(beta)),
+        ctypes.byref(ctypes.c_double(beta)),  # type: ignore
         int(C),
         ldc,
         batchCount,
@@ -10059,7 +10089,7 @@ def cublasStrsmBatched(
         _CUBLAS_DIAG[diag],
         m,
         n,
-        ctypes.byref(ctypes.c_float(alpha)),
+        ctypes.byref(ctypes.c_float(alpha)),  # type: ignore
         int(A),
         lda,
         int(B),
@@ -10121,7 +10151,7 @@ def cublasDtrsmBatched(
         _CUBLAS_DIAG[diag],
         m,
         n,
-        ctypes.byref(ctypes.c_double(alpha)),
+        ctypes.byref(ctypes.c_double(alpha)),  # type: ignore
         int(A),
         lda,
         int(B),
@@ -11284,14 +11314,14 @@ def cublasSgemmStridedBatched(
         m,
         n,
         k,
-        ctypes.byref(ctypes.c_float(alpha)),
+        ctypes.byref(ctypes.c_float(alpha)),  # type: ignore
         int(A),
         lda,
         strideA,
         int(B),
         ldb,
         strideB,
-        ctypes.byref(ctypes.c_float(beta)),
+        ctypes.byref(ctypes.c_float(beta)),  # type: ignore
         int(C),
         ldc,
         strideC,
