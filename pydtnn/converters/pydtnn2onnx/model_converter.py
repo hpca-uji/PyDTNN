@@ -62,7 +62,7 @@ def extract_shape(data: onnx.ValueInfoProto) -> tuple[int, ...]:
 
 def get_relevant_data(
     model_graph: onnx.GraphProto,
-) -> tuple[dict[str, tuple[int]], dict[str, tuple[int]], dict[str, np.ndarray]]:
+) -> tuple[dict[str, tuple[int, ...]], dict[str, tuple[int, ...]], dict[str, np.ndarray]]:
     """
     Extracts weights, inputs, and outputs information from an ONNX graph.
 
@@ -288,7 +288,7 @@ def get_operations(
     output_first_layer = get_actual_inputs(
         list_inputs=onnx_model.graph.node[0].input, weights_names=list(weights.keys())
     )[0]
-    operations = {output_first_layer: (Input(shape=inputs), [None])}
+    operations: dict[str, tuple[Layerable, list[str]]] = {output_first_layer: (Input(shape=inputs), [])}
 
     for i in range(num_operations - 1):
         _get_and_put_operation(
@@ -296,14 +296,14 @@ def get_operations(
             opset_version=opset_version,
             operations=operations,
             weights=weights,
-        )  # type: ignore
+        )
     _get_and_put_operation(
         node=onnx_model.graph.node[-1],
         opset_version=opset_version,
         operations=operations,
         weights=weights,
         output=list(outputs.keys()),
-    )  # type: ignore
+    )
 
     # The list of layers is returned.
     return list(map(lambda x: x[0], operations.values()))

@@ -278,7 +278,7 @@ def sigmoid(args: dict[str, Any]) -> tuple[Sigmoid, str]:
     # removing the input layer:
     dict_params["input"] = params.pop(0)
 
-    return (activation.sigmoid(**dict_params), dict_params["input"])
+    return (activation.Sigmoid(**dict_params), dict_params["input"])
 
 
 def softmax(args: dict[str, Any]) -> tuple[Softmax, str]:
@@ -335,4 +335,4 @@ def tanh(args: dict[str, Any]) -> tuple[Tanh, str]:
     # removing the input layer:
     dict_params["input"] = params.pop(0)
 
-    return (activation.tanh(**dict_params), dict_params["input"])
+    return (activation.Tanh(**dict_params), dict_params["input"])
