@@ -7,12 +7,14 @@ variables:
   BRANCH_MAIN: master
   BRANCH_WORK: develop
   GIT_DEPTH: 0
-  GIT_STRATEGY: fetch
+  GIT_STRATEGY: none
+  GIT_SUBMODULE_STRATEGY: none
 
 job_build:
   stage: build
 
   variables:
+    GIT_STRATEGY: fetch
     GIT_SUBMODULE_STRATEGY: recursive
     PIP_ROOT_USER_ACTION: ignore
     PIP_DISABLE_PIP_VERSION_CHECK: "1"
@@ -57,6 +59,9 @@ job_build:
 
 job_merge:
   stage: merge
+
+  variables:
+    GIT_STRATEGY: fetch
 
   rules:
   - if: '$CI_COMMIT_BRANCH == $BRANCH_WORK'
