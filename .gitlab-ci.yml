@@ -8,13 +8,12 @@ variables:
   BRANCH_WORK: develop
   GIT_DEPTH: 0
   GIT_STRATEGY: fetch
-  GIT_SUBMODULE_STRATEGY: recursive
 
 job_build:
   stage: build
 
   variables:
-    PYTHON_VERSION: latest
+    GIT_SUBMODULE_STRATEGY: recursive
     PIP_ROOT_USER_ACTION: ignore
     PIP_DISABLE_PIP_VERSION_CHECK: "1"
     PIP_CACHE_DIR: "$CI_PROJECT_DIR/build/pip"
@@ -23,7 +22,7 @@ job_build:
   - if: '$CI_COMMIT_BRANCH == $BRANCH_WORK'
 
   tags: [ lorca-ubuntu ]
-  image: python:$PYTHON_VERSION
+  image: python:latest
 
   cache:
   - paths:
