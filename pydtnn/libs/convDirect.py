@@ -479,7 +479,7 @@ def main() -> None:
     # Imports for this usage example (not required otherwise)
     from timeit import timeit
 
-    from pydtnn.utils import random
+    from pydtnn.utils import rand
 
     # Default parameters (1st layer AlexNet for Cifar10)
     b = 32  # Batch size
@@ -498,7 +498,7 @@ def main() -> None:
     # Create weights, x, and out matrices from previous parameters. If no out
     # matrix is provided, a proper one filled with zeros will be automatically
     # created.
-    random.seed(0)
+    rand.seed(0)
     # weights[1][1][1][1] = -322.0
     # weights[2][2][2][2] = -334.0
 
@@ -506,8 +506,8 @@ def main() -> None:
     wo = (w + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
 
     # NCHW --------------------------
-    weights = random.random((c, kh, kw, kn)).astype(np.float32, order="C")
-    x = random.random((b, h, w, c)).astype(np.float32, order="C")
+    weights = rand.random((c, kh, kw, kn)).astype(np.float32, order="C")
+    x = rand.random((b, h, w, c)).astype(np.float32, order="C")
     out = (np.ones((b, ho, wo, kn)) * 10).astype(np.float32, order="C")
 
     logger.info("Using conv_direct to compute weights * x + out...")

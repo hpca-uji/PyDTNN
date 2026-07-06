@@ -1352,7 +1352,7 @@ def main() -> None:
     # Imports for this usage example (not required otherwise)
     from timeit import timeit
 
-    from pydtnn.utils import random
+    from pydtnn.utils import rand
 
     # Default parameters (1st layer AlexNet for Cifar10)
     b = 32  # Batch size
@@ -1371,7 +1371,7 @@ def main() -> None:
     # Create weights, x, and biases matrices from previous parameters. If no biases
     # matrix is provided, a proper one filled with zeros will be automatically
     # created.
-    random.seed(0)
+    rand.seed(0)
     # weights[1][1][1][1] = -322.0
     # weights[2][2][2][2] = -334.0
 
@@ -1381,8 +1381,8 @@ def main() -> None:
     biases_wg = (np.ones(kn) * 10).astype(np.float32, order="C")
 
     # NCHW --------------------------
-    weights = random.random((kn, c, kh, kw)).astype(np.float32, order="C")
-    x = random.random((b, c, h, w)).astype(np.float32, order="C")
+    weights = rand.random((kn, c, kh, kw)).astype(np.float32, order="C")
+    x = rand.random((b, c, h, w)).astype(np.float32, order="C")
     biases = (np.ones((kn, b * ho * wo)) * 10).astype(np.float32, order="C")
     logger.info("Using conv_winograd NCHW to compute weights * x + biases...")
     conv_winograd = ConvWinograd(kh, kw, vstride, hstride, vdilation, hdilation, debug=False)
@@ -1448,8 +1448,8 @@ def main() -> None:
     logger.info("mm time: {:.4f}".format(mm_t))
 
     # NHWC --------------------------
-    weights = random.random((c, kh, kw, kn)).astype(np.float32, order="C")
-    x = random.random((b, h, w, c)).astype(np.float32, order="C")
+    weights = rand.random((c, kh, kw, kn)).astype(np.float32, order="C")
+    x = rand.random((b, h, w, c)).astype(np.float32, order="C")
     biases = (np.ones((b * ho * wo, kn)) * 10).astype(np.float32, order="C")
     logger.info("Using conv_winograd NHWC to compute weights * x + biases...")
     conv_winograd = ConvWinograd(
@@ -1579,10 +1579,10 @@ def main() -> None:
                                     biases_wg = (np.ones(kk) * 10).astype(np.float32, order="C")
                                     match tensor_fmt:
                                         case TensorFormat.NCHW:
-                                            weights = random.random((kk, cc, kh, kw)).astype(
+                                            weights = rand.random((kk, cc, kh, kw)).astype(
                                                 np.float32, order="C"
                                             )
-                                            x = random.random((nn, cc, hh, ww)).astype(
+                                            x = rand.random((nn, cc, hh, ww)).astype(
                                                 np.float32, order="C"
                                             )
                                             biases = (np.ones((kk, nn * ho * wo)) * 10).astype(
@@ -1663,10 +1663,10 @@ def main() -> None:
                                                 / 10
                                             )
                                         case TensorFormat.NHWC:
-                                            weights = random.random((cc, kh, kw, kk)).astype(
+                                            weights = rand.random((cc, kh, kw, kk)).astype(
                                                 np.float32, order="C"
                                             )
-                                            x = random.random((nn, hh, ww, cc)).astype(
+                                            x = rand.random((nn, hh, ww, cc)).astype(
                                                 np.float32, order="C"
                                             )
                                             biases = (np.ones((nn * ho * wo, kk)) * 10).astype(

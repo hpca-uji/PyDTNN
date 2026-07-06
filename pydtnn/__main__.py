@@ -52,9 +52,9 @@ def main(config: Namespace) -> None:  # noqa: C901
     """Application entry point"""
 
     # Initialize random seed
-    from pydtnn.utils import random
+    from pydtnn.utils import rand
 
-    random.seed(config.random_seed)
+    rand.seed(config.random_seed)
 
     # Create model
     from pydtnn.model import Model

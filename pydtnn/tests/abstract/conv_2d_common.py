@@ -7,7 +7,7 @@ import numpy as np
 
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.tests.abstract.common import D, TestCase, verbose_test
-from pydtnn.utils import print_with_header, random
+from pydtnn.utils import print_with_header, rand
 from pydtnn.utils.tensor import TensorFormat, format_transpose
 
 __all__ = ("Conv2DCommonTestCase",)
@@ -91,7 +91,7 @@ class Conv2DCommonTestCase[T: Conv2D](TestCase):  # noqa: D101 (generics not det
         y_allclose = np.allclose(y_ref, y_test)
 
         # Backward pass
-        dy = random.random((d.b, d.kn, d.ho, d.wo)).astype(np.float32, order="C")
+        dy = rand.random((d.b, d.kn, d.ho, d.wo)).astype(np.float32, order="C")
         if conv2d_ref.model.tensor_format is TensorFormat.NHWC:
             dy = format_transpose(dy, "NCHW", "NHWC").copy()
         dx_ref = conv2d_ref.backward(dy.copy()).copy()
@@ -144,7 +144,7 @@ class Conv2DCommonTestCase[T: Conv2D](TestCase):  # noqa: D101 (generics not det
         """Test that the default parameters lead to the same solution on the forward step"""
         d = D()
         conv2d_ref, conv2d_test = self._get_layers(d)
-        x = random.random((d.b, d.c, d.h, d.w)).astype(np.float32, order="C")
+        x = rand.random((d.b, d.c, d.h, d.w)).astype(np.float32, order="C")
         x = conv2d_ref.model.encode_tensor(x).copy()
         y_ref = conv2d_ref.forward(x.copy()).copy()
         y_test = conv2d_test.forward(x.copy()).copy()
@@ -160,8 +160,8 @@ class Conv2DCommonTestCase[T: Conv2D](TestCase):  # noqa: D101 (generics not det
     def test_forward_backward_defaults(self) -> None:
         """Test that the default parameters lead to the same solution on the backward step"""
         d = D()
-        x = random.random((d.b, d.c, d.h, d.w)).astype(np.float32, order="C")
-        weights = random.random((d.kn, d.c, d.kh, d.kw)).astype(np.float32, order="C")
+        x = rand.random((d.b, d.c, d.h, d.w)).astype(np.float32, order="C")
+        weights = rand.random((d.kn, d.c, d.kh, d.kw)).astype(np.float32, order="C")
         self._test_forward_backward(d, x, weights)
 
     def test_forward_backward_handmade_array(self) -> None:
@@ -278,8 +278,8 @@ class Conv2DCommonTestCase[T: Conv2D](TestCase):  # noqa: D101 (generics not det
         d.vpadding, d.hpadding = (1, 1)
         d.vstride, d.hstride = (2, 2)
         d.vdilation, d.hdilation = (1, 1)
-        x = random.random((d.b, d.c, d.h, d.w)).astype(np.float32, order="C")
-        weights = random.random((d.kn, d.c, d.kh, d.kw)).astype(np.float32, order="C")
+        x = rand.random((d.b, d.c, d.h, d.w)).astype(np.float32, order="C")
+        weights = rand.random((d.kn, d.c, d.kh, d.kw)).astype(np.float32, order="C")
         self._test_forward_backward(d, x, weights, print_times=True)
 
     def test_forward_backward_alexnet_imagenet_first_conv2d(self) -> None:
@@ -293,6 +293,6 @@ class Conv2DCommonTestCase[T: Conv2D](TestCase):  # noqa: D101 (generics not det
         d.vpadding, d.hpadding = (1, 1)
         d.vstride, d.hstride = (4, 4)
         d.vdilation, d.hdilation = (1, 1)
-        x = random.random((d.b, d.c, d.h, d.w)).astype(np.float32, order="C")
-        weights = random.random((d.kn, d.c, d.kh, d.kw)).astype(np.float32, order="C")
+        x = rand.random((d.b, d.c, d.h, d.w)).astype(np.float32, order="C")
+        weights = rand.random((d.kn, d.c, d.kh, d.kw)).astype(np.float32, order="C")
         self._test_forward_backward(d, x, weights, print_times=True)

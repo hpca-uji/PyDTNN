@@ -8,7 +8,7 @@ import warnings
 
 import numpy as np
 
-from pydtnn.utils import random
+from pydtnn.utils import rand
 from pydtnn.utils.tensor import TensorFormat
 
 __all__ = (
@@ -51,7 +51,7 @@ class TestCase(unittest.TestCase):
     def setUp(self) -> None:
         """Initializes the test environment with fixed seeds and warning filters."""
         super().setUp()
-        random.seed(0)
+        rand.seed(0)
         warnings.simplefilter("error")
 
     def tearDown(self) -> None:

@@ -32,7 +32,7 @@ from math import prod
 import numpy as np
 
 from pydtnn.converters.pytorch2pydtnn.common import TRANSPOSE_WEIGHTS_LAYERS
-from pydtnn.utils import random
+from pydtnn.utils import rand
 
 __all__ = (
     "AdditionTestPyTorchModel",
@@ -66,7 +66,7 @@ PYTORCH_LAYER_BIASES = "bias"
 # setting random seed
 SEED = 1234
 torch.manual_seed(SEED)
-random.seed(SEED)
+rand.seed(SEED)
 
 THRESHOLD = 1e-4
 DTYPE = np.float32

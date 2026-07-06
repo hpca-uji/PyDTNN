@@ -10,7 +10,7 @@ import numpy as np
 from pydtnn.libs.convGemm import is_conv_gemm_available
 from pydtnn.libs.mpi import MPI
 from pydtnn.tests.conv_2d_conv_gemm import Conv2DConvGemmTestCase, D
-from pydtnn.utils import random
+from pydtnn.utils import rand
 
 __all__ = ("Conv2DConvGemmLongTestCase",)
 
@@ -25,7 +25,7 @@ class Conv2DConvGemmLongTestCase(Conv2DConvGemmTestCase):
     global Conv2DConvGemmTestCase
     del Conv2DConvGemmTestCase
 
-    random.seed(0)  # type: ignore
+    rand.seed(0)  # type: ignore
     dtype = np.float32
 
     R = list(
@@ -44,7 +44,7 @@ class Conv2DConvGemmLongTestCase(Conv2DConvGemmTestCase):
         )
     )
 
-    X = random.random(
+    X = rand.random(
         (
             4,  # b
             11,  # c
@@ -53,7 +53,7 @@ class Conv2DConvGemmLongTestCase(Conv2DConvGemmTestCase):
         )
     ).astype(dtype)
 
-    W = random.random(
+    W = rand.random(
         (
             4,  # kn
             11,  # c

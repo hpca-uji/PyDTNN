@@ -19,7 +19,7 @@ from pydtnn.layers.dropout import Dropout
 from pydtnn.losses.abstract.loss import Loss
 from pydtnn.model import Model
 from pydtnn.tests.abstract.common import Params, TestCase, verbose_test
-from pydtnn.utils import print_with_header, random
+from pydtnn.utils import print_with_header, rand
 from pydtnn.utils.tensor import TensorFormat
 
 __all__ = ("ModelCommonTestCase",)
@@ -150,7 +150,7 @@ class ModelCommonTestCase(TestCase):
             The computed gradient array.
         """
         # random y target
-        y_targ = np.asarray(random.random(x.shape), dtype=model.dtype, order="C").copy()
+        y_targ = np.asarray(rand.random(x.shape), dtype=model.dtype, order="C").copy()
         # obtain first dx1
         global_batch_size = model.batch_size
         loss, dx = loss_func.compute(x, y_targ, global_batch_size)
@@ -434,7 +434,7 @@ class ModelCommonTestCase(TestCase):
 
         x = [
             np.asarray(
-                random.random((model1.batch_size, *model1.layers[0].shape)),
+                rand.random((model1.batch_size, *model1.layers[0].shape)),
                 dtype=model1.dtype,
                 order="C",
             ).copy()

@@ -8,7 +8,7 @@ import numpy as np
 
 from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython
 from pydtnn.tests.abstract.common import D, TestCase, alexnet_layers, verbose_test
-from pydtnn.utils import print_with_header, random
+from pydtnn.utils import print_with_header, rand
 
 __all__ = ("ConvCommonTestCase",)
 
@@ -93,8 +93,8 @@ class ConvCommonTestCase(TestCase):
     def test_defaults_with_random(self) -> None:
         """Test that the default parameters on random matrices lead to the same solution"""
         d = self._get_config()
-        weights = random.random((d.c, d.kh, d.kw, d.kn)).astype(np.float32, order="C")
-        x = random.random((d.b, d.h, d.w, d.c)).astype(np.float32, order="C")
+        weights = rand.random((d.c, d.kh, d.kw, d.kn)).astype(np.float32, order="C")
+        x = rand.random((d.b, d.h, d.w, d.c)).astype(np.float32, order="C")
         test_result, ref_result = self._compute_both(
             weights,
             x,
@@ -110,12 +110,12 @@ class ConvCommonTestCase(TestCase):
     def test_defaults_including_biases_with_random(self) -> None:
         """Test that the default parameters on random matrices, including b, lead to the same solution"""
         d = self._get_config()
-        weights = random.random((d.c, d.kh, d.kw, d.kn)).astype(np.float32, order="C")
-        x = random.random((d.b, d.h, d.w, d.c)).astype(np.float32, order="C")
+        weights = rand.random((d.c, d.kh, d.kw, d.kn)).astype(np.float32, order="C")
+        x = rand.random((d.b, d.h, d.w, d.c)).astype(np.float32, order="C")
         # ho = (d.h + 2 * d.vpadding - d.vdilation * (d.kh - 1) - 1) // d.vstride + 1
         # wo = (d.w + 2 * d.hpadding - d.hdilation * (d.kw - 1) - 1) // d.hstride + 1
         # biases = random.random((d.b, ho, wo, d.kn)).astype(np.float32, order='C')
-        biases = random.random((d.kn,)).astype(np.float32, order="C")
+        biases = rand.random((d.kn,)).astype(np.float32, order="C")
         test_result, ref_result = self._compute_both(
             weights,
             x,
@@ -141,10 +141,10 @@ class ConvCommonTestCase(TestCase):
             print_with_header("{}".format(inspect.stack()[1][3]), None)
             print(" kn   Maximum difference    sum(cg_result)")
             print("----+--------------------+-----------------")
-        x = random.random((d.b, d.h, d.w, d.c)).astype(np.float32, order="C")
+        x = rand.random((d.b, d.h, d.w, d.c)).astype(np.float32, order="C")
         np_all_close_for_all_cases = True
         for kn in range(1, 32):
-            weights = random.random((d.c, d.kh, d.kw, kn)).astype(np.float32, order="C")
+            weights = rand.random((d.c, d.kh, d.kw, kn)).astype(np.float32, order="C")
             test_result: np.ndarray = self._compute(
                 weights,
                 x,
@@ -210,10 +210,10 @@ class ConvCommonTestCase(TestCase):
             print_with_header("{}".format(inspect.stack()[1][3]), None)
             print("  b   Maximum difference")
             print("----+--------------------")
-        weights = random.random((d.c, d.kh, d.kw, d.kn)).astype(np.float32, order="C")
+        weights = rand.random((d.c, d.kh, d.kw, d.kn)).astype(np.float32, order="C")
         np_all_close_for_all_cases = True
         for b in range(1, 32):
-            x = random.random((b, d.h, d.w, d.c)).astype(np.float32, order="C")
+            x = rand.random((b, d.h, d.w, d.c)).astype(np.float32, order="C")
             test_result: np.ndarray = self._compute(
                 weights,
                 x,
@@ -278,8 +278,8 @@ class ConvCommonTestCase(TestCase):
             print_with_header("{}".format(inspect.stack()[1][3]), None)
             print("  p   Maximum difference")
             print("----+--------------------")
-        weights = random.random((d.c, d.kh, d.kw, d.kn)).astype(np.float32, order="C")
-        x = random.random((d.b, d.h, d.w, d.c)).astype(np.float32, order="C")
+        weights = rand.random((d.c, d.kh, d.kw, d.kn)).astype(np.float32, order="C")
+        x = rand.random((d.b, d.h, d.w, d.c)).astype(np.float32, order="C")
         np_all_close_for_all_cases = True
         for padding in range(0, 5):
             test_result: np.ndarray = self._compute(
@@ -346,8 +346,8 @@ class ConvCommonTestCase(TestCase):
             print_with_header("{}".format(inspect.stack()[1][3]), None)
             print("  s   Maximum difference")
             print("----+--------------------")
-        weights = random.random((d.c, d.kh, d.kw, d.kn)).astype(np.float32, order="C")
-        x = random.random((d.b, d.h, d.w, d.c)).astype(np.float32, order="C")
+        weights = rand.random((d.c, d.kh, d.kw, d.kn)).astype(np.float32, order="C")
+        x = rand.random((d.b, d.h, d.w, d.c)).astype(np.float32, order="C")
         np_all_close_for_all_cases = True
         for stride in range(1, 6):
             test_result: np.ndarray = self._compute(
@@ -414,8 +414,8 @@ class ConvCommonTestCase(TestCase):
             print_with_header("{}".format(inspect.stack()[1][3]), None)
             print(" vs  hs   Maximum difference")
             print("--------+--------------------")
-        weights = random.random((d.c, d.kh, d.kw, d.kn)).astype(np.float32, order="C")
-        x = random.random((d.b, d.h, d.w, d.c)).astype(np.float32, order="C")
+        weights = rand.random((d.c, d.kh, d.kw, d.kn)).astype(np.float32, order="C")
+        x = rand.random((d.b, d.h, d.w, d.c)).astype(np.float32, order="C")
         for vstride in range(1, 5):
             for hstride in range(1, 5):
                 if vstride == hstride:
@@ -485,8 +485,8 @@ class ConvCommonTestCase(TestCase):
             print_with_header("{}".format(inspect.stack()[1][3]), None)
             print("  s   Maximum difference")
             print("----+--------------------")
-        weights = random.random((d.c, d.kh, d.kw, d.kn)).astype(np.float32, order="C")
-        x = random.random((d.b, d.h, d.w, d.c)).astype(np.float32, order="C")
+        weights = rand.random((d.c, d.kh, d.kw, d.kn)).astype(np.float32, order="C")
+        x = rand.random((d.b, d.h, d.w, d.c)).astype(np.float32, order="C")
         np_all_close_for_all_cases = True
         for dilation in range(1, 3):
             test_result: np.ndarray = self._compute(
@@ -554,10 +554,10 @@ class ConvCommonTestCase(TestCase):
             print("-------+--------------------")
         layers = alexnet_layers
         for n, layer in enumerate(layers):
-            weights = random.random((layer.c, layer.kh, layer.kw, layer.kn)).astype(
+            weights = rand.random((layer.c, layer.kh, layer.kw, layer.kn)).astype(
                 np.float32, order="C"
             )
-            x = random.random((layer.b, layer.h, layer.w, layer.c)).astype(np.float32, order="C")
+            x = rand.random((layer.b, layer.h, layer.w, layer.c)).astype(np.float32, order="C")
             test_result: np.ndarray = self._compute(
                 weights,
                 x,

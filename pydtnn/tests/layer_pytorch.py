@@ -38,7 +38,7 @@ from pydtnn.layers.input import Input
 from pydtnn.layers.max_pool_2d import MaxPool2D
 from pydtnn.model import Model
 from pydtnn.tests.abstract.common import Params, TestCase, verbose_test
-from pydtnn.utils import random
+from pydtnn.utils import rand
 from pydtnn.utils.constants import Parameters
 from pydtnn.utils.tensor import TensorFormat, format_reshape, format_transpose
 
@@ -74,7 +74,7 @@ numpy_to_torch_dtype_dict = {
 
 # setting random seed
 SEED = 1234
-random.seed(SEED)
+rand.seed(SEED)
 # Constant values
 
 N = 8
@@ -338,7 +338,7 @@ class LayerPyTorchTestCase(TestCase):
 
         # NOTE: seems that PyTorch doesn't like too much np.float64
         x = np.stack([x_1_1, x_1_2, x_2_1, x_2_2], axis=0, dtype=dtype).reshape(shape_with_elements)
-        random.shuffle(x)
+        rand.shuffle(x)
 
         if normalize:
             min_x = np.min(x)

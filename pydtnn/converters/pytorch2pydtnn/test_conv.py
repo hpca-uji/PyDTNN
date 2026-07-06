@@ -19,7 +19,7 @@ from pydtnn.layers.conv_2d_depthwise import Conv2DDepthwise
 from pydtnn.layers.conv_2d_pointwise import Conv2DPointwise
 from pydtnn.layers.input import Input
 from pydtnn.model import Model
-from pydtnn.utils import random
+from pydtnn.utils import rand
 
 try:
     import pycuda.gpuarray as gpuarray  # type: ignore
@@ -54,7 +54,7 @@ KWARGS = {
 
 # End Constants
 
-random.seed(SEED)
+rand.seed(SEED)
 
 
 def main() -> None:
