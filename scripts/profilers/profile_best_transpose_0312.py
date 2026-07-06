@@ -17,7 +17,7 @@ def main() -> None:
     bop = BestOfProfiler("Transpose 0312 comparison", best_transpose_0312)  # type: ignore
     for layer in layers:
         d0, d1, d2, d3 = layer.shape
-        original = rand.random((d0, d1, d2, d3)).astype(layer.dtype)  # type: ignore
+        original = rand.random((d0, d1, d2, d3)).astype(layer.dtype)
         bop(original)
     bop.print_results()
 

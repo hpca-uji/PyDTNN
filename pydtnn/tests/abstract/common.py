@@ -79,6 +79,7 @@ class D:
         hstride: int = 1,
         vdilation: int = 1,
         hdilation: int = 1,
+        dtype: np.dtype = np.dtype(np.float32)
     ) -> None:
         """Initializes convolution dimensions and hyperparameters."""
         self.b = b  # Batch size
@@ -94,6 +95,7 @@ class D:
         self.hstride = hstride  # Horizontal stride
         self.vdilation = vdilation  # Vertical dilation
         self.hdilation = hdilation  # Horizontal dilation
+        self.dtype = dtype
 
     @property
     def ho(self) -> int:

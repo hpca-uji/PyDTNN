@@ -14,7 +14,7 @@ from pydtnn.utils.best_of_profiler import BestOfProfiler
 def main() -> None:
     """Executes performance profiling for the 0231 transpose operation across predefined AlexNet layer configurations."""
     layers = alexnet_layers
-    bop = BestOfProfiler("Transpose 0231 comparison", best_transpose_0231)
+    bop = BestOfProfiler("Transpose 0231 comparison", best_transpose_0231)  # type: ignore
     for layer in layers:
         d0, d1, d2, d3 = layer.shape
         original = rand.random((d0, d1, d2, d3)).astype(layer.dtype)

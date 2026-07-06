@@ -233,6 +233,8 @@ class ConvWinograd:
             funcs = [("numpy", (self._conv_winograd_numpy, None, None))]
 
         for intr, f in funcs:
+            assert f[1], f"{f[0]} missing pre function"
+            assert f[2], f"{f[0]} missing kernel function"
             self.alternatives[r].append(
                 (f"cw{m}{r}{intr}", partial(f[0], m, r, g, bt, at, f[1], f[2]))
             )

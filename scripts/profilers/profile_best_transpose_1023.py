@@ -20,7 +20,7 @@ def main() -> None:
     the final performance results.
     """
     layers = alexnet_layers
-    bop = BestOfProfiler("Transpose 1023 comparison", best_transpose_1023)
+    bop = BestOfProfiler("Transpose 1023 comparison", best_transpose_1023)  # type: ignore
     for layer in layers:
         d0, d1, d2, d3 = layer.shape
         original = rand.random((d0, d1, d2, d3)).astype(layer.dtype)

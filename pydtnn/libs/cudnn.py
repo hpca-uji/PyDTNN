@@ -503,7 +503,9 @@ def cudnnCreate() -> int:
     assert _libcudnn
     status = _libcudnn.cudnnCreate(ctypes.byref(handle))
     cudnnCheckStatus(status)
-    return handle.value
+    value = handle.value
+    assert value
+    return value
 
 
 _libcudnn.cudnnDestroy.restype = int
@@ -567,7 +569,9 @@ def cudnnGetStream(handle: int) -> int:
     assert _libcudnn
     status = _libcudnn.cudnnGetStream(handle, ctypes.byref(stream_id))
     cudnnCheckStatus(status)
-    return stream_id.value
+    value = stream_id.value
+    assert value is not None
+    return value
 
 
 _libcudnn.cudnnCreateActivationDescriptor.restype = int
@@ -589,7 +593,9 @@ def cudnnCreateActivationDescriptor() -> int:
     assert _libcudnn
     status = _libcudnn.cudnnCreateActivationDescriptor(ctypes.byref(activation))
     cudnnCheckStatus(status)
-    return activation.value
+    value = activation.value
+    assert value
+    return value
 
 
 _libcudnn.cudnnSetActivationDescriptor.restype = int
@@ -646,7 +652,9 @@ def cudnnCreateTensorDescriptor() -> int:
     assert _libcudnn
     status = _libcudnn.cudnnCreateTensorDescriptor(ctypes.byref(tensor))
     cudnnCheckStatus(status)
-    return tensor.value
+    value = tensor.value
+    assert value
+    return value
 
 
 _libcudnn.cudnnSetTensor4dDescriptor.restype = int
@@ -1234,8 +1242,9 @@ def cudnnCreateConvolutionDescriptor() -> int:
     assert _libcudnn
     status = _libcudnn.cudnnCreateConvolutionDescriptor(ctypes.byref(conv_desc))
     cudnnCheckStatus(status)
-
-    return conv_desc.value
+    value = conv_desc.value
+    assert value
+    return value
 
 
 _libcudnn.cudnnSetConvolution2dDescriptor.restype = int

@@ -135,7 +135,9 @@ def extract_parameters() -> None:  # noqa: C901
                     continue
                 line = line.strip()
                 if parameter_pattern.search(line):
-                    param, value = parameter_pattern.search(line).groups()
+                    match = parameter_pattern.search(line)
+                    assert match, "Line format wrong!"
+                    param, value = match.groups()
                     if param in ignore_parameters:
                         continue
                     if len(value) > 500:  # 9:
