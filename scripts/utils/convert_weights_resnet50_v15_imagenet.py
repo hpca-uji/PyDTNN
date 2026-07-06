@@ -4,7 +4,7 @@ import logging
 import os
 import urllib.request
 
-import h5py
+import h5py  # type: ignore
 import numpy as np
 
 from pydtnn.utils.constants import Parameters

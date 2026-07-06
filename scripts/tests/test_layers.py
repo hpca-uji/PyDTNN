@@ -19,7 +19,7 @@ from pydtnn.layers.input import Input
 from pydtnn.model import Model
 from pydtnn.optimizers.abstract.optimizer import Optimizer
 from pydtnn.optimizers.sgd import SGD
-from pydtnn.utils import random
+from pydtnn.utils import rand
 
 if TYPE_CHECKING:
     import pycuda.gpuarray as gpuarray  # type: ignore (it's correct)
@@ -28,7 +28,7 @@ from pydtnn.backends.gpu import TensorGPU  # type: ignore (it's correct)
 
 # setting random seed
 SEED = 1234
-random.seed(SEED)
+rand.seed(SEED)
 
 N = 100
 C = 3

@@ -6,7 +6,7 @@ against standard AlexNet layer configurations using the `BestOfProfiler`.
 """
 
 from pydtnn.tests.abstract.common import alexnet_layers
-from pydtnn.utils import random
+from pydtnn.utils import rand
 from pydtnn.utils.best_of.best_transpose_1023 import best_transpose_1023
 from pydtnn.utils.best_of_profiler import BestOfProfiler
 
@@ -23,7 +23,7 @@ def main() -> None:
     bop = BestOfProfiler("Transpose 1023 comparison", best_transpose_1023)
     for layer in layers:
         d0, d1, d2, d3 = layer.shape
-        original = random.random((d0, d1, d2, d3)).astype(layer.dtype)
+        original = rand.random((d0, d1, d2, d3)).astype(layer.dtype)
         bop(original)
     bop.print_results()
 
