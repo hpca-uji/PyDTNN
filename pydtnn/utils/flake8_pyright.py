@@ -1,19 +1,18 @@
 """Flake8 plugin for Pyright."""
 
-import re
 import ast
 import enum
-import json
 import itertools
-from pathlib import Path
+import json
+import re
 from argparse import Namespace
 from collections.abc import Generator, Iterable
+from pathlib import Path
 
 import pyright
 from flake8.discover_files import expand_paths
 
-
-_re_pascal = re.compile('[a-z][A-Z]')
+_re_pascal = re.compile("[a-z][A-Z]")
 
 
 def pascal_snake(pascal: str) -> str:
@@ -23,13 +22,16 @@ def pascal_snake(pascal: str) -> str:
 
 def run_pyright(filenames: Iterable[str] = []) -> dict[str, list[dict]]:
     """Run pyright and group results by filenames"""
-    output = json.loads(pyright.run("--outputjson", "-", input="\n".join(filenames), text=True, capture_output=True).stdout)
-    key = lambda diagnostic: diagnostic["file"]  # noqa: E731
+    output = json.loads(
+        pyright.run(
+            "--outputjson", "-", input="\n".join(filenames), text=True, capture_output=True
+        ).stdout
+    )
+    def key(diagnostic): return diagnostic["file"]  # noqa: E731
     diagnostics: list = output["generalDiagnostics"]
     diagnostics.sort(key=key)
     return {
-        file: list(diagnostics)
-        for file, diagnostics in itertools.groupby(diagnostics, key=key)
+        file: list(diagnostics) for file, diagnostics in itertools.groupby(diagnostics, key=key)
     }
 
 
@@ -128,12 +130,14 @@ class PyrightChecker:
     @classmethod
     def parse_options(cls, options: Namespace) -> None:
         """Parses and stores the maintainability threshold from options"""
-        cls._diagnostics = run_pyright(expand_paths(
-            paths=options.filenames,
-            stdin_display_name=options.stdin_display_name,
-            filename_patterns=options.filename,
-            exclude=(*options.exclude, *options.extend_exclude),
-        ))
+        cls._diagnostics = run_pyright(
+            expand_paths(
+                paths=options.filenames,
+                stdin_display_name=options.stdin_display_name,
+                filename_patterns=options.filename,
+                exclude=(*options.exclude, *options.extend_exclude),
+            )
+        )
 
     def __init__(self, tree: ast.AST, filename: str) -> None:
         """Initializes the checker with the tree mode"""
@@ -152,6 +156,6 @@ class PyrightChecker:
             yield (
                 diagnostic["range"]["start"]["line"],
                 diagnostic["range"]["start"]["character"],
-                f"T{rule:03} {diagnostic["message"].splitlines()[0]}",
+                f"T{rule:03} {diagnostic['message'].splitlines()[0]}",
                 type(self),
             )

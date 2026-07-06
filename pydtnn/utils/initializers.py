@@ -101,7 +101,9 @@ def _generate_distribution(
 
 
 def glorot_uniform(
-    shape: ArrayShape, dtype: np.dtype, random: np.random.Generator = rand  # type: ignore
+    shape: ArrayShape,
+    dtype: np.dtype,
+    random: np.random.Generator = rand,  # type: ignore
 ) -> np.ndarray:
     """Initializes weights using the Glorot uniform distribution."""
     return _generate_distribution(
@@ -110,7 +112,9 @@ def glorot_uniform(
 
 
 def glorot_normal(
-    shape: ArrayShape, dtype: np.dtype, random: np.random.Generator = rand  # type: ignore
+    shape: ArrayShape,
+    dtype: np.dtype,
+    random: np.random.Generator = rand,  # type: ignore
 ) -> np.ndarray:
     """Initializes weights using the Glorot normal distribution."""
     return _generate_distribution(
@@ -119,7 +123,9 @@ def glorot_normal(
 
 
 def he_uniform(
-    shape: ArrayShape, dtype: np.dtype, random: np.random.Generator = rand  # type: ignore
+    shape: ArrayShape,
+    dtype: np.dtype,
+    random: np.random.Generator = rand,  # type: ignore
 ) -> np.ndarray:
     """Initializes weights using the He uniform distribution."""
     return _generate_distribution(
@@ -128,7 +134,9 @@ def he_uniform(
 
 
 def he_normal(
-    shape: ArrayShape, dtype: np.dtype, random: np.random.Generator = rand  # type: ignore
+    shape: ArrayShape,
+    dtype: np.dtype,
+    random: np.random.Generator = rand,  # type: ignore
 ) -> np.ndarray:
     """Initializes weights using the He normal distribution."""
     return _generate_distribution(
@@ -137,7 +145,9 @@ def he_normal(
 
 
 def lecun_uniform(
-    shape: ArrayShape, dtype: np.dtype, random: np.random.Generator = rand  # type: ignore
+    shape: ArrayShape,
+    dtype: np.dtype,
+    random: np.random.Generator = rand,  # type: ignore
 ) -> np.ndarray:
     """Initializes weights using the LeCun uniform distribution."""
     return _generate_distribution(
@@ -146,7 +156,9 @@ def lecun_uniform(
 
 
 def lecun_normal(
-    shape: ArrayShape, dtype: np.dtype, random: np.random.Generator = rand  # type: ignore
+    shape: ArrayShape,
+    dtype: np.dtype,
+    random: np.random.Generator = rand,  # type: ignore
 ) -> np.ndarray:
     """Initializes weights using the LeCun normal distribution."""
     return _generate_distribution(

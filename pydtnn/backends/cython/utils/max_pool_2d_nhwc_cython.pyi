@@ -4,7 +4,6 @@ import numpy as _np
 
 from pydtnn.backends.cython.utils.base import _npDT, _npDT_4Dims
 
-
 def max_pool_2d_fwd_nhwc_cython[T: _npDT](  # noqa: D103
     x: _npDT_4Dims[T],
     y: _npDT_4Dims[T],
@@ -42,7 +41,6 @@ def max_pool_2d_fwd_nhwc_cython[T: _npDT](  # noqa: D103
     Returns:
         Nothing. The output is stored in "y" and "idx_max".
     """
-
 
 def max_pool_2d_bwd_nhwc_cython[T: _npDT](  # noqa: D103
     dy: _npDT_4Dims[T],

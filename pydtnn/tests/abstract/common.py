@@ -79,7 +79,7 @@ class D:
         hstride: int = 1,
         vdilation: int = 1,
         hdilation: int = 1,
-        dtype: np.dtype = np.dtype(np.float32)
+        dtype: np.dtype = np.dtype(np.float32),
     ) -> None:
         """Initializes convolution dimensions and hyperparameters."""
         self.b = b  # Batch size

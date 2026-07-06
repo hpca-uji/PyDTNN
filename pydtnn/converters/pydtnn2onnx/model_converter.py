@@ -288,7 +288,9 @@ def get_operations(
     output_first_layer = get_actual_inputs(
         list_inputs=onnx_model.graph.node[0].input, weights_names=list(weights.keys())
     )[0]
-    operations: dict[str, tuple[Layerable, list[str]]] = {output_first_layer: (Input(shape=inputs), [])}
+    operations: dict[str, tuple[Layerable, list[str]]] = {
+        output_first_layer: (Input(shape=inputs), [])
+    }
 
     for i in range(num_operations - 1):
         _get_and_put_operation(

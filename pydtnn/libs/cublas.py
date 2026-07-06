@@ -1284,7 +1284,7 @@ def cublasSaxpy(
         int(x),
         incx,
         int(y),
-        incy
+        incy,
     )
     cublasCheckStatus(status)
 
@@ -2788,7 +2788,7 @@ def cublasSscal(handle: int, n: int, alpha: np.float32, x: ctypes.c_void_p, incx
         n,
         ctypes.byref(ctypes.c_float(alpha)),  # type: ignore
         int(x),
-        incx
+        incx,
     )
     cublasCheckStatus(status)
 
@@ -2879,7 +2879,7 @@ def cublasCsscal(handle: int, n: int, alpha: np.float32, x: ctypes.c_void_p, inc
         n,
         ctypes.byref(ctypes.c_float(alpha)),  # type: ignore
         int(x),
-        incx
+        incx,
     )
     cublasCheckStatus(status)
 
@@ -3712,7 +3712,7 @@ def cublasSger(
         int(y),
         incy,
         int(A),
-        lda
+        lda,
     )
     cublasCheckStatus(status)
 
