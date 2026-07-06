@@ -1,4 +1,4 @@
-"""Flake8 plugin to enforce code maintainability standards using Radon."""
+"""Flake8 plugin to enforce source code metrics standards using Radon."""
 
 import ast
 from argparse import Namespace
@@ -18,28 +18,28 @@ except ModuleNotFoundError as exc:
         raise _exc
 
 
-class MaintainabilityChecker:
-    """Flake8 plugin class to check the Maintainability Index of Python files"""
+class MetricsChecker:
+    """Flake8 plugin class to check source code metrics of Python files"""
 
-    name = "flake8-maintain"
-    version = "0.1.0"
+    name = "flake8-metrics"
+    version = "1.0.0"
 
-    DEFAULT_THRESHOLD = 19
+    MANTAIN_THRESHOLD = 19
 
     @classmethod
     def add_options(cls, parser: OptionManager) -> None:
-        """Registers the custom command-line option for the maintainability checks"""
+        """Registers the custom command-line option for the metrics checks"""
         parser.add_option(
             "--min-maintain-index",
             type=float,
             parse_from_config=True,
-            default=cls.DEFAULT_THRESHOLD,
-            help=(f"Minimum Maintainability Index allowed (default: {cls.DEFAULT_THRESHOLD})"),
+            default=cls.MANTAIN_THRESHOLD,
+            help=(f"Minimum Maintainability Index allowed (default: {cls.MANTAIN_THRESHOLD})"),
         )
 
     @classmethod
     def parse_options(cls, options: Namespace) -> None:
-        """Parses and stores the maintainability threshold from options"""
+        """Parses and stores the metrics threshold from options"""
         cls.threshold = options.min_maintain_index
 
     def __init__(self, tree: ast.AST, lines: list[str]) -> None:
@@ -47,7 +47,7 @@ class MaintainabilityChecker:
         self.lines = lines
 
     def run(self) -> Generator[tuple[int, int, str, type]]:
-        """Calculates the Maintainability Index and yields a violation if below threshold."""
+        """Calculates the metrics and yields a violation if below threshold."""
         try:
             score = mi_visit("".join(self.lines), multi=True)
         except Exception:
@@ -57,7 +57,7 @@ class MaintainabilityChecker:
             yield (
                 1,  # line
                 0,  # column
-                f"MI100 Maintainability index {mi_rank(score)!r} ({score:.2f})"
+                f"M100 Maintainability index {mi_rank(score)!r} ({score:.2f})"
                 f" is below threshold ({self.threshold})",
                 type(self),
             )

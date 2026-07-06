@@ -146,11 +146,12 @@ exclude = [
 per-file-ignores = [
     "pydtnn/converters/*:N802",
     "pydtnn/converters/onnx2pydtnn/*:N802,N806",
-    "pydtnn/libs/*:N801,N802,N803,N816,N818,E501,MI100"
+    "pydtnn/libs/*:N801,N802,N803,N816,N818,E501,M100"
 ]
 
 [project.entry-points."flake8.extension"]
-MI1 = "pydtnn.utils.flake8_maintain:MaintainabilityChecker"
+M = "pydtnn.utils.flake8_metrics:MetricsChecker"
+T = "pydtnn.utils.flake8_pyright:PyrightChecker"
 
 [tool.autopep8]
 max-line-length = 100
@@ -177,3 +178,10 @@ omit = [
     "*/pydtnn/tracers/*",
     "*/pydtnn/utils/*"
 ]
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
+typeCheckingMode = "basic"
+include = ["pydtnn"]
+exclude = ["**/__pycache__", "build", "vendor"]
