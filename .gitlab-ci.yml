@@ -78,8 +78,6 @@ job_merge:
   - GIT_REMOTE_NAME=$(git remote)
   - GIT_REMOTE_URL=$(git remote get-url "${GIT_REMOTE_NAME:?}")
   - GIT_TAG=$(basename ./build/pydtnn/pydtnn-*.tar.gz | sed -nE 's|^pydtnn-(.*)\.tar\.gz$|v\1|p')
-  - git config --global user.name "${GITLAB_USER_NAME:?}"
-  - git config --global user.email "${GITLAB_USER_EMAIL:?}"
   - git remote set-url "${GIT_REMOTE_NAME}" "${GIT_REMOTE_URL/gitlab-ci-token:[^@]*@/gitlab-ci-token:${CI_JOB_TOKEN:?}@}"
   - glab auth login --hostname "${CI_SERVER_FQDN:?}" --token "${CI_JOB_TOKEN:?}"
   script:
@@ -88,7 +86,6 @@ job_merge:
   - git merge "${CI_COMMIT_SHA:?}" --ff-only
   - git tag "${GIT_TAG:?}" "${CI_COMMIT_SHA:?}" || true
   - git push "${GIT_REMOTE_NAME:?}" "${BRANCH_MAIN:?}" "${GIT_TAG:?}"
-  - git checkout "${CI_COMMIT_SHA:?}"
 
 job_push:
   stage: push
