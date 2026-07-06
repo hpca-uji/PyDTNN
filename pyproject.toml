@@ -88,7 +88,8 @@ lint = [
     "pycodestyle~=2.14",
     "pydocstyle~=6.3",
     "pyflakes~=3.4",
-    "radon~=6.0"
+    "radon~=6.0",
+    "pyright~=1.1"
 ]
 profile = [
     "memray~=1.19"
