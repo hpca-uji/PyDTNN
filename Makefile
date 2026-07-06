@@ -573,7 +573,7 @@ uarchfhe-clean:
 pydtnn: pydtnn-build
 
 pydtnn-deps:
-	$(APT) install -y python3 gcc patchelf
+	$(APT) install -y python3 nodejs gcc patchelf
 	$(PIP) install build auditwheel
 
 pydtnn-src: $(PYDTNN_SRC)/.git
