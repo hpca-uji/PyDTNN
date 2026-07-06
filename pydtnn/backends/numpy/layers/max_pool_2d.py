@@ -26,7 +26,7 @@ class MaxPool2DNumpy(MaxPool2D[np.ndarray], AbstractPool2DLayerNumpy):
         """Initialize the MaxPool2DNumpy layer."""
         super().__init__(*args, **kwargs)
         # The following attribute will be intialized later.
-        self.idx_max: np.ndarray[tuple[int, int, int, int], np.int32] = None  # type: ignore
+        self.idx_max: np.ndarray[tuple[int, int, int, int], np.dtype[np.int32]] = None  # type: ignore
         self.y: np.ndarray  # NOTE: Defined and initalized in AbstractPool2DLayerNumpy's init and initialize, respectively
 
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
@@ -42,7 +42,7 @@ class MaxPool2DNumpy(MaxPool2D[np.ndarray], AbstractPool2DLayerNumpy):
         # NOTE: This attribute only stores data, its value before the operation
         # doesn't matter; it's initalized due avoid warnings in
         # "LayerAndActivationBase.export".
-        self._idx_max: np.ndarray[tuple[int, int, int, int], np.int32] = np.zeros(
+        self._idx_max: np.ndarray[tuple[int, int, int, int], np.dtype[np.int32]] = np.zeros(
             idx_max_shape, dtype=np.int32
         )  # type: ignore
         self.memory_used += self._idx_max.nbytes

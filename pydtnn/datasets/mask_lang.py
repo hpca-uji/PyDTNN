@@ -98,7 +98,7 @@ class MaskLang(Dataset):
 
         # Synthetic
         # self.train_val_nsamples = 10000
-        # self.train_nsamples = None
+        # self.train_nsamples = -1
         # self.make_train_val_partitions()
         # self.src_embeddings = random.random(
         #     (self.train_val_nsamples, 1, self.max_sentence, self.embedl)
@@ -119,7 +119,7 @@ class MaskLang(Dataset):
 
         self.train_val_nsamples = len(self.lines)
         logger.info(self.train_val_nsamples)
-        self.train_nsamples = None
+        self.train_nsamples = -1
 
     def get_dictionary(self, language: str) -> Language:
         """
@@ -141,7 +141,7 @@ class MaskLang(Dataset):
     def make_train_val_partitions(self) -> None:
         """Create training and validation partitions based on model configuration."""
         val_split = self.model.validation_split
-        if self.train_nsamples is None:
+        if self.train_nsamples < 0:
             s = np.arange(self.train_val_nsamples)
             if self.model.augment_shuffle:
                 self.model.random.shuffle(s)

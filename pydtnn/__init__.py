@@ -206,7 +206,7 @@ else:
 
 # SYNC CUDNN+CUDA
 if cudnn is not None and stream is not None:
-    cudnn.cudnnSetStream(cudnn_handle, stream_handle)
+    cudnn.cudnnSetStream(cudnn_handle, stream_handle)  # type: ignore
 
 # SYNC CUBLAS+CUDA
 if cublas is not None and stream is not None:

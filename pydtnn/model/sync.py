@@ -61,7 +61,7 @@ class Sync[T: Array](Init[T]):  # noqa: D101 (generics not detected)
         """
 
         if self.crypt:
-            data = self.crypt.decrypt(data)
+            data = self.crypt.decrypt(data)  # type: ignore
 
         if self.model_sync_quantize:
             data = np.astype(data, self.dtype)
