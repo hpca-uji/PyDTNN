@@ -11,6 +11,10 @@ import logging
 
 import numpy as np
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from pydtnn.backends.cython.utils.base import _npDT
+
 from pydtnn.utils.sparse.sparse_cython import (summ_coo_cython, top_threshold_selection_coo_cython,
                                                top_threshold_selection_dense_cython)
 
@@ -19,7 +23,11 @@ __all__ = ("SparseMatrixCOO",)
 logger = logging.getLogger(__name__)
 
 
-class SparseMatrixCOO:
+type DataType[T: _npDT] = np.ndarray[tuple[int], np.dtype[T]]
+type RowType = np.ndarray[tuple[int], np.dtype[np.int32]]
+type ColType = RowType
+
+class SparseMatrixCOO[T: _npDT]:
     """Represents a sparse matrix in COO format.
 
     This format stores the matrix using three arrays:
@@ -34,9 +42,9 @@ class SparseMatrixCOO:
 
     def __init__(
         self,
-        data: np.ndarray,
-        row: np.ndarray[tuple[int], np.dtype[np.int32]],
-        col: np.ndarray[tuple[int], np.dtype[np.int32]],
+        data: DataType[T],
+        row: RowType,
+        col: ColType,
         shape: tuple,
         has_canonical_format: bool,
     ) -> None:
@@ -54,12 +62,12 @@ class SparseMatrixCOO:
             raise AssertionError("Data, row, and col arrays must have the same shape")
 
         if has_canonical_format:
-            self.data = data
-            self.row = row
-            self.col = col
-            self.shape = shape
-            self.nnz = len(self.data)
-            self.has_canonical_format = True
+            self.data: DataType[T] = data
+            self.row: RowType = row
+            self.col: ColType = col
+            self.shape: tuple = shape
+            self.nnz: int = len(self.data)
+            self.has_canonical_format: bool = True
             assert self._has_canonical_format()
 
         else:
@@ -69,7 +77,7 @@ class SparseMatrixCOO:
             )
 
     @classmethod
-    def from_dense(cls, dense_array: np.ndarray) -> "SparseMatrixCOO":
+    def from_dense(cls, dense_array: np.ndarray) -> SparseMatrixCOO[T]:
         """Constructs to create a SparseMatrixCOO from a dense array.
 
         Only stores non-zero values!
@@ -98,7 +106,7 @@ class SparseMatrixCOO:
     @classmethod
     def from_dense_top_selection(
         cls, dense_array: np.ndarray, threshold: float
-    ) -> "SparseMatrixCOO":
+    ) -> SparseMatrixCOO[T]:
         """Constructor from a dense array considering only elements greater than or equal to the threshold.
 
         Parameters:
@@ -117,9 +125,8 @@ class SparseMatrixCOO:
         topk, topk_row, topk_col = top_threshold_selection_dense_cython(dense_array, threshold)
         return cls(topk, topk_row, topk_col, dense_array.shape, has_canonical_format=True)
 
-    def top_selection(
-        self, threshold: float, inplace: bool | None = True
-    ) -> "SparseMatrixCOO | None":
+    def top_selection(self, threshold: float,
+                      inplace: bool | None = True) -> SparseMatrixCOO[T] | None:
         """
         Performs top threshold selection on sparse array
 
@@ -128,7 +135,7 @@ class SparseMatrixCOO:
             inplace (bool, optional): Whether to modify the current instance.
 
         Returns:
-            topk (SparseMatrixCOO): if inplace == False, or void (None): if inplace == True
+            topk (SparseMatrixCOO[T]): if inplace == False, or void (None): if inplace == True
         """
 
         topk, topk_row, topk_col = top_threshold_selection_coo_cython(
@@ -143,9 +150,9 @@ class SparseMatrixCOO:
             # self.shape remains equal
             # self.has_canonical_format remains equal
         else:
-            return SparseMatrixCOO(topk, topk_row, topk_col, self.shape, self.has_canonical_format)
+            return SparseMatrixCOO[T](topk, topk_row, topk_col, self.shape, self.has_canonical_format)
 
-    def get_indexes(self) -> tuple[np.ndarray, np.ndarray]:
+    def get_indexes(self) -> tuple[RowType, ColType]:
         """
         Returns the row and col indices.
 
@@ -154,7 +161,7 @@ class SparseMatrixCOO:
         """
         return self.row, self.col
 
-    def get_triplet(self) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def get_triplet(self) -> tuple[DataType, RowType, ColType]:
         """
         Returns the data, row, col triplet.
 
@@ -165,7 +172,7 @@ class SparseMatrixCOO:
 
     def slice(
         self, row_start: int, row_end: int, reset_indexes: bool | None = False
-    ) -> "SparseMatrixCOO":
+    ) -> SparseMatrixCOO[T]:
         """
         Perform a slice by row of the sparse matrix.
 
@@ -187,11 +194,11 @@ class SparseMatrixCOO:
         if reset_indexes:
             sliced_row -= row_start
 
-        return SparseMatrixCOO(
+        return SparseMatrixCOO[T](
             sliced_data, sliced_row, sliced_col, self.shape, self.has_canonical_format
         )
 
-    def to_dense(self) -> np.ndarray:
+    def to_dense(self) -> np.ndarray[tuple[int, ...], np.dtype[np.float32]]:
         """
         Convert to dense np.array.
 
@@ -208,12 +215,12 @@ class SparseMatrixCOO:
         dense_matrix[self.row, self.col] = self.data
         return dense_matrix
 
-    def __add__(self, other: "SparseMatrixCOO") -> "SparseMatrixCOO":
+    def __add__(self, other: SparseMatrixCOO[T]) -> SparseMatrixCOO[T]:
         """
         Adds two SparseMatrixCOO matrices that are in canonical format.
 
         Parameters:
-            other (SparseMatrixCOO): Another SparseMatrixCOO instance.
+            other (SparseMatrixCOO[T]): Another SparseMatrixCOO instance.
 
         Returns:
             SparseMatrixCOO: A new instance representing the sum of both matrices.
@@ -229,9 +236,9 @@ class SparseMatrixCOO:
         summ_val, summ_row, summ_col = summ_coo_cython(
             self.data, self.row, self.col, other.data, other.row, other.col
         )
-        return SparseMatrixCOO(summ_val, summ_row, summ_col, self.shape, has_canonical_format=True)
+        return SparseMatrixCOO[T](summ_val, summ_row, summ_col, self.shape, has_canonical_format=True)
 
-    def __radd__(self, other: "int | SparseMatrixCOO") -> "SparseMatrixCOO":
+    def __radd__(self, other: int | SparseMatrixCOO[T]) -> SparseMatrixCOO[T]:
         """
         Implements right-hand addition to support the built-in sum() function.
 
@@ -240,7 +247,7 @@ class SparseMatrixCOO:
         otherwise, it delegates the operation to the __add__ method.
 
         Parameters:
-            other (int or SparseMatrixCOO): The left-hand operand.
+            other (int or SparseMatrixCOO[T]): The left-hand operand.
 
         Returns:
             SparseMatrixCOO: The sum of self and other.

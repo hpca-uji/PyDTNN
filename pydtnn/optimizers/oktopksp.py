@@ -82,6 +82,8 @@ class OkTopkSP[T: Array](Optimizer[T]):  # noqa: D101 (generics not detected)
         """
         super()._model_init(list_layers)
 
+        assert self.model.comm, "Communicator need!"
+
         if self.model.model_sync_freq >= 0:
             logger.warning("Optimizer does model sync but global model sync is also enabled!")
 

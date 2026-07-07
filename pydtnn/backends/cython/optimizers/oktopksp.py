@@ -114,26 +114,6 @@ class OkTopkSPCython(OkTopkSPNumpy, OptimizerCython):
             reset_residuals_cython(acc, indexes[0], indexes[1])
             return acc
 
-    def _update_weights(
-        self, layer: Layerable, w_type: str, w: np.ndarray, coo_u: SparseMatrixCOO
-    ) -> None:
-        """
-        Update weights and set to weight layer attribute.
-
-        w -= (u / self.model.nprocs)
-        setattr(layer, w_type, w)
-
-        Parameters:
-            layer (int): layer id
-            w_type (string): weight param type (bias, weight, ...)
-            w (np.array): N dimensional dense weights matrix/tensor
-            coo_u (SparseMatrixCOO): Sparse 2D gradient matrix in COO format to update w
-
-        Returns:
-            (void): instead it directly applies the result to the weight layer attribute
-        """
-        raise NotImplementedError("This is a fake method that must be replaced with the right one.")
-
     def _update_weights_cython(
         self, layer: Layerable, w_type: str, w: np.ndarray, coo_u: SparseMatrixCOO
     ) -> None:

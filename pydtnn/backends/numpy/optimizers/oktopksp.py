@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     import numpy as np  # noqa: F811 (override typing)
+    from pympi.MPI import Request
 
 
 try:
@@ -23,6 +24,7 @@ try:
 except (ImportError, ModuleNotFoundError):
     pass
 
+type AllGatherTypes = np.ndarray[tuple[int, ...], np.dtype[np.float32 | np.float64]] | SparseMatrixCOO
 
 class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
     """NumPy-based implementation of the OkTopkSP optimizer for distributed training."""
@@ -37,17 +39,18 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
         super()._model_init(list_layers)
 
         self.iterations: dict[int, int]
-        self.all_local_th: dict[int, dict[str, np.ndarray]]
-        self.all_global_th: dict[int, dict[str, np.ndarray]]
+        self.all_local_th: dict[int, dict[str, float]]
+        self.all_global_th: dict[int, dict[str, float]]
         self.all_residuals: dict[int, dict[str, np.ndarray]]
         self.all_boundaries: dict[int, dict[str, np.ndarray]]
 
         for layer in list_layers:
             self.iterations[layer.id] = 0
-            self.all_local_th[layer.id] = {dw_: None for dw_ in layer.grad_vars.values()}
-            self.all_global_th[layer.id] = {dw_: None for dw_ in layer.grad_vars.values()}
-            self.all_residuals[layer.id] = {dw_: None for dw_ in layer.grad_vars.values()}
-            self.all_boundaries[layer.id] = {dw_: None for dw_ in layer.grad_vars.values()}
+            # The following attributes will be initialized later.
+            self.all_local_th[layer.id] = {dw_: None for dw_ in layer.grad_vars.values()}  #  type: ignore
+            self.all_global_th[layer.id] = {dw_: None for dw_ in layer.grad_vars.values()}  #  type: ignore
+            self.all_residuals[layer.id] = {dw_: None for dw_ in layer.grad_vars.values()}  #  type: ignore
+            self.all_boundaries[layer.id] = {dw_: None for dw_ in layer.grad_vars.values()}  #  type: ignore
 
     def update(self, layer: Layerable) -> None:
         """
@@ -159,15 +162,29 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
                 acc[indexes] = 0
             return acc
 
-    # TODO: Move this to 3 different methods.
+
     def _update_weights(
-        self,
-        layer: Layerable,
-        w_type: str,
-        w: np.ndarray,
-        coo_u: SparseMatrixCOO,
-        method: str = "cython",
+        self, layer: Layerable, w_type: str, w: np.ndarray, coo_u: SparseMatrixCOO
     ) -> None:
+        """
+        Update weights and set to weight layer attribute.
+
+        w -= (u / self.model.nprocs)
+        setattr(layer, w_type, w)
+
+        Parameters:
+            layer (int): layer id
+            w_type (string): weight param type (bias, weight, ...)
+            w (np.array): N dimensional dense weights matrix/tensor
+            coo_u (SparseMatrixCOO): Sparse 2D gradient matrix in COO format to update w
+
+        Returns:
+            (void): instead it directly applies the result to the weight layer attribute
+        """
+        raise NotImplementedError("This is a fake method that must be replaced with the right one.")
+
+    def _update_weights_numpy(self, layer: Layerable, w_type: str, w: np.ndarray,
+                              coo_u: SparseMatrixCOO, ) -> None:
         """
         Update weights and set to weight layer attribute.
 
@@ -187,58 +204,101 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
         """
 
         self._show_message_only_once(
-            f"In '_update_weights', the method that it is being used is '{method}'"
+            f"In '_update_weights', the method that it is being used is 'numpy'"
         )
 
-        if method == "numpy":
-            if len(self.dw_original_shape) != 2:
-                w = w.reshape(w.shape[0], -1)
-            w[coo_u.row, coo_u.col] -= coo_u.data
-            if len(self.dw_original_shape) != 2:
-                w = w.reshape(self.dw_original_shape)
-            setattr(layer, w_type, w)
-            return
+        if len(self.dw_original_shape) != 2:
+            w = w.reshape(w.shape[0], -1)
+        w[coo_u.row, coo_u.col] -= coo_u.data
+        if len(self.dw_original_shape) != 2:
+            w = w.reshape(self.dw_original_shape)
+        setattr(layer, w_type, w)
+        return
 
-        if method == "numpy_with_vel_and_momentum":
-            if self.momentum == 0:
-                logger.warning(
-                    "If momentum is 0 use just 'numpy' method, it produces the same output but it"
-                    " is faster"
-                )
+    def _update_weights_numpy_with_vel_and_momentum(self, layer: Layerable, w_type: str, w: np.ndarray,
+                                                    coo_u: SparseMatrixCOO, ) -> None:
+        """
+        Update weights and set to weight layer attribute.
 
-            if len(self.dw_original_shape) != 2:
-                w = w.reshape(w.shape[0], -1)
-            velocity = getattr(
-                layer, "velocity_%s" % w_type, np.zeros_like(w, dtype=layer.model.dtype)
-            )
-            velocity *= self.momentum
-            velocity[coo_u.row, coo_u.col] += coo_u.data
-            w[coo_u.row, coo_u.col] -= velocity[coo_u.row, coo_u.col]
-            if len(self.dw_original_shape) != 2:
-                w = w.reshape(self.dw_original_shape)
-            setattr(layer, w_type, w)
-            setattr(layer, "velocity_%s" % w_type, velocity)
-            return
+        w -= (u / self.model.nprocs)
+        setattr(layer, w_type, w)
 
-        if method == "like_sgd":
-            """Use only for debugging purposes"""
+        Parameters:
+            layer (int): layer id
+            w_type (string): weight param type (bias, weight, ...)
+            w (np.array): N dimensional dense weights matrix/tensor
+            coo_u (SparseMatrixCOO): Sparse 2D gradient matrix in COO format to update w
+            method (string, optional): The method to use for updating the weights. It can be 'cython' or 'numpy'.
+                Default is 'cython'.
+
+        Returns:
+            (void): instead it directly applies the result to the weight layer attribute
+        """
+
+        self._show_message_only_once(
+            f"In '_update_weights', the method that it is being used is 'numpy_with_vel_and_momentum'"
+        )
+
+        if self.momentum == 0:
             logger.warning(
-                "This method should be used only in case of debugging for performance reasons."
+                "If momentum is 0 use just 'numpy' method, it produces the same output but it"
+                " is faster"
             )
 
-            dw = coo_u.to_dense()
-            if len(self.dw_original_shape) != 2:
-                dw = dw.reshape(self.dw_original_shape)
-            velocity = getattr(
-                layer, "velocity_%s" % w_type, np.zeros_like(w, dtype=layer.model.dtype)
-            )
-            velocity = self.momentum * velocity + dw
-            w -= velocity  # Oktopk already computes acc with learning_rate
-            setattr(layer, w_type, w)
-            setattr(layer, "velocity_%s" % w_type, velocity)
-            return
+        if len(self.dw_original_shape) != 2:
+            w = w.reshape(w.shape[0], -1)
+        velocity = getattr(
+            layer, "velocity_%s" % w_type, np.zeros_like(w, dtype=layer.model.dtype)
+        )
+        velocity *= self.momentum
+        velocity[coo_u.row, coo_u.col] += coo_u.data
+        w[coo_u.row, coo_u.col] -= velocity[coo_u.row, coo_u.col]
+        if len(self.dw_original_shape) != 2:
+            w = w.reshape(self.dw_original_shape)
+        setattr(layer, w_type, w)
+        setattr(layer, "velocity_%s" % w_type, velocity)
+        return
 
-        raise NotImplementedError(f"Method '{method}' not implemented")
+    def _update_weights_like_sgd(self, layer: Layerable, w_type: str,
+                                 w: np.ndarray, coo_u: SparseMatrixCOO) -> None:
+        """
+        Update weights and set to weight layer attribute.
+
+        w -= (u / self.model.nprocs)
+        setattr(layer, w_type, w)
+
+        Parameters:
+            layer (int): layer id
+            w_type (string): weight param type (bias, weight, ...)
+            w (np.array): N dimensional dense weights matrix/tensor
+            coo_u (SparseMatrixCOO): Sparse 2D gradient matrix in COO format to update w
+            method (string, optional): The method to use for updating the weights. It can be 'cython' or 'numpy'.
+                Default is 'cython'.
+
+        Returns:
+            (void): instead it directly applies the result to the weight layer attribute
+        """
+
+        self._show_message_only_once(
+            f"In '_update_weights', the method that it is being used is 'like_sgd'"
+        )
+
+        """Use only for debugging purposes"""
+        logger.warning(
+            "This method should be used only in case of debugging for performance reasons."
+        )
+
+        dw = coo_u.to_dense()
+        if len(self.dw_original_shape) != 2:
+            dw = dw.reshape(self.dw_original_shape)
+        velocity = getattr(
+            layer, "velocity_%s" % w_type, np.zeros_like(w, dtype=layer.model.dtype)
+        )
+        velocity = self.momentum * velocity + dw
+        w -= velocity  # Oktopk already computes acc with learning_rate
+        setattr(layer, w_type, w)
+        setattr(layer, "velocity_%s" % w_type, velocity)
+        return
 
     def _ok_sparse_allreduce(
         self,
@@ -271,7 +331,7 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
         """
 
         if t % thresholds_re_evaluation_t == 0:
-            self.local_th = self._th_re_evaluate(acc, k, input_format="dense")
+            self.local_th = self._th_re_evaluate_dense(acc, k)
 
         if t % space_repartition_t == 0:
             self.boundaries = self._space_repartition(acc, self.local_th)
@@ -282,7 +342,7 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
 
         if t % thresholds_re_evaluation_t == 0:
             coo_all_reduced_topk = self._allgather(coo_reduced_region_topk)
-            self.global_th = self._th_re_evaluate(coo_all_reduced_topk, k, input_format="coo")
+            self.global_th = self._th_re_evaluate_coo(coo_all_reduced_topk, k)
 
         coo_u, global_topk_indexes = self._balance_and_allgather(
             coo_reduced_region_topk, self.global_th
@@ -290,12 +350,36 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
         indexes = self._intersect_indexes(local_topk_indexes, global_topk_indexes)
         return coo_u, indexes
 
-    # TODO: Move this to different methods.
-    def _th_re_evaluate(
+# -------------------------------------------------------
+# ---- _th_re_evaluate ----
+# -------------------------
+
+    def _th_re_evaluate_numpy_sort(self, sorted_data: np.ndarray, k: int) -> float:
+        threshold = sorted_data[max(-k, -len(sorted_data))]
+        return threshold
+
+    def _th_re_evaluate_numpy_sort_coo(self, matrix: SparseMatrixCOO, k: int) -> float:
+        return self._th_re_evaluate_numpy_sort(np.sort(np.abs(matrix.data)), k)
+
+    def _th_re_evaluate_numpy_sort_dense(self, matrix: np.ndarray, k: int) -> float:
+        return self._th_re_evaluate_numpy_sort(np.sort(np.abs(matrix)).flatten(), k)
+
+    def _th_re_evaluate_numpy_partition(self, flat_matrix: np.ndarray, k: int) -> float:
+        if k > len(flat_matrix):
+            return flat_matrix.min()
+        threshold = np.partition(flat_matrix, -k)[-k]
+        return threshold
+
+    def _th_re_evaluate_numpy_partition_coo(self, matrix: SparseMatrixCOO, k: int) -> float:
+        return self._th_re_evaluate_numpy_sort(np.abs(matrix.data), k)
+
+    def _th_re_evaluate_numpy_partition_dense(self, matrix: np.ndarray, k: int) -> float:
+        return self._th_re_evaluate_numpy_sort(np.abs(matrix).flatten(), k)
+
+    def _th_re_evaluate_dense(
         self,
-        matrix: np.ndarray | SparseMatrixCOO,
+        matrix: np.ndarray,
         k: int,
-        input_format: str | None = None,
         method: str = "numpy_sort",
     ) -> float:
         """
@@ -305,7 +389,41 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
             matrix (np.array or SparseMatrixCOO): A 2D gradient matrix, in np.array for 'dense' input_format or
                 SparseMatrixCOO for 'coo' input_format.
             k (int): Indicating the number of top gradient values to consider.
-            input_format (string): Either 'dense' for a dense matrix or 'coo' for a sparse matrix in COO format.
+            method (string, optional): The method to use for threshold selection. It can be 'numpy_sort' or 'numpy_partition'.
+
+        Returns:
+            threshold (float): The absolute gradient threshold based on the top k values.
+        """
+
+        if k <= 0:
+            return 0.0
+
+        self._show_message_only_once(
+            f"In '_th_re_evaluate', the method that it is being used is '{method}'"
+        )
+
+        # TODO: if the method is fixed; during the initialize set the method's function in a variable an call that variable here
+        if method == "numpy_sort":
+            return self._th_re_evaluate_numpy_sort_dense(matrix, k)
+        
+        if method == "numpy_partition":
+            return self._th_re_evaluate_numpy_partition_dense(matrix, k)
+
+        raise NotImplementedError(f"Method '{method}' not implemented")
+
+    def _th_re_evaluate_coo(
+        self,
+        matrix: SparseMatrixCOO,
+        k: int,
+        method: str = "numpy_sort",
+    ) -> float:
+        """
+        Return the absolute gradient threshold for a given matrix.
+
+        Parameters:
+            matrix (np.array or SparseMatrixCOO): A 2D gradient matrix, in np.array for 'dense' input_format or
+                SparseMatrixCOO for 'coo' input_format.
+            k (int): Indicating the number of top gradient values to consider.
             method (string, optional): The method to use for threshold selection. It can be 'numpy_sort' or 'numpy_partition'.
 
         Returns:
@@ -319,34 +437,21 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
         if k <= 0:
             return 0.0
 
-        if input_format == "coo" and matrix.nnz == 0:
+        if matrix.nnz == 0:
             return 1.0
+        
+        # TODO: if the method is fixed; during the initialize set the method's function in a variable an call that variable here
+        if method == "numpy_sort":
+            return self._th_re_evaluate_numpy_sort_coo(matrix, k)
+        
+        if method == "numpy_partition":
+            return self._th_re_evaluate_numpy_partition_coo(matrix, k)
 
-        if input_format == "dense" and method == "numpy_sort":
-            sorted_matrix = np.sort(np.abs(matrix).flatten())
-            threshold = sorted_matrix[max(-k, -len(sorted_matrix))]
-            return threshold
+        raise NotImplementedError(f"Method '{method}' not implemented")
 
-        if input_format == "coo" and method == "numpy_sort":
-            sorted_data = np.sort(np.abs(matrix.data))
-            threshold = sorted_data[max(-k, -len(sorted_data))]
-            return threshold
-
-        if input_format == "dense" and method == "numpy_partition":
-            flat_matrix = np.abs(matrix).flatten()
-            if k > len(flat_matrix):
-                return flat_matrix.min()
-            threshold = np.partition(flat_matrix, -k)[-k]
-            return threshold
-
-        if input_format == "coo" and method == "numpy_partition":
-            flat_matrix = np.abs(matrix.data)
-            if k > len(flat_matrix):
-                return flat_matrix.min()
-            threshold = np.partition(flat_matrix, -k)[-k]
-            return threshold
-
-        raise NotImplementedError(f"Method '{method}' with format '{input_format}' not implemented")
+# ------------------------
+# --- _th_re_evaluate ----
+# -----------------------------------------------------------------------------------
 
     def _space_repartition(
         self, acc: np.ndarray, local_th: float, balanced: bool = True
@@ -383,7 +488,6 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
 
             output = boundaries
         else:
-            assert self.model.comm, "Communicator need!"
 
             coo_topk = SparseMatrixCOO.from_dense_top_selection(acc, local_th)
 
@@ -538,6 +642,104 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
 
         return intersected_rows[:count], intersected_cols[:count]
 
+# -----------------------------------------------------------------------------------
+# ----- _reduce_topk ------
+# -------------------------
+
+    def _reduce_topk_collective_allreduce_then_slice(self, coo_topk: SparseMatrixCOO,
+                                                     boundaries: np.ndarray) -> SparseMatrixCOO:
+        logger.warning(
+                "This reduce_topk method ('collective_allreduce_then_slice') should be used only in"
+                " case of debugging for performance reasons."
+        )
+        assert self.model.comm, "Communicator needed!"
+
+        all_reduced_coo = self.model.comm.allreduce(coo_topk, op=MPI.SUM)
+        row_start = 0 if self.model.rank == 0 else boundaries[self.model.rank - 1]
+        row_end = boundaries[self.model.rank]
+        return all_reduced_coo.slice(row_start, row_end)
+
+    def _reduce_topk_collective_region_wise_reduce_sync(self, coo_topk: SparseMatrixCOO,
+                                                        boundaries: np.ndarray) -> SparseMatrixCOO:
+        assert self.model.comm, "Communicator needed!"
+        row_start = 0
+        # # type: ignore (The values will be set later)
+        reduced_regions_coo: list[SparseMatrixCOO] = [None] * self.model.nprocs  # type: ignore
+        for region in range(self.model.nprocs):
+            row_end = boundaries[region]
+            reduced_regions_coo[region] = self.model.comm.reduce(
+                coo_topk.slice(row_start, row_end), op=MPI.SUM, root=region
+            )
+            row_start = row_end
+        return reduced_regions_coo[self.model.rank]
+
+    def _reduce_topk_collective_region_wise_reduce_async(self, coo_topk: SparseMatrixCOO,
+                                                         boundaries: np.ndarray) -> SparseMatrixCOO:
+        raise NotImplementedError("It is not possible with the current mpi4py version to generate a buffer "
+                                  "with indexes and values and operate with them")
+
+    def _reduce_topk_p2p_region_wise_reduce_static_destination(self, coo_topk: SparseMatrixCOO,
+                                                               boundaries: np.ndarray) -> SparseMatrixCOO:
+        
+        assert self.model.comm, "Communicator needed!"
+        # Prepare a vector region for storing the partial sums
+        coo_region_partial_sum: list[SparseMatrixCOO] = [None] * self.model.nprocs  # type: ignore
+        for region in range(self.model.nprocs):
+            row_start = 0 if region == 0 else boundaries[region - 1]
+            row_end = boundaries[region]
+            coo_region_partial_sum[region] = coo_topk.slice(row_start, row_end)
+
+        # Overlaps comm. steps with computation (sparse sum)
+        # On comm_step i: P{rank} sends to P{rank + 1} region{rank - i % nprocs}.
+        destination = (self.model.rank + 1) % self.model.nprocs
+        receive_from = (self.model.rank - 1) % self.model.nprocs
+        for comm_step in range(1, self.model.nprocs):
+            region_to_send = (self.model.rank - comm_step) % self.model.nprocs
+            region_to_recv = (self.model.rank - comm_step - 1) % self.model.nprocs
+            # recv_req = self.model.comm.irecv(source=receive_from)
+            # self.model.comm.send(coo_region_partial_sum[region_to_send], dest=destination)
+            # coo_region_partial_sum[region_to_recv] += recv_req.wait()
+            coo_region_partial_sum[region_to_recv] += self.model.comm.sendrecv(
+                coo_region_partial_sum[region_to_send], dest=destination, source=receive_from
+            )
+        return coo_region_partial_sum[self.model.rank]
+
+    def _reduce_topk_p2p_region_wise_reduce_destination_rotation_and_bucketing(self,
+                                                                               coo_topk: SparseMatrixCOO,
+                                                                               boundaries: np.ndarray
+                                                                              ) -> SparseMatrixCOO:
+        
+        assert self.model.comm, "Communicator needed!"
+        # There are (nprocs - 1) messages to send (excluding self)
+        total_sends = self.model.nprocs - 1
+        requests: list[Request] = [None] * total_sends  # type: ignore
+
+        # Compute local slice of coo_topk (the "self" region)
+        row_start = 0 if self.model.rank == 0 else boundaries[self.model.rank - 1]
+        row_end = boundaries[self.model.rank]
+        coo_reduced_region = coo_topk.slice(row_start, row_end)  
+
+        # Process sends and receives in buckets.
+        bucket_size = 2
+        region = (self.model.rank + 1) % self.model.nprocs
+        for comm_step in range(0, total_sends, bucket_size):
+            # The current bucket may have fewer messages than bucket_size (i.e. the last bucket)
+            current_bucket_size = min(bucket_size, total_sends - comm_step)
+            # Non-blocking sends for the current bucket
+            for i in range(current_bucket_size):
+                row_start = 0 if region == 0 else boundaries[region - 1]
+                row_end = boundaries[region]
+                requests[comm_step + i] = self.model.comm.isend(
+                    coo_topk.slice(row_start, row_end), dest=region
+                )
+                region = (region + 1) % self.model.nprocs
+            # After sending the bucket, perform the receives sequentially for the same bucket.
+            for i in range(current_bucket_size):
+                coo_reduced_region += self.model.comm.recv()
+
+        MPI.Request.Waitall(requests)
+        return coo_reduced_region
+
     # TODO: Move this to different methods.
     def _reduce_topk(
         self,
@@ -566,91 +768,54 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
 
         assert self.model.comm, "Communicator need!"
 
-        if method == "collective_allreduce_then_slice":
-            logger.warning(
-                "This reduce_topk method ('collective_allreduce_then_slice') should be used only in"
-                " case of debugging for performance reasons."
-            )
-            all_reduced_coo = self.model.comm.allreduce(coo_topk, op=MPI.SUM)
-            row_start = 0 if self.model.rank == 0 else boundaries[self.model.rank - 1]
-            row_end = boundaries[self.model.rank]
-            return all_reduced_coo.slice(row_start, row_end)
+        match method:
+            case "collective_allreduce_then_slice":
+                return self._reduce_topk_collective_allreduce_then_slice(coo_topk, boundaries)
+            case "collective_region_wise_reduce_sync":
+                return self._reduce_topk_collective_region_wise_reduce_sync(coo_topk, boundaries)
+            case "collective_region_wise_reduce_async":
+                return self._reduce_topk_collective_region_wise_reduce_async(coo_topk, boundaries)
+            case "p2p_region_wise_reduce_static_destination":
+                return self._reduce_topk_p2p_region_wise_reduce_static_destination(coo_topk, boundaries)
+            case "p2p_region_wise_reduce_destination_rotation_and_bucketing":
+                return self._reduce_topk_p2p_region_wise_reduce_destination_rotation_and_bucketing(coo_topk, boundaries)
+            case _:
+                raise NotImplementedError(f"Method '{method}' not implemented")
 
-        if method == "collective_region_wise_reduce_sync":
-            row_start = 0
-            reduced_regions_coo = [None] * self.model.nprocs
-            for region in range(self.model.nprocs):
-                row_end = boundaries[region]
-                reduced_regions_coo[region] = self.model.comm.reduce(
-                    coo_topk.slice(row_start, row_end), op=MPI.SUM, root=region
-                )
-                row_start = row_end
-            return reduced_regions_coo[self.model.rank]
+# -------------------------
+# ----- _reduce_topk ------
+# -----------------------------------------------------------------------------------
+    def _allgather_dense(self, local_data: np.ndarray) -> np.ndarray:
+        """
+        Gathers data from all processes.
 
-        if method == "collective_region_wise_reduce_async":
-            """It is not possible with the current mpi4py version to generate a buffer
-             with indexes and values and operate with them"""
-            pass
+        Parameters:
+            local_data (np.ndarray): The local data to be gathered.
+        Returns:
+            gathered_data (np.ndarray): The gathered global data in the specified format.
+        """
+        logger.warning("Try to avoid dense communications!")
+        return np.concatenate(self.model.comm.allgather(local_data))
 
-        if method == "p2p_region_wise_reduce_static_destination":
-            # Prepare a vector region for storing the partial sums
-            coo_region_partial_sum = [None] * self.model.nprocs
-            for region in range(self.model.nprocs):
-                row_start = 0 if region == 0 else boundaries[region - 1]
-                row_end = boundaries[region]
-                coo_region_partial_sum[region] = coo_topk.slice(row_start, row_end)
+    def _allgather_sparse_matrix(self, local_data: SparseMatrixCOO) -> SparseMatrixCOO:
+        """
+        Gathers data from all processes.
 
-            # Overlaps comm. steps with computation (sparse sum)
-            # On comm_step i: P{rank} sends to P{rank + 1} region{rank - i % nprocs}.
-            destination = (self.model.rank + 1) % self.model.nprocs
-            receive_from = (self.model.rank - 1) % self.model.nprocs
-            for comm_step in range(1, self.model.nprocs):
-                region_to_send = (self.model.rank - comm_step) % self.model.nprocs
-                region_to_recv = (self.model.rank - comm_step - 1) % self.model.nprocs
-                # recv_req = self.model.comm.irecv(source=receive_from)
-                # self.model.comm.send(coo_region_partial_sum[region_to_send], dest=destination)
-                # coo_region_partial_sum[region_to_recv] += recv_req.wait()
-                coo_region_partial_sum[region_to_recv] += self.model.comm.sendrecv(
-                    coo_region_partial_sum[region_to_send], dest=destination, source=receive_from
-                )
-
-            return coo_region_partial_sum[self.model.rank]
-
-        if method == "p2p_region_wise_reduce_destination_rotation_and_bucketing":
-            # There are (nprocs - 1) messages to send (excluding self)
-            total_sends = self.model.nprocs - 1
-            requests = [None] * total_sends
-
-            # Compute local slice of coo_topk (the "self" region)
-            row_start = 0 if self.model.rank == 0 else boundaries[self.model.rank - 1]
-            row_end = boundaries[self.model.rank]
-            coo_reduced_region = coo_topk.slice(row_start, row_end)
-
-            # Process sends and receives in buckets.
-            bucket_size = 2
-            region = (self.model.rank + 1) % self.model.nprocs
-            for comm_step in range(0, total_sends, bucket_size):
-                # The current bucket may have fewer messages than bucket_size (i.e. the last bucket)
-                current_bucket_size = min(bucket_size, total_sends - comm_step)
-                # Non-blocking sends for the current bucket
-                for i in range(current_bucket_size):
-                    row_start = 0 if region == 0 else boundaries[region - 1]
-                    row_end = boundaries[region]
-                    requests[comm_step + i] = self.model.comm.isend(
-                        coo_topk.slice(row_start, row_end), dest=region
-                    )
-                    region = (region + 1) % self.model.nprocs
-                # After sending the bucket, perform the receives sequentially for the same bucket.
-                for i in range(current_bucket_size):
-                    coo_reduced_region += self.model.comm.recv()
-
-            MPI.Request.Waitall(requests)
-            return coo_reduced_region
-
-        raise NotImplementedError(f"Method '{method}' not implemented")
+        Parameters:
+            local_data (SparseMatrixCOO): The local data to be gathered.
+        Returns:
+            gathered_data (SparseMatrixCOO): The gathered global data in the specified format.
+        """
+        gathered = self.model.comm.allgather(local_data.get_triplet())
+        all_val = np.concatenate([t[0] for t in gathered])
+        all_row = np.concatenate([t[1] for t in gathered])
+        all_col = np.concatenate([t[2] for t in gathered])
+        return SparseMatrixCOO(
+            all_val, all_row, all_col, self.dw_2d_shape, has_canonical_format=True
+        )
 
     # TODO: Move this to different methods.
-    def _allgather[T](  # : np.ndarray | SparseMatrixCOO
+    def _allgather[T: AllGatherTypes](  # : np.ndarray | SparseMatrixCOO
         self, local_data: T, input_format: str = "SparseMatrixCOO"
     ) -> T:
         """
@@ -666,22 +831,16 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
         if self.model.nprocs == 1:
             return local_data
 
-        assert self.model.comm, "Communicator need!"
-
-        if input_format == "SparseMatrixCOO":
-            gathered = self.model.comm.allgather(local_data.get_triplet())
-            all_val = np.concatenate([t[0] for t in gathered])
-            all_row = np.concatenate([t[1] for t in gathered])
-            all_col = np.concatenate([t[2] for t in gathered])
-            return SparseMatrixCOO(
-                all_val, all_row, all_col, self.dw_2d_shape, has_canonical_format=True
-            )
-
-        if input_format == "dense":
-            logger.warning("Try to avoid dense communications!")
-            return np.concatenate(self.model.comm.allgather(local_data))
-
-        raise NotImplementedError(f"Input format '{input_format}' not implemented")
+        # TODO: Move theese methods to an attribute in model_init
+        match input_format:
+            case "dense":
+                assert isinstance(local_data, np.ndarray)
+                return self._allgather_dense(local_data)
+            case "SparseMatrixCOO":
+                assert isinstance(local_data, SparseMatrixCOO)
+                return self._allgather_sparse_matrix(local_data)
+            case _:
+                raise NotImplementedError(f"Input format '{input_format}' not implemented")
 
     def _show_message_only_once(self, message: str) -> None:
         """
