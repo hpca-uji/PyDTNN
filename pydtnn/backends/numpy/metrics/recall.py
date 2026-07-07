@@ -36,9 +36,9 @@ class RecallNumpy(Recall[np.ndarray], MetricNumpy):
         """Allocates memory for internal buffers after model initialization."""
         super()._post_init()
         with self.model.memory:
-            self.true_positives = self.model.memory.ndarray(self.temp_var_shape, dtype=np.float32)
-            self.false_negatives = self.model.memory.ndarray(self.temp_var_shape, dtype=np.float32)
-            self.are_zeros = self.model.memory.ndarray(self.temp_var_shape, dtype=np.bool_)
+            self.true_positives = self.model.memory.ndarray(self.temp_var_shape, dtype=np.dtype(np.float32))
+            self.false_negatives = self.model.memory.ndarray(self.temp_var_shape, dtype=np.dtype(np.float32))
+            self.are_zeros = self.model.memory.ndarray(self.temp_var_shape, dtype=np.dtype(np.bool_))
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
         """

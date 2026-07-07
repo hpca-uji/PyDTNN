@@ -26,6 +26,7 @@ except (ImportError, ModuleNotFoundError):
 
 type AllGatherTypes = np.ndarray[tuple[int, ...], np.dtype[np.float32 | np.float64]] | SparseMatrixCOO
 
+
 class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
     """NumPy-based implementation of the OkTopkSP optimizer for distributed training."""
 
@@ -46,11 +47,12 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
 
         for layer in list_layers:
             self.iterations[layer.id] = 0
+
             # The following attributes will be initialized later.
-            self.all_local_th[layer.id] = {dw_: None for dw_ in layer.grad_vars.values()}  #  type: ignore
-            self.all_global_th[layer.id] = {dw_: None for dw_ in layer.grad_vars.values()}  #  type: ignore
-            self.all_residuals[layer.id] = {dw_: None for dw_ in layer.grad_vars.values()}  #  type: ignore
-            self.all_boundaries[layer.id] = {dw_: None for dw_ in layer.grad_vars.values()}  #  type: ignore
+            self.all_local_th[layer.id] = {dw_: None for dw_ in layer.grad_vars.values()}  # type: ignore
+            self.all_global_th[layer.id] = {dw_: None for dw_ in layer.grad_vars.values()}  # type: ignore
+            self.all_residuals[layer.id] = {dw_: None for dw_ in layer.grad_vars.values()}  # type: ignore
+            self.all_boundaries[layer.id] = {dw_: None for dw_ in layer.grad_vars.values()}  # type: ignore
 
     def update(self, layer: Layerable) -> None:
         """
@@ -161,7 +163,6 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
             if len(indexes[0]) > 0:
                 acc[indexes] = 0
             return acc
-
 
     def _update_weights(
         self, layer: Layerable, w_type: str, w: np.ndarray, coo_u: SparseMatrixCOO
@@ -405,7 +406,7 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
         # TODO: if the method is fixed; during the initialize set the method's function in a variable an call that variable here
         if method == "numpy_sort":
             return self._th_re_evaluate_numpy_sort_dense(matrix, k)
-        
+
         if method == "numpy_partition":
             return self._th_re_evaluate_numpy_partition_dense(matrix, k)
 
@@ -439,11 +440,11 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
 
         if matrix.nnz == 0:
             return 1.0
-        
+
         # TODO: if the method is fixed; during the initialize set the method's function in a variable an call that variable here
         if method == "numpy_sort":
             return self._th_re_evaluate_numpy_sort_coo(matrix, k)
-        
+
         if method == "numpy_partition":
             return self._th_re_evaluate_numpy_partition_coo(matrix, k)
 
@@ -707,8 +708,8 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
     def _reduce_topk_p2p_region_wise_reduce_destination_rotation_and_bucketing(self,
                                                                                coo_topk: SparseMatrixCOO,
                                                                                boundaries: np.ndarray
-                                                                              ) -> SparseMatrixCOO:
-        
+                                                                               ) -> SparseMatrixCOO:
+
         assert self.model.comm, "Communicator needed!"
         # There are (nprocs - 1) messages to send (excluding self)
         total_sends = self.model.nprocs - 1
@@ -717,7 +718,7 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
         # Compute local slice of coo_topk (the "self" region)
         row_start = 0 if self.model.rank == 0 else boundaries[self.model.rank - 1]
         row_end = boundaries[self.model.rank]
-        coo_reduced_region = coo_topk.slice(row_start, row_end)  
+        coo_reduced_region = coo_topk.slice(row_start, row_end)
 
         # Process sends and receives in buckets.
         bucket_size = 2

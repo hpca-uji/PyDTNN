@@ -30,7 +30,7 @@ class CategoricalAccuracyNumpy(CategoricalAccuracy[np.ndarray], MetricNumpy):
         """Allocates memory for the argmax buffer after model initialization."""
         super()._post_init()
         with self.model.memory:
-            self._argmax = self.model.memory.ndarray(self._argmax_shape, dtype=np.int32)
+            self._argmax = self.model.memory.ndarray(self._argmax_shape, dtype=np.dtype(np.int32))
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
         """

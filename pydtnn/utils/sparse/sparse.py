@@ -27,6 +27,7 @@ type DataType[T: _npDT] = np.ndarray[tuple[int], np.dtype[T]]
 type RowType = np.ndarray[tuple[int], np.dtype[np.int32]]
 type ColType = RowType
 
+
 class SparseMatrixCOO[T: _npDT]:
     """Represents a sparse matrix in COO format.
 

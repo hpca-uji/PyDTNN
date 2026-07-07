@@ -36,9 +36,9 @@ class PrecisionNumpy(Precision[np.ndarray], MetricNumpy):
         """Allocates memory buffers for true positives, false positives, and zero-check masks."""
         super()._post_init()
         with self.model.memory:
-            self.true_positives = self.model.memory.ndarray(self.temp_var_shape, dtype=np.float32)
-            self.false_positives = self.model.memory.ndarray(self.temp_var_shape, dtype=np.float32)
-            self.are_zeros = self.model.memory.ndarray(self.temp_var_shape, dtype=np.bool_)
+            self.true_positives = self.model.memory.ndarray(self.temp_var_shape, dtype=np.dtype(np.float32))
+            self.false_positives = self.model.memory.ndarray(self.temp_var_shape, dtype=np.dtype(np.float32))
+            self.are_zeros = self.model.memory.ndarray(self.temp_var_shape, dtype=np.dtype(np.bool_))
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
         """
