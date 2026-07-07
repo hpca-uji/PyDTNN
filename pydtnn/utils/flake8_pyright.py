@@ -156,7 +156,6 @@ class PyrightChecker:
             try:
                 rule = DiagnosticRule[rule_name]
             except KeyError:
-                print(rule_name)
                 rule = DiagnosticRule.REPORT_GENERAL_TYPE_ISSUES
 
             yield (
