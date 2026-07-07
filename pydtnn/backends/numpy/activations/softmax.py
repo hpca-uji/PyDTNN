@@ -43,7 +43,8 @@ class SoftmaxNumpy(Softmax[np.ndarray], ActivationNumpy):
         self.temp_shape = (self.model.batch_size, *shape_intermediate_ops)
         sum_y_shape = max_x_shape = self.temp_shape
         self.tmp_memory_used += (
-            int(math.prod(max_x_shape) + math.prod(sum_y_shape)) * self.model.dtype.itemsize
+            int(math.prod(max_x_shape) + math.prod(sum_y_shape))
+            * self.model.dtype.itemsize
         )
 
         self.mul_dy_shape = (self.model.batch_size, *self.shape)

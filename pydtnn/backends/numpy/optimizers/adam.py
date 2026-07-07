@@ -27,8 +27,12 @@ class AdamNumpy(Adam[np.ndarray], OptimizerNumpy):
         temp_memory_size = []
 
         for layer in list_layers:
+            if not layer.grad_vars:
+                continue
+
             self.context[layer.id] = dict[str, int | np.ndarray]()
             self.context[layer.id]["it"] = 0
+            temp_memory_size_layer = 0
 
             for w_ in layer.grad_vars.keys():
                 w: np.ndarray = getattr(layer, w_)
@@ -39,7 +43,7 @@ class AdamNumpy(Adam[np.ndarray], OptimizerNumpy):
                 mt_temp_dw = None
                 self.memory_used += momentum.nbytes + velocity.nbytes
 
-                temp_memory_size.append(int(2 * math.prod(shape)) * self.model.dtype.itemsize)
+                temp_memory_size_layer += int(2 * math.prod(shape)) * self.model.dtype.itemsize
                 # NOTE: int(2 * math.prod(w.shape)): temp_w.nbytes = temp_dw.nbytes =
                 # w.nbytes ==> temp_w.nbytes + temp_dw.nbytes = 2 * w.nbytes
 
@@ -47,6 +51,8 @@ class AdamNumpy(Adam[np.ndarray], OptimizerNumpy):
                 self.context[layer.id]["v_%s" % w_] = velocity
                 self.context[layer.id]["temp_w_%s" % w_] = vt_temp_w  # type: ignore (it is the right type)
                 self.context[layer.id]["temp_dw_%s" % w_] = mt_temp_dw  # type: ignore (it is the right type)
+
+            temp_memory_size.append(temp_memory_size_layer)
 
         self.tmp_memory_used += self.model.memory_cls._total(*temp_memory_size)
         self.memory_used += self.tmp_memory_used

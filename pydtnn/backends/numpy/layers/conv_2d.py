@@ -77,7 +77,7 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
         # self.temp_y_bc_br: Temporal array where the y and backward's cols/rows values are stored.
         self.memory_used += self.temp_y_dx.nbytes
 
-        self.memory_used += self.tmp_memory_used
+        # self.memory_used += self.tmp_memory_used
 
     def get_rows(self, batch_size: int) -> np.ndarray:
         """Retrieves a view of the im2row temporary output buffer."""

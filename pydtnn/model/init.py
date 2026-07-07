@@ -384,7 +384,7 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
         self.loss_and_metrics_format = [self.loss_func.format] + [
             metric.format for metric in self.metrics_funcs
         ]
-        self.total_metrics = np.array([0] + [0 for func in self.metrics_funcs], dtype=self.dtype)
+        self.total_metrics = np.array([0] + [0] * len(self.metrics_funcs), dtype=self.dtype)
         self.tracer.define_event_types(self)
 
         self.optimizer._model_init(self.get_all_layers(self.layers))
@@ -395,7 +395,7 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
             self.memory_used += layer.memory_used
             temp_memory_size.append(layer.tmp_memory_used)
 
-        self.tmp_memory_used = self.memory_cls._total(*temp_memory_size)
+        self.tmp_memory_used += self.memory_cls._total(*temp_memory_size)
         self.memory_used += self.tmp_memory_used
         self.memory = self.memory_cls(size=self.tmp_memory_used)
 

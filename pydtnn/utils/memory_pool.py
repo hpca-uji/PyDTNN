@@ -3,10 +3,14 @@
 import logging
 import math
 import types
-from typing import Self
+from typing import Self, TYPE_CHECKING
 
 import pydtnn.libs.numpy as np
 from pydtnn.utils.constants import ArrayShape
+from pydtnn.utils.debug import debug_stack
+
+if TYPE_CHECKING:
+    import numpy as np  # noqa: F811
 
 __all__ = (
     "PreallocMemory",
@@ -55,16 +59,18 @@ class PreallocMemory(PrivateMemory):
         """Calculate the maximum of provided memory sizes."""
         return max(args)
 
-    def _malloc(self, size: int) -> memoryview:
+    def _malloc(self, size: int) -> np.ndarray[tuple[int], np.dtype[np.uint8]]:
         """Allocate a slice of the preallocated buffer."""
+        debug_stack(f"{self._used=} {size=}")
         start = self._used
         end = start + size
 
         if end > self._capacity:
             raise RuntimeError(
-                f"Getting too much memory. Memory to get={size}, Memory occupied={
-                    self._used
-                }, Memory after the operation={self._capacity}"
+                f"Getting too much memory."
+                f" Memory to get={size},"
+                f" Memory occupied={self._used},"
+                f" Memory after the operation={self._capacity}"
             )
 
         self._used = end
@@ -76,7 +82,10 @@ class PreallocMemory(PrivateMemory):
 
         if new_offset < 0:
             raise RuntimeError(
-                f"Removing too much memory. {self._used=}, memory to erase={size}, {new_offset=}"
+                f"Removing too much memory."
+                f" {self._used=},"
+                f" memory to erase={size},"
+                f" {new_offset=}"
             )
 
         self._used = new_offset
@@ -95,6 +104,6 @@ class PreallocMemory(PrivateMemory):
         if order != "C":
             raise RuntimeError("PreallocMemory only supports C order")
         buffer = self._malloc(size=int(math.prod(shape) * np.dtype(dtype).itemsize))
-        array = np.frombuffer(buffer, dtype=dtype).reshape(shape)
+        array = buffer.view(dtype).reshape(shape)
         array.fill(0)
         return array

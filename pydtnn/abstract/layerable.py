@@ -130,10 +130,11 @@ class Layerable[T: Array](Base[T]):  # noqa: D101 (generics not detected)
         if self.nparams > 0:
             props["params"] = self.nparams
 
-        if self.prev_shape is not None:
+        if self.prev_shape:
             props["input"] = self.prev_shape
 
-        props["output"] = self.shape
+        if self.shape:
+            props["output"] = self.shape
 
         if len(self.paths) > 0:
             props["paths"] = ", ".join(

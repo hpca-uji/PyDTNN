@@ -23,7 +23,7 @@ class CategoricalAccuracyNumpy(CategoricalAccuracy[np.ndarray], MetricNumpy):
         """Initializes model-specific parameters and calculates memory usage."""
         super()._model_init()
         self._argmax_shape = (self.model.batch_size,)
-        self.tmp_memory_used = int(math.prod(self._argmax_shape)) * np.int32().itemsize
+        self.tmp_memory_used += int(math.prod(self._argmax_shape) * np.int32().itemsize)
         self.memory_used += self.tmp_memory_used  # + arange_size = self.model.batch_size
 
     def _post_init(self) -> None:

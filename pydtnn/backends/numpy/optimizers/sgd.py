@@ -27,23 +27,29 @@ class SGDNumpy(SGD[np.ndarray], OptimizerNumpy):
         temp_memory_size = []
 
         for layer in list_layers:
+            if not layer.grad_vars:
+                continue
+
             list_grad_vars = list(layer.grad_vars.keys())
-            if len(list_grad_vars) != 0:
-                self.context[layer.id] = dict[str, np.ndarray]()  # type: ignore
-                for w_ in list_grad_vars:
-                    w: np.ndarray = getattr(layer, w_)
-                    velocity: np.ndarray = np.zeros(w.shape, dtype=layer.model.dtype)
-                    temp_w = None
-                    temp_v = None
-                    self.memory_used += velocity.nbytes
+            self.context[layer.id] = dict[str, np.ndarray]()  # type: ignore
+            temp_memory_size_layer = 0
 
-                    temp_memory_size.append(int(2 * math.prod(w.shape)) * self.model.dtype.itemsize)
-                    # NOTE: int(2 * math.prod(w.shape)): temp_w.nbytes = temp_v.nbytes =
-                    # w.nbytes ==> temp_w.nbytes + temp_v.nbytes = 2 * w.nbytes
+            for w_ in list_grad_vars:
+                w: np.ndarray = getattr(layer, w_)
+                velocity = np.zeros(w.shape, dtype=self.model.dtype)
+                temp_w = None
+                temp_v = None
+                self.memory_used += velocity.nbytes
 
-                    self.context[layer.id]["velocity_%s" % w_] = velocity
-                    self.context[layer.id]["temp_w_%s" % w_] = temp_w  # type: ignore (it's the right type)
-                    self.context[layer.id]["temp_v_%s" % w_] = temp_v  # type: ignore (it's the right type)
+                temp_memory_size_layer += int(2 * math.prod(w.shape) * self.model.dtype.itemsize)
+                # NOTE: int(2 * math.prod(w.shape)): temp_w.nbytes = temp_v.nbytes =
+                # w.nbytes ==> temp_w.nbytes + temp_v.nbytes = 2 * w.nbytes
+
+                self.context[layer.id]["velocity_%s" % w_] = velocity
+                self.context[layer.id]["temp_w_%s" % w_] = temp_w  # type: ignore (it's the right type)
+                self.context[layer.id]["temp_v_%s" % w_] = temp_v  # type: ignore (it's the right type)
+
+            temp_memory_size.append(temp_memory_size_layer)
 
         self.tmp_memory_used += self.model.memory_cls._total(*temp_memory_size)
         self.memory_used += self.tmp_memory_used
@@ -64,8 +70,8 @@ class SGDNumpy(SGD[np.ndarray], OptimizerNumpy):
                     if w_ is None:
                         continue
                     # if w_ is not None:
-
                     w_shape = self.context[layer_id]["velocity_%s" % w_].shape  # type: ignore (it is correct)
+                    print(self.canonical_name, key, w_, w_shape)
                     w_shape = self.context[layer_id][key] = self.model.memory.ndarray(
                         w_shape, dtype=self.model.dtype
                     )

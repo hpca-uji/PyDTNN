@@ -27,7 +27,7 @@ class CategoricalCrossEntropyNumpy(CategoricalCrossEntropy[np.ndarray], LossNump
         self._y_pred_op_shape = (self.model.batch_size,)
         self._y_pred_shape = self.shape
 
-        self.tmp_memory_used += int(math.prod(self._argmax_shape)) * np.int32().itemsize
+        self.tmp_memory_used += int(math.prod(self._argmax_shape) * np.int32().itemsize)
         self.tmp_memory_used += (
             int(math.prod(self._y_pred_op_shape) + math.prod(self._y_pred_shape))
             * self.model.dtype.itemsize
@@ -39,11 +39,15 @@ class CategoricalCrossEntropyNumpy(CategoricalCrossEntropy[np.ndarray], LossNump
         """Allocate memory buffers for loss computation."""
         super()._post_init()
         with self.model.memory:
-            self._argmax = self.model.memory.ndarray(self._argmax_shape, dtype=np.int32)
+            self._argmax = self.model.memory.ndarray(
+                self._argmax_shape, dtype=np.dtype(np.int32)
+            )
             self._y_pred_op = self.model.memory.ndarray(
                 self._y_pred_op_shape, dtype=self.model.dtype
             )
-            self._y_pred = self.model.memory.ndarray(self._y_pred_shape, dtype=self.model.dtype)
+            self._y_pred = self.model.memory.ndarray(
+                self._y_pred_shape, dtype=self.model.dtype
+            )
 
     def compute(
         self, y_pred: np.ndarray, y_targ: np.ndarray, batch_size: int

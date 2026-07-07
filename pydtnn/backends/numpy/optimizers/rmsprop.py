@@ -27,21 +27,26 @@ class RMSPropNumpy(RMSProp[np.ndarray], OptimizerNumpy):
         temp_memory_size = []
 
         for layer in list_layers:
+            if not layer.grad_vars:
+                continue
+
             list_grad_vars = list(layer.grad_vars.keys())
+            self.context[layer.id] = dict[str, np.ndarray]()  # type: ignore
+            tmp_memory_used_layer = 0
 
-            if len(list_grad_vars) != 0:
-                self.context[layer.id] = dict[str, np.ndarray]()  # type: ignore
-                for w_ in list_grad_vars:
-                    w: np.ndarray = getattr(layer, w_)
-                    cache = np.zeros(w.shape, dtype=layer.model.dtype)
-                    temp = None
-                    self.memory_used += cache.nbytes
+            for w_ in list_grad_vars:
+                w: np.ndarray = getattr(layer, w_)
+                cache = np.zeros(w.shape, dtype=layer.model.dtype)
+                temp = None
+                self.memory_used += cache.nbytes
 
-                    temp_memory_size.append(int(math.prod(w.shape)) * self.model.dtype.itemsize)
-                    # NOTE: int(math.prod(w.shape)): temp_.nbytes = w.nbytes
+                tmp_memory_used_layer += int(math.prod(w.shape)) * self.model.dtype.itemsize
+                # NOTE: int(math.prod(w.shape)): temp_.nbytes = w.nbytes
 
-                    self.context[layer.id]["cache_%s" % w_] = cache
-                    self.context[layer.id]["temp_%s" % w_] = temp  # type: ignore (it is the right type)
+                self.context[layer.id]["cache_%s" % w_] = cache
+                self.context[layer.id]["temp_%s" % w_] = temp  # type: ignore (it is the right type)
+
+            temp_memory_size.append(tmp_memory_used_layer)
 
         self.tmp_memory_used += self.model.memory_cls._total(*temp_memory_size)
         self.memory_used += self.tmp_memory_used
