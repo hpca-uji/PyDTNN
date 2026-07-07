@@ -161,6 +161,6 @@ class PyrightChecker:
             yield (
                 diagnostic["range"]["start"]["line"],
                 diagnostic["range"]["start"]["character"],
-                f"T{rule:03} {diagnostic['message'].splitlines()[0]}",
+                f"T{rule:03} {diagnostic["message"].splitlines()[0]}",
                 type(self),
             )
