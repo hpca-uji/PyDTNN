@@ -18,22 +18,22 @@ _Things to do & not to do_
 - Each CUDA kernel must have a unique name, duplicate names will cause incorrect kernel resolution.
 
 ## Randomness
-- Use `pydtnn.utils.random` for random number generation, other generators are not multi-thread aware.
+- Use `pydtnn.utils.random` (or a local instance) for random number generation, other generators are not multi-thread aware.
 
 ## Tests
 - Test all changes across backends (CPU, GPU, etc.), changes in base classes may introduce backend-specific issues.
 - When comparing outputs between layers or models, always copy outputs before passing them to the next layer, some layers perform in-place operations.
 
 ## Documentation
-- Keep `README.md` and `parser.py` in sync, any change in options must be reflected in both.
+- Keep `README.md`, `utils/parser.py` and `model/base.py` in sync, any change in options must be reflected in all of them.
 
 ## Environment
 - Use `from __future__ import annotations` instead of string type annotations, it is more legible and will be default moving forward.
-- Keep `Makefile` and submodules in sync, any changes in commit versions must be reflected in both.
+- Keep `Makefile` and `pyproject.toml` in sync, any changes in dependencies versions must be reflected in both.
 
 ## Components
-- If model or components structure changes, update the `Structure` section of this document accordingly.
-- If the Model components or components hierarchy structure changes, update the model's `__init__` diagram.
+- If components structure changes, update the `Structure` section of this document accordingly.
+- If the Model or Dataset components structure changes, update the class's `__init__` diagram.
 
 # Knowledge
 _Things you should keep in mind_
@@ -139,7 +139,14 @@ _How is the project organized_
 │   │           ├── memory_allocation.py
 │   │           └── tensor_array.py
 │   ├── datasets
-│   │   ├── dataset.py  # base
+│   │   ├── __init__.py  # usable datasets
+│   │   ├── abstract
+│   │   │   ├── base.py     # typing interface
+│   │   │   ├── utils.py    # utility methods
+│   │   │   ├── state.py    # state management
+│   │   │   ├── init.py     # initialization
+│   │   │   ├── repr.py     # representation
+│   │   │   └── augment.py  # data augmentation
 │   │   ├── archive.py
 │   │   ├── memory.py
 │   │   ├── folder.py
