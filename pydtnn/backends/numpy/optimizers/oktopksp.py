@@ -809,8 +809,9 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
         all_val = np.concatenate([t[0] for t in gathered])
         all_row = np.concatenate([t[1] for t in gathered])
         all_col = np.concatenate([t[2] for t in gathered])
+        indexes = SparseMatrixCOO.to_indexes(all_row, all_col)
         return SparseMatrixCOO(
-            all_val, all_row, all_col, self.dw_2d_shape, has_canonical_format=True
+            all_val, indexes, self.dw_2d_shape, has_canonical_format=True
         )
 
     # TODO: Move this to different methods.
