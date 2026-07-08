@@ -113,7 +113,7 @@ class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
 
         _indexes = np.where(dense_array != 0)
         data = dense_array[_indexes]
-        indexes = cls.to_indexes(*map(np.ndarray.tolist, _indexes))
+        indexes = cls.to_indexes(*_indexes)  # type: ignore
         return cls(data, indexes, dense_array.shape, has_canonical_format=True)
 
     @classmethod
