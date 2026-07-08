@@ -3,22 +3,26 @@ import numpy as np
 cimport numpy as np
 from cython.parallel cimport prange
 
+ctypedef fused OkTopK_npDT:
+    np.float32_t
+    np.float64_t
+    # NOTE: in order to extend the supported data types, add the new types here.
 
-def summ_coo_cython(np.ndarray [np.float32_t, ndim=1] self_data,
-                    np.ndarray [np.int32_t, ndim=1] self_rows,
-                    np.ndarray [np.int32_t, ndim=1] self_cols,
-                    np.ndarray [np.float32_t, ndim=1] other_data,
-                    np.ndarray [np.int32_t, ndim=1] other_rows,
-                    np.ndarray [np.int32_t, ndim=1] other_cols):
+def summ_coo_cython(OkTopK_npDT[::1] self_data,
+                    np.int32_t[::1] self_rows,
+                    np.int32_t[::1] self_cols,
+                    OkTopK_npDT[::1] other_data,
+                    np.int32_t[::1] other_rows,
+                    np.int32_t[::1] other_cols):
 
     cdef int count = 0
     cdef int i_self = 0
     cdef int i_other = 0
     cdef int row_self, row_other, col_self, col_other
     cdef int max_size = len(self_data) + len(other_data)
-    cdef np.ndarray[np.float32_t, ndim=1] summ_val = np.empty(max_size, dtype=np.float32)
-    cdef np.ndarray[np.int32_t, ndim=1] summ_row = np.empty(max_size, dtype=np.int32)
-    cdef np.ndarray[np.int32_t, ndim=1] summ_col = np.empty(max_size, dtype=np.int32)
+    cdef np.ndarray[OkTopK_npDT, ndim=1] summ_val = np.zeros(max_size, dtype=np.float32)
+    cdef np.ndarray[np.int32_t, ndim=1] summ_row = np.zeros(max_size, dtype=np.int32)
+    cdef np.ndarray[np.int32_t, ndim=1] summ_col = np.zeros(max_size, dtype=np.int32)
 
     while i_self < len(self_data) or i_other < len(other_data):
         if i_other >= len(other_data):
@@ -76,26 +80,28 @@ def summ_coo_cython(np.ndarray [np.float32_t, ndim=1] self_data,
     return summ_val[:count], summ_row[:count], summ_col[:count]
 
 
-def top_threshold_selection_dense_cython(np.ndarray[np.float32_t, ndim=2] matrix, 
-                                         float threshold):
+def top_threshold_selection_dense_cython(OkTopK_npDT[:, ::1] matrix,
+                                         OkTopK_npDT threshold):
     
     cdef int rows = matrix.shape[0]
     cdef int cols = matrix.shape[1]
     cdef int i, j, count = 0
     cdef np.ndarray[np.int32_t, ndim=1]  count_vector = np.zeros(rows + 1, dtype=np.int32)
 
+
     for i in prange(rows, nogil=True):
         for j in range(cols):
             if abs(matrix[i, j]) > threshold:
+            #if (<float> abs(matrix[i, j])) > threshold:
                 count_vector[i + 1] += 1
 
     for i in range(rows):
         count_vector[i + 1] += count_vector[i] 
     count = count_vector[rows]
 
-    cdef np.ndarray[np.float32_t, ndim=1] top_values = np.empty(count, dtype=np.float32)
-    cdef np.ndarray[np.int32_t, ndim=1] row_indices = np.empty(count, dtype=np.int32)
-    cdef np.ndarray[np.int32_t, ndim=1] col_indices = np.empty(count, dtype=np.int32)
+    cdef np.ndarray[OkTopK_npDT, ndim=1] top_values = np.zeros(count, dtype=np.float32)
+    cdef np.ndarray[np.int32_t, ndim=1] row_indices = np.zeros(count, dtype=np.int32)
+    cdef np.ndarray[np.int32_t, ndim=1] col_indices = np.zeros(count, dtype=np.int32)
 
     for i in prange(rows, nogil=True):
         for j in range(cols):
@@ -108,10 +114,10 @@ def top_threshold_selection_dense_cython(np.ndarray[np.float32_t, ndim=2] matrix
     return top_values, row_indices, col_indices
 
 
-def top_threshold_selection_coo_cython(np.ndarray[np.float32_t, ndim=1] values, 
+def top_threshold_selection_coo_cython(np.ndarray[OkTopK_npDT, ndim=1] values, 
                                        np.ndarray[np.int32_t, ndim=1] rows, 
                                        np.ndarray[np.int32_t, ndim=1] cols, 
-                                       float threshold):
+                                       OkTopK_npDT threshold):
     cdef int i, count = 0
     cdef int len_values = len(values)
 
@@ -119,9 +125,9 @@ def top_threshold_selection_coo_cython(np.ndarray[np.float32_t, ndim=1] values,
         if abs(values[i]) > threshold:
             count += 1
 
-    cdef np.ndarray[np.float32_t, ndim=1] top_values = np.empty(count, dtype=np.float32)
-    cdef np.ndarray[np.int32_t, ndim=1] row_indices = np.empty(count, dtype=np.int32)
-    cdef np.ndarray[np.int32_t, ndim=1] col_indices = np.empty(count, dtype=np.int32)
+    cdef np.ndarray[OkTopK_npDT, ndim=1] top_values = np.zeros(count, dtype=np.float32)
+    cdef np.ndarray[np.int32_t, ndim=1] row_indices = np.zeros(count, dtype=np.int32)
+    cdef np.ndarray[np.int32_t, ndim=1] col_indices = np.zeros(count, dtype=np.int32)
 
     count = 0
     for i in range(len_values):
