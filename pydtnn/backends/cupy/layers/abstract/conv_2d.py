@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-import cupy as np  # type: ignore
+from cupy import ndarray  # type: ignore
 from cupy.cuda import Stream  # type: ignore
 
 from pydtnn.backends.cupy.layers.abstract.layer import LayerCupy
@@ -18,13 +18,13 @@ __all__ = ("AbstractConv2DCupy",)
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    import numpy as np  # noqa: F811 (override typing)
+    from numpy import ndarray  # noqa: F811 (override typing)
 
 
-class AbstractConv2DCupy(AbstractConv2DNumpy, AbstractConv2D[np.ndarray], LayerCupy):
+class AbstractConv2DCupy(AbstractConv2DNumpy, AbstractConv2D[ndarray], LayerCupy):
     """Abstract base class for 2D convolution layers using CuPy backend."""
 
-    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
+    def _model_init(self, prev_shape: ArrayShape, x: ndarray) -> None:
         """Initialize model parameters and CUDA kernels."""
         super()._model_init(prev_shape, x)
 
@@ -59,7 +59,7 @@ class AbstractConv2DCupy(AbstractConv2DNumpy, AbstractConv2D[np.ndarray], LayerC
             },
         )
 
-    def im2row(self, x: np.ndarray, x_rows: np.ndarray) -> None:
+    def im2row(self, x: ndarray, x_rows: ndarray) -> None:
         """Perform im2row transformation on GPU."""
         # return super().im2row(x, x_rows)
         self._im2row(
@@ -85,7 +85,7 @@ class AbstractConv2DCupy(AbstractConv2DNumpy, AbstractConv2D[np.ndarray], LayerC
             ),
         )
 
-    def row2im(self, x_rows: np.ndarray, dx: np.ndarray) -> None:
+    def row2im(self, x_rows: ndarray, dx: ndarray) -> None:
         """Perform row2im transformation on GPU."""
         # return super().im2row(x_rows, dx)
         self._row2im(
@@ -111,7 +111,7 @@ class AbstractConv2DCupy(AbstractConv2DNumpy, AbstractConv2D[np.ndarray], LayerC
             ),
         )
 
-    def im2col(self, x: np.ndarray, x_cols: np.ndarray) -> None:
+    def im2col(self, x: ndarray, x_cols: ndarray) -> None:
         """Perform im2col transformation on GPU."""
         # return super().im2col(x, x_cols)
         self._im2row(
@@ -137,7 +137,7 @@ class AbstractConv2DCupy(AbstractConv2DNumpy, AbstractConv2D[np.ndarray], LayerC
             ),
         )
 
-    def col2im(self, x_cols: np.ndarray, dx: np.ndarray) -> None:
+    def col2im(self, x_cols: ndarray, dx: ndarray) -> None:
         """Perform col2im transformation on GPU."""
         # return super().im2row(x_cols, dx)
         self._col2im(

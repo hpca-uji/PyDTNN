@@ -16,7 +16,7 @@ from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT,
 from pydtnn.utils.constants import Array
 
 if TYPE_CHECKING:
-    from pympi.MPI import Request
+    from pympi.MPI import Request  # type: ignore
 
 __all__ = ("Sync",)
 
