@@ -1,15 +1,15 @@
 """Module providing the BestOfVariant class for dynamic convolution implementation selection."""
 
+# FIXME: Broken since Conv2D to backend support
+
 import logging
 from collections.abc import Callable
 from typing import Any
 
 import numpy as np
 
-from pydtnn.backends.numpy.layers.conv_2d.direct_cpu import \
-    Conv2DDirectNumpy  # type: ignore  # FIXME: too old
-from pydtnn.backends.numpy.layers.conv_2d.winograd_cpu import \
-    Conv2DWinogradNumpy  # type: ignore  # FIXME: too old
+from pydtnn.backends.numpy.layers.conv_2d.direct_cpu import Conv2DDirectNumpy  # type: ignore
+from pydtnn.backends.numpy.layers.conv_2d.winograd_cpu import Conv2DWinogradNumpy  # type: ignore
 from pydtnn.model import Model
 from pydtnn.utils.best_of.best_of import BestOf
 from pydtnn.utils.constants import ArrayShape
@@ -19,7 +19,6 @@ __all__ = ("BestOfVariant",)
 logger = logging.getLogger(__name__)
 
 
-# FIXME: Broken since Conv2D to backend support
 class BestOfVariant(Conv2DWinogradNumpy, Conv2DDirectNumpy):
     """Convolution variant that dynamically selects the most efficient implementation"""
 
