@@ -28,6 +28,7 @@ type IndexType = np.ndarray[tuple[int, int], np.dtype[np.int32]]
 type RowType = np.ndarray[tuple[int], np.dtype[np.int32]]
 type ColType = RowType
 
+
 class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
     """Represents a sparse matrix in COO format.
 
@@ -76,14 +77,17 @@ class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
 
     @property
     def row(self) -> RowType:
+        """Row indexes"""
         return self.indexes[:, :0]
-    
+
     @property
     def col(self) -> ColType:
+        """Column indexes"""
         return self.indexes[:, :1]
 
     @staticmethod
     def to_indexes(row: RowType, col: ColType) -> IndexType:
+        """Merge rows and columns to an index array"""
         return np.array(list(zip(row, col)), dtype=np.int32)
 
     @classmethod
@@ -161,9 +165,7 @@ class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
             # self.shape remains equal
             # self.has_canonical_format remains equal
         else:
-            return SparseMatrixCOO[T](
-                topk, indexes, self.shape, self.has_canonical_format
-            )
+            return SparseMatrixCOO[T](topk, indexes, self.shape, self.has_canonical_format)
 
     def get_indexes(self) -> tuple[RowType, ColType]:
         """
