@@ -665,7 +665,16 @@ class ArgumentParser(argparse.ArgumentParser):
             default=False,
             type=bool_lambda,
             help=(
-                "Scale learning rate in data parallelism: new_lr = lr / num_procs."
+                "Scale learning rate in parallelism: new_lr = lr / num_procs."
+                " True if specified."
+            ),
+        )
+        _op_group.add_argument(
+            "--gradient-scaling",
+            default=False,
+            type=bool_lambda,
+            help=(
+                "Scale gradient prior to back-propagation in parallelism: new_dx = dx / num_procs."
                 " True if specified."
             ),
         )
