@@ -26,7 +26,9 @@ try:
 except (ImportError, ModuleNotFoundError):
     pass
 
-type AllGatherTypes = np.ndarray[tuple[int, ...], np.dtype[np.float32 | np.float64]] | SparseMatrixCOO
+type AllGatherTypes = (
+    np.ndarray[tuple[int, ...], np.dtype[np.float32 | np.float64]] | SparseMatrixCOO
+)
 
 
 class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
@@ -186,8 +188,13 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
         """
         raise NotImplementedError("This is a fake method that must be replaced with the right one.")
 
-    def _update_weights_numpy(self, layer: Layerable, w_type: str, w: np.ndarray,
-                              coo_u: SparseMatrixCOO, ) -> None:
+    def _update_weights_numpy(
+        self,
+        layer: Layerable,
+        w_type: str,
+        w: np.ndarray,
+        coo_u: SparseMatrixCOO,
+    ) -> None:
         """
         Update weights and set to weight layer attribute.
 
@@ -216,8 +223,13 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
         setattr(layer, w_type, w)
         return
 
-    def _update_weights_numpy_with_vel_and_momentum(self, layer: Layerable, w_type: str, w: np.ndarray,
-                                                    coo_u: SparseMatrixCOO, ) -> None:
+    def _update_weights_numpy_with_vel_and_momentum(
+        self,
+        layer: Layerable,
+        w_type: str,
+        w: np.ndarray,
+        coo_u: SparseMatrixCOO,
+    ) -> None:
         """
         Update weights and set to weight layer attribute.
 
@@ -236,7 +248,9 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
             (void): instead it directly applies the result to the weight layer attribute
         """
 
-        logger.debug("In '_update_weights', the method that it is being used is 'numpy_with_vel_and_momentum'")
+        logger.debug(
+            "In '_update_weights', the method that it is being used is 'numpy_with_vel_and_momentum'"
+        )
 
         if self.momentum == 0:
             logger.warning(
@@ -246,9 +260,7 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
 
         if len(self.dw_original_shape) != 2:
             w = w.reshape(w.shape[0], -1)
-        velocity = getattr(
-            layer, "velocity_%s" % w_type, np.zeros_like(w, dtype=layer.model.dtype)
-        )
+        velocity = getattr(layer, "velocity_%s" % w_type, np.zeros_like(w, dtype=layer.model.dtype))
         velocity *= self.momentum
         velocity[coo_u.row, coo_u.col] += coo_u.data
         w[coo_u.row, coo_u.col] -= velocity[coo_u.row, coo_u.col]
@@ -258,8 +270,9 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
         setattr(layer, "velocity_%s" % w_type, velocity)
         return
 
-    def _update_weights_like_sgd(self, layer: Layerable, w_type: str,
-                                 w: np.ndarray, coo_u: SparseMatrixCOO) -> None:
+    def _update_weights_like_sgd(
+        self, layer: Layerable, w_type: str, w: np.ndarray, coo_u: SparseMatrixCOO
+    ) -> None:
         """[Use only for debugging purposes] Update weights and set to weight layer attribute.
 
         w -= (u / self.model.nprocs)
@@ -287,9 +300,7 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
         dw = coo_u.to_dense()
         if len(self.dw_original_shape) != 2:
             dw = dw.reshape(self.dw_original_shape)
-        velocity = getattr(
-            layer, "velocity_%s" % w_type, np.zeros_like(w, dtype=layer.model.dtype)
-        )
+        velocity = getattr(layer, "velocity_%s" % w_type, np.zeros_like(w, dtype=layer.model.dtype))
         velocity = self.momentum * velocity + dw
         w -= velocity  # Oktopk already computes acc with learning_rate
         setattr(layer, w_type, w)
@@ -345,10 +356,6 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
         )
         indexes = self._intersect_indexes(local_topk_indexes, global_topk_indexes)
         return coo_u, indexes
-
-# -------------------------------------------------------
-# ---- _th_re_evaluate ----
-# -------------------------
 
     def _th_re_evaluate_numpy_sort(self, sorted_data: np.ndarray, k: int) -> float:
         threshold = sorted_data[max(-k, -len(sorted_data))]
@@ -445,10 +452,6 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
 
         raise NotImplementedError(f"Method '{method}' not implemented")
 
-# ------------------------
-# --- _th_re_evaluate ----
-# -----------------------------------------------------------------------------------
-
     def _space_repartition(
         self, acc: np.ndarray, local_th: float, balanced: bool = True
     ) -> np.ndarray:
@@ -484,7 +487,6 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
 
             output = boundaries
         else:
-
             coo_topk = SparseMatrixCOO.from_dense_top_selection(acc, local_th)
 
             current_row = 0
@@ -638,14 +640,13 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
 
         return intersected_rows[:count], intersected_cols[:count]
 
-# -----------------------------------------------------------------------------------
-# ----- _reduce_topk ------
-# -------------------------
-
-    def _reduce_topk_collective_allreduce_then_slice(self, coo_topk: SparseMatrixCOO,
-                                                     boundaries: np.ndarray) -> SparseMatrixCOO:
-        logger.warning("reduce_topk_collective_allreduce_then_slice' should be used only "
-                       "in case of debugging for performance reasons.")
+    def _reduce_topk_collective_allreduce_then_slice(
+        self, coo_topk: SparseMatrixCOO, boundaries: np.ndarray
+    ) -> SparseMatrixCOO:
+        logger.warning(
+            "reduce_topk_collective_allreduce_then_slice' should be used only "
+            "in case of debugging for performance reasons."
+        )
 
         assert self.model.comm, "Communicator needed!"
         all_reduced_coo = self.model.comm.allreduce(coo_topk, op=MPI.SUM)
@@ -653,8 +654,9 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
         row_end = boundaries[self.model.rank]
         return all_reduced_coo.slice(row_start, row_end)
 
-    def _reduce_topk_collective_region_wise_reduce_sync(self, coo_topk: SparseMatrixCOO,
-                                                        boundaries: np.ndarray) -> SparseMatrixCOO:
+    def _reduce_topk_collective_region_wise_reduce_sync(
+        self, coo_topk: SparseMatrixCOO, boundaries: np.ndarray
+    ) -> SparseMatrixCOO:
         assert self.model.comm, "Communicator needed!"
         row_start = 0
         # # type: ignore (The values will be set later)
@@ -667,13 +669,17 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
             row_start = row_end
         return reduced_regions_coo[self.model.rank]
 
-    def _reduce_topk_collective_region_wise_reduce_async(self, coo_topk: SparseMatrixCOO,
-                                                         boundaries: np.ndarray) -> SparseMatrixCOO:
-        raise NotImplementedError("It is not possible with the current mpi4py version to generate a buffer "
-                                  "with indexes and values and operate with them")
+    def _reduce_topk_collective_region_wise_reduce_async(
+        self, coo_topk: SparseMatrixCOO, boundaries: np.ndarray
+    ) -> SparseMatrixCOO:
+        raise NotImplementedError(
+            "It is not possible with the current mpi4py version to generate a buffer "
+            "with indexes and values and operate with them"
+        )
 
-    def _reduce_topk_p2p_region_wise_reduce_static_destination(self, coo_topk: SparseMatrixCOO,
-                                                               boundaries: np.ndarray) -> SparseMatrixCOO:
+    def _reduce_topk_p2p_region_wise_reduce_static_destination(
+        self, coo_topk: SparseMatrixCOO, boundaries: np.ndarray
+    ) -> SparseMatrixCOO:
         assert self.model.comm, "Communicator needed!"
         # Prepare a vector region for storing the partial sums
         coo_region_partial_sum: list[SparseMatrixCOO] = [None] * self.model.nprocs  # type: ignore
@@ -697,10 +703,9 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
             )
         return coo_region_partial_sum[self.model.rank]
 
-    def _reduce_topk_p2p_region_wise_reduce_destination_rotation_and_bucketing(self,
-                                                                               coo_topk: SparseMatrixCOO,
-                                                                               boundaries: np.ndarray
-                                                                               ) -> SparseMatrixCOO:
+    def _reduce_topk_p2p_region_wise_reduce_destination_rotation_and_bucketing(
+        self, coo_topk: SparseMatrixCOO, boundaries: np.ndarray
+    ) -> SparseMatrixCOO:
 
         assert self.model.comm, "Communicator needed!"
         # There are (nprocs - 1) messages to send (excluding self)
@@ -769,15 +774,16 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
             case "collective_region_wise_reduce_async":
                 return self._reduce_topk_collective_region_wise_reduce_async(coo_topk, boundaries)
             case "p2p_region_wise_reduce_static_destination":
-                return self._reduce_topk_p2p_region_wise_reduce_static_destination(coo_topk, boundaries)
+                return self._reduce_topk_p2p_region_wise_reduce_static_destination(
+                    coo_topk, boundaries
+                )
             case "p2p_region_wise_reduce_destination_rotation_and_bucketing":
-                return self._reduce_topk_p2p_region_wise_reduce_destination_rotation_and_bucketing(coo_topk, boundaries)
+                return self._reduce_topk_p2p_region_wise_reduce_destination_rotation_and_bucketing(
+                    coo_topk, boundaries
+                )
             case _:
                 raise NotImplementedError(f"Method '{method}' not implemented")
 
-# -------------------------
-# ----- _reduce_topk ------
-# -----------------------------------------------------------------------------------
     def _allgather_dense(self, local_data: np.ndarray) -> np.ndarray:
         """
         Gathers data from all processes.

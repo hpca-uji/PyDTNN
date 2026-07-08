@@ -665,8 +665,7 @@ class ArgumentParser(argparse.ArgumentParser):
             default=False,
             type=bool_lambda,
             help=(
-                "Scale learning rate in parallelism: new_lr = lr / num_procs."
-                " True if specified."
+                "Scale learning rate in parallelism: new_lr = lr / num_procs. True if specified."
             ),
         )
         _op_group.add_argument(

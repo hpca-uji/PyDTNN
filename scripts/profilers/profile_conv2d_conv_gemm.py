@@ -125,7 +125,9 @@ def get_conv2d_layers(d: D) -> tuple[Conv2D, Conv2D]:
 class PerfTestConv2DConvGemm:
     """Performance test for Conv2D that compares Conv2d with mm and i2c.T"""
 
-    def _test_forward_backward(self, d: D, x: np.ndarray, weights: np.ndarray, print_times: bool = False) -> None:
+    def _test_forward_backward(
+        self, d: D, x: np.ndarray, weights: np.ndarray, print_times: bool = False
+    ) -> None:
         """Executes forward and backward passes and profiles performance."""
         conv2d_i2c, conv2d_cg = get_conv2d_layers(d)
         conv2d_i2c.weights = weights.copy()

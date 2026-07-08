@@ -5,8 +5,7 @@ import getopt
 import gzip
 import pathlib
 import sys
-from typing import Any
-import typing
+from typing import Any, TextIO
 
 from prettytable import PLAIN_COLUMNS, PrettyTable
 
@@ -64,7 +63,7 @@ def get_opts() -> None:
 #
 # APPLICATION SPECIFIC FUNCTIONS
 #
-def file_to_dict(file: typing.TextIO) -> tuple[dict, float]:
+def file_to_dict(file: TextIO) -> tuple[dict, float]:
     """Convert the CSV file to a dict."""
     _dict = {}
     total_time = 0.0

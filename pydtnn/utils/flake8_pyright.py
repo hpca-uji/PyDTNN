@@ -24,9 +24,7 @@ def run_pyright(filenames: Iterable[str] = []) -> dict[str, list[dict]]:
     """Run pyright and group results by filename"""
     output = json.loads(
         pyright.run(
-            "--outputjson", "-",
-            input="\n".join(filenames),
-            text=True, capture_output=True
+            "--outputjson", "-", input="\n".join(filenames), text=True, capture_output=True
         ).stdout
     )
 
@@ -36,8 +34,7 @@ def run_pyright(filenames: Iterable[str] = []) -> dict[str, list[dict]]:
     diagnostics: list[dict] = output["generalDiagnostics"]
     diagnostics.sort(key=key)
     return {
-        file: list(diagnostics)
-        for file, diagnostics in itertools.groupby(diagnostics, key=key)
+        file: list(diagnostics) for file, diagnostics in itertools.groupby(diagnostics, key=key)
     }
 
 
@@ -161,6 +158,6 @@ class PyrightChecker:
             yield (
                 diagnostic["range"]["start"]["line"],
                 diagnostic["range"]["start"]["character"],
-                f"T{rule:03} {diagnostic["message"].splitlines()[0]}",
+                f"T{rule:03} {diagnostic['message'].splitlines()[0]}",
                 type(self),
             )

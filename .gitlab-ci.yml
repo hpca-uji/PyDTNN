@@ -50,9 +50,9 @@ job_build:
       coverage_report:
         coverage_format: cobertura
         path: ./build/pydtnn/coverage.xml
-      codequality: ./build/pydtnn/quality.json
+      codequality: ./build/pydtnn/lint.json
     paths:
-    - ./build/pydtnn/pydtnn-*
+    - ./build/pydtnn/*
     expire_in: 1d
     when: always
   coverage: '/TOTAL.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
@@ -94,6 +94,10 @@ job_merge:
 job_push:
   stage: push
 
+  variables:
+    RELEASE_TAG: continuous
+    GIT_STRATEGY: fetch
+
   rules:
   - if: '$CI_COMMIT_BRANCH == $BRANCH_WORK'
 
@@ -109,5 +113,5 @@ job_push:
   - GIT_TAG=$(basename ./build/pydtnn/pydtnn-*.tar.gz | sed -nE 's|^pydtnn-(.*)\.tar\.gz$|v\1|p')
   - glab auth login --hostname "${CI_SERVER_FQDN:?}" --token "${CI_JOB_TOKEN:?}"
   script:
-  - glab release delete "${GIT_TAG:?}" --yes || true
-  - glab release create "${GIT_TAG:?}" ./build/pydtnn/pydtnn-* --ref "${CI_COMMIT_SHA:?}" --name "${CI_PROJECT_TITLE:?} ${GIT_TAG:?}"
+  - glab release delete "${RELEASE_TAG:?}" -ty || true
+  - glab release create "${RELEASE_TAG:?}" ./build/pydtnn/* --ref "${CI_COMMIT_SHA:?}" --name "${CI_PROJECT_TITLE:?} ${GIT_TAG:?} (${CI_COMMIT_SHA:?})" --notes-file 'README.md'

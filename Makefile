@@ -623,12 +623,12 @@ pydtnn-lint: PYDTNN_PKG := pydtnn
 pydtnn-lint:
 	mkdir -p "$(PYDTNN_DST)"
 	cd "$(PYDTNN_SRC)" && \
-		rm -f "$(PYDTNN_DST)/quality.json" && \
+		rm -f "$(PYDTNN_DST)/lint.json" && \
 		flake8 \
 			--tee \
 			--jobs "$(NPROC)" \
 			--format=gl-codeclimate \
-			--output-file="$(PYDTNN_DST)/quality.json" \
+			--output-file="$(PYDTNN_DST)/lint.json" \
 			"$(PYDTNN_PKG)"
 
 pydtnn-clean:

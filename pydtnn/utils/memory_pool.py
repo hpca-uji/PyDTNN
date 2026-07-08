@@ -3,7 +3,7 @@
 import logging
 import math
 import types
-from typing import Self, TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 import pydtnn.libs.numpy as np
 from pydtnn.utils.constants import ArrayShape
@@ -82,10 +82,7 @@ class PreallocMemory(PrivateMemory):
 
         if new_offset < 0:
             raise RuntimeError(
-                f"Removing too much memory."
-                f" {self._used=},"
-                f" memory to erase={size},"
-                f" {new_offset=}"
+                f"Removing too much memory. {self._used=}, memory to erase={size}, {new_offset=}"
             )
 
         self._used = new_offset

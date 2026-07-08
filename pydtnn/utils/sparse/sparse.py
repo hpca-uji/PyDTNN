@@ -8,10 +8,10 @@ sparse matrix format optimized for performance using Cython-backed operations.
 from __future__ import annotations
 
 import logging
+from typing import TYPE_CHECKING
 
 import numpy as np
 
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from pydtnn.backends.cython.utils.base import _npDT  # type: ignore
 
@@ -126,8 +126,9 @@ class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
         topk, topk_row, topk_col = top_threshold_selection_dense_cython(dense_array, threshold)
         return cls(topk, topk_row, topk_col, dense_array.shape, has_canonical_format=True)
 
-    def top_selection(self, threshold: float,
-                      inplace: bool | None = True) -> SparseMatrixCOO[T] | None:
+    def top_selection(
+        self, threshold: float, inplace: bool | None = True
+    ) -> SparseMatrixCOO[T] | None:
         """
         Performs top threshold selection on sparse array
 
@@ -151,7 +152,9 @@ class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
             # self.shape remains equal
             # self.has_canonical_format remains equal
         else:
-            return SparseMatrixCOO[T](topk, topk_row, topk_col, self.shape, self.has_canonical_format)
+            return SparseMatrixCOO[T](
+                topk, topk_row, topk_col, self.shape, self.has_canonical_format
+            )
 
     def get_indexes(self) -> tuple[RowType, ColType]:
         """
@@ -237,7 +240,9 @@ class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
         summ_val, summ_row, summ_col = summ_coo_cython(
             self.data, self.row, self.col, other.data, other.row, other.col
         )
-        return SparseMatrixCOO[T](summ_val, summ_row, summ_col, self.shape, has_canonical_format=True)
+        return SparseMatrixCOO[T](
+            summ_val, summ_row, summ_col, self.shape, has_canonical_format=True
+        )
 
     def __radd__(self, other: int | SparseMatrixCOO[T]) -> SparseMatrixCOO[T]:
         """

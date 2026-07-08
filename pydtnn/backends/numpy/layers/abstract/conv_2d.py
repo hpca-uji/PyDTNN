@@ -54,9 +54,7 @@ class AbstractConv2DNumpy(AbstractConv2D[np.ndarray], LayerNumpy):
                 self.db = np.zeros(shape=bias_shape, dtype=self.model.param_dtype, order="C")
                 self.memory_used += self.db.nbytes
 
-            self.dw = np.zeros(
-                self.weights.shape, dtype=self.model.param_dtype, order="C"
-            )
+            self.dw = np.zeros(self.weights.shape, dtype=self.model.param_dtype, order="C")
             self.memory_used += self.dw.nbytes
 
         # Performance models

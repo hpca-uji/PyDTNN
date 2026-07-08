@@ -73,10 +73,12 @@ def print_joules(start_time: float, end_time: float) -> None:
     """
     print(f"Computing joules between {start_time:f} and {end_time:f}...")
     joules = pmlib.get_joules(start_time, end_time, debug=True)
-    print(f"Joules = {joules}\n"
-          f"Number of intermediate samples = "
-          f"{pmlib.get_number_of_intermediate_samples(start_time, end_time)}"
-          "\n")
+    print(
+        f"Joules = {joules}\n"
+        f"Number of intermediate samples = "
+        f"{pmlib.get_number_of_intermediate_samples(start_time, end_time)}"
+        "\n"
+    )
 
 
 for pairs in [(pmlib.times[0], pmlib.times[-1]), (pmlib.times[0] + 0.25, pmlib.times[0] + 0.3)]:
