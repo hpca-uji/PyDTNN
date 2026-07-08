@@ -24,9 +24,9 @@ logger = logging.getLogger(__name__)
 
 
 type DataType[T: _npDT] = np.ndarray[tuple[int], np.dtype[T]]
+type IndexType = np.ndarray[tuple[int, int], np.dtype[np.int32]]
 type RowType = np.ndarray[tuple[int], np.dtype[np.int32]]
 type ColType = RowType
-
 
 class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
     """Represents a sparse matrix in COO format.
@@ -44,28 +44,25 @@ class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
     def __init__(
         self,
         data: DataType[T],
-        row: RowType,
-        col: ColType,
+        indexes: IndexType,
         shape: tuple,
         has_canonical_format: bool,
     ) -> None:
         """Primary initializer for SparseMatrixCOO.
 
         Parameters:
-            data (np.ndarray): Array with the nonzero values.
-            row  (np.ndarray): Array with the row indices.
-            col  (np.ndarray): Array with the column indices.
+            data (np.ndarray[tuple[int], np.dtype[T]]): Array with the nonzero values.
+            indexes  (np.np.ndarray[tuple[int, int], np.dtype[np.int32]]): Array with the row and column indices.
             shape (tuple): Shape of the original matrix.
             has_canonical_format (bool): Whether the input arrays are already sorted.
         """
 
-        if len(data) != len(row) or len(data) != len(col):
-            raise AssertionError("Data, row, and col arrays must have the same shape")
+        if len(data) != len(indexes):
+            raise AssertionError("Data and indexes arrays must have the same shape")
 
         if has_canonical_format:
             self.data: DataType[T] = data
-            self.row: RowType = row
-            self.col: ColType = col
+            self.indexes: IndexType = indexes
             self.shape: tuple = shape
             self.nnz: int = len(self.data)
             self.has_canonical_format: bool = True
@@ -76,6 +73,18 @@ class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
             raise NotImplementedError(
                 "Not yet implemented constructor with unordered rows and cols"
             )
+
+    @property
+    def row(self) -> RowType:
+        return self.indexes[:, :0]
+    
+    @property
+    def col(self) -> ColType:
+        return self.indexes[:, :1]
+
+    @staticmethod
+    def to_indexes(row: RowType, col: ColType) -> IndexType:
+        return np.array(list(zip(row, col)), dtype=np.int32)
 
     @classmethod
     def from_dense(cls, dense_array: np.ndarray) -> SparseMatrixCOO[T]:
@@ -98,11 +107,10 @@ class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
             " reasons."
         )
 
-        row, col = np.where(dense_array != 0)
-        data = dense_array[row, col]
-        row = row.astype(np.int32)
-        col = col.astype(np.int32)
-        return cls(data, row, col, dense_array.shape, has_canonical_format=True)
+        _indexes = np.where(dense_array != 0)
+        data = dense_array[_indexes]
+        indexes = cls.to_indexes(*map(np.ndarray.tolist, _indexes))
+        return cls(data, indexes, dense_array.shape, has_canonical_format=True)
 
     @classmethod
     def from_dense_top_selection(
@@ -124,7 +132,8 @@ class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
         # topk_row, topk_col = np.where(np.abs(dense_array) >= threshold)
         # topk = dense_array[topk_row, topk_col]
         topk, topk_row, topk_col = top_threshold_selection_dense_cython(dense_array, threshold)
-        return cls(topk, topk_row, topk_col, dense_array.shape, has_canonical_format=True)
+        indexes = cls.to_indexes(topk_row, topk_col)
+        return cls(topk, indexes, dense_array.shape, has_canonical_format=True)
 
     def top_selection(
         self, threshold: float, inplace: bool | None = True
@@ -143,17 +152,17 @@ class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
         topk, topk_row, topk_col = top_threshold_selection_coo_cython(
             self.data, self.row, self.col, threshold
         )
+        indexes = self.to_indexes(topk_row, topk_col)
 
         if inplace:
             self.data = topk
-            self.row = topk_row
-            self.col = topk_col
+            self.indexes = indexes
             self.nnz = len(self.data)
             # self.shape remains equal
             # self.has_canonical_format remains equal
         else:
             return SparseMatrixCOO[T](
-                topk, topk_row, topk_col, self.shape, self.has_canonical_format
+                topk, indexes, self.shape, self.has_canonical_format
             )
 
     def get_indexes(self) -> tuple[RowType, ColType]:
@@ -165,14 +174,14 @@ class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
         """
         return self.row, self.col
 
-    def get_triplet(self) -> tuple[DataType, RowType, ColType]:
+    def get_triplet(self) -> tuple[DataType[T], RowType, ColType]:
         """
         Returns the data, row, col triplet.
 
         Returns:
             tuple: (data, row, col) arrays.
         """
-        return self.data, self.row, self.col
+        return self.data, *self.get_indexes()
 
     def slice(
         self, row_start: int, row_end: int, reset_indexes: bool | None = False
@@ -198,8 +207,10 @@ class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
         if reset_indexes:
             sliced_row -= row_start
 
+        sliced_indexes = self.to_indexes(sliced_row, sliced_col)
+
         return SparseMatrixCOO[T](
-            sliced_data, sliced_row, sliced_col, self.shape, self.has_canonical_format
+            sliced_data, sliced_indexes, self.shape, self.has_canonical_format
         )
 
     def to_dense(self) -> np.ndarray[tuple[int, ...], np.dtype[np.float32]]:
@@ -241,7 +252,7 @@ class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
             self.data, self.row, self.col, other.data, other.row, other.col
         )
         return SparseMatrixCOO[T](
-            summ_val, summ_row, summ_col, self.shape, has_canonical_format=True
+            summ_val, self.to_indexes(summ_row, summ_col), self.shape, has_canonical_format=True
         )
 
     def __radd__(self, other: int | SparseMatrixCOO[T]) -> SparseMatrixCOO[T]:
