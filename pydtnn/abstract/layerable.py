@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 if TYPE_CHECKING:
-    from pympi.MPI import Request
+    from pympi.MPI import Request  # type: ignore
 
     from pydtnn.activations.abstract.activation import Activation
     from pydtnn.model import Model

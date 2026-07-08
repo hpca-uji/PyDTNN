@@ -1,9 +1,11 @@
 """CuPy implementation of abstract 2D convolution layers."""
 
+from __future__ import annotations
+
 import logging
 from typing import TYPE_CHECKING
 
-import cupy as np
+import cupy as np  # type: ignore
 from cupy.cuda import Stream  # type: ignore
 
 from pydtnn.backends.cupy.layers.abstract.layer import LayerCupy

@@ -1,5 +1,7 @@
 """Module for the OkTopkSP optimizer implementation using NumPy."""
 
+from __future__ import annotations
+
 import logging
 from typing import TYPE_CHECKING
 
@@ -16,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     import numpy as np  # noqa: F811 (override typing)
-    from pympi.MPI import Request
+    from pympi.MPI import Request  # type: ignore
 
 
 try:
@@ -826,10 +828,12 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
         match input_format:
             case "dense":
                 assert isinstance(local_data, np.ndarray)
-                return self._allgather_dense(local_data)
+                global_data = self._allgather_dense(local_data)
+                return global_data  # type: ignore
             case "SparseMatrixCOO":
                 assert isinstance(local_data, SparseMatrixCOO)
-                return self._allgather_sparse_matrix(local_data)
+                global_data = self._allgather_sparse_matrix(local_data)
+                return global_data
             case _:
                 raise NotImplementedError(f"Input format '{input_format}' not implemented")
 
