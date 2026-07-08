@@ -67,9 +67,9 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
         for scheduler in self.schedulers:
             scheduler.model = self  # type: ignore (It's fine)
 
-    def _train_batch(
+    def _train_batch(  # noqa: C901
         self, x_batch: np.ndarray, y_batch: np.ndarray, sync_model: bool = True
-    ) -> np.ndarray:  # noqa: C901
+    ) -> np.ndarray:
         """Executes a single training batch including forward pass, backward pass, and weight updates."""
         self.mode = Base.Mode.TRAIN
 

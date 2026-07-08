@@ -13,7 +13,7 @@ import numpy as np
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from pydtnn.backends.cython.utils.base import _npDT
+    from pydtnn.backends.cython.utils.base import _npDT  # type: ignore
 
 from pydtnn.utils.sparse.sparse_cython import (summ_coo_cython, top_threshold_selection_coo_cython,
                                                top_threshold_selection_dense_cython)
@@ -28,7 +28,7 @@ type RowType = np.ndarray[tuple[int], np.dtype[np.int32]]
 type ColType = RowType
 
 
-class SparseMatrixCOO[T: _npDT]:
+class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
     """Represents a sparse matrix in COO format.
 
     This format stores the matrix using three arrays:
