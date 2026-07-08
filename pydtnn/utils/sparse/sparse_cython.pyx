@@ -15,6 +15,7 @@ def summ_coo_cython(OkTopK_npDT[::1] self_data,
                     np.int32_t[::1] other_rows,
                     np.int32_t[::1] other_cols):
 
+    cdef OkTopK_npDT val
     cdef int count = 0
     cdef int i_self = 0
     cdef int i_other = 0
@@ -68,14 +69,19 @@ def summ_coo_cython(OkTopK_npDT[::1] self_data,
                     summ_row[count] = other_rows[i_other]
                     summ_col[count] = other_cols[i_other]
                     i_other += 1
-                elif (self_data[i_self] + other_data[i_other]) != 0:
-                    # Set self + other data, any row, any col
-                    summ_val[count] = self_data[i_self] + other_data[i_other]
-                    summ_row[count] = self_rows[i_self]
-                    summ_col[count] = self_cols[i_self]
+                else:
+                    val = (self_data[i_self] + other_data[i_other])
+                    if val != 0:
+                        # Set self + other data, any row, any col
+                        summ_val[count] = self_data[i_self] + other_data[i_other]
+                        summ_row[count] = self_rows[i_self]
+                        summ_col[count] = self_cols[i_self]
+                    else:
+                        # Skip zero result
+                        count -= 1
                     i_other += 1
                     i_self += 1
-            count += 1
+        count += 1
 
     return summ_val[:count], summ_row[:count], summ_col[:count]
 
