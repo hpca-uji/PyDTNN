@@ -245,3 +245,4 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
     optimizer: Optimizer[T]
     loss_func: Loss[T]
     _is_model_init: bool
+    gradient_scaling: bool

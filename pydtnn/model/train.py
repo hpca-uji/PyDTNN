@@ -69,7 +69,7 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
 
     def _train_batch(
         self, x_batch: np.ndarray, y_batch: np.ndarray, sync_model: bool = True
-    ) -> np.ndarray:
+    ) -> np.ndarray:  # noqa: C901
         """Executes a single training batch including forward pass, backward pass, and weight updates."""
         self.mode = Base.Mode.TRAIN
 
@@ -165,7 +165,7 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
         terminate: bool = False,
         prev_string: str = "",
         out_prefix: str = "",
-    ) -> tuple[np.ndarray, int, int, bool, str]:
+    ) -> tuple[np.ndarray, int, int, bool, str]:  # noqa: C901
         """Executes a full training round over the provided batch generator."""
         sync_epoch = False
         string = ""

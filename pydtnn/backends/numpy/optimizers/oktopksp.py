@@ -204,9 +204,7 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
             (void): instead it directly applies the result to the weight layer attribute
         """
 
-        self._show_message_only_once(
-            f"In '_update_weights', the method that it is being used is 'numpy'"
-        )
+        logger.debug("In '_update_weights', the method that it is being used is 'numpy'")
 
         if len(self.dw_original_shape) != 2:
             w = w.reshape(w.shape[0], -1)
@@ -236,9 +234,7 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
             (void): instead it directly applies the result to the weight layer attribute
         """
 
-        self._show_message_only_once(
-            f"In '_update_weights', the method that it is being used is 'numpy_with_vel_and_momentum'"
-        )
+        logger.debug("In '_update_weights', the method that it is being used is 'numpy_with_vel_and_momentum'")
 
         if self.momentum == 0:
             logger.warning(
@@ -262,8 +258,7 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
 
     def _update_weights_like_sgd(self, layer: Layerable, w_type: str,
                                  w: np.ndarray, coo_u: SparseMatrixCOO) -> None:
-        """
-        Update weights and set to weight layer attribute.
+        """[Use only for debugging purposes] Update weights and set to weight layer attribute.
 
         w -= (u / self.model.nprocs)
         setattr(layer, w_type, w)
@@ -280,13 +275,11 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
             (void): instead it directly applies the result to the weight layer attribute
         """
 
-        self._show_message_only_once(
-            f"In '_update_weights', the method that it is being used is 'like_sgd'"
-        )
+        logger.debug("In '_update_weights', the method that it is being used is 'like_sgd'")
 
-        """Use only for debugging purposes"""
+        """"""
         logger.warning(
-            "This method should be used only in case of debugging for performance reasons."
+            "This method (_update_weights_like_sgd) should be used only in case of debugging for performance reasons."
         )
 
         dw = coo_u.to_dense()
@@ -649,12 +642,10 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
 
     def _reduce_topk_collective_allreduce_then_slice(self, coo_topk: SparseMatrixCOO,
                                                      boundaries: np.ndarray) -> SparseMatrixCOO:
-        logger.warning(
-                "This reduce_topk method ('collective_allreduce_then_slice') should be used only in"
-                " case of debugging for performance reasons."
-        )
-        assert self.model.comm, "Communicator needed!"
+        logger.warning("reduce_topk_collective_allreduce_then_slice' should be used only "
+                       "in case of debugging for performance reasons.")
 
+        assert self.model.comm, "Communicator needed!"
         all_reduced_coo = self.model.comm.allreduce(coo_topk, op=MPI.SUM)
         row_start = 0 if self.model.rank == 0 else boundaries[self.model.rank - 1]
         row_end = boundaries[self.model.rank]
@@ -681,7 +672,6 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
 
     def _reduce_topk_p2p_region_wise_reduce_static_destination(self, coo_topk: SparseMatrixCOO,
                                                                boundaries: np.ndarray) -> SparseMatrixCOO:
-        
         assert self.model.comm, "Communicator needed!"
         # Prepare a vector region for storing the partial sums
         coo_region_partial_sum: list[SparseMatrixCOO] = [None] * self.model.nprocs  # type: ignore
