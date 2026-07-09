@@ -1,16 +1,16 @@
 variables:
-  BRANCH_MAIN: master
-  BRANCH_WORK: develop
+  DEBIAN_FRONTEND: noninteractive
   GIT_DEPTH: 0
   GIT_STRATEGY: none
   GIT_SUBMODULE_STRATEGY: none
-  DEBIAN_FRONTEND: noninteractive
+  BRANCH_MAIN: master
+  BRANCH_WORK: develop
 
 stages:
 - build
 - deploy
 
-job_pydtnn:
+build_pydtnn:
   variables:
     GIT_STRATEGY: fetch
     GIT_SUBMODULE_STRATEGY: recursive
@@ -57,7 +57,7 @@ job_pydtnn:
     when: always
   coverage: '/TOTAL.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
 
-job_git:
+deploy_git:
   variables:
     GIT_STRATEGY: fetch
 
@@ -70,7 +70,7 @@ job_git:
   tags: [ lorca-ubuntu ]
 
   needs:
-  - job: job_pydtnn
+  - job: build_pydtnn
     artifacts: true
 
   rules:
@@ -89,7 +89,7 @@ job_git:
   - git tag "${GIT_TAG:?}" "${CI_COMMIT_SHA:?}" || true
   - git push "${GIT_REMOTE_NAME:?}" "${BRANCH_MAIN:?}" "${GIT_TAG:?}"
 
-job_gitlab:
+deploy_gitlab:
   variables:
     GIT_STRATEGY: fetch
 
@@ -102,7 +102,7 @@ job_gitlab:
   image: registry.gitlab.com/gitlab-org/cli:latest
 
   needs:
-  - job: job_pydtnn
+  - job: build_pydtnn
     artifacts: true
 
   before_script:
@@ -113,8 +113,9 @@ job_gitlab:
   - glab release delete "${RELEASE_TAG:?}" -ty || true
   - glab release create "${RELEASE_TAG:?}" ./build/pydtnn/* --ref "${CI_COMMIT_SHA:?}" --name 'Continuous build'
 
-job_pypi:
+deploy_pypi:
   variables:
+    GIT_STRATEGY: fetch
     PIP_ROOT_USER_ACTION: ignore
     PIP_DISABLE_PIP_VERSION_CHECK: "1"
     PIP_CACHE_DIR: $CI_PROJECT_DIR/build/pip
@@ -129,7 +130,7 @@ job_pypi:
   image: python:latest
 
   needs:
-  - job: job_pydtnn
+  - job: build_pydtnn
     artifacts: true
 
   before_script:
