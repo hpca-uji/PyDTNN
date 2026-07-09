@@ -6,6 +6,10 @@ variables:
   GIT_SUBMODULE_STRATEGY: none
   DEBIAN_FRONTEND: noninteractive
 
+stages:
+- build
+- deploy
+
 job_pydtnn:
   variables:
     GIT_STRATEGY: fetch
@@ -14,9 +18,10 @@ job_pydtnn:
     PIP_DISABLE_PIP_VERSION_CHECK: "1"
     PIP_CACHE_DIR: $CI_PROJECT_DIR/build/pip
 
+  stage: build
+  timeout: 5h
   rules:
   - if: $CI_COMMIT_BRANCH == $BRANCH_WORK
-  timeout: 5h
 
   tags: [ lorca-ubuntu ]
   image: python:latest
@@ -56,9 +61,10 @@ job_git:
   variables:
     GIT_STRATEGY: fetch
 
+  stage: deploy
+  timeout: 5m
   rules:
   - if: $CI_COMMIT_BRANCH == $BRANCH_WORK
-  timeout: 5m
 
   image: registry.gitlab.com/gitlab-org/cli:latest
   tags: [ lorca-ubuntu ]
@@ -87,9 +93,10 @@ job_gitlab:
   variables:
     GIT_STRATEGY: fetch
 
+  stage: deploy
+  timeout: 5m
   rules:
   - if: $CI_COMMIT_BRANCH == $BRANCH_WORK
-  timeout: 5m
 
   tags: [ lorca-ubuntu ]
   image: registry.gitlab.com/gitlab-org/cli:latest
@@ -108,14 +115,15 @@ job_gitlab:
 
 job_pypi:
   variables:
-    TWINE_NON_INTERACTIVE: "1"
     PIP_ROOT_USER_ACTION: ignore
     PIP_DISABLE_PIP_VERSION_CHECK: "1"
     PIP_CACHE_DIR: $CI_PROJECT_DIR/build/pip
+    TWINE_NON_INTERACTIVE: "1"
 
+  stage: deploy
+  timeout: 5m
   rules:
   - if: $CI_COMMIT_BRANCH == $BRANCH_WORK
-  timeout: 5m
 
   tags: [ lorca-ubuntu ]
   image: python:latest
@@ -127,7 +135,7 @@ job_pypi:
   before_script:
   - GIT_TAG=$(basename ./build/pydtnn/pydtnn-*.tar.gz | sed -nE 's|^pydtnn-(.*)\.tar\.gz$|v\1|p')
   - GIT_COMMIT=$(git rev-list -n1 "${GIT_TAG:?}")
-  - '[ "${GIT_COMMIT:?}" = "${CI_COMMIT_SHA:?}" ] || exit 0'
+  - '[ "${GIT_COMMIT:?}" = "${CI_COMMIT_SHA:?}" ] || echo exit 0'
   - apt-get update
   - make pydtnn-deps APT="apt-get -o dir::cache::archives=${PWD:?}/build/apt"
   script:

@@ -574,7 +574,7 @@ pydtnn: pydtnn-build
 
 pydtnn-deps:
 	$(APT) install -y python3 nodejs gcc patchelf
-	$(PIP) install build auditwheel
+	$(PIP) install build auditwheel twine
 
 pydtnn-src: $(PYDTNN_SRC)/.git
 $(PYDTNN_SRC)/.git:
