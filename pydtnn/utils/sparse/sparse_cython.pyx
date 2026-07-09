@@ -2,145 +2,115 @@ import cython
 import numpy as np
 cimport numpy as np
 from cython.parallel cimport prange
+from pydtnn.backends.cython.utils.base cimport npDT
 
-ctypedef fused OkTopK_npDT:
-    np.float32_t
-    np.float64_t
-    # NOTE: in order to extend the supported data types, add the new types here.
+def summ_coo_cython(npDT[::1] self_data,
+                    np.int32_t[::1] self_indices,
+                    npDT[::1] other_data,
+                    np.int32_t[::1] other_indices):
 
-def summ_coo_cython(OkTopK_npDT[::1] self_data,
-                    np.int32_t[::1] self_rows,
-                    np.int32_t[::1] self_cols,
-                    OkTopK_npDT[::1] other_data,
-                    np.int32_t[::1] other_rows,
-                    np.int32_t[::1] other_cols):
-
-    cdef OkTopK_npDT val
-    cdef int count = 0
     cdef int i_self = 0
     cdef int i_other = 0
-    cdef int row_self, row_other, col_self, col_other
+    cdef int i_summ = 0
     cdef int max_size = len(self_data) + len(other_data)
-    cdef np.ndarray[OkTopK_npDT, ndim=1] summ_val = np.zeros(max_size, dtype=np.float32)
-    cdef np.ndarray[np.int32_t, ndim=1] summ_row = np.zeros(max_size, dtype=np.int32)
-    cdef np.ndarray[np.int32_t, ndim=1] summ_col = np.zeros(max_size, dtype=np.int32)
+    cdef np.ndarray[npDT, ndim=1] summ_val = np.zeros(max_size, dtype=np.float32)
+    cdef np.ndarray[np.int32_t, ndim=1] summ_indices = np.zeros(max_size, dtype=np.int32)
 
-    while i_self < len(self_data) or i_other < len(other_data):
-        if i_other >= len(other_data):
-            # There are only elements left in self
-            summ_val[count] = self_data[i_self]
-            summ_row[count] = self_rows[i_self]
-            summ_col[count] = self_cols[i_self]
+    # Adding the coincidences of both matrices
+    while i_self < len(self_data) and i_other < len(other_data):
+        if self_indices[i_self] == other_indices[i_other]:
+            summ_val[i_summ] = self_data[i_self] + other_data[i_other]
+            other_indices[i_summ] = i_self
             i_self += 1
-        elif i_self >= len(self_data):
-            # There are only elements left in other
-            summ_val[count] = other_data[i_other]
-            summ_row[count] = other_rows[i_other]
-            summ_col[count] = other_cols[i_other]
             i_other += 1
-        else:
-            row_self = self_rows[i_self]
-            row_other = other_rows[i_other]
-            if row_self < row_other:
-                # Set self_data, self_row, self_col
-                summ_val[count] = self_data[i_self]
-                summ_row[count] = self_rows[i_self]
-                summ_col[count] = self_cols[i_self]
-                i_self += 1
-            elif row_self > row_other:
-                # Set other_data, other_row, other_col
-                summ_val[count] = other_data[i_other]
-                summ_row[count] = other_rows[i_other]
-                summ_col[count] = other_cols[i_other]
-                i_other += 1
-            else:
-                # Same row, let's see the column
-                col_self = self_cols[i_self]
-                col_other = other_cols[i_other]
-                if col_self < col_other:
-                    # Set self_data, self_row, self_col
-                    summ_val[count] = self_data[i_self]
-                    summ_row[count] = self_rows[i_self]
-                    summ_col[count] = self_cols[i_self]
-                    i_self += 1
-                elif col_self > col_other:
-                    # Set other_data, other_row, other_col
-                    summ_val[count] = other_data[i_other]
-                    summ_row[count] = other_rows[i_other]
-                    summ_col[count] = other_cols[i_other]
-                    i_other += 1
-                else:
-                    val = (self_data[i_self] + other_data[i_other])
-                    if val != 0:
-                        # Set self + other data, any row, any col
-                        summ_val[count] = self_data[i_self] + other_data[i_other]
-                        summ_row[count] = self_rows[i_self]
-                        summ_col[count] = self_cols[i_self]
-                    else:
-                        # Skip zero result
-                        count -= 1
-                    i_other += 1
-                    i_self += 1
-        count += 1
+            if summ_val[i_summ] == 0:
+                # Case: "self_data[i_self] = -other_data[i_other]" ==>
+                #  0 must not be stored (it will be replaced in the next iteration or sliced at the end)
+                i_summ -= 1
+        elif self_indices[i_self] > other_indices[i_other]:
+            summ_val[i_summ] = other_data[i_other]
+            other_indices[i_summ] = i_other
+            i_other += 1
+        else:  # if self_indices[i_self] < other_indices[i_other]:
+            summ_val[i_summ] = self_data[i_self]
+            other_indices[i_summ] = i_self
+            i_self += 1
+        i_summ += 1
 
-    return summ_val[:count], summ_row[:count], summ_col[:count]
+    # NOTE: self or other still have values to iterate, but the other one has no more.
+    # Adding the leftovers of this (self) matrix
+    while i_self < len(self_data):
+        summ_val[i_summ] = self_data[i_self]
+        other_indices[i_summ] = i_self
+        i_self += 1
+        i_summ += 1
+    
+    # Adding the leftovers of the other matrix
+    while i_other < len(other_data):
+        summ_val[i_summ] = other_data[i_other]
+        other_indices[i_summ] = i_other
+        i_other += 1
+        i_summ += 1
+
+    return summ_val[:i_summ], summ_indices[:i_summ]
 
 
-def top_threshold_selection_dense_cython(OkTopK_npDT[:, ::1] matrix,
-                                         OkTopK_npDT threshold):
+def top_threshold_selection_dense_cython(npDT[:, ::1] matrix,
+                                         npDT threshold):
     
     cdef int rows = matrix.shape[0]
     cdef int cols = matrix.shape[1]
     cdef int i, j, count = 0
     cdef np.ndarray[np.int32_t, ndim=1]  count_vector = np.zeros(rows + 1, dtype=np.int32)
 
-
+    # Counting the number of elements above the threshold
     for i in prange(rows, nogil=True):
         for j in range(cols):
-            if abs(matrix[i, j]) > threshold:
-            #if (<float> abs(matrix[i, j])) > threshold:
-                count_vector[i + 1] += 1
-
-    for i in range(rows):
-        count_vector[i + 1] += count_vector[i] 
-    count = count_vector[rows]
-
-    cdef np.ndarray[OkTopK_npDT, ndim=1] top_values = np.zeros(count, dtype=np.float32)
-    cdef np.ndarray[np.int32_t, ndim=1] row_indices = np.zeros(count, dtype=np.int32)
-    cdef np.ndarray[np.int32_t, ndim=1] col_indices = np.zeros(count, dtype=np.int32)
-
-    for i in prange(rows, nogil=True):
-        for j in range(cols):
-            if abs(matrix[i, j]) > threshold:
-                top_values[count_vector[i]] = matrix[i, j]
-                row_indices[count_vector[i]] = i
-                col_indices[count_vector[i]] = j
+            #if abs(matrix[i, j]) > threshold: NOTE: abs doesn't work in int8
+            if matrix[i, j] > threshold or matrix[i, j] < -threshold:
                 count_vector[i] += 1
 
-    return top_values, row_indices, col_indices
+    # Accumulating the count of elements above the threshold
+    for i in range(rows):
+        count_vector[rows] += count_vector[i]
+    count = count_vector[rows]
+
+    cdef np.ndarray[npDT, ndim=1] top_values = np.zeros(count, dtype=np.float32)
+    cdef np.ndarray[np.int32_t, ndim=1] top_indices = np.zeros(count, dtype=np.int32)
+    
+    # Storing the top values and their indexes
+    count = 0
+    for i in range(rows):
+        for j in range(cols):
+            #if abs(matrix[i, j]) > threshold: NOTE: abs doesn't work in int8
+            if matrix[i, j] > threshold or matrix[i, j] < -threshold:
+                top_values[count] = matrix[i, j]
+                top_indices[count] = i * cols + j
+                count = 1
+    return top_values, top_indices
 
 
-def top_threshold_selection_coo_cython(np.ndarray[OkTopK_npDT, ndim=1] values, 
-                                       np.ndarray[np.int32_t, ndim=1] rows, 
-                                       np.ndarray[np.int32_t, ndim=1] cols, 
-                                       OkTopK_npDT threshold):
+def top_threshold_selection_coo_cython(np.ndarray[npDT, ndim=1] values,
+                                       np.ndarray[np.int32_t, ndim=1] indices,
+                                       npDT threshold):
     cdef int i, count = 0
     cdef int len_values = len(values)
 
+    # Calculating the number of elements above the threshold.
     for i in prange(len_values, nogil=True):
-        if abs(values[i]) > threshold:
+        #if abs(values[i]) > threshold: NOTE: abs doesn't work in int8
+        if values[i] > threshold or values[i] < -threshold:
             count += 1
 
-    cdef np.ndarray[OkTopK_npDT, ndim=1] top_values = np.zeros(count, dtype=np.float32)
-    cdef np.ndarray[np.int32_t, ndim=1] row_indices = np.zeros(count, dtype=np.int32)
-    cdef np.ndarray[np.int32_t, ndim=1] col_indices = np.zeros(count, dtype=np.int32)
+    cdef np.ndarray[npDT, ndim=1] top_values = np.zeros(count, dtype=np.float32)
+    cdef np.ndarray[np.int32_t, ndim=1] top_indices = np.zeros(count, dtype=np.int32)
 
+    # Storing the values above the threshold.
     count = 0
     for i in range(len_values):
-        if abs(values[i]) > threshold:
+        #if abs(values[i]) > threshold: NOTE: abs doesn't work in int8
+        if values[i] > threshold or values[i] < -threshold:
             top_values[count] = values[i]
-            row_indices[count] = rows[i]
-            col_indices[count] = cols[i]
+            top_indices[count] = indices[i]
             count += 1
-            
-    return top_values, row_indices, col_indices
+    return top_values, top_indices

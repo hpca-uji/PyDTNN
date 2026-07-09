@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 type DataType[T: _npDT] = np.ndarray[tuple[int], np.dtype[T]]
-type IndexType = np.ndarray[tuple[int, int], np.dtype[np.int32]]
+type IndexType = np.ndarray[tuple[int], np.dtype[np.int32]]
 type RowType = np.ndarray[tuple[int], np.dtype[np.int32]]
 type ColType = RowType
 
@@ -40,6 +40,9 @@ class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
     The matrix is assumed to be in canonical format: indices sorted by row and then by column,
     and no duplicate entries are present.
     This class is not designed to store explict zeros so, len(self.data) should always be equal to nnz.
+
+
+    
     """
 
     def __init__(
@@ -53,7 +56,8 @@ class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
 
         Parameters:
             data (np.ndarray[tuple[int], np.dtype[T]]): Array with the nonzero values.
-            indexes  (np.np.ndarray[tuple[int, int], np.dtype[np.int32]]): Array with the row and column indices.
+            indexes (np.np.ndarray[tuple[int], np.dtype[np.int32]]): Array with the values' postition
+              as if the array is flattened.
             shape (tuple): Shape of the original matrix.
             has_canonical_format (bool): Whether the input arrays are already sorted.
         """
@@ -65,7 +69,6 @@ class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
             self.data: DataType[T] = data
             self.indexes: IndexType = indexes
             self.shape: tuple = shape
-            self.nnz: int = len(self.data)
             self.has_canonical_format: bool = True
             assert self._has_canonical_format()
 
@@ -74,6 +77,10 @@ class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
             raise NotImplementedError(
                 "Not yet implemented constructor with unordered rows and cols"
             )
+
+    @property
+    def nnz(self) -> int:
+        return len(self.data)
 
     @property
     def row(self) -> RowType:
