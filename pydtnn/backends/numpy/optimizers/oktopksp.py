@@ -856,7 +856,7 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
                 self._info_messages.add(message)
                 logger.debug(message)
 
-    def _has_canonical_format(self, indexes: tuple[np.ndarray, np.ndarray]) -> bool:
+    def _has_canonical_format(self, indexes: np.ndarray) -> bool:
         """
         Check if indexes follows the COO canonical format.
 
@@ -879,18 +879,5 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
             " performance reasons."
         )
 
-        row, col = indexes
+        return (len(indexes) == 0) or bool(np.all(indexes[:-1] < indexes[1:]))
 
-        if len(row) != len(col):
-            raise AssertionError("'row' and 'col' must have the same length")
-
-        if len(row) == 0:
-            return True
-
-        if not np.all(row[:-1] <= row[1:]):
-            return False
-
-        for i in range(len(row) - 1):
-            if row[i] == row[i + 1] and col[i] >= col[i + 1]:
-                return False
-        return True
