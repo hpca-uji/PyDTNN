@@ -1,27 +1,22 @@
-stages:
-- build
-- merge
-- push
-
 variables:
   BRANCH_MAIN: master
   BRANCH_WORK: develop
   GIT_DEPTH: 0
   GIT_STRATEGY: none
   GIT_SUBMODULE_STRATEGY: none
+  DEBIAN_FRONTEND: noninteractive
 
-job_build:
-  stage: build
-
+job_pydtnn:
   variables:
     GIT_STRATEGY: fetch
     GIT_SUBMODULE_STRATEGY: recursive
     PIP_ROOT_USER_ACTION: ignore
     PIP_DISABLE_PIP_VERSION_CHECK: "1"
-    PIP_CACHE_DIR: "$CI_PROJECT_DIR/build/pip"
+    PIP_CACHE_DIR: $CI_PROJECT_DIR/build/pip
 
   rules:
-  - if: '$CI_COMMIT_BRANCH == $BRANCH_WORK'
+  - if: $CI_COMMIT_BRANCH == $BRANCH_WORK
+  timeout: 5h
 
   tags: [ lorca-ubuntu ]
   image: python:latest
@@ -57,33 +52,30 @@ job_build:
     when: always
   coverage: '/TOTAL.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
 
-job_merge:
-  stage: merge
-
+job_git:
   variables:
     GIT_STRATEGY: fetch
 
   rules:
-  - if: '$CI_COMMIT_BRANCH == $BRANCH_WORK'
+  - if: $CI_COMMIT_BRANCH == $BRANCH_WORK
+  timeout: 5m
 
   image: registry.gitlab.com/gitlab-org/cli:latest
   tags: [ lorca-ubuntu ]
 
   needs:
-  - job: job_build
+  - job: job_pydtnn
     artifacts: true
 
   rules:
-  - if: '$CI_COMMIT_BRANCH == $BRANCH_WORK'
-
-  resource_group: $BRANCH_MAIN
+  - if: $CI_COMMIT_BRANCH == $BRANCH_WORK
 
   before_script:
   - GIT_REMOTE_NAME=$(git remote)
   - GIT_REMOTE_URL=$(git remote get-url "${GIT_REMOTE_NAME:?}")
   - GIT_TAG=$(basename ./build/pydtnn/pydtnn-*.tar.gz | sed -nE 's|^pydtnn-(.*)\.tar\.gz$|v\1|p')
-  - git remote set-url "${GIT_REMOTE_NAME}" "${GIT_REMOTE_URL/gitlab-ci-token:[^@]*@/gitlab-ci-token:${CI_JOB_TOKEN:?}@}"
-  - glab auth login --hostname "${CI_SERVER_FQDN:?}" --token "${CI_JOB_TOKEN:?}"
+  - git remote set-url "${GIT_REMOTE_NAME}" "${GIT_REMOTE_URL/gitlab-ci-token:[^@]*@/gitlab-ci-token:${GITLAB_TOKEN:?}@}"
+  - glab auth login --hostname "${CI_SERVER_FQDN:?}" --token "${GITLAB_TOKEN:?}"
   script:
   - git fetch "${GIT_REMOTE_NAME:?}" "${BRANCH_MAIN:?}"
   - git checkout -B "${BRANCH_MAIN:?}" "${GIT_REMOTE_NAME:?}/${BRANCH_MAIN:?}"
@@ -91,27 +83,52 @@ job_merge:
   - git tag "${GIT_TAG:?}" "${CI_COMMIT_SHA:?}" || true
   - git push "${GIT_REMOTE_NAME:?}" "${BRANCH_MAIN:?}" "${GIT_TAG:?}"
 
-job_push:
-  stage: push
-
+job_gitlab:
   variables:
     GIT_STRATEGY: fetch
 
   rules:
-  - if: '$CI_COMMIT_BRANCH == $BRANCH_WORK'
+  - if: $CI_COMMIT_BRANCH == $BRANCH_WORK
+  timeout: 5m
 
   tags: [ lorca-ubuntu ]
   image: registry.gitlab.com/gitlab-org/cli:latest
 
   needs:
-  - job: job_build
+  - job: job_pydtnn
     artifacts: true
-  - job: job_merge
 
   before_script:
   - RELEASE_TAG=continuous
   - GIT_TAG=$(basename ./build/pydtnn/pydtnn-*.tar.gz | sed -nE 's|^pydtnn-(.*)\.tar\.gz$|v\1|p')
-  - glab auth login --hostname "${CI_SERVER_FQDN:?}" --token "${CI_JOB_TOKEN:?}"
+  - glab auth login --hostname "${CI_SERVER_FQDN:?}" --token "${GITLAB_TOKEN:?}"
   script:
   - glab release delete "${RELEASE_TAG:?}" -ty || true
-  - glab release create "${RELEASE_TAG:?}" ./build/pydtnn/* --ref "${CI_COMMIT_SHA:?}" --name 'Continuous build' --notes-file 'README.md'
+  - glab release create "${RELEASE_TAG:?}" ./build/pydtnn/* --ref "${CI_COMMIT_SHA:?}" --name 'Continuous build'
+
+job_pypi:
+  variables:
+    TWINE_NON_INTERACTIVE: "1"
+    PIP_ROOT_USER_ACTION: ignore
+    PIP_DISABLE_PIP_VERSION_CHECK: "1"
+    PIP_CACHE_DIR: $CI_PROJECT_DIR/build/pip
+
+  rules:
+  - if: $CI_COMMIT_BRANCH == $BRANCH_WORK
+  timeout: 5m
+
+  tags: [ lorca-ubuntu ]
+  image: python:latest
+
+  needs:
+  - job: job_pydtnn
+    artifacts: true
+
+  before_script:
+  - GIT_TAG=$(basename ./build/pydtnn/pydtnn-*.tar.gz | sed -nE 's|^pydtnn-(.*)\.tar\.gz$|v\1|p')
+  - GIT_COMMIT=$(git rev-list -n1 "${GIT_TAG:?}")
+  - '[ "${GIT_COMMIT:?}" = "${CI_COMMIT_SHA:?}" ] || exit 0'
+  - apt-get update
+  - make pydtnn-deps APT="apt-get -o dir::cache::archives=${PWD:?}/build/apt"
+  script:
+  - twine upload --repository-url 'https://test.pypi.org/legacy/' -u '__token__' -p "${PYPI_TOKEN:?}" ./build/pydtnn/pydtnn-*
