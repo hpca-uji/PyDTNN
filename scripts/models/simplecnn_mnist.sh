@@ -18,7 +18,7 @@ pydtnn-benchmark \
   --num-epochs=50 \
   --steps-per-epoch=0 \
   --validation-split=0.2 \
-  --evaluate=False \
+  --evaluate=True \
   --optimizer=sgd \
   --learning-rate=0.01 \
   --loss-func=categorical_cross_entropy \

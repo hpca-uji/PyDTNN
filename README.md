@@ -234,9 +234,8 @@ The PyDTNN framework comes with a utility launcher called
     Default: `sgd`.
   - `--learning-rate`: Learning rate. Default: `0.01`.
   - `--learning-rate-scaling`: Scale learning rate in parallelism:
-    `new_lr = lr/num_procs`. `True` if specified.
-  - `--gradient-scaling`: Scale gradient prior to back-propagation in parallelism:
-    `new_dx = dx/num_procs`. `True` if specified.
+    `new_lr = lr * num_procs`. `True` if specified.
+    If left undefined, when '--batch-size' is defined, defaults to True.
   - `--optimizer-momentum`: Decay rate for `sgd` optimizer. Default: `0.9`.
   - `--optimizer-decay`: Decay rate for optimizers. Default: `0.0`.
   - `--optimizer-nesterov`: Whether to apply Nesterov momentum. Default:

@@ -662,19 +662,11 @@ class ArgumentParser(argparse.ArgumentParser):
         )
         _op_group.add_argument(
             "--learning-rate-scaling",
-            default=False,
             type=bool_lambda,
+            default=None,
             help=(
-                "Scale learning rate in parallelism: new_lr = lr / num_procs. True if specified."
-            ),
-        )
-        _op_group.add_argument(
-            "--gradient-scaling",
-            default=False,
-            type=bool_lambda,
-            help=(
-                "Scale gradient prior to back-propagation in parallelism: new_dx = dx / num_procs."
-                " True if specified."
+                "Scale learning rate in parallelism: new_lr = lr * num_procs. True if specified."
+                " If left undefined, when '--batch-size' is defined, defaults to True."
             ),
         )
         _op_group.add_argument(

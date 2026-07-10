@@ -117,13 +117,11 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
         # Private attributes
         self._is_model_init: bool = False
 
-        # Optimizers and LRSchedulers
-        if self.learning_rate_scaling:
-            # using comm_size instead of nprocs might not be appropriate,
-            # as it differs to how learning_rate is defined elsewhere,
-            # but for now it just a parser option difference that helps testing
-            self.learning_rate = self.learning_rate / self.comm_size
+        # LR scaling
+        if self.learning_rate_scaling or (self.learning_rate_scaling is None and self.global_batch_size is None):
+            self.learning_rate = self.learning_rate * self.nprocs
 
+        # Optimizers
         self.optimizer = select_optimizer(self.optimizer_name).from_model(self)
         self.optimizer._init_backend_with_model(self)
 

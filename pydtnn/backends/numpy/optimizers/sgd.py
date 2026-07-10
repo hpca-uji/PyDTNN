@@ -71,7 +71,6 @@ class SGDNumpy(SGD[np.ndarray], OptimizerNumpy):
                         continue
                     # if w_ is not None:
                     w_shape = self.context[layer_id]["velocity_%s" % w_].shape  # type: ignore (it is correct)
-                    print(self.canonical_name, key, w_, w_shape)
                     w_shape = self.context[layer_id][key] = self.model.memory.ndarray(
                         w_shape, dtype=self.model.dtype
                     )

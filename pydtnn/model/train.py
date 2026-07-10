@@ -102,9 +102,6 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
                 )
             loss, dx = 0.0, y_targ
 
-        if self.gradient_scaling:
-            dx /= self.nprocs  # type: ignore
-
         total_metrics = None
         total_metrics, _ = self._compute_metrics_funcs(x, y_targ, loss, comm=sync_model)
         assert total_metrics is not None
