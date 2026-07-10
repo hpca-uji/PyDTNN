@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import copy
 import logging
+import math
 from typing import TYPE_CHECKING, Any, Self
 
 import numpy as np
@@ -188,9 +189,7 @@ class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
         self.data = self.data[self.indexes]
         return self
 
-    def intersection(
-        self, other: SparseMatrixCOO, inplace: bool = False
-    ) -> SparseMatrixCOO[T]:
+    def intersection(self, other: SparseMatrixCOO, inplace: bool = False) -> SparseMatrixCOO[T]:
         """Returns a new SparseMatrixCOO with the intersection of self and other, isolated or inplace"""
         if inplace:
             self &= other
@@ -212,9 +211,9 @@ class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
             topk (SparseMatrixCOO[T]): if inplace == False, or void (None): if inplace == True
         """
 
-        shape = np.prod(self.shape)
-        top_values = np.zeros(shape, dtype=self.data.dtype)
-        top_indices = np.zeros(shape, dtype=np.int32)
+        shape = math.prod(self.shape)
+        top_values = np.zeros((shape,), dtype=self.data.dtype)
+        top_indices = np.zeros((shape,), dtype=np.int32)
 
         topk, topk_indixes = top_threshold_selection_coo_cython(
             self.data, self.indexes, threshold, top_values, top_indices
@@ -252,10 +251,10 @@ class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
             SparseMatrixCOO: A row-sliced sparse matrix of self.
         """
         # Converting from matrix/tensor row to a flattened matrix/tensor position:
-        rows: int = self.shape[0]
-        not_rows: int = int(np.prod(self.shape) // rows)
-        flattened_pos_start: int = row_start * not_rows
-        flattened_pos_end: int = row_end * not_rows
+        rows = self.shape[0]
+        not_rows = math.prod(self.shape) // rows
+        flattened_pos_start = row_start * not_rows
+        flattened_pos_end = row_end * not_rows
 
         start_index = np.searchsorted(self.indexes, flattened_pos_start, side="left")
         ending_index = np.searchsorted(self.indexes, flattened_pos_end, side="left")
@@ -282,7 +281,8 @@ class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
             " reasons."
         )
 
-        dense_matrix = np.zeros(np.prod(self.shape), dtype=np.float32)
+        shape = np.prod(self.shape)
+        dense_matrix = np.zeros((shape,), dtype=np.float32)
         dense_matrix[self.indexes] = self.data
         return dense_matrix.reshape(self.shape)
 
