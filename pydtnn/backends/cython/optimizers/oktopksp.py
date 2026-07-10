@@ -12,7 +12,7 @@ from pydtnn.backends.cython.utils.oktopk_cython import (compute_dense_acc_cython
                                                         update_sparsed_weights_mv_cython)
 from pydtnn.backends.numpy.optimizers.oktopksp import OkTopkSPNumpy
 from pydtnn.libs import numpy as np
-from pydtnn.utils.sparse.sparse import SparseMatrixCOO
+from pydtnn.utils.sparse.sparse import SparseMatrixFlat
 
 __all__ = ("OkTopkSPNumpy",)
 
@@ -116,7 +116,7 @@ class OkTopkSPCython(OkTopkSPNumpy, OptimizerCython):
             return acc
 
     def _update_weights_cython(
-        self, layer: Layerable, w_type: str, w: np.ndarray, coo_u: SparseMatrixCOO
+        self, layer: Layerable, w_type: str, w: np.ndarray, coo_u: SparseMatrixFlat
     ) -> None:
         """
         Perform weight updates using Cython-accelerated sparse operations.
@@ -142,7 +142,7 @@ class OkTopkSPCython(OkTopkSPNumpy, OptimizerCython):
         setattr(layer, w_type, w)
 
     def _update_weights_with_vel_and_momentum(
-        self, layer: Layerable, w_type: str, w: np.ndarray, coo_u: SparseMatrixCOO
+        self, layer: Layerable, w_type: str, w: np.ndarray, coo_u: SparseMatrixFlat
     ) -> None:
         """
         Perform weight updates with velocity and momentum using Cython-accelerated operations.

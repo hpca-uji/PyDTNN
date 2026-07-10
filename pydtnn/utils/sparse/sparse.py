@@ -1,7 +1,7 @@
 """
 Sparse matrix utilities for the PyDTNN framework.
 
-This module provides the SparseMatrixCOO class, which implements a Coordinate (COO)
+This module provides the SparseMatrixFlat class, which implements a Flatten Coordinate (FCOO)
 sparse matrix format optimized for performance using Cython-backed operations.
 """
 
@@ -17,10 +17,11 @@ import numpy as np
 if TYPE_CHECKING:
     from pydtnn.backends.cython.utils.base import _npDT  # type: ignore
 
+from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.sparse.sparse_cython import (summ_coo_cython, top_threshold_selection_coo_cython,
                                                top_threshold_selection_dense_cython)
 
-__all__ = ("SparseMatrixCOO",)
+__all__ = ("SparseMatrixFlat",)
 
 logger = logging.getLogger(__name__)
 
@@ -31,8 +32,8 @@ type RowType = np.ndarray[tuple[int], np.dtype[np.int32]]
 type ColType = RowType
 
 
-class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
-    """Represents a sparse matrix in COO format.
+class SparseMatrixFlat[T: _npDT]:  # noqa: D101 (generics not detected)
+    """Represents a sparse matrix in Flatten COO format.
 
     This format stores the matrix using three arrays:
         - data: the nonzero values.
@@ -40,15 +41,15 @@ class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
         - col: the column indices corresponding to each value.
 
     and no duplicate entries are present.
-    This class is not designed to store explict zeros so, len(self.data) should always be equal to number_non_zeros.
+    This class is not designed to store explicit zeros so, len(self.data) should always be equal to number_non_zeros.
     """
 
-    def __init__(self, data: DataType[T], indexes: IndexType, shape: tuple) -> None:
+    def __init__(self, data: DataType[T], indexes: IndexType, shape: ArrayShape) -> None:
         """Primary initializer for SparseMatrixCOO.
 
         Parameters:
             data (np.ndarray[tuple[int], np.dtype[T]]): Array with the nonzero values.
-            indexes (np.np.ndarray[tuple[int], np.dtype[np.int32]]): Array with the values' postition
+            indexes (np.np.ndarray[tuple[int], np.dtype[np.int32]]): Array with the values' position
               as if the array is flattened.
             shape (tuple): Shape of the original matrix.
         """
@@ -58,7 +59,7 @@ class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
 
         self.data: DataType[T] = data
         self.indexes: IndexType = indexes
-        self.shape: tuple = shape
+        self.shape: ArrayShape = shape
         assert self._has_canonical_format()
 
     @property
@@ -82,13 +83,13 @@ class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
 
     @classmethod
     def from_unsorted_indexes(
-        cls, data: DataType, indexes: IndexType, shape: tuple
-    ) -> SparseMatrixCOO[T]:
+        cls, data: DataType, indexes: IndexType, shape: ArrayShape
+    ) -> SparseMatrixFlat[T]:
         """Constructs to create a SparseMatrixCOO from a unsorted indexes array.
 
         Parameters:
             data (np.ndarray[tuple[int], np.dtype[T]]): Array with the nonzero values.
-            indexes (np.np.ndarray[tuple[int], np.dtype[np.int32]]): Unsorted array with the values' postition
+            indexes (np.np.ndarray[tuple[int], np.dtype[np.int32]]): Unsorted array with the values' position
                 as if the array is flattened.
             shape (tuple): Shape of the original matrix.
 
@@ -103,7 +104,7 @@ class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
         return cls(data, indexes, shape)
 
     @classmethod
-    def from_dense(cls, dense_array: np.ndarray) -> SparseMatrixCOO[T]:
+    def from_dense(cls, dense_array: np.ndarray) -> SparseMatrixFlat[T]:
         """Constructs to create a SparseMatrixCOO from a dense array.
 
         Only stores non-zero values!
@@ -131,7 +132,7 @@ class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
     @classmethod
     def from_dense_top_selection(
         cls, dense_array: np.ndarray, threshold: float
-    ) -> SparseMatrixCOO[T]:
+    ) -> SparseMatrixFlat[T]:
         """Constructor from a dense array considering only elements greater than or equal to the threshold.
 
         Parameters:
@@ -155,7 +156,7 @@ class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
 
     @staticmethod
     def intersection_indexes(o1: np.ndarray, o2: np.ndarray) -> np.ndarray:
-        """Returns the interesection of two SparseMatrixCOO's indexes."""
+        """Returns the intersection of two SparseMatrixCOO's indexes."""
         return np.intersect1d(o1, o2)
 
     def __copy__(self) -> Self:
@@ -166,20 +167,20 @@ class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
         """Return copy of SparseMatrixCOO"""
         return copy.copy(self)
 
-    def __and__(self, other: Any) -> SparseMatrixCOO[T]:
+    def __and__(self, other: Any) -> SparseMatrixFlat[T]:
         """Returns a new SparseMatrixCOO with the intersection of self and other"""
-        if not isinstance(other, SparseMatrixCOO):
+        if not isinstance(other, SparseMatrixFlat):
             raise TypeError("Operand must be a SparseMatrixCOO instance.")
         if self.shape != other.shape:
             raise ValueError("Matrices must have the same shape.")
         if not self._has_canonical_format() or not other._has_canonical_format():
             raise ValueError("Both matrices must be sorted.")
         indexes = self.intersection_indexes(self.indexes, other.indexes)
-        return SparseMatrixCOO[T](data=self.data[indexes], indexes=indexes, shape=self.shape)
+        return SparseMatrixFlat[T](data=self.data[indexes], indexes=indexes, shape=self.shape)
 
     def __iand__(self, other: Any) -> Self:
         """Returns a new SparseMatrixCOO with the intersection of self and other"""
-        if not isinstance(other, SparseMatrixCOO):
+        if not isinstance(other, SparseMatrixFlat):
             raise TypeError("Operand must be a SparseMatrixCOO instance.")
         if self.shape != other.shape:
             raise ValueError("Matrices must have the same shape.")
@@ -189,7 +190,7 @@ class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
         self.data = self.data[self.indexes]
         return self
 
-    def intersection(self, other: SparseMatrixCOO, inplace: bool = False) -> SparseMatrixCOO[T]:
+    def intersection(self, other: SparseMatrixFlat, inplace: bool = False) -> SparseMatrixFlat[T]:
         """Returns a new SparseMatrixCOO with the intersection of self and other, isolated or inplace"""
         if inplace:
             self &= other
@@ -197,9 +198,9 @@ class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
             self = self & other
         return self
 
-    def top_selection(
+    def threshold_selection(
         self, threshold: float, inplace: bool | None = True
-    ) -> SparseMatrixCOO[T] | None:
+    ) -> SparseMatrixFlat[T] | None:
         """
         Performs top threshold selection on sparse array
 
@@ -224,7 +225,7 @@ class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
             self.indexes = topk_indixes
             # self.shape remains equal
         else:
-            return SparseMatrixCOO[T](topk, self.indexes, self.shape)
+            return SparseMatrixFlat[T](topk, self.indexes, self.shape)
 
     def get_data_and_indexes(self) -> tuple[DataType[T], IndexType]:
         """
@@ -235,9 +236,9 @@ class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
         """
         return self.data, self.indexes
 
-    def slice(
+    def slice_selection(
         self, row_start: int, row_end: int, reset_indexes: bool | None = False
-    ) -> SparseMatrixCOO[T]:
+    ) -> SparseMatrixFlat[T]:
         """
         Perform a slice by row of the sparse matrix.
 
@@ -264,11 +265,11 @@ class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
 
         # TODO: Check this works as intended:
         if reset_indexes:
-            sliced_indexes -= row_start
+            sliced_indexes -= flattened_pos_start
 
-        return SparseMatrixCOO[T](sliced_data, sliced_indexes, self.shape)
+        return SparseMatrixFlat[T](sliced_data, sliced_indexes, self.shape)
 
-    def to_dense(self) -> np.ndarray[tuple[int, ...], np.dtype[np.float32]]:
+    def to_dense(self) -> np.ndarray[tuple[int, ...], np.dtype[T]]:
         """
         Convert to dense np.array.
 
@@ -281,12 +282,12 @@ class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
             " reasons."
         )
 
-        shape = np.prod(self.shape)
-        dense_matrix = np.zeros((shape,), dtype=np.float32)
+        shape = math.prod(self.shape)
+        dense_matrix = np.zeros((shape,), dtype=self.data.dtype)
         dense_matrix[self.indexes] = self.data
         return dense_matrix.reshape(self.shape)
 
-    def __iadd__(self, other: SparseMatrixCOO[T]) -> Self:
+    def __iadd__(self, other: SparseMatrixFlat[T]) -> Self:
         """
         Adds two SparseMatrixCOO matrices that are sorted.
 
@@ -299,7 +300,7 @@ class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
 
         if other == 0:
             return self
-        if not isinstance(other, SparseMatrixCOO):
+        if not isinstance(other, SparseMatrixFlat):
             raise TypeError("Operand must be a SparseMatrixCOO instance.")
         if self.shape != other.shape:
             raise ValueError("Matrices must have the same shape.")
@@ -314,7 +315,7 @@ class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
         )
         return self
 
-    def __add__(self, other: SparseMatrixCOO[T]) -> SparseMatrixCOO[T]:
+    def __add__(self, other: SparseMatrixFlat[T]) -> SparseMatrixFlat[T]:
         """
         Adds two SparseMatrixCOO matrices that are sorted.
 
@@ -327,7 +328,7 @@ class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
 
         if other == 0:
             return self
-        if not isinstance(other, SparseMatrixCOO):
+        if not isinstance(other, SparseMatrixFlat):
             raise TypeError("Operand must be a SparseMatrixCOO instance.")
         if self.shape != other.shape:
             raise ValueError("Matrices must have the same shape.")
@@ -340,9 +341,9 @@ class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
         summ_val, summ_indices = summ_coo_cython(
             self.data, self.indexes, other.data, other.indexes, summ_val, summ_indices
         )
-        return SparseMatrixCOO[T](summ_val, summ_indices, self.shape)
+        return SparseMatrixFlat[T](summ_val, summ_indices, self.shape)
 
-    def __radd__(self, other: SparseMatrixCOO[T]) -> SparseMatrixCOO[T]:
+    def __radd__(self, other: SparseMatrixFlat[T]) -> SparseMatrixFlat[T]:
         """Reversed add"""
         return self + other
 
