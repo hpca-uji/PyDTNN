@@ -1,7 +1,10 @@
 import cython
 import numpy as np
+
 cimport numpy as np
+
 from pydtnn.backends.cython.utils.base cimport npDT
+
 
 def summ_coo_cython(npDT[::1] self_data,
                     np.int32_t[::1] self_indices,

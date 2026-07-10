@@ -5,11 +5,11 @@ from typing import TYPE_CHECKING
 
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.backends.cython.optimizers.optimizer import OptimizerCython
-from pydtnn.backends.cython.utils.oktopk_utils_cython import (compute_dense_acc_cython,
-                                                              intersect_1d_indexes_cython,
-                                                              reset_residuals_cython,
-                                                              update_sparsed_weights_cython,
-                                                              update_sparsed_weights_mv_cython)
+from pydtnn.backends.cython.utils.oktopk_cython import (compute_dense_acc_cython,
+                                                        intersect_1d_indexes_cython,
+                                                        reset_residuals_cython,
+                                                        update_sparsed_weights_cython,
+                                                        update_sparsed_weights_mv_cython)
 from pydtnn.backends.numpy.optimizers.oktopksp import OkTopkSPNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.utils.sparse.sparse import SparseMatrixCOO
@@ -30,7 +30,9 @@ class OkTopkSPCython(OkTopkSPNumpy, OptimizerCython):
     Inheriting from both the NumPy implementation and the Cython optimizer base class.
     """
 
-    def _model_init(self, list_layers: list[Layerable], _update_weights_method: str = "cython") -> None:
+    def _model_init(
+        self, list_layers: list[Layerable], _update_weights_method: str = "cython"
+    ) -> None:
         """
         Initialize the model layers and configure the Cython weight update method.
 
@@ -80,9 +82,7 @@ class OkTopkSPCython(OkTopkSPNumpy, OptimizerCython):
 
         return acc
 
-    def _reset_residuals(
-        self, acc: np.ndarray, indexes: np.ndarray
-    ) -> np.ndarray:
+    def _reset_residuals(self, acc: np.ndarray, indexes: np.ndarray) -> np.ndarray:
         """
         Update residuals.
 
@@ -168,9 +168,7 @@ class OkTopkSPCython(OkTopkSPNumpy, OptimizerCython):
         if len(self.dw_original_shape) != 1:
             w = w.reshape(-1)
         velocity = getattr(layer, "velocity_%s" % w_type, np.zeros_like(w, dtype=layer.model.dtype))
-        update_sparsed_weights_mv_cython(
-            w, coo_u.data, coo_u.indexes, velocity, self.momentum
-        )
+        update_sparsed_weights_mv_cython(w, coo_u.data, coo_u.indexes, velocity, self.momentum)
         if len(self.dw_original_shape) != 1:
             w = w.reshape(self.dw_original_shape)
         setattr(layer, w_type, w)

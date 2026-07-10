@@ -7,8 +7,9 @@ sparse matrix format optimized for performance using Cython-backed operations.
 
 from __future__ import annotations
 
+import copy
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Self
 
 import numpy as np
 
@@ -41,12 +42,7 @@ class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
     This class is not designed to store explict zeros so, len(self.data) should always be equal to number_non_zeros.
     """
 
-    def __init__(
-        self,
-        data: DataType[T],
-        indexes: IndexType,
-        shape: tuple
-    ) -> None:
+    def __init__(self, data: DataType[T], indexes: IndexType, shape: tuple) -> None:
         """Primary initializer for SparseMatrixCOO.
 
         Parameters:
@@ -84,7 +80,9 @@ class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
         return np.array(list(zip(row, col)), dtype=np.int32)
 
     @classmethod
-    def from_unsorted_indexes(cls, data: DataType, indexes: IndexType, shape: tuple) -> SparseMatrixCOO[T]:
+    def from_unsorted_indexes(
+        cls, data: DataType, indexes: IndexType, shape: tuple
+    ) -> SparseMatrixCOO[T]:
         """Constructs to create a SparseMatrixCOO from a unsorted indexes array.
 
         Parameters:
@@ -98,7 +96,7 @@ class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
         """
 
         indexes_and_data = list(zip(data, indexes))
-        indexes_and_data.sort(key = lambda x: x[0])
+        indexes_and_data.sort(key=lambda x: x[0])
         indexes, data = zip(*indexes_and_data)  # type: ignore (It's the right data type)
 
         return cls(data, indexes, shape)
@@ -149,32 +147,57 @@ class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
         top_values = np.zeros(shape, dtype=dense_array.dtype)
         top_indices = np.zeros(shape, dtype=np.int32)
 
-        topk, topk_indexes = top_threshold_selection_dense_cython(dense_array, threshold, top_values, top_indices)
+        topk, topk_indexes = top_threshold_selection_dense_cython(
+            dense_array, threshold, top_values, top_indices
+        )
         return cls(topk, topk_indexes, dense_array.shape)
-    
+
     @staticmethod
-    def intersection_indexes(o1: np.ndarray, o2: np.ndarray) ->  np.ndarray:
+    def intersection_indexes(o1: np.ndarray, o2: np.ndarray) -> np.ndarray:
         """Returns the interesection of two SparseMatrixCOO's indexes."""
         return np.intersect1d(o1, o2)
 
+    def __copy__(self) -> Self:
+        """Return copy of SparseMatrixCOO"""
+        return self.__class__(self.data.copy(), self.indexes.copy(), self.shape)
+
+    def copy(self) -> Self:
+        """Return copy of SparseMatrixCOO"""
+        return copy.copy(self)
+
     def __and__(self, other: Any) -> SparseMatrixCOO[T]:
-        """Returns a new SparseMatrixCOO with the intersection of self and other SparseMatrixCOOs"""
+        """Returns a new SparseMatrixCOO with the intersection of self and other"""
         if not isinstance(other, SparseMatrixCOO):
             raise NotImplementedError("Intersection only implemented for two SparseMatrixCOO!")
-        intersection_indexes = SparseMatrixCOO.intersection_indexes(self.indexes, other.indexes)
-        return SparseMatrixCOO[T](data = self.data[intersection_indexes],
-                                  indexes=intersection_indexes,
-                                  shape = self.shape)
-    
-    def intersection(self, other: SparseMatrixCOO, inplace: bool = False) -> None | SparseMatrixCOO[T]:
-        """Returns a new SparseMatrixCOO with the intersection of self and other SparseMatrixCOOs or set the new values inplace."""
+        if self.shape != other.shape:
+            raise AssertionError("Matrices must have the same shape.")
+        if not self._has_canonical_format() or not other._has_canonical_format():
+            raise AssertionError("Both matrices must be sorted.")
+        indexes = self.intersection_indexes(self.indexes, other.indexes)
+        return SparseMatrixCOO[T](data=self.data[indexes], indexes=indexes, shape=self.shape)
+
+    def __iand__(self, other: Any) -> Self:
+        """Returns a new SparseMatrixCOO with the intersection of self and other"""
+        if not isinstance(other, SparseMatrixCOO):
+            raise NotImplementedError("Intersection only implemented for two SparseMatrixCOO!")
+        if self.shape != other.shape:
+            raise AssertionError("Matrices must have the same shape.")
+        if not self._has_canonical_format() or not other._has_canonical_format():
+            raise AssertionError("Both matrices must be sorted.")
+        self.indexes = self.intersection_indexes(self.indexes, other.indexes)
+        self.data = self.data[self.indexes]
+        return self
+
+    def intersection(
+        self, other: SparseMatrixCOO, inplace: bool = False
+    ) -> None | SparseMatrixCOO[T]:
+        """Returns a new SparseMatrixCOO with the intersection of self and other, isolated or inplace"""
         if not isinstance(other, SparseMatrixCOO):
             raise NotImplementedError("Intersection only implemented for two SparseMatrixCOO!")
         if inplace:
-            self.indexes = SparseMatrixCOO.intersection_indexes(self.indexes, other.indexes)
-            self.data = self.data[self.indexes]
+            self &= other
         else:
-            return self.__and__(other)
+            return self & other
 
     def top_selection(
         self, threshold: float, inplace: bool | None = True
@@ -264,6 +287,34 @@ class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
         dense_matrix[self.indexes] = self.data
         return dense_matrix.reshape(self.shape)
 
+    def __iadd__(self, other: SparseMatrixCOO[T]) -> Self:
+        """
+        Adds two SparseMatrixCOO matrices that are sorted.
+
+        Parameters:
+            other (SparseMatrixCOO[T]): Another SparseMatrixCOO instance.
+
+        Returns:
+            SparseMatrixCOO: A new instance representing the sum of both matrices.
+        """
+
+        if other == 0:
+            return self
+        if not isinstance(other, SparseMatrixCOO):
+            raise AssertionError("Operand must be a SparseMatrixCOO instance.")
+        if self.shape != other.shape:
+            raise AssertionError("Matrices must have the same shape.")
+        if not self._has_canonical_format() or not other._has_canonical_format():
+            raise AssertionError("Both matrices must be sorted.")
+
+        max_size = self.number_non_zeros + other.number_non_zeros
+        summ_val = np.zeros(max_size, dtype=self.data.dtype)
+        summ_indices = np.zeros(max_size, dtype=np.int32)
+        self.data, self.indexes = summ_coo_cython(
+            self.data, self.indexes, other.data, other.indexes, summ_val, summ_indices
+        )
+        return self
+
     def __add__(self, other: SparseMatrixCOO[T]) -> SparseMatrixCOO[T]:
         """
         Adds two SparseMatrixCOO matrices that are sorted.
@@ -275,41 +326,26 @@ class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
             SparseMatrixCOO: A new instance representing the sum of both matrices.
         """
 
+        if other == 0:
+            return self
         if not isinstance(other, SparseMatrixCOO):
             raise AssertionError("Operand must be a SparseMatrixCOO instance.")
         if self.shape != other.shape:
             raise AssertionError("Matrices must have the same shape.")
         if not self._has_canonical_format() or not other._has_canonical_format():
             raise AssertionError("Both matrices must be sorted.")
-        
+
         max_size = self.number_non_zeros + other.number_non_zeros
         summ_val = np.zeros(max_size, dtype=self.data.dtype)
         summ_indices = np.zeros(max_size, dtype=np.int32)
-
         summ_val, summ_indices = summ_coo_cython(
             self.data, self.indexes, other.data, other.indexes, summ_val, summ_indices
         )
         return SparseMatrixCOO[T](summ_val, summ_indices, self.shape)
 
-    def __radd__(self, other: int | SparseMatrixCOO[T]) -> SparseMatrixCOO[T]:
-        """
-        Implements right-hand addition to support the built-in sum() function.
-
-        This method allows an instance of this class to be used with sum() by handling the
-        case where the left operand is 0. If 'other' is 0, it returns the instance itself;
-        otherwise, it delegates the operation to the __add__ method.
-
-        Parameters:
-            other (int or SparseMatrixCOO[T]): The left-hand operand.
-
-        Returns:
-            SparseMatrixCOO: The sum of self and other.
-        """
-        if other == 0:
-            return self
-        else:
-            assert not isinstance(other, int)
-            return self.__add__(other)
+    def __radd__(self, other: SparseMatrixCOO[T]) -> SparseMatrixCOO[T]:
+        """Reversed add"""
+        return self + other
 
     def _has_canonical_format(self) -> bool:
         """Check if SparseMatrixCOO follows canonical format.

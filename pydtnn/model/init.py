@@ -118,7 +118,9 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
         self._is_model_init: bool = False
 
         # LR scaling
-        if self.learning_rate_scaling or (self.learning_rate_scaling is None and self.global_batch_size is None):
+        if self.learning_rate_scaling or (
+            self.learning_rate_scaling is None and self.global_batch_size is None
+        ):
             self.learning_rate = self.learning_rate * self.nprocs
 
         # Optimizers

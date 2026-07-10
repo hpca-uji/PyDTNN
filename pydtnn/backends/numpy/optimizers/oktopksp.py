@@ -605,8 +605,8 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
             - output: array([1, 3, 8])
         """
 
-        return np.intersect1d(local_indexes, global_indexes, assume_unique = True)
-    
+        return np.intersect1d(local_indexes, global_indexes, assume_unique=True)
+
     def __intersect_indexes(
         self,
         local_indexes: tuple[np.ndarray, np.ndarray],
@@ -907,4 +907,3 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
         )
 
         return (len(indexes) == 0) or bool(np.all(indexes[:-1] < indexes[1:]))
-

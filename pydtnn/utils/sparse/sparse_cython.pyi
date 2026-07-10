@@ -50,7 +50,7 @@ def top_threshold_selection_coo_cython[T: _npDT](
     indices: _npDT_1Dims[_np.int32],
     threshold: float,
     top_values: _npDT_1Dims[T],
-    top_indices: _npDT_1Dims[_np.int32]
+    top_indices: _npDT_1Dims[_np.int32],
 ) -> tuple[_npDT_1Dims[T], _npDT_1Dims[_np.int32]]:
     """Filter elements of a COO sparse matrix based on a threshold.
     Args:
