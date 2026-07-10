@@ -168,36 +168,35 @@ class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
     def __and__(self, other: Any) -> SparseMatrixCOO[T]:
         """Returns a new SparseMatrixCOO with the intersection of self and other"""
         if not isinstance(other, SparseMatrixCOO):
-            raise NotImplementedError("Intersection only implemented for two SparseMatrixCOO!")
+            raise TypeError("Operand must be a SparseMatrixCOO instance.")
         if self.shape != other.shape:
-            raise AssertionError("Matrices must have the same shape.")
+            raise ValueError("Matrices must have the same shape.")
         if not self._has_canonical_format() or not other._has_canonical_format():
-            raise AssertionError("Both matrices must be sorted.")
+            raise ValueError("Both matrices must be sorted.")
         indexes = self.intersection_indexes(self.indexes, other.indexes)
         return SparseMatrixCOO[T](data=self.data[indexes], indexes=indexes, shape=self.shape)
 
     def __iand__(self, other: Any) -> Self:
         """Returns a new SparseMatrixCOO with the intersection of self and other"""
         if not isinstance(other, SparseMatrixCOO):
-            raise NotImplementedError("Intersection only implemented for two SparseMatrixCOO!")
+            raise TypeError("Operand must be a SparseMatrixCOO instance.")
         if self.shape != other.shape:
-            raise AssertionError("Matrices must have the same shape.")
+            raise ValueError("Matrices must have the same shape.")
         if not self._has_canonical_format() or not other._has_canonical_format():
-            raise AssertionError("Both matrices must be sorted.")
+            raise ValueError("Both matrices must be sorted.")
         self.indexes = self.intersection_indexes(self.indexes, other.indexes)
         self.data = self.data[self.indexes]
         return self
 
     def intersection(
         self, other: SparseMatrixCOO, inplace: bool = False
-    ) -> None | SparseMatrixCOO[T]:
+    ) -> SparseMatrixCOO[T]:
         """Returns a new SparseMatrixCOO with the intersection of self and other, isolated or inplace"""
-        if not isinstance(other, SparseMatrixCOO):
-            raise NotImplementedError("Intersection only implemented for two SparseMatrixCOO!")
         if inplace:
             self &= other
         else:
-            return self & other
+            self = self & other
+        return self
 
     def top_selection(
         self, threshold: float, inplace: bool | None = True
@@ -301,11 +300,11 @@ class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
         if other == 0:
             return self
         if not isinstance(other, SparseMatrixCOO):
-            raise AssertionError("Operand must be a SparseMatrixCOO instance.")
+            raise TypeError("Operand must be a SparseMatrixCOO instance.")
         if self.shape != other.shape:
-            raise AssertionError("Matrices must have the same shape.")
+            raise ValueError("Matrices must have the same shape.")
         if not self._has_canonical_format() or not other._has_canonical_format():
-            raise AssertionError("Both matrices must be sorted.")
+            raise ValueError("Both matrices must be sorted.")
 
         max_size = self.number_non_zeros + other.number_non_zeros
         summ_val = np.zeros(max_size, dtype=self.data.dtype)
@@ -329,11 +328,11 @@ class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
         if other == 0:
             return self
         if not isinstance(other, SparseMatrixCOO):
-            raise AssertionError("Operand must be a SparseMatrixCOO instance.")
+            raise TypeError("Operand must be a SparseMatrixCOO instance.")
         if self.shape != other.shape:
-            raise AssertionError("Matrices must have the same shape.")
+            raise ValueError("Matrices must have the same shape.")
         if not self._has_canonical_format() or not other._has_canonical_format():
-            raise AssertionError("Both matrices must be sorted.")
+            raise ValueError("Both matrices must be sorted.")
 
         max_size = self.number_non_zeros + other.number_non_zeros
         summ_val = np.zeros(max_size, dtype=self.data.dtype)
