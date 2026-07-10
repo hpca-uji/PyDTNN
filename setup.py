@@ -1,4 +1,4 @@
-"""PyDTNN's Setup"""
+"""PyDTNN's setup"""
 
 from pathlib import Path
 from os import process_cpu_count
@@ -9,45 +9,67 @@ from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext
 
 
+# configuration
+PACKAGE = Path("pydtnn")
+
+EXTENSION_ARGS = {
+    "extra_compile_args": ["-fopenmp", "-O3", "-g0"],
+    "extra_link_args": ["-fopenmp", "-s"],
+    "include_dirs": [numpy.get_include()],
+}
+
+CYTHON_ARGS = {
+    "language_level": 3,
+    "compiler_directives": {
+        "cdivision": True,
+        "overflowcheck": False,
+        "wraparound": False,
+        "boundscheck": False,
+        "initializedcheck": False
+    },
+}
+
+CYTHON_UTILITY = PACKAGE.joinpath("utils/_cyutility.c")
+
+
+# backend
 class BuildExt(build_ext):
-    """Provides the configuration for some non-python libraries."""
+    """Extension builder"""
+
+    @staticmethod
+    def path_module(path: Path) -> str:
+        """Convert a path to a module name"""
+        return ".".join(path.with_suffix("").parts)
 
     def initialize_options(self) -> None:
-        """Set the extern libraries' initialize options so the compilation is made in parallel."""
-
+        """Default extensions configuration"""
         super().initialize_options()
+
         if self.parallel is None:
             self.parallel = process_cpu_count()
 
+    def finalize_options(self) -> None:
+        """Finish extensions configuration"""
+        self.parallel = int(self.parallel)
 
-ext_modules = [
-    Extension("pydtnn.utils._cyutility", sources=["pydtnn/utils/_cyutility.c"])
-]
+        self.distribution.ext_modules = cythonize(
+            self.distribution.ext_modules,
+            **CYTHON_ARGS,
+            nthreads=self.parallel,
+            shared_utility_qualified_name=self.path_module(CYTHON_UTILITY)
+        )
 
-for pyx in Path("pydtnn").rglob("*.pyx"):
-    ext_modules.append(Extension(
-        ".".join(pyx.with_suffix("").parts),
-        [str(pyx)],
-        extra_compile_args=["-fopenmp", "-O3", "-g0"],
-        extra_link_args=["-fopenmp", "-s"],
-        include_dirs=[numpy.get_include()],
-    ))
+        if self.parallel <= 1:
+            self.parallel = None
 
+        super().finalize_options()
+
+
+# entrypoint
 setup(
-    cmdclass={
-        "build_ext": BuildExt
-    },
-    ext_modules=cythonize(
-        ext_modules,
-        language_level=3,
-        compiler_directives={
-            "cdivision": True,
-            "overflowcheck": False,
-            "wraparound": False,
-            "boundscheck": False,
-            "initializedcheck": False
-        },
-        nthreads=process_cpu_count(),
-        shared_utility_qualified_name="pydtnn.utils._cyutility"
-    )
+    cmdclass={"build_ext": BuildExt},
+    ext_modules=[
+        Extension(BuildExt.path_module(CYTHON_UTILITY), sources=[str(CYTHON_UTILITY)]),
+        *(Extension(BuildExt.path_module(pyx), [str(pyx)], **EXTENSION_ARGS) for pyx in PACKAGE.rglob("*.pyx"))  # type: ignore
+    ]
 )
