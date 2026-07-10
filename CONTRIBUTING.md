@@ -232,11 +232,17 @@ _Do things work?_
 
 ## All
 ```sh
-python -m unittest pydtnn.tests.groups.all
+make test
 ```
 
-_Note: include `-v` for verbose mode_  
-_Note: exhaustive tests are skipped_  
+_Note: exhaustive tests are skipped_
+
+## Specific
+```sh
+python -m unittest pydtnn.tests.${TEST_FILE}.${TEST_CLASS}.${TEST_METHOD}
+```
+
+_Note: include `-v` for verbose mode_
 
 ## Exhaustive
 ```sh
@@ -249,29 +255,19 @@ mpirun python -m unittest pydtnn.tests.conv_2d_conv_gemm_long.Conv2DConvGemmLong
 python -m unittest pydtnn.tests.model_gpu
 ```
 
-## Specific
-```sh
-python -m unittest pydtnn.tests.${TEST_NAME}
-```
-
 # Publishing
 _Making things public_
 
 ## Cleanup
 ```sh
-make format
-git commit -am format
+make format lint
+git commit -am cleanup
 git push
 ```
 
 ## Build
 ```sh
-make build
-```
-
-## Test
-```sh
-make test
+make build test
 ```
 
 ## Publish
