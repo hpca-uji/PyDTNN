@@ -594,12 +594,15 @@ $(PYDTNN_DST)/.build: $(PYDTNN_SRC)/.git | $(DST)/.gitignore
 pydtnn-install: PYDTNN_PKG :=
 pydtnn-install: $(PYDTNN_DST)/.build
 	WHEEL=$$(printf '%s ' "$(PYDTNN_DST)"/pydtnn-*.whl) && \
-	$(PIP) install "$${WHEEL:?}$(if $(PYDTNN_PKG),[$(PYDTNN_PKG)])"
+	$(PIP) install \
+		-C="--global-option=build_ext --parallel=$(NPROC)" \
+		"$${WHEEL:?}$(if $(PYDTNN_PKG),[$(PYDTNN_PKG)])"
 
 pydtnn-develop: PYDTNN_PKG := dev
 pydtnn-develop:
 	$(PIP) install \
-		--config-settings editable_mode=compat \
+		-C=editable_mode=compat \
+		-C="--global-option=build_ext --parallel=$(NPROC)" \
 		-e "$(PYDTNN_SRC)$(if $(PYDTNN_PKG),[$(PYDTNN_PKG)])"
 
 pydtnn-format: PYDTNN_PKG := pydtnn
