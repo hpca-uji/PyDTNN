@@ -151,16 +151,17 @@ class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
 
         topk, topk_indexes = top_threshold_selection_dense_cython(dense_array, threshold, top_values, top_indices)
         return cls(topk, topk_indexes, dense_array.shape)
-
-    def intersection_indexes(self, other: np.ndarray) ->  np.ndarray:
+    
+    @staticmethod
+    def intersection_indexes(o1: np.ndarray, o2: np.ndarray) ->  np.ndarray:
         """Returns the interesection of two SparseMatrixCOO's indexes."""
-        return np.intersect1d(self.indexes, other)
+        return np.intersect1d(o1, o2)
 
     def __and__(self, other: Any) -> SparseMatrixCOO[T]:
         """Returns a new SparseMatrixCOO with the intersection of self and other SparseMatrixCOOs"""
         if not isinstance(other, SparseMatrixCOO):
             raise NotImplementedError("Intersection only implemented for two SparseMatrixCOO!")
-        intersection_indexes = self.intersection_indexes(other.indexes)
+        intersection_indexes = SparseMatrixCOO.intersection_indexes(self.indexes, other.indexes)
         return SparseMatrixCOO[T](data = self.data[intersection_indexes],
                                   indexes=intersection_indexes,
                                   shape = self.shape)
@@ -170,7 +171,7 @@ class SparseMatrixCOO[T: _npDT]:  # noqa: D101 (generics not detected)
         if not isinstance(other, SparseMatrixCOO):
             raise NotImplementedError("Intersection only implemented for two SparseMatrixCOO!")
         if inplace:
-            self.indexes = self.intersection_indexes(other.indexes)
+            self.indexes = SparseMatrixCOO.intersection_indexes(self.indexes, other.indexes)
             self.data = self.data[self.indexes]
         else:
             return self.__and__(other)

@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.backends.cython.optimizers.optimizer import OptimizerCython
 from pydtnn.backends.cython.utils.oktopk_utils_cython import (compute_dense_acc_cython,
-                                                              intersect_2d_indexes_cython,
+                                                              intersect_1d_indexes_cython,
                                                               reset_residuals_cython,
                                                               update_sparsed_weights_cython,
                                                               update_sparsed_weights_mv_cython)
@@ -30,7 +30,7 @@ class OkTopkSPCython(OkTopkSPNumpy, OptimizerCython):
     Inheriting from both the NumPy implementation and the Cython optimizer base class.
     """
 
-    def _model_init(self, list_layers: list[Layerable]) -> None:
+    def _model_init(self, list_layers: list[Layerable], _update_weights_method: str = "cython") -> None:
         """
         Initialize the model layers and configure the Cython weight update method.
 
@@ -38,7 +38,7 @@ class OkTopkSPCython(OkTopkSPNumpy, OptimizerCython):
             list_layers: List of layers to be optimized.
         """
         super()._model_init(list_layers)
-        self._update_weights_method = "cython"
+        self._update_weights_method = _update_weights_method
         # method (string, optional): The method to use for updating the weights.
         # It can be 'cython' or 'numpy'. Default is 'cython'.
 
@@ -81,7 +81,7 @@ class OkTopkSPCython(OkTopkSPNumpy, OptimizerCython):
         return acc
 
     def _reset_residuals(
-        self, acc: np.ndarray, indexes: tuple[np.ndarray, np.ndarray]
+        self, acc: np.ndarray, indexes: np.ndarray
     ) -> np.ndarray:
         """
         Update residuals.
@@ -110,8 +110,9 @@ class OkTopkSPCython(OkTopkSPNumpy, OptimizerCython):
         if self.density == 1:
             return np.zeros_like(acc)
         else:
+            # TODO: CHECK THIS!!! (Must have always a cannonical format)
             assert self._has_canonical_format(indexes)
-            reset_residuals_cython(acc, indexes[0], indexes[1])
+            reset_residuals_cython(acc, indexes)
             return acc
 
     def _update_weights_cython(
@@ -133,10 +134,10 @@ class OkTopkSPCython(OkTopkSPNumpy, OptimizerCython):
             }'"
         )
 
-        if len(self.dw_original_shape) != 2:
-            w = w.reshape(w.shape[0], -1)
-        update_sparsed_weights_cython(w, coo_u.data, coo_u.row, coo_u.col)
-        if len(self.dw_original_shape) != 2:
+        if len(self.dw_original_shape) != 1:
+            w = w.reshape(-1)
+        update_sparsed_weights_cython(w, coo_u.data, coo_u.indexes)
+        if len(self.dw_original_shape) != 1:
             w = w.reshape(self.dw_original_shape)
         setattr(layer, w_type, w)
 
@@ -164,22 +165,22 @@ class OkTopkSPCython(OkTopkSPNumpy, OptimizerCython):
                 "If momentum is 0 use 'cython' method, it produces the same output but it is faster"
             )
 
-        if len(self.dw_original_shape) != 2:
-            w = w.reshape(w.shape[0], -1)
+        if len(self.dw_original_shape) != 1:
+            w = w.reshape(-1)
         velocity = getattr(layer, "velocity_%s" % w_type, np.zeros_like(w, dtype=layer.model.dtype))
         update_sparsed_weights_mv_cython(
-            w, coo_u.data, coo_u.row, coo_u.col, velocity, self.momentum
+            w, coo_u.data, coo_u.indexes, velocity, self.momentum
         )
-        if len(self.dw_original_shape) != 2:
+        if len(self.dw_original_shape) != 1:
             w = w.reshape(self.dw_original_shape)
         setattr(layer, w_type, w)
         setattr(layer, "velocity_%s" % w_type, velocity)
 
     def _intersect_indexes(
         self,
-        local_indexes: tuple[np.ndarray, np.ndarray],
-        global_indexes: tuple[np.ndarray, np.ndarray],
-    ) -> tuple[np.ndarray, np.ndarray]:
+        local_indexes: np.ndarray,
+        global_indexes: np.ndarray,
+    ) -> np.ndarray:
         """
         Calculates the intersection of two sets of indices of 2D.
 
@@ -193,29 +194,22 @@ class OkTopkSPCython(OkTopkSPNumpy, OptimizerCython):
         (python3 -O script.py), the assert sentences are not computed.
 
         Parameters:
-            local_indexes (tuple(np.array, np.array)):
-                a tuple of two numpy arrays representing row
-                and column indices, sorted by rows, then by columns.
-            global_indexes (tuple(np.array, np.array)):
-                a tuple of two numpy arrays representing row
-                and column indices, sorted by rows, then by columns.
+            local_indexes (np.array):
+                a numpy array representing the indexes
+            global_indexes (np.array):
+                a numpy array representing the indexes
 
         Returns:
-            intersected_indexes (tuple(np.array, np.array)):
-                Set of tuples representing the common indices.
+            intersected_indexes (np.array):
+                A numpy array representing the common indices.
 
         Example:
-            - local_indexes  = (np.array([0, 1, 2, 3, 3, 4]), np.array([4, 6, 5, 1, 7, 3]))
-            - global_indexes = (np.array([0, 1, 3, 3, 3]), np.array([1, 6, 1, 5, 7]))
-            - output: (array([1, 3, 3]), array([6, 1, 7]))
+            - local_indexes  = np.array([0, 1, 2, 3, 5, 8]
+            - global_indexes = np.array([1, 5, 8, 13, 21]
+            - output: array([1, 5, 9])
         """
 
-        local_rows, local_cols = local_indexes
-        global_rows, global_cols = global_indexes
-        max_size = min(len(local_rows), len(global_rows))
-        intersected_rows = np.zeros(max_size, dtype=np.int32)
-        intersected_cols = np.zeros(max_size, dtype=np.int32)
+        max_size = min(len(local_indexes), len(global_indexes))
+        intersected_indexes = np.zeros(max_size, dtype=np.int32)
 
-        return intersect_2d_indexes_cython(
-            local_rows, local_cols, global_rows, global_cols, intersected_rows, intersected_cols
-        )
+        return intersect_1d_indexes_cython(local_indexes, global_indexes, intersected_indexes)

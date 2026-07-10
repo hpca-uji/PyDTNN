@@ -136,7 +136,7 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
         return residuals + (learning_rate * dw)
 
     def _reset_residuals(
-        self, acc: np.ndarray, indexes: tuple[np.ndarray, np.ndarray], method: str = "cython"
+        self, acc: np.ndarray, indexes: np.ndarray, method: str = "cython"
     ) -> np.ndarray:
         """
         Update residuals.
@@ -164,7 +164,7 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
             # TODO: Check if this if is necessary or if it's necessary in this function.
             return np.zeros_like(acc)
         else:
-            if len(indexes[0]) > 0:
+            if len(indexes) > 0:
                 acc[indexes] = 0
             return acc
 
@@ -314,7 +314,7 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
         k: int,
         space_repartition_t: int,
         thresholds_re_evaluation_t: int,
-    ) -> tuple[SparseMatrixCOO, tuple[np.ndarray, np.ndarray]]:
+    ) -> tuple[SparseMatrixCOO, np.ndarray]:
         """
         Performs the Ok-Topk sparse allreduce operation.
 
@@ -334,7 +334,7 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
         Returns:
             out (tuple with two elements:):
                 - coo_u (SparseMatrixCOO): The updated gradient values in 2D sparse format.
-                - indexes (tuple(np.array, np.array)): The indices of the top-k gradient values that were updated.
+                - indexes (np.array): The indices of the top-k gradient values that were updated.
         """
 
         if t % thresholds_re_evaluation_t == 0:
@@ -354,7 +354,7 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
         coo_u, global_topk_indexes = self._balance_and_allgather(
             coo_reduced_region_topk, self.global_th
         )
-        indexes = self._intersect_indexes(local_topk_indexes, global_topk_indexes)
+        indexes = SparseMatrixCOO.intersection_indexes(local_topk_indexes, global_topk_indexes)
         return coo_u, indexes
 
     def _th_re_evaluate_numpy_sort(self, sorted_data: np.ndarray, k: int) -> float:
@@ -440,7 +440,7 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
         if k <= 0:
             return 0.0
 
-        if matrix.nnz == 0:
+        if matrix.number_non_zeros == 0:
             return 1.0
 
         # TODO: if the method is fixed; during the initialize set the method's function in a variable an call that variable here
@@ -495,7 +495,7 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
             topk_in_current_proc = 0
             total_rows = coo_topk.shape[0]
             boundaries = np.zeros(self.model.nprocs, dtype=np.int32)
-            topk_per_proc = coo_topk.nnz // self.model.nprocs
+            topk_per_proc = coo_topk.number_non_zeros // self.model.nprocs
             topk_per_row = np.zeros(total_rows, dtype=np.int32)
             np.add.at(topk_per_row, rows, 1)  # type: ignore
 
@@ -521,7 +521,7 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
 
     def _split_and_reduce(
         self, acc: np.ndarray, local_th: float, boundaries: np.ndarray
-    ) -> tuple[SparseMatrixCOO, tuple[np.ndarray, np.ndarray]]:
+    ) -> tuple[SparseMatrixCOO, np.ndarray]:
         """
         First main phase of ok_sparse_allreduce.
 
@@ -541,11 +541,11 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
 
         coo_topk = SparseMatrixCOO.from_dense_top_selection(acc, local_th)
         coo_reduced_region_topk = self._reduce_topk(coo_topk, boundaries)
-        return coo_reduced_region_topk, coo_topk.get_indexes()
+        return coo_reduced_region_topk, coo_topk.indexes
 
     def _balance_and_allgather(
         self, coo_reduced_region_topk: SparseMatrixCOO, global_th: float
-    ) -> tuple[SparseMatrixCOO, tuple[np.ndarray, np.ndarray]]:
+    ) -> tuple[SparseMatrixCOO, np.ndarray]:
         """
         Second main phase of ok_sparse_allreduce.
 
@@ -576,9 +576,38 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
 
         # 4. Allgatherv using recursive doubling
         coo_allgather_topk: SparseMatrixCOO = self._allgather(coo_reduced_region_global_topk)
-        return coo_allgather_topk, coo_reduced_region_global_topk.get_indexes()
+        return coo_allgather_topk, coo_reduced_region_global_topk.indexes
 
     def _intersect_indexes(
+        self,
+        local_indexes: np.ndarray,
+        global_indexes: np.ndarray,
+    ) -> np.ndarray:
+        """
+        Calculates the intersection of two sets of indices of 2D.
+
+        The assertion statement is only executed when the script is not run in optimized mode (python3 -O script.py).
+        Remember that '_has_canonical_format' should only be used for debugging/development purposes
+         to assert that indexes are correct.
+        Indexes in scipy are usually in canonical format, so it should not be necessary to evaluate the indexes format.
+        When optimized mode is enabled (python3 -O script.py), the assert sentences are not computed.
+
+        Parameters:
+            local_indexes (np.array): an array representing the indices,
+            global_indexes (np.array): an array representing the indices,
+
+        Returns:
+            intersected_indexes (np.array): a np.array representing the common indices.
+
+        Example:
+            - local_indexes  = np.array([0, 1, 2, 3, 5, 8])
+            - global_indexes = np.array([1, 3, 8, 13, 21]
+            - output: array([1, 3, 8])
+        """
+
+        return np.intersect1d(local_indexes, global_indexes, assume_unique = True)
+    
+    def __intersect_indexes(
         self,
         local_indexes: tuple[np.ndarray, np.ndarray],
         global_indexes: tuple[np.ndarray, np.ndarray],
@@ -805,12 +834,10 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
         Returns:
             gathered_data (SparseMatrixCOO): The gathered global data in the specified format.
         """
-        gathered = self.model.comm.allgather(local_data.get_triplet())
+        gathered = self.model.comm.allgather(local_data.get_data_and_indexes())
         all_val = np.concatenate([t[0] for t in gathered])
-        all_row = np.concatenate([t[1] for t in gathered])
-        all_col = np.concatenate([t[2] for t in gathered])
-        indexes = SparseMatrixCOO.to_indexes(all_row, all_col)
-        return SparseMatrixCOO(all_val, indexes, self.dw_2d_shape, has_canonical_format=True)
+        all_indexes = np.concatenate([t[1] for t in gathered])
+        return SparseMatrixCOO(all_val, all_indexes, self.dw_2d_shape)
 
     # TODO: Move this to different methods.
     def _allgather[T: AllGatherTypes](  # : np.ndarray | SparseMatrixCOO
@@ -868,7 +895,7 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
         This function should only be used in developement to assert that sparse matrices have canonical format.
 
         Parameters:
-            indexes (tuple(np.ndarray, np.ndarray)): indexes to check
+            indexes (np.ndarray): indexes to check
 
         Returns:
             has_canonical_format (bool): True if indexes are in canonical format, False if not.
