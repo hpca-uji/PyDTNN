@@ -26,7 +26,7 @@ CYTHON_ARGS = {
         "wraparound": False,
         "boundscheck": False,
         "initializedcheck": False
-    },
+    }
 }
 
 CYTHON_UTILITY = PACKAGE.joinpath("utils/_cyutility.c")
