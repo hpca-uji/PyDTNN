@@ -117,7 +117,7 @@ install it in editable mode:
 ```sh
 git clone https://github.com/hpca-uji/PyDTNN.git
 cd PyDTNN
-make
+make dev
 ```
 
 For more information on how to work on the project,

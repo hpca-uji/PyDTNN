@@ -48,6 +48,7 @@ PYDTNN_DST := $(DST)/pydtnn
 	src \
 	build \
 	install \
+	dev \
 	format \
 	test \
 	lint \
@@ -55,7 +56,7 @@ PYDTNN_DST := $(DST)/pydtnn
 	sync \
 	env
 
-.DEFAULT_GOAL := pydtnn-develop
+.DEFAULT_GOAL := build
 
 help:
 	@echo "PyDTNN's Makefile"
@@ -127,6 +128,9 @@ install: \
 	openfhe-install \
 	openfhe-python-install \
 	pydtnn-install
+
+dev: \
+	pydtnn-dev
 
 format: \
 	pydtnn-format
@@ -564,7 +568,7 @@ uarchfhe-clean:
 	pydtnn-src \
 	pydtnn-build \
 	pydtnn-install \
-	pydtnn-develop \
+	pydtnn-dev \
 	pydtnn-format \
 	pydtnn-test \
 	pydtnn-lint \
@@ -598,8 +602,8 @@ pydtnn-install: $(PYDTNN_DST)/.build
 		-C="--global-option=build_ext --parallel=$(NPROC)" \
 		"$${WHEEL:?}$(if $(PYDTNN_PKG),[$(PYDTNN_PKG)])"
 
-pydtnn-develop: PYDTNN_PKG := dev
-pydtnn-develop:
+pydtnn-dev: PYDTNN_PKG := dev
+pydtnn-dev:
 	$(PIP) install \
 		-C=editable_mode=compat \
 		-C="--global-option=build_ext --parallel=$(NPROC)" \

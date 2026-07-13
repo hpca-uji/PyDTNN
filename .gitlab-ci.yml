@@ -5,6 +5,7 @@ variables:
   GIT_SUBMODULE_STRATEGY: none
   BRANCH_MAIN: master
   BRANCH_WORK: develop
+  RUNNER_NPROC: 1
 
 stages:
 - build
@@ -15,13 +16,12 @@ build_pydtnn:
     GIT_STRATEGY: fetch
     GIT_SUBMODULE_STRATEGY: recursive
     PIP_ROOT_USER_ACTION: ignore
-    PIP_DISABLE_PIP_VERSION_CHECK: "1"
+    PIP_DISABLE_PIP_VERSION_CHECK: 1
     PIP_CACHE_DIR: $CI_PROJECT_DIR/build/pip
 
   stage: build
   timeout: 5h
-  rules:
-  - if: $CI_COMMIT_BRANCH == $BRANCH_WORK
+  rules: [ if: $CI_COMMIT_BRANCH == $BRANCH_WORK ]
 
   tags: [ lorca-ubuntu ]
   image: python:latest
@@ -39,10 +39,10 @@ build_pydtnn:
   - make deps APT="apt-get -o dir::cache::archives=${PWD:?}/build/apt"
   script:
   - make pydtnn-clean
-  - make build NPROC=1
+  - make build NPROC=${RUNNER_NPROC:?}
   - make install PYDTNN_PKG=test,lint
-  - make test NPROC=1
-  - make lint NPROC=1
+  - make test NPROC=${RUNNER_NPROC:?}
+  - make lint NPROC=${RUNNER_NPROC:?}
 
   artifacts:
     reports:
@@ -63,8 +63,7 @@ deploy_git:
 
   stage: deploy
   timeout: 5m
-  rules:
-  - if: $CI_COMMIT_BRANCH == $BRANCH_WORK
+  rules: [ if: $CI_COMMIT_BRANCH == $BRANCH_WORK && $GITLAB_TOKEN ]
 
   image: registry.gitlab.com/gitlab-org/cli:latest
   tags: [ lorca-ubuntu ]
@@ -72,9 +71,6 @@ deploy_git:
   needs:
   - job: build_pydtnn
     artifacts: true
-
-  rules:
-  - if: $CI_COMMIT_BRANCH == $BRANCH_WORK
 
   before_script:
   - GIT_REMOTE_NAME=$(git remote)
@@ -95,8 +91,7 @@ deploy_gitlab:
 
   stage: deploy
   timeout: 5m
-  rules:
-  - if: $CI_COMMIT_BRANCH == $BRANCH_WORK
+  rules: [ if: $CI_COMMIT_BRANCH == $BRANCH_WORK && $GITLAB_TOKEN ]
 
   tags: [ lorca-ubuntu ]
   image: registry.gitlab.com/gitlab-org/cli:latest
@@ -117,14 +112,13 @@ deploy_pypi:
   variables:
     GIT_STRATEGY: fetch
     PIP_ROOT_USER_ACTION: ignore
-    PIP_DISABLE_PIP_VERSION_CHECK: "1"
+    PIP_DISABLE_PIP_VERSION_CHECK: 1
     PIP_CACHE_DIR: $CI_PROJECT_DIR/build/pip
-    TWINE_NON_INTERACTIVE: "1"
+    TWINE_NON_INTERACTIVE: 1
 
   stage: deploy
   timeout: 5m
-  rules:
-  - if: $CI_COMMIT_BRANCH == $BRANCH_WORK
+  rules: [ if: $CI_COMMIT_BRANCH == $BRANCH_WORK && $PYPI_TOKEN ]
 
   tags: [ lorca-ubuntu ]
   image: python:latest
@@ -138,6 +132,6 @@ deploy_pypi:
   - GIT_COMMIT=$(git rev-list -n1 "${GIT_TAG:?}")
   - '[ "${GIT_COMMIT:?}" = "${CI_COMMIT_SHA:?}" ] || exit 0'
   - apt-get update
-  - make pydtnn-deps APT="apt-get -o dir::cache::archives=${PWD:?}/build/apt"
+  - make pydtnn-deps APT="true"
   script:
   - twine upload -u '__token__' -p "${PYPI_TOKEN:?}" ./build/pydtnn/pydtnn-*
