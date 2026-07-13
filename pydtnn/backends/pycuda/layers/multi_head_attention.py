@@ -93,7 +93,10 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
         self.states_size = cudnn.cudnnDropoutGetStatesSize(self.model.cudnn_handle)  # type: ignore
         states_gpu = gpuarray.zeros((self.states_size,), self.model.dtype)
         self.states = TensorArray(
-            states_gpu, self.model.tensor_fmt, self.model.cudnn_dtype, TensorArray.TensorType.OTHER
+            states_gpu,
+            self.model.tensor_format,
+            self.model.cudnn_dtype,
+            TensorArray.TensorType.OTHER,
         )
         self.drop_desc = cudnn.cudnnCreateDropoutDescriptor()
         cudnn.cudnnSetDropoutDescriptor(
@@ -145,18 +148,18 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
         self.weights = gpuarray.zeros((weights_size,), self.model.dtype)
         self.weights = TensorArray(
             self.weights,
-            self.model.tensor_fmt,
+            self.model.tensor_format,
             self.model.cudnn_dtype,
             TensorArray.TensorType.OTHER,
         )
         self.dw = gpuarray.zeros((weights_size,), self.model.dtype)
         self.dw = TensorArray(
-            self.dw, self.model.tensor_fmt, self.model.cudnn_dtype, TensorArray.TensorType.OTHER
+            self.dw, self.model.tensor_format, self.model.cudnn_dtype, TensorArray.TensorType.OTHER
         )
         self.reserve_backward = gpuarray.zeros((reserve_backward_size,), self.model.dtype)
         self.reserve_backward = TensorArray(
             self.reserve_backward,
-            self.model.tensor_fmt,
+            self.model.tensor_format,
             self.model.cudnn_dtype,
             TensorArray.TensorType.OTHER,
         )
@@ -192,25 +195,31 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
             (self.model.batch_size, self.beam, self.seq, self.embedl), self.model.dtype
         )
         self.y = TensorArray(
-            self.y, self.model.tensor_fmt, self.model.cudnn_dtype, TensorArray.TensorType.SEQ
+            self.y, self.model.tensor_format, self.model.cudnn_dtype, TensorArray.TensorType.SEQ
         )
         self.dquery = gpuarray.zeros(
             (self.model.batch_size, self.beam, self.seq, self.embedl), self.model.dtype
         )
         self.dquery = TensorArray(
-            self.dquery, self.model.tensor_fmt, self.model.cudnn_dtype, TensorArray.TensorType.SEQ
+            self.dquery,
+            self.model.tensor_format,
+            self.model.cudnn_dtype,
+            TensorArray.TensorType.SEQ,
         )
         self.dkey = gpuarray.zeros(
             (self.model.batch_size, self.beam, self.seq, self.embedl), self.model.dtype
         )
         self.dkey = TensorArray(
-            self.dkey, self.model.tensor_fmt, self.model.cudnn_dtype, TensorArray.TensorType.SEQ
+            self.dkey, self.model.tensor_format, self.model.cudnn_dtype, TensorArray.TensorType.SEQ
         )
         self.dvalue = gpuarray.zeros(
             (self.model.batch_size, self.beam, self.seq, self.embedl), self.model.dtype
         )
         self.dvalue = TensorArray(
-            self.dvalue, self.model.tensor_fmt, self.model.cudnn_dtype, TensorArray.TensorType.SEQ
+            self.dvalue,
+            self.model.tensor_format,
+            self.model.cudnn_dtype,
+            TensorArray.TensorType.SEQ,
         )
 
         self.current_index = -1  # Training

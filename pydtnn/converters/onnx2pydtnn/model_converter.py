@@ -405,7 +405,7 @@ def convert_model(
 
     # TODO: Faltaría comprobar el formato de los pesos (y hacer la traducción, si fuese necesario)
 
-    # Loading the weights into the model.
-    model.load_store_path(layers=model.layers, d=weights, mode="load")
+    # TODO: Loading the weights into the model.
+    # model.load_store_path(layers=model.layers, d=weights, mode="load")
 
     return model

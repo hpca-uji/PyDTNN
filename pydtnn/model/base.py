@@ -143,12 +143,14 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
     optimizer_tau: int
     optimizer_tau_prime: int
     optimizer_density: float
+    oktopk_min_k: int
     loss_func_name: str
     loss_eps: float
     loss_weights: list[float] | None
     use_loss_weights: bool
     metrics: str
     schedulers_names: str
+    warm_up_epochs: int
     early_stopping_metric: str
     early_stopping_patience: int
     early_stopping_minimize: bool
@@ -156,9 +158,11 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
     reduce_lr_on_plateau_float: float
     reduce_lr_on_plateau_patience: int
     reduce_lr_on_plateau_min_lr: float
+    reduce_lr_on_plateau_factor: float
     reduce_lr_every_nepochs_float: float
     reduce_lr_every_nepochs_nepochs: int
     reduce_lr_every_nepochs_min_lr: float
+    reduce_lr_every_nepochs_factor: float
     stop_at_loss_metric: str
     stop_at_loss_threshold: float
     model_checkpoint_metric: str

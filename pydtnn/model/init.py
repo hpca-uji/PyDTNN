@@ -60,8 +60,8 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
         super().__init__(**kwargs)
 
         # Get default values from parser and update them from the received kwargs
-        self.kwargs: dict[str, Any] = vars(ArgumentParser().parse_args([]))
-        self.kwargs.update(kwargs)
+        self.__dict__.update(vars(ArgumentParser().parse_args([])))
+        self.__dict__.update(kwargs)
 
         # Attributes related to the given arguments
         self.blocking_mpi: bool = self.use_blocking_mpi
@@ -135,13 +135,11 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
         self.model_sync_algo = self.SyncAlgorithm(self.model_sync_algo)
 
         # NOTE: This parameter come from Parser.
-        self.model_sync_participation = self.SyncParticipation(
-            self.kwargs["model_sync_participation"]
-        )
+        self.model_sync_participation = self.SyncParticipation(self.model_sync_participation)
 
         # Read the model (NOTE: must be the last action, as it calls
         # self._model_init() if there is a model)
-        if model_name := self.kwargs.get("model_name"):
+        if model_name := self.model_name:
             self._layers_init(model_name)
 
     def _tensor_init(self) -> None:

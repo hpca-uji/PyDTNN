@@ -1,7 +1,6 @@
 """Utility module for PyDTNN model operations, providing shape and tensor format transformations."""
 
 import logging
-from typing import Any
 
 import numpy as np
 
@@ -50,8 +49,4 @@ class Utils[T: Array](Base[T]):  # noqa: D101 (generics not detected)
     @property
     def dataset_path(self) -> str:
         """Raw dataset path with rank substituted"""
-        return utils.string_substitute(self.kwargs["dataset_path"], rank=self.comm_rank)
-
-    def __getattr__(self, item: str) -> Any:
-        """Retrieve values from the model's keyword arguments."""
-        return self.kwargs.get(item)
+        return utils.string_substitute(self.__dict__["dataset_path"], rank=self.comm_rank)

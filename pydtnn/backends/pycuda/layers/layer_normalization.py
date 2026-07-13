@@ -27,9 +27,9 @@ class LayerNormalizationPycuda(LayerNormalization[TensorArray], LayerPycuda):
 
         # Shape same as x input
         self.y = gpuarray.zeros(x.shape, self.model.dtype)
-        self.y = TensorArray(self.y, self.model.tensor_fmt, self.model.cudnn_dtype)
+        self.y = TensorArray(self.y, self.model.tensor_format, self.model.cudnn_dtype)
         self.dx = gpuarray.zeros(x.shape, self.model.dtype)
-        self.dx = TensorArray(self.dx, self.model.tensor_fmt, self.model.cudnn_dtype)
+        self.dx = TensorArray(self.dx, self.model.tensor_format, self.model.cudnn_dtype)
 
         # Shape same as x input, but batch = 1. For scaling at the end: output =
         # scale * post_normalization + bias
@@ -37,28 +37,28 @@ class LayerNormalizationPycuda(LayerNormalization[TensorArray], LayerPycuda):
         gamma = gpuarray.to_gpu(np.full(gamma_shape, self.gamma_init_val, self.model.dtype))
         self.gamma: TensorArray = TensorArray(
             gamma,
-            self.model.tensor_fmt,
+            self.model.tensor_format,
             self.model.cudnn_dtype,
             tensor_type=TensorArray.TensorType.OTHER,
         )
         beta = gpuarray.zeros(gamma_shape, self.model.dtype)
         self.beta: TensorArray = TensorArray(
             beta,
-            self.model.tensor_fmt,
+            self.model.tensor_format,
             self.model.cudnn_dtype,
             tensor_type=TensorArray.TensorType.OTHER,
         )
         dgamma = gpuarray.zeros(gamma_shape, self.model.dtype)
         self.dgamma: TensorArray = TensorArray(
             dgamma,
-            self.model.tensor_fmt,
+            self.model.tensor_format,
             self.model.cudnn_dtype,
             tensor_type=TensorArray.TensorType.OTHER,
         )
         dbeta = gpuarray.zeros(gamma_shape, self.model.dtype)
         self.dbeta: TensorArray = TensorArray(
             dbeta,
-            self.model.tensor_fmt,
+            self.model.tensor_format,
             self.model.cudnn_dtype,
             tensor_type=TensorArray.TensorType.OTHER,
         )
@@ -71,7 +71,7 @@ class LayerNormalizationPycuda(LayerNormalization[TensorArray], LayerPycuda):
         std = gpuarray.zeros(mean_shape, self.model.dtype)
         self.std: TensorArray = TensorArray(
             std,
-            self.model.tensor_fmt,
+            self.model.tensor_format,
             self.model.cudnn_dtype,
             tensor_type=TensorArray.TensorType.OTHER,
         )
@@ -79,7 +79,7 @@ class LayerNormalizationPycuda(LayerNormalization[TensorArray], LayerPycuda):
         xn = gpuarray.zeros(out_shape, self.model.dtype)
         self.xn: TensorArray = TensorArray(
             xn,
-            self.model.tensor_fmt,
+            self.model.tensor_format,
             self.model.cudnn_dtype,
             tensor_type=TensorArray.TensorType.OTHER,
         )

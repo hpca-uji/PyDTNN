@@ -56,9 +56,7 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
         self.model_sync_algo = self.SyncAlgorithm(self.model_sync_algo)
 
         # NOTE: This parameter come from Parser.
-        self.model_sync_participation = self.SyncParticipation(
-            self.kwargs["model_sync_participation"]
-        )
+        self.model_sync_participation = self.SyncParticipation(self.model_sync_participation)
 
         self.schedulers: list[Scheduler] = [
             select_scheduler(scheduler_name).from_model(self)

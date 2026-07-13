@@ -79,7 +79,7 @@ class EncoderPycuda(Encoder[TensorArray], AbstractBlockLayerPycuda):
 
         self.layernormalization_1_y_flatten = TensorArray(
             self.flatten(self.layernormalization_1.y).ary,
-            self.model.tensor_fmt,
+            self.model.tensor_format,
             self.model.cudnn_dtype,
         )
 
@@ -88,24 +88,26 @@ class EncoderPycuda(Encoder[TensorArray], AbstractBlockLayerPycuda):
         )
 
         self.feedforward_y_unflatten = TensorArray(
-            self.unflatten(self.feedforward.y).ary, self.model.tensor_fmt, self.model.cudnn_dtype
+            self.unflatten(self.feedforward.y).ary, self.model.tensor_format, self.model.cudnn_dtype
         )
         self.feedforward_dx_unflatten = TensorArray(
-            self.unflatten(self.feedforward.dx).ary, self.model.tensor_fmt, self.model.cudnn_dtype
+            self.unflatten(self.feedforward.dx).ary,
+            self.model.tensor_format,
+            self.model.cudnn_dtype,
         )
 
         self.dropout_2._model_init(
             prev_shape=self.feedforward.shape, x=self.feedforward_y_unflatten
         )
         self.dropout_2_dx_flatten = TensorArray(
-            self.flatten(self.dropout_2.dx).ary, self.model.tensor_fmt, self.model.cudnn_dtype
+            self.flatten(self.dropout_2.dx).ary, self.model.tensor_format, self.model.cudnn_dtype
         )
 
         self.layernormalization_2._model_init(prev_shape=self.dropout_2.shape, x=self.dropout_2.y)
 
         self.y = self.layernormalization_2.y
         x_aux = self.multiheadattention.dquery
-        self.dx = TensorArray(x_aux.ary, self.model.tensor_fmt, self.model.cudnn_dtype)
+        self.dx = TensorArray(x_aux.ary, self.model.tensor_format, self.model.cudnn_dtype)
 
         self.flatten(
             self.feedforward.y

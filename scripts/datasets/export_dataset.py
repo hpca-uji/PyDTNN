@@ -9,5 +9,5 @@ parser = ArgumentParser()
 parser.add_argument("--export-split-weights", type=str, default="")
 model = Model(**vars(parser.parse_args()))
 model._ensure_model_runnable()
-split_weights = list(map(float, filter(None, model.export_split_weights.split(","))))
+split_weights = list(map(float, filter(None, model.export_split_weights.split(","))))  # type: ignore
 model.dataset.export_archive(split_weights=split_weights)

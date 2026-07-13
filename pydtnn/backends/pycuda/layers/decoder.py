@@ -82,7 +82,7 @@ class DecoderPycuda(Decoder[TensorArray], AbstractBlockLayerPycuda):
 
         x_aux = self.flatten(self.layernormalization_enc.y)
         self.layernormalization_enc_y_flatten = TensorArray(
-            x_aux.ary, self.model.tensor_fmt, self.model.cudnn_dtype
+            x_aux.ary, self.model.tensor_format, self.model.cudnn_dtype
         )
 
         self.feedforward._model_init(
@@ -91,11 +91,11 @@ class DecoderPycuda(Decoder[TensorArray], AbstractBlockLayerPycuda):
 
         x_aux = self.unflatten(self.feedforward.y)
         self.feedforward_y_unflatten = TensorArray(
-            x_aux.ary, self.model.tensor_fmt, self.model.cudnn_dtype
+            x_aux.ary, self.model.tensor_format, self.model.cudnn_dtype
         )
         x_aux = self.unflatten(self.feedforward.dx)
         self.feedforward_dx_unflatten = TensorArray(
-            x_aux.ary, self.model.tensor_fmt, self.model.cudnn_dtype
+            x_aux.ary, self.model.tensor_format, self.model.cudnn_dtype
         )
 
         self.dropout_2._model_init(
@@ -103,18 +103,20 @@ class DecoderPycuda(Decoder[TensorArray], AbstractBlockLayerPycuda):
         )
         x_aux = self.flatten(self.dropout_2.dx)
         self.dropout_2_dx_flatten = TensorArray(
-            x_aux.ary, self.model.tensor_fmt, self.model.cudnn_dtype
+            x_aux.ary, self.model.tensor_format, self.model.cudnn_dtype
         )
 
         self.layernormalization_2._model_init(prev_shape=self.dropout_2.shape, x=self.dropout_2.y)
 
         self.y = self.layernormalization_2.y
         x_aux = self.multiheadattention.dquery
-        self.dx = TensorArray(x_aux.ary, self.model.tensor_fmt, self.model.cudnn_dtype)
+        self.dx = TensorArray(x_aux.ary, self.model.tensor_format, self.model.cudnn_dtype)
         x_aux = self.multiheadattention_enc.dkey
-        self.dx_enc = TensorArray(x_aux.ary, self.model.tensor_fmt, self.model.cudnn_dtype)
+        self.dx_enc = TensorArray(x_aux.ary, self.model.tensor_format, self.model.cudnn_dtype)
         x_aux = self.multiheadattention_enc.dquery
-        self.dx_enc_dquery = TensorArray(x_aux.ary, self.model.tensor_fmt, self.model.cudnn_dtype)
+        self.dx_enc_dquery = TensorArray(
+            x_aux.ary, self.model.tensor_format, self.model.cudnn_dtype
+        )
 
         self.flatten(self.feedforward.y)
         self.flatten(self.feedforward.dx)
