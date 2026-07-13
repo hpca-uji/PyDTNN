@@ -106,7 +106,7 @@ deploy_gitlab:
   - glab auth login --hostname "${CI_SERVER_FQDN:?}" --token "${GITLAB_TOKEN:?}"
   script:
   - glab release delete "${RELEASE_TAG:?}" -ty || true
-  - glab release create "${RELEASE_TAG:?}" ./build/pydtnn/* --ref "${CI_COMMIT_SHA:?}" --name 'Continuous build'
+  - glab release create "${RELEASE_TAG:?}" ./build/pydtnn/* --ref "${CI_COMMIT_SHA:?}" --name 'Continuous build' --notes 'Latest stable commit'
 
 deploy_pypi:
   variables:
