@@ -131,7 +131,6 @@ deploy_pypi:
   - GIT_TAG=$(basename ./build/pydtnn/pydtnn-*.tar.gz | sed -nE 's|^pydtnn-(.*)\.tar\.gz$|v\1|p')
   - GIT_COMMIT=$(git rev-list -n1 "${GIT_TAG:?}")
   - '[ "${GIT_COMMIT:?}" = "${CI_COMMIT_SHA:?}" ] || exit 0'
-  - apt-get update
   - make pydtnn-deps APT="true"
   script:
   - twine upload -u '__token__' -p "${PYPI_TOKEN:?}" ./build/pydtnn/pydtnn-*
