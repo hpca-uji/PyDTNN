@@ -3,7 +3,7 @@
 import logging
 from typing import TYPE_CHECKING
 
-from pydtnn.backends.cython.layers.abstract.pool_2d_layer import AbstractPool2DLayerCython
+from pydtnn.backends.cython.layers.abstract.layer import LayerCython
 from pydtnn.backends.cython.utils.adaptive_avg_pooling_nchw_cython import (
     adaptive_avg_pooling_bwd_nchw_cython, adaptive_avg_pooling_fwd_nchw_cython)
 from pydtnn.backends.cython.utils.adaptive_avg_pooling_nhwc_cython import (
@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     import numpy as np  # noqa: F811 (override typing)
 
 
-class AdaptiveAveragePool2DCython(AdaptiveAveragePool2DNumpy, AbstractPool2DLayerCython):
+class AdaptiveAveragePool2DCython(AdaptiveAveragePool2DNumpy, LayerCython):
     """Cython-accelerated 2D adaptive average pooling layer."""
 
     def _fwd_nhwc(self, x: np.ndarray, y: np.ndarray) -> None:

@@ -3,7 +3,7 @@
 import logging
 from typing import TYPE_CHECKING, Any
 
-from pydtnn.backends.numpy.layers.abstract.pool_2d_layer import AbstractPool2DLayerNumpy
+from pydtnn.backends.numpy.layers.abstract.layer import LayerNumpy
 from pydtnn.layers.adaptive_average_pool_2d import AdaptiveAveragePool2D
 from pydtnn.libs import numpy as np
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
@@ -24,7 +24,7 @@ if TYPE_CHECKING:
     import numpy as np  # noqa: F811 (override typing)
 
 
-class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], AbstractPool2DLayerNumpy):
+class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], LayerNumpy):
     """Numpy implementation of the Adaptive Average Pooling 2D layer."""
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -33,13 +33,8 @@ class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], AbstractPool
         # The following atributte will be initalized in "initalize"
         self.y: np.ndarray = None  # type: ignore
 
-    # Method from AbstractPool2DLayerNumpy
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
         """Initialize model parameters and allocate memory for forward/backward passes."""
-        # The objective is following lines is to override the
-        # AbstractPool2DLayer's initialize method, that is avoiding call to
-        # "super" since in that case AbstractPool2DLayer will be called
-        # eventually.
         super()._model_init(prev_shape, x)
 
         match self.model.tensor_format:
