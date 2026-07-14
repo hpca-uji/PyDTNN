@@ -32,6 +32,7 @@ logger = logging.getLogger(__name__)
 # NOTE: mpi4py has more functions, but no typing
 if TYPE_CHECKING:
     from pympi.MPI import Comm as MPI_COMM  # type: ignore  # noqa: N814
+    from pycuda.driver import Stream  # type: ignore
 
 
 class Base[T: Array]:  # noqa: D101 (generics not detected)
@@ -212,7 +213,7 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
     gpudirect: bool
     nccl_comm: Any
     nccl_type: Any
-    stream: Any  # drv.Stream
+    stream: Stream
 
     memory_used: int
     use_memory_pool: bool

@@ -109,6 +109,8 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
         # Cuda [NOTE: Always after initializing MPI (if you are going to use MPI)]
         if self.enable_cudnn:
             self._cudnn_init()
+        else:
+            self.stream = None
 
         # Dataset [NOTE: Always after initializing MPI (if you are going to use MPI)]
         if self.dataset_name:
