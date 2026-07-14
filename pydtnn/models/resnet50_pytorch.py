@@ -6,6 +6,7 @@ from pydtnn.abstract.layerable import Layerable
 from pydtnn.activations.relu import Relu
 from pydtnn.activations.softmax import Softmax
 from pydtnn.layers.adaptive_average_pool_2d import AdaptiveAveragePool2D
+from pydtnn.layers.addition_block import AdditionBlock
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.fc import FC
@@ -43,35 +44,50 @@ def resnet50_pytorch(input_shape: ArrayShape, output_shape: ArrayShape) -> Seque
         for r in range(res_blocks):
             if r > 0:
                 stride = 1
-                _(
-                    Conv2D(
-                        nfilters=n_filt,
-                        filter_shape=(1, 1),
-                        stride=1,
-                        weights_initializer=he_uniform,
-                    )
+            _(
+                AdditionBlock(
+                    [
+                        Conv2D(
+                            nfilters=n_filt,
+                            filter_shape=(1, 1),
+                            stride=1,
+                            weights_initializer=he_uniform,
+                        ),
+                        BatchNormalization(),
+                        Relu(),
+                        Conv2D(
+                            nfilters=n_filt,
+                            filter_shape=(3, 3),
+                            stride=stride,
+                            padding=1,
+                            weights_initializer=he_uniform,
+                        ),
+                        BatchNormalization(),
+                        Relu(),
+                        Conv2D(
+                            nfilters=n_filt * expansion,
+                            filter_shape=(1, 1),
+                            stride=1,
+                            weights_initializer=he_uniform,
+                        ),
+                        BatchNormalization(),
+                    ],
+                    (
+                        [
+                            Conv2D(
+                                nfilters=n_filt * expansion,
+                                filter_shape=(1, 1),
+                                stride=stride,
+                                weights_initializer=he_uniform,
+                            ),
+                            BatchNormalization(),
+                        ]
+                        if r == 0 or stride != 1
+                        else []
+                    ),
                 )
-                _(BatchNormalization())
-                _(
-                    Conv2D(
-                        nfilters=n_filt,
-                        filter_shape=(3, 3),
-                        stride=stride,
-                        padding=1,
-                        weights_initializer=he_uniform,
-                    )
-                )
-                _(BatchNormalization())
-                _(
-                    Conv2D(
-                        nfilters=n_filt * expansion,
-                        filter_shape=(1, 1),
-                        stride=1,
-                        weights_initializer=he_uniform,
-                    )
-                )
-                _(BatchNormalization())
-                _(Relu())
+            )
+            _(Relu())
 
     _(AdaptiveAveragePool2D(output_shape=(1, 1)))
     _(Flatten())
