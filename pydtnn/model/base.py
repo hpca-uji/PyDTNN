@@ -74,8 +74,6 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
     quantize_dtype: np.dtype
     num_epochs: int
     steps_per_epoch: float
-    evaluate: bool
-    evaluate_only: bool
     model_state_filename: str
     history_file: str
     tensor_format: TensorFormat
@@ -243,6 +241,7 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
     output_shape: ArrayShape
 
     evaluate_on_train: bool
+    evaluate_only: bool
     dataset_train_path: str
     dataset_test_path: str
     use_synthetic_data: bool

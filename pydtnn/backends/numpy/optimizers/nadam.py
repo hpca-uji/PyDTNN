@@ -79,6 +79,9 @@ class NadamNumpy(Nadam[np.ndarray], OptimizerNumpy):
 
     def update(self, layer: LayerNumpy) -> None:
         """Perform a single Nadam optimization step for the given layer."""
+        if not layer.grad_vars:
+            return
+
         self.context[layer.id]["it"] += 1
         it: int = self.context[layer.id]["it"]  # type: ignore
 

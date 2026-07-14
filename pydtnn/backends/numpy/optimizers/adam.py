@@ -81,6 +81,9 @@ class AdamNumpy(Adam[np.ndarray], OptimizerNumpy):
 
     def update(self, layer: LayerNumpy) -> None:
         """Performs a single optimization step for the given layer."""
+        if not layer.grad_vars:
+            return 
+
         self.context[layer.id]["it"] += 1
         it: int = self.context[layer.id]["it"]  # type: ignore
 
