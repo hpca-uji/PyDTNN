@@ -284,7 +284,7 @@ class ParamsLayerPytorch(Params):
         self.backend = "cpu"
         self.tensor_format = TensorFormat.NCHW.upper()
         self.shape = format_reshape((C, H, W), "CHW", self.tensor_format[1:])
-        self.evaluate_only = True
+        self.evaluate_only = False
         self.parallel_data = False
         self.loss_func = "categorical_cross_entropy"
         self.enable_cudnn = False
@@ -447,7 +447,7 @@ class LayerPyTorchTestCase(TestCase):
                             grad: np.ndarray = getattr(layer, grad_var)
                             self._copy_grad_vars(grad, grad_var, torch_layer)
 
-    def do_test(
+    def do_test_forward(
         self,
         _x: np.ndarray,
         pydtnn_model: Model,
@@ -456,7 +456,7 @@ class LayerPyTorchTestCase(TestCase):
         rtol: float = 1e-6,
         atol: float = 1e-6,
     ) -> None:
-        """Executes the comparison test between PyDTNN and PyTorch."""
+        """Executes a forward comparison test between PyDTNN and PyTorch."""
         self.copy_grad_vars(pydtnn_model, torch_model)
 
         num_elems = len("Testing: ") + len(name_test)
@@ -499,6 +499,108 @@ class LayerPyTorchTestCase(TestCase):
         # self.assertTrue((diff < rtol).all()), f"Not all values are below the rtol. Max. difference: {diff.max()}."
         #                                       f"Std. deviation: {diff.std()}. Min. difference: {diff.min()}."
         self.assertTrue(np.allclose(x_pydtnn, x_torch, rtol=rtol, atol=atol))
+    
+    def do_test_fbf(
+        self,
+        _x: np.ndarray,
+        pydtnn_model: Model,
+        torch_model: torch.nn.Module,
+        name_test: str,
+        rtol: float = 1e-6,
+        atol: float = 1e-6,
+    ) -> None:
+        """Executes a forward-backward-forward comparison test between PyDTNN and PyTorch."""
+        self.copy_grad_vars(pydtnn_model, torch_model)
+
+        flattened_output_shape = (np.prod(pydtnn_model.layers[-1].shape), )
+        pydtnn_model.layers[-1].shape = flattened_output_shape
+        #pydtnn_model.loss_func.shape = (_x.shape[0], flattened_output_shape)
+        pydtnn_model.loss_func._model_init()
+        pydtnn_model.loss_func._post_init()
+
+        num_elems = len("Testing: ") + len(name_test)
+        if verbose_test():
+            logger.info(f"\n\n{'=' * num_elems}\nTesting: {name_test}\n{'=' * num_elems}")
+
+        x = np.copy(_x)
+
+        x: np.ndarray = x.astype(dtype = self.params.dtype)
+        print(f"{pydtnn_model.output_shape=} || {flattened_output_shape=}")
+        y = np.ones((x.shape[0], *flattened_output_shape), dtype = pydtnn_model.dtype)
+        print(f"{y.shape=}")
+        _y = y.copy()
+
+        for layer in pydtnn_model.layers:
+            x = layer.forward(x)
+        x_base_shape = x.shape
+        x_reshaped = x.reshape(N, -1)
+        print(f"{x_reshaped=}")
+        _loss, dx = pydtnn_model.loss_func.compute(x_reshaped, y, N)
+        dx: np.ndarray = dx.reshape(x_base_shape)
+        for layer in reversed(pydtnn_model.layers):
+            dx = layer.backward(dx)
+        print(f"backward PyDTNN: {dx} || {dx.sum()=} || {dx.mean()=} || {_loss=}")
+
+        x_pydtnn = x
+        x_pydtnn = format_transpose(
+            x, self.params.tensor_format.upper(), TensorFormat.NCHW.upper()
+        ).copy()
+        
+        loss_func = torch.nn.CrossEntropyLoss()
+        x_torch: torch.Tensor = torch.from_numpy(_x.reshape((N, C, H, W), copy=False)).to(torch.device("cpu")).float()  # type: ignore (It's fine)
+        y_torch: torch.Tensor = torch.from_numpy(_y.reshape((N, -1), copy=False)).to(torch.device("cpu")).float()  # type: ignore (It's fine)
+        x_torch = x_torch.requires_grad_(True)
+        x_torch.retain_grad()
+        x_torch = torch_model(x_torch)
+
+        x_torch = x_torch.reshape((N, -1))
+        loss: torch.Tensor = loss_func(x_torch, y_torch)
+        loss.retain_grad()
+        print(f"before backward - {loss}\n===")
+        loss.backward()
+        print(f"after backward - {loss=}\n\n===")
+        print(f"{loss.grad=}")
+
+        x_torch = np.asarray(
+            x_torch.cpu().detach().numpy(), dtype=pydtnn_model.dtype, order="C"
+        ).reshape(x_base_shape, copy=True)  # type: ignore (It's fine)
+
+        if verbose_test():
+            logger.info(
+                f"[{rtol=},"
+                f" {atol=}]\n{x_pydtnn.max()=}\n{x_torch.max()=}\n{x_pydtnn.min()=}\n{x_torch.min()=}"
+                f"\n{x_pydtnn.std()=}\n{x_torch.std()=}\n{x_pydtnn.mean()=}\n{x_torch.mean()=}"
+            )
+
+        diff = x_pydtnn - x_torch
+        if verbose_test():
+            logger.info(f"{diff.max()=}\n{diff.min()=}\n{diff.std()=}\n{diff.mean()=}")
+
+        if not (diff < rtol).all():
+            print(f"x_pydtnn:\n{x_pydtnn}")
+            print(f"x_torch:\n{x_torch}")
+            print(f"diff:\n{diff}")
+
+        # self.assertTrue((diff < rtol).all()), f"Not all values are below the rtol. Max. difference: {diff.max()}."
+        #                                       f"Std. deviation: {diff.std()}. Min. difference: {diff.min()}."
+        self.assertTrue(np.allclose(x_pydtnn, x_torch, rtol=rtol, atol=atol))
+    
+    def do_test(
+        self,
+        _x: np.ndarray,
+        pydtnn_model: Model,
+        torch_model: torch.nn.Module,
+        name_test: str,
+        rtol: float = 1e-6,
+        atol: float = 1e-6,
+    ) -> None:
+        
+        original_x = _x.copy()
+        with self.subTest(f"forward - {name_test}"):
+            self.do_test_forward(_x, pydtnn_model, torch_model, name_test, rtol, atol)
+        
+        #with self.subTest(f"forward + backward + forward - {name_test}"):
+        #    self.do_test_fbf(original_x, pydtnn_model, torch_model, name_test, rtol, atol)
 
     # Unitary Test methods
 
