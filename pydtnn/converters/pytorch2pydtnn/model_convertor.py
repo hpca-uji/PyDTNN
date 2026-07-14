@@ -12,6 +12,8 @@ from pydtnn.abstract.layerable import Layerable
 from pydtnn.activations.abstract.activation import Activation
 from pydtnn.layers.input import Input
 from pydtnn.model import Model as PyDTNN_Model
+from pydtnn.utils.constants import ArrayShape
+from pydtnn.utils.tensor import TensorFormat
 
 __all__ = (
     "check_kwargs_and_set_default",
@@ -29,8 +31,7 @@ logger = logging.getLogger(__name__)
 
 
 def load_layers(
-    model: PyDTNN_Model, layers: list[Layerable], activation_layer: Activation | None
-) -> None:
+    model: PyDTNN_Model, layers: list[Layerable]) -> None:
     """
     Adds a list of layers to the model and initializes it.
 
@@ -41,8 +42,6 @@ def load_layers(
     """
     for layer in layers:
         model.add(layer)
-    if not isinstance(layers[-1], Activation) and activation_layer is not None:
-        model.add(activation_layer)
     model._model_init()
 
 
@@ -175,7 +174,7 @@ def extract_layers_relations(
 
 
 def convert_layers_and_set_weights_and_biases(
-    input_shape: tuple[int, int, int], layers: dict[str, tuple[str | torch.nn.Module, str]]
+    input_shape: ArrayShape, layers: dict[str, tuple[str | torch.nn.Module, str]]
 ) -> list[Layerable]:
     """
     Converts PyTorch layers to PyDTNN layers and maps weights/biases.
@@ -322,30 +321,41 @@ def check_kwargs_and_set_default(kwargs: dict) -> None:
         kwargs: Dictionary of user-provided arguments.
     """
 
-    dict_kwargs_default_values = {
-        "tensor_format": "nchw",  # NOTE: PyTorch's weight tensors only NCHW format.
-        # NOTE: If it's not set to "None", it's possible that other neural network is loaded.
-        "model_name": None,
-        "batch_size": 64,
-        # Model object parameters:
-        "omm": None,
-        "enable_cudnn": False,
-        "enable_gpudirect": False,
-        "non_blocking_mpi": False,
-        "enable_nccl": False,
-        "dtype": np.float32,
-        "tracing": False,
-        "tracer_output": "",
-    }
+    assert kwargs.get("tensor_format") == TensorFormat.NCHW, "PyTorch is only implemented for NCHW format"
+    kwargs["model_name"] = None
 
-    for k in dict_kwargs_default_values.keys():
-        if k not in kwargs:
-            kwargs[k] = dict_kwargs_default_values[k]
 
+def get_layers_from_torch(
+    model: torch.nn.Module,
+    input_shape: ArrayShape,
+    default_output_activation_layer: Activation | None = None,
+) -> list[Layerable]:
+    """
+    Get a list of the equivalent PyDTNN's layers from a PyTorch model.
+
+    Args:
+        model: The PyTorch model to convert.
+        input_shape: The input shape of the model.
+        default_output_activation_layer: Optional activation layer to add at the end.
+
+    Returns:
+        A list with the equivalent PyDTNN's layers from a PyTorch model.
+    """
+    # Obtaining the model's layers/operations, activations, etc.; and the relation between them.
+    dict_layers = extract_layers_relations(model=model)
+
+    # Obtaining the PyDTNN equivalent layer for every layer and setting the
+    # weights and biases (if it's necessary)
+    layers = convert_layers_and_set_weights_and_biases(input_shape=input_shape, layers=dict_layers)
+
+    if not isinstance(layers[-1], Activation) and default_output_activation_layer is not None:
+        layers.append(default_output_activation_layer)
+
+    return layers
 
 def convert_model(
     model: torch.nn.Module,
-    input_shape: tuple[int, int, int],
+    input_shape: ArrayShape,
     default_output_activation_layer: Activation | None = None,
     **kwargs: Any,
 ) -> PyDTNN_Model:
@@ -368,17 +378,10 @@ def convert_model(
     # Output model.
     converted_model = PyDTNN_Model(**kwargs)
 
-    # Obtaining the model's layers/operations, activations, etc.; and the relation between them.
-    dict_layers = extract_layers_relations(model=model)
-
-    # Obtaining the PyDTNN equivalent layer for every layer and setting the
-    # weights and biases (if it's necessary)
-    layers = convert_layers_and_set_weights_and_biases(input_shape=input_shape, layers=dict_layers)
+    layers = get_layers_from_torch(model, input_shape, default_output_activation_layer)
 
     # Assigning the layers/operations to the converted model and the default
     # activation layer if there is none in the new model.
-    load_layers(
-        model=converted_model, layers=layers, activation_layer=default_output_activation_layer
-    )
+    load_layers(model=converted_model, layers=layers)
 
     return converted_model
