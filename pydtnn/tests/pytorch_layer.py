@@ -594,12 +594,13 @@ class LayerPyTorchTestCase(TestCase):
         rtol: float = 1e-6,
         atol: float = 1e-6,
     ) -> None:
-        
-        original_x = _x.copy()
+        """Executes a forward comparison test and a forward-backward-forward comparison test between PyDTNN and PyTorch"""
+
+        #   original_x = _x.copy()
         with self.subTest(f"forward - {name_test}"):
             self.do_test_forward(_x, pydtnn_model, torch_model, name_test, rtol, atol)
-        
-        #with self.subTest(f"forward + backward + forward - {name_test}"):
+
+        # with self.subTest(f"forward + backward + forward - {name_test}"):
         #    self.do_test_fbf(original_x, pydtnn_model, torch_model, name_test, rtol, atol)
 
     # Unitary Test methods
