@@ -1,16 +1,19 @@
 """Flake8 plugin for Pyright."""
 
+import os
+import re
 import ast
 import enum
-import itertools
 import json
-import re
+import itertools
+from pathlib import Path
+from tempfile import mkstemp
 from argparse import Namespace
 from collections.abc import Generator, Iterable
-from pathlib import Path
 
 import pyright
 from flake8.discover_files import expand_paths
+
 
 _re_pascal = re.compile("[a-z][A-Z]")
 
@@ -133,14 +136,27 @@ class PyrightChecker:
     @classmethod
     def parse_options(cls, options: Namespace) -> None:
         """Parses and stores the maintainability threshold from options"""
-        cls._diagnostics = run_pyright(
-            expand_paths(
+        key = cls.name.upper()
+
+        # diagnostics cached
+        if path := os.environ.get(key):
+            with open(path, mode="r") as f:
+                cls._diagnostics = json.load(f)
+
+        # compute diagnostics
+        else:
+            fd, path = mkstemp(cls.name)
+            os.environ[key] = path
+
+            cls._diagnostics = run_pyright(expand_paths(
                 paths=options.filenames,
                 stdin_display_name=options.stdin_display_name,
                 filename_patterns=options.filename,
                 exclude=(*options.exclude, *options.extend_exclude),
-            )
-        )
+            ))
+
+            with os.fdopen(fd, mode="w") as f:
+                json.dump(cls._diagnostics, f)
 
     def __init__(self, tree: ast.AST, filename: str) -> None:
         """Initializes the checker with the tree mode"""
@@ -156,7 +172,7 @@ class PyrightChecker:
                 rule = DiagnosticRule.REPORT_GENERAL_TYPE_ISSUES
 
             yield (
-                diagnostic["range"]["start"]["line"],
+                diagnostic["range"]["start"]["line"] + 1,
                 diagnostic["range"]["start"]["character"],
                 f"T{rule:03} {diagnostic['message'].splitlines()[0]}",
                 type(self),
