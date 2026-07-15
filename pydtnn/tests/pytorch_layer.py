@@ -499,7 +499,7 @@ class LayerPyTorchTestCase(TestCase):
         # self.assertTrue((diff < rtol).all()), f"Not all values are below the rtol. Max. difference: {diff.max()}."
         #                                       f"Std. deviation: {diff.std()}. Min. difference: {diff.min()}."
         self.assertTrue(np.allclose(x_pydtnn, x_torch, rtol=rtol, atol=atol))
-    
+
     def do_test_fbf(
         self,
         _x: np.ndarray,
@@ -512,9 +512,9 @@ class LayerPyTorchTestCase(TestCase):
         """Executes a forward-backward-forward comparison test between PyDTNN and PyTorch."""
         self.copy_grad_vars(pydtnn_model, torch_model)
 
-        flattened_output_shape = (np.prod(pydtnn_model.layers[-1].shape), )
+        flattened_output_shape = (int(np.prod(pydtnn_model.layers[-1].shape)),)
         pydtnn_model.layers[-1].shape = flattened_output_shape
-        #pydtnn_model.loss_func.shape = (_x.shape[0], flattened_output_shape)
+        # pydtnn_model.loss_func.shape = (_x.shape[0], flattened_output_shape)
         pydtnn_model.loss_func._model_init()
         pydtnn_model.loss_func._post_init()
 
@@ -524,9 +524,9 @@ class LayerPyTorchTestCase(TestCase):
 
         x = np.copy(_x)
 
-        x: np.ndarray = x.astype(dtype = self.params.dtype)
+        x: np.ndarray = x.astype(dtype=self.params.dtype)
         print(f"{pydtnn_model.output_shape=} || {flattened_output_shape=}")
-        y = np.ones((x.shape[0], *flattened_output_shape), dtype = pydtnn_model.dtype)
+        y = np.ones((x.shape[0], *flattened_output_shape), dtype=pydtnn_model.dtype)
         print(f"{y.shape=}")
         _y = y.copy()
 
@@ -545,10 +545,14 @@ class LayerPyTorchTestCase(TestCase):
         x_pydtnn = format_transpose(
             x, self.params.tensor_format.upper(), TensorFormat.NCHW.upper()
         ).copy()
-        
+
         loss_func = torch.nn.CrossEntropyLoss()
-        x_torch: torch.Tensor = torch.from_numpy(_x.reshape((N, C, H, W), copy=False)).to(torch.device("cpu")).float()  # type: ignore (It's fine)
-        y_torch: torch.Tensor = torch.from_numpy(_y.reshape((N, -1), copy=False)).to(torch.device("cpu")).float()  # type: ignore (It's fine)
+        x_torch: torch.Tensor = (
+            torch.from_numpy(_x.reshape((N, C, H, W), copy=False)).to(torch.device("cpu")).float()
+        )  # type: ignore (It's fine)
+        y_torch: torch.Tensor = (
+            torch.from_numpy(_y.reshape((N, -1), copy=False)).to(torch.device("cpu")).float()
+        )  # type: ignore (It's fine)
         x_torch = x_torch.requires_grad_(True)
         x_torch.retain_grad()
         x_torch = torch_model(x_torch)
@@ -584,7 +588,7 @@ class LayerPyTorchTestCase(TestCase):
         # self.assertTrue((diff < rtol).all()), f"Not all values are below the rtol. Max. difference: {diff.max()}."
         #                                       f"Std. deviation: {diff.std()}. Min. difference: {diff.min()}."
         self.assertTrue(np.allclose(x_pydtnn, x_torch, rtol=rtol, atol=atol))
-    
+
     def do_test(
         self,
         _x: np.ndarray,

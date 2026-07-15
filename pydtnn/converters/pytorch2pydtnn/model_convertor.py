@@ -30,8 +30,7 @@ logger = logging.getLogger(__name__)
 # Operations/transformations related
 
 
-def load_layers(
-    model: PyDTNN_Model, layers: list[Layerable]) -> None:
+def load_layers(model: PyDTNN_Model, layers: list[Layerable]) -> None:
     """
     Adds a list of layers to the model and initializes it.
 
@@ -321,7 +320,9 @@ def check_kwargs_and_set_default(kwargs: dict) -> None:
         kwargs: Dictionary of user-provided arguments.
     """
 
-    assert kwargs.get("tensor_format") == TensorFormat.NCHW, "PyTorch is only implemented for NCHW format"
+    assert kwargs.get("tensor_format") == TensorFormat.NCHW, (
+        "PyTorch is only implemented for NCHW format"
+    )
     kwargs["model_name"] = None
 
 
@@ -352,6 +353,7 @@ def get_layers_from_torch(
         layers.append(default_output_activation_layer)
 
     return layers
+
 
 def convert_model(
     model: torch.nn.Module,

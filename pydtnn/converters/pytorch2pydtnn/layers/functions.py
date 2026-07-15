@@ -199,7 +199,7 @@ def flatten(args: dict[str, str]) -> tuple[Flatten, str]:
     params = args[cm.PARAMETERS].strip()
     dict_params = switch(params.split(cm.ARGS_SEPARATOR))
 
-    #return (Flatten(**dict_params), dict_params["input"])  # type: ignore
+    # return (Flatten(**dict_params), dict_params["input"])  # type: ignore
     return (Flatten(), dict_params["input"])  # type: ignore
 
 
