@@ -14,7 +14,9 @@ def resnet50_from_pytorch(input_shape: ArrayShape, output_shape: ArrayShape) -> 
     """Returns a PyDTNN conversion from a PyTorch's Resnet50."""
 
     torch_model = torch_models.resnet50(weights=torch_models.ResNet50_Weights.IMAGENET1K_V1)
-    torch_model.fc = torch.nn.Linear(
-        in_features=torch_model.fc.in_features, out_features=output_shape[0]
+    torch_model.fc = torch.nn.Sequential(  # type: ignore (It's ok to set a Sequential)
+        torch.nn.Linear(in_features=torch_model.fc.in_features, out_features=output_shape[0]),
+        torch.nn.Softmax()
     )
+    
     return from_pytorch(input_shape, torch_model)
