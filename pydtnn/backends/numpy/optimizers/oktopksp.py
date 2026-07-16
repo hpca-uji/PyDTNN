@@ -217,6 +217,7 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
 
         if len(self.dw_original_shape) != 2:
             w = w.reshape(w.shape[0], -1)
+        coo_u.data /= self.model.nprocs
         w[coo_u.row, coo_u.col] -= coo_u.data
         if len(self.dw_original_shape) != 2:
             w = w.reshape(self.dw_original_shape)
@@ -260,6 +261,7 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
 
         if len(self.dw_original_shape) != 2:
             w = w.reshape(w.shape[0], -1)
+        coo_u.data /= self.model.nprocs
         velocity = getattr(layer, "velocity_%s" % w_type, np.zeros_like(w, dtype=layer.model.dtype))
         velocity *= self.momentum
         velocity[coo_u.row, coo_u.col] += coo_u.data
@@ -291,12 +293,10 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
         """
 
         logger.debug("In '_update_weights', the method that it is being used is 'like_sgd'")
-
-        """"""
         logger.warning(
             "This method (_update_weights_like_sgd) should be used only in case of debugging for performance reasons."
         )
-
+        coo_u.data /= self.model.nprocs
         dw = coo_u.to_dense()
         if len(self.dw_original_shape) != 2:
             dw = dw.reshape(self.dw_original_shape)

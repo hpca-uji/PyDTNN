@@ -59,6 +59,7 @@ def reset_residuals_cython(npDT[:,::1] acc,
 
 
 def update_dense_weights_cython(npDT[:,::1] w,
+                                int nprocs,
                                 npDT[:,::1] u):
 
     cdef int i, j
@@ -67,20 +68,22 @@ def update_dense_weights_cython(npDT[:,::1] w,
 
     for i in prange(rows, nogil=True):
         for j in range(cols):
-            w[i, j] -= u[i, j]
+            w[i, j] -= u[i, j] / nprocs
 
 
 def update_sparsed_weights_cython(npDT[::1] w,
+                                  int nprocs,
                                   npDT[::1] grads_to_update,
                                   np.int32_t[::1] indexes_to_update):
 
 
     cdef int i
     for i in prange(grads_to_update.shape[0], nogil=True):
-        w[indexes_to_update[i]] -= grads_to_update[i]
+        w[indexes_to_update[i]] -= grads_to_update[i] / nprocs
 
 
 def update_sparsed_weights_mv_cython(npDT[::1] w,
+                                     int nprocs,
                                      npDT[::1] grads_to_update,
                                      np.int32_t[::1] indexes_to_update,
                                      npDT[::1] velocity,
@@ -95,5 +98,5 @@ def update_sparsed_weights_mv_cython(npDT[::1] w,
     for i in prange(grads_to_update.shape[0], nogil=True):
         index = indexes_to_update[i]
 
-        velocity[index] += grads_to_update[i]
+        velocity[index] += grads_to_update[i] / nprocs
         w[index] -= velocity[index]

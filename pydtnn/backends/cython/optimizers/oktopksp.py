@@ -136,7 +136,7 @@ class OkTopkSPCython(OkTopkSPNumpy, OptimizerCython):
 
         if len(self.dw_original_shape) != 1:
             w = w.reshape(-1)
-        update_sparsed_weights_cython(w, coo_u.data, coo_u.indexes)
+        update_sparsed_weights_cython(w, self.model.nprocs, coo_u.data, coo_u.indexes)
         if len(self.dw_original_shape) != 1:
             w = w.reshape(self.dw_original_shape)
         setattr(layer, w_type, w)
@@ -168,7 +168,7 @@ class OkTopkSPCython(OkTopkSPNumpy, OptimizerCython):
         if len(self.dw_original_shape) != 1:
             w = w.reshape(-1)
         velocity = getattr(layer, "velocity_%s" % w_type, np.zeros_like(w, dtype=layer.model.dtype))
-        update_sparsed_weights_mv_cython(w, coo_u.data, coo_u.indexes, velocity, self.momentum)
+        update_sparsed_weights_mv_cython(w, self.model.nprocs, coo_u.data, coo_u.indexes, velocity, self.momentum)
         if len(self.dw_original_shape) != 1:
             w = w.reshape(self.dw_original_shape)
         setattr(layer, w_type, w)

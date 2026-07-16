@@ -47,7 +47,7 @@ def reset_residuals_cython[T: _npDT](acc: _npDT_2Dims[T], indexes: _npDT_1Dims[_
     """
     ...
 
-def update_dense_weights_cython[T: _npDT](w: _npDT_2Dims[T], u: _npDT_2Dims[T]) -> None:
+def update_dense_weights_cython[T: _npDT](w: _npDT_2Dims[T], nprocs: int, u: _npDT_2Dims[T]) -> None:
     """
     Update dense weights by adding the provided update matrix.
     Args:
@@ -59,7 +59,7 @@ def update_dense_weights_cython[T: _npDT](w: _npDT_2Dims[T], u: _npDT_2Dims[T]) 
     ...
 
 def update_sparsed_weights_cython[T: _npDT](
-    w: _npDT_1Dims[T], grads_to_update: _npDT_1Dims[T], indexes_to_update: _npDT_1Dims[_np.int32]
+    w: _npDT_1Dims[T], nprocs: int, grads_to_update: _npDT_1Dims[T], indexes_to_update: _npDT_1Dims[_np.int32]
 ) -> None:
     """
     Update sparse weights using coordinate-based gradient updates.
@@ -74,6 +74,7 @@ def update_sparsed_weights_cython[T: _npDT](
 
 def update_sparsed_weights_mv_cython[T: _npDT](
     w: _npDT_1Dims[T],
+    nprocs: int,
     grads_to_update: _npDT_1Dims[T],
     indexes_to_update: _npDT_1Dims[_np.int32],
     velocity: _npDT_1Dims[T],
