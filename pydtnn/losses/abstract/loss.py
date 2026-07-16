@@ -59,15 +59,14 @@ class Loss[T: Array](Base):  # noqa: D101 (generics not detected)
         super()._model_init()
         self.shape = (self.model.batch_size, *self.model.output_shape)
         if self.model.use_loss_weights:
-            if self.model.loss_weights is None:
+            if self.model.loss_weights:
                 weights = self.model.dataset.weight_classes
             else:
-                # (until here, self.loss_weights is str)
-                weights = list(map(float, self.model.loss_weights.split(",")))  # type: ignore
+                weights = list(self.model.loss_weights)
         else:
             weights = None
 
-        self.weights: T = self._weights_to_tensor(weights)  # type: ignore (It will be initalized here)
+        self.weights: T = self._weights_to_tensor(weights)  # type: ignore (It will be initialized here)
 
     def compute(self, y_pred: T, y_targ: T, batch_size: int) -> tuple[float, T]:
         """

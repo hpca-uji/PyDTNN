@@ -10,5 +10,5 @@ python3 "${dir:?}/export_dataset.py" \
   --model=simplecnn \
   --dataset=mnist \
   --dataset-path=datasets/mnist \
-  --parallel-data=False \
-  --shared-data=True
+  --no-parallel-data \
+  --shared-data

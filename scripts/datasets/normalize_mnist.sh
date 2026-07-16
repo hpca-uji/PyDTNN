@@ -10,5 +10,5 @@ python3 "${dir:?}/normalize_dataset.py" \
   --model=simplecnn \
   --dataset=mnist \
   --dataset-path=datasets/mnist \
-  --parallel-data=False \
-  --shared-data=True
+  --no-parallel-data \
+  --shared-data

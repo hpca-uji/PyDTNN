@@ -43,7 +43,7 @@ KWARGS = {
     "evaluate_only": True,
     "parallel_data": False,
     "tensor_format": TENSOR_FORMAT,
-    "enable_cudnn": False,  # True,
+    "use_cudnn": False,  # True,
     "omm": None,
     "dtype": DTYPE,
     "tracing": False,
@@ -122,7 +122,7 @@ def main() -> None:
         # model.show()
 
         x = deepcopy(dataset)
-        if KWARGS["enable_cudnn"]:
+        if KWARGS["use_cudnn"]:
             _dataset = TensorArray(
                 gpu_arr=gpuarray.zeros(shape=dataset.shape, dtype=KWARGS["dtype"]),
                 tensor_format=model.tensor_format,

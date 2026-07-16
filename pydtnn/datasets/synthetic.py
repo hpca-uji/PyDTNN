@@ -40,17 +40,12 @@ class Synthetic(Dataset):
             force_test_as_validation: Whether to use test data as validation data.
             debug: Whether to enable debug mode.
         """
-        train_nsamples = int(model.synthetic_train_samples)
-        test_nsamples = int(model.synthetic_test_samples)
-        input_shape = tuple(map(int, model.synthetic_input_shape.split(",")))
-        output_shape = tuple(map(int, model.synthetic_output_shape.split(",")))
-
         super().__init__(
             model,
-            train_nsamples=train_nsamples,
-            test_nsamples=test_nsamples,
-            input_shape=input_shape,
-            output_shape=output_shape,
+            train_nsamples=model.synthetic_train_samples,
+            test_nsamples=model.synthetic_test_samples,
+            input_shape=model.synthetic_input_shape,
+            output_shape=model.synthetic_output_shape,
             force_test_as_validation=force_test_as_validation,
             debug=debug,
         )

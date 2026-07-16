@@ -287,7 +287,7 @@ class ParamsLayerPytorch(Params):
         self.evaluate_only = False
         self.parallel_data = False
         self.loss_func = "categorical_cross_entropy"
-        self.enable_cudnn = False
+        self.use_cudnn = False
         self.omm = None
         self.dtype = np.dtype(np.float32)
         self.tracing = False

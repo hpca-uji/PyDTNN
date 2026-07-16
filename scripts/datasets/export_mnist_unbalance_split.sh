@@ -11,5 +11,5 @@ python3 "${dir:?}/export_dataset.py" \
   --dataset=mnist \
   --dataset-path=datasets/mnist \
   --export-split-weights=1,1.125,1.25,1.5 \
-  --parallel-data=False \
-  --shared-data=True
+  --no-parallel-data \
+  --shared-data

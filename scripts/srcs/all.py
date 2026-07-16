@@ -55,7 +55,9 @@ def find_insert(source: str) -> int:
     body = list(tree.body)
 
     # Skip module docstring
-    if body and isinstance(body[0], ast.Expr) and isinstance(body[0].value, ast.Str):
+    if body and isinstance(body[0], ast.Expr) \
+            and isinstance(body[0].value, ast.Constant) \
+            and isinstance(body[0].value.value, str):
         body = body[1:]
 
     # Skip imports

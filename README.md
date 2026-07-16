@@ -221,10 +221,10 @@ The PyDTNN framework comes with a utility launcher called
   - `--enable-best-of`: Enable the `BestOf` auto-tuner.
   - `--enable-memory-cache`: Enable the memory cache module to use
     persistent memory.
-  - `--enable-fused-bn-relu`: Fuse `BatchNormalization` and `Relu` layers. `True` if specified.
-  - `--enable-fused-conv-relu`: Fuse `Conv2D` and `Relu` layers. `True` if specified.
-  - `--enable-fused-conv-bn`: Fuse `Conv2D` and `BatchNormalization` layers. `True` if specified.
-  - `--enable-fused-conv-bn-relu`: Fuse `Conv2D` and
+  - `--fused-bn-relu`: Fuse `BatchNormalization` and `Relu` layers. `True` if specified.
+  - `--fused-conv-relu`: Fuse `Conv2D` and `Relu` layers. `True` if specified.
+  - `--fused-conv-bn`: Fuse `Conv2D` and `BatchNormalization` layers. `True` if specified.
+  - `--fused-conv-bn-relu`: Fuse `Conv2D` and
     `BatchNormalization` and `Relu` layers. Default: `False`.
 - Convolution operation parameters:
   - `--conv-direct-method`: ConvDirect algorithm to use in Conv2D layers.
@@ -307,12 +307,12 @@ The PyDTNN framework comes with a utility launcher called
   - `--use-mpi-buffers`: Enable the use of MPI buffers. Possible values:
     `True` (MPI operations by buffer), `False` (MPI operations by
     object) or `None` (auto-select the better option). Default: `None`.
-  - `--enable-gpudirect`: Enable GPU pinned memory for gradients when
+  - `--use-gpudirect`: Enable GPU pinned memory for gradients when
     using a CUDA-aware MPI version. Default: `False`.
-  - `--enable-nccl`: Enable the use of the `NCCL` library for collective
+  - `--use-nccl`: Enable the use of the `NCCL` library for collective
     communications on GPUs. This option can only be set when cuDNN is available.
     Default: `False`.
-  - `--enable-cudnn-auto-conv-algo`: Let `cuDNN` to select the best
+  - `--use-cudnn-auto-conv-algo`: Let `cuDNN` to select the best
     performing convolution algorithm. Default: `True`.
 - Encryption parameters:
   - `--encryption`: Encryption library: `tenseal`, `openfhe`, `None`. Default `None`.
@@ -357,7 +357,7 @@ $ mpirun -np 12 \
       --parallel-data=False \
       --tracing=False \
       --profile=False \
-      --enable-cudnn=True \
+      --use-cudnn \
       --backend=gpu \
       --dtype=float32
 
@@ -627,7 +627,7 @@ $ pydtnn-benchmark \
     --model-state-filename=vgg16-weights-nhwc.npz \
     --tracing=False \
     --profile=False \
-    --enable-cudnn=True \
+    --use-cudnn \
     --backend=gpu \
     --dtype=float32
 

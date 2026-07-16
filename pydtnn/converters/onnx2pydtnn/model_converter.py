@@ -342,9 +342,9 @@ def load_layers(model: PyDTNN_Model, operations: list[Layerable]) -> None:
 def convert_model(
     onnx_model: onnx.ModelProto,
     non_blocking_mpi: bool = False,
-    enable_cudnn: bool = False,
-    enable_gpudirect: bool = False,
-    enable_nccl: bool = False,
+    use_cudnn: bool = False,
+    use_gpudirect: bool = False,
+    use_nccl: bool = False,
     dtype: np.dtype = np.dtype(np.float32),
     tracing: bool = False,
     tracer_output: str = "",
@@ -356,9 +356,9 @@ def convert_model(
     Args:
         onnx_model: The ONNX model to convert.
         non_blocking_mpi: Whether to use non-blocking MPI.
-        enable_cudnn: Whether to enable cuDNN.
-        enable_gpudirect: Whether to enable GPUDirect.
-        enable_nccl: Whether to enable NCCL.
+        use_cudnn: Whether to enable cuDNN.
+        use_gpudirect: Whether to enable GPUDirect.
+        use_nccl: Whether to enable NCCL.
         dtype: The data type for the model.
         tracing: Whether to enable tracing.
         tracer_output: Path for tracer output.
@@ -375,9 +375,9 @@ def convert_model(
     # pydtnn.parser import parser is None!!!!!!!!.
     model = PyDTNN_Model(
         non_blocking_mpi=non_blocking_mpi,
-        enable_cudnn=enable_cudnn,
-        enable_gpudirect=enable_gpudirect,
-        enable_nccl=enable_nccl,
+        use_cudnn=use_cudnn,
+        use_gpudirect=use_gpudirect,
+        use_nccl=use_nccl,
         dtype=dtype,
         tracing=tracing,
         tracer_output=tracer_output,

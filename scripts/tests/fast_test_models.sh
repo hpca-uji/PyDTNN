@@ -24,16 +24,16 @@ function run_model() {
     --batch-size=1 \
     --steps-per-epoch=1 \
     --num-epochs=1 \
-    --evaluate=True \
+    --evaluate \
     --optimizer=sgd \
     --learning-rate=0.01 \
     --loss-func=categorical_cross_entropy \
     --schedulers= \
-    --parallel-data=False \
-    --tracing=False \
-    --profile=False \
+    --no-parallel-data \
+    --no-tracing \
+    --no-profile \
     --backend=cpu \
-    --enable-cudnn=False \
+    --no-use-cudnn \
     --dtype=float32
 }
 

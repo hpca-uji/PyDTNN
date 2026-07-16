@@ -18,18 +18,18 @@ mpirun -np 2 "${MPI_ARGS[@]}" \
   --synthetic-test-samples=50000 \
   --synthetic-input-shape=3,227,227 \
   --synthetic-output-shape=1000 \
-  --test-as-validation=False \
+  --no-test-as-validation \
   --augment-horizontal-flip=0.5 \
   --augment-mask=0.5 \
   --augment-mask-size=16 \
-  --test-as-validation=True \
+  --test-as-validation \
   --batch-size=64 \
   --validation-split=0.2 \
   --steps-per-epoch=0 \
   --num-epochs=400 \
-  --evaluate=False \
+  --no-evaluate \
   --optimizer=sgd \
-  --optimizer-nesterov=False \
+  --no-optimizer-nesterov \
   --learning-rate=0.1 \
   --optimizer-momentum=0.9 \
   --loss-func=categorical_cross_entropy \
@@ -47,12 +47,12 @@ mpirun -np 2 "${MPI_ARGS[@]}" \
   --reduce-lr-every-nepochs-factor=0.1 \
   --stop-at-loss-metric=val_categorical_accuracy \
   --stop-at-loss-threshold=70.0 \
-  --parallel-data=False \
-  --use-blocking-mpi=True \
-  --tracing=False \
-  --profile=False \
+  --no-parallel-data \
+  --use-blocking-mpi \
+  --no-tracing \
+  --no-profile \
   --backend=gpu \
-  --enable-cudnn=True \
-  --enable-gpudirect=False \
+  --use-cudnn \
+  --no-use-gpudirect \
   --history-file="results/result_resnet.history" \
   --dtype=float32

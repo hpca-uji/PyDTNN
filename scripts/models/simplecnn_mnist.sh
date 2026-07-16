@@ -8,17 +8,17 @@ pydtnn-benchmark \
   --model=simplecnn \
   --dataset=mnist \
   --dataset-path=datasets/mnist \
-  --test-as-validation=False \
-  --augment-crop=False \
+  --no-test-as-validation \
+  --no-augment-crop \
   --augment-crop-perc=0.8 \
-  --augment-scale=False \
+  --no-augment-scale \
   --augment-scale-size=16 \
-  --augment-shuffle=True \
+  --augment-shuffle \
   --batch-size=64 \
   --num-epochs=50 \
   --steps-per-epoch=0 \
   --validation-split=0.2 \
-  --evaluate=True \
+  --evaluate \
   --optimizer=sgd \
   --learning-rate=0.01 \
   --loss-func=categorical_cross_entropy \
@@ -28,9 +28,9 @@ pydtnn-benchmark \
   --reduce-lr-every-nepochs-min-lr=0.001 \
   --early-stopping-metric=val_categorical_cross_entropy \
   --early-stopping-patience=20 \
-  --parallel-data=False \
-  --tracing=False \
-  --profile=False \
+  --no-parallel-data \
+  --no-tracing \
+  --no-profile \
   --backend=cpu \
-  --enable-cudnn=False \
+  --no-use-cudnn \
   --dtype=float32

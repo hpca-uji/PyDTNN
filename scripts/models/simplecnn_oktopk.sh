@@ -15,16 +15,16 @@ mpirun -np 1 --oversubscribe "${MPI_ARGS[@]}" \
   --model=simplecnn \
   --dataset=mnist \
   --dataset-path=datasets/mnist \
-  --test-as-validation=False \
-  --augment-shuffle=False \
+  --no-test-as-validation \
+  --no-augment-shuffle \
   --batch-size=64 \
   --num-epochs=10 \
   --steps-per-epoch=0 \
   --validation-split=0.2 \
-  --evaluate=True \
+  --evaluate \
   --model-sync-freq=0 \
-  --initial-model-sync=False \
-  --final-model-sync=False \
+  --no-initial-model-sync \
+  --no-final-model-sync \
   --optimizer=sgd \
   --learning-rate=0.001 \
   --optimizer-momentum=0.9 \
@@ -40,9 +40,9 @@ mpirun -np 1 --oversubscribe "${MPI_ARGS[@]}" \
   --reduce-lr-every-nepochs-min-lr=0.001 \
   --early-stopping-metric=val_categorical_cross_entropy \
   --early-stopping-patience=100 \
-  --parallel-data=True \
-  --tracing=False \
-  --profile=False \
+  --parallel-data \
+  --no-tracing \
+  --no-profile \
   --backend=cpu \
-  --enable-cudnn=False \
+  --no-use-cudnn \
   --dtype=float32

@@ -49,7 +49,7 @@ class State[T: Array](Init[T]):  # noqa: D101 (generics not detected)
         """
         data = {}
 
-        if self.model_name is not None:
+        if not self.model_name:
             data[Parameters.MODEL_NAME] = self.model_name
 
         data[Parameters.LAYERS] = [layer.export() for layer in self.layers]

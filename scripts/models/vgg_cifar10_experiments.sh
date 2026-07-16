@@ -23,15 +23,15 @@ for procs in 6 4 2 1; do
       --model=vgg11bn_cifar10 \
       --dataset=cifar10 \
       --dataset-path=datasets/cifar10 \
-      --augment-normalize=True \
+      --augment-normalize \
       --augment-normalize-offset=-0.472 \
       --augment-normalize-scale=1 \
-      --test-as-validation=True \
+      --test-as-validation \
       --batch-size=64 \
       --validation-split=0.2 \
       --steps-per-epoch=0 \
       --num-epochs=200 \
-      --evaluate=False \
+      --no-evaluate \
       --optimizer=sgd \
       --learning-rate=0.001 \
       --optimizer-momentum=0.9 \
@@ -47,12 +47,12 @@ for procs in 6 4 2 1; do
       --reduce-lr-on-plateau-min-lr=0 \
       --stop-at-loss-metric=val_categorical_accuracy \
       --stop-at-loss-threshold=70.0 \
-      --parallel-data=True \
-      --use-blocking-mpi=True \
-      --tracing=False \
-      --profile=False \
+      --parallel-data \
+      --use-blocking-mpi \
+      --no-tracing \
+      --no-profile \
       --backend=cpu \
-      --enable-cudnn=False \
+      --no-use-cudnn \
       --history-file="results/result_vgg9_${procs}p_${thrds}t.history" \
       --dtype=float32 | tee results/result_vgg9_${procs}p_${thrds}t.dat
   done

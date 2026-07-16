@@ -73,7 +73,7 @@ class Layers[T: Array](Utils[T]):  # noqa: D101 (generics not detected)
             case (_, LayerFuse(), _):
                 pass  # skip fused
             case (Conv2D(), BatchNormalization(), Relu()):
-                if self.enable_fused_conv_bn_relu:
+                if self.fused_conv_bn_relu:
                     layer_name = "conv_2d_batch_normalization_relu"
 
         return layer_name, [layer0, layer1, layer2]
@@ -91,13 +91,13 @@ class Layers[T: Array](Utils[T]):  # noqa: D101 (generics not detected)
             case (LayerFuse(), _):
                 pass  # skip fused
             case (Conv2D(), BatchNormalization()):
-                if self.enable_fused_conv_bn:
+                if self.fused_conv_bn:
                     layer_name = "conv_2d_batch_normalization"
             case (Conv2D(), Relu()):
-                if self.enable_fused_conv_relu:
+                if self.fused_conv_relu:
                     layer_name = "conv_2d_relu"
             case (BatchNormalization(), Relu()):
-                if self.enable_fused_bn_relu:
+                if self.fused_bn_relu:
                     layer_name = "batch_normalization_relu"
 
         return layer_name, [layer1, layer2]
@@ -150,12 +150,12 @@ class Layers[T: Array](Utils[T]):  # noqa: D101 (generics not detected)
     def _apply_layer_fusion(self) -> None:
         """Apply layer fusion in a recursive manner"""
 
-        if not self.enable_cudnn and any(
+        if not self.use_cudnn and any(
             [
-                self.enable_fused_bn_relu,
-                self.enable_fused_conv_relu,
-                self.enable_fused_conv_bn,
-                self.enable_fused_conv_bn_relu,
+                self.fused_bn_relu,
+                self.fused_conv_relu,
+                self.fused_conv_bn,
+                self.fused_conv_bn_relu,
             ]
         ):
             # NOTE: 1st the 3 layers fusion, then the rest:

@@ -10,12 +10,12 @@ pydtnn-benchmark \
   --synthetic-test-samples=50000 \
   --synthetic-input-shape=3,227,227 \
   --synthetic-output-shape=1000 \
-  --test-as-validation=False \
+  --no-test-as-validation \
   --batch-size=64 \
   --validation-split=0.2 \
   --steps-per-epoch=0 \
   --num-epochs=30 \
-  --evaluate=True \
+  --evaluate \
   --optimizer=sgd \
   --learning-rate=0.01 \
   --optimizer-momentum=0.9 \
@@ -29,10 +29,10 @@ pydtnn-benchmark \
   --reduce-lr-on-plateau-factor=0.1 \
   --reduce-lr-on-plateau-patience=5 \
   --reduce-lr-on-plateau-min-lr=0 \
-  --parallel-data=False \
-  --use-blocking-mpi=True \
-  --tracing=False \
-  --profile=False \
+  --no-parallel-data \
+  --use-blocking-mpi \
+  --no-tracing \
+  --no-profile \
   --backend=cpu \
-  --enable-cudnn=False \
+  --no-use-cudnn \
   --dtype=float32

@@ -16,17 +16,16 @@ pydtnn-benchmark \
   --model=vgg_tropical_cyclone \
   --dataset=cyclones \
   --dataset-train-path=datasets/cifar10 \
-  --use-synthetic-data=True \
-  --test-as-validation=True \
-  --flip-images=False \
-  --crop-images=False \
+  --test-as-validation \
+  --no-flip-images \
+  --no-crop-images \
   --batch-size=64 \
   --validation-split=0.2 \
   --steps-per-epoch=10 \
   --num-epochs=1 \
-  --evaluate=False \
+  --no-evaluate \
   --optimizer=sgd \
-  --nesterov=False \
+  --no-nesterov \
   --learning-rate=0.01 \
   --optimizerdecay=1e-4 \
   --optimizer-momentum=0.9 \
@@ -45,14 +44,14 @@ pydtnn-benchmark \
   --reduce-lr-every-nepochs-min-lr=0.001 \
   --stop-at-loss-metric=val_categorical_accuracy \
   --stop-at-loss-threshold=70.0 \
-  --parallel-data=False \
-  --use-blocking-mpi=True \
-  --tracing=False \
-  --profile=False \
+  --no-parallel-data \
+  --use-blocking-mpi \
+  --no-tracing \
+  --no-profile \
   --backend="cpu;conv_2d:winograd" \
-  --enable-cudnn=False \
-  --enable-best-of=False \
-  --enable-cudnn-auto-conv-algo=False \
-  --enable-gpudirect=False \
+  --no-use-cudnn \
+  --no-enable-best-of \
+  --no-use-cudnn-auto-conv-algo \
+  --no-use-gpudirect \
   --history-file="results/result_vgg3dobn.history" \
   --dtype=float32

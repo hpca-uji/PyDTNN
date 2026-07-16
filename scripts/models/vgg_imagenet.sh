@@ -8,19 +8,18 @@ pydtnn-benchmark \
   --model=vgg11_imagenet \
   --dataset=imagenet \
   --dataset-path=datasets/imagenet \
-  --augment-crop=True \
+  --augment-crop \
   --augment-crop-perc=0.875 \
-  --augment-scale=True \
+  --augment-scale \
   --augment-scale-size=227 \
-  --augment-normalize=True \
+  --augment-normalize \
   --augment-normalize-offset=-0.449 \
   --augment-normalize-scale=3.537 \
-  --use-synthetic-data=False \
   --tensor-format=nchw \
   --batch-size=64 \
   --validation-split=0.2 \
   --num-epochs=10 \
-  --evaluate=True \
+  --evaluate \
   --optimizer=adam \
   --learning-rate=0.0001 \
   --optimizer-momentum=0.9 \
@@ -34,10 +33,10 @@ pydtnn-benchmark \
   --reduce-lr-on-plateau-factor=0.1 \
   --reduce-lr-on-plateau-patience=5 \
   --reduce-lr-on-plateau-min-lr=0 \
-  --parallel-data=False \
-  --use-blocking-mpi=True \
-  --tracing=False \
-  --profile=False \
+  --no-parallel-data \
+  --use-blocking-mpi \
+  --no-tracing \
+  --no-profile \
   --backend=cpu \
-  --enable-cudnn=False \
+  --no-use-cudnn \
   --dtype=float32

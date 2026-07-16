@@ -23,8 +23,8 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
         if not self.model.comm:
             return
 
-        # if self.model.enable_cudnn:
-        #     if self.model.enable_nccl or self.model.gpudirect:
+        # if self.model.use_cudnn:
+        #     if self.model.use_nccl or self.model.gpudirect:
         #        self.model.stream.synchronize()
         #     else:
         #        self.stream_2.synchronize()
@@ -33,7 +33,7 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
             dw_ = dw_ if gradient else w_
             dw = getattr(self, dw_)
 
-            if self.model.enable_nccl:
+            if self.model.use_nccl:
                 assert nccl is not None
 
                 # self.model.stream.synchronize()
@@ -96,7 +96,7 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
             return
 
         for w_, dw_ in self.grad_vars.items():
-            if self.model.enable_nccl:
+            if self.model.use_nccl:
                 # self.model.stream.synchronize()
                 dw: TensorArray = getattr(self, dw_)
                 # TODO: self.model._decode_reduce
@@ -120,7 +120,7 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
                 setattr(self, f"{dw_}_cpu", dw_cpu)
 
                 # # Hierarchical mode NCCL + MPI
-                # if self.model.enable_nccl:
+                # if self.model.use_nccl:
                 #     if len(self.model.inter_ranks) == 1:
                 #         # Do nothing, Allreduce was already completed in phase 1
                 #         pass
@@ -153,7 +153,7 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
             # stream = self.stream_2.handle)
             dw = getattr(self, dw_)
 
-            if self.model.enable_nccl:
+            if self.model.use_nccl:
                 # self.stream_2.synchronize()
                 dw *= self.model.rank_weight
                 # TODO: self.model._encode_reduce

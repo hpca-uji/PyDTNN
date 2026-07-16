@@ -69,140 +69,136 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
 
     # Explicit declaration of those model attributes that are referenced by other parts of PyDTNN
     #   NOTE: The following parameters come from "Parser"
-    dtype: np.dtype
-    quantize: bool
-    quantize_dtype: np.dtype
-    num_epochs: int
-    steps_per_epoch: float
-    model_state_filename: str
-    history_file: str
-    tensor_format: TensorFormat
-    random: np.random.Generator
-    random_seed: int
-    shared_tmp_memory: bool
-    shared_data: bool
-    model_sync_freq: int
-    model_sync_algo: str
-    model_sync_participation: str
-    model_sync_min_avail: int
-    initial_model_sync: bool
-    final_model_sync: bool
-    model_sync_quantize: bool
-    model_sync_dtype: np.dtype
-    dataset_name: str
-    dataset_percentage: float
-    dataset_path: str
-    dataset_lang: str
-    dataset_lang2: str
-    synthetic_train_samples: int
-    synthetic_test_samples: int
-    synthetic_input_shape: str
-    synthetic_output_shape: str
-    test_as_validation: bool
-    validation_split: float
-    augment_shuffle: bool
-    augment_horizontal_flip: float
-    augment_vertical_flip: float
-    augment_rotate: float
-    augment_rotate_degree: float
-    augment_brightness: float
-    augment_brightness_factor: float
-    augment_contrast: float
-    augment_contrast_factor: float
-    augment_saturation: float
-    augment_saturation_factor: float
-    augment_mask: float
-    augment_mask_size: int
-    augment_blur: float
-    augment_blur_size: int
-    augment_crop: bool
-    augment_crop_perc: float
-    augment_scale: bool
-    augment_scale_size: int
-    augment_perspective: float
-    augment_perspective_factor: float
-    augment_normalize: bool
-    augment_normalize_offset: float
-    augment_normalize_scale: float
-    enable_fused_bn_relu: bool
-    enable_fused_conv_relu: bool
-    enable_fused_conv_bn: bool
-    enable_fused_conv_bn_relu: bool
-    conv_direct_method: str
-    optimizer_name: str
-    learning_rate: float
-    learning_rate_scaling: bool
-    optimizer_momentum: float
-    optimizer_decay: float
-    optimizer_nesterov: bool
-    optimizer_beta1: float
-    optimizer_beta2: float
-    optimizer_epsilon: float
-    optimizer_rho: float
-    optimizer_tau: int
-    optimizer_tau_prime: int
-    optimizer_density: float
-    oktopk_min_k: int
-    loss_func_name: str
-    loss_eps: float
-    loss_weights: list[float] | None
-    use_loss_weights: bool
-    metrics: str
-    schedulers_names: str
-    warm_up_epochs: int
-    early_stopping_metric: str
-    early_stopping_patience: int
-    early_stopping_minimize: bool
-    reduce_lr_on_plateau_metric: str
-    reduce_lr_on_plateau_float: float
-    reduce_lr_on_plateau_patience: int
-    reduce_lr_on_plateau_min_lr: float
-    reduce_lr_on_plateau_factor: float
-    reduce_lr_every_nepochs_float: float
-    reduce_lr_every_nepochs_nepochs: int
-    reduce_lr_every_nepochs_min_lr: float
-    reduce_lr_every_nepochs_factor: float
-    stop_at_loss_metric: str
-    stop_at_loss_threshold: float
-    model_checkpoint_metric: str
-    model_checkpoint_save_freq: int
-    parallel_data: bool
-    parallel_pipeline: bool
-    use_blocking_mpi: bool
-    use_mpi_buffers: bool
-    enable_cudnn: bool
-    enable_gpudirect: bool
-    enable_nccl: bool
-    enable_cudnn_auto_conv_algo: bool
-    encryption_name: str
-    encryption_slots: int
-    encryption_scale: int
-    encryption_security: int
-    tracing: bool
-    tracer: Tracer
-    tracer_output: str
-    tracer_pmlib_server: str
-    tracer_pmlib_port: int
-    tracer_pmlib_device: str
-    profile: bool
-    cpu_speed: float
-    memory_bw: float
-    network_bw: float
-    network_lat: float
-    network_algo: NetworkAlgoEnum
-    mpi_processes: int
-    threads_per_process: int
-    gpus_per_node: int
-    mpi_protocol: str
-    mpi_server: str
-    mpi_port: int
+    model_name: str = ""
+    backend: str = "cpu"
+    batch_size: int = 0
+    global_batch_size: int = 0
+    dtype: np.dtype = np.dtype(np.float32)
+    quantize: bool = False
+    quantize_dtype: np.dtype = np.dtype(np.float16)
+    num_epochs: int = 1
+    steps_per_epoch: int = 0
+    evaluate_on_train: bool = False
+    evaluate_only: bool = False
+    model_state_filename: str = ""
+    history_file: str = ""
+    tensor_format: TensorFormat = None  # type: ignore (properly initialized later)
+    random_seed: int = 57005
+    shared_tmp_memory: bool = False
+    shared_data: bool = True
+    model_sync_freq: int = 0
+    model_sync_algo: SyncAlgorithm = SyncAlgorithm.AVG
+    model_sync_participation: SyncParticipation = SyncParticipation.ALL
+    model_sync_min_avail: int = 0
+    initial_model_sync: bool = True
+    final_model_sync: bool = True
+    model_sync_quantize: bool = False
+    model_sync_dtype: np.dtype = np.dtype(np.float16)
+    dataset_name: str = ""
+    dataset_percentage: float = 0.0
+    dataset_path: str = "datasets/mnist"
+    dataset_lang: str = "en"
+    dataset_lang2: str = "de"
+    synthetic_train_samples: int = 1000
+    synthetic_test_samples: int = 100
+    synthetic_input_shape: ArrayShape = (3, 32, 32)
+    synthetic_output_shape: ArrayShape = (10,)
+    test_as_validation: bool = False
+    validation_split: float = 0.2
+    augment_shuffle: bool = True
+    augment_horizontal_flip: float = 0.0
+    augment_vertical_flip: float = 0.0
+    augment_rotate: float = 0.0
+    augment_rotate_degree: float = 90.0
+    augment_brightness: float = 0.0
+    augment_brightness_factor: float = 1.0
+    augment_contrast: float = 0.0
+    augment_contrast_factor: float = 1.0
+    augment_saturation: float = 0.0
+    augment_saturation_factor: float = 1.0
+    augment_mask: float = 0.0
+    augment_mask_size: int = 16
+    augment_blur: float = 0.0
+    augment_blur_size: int = 16
+    augment_crop: bool = False
+    augment_crop_perc: float = 0.875
+    augment_scale: bool = False
+    augment_scale_size: int = 300
+    augment_perspective: float = 0.0
+    augment_perspective_factor: float = 0.25
+    augment_normalize: bool = False
+    augment_normalize_offset: float = -0.45
+    augment_normalize_scale: float = 3.75
+    fused_bn_relu: bool = False
+    fused_conv_relu: bool = False
+    fused_conv_bn: bool = False
+    fused_conv_bn_relu: bool = False
+    conv_direct_method: str = ""
+    optimizer_name: str = "sgd"
+    learning_rate: float = 1e-2
+    learning_rate_scaling: bool = None  # type: ignore (properly initialized later)
+    optimizer_momentum: float = 0.9
+    optimizer_decay: float = 0.0
+    optimizer_nesterov: bool = False
+    optimizer_beta1: float = 0.99
+    optimizer_beta2: float = 0.999
+    optimizer_epsilon: float = 1e-7
+    optimizer_rho: float = 0.9
+    optimizer_tau: int = 64
+    optimizer_tau_prime: int = 32
+    optimizer_density: float = 0.01
+    oktopk_min_k: int = 10
+    loss_func_name: str = "categorical_cross_entropy"
+    loss_eps: float = 1e-8
+    loss_weights: ArrayShape = ()
+    use_loss_weights: bool = False
+    metrics: tuple[str, ...] = ("categorical_accuracy",)
+    schedulers_names: tuple[str, ...] = ("early_stopping", "reduce_lr_on_plateau", "model_checkpoint")
+    warm_up_epochs: int = 5
+    early_stopping_metric: str = "val_categorical_cross_entropy"
+    early_stopping_patience: int = 10
+    early_stopping_minimize: bool = True
+    reduce_lr_on_plateau_metric: str = "val_categorical_cross_entropy"
+    reduce_lr_on_plateau_factor: float = 0.1
+    reduce_lr_on_plateau_patience: int = 5
+    reduce_lr_on_plateau_min_lr: float = 0.0
+    reduce_lr_every_nepochs_factor: float = 0.1
+    reduce_lr_every_nepochs_nepochs: int = 5
+    reduce_lr_every_nepochs_min_lr: float = 0.0
+    stop_at_loss_metric: str = "val_accuracy"
+    stop_at_loss_threshold: float = 0
+    model_checkpoint_metric: str = "val_categorical_cross_entropy"
+    model_checkpoint_save_freq: int = 2
+    parallel_data: bool = False
+    parallel_pipeline: bool = False
+    use_blocking_mpi: bool = True
+    use_mpi_buffers: bool = None  # type: ignore (properly initialized later)
+    use_cudnn: bool = False
+    use_gpudirect: bool = False
+    use_nccl: bool = False
+    use_cudnn_auto_conv_algo: bool = True
+    encryption_name: str = ""
+    encryption_slots: int = 13
+    encryption_scale: int = 40
+    encryption_security: int = 128
+    tracing: bool = False
+    tracer_output: str = ""
+    tracer_pmlib_server: str = "127.0.0.1"
+    tracer_pmlib_port: int = 6526
+    tracer_pmlib_device: str = ""
+    profile: bool = False
 
+    cpu_speed: float = 4e12
+    memory_bw: float = 50e9
+    network_bw: float = 1e9
+    network_lat: float = 0.5e-6
+    network_algo: NetworkAlgoEnum = NetworkAlgoEnum.VDG
+
+    tracer: Tracer
+    random: np.random.Generator
     kwargs: dict[str, Any]
-    backend: str
-    model_name: str
     history: dict[str, list[np.ndarray]]
     nparams: int
-
     cudnn_dtype: int
     cuda_grid: tuple[int, int, int]
     cuda_block: tuple[int, int, int]
@@ -212,18 +208,15 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
     nccl_comm: Any
     nccl_type: Any
     stream: Stream
-
     memory_used: int
     use_memory_pool: bool
     memory_cls: type[PrivateMemory]
     memory: PrivateMemory
     tmp_memory_used: int
-
     total_metrics: np.ndarray
     metrics_funcs: list[Metric[T]]
     loss_and_metrics: list[str]
     layers: list[Layerable[T]]
-
     nprocs: int
     blocking_mpi: bool
     MPI: MPI_MODULE
@@ -233,18 +226,11 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
     comm_nsamples: list[tuple[int]]
     rank: int
     rank_weight: float
-
-    batch_size: int
-    global_batch_size: int
     real_batch_size: int
     input_shape: ArrayShape
     output_shape: ArrayShape
-
-    evaluate_on_train: bool
-    evaluate_only: bool
     dataset_train_path: str
     dataset_test_path: str
-    use_synthetic_data: bool
     y_batch: T
     optimizer: Optimizer[T]
     loss_func: Loss[T]

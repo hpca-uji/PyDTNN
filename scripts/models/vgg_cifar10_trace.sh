@@ -29,15 +29,15 @@ mpirun -iface ib0 -genv LD_PRELOAD $EXTRAELIB -ppn 1 -np $procs -host $hosts "${
   --model=vgg11bn_cifar10 \
   --dataset=cifar10 \
   --dataset-path=datasets/cifar10 \
-  --augment-normalize=True \
+  --augment-normalize \
   --augment-normalize-offset=-0.472 \
   --augment-normalize-scale=1 \
-  --test-as-validation=True \
+  --test-as-validation \
   --batch-size=64 \
   --validation-split=0.2 \
   --steps-per-epoch=10 \
   --num-epochs=50 \
-  --evaluate=False \
+  --no-evaluate \
   --optimizer=sgd \
   --learning-rate=0.001 \
   --optimizer-momentum=0.9 \
@@ -53,10 +53,10 @@ mpirun -iface ib0 -genv LD_PRELOAD $EXTRAELIB -ppn 1 -np $procs -host $hosts "${
   --reduce-lr-on-plateau-min-lr=0 \
   --stop-at-loss-metric=val_categorical_accuracy \
   --stop-at-loss-threshold=70.0 \
-  --parallel-data=True \
-  --use-blocking-mpi=False \
-  --tracing=True \
-  --profile=False \
+  --parallel-data \
+  --no-use-blocking-mpi \
+  --tracing \
+  --no-profile \
   --backend=cpu \
-  --enable-cudnn=False \
+  --no-use-cudnn \
   --dtype=float32

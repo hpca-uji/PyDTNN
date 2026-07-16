@@ -79,7 +79,7 @@ KWARGS = {
     "parallel-data": False,
     "tensor_format": "nchw",  # "NCHW" # "NHWC",
     "loss_func": "categorical_cross_entropy",
-    "enable_cudnn": False,  # True,
+    "use_cudnn": False,  # True,
     "omm": None,
     "dtype": DTYPE,
     "tracing": False,
@@ -452,7 +452,7 @@ def main() -> None:
     kwargs = KWARGS
     quarter_elements = prod((N, *SHAPE)) / 4
 
-    device = torch.device("cuda") if kwargs["enable_cudnn"] else torch.device("cpu")
+    device = torch.device("cuda") if kwargs["use_cudnn"] else torch.device("cpu")
     dataset_p = np.arange(quarter_elements, dtype=DTYPE) / 3
     dataset_p_int = np.arange(quarter_elements, dtype=DTYPE)
     dataset_n = np.arange(quarter_elements, dtype=DTYPE) * (-1 / 3)

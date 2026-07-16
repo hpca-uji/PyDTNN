@@ -85,7 +85,7 @@ class Conv2DPycuda(AbstractConv2DPycuda):
         )
         assert self.ho == _ho and self.wo == _wo, "cuDNN output sizes differ from expected ones!"
 
-        # Set to 20 the number of requested algorithms for enable_cudnn_auto_conv_algo
+        # Set to 20 the number of requested algorithms for use_cudnn_auto_conv_algo
         req_algs = 20
 
         self.fwd_algo = (
@@ -97,7 +97,7 @@ class Conv2DPycuda(AbstractConv2DPycuda):
                 self.y.desc,
                 req_algs,
             )[0].algo
-            if self.model.enable_cudnn_auto_conv_algo
+            if self.model.use_cudnn_auto_conv_algo
             else cudnn.cudnnConvolutionFwdAlgo["CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_PRECOMP_GEMM"]
         )
 
@@ -122,7 +122,7 @@ class Conv2DPycuda(AbstractConv2DPycuda):
                 self.weights.desc,
                 req_algs,
             )[0].algo
-            if self.model.enable_cudnn_auto_conv_algo
+            if self.model.use_cudnn_auto_conv_algo
             else cudnn.cudnnConvolutionBwdFilterAlgo["CUDNN_CONVOLUTION_BWD_FILTER_ALGO_1"]
         )
 
@@ -145,7 +145,7 @@ class Conv2DPycuda(AbstractConv2DPycuda):
                 x.desc,
                 req_algs,
             )[0].algo
-            if self.model.enable_cudnn_auto_conv_algo
+            if self.model.use_cudnn_auto_conv_algo
             else cudnn.cudnnConvolutionBwdDataAlgo["CUDNN_CONVOLUTION_BWD_DATA_ALGO_1"]
         )
 
@@ -232,7 +232,7 @@ class Conv2DPycuda(AbstractConv2DPycuda):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         # DtoH dw when data parallelism and no GPU direct/NCCL is used
-        if self.model.comm and not self.model.gpudirect and not self.model.enable_nccl:
+        if self.model.comm and not self.model.gpudirect and not self.model.use_nccl:
             # self.model.stream.synchronize()
             self.dw.get_async(self.stream_2, self.dw_cpu)
 
@@ -254,7 +254,7 @@ class Conv2DPycuda(AbstractConv2DPycuda):
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
             # DtoH db when data parallelism and no GPU direct/NCCL is used
-            if self.model.comm and not self.model.gpudirect and not self.model.enable_nccl:
+            if self.model.comm and not self.model.gpudirect and not self.model.use_nccl:
                 # self.model.stream.synchronize()
                 self.db.get_async(self.stream_2, self.db_cpu)
 

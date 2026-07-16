@@ -15,14 +15,14 @@ mpirun -np 4 "${MPI_ARGS[@]}" \
   --model=resnet \
   --dataset=folder \
   --dataset-path=datasets/folder \
-  --test-as-validation=False \
+  --no-test-as-validation \
   --batch-size=20 \
   --validation-split=0.2 \
   --steps-per-epoch=0 \
   --num-epochs=15 \
-  --evaluate=False \
+  --no-evaluate \
   --optimizer=sgd \
-  --optimizer-nesterov=True \
+  --optimizer-nesterov \
   --learning-rate=0.1 \
   --optimizer-momentum=0.9 \
   --loss-func=categorical_cross_entropy \
@@ -40,13 +40,13 @@ mpirun -np 4 "${MPI_ARGS[@]}" \
   --reduce-lr-every-nepochs-factor=0.1 \
   --stop-at-loss-metric=val_categorical_accuracy \
   --stop-at-loss-threshold=70.0 \
-  --parallel-data=True \
-  --use-blocking-mpi=False \
-  --tracing=False \
-  --profile=False \
+  --parallel-data \
+  --no-use-blocking-mpi \
+  --no-tracing \
+  --no-profile \
   --backend=cpu \
-  --enable-cudnn=False \
-  --enable-gpudirect=False \
+  --no-use-cudnn \
+  --no-use-gpudirect \
   --dtype=float32 \
-  --augment-scale=True \
+  --augment-scale \
   --augment-scale-size=300

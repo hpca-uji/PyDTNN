@@ -44,7 +44,7 @@ class LayerableNumpy(Layerable[np.ndarray], BaseNumpy):
             gradient (bool): If True, waits for gradients; otherwise, waits for weights.
         """
         # NOTE: Keep in sync with Layer
-        if not self.model.comm or self.model.enable_nccl:
+        if not self.model.comm or self.model.use_nccl:
             return
         for w_, dw_ in self.grad_vars.items():
             dw_ = dw_ if gradient else w_

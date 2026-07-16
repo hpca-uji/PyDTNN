@@ -18,12 +18,12 @@ mpirun -np 4 "${MPI_ARGS[@]}" \
   --model-sync-participation=all \
   --model-sync-algo=avg \
   --model-sync-min-avail=0 \
-  --test-as-validation=False \
+  --no-test-as-validation \
   --augment-horizontal-flip=0.5 \
   --batch-size=64 \
   --validation-split=0.2 \
   --num-epochs=50 \
-  --evaluate=True \
+  --evaluate \
   --optimizer=adam \
   --learning-rate=0.01 \
   --loss-func=categorical_cross_entropy \
@@ -33,11 +33,11 @@ mpirun -np 4 "${MPI_ARGS[@]}" \
   --reduce-lr-every-nepochs-min-lr=0.001 \
   --early-stopping-metric=val_categorical_cross_entropy \
   --early-stopping-patience=20 \
-  --parallel-data=True \
-  --shared-data=False \
-  --use-blocking-mpi=True \
-  --tracing=False \
-  --profile=False \
+  --parallel-data \
+  --no-shared-data \
+  --use-blocking-mpi \
+  --no-tracing \
+  --no-profile \
   --backend=cpu \
-  --enable-cudnn=False \
+  --no-use-cudnn \
   --dtype=float32

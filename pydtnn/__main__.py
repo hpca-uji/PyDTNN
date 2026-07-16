@@ -40,10 +40,6 @@ def _start() -> int:
     parser = ArgumentParser()
     config = parser.parse_args()
 
-    # CLI defaults
-    config.model_name = config.model_name or "simplecnn"
-    config.dataset_name = config.dataset_name or "mnist"
-
     with traceback_context():
         return main(config)  # type: ignore
 

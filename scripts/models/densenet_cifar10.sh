@@ -15,20 +15,20 @@ mpirun -np 1 "${MPI_ARGS[@]}" \
   --model=densenet121_cifar10 \
   --dataset=cifar10 \
   --dataset-path=datasets/cifar10 \
-  --augment-normalize=True \
+  --augment-normalize \
   --augment-normalize-offset=-0.472 \
   --augment-normalize-scale=1 \
   --augment-horizontal-flip=0.5 \
   --augment-mask=0.5 \
   --augment-mask-size=16 \
-  --test-as-validation=True \
+  --test-as-validation \
   --batch-size=64 \
   --validation-split=0.2 \
   --steps-per-epoch=0 \
   --num-epochs=400 \
-  --evaluate=False \
+  --no-evaluate \
   --optimizer=sgd \
-  --optimizer-nesterov=False \
+  --no-optimizer-nesterov \
   --learning-rate=0.01 \
   --optimizer-momentum=0.9 \
   --optimizer-decay=1e-4 \
@@ -47,12 +47,12 @@ mpirun -np 1 "${MPI_ARGS[@]}" \
   --reduce-lr-every-nepochs-min-lr=0.001 \
   --stop-at-loss-metric=val_categorical_accuracy \
   --stop-at-loss-threshold=70.0 \
-  --parallel-data=True \
-  --use-blocking-mpi=True \
-  --tracing=False \
-  --profile=False \
+  --parallel-data \
+  --use-blocking-mpi \
+  --no-tracing \
+  --no-profile \
   --backend=cpu \
-  --enable-cudnn=False \
-  --enable-gpudirect=False \
+  --no-use-cudnn \
+  --no-use-gpudirect \
   --history-file="results/result_googlenet.history" \
   --dtype=float32

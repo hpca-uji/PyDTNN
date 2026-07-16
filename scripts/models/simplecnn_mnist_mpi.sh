@@ -15,15 +15,15 @@ mpirun -np 8 "${MPI_ARGS[@]}" \
   --model=simplecnn \
   --dataset=mnist \
   --dataset-path=datasets/mnist \
-  --test-as-validation=False \
+  --no-test-as-validation \
   --batch-size=64 \
   --validation-split=0.2 \
   --encryption= \
   --model-sync-freq=0 \
-  --final-model-sync=False \
+  --no-final-model-sync \
   --steps-per-epoch=0 \
   --num-epochs=10 \
-  --evaluate=True \
+  --evaluate \
   --optimizer=sgd \
   --learning-rate=0.01 \
   --loss-func=categorical_cross_entropy \
@@ -33,11 +33,11 @@ mpirun -np 8 "${MPI_ARGS[@]}" \
   --reduce-lr-every-nepochs-min-lr=0.001 \
   --early-stopping-metric=val_categorical_cross_entropy \
   --early-stopping-patience=20 \
-  --parallel-data=True \
-  --use-blocking-mpi=True \
-  --use-mpi-buffers=False \
-  --tracing=False \
-  --profile=False \
+  --parallel-data \
+  --use-blocking-mpi \
+  --no-use-mpi-buffers \
+  --no-tracing \
+  --no-profile \
   --backend=cpu \
-  --enable-cudnn=False \
+  --no-use-cudnn \
   --dtype=float32

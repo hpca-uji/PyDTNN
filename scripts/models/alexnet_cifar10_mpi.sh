@@ -33,15 +33,15 @@ mpirun -genv LD_PRELOAD $EXTRAELIB -iface ib0 -hosts $HOSTS -ppn $PROCS_PER_NODE
   --model=alexnet_cifar10 \
   --dataset=cifar10 \
   --dataset-path=datasets/cifar10 \
-  --augment-normalize=True \
+  --augment-normalize \
   --augment-normalize-offset=-0.472 \
   --augment-normalize-scale=1 \
-  --test-as-validation=False \
+  --no-test-as-validation \
   --batch-size=64 \
   --validation-split=0.2 \
   --steps-per-epoch=0 \
   --num-epochs=10 \
-  --evaluate=True \
+  --evaluate \
   --optimizer=sgd \
   --learning-rate=0.001 \
   --optimizer-momentum=0.9 \
@@ -55,10 +55,10 @@ mpirun -genv LD_PRELOAD $EXTRAELIB -iface ib0 -hosts $HOSTS -ppn $PROCS_PER_NODE
   --reduce-lr-on-plateau-factor=0.1 \
   --reduce-lr-on-plateau-patience=5 \
   --reduce-lr-on-plateau-min-lr=0 \
-  --parallel-data=True \
-  --use-blocking-mpi=True \
-  --tracing=True \
-  --profile=False \
+  --parallel-data \
+  --use-blocking-mpi \
+  --tracing \
+  --no-profile \
   --backend=cpu \
-  --enable-cudnn=False \
+  --no-use-cudnn \
   --dtype=float32

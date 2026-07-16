@@ -8,12 +8,12 @@ pydtnn-benchmark \
   --model=simplemlp \
   --dataset=mnist \
   --dataset-path=datasets/mnist \
-  --test-as-validation=True \
+  --test-as-validation \
   --batch-size=256 \
   --validation-split=0.2 \
   --steps-per-epoch=0 \
   --num-epochs=300 \
-  --evaluate=False \
+  --no-evaluate \
   --optimizer=sgd \
   --learning-rate=0.1 \
   --optimizer-momentum=0.0 \
@@ -27,10 +27,10 @@ pydtnn-benchmark \
   --reduce-lr-on-plateau-factor=0.1 \
   --reduce-lr-on-plateau-patience=5 \
   --reduce-lr-on-plateau-min-lr=0 \
-  --parallel-data=False \
-  --use-blocking-mpi=True \
-  --tracing=False \
-  --profile=False \
+  --no-parallel-data \
+  --use-blocking-mpi \
+  --no-tracing \
+  --no-profile \
   --backend=cpu \
-  --enable-cudnn=False \
+  --no-use-cudnn \
   --dtype=float32

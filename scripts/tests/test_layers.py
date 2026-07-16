@@ -46,7 +46,7 @@ KWARGS = {
     "parallel": "data",
     "tensor_format": FORMAT,  # "NCHW" # "NHWC",
     "loss_func": "categorical_cross_entropy",
-    "enable_cudnn": False,  # False, #True,
+    "use_cudnn": False,  # False, #True,
     "omm": None,
     "dtype": np.float32,
     "tracing": False,
@@ -134,7 +134,7 @@ def test_layers_activations(_x: np.ndarray, opt: Optimizer) -> None:
 
             x = np.copy(_x)
 
-            if KWARGS["enable_cudnn"]:
+            if KWARGS["use_cudnn"]:
                 x = TensorGPU(gpuarray.to_gpu(x), model.tensor_format, model.cudnn_dtype)
 
             t_forward = 0.0
@@ -152,7 +152,7 @@ def test_layers_activations(_x: np.ndarray, opt: Optimizer) -> None:
                         x = layer.forward(x)
                     t_forward += time() - t
 
-                if not KWARGS["enable_cudnn"]:
+                if not KWARGS["use_cudnn"]:
                     x = x.copy()
 
                 if True:
@@ -197,7 +197,7 @@ def test_add_concat(_x: np.ndarray, opt: Optimizer) -> None:
         t_backward = 0
         t_opt = 0
 
-        if KWARGS["enable_cudnn"]:
+        if KWARGS["use_cudnn"]:
             x = TensorGPU(gpuarray.to_gpu(x), model.tensor_format, model.cudnn_dtype)
 
         for _ in range(NUM_REPETITIONS):
@@ -211,7 +211,7 @@ def test_add_concat(_x: np.ndarray, opt: Optimizer) -> None:
                     x = layer.forward(x)
                 t_forward += time() - t
 
-            if not KWARGS["enable_cudnn"]:
+            if not KWARGS["use_cudnn"]:
                 x = x.copy()
 
             if True:

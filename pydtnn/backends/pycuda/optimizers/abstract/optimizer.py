@@ -48,6 +48,6 @@ class OptimizerPycuda(Optimizer[TensorArray], BasePycuda):
             w_gpu: The source TensorArray on the GPU.
             w_cpu: The destination numpy array on the host.
         """
-        if self.model.comm and not self.model.gpudirect and not self.model.enable_nccl:
+        if self.model.comm and not self.model.gpudirect and not self.model.use_nccl:
             # self.model.stream.synchronize()
             w_gpu.get_async(layer.stream_2, w_cpu)

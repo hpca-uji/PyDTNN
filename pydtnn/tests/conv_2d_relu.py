@@ -69,7 +69,7 @@ class Conv2DReluTestCase(Conv2DCommonTestCase):
         model_chain.add(chain)
 
         params_fuse = deepcopy(params_chain)
-        params_fuse.enable_fused_conv_relu = True  # type: ignore
+        params_fuse.fused_conv_relu = True  # type: ignore
         model_fuse = Model(**vars(params_fuse))
         model_fuse.mode = Model.Mode.EVALUATE
         model_fuse.add(Input(model_fuse.encode_shape((d.c, d.h, d.w))))

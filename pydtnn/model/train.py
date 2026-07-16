@@ -53,14 +53,14 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
         self._training_round: int = 0
         # Synchronization parameters
         # NOTE: This parameter come from Parser.
-        self.model_sync_algo = self.SyncAlgorithm(self.model_sync_algo)
+        self.model_sync_algo = Base.SyncAlgorithm(self.model_sync_algo)
 
         # NOTE: This parameter come from Parser.
-        self.model_sync_participation = self.SyncParticipation(self.model_sync_participation)
+        self.model_sync_participation = Base.SyncParticipation(self.model_sync_participation)
 
         self.schedulers: list[Scheduler] = [
             select_scheduler(scheduler_name).from_model(self)
-            for scheduler_name in filter(None, self.schedulers_names.split(","))
+            for scheduler_name in self.schedulers_names
         ]
         for scheduler in self.schedulers:
             scheduler.model = self  # type: ignore (It's fine)
@@ -138,7 +138,7 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
                 gradient=False, blocking=self.blocking_mpi, pipeline=self.parallel_pipeline
             )
 
-        if self.enable_cudnn:
+        if self.use_cudnn:
             for layer in self.layers:
                 if layer.grad_vars and layer.stream_2:
                     layer.stream_2.synchronize()  # type: ignore
@@ -233,7 +233,7 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
         self._ensure_model_runnable()
 
         # If working with CUDA, self.y_batch must be in a GPU's data structure.
-        if self.enable_cudnn and self.y_batch is None:
+        if self.use_cudnn and self.y_batch is None:
             assert gpuarray and self.cudnn_dtype
             tensor_ary = TensorArray(
                 gpuarray.empty((self.batch_size, *self.layers[-1].shape), self.dtype),

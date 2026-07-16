@@ -155,7 +155,7 @@ KWARGS = {
     "parallel_data": False,
     "tensor_format": "nchw",  # "NCHW" # "NHWC",
     "loss_func": "categorical_cross_entropy",
-    "enable_cudnn": False,  # True,
+    "use_cudnn": False,  # True,
     "dataset_train_path": DATASET_PATH,
     "dataset_test_path": DATASET_PATH,
 }
@@ -258,7 +258,7 @@ def pydtnn_inference(
 ) -> None:
     """Runs inference on a PyDTNN model and prints reports."""
     metrics_list = (
-        [f for f in model.metrics.replace(" ", "").split(",")]
+        [f for f in model.metrics]
         if metrics_list is None
         else metrics_list
     )
@@ -351,7 +351,7 @@ def main() -> None:
     shape = shape if KWARGS["tensor_format"] == "NHWC" else (shape[2], *shape[:2])
     print(f"{shape}")
 
-    device = torch.device("cpu")  # if kwargs["enable_cudnn"] == False else torch.device("cuda")
+    device = torch.device("cpu")  # if kwargs["use_cudnn"] == False else torch.device("cuda")
     if weight is not None:
         weight = f"{WEIGHTS_PATH}model_{test}.pth"
         weight = torch.load(weight, weights_only=True, map_location=torch.device(device))

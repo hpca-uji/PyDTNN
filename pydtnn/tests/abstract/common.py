@@ -41,8 +41,8 @@ class Params:
         self.dataset_name = "synthetic"
         self.synthetic_train_samples = 128
         self.synthetic_test_samples = 128
-        self.synthetic_input_shape = "3,32,32"
-        self.synthetic_output_shape = "10"
+        self.synthetic_input_shape = (3, 32, 32)
+        self.synthetic_output_shape = (10,)
 
 
 class TestCase(unittest.TestCase):

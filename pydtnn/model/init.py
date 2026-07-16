@@ -23,7 +23,6 @@ from pydtnn.optimizers import select as select_optimizer
 from pydtnn.utils import rand
 from pydtnn.utils.gpu import CudnnDataType
 from pydtnn.utils.memory_pool import PreallocMemory, PrivateMemory
-from pydtnn.utils.parser import ArgumentParser
 from pydtnn.utils.performance_counter import PerformanceCounter
 from pydtnn.utils.tensor import SampleFormat, TensorFormat, format_reshape
 
@@ -59,15 +58,17 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
         """
         super().__init__(**kwargs)
 
-        # Get default values from parser and update them from the received kwargs
-        self.__dict__.update(vars(ArgumentParser().parse_args([])))
-        self.__dict__.update(kwargs)
+        # Filter default values from base and update them from the received kwargs
+        for key, value in vars(Base).items():
+            if key.startswith("_"):
+                continue
+            self.__dict__[key] = kwargs.get(key, value)
 
         # Attributes related to the given arguments
         self.blocking_mpi: bool = self.use_blocking_mpi
-        self.enable_cudnn = gpuarray is not None and drv is not None and cublas is not None
-        self.gpudirect: bool = self.enable_gpudirect
-        self.enable_nccl: bool = self.enable_nccl
+        self.use_cudnn = gpuarray is not None and drv is not None and cublas is not None
+        self.gpudirect: bool = self.use_gpudirect
+        self.use_nccl: bool = self.use_nccl
         self.memory: PrivateMemory = None  # type: ignore (it will be intialized later if "self.use_memory_pool" is True)
         self.dtype: np.dtype = np.dtype(self.dtype)
         self.param_dtype: np.dtype = np.dtype(self.quantize_dtype) if self.quantize else self.dtype
@@ -107,7 +108,7 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
             self.crypt = None
 
         # Cuda [NOTE: Always after initializing MPI (if you are going to use MPI)]
-        if self.enable_cudnn:
+        if self.use_cudnn:
             self._cudnn_init()
         else:
             self.stream = None
@@ -130,7 +131,7 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
         self.optimizer._init_backend_with_model(self)
 
         # Metrics list
-        self.metrics_list: list[str] = [m for m in self.metrics.replace(" ", "").split(",")]
+        self.metrics_list: list[str] = [m for m in self.metrics]
 
         # Synchronization parameters
         # NOTE: This parameter come from Parser.
@@ -148,7 +149,7 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
         """Configures the tensor format based on hardware capabilities."""
         if self.tensor_format:
             tensor_format = TensorFormat(self.tensor_format.lower())
-        elif self.enable_cudnn:
+        elif self.use_cudnn:
             tensor_format = TensorFormat.NCHW
         else:
             tensor_format = TensorFormat.NHWC
@@ -190,7 +191,7 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
             from pydtnn.tracers.extrae_tracer import ExtraeTracer
 
             tracer = ExtraeTracer(self.tracing)
-        elif self.enable_cudnn:
+        elif self.use_cudnn:
             from pydtnn.tracers.simple_tracer_gpu import SimpleTracerPycuda
 
             tracer = SimpleTracerPycuda(self.tracing, self.tracer_output, self.comm)
@@ -236,7 +237,7 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
             crypt = self.comm.bcast(crypt if self.comm_rank == 0 else None)
 
         assert crypt is not None
-        if self.enable_nccl:
+        if self.use_nccl:
             logger.warning("If NCCL is active, encryption is disabled")
 
         return crypt
@@ -274,7 +275,7 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
     def _cudnn_init(self) -> None:
         """Initializes CUDA, cuDNN, and NCCL backend handles."""
 
-        if not self.gpudirect and self.enable_nccl:
+        if not self.gpudirect and self.use_nccl:
             raise RuntimeError("It is necessary to have gpudirect active to work with NCCL.")
 
         assert cudnn is not None
@@ -291,7 +292,7 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
         self.cuda_grid = (self.cuda_blocks, 1, 1)
         self.cuda_block = (self.cuda_threads, 1, 1)
 
-        if self.comm and self.enable_nccl:
+        if self.comm and self.use_nccl:
             assert nccl is not None
             assert nccl_comm is not None
 
@@ -411,7 +412,7 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
     def _ensure_model_runnable(self) -> None:
         """Validates that the model is ready for execution."""
         if not self.layers:
-            logger.warning("The model has no layers in it.")
+            raise ValueError("The model has no layers in it.")
         elif not self.dataset:
             raise ValueError("There is no dataset and the model has layers.")
         self._model_init()
