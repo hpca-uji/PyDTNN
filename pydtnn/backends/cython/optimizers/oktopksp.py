@@ -30,32 +30,6 @@ class OkTopkSPCython(OkTopkSPNumpy, OptimizerCython):
     Inheriting from both the NumPy implementation and the Cython optimizer base class.
     """
 
-    def _model_init(
-        self, list_layers: list[Layerable], _update_weights_method: str = "cython"
-    ) -> None:
-        """
-        Initialize the model layers and configure the Cython weight update method.
-
-        Args:
-            list_layers: List of layers to be optimized.
-        """
-        super()._model_init(list_layers)
-        self._update_weights_method = _update_weights_method
-        # method (string, optional): The method to use for updating the weights.
-        # It can be 'cython' or 'numpy'. Default is 'cython'.
-
-        match self._update_weights_method:
-            case "cython":
-                self._update_weights = self._update_weights_cython
-            case "cython_with_vel_and_momentum":
-                self._update_weights = self._update_weights_with_vel_and_momentum
-            case _:
-                NotImplementedError(
-                    f'The weights update is not implemented for "{
-                        self._update_weights_method
-                    }" method.'
-                )
-
     def _compute_acc(
         self, residuals: np.ndarray, dw: np.ndarray, learning_rate: float
     ) -> np.ndarray:
@@ -115,7 +89,7 @@ class OkTopkSPCython(OkTopkSPNumpy, OptimizerCython):
             reset_residuals_cython(acc, indexes)
             return acc
 
-    def _update_weights_cython(
+    def _update_weights(
         self, layer: Layerable, w_type: str, w: np.ndarray, coo_u: SparseMatrixFlat
     ) -> None:
         """
@@ -141,7 +115,7 @@ class OkTopkSPCython(OkTopkSPNumpy, OptimizerCython):
             w = w.reshape(self.dw_original_shape)
         setattr(layer, w_type, w)
 
-    def _update_weights_with_vel_and_momentum(
+    def _update_weights_with_momentum(
         self, layer: Layerable, w_type: str, w: np.ndarray, coo_u: SparseMatrixFlat
     ) -> None:
         """

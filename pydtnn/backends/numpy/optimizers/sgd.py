@@ -20,13 +20,13 @@ if TYPE_CHECKING:
 class SGDNumpy(SGD[np.ndarray], OptimizerNumpy):
     """Numpy-specific implementation of the SGD optimizer."""
 
-    def _model_init(self, list_layers: list[LayerNumpy]) -> None:
+    def _model_init(self, layers: list[LayerNumpy]) -> None:
         """Initializes optimizer state and memory buffers for layers."""
-        super()._model_init(list_layers)  # type: ignore (it's the right type)
+        super()._model_init(layers)  # type: ignore (it's the right type)
 
         temp_memory_size = []
 
-        for layer in list_layers:
+        for layer in layers:
             if not layer.grad_vars:
                 continue
 

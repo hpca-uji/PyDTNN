@@ -20,13 +20,13 @@ if TYPE_CHECKING:
 class NadamNumpy(Nadam[np.ndarray], OptimizerNumpy):
     """Nadam optimizer implementation using NumPy arrays."""
 
-    def _model_init(self, list_layers: list[LayerNumpy]) -> None:
+    def _model_init(self, layers: list[LayerNumpy]) -> None:
         """Initialize optimizer state and memory buffers for each layer."""
-        super()._model_init(list_layers)  # type: ignore (it is the right type)
+        super()._model_init(layers)  # type: ignore (it is the right type)
 
         temp_memory_size = []
 
-        for layer in list_layers:
+        for layer in layers:
             if not layer.grad_vars:
                 continue
 

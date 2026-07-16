@@ -38,12 +38,12 @@ class Optimizer[T: Array](Base):  # noqa: D101 (generics not detected)
         self.learning_rate: float = learning_rate
         self.context = dict[int, dict[str, int | T]]()
 
-    def _model_init(self, list_layers: list[Layerable[T]]) -> None:
+    def _model_init(self, layers: list[Layerable[T]]) -> None:
         """
         Initializes the optimizer with the model layers.
 
         Args:
-            list_layers (list[Layerable[T]]): List of layers to be optimized.
+            layers (list[Layerable[T]]): List of layers to be optimized.
         """
         super()._model_init()
 

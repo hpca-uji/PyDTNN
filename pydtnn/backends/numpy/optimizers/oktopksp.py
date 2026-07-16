@@ -34,14 +34,16 @@ type AllGatherTypes = (
 class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
     """NumPy-based implementation of the OkTopkSP optimizer for distributed training."""
 
-    def _model_init(self, list_layers: list[Layerable]) -> None:
+    def _model_init(self, layers: list[Layerable]) -> None:
         """
         Initializes model-specific structures for the optimizer.
 
         Args:
-            list_layers: List of layers to be optimized.
+            layers: List of layers to be optimized.
         """
-        super()._model_init(list_layers)
+        super()._model_init(layers)
+        if self.momentum:
+            self._update_weights = self._update_weights_with_momentum
 
         self.iterations: dict[int, int]
         self.all_local_th: dict[int, dict[str, float]]
@@ -49,7 +51,7 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
         self.all_residuals: dict[int, dict[str, np.ndarray]]
         self.all_boundaries: dict[int, dict[str, np.ndarray]]
 
-        for layer in list_layers:
+        for layer in layers:
             self.iterations[layer.id] = 0
 
             # The following attributes will be initialized later.
@@ -169,26 +171,6 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
             return acc
 
     def _update_weights(
-        self, layer: Layerable, w_type: str, w: np.ndarray, coo_u: SparseMatrixFlat
-    ) -> None:
-        """
-        Update weights and set to weight layer attribute.
-
-        w -= (u / self.model.nprocs)
-        setattr(layer, w_type, w)
-
-        Parameters:
-            layer (int): layer id
-            w_type (string): weight param type (bias, weight, ...)
-            w (np.array): N dimensional dense weights matrix/tensor
-            coo_u (SparseMatrixCOO): Sparse 2D gradient matrix in COO format to update w
-
-        Returns:
-            (void): instead it directly applies the result to the weight layer attribute
-        """
-        raise NotImplementedError("This is a fake method that must be replaced with the right one.")
-
-    def _update_weights_numpy(
         self,
         layer: Layerable,
         w_type: str,
@@ -224,7 +206,7 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
         setattr(layer, w_type, w)
         return
 
-    def _update_weights_numpy_with_vel_and_momentum(
+    def _update_weights_with_momentum(
         self,
         layer: Layerable,
         w_type: str,
@@ -272,7 +254,7 @@ class OkTopkSPNumpy(OkTopkSP[np.ndarray], OptimizerNumpy):
         setattr(layer, "velocity_%s" % w_type, velocity)
         return
 
-    def _update_weights_like_sgd(
+    def _update_weights_as_sgd(
         self, layer: Layerable, w_type: str, w: np.ndarray, coo_u: SparseMatrixFlat
     ) -> None:
         """[Use only for debugging purposes] Update weights and set to weight layer attribute.

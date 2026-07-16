@@ -20,13 +20,13 @@ if TYPE_CHECKING:
 class AdamNumpy(Adam[np.ndarray], OptimizerNumpy):
     """Numpy-based Adam optimizer implementation."""
 
-    def _model_init(self, list_layers: list[LayerNumpy]) -> None:
+    def _model_init(self, layers: list[LayerNumpy]) -> None:
         """Initializes the optimizer state for the given layers."""
-        super()._model_init(list_layers)  # type: ignore (it is the right type)
+        super()._model_init(layers)  # type: ignore (it is the right type)
 
         temp_memory_size = []
 
-        for layer in list_layers:
+        for layer in layers:
             if not layer.grad_vars:
                 continue
 
