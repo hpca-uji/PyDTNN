@@ -16,6 +16,8 @@ be available as a Model attribute.
 import argparse
 import logging
 import os
+import re
+import textwrap
 from typing import Sequence
 from importlib import resources
 from pathlib import PurePath
@@ -185,6 +187,7 @@ class ArgumentParser(argparse.ArgumentParser):
         # (argparse.SUPPRESS is used to avoid showing them on the message)
 
         # Model
+        self._optionals.title = "Model options"
         models = list_modules("models")
         self.add_argument(
             "--model",
@@ -1282,7 +1285,7 @@ class ArgumentParser(argparse.ArgumentParser):
             type=int,
             default=ModelBase.encryption_scale,
             help=(
-                "Encryption operational scale. 2 ^ 'value''."
+                "Encryption operational scale. 2 ^ 'value'."
                 f" Default: {ModelBase.encryption_scale!r}."
             ),
         )
@@ -1397,3 +1400,55 @@ class ArgumentParser(argparse.ArgumentParser):
         result.use_cudnn = _get_use_cudnn()
         result.groups = self._action_groups
         return result
+
+    def __str__(self) -> str:
+        """
+        Converts ArgumentParser into a Markdown document.
+
+        The output is intentionally very similar to argparse --help,
+        only adding Markdown formatting.
+        """
+
+        lines = []
+
+        def quotes(text: str) -> str:
+            return re.sub(r"'([^']*)'", r"`\1`", text)
+
+        for group in self._action_groups:
+
+            actions = [
+                a for a in group._group_actions
+                if a.help is not argparse.SUPPRESS
+            ]
+
+            if not actions:
+                continue
+
+            description = quotes(group.description or "")
+            lines.append(f"- {group.title}: {description}".rstrip())
+
+            for action in actions:
+                if not action.option_strings:
+                    option = f"`{action.dest}`"
+                else:
+                    option = ", ".join(
+                        f"`{opt}`"
+                        for opt in action.option_strings
+                    )
+
+                description = quotes(action.help or "")
+                description = textwrap.fill(
+                    description,
+                    width=80,
+                    initial_indent="",
+                    subsequent_indent="",
+                ).replace("\n", "\n    ")
+                lines.append(f"  - {option}: {description}".rstrip())
+
+            lines.append("")
+
+        return "\n".join(lines)
+
+
+if __name__ == "__main__":
+    print(ArgumentParser())

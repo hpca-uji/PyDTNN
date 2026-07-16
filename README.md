@@ -128,204 +128,212 @@ see `CONTRIBUTING.md`.
 The PyDTNN framework comes with a utility launcher called
 `pydtnn-benchmark` that supports the following options:
 
-- Model parameters:
-  - `--model`: Neural network model: `simplemlp`, `simplecnn`,
-    `alexnet`, `vgg11`, `vgg16`, etc. Default: `None`.
-  - `--backend`: Backend selection priority.
-    Format: `[module[,module[,...]]:]backend[,backend[,...]][;...]`.
-    Example: `"all:numpy;conv_2d:gemm;layers,optimizers:numpy,cython"`.
-    Selection: More specific modules are attempted first, backend order goes from least to most priority.
-    (Note: remember to put value between quotes, specially if there is a ";" in it).
-    Default: `cpu`.
-  - `--batch-size`: Batch size per MPI rank. Default: `None`.
-  - `--global-batch-size`: Batch size between all MPI ranks. Default: `None`.
-  - `--dtype`: Datatype to use: `float32`, `float64`. Default: `float32`.
-  - `--quantize`: Enable model quantization. Default: `False`.
-  - `--quantize-dtype`: Datatype to use: `float32`, `float64`. Default: `float16`.
-  - `--num-epochs`: Number of epochs to perform. Default: `1`.
-  - `--steps-per-epoch`: Trims the training data depending on the given
-    number of steps per epoch. Default: `0`, i.e., do not trim.
-  - `--evaluate`: Evaluate the model before and after training the
-    model. Default: `False`.
-  - `--evaluate-only`: Only evaluate the model. Default: `False`.
-  - `--model-state-filename`: Load weights and bias from file.
-    Default: `None`.
-  - `--history-file`: Filename to save training loss and metrics.
-  - `--tensor-format`: Data format to be used: `NHWC` or `NCHW`.
-    Optionally, the `AUTO` value sets `NCHW` when cuDNN is available,
-    `NHWC` otherwise. Default: `NHWC`.
-  - `--random-seed`: Initial state of random number generator. Default: `57005`.
-  - `--shared-tmp-memory`: Allows to use a common memory pool for all the temporary data structures.
-  - `--shared-data`: If `True` ranks assume they share the file
-    system. Default: `True`.
-  - `--model-sync-freq`: Number of batches between model synchronization.
-    The `0` value synchronizes gradients every batch. Positive values
-    synchronizes gradients and weights every N batches. Negative values
-    disables synchronization. Default: `0`.
-  - `--model-sync-algo`: Aggregation method used to synchronize models:
-    `avg`, `wavg` or `invwavg`. Default: `avg`.
-  - `--model-sync-participation`: Rank participation to synchronize
-    models: `all` or `avail2all`. Default: `all`.
-  - `--model-sync-min-avail`: Minimum ranks with data required to
-    synchronize models. Default: `0`.
-  - `--initial-model-sync`: Synchronize models on training start. Default: `True`.
-  - `--final-model-sync`: Synchronize models on training end. Default: `True`.
-  - `--model-sync-quantize`: Enable model quantization on synchronize. Default: `False`.
-  - `--model-sync-dtype`: Model synchronization quantization target dtype. Default: `float16`.
-- Dataset parameters:
-  - `--dataset`: Dataset to train: `mnist`, `cifar10`, `synthetic`,
-    …. Default: `None`.
-  - `--dataset-path`: Path to dataset folder.
+- Model options:
+  - `-h`, `--help`: show this help message and exit
+  - `--model`: Neural network model: `densenet21k8`, `densenet121_imagenet`, `resnet44`, etc.
+    Default: ``.
+  - `--backend`: Backend selection priority. Format:
+    [module[,module[,...]]:]backend[,backend[,...]][;...]. Example:
+    `all:numpy;conv_2d:gemm;layers,optimizers:numpy,cython`. Selection: More
+    specific modules are attempted first, backend order goes from least to most
+    priority. Backends: `winograd`, `pycuda`, `fuse`, `numpy`, `cupy`, `direct`,
+    `cython`, `gemm`. Alias: `all` = `pydtnn`, `cpu` = `numpy,cython`, `gpu` =
+    `pycuda`. Default: `cpu`.
+  - `--batch-size`: Batch size per MPI rank. Or `batch_size` or `global_batch_size` must have a
+    value (but not both). Default: 0.
+  - `--global-batch-size`: Batch size between all MPI ranks. Or `batch_size` or `global_batch_size` must
+    have a value (but not both). Default: 0.
+  - `--dtype`: Datatype to use: "<class `numpy.float32`>", "<class `numpy.float64`>". Default:
+    dtype(`float32`).
+  - `--quantize`, `--no-quantize`: Enable model quantization. Default: False
+  - `--quantize-dtype`: Quantized datatype to use: "<class `numpy.float16`>", "<class `numpy.float32`>",
+    "<class `numpy.float64`>". Default: dtype(`float16`).
+  - `--num-epochs`: Number of epochs to perform. Default: 1.
+  - `--steps-per-epoch`: Trims the training data depending on the given number of steps per epoch. If
+    `0`, then no trim, full dataset.Default: 0.
+  - `--evaluate`, `--no-evaluate`: Evaluate the model before and after training the model. Default: False.
+  - `--evaluate-only`, `--no-evaluate-only`: Only evaluate the model. Default: False.
+  - `--model-state-filename`: Load weights and bias from file. Default: ``.
+  - `--history-file`: Filename to save training loss and metrics. Default: ``.
+  - `--tensor-format`: Data format to be used: `nchw`, `nhwc`. If not defined value sets `nchw` when
+    cuDNN is available, `nhwc` otherwise. Default: None.
+  - `--random-seed`: Initial state of random number generator. Default: 57005.
+  - `--shared-tmp-memory`, `--no-shared-tmp-memory`: Allows to use a memory pool for all the temporary data structures. Default:
+    False.
+
+- Synchronization options:
+  - `--shared-data`, `--no-shared-data`: If `True` ranks assume they share the file system.Default: True.
+  - `--model-sync-freq`: Number of batches between model synchronization. The `0` value synchronizes
+    gradients every batch. Positive values synchronizes gradients and weights every
+    N batches. Negative values disables synchronization.Default: 0.
+  - `--model-sync-algo`: Aggregation method used to synchronize models: `avg`, `wavg`, `invavg`. Default:
+    <SyncAlgorithm.AVG: `avg`>.
+  - `--model-sync-participation`: Rank participation to synchronize models: `all`, `avail2all`. Default:
+    <SyncParticipation.ALL: `all`>.
+  - `--model-sync-min-avail`: Minimum ranks with data required to synchronize models. Default: 0.
+  - `--initial-model-sync`, `--no-initial-model-sync`: Synchronize models on training start. Default: True.
+  - `--final-model-sync`, `--no-final-model-sync`: Synchronize models on training end. Default: True.
+  - `--model-sync-quantize`, `--no-model-sync-quantize`: Enable model quantization on synchronize. Default: False.
+  - `--model-sync-dtype`: Model synchronization quantization target dtype: "<class `numpy.float16`>",
+    "<class `numpy.float32`>", "<class `numpy.float64`>" Default: dtype(`float16`).
+
+- Dataset options:
+  - `--dataset`: Dataset to train: `synthetic`, `mnist`, `folder`, etc. Default: ``.
+  - `--dataset-percentage`: Percentage of dataset that will be used. If it is `0`: it is deactivated; if is
+    is a value below `1` (and above 0): it will perform undersampling; and if is is
+    a value above `1`: it will perform oversampling. Default: 0.0.
+  - `--dataset-path`: Path to the dataset. Default: `datasets/mnist`.
   - `--dataset-lang`: Dataset language. Default: `en`.
   - `--dataset-lang2`: Dataset second language. Default: `de`.
-  - `--synthetic-train-samples`: Number of synthetic train sample.
-    Default: `1000`.
-  - `--synthetic-test-samples`: Number of synthetic train sample.
-    Default: `100`.
-  - `--synthetic-input-shape`: Synthetic input shape (coma separated).
-    Default: `3,32,32`.
-  - `--synthetic-output-shape`: Synthetic output shape (coma separated).
-    Default: `10`.
-  - `--dataset-percentage`: Percentage of dataset that will be used. If
-    it is `0`: it is deactivated; if is is a value below `1` (and above
-    `0`): it will perform undersampling; and if is is a value above `1`:
-    it will perform oversampling. Default: `0`.
-  - `--test-as-validation`: Prevent making partitions on training data
-    for training+validation data, use test data for validation. `True`
-    if specified.
-  - `--validation-split`: Split between training and validation data.
-  - `--augment-horizontal-flip`: Probability to flip horizontally training images. If the value is less or equal to 0 it is disabled. Default: `0.0`.
-  - `--augment-vertical-flip`: Probability to flip vertically training images. If the value is less or equal to 0 it is disabled. Default: `0.0`.
-  - `--augment-rotate`: Probability to rotate training images. If the value is less or equal to 0 it is disabled. Default: `0.0`.
-  - `--augment-rotate-degree`: The maximum degree to rotate training images. Default: `90.0`.
-  - `--augment-brightness`: Probability to change the brightness to training images. If the value is less or equal to 0 it is disabled. Default: `0.0`.
-  - `--augment-brightness-factor`: The maximum brightness to apply in training images. Value ranges from 0 (no brightness), to 1 (same), up to infinity. Default: `0.0`.
-  - `--augment-contrast`: Probability to change the contrast to training images. If the value is less or equal to 0 it is disabled. Default: `0.0`.
-  - `--augment-contrast-factor`: The maximum contrast to apply in training images. Value ranges from 0 (no brightness), to 1 (same), up to infinity. Default: `0.0`.
-  - `--augment-saturation`: Probability to change the saturation to training images. If the value is less or equal to 0 it is disabled. Default: 0.0.
-  - `--augment-saturation-factor`: The maximum saturation to apply in training images. Value ranges from 0 (no brightness), to 1 (same), up to infinity. Default: `0.0`.
-  - `--augment-mask`: Probability to mask training images. If the value is less or equal to 0 it is disabled. Default: `0.0`.
-  - `--augment-mask-size`: Size to mask training images. Default: `16`.
-  - `--augment-blur`: Probability to blur training images. If the value is less or equal to 0 it is disabled. Default: `0.0`.
-  - `--augment-blur-size`: Size to blur training images. Default: `16`.
-  - `--augment-crop`: Crop the images. `True` if specified.
-  - `--augment-crop-perc`: Central crop percentage of the images. Default: `0.875`.
-  - `--augment-scale`: Resize the images. `True` if specified.
-  - `--augment-scale-size`: New size of the images. Default: `300`.
-  - `--augment-perspective`: Probability to change the perspective in training images. If the value is less or equal to 0 it is disabled. Default: `0.0`.
-  - `--augment-perspective-factor`: The perspective distortion factor. The ranges are from 0.0 to 0.5. Default: `0.25`.
-  - `--augment-normalize`: Normalize dataset. Default: `False`.
-  - `--augment-normalize-offset`: Offset samples by a value. Default: `-0.45`.
-  - `--augment-normalize-scale`: Scale samples by a value. Default: `3.75`.
-- Optimization parameters:
-  - `--enable-best-of`: Enable the `BestOf` auto-tuner.
-  - `--enable-memory-cache`: Enable the memory cache module to use
-    persistent memory.
-  - `--fused-bn-relu`: Fuse `BatchNormalization` and `Relu` layers. `True` if specified.
-  - `--fused-conv-relu`: Fuse `Conv2D` and `Relu` layers. `True` if specified.
-  - `--fused-conv-bn`: Fuse `Conv2D` and `BatchNormalization` layers. `True` if specified.
-  - `--fused-conv-bn-relu`: Fuse `Conv2D` and
-    `BatchNormalization` and `Relu` layers. Default: `False`.
-- Convolution operation parameters:
-  - `--conv-direct-method`: ConvDirect algorithm to use in Conv2D layers.
-    Default: `convdirect_original_{tensor_format}_default`.
-- Optimizer parameters:
-  - `--optimizer`: Optimizers: `sgd`, `rmsprop`, `adam`, `nadam`, ...
-    Default: `sgd`.
-  - `--learning-rate`: Learning rate. Default: `0.01`.
-  - `--learning-rate-scaling`: Scale learning rate in parallelism:
-    `new_lr = lr * num_procs`. `True` if specified.
-    If left undefined, when `--batch-size` is defined, defaults to True.
-  - `--optimizer-momentum`: Decay rate for `sgd` optimizer. Default: `0.9`.
-  - `--optimizer-decay`: Decay rate for optimizers. Default: `0.0`.
-  - `--optimizer-nesterov`: Whether to apply Nesterov momentum. Default:
-    `False`.
-  - `--optimizer-beta1`: Variable for `adam`, `nadam` optimizers.
-    Default: `0.99`.
-  - `--optimizer-beta2`: Variable for `adam`, `nadam` optimizers.
-    Default: `0.999`.
-  - `--optimizer-epsilon`: Variable for `rmsprop`, `adam`, `nadam`.
-    Default: `1e-7`.
-  - `--optimizer-rho`: Variable for `rmsprop` optimizers.
-    Default: `0.99`.
-  - `--oktopk-min-k`: Variable for `oktopk` optimizers.
-    Default: `10`.
-  - `--loss-func`: Loss functions that is evaluated on each trained
-    batch: `categorical_cross_entropy`, `binary_cross_entropy` or `kl_divergence`.
+  - `--synthetic-train-samples`: Number of synthetic train sample. Default: 1000.
+  - `--synthetic-test-samples`: Number of synthetic train sample. Default: 100.
+  - `--synthetic-input-shape`: Synthetic input shape (coma separated). Default: (3, 32, 32).
+  - `--synthetic-output-shape`: Synthetic output shape (coma separated). Default: (10,).
+  - `--test-as-validation`, `--no-test-as-validation`: Prevent making partitions on training data for training+validation data, use
+    test data for validation. True if specified. Default: False.
+  - `--validation-split`: Split between training and validation data. Default: 0.2.
+  - `--augment-shuffle`, `--no-augment-shuffle`: Shuffle training images. Default: True.
+  - `--augment-horizontal-flip`: Probability to do a horizontal flip to the training images. If the value is less
+    or equal to 0 it is disabled. Default: 0.0.
+  - `--augment-vertical-flip`: Probability to do a vertical flip to the training images. If the value is less
+    or equal to 0 it is disabled. Default: 0.0.
+  - `--augment-rotate`: Probability to rotate training images. If the value is less or equal to 0 it is
+    disabled. Default: 0.0.
+  - `--augment-rotate-degree`: The maximum degree to rotate training images. Default: 90.0.
+  - `--augment-brightness`: Probability to change the brightness to training images. If the value is less or
+    equal to 0 it is disabled. Default: 0.0.
+  - `--augment-brightness-factor`: The maximum brightness to apply in training images. Value ranges from 0 (no
+    brightness), to 1 (same), up to infinity. Default: 1.0.
+  - `--augment-contrast`: Probability to change the contrast to training images. If the value is less or
+    equal to 0 it is disabled. Default: 0.0.
+  - `--augment-contrast-factor`: The maximum contrast to apply in training images. Value ranges from 0 (no
+    brightness), to 1 (same), up to infinity. Default: 1.0.
+  - `--augment-saturation`: Probability to change the saturation to training images. If the value is less or
+    equal to 0 it is disabled. Default: 0.0.
+  - `--augment-saturation-factor`: The maximum saturation to apply in training images. Value ranges from 0 (no
+    brightness), to 1 (same), up to infinity. Default: 1.0.
+  - `--augment-mask`: Probability to mask training images. If the value is less or equal to 0 it is
+    disabled. Default: 0.0.
+  - `--augment-mask-size`: Size to mask training images. Default: 16.
+  - `--augment-blur`: Probability to blur training images. If the value is less or equal to 0 it is
+    disabled. Default: 0.0.
+  - `--augment-blur-size`: Size to blur training images. Default: 16.
+  - `--augment-crop`, `--no-augment-crop`: Crop the images. True if specified. Default: False.
+  - `--augment-crop-perc`: Central crop percentage of the images. Default: 0.875.
+  - `--augment-scale`, `--no-augment-scale`: Resize the images. True if specified. Default: False.
+  - `--augment-scale-size`: New size of the images. Default: 300.
+  - `--augment-perspective`: Probability to change the perspective in training images. If the value is less
+    or equal to 0 it is disabled. Default: 0.0.
+  - `--augment-perspective-factor`: The perspective distortion factor. The ranges are from 0.0 to 0.5. Default:
+    0.25.
+  - `--augment-normalize`, `--no-augment-normalize`: Normalize dataset. Default: False.
+  - `--augment-normalize-offset`: Offset samples by a value. Default: -0.45.
+  - `--augment-normalize-scale`: Scale samples by a value. Default: 3.75.
+
+- Optimization options:
+  - `--fused-bn-relu`, `--no-fused-bn-relu`: Fuse BatchNormalization and Relu layers. True if specified. Default: False.
+  - `--fused-conv-relu`, `--no-fused-conv-relu`: Fuse Conv2D and Relu layers. True if specified. Default: False.
+  - `--fused-conv-bn`, `--no-fused-conv-bn`: Fuse Conv2D and BatchNormalization layers. True if specified. Default: False.
+  - `--fused-conv-bn-relu`, `--no-fused-conv-bn-relu`: Fuse Conv2D and BatchNormalization and Relu layers. True if specified. Default:
+    False.
+
+- Convolution options:
+  - `--conv-direct-method`: ConvDirect algorithm to use in Conv2D layers. Use `convDirect_info` to see
+    available algorithms. Default: `convdirect_original_{tensor_format}_default`
+
+- Optimizer options:
+  - `--optimizer`: Optimizers: `oktopksp`, `rmsprop`, `sgd`, etc. Default: `sgd`.
+  - `--learning-rate`: Learning rate. Default: 0.01.
+  - `--learning-rate-scaling`, `--no-learning-rate-scaling`: Scale learning rate in parallelism: new_lr = lr * num_procs. True if specified.
+    If left undefined, when `--batch-size` is defined, defaults to True. Default:
+    None.
+  - `--optimizer-momentum`: Decay rate for optimizers. Default: 0.9.
+  - `--optimizer-decay`: Decay rate for optimizers. Default: 0.0.
+  - `--optimizer-nesterov`, `--no-optimizer-nesterov`: Whether to apply Nesterov momentum. Default: False.
+  - `--optimizer-beta1`: Variable for `adam`, `nadam` optimizers. Default: 0.99.
+  - `--optimizer-beta2`: Variable for `adam`, `nadam` optimizers. Default: 0.999.
+  - `--optimizer-epsilon`: Variable for `rmsprop`, `adam`, `nadam`. Default: 1e-07.
+  - `--optimizer-rho`: Variable for `rmsprop` optimizers. Default: 0.9.
+  - `--optimizer-tau`: Variable for `oktopk` optimizers. Default: 64.
+  - `--optimizer-tau-prime`: Variable for `oktopk` optimizers. Default: 64.
+  - `--optimizer-density`: Variable for `oktopk` optimizers. Default: 0.01.
+  - `--oktopk-min-k`: Variable for `oktopk` optimizers. Default: 10.
+  - `--loss-func`: Loss functions that is evaluated on each trained batch:
+    `categorical_cross_entropy`, `binary_cross_entropy`, `kl_divergence`, etc.
     Default: `categorical_cross_entropy`.
-  - `--loss-eps`: Value for numerical stability. Default `1e-8`.
-  - `--loss-weights`: List modifiers separated by a comma to indicate the weights of every class. If the value is 'None' it will use the default dataset's value; if the dataset has not a default value, all classes will weight '1'. Example, with 3 classes: `0.4,1.8,0.2`. Default: `None`.
-  - `--use-loss-weights`:  True if use the loss-weights parameter, False to set all classes' weights with the same value. Default: `False`.
-  - `--metrics`: List of comma-separated metrics that are evaluated on
-    each trained batch: `categorical_accuracy`, `categorical_hinge`,
-    `categorical_mse`, `categorical_mae`, `regression_mse`,
-    `regression_mae`, `binary_confusion_matrix`,
-    `multiclass_confusion_matrix`, `precision`, `recall`, `f1_score`.
-    Default: `categorical_accuracy`.
-- Schedulers parameters:
-  - `--schedulers`: List of comma-separated schedulers: `warm_up`,
-    `early_stopping`, `reduce_lr_on_plateau`, `reduce_lr_every_nepochs`,
-    `model_checkpoint`. Default:
-    `early_stopping,reduce_lr_on_plateau,model_checkpoint`.
-  - `--warm-up-batches`: Number of batches (ramp up) that the LR is
-    scaled up from 0 until LR. Default: `5`.
-  - `--early-stopping-metric`: Loss metric monitored by `early_stopping`
-    scheduler. Default: `val_categorical_cross_entropy`.
-  - `--early-stopping-patience`: Number of epochs with no improvement
-    after which training will be stopped. Default: `10`.
-  - `--early-stopping-minimize`: Whether to minimize the metric. If False,
-    it will maximize. Default: `True`.
-  - `--reduce-lr-on-plateau-metric`: Loss metric monitored by
-    `reduce_lr_on_plateau` scheduler. Default:
+  - `--loss-eps`: Value for numerical stability. Default: 1e-08.
+  - `--loss-weights`: List modifiers separated by a comma to indicate the weights of every class. If
+    the value is `None` it will use the default dataset`s value;  if the dataset has
+    not a default value, all classes will weight `1`. Example, with 3 classes:
+    `0.4,1.8,0.2'. Default: ().
+  - `--use-loss-weights`, `--no-use-loss-weights`: True if use the loss-weights parameter,  False to set all classes' weights with
+    the same value. Default: False.
+  - `--metrics`: List of comma-separated metrics that are evaluated on each trained batch:
+    `categorical_hinge`, `confusion_matrix`, `kl_divergence_metric`,
+    `multiclass_confusion_matrix`, `f1_score`, `regression_mae`, `precision`,
+    `binary_confusion_matrix`, `categorical_mse`, `categorical_mae`, `recall`,
+    `regression_mse`, `categorical_accuracy`, etc. Default:
+    (`categorical_accuracy`,).
+
+- Schedulers options:
+  - `--schedulers`: List of comma-separated schedulers: `warm_up`, `stop_at_loss`,
+    `reduce_lr_on_plateau`, `scheduler_with_loss_or_metric`, `model_checkpoint`,
+    `reduce_lr_every_nepochs`, `early_stopping`, etc. Default: (`early_stopping`,
+    `reduce_lr_on_plateau`, `model_checkpoint`).
+  - `--warm-up-epochs`: Number of batches (ramp up) that the LR is scaled up from 0 until LR. Default:
+    5.
+  - `--early-stopping-metric`: Loss metric monitored by early_stopping LR scheduler. Default:
     `val_categorical_cross_entropy`.
-  - `--reduce-lr-on-plateau-factor`: Factor by which the learning rate will be reduced.
-    `new_lr = lr *factor`. Default: `0.1`.
-  - `--reduce-lr-on-plateau-patience`: Number of epochs with no improvement
-    after which LR will be reduced. Default: `5`.
-  - `--reduce-lr-on-plateau-min-lr`: Lower bound on the learning rate.
-    Default: `0`.
-  - `--reduce-lr-every-nepochs-factor`: Factor by which the learning rate
-    will be reduced. `new_lr = lr*factor`. Default: `0.1`.
-  - `--reduce-lr-every-nepochs-nepochs`: Number of epochs after which LR
-    will be periodically reduced. Default: `5`.
-  - `--reduce-lr-every-nepochs-min-lr`: Lower bound on the learning
-    rate. Default: `0`.
-  - `--stop-at-loss-metric`: Loss metric monitored by `stop_at_loss`
-    scheduler. Default: `val_accuracy`.
-  - `--stop-at-loss-threshold`: Metric threshold monitored by
-    `stop_at_loss` scheduler. Default: `0`.
-  - `--model-checkpoint-metric`: Loss metric monitored by
-    `model_checkpoint` scheduler. Default:
-    `val_categorical_cross_entropy`
-  - `--model-checkpoint-save-freq`: Frequency (in epochs) at which the
-    model weights and bias will be saved by the `model_checkpoint` scheduler.
-    Default: `2`.
-- Parallelization and other performance-related parameters:
-  - `--parallel-data`: Enable data parallelization. Default: `False`.
-  - `--parallel-pipeline`: Enable pipeline parallelization. Default: `False`.
-  - `--use-blocking-mpi`: Enable blocking MPI primitives. Default: `True`.
-  - `--use-mpi-buffers`: Enable the use of MPI buffers. Possible values:
-    `True` (MPI operations by buffer), `False` (MPI operations by
-    object) or `None` (auto-select the better option). Default: `None`.
-  - `--use-gpudirect`: Enable GPU pinned memory for gradients when
-    using a CUDA-aware MPI version. Default: `False`.
-  - `--use-nccl`: Enable the use of the `NCCL` library for collective
-    communications on GPUs. This option can only be set when cuDNN is available.
-    Default: `False`.
-  - `--use-cudnn-auto-conv-algo`: Let `cuDNN` to select the best
-    performing convolution algorithm. Default: `True`.
-- Encryption parameters:
-  - `--encryption`: Encryption library: `tenseal`, `openfhe`, `None`. Default `None`.
-  - `--encryption-slots`: Encryption slot count. `2 ^ value`. Default: `12`.
-  - `--encryption-scale`: Encryption operational scale. `2 ^ value`. Default: `40`.
-  - `--encryption-security`: Encryption security level: `128`, `192`, `256`. Default: `128`.
-- Tracing and profiling parameters:
-  - `--tracing`: Obtain Simple/Extrae-based traces. Default: `False`.
-  - `--tracer-output`: Output file to store the Simple/Extrae-based traces.
+  - `--early-stopping-patience`: Number of epochs with no improvement after which training will be stopped.
+    Default: 10.
+  - `--early-stopping-minimize`, `--no-early-stopping-minimize`: Whether to minimize the metric. If False, it will maximize. Default: True.
+  - `--reduce-lr-on-plateau-metric`: Loss metric monitored by reduce_lr_on_plateau LR scheduler. Default:
+    `val_categorical_cross_entropy`.
+  - `--reduce-lr-on-plateau-factor`: Factor by which the learning rate will be reduced. new_lr = lr * factor.
+    Default: 0.1.
+  - `--reduce-lr-on-plateau-patience`: Number of epochs with no improvement after which LR will be reduced. Default: 5.
+  - `--reduce-lr-on-plateau-min-lr`: Lower bound on the learning rate. Default: 0.0.
+  - `--reduce-lr-every-nepochs-factor`: Factor by which the learning rate will be reduced. new_lr = lr * factor.
+    Default: 0.1.
+  - `--reduce-lr-every-nepochs-nepochs`: Number of epochs after which LR will be periodically reduced. Default: 5.
+  - `--reduce-lr-every-nepochs-min-lr`: Lower bound on the learning rate. Default: 0.0.
+  - `--stop-at-loss-metric`: Loss metric monitored by stop_at_loss LR scheduler. Default: `val_accuracy`.
+  - `--stop-at-loss-threshold`: Metric threshold monitored by stop_at_loss LR scheduler. Default: 0.
+  - `--model-checkpoint-metric`: Loss metric monitored by model_checkpoint LR scheduler. Default:
+    `val_categorical_cross_entropy`.
+  - `--model-checkpoint-save-freq`: Frequency (in epochs) at which the model weights and bias will be saved by the
+    model_checkpoint LR scheduler. Default: 2.
+
+- Parallel execution options:
+  - `--parallel-data`, `--no-parallel-data`: Enable data parallelization modes. Default: False.
+  - `--parallel-pipeline`, `--no-parallel-pipeline`: Enable pipeline parallelization modes. Default: False.
+  - `--use-blocking-mpi`, `--no-use-blocking-mpi`: Enable non-blocking MPI primitives. Default: True.
+  - `--use-mpi-buffers`, `--no-use-mpi-buffers`: Enable the use of MPI buffers. Possible values: `True` (MPI operations by
+    buffer), `False` (MPI operations by object) or undefined (auto-select the better
+    option). Default: None.
+  - `--use-cudnn`, `--no-use-cudnn`: Ignored, always enabled if plausible, present just for compatibility. Default:
+    False.
+  - `--use-gpudirect`, `--no-use-gpudirect`: Enable GPU pinned memory for gradients when using a CUDA-aware MPI version.
+    Default: False.
+  - `--use-nccl`, `--no-use-nccl`: Enable the use of the NCCL library for collective communications on GPUs. This
+    option can only be set when cuDNN is available. Default: False.
+  - `--use-cudnn-auto-conv-algo`, `--no-use-cudnn-auto-conv-algo`: Let cuDNN to select the best performing convolution algorithm. Default: True.
+
+- Encryption options:
+  - `--encryption`: Encryption library backend to use. Use `polyhe.Backend` to see available
+    libraries. Default: ``.
+  - `--encryption-slots`: Encryption slot count. 2 ^ `value`. Default: 13.
+  - `--encryption-scale`: Encryption operational scale. 2 ^ `value`. Default: 40.
+  - `--encryption-security`: Encryption security level: 128, 192, 256. Use `polyhe.{backend}.SECURITY_LEVEL`
+    to see available security levels. Default: 128.
+
+- Tracing options:
+  - `--tracing`, `--no-tracing`: Obtain Simple/Extrae-based traces. Default: False.
+  - `--tracer-output`: Output file to store the Simple/Extrae-based traces. Default: ``.
   - `--tracer-pmlib-server`: Address of PMlib tracer server. Default: `127.0.0.1`.
-  - `--tracer-pmlib-port`: Port of PMlib tracer server. Default: `6526`.
-  - `--tracer-pmlib-device`: Port of PMlib tracer device.
-  - `--profile`: Obtain cProfile profiles. Default: `False`.
+  - `--tracer-pmlib-port`: Port of PMlib tracer server. Default: 6526.
+  - `--tracer-pmlib-device`: Port of PMlib tracer device. Default: ``.
+  - `--profile`, `--no-profile`: Obtain Python profiles. Default: False.
 
 ## Example: distributed training of a CNN for the MNIST dataset
 In this example, we train a simple CNN for the MNIST dataset using data
@@ -340,11 +348,11 @@ $ mpirun -np 12 \
       --dataset-train-path=datasets/mnist \
       --dataset-test-path=datasets/mnist \
       --test-as-validation=False \
-      --augment-horizontal-flip=True \
+      --augment-horizontal-flip \
       --batch-size=64 \
       --validation-split=0.2 \
       --num-epochs=50 \
-      --evaluate=True \
+      --evaluate \
       --optimizer=adam \
       --learning-rate=0.01 \
       --loss-func=categorical_cross_entropy \
@@ -415,10 +423,10 @@ Dataset options
   normalize-scale        : 3.75
 
 Optimization options
-  enable-fused-bn-relu     : False
-  enable-fused-conv-relu   : False
-  enable-fused-conv-bn     : False
-  enable-fused-conv-bn-relu: False
+  fused-bn-relu     : False
+  fused-conv-relu   : False
+  fused-conv-bn     : False
+  fused-conv-bn-relu: False
 
 Convolution options
   conv-direct-method: 
@@ -463,10 +471,10 @@ Parallel execution options
   parallel-pipeline         : False
   use-blocking-mpi          : True
   use-mpi-buffers           : None
-  enable-cudnn              : AUTO
-  enable-gpudirect          : False
-  enable-nccl               : False
-  enable-cudnn-auto-conv-alg: True
+  use-cudnn              : False
+  use-gpudirect          : False
+  use-nccl               : False
+  use-cudnn-auto-conv-alg: True
 
 Encryption options
   encryption         : 
@@ -621,12 +629,12 @@ $ pydtnn-benchmark \
     --model=vgg16_cifar10 \
     --dataset=cifar10 \
     --dataset-path=datasets/cifar10/cifar-10-binary.tar.gz \
-    --evaluate-only=True \
+    --evaluate-only \
     --batch-size=64 \
     --validation-split=0.2 \
     --model-state-filename=vgg16-weights-nhwc.npz \
-    --tracing=False \
-    --profile=False \
+    --no-tracing \
+    --no-profile \
     --use-cudnn \
     --backend=gpu \
     --dtype=float32
@@ -685,10 +693,10 @@ Dataset options
   normalize-scale        : 1.0
 
 Optimization options
-  enable-fused-bn-relu     : False
-  enable-fused-conv-relu   : False
-  enable-fused-conv-bn     : False
-  enable-fused-conv-bn-relu: False
+  fused-bn-relu     : False
+  fused-conv-relu   : False
+  fused-conv-bn     : False
+  fused-conv-bn-relu: False
 
 Convolution options
   conv-direct-method: 
@@ -733,10 +741,10 @@ Parallel execution options
   parallel-pipeline          : False
   use-blocking-mpi           : True
   use-mpi-buffers            : None
-  enable-cudnn               : AUTO
-  enable-gpudirect           : False
-  enable-nccl                : False
-  enable-cudnn-auto-conv-algo: False
+  use-cudnn               : False
+  use-gpudirect           : False
+  use-nccl                : False
+  use-cudnn-auto-conv-algo: False
 
 Encryption options
   encryption         : 
