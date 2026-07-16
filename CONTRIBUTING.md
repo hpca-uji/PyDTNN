@@ -47,8 +47,8 @@ _Things you should keep in mind_
 
 ## FHE
 - `--enable-encryption` requires `NCCL` to be disabled (otherwise it will be skipped),
-  typically requires `--use-mpi-buffers=False` (crypto libraries usually do not expose buffer access)
-  and `--use-blocking-mpi=True` (MPI like `mpi4py` does not support async object reductions)
+  typically requires `--no-use-mpi-buffers` (crypto libraries usually do not expose buffer access)
+  and `--use-blocking-mpi` (MPI like `mpi4py` does not support async object reductions)
 
 ## Cython
 - Shared interface and typing code can be defined in `.pyd` files.

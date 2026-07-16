@@ -18,5 +18,5 @@ def resnet50_from_pytorch(input_shape: ArrayShape, output_shape: ArrayShape) -> 
         torch.nn.Linear(in_features=torch_model.fc.in_features, out_features=output_shape[0]),
         torch.nn.Softmax()
     )
-    
+
     return from_pytorch(input_shape, torch_model)
