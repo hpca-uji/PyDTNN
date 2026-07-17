@@ -477,7 +477,7 @@ class LayerPyTorchTestCase(TestCase):
         x = torch.from_numpy(_x.reshape((N, C, H, W), copy=False)).to(torch.device("cpu")).float()  # type: ignore (It's fine)
         x_torch: torch.Tensor = torch_model(x)
         x_torch = np.asarray(
-            x_torch.cpu().detach().numpy(), dtype=pydtnn_model.dtype, order="C"
+            x_torch.numpy(force=True), dtype=pydtnn_model.dtype, order="C"
         ).copy()  # type: ignore (It's fine)
 
         if verbose_test():
@@ -566,7 +566,7 @@ class LayerPyTorchTestCase(TestCase):
         print(f"{loss.grad=}")
 
         x_torch = np.asarray(
-            x_torch.cpu().detach().numpy(), dtype=pydtnn_model.dtype, order="C"
+            x_torch.numpy(force=True), dtype=pydtnn_model.dtype, order="C"
         ).reshape(x_base_shape, copy=True)  # type: ignore (It's fine)
 
         if verbose_test():
