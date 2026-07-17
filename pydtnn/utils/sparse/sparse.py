@@ -32,6 +32,9 @@ type RowType = np.ndarray[tuple[int], np.dtype[np.int32]]
 type ColType = RowType
 
 
+# TODO: Remove all _has_canonical_format checks, only call on demand, asume is sorted!
+# TODO: Remove all row,col usage; make it work on arbitrary shapes
+
 class SparseMatrixFlat[T: _npDT]:  # noqa: D101 (generics not detected)
     """Represents a sparse matrix in Flatten COO format.
 

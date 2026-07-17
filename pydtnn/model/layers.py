@@ -33,6 +33,7 @@ class Layers[T: Array](Utils[T]):  # noqa: D101 (generics not detected)
             prev_shape = ()
             y = None
 
+        # Can you wait for model init?
         layer._model_init(prev_shape, y)
 
         self.nparams += layer.nparams

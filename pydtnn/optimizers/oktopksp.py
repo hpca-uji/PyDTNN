@@ -18,6 +18,9 @@ if TYPE_CHECKING:
     from pydtnn.model import Model
 
 
+# TODO: Remove all row,col, use new flat structure, allows balanced partitioning
+
+
 class OkTopkSP[T: Array](Optimizer[T]):  # noqa: D101 (generics not detected)
     """OkTopkSP Optimizer"""
 
@@ -25,6 +28,7 @@ class OkTopkSP[T: Array](Optimizer[T]):  # noqa: D101 (generics not detected)
         self,
         learning_rate: float = 1e-2,
         momentum: float = 0.9,
+        decay: float = 0.0,
         tau: int = 64,
         tau_prime: int = 32,
         density: float = 0.01,
@@ -44,6 +48,7 @@ class OkTopkSP[T: Array](Optimizer[T]):  # noqa: D101 (generics not detected)
 
         super().__init__(learning_rate=learning_rate)
         self.momentum = momentum
+        self.decay = decay
         self.residuals = {}
         self.tau = tau
         self.tau_prime = tau_prime
@@ -54,7 +59,6 @@ class OkTopkSP[T: Array](Optimizer[T]):  # noqa: D101 (generics not detected)
         self.all_global_th = {}
         self.all_residuals = {}
         self.all_boundaries = {}
-        self._info_messages = set()
 
     def _show_props(self) -> dict:
         """
@@ -106,6 +110,7 @@ class OkTopkSP[T: Array](Optimizer[T]):  # noqa: D101 (generics not detected)
         return OkTopkSP(
             learning_rate=model.learning_rate,
             momentum=model.optimizer_momentum,
+            decay=model.optimizer_decay,
             tau=model.optimizer_tau,
             tau_prime=model.optimizer_tau_prime,
             density=model.optimizer_density,
