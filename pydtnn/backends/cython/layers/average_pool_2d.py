@@ -36,7 +36,7 @@ class AveragePool2DCython(AveragePool2DNumpy, AbstractPool2DLayerCython):
         """Perform forward average pooling in NCHW format using Cython."""
         average_pool_2d_fwd_nchw_cython(
             x,
-            y,  # type: ignore
+            y,
             self.kh,
             self.kw,
             self.ho,
@@ -53,7 +53,7 @@ class AveragePool2DCython(AveragePool2DNumpy, AbstractPool2DLayerCython):
         """Perform forward average pooling in NHWC format using Cython."""
         average_pool_2d_fwd_nhwc_cython(
             x,
-            y,  # type: ignore
+            y,
             self.kh,
             self.kw,
             self.ho,
@@ -70,7 +70,7 @@ class AveragePool2DCython(AveragePool2DNumpy, AbstractPool2DLayerCython):
         """Perform backward average pooling in NHWC format using Cython."""
         average_pool_2d_bwd_nhwc_cython(
             dy,
-            dx,  # type: ignore
+            dx,
             dy.shape[0],
             self.hi,
             self.wi,
@@ -91,7 +91,7 @@ class AveragePool2DCython(AveragePool2DNumpy, AbstractPool2DLayerCython):
         """Perform backward average pooling in NCHW format using Cython."""
         average_pool_2d_bwd_nchw_cython(
             dy,
-            dx,  # type: ignore
+            dx,
             dy.shape[0],
             self.hi,
             self.wi,
@@ -120,7 +120,7 @@ class AveragePool2DCython(AveragePool2DNumpy, AbstractPool2DLayerCython):
         )
         im2row_1ch_nhwc_cython(
             x,
-            x_rows,  # type: ignore
+            x_rows,
             self.kh,
             self.kw,
             self.ho,
@@ -150,7 +150,7 @@ class AveragePool2DCython(AveragePool2DNumpy, AbstractPool2DLayerCython):
         )
         im2col_1ch_nchw_cython(
             x,
-            x_cols,  # type: ignore
+            x_cols,
             self.kh,
             self.kw,
             self.ho,
@@ -182,7 +182,7 @@ class AveragePool2DCython(AveragePool2DNumpy, AbstractPool2DLayerCython):
         )
         row2im_1ch_nhwc_cython(
             dy_rows,
-            dx,  # type: ignore
+            dx,
             dy.shape[0],
             self.hi,
             self.wi,
@@ -215,7 +215,7 @@ class AveragePool2DCython(AveragePool2DNumpy, AbstractPool2DLayerCython):
         )
         col2im_1ch_nchw_cython(
             dy_cols,
-            dx,  # type: ignore
+            dx,
             dy.shape[0],
             self.hi,
             self.wi,

@@ -27,7 +27,7 @@ class AbstractConv2DCython(AbstractConv2DNumpy, LayerCython):
         """Transform input image to row format using Cython implementation."""
         im2row_nhwc_cython(
             x,
-            x_rows,  # type: ignore
+            x_rows,
             self.kh,
             self.kw,
             self.ho,
@@ -44,7 +44,7 @@ class AbstractConv2DCython(AbstractConv2DNumpy, LayerCython):
         """Transform input image to column format using Cython implementation."""
         im2col_nchw_cython(
             x,
-            x_cols,  # type: ignore
+            x_cols,
             self.kh,
             self.kw,
             self.ho,
@@ -61,7 +61,7 @@ class AbstractConv2DCython(AbstractConv2DNumpy, LayerCython):
         """Transform row format back to image using Cython implementation."""
         row2im_nhwc_cython(
             x_rows,
-            dx,  # type: ignore
+            dx,
             dx.shape[0],
             self.hi,
             self.wi,
@@ -82,7 +82,7 @@ class AbstractConv2DCython(AbstractConv2DNumpy, LayerCython):
         """Transform column format back to image using Cython implementation."""
         col2im_nchw_cython(
             x_cols,
-            dx,  # type: ignore
+            dx,
             dx.shape[0],
             self.ci,
             self.hi,
