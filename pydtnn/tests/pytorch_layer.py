@@ -401,15 +401,18 @@ class LayerPyTorchTestCase(TestCase):
                 torch_layer = torch_layers[i]
                 match layer:
                     case BatchNormalization():
-                        running_mean = layer.running_mean
-                        running_var = layer.running_var
+                        assert isinstance(torch_layer, torch.nn.BatchNorm2d)
+                        running_mean: np.ndarray = layer.running_mean
+                        running_var: np.ndarray = layer.running_var
                         if running_mean is not None:
+                            assert isinstance(torch_layer.running_mean, torch.Tensor)
                             torch_layer.running_mean.copy_(
                                 torch.from_numpy(running_mean.copy())
                                 .to(torch.device("cpu"))
                                 .float()
                             )
                         if running_var is not None:
+                            assert isinstance(torch_layer.running_var, torch.Tensor)
                             torch_layer.running_var.copy_(
                                 torch.from_numpy(running_var.copy()).to(torch.device("cpu")).float()
                             )
@@ -418,19 +421,7 @@ class LayerPyTorchTestCase(TestCase):
                             grad: np.ndarray = getattr(layer, grad_var)
                             grad = grad if grad_var != Parameters.WEIGHTS else grad.T
                             self._copy_grad_vars(grad, grad_var, torch_layer)
-                    case Conv2D():
-                        for grad_var in layer.grad_vars.keys():
-                            grad: np.ndarray = getattr(layer, grad_var)
-                            if grad_var == Parameters.WEIGHTS and grad is not None:
-                                grad = format_transpose(
-                                    grad,
-                                    {TensorFormat.NHWC: "ihwo", TensorFormat.NCHW: "oihw"}[
-                                        pydtnn_model.tensor_format
-                                    ],
-                                    "oihw",
-                                )
-                            self._copy_grad_vars(grad, grad_var, torch_layer)
-                    case Conv2DDepthwise():
+                    case Conv2D() | Conv2DDepthwise():
                         for grad_var in layer.grad_vars.keys():
                             grad: np.ndarray = getattr(layer, grad_var)
                             if grad_var == Parameters.WEIGHTS and grad is not None:
@@ -473,7 +464,7 @@ class LayerPyTorchTestCase(TestCase):
         x_pydtnn = format_transpose(
             x, self.params.tensor_format.upper(), TensorFormat.NCHW.upper()
         ).copy()
-
+        
         x = torch.from_numpy(_x.reshape((N, C, H, W), copy=False)).to(torch.device("cpu")).float()  # type: ignore (It's fine)
         x_torch: torch.Tensor = torch_model(x)
         x_torch = np.asarray(

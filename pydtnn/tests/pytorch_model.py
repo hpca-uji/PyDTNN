@@ -1,7 +1,7 @@
 """Tests for verifying model behavior and consistency across different data types."""
 
-from time import sleep
 import logging
+from typing import Any
 import unittest
 
 import numpy as np
@@ -143,11 +143,55 @@ class ModelDTypeTestCase(unittest.TestCase):
         params.model_name = model_name  # type: ignore
 
         torch_model = torch_models.resnet50(weights=torch_models.ResNet50_Weights.IMAGENET1K_V1)
-        torch_model.fc = torch.nn.Linear(
-            in_features = torch_model.fc.in_features,
-            out_features = params.synthetic_output_shape[0]
-        )
+        print(torch_model)
+        #torch_model.fc = torch.nn.Sequential(  # type: ignore (It's ok to set a Sequential)
+        #    torch.nn.Linear(in_features=torch_model.fc.in_features, 
+        #                    out_features=params.synthetic_output_shape[0]),
+        #    torch.nn.Softmax()
+        #)
+        class Torch_Model(torch.nn.Module):
+            def __init__(self, *args: Any, **kwargs: Any) -> None:
+                super().__init__(*args, **kwargs)
+                self.conv2d = torch.nn.Conv2d(3, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+                self.bn = torch.nn.BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True)
+                self.relu = torch.nn.ReLU(inplace=True)
+                self.max_pool = torch.nn.MaxPool2d(kernel_size=3, stride=2, padding=1, dilation=1, ceil_mode=False)
 
+                #self.bottleneck = torch.nn.Sequential(
+                #    torch.nn.Conv2d(64, 64, kernel_size=(1, 1), stride=(1, 1), bias=False),
+                #    torch.nn.BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True),
+                #    torch.nn.Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False),
+                #    torch.nn.BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True),
+                #    torch.nn.Conv2d(64, 256, kernel_size=(1, 1), stride=(1, 1), bias=False),
+                #    torch.nn.BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True),
+                #    torch.nn.ReLU(inplace=True),
+                #)
+
+                self.avg_pool = torch.nn.AdaptiveAvgPool2d(output_size=(1, 1))
+                self.fc1 = torch.nn.Linear(in_features=3072, out_features=params.synthetic_output_shape[0], bias=True)
+                self.fc2 = torch.nn.Softmax()
+
+                self.fc = torch.nn.Sequential(
+                    self.fc1,
+                    self.fc2
+                )
+
+            def forward(self, x: torch.Tensor) -> torch.Tensor:
+                x = self.conv2d(x)
+                #x = self.bn(x)
+                #x = self.relu(x)
+                #x = self.max_pool(x)
+
+                #x = self.bottleneck(x)
+                
+                #x = self.avg_pool(x)
+                #x = torch.flatten(x, 1)
+                #x = self.fc1(x)
+                #x = self.fc2(x)
+                return x
+
+        torch_model = Torch_Model()
+        print(f"{torch_model=}")
         return torch_model, torch.nn.CrossEntropyLoss()
 
     def get_model_pydtnn(self, model_pytorch: PyTorch_Model) -> PyDTNN_Model:
@@ -178,6 +222,8 @@ class ModelDTypeTestCase(unittest.TestCase):
         layers = from_pytorch(params.synthetic_input_shape, model_pytorch)
         model2.add_layers(layers)
         model2._model_init()
+
+        print(f"{model2.tensor_format=}")
 
         for layer in model2.layers:
             print(layer)
@@ -353,6 +399,9 @@ class ModelDTypeTestCase(unittest.TestCase):
             if verbose_test():
                 print_with_header(f"Model {model_pydtnn.model_name} 2 forward pass")
             x_pydtnn = self.do_model2_forward_pass(model_pydtnn, x_pydtnn)
+
+            print(f"{x_torch[0].shape=}")
+            print(f"{x_pydtnn[0].shape=}")
 
             # Compare forward results
             self.compare_forward(model_pydtnn, x_torch, x_pydtnn)
