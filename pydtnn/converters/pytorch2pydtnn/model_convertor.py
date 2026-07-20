@@ -297,15 +297,9 @@ def convert_layers_and_set_weights_and_biases(
                     converted_layer.biases = biases
             # else: Nothing special.
 
-            if isinstance(converted_layer, BatchNormalization):
-                print("==> BatchNormalization")
-                breakpoint()
-
             # for BatchNormalization
             if layer_running_mean in state_dict:
-                print("layer_running_mean")
                 running_mean: np.ndarray = copy.deepcopy(state_dict[layer_running_mean].numpy(force = True))
-                breakpoint()
                 if hasattr(converted_layer, pydtnn_running_mean_initializer):
 
                     def running_mean_initializer(
@@ -330,9 +324,7 @@ def convert_layers_and_set_weights_and_biases(
 
             # for BatchNormalization
             if layer_running_var in state_dict:
-                print("layer_running_var")
                 running_var: np.ndarray = copy.deepcopy(state_dict[layer_running_var].numpy(force = True))
-                breakpoint()
                 if hasattr(converted_layer, pydtnn_running_variance_initializer):
 
                     def running_var_initializer(
@@ -354,10 +346,6 @@ def convert_layers_and_set_weights_and_biases(
                     assert isinstance(converted_layer, BatchNormalization)
                     converted_layer.running_var = running_var
             # else: Nothing special.
-
-            if isinstance(converted_layer, BatchNormalization):
-                print("==> BatchNormalization")
-                breakpoint()
 
             converted_layers[layer_var] = (converted_layer, params)
         else:  # is intance of string (the name of a function or an operation)
