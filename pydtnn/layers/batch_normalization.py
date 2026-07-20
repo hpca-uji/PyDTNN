@@ -23,8 +23,8 @@ class BatchNormalization[T: Array](Layer[T]):  # noqa: D101 (generics not detect
         gamma: float = 1.0,
         momentum: float = 0.9,
         epsilon: float = 1e-5,
-        moving_mean_initializer: Callable = zeros,
-        moving_variance_initializer: Callable = ones,
+        running_mean_initializer: Callable = zeros,
+        running_var_initializer: Callable = ones,
         sync_stats: bool = False,
     ) -> None:
         """
@@ -35,8 +35,8 @@ class BatchNormalization[T: Array](Layer[T]):  # noqa: D101 (generics not detect
             gamma: Initial value for the scale parameter.
             momentum: Momentum for the moving average of mean and variance.
             epsilon: Small constant for numerical stability.
-            moving_mean_initializer: Initializer function for the moving mean.
-            moving_variance_initializer: Initializer function for the moving variance.
+            running_mean_initializer: Initializer function for the running mean.
+            running_var_initializer: Initializer function for the running variance.
             sync_stats: Whether to synchronize statistics across devices.
         """
         super().__init__()
@@ -44,11 +44,11 @@ class BatchNormalization[T: Array](Layer[T]):  # noqa: D101 (generics not detect
         self.beta_init_val = beta
         self.momentum = momentum
         self.epsilon = epsilon
-        self.moving_mean_initializer: Callable[[ArrayShape, np.dtype], np.ndarray] = (
-            moving_mean_initializer
+        self.running_mean_initializer: Callable[[ArrayShape, np.dtype], np.ndarray] = (
+            running_mean_initializer
         )
-        self.moving_variance_initializer: Callable[[ArrayShape, np.dtype], np.ndarray] = (
-            moving_variance_initializer
+        self.running_var_initializer: Callable[[ArrayShape, np.dtype], np.ndarray] = (
+            running_var_initializer
         )
         self.grad_vars = {Parameters.BETA: Parameters.DBETA, Parameters.GAMMA: Parameters.DGAMMA}
         self.sync_stats = sync_stats
