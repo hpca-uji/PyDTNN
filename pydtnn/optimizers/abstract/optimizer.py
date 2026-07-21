@@ -46,6 +46,7 @@ class Optimizer[T: Array](Base):  # noqa: D101 (generics not detected)
             layers (list[Layerable[T]]): List of layers to be optimized.
         """
         super()._model_init()
+        self.layers = layers
 
     @property
     def dtype(self) -> np.dtype:

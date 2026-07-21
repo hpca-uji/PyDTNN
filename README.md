@@ -242,7 +242,7 @@ The PyDTNN framework comes with a utility launcher called
     available algorithms. Default: `convdirect_original_{tensor_format}_default`
 
 - Optimizer options:
-  - `--optimizer`: Optimizers: `oktopksp`, `rmsprop`, `sgd`, etc. Default: `sgd`.
+  - `--optimizer`: Optimizers: `oktopk`, `rmsprop`, `sgd`, etc. Default: `sgd`.
   - `--learning-rate`: Learning rate. Default: 0.01.
   - `--learning-rate-scaling`, `--no-learning-rate-scaling`: Scale learning rate in parallelism: new_lr = lr * num_procs. True if specified.
     If left undefined, when `--batch-size` is defined, defaults to True. Default:
