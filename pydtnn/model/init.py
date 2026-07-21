@@ -285,6 +285,8 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
         assert cublas_handle is not None
         assert stream is not None
 
+        self.y_batch = None  # type: ignore (it will be initalized later)
+
         self.cuda_threads = min(self.batch_size, LIMIT_THREADS_AND_BLOCKS)
         self.cuda_blocks = (max(self.batch_size, LIMIT_THREADS_AND_BLOCKS) // self.cuda_threads) + 1
         # NOTE: Seems that in PyDTNN, usually the ".x" (blockIdx.x, threadIdx.x,
