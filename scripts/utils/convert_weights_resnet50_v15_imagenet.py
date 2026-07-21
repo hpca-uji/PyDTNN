@@ -129,8 +129,8 @@ weights = {
     "bias": Parameters.BIASES,
     Parameters.GAMMA: Parameters.GAMMA,
     Parameters.BETA: Parameters.BETA,
-    "moving_mean": "running_mean",
-    "moving_variance": "running_var",
+    "running_mean": "running_mean",
+    "running_var": "running_var",
 }
 
 

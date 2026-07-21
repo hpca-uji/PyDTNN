@@ -74,6 +74,9 @@ def Conv2d(args: dict[str, Any]) -> Conv2D:
         pydtnn_dict_keys=pydtnn_dict_keys,
     )
 
+    initializers = cm.set_initializer_with_pytorch_values(args[cm.ARGUMENTS]["_parameters"])
+    layer_args.update(initializers)
+
     if pydtnn_filter_shape in layer_args:
         pool_shape = layer_args[pydtnn_filter_shape]
         if isinstance(pool_shape, int):

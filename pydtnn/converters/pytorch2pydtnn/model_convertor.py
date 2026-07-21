@@ -18,7 +18,7 @@ from pydtnn.utils.tensor import TensorFormat
 
 __all__ = (
     "check_kwargs_and_set_default",
-    "convert_layers_and_set_weights_and_biases",
+    "convert_layers",
     "convert_model",
     "extract_layers_relations",
     "load_layers",
@@ -173,7 +173,7 @@ def extract_layers_relations(
     return relations_dic
 
 
-def convert_layers_and_set_weights_and_biases(
+def convert_layers(
     input_shape: ArrayShape, layers: dict[str, tuple[str | torch.nn.Module, str]]
 ) -> list[Layerable]:
     """
@@ -188,20 +188,6 @@ def convert_layers_and_set_weights_and_biases(
     """
 
     converted_layers: dict[str, tuple[Layerable, str | None]] = dict()
-
-    # Constants
-    # - state_dicts keys.
-    layer_weights = "weight"
-    layer_biases = "bias"
-    layer_running_mean = "running_mean"
-    layer_running_var = "running_var"
-
-    # - initalizers
-    pydtnn_weights_initializer = "weights_initializer"
-    pydtnn_biases_initializer = "biases_initializer"
-    pydtnn_running_mean_initializer = "running_mean_initializer"
-    pydtnn_running_variance_initializer = "running_var_initializer"
-    # -
 
     # NOTE: There is no way to get the input shape from a PyTorch model due
     # depends of the dataset ==> The input shape will be a parameter set by
@@ -236,116 +222,6 @@ def convert_layers_and_set_weights_and_biases(
                 cm.ARGUMENTS: vars(layer)
             }  # NOTE: In this context, params are the input layers.
             converted_layer = cm.switch_pytorch_pydtnn(name)(args)
-
-            # -- Loading the weigths and the biases into the converted layer --
-            state_dict = layer.state_dict()
-            # There are layers without weight nor biases
-            if layer_weights in state_dict:
-                # The weights are "torch.Tensor": torch.Tensor.cpu().detach().numpy() ==>
-                # weigths as np.array
-                weights: np.ndarray = copy.deepcopy(state_dict[layer_weights].numpy(force = True))
-                # NOTE: There are some layers (like the fully connected) where the shape
-                # in PyDTNN is the transpose of the PyTorch's one.
-                weights = weights.T if name in cm.TRANSPOSE_WEIGHTS_LAYERS else weights
-
-                if hasattr(converted_layer, pydtnn_weights_initializer):
-
-                    def weights_initializer(
-                        shape: tuple,
-                        dtype: np.ndarray,
-                        pytorch_weights: np.ndarray = weights,
-                        **kwargs_to_ignore: Any,
-                    ) -> np.ndarray:
-                        # NOTE [IMPORTANT]: Regarding "pytorch_weights = weights".
-                        # NOTE If "weights" are directly set as the returned value (return weights),
-                        #       for some reason the return will be a reference to "weights"
-                        #       instead of the "weights" value (that is a reference to the layer's PyTorch's weights),
-                        #       so, since this is in a for loop and this function (weights_initializer) is called
-                        #       in some step after the loop, every layer will have the last iteration's "weights" values
-                        #       a reference to the last layer weights- instead of a reference to their respective layer weights.
-                        #       In this way "pytorch_weights" has the copy of "weights" values
-                        #       (that, as said before, is a reference to the layer's weights) of that iteration.
-                        return pytorch_weights.astype(dtype=dtype, copy=False)
-
-                    setattr(converted_layer, pydtnn_weights_initializer, weights_initializer)
-                else:
-                    # I'm pretty sure this case never happens (anyways, it's better to have it
-                    # just in case).
-                    converted_layer.weights = weights
-            # else: Nothing special.
-
-            if layer_biases in state_dict:
-                biases: np.ndarray = copy.deepcopy(state_dict[layer_biases].numpy(force = True))
-                biases = biases.T if name in cm.TRANSPOSE_WEIGHTS_LAYERS else biases
-                if hasattr(converted_layer, pydtnn_biases_initializer):
-
-                    def biases_initializer(
-                        shape: tuple,
-                        dtype: np.ndarray,
-                        pytorch_biases: np.ndarray = biases,
-                        **kwargs_to_ignore: Any,
-                    ) -> np.ndarray:
-                        # NOTE [IMPORTANT]: See "weights_initializer" notes; the case of
-                        # "pytorch_biases = biases" parameter is the same case as
-                        # weights_initializer's "pytorch_weights = weights".
-                        return pytorch_biases.astype(dtype=dtype, copy=False)
-
-                    setattr(converted_layer, pydtnn_biases_initializer, biases_initializer)
-                else:
-                    # As said before, I'm pretty sure this case never happens, but anyways,
-                    # it's better to have it just in case.
-                    converted_layer.biases = biases
-            # else: Nothing special.
-
-            # for BatchNormalization
-            if layer_running_mean in state_dict:
-                running_mean: np.ndarray = copy.deepcopy(state_dict[layer_running_mean].numpy(force = True))
-                if hasattr(converted_layer, pydtnn_running_mean_initializer):
-
-                    def running_mean_initializer(
-                        shape: tuple,
-                        dtype: np.ndarray,
-                        random: np.random.Generator,
-                        pytorch_running_mean: np.ndarray = running_mean,
-                        **kwargs_to_ignore: Any,
-                    ) -> np.ndarray:
-                        # NOTE [IMPORTANT]: See "weights_initializer" notes; the case of
-                        # "pytorch_running_mean = running_mean" parameter is the same case as
-                        # weights_initializer's "pytorch_weights = weights".
-                        return pytorch_running_mean.astype(dtype=dtype, copy=False)
-
-                    setattr(converted_layer, pydtnn_running_mean_initializer, running_mean_initializer)
-                else:
-                    # As said before, I'm pretty sure this case never happens, but anyways,
-                    # it's better to have it just in case.
-                    assert isinstance(converted_layer, BatchNormalization)
-                    converted_layer.running_mean = running_mean
-            # else: Nothing special.
-
-            # for BatchNormalization
-            if layer_running_var in state_dict:
-                running_var: np.ndarray = copy.deepcopy(state_dict[layer_running_var].numpy(force = True))
-                if hasattr(converted_layer, pydtnn_running_variance_initializer):
-
-                    def running_var_initializer(
-                        shape: tuple,
-                        dtype: np.ndarray,
-                        random: np.random.Generator,
-                        pytorch_running_var: np.ndarray = running_var,
-                        **kwargs_to_ignore: Any,
-                    ) -> np.ndarray:
-                        # NOTE [IMPORTANT]: See "weights_initializer" notes; the case of
-                        # "pytorch_running_var = running_var" parameter is the same case as
-                        # weights_initializer's "pytorch_weights = weights".
-                        return pytorch_running_var.astype(dtype=dtype, copy=False)
-
-                    setattr(converted_layer, pydtnn_running_variance_initializer, running_var_initializer)
-                else:
-                    # As said before, I'm pretty sure this case never happens, but anyways,
-                    # it's better to have it just in case.
-                    assert isinstance(converted_layer, BatchNormalization)
-                    converted_layer.running_var = running_var
-            # else: Nothing special.
 
             converted_layers[layer_var] = (converted_layer, params)
         else:  # is intance of string (the name of a function or an operation)
@@ -400,7 +276,7 @@ def get_layers_from_torch(
 
     # Obtaining the PyDTNN equivalent layer for every layer and setting the
     # weights and biases (if it's necessary)
-    layers = convert_layers_and_set_weights_and_biases(input_shape=input_shape, layers=dict_layers)
+    layers = convert_layers(input_shape=input_shape, layers=dict_layers)
 
     if not isinstance(layers[-1], Activation) and default_output_activation_layer is not None:
         layers.append(default_output_activation_layer)

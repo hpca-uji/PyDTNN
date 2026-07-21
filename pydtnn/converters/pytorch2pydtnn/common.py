@@ -3,6 +3,8 @@
 import logging
 from typing import Any, Callable
 
+import torch
+
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.converters.pytorch2pydtnn.layers.activation import (LeakyRelu, LogSigmoid, ReLU,
                                                                 ReLU6, Sigmoid, Softmax, Tanh)
@@ -16,6 +18,9 @@ from pydtnn.converters.pytorch2pydtnn.layers.normalization import BatchNorm2d
 from pydtnn.converters.pytorch2pydtnn.layers.pooling import AdaptiveAvgPool2d, AvgPool2d, MaxPool2d
 from pydtnn.converters.pytorch2pydtnn.layers.utility import Flatten
 
+import numpy as np
+import copy
+
 __all__ = (
     "function_operation_to_pydtnn",
     "get_equivalent_layer",
@@ -28,11 +33,6 @@ __all__ = (
 )
 
 logger = logging.getLogger(__name__)
-
-# Typing related (or non important) imports
-
-# Functionality imports
-
 
 # ---- CONSTANTS ----
 ARGUMENTS = "arguments"
@@ -342,3 +342,48 @@ def get_equivalent_layer(params: list[str], dict_equivalent_layers: dict[str, st
             layer = dict_equivalent_layers[layer]
         equivalent_layers[layer] = None
     return list(equivalent_layers.keys())
+
+def set_initializer_with_pytorch_values(state_dict: dict[str, Any],
+                                        transpose_values: bool = False,
+                                        vars_and_initiaizers: dict[str, str] = {
+                                               "weight": "weights_initializer",
+                                               "bias": "biases_initializer",
+                                               "running_mean": "running_mean_initializer",
+                                               "running_var": "running_var_initializer"
+                                        }) -> dict[str, Any]:
+    """Function to set the value returned by the initializers of the layer's weight, bias, etc."""
+    dict_initalizers: dict[str, Any] = dict()
+
+    for variable in vars_and_initiaizers.keys():
+        # There are layers without weight nor biases
+        if variable in state_dict:
+            initalizer_name = vars_and_initiaizers[variable]
+
+            torch_value: torch.Tensor | None = state_dict[variable]
+            if torch_value is None:
+                continue
+
+            value_to_set: np.ndarray = copy.deepcopy(torch_value.numpy(force = True))
+            # NOTE: There are some layers (like the fully connected) where the shape
+            # in PyDTNN is the transpose of the PyTorch's one.
+            value_to_set = value_to_set.T if transpose_values else value_to_set
+
+            def pytorch_value_initializer(shape: tuple,
+                                          dtype: np.ndarray,
+                                          random: np.random.Generator = None,  # type: ignore (It will be ignored.)
+                                          pytorch_value_to_set: np.ndarray = value_to_set,
+                                          **kwargs_to_ignore: Any) -> np.ndarray:
+                # NOTE [IMPORTANT]: Regarding "pytorch_value_to_set = value_to_set".
+                # NOTE If "value_to_set" is directly set as the returned value ("return value_to_set"),
+                #       for some reason the return will be a reference to "value_to_set" instead of
+                #       the "value_to_set"'s value (that is a reference to the layer's PyTorch's value_to_set),
+                #       so, since this is in a for loop and this function (weights_initializer) is called
+                #       in some step after the loop, every layer will have the last iteration's "value_to_set" values
+                #       a reference to the last layer value_to_set- instead of a reference to their respective layer value_to_set.
+                #       In this way "pytorch_value_to_set" has the copy of "value_to_set"'s values
+                #       (that, as said before, is a reference to the layer's value_to_set) of that iteration.
+                return pytorch_value_to_set.astype(dtype=dtype, copy=False)
+            
+            dict_initalizers[initalizer_name] = pytorch_value_initializer
+            
+    return dict_initalizers

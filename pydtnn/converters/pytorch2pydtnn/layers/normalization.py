@@ -50,4 +50,7 @@ def BatchNorm2d(args: dict[str, Any]) -> BatchNormalization:
         pydtnn_dict_keys=pydtnn_dict_keys,
     )
 
+    initializers = cm.set_initializer_with_pytorch_values(args[cm.ARGUMENTS]["_buffers"])
+    layer_args.update(initializers)
+
     return BatchNormalization(**layer_args)

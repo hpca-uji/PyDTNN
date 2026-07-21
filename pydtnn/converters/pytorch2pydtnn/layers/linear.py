@@ -49,6 +49,9 @@ def Linear(args: dict[str, Any]) -> FC:
         pydtnn_dict_keys=pydtnn_dict_keys,
     )
 
+    initializers = cm.set_initializer_with_pytorch_values(args[cm.ARGUMENTS]["_parameters"], transpose_values = True)
+    layer_args.update(initializers)
+
     # PyDTNN expects the shape as a tuple instead of an int.
     if pydtnn_shape in layer_args and isinstance(layer_args[pydtnn_shape], int):
         layer_args[pydtnn_shape] = (layer_args[pydtnn_shape],)
