@@ -12,7 +12,7 @@ from typing import Any
 
 import numpy as np
 
-from pydtnn.utils.constants import ArrayShape
+from pydtnn.utils.constants import ArrayShape  # noqa: F401
 
 __all__ = ("SparseFlatArray",)
 
@@ -25,34 +25,46 @@ class SparseFlatArray[V: np.number, I: np.integer = np.int32, S: tuple = ArraySh
 
     def __init__(self, shape: S, indexes: FlatArray[I], values: FlatArray[V]) -> None:
         """Construct array"""
-        size = math.prod(shape)
-
-        if len(indexes) != len(values):
-            raise ValueError("Mismatch indexes and data array")
-        elif indexes.min(initial=size) < 0 or indexes.max(initial=0) >= size:
-            raise ValueError("Indexes out of range of shape")
-        elif len(values) > size:
-            raise ValueError("Too many values for shape")
-
         self.shape = shape
         self.indexes = indexes
         self.values = values
+
+        if len(self.indexes) != len(self.values):
+            raise ValueError("Mismatch indexes and data array")
+        elif indexes.min(initial=self.size) < 0 or indexes.max(initial=0) >= self.size:
+            raise ValueError("Indexes out of range of shape")
+        elif len(self.values) > self.size:
+            raise ValueError("Too many values for shape")
+        assert self.is_canonical(), "Non canonical representation"
 
     def __repr__(self) -> str:
         """Sparse flatten array representation"""
         return f"{self.__class__.__name__}(shape={self.shape}, indexes={self.indexes}, values={self.values})"
 
+    @property
+    def size(self) -> int:
+        """Number of dense slots"""
+        return math.prod(self.shape)
+
+    @property
+    def nnz(self) -> int:
+        """Number of sparse slots"""
+        return self.values.size
+
+    @property
+    def nbytes(self) -> int:
+        """Number of sparse bytes"""
+        return self.indexes.nbytes + self.values.nbytes
+
     @classmethod
     def from_dense[DV: np.number, DI: np.integer, DS: tuple](
         cls: type[SparseFlatArray[DV, DI, DS]],
         array: np.ndarray[DS, np.dtype[DV]],
-        threshold: float = 0.0,
         dtype: type[DI] = np.int32
     ) -> SparseFlatArray[DV, DI, DS]:
         """Construct from dense"""
-        threshold = 0.0
         shape = array.shape
-        indexes = np.flatnonzero(np.abs(array) > threshold).astype(dtype)
+        indexes = np.flatnonzero(array).astype(dtype)
         values = array.reshape(-1)[indexes]
         return cls(shape, indexes, values)
 
@@ -96,16 +108,6 @@ class SparseFlatArray[V: np.number, I: np.integer = np.int32, S: tuple = ArraySh
 
         return self.__class__(self.shape, indexes, values)
 
-    def __and__(self, other: Any) -> SparseFlatArray[V, I, S]:  # noqa: E741
-        """Index intersection"""
-        if not isinstance(other, SparseFlatArray):
-            raise TypeError("Operand must be a SparseFlatArray instance")
-        elif self.shape != other.shape:
-            raise ValueError("Array must have the same shape")
-        indexes, original, _ = np.intersect1d(self.indexes, other.indexes, assume_unique=True, return_indices=True)
-        values = self.values[original]
-        return self.__class__(self.shape, indexes, values)
-
     def __add__(self, other: Any) -> SparseFlatArray[V, I, S]:  # noqa: E741
         """Add two arrays"""
         if not isinstance(other, SparseFlatArray):
@@ -113,21 +115,27 @@ class SparseFlatArray[V: np.number, I: np.integer = np.int32, S: tuple = ArraySh
         elif self.shape != other.shape:
             raise ValueError("Array must have the same shape")
 
+        # union
         indexes = np.union1d(self.indexes, other.indexes)
         values = np.zeros(indexes.size, dtype=self.values.dtype)
 
+        # self
         insert = np.searchsorted(indexes, self.indexes)
         values[insert] += self.values
 
+        # other
         insert = np.searchsorted(indexes, other.indexes)
         values[insert] += other.values
 
         return self.__class__(self.shape, indexes, values)
 
+    def __getitem__(self, key: Any) -> SparseFlatArray[V, I, S]:  # noqa: E741
+        """Filtering getter"""
+        indexes, values = self.indexes[key], self.values[key]
+        return self.__class__(self.shape, indexes, values)
+
     def threshold(self, threshold: float = 0.0) -> SparseFlatArray[V, I, S]:  # noqa: E741
         """Threshold filter"""
-        threshold = 0.0
-        filter = np.flatnonzero(np.abs(self.values) > threshold).astype(self.indexes.dtype)
-        indexes = self.indexes[filter]
-        values = self.values[filter]
-        return self.__class__(self.shape, indexes, values)
+        threshold = 0.0  # TODO: remove once tested
+        indexes = np.flatnonzero(np.abs(self.values) > threshold)
+        return self[indexes]
