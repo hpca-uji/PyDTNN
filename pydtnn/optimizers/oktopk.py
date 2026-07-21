@@ -1,4 +1,4 @@
-"""OkTopkSP optimizer implementation for distributed training."""
+"""OkTopk optimizer implementation for distributed training."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from pydtnn.abstract.layerable import Layerable
 from pydtnn.optimizers.abstract.optimizer import Optimizer
 from pydtnn.utils.constants import Array
 
-__all__ = ("OkTopkSP",)
+__all__ = ("OkTopk",)
 
 logger = logging.getLogger(__name__)
 
@@ -21,8 +21,8 @@ if TYPE_CHECKING:
 # TODO: Remove all row,col, use new flat structure, allows balanced partitioning
 
 
-class OkTopkSP[T: Array](Optimizer[T]):  # noqa: D101 (generics not detected)
-    """OkTopkSP Optimizer"""
+class OkTopk[T: Array](Optimizer[T]):  # noqa: D101 (generics not detected)
+    """OkTopk Optimizer"""
 
     def __init__(
         self,
@@ -70,6 +70,7 @@ class OkTopkSP[T: Array](Optimizer[T]):  # noqa: D101 (generics not detected)
         props = super()._show_props()
 
         props["momentum"] = self.momentum
+        props["decay"] = self.decay
         props["tau"] = self.tau
         props["tau_prime"] = self.tau_prime
         props["density"] = self.density
@@ -77,15 +78,16 @@ class OkTopkSP[T: Array](Optimizer[T]):  # noqa: D101 (generics not detected)
 
         return props
 
-    def _model_init(self, list_layers: list[Layerable]) -> None:
+    def _model_init(self, layers: list[Layerable]) -> None:
         """
         Initialize the optimizer with model layers.
 
         Args:
             list_layers: List of layers in the model.
         """
-        super()._model_init(list_layers)
+        super()._model_init(layers)
 
+        
         assert self.model.comm, "Communicator need!"
 
         if self.model.model_sync_freq >= 0:
@@ -97,7 +99,7 @@ class OkTopkSP[T: Array](Optimizer[T]):  # noqa: D101 (generics not detected)
             )
 
     @classmethod
-    def from_model(cls, model: Model) -> OkTopkSP:
+    def from_model(cls, model: Model) -> OkTopk:
         """
         Create an OkTopk instance from a model configuration.
 
@@ -107,7 +109,7 @@ class OkTopkSP[T: Array](Optimizer[T]):  # noqa: D101 (generics not detected)
         Returns:
             An initialized OkTopk optimizer.
         """
-        return OkTopkSP(
+        return OkTopk(
             learning_rate=model.learning_rate,
             momentum=model.optimizer_momentum,
             decay=model.optimizer_decay,
