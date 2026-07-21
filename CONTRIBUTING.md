@@ -32,14 +32,15 @@ _Things to do & not to do_
 - Keep `Makefile` and `pyproject.toml` in sync, any changes in dependencies versions must be reflected in both.
 
 ## Components
-- If components structure changes, update the `Structure` section of this document accordingly.
-- If the Model or Dataset components structure changes, update the class's `__init__` diagram.
+- When components structure changes, update the `Structure` section of this document accordingly.
+- When the Model or Dataset components structure changes, update the class's `__init__` diagram.
 
 # Knowledge
 _Things you should keep in mind_
 
 ## Bootstrapping
 - In components, `__init__` is used for model-agnostic configuration, and `_model_init` for model specific configuration, and `_post_init` and resource allocation.
+- When using componentes with backends, when initialized (via `_init_backend`) the instance will reset, so no modifications (such as with `setattr`) will be visible.
 
 ## GPU
 - `--use-gpudirect` moves data from CPU (`ndarray`) to GPU (`GPUArray`), requires `enable-cudnn`
@@ -58,11 +59,11 @@ _Things you should keep in mind_
 - When using `PreallocMemory`, temporary memory in block layers will overlap its child layers, therefore it may be overwritten.
 
 ## Environment
-- If using `conda` and `pip install` fails with `no such option: --config-settings`, deactivate all environments and reactivate only the target environment.
+- When using `conda` and `pip install` fails with `no such option: --config-settings`, deactivate all environments and reactivate only the target environment.
 
 ## Typing
-- If sure, you can disable typing errors with `# typing: ignore (reason)`.
-- If sure, you can disable styling errors with `# noqa: {error} (reason)`.
+- When sure, you can disable typing errors with `# typing: ignore (reason)`.
+- When sure, you can disable styling errors with `# noqa: {error} (reason)`.
 
 # Structure
 _How is the project organized_
