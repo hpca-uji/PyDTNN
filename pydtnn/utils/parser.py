@@ -51,9 +51,9 @@ def factor(_x: str) -> float:
     return x
 
 
-def np_dtype(x: str) -> np.object_:
+def np_dtype(x: str) -> np.dtype:
     """Returns a numpy object from a string representing the data type"""
-    return getattr(np, x)
+    return np.dtype(getattr(np, x))
 
 
 def csi(x: str) -> tuple[int, ...]:
@@ -243,7 +243,7 @@ class ArgumentParser(argparse.ArgumentParser):
             choices=dtype,
             help=(
                 f"Datatype to use: {", ".join(map(repr, map(str, dtype)))}."
-                f" Default: {ModelBase.dtype!r}."
+                f" Default: {str(ModelBase.dtype)!r}."
             ),
         )
         self.add_argument(
@@ -263,7 +263,7 @@ class ArgumentParser(argparse.ArgumentParser):
             choices=quantize_dtype,
             help=(
                 f"Quantized datatype to use: {", ".join(map(repr, map(str, quantize_dtype)))}."
-                f" Default: {ModelBase.quantize_dtype!r}."
+                f" Default: {str(ModelBase.quantize_dtype)!r}."
             ),
         )
         self.add_argument(
@@ -383,7 +383,7 @@ class ArgumentParser(argparse.ArgumentParser):
             choices=ModelBase.SyncAlgorithm,
             help=(
                 f"Aggregation method used to synchronize models: {", ".join(map(repr, map(str, ModelBase.SyncAlgorithm)))}."
-                f" Default: {ModelBase.model_sync_algo!r}."
+                f" Default: {str(ModelBase.model_sync_algo)!r}."
             ),
         )
         _sy_group.add_argument(
@@ -393,7 +393,7 @@ class ArgumentParser(argparse.ArgumentParser):
             choices=ModelBase.SyncParticipation,
             help=(
                 f"Rank participation to synchronize models: {", ".join(map(repr, map(str, ModelBase.SyncParticipation)))}."
-                f" Default: {ModelBase.model_sync_participation!r}."),
+                f" Default: {str(ModelBase.model_sync_participation)!r}."),
         )
         _sy_group.add_argument(
             "--model-sync-min-avail",
@@ -439,7 +439,7 @@ class ArgumentParser(argparse.ArgumentParser):
             choices=model_sync_dtype,
             help=(
                 f"Model synchronization quantization target dtype: {", ".join(map(repr, map(str, model_sync_dtype)))}"
-                f" Default: {ModelBase.model_sync_dtype!r}."
+                f" Default: {str(ModelBase.model_sync_dtype)!r}."
             ),
         )
 
@@ -1412,7 +1412,7 @@ class ArgumentParser(argparse.ArgumentParser):
         lines = []
 
         def quotes(text: str) -> str:
-            return re.sub(r"'([^']*)'", r"`\1`", text)
+            return re.sub(r"'([^']*)'", r"`\1`", text).replace("``", "` `")
 
         for group in self._action_groups:
 

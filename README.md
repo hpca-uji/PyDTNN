@@ -131,7 +131,7 @@ The PyDTNN framework comes with a utility launcher called
 - Model options:
   - `-h`, `--help`: show this help message and exit
   - `--model`: Neural network model: `densenet21k8`, `densenet121_imagenet`, `resnet44`, etc.
-    Default: ``.
+    Default: ` `.
   - `--backend`: Backend selection priority. Format:
     [module[,module[,...]]:]backend[,backend[,...]][;...]. Example:
     `all:numpy;conv_2d:gemm;layers,optimizers:numpy,cython`. Selection: More
@@ -143,18 +143,16 @@ The PyDTNN framework comes with a utility launcher called
     value (but not both). Default: 0.
   - `--global-batch-size`: Batch size between all MPI ranks. Or `batch_size` or `global_batch_size` must
     have a value (but not both). Default: 0.
-  - `--dtype`: Datatype to use: "<class `numpy.float32`>", "<class `numpy.float64`>". Default:
-    dtype(`float32`).
+  - `--dtype`: Datatype to use: `float32`, `float64`. Default: `float32`.
   - `--quantize`, `--no-quantize`: Enable model quantization. Default: False
-  - `--quantize-dtype`: Quantized datatype to use: "<class `numpy.float16`>", "<class `numpy.float32`>",
-    "<class `numpy.float64`>". Default: dtype(`float16`).
+  - `--quantize-dtype`: Quantized datatype to use: `float16`, `float32`, `float64`. Default: `float16`.
   - `--num-epochs`: Number of epochs to perform. Default: 1.
   - `--steps-per-epoch`: Trims the training data depending on the given number of steps per epoch. If
     `0`, then no trim, full dataset.Default: 0.
   - `--evaluate`, `--no-evaluate`: Evaluate the model before and after training the model. Default: False.
   - `--evaluate-only`, `--no-evaluate-only`: Only evaluate the model. Default: False.
-  - `--model-state-filename`: Load weights and bias from file. Default: ``.
-  - `--history-file`: Filename to save training loss and metrics. Default: ``.
+  - `--model-state-filename`: Load weights and bias from file. Default: ` `.
+  - `--history-file`: Filename to save training loss and metrics. Default: ` `.
   - `--tensor-format`: Data format to be used: `nchw`, `nhwc`. If not defined value sets `nchw` when
     cuDNN is available, `nhwc` otherwise. Default: None.
   - `--random-seed`: Initial state of random number generator. Default: 57005.
@@ -167,18 +165,17 @@ The PyDTNN framework comes with a utility launcher called
     gradients every batch. Positive values synchronizes gradients and weights every
     N batches. Negative values disables synchronization.Default: 0.
   - `--model-sync-algo`: Aggregation method used to synchronize models: `avg`, `wavg`, `invavg`. Default:
-    <SyncAlgorithm.AVG: `avg`>.
-  - `--model-sync-participation`: Rank participation to synchronize models: `all`, `avail2all`. Default:
-    <SyncParticipation.ALL: `all`>.
+    `avg`.
+  - `--model-sync-participation`: Rank participation to synchronize models: `all`, `avail2all`. Default: `all`.
   - `--model-sync-min-avail`: Minimum ranks with data required to synchronize models. Default: 0.
   - `--initial-model-sync`, `--no-initial-model-sync`: Synchronize models on training start. Default: True.
   - `--final-model-sync`, `--no-final-model-sync`: Synchronize models on training end. Default: True.
   - `--model-sync-quantize`, `--no-model-sync-quantize`: Enable model quantization on synchronize. Default: False.
-  - `--model-sync-dtype`: Model synchronization quantization target dtype: "<class `numpy.float16`>",
-    "<class `numpy.float32`>", "<class `numpy.float64`>" Default: dtype(`float16`).
+  - `--model-sync-dtype`: Model synchronization quantization target dtype: `float16`, `float32`, `float64`
+    Default: `float16`.
 
 - Dataset options:
-  - `--dataset`: Dataset to train: `synthetic`, `mnist`, `folder`, etc. Default: ``.
+  - `--dataset`: Dataset to train: `synthetic`, `mnist`, `folder`, etc. Default: ` `.
   - `--dataset-percentage`: Percentage of dataset that will be used. If it is `0`: it is deactivated; if is
     is a value below `1` (and above 0): it will perform undersampling; and if is is
     a value above `1`: it will perform oversampling. Default: 0.0.
@@ -242,7 +239,7 @@ The PyDTNN framework comes with a utility launcher called
     available algorithms. Default: `convdirect_original_{tensor_format}_default`
 
 - Optimizer options:
-  - `--optimizer`: Optimizers: `oktopk`, `rmsprop`, `sgd`, etc. Default: `sgd`.
+  - `--optimizer`: Optimizers: `rmsprop`, `sgd`, `oktopk`, etc. Default: `sgd`.
   - `--learning-rate`: Learning rate. Default: 0.01.
   - `--learning-rate-scaling`, `--no-learning-rate-scaling`: Scale learning rate in parallelism: new_lr = lr * num_procs. True if specified.
     If left undefined, when `--batch-size` is defined, defaults to True. Default:
@@ -321,7 +318,7 @@ The PyDTNN framework comes with a utility launcher called
 
 - Encryption options:
   - `--encryption`: Encryption library backend to use. Use `polyhe.Backend` to see available
-    libraries. Default: ``.
+    libraries. Default: ` `.
   - `--encryption-slots`: Encryption slot count. 2 ^ `value`. Default: 13.
   - `--encryption-scale`: Encryption operational scale. 2 ^ `value`. Default: 40.
   - `--encryption-security`: Encryption security level: 128, 192, 256. Use `polyhe.{backend}.SECURITY_LEVEL`
@@ -329,10 +326,10 @@ The PyDTNN framework comes with a utility launcher called
 
 - Tracing options:
   - `--tracing`, `--no-tracing`: Obtain Simple/Extrae-based traces. Default: False.
-  - `--tracer-output`: Output file to store the Simple/Extrae-based traces. Default: ``.
+  - `--tracer-output`: Output file to store the Simple/Extrae-based traces. Default: ` `.
   - `--tracer-pmlib-server`: Address of PMlib tracer server. Default: `127.0.0.1`.
   - `--tracer-pmlib-port`: Port of PMlib tracer server. Default: 6526.
-  - `--tracer-pmlib-device`: Port of PMlib tracer device. Default: ``.
+  - `--tracer-pmlib-device`: Port of PMlib tracer device. Default: ` `.
   - `--profile`, `--no-profile`: Obtain Python profiles. Default: False.
 
 ## Example: distributed training of a CNN for the MNIST dataset
