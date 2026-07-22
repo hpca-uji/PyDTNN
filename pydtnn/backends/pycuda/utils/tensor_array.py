@@ -27,7 +27,7 @@ except Exception:
     pass
 
 
-class TensorArray:
+class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
     """Wrapper class for GPU arrays that integrates with cuDNN descriptors."""
 
     class TensorType(StrEnum):
@@ -40,15 +40,15 @@ class TensorArray:
 
     @staticmethod
     def new_empty(
-        shape: ArrayShape,
-        dtype: np.dtype,
+        shape: S,
+        dtype: D,
         tensor_format: TensorFormat,
         cudnn_dtype: int,
         tensor_type: TensorType = TensorType.TENSOR,
         desc: int | None = None,
         gpudirect: bool = False,
         cublas: bool = False,
-    ) -> TensorArray:
+    ) -> TensorArray[S, D]:
         """Creates an uninitialized TensorArray."""
         gpu_arr = gpuarray.empty(shape, dtype)
         return TensorArray(
@@ -63,15 +63,15 @@ class TensorArray:
 
     @staticmethod
     def new_zeros(
-        shape: ArrayShape,
-        dtype: np.dtype,
+        shape: S,
+        dtype: D,
         tensor_format: TensorFormat,
         cudnn_dtype: int,
         tensor_type: TensorType = TensorType.TENSOR,
         desc: int | None = None,
         gpudirect: bool = False,
         cublas: bool = False,
-    ) -> TensorArray:
+    ) -> TensorArray[S, D]:
         """Creates a zero-initialized TensorArray."""
         gpu_arr = gpuarray.zeros(shape, dtype)
         return TensorArray(
@@ -86,14 +86,14 @@ class TensorArray:
 
     @staticmethod
     def to_gpu(
-        ary: np.ndarray,
+        ary: np.ndarray[S, D],
         tensor_format: TensorFormat,
         cudnn_dtype: int,
         tensor_type: TensorType = TensorType.TENSOR,
         desc: int | None = None,
         gpudirect: bool = False,
         cublas: bool = False,
-    ) -> TensorArray:
+    ) -> TensorArray[S, D]:
         """Creates a zero-initialized TensorArray."""
         gpu_arr = gpuarray.to_gpu(ary)
         return TensorArray(
@@ -108,15 +108,15 @@ class TensorArray:
 
     @staticmethod
     def new_ones(
-        shape: ArrayShape,
-        dtype: np.dtype,
+        shape: S,
+        dtype: D,
         tensor_format: TensorFormat,
         cudnn_dtype: int,
         tensor_type: TensorType = TensorType.TENSOR,
         desc: int | None = None,
         gpudirect: bool = False,
         cublas: bool = False,
-    ) -> TensorArray:
+    ) -> TensorArray[S, D]:
         """Creates a initialized TensorArray filled with ones."""
         gpu_arr = gpuarray.ones(shape, dtype)
         return TensorArray(
@@ -132,20 +132,20 @@ class TensorArray:
     @staticmethod
     def new_pair_gpudirect(
         drv: pycuda_driver,
-        shape: ArrayShape,
-        dtype: np.dtype,
+        shape: S,
+        dtype: D,
         tensor_format: TensorFormat,
         cudnn_dtype: int,
         tensor_type: TensorType = TensorType.TENSOR,
         desc: int | None = None,
         gpudirect: bool = False,
         cublas: bool = False,
-    ) -> tuple[np.ndarray, TensorArray]:
+    ) -> tuple[np.ndarray[S, D], TensorArray[S, D]]:
         """Creates a CPU/GPU pair using GPUDirect memory registration."""
         x_cpu = drv.aligned_zeros(shape, dtype)
         x_gpu = drv.register_host_memory(x_cpu, flags=drv.mem_host_register_flags.DEVICEMAP)
 
-        x_gpu = TensorArray(
+        x_gpu = TensorArray[S, D](
             x_gpu,
             tensor_format=tensor_format,
             cudnn_dtype=cudnn_dtype,
@@ -158,19 +158,19 @@ class TensorArray:
 
     @staticmethod
     def new_pair(
-        shape: ArrayShape,
-        dtype: np.dtype,
+        shape: S,
+        dtype: D,
         tensor_format: TensorFormat,
         cudnn_dtype: int,
         tensor_type: TensorType = TensorType.TENSOR,
         desc: int | None = None,
         gpudirect: bool = False,
         cublas: bool = False,
-    ) -> tuple[np.ndarray, TensorArray]:
+    ) -> tuple[np.ndarray[S, D], TensorArray[S, D]]:
         """Creates a standard CPU/GPU pair."""
         x_cpu = np.zeros(shape, dtype)
         x_gpu = gpuarray.zeros(shape, dtype)
-        x_gpu = TensorArray(
+        x_gpu = TensorArray[S, D](
             x_gpu,
             tensor_format=tensor_format,
             cudnn_dtype=cudnn_dtype,
@@ -183,8 +183,8 @@ class TensorArray:
 
     @staticmethod
     def new(
-        shape: ArrayShape,
-        dtype: np.dtype,
+        shape: S,
+        dtype: D,
         tensor_format: TensorFormat,
         cudnn_dtype: int,
         tensor_type: TensorType = TensorType.TENSOR,
@@ -192,10 +192,10 @@ class TensorArray:
         gpudirect: bool = False,
         cublas: bool = False,
         drv: pycuda_driver = None,
-    ) -> tuple[np.ndarray, TensorArray]:
+    ) -> tuple[np.ndarray[S, D], TensorArray[S, D]]:
         """Factory method to create a CPU/GPU pair based on driver availability."""
         if drv is not None:
-            return TensorArray.new_pair_gpudirect(
+            return TensorArray[S, D].new_pair_gpudirect(
                 drv=drv,
                 shape=shape,
                 dtype=dtype,
@@ -207,7 +207,7 @@ class TensorArray:
                 cublas=cublas,
             )
         else:
-            return TensorArray.new_pair(
+            return TensorArray[S, D].new_pair(
                 shape=shape,
                 dtype=dtype,
                 tensor_format=tensor_format,
@@ -227,7 +227,7 @@ class TensorArray:
         desc: int | None = None,
         gpudirect: bool = False,
         cublas: bool = False,
-        cpu_shape: ArrayShape | None = None,
+        cpu_shape: S | None = None,
     ) -> None:
         """Initializes the TensorArray instance."""
 
@@ -239,7 +239,7 @@ class TensorArray:
 
         self.ary: gpuarray.GPUArray
         self.desc: int = desc  # type: ignore (if it's None it will be set later)
-        self.cpu_shape: ArrayShape = cpu_shape  # type: ignore (if it's None it will be set later)
+        self.cpu_shape: S = cpu_shape  # type: ignore (if it's None it will be set later)
 
         self._set_ary(gpu_arr)
         if desc:
@@ -398,9 +398,9 @@ class TensorArray:
         """Delegates attribute access to the underlying GPUArray."""
         return getattr(self.ary, name)
 
-    def reshape(self, shape: ArrayShape, order: Literal["C", "F", "A"] = "C") -> TensorArray:
+    def reshape[NS: tuple = ArrayShape](self, shape: NS, order: Literal["C", "F", "A"] = "C") -> TensorArray[NS, D]:
         """Returns a reshaped view of the TensorArray."""
-        return self._view(self.ary.reshape(shape, order))
+        return self._view(self.ary.reshape(shape, order))  # type: ignore
 
     def squeeze(self, dtype: np.dtype | None = None) -> TensorArray:
         """Squeeze operation is not supported for TensorArray."""
@@ -416,7 +416,7 @@ class TensorArray:
             np.asarray(value.reshape(self.ary.shape), dtype=self.ary.dtype), stream=stream
         )
 
-    def get(self, ary: gpuarray.GPUArray | None = None) -> np.ndarray:
+    def get(self, ary: gpuarray.GPUArray | None = None) -> np.ndarray[S, D]:
         """Copies data from GPU to CPU and removes padding."""
         value = self.ary.get()
 
@@ -460,7 +460,7 @@ class TensorArray:
             return None  # type: ignore
 
     def get_async(
-        self, stream: pycuda_driver | None = None, ary: gpuarray.GPUArray | None = None
+        self, stream: pycuda_driver | None = None, ary: np.ndarray[ArrayShape, D] | None = None
     ) -> None:
         """Asynchronously copies data from GPU to CPU."""
         if ary is None:
@@ -471,15 +471,17 @@ class TensorArray:
             raise TypeError("Destination must be same dtype!")
         self.ary.get_async(stream, ary=ary.reshape(self.ary.shape))
 
-    def __array__(self, dtype: np.dtype | None = None, *, copy: bool | None = None) -> np.ndarray:
+    def __array__(self, dtype: np.dtype | None = None, *, copy: bool | None = None) -> np.ndarray[S, D]:
         """Converts TensorArray to a NumPy array."""
-        return np.asarray(self.get(), dtype=dtype)
+        if copy is False:
+            raise ValueError("Must copy array")
+        return np.asarray(self.get(), dtype=dtype)  # type: ignore
 
-    def _view(self, ary: gpuarray.GPUArray, keep_shape: bool = True) -> TensorArray:
+    def _view(self, ary: gpuarray.GPUArray, keep_shape: bool = True) -> TensorArray[S, D]:
         """Creates a new TensorArray instance sharing the same underlying configuration."""
         # NOTE: In some cases, it would be possible to share the descriptor more
         # aggressively, but we don't have enough information to decide when.
-        return TensorArray(
+        return TensorArray[S, D](
             gpu_arr=ary,
             tensor_format=self.tensor_format,
             cudnn_dtype=self.cudnn_dtype,
@@ -490,17 +492,17 @@ class TensorArray:
             cpu_shape=self.cpu_shape if keep_shape else None,
         )
 
-    def copy(self) -> TensorArray:
+    def copy(self) -> TensorArray[S, D]:
         """Returns a deep copy of the TensorArray."""
         return copy.deepcopy(self)
 
-    def __copy__(self) -> TensorArray:
+    def __copy__(self) -> TensorArray[S, D]:
         """Returns a shallow copy of the TensorArray."""
         return self._view(self.ary)
 
-    def __deepcopy__(self, memo: dict) -> TensorArray:
+    def __deepcopy__(self, memo: dict) -> TensorArray[S, D]:
         """Returns a deep copy of the TensorArray."""
-        obj = TensorArray(
+        obj = memo[id(self)] = TensorArray[S, D](
             gpu_arr=copy.deepcopy(self.ary, memo),
             tensor_format=self.tensor_format,
             cudnn_dtype=self.cudnn_dtype,
@@ -510,7 +512,6 @@ class TensorArray:
             desc=-1,
             cpu_shape=self.cpu_shape,
         )
-        memo[id(self)] = obj
         return obj
 
     def close(self) -> None:
@@ -542,72 +543,72 @@ class TensorArray:
             other = other.astype(self.ary.dtype)
         return other
 
-    def __add__(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> TensorArray:
+    def __add__(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> TensorArray[S, D]:
         """Addition operator."""
         other = self._operable(other)
         return self._view(self.ary.__add__(other))
 
-    def __radd__(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> TensorArray:
+    def __radd__(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> TensorArray[S, D]:
         """Right-side addition operator."""
         other = self._operable(other)
         return self._view(self.ary.__radd__(other))
 
-    def __sub__(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> TensorArray:
+    def __sub__(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> TensorArray[S, D]:
         """Subtraction operator."""
         other = self._operable(other)
         return self._view(self.ary.__sub__(other))
 
-    def __rsub__(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> TensorArray:
+    def __rsub__(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> TensorArray[S, D]:
         """Right-side subtraction operator."""
         other = self._operable(other)
         return self._view(self.ary.__rsub__(other))
 
-    def __iadd__(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> TensorArray:
+    def __iadd__(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> TensorArray[S, D]:
         """In-place addition operator."""
         other = self._operable(other)
         return self._view(self.ary.__iadd__(other))
 
-    def __isub__(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> TensorArray:
+    def __isub__(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> TensorArray[S, D]:
         """In-place subtraction operator."""
         other = self._operable(other)
         return self._view(self.ary.__isub__(other))
 
-    def __neg__(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> TensorArray:
+    def __neg__(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> TensorArray[S, D]:
         """Negation operator."""
         other = self._operable(other)
         return self._view(self.ary.__neg__(other))
 
-    def __mul__(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> TensorArray:
+    def __mul__(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> TensorArray[S, D]:
         """Multiplication operator."""
         other = self._operable(other)
         return self._view(self.ary.__mul__(other))
 
-    def __rmul__(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> TensorArray:
+    def __rmul__(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> TensorArray[S, D]:
         """Right-side multiplication operator."""
         other = self._operable(other)
         return self._view(self.ary.__rmul__(other))
 
-    def __truediv__(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> TensorArray:
+    def __truediv__(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> TensorArray[S, D]:
         """Division operator."""
         other = self._operable(other)
         return self._view(self.ary.__truediv__(other))
 
-    def __rtruediv__(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> TensorArray:
+    def __rtruediv__(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> TensorArray[S, D]:
         """Right-side division operator."""
         other = self._operable(other)
         return self._view(self.ary.__rtruediv__(other))
 
-    def __pow__(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> TensorArray:
+    def __pow__(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> TensorArray[S, D]:
         """Power operator."""
         other = self._operable(other)
         return self._view(self.ary.__pow__(other))
 
-    def __rpow__(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> TensorArray:
+    def __rpow__(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> TensorArray[S, D]:
         """Right-side power operator."""
         other = self._operable(other)
         return self._view(self.ary.__rpow__(other))
 
-    def __getitem__(self, index: int | tuple | slice | np.ndarray) -> TensorArray:
+    def __getitem__(self, index: int | tuple | slice | np.ndarray) -> TensorArray[S, D]:
         """Indexing operator."""
         return self._view(self.ary.__getitem__(index), keep_shape=False)
 
@@ -620,6 +621,6 @@ class TensorArray:
         value = self._operable(value)
         return self.ary.__setitem__(key, value)
 
-    def __abs__(self) -> TensorArray:
+    def __abs__(self) -> TensorArray[S, D]:
         """Absolute value operator."""
         return self._view(self.ary.__abs__())

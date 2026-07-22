@@ -12,5 +12,3 @@ logger = logging.getLogger(__name__)
 
 class BinaryConfusionMatrix[T: Array](ConfusionMatrix[T]):  # noqa: D101 (generics not detected)
     """A confusion matrix implementation specifically for binary classification tasks."""
-
-    conf_matrix: T = None  # type: ignore
