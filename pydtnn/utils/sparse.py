@@ -17,10 +17,10 @@ from pydtnn.utils.constants import ArrayShape  # noqa: F401
 __all__ = ("SparseFlatArray",)
 
 
-type FlatArray[T: np.number] = np.ndarray[tuple[int], np.dtype[T]]
+type FlatArray[T: np.dtype] = np.ndarray[tuple[int], T]
 
 
-class SparseFlatArray[V: np.number, I: np.integer = np.int32, S: tuple = ArrayShape]:  # noqa: D101 (generics not detected)
+class SparseFlatArray[S: tuple, I: np.dtype, V: np.dtype]:  # noqa: D101 (generics not detected)
     """Sparse flatten array"""
 
     def __init__(self, shape: S, indexes: FlatArray[I], values: FlatArray[V]) -> None:
@@ -57,28 +57,28 @@ class SparseFlatArray[V: np.number, I: np.integer = np.int32, S: tuple = ArraySh
         return self.indexes.nbytes + self.values.nbytes
 
     @classmethod
-    def from_dense[DV: np.number, DI: np.integer, DS: tuple](
-        cls: type[SparseFlatArray[DV, DI, DS]],
-        array: np.ndarray[DS, np.dtype[DV]],
-        dtype: type[DI] = np.int32,
-    ) -> SparseFlatArray[DV, DI, DS]:
+    def from_dense[DS: tuple, DI: np.dtype, DV: np.dtype](
+        cls: type[SparseFlatArray[DS, DI, DV]],
+        array: np.ndarray[DS, DV],
+        dtype: DI = np.dtype(np.int32)
+    ) -> SparseFlatArray[DS, DI, DV]:
         """Construct from dense"""
         shape = array.shape
-        indexes = np.flatnonzero(array).astype(dtype)
-        values = array.reshape(-1)[indexes]
+        indexes: FlatArray[DI] = np.arange(array.size, dtype=dtype)  # type: ignore
+        values = array.flatten()
         return cls(shape, indexes, values)
 
-    def to_dense(self) -> np.ndarray[S, np.dtype[V]]:
+    def to_dense(self) -> np.ndarray[S, V]:
         """Convert to dense"""
-        ary = np.zeros(self.shape, dtype=self.values.dtype)
+        ary = np.zeros(self.size, dtype=self.values.dtype)
         ary[self.indexes] = self.values
-        return ary
+        return ary.reshape(self.shape)  # type: ignore
 
-    def __copy__(self) -> SparseFlatArray[V, I, S]:  # noqa: E741
+    def __copy__(self) -> SparseFlatArray[S, I, V]:  # noqa: E741
         """Shallow copy (maintain backing arrays)"""
         return self.__class__(self.shape, self.indexes, self.values)
 
-    def __deepcopy__(self, memo: dict) -> SparseFlatArray[V, I, S]:  # noqa: E741
+    def __deepcopy__(self, memo: dict) -> SparseFlatArray[S, I, V]:  # noqa: E741
         """Deep copy (copy backing arrays)"""
         ary = memo[id(self)] = self.__copy__()
         ary.shape = copy.deepcopy(self.shape, memo)
@@ -86,7 +86,13 @@ class SparseFlatArray[V: np.number, I: np.integer = np.int32, S: tuple = ArraySh
         ary.values = copy.deepcopy(self.values, memo)
         return ary
 
-    def copy(self) -> SparseFlatArray[V, I, S]:  # noqa: E741
+    def __array__(self, dtype: np.dtype | None = None, *, copy: bool | None = None) -> np.ndarray[S, V]:
+        """Converts TensorArray to a NumPy array."""
+        if copy is False:
+            raise ValueError("Must copy array")
+        return np.asarray(self.to_dense(), dtype=dtype)  # type: ignore
+
+    def copy(self) -> SparseFlatArray[S, I, V]:  # noqa: E741
         """Copy (including backing arrays)"""
         return copy.deepcopy(self)
 
@@ -94,21 +100,21 @@ class SparseFlatArray[V: np.number, I: np.integer = np.int32, S: tuple = ArraySh
         """Check indexes are sorted and unique"""
         return bool(np.all(self.indexes[1:] > self.indexes[:-1]))
 
-    def canonical(self) -> SparseFlatArray[V, I, S]:  # noqa: E741
+    def canonical(self) -> SparseFlatArray[S, I, V]:  # noqa: E741
         """Get canonical representation"""
 
         # order
         order = np.argsort(self.indexes)
-        indexes = self.indexes[order]
-        values = self.values[order]
+        indexes: FlatArray[I] = self.indexes[order]
+        values: FlatArray[V] = self.values[order]
 
         # unique
-        indexes, idx = np.unique(indexes, return_index=True)
+        indexes, idx = np.unique(indexes, return_index=True)  # type: ignore
         values = values[idx]
 
         return self.__class__(self.shape, indexes, values)
 
-    def __add__(self, other: Any) -> SparseFlatArray[V, I, S]:  # noqa: E741
+    def __add__(self, other: Any) -> SparseFlatArray[S, I, V]:  # noqa: E741
         """Add two arrays"""
         if not isinstance(other, SparseFlatArray):
             raise TypeError("Operand must be a SparseFlatArray instance")
@@ -116,8 +122,8 @@ class SparseFlatArray[V: np.number, I: np.integer = np.int32, S: tuple = ArraySh
             raise ValueError("Array must have the same shape")
 
         # union
-        indexes = np.union1d(self.indexes, other.indexes)
-        values = np.zeros(indexes.size, dtype=self.values.dtype)
+        indexes: FlatArray[I] = np.union1d(self.indexes, other.indexes)  # type: ignore
+        values: FlatArray[V] = np.zeros(indexes.size, dtype=self.values.dtype)
 
         # self
         insert = np.searchsorted(indexes, self.indexes)
@@ -129,13 +135,14 @@ class SparseFlatArray[V: np.number, I: np.integer = np.int32, S: tuple = ArraySh
 
         return self.__class__(self.shape, indexes, values)
 
-    def __getitem__(self, key: Any) -> SparseFlatArray[V, I, S]:  # noqa: E741
+    def __getitem__(self, key: Any) -> SparseFlatArray[S, I, V]:  # noqa: E741
         """Filtering getter"""
         indexes, values = self.indexes[key], self.values[key]
         return self.__class__(self.shape, indexes, values)
 
-    def threshold(self, threshold: float = 0.0) -> SparseFlatArray[V, I, S]:  # noqa: E741
+    def threshold(self, threshold: float = 0.0) -> SparseFlatArray[S, I, V]:  # noqa: E741
         """Threshold filter"""
-        threshold = 0.0  # TODO: remove once tested
-        indexes = np.flatnonzero(np.abs(self.values) > threshold)
+        # mask = np.isclose(self.values, 0, atol=threshold, rtol=0)
+        # np.invert(mask, out=mask)
+        indexes = np.flatnonzero(np.abs(self.values) >= threshold)
         return self[indexes]

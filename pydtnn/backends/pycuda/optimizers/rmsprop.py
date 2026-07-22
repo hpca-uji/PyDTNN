@@ -86,13 +86,16 @@ class RMSPropPycuda(RMSProp[TensorArray], OptimizerPycuda):
                     # NOTE: They are both "gpuarray" and not "int"
                     self.memory_used += self.context[layer.id]["cache_%s" % w_].nbytes  # type: ignore
 
-    def update(self, layer: LayerPycuda) -> None:
+    def update(self, layer: LayerPycuda, update: bool = True) -> None:
         """
         Perform a single optimization step for the given layer.
 
         Args:
             layer (LayerPycuda): The layer to update.
         """
+        if not layer.grad_vars or not update:
+            return
+
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
             cache = self.context[layer.id]["cache_%s" % w_]

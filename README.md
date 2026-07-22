@@ -168,7 +168,6 @@ The PyDTNN framework comes with a utility launcher called
     `avg`.
   - `--model-sync-participation`: Rank participation to synchronize models: `all`, `avail2all`. Default: `all`.
   - `--model-sync-min-avail`: Minimum ranks with data required to synchronize models. Default: 0.
-  - `--initial-model-sync`, `--no-initial-model-sync`: Synchronize models on training start. Default: True.
   - `--final-model-sync`, `--no-final-model-sync`: Synchronize models on training end. Default: True.
   - `--model-sync-quantize`, `--no-model-sync-quantize`: Enable model quantization on synchronize. Default: False.
   - `--model-sync-dtype`: Model synchronization quantization target dtype: `float16`, `float32`, `float64`

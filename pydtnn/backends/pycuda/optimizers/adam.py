@@ -77,8 +77,11 @@ class AdamPycuda(Adam[TensorArray], OptimizerPycuda):
                     + self.context[layer.id]["v_%s" % w_].nbytes  # type: ignore (They are both "gpuarray" and not "int")
                 )
 
-    def update(self, layer: LayerPycuda) -> None:
+    def update(self, layer: LayerPycuda, update: bool = True) -> None:
         """Perform a single optimization step for the given layer."""
+        if not layer.grad_vars or not update:
+            return
+
         self.context[layer.id]["it"] += 1  # type: ignore ("it" is an "int".)
         it: int = self.context[layer.id]["it"]  # type: ignore ("it" is an "int".)
 

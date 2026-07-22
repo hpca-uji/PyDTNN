@@ -253,9 +253,6 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
             if sync_model:
                 sync_epoch = True
 
-            if model_sync_count == 0 and not self.initial_model_sync:
-                sync_model = False
-
             model_sync_count += 1
 
             if i_batch < batches_min:

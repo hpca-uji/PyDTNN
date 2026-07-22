@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-from pydtnn.abstract.layerable import Layerable
+from pydtnn.backends.numpy.abstract.layerable import Layerable
 from pydtnn.backends.numpy.optimizers.abstract.optimizer import OptimizerNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.optimizers.oktopk import OkTopk
@@ -14,6 +14,8 @@ from pydtnn.utils.sparse import SparseFlatArray
 __all__ = ("OkTopkNumpy",)
 
 logger = logging.getLogger(__name__)
+
+type BoundaryArray = np.ndarray[tuple[int], np.dtype[np.int32]]
 
 
 if TYPE_CHECKING:
@@ -44,7 +46,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
         self.all_global_th: dict[int, dict[str, float]] = {}
         self.all_residuals: dict[int, dict[str, np.ndarray]] = {}
         self.all_velocity: dict[int, dict[str, np.ndarray]] = {}
-        self.all_boundaries: dict[int, dict[str, np.ndarray[tuple[int], np.dtype[np.int32]]]] = {}
+        self.all_boundaries: dict[int, dict[str, BoundaryArray]] = {}
 
         for layer in self.layers:
             self.iterations[layer.id] = 0
@@ -99,12 +101,15 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
                 case _:
                     raise NotImplementedError(f"Method '{method}' not implemented")
 
-    def update(self, layer: Layerable) -> None:
+    def update(self, layer: Layerable, update: bool = True) -> None:
         """Optimizer update step for a given layer.
 
         Args:
             layer: The layer to update.
         """
+        if not layer.grad_vars or not update:
+            return
+
         for w_, dw_ in layer.grad_vars.items():
             # Get layer weights and gradients
             w: np.ndarray
@@ -144,7 +149,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
             self.all_boundaries[layer.id][dw_] = self.boundaries
 
             # Perform the weights update
-            self._update_weights(layer, w_, w, sparse_u)
+            self._update_weights(w, sparse_u)
 
         self.iterations[layer.id] += 1
 
@@ -215,9 +220,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
 
         return np.partition(array, -k)[-k]
 
-    def _space_repartition(
-        self, acc: np.ndarray, local_th: float
-    ) -> np.ndarray[tuple[int], np.dtype[np.int32]]:
+    def _space_repartition(self, acc: np.ndarray, local_th: float) -> BoundaryArray:
         block_size = acc.size // self.model.nprocs
 
         for i in range(self.model.nprocs):
@@ -225,14 +228,13 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
 
         return self.boundaries
 
-    def _space_repartition_balanced(
-        self, acc: np.ndarray, local_th: float
-    ) -> np.ndarray[tuple[int], np.dtype[np.int32]]:
+    def _space_repartition_balanced(self, acc: np.ndarray, local_th: float) -> BoundaryArray:
         sparse = SparseFlatArray.from_dense(acc).threshold(local_th)
-        block_size = len(sparse.indexes) // self.model.nprocs
+        block_size = sparse.nnz // self.model.nprocs
 
         for i in range(self.model.nprocs):
-            self.boundaries[i] = sparse.indexes[min(block_size * (i + 1), len(sparse.indexes))]
+            self.boundaries[i] = sparse.indexes[min(block_size * (i + 1), sparse.nnz - 1)]
+        self.boundaries[-1] += 1
 
         self.model.comm.Allreduce(MPI.IN_PLACE, self.boundaries, op=MPI.SUM)
         self.boundaries /= self.model.nprocs
@@ -240,7 +242,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
         return self.boundaries
 
     def _split_and_reduce(
-        self, acc: np.ndarray, local_th: float, boundaries: np.ndarray
+        self, acc: np.ndarray, local_th: float, boundaries: BoundaryArray
     ) -> tuple[SparseFlatArray, np.ndarray]:
         """
         First main phase of ok_sparse_allreduce.
@@ -272,7 +274,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
     def _reduce_topk(
         self,
         sparse_topk: SparseFlatArray,
-        boundaries: np.ndarray,
+        boundaries: BoundaryArray,
     ) -> SparseFlatArray:
         """
         Reduce the topk elements in regions defined by boundaries.
@@ -282,7 +284,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
         return sparse_topk
 
     def _reduce_topk_collective_allreduce_then_slice(
-        self, sparse_topk: SparseFlatArray, boundaries: np.ndarray
+        self, sparse_topk: SparseFlatArray, boundaries: BoundaryArray
     ) -> SparseFlatArray:
         assert self.model.comm, "Communicator needed!"
         sparse_topk = self.model.comm.allreduce(sparse_topk, op=MPI.SUM)
@@ -290,15 +292,14 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
         start = 0 if self.model.rank == 0 else self.boundaries[self.model.rank - 1]
         end = self.boundaries[self.model.rank]
 
-        sparse_topk.indexes = sparse_topk.indexes[start:end]
-        sparse_topk.values = sparse_topk.values[start:end]
+        sparse_topk = sparse_topk[np.searchsorted(sparse_topk.indexes, start):np.searchsorted(sparse_topk.indexes, end)]
 
         sparse_topk.values /= self.model.nprocs
 
         return sparse_topk
 
     def _reduce_topk_collective_region_wise_reduce_sync(
-        self, sparse_topk: SparseFlatArray, boundaries: np.ndarray
+        self, sparse_topk: SparseFlatArray, boundaries: BoundaryArray
     ) -> SparseFlatArray:
         assert self.model.comm, "Communicator needed!"
         start = 0
@@ -307,7 +308,9 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
         for region in range(self.model.nprocs):
             end = boundaries[region]
             reduced_regions_sparse[region] = self.model.comm.reduce(
-                sparse_topk[start:end], op=MPI.SUM, root=region
+                sparse_topk[
+                    np.searchsorted(sparse_topk.indexes, start):np.searchsorted(sparse_topk.indexes, end)
+                ], op=MPI.SUM, root=region
             )
             start = end
         region_reduced_sparse = reduced_regions_sparse[self.model.rank]
@@ -315,15 +318,16 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
         return region_reduced_sparse
 
     def _reduce_topk_collective_region_wise_reduce_async(
-        self, sparse_topk: SparseFlatArray, boundaries: np.ndarray
+        self, sparse_topk: SparseFlatArray, boundaries: BoundaryArray
     ) -> SparseFlatArray:
+        # NOTE: Posible with PyMPI
         raise NotImplementedError(
             "It is not possible with the current mpi4py version to generate a buffer "
             "with indexes and values and operate with them"
         )
 
     def _reduce_topk_p2p_region_wise_reduce_static_destination(
-        self, sparse_topk: SparseFlatArray, boundaries: np.ndarray
+        self, sparse_topk: SparseFlatArray, boundaries: BoundaryArray
     ) -> SparseFlatArray:
         assert self.model.comm, "Communicator needed!"
         # Prepare a vector region for storing the partial sums
@@ -331,7 +335,9 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
         for region in range(self.model.nprocs):
             start = 0 if region == 0 else boundaries[region - 1]
             end = boundaries[region]
-            sparse_region_partial_sum[region] = sparse_topk[start:end]
+            sparse_region_partial_sum[region] = sparse_topk[
+                np.searchsorted(sparse_topk.indexes, start):np.searchsorted(sparse_topk.indexes, end)
+            ]
 
         # Overlaps comm. steps with computation (sparse sum)
         # On comm_step i: P{rank} sends to P{rank + 1} region{rank - i % nprocs}.
@@ -351,7 +357,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
         return region_reduced_sparse
 
     def _reduce_topk_p2p_region_wise_reduce_destination_rotation_and_bucketing(
-        self, sparse_topk: SparseFlatArray, boundaries: np.ndarray
+        self, sparse_topk: SparseFlatArray, boundaries: BoundaryArray
     ) -> SparseFlatArray:
 
         assert self.model.comm, "Communicator needed!"
@@ -362,7 +368,9 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
         # Compute local slice of sparse_topk (the "self" region)
         start = 0 if self.model.rank == 0 else boundaries[self.model.rank - 1]
         end = boundaries[self.model.rank]
-        sparse_reduced_region = sparse_topk[start:end]
+        sparse_reduced_region = sparse_topk[
+            np.searchsorted(sparse_topk.indexes, start):np.searchsorted(sparse_topk.indexes, end)
+        ]
 
         # Process sends and receives in buckets.
         bucket_size = 2
@@ -374,7 +382,11 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
             for i in range(current_bucket_size):
                 start = 0 if region == 0 else boundaries[region - 1]
                 end = boundaries[region]
-                requests[comm_step + i] = self.model.comm.isend(sparse_topk[start:end], dest=region)
+                requests[comm_step + i] = self.model.comm.isend(
+                    sparse_topk[
+                        np.searchsorted(sparse_topk.indexes, start):np.searchsorted(sparse_topk.indexes, end)
+                    ], dest=region
+                )
                 region = (region + 1) % self.model.nprocs
             # After sending the bucket, perform the receives sequentially for the same bucket.
             for i in range(current_bucket_size):
@@ -440,12 +452,10 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
 
         # 4. Allgatherv using recursive doubling
         sparse_allgather_topk = self._sparse_allgather(sparse_reduced_region_global_topk)
-        return sparse_allgather_topk, sparse_reduced_region_global_topk.indexes
+        return sparse_allgather_topk, sparse_allgather_topk.indexes
 
     def _update_weights(
         self,
-        layer: Layerable,
-        w_type: str,
         w: np.ndarray,
         sparse_u: SparseFlatArray,
     ) -> None:
@@ -473,4 +483,4 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
         velocity[sparse_u.indexes] += sparse_u.values
         velocity = velocity.reshape(w.shape)
         w -= self.learning_rate * (self.decay * w + velocity)
-        self.velocity = velocity
+        self.velocity = velocity  # NOTE: GPU (reshape may copy)

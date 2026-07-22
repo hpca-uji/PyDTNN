@@ -55,11 +55,11 @@ class AbstractBlockLayer[T: Array](Layer[T]):  # noqa: D101 (generics not detect
             self.out_shapes.append(prev_shape)
         self.shape = self.out_shapes[0]
 
-    def update_weights(self, optimizer: Optimizer[T]) -> None:
+    def update_weights(self, optimizer: Optimizer[T], update: bool = True) -> None:
         """Updates weights for all layers in all paths using the provided optimizer."""
         for p in self.paths:
             for layer in p:
-                layer.update_weights(optimizer)
+                layer.update_weights(optimizer, update)
 
     def reduce_weights_async(self, gradient: bool = True) -> None:
         """Initiates asynchronous weight reduction for all layers."""

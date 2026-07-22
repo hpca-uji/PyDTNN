@@ -64,8 +64,11 @@ class RMSPropNumpy(RMSProp[np.ndarray], OptimizerNumpy):
                             w_shape, dtype=self.model.dtype
                         )
 
-    def update(self, layer: LayerNumpy) -> None:
+    def update(self, layer: LayerNumpy, update: bool = True) -> None:
         """Perform a single optimization step for the given layer."""
+        if not layer.grad_vars or not update:
+            return
+
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
             cache: np.ndarray = self.context[layer.id]["cache_%s" % w_]  # type: ignore
