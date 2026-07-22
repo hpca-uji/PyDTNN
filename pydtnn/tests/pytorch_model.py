@@ -220,15 +220,16 @@ class ModelDTypeTestCase(unittest.TestCase):
         params = ModelDTypeTestCase.params
         params.model_name = model_name  # type: ignore
 
-        # torch_model = torch_models.resnet50(weights=torch_models.ResNet50_Weights.IMAGENET1K_V1)
-        # print(f"{torch_model=}")
-        # torch_model.fc = torch.nn.Sequential(  # type: ignore (It's ok to set a Sequential)
-        #     torch.nn.Linear(in_features=torch_model.fc.in_features,
-        #                     out_features=params.synthetic_output_shape[0]),
-        #     torch.nn.Softmax()
-        # )
+        if model_name == "basic_model":
+            torch_model = TestModel()
+        else:
+            torch_model = torch_models.resnet50(weights=torch_models.ResNet50_Weights.IMAGENET1K_V1)
+            torch_model.fc = torch.nn.Sequential(  # type: ignore (It's ok to set a Sequential)
+                torch.nn.Linear(in_features=torch_model.fc.in_features,
+                                out_features=params.synthetic_output_shape[0]),
+                torch.nn.Softmax()
+            )
 
-        torch_model = TestModel()
         return torch_model, torch.nn.CrossEntropyLoss()
 
     def get_model_pydtnn(self, model_pytorch: PyTorch_Model) -> PyDTNN_Model:
@@ -461,7 +462,11 @@ class ModelDTypeTestCase(unittest.TestCase):
             # Compare backward results
             self.compare_backward(model_torch, dx_torch, model_pydtnn, dx_pydtnn)
 
-    # @unittest.skip("TODO skipping")
+    @unittest.skip("Too big")
     def test_renset50_from_pytorch(self) -> None:
         """Compares results between an Resnet50 model using a PyTorch model and other a PyDTNN one."""
         self.do_test_model("resnet50_from_pytorch")
+    
+    def test_basic_model_from_pytorch(self) -> None:
+        """Compares results between an Resnet50 model using a PyTorch model and other a PyDTNN one."""
+        self.do_test_model("basic_model")
