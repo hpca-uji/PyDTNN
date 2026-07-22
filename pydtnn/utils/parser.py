@@ -18,19 +18,19 @@ import logging
 import os
 import re
 import textwrap
-from typing import Sequence
 from importlib import resources
 from pathlib import PurePath
+from typing import Sequence
 
 import numpy as np
 
-from pydtnn import gpuarray, drv, cublas, package_name
+from pydtnn import cublas, drv, gpuarray, package_name
+from pydtnn.abstract.base import Base
+from pydtnn.datasets.abstract.base import Base as DatasetBase
+from pydtnn.model.base import Base as ModelBase
 from pydtnn.utils import read_dir
 from pydtnn.utils.constants import NetworkAlgoEnum
 from pydtnn.utils.gpu import get_gpus_per_node
-from pydtnn.model.base import Base as ModelBase
-from pydtnn.abstract.base import Base
-from pydtnn.datasets.abstract.base import Base as DatasetBase
 from pydtnn.utils.tensor import TensorFormat
 
 __all__ = (
@@ -76,7 +76,9 @@ def list_modules(path: str) -> list[str]:
     return [
         PurePath(resource.name).stem
         for resource in resources.files(package_name).joinpath(path).iterdir()
-        if resource.is_file() and not resource.name.startswith("_") and resource.name.endswith(".py")
+        if resource.is_file()
+        and not resource.name.startswith("_")
+        and resource.name.endswith(".py")
     ]
 
 
@@ -180,7 +182,7 @@ class ArgumentParser(argparse.ArgumentParser):
                 "Example scripts that call this program for training"
                 " and evaluating different neural network models with"
                 " different datasets are available at 'scripts'."
-            )
+            ),
         )
 
         # Parser and the supported arguments with their default values
@@ -196,7 +198,7 @@ class ArgumentParser(argparse.ArgumentParser):
             choices=models,
             default="simplecnn",
             help=(
-                f"Neural network model: {", ".join(map(repr, models[:3]))}, etc."
+                f"Neural network model: {', '.join(map(repr, models[:3]))}, etc."
                 f" Default: {ModelBase.model_name!r}."
             ),
         )
@@ -210,8 +212,8 @@ class ArgumentParser(argparse.ArgumentParser):
                 " Format: [module[,module[,...]]:]backend[,backend[,...]][;...]."
                 " Example: 'all:numpy;conv_2d:gemm;layers,optimizers:numpy,cython'."
                 " Selection: More specific modules are attempted first, backend order goes from least to most priority."
-                f" Backends: {", ".join(map(repr, backends))}."
-                f" Alias: {", ".join(f"{key!r} = {value!r}" for key, value in Base._map_backend.items())}."
+                f" Backends: {', '.join(map(repr, backends))}."
+                f" Alias: {', '.join(f'{key!r} = {value!r}' for key, value in Base._map_backend.items())}."
                 f" Default: {ModelBase.backend!r}."
             ),
         )
@@ -235,14 +237,14 @@ class ArgumentParser(argparse.ArgumentParser):
                 f"Default: {ModelBase.global_batch_size!r}."
             ),
         )
-        dtype = list(map(np_dtype, ['float32', 'float64']))
+        dtype = list(map(np_dtype, ["float32", "float64"]))
         self.add_argument(
             "--dtype",
             type=np_dtype,
             default=ModelBase.dtype,
             choices=dtype,
             help=(
-                f"Datatype to use: {", ".join(map(repr, map(str, dtype)))}."
+                f"Datatype to use: {', '.join(map(repr, map(str, dtype)))}."
                 f" Default: {str(ModelBase.dtype)!r}."
             ),
         )
@@ -250,19 +252,16 @@ class ArgumentParser(argparse.ArgumentParser):
             "--quantize",
             action=argparse.BooleanOptionalAction,
             default=ModelBase.quantize,
-            help=(
-                "Enable model quantization."
-                f" Default: {ModelBase.quantize!r}"
-            ),
+            help=(f"Enable model quantization. Default: {ModelBase.quantize!r}"),
         )
-        quantize_dtype = list(map(np_dtype, ['float16', 'float32', 'float64']))
+        quantize_dtype = list(map(np_dtype, ["float16", "float32", "float64"]))
         self.add_argument(
             "--quantize-dtype",
             type=np_dtype,
             default=ModelBase.quantize_dtype,
             choices=quantize_dtype,
             help=(
-                f"Quantized datatype to use: {", ".join(map(repr, map(str, quantize_dtype)))}."
+                f"Quantized datatype to use: {', '.join(map(repr, map(str, quantize_dtype)))}."
                 f" Default: {str(ModelBase.quantize_dtype)!r}."
             ),
         )
@@ -270,10 +269,7 @@ class ArgumentParser(argparse.ArgumentParser):
             "--num-epochs",
             type=int,
             default=ModelBase.num_epochs,
-            help=(
-                "Number of epochs to perform."
-                f" Default: {ModelBase.num_epochs!r}."
-            ),
+            help=(f"Number of epochs to perform. Default: {ModelBase.num_epochs!r}."),
         )
         self.add_argument(
             "--steps-per-epoch",
@@ -299,27 +295,20 @@ class ArgumentParser(argparse.ArgumentParser):
             "--evaluate-only",
             action=argparse.BooleanOptionalAction,
             default=ModelBase.evaluate_only,
-            help=(
-                "Only evaluate the model."
-                f" Default: {ModelBase.evaluate_only!r}."
-            ),
+            help=(f"Only evaluate the model. Default: {ModelBase.evaluate_only!r}."),
         )
         self.add_argument(
             "--model-state-filename",
             type=str,
             default=ModelBase.model_state_filename,
-            help=(
-                "Load weights and bias from file."
-                f" Default: {ModelBase.model_state_filename!r}."
-            ),
+            help=(f"Load weights and bias from file. Default: {ModelBase.model_state_filename!r}."),
         )
         self.add_argument(
             "--history-file",
             type=str,
             default=ModelBase.history_file,
             help=(
-                "Filename to save training loss and metrics."
-                f" Default: {ModelBase.history_file!r}."
+                f"Filename to save training loss and metrics. Default: {ModelBase.history_file!r}."
             ),
         )
         self.add_argument(
@@ -328,7 +317,7 @@ class ArgumentParser(argparse.ArgumentParser):
             default=ModelBase.tensor_format,
             choices=TensorFormat,
             help=(
-                f"Data format to be used: {", ".join(map(repr, map(str, TensorFormat)))}."
+                f"Data format to be used: {', '.join(map(repr, map(str, TensorFormat)))}."
                 f" If not defined value sets {str(TensorFormat.NCHW)!r} when cuDNN is available,"
                 f" {str(TensorFormat.NHWC)!r} otherwise."
                 f" Default: {ModelBase.tensor_format!r}."
@@ -338,10 +327,7 @@ class ArgumentParser(argparse.ArgumentParser):
             "--random-seed",
             type=int,
             default=ModelBase.random_seed,
-            help=(
-                "Initial state of random number generator."
-                f" Default: {ModelBase.random_seed!r}."
-            ),
+            help=(f"Initial state of random number generator. Default: {ModelBase.random_seed!r}."),
         )
         self.add_argument(
             "--shared-tmp-memory",
@@ -382,7 +368,7 @@ class ArgumentParser(argparse.ArgumentParser):
             default=ModelBase.model_sync_algo,
             choices=ModelBase.SyncAlgorithm,
             help=(
-                f"Aggregation method used to synchronize models: {", ".join(map(repr, map(str, ModelBase.SyncAlgorithm)))}."
+                f"Aggregation method used to synchronize models: {', '.join(map(repr, map(str, ModelBase.SyncAlgorithm)))}."
                 f" Default: {str(ModelBase.model_sync_algo)!r}."
             ),
         )
@@ -392,8 +378,9 @@ class ArgumentParser(argparse.ArgumentParser):
             default=ModelBase.model_sync_participation,
             choices=ModelBase.SyncParticipation,
             help=(
-                f"Rank participation to synchronize models: {", ".join(map(repr, map(str, ModelBase.SyncParticipation)))}."
-                f" Default: {str(ModelBase.model_sync_participation)!r}."),
+                f"Rank participation to synchronize models: {', '.join(map(repr, map(str, ModelBase.SyncParticipation)))}."
+                f" Default: {str(ModelBase.model_sync_participation)!r}."
+            ),
         )
         _sy_group.add_argument(
             "--model-sync-min-avail",
@@ -409,18 +396,14 @@ class ArgumentParser(argparse.ArgumentParser):
             action=argparse.BooleanOptionalAction,
             default=ModelBase.initial_model_sync,
             help=(
-                "Synchronize models on training start."
-                f" Default: {ModelBase.initial_model_sync!r}."
+                f"Synchronize models on training start. Default: {ModelBase.initial_model_sync!r}."
             ),
         )
         _sy_group.add_argument(
             "--final-model-sync",
             action=argparse.BooleanOptionalAction,
             default=ModelBase.final_model_sync,
-            help=(
-                "Synchronize models on training end."
-                f" Default: {ModelBase.final_model_sync!r}."
-            ),
+            help=(f"Synchronize models on training end. Default: {ModelBase.final_model_sync!r}."),
         )
         _sy_group.add_argument(
             "--model-sync-quantize",
@@ -431,14 +414,14 @@ class ArgumentParser(argparse.ArgumentParser):
                 f" Default: {ModelBase.model_sync_quantize!r}."
             ),
         )
-        model_sync_dtype = list(map(np_dtype, ['float16', 'float32', 'float64']))
+        model_sync_dtype = list(map(np_dtype, ["float16", "float32", "float64"]))
         _sy_group.add_argument(
             "--model-sync-dtype",
             type=np_dtype,
             default=ModelBase.model_sync_dtype,
             choices=model_sync_dtype,
             help=(
-                f"Model synchronization quantization target dtype: {", ".join(map(repr, map(str, model_sync_dtype)))}"
+                f"Model synchronization quantization target dtype: {', '.join(map(repr, map(str, model_sync_dtype)))}"
                 f" Default: {str(ModelBase.model_sync_dtype)!r}."
             ),
         )
@@ -454,7 +437,7 @@ class ArgumentParser(argparse.ArgumentParser):
             default="mnist",
             choices=datasets,
             help=(
-                f"Dataset to train: {", ".join(map(repr, datasets[:3]))}, etc."
+                f"Dataset to train: {', '.join(map(repr, datasets[:3]))}, etc."
                 f" Default: {ModelBase.dataset_name!r}."
             ),
         )
@@ -474,36 +457,26 @@ class ArgumentParser(argparse.ArgumentParser):
             "--dataset-path",
             type=str,
             default=ModelBase.dataset_path,
-            help=(
-                "Path to the dataset."
-                f" Default: {ModelBase.dataset_path!r}."
-            ),
+            help=(f"Path to the dataset. Default: {ModelBase.dataset_path!r}."),
         )
         _ds_group.add_argument(
             "--dataset-lang",
             type=str,
             default=ModelBase.dataset_lang,
-            help=(
-                "Dataset language."
-                f" Default: {ModelBase.dataset_lang!r}."
-            )
+            help=(f"Dataset language. Default: {ModelBase.dataset_lang!r}."),
         )
         _ds_group.add_argument(
             "--dataset-lang2",
             type=str,
             default=ModelBase.dataset_lang2,
-            help=(
-                "Dataset second language."
-                f" Default: {ModelBase.dataset_lang2!r}."
-            )
+            help=(f"Dataset second language. Default: {ModelBase.dataset_lang2!r}."),
         )
         _ds_group.add_argument(
             "--synthetic-train-samples",
             type=int,
             default=ModelBase.synthetic_train_samples,
             help=(
-                "Number of synthetic train sample."
-                f" Default: {ModelBase.synthetic_train_samples!r}."
+                f"Number of synthetic train sample. Default: {ModelBase.synthetic_train_samples!r}."
             ),
         )
         _ds_group.add_argument(
@@ -511,8 +484,7 @@ class ArgumentParser(argparse.ArgumentParser):
             type=int,
             default=ModelBase.synthetic_test_samples,
             help=(
-                "Number of synthetic train sample."
-                f" Default: {ModelBase.synthetic_test_samples!r}."
+                f"Number of synthetic train sample. Default: {ModelBase.synthetic_test_samples!r}."
             ),
         )
         _ds_group.add_argument(
@@ -556,10 +528,7 @@ class ArgumentParser(argparse.ArgumentParser):
             "--augment-shuffle",
             action=argparse.BooleanOptionalAction,
             default=ModelBase.augment_shuffle,
-            help=(
-                "Shuffle training images."
-                f" Default: {ModelBase.augment_shuffle!r}."
-            ),
+            help=(f"Shuffle training images. Default: {ModelBase.augment_shuffle!r}."),
         )
         _ds_group.add_argument(
             "--augment-horizontal-flip",
@@ -674,10 +643,7 @@ class ArgumentParser(argparse.ArgumentParser):
             "--augment-mask-size",
             type=int,
             default=ModelBase.augment_mask_size,
-            help=(
-                "Size to mask training images."
-                f" Default: {ModelBase.augment_mask_size!r}."
-            ),
+            help=(f"Size to mask training images. Default: {ModelBase.augment_mask_size!r}."),
         )
         _ds_group.add_argument(
             "--augment-blur",
@@ -693,46 +659,33 @@ class ArgumentParser(argparse.ArgumentParser):
             "--augment-blur-size",
             type=int,
             default=ModelBase.augment_blur_size,
-            help=(
-                "Size to blur training images."
-                f" Default: {ModelBase.augment_blur_size!r}."
-            ),
+            help=(f"Size to blur training images. Default: {ModelBase.augment_blur_size!r}."),
         )
         _ds_group.add_argument(
             "--augment-crop",
             action=argparse.BooleanOptionalAction,
             default=ModelBase.augment_crop,
-            help=(
-                "Crop the images. True if specified."
-                f" Default: {ModelBase.augment_crop!r}."
-            ),
+            help=(f"Crop the images. True if specified. Default: {ModelBase.augment_crop!r}."),
         )
         _ds_group.add_argument(
             "--augment-crop-perc",
             type=factor,
             default=ModelBase.augment_crop_perc,
             help=(
-                "Central crop percentage of the images."
-                f" Default: {ModelBase.augment_crop_perc!r}."
+                f"Central crop percentage of the images. Default: {ModelBase.augment_crop_perc!r}."
             ),
         )
         _ds_group.add_argument(
             "--augment-scale",
             action=argparse.BooleanOptionalAction,
             default=ModelBase.augment_scale,
-            help=(
-                "Resize the images. True if specified."
-                f" Default: {ModelBase.augment_scale!r}."
-            ),
+            help=(f"Resize the images. True if specified. Default: {ModelBase.augment_scale!r}."),
         )
         _ds_group.add_argument(
             "--augment-scale-size",
             type=int,
             default=ModelBase.augment_scale_size,
-            help=(
-                "New size of the images."
-                f" Default: {ModelBase.augment_scale_size!r}."
-            ),
+            help=(f"New size of the images. Default: {ModelBase.augment_scale_size!r}."),
         )
         _ds_group.add_argument(
             "--augment-perspective",
@@ -757,28 +710,19 @@ class ArgumentParser(argparse.ArgumentParser):
             "--augment-normalize",
             action=argparse.BooleanOptionalAction,
             default=ModelBase.augment_normalize,
-            help=(
-                "Normalize dataset."
-                f" Default: {ModelBase.augment_normalize!r}."
-            ),
+            help=(f"Normalize dataset. Default: {ModelBase.augment_normalize!r}."),
         )
         _ds_group.add_argument(
             "--augment-normalize-offset",
             type=float,
             default=ModelBase.augment_normalize_offset,
-            help=(
-                "Offset samples by a value."
-                f" Default: {ModelBase.augment_normalize_offset!r}."
-            ),
+            help=(f"Offset samples by a value. Default: {ModelBase.augment_normalize_offset!r}."),
         )
         _ds_group.add_argument(
             "--augment-normalize-scale",
             type=float,
             default=ModelBase.augment_normalize_scale,
-            help=(
-                "Scale samples by a value."
-                f" Default: {ModelBase.augment_normalize_scale!r}."
-            ),
+            help=(f"Scale samples by a value. Default: {ModelBase.augment_normalize_scale!r}."),
         )
 
         # Optimization options
@@ -843,7 +787,7 @@ class ArgumentParser(argparse.ArgumentParser):
             default=ModelBase.optimizer_name,
             choices=optimizers,
             help=(
-                f"Optimizers: {", ".join(map(repr, optimizers[:3]))}, etc."
+                f"Optimizers: {', '.join(map(repr, optimizers[:3]))}, etc."
                 f" Default: {ModelBase.optimizer_name!r}."
             ),
         )
@@ -851,10 +795,7 @@ class ArgumentParser(argparse.ArgumentParser):
             "--learning-rate",
             type=float,
             default=ModelBase.learning_rate,
-            help=(
-                "Learning rate."
-                f" Default: {ModelBase.learning_rate!r}."
-            ),
+            help=(f"Learning rate. Default: {ModelBase.learning_rate!r}."),
         )
         _op_group.add_argument(
             "--learning-rate-scaling",
@@ -870,27 +811,20 @@ class ArgumentParser(argparse.ArgumentParser):
             "--optimizer-momentum",
             type=float,
             default=ModelBase.optimizer_momentum,
-            help=(
-                "Decay rate for optimizers."
-                f" Default: {ModelBase.optimizer_momentum!r}."
-            ),
+            help=(f"Decay rate for optimizers. Default: {ModelBase.optimizer_momentum!r}."),
         )
         _op_group.add_argument(
             "--optimizer-decay",
             type=float,
             default=ModelBase.optimizer_decay,
-            help=(
-                "Decay rate for optimizers."
-                f" Default: {ModelBase.optimizer_decay!r}."
-            ),
+            help=(f"Decay rate for optimizers. Default: {ModelBase.optimizer_decay!r}."),
         )
         _op_group.add_argument(
             "--optimizer-nesterov",
             action=argparse.BooleanOptionalAction,
             default=ModelBase.optimizer_nesterov,
             help=(
-                "Whether to apply Nesterov momentum."
-                f" Default: {ModelBase.optimizer_nesterov!r}."
+                f"Whether to apply Nesterov momentum. Default: {ModelBase.optimizer_nesterov!r}."
             ),
         )
         _op_group.add_argument(
@@ -898,8 +832,7 @@ class ArgumentParser(argparse.ArgumentParser):
             type=float,
             default=ModelBase.optimizer_beta1,
             help=(
-                "Variable for 'adam', 'nadam' optimizers."
-                f" Default: {ModelBase.optimizer_beta1!r}."
+                f"Variable for 'adam', 'nadam' optimizers. Default: {ModelBase.optimizer_beta1!r}."
             ),
         )
         _op_group.add_argument(
@@ -907,8 +840,7 @@ class ArgumentParser(argparse.ArgumentParser):
             type=float,
             default=ModelBase.optimizer_beta2,
             help=(
-                "Variable for 'adam', 'nadam' optimizers."
-                f" Default: {ModelBase.optimizer_beta2!r}."
+                f"Variable for 'adam', 'nadam' optimizers. Default: {ModelBase.optimizer_beta2!r}."
             ),
         )
         _op_group.add_argument(
@@ -924,46 +856,31 @@ class ArgumentParser(argparse.ArgumentParser):
             "--optimizer-rho",
             type=float,
             default=ModelBase.optimizer_rho,
-            help=(
-                "Variable for 'rmsprop' optimizers."
-                f" Default: {ModelBase.optimizer_rho!r}."
-            ),
+            help=(f"Variable for 'rmsprop' optimizers. Default: {ModelBase.optimizer_rho!r}."),
         )
         _op_group.add_argument(
             "--optimizer-tau",
             type=int,
             default=ModelBase.optimizer_tau,
-            help=(
-                "Variable for 'oktopk' optimizers."
-                f" Default: {ModelBase.optimizer_tau!r}."
-            ),
+            help=(f"Variable for 'oktopk' optimizers. Default: {ModelBase.optimizer_tau!r}."),
         )
         _op_group.add_argument(
             "--optimizer-tau-prime",
             type=int,
             default=ModelBase.optimizer_tau,
-            help=(
-                "Variable for 'oktopk' optimizers."
-                f" Default: {ModelBase.optimizer_tau!r}."
-            ),
+            help=(f"Variable for 'oktopk' optimizers. Default: {ModelBase.optimizer_tau!r}."),
         )
         _op_group.add_argument(
             "--optimizer-density",
             type=float,
             default=ModelBase.optimizer_density,
-            help=(
-                "Variable for 'oktopk' optimizers."
-                f" Default: {ModelBase.optimizer_density!r}."
-            ),
+            help=(f"Variable for 'oktopk' optimizers. Default: {ModelBase.optimizer_density!r}."),
         )
         _op_group.add_argument(
             "--oktopk-min-k",
             type=int,
             default=ModelBase.oktopk_min_k,
-            help=(
-                "Variable for 'oktopk' optimizers."
-                f" Default: {ModelBase.oktopk_min_k!r}."
-            ),
+            help=(f"Variable for 'oktopk' optimizers. Default: {ModelBase.oktopk_min_k!r}."),
         )
         losses = list_modules("losses")
         _op_group.add_argument(
@@ -974,7 +891,7 @@ class ArgumentParser(argparse.ArgumentParser):
             choices=losses,
             help=(
                 "Loss functions that is evaluated on each trained batch:"
-                f" {", ".join(map(repr, losses[:3]))}, etc."
+                f" {', '.join(map(repr, losses[:3]))}, etc."
                 f" Default: {ModelBase.loss_func_name!r}."
             ),
         )
@@ -982,10 +899,7 @@ class ArgumentParser(argparse.ArgumentParser):
             "--loss-eps",
             type=float,
             default=ModelBase.loss_eps,
-            help=(
-                "Value for numerical stability."
-                f" Default: {ModelBase.loss_eps!r}."
-            ),
+            help=(f"Value for numerical stability. Default: {ModelBase.loss_eps!r}."),
         )
         _op_group.add_argument(
             "--loss-weights",
@@ -1016,7 +930,7 @@ class ArgumentParser(argparse.ArgumentParser):
             default=ModelBase.metrics,
             help=(
                 "List of comma-separated metrics that are evaluated on each trained batch:"
-                f" {", ".join(map(repr, metrics))}, etc."
+                f" {', '.join(map(repr, metrics))}, etc."
                 f" Default: {ModelBase.metrics!r}."
             ),
         )
@@ -1035,7 +949,7 @@ class ArgumentParser(argparse.ArgumentParser):
             default=ModelBase.schedulers_names,
             help=(
                 "List of comma-separated schedulers:"
-                f" {", ".join(map(repr, schedulers))}, etc."
+                f" {', '.join(map(repr, schedulers))}, etc."
                 f" Default: {ModelBase.schedulers_names!r}."
             ),
         )
@@ -1186,28 +1100,21 @@ class ArgumentParser(argparse.ArgumentParser):
             "--parallel-data",
             action=argparse.BooleanOptionalAction,
             default=ModelBase.parallel_data,
-            help=(
-                "Enable data parallelization modes."
-                f" Default: {ModelBase.parallel_data!r}."
-            ),
+            help=(f"Enable data parallelization modes. Default: {ModelBase.parallel_data!r}."),
         )
         _pe_group.add_argument(
             "--parallel-pipeline",
             action=argparse.BooleanOptionalAction,
             default=ModelBase.parallel_pipeline,
             help=(
-                "Enable pipeline parallelization modes."
-                f" Default: {ModelBase.parallel_pipeline!r}."
+                f"Enable pipeline parallelization modes. Default: {ModelBase.parallel_pipeline!r}."
             ),
         )
         _pe_group.add_argument(
             "--use-blocking-mpi",
             action=argparse.BooleanOptionalAction,
             default=ModelBase.use_blocking_mpi,
-            help=(
-                "Enable non-blocking MPI primitives."
-                f" Default: {ModelBase.use_blocking_mpi!r}."
-            ),
+            help=(f"Enable non-blocking MPI primitives. Default: {ModelBase.use_blocking_mpi!r}."),
         )
         _pe_group.add_argument(
             "--use-mpi-buffers",
@@ -1255,7 +1162,7 @@ class ArgumentParser(argparse.ArgumentParser):
                 "Let cuDNN to select the best performing convolution algorithm."
                 f" Default: {ModelBase.use_cudnn_auto_conv_algo!r}."
             ),
-            deprecated=True
+            deprecated=True,
         )
 
         # Encryption options
@@ -1275,10 +1182,7 @@ class ArgumentParser(argparse.ArgumentParser):
             "--encryption-slots",
             type=int,
             default=ModelBase.encryption_slots,
-            help=(
-                "Encryption slot count. 2 ^ 'value'."
-                f" Default: {ModelBase.encryption_slots!r}."
-            ),
+            help=(f"Encryption slot count. 2 ^ 'value'. Default: {ModelBase.encryption_slots!r}."),
         )
         _cy_group.add_argument(
             "--encryption-scale",
@@ -1306,10 +1210,7 @@ class ArgumentParser(argparse.ArgumentParser):
             "--tracing",
             action=argparse.BooleanOptionalAction,
             default=ModelBase.tracing,
-            help=(
-                "Obtain Simple/Extrae-based traces."
-                f" Default: {ModelBase.tracing!r}."
-            ),
+            help=(f"Obtain Simple/Extrae-based traces. Default: {ModelBase.tracing!r}."),
         )
         _tr_group.add_argument(
             "--tracer-output",
@@ -1324,45 +1225,41 @@ class ArgumentParser(argparse.ArgumentParser):
             "--tracer-pmlib-server",
             type=str,
             default=ModelBase.tracer_pmlib_server,
-            help=(
-                "Address of PMlib tracer server."
-                f" Default: {ModelBase.tracer_pmlib_server!r}."
-            ),
+            help=(f"Address of PMlib tracer server. Default: {ModelBase.tracer_pmlib_server!r}."),
         )
         _tr_group.add_argument(
             "--tracer-pmlib-port",
             type=int,
             default=ModelBase.tracer_pmlib_port,
-            help=(
-                "Port of PMlib tracer server."
-                f" Default: {ModelBase.tracer_pmlib_port!r}."
-            ),
+            help=(f"Port of PMlib tracer server. Default: {ModelBase.tracer_pmlib_port!r}."),
         )
         _tr_group.add_argument(
             "--tracer-pmlib-device",
             type=str,
             default=ModelBase.tracer_pmlib_device,
-            help=(
-                "Port of PMlib tracer device."
-                f" Default: {ModelBase.tracer_pmlib_device!r}."
-            ),
+            help=(f"Port of PMlib tracer device. Default: {ModelBase.tracer_pmlib_device!r}."),
         )
         _tr_group.add_argument(
             "--profile",
             action=argparse.BooleanOptionalAction,
             default=ModelBase.profile,
-            help=(
-                "Obtain Python profiles."
-                f" Default: {ModelBase.profile!r}."
-            ),
+            help=(f"Obtain Python profiles. Default: {ModelBase.profile!r}."),
         )
 
         # Performance modeling options
         _pm_group = self.add_argument_group("Performance modeling options")
-        _pm_group.add_argument("--cpu-speed", type=float, default=ModelBase.cpu_speed, help=argparse.SUPPRESS)
-        _pm_group.add_argument("--memory-bw", type=float, default=ModelBase.memory_bw, help=argparse.SUPPRESS)
-        _pm_group.add_argument("--network-bw", type=float, default=ModelBase.network_bw, help=argparse.SUPPRESS)
-        _pm_group.add_argument("--network-lat", type=float, default=ModelBase.network_lat, help=argparse.SUPPRESS)
+        _pm_group.add_argument(
+            "--cpu-speed", type=float, default=ModelBase.cpu_speed, help=argparse.SUPPRESS
+        )
+        _pm_group.add_argument(
+            "--memory-bw", type=float, default=ModelBase.memory_bw, help=argparse.SUPPRESS
+        )
+        _pm_group.add_argument(
+            "--network-bw", type=float, default=ModelBase.network_bw, help=argparse.SUPPRESS
+        )
+        _pm_group.add_argument(
+            "--network-lat", type=float, default=ModelBase.network_lat, help=argparse.SUPPRESS
+        )
         _pm_group.add_argument(
             "--network-algo",
             type=NetworkAlgoEnum,
@@ -1415,11 +1312,7 @@ class ArgumentParser(argparse.ArgumentParser):
             return re.sub(r"'([^']*)'", r"`\1`", text).replace("``", "` `")
 
         for group in self._action_groups:
-
-            actions = [
-                a for a in group._group_actions
-                if a.help is not argparse.SUPPRESS
-            ]
+            actions = [a for a in group._group_actions if a.help is not argparse.SUPPRESS]
 
             if not actions:
                 continue
@@ -1431,10 +1324,7 @@ class ArgumentParser(argparse.ArgumentParser):
                 if not action.option_strings:
                     option = f"`{action.dest}`"
                 else:
-                    option = ", ".join(
-                        f"`{opt}`"
-                        for opt in action.option_strings
-                    )
+                    option = ", ".join(f"`{opt}`" for opt in action.option_strings)
 
                 description = quotes(action.help or "")
                 description = textwrap.fill(

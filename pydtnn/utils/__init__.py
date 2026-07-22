@@ -218,7 +218,4 @@ def read_file(path: str, replaces: dict[str, str] = {}) -> str:
 
 def read_dir(path: str) -> list[str]:
     """List directory content from inside the package"""
-    return [
-        resource.name
-        for resource in resources.files(package_name).joinpath(path).iterdir()
-    ]
+    return [resource.name for resource in resources.files(package_name).joinpath(path).iterdir()]

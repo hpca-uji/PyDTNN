@@ -60,7 +60,7 @@ class SparseFlatArray[V: np.number, I: np.integer = np.int32, S: tuple = ArraySh
     def from_dense[DV: np.number, DI: np.integer, DS: tuple](
         cls: type[SparseFlatArray[DV, DI, DS]],
         array: np.ndarray[DS, np.dtype[DV]],
-        dtype: type[DI] = np.int32
+        dtype: type[DI] = np.int32,
     ) -> SparseFlatArray[DV, DI, DS]:
         """Construct from dense"""
         shape = array.shape

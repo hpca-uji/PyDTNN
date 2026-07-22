@@ -4,6 +4,8 @@ import logging
 import unittest
 
 import numpy as np
+import torch
+import torchvision.models as torch_models
 
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.layers.abstract.block_layer import AbstractBlockLayer
@@ -15,12 +17,10 @@ from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.model import Model as PyDTNN_Model
 from pydtnn.tests.abstract.common import Params, verbose_test
 from pydtnn.tests.abstract.model_common import ModelCommonTestCase  # noqa: F401 (It's being used)
+from pydtnn.utils import print_with_header, rand
 from pydtnn.utils.pytorch import from_pytorch
 from pydtnn.utils.tensor import TensorFormat
-from pydtnn.utils import print_with_header, rand
 
-import torch
-import torchvision.models as torch_models
 type PyTorch_Model = torch.nn.Module
 
 __all__ = ("ModelDTypeTestCase",)
@@ -29,59 +29,92 @@ logger = logging.getLogger(__name__)
 
 
 class TestModel(torch.nn.Module):
-
     def __init__(self) -> None:
         super().__init__()
         self.layer1_0 = torch.nn.Sequential(
             torch.nn.Conv2d(64, 256, kernel_size=(1, 1), stride=(1, 1), bias=False),
-            torch.nn.BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True),
-            torch.nn.ReLU(inplace=True)
+            torch.nn.BatchNorm2d(
+                256, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True
+            ),
+            torch.nn.ReLU(inplace=True),
         )
         self.layer1_1 = torch.nn.Sequential(
             torch.nn.Conv2d(256, 256, kernel_size=(1, 1), stride=(1, 1), bias=False),
-            torch.nn.BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True),
-            torch.nn.ReLU(inplace=True)
+            torch.nn.BatchNorm2d(
+                256, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True
+            ),
+            torch.nn.ReLU(inplace=True),
         )
         self.layer2_0 = torch.nn.Sequential(
             torch.nn.Conv2d(256, 128, kernel_size=(1, 1), stride=(1, 1), bias=False),
-            torch.nn.BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True),
+            torch.nn.BatchNorm2d(
+                128, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True
+            ),
         )
         self.layer3_0 = torch.nn.Sequential(
             torch.nn.Conv2d(128, 256, kernel_size=(1, 1), stride=(1, 1), bias=False),
-            torch.nn.BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True),
-            torch.nn.Conv2d(256, 256, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False),
-            torch.nn.BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True),
+            torch.nn.BatchNorm2d(
+                256, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True
+            ),
+            torch.nn.Conv2d(
+                256, 256, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False
+            ),
+            torch.nn.BatchNorm2d(
+                256, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True
+            ),
             torch.nn.Conv2d(256, 256, kernel_size=(1, 1), stride=(1, 1), bias=False),
-            torch.nn.BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True),
+            torch.nn.BatchNorm2d(
+                256, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True
+            ),
             torch.nn.ReLU(inplace=True),
             torch.nn.Sequential(
                 torch.nn.Conv2d(256, 512, kernel_size=(1, 1), stride=(2, 2), bias=False),
-                torch.nn.BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True)
-            )
+                torch.nn.BatchNorm2d(
+                    512, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True
+                ),
+            ),
         )
         self.layer3_1 = torch.nn.Sequential(
             torch.nn.Conv2d(512, 256, kernel_size=(1, 1), stride=(1, 1), bias=False),
-            torch.nn.BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True),
-            torch.nn.Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False),
-            torch.nn.BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True),
+            torch.nn.BatchNorm2d(
+                256, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True
+            ),
+            torch.nn.Conv2d(
+                256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+            ),
+            torch.nn.BatchNorm2d(
+                256, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True
+            ),
             torch.nn.Conv2d(256, 256, kernel_size=(1, 1), stride=(1, 1), bias=False),
-            torch.nn.BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True),
-            torch.nn.ReLU(inplace=True)
+            torch.nn.BatchNorm2d(
+                256, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True
+            ),
+            torch.nn.ReLU(inplace=True),
         )
         self.layer4_0 = torch.nn.Sequential(
             torch.nn.Conv2d(256, 512, kernel_size=(1, 1), stride=(1, 1), bias=False),
-            torch.nn.BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True),
+            torch.nn.BatchNorm2d(
+                512, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True
+            ),
         )
         self.layer4_1 = torch.nn.Sequential(
             torch.nn.Conv2d(512, 2048, kernel_size=(1, 1), stride=(1, 1), bias=False),
-            torch.nn.BatchNorm2d(2048, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True),
-            torch.nn.ReLU(inplace=True)
+            torch.nn.BatchNorm2d(
+                2048, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True
+            ),
+            torch.nn.ReLU(inplace=True),
         )
 
-        self.conv1 = torch.nn.Conv2d(3, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
-        self.bn1 = torch.nn.BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True)
+        self.conv1 = torch.nn.Conv2d(
+            3, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False
+        )
+        self.bn1 = torch.nn.BatchNorm2d(
+            64, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True
+        )
         self.relu = torch.nn.ReLU(inplace=True)
-        self.maxpool = torch.nn.MaxPool2d(kernel_size=3, stride=2, padding=1, dilation=1, ceil_mode=False)
+        self.maxpool = torch.nn.MaxPool2d(
+            kernel_size=3, stride=2, padding=1, dilation=1, ceil_mode=False
+        )
         self.layer1 = torch.nn.Sequential(self.layer1_0, self.layer1_1)
         self.layer2 = torch.nn.Sequential(self.layer2_0)
         self.layer3 = torch.nn.Sequential(self.layer3_0, self.layer3_1)
@@ -89,7 +122,7 @@ class TestModel(torch.nn.Module):
         self.avgpool = torch.nn.AdaptiveAvgPool2d(output_size=(1, 1))
         self.fc = torch.nn.Sequential(
             torch.nn.Linear(in_features=2048, out_features=10, bias=True),
-            torch.nn.Softmax(dim=None)
+            torch.nn.Softmax(dim=None),
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -205,7 +238,9 @@ class ModelDTypeTestCase(unittest.TestCase):
         )
 
     @staticmethod
-    def get_model_torch_and_loss_func(model_name: str) -> tuple[PyTorch_Model, torch.nn.modules.loss._Loss]:
+    def get_model_torch_and_loss_func(
+        model_name: str,
+    ) -> tuple[PyTorch_Model, torch.nn.modules.loss._Loss]:
         """
         Initializes a model and its corresponding loss function.
 
@@ -225,9 +260,11 @@ class ModelDTypeTestCase(unittest.TestCase):
         else:
             torch_model = torch_models.resnet50(weights=torch_models.ResNet50_Weights.IMAGENET1K_V1)
             torch_model.fc = torch.nn.Sequential(  # type: ignore (It's ok to set a Sequential)
-                torch.nn.Linear(in_features=torch_model.fc.in_features,
-                                out_features=params.synthetic_output_shape[0]),
-                torch.nn.Softmax()
+                torch.nn.Linear(
+                    in_features=torch_model.fc.in_features,
+                    out_features=params.synthetic_output_shape[0],
+                ),
+                torch.nn.Softmax(),
             )
 
         return torch_model, torch.nn.CrossEntropyLoss()
@@ -301,18 +338,23 @@ class ModelDTypeTestCase(unittest.TestCase):
             x1.append(layer.forward(x1[-1].copy()))
         return x1
 
-    def do_pytorch_model_loss(self, loss_func: torch.nn.modules.loss._Loss,
-                              x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+    def do_pytorch_model_loss(
+        self, loss_func: torch.nn.modules.loss._Loss, x: torch.Tensor, y: torch.Tensor
+    ) -> torch.Tensor:
         """Method execute the pytorch's loss"""
         loss: torch.Tensor = loss_func(x, y)
         return loss
 
-    def do_pydtnn_model_loss(self, model: PyDTNN_Model, x: np.ndarray, y: np.ndarray) -> tuple[float, np.ndarray]:
+    def do_pydtnn_model_loss(
+        self, model: PyDTNN_Model, x: np.ndarray, y: np.ndarray
+    ) -> tuple[float, np.ndarray]:
         """Method execute the pydtnn's loss"""
         loss, dx = model.loss_func.compute(x.copy(), y, model.batch_size)
         return loss, dx
 
-    def do_pytorch_model_backward_pass(self, _model1: PyTorch_Model, loss: torch.Tensor) -> list[torch.Tensor]:
+    def do_pytorch_model_backward_pass(
+        self, _model1: PyTorch_Model, loss: torch.Tensor
+    ) -> list[torch.Tensor]:
         """
         Performs a forward pass for Model 1.
 
@@ -330,7 +372,9 @@ class ModelDTypeTestCase(unittest.TestCase):
         # TODO: Get all layers in torch and iterate over those layers.
         return [dx]
 
-    def do_pydtnn_model_backward_pass(self, model2: PyDTNN_Model, dx: np.ndarray) -> list[np.ndarray]:
+    def do_pydtnn_model_backward_pass(
+        self, model2: PyDTNN_Model, dx: np.ndarray
+    ) -> list[np.ndarray]:
         """
         Performs a forward pass for PyDTNN's Model.
 
@@ -351,8 +395,9 @@ class ModelDTypeTestCase(unittest.TestCase):
             dx1.insert(0, layer.backward(dx1[0].copy()))
         return dx1
 
-    def compare_forward(self, model_pydtnn: PyDTNN_Model, x_torch: list[torch.Tensor],
-                        x_pydtnn: list[np.ndarray]) -> None:
+    def compare_forward(
+        self, model_pydtnn: PyDTNN_Model, x_torch: list[torch.Tensor], x_pydtnn: list[np.ndarray]
+    ) -> None:
         """
         Compares the forward pass outputs of two models.
 
@@ -386,7 +431,11 @@ class ModelDTypeTestCase(unittest.TestCase):
         )
 
     def compare_backward(
-        self, _model1: PyTorch_Model, _dx1: list[torch.Tensor], _model2: PyDTNN_Model, _dx2: list[np.ndarray]
+        self,
+        _model1: PyTorch_Model,
+        _dx1: list[torch.Tensor],
+        _model2: PyDTNN_Model,
+        _dx2: list[np.ndarray],
     ) -> None:
         """Compares the backward pass gradients of two models.
 
@@ -422,15 +471,15 @@ class ModelDTypeTestCase(unittest.TestCase):
                 print()
                 print_with_header(f"Round {i}/{number_rounds - 1}")
 
-            x_pydtnn = np.asarray(rand.random((params.batch_size, *input_shape)),
-                                  dtype=params.dtype,
-                                  order="C")
+            x_pydtnn = np.asarray(
+                rand.random((params.batch_size, *input_shape)), dtype=params.dtype, order="C"
+            )
             y_pydtnn = np.ones((params.batch_size, output_shape), dtype=params.dtype)
 
             x_torch = torch.from_numpy(x_pydtnn).to(torch.device("cpu")).float()
             y_torch = torch.from_numpy(y_pydtnn).to(torch.device("cpu")).float()
 
-            # --- FORWARD --- #
+            # --- FORWARD ---
             if verbose_test():
                 print()
                 print_with_header(f"Model {model_name} 1 forward pass")
@@ -443,11 +492,13 @@ class ModelDTypeTestCase(unittest.TestCase):
             # Compare forward results
             self.compare_forward(model_pydtnn, x_torch, x_pydtnn)
 
-            # --- LOSS --- #
+            # --- LOSS ---
             loss_torch = self.do_pytorch_model_loss(loss_func_torch, x_torch[-1], y_torch)
-            _loss_pydtnn, dx_pydtnn = self.do_pydtnn_model_loss(model_pydtnn, x_pydtnn[-1], y_pydtnn)
+            _loss_pydtnn, dx_pydtnn = self.do_pydtnn_model_loss(
+                model_pydtnn, x_pydtnn[-1], y_pydtnn
+            )
 
-            # --- BACKWARD --- #
+            # --- BACKWARD ---
             # Model 1 backward
             if verbose_test():
                 print_with_header(f"Model {model_torch} 1 backward pass")

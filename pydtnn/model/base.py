@@ -153,7 +153,11 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
     loss_weights: ArrayShape = ()
     use_loss_weights: bool = False
     metrics: tuple[str, ...] = ("categorical_accuracy",)
-    schedulers_names: tuple[str, ...] = ("early_stopping", "reduce_lr_on_plateau", "model_checkpoint")
+    schedulers_names: tuple[str, ...] = (
+        "early_stopping",
+        "reduce_lr_on_plateau",
+        "model_checkpoint",
+    )
     warm_up_epochs: int = 5
     early_stopping_metric: str = "val_categorical_cross_entropy"
     early_stopping_patience: int = 10

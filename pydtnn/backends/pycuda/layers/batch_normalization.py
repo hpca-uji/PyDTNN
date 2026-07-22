@@ -110,9 +110,7 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
         )
         self.memory_used += self.running_mean.nbytes
 
-        running_var_gpu = gpuarray.to_gpu(
-            self.running_var_initializer(shape_, self.model.dtype)
-        )
+        running_var_gpu = gpuarray.to_gpu(self.running_var_initializer(shape_, self.model.dtype))
         self.running_var = TensorArray(
             running_var_gpu, self.model.tensor_format, self.model.cudnn_dtype
         )

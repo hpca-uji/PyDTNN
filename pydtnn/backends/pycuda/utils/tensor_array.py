@@ -398,7 +398,9 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
         """Delegates attribute access to the underlying GPUArray."""
         return getattr(self.ary, name)
 
-    def reshape[NS: tuple = ArrayShape](self, shape: NS, order: Literal["C", "F", "A"] = "C") -> TensorArray[NS, D]:
+    def reshape[NS: tuple = ArrayShape](
+        self, shape: NS, order: Literal["C", "F", "A"] = "C"
+    ) -> TensorArray[NS, D]:
         """Returns a reshaped view of the TensorArray."""
         return self._view(self.ary.reshape(shape, order))  # type: ignore
 
@@ -471,7 +473,9 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
             raise TypeError("Destination must be same dtype!")
         self.ary.get_async(stream, ary=ary.reshape(self.ary.shape))
 
-    def __array__(self, dtype: np.dtype | None = None, *, copy: bool | None = None) -> np.ndarray[S, D]:
+    def __array__(
+        self, dtype: np.dtype | None = None, *, copy: bool | None = None
+    ) -> np.ndarray[S, D]:
         """Converts TensorArray to a NumPy array."""
         if copy is False:
             raise ValueError("Must copy array")
@@ -593,7 +597,9 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
         other = self._operable(other)
         return self._view(self.ary.__truediv__(other))
 
-    def __rtruediv__(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> TensorArray[S, D]:
+    def __rtruediv__(
+        self, other: TensorArray | gpuarray.GPUArray | np.ndarray
+    ) -> TensorArray[S, D]:
         """Right-side division operator."""
         other = self._operable(other)
         return self._view(self.ary.__rtruediv__(other))

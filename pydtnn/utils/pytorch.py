@@ -1,13 +1,12 @@
 """Get a model from PyTorch converted to PyDTNN."""
 
-import torch
-
 from collections.abc import Sequence
 
-from pydtnn.utils.constants import ArrayShape
+import torch
 
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.converters.pytorch2pydtnn.model_convertor import get_layers_from_torch
+from pydtnn.utils.constants import ArrayShape
 
 
 def from_pytorch(

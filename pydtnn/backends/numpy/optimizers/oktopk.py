@@ -53,18 +53,15 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
             self.all_global_th[layer.id] = {dw_: 0.0 for dw_ in layer.grad_vars.values()}
 
             self.all_residuals[layer.id] = {
-                dw_: np.zeros_like(getattr(layer, dw_))
-                for dw_ in layer.grad_vars.values()
+                dw_: np.zeros_like(getattr(layer, dw_)) for dw_ in layer.grad_vars.values()
             }
 
             self.all_velocity[layer.id] = {
-                dw_: np.zeros_like(getattr(layer, dw_))
-                for dw_ in layer.grad_vars.values()
+                dw_: np.zeros_like(getattr(layer, dw_)) for dw_ in layer.grad_vars.values()
             }
 
             self.all_boundaries[layer.id] = {
-                dw_: np.zeros(self.model.nprocs, dtype=np.int32)
-                for dw_ in layer.grad_vars.values()
+                dw_: np.zeros(self.model.nprocs, dtype=np.int32) for dw_ in layer.grad_vars.values()
             }
 
             for dw_ in layer.grad_vars.values():
@@ -85,7 +82,9 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
                 case "p2p_region_wise_reduce_static_destination":
                     self._reduce_topk = self._reduce_topk_p2p_region_wise_reduce_static_destination
                 case "p2p_region_wise_reduce_destination_rotation_and_bucketing":
-                    self._reduce_topk = self._reduce_topk_p2p_region_wise_reduce_destination_rotation_and_bucketing
+                    self._reduce_topk = (
+                        self._reduce_topk_p2p_region_wise_reduce_destination_rotation_and_bucketing
+                    )
                 case _:
                     raise NotImplementedError(f"Method '{method}' not implemented")
 
@@ -129,11 +128,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
             # Main part of ok-topk: compute the values
             # that contribute to the update and its indexes
             sparse_u, indexes = self._ok_sparse_allreduce(
-                acc,
-                self.iterations[layer.id],
-                k,
-                self.tau,
-                self.tau_prime
+                acc, self.iterations[layer.id], k, self.tau, self.tau_prime
             )
 
             # Update residuals
@@ -220,7 +215,9 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
 
         return np.partition(array, -k)[-k]
 
-    def _space_repartition(self, acc: np.ndarray, local_th: float) -> np.ndarray[tuple[int], np.dtype[np.int32]]:
+    def _space_repartition(
+        self, acc: np.ndarray, local_th: float
+    ) -> np.ndarray[tuple[int], np.dtype[np.int32]]:
         block_size = acc.size // self.model.nprocs
 
         for i in range(self.model.nprocs):
@@ -228,7 +225,9 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
 
         return self.boundaries
 
-    def _space_repartition_balanced(self, acc: np.ndarray, local_th: float) -> np.ndarray[tuple[int], np.dtype[np.int32]]:
+    def _space_repartition_balanced(
+        self, acc: np.ndarray, local_th: float
+    ) -> np.ndarray[tuple[int], np.dtype[np.int32]]:
         sparse = SparseFlatArray.from_dense(acc).threshold(local_th)
         block_size = len(sparse.indexes) // self.model.nprocs
 
@@ -375,9 +374,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
             for i in range(current_bucket_size):
                 start = 0 if region == 0 else boundaries[region - 1]
                 end = boundaries[region]
-                requests[comm_step + i] = self.model.comm.isend(
-                    sparse_topk[start:end], dest=region
-                )
+                requests[comm_step + i] = self.model.comm.isend(sparse_topk[start:end], dest=region)
                 region = (region + 1) % self.model.nprocs
             # After sending the bucket, perform the receives sequentially for the same bucket.
             for i in range(current_bucket_size):
@@ -432,9 +429,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
         """
 
         # 1. Global topk selection
-        sparse_reduced_region_global_topk = sparse_reduced_region_topk.threshold(
-            global_th
-        )
+        sparse_reduced_region_global_topk = sparse_reduced_region_topk.threshold(global_th)
         assert sparse_reduced_region_global_topk
 
         # 2. Data packaging

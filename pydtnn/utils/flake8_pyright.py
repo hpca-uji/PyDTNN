@@ -1,19 +1,18 @@
 """Flake8 plugin for Pyright."""
 
-import os
-import re
 import ast
 import enum
-import json
 import itertools
-from pathlib import Path
-from tempfile import mkstemp
+import json
+import os
+import re
 from argparse import Namespace
 from collections.abc import Generator, Iterable
+from pathlib import Path
+from tempfile import mkstemp
 
 import pyright
 from flake8.discover_files import expand_paths
-
 
 _re_pascal = re.compile("[a-z][A-Z]")
 
@@ -148,12 +147,14 @@ class PyrightChecker:
             fd, path = mkstemp(cls.name)
             os.environ[key] = path
 
-            cls._diagnostics = run_pyright(expand_paths(
-                paths=options.filenames,
-                stdin_display_name=options.stdin_display_name,
-                filename_patterns=options.filename,
-                exclude=(*options.exclude, *options.extend_exclude),
-            ))
+            cls._diagnostics = run_pyright(
+                expand_paths(
+                    paths=options.filenames,
+                    stdin_display_name=options.stdin_display_name,
+                    filename_patterns=options.filename,
+                    exclude=(*options.exclude, *options.extend_exclude),
+                )
+            )
 
             with os.fdopen(fd, mode="w") as f:
                 json.dump(cls._diagnostics, f)
