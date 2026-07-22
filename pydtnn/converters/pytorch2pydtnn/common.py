@@ -1,6 +1,5 @@
 """Common utilities and mapping functions for converting PyTorch models to PyDTNN."""
 
-import copy
 import logging
 from typing import Any, Callable
 
@@ -365,7 +364,7 @@ def set_initializer_with_pytorch_values(
             if torch_value is None:
                 continue
 
-            value_to_set: np.ndarray = copy.deepcopy(torch_value.numpy(force=True))
+            value_to_set: np.ndarray = torch_value.numpy(force=True)
             # NOTE: There are some layers (like the fully connected) where the shape
             # in PyDTNN is the transpose of the PyTorch's one.
             value_to_set = value_to_set.T if transpose_values else value_to_set
@@ -387,7 +386,7 @@ def set_initializer_with_pytorch_values(
                 #       respective layer value_to_set.
                 #       In this way "pytorch_value_to_set" has the copy of "value_to_set"'s values
                 #       (that, as said before, is a reference to the layer's value_to_set) of that iteration.
-                return pytorch_value_to_set.astype(dtype=dtype, copy=False)
+                return pytorch_value_to_set.astype(dtype=dtype, order="C", copy=True)
 
             dict_initalizers[initalizer_name] = pytorch_value_initializer
     return dict_initalizers
