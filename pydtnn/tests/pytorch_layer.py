@@ -402,8 +402,8 @@ class LayerPyTorchTestCase(TestCase):
                 match layer:
                     case BatchNormalization():
                         assert isinstance(torch_layer, torch.nn.BatchNorm2d)
-                        running_mean: np.ndarray = layer.running_mean
-                        running_var: np.ndarray = layer.running_var
+                        running_mean: np.ndarray = layer.running_mean  # type: ignore (It's fine.)
+                        running_var: np.ndarray = layer.running_var  # type: ignore (It's fine.)
                         if running_mean is not None:
                             assert isinstance(torch_layer.running_mean, torch.Tensor)
                             torch_layer.running_mean.copy_(
@@ -464,7 +464,7 @@ class LayerPyTorchTestCase(TestCase):
         x_pydtnn = format_transpose(
             x, self.params.tensor_format.upper(), TensorFormat.NCHW.upper()
         ).copy()
-        
+
         x = torch.from_numpy(_x.reshape((N, C, H, W), copy=False)).to(torch.device("cpu")).float()  # type: ignore (It's fine)
         x_torch: torch.Tensor = torch_model(x)
         x_torch = np.asarray(

@@ -1,16 +1,13 @@
 """Module for converting PyTorch models to PyDTNN models."""
 
-import copy
 import logging
 from typing import Any
 
-import numpy as np
 import torch  # type: ignore
 
 import pydtnn.converters.pytorch2pydtnn.common as cm
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.activations.abstract.activation import Activation
-from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.input import Input
 from pydtnn.model import Model as PyDTNN_Model
 from pydtnn.utils.constants import ArrayShape

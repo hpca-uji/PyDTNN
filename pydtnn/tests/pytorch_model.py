@@ -1,7 +1,6 @@
 """Tests for verifying model behavior and consistency across different data types."""
 
 import logging
-from typing import Any
 import unittest
 
 import numpy as np
@@ -15,7 +14,7 @@ from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.model import Model as PyDTNN_Model
 from pydtnn.tests.abstract.common import Params, verbose_test
-from pydtnn.tests.abstract.model_common import ModelCommonTestCase
+from pydtnn.tests.abstract.model_common import ModelCommonTestCase  # noqa: F401 (It's being used)
 from pydtnn.utils.pytorch import from_pytorch
 from pydtnn.utils.tensor import TensorFormat
 from pydtnn.utils import print_with_header, rand
@@ -27,6 +26,85 @@ type PyTorch_Model = torch.nn.Module
 __all__ = ("ModelDTypeTestCase",)
 
 logger = logging.getLogger(__name__)
+
+
+class TestModel(torch.nn.Module):
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.layer1_0 = torch.nn.Sequential(
+            torch.nn.Conv2d(64, 256, kernel_size=(1, 1), stride=(1, 1), bias=False),
+            torch.nn.BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True),
+            torch.nn.ReLU(inplace=True)
+        )
+        self.layer1_1 = torch.nn.Sequential(
+            torch.nn.Conv2d(256, 256, kernel_size=(1, 1), stride=(1, 1), bias=False),
+            torch.nn.BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True),
+            torch.nn.ReLU(inplace=True)
+        )
+        self.layer2_0 = torch.nn.Sequential(
+            torch.nn.Conv2d(256, 128, kernel_size=(1, 1), stride=(1, 1), bias=False),
+            torch.nn.BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True),
+        )
+        self.layer3_0 = torch.nn.Sequential(
+            torch.nn.Conv2d(128, 256, kernel_size=(1, 1), stride=(1, 1), bias=False),
+            torch.nn.BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True),
+            torch.nn.Conv2d(256, 256, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False),
+            torch.nn.BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True),
+            torch.nn.Conv2d(256, 256, kernel_size=(1, 1), stride=(1, 1), bias=False),
+            torch.nn.BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True),
+            torch.nn.ReLU(inplace=True),
+            torch.nn.Sequential(
+                torch.nn.Conv2d(256, 512, kernel_size=(1, 1), stride=(2, 2), bias=False),
+                torch.nn.BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True)
+            )
+        )
+        self.layer3_1 = torch.nn.Sequential(
+            torch.nn.Conv2d(512, 256, kernel_size=(1, 1), stride=(1, 1), bias=False),
+            torch.nn.BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True),
+            torch.nn.Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False),
+            torch.nn.BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True),
+            torch.nn.Conv2d(256, 256, kernel_size=(1, 1), stride=(1, 1), bias=False),
+            torch.nn.BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True),
+            torch.nn.ReLU(inplace=True)
+        )
+        self.layer4_0 = torch.nn.Sequential(
+            torch.nn.Conv2d(256, 512, kernel_size=(1, 1), stride=(1, 1), bias=False),
+            torch.nn.BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True),
+        )
+        self.layer4_1 = torch.nn.Sequential(
+            torch.nn.Conv2d(512, 2048, kernel_size=(1, 1), stride=(1, 1), bias=False),
+            torch.nn.BatchNorm2d(2048, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True),
+            torch.nn.ReLU(inplace=True)
+        )
+
+        self.conv1 = torch.nn.Conv2d(3, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+        self.bn1 = torch.nn.BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True)
+        self.relu = torch.nn.ReLU(inplace=True)
+        self.maxpool = torch.nn.MaxPool2d(kernel_size=3, stride=2, padding=1, dilation=1, ceil_mode=False)
+        self.layer1 = torch.nn.Sequential(self.layer1_0, self.layer1_1)
+        self.layer2 = torch.nn.Sequential(self.layer2_0)
+        self.layer3 = torch.nn.Sequential(self.layer3_0, self.layer3_1)
+        self.layer4 = torch.nn.Sequential(self.layer4_0, self.layer4_1)
+        self.avgpool = torch.nn.AdaptiveAvgPool2d(output_size=(1, 1))
+        self.fc = torch.nn.Sequential(
+            torch.nn.Linear(in_features=2048, out_features=10, bias=True),
+            torch.nn.Softmax(dim=None)
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = self.conv1(x)
+        x = self.bn1(x)
+        x = self.relu(x)
+        x = self.maxpool(x)
+        x = self.layer1(x)
+        x = self.layer2(x)
+        x = self.layer3(x)
+        x = self.layer4(x)
+        x = self.avgpool(x)
+        x = torch.flatten(x, 1)
+        x = self.fc(x)
+        return x
 
 
 class ModelDTypeTestCase(unittest.TestCase):
@@ -89,7 +167,7 @@ class ModelDTypeTestCase(unittest.TestCase):
                 atol += catol
 
         return rtol, atol
-    
+
     def print_stats(self, x1: np.ndarray, x2: np.ndarray, rtol: float, atol: float) -> str:
         """
         Generates a string summary of statistical differences between two arrays.
@@ -142,13 +220,15 @@ class ModelDTypeTestCase(unittest.TestCase):
         params = ModelDTypeTestCase.params
         params.model_name = model_name  # type: ignore
 
-        torch_model = torch_models.resnet50(weights=torch_models.ResNet50_Weights.IMAGENET1K_V1)
-        print(f"{torch_model=}")
-        torch_model.fc = torch.nn.Sequential(  # type: ignore (It's ok to set a Sequential)
-            torch.nn.Linear(in_features=torch_model.fc.in_features, 
-                            out_features=params.synthetic_output_shape[0]),
-            torch.nn.Softmax()
-        )
+        # torch_model = torch_models.resnet50(weights=torch_models.ResNet50_Weights.IMAGENET1K_V1)
+        # print(f"{torch_model=}")
+        # torch_model.fc = torch.nn.Sequential(  # type: ignore (It's ok to set a Sequential)
+        #     torch.nn.Linear(in_features=torch_model.fc.in_features,
+        #                     out_features=params.synthetic_output_shape[0]),
+        #     torch.nn.Softmax()
+        # )
+
+        torch_model = TestModel()
         return torch_model, torch.nn.CrossEntropyLoss()
 
     def get_model_pydtnn(self, model_pytorch: PyTorch_Model) -> PyDTNN_Model:
@@ -171,21 +251,21 @@ class ModelDTypeTestCase(unittest.TestCase):
         # Begin of params configuration
         params_dict = vars(params)
         try:
-            model2 = PyDTNN_Model(**params_dict)
+            model_pydtnn = PyDTNN_Model(**params_dict)
         except LayerError as exc:
             raise unittest.SkipTest(
                 f"PyDTNN_Model incompatible with {params_dict['dataset_name']}"
             ) from exc
         layers = from_pytorch(params.synthetic_input_shape, model_pytorch)
-        model2.add_layers(layers)
-        model2._model_init()
-        model2.mode = model2.Mode.TRAIN
+        model_pydtnn.add_layers(layers)
+        model_pydtnn._model_init()
+        model_pydtnn.mode = model_pydtnn.Mode.TRAIN
 
-        print(f"{model2.tensor_format=}")
+        print(f"{model_pydtnn.memory_used=}")
 
-        for layer in model2.layers:
+        for layer in model_pydtnn.layers:
             print(layer)
-        return model2
+        return model_pydtnn
 
     def do_model1_forward_pass(self, model1: PyTorch_Model, x0: torch.Tensor) -> list[torch.Tensor]:
         """
@@ -216,17 +296,18 @@ class ModelDTypeTestCase(unittest.TestCase):
         """
         x1: list[np.ndarray] = [x0]
         # TODO: Get all layers in torch and iterate over those layers.
-        x = x1[0]
         for layer in model2.layers:
             x1.append(layer.forward(x1[-1].copy()))
         return x1
 
-    def do_model1_loss(self, loss_func: torch.nn.modules.loss._Loss,
-                       x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+    def do_pytorch_model_loss(self, loss_func: torch.nn.modules.loss._Loss,
+                              x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+        """Method execute the pytorch's loss"""
         loss: torch.Tensor = loss_func(x, y)
         return loss
 
-    def do_model2_loss(self, model: PyDTNN_Model, x: np.ndarray, y: np.ndarray) -> tuple[float, np.ndarray]:
+    def do_pydtnn_model_loss(self, model: PyDTNN_Model, x: np.ndarray, y: np.ndarray) -> tuple[float, np.ndarray]:
+        """Method execute the pydtnn's loss"""
         loss, dx = model.loss_func.compute(x.copy(), y, model.batch_size)
         return loss, dx
 
@@ -242,13 +323,13 @@ class ModelDTypeTestCase(unittest.TestCase):
             Nothing special yet.
         """
         # TODO: mover el loss a una función a parte (para compararlas)
-        #dx: list[torch.Tensor] = []
+        # dx: list[torch.Tensor] = []
         loss.backward()
         dx = loss
         # TODO: Get all layers in torch and iterate over those layers.
         return [dx]
 
-    def do_pydtnn_model_backward_pass(self, model2: PyDTNN_Model, dx: np.ndarray)-> list[np.ndarray]:
+    def do_pydtnn_model_backward_pass(self, model2: PyDTNN_Model, dx: np.ndarray) -> list[np.ndarray]:
         """
         Performs a forward pass for PyDTNN's Model.
 
@@ -266,7 +347,7 @@ class ModelDTypeTestCase(unittest.TestCase):
         #   will be at the same index as it's layer.
         dx1.insert(0, dx)
         for layer in reversed(model2.layers):
-            dx1.insert(0, layer.bakward(dx1[0].copy()))
+            dx1.insert(0, layer.backward(dx1[0].copy()))
         return dx1
 
     def compare_forward(self, model_pydtnn: PyDTNN_Model, x_torch: list[torch.Tensor],
@@ -280,16 +361,16 @@ class ModelDTypeTestCase(unittest.TestCase):
             model2 (PyDTNN_Model): PyDTNN model.
             x2 (list[np.ndarray]): Forward pass outputs of model 2.
         """
-        #assert len(x1) == len(x2), "x1 and x2 should have the same length"
+        # assert len(x1) == len(x2), "x1 and x2 should have the same length"
         if verbose_test():
             print()
             print("Comparing outputs of both models...")
-        
+
         pytorch_last_layer = x_torch[-1]
         pydtnn_last_layer = x_pydtnn[-1]
         layer = model_pydtnn.layers[-1]
 
-        pytorch_as_numpy = pytorch_last_layer.numpy(force = True)
+        pytorch_as_numpy = pytorch_last_layer.numpy(force=True)
 
         rtol, atol = self.get_tolerance(layer)
         self.assertTrue(
@@ -302,12 +383,12 @@ class ModelDTypeTestCase(unittest.TestCase):
             f"Forward result from layers {layer.name_with_id} differ "
             f"({self.print_stats(pytorch_as_numpy, pydtnn_last_layer, rtol, atol)})",
         )
-    
+
     def compare_backward(
         self, _model1: PyTorch_Model, _dx1: list[torch.Tensor], _model2: PyDTNN_Model, _dx2: list[np.ndarray]
     ) -> None:
-        """
-        Compares the backward pass gradients of two models.
+        """Compares the backward pass gradients of two models.
+
         Due the differences of implementation, right now it's not possible to compare the both gradients.
 
         Args:
@@ -343,7 +424,7 @@ class ModelDTypeTestCase(unittest.TestCase):
             x_pydtnn = np.asarray(rand.random((params.batch_size, *input_shape)),
                                   dtype=params.dtype,
                                   order="C")
-            y_pydtnn = np.ones((params.batch_size, output_shape), dtype = params.dtype)
+            y_pydtnn = np.ones((params.batch_size, output_shape), dtype=params.dtype)
 
             x_torch = torch.from_numpy(x_pydtnn).to(torch.device("cpu")).float()
             y_torch = torch.from_numpy(y_pydtnn).to(torch.device("cpu")).float()
@@ -358,20 +439,17 @@ class ModelDTypeTestCase(unittest.TestCase):
                 print_with_header(f"Model {model_pydtnn.model_name} 2 forward pass")
             x_pydtnn = self.do_model2_forward_pass(model_pydtnn, x_pydtnn)
 
-            print(f"{x_torch[0].shape=}")
-            print(f"{x_pydtnn[0].shape=}")
-
             # Compare forward results
             self.compare_forward(model_pydtnn, x_torch, x_pydtnn)
 
             # --- LOSS --- #
-            loss_torch = self.do_model1_loss(loss_func_torch, x_torch[-1], y_torch)
-            _loss_pydtnn, dx_pydtnn = self.do_model2_loss(model_pydtnn, x_pydtnn[-1], y_pydtnn)
+            loss_torch = self.do_pytorch_model_loss(loss_func_torch, x_torch[-1], y_torch)
+            _loss_pydtnn, dx_pydtnn = self.do_pydtnn_model_loss(model_pydtnn, x_pydtnn[-1], y_pydtnn)
 
             # --- BACKWARD --- #
             # Model 1 backward
             if verbose_test():
-                print_with_header(f"Model {model_torch.model_name} 1 backward pass")
+                print_with_header(f"Model {model_torch} 1 backward pass")
 
             dx_torch = self.do_pytorch_model_backward_pass(model_torch, loss_torch)
 
@@ -383,7 +461,7 @@ class ModelDTypeTestCase(unittest.TestCase):
             # Compare backward results
             self.compare_backward(model_torch, dx_torch, model_pydtnn, dx_pydtnn)
 
-    @unittest.skip("TODO skipping")
+    # @unittest.skip("TODO skipping")
     def test_renset50_from_pytorch(self) -> None:
         """Compares results between an Resnet50 model using a PyTorch model and other a PyDTNN one."""
         self.do_test_model("resnet50_from_pytorch")
