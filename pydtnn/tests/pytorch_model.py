@@ -466,7 +466,8 @@ class ModelDTypeTestCase(unittest.TestCase):
     def test_renset50_from_pytorch(self) -> None:
         """Compares results between an Resnet50 model using a PyTorch model and other a PyDTNN one."""
         self.do_test_model("resnet50_from_pytorch")
-    
+
+    # @unittest.skip("Too small")
     def test_basic_model_from_pytorch(self) -> None:
         """Compares results between an Resnet50 model using a PyTorch model and other a PyDTNN one."""
         self.do_test_model("basic_model")

@@ -383,7 +383,5 @@ def set_initializer_with_pytorch_values(state_dict: dict[str, Any],
                 #       In this way "pytorch_value_to_set" has the copy of "value_to_set"'s values
                 #       (that, as said before, is a reference to the layer's value_to_set) of that iteration.
                 return pytorch_value_to_set.astype(dtype=dtype, copy=False)
-            
             dict_initalizers[initalizer_name] = pytorch_value_initializer
-            
     return dict_initalizers
