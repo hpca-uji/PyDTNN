@@ -8,6 +8,7 @@ from pydtnn.backends.numpy.layers.abstract.layer import LayerNumpy
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.libs import numpy as np
 from pydtnn.model import Model
+from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, OpsEventEnum
 from pydtnn.utils.constants import ArrayShape, Parameters
 from pydtnn.utils.tensor import TensorFormat, format_transpose
 
@@ -64,6 +65,12 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
             self.gamma.size + self.beta.size + self.running_mean.size + self.running_var.size
         )
 
+        if self.use_bias:
+            self.biases = np.asarray(
+                self.biases_initializer(shape_, self.model.dtype), order="C"
+            )
+            self.nparams += self.biases.size
+
         # NOTE: These attributes only store data, their value before the operation
         # doesn't matter; they're initalized due avoid warnings in
         # "LayerAndActivationBase.export".
@@ -89,6 +96,10 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
         self.memory_used += self.dgamma.nbytes
         self.dbeta: np.ndarray = np.zeros(shape=shape_, dtype=self.model.dtype)
         self.memory_used += self.dbeta.nbytes
+
+        if self.use_bias:
+            self.db: np.ndarray = np.zeros(shape=shape_, dtype=self.model.dtype)
+            self.memory_used += self.db.size
 
         self._mean_shape = (self.ci,)
         self._var_shape = (self.ci,)
@@ -189,6 +200,16 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
 
         # bn_training_fwd_cython(x, y, self.xn, self.std, self.gamma, self.beta, _mean, _var, self.epsilon)
         self._training_fwd(x, _mean, _var, y)
+
+        if self.use_bias:
+            self.model.tracer.emit_event(
+                PYDTNN_OPS_EVENT,
+                self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_SUM_BIASES,
+            )
+            np.add(y, self.biases, out=y, dtype=self.model.dtype)
+
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+
         if self.spatial:
             y = y.reshape((n, self.hi, self.wi, self.ci))
             y = format_transpose(y, TensorFormat.NHWC, self.model.tensor_format)
@@ -207,6 +228,13 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
             dy = np.asarray(dy.reshape((num_elems, self.ci)), dtype=self.model.dtype, order="C")
         else:
             num_elems = n
+
+        # Biases gradient
+        if self.use_bias:
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
+                self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.BACKWARD_SUM_BIASES)
+            np.sum(dy, axis=0, out=self.db)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         dx: np.ndarray = np.asarray(self.y_dx[:num_elems, :], dtype=self.model.dtype, order="C")
         # dx.fill(0)

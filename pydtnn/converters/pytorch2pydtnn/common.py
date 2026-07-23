@@ -18,6 +18,7 @@ from pydtnn.converters.pytorch2pydtnn.layers.linear import Linear
 from pydtnn.converters.pytorch2pydtnn.layers.normalization import BatchNorm2d
 from pydtnn.converters.pytorch2pydtnn.layers.pooling import AdaptiveAvgPool2d, AvgPool2d, MaxPool2d
 from pydtnn.converters.pytorch2pydtnn.layers.utility import Flatten
+from pydtnn.utils.tensor import format_transpose
 
 __all__ = (
     "function_operation_to_pydtnn",
@@ -344,30 +345,41 @@ def get_equivalent_layer(params: list[str], dict_equivalent_layers: dict[str, st
 
 def set_initializer_with_pytorch_values(
     state_dict: dict[str, Any],
-    transpose_values: bool = False,
-    vars_and_initiaizers: dict[str, str] = {
-        "weight": "weights_initializer",
-        "bias": "biases_initializer",
-        "running_mean": "running_mean_initializer",
-        "running_var": "running_var_initializer",
+    vars_initiaizers_transpose: dict[str, tuple[str, None | tuple[str, str]]] = {
+        "weight": ("weights_initializer", None),
+        "bias": ("biases_initializer", None),
+        "running_mean": ("running_mean_initializer", None),
+        "running_var": ("running_var_initializer", None),
     },
 ) -> dict[str, Any]:
-    """Function to set the value returned by the initializers of the layer's weight, bias, etc."""
+    """Function to set the value returned by the initializers of the layer's weight, bias, etc.
+    
+    Args:
+        state_dict (dict[str, Any]): A dictionary with the values.
+        vars_and_initiaizers (dict[str, tuple[str, None | tuple[str, str]]]): Key (str): the name of the variable. 
+                                               Value[0] (str): The name of the initalizer's fuction.
+                                               Value[1] (None | tuple[str, str]): None if it's not necessary to transpose, tuple([origin shape's format], [new shape's format]) if it's necessary to transpose
+
+    Returns:
+        A dict[str, Any] where the Key is the initializer's fuction name, and the value is the initializer's function.
+    """
     dict_initalizers: dict[str, Any] = dict()
 
-    for variable in vars_and_initiaizers.keys():
+    for variable in vars_initiaizers_transpose.keys():
         # There are layers without weight nor biases
         if variable in state_dict:
-            initalizer_name = vars_and_initiaizers[variable]
+            initalizer_name = vars_initiaizers_transpose[variable][0]
+            transpose_values = vars_initiaizers_transpose[variable][1]
 
             torch_value: torch.Tensor | None = state_dict[variable]
             if torch_value is None:
                 continue
 
-            value_to_set: np.ndarray = torch_value.numpy(force=True)
+            value_to_set: np.ndarray = torch_value.numpy(force=True).copy()
             # NOTE: There are some layers (like the fully connected) where the shape
             # in PyDTNN is the transpose of the PyTorch's one.
-            value_to_set = value_to_set.T if transpose_values else value_to_set
+            if transpose_values is not None:
+                value_to_set = format_transpose(value_to_set, transpose_values[0], transpose_values[1])
 
             def pytorch_value_initializer(
                 shape: tuple,
@@ -386,7 +398,7 @@ def set_initializer_with_pytorch_values(
                 #       respective layer value_to_set.
                 #       In this way "pytorch_value_to_set" has the copy of "value_to_set"'s values
                 #       (that, as said before, is a reference to the layer's value_to_set) of that iteration.
-                return pytorch_value_to_set.astype(dtype=dtype, order="C", copy=True)
+                return pytorch_value_to_set.astype(dtype=dtype, order="C", copy=False)
 
             dict_initalizers[initalizer_name] = pytorch_value_initializer
     return dict_initalizers

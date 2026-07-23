@@ -25,7 +25,9 @@ class BatchNormalization[T: Array](Layer[T]):  # noqa: D101 (generics not detect
         epsilon: float = 1e-5,
         running_mean_initializer: Callable = zeros,
         running_var_initializer: Callable = ones,
+        biases_initializer: Callable = zeros,
         sync_stats: bool = False,
+        use_bias: bool = True
     ) -> None:
         """
         Initializes the BatchNormalization layer.
@@ -44,13 +46,19 @@ class BatchNormalization[T: Array](Layer[T]):  # noqa: D101 (generics not detect
         self.beta_init_val = beta
         self.momentum = momentum
         self.epsilon = epsilon
+        self.use_bias = use_bias
         self.running_mean_initializer: Callable[[ArrayShape, np.dtype], np.ndarray] = (
             running_mean_initializer
         )
         self.running_var_initializer: Callable[[ArrayShape, np.dtype], np.ndarray] = (
             running_var_initializer
         )
+        self.biases_initializer: Callable[[ArrayShape, np.dtype], np.ndarray] = (
+            biases_initializer
+        )
         self.grad_vars = {Parameters.BETA: Parameters.DBETA, Parameters.GAMMA: Parameters.DGAMMA}
+        if self.use_bias:
+            self.grad_vars[Parameters.BIASES] = Parameters.DB
         self.sync_stats = sync_stats
         # The following attributes will be initialized later
         self.co = self.ci = self.hi = self.wi = 0
@@ -63,6 +71,7 @@ class BatchNormalization[T: Array](Layer[T]):  # noqa: D101 (generics not detect
         self.xn: np.ndarray = None  # type: ignore
         self.dgamma: T = None  # type: ignore
         self.dbeta: T = None  # type: ignore
+        self.db: T = None  # type: ignore
 
     def export(self) -> dict[str, Any]:
         """
@@ -75,6 +84,7 @@ class BatchNormalization[T: Array](Layer[T]):  # noqa: D101 (generics not detect
 
         data[Parameters.RUNNING_MEAN] = self._export_prop(Parameters.RUNNING_MEAN)
         data[Parameters.RUNNING_VAR] = self._export_prop(Parameters.RUNNING_VAR)
+        data[Parameters.BIASES] = self._export_prop(Parameters.BIASES)
 
         return data
 
@@ -88,6 +98,7 @@ class BatchNormalization[T: Array](Layer[T]):  # noqa: D101 (generics not detect
 
         self._import_prop(Parameters.RUNNING_MEAN, data[Parameters.RUNNING_MEAN])
         self._import_prop(Parameters.RUNNING_VAR, data[Parameters.RUNNING_VAR])
+        self._import_prop(Parameters.BIASES, data[Parameters.BIASES])
 
         return super().import_(data)
 

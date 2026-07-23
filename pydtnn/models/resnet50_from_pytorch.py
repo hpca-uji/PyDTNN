@@ -15,6 +15,7 @@ def resnet50_from_pytorch(input_shape: ArrayShape, output_shape: ArrayShape) -> 
 
     torch_model = torch_models.resnet50(weights=torch_models.ResNet50_Weights.IMAGENET1K_V1)
     torch_model.fc = torch.nn.Sequential(  # type: ignore (It's ok to set a Sequential)
+        torch.nn.Dropout(p=0.5),
         torch.nn.Linear(in_features=torch_model.fc.in_features, out_features=output_shape[0]),
         torch.nn.Softmax(),
     )
