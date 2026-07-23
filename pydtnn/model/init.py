@@ -361,6 +361,8 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
             return
         self._is_model_init = True
 
+        self.random.seed(self.random_seed)  # type: ignore (seed exists)
+
         self.dataset._model_init()
 
         self._apply_layer_fusion()
@@ -418,4 +420,3 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
         elif not self.dataset:
             raise ValueError("There is no dataset and the model has layers.")
         self._model_init()
-        self.random.seed(self.random_seed)  # type: ignore (seed exists)

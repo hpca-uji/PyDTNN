@@ -142,7 +142,5 @@ class SparseFlatArray[S: tuple, I: np.dtype, V: np.dtype]:  # noqa: D101 (generi
 
     def threshold(self, threshold: float = 0.0) -> SparseFlatArray[S, I, V]:  # noqa: E741
         """Threshold filter"""
-        # mask = np.isclose(self.values, 0, atol=threshold, rtol=0)
-        # np.invert(mask, out=mask)
         indexes = np.flatnonzero(np.abs(self.values) >= threshold)
         return self[indexes]

@@ -266,6 +266,11 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
             self.batch_size * self.nprocs
         )
 
+        # Synchronize model
+        if self.initial_model_sync:
+            self._weight_update(gradient=True, blocking=self.blocking_mpi)
+            self._weight_update(gradient=False, blocking=self.blocking_mpi)
+
         for epoch in range(self.num_epochs):
             train_batch_generator, val_batch_generator = self.dataset.get_train_val_generator()
             sync_epoch = False
@@ -372,6 +377,7 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
 
         # Synchronize model
         if self.final_model_sync:
+            self._weight_update(gradient=True, blocking=self.blocking_mpi)
             self._weight_update(gradient=False, blocking=self.blocking_mpi)
 
         self.tracer.define_event_types(self)

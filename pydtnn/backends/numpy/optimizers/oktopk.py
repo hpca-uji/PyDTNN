@@ -118,7 +118,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
 
             # Compute k from: layer_params * self.density
             k = int(dw.size * self.density)
-            k = max(self.min_k_layer, k)
+            k = max(self.min_k_layer or dw.size, k)
 
             # Initialize current layer-parameter values
             self.local_th = self.all_local_th[layer.id][dw_]
@@ -209,13 +209,10 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
 
     def _th_re_evaluate(self, array: np.ndarray, k: int) -> float:
         """Re-evaluate k threshold"""
-        if k <= 0:
-            return 0.0
-
         array = np.abs(array.reshape(-1))
 
         # fast-path
-        if k > len(array):
+        if k >= len(array):
             return array.min(initial=0.0)
 
         return np.partition(array, -k)[-k]

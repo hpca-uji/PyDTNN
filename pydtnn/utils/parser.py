@@ -392,10 +392,22 @@ class ArgumentParser(argparse.ArgumentParser):
             ),
         )
         _sy_group.add_argument(
+            "--initial-model-sync",
+            action=argparse.BooleanOptionalAction,
+            default=ModelBase.initial_model_sync,
+            help=(
+                "Synchronize models on training start."
+                f" Default: {ModelBase.initial_model_sync!r}."
+            ),
+        )
+        _sy_group.add_argument(
             "--final-model-sync",
             action=argparse.BooleanOptionalAction,
             default=ModelBase.final_model_sync,
-            help=(f"Synchronize models on training end. Default: {ModelBase.final_model_sync!r}."),
+            help=(
+                "Synchronize models on training end."
+                f" Default: {ModelBase.final_model_sync!r}."
+            ),
         )
         _sy_group.add_argument(
             "--model-sync-quantize",

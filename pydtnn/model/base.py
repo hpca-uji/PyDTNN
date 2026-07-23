@@ -90,6 +90,7 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
     model_sync_algo: SyncAlgorithm = SyncAlgorithm.AVG
     model_sync_participation: SyncParticipation = SyncParticipation.ALL
     model_sync_min_avail: int = 0
+    initial_model_sync: bool = True
     final_model_sync: bool = True
     model_sync_quantize: bool = False
     model_sync_dtype: np.dtype = np.dtype(np.float16)
