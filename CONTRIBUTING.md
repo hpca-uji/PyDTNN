@@ -29,6 +29,7 @@ _Things to do & not to do_
 
 ## Environment
 - Use `from __future__ import annotations` instead of string type annotations, it is more legible and will be default moving forward.
+- Use `x | None` instead of `Optional[x]` for type annotations, it is equivalent and will be default moving forward.
 - Keep `Makefile` and `pyproject.toml` in sync, any changes in dependencies versions must be reflected in both.
 
 ## Components
