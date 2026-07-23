@@ -1,7 +1,8 @@
 """Pointwise 2D convolution layer implementation for the PyDTNN framework."""
 
+from __future__ import annotations
+
 import logging
-from typing import Optional
 
 from pydtnn.activations.abstract.activation import Activation
 from pydtnn.layers.abstract.conv_2d import AbstractConv2D
@@ -26,7 +27,7 @@ class Conv2DPointwise[T: Array](AbstractConv2D[T]):  # noqa: D101 (generics not 
         padding: tuple[int, int] | int = 0,
         stride: tuple[int, int] | int = 1,
         dilation: tuple[int, int] | int = 0,
-        activation: Optional[type["Activation"]] = None,
+        activation: type[Activation[T]] | None = None,
         use_bias: bool = True,
         weights_initializer: InitializerFunc = glorot_uniform,
         biases_initializer: InitializerFunc = zeros,

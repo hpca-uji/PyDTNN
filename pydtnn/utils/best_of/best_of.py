@@ -1,11 +1,13 @@
 """Module for automatic selection of the best performing algorithm or pipeline based on problem size."""
 
+from __future__ import annotations
+
 import logging
 import traceback
 from collections import abc, defaultdict
 from contextlib import suppress
 from timeit import default_timer as timer
-from typing import Any, Callable, Hashable, Optional, Union
+from typing import Any, Callable, Hashable, Union
 
 import numpy as np
 from rich import box
@@ -26,9 +28,9 @@ class _BestOfExecution:
 
     def __init__(
         self,
-        best_of: Optional["BestOf"],
-        execution_id: Optional[Hashable],
-        parent: Optional["_BestOfExecution"],
+        best_of: BestOf | None,
+        execution_id: Hashable | None,
+        parent: _BestOfExecution | None,
     ) -> None:
         """Initializes an execution node in the BestOf hierarchy."""
         self.best_of = best_of

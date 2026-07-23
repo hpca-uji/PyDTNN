@@ -1,8 +1,10 @@
 """Abstract base class for 2D convolutional layers."""
 
+from __future__ import annotations
+
 import logging
 import math
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from pydtnn.layers.abstract.layer import Layer
 from pydtnn.utils.constants import Array, ArrayShape, Parameters
@@ -27,7 +29,7 @@ class AbstractConv2D[T: Array](Layer[T]):  # noqa: D101 (generics not detected)
         padding: tuple[int, int] | int = 0,
         stride: tuple[int, int] | int = 1,
         dilation: tuple[int, int] | int = 1,
-        activation: Optional[type["Activation"]] = None,
+        activation: type[Activation[T]] | None = None,
         use_bias: bool = True,
         weights_initializer: InitializerFunc = glorot_uniform,
         biases_initializer: InitializerFunc = zeros,
