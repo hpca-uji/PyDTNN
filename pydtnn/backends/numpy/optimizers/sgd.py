@@ -75,7 +75,7 @@ class SGDNumpy(SGD[np.ndarray], OptimizerNumpy):
                         w_shape, dtype=self.model.dtype
                     )
 
-    def update(self, layer: LayerNumpy, update: bool = True) -> None:
+    def update(self, layer: LayerNumpy, update: bool = True, sync: bool = True) -> None:
         """Performs a single optimization step for the given layer."""
         if not layer.grad_vars or not update:
             return

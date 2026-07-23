@@ -80,7 +80,7 @@ class NadamPycuda(Nadam[TensorArray], OptimizerPycuda):
                     + self.context[layer.id]["v_%s" % w_].nbytes  # type: ignore (They are both "gpuarray" and not "int")
                 )
 
-    def update(self, layer: LayerPycuda, update: bool = True) -> None:
+    def update(self, layer: LayerPycuda, update: bool = True, sync: bool = True) -> None:
         """Perform a single optimization step on the specified layer."""
         if not layer.grad_vars or not update:
             return

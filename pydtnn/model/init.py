@@ -252,16 +252,8 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
         else:
             self.MPI, self.comm = (None, None)  # type: ignore (Excepcionally, they can be "None")
 
-        # Communication size
+        # Communication weight
         self.rank_weight = 1.0
-        self.comm_rank = self.rank = 0
-        self.comm_size = self.nprocs = 1
-        if self.comm:
-            self.comm_rank = self.comm.Get_rank()
-            self.comm_size = self.comm.Get_size()
-            if self.shared_data:
-                self.rank = self.comm_rank
-                self.nprocs = self.comm_size
 
         # Communication method
         match self.use_mpi_buffers:

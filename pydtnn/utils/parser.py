@@ -886,6 +886,18 @@ class ArgumentParser(argparse.ArgumentParser):
             default=ModelBase.oktopk_min_k,
             help=(f"Variable for 'oktopk' optimizers. Default: {ModelBase.oktopk_min_k!r}."),
         )
+        _op_group.add_argument(
+            "--oktopk-partition-method",
+            type=str,
+            default=ModelBase.oktopk_partition_method,
+            help=(f"OkTopk data partition method. Default: {ModelBase.oktopk_partition_method!r}."),
+        )
+        _op_group.add_argument(
+            "--oktopk-reduce-method",
+            type=str,
+            default=ModelBase.oktopk_reduce_method,
+            help=(f"OkTopk data reduce method. Default: {ModelBase.oktopk_reduce_method!r}."),
+        )
         losses = list_modules("losses")
         _op_group.add_argument(
             "--loss-func",

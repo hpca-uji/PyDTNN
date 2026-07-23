@@ -86,7 +86,7 @@ class RMSPropPycuda(RMSProp[TensorArray], OptimizerPycuda):
                     # NOTE: They are both "gpuarray" and not "int"
                     self.memory_used += self.context[layer.id]["cache_%s" % w_].nbytes  # type: ignore
 
-    def update(self, layer: LayerPycuda, update: bool = True) -> None:
+    def update(self, layer: LayerPycuda, update: bool = True, sync: bool = True) -> None:
         """
         Perform a single optimization step for the given layer.
 

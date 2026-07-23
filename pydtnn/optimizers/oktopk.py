@@ -90,11 +90,6 @@ class OkTopk[T: Array](Optimizer[T]):  # noqa: D101 (generics not detected)
         if self.model.model_sync_freq >= 0:
             logger.warning("Optimizer does model sync but global model sync is also enabled!")
 
-        if not self.model.shared_data:
-            raise NotImplementedError(
-                "OkTopK optimizer does not support Federated Learing (unbalanced datasets)!"
-            )
-
     @classmethod
     def from_model(cls, model: Model) -> OkTopk:
         """

@@ -7,7 +7,8 @@ from pydtnn.utils.parser import ArgumentParser
 
 parser = ArgumentParser()
 parser.add_argument("--export-split-weights", type=str, default="")
-model = Model(**vars(parser.parse_args()))
+config = parser.parse_args()
+model = Model(**vars(config))
 model._ensure_model_runnable()
-split_weights = list(map(float, filter(None, model.export_split_weights.split(","))))  # type: ignore
+split_weights = list(map(float, filter(None, config.export_split_weights.split(","))))  # type: ignore
 model.dataset.export_archive(split_weights=split_weights)

@@ -172,9 +172,8 @@ class Sync[T: Array](Init[T]):  # noqa: D101 (generics not detected)
                     return 0.0
             case _:
                 raise ValueError(
-                    f"Model synchronization participation option '{
-                        self.model_sync_participation
-                    }' not recognized. Only recognized: {list(Base.SyncParticipation)}"
+                    f"Model synchronization participation option {self.model_sync_participation} not recognized."
+                    f" Only recognized: {list(Base.SyncParticipation)}"
                 )
 
         min_nsamples, max_nsamples, total_nsamples = (
@@ -194,7 +193,6 @@ class Sync[T: Array](Init[T]):  # noqa: D101 (generics not detected)
                 return inverse_nsamples / total_nsamples
             case _:
                 raise ValueError(
-                    f"Model synchronization algorithm option '{
-                        self.model_sync_algo
-                    }' not recognized. Only recognized: {list(Base.SyncAlgorithm)}"
+                    f"Model synchronization algorithm option {self.model_sync_algo} not recognized."
+                    f" Only recognized: {list(Base.SyncAlgorithm)}"
                 )

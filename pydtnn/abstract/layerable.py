@@ -258,7 +258,7 @@ class Layerable[T: Array](Base[T]):  # noqa: D101 (generics not detected)
             children += [layer for layer in path]
         return children
 
-    def update_weights(self, optimizer: Optimizer[T], update: bool = True) -> None:
+    def update_weights(self, optimizer: Optimizer[T], update: bool = True, sync: bool = True) -> None:
         """
         Update layer weights using the provided optimizer.
 

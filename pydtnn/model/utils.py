@@ -50,3 +50,23 @@ class Utils[T: Array](Base[T]):  # noqa: D101 (generics not detected)
     def dataset_path(self) -> str:
         """Raw dataset path with rank substituted"""
         return utils.string_substitute(self.__dict__["dataset_path"], rank=self.comm_rank)
+
+    @property
+    def comm_rank(self) -> int:
+        """Communicator rank"""
+        return self.comm.rank if self.comm else 0
+
+    @property
+    def comm_size(self) -> int:
+        """Communicator size"""
+        return self.comm.size if self.comm else 1
+
+    @property
+    def rank(self) -> int:
+        """Model process rank"""
+        return self.comm_rank if self.shared_data else 0
+
+    @property
+    def nprocs(self) -> int:
+        """Model process size"""
+        return self.comm_size if self.shared_data else 1

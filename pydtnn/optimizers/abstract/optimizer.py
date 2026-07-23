@@ -68,7 +68,7 @@ class Optimizer[T: Array](Base):  # noqa: D101 (generics not detected)
         """
         return self.model.gpudirect
 
-    def update(self, layer: Layerable[T], update: bool = True) -> None:
+    def update(self, layer: Layerable[T], update: bool = True, sync: bool = True) -> None:
         """
         Updates the parameters of the given layer.
 

@@ -123,14 +123,13 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
                 gradient=True, blocking=self.blocking_mpi, pipeline=self.parallel_pipeline
             )
 
-        if sync_model:
-            # Optimizer
-            for layer in self.layers:
-                self.tracer.emit_event(
-                    PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + MdlEventEnum.UPDATE_DW
-                )
-                layer.update_weights(self.optimizer, has_batch)
-                self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
+        # Optimizer
+        for layer in self.layers:
+            self.tracer.emit_event(
+                PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + MdlEventEnum.UPDATE_DW
+            )
+            layer.update_weights(self.optimizer, has_batch, sync_model)
+            self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
         # Weight update (WU)
         if self.model_sync_freq > 0 and sync_model:

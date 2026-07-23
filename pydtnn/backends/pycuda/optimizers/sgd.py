@@ -85,7 +85,7 @@ class SGDPycuda(SGD[TensorArray], OptimizerPycuda):
                     # NOTE: They are both "gpuarray" and not "int"
                     self.memory_used += self.context[layer.id]["velocity_%s" % w_].nbytes  # type: ignore
 
-    def update(self, layer: LayerPycuda, update: bool = True) -> None:
+    def update(self, layer: LayerPycuda, update: bool = True, sync: bool = True) -> None:
         """
         Performs a single optimization step on the provided layer.
 
