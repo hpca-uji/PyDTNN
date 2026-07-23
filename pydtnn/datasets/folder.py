@@ -91,7 +91,10 @@ class Folder(Dataset):
                 self.folder_class_elems[folder_class] / num_elementos
             )
 
-        input_shape = (3, 10, 10)  # synthetic
+        first_path = self.labels_and_images[Dataset.Part.TRAIN][0][1]
+        x = self._load_rgb_image(first_path)
+
+        input_shape = tuple(x.shape)
         output_shape = (num_classes_train,)
 
         super().__init__(
