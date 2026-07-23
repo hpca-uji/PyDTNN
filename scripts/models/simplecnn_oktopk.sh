@@ -24,6 +24,7 @@ mpirun -np 4 "${MPI_ARGS[@]}" \
   --no-evaluate \
   --optimizer=oktopk \
   --model-sync-freq=-1 \
+  --no-initial-model-sync \
   --no-final-model-sync \
   --learning-rate=0.0001 \
   --optimizer-momentum=0.9 \
