@@ -168,6 +168,7 @@ The PyDTNN framework comes with a utility launcher called
     `avg`.
   - `--model-sync-participation`: Rank participation to synchronize models: `all`, `avail2all`. Default: `all`.
   - `--model-sync-min-avail`: Minimum ranks with data required to synchronize models. Default: 0.
+  - `--initial-model-sync`, `--no-initial-model-sync`: Synchronize models on training start. Default: True.
   - `--final-model-sync`, `--no-final-model-sync`: Synchronize models on training end. Default: True.
   - `--model-sync-quantize`, `--no-model-sync-quantize`: Enable model quantization on synchronize. Default: False.
   - `--model-sync-dtype`: Model synchronization quantization target dtype: `float16`, `float32`, `float64`
@@ -254,6 +255,8 @@ The PyDTNN framework comes with a utility launcher called
   - `--optimizer-tau-prime`: Variable for `oktopk` optimizers. Default: 64.
   - `--optimizer-density`: Variable for `oktopk` optimizers. Default: 0.01.
   - `--oktopk-min-k`: Variable for `oktopk` optimizers. Default: 10.
+  - `--oktopk-partition-method`: OkTopk data partition method. Default: `dense`.
+  - `--oktopk-reduce-method`: OkTopk data reduce method. Default: `collective_allreduce_then_slice`.
   - `--loss-func`: Loss functions that is evaluated on each trained batch:
     `categorical_cross_entropy`, `binary_cross_entropy`, `kl_divergence`, etc.
     Default: `categorical_cross_entropy`.
