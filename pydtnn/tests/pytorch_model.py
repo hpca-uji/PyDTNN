@@ -1,6 +1,7 @@
 """Tests for verifying model behavior and consistency across different data types."""
 
 import logging
+from typing import Any
 import unittest
 
 import numpy as np
@@ -14,6 +15,8 @@ from pydtnn.layers.addition_block import AdditionBlock
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.conv_2d import Conv2D
+from pydtnn.layers.fc import FC
+from pydtnn.layers.input import Input
 from pydtnn.model import Model as PyDTNN_Model
 from pydtnn.tests.abstract.common import Params, verbose_test
 from pydtnn.tests.abstract.model_common import ModelCommonTestCase  # noqa: F401 (It's being used)
@@ -139,6 +142,28 @@ class TestModel(torch.nn.Module):
         x = self.fc(x)
         return x
 
+def replace_layer(module: torch.nn.Module, name: str, layer_to_replace: type[torch.nn.Module]) -> None:
+    '''
+    Recursively put desired batch norm in nn.module module.
+
+    set module = net to start code.
+    https://discuss.pytorch.org/t/how-to-replace-a-layer-with-own-custom-variant/43586/7
+    '''
+    # go through all attributes of module nn.module (e.g. network or layer) and put batch norms if present
+    for attr_str in dir(module):
+        target_attr = getattr(module, attr_str)
+        #if type(target_attr) == torch.nn.BatchNorm2d:
+        if isinstance(target_attr, layer_to_replace):
+            print('replaced: ', name, attr_str)
+            new_bn = torch.nn.Identity(target_attr.num_features, target_attr.eps, target_attr.momentum, target_attr.affine,
+                                          track_running_stats=False)
+            setattr(module, attr_str, new_bn)
+
+    #if isinstance(module, torch.nn.Sequential):
+    #    breakpoint()
+    # iterate through immediate child modules. Note, the recursion is done by our code no need to use named_modules()
+    for name, immediate_child_module in module.named_children():
+        replace_layer(immediate_child_module, name, layer_to_replace)
 
 class ModelDTypeTestCase(unittest.TestCase):
     """Tests that two models with different parameters lead to the same results"""
@@ -260,12 +285,25 @@ class ModelDTypeTestCase(unittest.TestCase):
         else:
             torch_model = torch_models.resnet50(weights=torch_models.ResNet50_Weights.IMAGENET1K_V1)
             torch_model.fc = torch.nn.Sequential(  # type: ignore (It's ok to set a Sequential)
+                # torch.nn.Dropout(p=0.5),
                 torch.nn.Linear(
                     in_features=torch_model.fc.in_features,
                     out_features=params.synthetic_output_shape[0],
                 ),
-                torch.nn.Softmax(),
+                torch.nn.Softmax(dim=1),
             )
+
+        # breakpoint()
+        # class TEST(torch.nn.Module):
+        #    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        #        super().__init__(*args, **kwargs)
+        #        self.layer = torch_model.conv1
+        #    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        #        x = self.layer(x)
+        #        return x
+        # torch_model = TEST()
+        # replace_layer(torch_model, "model", layer_to_replace=torch.nn.BatchNorm2d)
+        # breakpoint()
 
         return torch_model, torch.nn.CrossEntropyLoss()
 
@@ -294,15 +332,21 @@ class ModelDTypeTestCase(unittest.TestCase):
             raise unittest.SkipTest(
                 f"PyDTNN_Model incompatible with {params_dict['dataset_name']}"
             ) from exc
+
+        print(f"{model_pytorch=}")
+
         layers = from_pytorch(params.synthetic_input_shape, model_pytorch)
+        breakpoint()
         model_pydtnn.add_layers(layers)
         model_pydtnn._model_init()
         model_pydtnn.mode = model_pydtnn.Mode.TRAIN
 
-        print(f"{model_pydtnn.memory_used=}")
-
         for layer in model_pydtnn.layers:
             print(layer)
+
+        capa = model_pydtnn.layers[-1]
+
+        breakpoint()
         return model_pydtnn
 
     def do_model1_forward_pass(self, model1: PyTorch_Model, x0: torch.Tensor) -> list[torch.Tensor]:

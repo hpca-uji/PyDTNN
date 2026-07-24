@@ -47,16 +47,12 @@ def Linear(args: dict[str, Any]) -> FC:
         # pydtnn_bias,
         pydtnn_shape]
 
-    breakpoint()
-
     layer_args = cm.prepare_pydtnn_arguments(
         arguments=args[cm.ARGUMENTS],
         torch_dict_keys=torch_dict_keys,
         pydtnn_dict_keys=pydtnn_dict_keys,
     )
     layer_args[pydtnn_bias] = args[cm.ARGUMENTS]["_parameters"]["bias"] is not None
-
-    breakpoint()
 
     initializers = cm.set_initializer_with_pytorch_values(
         args[cm.ARGUMENTS]["_parameters"], vars_initiaizers_transpose={
