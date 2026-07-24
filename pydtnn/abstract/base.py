@@ -27,10 +27,10 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
     # Base class
     model: Model[T]
 
-    def __new__[I](cls: type[I], *args: typing.Any, **kwds: typing.Any) -> I:
+    def __new__(cls: type[typing.Self], *args: typing.Any, **kwds: typing.Any) -> typing.Self:
         """Create a new instance and store constructor arguments for backend initialization."""
         # Save top-level constructor arguments
-        self = super().__new__(cls)  # type: ignore
+        self = super().__new__(cls)
         self._new_backend = (args, kwds)
         return self
 
@@ -108,7 +108,7 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
                 try:
                     backend_module = importlib.import_module(backend_module_name)
                 except ModuleNotFoundError as exc:
-                    if backend_module_name.startswith(exc.name):  # type: ignore
+                    if backend_module_name.startswith(exc.name or "builtin"):
                         continue  # Backend not found
                     raise  # Backend raised exception
                 cls_name = f"{cls.__name__}{backend.title()}"
@@ -220,10 +220,10 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
     def _init_backend_with_model(self, model: model_module.Base[T]) -> None:
         """Initialize backend and link a new model instance"""
         # Set on frontend:
-        self.model = model  # type: ignore (it's the right class)
+        self.model = model  # pyright: ignore[reportAttributeAccessIssue]
         self._init_backend()
         # Set on backend
-        self.model = model  # type: ignore (it's the right class)
+        self.model = model  # pyright: ignore[reportAttributeAccessIssue]
 
     @classmethod
     def from_model[I](cls: type[I], model: model_module.Base[T]) -> I:

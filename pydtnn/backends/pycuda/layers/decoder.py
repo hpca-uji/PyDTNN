@@ -6,7 +6,7 @@ from typing import Any
 import numpy as np
 
 from pydtnn.backends.pycuda.layers.abstract.block_layer import AbstractBlockLayerPycuda
-from pydtnn.backends.pycuda.libs import libcudnn as cudnn  # type: ignore
+from pydtnn.backends.pycuda.libs import libcudnn as cudnn
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.layers.decoder import Decoder
 from pydtnn.layers.dropout import Dropout
@@ -54,8 +54,8 @@ class DecoderPycuda(Decoder[TensorArray], AbstractBlockLayerPycuda):
         ]
 
         # The next attributes will be initialized later
-        self.y: TensorArray = None  # type: ignore
-        self.dx: TensorArray = None  # type: ignore
+        self.y: TensorArray = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.dx: TensorArray = None  # pyright: ignore[reportAttributeAccessIssue]
 
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
         """Initializes the backend model and sub-layer structures."""
@@ -64,7 +64,7 @@ class DecoderPycuda(Decoder[TensorArray], AbstractBlockLayerPycuda):
         x_dec_shape, x_enc_shape, mask_dec_shape = prev_shape
         mha_shape = (x_dec_shape, mask_dec_shape)
 
-        self.shape = x_enc_shape  # type: ignore (This layer has a special shape)
+        self.shape = x_enc_shape  # pyright: ignore[reportAttributeAccessIssue]
         self.first_dims = x_dec.shape[:-1]
 
         # Initialize all sublayers
@@ -147,13 +147,13 @@ class DecoderPycuda(Decoder[TensorArray], AbstractBlockLayerPycuda):
         alpha, beta = 1.0, 1.0
         # Self Attention
 
-        self.multiheadattention.forward(x, x, x, mask, x)  # type: ignore (multiheadattention uses more parameters)
+        self.multiheadattention.forward(x, x, x, mask, x)  # pyright: ignore[reportCallIssue]
         self.layernormalization_1.forward(self.multiheadattention.y)
 
         # Self Attention Encoder
         self.multiheadattention_enc.forward(
             self.layernormalization_1.y,
-            x_enc,  # type: ignore (multiheadattention uses more parameters)
+            x_enc,  # pyright: ignore[reportCallIssue]
             x_enc,
             mask,
             self.layernormalization_1.y,

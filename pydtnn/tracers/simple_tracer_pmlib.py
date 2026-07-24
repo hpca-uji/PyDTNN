@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 if TYPE_CHECKING:
-    from pympi.MPI import Comm  # type: ignore
+    from pympi.MPI import Comm
 
 
 class SimpleTracerPMLib(SimpleTracer):

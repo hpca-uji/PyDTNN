@@ -7,7 +7,7 @@ data tensors.
 """
 
 import numpy as np
-from tenseal import sealapi  # type: ignore
+from tenseal import sealapi
 
 slots = 2**12
 poly_degree = slots * 2

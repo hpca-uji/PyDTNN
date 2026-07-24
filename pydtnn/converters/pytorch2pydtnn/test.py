@@ -1,11 +1,10 @@
 """Test suite for verifying PyTorch to PyDTNN model conversion and inference parity."""
 
-import torch  # type: ignore
+import torch
 from model_convertor import convert_model
-from torch.nn import CrossEntropyLoss  # type: ignore
-from torchmetrics import Accuracy, Metric  # type: ignore
-from torchvision.models import googlenet  # type: ignore
-from torchvision.models import (alexnet, densenet121, densenet169, densenet201, resnet18,
+from torch.nn import CrossEntropyLoss
+from torchmetrics import Accuracy, Metric
+from torchvision.models import (alexnet, densenet121, densenet169, densenet201, googlenet, resnet18,
                                 resnet34, resnet50, resnet101, resnet152, vgg11, vgg16, vgg19)
 
 from pydtnn.activations.softmax import Softmax

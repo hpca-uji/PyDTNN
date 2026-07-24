@@ -25,7 +25,7 @@ class Conv2DGemm(Conv2DNumpy, AbstractConv2DGemm):
         """Initialize the GEMM-based 2D convolutional layer."""
         super().__init__(*args, **kwargs)
         # convGemm related attributes (will be initialized in initialize())
-        self.cg = None  # type: ignore
+        self.cg = None  # pyright: ignore[reportAttributeAccessIssue]
 
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
         """Initialize layer parameters and select the appropriate GEMM kernels based on tensor format."""

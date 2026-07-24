@@ -1,10 +1,8 @@
-"""
-Cython-accelerated depthwise convolution utilities for NCHW data format.
-"""
+"""Cython-accelerated depthwise convolution utilities for NCHW data format."""
 
 from pydtnn.backends.cython.utils.base import _npDT, _npDT_3Dims, _npDT_4Dims
 
-def depthwise_conv_nchw_cython[T: _npDT](
+def depthwise_conv_nchw_cython[T: _npDT](  # noqa: D103,E302
     x: _npDT_4Dims[T],
     k: _npDT_3Dims[T],
     res: _npDT_4Dims[T],
@@ -37,7 +35,7 @@ def depthwise_conv_nchw_cython[T: _npDT](
         Nothing. The value is stored in "res".
     """
 
-def depthwise_conv_backward_nchw_cython[T: _npDT](
+def depthwise_conv_backward_nchw_cython[T: _npDT](  # noqa: D103,E302
     dy: _npDT_4Dims[T],
     x: _npDT_4Dims[T],
     k: _npDT_3Dims[T],

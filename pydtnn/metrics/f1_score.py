@@ -15,7 +15,7 @@ class F1Score[T: Array](Metric[T]):  # noqa: D101 (generics not detected)
     """Computes the F1-score based on a BinaryConfusionMatrix."""
 
     order = BinaryConfusionMatrix.order + 1
-    conf_matrix_metric: BinaryConfusionMatrix = None  # type: ignore
+    conf_matrix_metric: BinaryConfusionMatrix = None  # pyright: ignore[reportAssignmentType]
     format = "f1: %.4f"
 
     def _model_init(self) -> None:

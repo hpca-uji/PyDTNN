@@ -64,7 +64,7 @@ except Exception:
     MPI = None
 
 try:
-    import cupy  # type: ignore
+    import cupy
 
     logger.debug("Cupy available")
 except Exception as e:
@@ -73,11 +73,11 @@ except Exception as e:
     gpu_errors.append(e)
 
 try:
-    import pycuda  # type: ignore
+    import pycuda
 
     logger.debug("PyCuda available")
 
-    import pycuda.driver as drv  # type: ignore
+    import pycuda.driver as drv
 
     logger.debug("drv available")
 except Exception as e:
@@ -89,12 +89,12 @@ except Exception as e:
     stream = None
     has_drv = False
 else:
-    import pycuda.gpuarray as gpuarray  # type: ignore
+    import pycuda.gpuarray as gpuarray
 
     has_drv = True
 
 try:
-    from pydtnn.backends.pycuda.utils import tensor_array  # type: ignore
+    from pydtnn.backends.pycuda.utils import tensor_array
 
     logger.debug("tensor_array available")
 except Exception as e:
@@ -103,7 +103,7 @@ except Exception as e:
     gpu_errors.append(e)
 
 try:
-    from pydtnn.libs import nccl as nccl  # type: ignore
+    from pydtnn.libs import nccl as nccl
 
     logger.debug("nccl available")
 except Exception as e:
@@ -112,7 +112,7 @@ except Exception as e:
     gpu_errors.append(e)
 
 try:
-    from pydtnn.libs import cudnn as cudnn  # type: ignore
+    from pydtnn.libs import cudnn as cudnn
 
     logger.debug("cudnn available")
 except Exception as e:
@@ -121,7 +121,7 @@ except Exception as e:
     gpu_errors.append(e)
 
 try:
-    from pydtnn.libs import cublas  # type: ignore
+    from pydtnn.libs import cublas
 
     logger.debug("cublas available")
 except Exception as e:
@@ -156,58 +156,76 @@ if nccl is not None and num_gpus > 0:
     if MPI:
         nccl_id = MPI.COMM_WORLD.bcast(nccl_id)
     nccl_comm = nccl.ncclCommInitRank(nprocs, nccl_id, rank)
-    atexit.register(lambda: nccl.ncclCommDestroy(nccl_comm))  # type: ignore
+    nccl_destroy = nccl.ncclCommDestroy
+
+    def _destory() -> None:
+        assert nccl and nccl_comm
+        nccl.ncclCommDestroy(nccl_comm)
+
+    atexit.register(_destory)
 else:
-    nccl_comm = None  # type: ignore
+    nccl_comm = None
+
+# DEFAULT CUDA
+device = None
+context = None
+stream = None
+stream_handle = None
 
 # INIT CUPY
 if cupy is not None and drv is not None:
-    rank = MPI.COMM_WORLD.rank if MPI else 0
+    from cupy.cuda import Stream as CupyStream
+
     cupy.cuda.runtime.setDevice(rank % cupy.cuda.runtime.getDeviceCount())
-    stream: cupy.cuda.Stream = cupy.cuda.get_current_stream()  # type: ignore (type not recognized)
+    stream: CupyStream = cupy.cuda.get_current_stream()
     stream_handle = stream.ptr
-else:
-    pass  # Defaults handled later
 
 # INIT PYCUDA
 if drv is not None:
     drv.init()
-    rank = MPI.COMM_WORLD.rank if MPI else 0
+    from pycuda.driver import Stream as PycudaStream
+
     device = drv.Device(rank % drv.Device.count())
     context = device.make_context()
-    stream: drv.Stream = drv.Stream()  # type: ignore
+    stream: PycudaStream = drv.Stream()
     stream_handle = stream.handle
-    atexit.register(lambda: context.pop())  # type: ignore
-else:
-    context = None  # type: ignore
-    # Defaults handled later
 
-# DEFAULT CUDA
-if cupy is None and drv is None:
-    device = None  # type: ignore
-    context = None  # type: ignore
-    stream = None  # type: ignore
-    stream_handle = None  # type: ignore
+    def _destroy() -> None:
+        assert context
+        context.pop()
+
+    atexit.register(_destroy)
 
 # INIT CUDNN
 if cudnn is not None and drv is not None:
     # NOTE: CUDNN initalization must be done after "drv.init()"
-    cudnn_handle: Cudnn_Handle_Type = cudnn.cudnnCreate()  # type: ignore
-    atexit.register(lambda: cudnn.cudnnDestroy(cudnn_handle))  # type: ignore
+    cudnn_handle: Cudnn_Handle_Type = cudnn.cudnnCreate()
+
+    def _destroy() -> None:
+        assert cudnn and cudnn_handle
+        cudnn.cudnnDestroy(cudnn_handle)
+
+    atexit.register(_destroy)
 else:
-    cudnn_handle: Cudnn_Handle_Type = None  # type: ignore
+    cudnn_handle = None  # pyright: ignore[reportAssignmentType]
+
 
 # INIT CUBLAS
 if cublas is not None and device is not None:
-    cublas_handle: Cublas_Handle_Type = cublas.cublasCreate()  # type: ignore
-    atexit.register(lambda: cublas.cublasDestroy(cublas_handle))  # type: ignore
+    cublas_handle: Cublas_Handle_Type = cublas.cublasCreate()
+
+    def _destroy() -> None:
+        assert cublas, cublas_handle
+        cublas.cublasDestroy(cublas_handle)
+
+    atexit.register(_destroy)
 else:
-    cublas_handle: Cublas_Handle_Type = None  # type: ignore
+    cublas_handle: Cublas_Handle_Type = None  # pyright: ignore[reportAssignmentType]
 
 # SYNC CUDNN+CUDA
-if cudnn is not None and stream is not None:
-    cudnn.cudnnSetStream(cudnn_handle, stream_handle)  # type: ignore
+if cudnn is not None and stream_handle is not None:
+    cudnn.cudnnSetStream(cudnn_handle, stream_handle)
 
 # SYNC CUBLAS+CUDA
-if cublas is not None and stream is not None:
-    cublas.cublasSetStream(cublas_handle, stream_handle)  # type: ignore
+if cublas is not None and stream_handle is not None:
+    cublas.cublasSetStream(cublas_handle, stream_handle)

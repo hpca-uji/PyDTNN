@@ -3,7 +3,7 @@
 import logging
 
 import numpy as np
-from pycuda import gpuarray  # type: ignore
+from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 
 from pydtnn.backends.pycuda.metrics.abstract.metric import MetricPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray

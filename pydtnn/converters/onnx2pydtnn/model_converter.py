@@ -10,7 +10,7 @@ from typing import Any
 
 import numpy as np
 # Operations/transformations related
-import onnx  # type: ignore
+import onnx
 
 import pydtnn.converters.onnx2pydtnn.constants as cons
 from pydtnn.abstract.layerable import Layerable
@@ -238,7 +238,7 @@ def _get_and_put_layer(
         cons.CONST_WEIGHTS: weights,
         cons.CONST_PREV_LAYERS: operations,
     }
-    if len(info[cons.CONST_INPUTS]) > 1:
+    if len(info[cons.CONST_INPUTS]) > 1:  # pyright: ignore[reportArgumentType]
         info[cons.CONST_listS_NODES], operations_to_remove = get_lists_operations_and_outputs(
             info, operations
         )

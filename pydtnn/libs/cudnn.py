@@ -3,7 +3,6 @@
 # Source: https://github.com/hannes-brt/cudnn-python-wrappers
 
 import ctypes
-import ctypes.util
 import logging
 import sys
 

@@ -7,12 +7,11 @@
 from __future__ import absolute_import
 
 import ctypes
-import ctypes.util
 import functools
 import re
 import sys
 from string import Template
-from typing import Callable
+from typing import Any, Callable
 
 import numpy as np
 
@@ -614,7 +613,7 @@ class _cublas_version_req(object):  # noqa: N801
         """
 
         @functools.wraps(f)
-        def f_new(*args, **kwargs):
+        def f_new(*args: Any, **kwargs: Any) -> Any:
             raise NotImplementedError("CUBLAS " + self.vs + " required")
 
         f_new.__doc__ = f.__doc__
@@ -622,7 +621,7 @@ class _cublas_version_req(object):  # noqa: N801
         if _cublas_version >= int(self.vi):
             return f
         else:
-            return f_new  # type: ignore
+            return f_new  # pyright: ignore[reportReturnType]
 
 
 _libcublas.cublasSetStream_v2.restype = int
@@ -1280,7 +1279,7 @@ def cublasSaxpy(
     status = _libcublas.cublasSaxpy_v2(
         handle,
         n,
-        ctypes.byref(ctypes.c_float(alpha)),  # type: ignore
+        ctypes.byref(ctypes.c_float(alpha)),  # pyright: ignore[reportArgumentType]
         int(x),
         incx,
         int(y),
@@ -2055,8 +2054,8 @@ def cublasSrot(
         incx,
         int(y),
         incy,
-        ctypes.byref(ctypes.c_float(c)),  # type: ignore
-        ctypes.byref(ctypes.c_float(s)),  # type: ignore
+        ctypes.byref(ctypes.c_float(c)),  # pyright: ignore[reportArgumentType]
+        ctypes.byref(ctypes.c_float(s)),  # pyright: ignore[reportArgumentType]
     )
     cublasCheckStatus(status)
 
@@ -2153,7 +2152,7 @@ def cublasCrot(
         incx,
         int(y),
         incy,
-        ctypes.byref(ctypes.c_float(c)),  # type: ignore
+        ctypes.byref(ctypes.c_float(c)),  # pyright: ignore[reportArgumentType]
         ctypes.byref(cuda.cuFloatComplex(s.real, s.imag)),
     )
     cublasCheckStatus(status)
@@ -2202,8 +2201,8 @@ def cublasCsrot(
         incx,
         int(y),
         incy,
-        ctypes.byref(ctypes.c_float(c)),  # type: ignore
-        ctypes.byref(ctypes.c_float(s)),  # type: ignore
+        ctypes.byref(ctypes.c_float(c)),  # pyright: ignore[reportArgumentType]
+        ctypes.byref(ctypes.c_float(s)),  # pyright: ignore[reportArgumentType]
     )
     cublasCheckStatus(status)
 
@@ -2380,8 +2379,8 @@ def cublasSrotg(
     handle: int, a: np.float32, b: np.float32
 ) -> tuple[np.float32, np.float32, np.float32]:
     """Constructs a Givens rotation matrix (single precision real)."""
-    _a = ctypes.c_float(a)  # type: ignore
-    _b = ctypes.c_float(b)  # type: ignore
+    _a = ctypes.c_float(a)  # pyright: ignore[reportArgumentType]
+    _b = ctypes.c_float(b)  # pyright: ignore[reportArgumentType]
     _c = ctypes.c_float()
     _s = ctypes.c_float()
     assert _libcublas
@@ -2677,10 +2676,10 @@ def cublasSrotmg(
     handle: int, d1: np.float32, d2: np.float32, x1: np.float32, y1: np.float32
 ) -> np.ndarray[tuple, np.dtype[np.float32]]:
     """Constructs a real modified Givens rotation matrix (single precision)."""
-    _d1 = ctypes.c_float(d1)  # type: ignore
-    _d2 = ctypes.c_float(d2)  # type: ignore
-    _x1 = ctypes.c_float(x1)  # type: ignore
-    _y1 = ctypes.c_float(y1)  # type: ignore
+    _d1 = ctypes.c_float(d1)  # pyright: ignore[reportArgumentType]
+    _d2 = ctypes.c_float(d2)  # pyright: ignore[reportArgumentType]
+    _x1 = ctypes.c_float(x1)  # pyright: ignore[reportArgumentType]
+    _y1 = ctypes.c_float(y1)  # pyright: ignore[reportArgumentType]
     sparam = np.empty(5, np.float32)
     assert _libcublas
     status = _libcublas.cublasSrotmg_v2(
@@ -2786,7 +2785,7 @@ def cublasSscal(handle: int, n: int, alpha: np.float32, x: ctypes.c_void_p, incx
     status = _libcublas.cublasSscal_v2(
         handle,
         n,
-        ctypes.byref(ctypes.c_float(alpha)),  # type: ignore
+        ctypes.byref(ctypes.c_float(alpha)),  # pyright: ignore[reportArgumentType]
         int(x),
         incx,
     )
@@ -2877,7 +2876,7 @@ def cublasCsscal(handle: int, n: int, alpha: np.float32, x: ctypes.c_void_p, inc
     status = _libcublas.cublasCsscal_v2(
         handle,
         n,
-        ctypes.byref(ctypes.c_float(alpha)),  # type: ignore
+        ctypes.byref(ctypes.c_float(alpha)),  # pyright: ignore[reportArgumentType]
         int(x),
         incx,
     )
@@ -3166,12 +3165,12 @@ def cublasSgbmv(
         n,
         kl,
         ku,
-        ctypes.byref(ctypes.c_float(alpha)),  # type: ignore
+        ctypes.byref(ctypes.c_float(alpha)),  # pyright: ignore[reportArgumentType]
         int(A),
         lda,
         int(x),
         incx,
-        ctypes.byref(ctypes.c_float(beta)),  # type: ignore
+        ctypes.byref(ctypes.c_float(beta)),  # pyright: ignore[reportArgumentType]
         int(y),
         incy,
     )
@@ -3233,12 +3232,12 @@ def cublasDgbmv(
         n,
         kl,
         ku,
-        ctypes.byref(ctypes.c_double(alpha)),  # type: ignore
+        ctypes.byref(ctypes.c_double(alpha)),
         int(A),
         lda,
         int(x),
         incx,
-        ctypes.byref(ctypes.c_double(beta)),  # type: ignore
+        ctypes.byref(ctypes.c_double(beta)),
         int(y),
         incy,
     )
@@ -3459,12 +3458,12 @@ def cublasSgemv(
         _CUBLAS_OP[trans],
         m,
         n,
-        ctypes.byref(ctypes.c_float(alpha)),  # type: ignore
+        ctypes.byref(ctypes.c_float(alpha)),  # pyright: ignore[reportArgumentType]
         int(A),
         lda,
         int(x),
         incx,
-        ctypes.byref(ctypes.c_float(beta)),  # type: ignore
+        ctypes.byref(ctypes.c_float(beta)),  # pyright: ignore[reportArgumentType]
         int(y),
         incy,
     )
@@ -3706,7 +3705,7 @@ def cublasSger(
         handle,
         m,
         n,
-        ctypes.byref(ctypes.c_float(alpha)),  # type: ignore
+        ctypes.byref(ctypes.c_float(alpha)),  # pyright: ignore[reportArgumentType]
         int(x),
         incx,
         int(y),
@@ -4020,12 +4019,12 @@ def cublasSsbmv(
         _CUBLAS_FILL_MODE[uplo],
         n,
         k,
-        ctypes.byref(ctypes.c_float(alpha)),  # type: ignore
+        ctypes.byref(ctypes.c_float(alpha)),  # pyright: ignore[reportArgumentType]
         int(A),
         lda,
         int(x),
         incx,
-        ctypes.byref(ctypes.c_float(beta)),  # type: ignore
+        ctypes.byref(ctypes.c_float(beta)),  # pyright: ignore[reportArgumentType]
         int(y),
         incy,
     )
@@ -4161,11 +4160,11 @@ def cublasSspmv(
         handle,
         _CUBLAS_FILL_MODE[uplo],
         n,
-        ctypes.byref(ctypes.c_float(alpha)),  # type: ignore
-        ctypes.byref(ctypes.c_float(AP)),  # type: ignore
+        ctypes.byref(ctypes.c_float(alpha)),  # pyright: ignore[reportArgumentType]
+        ctypes.byref(ctypes.c_float(AP)),  # pyright: ignore[reportArgumentType]
         int(x),
         incx,
-        ctypes.byref(ctypes.c_float(beta)),  # type: ignore
+        ctypes.byref(ctypes.c_float(beta)),  # pyright: ignore[reportArgumentType]
         int(y),
         incy,
     )
@@ -4283,7 +4282,7 @@ def cublasSspr(
         handle,
         _CUBLAS_FILL_MODE[uplo],
         n,
-        ctypes.byref(ctypes.c_float(alpha)),  # type: ignore
+        ctypes.byref(ctypes.c_float(alpha)),  # pyright: ignore[reportArgumentType]
         int(x),
         incx,
         int(AP),
@@ -4320,7 +4319,7 @@ def cublasDspr(
         handle,
         _CUBLAS_FILL_MODE[uplo],
         n,
-        ctypes.byref(ctypes.c_double(alpha)),  # type: ignore
+        ctypes.byref(ctypes.c_double(alpha)),
         int(x),
         incx,
         int(AP),
@@ -4398,7 +4397,7 @@ def cublasSspr2(
         handle,
         _CUBLAS_FILL_MODE[uplo],
         n,
-        ctypes.byref(ctypes.c_float(alpha)),  # type: ignore
+        ctypes.byref(ctypes.c_float(alpha)),  # pyright: ignore[reportArgumentType]
         int(x),
         incx,
         int(y),
@@ -4441,7 +4440,7 @@ def cublasDspr2(
         handle,
         _CUBLAS_FILL_MODE[uplo],
         n,
-        ctypes.byref(ctypes.c_double(alpha)),  # type: ignore
+        ctypes.byref(ctypes.c_double(alpha)),
         int(x),
         incx,
         int(y),
@@ -4527,12 +4526,12 @@ def cublasSsymv(
         handle,
         _CUBLAS_FILL_MODE[uplo],
         n,
-        ctypes.byref(ctypes.c_float(alpha)),  # type: ignore
+        ctypes.byref(ctypes.c_float(alpha)),  # pyright: ignore[reportArgumentType]
         int(A),
         lda,
         int(x),
         incx,
-        ctypes.byref(ctypes.c_float(beta)),  # type: ignore
+        ctypes.byref(ctypes.c_float(beta)),  # pyright: ignore[reportArgumentType]
         int(y),
         incy,
     )
@@ -4578,12 +4577,12 @@ def cublasDsymv(
         handle,
         _CUBLAS_FILL_MODE[uplo],
         n,
-        ctypes.byref(ctypes.c_double(alpha)),  # type: ignore
+        ctypes.byref(ctypes.c_double(alpha)),
         int(A),
         lda,
         int(x),
         incx,
-        ctypes.byref(ctypes.c_double(beta)),  # type: ignore
+        ctypes.byref(ctypes.c_double(beta)),
         int(y),
         incy,
     )
@@ -4755,7 +4754,7 @@ def cublasSsyr(
         handle,
         _CUBLAS_FILL_MODE[uplo],
         n,
-        ctypes.byref(ctypes.c_float(alpha)),  # type: ignore
+        ctypes.byref(ctypes.c_float(alpha)),  # pyright: ignore[reportArgumentType]
         int(x),
         incx,
         int(A),
@@ -4795,7 +4794,7 @@ def cublasDsyr(
         handle,
         _CUBLAS_FILL_MODE[uplo],
         n,
-        ctypes.byref(ctypes.c_double(alpha)),  # type: ignore
+        ctypes.byref(ctypes.c_double(alpha)),
         int(x),
         incx,
         int(A),
@@ -4958,7 +4957,7 @@ def cublasSsyr2(
         handle,
         _CUBLAS_FILL_MODE[uplo],
         n,
-        ctypes.byref(ctypes.c_float(alpha)),  # type: ignore
+        ctypes.byref(ctypes.c_float(alpha)),  # pyright: ignore[reportArgumentType]
         int(x),
         incx,
         int(y),
@@ -7083,7 +7082,7 @@ def cublasChpr(
         handle,
         _CUBLAS_FILL_MODE[uplo],
         n,
-        ctypes.byref(ctypes.c_float(alpha)),  # type: ignore
+        ctypes.byref(ctypes.c_float(alpha)),  # pyright: ignore[reportArgumentType]
         int(x),
         incx,
         int(AP),
@@ -7120,7 +7119,7 @@ def cublasZhpr(
         handle,
         _CUBLAS_FILL_MODE[uplo],
         n,
-        ctypes.byref(ctypes.c_double(alpha)),  # type: ignore
+        ctypes.byref(ctypes.c_double(alpha)),
         int(x),
         incx,
         int(AP),
@@ -7346,12 +7345,12 @@ def cublasSgemm(
         m,
         n,
         k,
-        ctypes.byref(ctypes.c_float(alpha)),  # type: ignore
+        ctypes.byref(ctypes.c_float(alpha)),  # pyright: ignore[reportArgumentType]
         int(A),
         lda,
         int(B),
         ldb,
-        ctypes.byref(ctypes.c_float(beta)),  # type: ignore
+        ctypes.byref(ctypes.c_float(beta)),  # pyright: ignore[reportArgumentType]
         int(C),
         ldc,
     )
@@ -7462,12 +7461,12 @@ def cublasDgemm(
         m,
         n,
         k,
-        ctypes.byref(ctypes.c_double(alpha)),  # type: ignore
+        ctypes.byref(ctypes.c_double(alpha)),
         int(A),
         lda,
         int(B),
         ldb,
-        ctypes.byref(ctypes.c_double(beta)),  # type: ignore
+        ctypes.byref(ctypes.c_double(beta)),
         int(C),
         ldc,
     )
@@ -7622,10 +7621,10 @@ def cublasSsymm(
         _CUBLAS_FILL_MODE[uplo],
         m,
         n,
-        ctypes.byref(ctypes.c_float(alpha)),  # type: ignore
+        ctypes.byref(ctypes.c_float(alpha)),  # pyright: ignore[reportArgumentType]
         int(A),
         lda,
-        ctypes.byref(ctypes.c_float(beta)),  # type: ignore
+        ctypes.byref(ctypes.c_float(beta)),  # pyright: ignore[reportArgumentType]
         int(B),
         ldb,
         int(C),
@@ -7677,10 +7676,10 @@ def cublasDsymm(
         _CUBLAS_FILL_MODE[uplo],
         m,
         n,
-        ctypes.byref(ctypes.c_double(alpha)),  # type: ignore
+        ctypes.byref(ctypes.c_double(alpha)),
         int(A),
         lda,
-        ctypes.byref(ctypes.c_double(beta)),  # type: ignore
+        ctypes.byref(ctypes.c_double(beta)),
         int(B),
         ldb,
         int(C),
@@ -7882,10 +7881,10 @@ def cublasSsyrk(
         _CUBLAS_OP[trans],
         n,
         k,
-        ctypes.byref(ctypes.c_float(alpha)),  # type: ignore
+        ctypes.byref(ctypes.c_float(alpha)),  # pyright: ignore[reportArgumentType]
         int(A),
         lda,
-        ctypes.byref(ctypes.c_float(beta)),  # type: ignore
+        ctypes.byref(ctypes.c_float(beta)),  # pyright: ignore[reportArgumentType]
         int(C),
         ldc,
     )
@@ -7931,10 +7930,10 @@ def cublasDsyrk(
         _CUBLAS_OP[trans],
         n,
         k,
-        ctypes.byref(ctypes.c_double(alpha)),  # type: ignore
+        ctypes.byref(ctypes.c_double(alpha)),
         int(A),
         lda,
-        ctypes.byref(ctypes.c_double(beta)),  # type: ignore
+        ctypes.byref(ctypes.c_double(beta)),
         int(C),
         ldc,
     )
@@ -8130,12 +8129,12 @@ def cublasSsyr2k(
         _CUBLAS_OP[trans],
         n,
         k,
-        ctypes.byref(ctypes.c_float(alpha)),  # type: ignore
+        ctypes.byref(ctypes.c_float(alpha)),  # pyright: ignore[reportArgumentType]
         int(A),
         lda,
         int(B),
         ldb,
-        ctypes.byref(ctypes.c_float(beta)),  # type: ignore
+        ctypes.byref(ctypes.c_float(beta)),  # pyright: ignore[reportArgumentType]
         int(C),
         ldc,
     )
@@ -8185,12 +8184,12 @@ def cublasDsyr2k(
         _CUBLAS_OP[trans],
         n,
         k,
-        ctypes.byref(ctypes.c_double(alpha)),  # type: ignore
+        ctypes.byref(ctypes.c_double(alpha)),
         int(A),
         lda,
         int(B),
         ldb,
-        ctypes.byref(ctypes.c_double(beta)),  # type: ignore
+        ctypes.byref(ctypes.c_double(beta)),
         int(C),
         ldc,
     )
@@ -8412,7 +8411,7 @@ def cublasStrmm(
         _CUBLAS_DIAG[diag],
         m,
         n,
-        ctypes.byref(ctypes.c_float(alpha)),  # type: ignore
+        ctypes.byref(ctypes.c_float(alpha)),  # pyright: ignore[reportArgumentType]
         int(A),
         lda,
         int(B),
@@ -8470,7 +8469,7 @@ def cublasDtrmm(
         _CUBLAS_DIAG[diag],
         m,
         n,
-        ctypes.byref(ctypes.c_double(alpha)),  # type: ignore
+        ctypes.byref(ctypes.c_double(alpha)),
         int(A),
         lda,
         int(B),
@@ -8692,7 +8691,7 @@ def cublasStrsm(
         _CUBLAS_DIAG[diag],
         m,
         n,
-        ctypes.byref(ctypes.c_float(alpha)),  # type: ignore
+        ctypes.byref(ctypes.c_float(alpha)),  # pyright: ignore[reportArgumentType]
         int(A),
         lda,
         int(B),
@@ -8744,7 +8743,7 @@ def cublasDtrsm(
         _CUBLAS_DIAG[diag],
         m,
         n,
-        ctypes.byref(ctypes.c_double(alpha)),  # type: ignore
+        ctypes.byref(ctypes.c_double(alpha)),
         int(A),
         lda,
         int(B),
@@ -9099,10 +9098,10 @@ def cublasCherk(
         _CUBLAS_OP[trans],
         n,
         k,
-        ctypes.byref(ctypes.c_float(alpha)),  # type: ignore
+        ctypes.byref(ctypes.c_float(alpha)),  # pyright: ignore[reportArgumentType]
         int(A),
         lda,
-        ctypes.byref(ctypes.c_float(beta)),  # type: ignore
+        ctypes.byref(ctypes.c_float(beta)),  # pyright: ignore[reportArgumentType]
         int(C),
         ldc,
     )
@@ -9148,10 +9147,10 @@ def cublasZherk(
         _CUBLAS_OP[trans],
         n,
         k,
-        ctypes.byref(ctypes.c_double(alpha)),  # type: ignore
+        ctypes.byref(ctypes.c_double(alpha)),
         int(A),
         lda,
-        ctypes.byref(ctypes.c_double(beta)),  # type: ignore
+        ctypes.byref(ctypes.c_double(beta)),
         int(C),
         ldc,
     )
@@ -9438,10 +9437,10 @@ def cublasSgeam(
         _CUBLAS_OP[transb],
         m,
         n,
-        ctypes.byref(ctypes.c_float(alpha)),  # type: ignore
+        ctypes.byref(ctypes.c_float(alpha)),  # pyright: ignore[reportArgumentType]
         int(A),
         lda,
-        ctypes.byref(ctypes.c_float(beta)),  # type: ignore
+        ctypes.byref(ctypes.c_float(beta)),  # pyright: ignore[reportArgumentType]
         int(B),
         ldb,
         int(C),
@@ -9508,10 +9507,10 @@ def cublasDgeam(
         _CUBLAS_OP[transb],
         m,
         n,
-        ctypes.byref(ctypes.c_double(alpha)),  # type: ignore
+        ctypes.byref(ctypes.c_double(alpha)),
         int(A),
         lda,
-        ctypes.byref(ctypes.c_double(beta)),  # type: ignore
+        ctypes.byref(ctypes.c_double(beta)),
         int(B),
         ldb,
         int(C),
@@ -9772,12 +9771,12 @@ def cublasSgemmBatched(
         m,
         n,
         k,
-        ctypes.byref(ctypes.c_float(alpha)),  # type: ignore
+        ctypes.byref(ctypes.c_float(alpha)),  # pyright: ignore[reportArgumentType]
         int(A),
         lda,
         int(B),
         ldb,
-        ctypes.byref(ctypes.c_float(beta)),  # type: ignore
+        ctypes.byref(ctypes.c_float(beta)),  # pyright: ignore[reportArgumentType]
         int(C),
         ldc,
         batchCount,
@@ -9840,12 +9839,12 @@ def cublasDgemmBatched(
         m,
         n,
         k,
-        ctypes.byref(ctypes.c_double(alpha)),  # type: ignore
+        ctypes.byref(ctypes.c_double(alpha)),
         int(A),
         lda,
         int(B),
         ldb,
-        ctypes.byref(ctypes.c_double(beta)),  # type: ignore
+        ctypes.byref(ctypes.c_double(beta)),
         int(C),
         ldc,
         batchCount,
@@ -10089,7 +10088,7 @@ def cublasStrsmBatched(
         _CUBLAS_DIAG[diag],
         m,
         n,
-        ctypes.byref(ctypes.c_float(alpha)),  # type: ignore
+        ctypes.byref(ctypes.c_float(alpha)),  # pyright: ignore[reportArgumentType]
         int(A),
         lda,
         int(B),
@@ -10151,7 +10150,7 @@ def cublasDtrsmBatched(
         _CUBLAS_DIAG[diag],
         m,
         n,
-        ctypes.byref(ctypes.c_double(alpha)),  # type: ignore
+        ctypes.byref(ctypes.c_double(alpha)),
         int(A),
         lda,
         int(B),
@@ -11314,14 +11313,14 @@ def cublasSgemmStridedBatched(
         m,
         n,
         k,
-        ctypes.byref(ctypes.c_float(alpha)),  # type: ignore
+        ctypes.byref(ctypes.c_float(alpha)),  # pyright: ignore[reportArgumentType]
         int(A),
         lda,
         strideA,
         int(B),
         ldb,
         strideB,
-        ctypes.byref(ctypes.c_float(beta)),  # type: ignore
+        ctypes.byref(ctypes.c_float(beta)),  # pyright: ignore[reportArgumentType]
         int(C),
         ldc,
         strideC,

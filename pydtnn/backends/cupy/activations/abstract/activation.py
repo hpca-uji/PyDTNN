@@ -28,7 +28,7 @@ class ActivationCupy(ActivationNumpy, LayerableCupy):
         """
         super()._model_init(prev_shape, x)
 
-        if libnp != cp:  # type: ignore (It's possible to do this operation)
+        if libnp.ndarray is not cp.ndarray:  # pyright: ignore[reportAttributeAccessIssue]
             raise RuntimeError("CuPy layers requies PYDTNN_CUPY enabled!")
 
         self.defines_replaces = {'"TYPE"': DTYPE2CTYPE[self.model.dtype]}

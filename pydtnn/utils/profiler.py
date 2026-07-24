@@ -9,8 +9,8 @@ import types
 from pathlib import Path
 from typing import Self
 
-import memray  # type: ignore
-from memray._memray import compute_statistics as memray_statistics  # type: ignore
+import memray
+from memray._memray import compute_statistics as memray_statistics
 
 __all__ = (
     "MemoryProfiler",

@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 def transpose_0231_numpy(
     original: np.ndarray,
-    transposed: np.ndarray | None = None,  # type: ignore
+    transposed: np.ndarray | None = None,
 ) -> np.ndarray:
     """
     Perform 0231 transposition using NumPy's transpose method.
@@ -33,14 +33,14 @@ def transpose_0231_numpy(
     """
     d0, d1, d2, d3 = original.shape
     if transposed is None:
-        transposed: np.ndarray = np.empty((d0, d2, d3, d1), original.dtype)
+        transposed = np.empty((d0, d2, d3, d1), original.dtype)
     transposed[...] = original.transpose((0, 2, 3, 1))
     return transposed
 
 
 def transpose_0231_ijk_cython_wrapper(
     original: np.ndarray,
-    transposed: np.ndarray | None = None,  # type: ignore
+    transposed: np.ndarray | None = None,
 ) -> np.ndarray:
     """
     Perform 0231 transposition using Cython implementation with ijk loop order.
@@ -54,14 +54,14 @@ def transpose_0231_ijk_cython_wrapper(
     """
     d0, d1, d2, d3 = original.shape
     if transposed is None:
-        transposed: np.ndarray = np.empty((d0, d2, d3, d1), original.dtype)
+        transposed = np.empty((d0, d2, d3, d1), original.dtype)
     transpose_0231_ijk_cython(original, transposed)
     return transposed
 
 
 def transpose_0231_ikj_cython_wrapper(
     original: np.ndarray,
-    transposed: np.ndarray | None = None,  # type: ignore
+    transposed: np.ndarray | None = None,
 ) -> np.ndarray:
     """
     Perform 0231 transposition using Cython implementation with ikj loop order.
@@ -75,7 +75,7 @@ def transpose_0231_ikj_cython_wrapper(
     """
     d0, d1, d2, d3 = original.shape
     if transposed is None:
-        transposed: np.ndarray = np.empty((d0, d2, d3, d1), original.dtype)
+        transposed = np.empty((d0, d2, d3, d1), original.dtype)
     transpose_0231_ikj_cython(original, transposed)
     return transposed
 

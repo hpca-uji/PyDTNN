@@ -3,7 +3,7 @@
 import logging
 from typing import Any
 
-from pycuda import gpuarray  # type: ignore
+from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 
 from pydtnn.activations.relu import Relu
 from pydtnn.backends.pycuda.activations.abstract.activation import ActivationPycuda
@@ -22,7 +22,7 @@ class ReluPycuda(Relu[TensorArray], ActivationPycuda):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the ReLU PyCUDA layer."""
         super().__init__(*args, **kwargs)
-        self.act_desc: int = None  # type: ignore (it'll be intialized later)
+        self.act_desc: int = None  # pyright: ignore[reportAttributeAccessIssue]
 
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
         """Initialize cuDNN descriptors and allocate memory for forward and backward passes."""

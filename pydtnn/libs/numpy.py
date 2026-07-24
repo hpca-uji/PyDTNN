@@ -9,7 +9,7 @@ import typing as _typing
 _pkg = _sys.path.pop(0)
 try:
     if _os.environ.get("PYDTNN_CUPY"):
-        import cupy as _module  # type: ignore
+        import cupy as _module
     else:
         import numpy as _module
 finally:
@@ -19,7 +19,7 @@ finally:
 _sys.modules[__name__] = _module
 
 if hasattr(_module, "__all__"):
-    __all__ = _module.__all__  # type: ignore
+    __all__ = _module.__all__  # pyright: ignore[reportUnsupportedDunderAll]
 
 
 def __getattr__(key: _typing.Any) -> _typing.Any:

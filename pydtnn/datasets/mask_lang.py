@@ -131,7 +131,7 @@ class MaskLang(Dataset):
         Returns:
             The loaded spaCy model.
         """
-        import spacy  # type: ignore
+        import spacy
 
         table = {"en": "en_core_web_md", "de": "de_core_news_md"}
         if language in table:

@@ -3,7 +3,7 @@
 import logging
 from typing import Any
 
-from pycuda import gpuarray  # type: ignore
+from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 
 from pydtnn.activations.softmax import Softmax
 from pydtnn.backends.pycuda.activations.abstract.activation import ActivationPycuda
@@ -22,8 +22,8 @@ class SoftmaxPycuda(Softmax[TensorArray], ActivationPycuda):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the SoftmaxPycuda layer."""
         super().__init__(*args, **kwargs)
-        self.mode: int = None  # type: ignore (It'll be initalized later)
-        self.algo: int = None  # type: ignore (It'll be initalized later)
+        self.mode: int = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.algo: int = None  # pyright: ignore[reportAttributeAccessIssue]
 
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
         """Initialize layer buffers and cuDNN parameters."""

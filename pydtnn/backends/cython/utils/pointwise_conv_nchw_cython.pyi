@@ -1,10 +1,8 @@
-"""
-Cython-accelerated pointwise convolution utilities for NHWC data layout.
-"""
+"""Cython-accelerated pointwise convolution utilities for NHWC data layout."""
 
 from pydtnn.backends.cython.utils.base import _npDT, _npDT_3Dims, _npDT_4Dims
 
-def fwd_pointwise_conv_cython_nchw[T: _npDT](
+def fwd_pointwise_conv_cython_nchw[T: _npDT](  # noqa: D103,E302
     x: _npDT_4Dims[T],
     k: _npDT_3Dims[T],
     res: _npDT_4Dims[T],
@@ -29,7 +27,7 @@ def fwd_pointwise_conv_cython_nchw[T: _npDT](
         Nothing. The value is stored in `out`.
     """
 
-def bwd_pointwise_conv_cython_nchw[T: _npDT](
+def bwd_pointwise_conv_cython_nchw[T: _npDT](  # noqa: D103,E302
     dy: _npDT_4Dims[T],
     x: _npDT_4Dims[T],
     k: _npDT_3Dims[T],

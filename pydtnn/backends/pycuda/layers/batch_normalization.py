@@ -4,8 +4,8 @@ import logging
 from typing import Any
 
 import numpy as np
-import pycuda.driver as drv  # type: ignore
-from pycuda import gpuarray  # type: ignore
+import pycuda.driver as drv
+from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 
 from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
@@ -33,15 +33,15 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
         """Initializes the BatchNormalizationPycuda layer."""
         super().__init__(*args, **kwargs)
         # NOTE: The next attributes will be initialized later
-        self.weights_biases_mean_var_desc: int = None  # type: ignore
-        self.mode: int = None  # type: ignore
-        self.weights_cpu: np.ndarray = None  # type: ignore
-        self.biases_cpu: np.ndarray = None  # type: ignore
-        self.dw_cpu: np.ndarray = None  # type: ignore
-        self.db_cpu: np.ndarray = None  # type: ignore
-        self.save_mean: TensorArray = None  # type: ignore
-        self.save_inv_var: TensorArray = None  # type: ignore
-        self.factor: float = None  # type: ignore
+        self.weights_biases_mean_var_desc: int = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.mode: int = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.weights_cpu: np.ndarray = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.biases_cpu: np.ndarray = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.dw_cpu: np.ndarray = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.db_cpu: np.ndarray = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.save_mean: TensorArray = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.save_inv_var: TensorArray = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.factor: float = None  # pyright: ignore[reportAttributeAccessIssue]
 
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
         """Initializes GPU memory and cuDNN descriptors for the layer."""

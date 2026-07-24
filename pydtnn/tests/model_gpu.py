@@ -6,7 +6,7 @@ import logging
 import unittest
 
 import numpy as np
-import pycuda.gpuarray as gpuarray  # type: ignore
+from pycuda import gpuarray
 
 from pydtnn import pycuda, supported_gpu
 from pydtnn.abstract.layerable import Layerable
@@ -61,11 +61,11 @@ class ModelGpuTestCase(ModelCommonTestCase):
         """
         # GPU model
         params = Params()
-        params.model_name = model_name  # type: ignore
+        params.model_name = model_name
         params.backend = "gpu"
-        params.use_cudnn = True  # type: ignore
-        params.use_cudnn_auto_conv_algo = True  # type: ignore
-        params.tensor_format = TensorFormat.NCHW.upper()
+        params.use_cudnn = True
+        params.use_cudnn_auto_conv_algo = True
+        params.tensor_format = TensorFormat.NCHW
         params_dict = vars(params)
         try:
             model2 = Model(**params_dict)
@@ -117,7 +117,7 @@ class ModelGpuTestCase(ModelCommonTestCase):
 
     def set_data_to_ary(
         self,
-        ary: gpuarray,  # type: ignore
+        ary: gpuarray.GPUArray,
         data: np.ndarray,
         layer: Layerable,
     ) -> None:

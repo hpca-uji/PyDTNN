@@ -4,8 +4,8 @@ import logging
 from typing import Any
 
 import numpy as np
-from pycuda import gpuarray  # type: ignore
-from pycuda.elementwise import ElementwiseKernel  # type: ignore
+from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
+from pycuda.elementwise import ElementwiseKernel
 
 from pydtnn.activations.log import Log
 from pydtnn.backends.pycuda.activations.abstract.activation import ActivationPycuda

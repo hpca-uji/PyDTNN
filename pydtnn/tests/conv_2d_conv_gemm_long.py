@@ -25,7 +25,7 @@ class Conv2DConvGemmLongTestCase(Conv2DConvGemmTestCase):
     global Conv2DConvGemmTestCase
     del Conv2DConvGemmTestCase
 
-    rand.seed(0)  # type: ignore
+    rand.seed(0)
     dtype = np.float32
 
     R = list(

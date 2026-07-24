@@ -1,6 +1,7 @@
 """Average pooling 2D layer implementation using Cython backends."""
 
 import logging
+import math
 from typing import TYPE_CHECKING
 
 from pydtnn.backends.cython.layers.abstract.pool_2d_layer import AbstractPool2DLayerCython
@@ -170,10 +171,10 @@ class AveragePool2DCython(AveragePool2DNumpy, AbstractPool2DLayerCython):
 
     def _backward_nhwc_i2c(self, dy: np.ndarray) -> np.ndarray:
         """Perform backward pass in NHWC format using row2im transformation."""
-        pool_size = np.prod(self.pool_shape)
+        pool_size = math.prod(self.pool_shape)
         dy_rows: np.ndarray = np.tile(
             dy.reshape(-1, 1, copy=False) / pool_size,
-            (1, pool_size),  # type: ignore (it is correct.)
+            (1, pool_size),
         )
         dx: np.ndarray = np.zeros_like(dy, dtype=self.model.dtype)
 
@@ -205,8 +206,8 @@ class AveragePool2DCython(AveragePool2DNumpy, AbstractPool2DLayerCython):
 
     def _backward_nchw_i2c(self, dy: np.ndarray) -> np.ndarray:
         """Perform backward pass in NCHW format using col2im transformation."""
-        pool_size = np.prod(self.pool_shape)
-        dy_cols: np.ndarray = np.tile(dy.flatten() / pool_size, (pool_size, 1))  # type: ignore (it is correct.)
+        pool_size = math.prod(self.pool_shape)
+        dy_cols: np.ndarray = np.tile(dy.flatten() / pool_size, (pool_size, 1))
         dy_cols: np.ndarray = np.asarray(dy_cols, dtype=self.model.dtype, order="C")
         dx: np.ndarray = np.zeros((dy.shape[0], self.hi, self.wi, self.ci), dtype=self.model.dtype)
 

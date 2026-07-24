@@ -2,7 +2,7 @@
 
 from pydtnn.backends.cython.utils.base import _npDT, _npDT_2Dims, _npDT_4Dims
 
-def im2col_1ch_nchw_cython[T: _npDT](
+def im2col_1ch_nchw_cython[T: _npDT](  # noqa: D103,E302
     x: _npDT_4Dims[T],
     cols: _npDT_2Dims[T],
     kh: int,
@@ -36,7 +36,7 @@ def im2col_1ch_nchw_cython[T: _npDT](
         Nothing, it is stored in `cols`.
     """
 
-def col2im_1ch_nchw_cython[T: _npDT](
+def col2im_1ch_nchw_cython[T: _npDT](  # noqa: D103,E302
     cols: _npDT_2Dims[T],
     x: _npDT_4Dims[T],
     n: int,

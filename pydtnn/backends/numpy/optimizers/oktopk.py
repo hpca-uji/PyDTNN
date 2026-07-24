@@ -20,13 +20,13 @@ type BoundaryArray = np.ndarray[tuple[int], np.dtype[np.int32]]
 
 if TYPE_CHECKING:
     import numpy as np  # noqa: F811 (override typing)
-    from pympi.MPI import Request  # type: ignore
+    from pympi.MPI import Request
 
 
 try:
     from pydtnn.libs.mpi import MPI
 except (ImportError, ModuleNotFoundError):
-    pass
+    MPI = None
 
 
 class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
@@ -63,7 +63,8 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
             }
 
             self.all_boundaries[layer.id] = {
-                dw_: np.zeros(self.model.comm_size, dtype=np.int32) for dw_ in layer.grad_vars.values()
+                dw_: np.zeros(self.model.comm_size, dtype=np.int32)
+                for dw_ in layer.grad_vars.values()
             }
 
             for dw_ in layer.grad_vars.values():
@@ -83,7 +84,9 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
                 case "sparse":
                     self._space_repartition = self._space_repartition_sparse
                 case _:
-                    raise NotImplementedError(f"Method '{self.model.oktopk_partition_method}' not implemented")
+                    raise NotImplementedError(
+                        f"Method '{self.model.oktopk_partition_method}' not implemented"
+                    )
         else:
             self._space_repartition = self._space_repartition_local
 
@@ -99,9 +102,13 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
                 case "p2p_region_wise_reduce_static_destination":
                     self._reduce_topk = self._reduce_topk_p2p_region_wise_reduce_static_destination
                 case "p2p_region_wise_reduce_destination_rotation_and_bucketing":
-                    self._reduce_topk = self._reduce_topk_p2p_region_wise_reduce_destination_rotation_and_bucketing
+                    self._reduce_topk = (
+                        self._reduce_topk_p2p_region_wise_reduce_destination_rotation_and_bucketing
+                    )
                 case _:
-                    raise NotImplementedError(f"Method '{self.model.oktopk_reduce_method}' not implemented")
+                    raise NotImplementedError(
+                        f"Method '{self.model.oktopk_reduce_method}' not implemented"
+                    )
         else:
             self._reduce_topk = self._reduce_topk_local
 
@@ -244,6 +251,8 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
         return self.boundaries
 
     def _space_repartition_sparse(self, acc: np.ndarray, local_th: float) -> BoundaryArray:
+        assert MPI and self.model.comm, "Communicator needed!"
+
         sparse = SparseFlatArray.from_dense(acc).threshold(local_th)
         block_size = sparse.nnz // self.model.comm_size
 
@@ -303,13 +312,15 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
     def _reduce_topk_collective_allreduce_then_slice(
         self, sparse_topk: SparseFlatArray, boundaries: BoundaryArray
     ) -> SparseFlatArray:
-        assert self.model.comm, "Communicator needed!"
+        assert MPI and self.model.comm, "Communicator needed!"
         sparse_topk = self.model.comm.allreduce(sparse_topk, op=MPI.SUM)
 
         start = 0 if self.model.comm_rank == 0 else self.boundaries[self.model.comm_rank - 1]
         end = self.boundaries[self.model.comm_rank]
 
-        sparse_topk = sparse_topk[np.searchsorted(sparse_topk.indexes, start):np.searchsorted(sparse_topk.indexes, end)]
+        sparse_topk = sparse_topk[
+            np.searchsorted(sparse_topk.indexes, start): np.searchsorted(sparse_topk.indexes, end)
+        ]
 
         sparse_topk.values *= self.model.rank_weight
 
@@ -318,16 +329,20 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
     def _reduce_topk_collective_region_wise_reduce_sync(
         self, sparse_topk: SparseFlatArray, boundaries: BoundaryArray
     ) -> SparseFlatArray:
-        assert self.model.comm, "Communicator needed!"
+        assert MPI and self.model.comm, "Communicator needed!"
         start = 0
-        # # type: ignore (The values will be set later)
-        reduced_regions_sparse: list[SparseFlatArray] = [None] * self.model.comm_size  # type: ignore
+
+        reduced_regions_sparse: list[SparseFlatArray] = [None] * self.model.comm_size  # pyright: ignore[reportAssignmentType]
         for region in range(self.model.comm_size):
             end = boundaries[region]
             reduced_regions_sparse[region] = self.model.comm.reduce(
                 sparse_topk[
-                    np.searchsorted(sparse_topk.indexes, start):np.searchsorted(sparse_topk.indexes, end)
-                ], op=MPI.SUM, root=region
+                    np.searchsorted(sparse_topk.indexes, start): np.searchsorted(
+                        sparse_topk.indexes, end
+                    )
+                ],
+                op=MPI.SUM,
+                root=region,
             )
             start = end
         region_reduced_sparse = reduced_regions_sparse[self.model.comm_rank]
@@ -346,14 +361,16 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
     def _reduce_topk_p2p_region_wise_reduce_static_destination(
         self, sparse_topk: SparseFlatArray, boundaries: BoundaryArray
     ) -> SparseFlatArray:
-        assert self.model.comm, "Communicator needed!"
+        assert MPI and self.model.comm, "Communicator needed!"
         # Prepare a vector region for storing the partial sums
-        sparse_region_partial_sum: list[SparseFlatArray] = [None] * self.model.comm_size  # type: ignore
+        region_partial_sum: list[SparseFlatArray] = [None] * self.model.comm_size  # pyright: ignore[reportAssignmentType]
         for region in range(self.model.comm_size):
             start = 0 if region == 0 else boundaries[region - 1]
             end = boundaries[region]
-            sparse_region_partial_sum[region] = sparse_topk[
-                np.searchsorted(sparse_topk.indexes, start):np.searchsorted(sparse_topk.indexes, end)
+            region_partial_sum[region] = sparse_topk[
+                np.searchsorted(sparse_topk.indexes, start): np.searchsorted(
+                    sparse_topk.indexes, end
+                )
             ]
 
         # Overlaps comm. steps with computation (sparse sum)
@@ -366,27 +383,26 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
             # recv_req = self.model.comm.irecv(source=receive_from)
             # self.model.comm.send(sparse_region_partial_sum[region_to_send], dest=destination)
             # sparse_region_partial_sum[region_to_recv] += recv_req.wait()
-            sparse_region_partial_sum[region_to_recv] += self.model.comm.sendrecv(
-                sparse_region_partial_sum[region_to_send], dest=destination, source=receive_from
+            region_partial_sum[region_to_recv] += self.model.comm.sendrecv(
+                region_partial_sum[region_to_send], dest=destination, source=receive_from
             )
-        region_reduced_sparse = sparse_region_partial_sum[self.model.comm_rank]
+        region_reduced_sparse = region_partial_sum[self.model.comm_rank]
         region_reduced_sparse.values *= self.model.rank_weight
         return region_reduced_sparse
 
     def _reduce_topk_p2p_region_wise_reduce_destination_rotation_and_bucketing(
         self, sparse_topk: SparseFlatArray, boundaries: BoundaryArray
     ) -> SparseFlatArray:
-
-        assert self.model.comm, "Communicator needed!"
+        assert MPI and self.model.comm, "Communicator needed!"
         # There are (nprocs - 1) messages to send (excluding self)
         total_sends = self.model.comm_size - 1
-        requests: list[Request] = [None] * total_sends  # type: ignore
+        requests: list[Request] = [None] * total_sends
 
         # Compute local slice of sparse_topk (the "self" region)
         start = 0 if self.model.comm_rank == 0 else boundaries[self.model.comm_rank - 1]
         end = boundaries[self.model.comm_rank]
         sparse_reduced_region = sparse_topk[
-            np.searchsorted(sparse_topk.indexes, start):np.searchsorted(sparse_topk.indexes, end)
+            np.searchsorted(sparse_topk.indexes, start): np.searchsorted(sparse_topk.indexes, end)
         ]
 
         # Process sends and receives in buckets.
@@ -401,8 +417,11 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
                 end = boundaries[region]
                 requests[comm_step + i] = self.model.comm.isend(
                     sparse_topk[
-                        np.searchsorted(sparse_topk.indexes, start):np.searchsorted(sparse_topk.indexes, end)
-                    ], dest=region
+                        np.searchsorted(sparse_topk.indexes, start): np.searchsorted(
+                            sparse_topk.indexes, end
+                        )
+                    ],
+                    dest=region,
                 )
                 region = (region + 1) % self.model.comm_size
             # After sending the bucket, perform the receives sequentially for the same bucket.

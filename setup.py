@@ -2,6 +2,7 @@
 
 from pathlib import Path
 from os import process_cpu_count
+from typing import Any
 
 import numpy
 from Cython.Build import cythonize
@@ -12,13 +13,13 @@ from setuptools.command.build_ext import build_ext
 # configuration
 PACKAGE = Path("pydtnn")
 
-EXTENSION_ARGS = {
+EXTENSION_ARGS: dict[str, Any] = {
     "extra_compile_args": ["-fopenmp", "-O3", "-g0"],
     "extra_link_args": ["-fopenmp", "-s"],
     "include_dirs": [numpy.get_include()],
 }
 
-CYTHON_ARGS = {
+CYTHON_ARGS: dict[str, Any] = {
     "language_level": 3,
     "compiler_directives": {
         "cdivision": True,
@@ -70,6 +71,13 @@ setup(
     cmdclass={"build_ext": BuildExt},
     ext_modules=[
         Extension(BuildExt.path_module(CYTHON_UTILITY), sources=[str(CYTHON_UTILITY)]),
-        *(Extension(BuildExt.path_module(pyx), [str(pyx)], **EXTENSION_ARGS) for pyx in PACKAGE.rglob("*.pyx"))  # type: ignore
+        *(
+            Extension(
+                BuildExt.path_module(pyx),
+                [str(pyx)],
+                **EXTENSION_ARGS
+            )
+            for pyx in PACKAGE.rglob("*.pyx")
+        )
     ]
 )

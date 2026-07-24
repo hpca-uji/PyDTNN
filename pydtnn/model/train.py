@@ -1,6 +1,5 @@
 """Training code for the PyDTNN model"""
 
-import enum
 import logging
 import time
 from collections.abc import Generator
@@ -34,19 +33,6 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
     gradient updates, and training loop management.
     """
 
-    class SyncParticipation(enum.StrEnum):
-        """Defines strategies for node participation in model synchronization."""
-
-        ALL = enum.auto()
-        AVAIL2ALL = enum.auto()
-
-    class SyncAlgorithm(enum.StrEnum):
-        """Defines algorithms for weight aggregation during synchronization."""
-
-        AVG = enum.auto()
-        WAVG = enum.auto()
-        INVAVG = enum.auto()
-
     def __init__(self, **kwargs: Any) -> None:
         """Initializes the training instance with synchronization parameters and schedulers."""
         super().__init__(**kwargs)
@@ -63,7 +49,7 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
             for scheduler_name in self.schedulers_names
         ]
         for scheduler in self.schedulers:
-            scheduler.model = self  # type: ignore (It's fine)
+            scheduler.model = self  # pyright: ignore[reportAttributeAccessIssue]
 
     def _train_batch(  # noqa: C901
         self, x_batch: np.ndarray, y_batch: np.ndarray, sync_model: bool = True
@@ -76,7 +62,7 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
             sched.on_batch_begin()
 
         self.real_batch_size = x_batch.shape[0]
-        input_layer: Input[T] = self.layers[0]  # type: ignore (casting to the right type)
+        input_layer: Input[T] = self.layers[0]  # pyright: ignore[reportAssignmentType]
         x, y_targ = input_layer._sync_x_y(x_batch, y_batch)
 
         has_batch = x_batch.shape[0] > 0
@@ -115,7 +101,7 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.stream:
-            self.stream.synchronize()  # type: ignore
+            self.stream.synchronize()
 
         # Gradient update (GU)
         if self.model_sync_freq >= 0 and sync_model:
@@ -140,7 +126,7 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
         if self.use_cudnn:
             for layer in self.layers:
                 if layer.grad_vars and layer.stream_2:
-                    layer.stream_2.synchronize()  # type: ignore
+                    layer.stream_2.synchronize()
 
         # Schedulers end
         for sched in self.schedulers:
@@ -204,8 +190,8 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
 
             if local_batch_size <= 0:
                 if self.comm_rank == 0:
-                    # (in comm_rank 0 , pbar is not None)
-                    pbar.set_postfix_str(s=f"{string}, waiting…", refresh=True)  # type: ignore
+                    assert pbar
+                    pbar.set_postfix_str(s=f"{string}, waiting…", refresh=True)
                 continue
 
             total_loss, total_size, string = self._update_status(
@@ -236,7 +222,7 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
                 self.tensor_format,
                 self.cudnn_dtype,
             )
-            self.y_batch = tensor_ary  # type: ignore
+            self.y_batch = tensor_ary  # pyright: ignore[reportAttributeAccessIssue]
 
         self.history = {
             lm: []
@@ -343,7 +329,8 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
                     terminate = True
 
             if self.comm_rank == 0:
-                pbar.close()  # type: ignore (Here is a 'tqdm', only is None in self.comm_rank != 0)
+                assert pbar
+                pbar.close()
                 # Sleep for half a second to allow pbar to write its output before returning
                 time.sleep(0.5)
 
@@ -362,7 +349,7 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
 
             if sync_epoch:
                 if self.comm:
-                    op = MPI.LAND  # type: ignore
+                    op = MPI.LAND
                     global_terminate = self.comm.allreduce(terminate, op=op)
                 else:
                     global_terminate = terminate

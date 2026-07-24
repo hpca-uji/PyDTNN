@@ -4,8 +4,8 @@ import logging
 from typing import Any
 
 import numpy as np
-import pycuda.driver as drv  # type: ignore
-from pycuda import gpuarray  # type: ignore
+import pycuda.driver as drv
+from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 
 from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
@@ -27,9 +27,9 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
         super().__init__(*args, **kwargs)
 
         # The following attributes will be initalized later.
-        self.fwd_algo: int = None  # type: ignore
-        self.bwd_dw_algo: int = None  # type: ignore
-        self.bwd_dx_algo: int = None  # type: ignore
+        self.fwd_algo: int = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.bwd_dw_algo: int = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.bwd_dx_algo: int = None  # pyright: ignore[reportAttributeAccessIssue]
         self.conv_desc = None
 
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
@@ -73,7 +73,7 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
             cpu_speed=self.model.cpu_speed,
             memory_bw=self.model.memory_bw,
             dtype=self.model.dtype,
-        )  # type: ignore (It is correct.)
+        )
         self.bwd_time = matmul_time(
             m=self.co,
             n=(self.ci * self.kh * self.kw),
@@ -88,7 +88,7 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
             cpu_speed=self.model.cpu_speed,
             memory_bw=self.model.memory_bw,
             dtype=self.model.dtype,
-        )  # type: ignore (It is correct.)
+        )
 
         if self.model.gpudirect:
             bias_tensor_type = TensorArray.TensorType.FILTER

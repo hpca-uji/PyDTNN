@@ -185,7 +185,7 @@ class ConvGemm:
         weights: np.ndarray,
         x: np.ndarray,
         # res originaly was called "biases"
-        out: np.ndarray | None = None,  # type: ignore
+        out: np.ndarray | None = None,  # pyright: ignore[reportRedeclaration]
         vpadding: int = 0,
         hpadding: int = 0,
         vstride: int = 1,
@@ -193,12 +193,12 @@ class ConvGemm:
         vdilation: int = 1,
         hdilation: int = 1,
         # biases originaly was called "biases_vector"
-        biases: np.ndarray | None = None,  # type: ignore
+        biases: np.ndarray | None = None,  # pyright: ignore[reportRedeclaration]
         trans: bool = False,
-        bn_running_mean: np.ndarray | None = None,  # type: ignore
-        bn_inv_std: np.ndarray | None = None,  # type: ignore
-        bn_gamma: np.ndarray | None = None,  # type: ignore
-        bn_beta: np.ndarray | None = None,  # type: ignore
+        bn_running_mean: np.ndarray | None = None,  # pyright: ignore[reportRedeclaration]
+        bn_inv_std: np.ndarray | None = None,  # pyright: ignore[reportRedeclaration]
+        bn_gamma: np.ndarray | None = None,  # pyright: ignore[reportRedeclaration]
+        bn_beta: np.ndarray | None = None,  # pyright: ignore[reportRedeclaration]
         relu: bool = False,
     ) -> np.ndarray:
         """
@@ -367,19 +367,19 @@ class ConvGemm:
         self,
         weights: np.ndarray,
         x: np.ndarray,
-        out: np.ndarray | None = None,  # type: ignore
+        out: np.ndarray | None = None,  # pyright: ignore[reportRedeclaration]
         vpadding: int = 0,
         hpadding: int = 0,
         vstride: int = 1,
         hstride: int = 1,
         vdilation: int = 1,
         hdilation: int = 1,
-        biases: np.ndarray | None = None,  # type: ignore
+        biases: np.ndarray | None = None,  # pyright: ignore[reportRedeclaration]
         trans: bool = False,
-        bn_running_mean: np.ndarray | None = None,  # type: ignore
-        bn_inv_std: np.ndarray | None = None,  # type: ignore
-        bn_gamma: np.ndarray | None = None,  # type: ignore
-        bn_beta: np.ndarray | None = None,  # type: ignore
+        bn_running_mean: np.ndarray | None = None,  # pyright: ignore[reportRedeclaration]
+        bn_inv_std: np.ndarray | None = None,  # pyright: ignore[reportRedeclaration]
+        bn_gamma: np.ndarray | None = None,  # pyright: ignore[reportRedeclaration]
+        bn_beta: np.ndarray | None = None,  # pyright: ignore[reportRedeclaration]
         relu: bool = False,
     ) -> np.ndarray:
         """
@@ -842,7 +842,7 @@ def time_it_func(
     res = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype=x.dtype)
     im2col_nchw_cython(
         x,
-        res,  # type: ignore
+        res,
         kh,
         kw,
         ho,
@@ -856,7 +856,7 @@ def time_it_func(
     )
     res = res @ w_c
     res += out.reshape(b * ho * wo, kn)
-    return res  # type: ignore
+    return res  # pyright: ignore[reportReturnType]
 
 
 def main() -> None:
@@ -921,7 +921,7 @@ def main() -> None:
     x_c = np.zeros((c * kh * kw, b * ho * wo))
     im2col_nchw_cython(
         x,
-        x_c,  # type: ignore
+        x_c,
         kh,
         kw,
         ho,

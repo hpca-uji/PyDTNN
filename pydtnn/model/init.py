@@ -27,7 +27,7 @@ from pydtnn.utils.performance_counter import PerformanceCounter
 from pydtnn.utils.tensor import SampleFormat, TensorFormat, format_reshape
 
 if TYPE_CHECKING:
-    import polyhe  # type: ignore (polyhe exist if it's installed)
+    import polyhe
 else:
     try:
         import polyhe
@@ -69,7 +69,7 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
         self.use_cudnn = gpuarray is not None and drv is not None and cublas is not None
         self.gpudirect: bool = self.use_gpudirect
         self.use_nccl: bool = self.use_nccl
-        self.memory: PrivateMemory = None  # type: ignore (it will be intialized later if "self.use_memory_pool" is True)
+        self.memory: PrivateMemory = None  # pyright: ignore[reportAttributeAccessIssue]
         self.dtype: np.dtype = np.dtype(self.dtype)
         self.param_dtype: np.dtype = np.dtype(self.quantize_dtype) if self.quantize else self.dtype
         self.network_algo = NetworkAlgoEnum(self.network_algo.lower())
@@ -87,8 +87,8 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
         self.layer_id_generator: abc.Iterator[int] = iter(itertools.count())
 
         # Set current mode to unspecified
-        self.mode: Base.Mode = None  # type: ignore # Base.Mode.UNSPECIFIED
-        self.random: np.random.Generator = rand.Generator(self.random_seed)  # type: ignore
+        self.mode: Base.Mode = None  # pyright: ignore[reportAttributeAccessIssue] # Base.Mode.UNSPECIFIED
+        self.random: np.random.Generator = rand.Generator(self.random_seed)  # pyright: ignore[reportAttributeAccessIssue]
         self.memory_cls = PreallocMemory if self.shared_tmp_memory else PrivateMemory
 
         # Set tracer
@@ -230,11 +230,10 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
             security=self.encryption_security,
         )
 
-        if self.comm_rank == 0:
-            crypt = polyhe.new(backend, options)
+        crypt = polyhe.new(backend, options) if self.comm_rank == 0 else None
 
         if self.comm:
-            crypt = self.comm.bcast(crypt if self.comm_rank == 0 else None)
+            crypt = self.comm.bcast(crypt)
 
         assert crypt is not None
         if self.use_nccl:
@@ -250,7 +249,7 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
                 raise ValueError("Please, install mpi4py to allow parallel MPI execution!")
             self.MPI, self.comm = (MPI, MPI.COMM_WORLD)
         else:
-            self.MPI, self.comm = (None, None)  # type: ignore (Excepcionally, they can be "None")
+            self.MPI, self.comm = (None, None)  # pyright: ignore[reportAttributeAccessIssue]
 
         # Communication weight
         self.rank_weight = 1.0
@@ -277,7 +276,7 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
         assert cublas_handle is not None
         assert stream is not None
 
-        self.y_batch = None  # type: ignore (it will be initalized later)
+        self.y_batch = None  # pyright: ignore[reportAttributeAccessIssue]
 
         self.cuda_threads = min(self.batch_size, LIMIT_THREADS_AND_BLOCKS)
         self.cuda_blocks = (max(self.batch_size, LIMIT_THREADS_AND_BLOCKS) // self.cuda_threads) + 1
@@ -291,10 +290,10 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
             assert nccl_comm is not None
 
             nccl_types = {
-                np.float64: nccl.DataType.Float64,
-                np.float32: nccl.DataType.Float32,
-                np.int8: nccl.DataType.Int8,
-                np.int32: nccl.DataType.Int32,
+                np.dtype(np.float64): nccl.DataType.Float64,
+                np.dtype(np.float32): nccl.DataType.Float32,
+                np.dtype(np.int8): nccl.DataType.Int8,
+                np.dtype(np.int32): nccl.DataType.Int32,
             }
 
             nccl_type = nccl_types.get(self.dtype, nccl.DataType.Float32)
@@ -307,10 +306,10 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
         self.tracer.set_stream(stream)
 
         cudnn_types = {
-            np.float64: CudnnDataType.FLOAT64,
-            np.float32: CudnnDataType.FLOAT32,
-            np.int8: CudnnDataType.INT8,
-            np.int32: CudnnDataType.INT32,
+            np.dtype(np.float64): CudnnDataType.FLOAT64,
+            np.dtype(np.float32): CudnnDataType.FLOAT32,
+            np.dtype(np.int8): CudnnDataType.INT8,
+            np.dtype(np.int32): CudnnDataType.INT32,
         }
 
         cudnn_type: str = cudnn_types.get(self.dtype, CudnnDataType.FLOAT32)
@@ -353,7 +352,7 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
             return
         self._is_model_init = True
 
-        self.random.seed(self.random_seed)  # type: ignore (seed exists)
+        self.random.seed(self.random_seed)  # pyright: ignore[reportAttributeAccessIssue]
 
         self.dataset._model_init()
 

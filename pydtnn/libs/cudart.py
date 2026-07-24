@@ -7,7 +7,7 @@ import ctypes
 import functools
 import re
 import sys
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Any, Callable
 
 import numpy as np
 
@@ -15,7 +15,7 @@ import numpy as np
 
 
 if TYPE_CHECKING:
-    import gpuarray  # type: ignore
+    import gpuarray
 
 
 # Load library:
@@ -189,13 +189,13 @@ def POINTER(type: type) -> type[ctypes._Pointer]:
     p = ctypes.POINTER(type)
     if not isinstance(p.from_param, classmethod):
 
-        def from_param(cls, x):
+        def from_param[T](cls: type[T], x: T) -> T:
             if x is None:
                 return cls()
             else:
                 return x
 
-        p.from_param = classmethod(from_param)  # type: ignore
+        p.from_param = classmethod(from_param)  # pyright: ignore[reportAttributeAccessIssue]
 
     return p
 
@@ -255,29 +255,29 @@ def gpuarray_ptr(g: gpuarray.GPUArray) -> ctypes.c_void_p:
 
     addr = int(g.gpudata)
     if g.dtype == np.int8:
-        return ctypes.cast(addr, POINTER(ctypes.c_byte))  # type: ignore
+        return ctypes.cast(addr, POINTER(ctypes.c_byte))  # pyright: ignore[reportReturnType]
     if g.dtype == np.uint8:
-        return ctypes.cast(addr, POINTER(ctypes.c_ubyte))  # type: ignore
+        return ctypes.cast(addr, POINTER(ctypes.c_ubyte))  # pyright: ignore[reportReturnType]
     if g.dtype == np.int16:
-        return ctypes.cast(addr, POINTER(ctypes.c_short))  # type: ignore
+        return ctypes.cast(addr, POINTER(ctypes.c_short))  # pyright: ignore[reportReturnType]
     if g.dtype == np.uint16:
-        return ctypes.cast(addr, POINTER(ctypes.c_ushort))  # type: ignore
+        return ctypes.cast(addr, POINTER(ctypes.c_ushort))  # pyright: ignore[reportReturnType]
     if g.dtype == np.int32:
-        return ctypes.cast(addr, POINTER(ctypes.c_int))  # type: ignore
+        return ctypes.cast(addr, POINTER(ctypes.c_int))  # pyright: ignore[reportReturnType]
     if g.dtype == np.uint32:
-        return ctypes.cast(addr, POINTER(ctypes.c_uint))  # type: ignore
+        return ctypes.cast(addr, POINTER(ctypes.c_uint))  # pyright: ignore[reportReturnType]
     if g.dtype == np.int64:
-        return ctypes.cast(addr, POINTER(ctypes.c_long))  # type: ignore
+        return ctypes.cast(addr, POINTER(ctypes.c_long))  # pyright: ignore[reportReturnType]
     if g.dtype == np.uint64:
-        return ctypes.cast(addr, POINTER(ctypes.c_ulong))  # type: ignore
+        return ctypes.cast(addr, POINTER(ctypes.c_ulong))  # pyright: ignore[reportReturnType]
     if g.dtype == np.float32:
-        return ctypes.cast(addr, POINTER(ctypes.c_float))  # type: ignore
+        return ctypes.cast(addr, POINTER(ctypes.c_float))  # pyright: ignore[reportReturnType]
     elif g.dtype == np.float64:
-        return ctypes.cast(addr, POINTER(ctypes.c_double))  # type: ignore
+        return ctypes.cast(addr, POINTER(ctypes.c_double))  # pyright: ignore[reportReturnType]
     elif g.dtype == np.complex64:
-        return ctypes.cast(addr, POINTER(cuFloatComplex))  # type: ignore
+        return ctypes.cast(addr, POINTER(cuFloatComplex))  # pyright: ignore[reportReturnType]
     elif g.dtype == np.complex128:
-        return ctypes.cast(addr, POINTER(cuDoubleComplex))  # type: ignore
+        return ctypes.cast(addr, POINTER(cuDoubleComplex))  # pyright: ignore[reportReturnType]
     else:
         raise ValueError("unrecognized type")
 
@@ -1331,7 +1331,7 @@ def cudaMalloc(count: int, ctype: type | None = None) -> ctypes.c_void_p:
     cudaCheckStatus(status)
     if ctype is not None:
         ptr = ctypes.cast(ptr, ctypes.POINTER(ctype))
-    return ptr  # type: ignore
+    return ptr  # pyright: ignore[reportReturnType]
 
 
 _libcudart.cudaFree.restype = int
@@ -1604,7 +1604,7 @@ class _cudart_version_req(object):
 
     def __call__[T: Callable](self, f: T) -> T:
         @functools.wraps(f)
-        def f_new(*args, **kwargs):
+        def f_new(*args: Any, **kwargs: Any) -> Any:
             raise NotImplementedError("CUDART " + self.vs + " required")
 
         f_new.__doc__ = f.__doc__
@@ -1612,7 +1612,7 @@ class _cudart_version_req(object):
         if _cudart_version >= self.vi:
             return f
         else:
-            return f_new  # type: ignore
+            return f_new  # pyright: ignore[reportReturnType]
 
 
 # Memory types:

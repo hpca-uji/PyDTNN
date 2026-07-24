@@ -97,7 +97,7 @@ def format_reshape(shape: ArrayShape, src: str, dst: str) -> ArrayShape:
     if src == dst:
         return shape
     dims = dict(zip(src, shape))
-    return tuple(dims[i] for i in dst)  # type: ignore
+    return tuple(dims[i] for i in dst)
 
 
 def format_transpose(data: np.ndarray, src: str, dst: str) -> np.ndarray:
@@ -113,7 +113,7 @@ def format_transpose(data: np.ndarray, src: str, dst: str) -> np.ndarray:
     """
     if src == dst:
         return data
-    return data.transpose(format_reshape(range(len(data.shape)), src, dst))  # type: ignore
+    return data.transpose(format_reshape(tuple(range(len(data.shape))), src, dst))
 
 
 # Encoders

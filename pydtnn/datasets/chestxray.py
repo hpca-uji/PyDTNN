@@ -210,8 +210,8 @@ class ChestXRay(Dataset):
             with (
                 self._gzip_open(src_path) as g,
                 tarfile.TarFile(fileobj=g) as t,
-                t.extractfile(path) as fp,  # type: ignore (t is not None)
-            ):  # type: ignore
+                t.extractfile(path) as fp,  # pyright: ignore[reportOptionalContextManager]
+            ):
                 x = self._load_gray_image(fp)
 
             # Add N dimension

@@ -1,12 +1,10 @@
-"""
-Cython-accelerated argmax utility functions for PyDTNN.
-"""
+"""Cython-accelerated argmax utility functions for PyDTNN."""
 
 import numpy as _np
 
 from pydtnn.backends.cython.utils.base import _npDT, _npDT_1Dims, _npDT_2Dims
 
-def argmax_cython[T: _npDT](
+def argmax_cython[T: _npDT](  # noqa: D103,E302
     x: _npDT_2Dims[T],
     maxv: _npDT_1Dims[T],
     amax: _npDT_1Dims[_np.int32],
@@ -24,7 +22,9 @@ def argmax_cython[T: _npDT](
         axis (int): The axis where the argmax will be performed. Can be 0 or 1. Default: 0.
 
     Returns:
-        Explicit: tuple[np.ndarray, np.ndarray]: a tuple formed by: [T: npDT](amax, rng) if axis is 0, or [T: npDT](rng, amax) if not.
+        Explicit: tuple[np.ndarray, np.ndarray]: a tuple
+            formed by: [T: npDT](amax, rng) if axis is 0,
+            or [T: npDT](rng, amax) if not.
 
         Implicit: maxv.
     """

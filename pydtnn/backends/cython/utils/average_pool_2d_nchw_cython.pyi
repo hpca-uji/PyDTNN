@@ -2,7 +2,7 @@
 
 from pydtnn.backends.cython.utils.base import _npDT, _npDT_4Dims
 
-def average_pool_2d_fwd_nchw_cython[T: _npDT](
+def average_pool_2d_fwd_nchw_cython[T: _npDT](  # noqa: D103,E302
     x: _npDT_4Dims[T],
     y: _npDT_4Dims[T],
     kh: int,
@@ -21,7 +21,8 @@ def average_pool_2d_fwd_nchw_cython[T: _npDT](
 
     Args:
         x (npDT_4Dims): The 4 dimensional input's ndarray.
-        y (npDT_4Dims): The 4 dimensional output's ndarray. (the output's data is stored in this parameter).
+        y (npDT_4Dims): The 4 dimensional output's ndarray.
+            (the output's data is stored in this parameter).
         kh (int): The kernel's height.
         kw (int): The kernel's width.
         ho (int): The output's height.
@@ -37,7 +38,7 @@ def average_pool_2d_fwd_nchw_cython[T: _npDT](
         Nothing. Implictily the output is stored in "y".
     """
 
-def average_pool_2d_bwd_nchw_cython[T: _npDT](
+def average_pool_2d_bwd_nchw_cython[T: _npDT](  # noqa: D103,E302
     dy: _npDT_4Dims[T],
     dx: _npDT_4Dims[T],
     n: int,
@@ -60,7 +61,9 @@ def average_pool_2d_bwd_nchw_cython[T: _npDT](
 
     Args:
         dy (npDT_4Dims): The 4 dimensional input's ndarray.
-        dx (npDT_4Dims): The 4 dimensional output's ndarray. (the output's data will be stored in this parameter). Note: All values in this parameter should be 0.
+        dx (npDT_4Dims): The 4 dimensional output's ndarray.
+            (the output's data will be stored in this parameter).
+            Note: All values in this parameter should be 0.
         n (int): The number of images (usually, the batch size).
         h (int): The images' height.
         w (int): The images' width.

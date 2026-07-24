@@ -44,9 +44,9 @@ class Layers[T: Array](Utils[T]):  # noqa: D101 (generics not detected)
         if layer.act:
             self.add(layer.act())
 
-    def add_layers(self, list_layers: abc.Sequence[Layerable[T]]) -> None:
+    def add_layers(self, layers: abc.Sequence[Layerable[T]]) -> None:
         """Adds a sequence of layers to the model."""
-        for layer in list_layers:
+        for layer in layers:
             self.add(layer)
 
     def get_all_layers(self, from_layers: list[Layerable[T]] | None = None) -> list[Layerable[T]]:
@@ -76,6 +76,8 @@ class Layers[T: Array](Utils[T]):  # noqa: D101 (generics not detected)
             case (Conv2D(), BatchNormalization(), Relu()):
                 if self.fused_conv_bn_relu:
                     layer_name = "conv_2d_batch_normalization_relu"
+            case _, _, _:
+                pass  # no match
 
         return layer_name, [layer0, layer1, layer2]
 
@@ -100,6 +102,8 @@ class Layers[T: Array](Utils[T]):  # noqa: D101 (generics not detected)
             case (BatchNormalization(), Relu()):
                 if self.fused_bn_relu:
                     layer_name = "batch_normalization_relu"
+            case _, _:
+                pass  # no match
 
         return layer_name, [layer1, layer2]
 
@@ -117,34 +121,21 @@ class Layers[T: Array](Utils[T]):  # noqa: D101 (generics not detected)
             layer_name, layers_to_fuse = switch_fusion(layers[: i + 1])
 
             if layer_name:
-                dict_params = reduce(
-                    operator.or_, (layer.__dict__ for layer in reversed(layers_to_fuse))
-                )
-                memory_used = reduce(
-                    operator.add, (layer.memory_used for layer in reversed(layers_to_fuse))
-                )
-                tmp_memory_used = reduce(
-                    self.memory_cls._total,
-                    (layer.tmp_memory_used for layer in reversed(layers_to_fuse)),
-                )
-                dict_params |= {"memory_used": memory_used, "tmp_memory_used": tmp_memory_used}
                 logger.info(
                     f"Fusing {' + '.join(map(lambda layer: layer.name_with_id, layers_to_fuse))}"
                 )
-                fused_layer = select_layer(layer_name)
-
-                new_curr_layer = fused_layer(from_parent=dict_params)
-                new_curr_layer._init_backend_with_model(self)  # type: ignore (It's fine; this is a child class)
-                new_curr_layer.__dict__.update(dict_params)
+                fuse_layer_cls = select_layer(layer_name)
+                fuse_layer = fuse_layer_cls(parents=layers_to_fuse)
+                fuse_layer._init_backend_with_model(self)  # pyright: ignore[reportArgumentType]
                 try:
-                    new_curr_layer._model_init(
+                    fuse_layer._model_init(
                         prev_shape=layers_to_fuse[0].prev_shape, x=layers_to_fuse[0].x
                     )
                 except Exception:
                     logger.warning("Aborted fusion", exc_info=True)
                 else:
                     start = i + 1 - len(layers_to_fuse)
-                    layers[start: i + 1] = [new_curr_layer]
+                    layers[start: i + 1] = [fuse_layer]
                     i -= len(layers_to_fuse)
             i += 1
 

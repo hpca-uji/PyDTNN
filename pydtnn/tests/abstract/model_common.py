@@ -97,8 +97,8 @@ class ModelCommonTestCase(TestCase):
         # CPU model with no convGemm
         params = Params()
         # Begin of params configuration
-        params.model_name = model_name  # type: ignore
-        params.tensor_format = TensorFormat.NHWC.upper()
+        params.model_name = model_name
+        params.tensor_format = TensorFormat.NHWC
         # End of params configuration
         params_dict = vars(params)
         if overwrite_params is not None:

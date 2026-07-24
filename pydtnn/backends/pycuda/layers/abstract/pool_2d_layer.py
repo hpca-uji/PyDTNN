@@ -3,7 +3,7 @@
 import logging
 from typing import Any
 
-from pycuda import gpuarray  # type: ignore
+from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 
 from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
@@ -27,16 +27,16 @@ class AbstractPool2DLayerPycuda(AbstractPool2DLayer[TensorArray], LayerPycuda):
         """Initializes the abstract PyCUDA 2D pooling layer."""
         super().__init__(*args, **kwargs)
         # The following attributes will be initalized later.
-        self.pool_desc: int = None  # type: ignore
-        self.ci: int = None  # type: ignore
-        self.hi: int = None  # type: ignore
-        self.wi: int = None  # type: ignore
-        self.kh: int = None  # type: ignore
-        self.kw: int = None  # type: ignore
-        self.co: int = None  # type: ignore
-        self.ci: int = None  # type: ignore
-        self.ho: int = None  # type: ignore
-        self.wo: int = None  # type: ignore
+        self.pool_desc: int = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.ci: int = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.hi: int = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.wi: int = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.kh: int = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.kw: int = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.co: int = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.ci: int = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.ho: int = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.wo: int = None  # pyright: ignore[reportAttributeAccessIssue]
 
     def initialize_pool_2d_gpu(
         self, prev_shape: ArrayShape, x: TensorArray, pool_mode: int
@@ -92,14 +92,14 @@ class AbstractPool2DLayerPycuda(AbstractPool2DLayer[TensorArray], LayerPycuda):
             cpu_speed=self.model.cpu_speed,
             memory_bw=self.model.memory_bw,
             dtype=self.model.dtype,
-        )  # type: ignore (it's fine)
+        )
         self.bwd_time = col2im_time(
             m=(self.kh * self.kw),
             n=(self.model.batch_size * self.ho * self.wo * self.ci),
             cpu_speed=self.model.cpu_speed,
             memory_bw=self.model.memory_bw,
             dtype=self.model.dtype,
-        )  # type: ignore (it's fine)
+        )
 
     def forward(self, x: TensorArray) -> TensorArray:
         """

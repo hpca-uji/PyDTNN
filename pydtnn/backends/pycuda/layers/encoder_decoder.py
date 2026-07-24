@@ -4,7 +4,7 @@ import logging
 from typing import Any
 
 from pydtnn.backends.pycuda.layers.abstract.block_layer import AbstractBlockLayerPycuda
-from pydtnn.backends.pycuda.libs import libcudnn as cudnn  # type: ignore
+from pydtnn.backends.pycuda.libs import libcudnn as cudnn
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.layers.decoder import Decoder
 from pydtnn.layers.encoder import Encoder
@@ -42,11 +42,13 @@ class EncoderDecoderPycuda(EncoderDecoder[TensorArray], AbstractBlockLayerPycuda
             )
             for _ in range(self.dec_layers)
         ]
-        self.paths = [self.encoder + self.decoder]  # type: ignore
+        self.paths = [
+            self.encoder + self.decoder  # pyright: ignore[reportAttributeAccessIssue]
+        ]
 
         # The next attributes will be initialized later
-        self.y: TensorArray = None  # type: ignore
-        self.dx: TensorArray = None  # type: ignore
+        self.y: TensorArray = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.dx: TensorArray = None  # pyright: ignore[reportAttributeAccessIssue]
 
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
         """Initializes the model structure and sublayers for PyCUDA execution."""
@@ -66,11 +68,11 @@ class EncoderDecoderPycuda(EncoderDecoder[TensorArray], AbstractBlockLayerPycuda
         for layer in self.children:
             layer._init_backend_with_model(self.model)
 
-        self.encoder[0]._model_init(prev_shape=enc_shape, x=(x_enc, mask_enc))  # type: ignore (encoder use more parameters)
+        self.encoder[0]._model_init(prev_shape=enc_shape, x=(x_enc, mask_enc))  # pyright: ignore[reportArgumentType]
         for layer in self.encoder[1:]:
-            layer._model_init(prev_shape=enc_shape, x=(x_enc, mask_enc))  # type: ignore (encoder use more parameters)
+            layer._model_init(prev_shape=enc_shape, x=(x_enc, mask_enc))  # pyright: ignore[reportArgumentType]
         for layer in self.decoder:
-            layer._model_init(prev_shape=dec_shape, x=(x_dec, x_enc, mask_dec))  # type: ignore (decoder use more parameters)
+            layer._model_init(prev_shape=dec_shape, x=(x_dec, x_enc, mask_dec))  # pyright: ignore[reportArgumentType]
 
         for layer in self.children:
             self.fwd_time += layer.fwd_time
@@ -89,9 +91,9 @@ class EncoderDecoderPycuda(EncoderDecoder[TensorArray], AbstractBlockLayerPycuda
         else:
             x, x_mask, y, y_mask = x
         for i in range(self.enc_layers):  # Encoding layers
-            x = self.encoder[i].forward(x, x_mask)  # type: ignore (encoder use more parameters)
+            x = self.encoder[i].forward(x, x_mask)  # pyright: ignore[reportCallIssue]
         for i in range(self.dec_layers):  # Decoding layers
-            y = self.decoder[i].forward(y, x, y_mask)  # type: ignore (decoder use more parameters)
+            y = self.decoder[i].forward(y, x, y_mask)  # pyright: ignore[reportCallIssue]
         self.y = y
         return self.y
 

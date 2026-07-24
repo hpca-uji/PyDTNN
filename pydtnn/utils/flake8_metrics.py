@@ -8,12 +8,15 @@ from typing import Any
 from flake8.options.manager import OptionManager
 
 try:
-    from radon.metrics import mi_visit  # type: ignore (It's fine)
-    from radon.metrics import mi_rank
+    from radon.metrics import mi_rank, mi_visit
 except ModuleNotFoundError as exc:
     _exc = exc
 
-    def mi_visit(*args: Any, **kwds: Any) -> str:
+    def mi_visit(*args: Any, **kwds: Any) -> float:
+        """Visit the code and compute metric."""
+        raise _exc
+
+    def mi_rank(*args: Any, **kwds: Any) -> str:
         """Rank the score with a letter."""
         raise _exc
 
@@ -24,8 +27,6 @@ class MetricsChecker:
     name = "flake8-metrics"
     version = "1.0.0"
 
-    MANTAIN_THRESHOLD = 19
-
     @classmethod
     def add_options(cls, parser: OptionManager) -> None:
         """Registers the custom command-line option for the metrics checks"""
@@ -33,8 +34,8 @@ class MetricsChecker:
             "--min-maintain-index",
             type=float,
             parse_from_config=True,
-            default=cls.MANTAIN_THRESHOLD,
-            help=(f"Minimum Maintainability Index allowed (default: {cls.MANTAIN_THRESHOLD})"),
+            default=19,
+            help=("Minimum Maintainability Index allowed"),
         )
 
     @classmethod

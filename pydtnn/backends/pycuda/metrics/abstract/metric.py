@@ -2,7 +2,7 @@
 
 import logging
 
-from pycuda.driver import Function  # type: ignore
+from pycuda.driver import Function
 
 from pydtnn.backends.pycuda.abstract.base import BasePycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray

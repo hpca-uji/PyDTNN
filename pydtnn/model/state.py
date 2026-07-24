@@ -82,7 +82,7 @@ class State[T: Array](Init[T]):  # noqa: D101 (generics not detected)
             self._layers_init(model_name)
 
         for layer, data in zip(self.layers, data[Parameters.LAYERS]):
-            layer.import_(data)  # type: ignore (It is the right data type.)
+            layer.import_(data)  # pyright: ignore[reportArgumentType]
 
     def load_model_state(self, filename: str) -> None:
         """

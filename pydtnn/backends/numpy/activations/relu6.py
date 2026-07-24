@@ -22,7 +22,6 @@ class Relu6Numpy(Relu6[np.ndarray], ActivationNumpy):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the Relu6Numpy layer."""
         super().__init__(*args, **kwargs)
-        self.mask: np.ndarray = None  # type: ignore (will be initalized in "initialize")
 
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
         """Initialize internal buffers for forward and backward passes."""

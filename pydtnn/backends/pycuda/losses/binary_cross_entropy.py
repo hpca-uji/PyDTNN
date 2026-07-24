@@ -2,7 +2,7 @@
 
 import logging
 
-from pycuda import gpuarray  # type: ignore
+from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 
 from pydtnn.backends.pycuda.losses.abstract.loss import LossPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray

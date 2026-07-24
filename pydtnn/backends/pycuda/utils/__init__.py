@@ -15,9 +15,9 @@ __all__ = (
 logger = logging.getLogger(__name__)
 
 try:
-    from pydtnn.libs import cublas  # type: ignore
+    from pydtnn.libs import cublas
 except Exception:
-    pass
+    cublas = None
 
 
 def matmul_gpu(
@@ -57,6 +57,7 @@ def matmul_gpu(
         ldc: Leading dimension of C.
         dtype: Data type of the matrices.
     """
+    assert cublas, "No cublas support"
     try:
         gemm = {np.dtype(np.float32): cublas.cublasSgemm, np.dtype(np.float64): cublas.cublasDgemm}[
             dtype
@@ -64,7 +65,22 @@ def matmul_gpu(
     except KeyError:
         logger.error("I cannot handle %s type!\n" % dtype.__name__)
     else:
-        gemm(handle, trans_a, trans_b, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc)
+        gemm(
+            handle,
+            trans_a,
+            trans_b,
+            m,
+            n,
+            k,
+            dtype.type(alpha),
+            a,
+            lda,
+            b,
+            ldb,
+            dtype.type(beta),
+            c,
+            ldc,
+        )
 
 
 def matvec_gpu(
@@ -100,6 +116,7 @@ def matvec_gpu(
         ldc: Stride of vector y.
         dtype: Data type of the matrix and vectors.
     """
+    assert cublas, "No cublas support"
     try:
         gemv = {np.dtype(np.float32): cublas.cublasSgemv, np.dtype(np.float64): cublas.cublasDgemv}[
             dtype
@@ -107,4 +124,4 @@ def matvec_gpu(
     except KeyError:
         logger.error("I cannot handle %s type!\n" % dtype.__name__)
     else:
-        gemv(handle, trans_a, m, n, alpha, a, lda, b, ldb, beta, c, ldc)
+        gemv(handle, trans_a, m, n, dtype.type(alpha), a, lda, b, ldb, dtype.type(beta), c, ldc)

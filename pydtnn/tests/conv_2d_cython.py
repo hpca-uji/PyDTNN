@@ -31,7 +31,7 @@ class Conv2DCythonTestCase(Conv2DCommonTestCase):
         One using im2col and the other using Cython backend.
         """
         params_np = Params()
-        params_np.tensor_format = TensorFormat.NHWC.upper()
+        params_np.tensor_format = TensorFormat.NHWC
         params_np.batch_size = d.b
         params_np.backend = "numpy"
         model_np = Model(**vars(params_np))

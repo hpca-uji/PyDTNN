@@ -4,7 +4,7 @@ import logging
 from typing import Any
 
 import numpy as np
-from pycuda import gpuarray  # type: ignore
+from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 
 from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
@@ -27,11 +27,11 @@ class DropoutPycuda(Dropout[TensorArray], LayerPycuda):
         super().__init__(*args, **kwargs)
 
         # The following values will be initalized later:
-        self.states_size: int = None  # type: ignore
-        self.space_size: int = None  # type: ignore
-        self.space: TensorArray = None  # type: ignore
-        self.states: TensorArray = None  # type: ignore
-        self.drop_desc: int = None  # type: ignore
+        self.states_size: int = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.space_size: int = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.space: TensorArray = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.states: TensorArray = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.drop_desc: int = None  # pyright: ignore[reportAttributeAccessIssue]
 
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
         """Initializes cuDNN descriptors and memory buffers for dropout operations."""
@@ -47,7 +47,7 @@ class DropoutPycuda(Dropout[TensorArray], LayerPycuda):
         self.dx = TensorArray(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
         self.memory_used += self.dx.nbytes
 
-        self.states_size = cudnn.cudnnDropoutGetStatesSize(self.model.cudnn_handle)  # type: ignore
+        self.states_size = cudnn.cudnnDropoutGetStatesSize(self.model.cudnn_handle)
         self.space_size = cudnn.cudnnDropoutGetReserveSpaceSize(self.y.desc)
 
         space_gpu = gpuarray.zeros((self.space_size,), np.byte)

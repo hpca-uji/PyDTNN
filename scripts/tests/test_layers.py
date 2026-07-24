@@ -20,11 +20,12 @@ from pydtnn.model import Model
 from pydtnn.optimizers.abstract.optimizer import Optimizer
 from pydtnn.optimizers.sgd import SGD
 from pydtnn.utils import rand
+from pydtnn.utils.tensor import TensorFormat
 
 if TYPE_CHECKING:
-    import pycuda.gpuarray as gpuarray  # type: ignore (it's correct)
+    import pycuda.gpuarray as gpuarray
 
-from pydtnn.backends.gpu import TensorGPU  # type: ignore (it's correct)
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 
 # setting random seed
 SEED = 1234
@@ -34,8 +35,8 @@ N = 100
 C = 3
 H = 524
 W = 524
-FORMAT = "NHWC"
-SHAPE = (C, H, W) if FORMAT == "NCHW" else (H, W, C)
+FORMAT = TensorFormat.NHWC
+SHAPE = (C, H, W) if FORMAT == TensorFormat.NCHW else (H, W, C)
 NUM_REPETITIONS = 10
 
 KWARGS = {
@@ -48,7 +49,7 @@ KWARGS = {
     "loss_func": "categorical_cross_entropy",
     "use_cudnn": False,  # False, #True,
     "omm": None,
-    "dtype": np.float32,
+    "dtype": np.dtype(np.float32),
     "tracing": False,
     "tracer_output": "",
     "batch_size": N,
@@ -108,12 +109,12 @@ def test_keras(_x: np.ndarray) -> None:
     x = np.copy(_x)
 
     for layer in model.layers:
-        x_pydtnn = layer.forward(x)
+        x = layer.forward(x)
 
-    print(f"x_pydtnn.max:\t{x_pydtnn.max()}")
-    print(f"x_pydtnn.min:\t{x_pydtnn.min()}")
+    print(f"x_pydtnn.max:\t{x.max()}")
+    print(f"x_pydtnn.min:\t{x.min()}")
 
-    print(f"x_pydtnn:\n{x_pydtnn}")
+    print(f"x_pydtnn:\n{x}")
 
 
 def test_layers_activations(_x: np.ndarray, opt: Optimizer) -> None:
@@ -135,7 +136,7 @@ def test_layers_activations(_x: np.ndarray, opt: Optimizer) -> None:
             x = np.copy(_x)
 
             if KWARGS["use_cudnn"]:
-                x = TensorGPU(gpuarray.to_gpu(x), model.tensor_format, model.cudnn_dtype)
+                x = TensorArray(gpuarray.to_gpu(x), model.tensor_format, model.cudnn_dtype)
 
             t_forward = 0.0
             t_backward = 0.0
@@ -198,7 +199,7 @@ def test_add_concat(_x: np.ndarray, opt: Optimizer) -> None:
         t_opt = 0
 
         if KWARGS["use_cudnn"]:
-            x = TensorGPU(gpuarray.to_gpu(x), model.tensor_format, model.cudnn_dtype)
+            x = TensorArray(gpuarray.to_gpu(x), model.tensor_format, model.cudnn_dtype)
 
         for _ in range(NUM_REPETITIONS):
             if True:
@@ -241,13 +242,13 @@ def test_add_concat(_x: np.ndarray, opt: Optimizer) -> None:
 def main() -> None:
     """Entry point for executing layer and activation performance tests."""
     shape = (N, *SHAPE)
+    dtype: np.dtype = KWARGS["dtype"]  # pyright: ignore[reportAssignmentType]
     quarter_elements = np.prod(shape) / 4
-    _x_p: np.ndarray = np.arange(np.ceil(quarter_elements), dtype=KWARGS["dtype"])
-    _x_n: np.ndarray = np.arange(np.ceil(quarter_elements), dtype=KWARGS["dtype"]) * 1
-    _x_p_ir: np.ndarray = np.arange(np.floor(quarter_elements), dtype=KWARGS["dtype"]) / 3
-    _x_n_ir: np.ndarray = np.arange(np.floor(quarter_elements), dtype=KWARGS["dtype"]) * (1 / 3)
-    _x = np.concatenate([_x_p, _x_n, _x_p_ir, _x_n_ir], dtype=KWARGS["dtype"]).reshape(shape)
-
+    _x_p: np.ndarray = np.arange(np.ceil(quarter_elements), dtype=dtype)
+    _x_n: np.ndarray = np.arange(np.ceil(quarter_elements), dtype=dtype) * 1
+    _x_p_ir: np.ndarray = np.arange(np.floor(quarter_elements), dtype=dtype) / 3
+    _x_n_ir: np.ndarray = np.arange(np.floor(quarter_elements), dtype=dtype) * (1 / 3)
+    _x = np.concatenate([_x_p, _x_n, _x_p_ir, _x_n_ir], dtype=dtype).reshape(shape)
     opt = SGD()
 
     print(f"dataset shape: {_x.shape}")

@@ -21,4 +21,4 @@ class Relu[T: Array](Activation[T]):  # noqa: D101 (generics not detected)
         """
         super().__init__(shape)
         # Will be initalized in "initialize"
-        self.mask: T = None  # type: ignore
+        self.mask: T = None  # pyright: ignore[reportAttributeAccessIssue]

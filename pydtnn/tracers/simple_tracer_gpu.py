@@ -3,14 +3,12 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
-import pycuda.driver as drv  # type: ignore
+import pycuda.driver as drv
 
 from pydtnn.tracers.simple_tracer import SimpleTracer
 from pydtnn.tracers.tracer import StreamType
-
-type drvEvent = Any  # drv.Event()
 
 __all__ = ("SimpleTracerPycuda",)
 
@@ -18,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 if TYPE_CHECKING:
-    from pympi.MPI import Comm  # type: ignore
+    from pympi.MPI import Comm
 
 
 class SimpleTracerPycuda(SimpleTracer):
@@ -49,7 +47,7 @@ class SimpleTracerPycuda(SimpleTracer):
             self.event_vars.append((drv.Event(), drv.Event()))
         return self.event_vars.pop()
 
-    def _release_start_end_event(self, start: drvEvent, end: drvEvent) -> None:
+    def _release_start_end_event(self, start: drv.Event, end: drv.Event) -> None:
         """Return a pair of PyCUDA events to the pool for reuse."""
         self.event_vars.append((start, end))
 
@@ -84,9 +82,9 @@ class SimpleTracerPycuda(SimpleTracer):
             self._release_start_end_event(start, end)
             previous_calls, previous_time = self.events[_evt_type_val][_evt_val]
             self.events[_evt_type_val][_evt_val] = [
-                previous_calls + 1,  # type: ignore (previous_calls is an int)
+                previous_calls + 1,  # pyright: ignore[reportOperatorIssue]
                 previous_time + evt_time,
-            ]  # type: ignore
+            ]
 
     def _emit_nevent(
         self, evt_type_val_list: list, evt_val_list: list, stream: StreamType | None = None

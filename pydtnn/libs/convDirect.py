@@ -115,7 +115,7 @@ class ConvDirect:
         # Parent layer
         if parent_layer is not None:
             self.get_parent_layer = weakref.ref(parent_layer)
-            self.evaluate_only = self.get_parent_layer().model.evaluate_only  # type: ignore
+            self.evaluate_only = parent_layer.model.evaluate_only
             if not self.evaluate_only:
                 raise NotImplementedError("The convDirect module only works in evaluate_only mode!")
         else:
@@ -183,7 +183,7 @@ class ConvDirect:
         weights: np.ndarray,
         x: np.ndarray,
         # NOTE: "out" originally was called "biases"
-        out: np.ndarray | None = None,  # type: ignore
+        out: np.ndarray | None = None,
         vpadding: int = 0,
         hpadding: int = 0,
         vstride: int = 1,
@@ -286,7 +286,6 @@ class ConvDirect:
                     raise NotImplementedError(f"No support for {tensor_format} tensor format!")
             assert co == knb, "Number of filters must be the same!"
             assert n == bb, "Batch sizes must be the same!"
-        out: np.ndarray
 
         if self._reuse_processed_weights and self._weights_already_processed:
             self._DT = x.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
@@ -447,7 +446,7 @@ def time_it_func(
     res = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype=x.dtype)
     im2row_nhwc_cython(
         x,
-        res,  # type: ignore
+        res,
         kh,
         kw,
         ho,
@@ -461,7 +460,7 @@ def time_it_func(
     )
     res = res @ w_c
     res += out.reshape(b * ho * wo, kn)
-    return res  # type: ignore
+    return res  # pyright: ignore[reportReturnType]
 
 
 def main() -> None:

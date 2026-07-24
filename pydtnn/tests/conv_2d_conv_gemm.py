@@ -34,7 +34,7 @@ class Conv2DConvGemmTestCase(Conv2DCommonTestCase):
         One using im2col and the other using GEMM backend.
         """
         params_i2c = Params()
-        params_i2c.tensor_format = TensorFormat.NCHW.upper()
+        params_i2c.tensor_format = TensorFormat.NCHW
         params_i2c.batch_size = d.b
         params_i2c.backend = "cpu"
         model_i2c = Model(**vars(params_i2c))

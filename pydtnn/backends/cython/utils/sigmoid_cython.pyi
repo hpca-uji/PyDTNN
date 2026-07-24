@@ -1,10 +1,8 @@
-"""
-Cython-accelerated sigmoid activation function implementations for PyDTNN.
-"""
+"""Cython-accelerated sigmoid activation function implementations for PyDTNN."""
 
 from pydtnn.backends.cython.utils.base import _npDT, _npDT_1Dims
 
-def sigmoid_fwd_cython[T: _npDT](x: _npDT_1Dims[T], y: _npDT_1Dims[T]) -> None:
+def sigmoid_fwd_cython[T: _npDT](x: _npDT_1Dims[T], y: _npDT_1Dims[T]) -> None:  # noqa: D103,E302
     """
     Computes the forward pass of the sigmoid activation function.
 
@@ -15,7 +13,7 @@ def sigmoid_fwd_cython[T: _npDT](x: _npDT_1Dims[T], y: _npDT_1Dims[T]) -> None:
         Nothing. The output is stored in "y".
     """
 
-def sigmoid_bwd_cython[T: _npDT](dy: _npDT_1Dims[T], y: _npDT_1Dims[T], dx: _npDT_1Dims[T]) -> None:
+def sigmoid_bwd_cython[T: _npDT](dy: _npDT_1Dims[T], y: _npDT_1Dims[T], dx: _npDT_1Dims[T]) -> None:  # noqa: D103,E302
     """
     Computes the backward pass of the sigmoid activation function.
 

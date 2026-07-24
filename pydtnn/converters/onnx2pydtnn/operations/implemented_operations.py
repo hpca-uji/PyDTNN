@@ -332,16 +332,16 @@ def Gemm(info: dict[str, Any]) -> Layerable:
 
     original_fw = pseudo_gemm.forward
 
-    def _weights_initializer(*to_ignore):
+    def _weights_initializer(*to_ignore: Any) -> np.ndarray:
         return b.T if transB is not None else b
 
-    def _biases_initializer(*to_ignore):
+    def _biases_initializer(*to_ignore: Any) -> np.ndarray:
         assert c is not None
         return beta * c
 
-    def _mod_forward(x):
+    def _mod_forward(x: np.ndarray) -> np.ndarray:
         x = alpha * (x.T if transA is not None else x)
-        original_fw(x)
+        return original_fw(x)
 
     pseudo_gemm.weights_initializer = (
         _weights_initializer  # (lambda *x: b.T if transB is not None else b)

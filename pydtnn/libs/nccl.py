@@ -1,7 +1,6 @@
 """Python interface to the NVIDIA NCCL library"""
 
 import ctypes
-import ctypes.util
 import logging
 import sys
 from enum import Enum
@@ -227,7 +226,10 @@ def ncclCommInitAll(dev_list: tuple[int, ...] | None) -> ctypes._Pointer[NcclCom
     ncclComm_t
         The first communicator in the array of initialized NCCL communicators.
     """
-    comms = (ncclComm_t * len(dev_list))()  # type: ignore
+    if dev_list is None:
+        comms = (ncclComm_t * 1)()
+    else:
+        comms = (ncclComm_t * len(dev_list))()
     assert _libnccl
     status = _libnccl.ncclCommInitAll(comms, 0 if dev_list is None else len(dev_list), dev_list)
     ncclCheckStatus(status)

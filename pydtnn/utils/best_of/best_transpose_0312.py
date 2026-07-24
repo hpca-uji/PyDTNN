@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 def transpose_0312_numpy(
     original: np.ndarray,
-    transposed: np.ndarray | None = None,  # type: ignore
+    transposed: np.ndarray | None = None,
 ) -> np.ndarray:
     """
     Transpose a 4D array from (d0, d1, d2, d3) to (d0, d3, d1, d2) using NumPy.
@@ -33,14 +33,14 @@ def transpose_0312_numpy(
     """
     d0, d1, d2, d3 = original.shape
     if transposed is None:
-        transposed: np.ndarray = np.empty((d0, d3, d1, d2), original.dtype)
+        transposed = np.empty((d0, d3, d1, d2), original.dtype)
     transposed[...] = original.transpose((0, 3, 1, 2))
     return transposed
 
 
 def transpose_0312_ijk_cython_wrapper(
     original: np.ndarray,
-    transposed: np.ndarray | None = None,  # type: ignore
+    transposed: np.ndarray | None = None,
 ) -> np.ndarray:
     """
     Transpose a 4D array from (d0, d1, d2, d3) to (d0, d3, d1, d2) using Cython ijk implementation.
@@ -54,14 +54,14 @@ def transpose_0312_ijk_cython_wrapper(
     """
     d0, d1, d2, d3 = original.shape
     if transposed is None:
-        transposed: np.ndarray = np.empty((d0, d3, d1, d2), original.dtype)
+        transposed = np.empty((d0, d3, d1, d2), original.dtype)
     transpose_0312_ijk_cython(original, transposed)
     return transposed
 
 
 def transpose_0312_ikj_cython_wrapper(
     original: np.ndarray,
-    transposed: np.ndarray | None = None,  # type: ignore
+    transposed: np.ndarray | None = None,
 ) -> np.ndarray:
     """
     Transpose a 4D array from (d0, d1, d2, d3) to (d0, d3, d1, d2) using Cython ikj implementation.
@@ -75,7 +75,7 @@ def transpose_0312_ikj_cython_wrapper(
     """
     d0, d1, d2, d3 = original.shape
     if transposed is None:
-        transposed: np.ndarray = np.empty((d0, d3, d1, d2), original.dtype)
+        transposed = np.empty((d0, d3, d1, d2), original.dtype)
     transpose_0312_ikj_cython(original, transposed)
     return transposed
 

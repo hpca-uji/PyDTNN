@@ -47,12 +47,12 @@ class LayerNormalization[T: Array](Layer[T]):  # noqa: D101 (generics not detect
         self.grad_vars = {"beta": "dbeta", "gamma": "dgamma"}
         self.sync_stats = sync_stats
         # The next attributes will be initialized later
-        self.gamma: np.ndarray = None  # type: ignore
-        self.beta: np.ndarray = None  # type: ignore
-        self.std: np.ndarray = None  # type: ignore
-        self.xn: np.ndarray = None  # type: ignore
-        self.dgamma: np.ndarray = None  # type: ignore
-        self.dbeta: np.ndarray = None  # type: ignore
+        self.gamma: np.ndarray = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.beta: np.ndarray = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.std: np.ndarray = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.xn: np.ndarray = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.dgamma: np.ndarray = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.dbeta: np.ndarray = None  # pyright: ignore[reportAttributeAccessIssue]
 
     def _model_init(self, prev_shape: ArrayShape, x: T) -> None:
         """

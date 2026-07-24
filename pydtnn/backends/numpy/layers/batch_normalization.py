@@ -53,8 +53,12 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
 
         self.weights = np.asarray(self.weights_initializer(shape_, self.model.dtype), order="C")
         self.biases = np.asarray(self.biases_initializer(shape_, self.model.dtype), order="C")
-        self.running_mean = np.asarray(self.running_mean_initializer(shape_, self.model.dtype), order="C")
-        self.running_var = np.asarray(self.running_var_initializer(shape_, self.model.dtype), order="C")
+        self.running_mean = np.asarray(
+            self.running_mean_initializer(shape_, self.model.dtype), order="C"
+        )
+        self.running_var = np.asarray(
+            self.running_var_initializer(shape_, self.model.dtype), order="C"
+        )
 
         self.nparams = (
             self.weights.size + self.biases.size + self.running_mean.size + self.running_var.size

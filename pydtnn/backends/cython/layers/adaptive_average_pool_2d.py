@@ -26,16 +26,16 @@ class AdaptiveAveragePool2DCython(AdaptiveAveragePool2DNumpy, LayerCython):
 
     def _fwd_nhwc(self, x: np.ndarray, y: np.ndarray) -> None:
         """Performs forward pass for NHWC layout using Cython."""
-        adaptive_avg_pooling_fwd_nhwc_cython(x, y)  # type: ignore
+        adaptive_avg_pooling_fwd_nhwc_cython(x, y)
 
     def _fwd_nchw(self, x: np.ndarray, y: np.ndarray) -> None:
         """Performs forward pass for NCHW layout using Cython."""
-        adaptive_avg_pooling_fwd_nchw_cython(x, y)  # type: ignore
+        adaptive_avg_pooling_fwd_nchw_cython(x, y)
 
     def _bwd_nhwc(self, dx: np.ndarray, dy: np.ndarray) -> None:
         """Performs backward pass for NHWC layout using Cython."""
-        adaptive_avg_pooling_bwd_nhwc_cython(dx, dy)  # type: ignore
+        adaptive_avg_pooling_bwd_nhwc_cython(dx, dy)
 
     def _bwd_nchw(self, dx: np.ndarray, dy: np.ndarray) -> None:
         """Performs backward pass for NCHW layout using Cython."""
-        adaptive_avg_pooling_bwd_nchw_cython(dx, dy)  # type: ignore
+        adaptive_avg_pooling_bwd_nchw_cython(dx, dy)

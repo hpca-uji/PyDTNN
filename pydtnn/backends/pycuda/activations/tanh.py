@@ -3,7 +3,7 @@
 import logging
 from typing import Any
 
-from pycuda import gpuarray  # type: ignore
+from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 
 from pydtnn.activations.tanh import Tanh
 from pydtnn.backends.pycuda.activations.abstract.activation import ActivationPycuda
@@ -22,7 +22,7 @@ class TanhPycuda(Tanh[TensorArray], ActivationPycuda):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the TanhPycuda layer."""
         super().__init__(*args, **kwargs)
-        self.act_desc: int = None  # type: ignore (it will be initialized later)
+        self.act_desc: int = None  # pyright: ignore[reportAttributeAccessIssue]
 
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
         """Initialize cuDNN activation descriptor and allocate GPU memory for buffers."""

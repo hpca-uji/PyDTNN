@@ -26,21 +26,14 @@ class AbstractConv2DNumpy(AbstractConv2D[np.ndarray], LayerNumpy):
         """Initialize the AbstractConv2DNumpy layer."""
         super().__init__(*args, **kwargs)
         # More parameters initialized in initialize()
-        self.biases = None  # type: ignore
-        self.weights = None  # type: ignore
-        self.fwd_time = None  # type: ignore
-        self.bwd_time = None  # type: ignore
+        self.biases = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.weights = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.fwd_time = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.bwd_time = None  # pyright: ignore[reportAttributeAccessIssue]
 
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
         """Initialize model parameters, memory buffers, and performance models."""
         super()._model_init(prev_shape, x)
-        if self.use_bias:
-            bias_shape = (self.co,)  # NOTE: Is the same shape in every variant and grouping
-            self.biases = np.asarray(
-                self.biases_initializer(bias_shape, self.model.param_dtype, self.model.random),
-                order="C",
-            )
-            self.memory_used += self.biases.nbytes
 
         self.weights = np.asarray(
             self.weights_initializer(self.weights_shape, self.model.param_dtype, self.model.random),
@@ -50,12 +43,20 @@ class AbstractConv2DNumpy(AbstractConv2D[np.ndarray], LayerNumpy):
         self.memory_used += self.weights.nbytes
 
         if not self.model.evaluate_only:
-            if self.use_bias:
-                self.db = np.zeros(shape=bias_shape, dtype=self.model.param_dtype, order="C")
-                self.memory_used += self.db.nbytes
-
             self.dw = np.zeros(self.weights.shape, dtype=self.model.param_dtype, order="C")
             self.memory_used += self.dw.nbytes
+
+        if self.use_bias:
+            bias_shape = (self.co,)  # NOTE: Is the same shape in every variant and grouping
+            self.biases = np.asarray(
+                self.biases_initializer(bias_shape, self.model.param_dtype, self.model.random),
+                order="C",
+            )
+            self.memory_used += self.biases.nbytes
+
+            if not self.model.evaluate_only:
+                self.db = np.zeros(shape=bias_shape, dtype=self.model.param_dtype, order="C")
+                self.memory_used += self.db.nbytes
 
         # Performance models
         self.fwd_time = im2col_time(
@@ -71,7 +72,7 @@ class AbstractConv2DNumpy(AbstractConv2D[np.ndarray], LayerNumpy):
             cpu_speed=self.model.cpu_speed,
             memory_bw=self.model.memory_bw,
             dtype=self.model.dtype,
-        )  # type: ignore (It works well.)
+        )
         self.bwd_time = matmul_time(
             m=self.co,
             n=(self.ci * self.kh * self.kw),
@@ -79,7 +80,7 @@ class AbstractConv2DNumpy(AbstractConv2D[np.ndarray], LayerNumpy):
             cpu_speed=self.model.cpu_speed,
             memory_bw=self.model.memory_bw,
             dtype=self.model.dtype,
-        )  # type: ignore (It works well.)
+        )
         self.bwd_time += matmul_time(
             m=(self.ci * self.kh * self.kw),
             n=(self.model.batch_size * self.ho * self.wo),

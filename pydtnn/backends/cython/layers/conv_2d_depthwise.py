@@ -76,9 +76,9 @@ class Conv2DDepthwiseCython(Conv2DDepthwiseNumpy, AbstractConv2DCython):
         depthwise_conv_backward_nchw_cython(
             dy,
             self.x,
-            self.weights,  # type: ignore
+            self.weights,
             dx,
-            self.dw,  # type: ignore
+            self.dw,
             self.hpadding,
             self.wpadding,
             self.hstride,

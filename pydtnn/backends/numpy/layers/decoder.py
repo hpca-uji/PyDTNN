@@ -125,7 +125,7 @@ class DecoderNumpy(Decoder[np.ndarray], AbstractBlockLayerNumpy):
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_MHA
         )
-        x_1 = self.multiheadattention.forward(x, x, x, mask)  # type: ignore (This layer is special)
+        x_1 = self.multiheadattention.forward(x, x, x, mask)  # pyright: ignore[reportCallIssue] (This layer is special)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         # x_1 = self.dropout_1.forward(x_1)
         x_1 += x
@@ -134,7 +134,7 @@ class DecoderNumpy(Decoder[np.ndarray], AbstractBlockLayerNumpy):
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_MHA
         )
-        x_2 = self.multiheadattention_enc.forward(x_1, x_enc, x_enc, mask)  # type: ignore (This layer is special)
+        x_2 = self.multiheadattention_enc.forward(x_1, x_enc, x_enc, mask)  # pyright: ignore[reportCallIssue]
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         # x_2 = self.dropout_enc.forward(x_2)
         x_2 += x_1

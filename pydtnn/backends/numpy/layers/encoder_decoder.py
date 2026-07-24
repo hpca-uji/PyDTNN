@@ -45,7 +45,9 @@ class EncoderDecoderNumpy(EncoderDecoder[np.ndarray], AbstractBlockLayerNumpy):
             )
             for _ in range(self.dec_layers)
         ]
-        self.paths = [self.encoder + self.decoder]  # type: ignore
+        self.paths = [
+            self.encoder + self.decoder  # pyright: ignore[reportAttributeAccessIssue]
+        ]
 
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
         """Initializes model parameters and sublayers based on input shapes."""
@@ -59,18 +61,18 @@ class EncoderDecoderNumpy(EncoderDecoder[np.ndarray], AbstractBlockLayerNumpy):
             x_enc, mask_enc, x_dec, mask_dec = x if x else (None, None, None, None)
             enc_shape = (prev_shape[0], prev_shape[1])
             dec_shape = (prev_shape[2], prev_shape[0], prev_shape[3])
-        self.embedl = enc_shape[0][-1]  # type: ignore (This layer is special)
+        self.embedl = enc_shape[0][-1]  # pyright: ignore[reportIndexIssue] (This layer is special)
 
         # Initialize all sublayers
         for layer in self.children:
             layer._init_backend_with_model(self.model)
 
         # NOTE: encoder has multiple parameters
-        self.encoder[0]._model_init(prev_shape=enc_shape, x=(x_enc, mask_enc))  # type: ignore
+        self.encoder[0]._model_init(prev_shape=enc_shape, x=(x_enc, mask_enc))  # pyright: ignore[reportArgumentType]
         for layer in self.encoder[1:]:
-            layer._model_init(prev_shape=enc_shape, x=(x_enc, mask_enc))  # type: ignore
+            layer._model_init(prev_shape=enc_shape, x=(x_enc, mask_enc))  # pyright: ignore[reportArgumentType]
         for layer in self.decoder:
-            layer._model_init(prev_shape=dec_shape, x=(x_dec, x_enc, mask_dec))  # type: ignore
+            layer._model_init(prev_shape=dec_shape, x=(x_dec, x_enc, mask_dec))  # pyright: ignore[reportArgumentType]
 
         for layer in self.children:
             self.fwd_time += layer.fwd_time
@@ -90,20 +92,20 @@ class EncoderDecoderNumpy(EncoderDecoder[np.ndarray], AbstractBlockLayerNumpy):
             x, x_mask, y, y_mask = x
         # print(x.shape, x_mask.shape, y.shape, y_mask.shape)
         for i in range(self.enc_layers):  # Encoding layers
-            x = self.encoder[i].forward(x, x_mask)  # type: ignore (encoder has multiple parameters)
+            x = self.encoder[i].forward(x, x_mask)  # pyright: ignore[reportCallIssue] (encoder has multiple parameters)
         for i in range(self.dec_layers):  # Decoding layers
-            y = self.decoder[i].forward(y, x, y_mask)  # type: ignore (In transformer's layers is fine)
+            y = self.decoder[i].forward(y, x, y_mask)  # pyright: ignore[reportCallIssue] (decoder has multiple parameters)
         self.y = y
         return y
 
     def backward(self, prev_dx: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """Performs the backward pass through the decoder and encoder stacks."""
         dx_tgt = prev_dx
-        dx_enc: np.ndarray = 0.0  # type: ignore (It'll be a np.ndarray)
+        dx_enc: np.ndarray = 0.0
         for i in range(self.dec_layers):  # Decoding layers
             dx_tgt, dx2 = self.decoder[-1 * (i + 1)].backward(dx_tgt)
             dx_enc += dx2
         for i in range(self.enc_layers):  # Enconding layers
-            dx_enc = self.encoder[-1 * (i + 1)].backward(dx_enc)  # type: ignore (encoder has multiple parameters)
+            dx_enc = self.encoder[-1 * (i + 1)].backward(dx_enc)
         # if self.need_dx:
         return dx_tgt, dx_enc

@@ -3,7 +3,7 @@
 import logging
 from typing import TYPE_CHECKING
 
-from cupy.cuda import Stream  # type: ignore
+from cupy.cuda import Stream
 
 from pydtnn.backends.cupy.layers.abstract.layer import LayerCupy
 from pydtnn.backends.numpy.layers.batch_normalization import BatchNormalizationNumpy

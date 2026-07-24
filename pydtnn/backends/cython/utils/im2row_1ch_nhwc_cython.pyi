@@ -2,7 +2,7 @@
 
 from pydtnn.backends.cython.utils.base import _npDT, _npDT_2Dims, _npDT_4Dims
 
-def im2row_1ch_nhwc_cython[T: _npDT](
+def im2row_1ch_nhwc_cython[T: _npDT](  # noqa: D103,E302
     x: _npDT_4Dims[T],
     rows: _npDT_2Dims[T],
     kh: int,
@@ -36,7 +36,7 @@ def im2row_1ch_nhwc_cython[T: _npDT](
         Nothing. The output is stored in "rows".
     """
 
-def row2im_1ch_nhwc_cython[T: _npDT](
+def row2im_1ch_nhwc_cython[T: _npDT](  # noqa: D103,E302
     rows: _npDT_2Dims[T],
     x: _npDT_4Dims[T],
     n: int,

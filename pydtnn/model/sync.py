@@ -16,7 +16,7 @@ from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT,
 from pydtnn.utils.constants import Array
 
 if TYPE_CHECKING:
-    from pympi.MPI import Request  # type: ignore
+    from pympi.MPI import Request
 
 __all__ = ("Sync",)
 
@@ -45,7 +45,7 @@ class Sync[T: Array](Init[T]):  # noqa: D101 (generics not detected)
             data = np.astype(data, self.model_sync_dtype)
 
         if self.crypt:
-            data = self.crypt.encrypt(data)  # type: ignore
+            data = self.crypt.encrypt(data)
 
         return data
 
@@ -61,7 +61,7 @@ class Sync[T: Array](Init[T]):  # noqa: D101 (generics not detected)
         """
 
         if self.crypt:
-            data = self.crypt.decrypt(data)  # type: ignore
+            data = self.crypt.decrypt(data)
 
         if self.model_sync_quantize:
             data = np.astype(data, self.dtype)

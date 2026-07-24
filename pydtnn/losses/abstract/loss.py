@@ -66,7 +66,7 @@ class Loss[T: Array](Base):  # noqa: D101 (generics not detected)
         else:
             weights = None
 
-        self.weights: T = self._weights_to_tensor(weights)  # type: ignore (It will be initialized here)
+        self.weights = self._weights_to_tensor(weights)
 
     def compute(self, y_pred: T, y_targ: T, batch_size: int) -> tuple[float, T]:
         """

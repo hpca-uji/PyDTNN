@@ -63,8 +63,8 @@ class EncoderNumpy(Encoder[np.ndarray], AbstractBlockLayerNumpy):
             mask_enc = None
             mask_enc_shape = ()  # noqa: F841
 
-        self.shape = x_enc_shape  # type: ignore (This layer is special)
-        self.first_dims = x_enc_shape[:-1]  # type: ignore (This layer is special)
+        self.shape = x_enc_shape  # pyright: ignore[reportAttributeAccessIssue]
+        self.first_dims = x_enc_shape[:-1]  # pyright: ignore[reportIndexIssue]
 
         # Initialize all sublayers
         for layer in self.children:
@@ -117,7 +117,7 @@ class EncoderNumpy(Encoder[np.ndarray], AbstractBlockLayerNumpy):
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_MHA
         )
-        x_1 = self.multiheadattention.forward(x, x, x, mask)  # type: ignore (This layer is special)
+        x_1 = self.multiheadattention.forward(x, x, x, mask)  # pyright: ignore[reportCallIssue]
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         x_1 = self.dropout_1.forward(x_1)
         x_1 = x_1 + x

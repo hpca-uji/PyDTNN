@@ -1,11 +1,13 @@
 """Fused Batch Normalization and ReLU layer implementation for PyDTNN."""
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
+from pydtnn.activations.relu import Relu
 from pydtnn.backends.fuse.layers.abstract.layer import LayerFuse
 from pydtnn.backends.fuse.utils.bn_inference_cython import bn_relu_inference_cython
 from pydtnn.backends.numpy.layers.batch_normalization import BatchNormalizationNumpy
+from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.libs import numpy as np
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import TensorFormat, format_transpose
@@ -23,8 +25,11 @@ if TYPE_CHECKING:
 class BatchNormalizationReluFuse(LayerFuse, BatchNormalizationNumpy):
     """Numpy-based implementation of fused Batch Normalization and ReLU for inference."""
 
-    # NOTE: The "__init__" method is being made (more or less) in Model (in
-    # _apply_layer_fusion) and in FusedLayerMixIn.
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Unpack fused parents"""
+        super().__init__(*args, **kwargs)
+        self.conv_2d: BatchNormalization[np.ndarray] = self.parents[0]
+        self.relu: Relu[np.ndarray] = self.parents[1]
 
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
         """Initializes layer parameters and precomputes inverse standard deviation."""
@@ -55,12 +60,12 @@ class BatchNormalizationReluFuse(LayerFuse, BatchNormalizationNumpy):
 
         y: np.ndarray = self.y[:n, :]
         bn_relu_inference_cython(
-            x,  # type: ignore (revise)
-            y.reshape((-1, self.ci), copy=False),  # type: ignore (revise)
-            self.running_mean,  # type: ignore (revise)
-            self.inv_std,  # type: ignore (revise)
-            self.weights,  # type: ignore (revise)
-            self.biases,  # type: ignore (revise)
+            x,
+            y.reshape((-1, self.ci), copy=False),
+            self.running_mean,
+            self.inv_std,
+            self.weights,
+            self.biases,
         )
 
         if self.spatial:

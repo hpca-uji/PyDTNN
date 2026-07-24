@@ -4,7 +4,7 @@ import logging
 from typing import Any, override
 
 import numpy as np
-from pycuda import gpuarray  # type: ignore
+from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 
 from pydtnn.backends.pycuda.layers.abstract.conv_2d import AbstractConv2DPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray

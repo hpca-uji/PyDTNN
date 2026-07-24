@@ -181,8 +181,56 @@ omit = [
 ]
 
 [tool.pyright]
-venvPath = "."
 venv = ".venv"
-typeCheckingMode = "basic"
+venvPath = "."
 include = ["pydtnn"]
 exclude = ["**/__pycache__", "build", "vendor"]
+typeCheckingMode = "standard"
+enableReachabilityAnalysis = true
+
+# project
+deprecateTypingAliases = true
+enableTypeIgnoreComments = false
+reportDuplicateImport = "error"
+reportTypeCommentUsage = "error"
+reportUnusedImport = "error"
+reportWildcardImportFromLibrary = "error"
+
+# typing
+reportInvalidStubStatement = "information"
+reportUnnecessaryTypeIgnoreComment = "information"
+reportIncompleteStub = "warning"
+reportInvalidTypeForm = "warning"
+reportMissingImports = "warning"
+reportMissingModuleSource = "warning"
+reportMissingParameterType = "warning"
+reportMissingTypeArgument = "warning"
+reportMissingTypeStubs = "warning"
+reportReturnType = "warning"
+reportUntypedBaseClass = "warning"
+reportUntypedClassDecorator = "warning"
+reportUntypedFunctionDecorator = "warning"
+reportUntypedNamedTuple = "warning"
+reportInvalidTypeVarUse = "error"
+
+# python
+reportUnusedClass = "information"
+reportUnusedCoroutine = "information"
+reportUnusedExcept = "information"
+reportUnusedExpression = "information"
+reportUnusedFunction = "information"
+reportUnusedVariable = "information"
+reportConstantRedefinition = "warning"
+reportDeprecated = "warning"
+reportImportCycles = "warning"
+reportIncompatibleMethodOverride = "warning"
+reportIncompatibleVariableOverride = "warning"
+reportInconsistentConstructor = "warning"
+reportMatchNotExhaustive = "warning"
+reportMissingSuperCall = "warning"
+reportPrivateImportUsage = "warning"
+reportPrivateUsage = "warning"
+reportPropertyTypeMismatch = "warning"
+reportAssertAlwaysTrue = "error"
+reportInvalidStringEscapeSequence = "error"
+reportSelfClsParameterName = "error"

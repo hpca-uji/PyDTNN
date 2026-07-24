@@ -3,8 +3,8 @@
 import logging
 
 import numpy as np
-from pycuda import gpuarray  # type: ignore
-from pycuda.elementwise import ElementwiseKernel  # type: ignore
+from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
+from pycuda.elementwise import ElementwiseKernel
 
 from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
 from pydtnn.backends.pycuda.optimizers.abstract.optimizer import OptimizerPycuda
@@ -63,16 +63,16 @@ class RMSPropPycuda(RMSProp[TensorArray], OptimizerPycuda):
         }
         self.update_gpudirect = self._get_kernel(func_name_subfix="_gpudirect")
 
-    def _model_init(self, list_layers: list[LayerPycuda]) -> None:
+    def _model_init(self, layers: list[LayerPycuda]) -> None:
         """
         Initialize optimizer state buffers for each layer.
 
         Args:
-            list_layers (list[LayerPycuda]): List of layers to track.
+            layers (list[LayerPycuda]): List of layers to track.
         """
-        super()._model_init(list_layers)  # type: ignore (The type is correct: LayerPycuda extends LayerBase)
+        super()._model_init(layers)  # pyright: ignore[reportArgumentType]
 
-        for layer in list_layers:
+        for layer in layers:
             list_grad_vars = list(layer.grad_vars.keys())
 
             if len(list_grad_vars) != 0:
@@ -84,7 +84,7 @@ class RMSPropPycuda(RMSProp[TensorArray], OptimizerPycuda):
                     )
 
                     # NOTE: They are both "gpuarray" and not "int"
-                    self.memory_used += self.context[layer.id]["cache_%s" % w_].nbytes  # type: ignore
+                    self.memory_used += self.context[layer.id]["cache_%s" % w_].nbytes  # pyright: ignore[reportAttributeAccessIssue] # noqa: E501
 
     def update(self, layer: LayerPycuda, update: bool = True, sync: bool = True) -> None:
         """

@@ -29,8 +29,8 @@ class FeedForwardPycuda(FeedForward[TensorArray], AbstractBlockLayerPycuda):
         self.paths = [[self.FC_1, self.relu, self.dropout, self.FC_2]]
 
         # The next attributes will be initialized later
-        self.y: TensorArray = None  # type: ignore
-        self.dx: TensorArray = None  # type: ignore
+        self.y: TensorArray = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.dx: TensorArray = None  # pyright: ignore[reportAttributeAccessIssue]
 
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
         """Initialize model parameters and sublayers for the PyCUDA backend."""

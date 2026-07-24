@@ -22,7 +22,7 @@ class NadamNumpy(Nadam[np.ndarray], OptimizerNumpy):
 
     def _model_init(self, layers: list[LayerNumpy]) -> None:
         """Initialize optimizer state and memory buffers for each layer."""
-        super()._model_init(layers)  # type: ignore (it is the right type)
+        super()._model_init(layers)  # pyright: ignore[reportArgumentType]
 
         temp_memory_size = []
 
@@ -47,8 +47,8 @@ class NadamNumpy(Nadam[np.ndarray], OptimizerNumpy):
                 # w.nbytes ==> temp_w.nbytes + temp_dw.nbytes = 2 * w.nbytes
                 self.context[layer.id]["m_%s" % w_] = momentum
                 self.context[layer.id]["v_%s" % w_] = velocity
-                self.context[layer.id]["temp_w_%s" % w_] = vt_temp_w  # type: ignore (it is the right type)
-                self.context[layer.id]["temp_dw_%s" % w_] = mt_temp_dw  # type: ignore (it is the right type)
+                self.context[layer.id]["temp_w_%s" % w_] = vt_temp_w  # pyright: ignore[reportArgumentType]
+                self.context[layer.id]["temp_dw_%s" % w_] = mt_temp_dw  # pyright: ignore[reportArgumentType]
 
             temp_memory_size.append(temp_memory_size_layer)
 
@@ -72,7 +72,7 @@ class NadamNumpy(Nadam[np.ndarray], OptimizerNumpy):
                         continue
                     # if w_ is not None:
 
-                    w_shape = self.context[layer_id]["m_%s" % w_].shape  # type: ignore (it is correct)
+                    w_shape = self.context[layer_id]["m_%s" % w_].shape  # pyright: ignore[reportAttributeAccessIssue]
                     w_shape = self.context[layer_id][key] = self.model.memory.ndarray(
                         w_shape, dtype=self.model.dtype
                     )
@@ -83,19 +83,19 @@ class NadamNumpy(Nadam[np.ndarray], OptimizerNumpy):
             return
 
         self.context[layer.id]["it"] += 1
-        it: int = self.context[layer.id]["it"]  # type: ignore
+        it: int = self.context[layer.id]["it"]  # pyright: ignore[reportAssignmentType]
 
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
             w: np.ndarray
             dw: np.ndarray
             # Momentum of the weight or bias of the given layer
-            m: np.ndarray = self.context[layer.id]["m_%s" % w_]  # type: ignore
+            m: np.ndarray = self.context[layer.id]["m_%s" % w_]
             # Velocity of the weight or bias of the given layer
-            v: np.ndarray = self.context[layer.id]["v_%s" % w_]  # type: ignore
+            v: np.ndarray = self.context[layer.id]["v_%s" % w_]
 
-            vt_temp_w: np.ndarray = self.context[layer.id]["temp_w_%s" % w_]  # type: ignore
-            mt_temp_dw: np.ndarray = self.context[layer.id]["temp_dw_%s" % w_]  # type: ignore
+            vt_temp_w: np.ndarray = self.context[layer.id]["temp_w_%s" % w_]
+            mt_temp_dw: np.ndarray = self.context[layer.id]["temp_dw_%s" % w_]
 
             if not (
                 self.are_all_zeros(w)

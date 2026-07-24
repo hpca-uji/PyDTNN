@@ -3,8 +3,8 @@
 import logging
 from typing import Any
 
-from pycuda import gpuarray  # type: ignore
-from pycuda.elementwise import ElementwiseKernel  # type: ignore
+from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
+from pycuda.elementwise import ElementwiseKernel
 
 from pydtnn.backends.pycuda.layers.abstract.block_layer import AbstractBlockLayerPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
@@ -28,8 +28,8 @@ class ConcatenationBlockPycuda(ConcatenationBlock[TensorArray], AbstractBlockLay
         super().__init__(*args, **kwargs)
         self.concat: ElementwiseKernel = None
         self.split: ElementwiseKernel = None
-        self.dy: list[TensorArray] = None  # type: ignore
-        self.idx_co = None  # type: ignore
+        self.dy: list[TensorArray] = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.idx_co = None  # pyright: ignore[reportAttributeAccessIssue]
 
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
         """Initialize PyCUDA kernels and allocate memory for forward and backward passes."""

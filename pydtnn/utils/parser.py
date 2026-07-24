@@ -85,7 +85,7 @@ def list_modules(path: str) -> list[str]:
 def _get_mpi_processes() -> int:
     """Returns the number of MPI processes from the environment."""
     try:
-        from pympi import MPI  # type: ignore
+        from pympi import MPI
     except Exception:
         mpi_processes = 1
     else:
@@ -396,18 +396,14 @@ class ArgumentParser(argparse.ArgumentParser):
             action=argparse.BooleanOptionalAction,
             default=ModelBase.initial_model_sync,
             help=(
-                "Synchronize models on training start."
-                f" Default: {ModelBase.initial_model_sync!r}."
+                f"Synchronize models on training start. Default: {ModelBase.initial_model_sync!r}."
             ),
         )
         _sy_group.add_argument(
             "--final-model-sync",
             action=argparse.BooleanOptionalAction,
             default=ModelBase.final_model_sync,
-            help=(
-                "Synchronize models on training end."
-                f" Default: {ModelBase.final_model_sync!r}."
-            ),
+            help=(f"Synchronize models on training end. Default: {ModelBase.final_model_sync!r}."),
         )
         _sy_group.add_argument(
             "--model-sync-quantize",

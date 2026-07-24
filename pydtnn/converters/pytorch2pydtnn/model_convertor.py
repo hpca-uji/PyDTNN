@@ -3,7 +3,7 @@
 import logging
 from typing import Any
 
-import torch  # type: ignore
+import torch
 
 import pydtnn.converters.pytorch2pydtnn.common as cm
 from pydtnn.abstract.layerable import Layerable

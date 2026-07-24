@@ -27,10 +27,10 @@ class ActivationPycuda(Activation[TensorArray], LayerablePycuda):
         """Initializes the PyCUDA activation layer."""
         super().__init__(*args, **kwargs)
         # The following attributes will be initalized later.
-        self.x: TensorArray = None  # type: ignore
-        self.dx: TensorArray = None  # type: ignore
-        self.grid: tuple[int, int, int] = None  # type: ignore
-        self.block: tuple[int, int, int] = None  # type: ignore
+        self.x: TensorArray = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.dx: TensorArray = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.grid: tuple[int, int, int] = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.block: tuple[int, int, int] = None  # pyright: ignore[reportAttributeAccessIssue]
 
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
         """

@@ -31,7 +31,7 @@ class AdaptiveAveragePool2DNumpy(AdaptiveAveragePool2D[np.ndarray], LayerNumpy):
         """Initialize the AdaptiveAveragePool2DNumpy layer."""
         super().__init__(*args, **kwargs)
         # The following atributte will be initalized in "initalize"
-        self.y: np.ndarray = None  # type: ignore
+        self.y: np.ndarray = None
 
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
         """Initialize model parameters and allocate memory for forward/backward passes."""

@@ -18,8 +18,8 @@ logger = logging.getLogger(__name__)
 
 
 if TYPE_CHECKING:
-    import cupy  # type: ignore
-    import pycuda.driver as drv  # type: ignore
+    import cupy
+    import pycuda.driver as drv
 
     from pydtnn.abstract.layerable import Layerable
     from pydtnn.model.layers import Layers as Model

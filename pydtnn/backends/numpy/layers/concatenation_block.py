@@ -26,9 +26,9 @@ class ConcatenationBlockNumpy(ConcatenationBlock, AbstractBlockLayerNumpy):
         """Initializes the ConcatenationBlockNumpy instance."""
         super().__init__(*args, **kwargs)
         # The next attributes will be initialized later
-        self.out_co: list[int] = None  # type: ignore
-        self.idx_co: np.ndarray = None  # type: ignore
-        self.concat_dim: int = None  # type: ignore
+        self.out_co: list[int] = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.idx_co: np.ndarray = None
+        self.concat_dim: int = None  # pyright: ignore[reportAttributeAccessIssue]
 
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
         """Initializes model-specific buffers and memory tracking."""

@@ -68,7 +68,7 @@ class CIFAR10(Memory):
                 0,
                 TRAIN_NSAMPLES,
             ):
-                with t.extractfile(filename) as f:  # type: ignore
+                with t.extractfile(filename) as f:  # pyright: ignore[reportOptionalContextManager]
                     x_part, y_class = self._read_file(f, offset, nsamples)
                     x_parts.append(x_part)
 
@@ -89,7 +89,7 @@ class CIFAR10(Memory):
                 0,
                 TEST_NSAMPLES,
             ):
-                with t.extractfile(filename) as f:  # type: ignore
+                with t.extractfile(filename) as f:  # pyright: ignore[reportOptionalContextManager]
                     x_part, y_class = self._read_file(f, offset, nsamples)
                     x_parts.append(x_part)
 

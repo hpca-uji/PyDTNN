@@ -27,7 +27,7 @@ class Conv2DWinograd(Conv2DNumpy, AbstractConv2DWinograd):
         """Initialize the Winograd convolution layer."""
         super().__init__(*args, **kwargs)
         # convWinograd related attributes (will be initialized in initialize())
-        self.cw: ConvWinograd = None  # type: ignore
+        self.cw: ConvWinograd = None  # pyright: ignore[reportAttributeAccessIssue]
 
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
         """Initialize model parameters and select backend implementation based on tensor format."""
@@ -118,7 +118,7 @@ class Conv2DWinograd(Conv2DNumpy, AbstractConv2DWinograd):
         )
         im2row_nhwc_cython(
             self.cw_x,
-            self.x_rows,  # type: ignore
+            self.x_rows,
             self.kh,
             self.kw,
             self.ho,
@@ -143,7 +143,7 @@ class Conv2DWinograd(Conv2DNumpy, AbstractConv2DWinograd):
         )
         im2col_nchw_cython(
             self.cw_x,
-            self.x_cols,  # type: ignore
+            self.x_cols,
             self.kh,
             self.kw,
             self.ho,

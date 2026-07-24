@@ -8,8 +8,8 @@ from typing import Any
 
 import numpy as np
 
-from pydtnn.backends.numpy.layers.conv_2d.direct_cpu import Conv2DDirectNumpy  # type: ignore
-from pydtnn.backends.numpy.layers.conv_2d.winograd_cpu import Conv2DWinogradNumpy  # type: ignore
+from pydtnn.backends.numpy.layers.conv_2d.direct_cpu import Conv2DDirectNumpy
+from pydtnn.backends.numpy.layers.conv_2d.winograd_cpu import Conv2DWinogradNumpy
 from pydtnn.model import Model
 from pydtnn.utils.best_of.best_of import BestOf
 from pydtnn.utils.constants import ArrayShape
@@ -19,15 +19,15 @@ __all__ = ("BestOfVariant",)
 logger = logging.getLogger(__name__)
 
 
-class BestOfVariant(Conv2DWinogradNumpy, Conv2DDirectNumpy):
+class BestOfVariant(Conv2DWinogradNumpy, Conv2DDirectNumpy):  # pyright: ignore[reportUntypedBaseClass]
     """Convolution variant that dynamically selects the most efficient implementation"""
 
     def __init__(self, *args: Any, **kwargs: dict) -> None:
         """Initializes the BestOfVariant layer with default attributes."""
         super().__init__(*args, **kwargs)
         # best_of related attributes (will be initialized in initialize())
-        self._best_fw: BestOf = None  # type: ignore
-        self._best_fw_bw_pipeline: BestOf = None  # type: ignore
+        self._best_fw: BestOf = None  # pyright: ignore[reportAttributeAccessIssue]
+        self._best_fw_bw_pipeline: BestOf = None  # pyright: ignore[reportAttributeAccessIssue]
         # Other parameters
         self.variant = None
 

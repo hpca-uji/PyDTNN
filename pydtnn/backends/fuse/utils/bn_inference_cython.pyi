@@ -1,18 +1,16 @@
-"""
-Cython-accelerated batch normalization inference utilities for PyDTNN.
-"""
+"""Cython-accelerated batch normalization inference utilities for PyDTNN."""
 
 import numpy as _np
 
 type _npDT = _np.int8 | _np.float32 | _np.float64
-type _npDT_4Dims[T] = _np.ndarray[tuple[int, int, int, int], T]
-type _npDT_3Dims[T] = _np.ndarray[tuple[int, int, int], T]
-type _npDT_2Dims[T] = _np.ndarray[tuple[int, int], T]
-type _npDT_1Dims[T] = _np.ndarray[tuple[int], T]
+type _npDT_4Dims[T: _np.number] = _np.ndarray[tuple[int, int, int, int], _np.dtype[T]]
+type _npDT_3Dims[T: _np.number] = _np.ndarray[tuple[int, int, int], _np.dtype[T]]
+type _npDT_2Dims[T: _np.number] = _np.ndarray[tuple[int, int], _np.dtype[T]]
+type _npDT_1Dims[T: _np.number] = _np.ndarray[tuple[int], _np.dtype[T]]
 
 # TODO: Missing `bn_inference_nchw_cython`
 
-def bn_inference_cython[T: _npDT](
+def bn_inference_cython[T: _npDT](  # noqa: D103,E302
     x: _npDT_2Dims[T],
     y: _npDT_2Dims[T],
     running_mean: _npDT_1Dims[T],
@@ -35,7 +33,7 @@ def bn_inference_cython[T: _npDT](
         Nothing. The output is stored in "y".
     """
 
-def bn_relu_inference_cython[T: _npDT](
+def bn_relu_inference_cython[T: _npDT](  # noqa: D103,E302
     x: _npDT_2Dims[T],
     y: _npDT_2Dims[T],
     running_mean: _npDT_1Dims[T],

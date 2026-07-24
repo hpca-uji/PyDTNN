@@ -1,12 +1,10 @@
-"""
-Cython-accelerated ReLU activation function implementations for PyDTNN.
-"""
+"""Cython-accelerated ReLU activation function implementations for PyDTNN."""
 
 import numpy as _np
 
 from pydtnn.backends.cython.utils.base import _npDT, _npDT_1Dims
 
-def relu_cython[T: _npDT](
+def relu_cython[T: _npDT](  # noqa: D103,E302
     x: _npDT_1Dims[T], max: _npDT_1Dims[T], mask: _np.ndarray[tuple[int], _np.dtype[_np.int8]]
 ) -> None:
     """
@@ -20,7 +18,7 @@ def relu_cython[T: _npDT](
         Nothing. The output is stored in "max" and "mask".
     """
 
-def capped_relu_cython[T: _npDT](
+def capped_relu_cython[T: _npDT](  # noqa: D103,E302
     x: _npDT_1Dims[T],
     max: _npDT_1Dims[T],
     mask: _np.ndarray[tuple[int], _np.dtype[_np.int8]],
@@ -35,12 +33,13 @@ def capped_relu_cython[T: _npDT](
         x (npDT_1Dims): 1-dimensional input's array.
         max (npDT_1Dims): 1-dimensional array where the ouput is stored
         mask (np.ndarray[tuple[int], np.int8]): 1-dimensional array where the output's mask is stored.
-        cap (float): The ReLU's superior limit. Any value in x greater that this parameter will be set to this parameter in the ouput.
+        cap (float): The ReLU's superior limit. Any value in x greater that this parameter will be set
+            to this parameter in the ouput.
     Returns:
         Nothing. The output is stored in "max" and "mask".
     """
 
-def leaky_relu_cython[T: _npDT](
+def leaky_relu_cython[T: _npDT](  # noqa: D103,E302
     x: _npDT_1Dims[T], max: _npDT_1Dims[T], mask: _npDT_1Dims[T], negative_slope: float
 ) -> None:
     """

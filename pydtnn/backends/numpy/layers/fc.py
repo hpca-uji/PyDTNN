@@ -28,9 +28,9 @@ class FCNumpy(FC[np.ndarray], LayerNumpy):
         """Initialize the FCNumpy layer."""
         super().__init__(*args, **kwargs)
         # The following attributes will be initalized in "initalize"
-        self.x: np.ndarray = None  # type: ignore
-        self.dw: np.ndarray = None  # type: ignore
-        self.db: np.ndarray = None  # type: ignore
+        self.x: np.ndarray = None
+        self.dw: np.ndarray = None
+        self.db: np.ndarray = None
 
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
         """Initialize layer parameters, buffers, and performance models."""
@@ -76,7 +76,7 @@ class FCNumpy(FC[np.ndarray], LayerNumpy):
             cpu_speed=self.model.cpu_speed,
             memory_bw=self.model.memory_bw,
             dtype=self.model.dtype,
-        )  # type: ignore (it's fine)
+        )
         self.bwd_time += matmul_time(
             m=self.weights.shape[0],
             n=self.weights.shape[1],
@@ -92,7 +92,7 @@ class FCNumpy(FC[np.ndarray], LayerNumpy):
             cpu_speed=self.model.cpu_speed,
             memory_bw=self.model.memory_bw,
             dtype=self.model.dtype,
-        )  # type: ignore (It works well.)
+        )
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         """Perform the forward pass of the FC layer."""

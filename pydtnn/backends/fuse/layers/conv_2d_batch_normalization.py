@@ -1,7 +1,7 @@
 """Module for fused 2D Convolution and Batch Normalization layers."""
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from pydtnn.backends.fuse.layers.abstract.layer import LayerFuse
 from pydtnn.backends.numpy.layers.abstract.conv_2d_standard import AbstractConv2DStandardNumpy
@@ -27,6 +27,12 @@ class Conv2DBatchNormalizationFuse(
     LayerFuse, Conv2D[np.ndarray], BatchNormalization[np.ndarray], AbstractConv2DStandardNumpy
 ):
     """Numpy-based implementation of fused 2D Convolution and Batch Normalization."""
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Unpack fused parents"""
+        super().__init__(*args, **kwargs)
+        self.conv_2d: Conv2D[np.ndarray] = self.parents[0]
+        self.batch_normalization: BatchNormalization[np.ndarray] = self.parents[1]
 
     @property
     def _ary_prop(self) -> set[str]:
@@ -58,9 +64,9 @@ class Conv2DBatchNormalizationFuse(
             PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_CONVGEMM
         )
         y: np.ndarray = self.cw.conv_winograd_nchw(
-            self.weights,
+            self.conv_2d.weights,
             x,
-            self.biases,
+            self.conv_2d.biases,
             vpadding=self.hpadding,
             hpadding=self.wpadding,
             vstride=self.hstride,
@@ -71,8 +77,8 @@ class Conv2DBatchNormalizationFuse(
             bn=True,
             running_mean=self.running_mean,
             inv_std=self.inv_std,
-            gamma=self.weights,
-            beta=self.biases,
+            gamma=self.batch_normalization.weights,
+            beta=self.batch_normalization.biases,
         )
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
@@ -84,7 +90,7 @@ class Conv2DBatchNormalizationFuse(
             PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_CONVGEMM
         )
         res: np.ndarray = self.cg.conv_gemm_nchw(
-            self.weights,
+            self.conv_2d.weights,
             x,
             vpadding=self.hpadding,
             hpadding=self.wpadding,
@@ -95,8 +101,8 @@ class Conv2DBatchNormalizationFuse(
             biases=self.biases,
             bn_running_mean=self.running_mean,
             bn_inv_std=self.inv_std,
-            bn_gamma=self.weights,
-            bn_beta=self.biases,
+            bn_gamma=self.batch_normalization.weights,
+            bn_beta=self.batch_normalization.biases,
             relu=False,
         )
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
@@ -108,7 +114,7 @@ class Conv2DBatchNormalizationFuse(
             PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_CONVGEMM
         )
         res: np.ndarray = self.cg.conv_gemm_nhwc(
-            self.weights,
+            self.conv_2d.weights,
             x,
             vpadding=self.hpadding,
             hpadding=self.wpadding,
@@ -116,11 +122,11 @@ class Conv2DBatchNormalizationFuse(
             hstride=self.wstride,
             vdilation=self.hdilation,
             hdilation=self.wdilation,
-            biases=self.biases,
+            biases=self.conv_2d.biases,
             bn_running_mean=self.running_mean,
             bn_inv_std=self.inv_std,
-            bn_gamma=self.weights,
-            bn_beta=self.biases,
+            bn_gamma=self.batch_normalization.weights,
+            bn_beta=self.batch_normalization.biases,
             relu=False,
         )
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)

@@ -48,26 +48,21 @@ class BatchNormalization[T: Array](Layer[T]):  # noqa: D101 (generics not detect
         self.running_var_initializer: Callable[[ArrayShape, np.dtype], np.ndarray] = (
             running_var_initializer
         )
-        self.biases_initializer: Callable[[ArrayShape, np.dtype], np.ndarray] = (
-            biases_initializer
-        )
-        self.weights_initializer: Callable[[ArrayShape, np.dtype], np.ndarray] = (
-            weights_initializer
-        )
+        self.biases_initializer: Callable[[ArrayShape, np.dtype], np.ndarray] = biases_initializer
+        self.weights_initializer: Callable[[ArrayShape, np.dtype], np.ndarray] = weights_initializer
         self.grad_vars = {Parameters.WEIGHTS: Parameters.DW, Parameters.BIASES: Parameters.DB}
         self.sync_stats = sync_stats
         # The following attributes will be initialized later
         self.co = self.ci = self.hi = self.wi = 0
-        self.spatial: bool = None  # type: ignore
-        self.weights: T = None  # type: ignore
-        self.biases: T = None  # type: ignore
-        self.running_mean: T = None  # type: ignore
-        self.running_var: T = None  # type: ignore
-        self.std: np.ndarray = None  # type: ignore
-        self.xn: np.ndarray = None  # type: ignore
-        self.dw: T = None  # type: ignore
-        self.db: T = None  # type: ignore
-        self.borrar: T = None  # type: ignore
+        self.spatial: bool = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.weights: T = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.biases: T = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.running_mean: T = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.running_var: T = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.std: np.ndarray = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.xn: np.ndarray = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.dw: T = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.db: T = None  # pyright: ignore[reportAttributeAccessIssue]
 
     def export(self) -> dict[str, Any]:
         """

@@ -37,7 +37,7 @@ class AdaptiveAveragePool2D[T: Array](Layer[T]):  # noqa: D101 (generics not det
         self.output_shape = output_shape
 
         # This value will change in initialize:
-        self.pooling_not_needed: bool = None  # type: ignore
+        self.pooling_not_needed: bool = None  # pyright: ignore[reportAttributeAccessIssue]
 
     def _model_init(self, prev_shape: ArrayShape, x: T | None) -> None:
         """

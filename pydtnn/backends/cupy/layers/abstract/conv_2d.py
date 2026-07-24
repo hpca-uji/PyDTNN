@@ -5,8 +5,8 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-from cupy import ndarray  # type: ignore
-from cupy.cuda import Stream  # type: ignore
+from cupy import ndarray  # pyright: ignore[reportAttributeAccessIssue]
+from cupy.cuda import Stream
 
 from pydtnn.backends.cupy.layers.abstract.layer import LayerCupy
 from pydtnn.backends.numpy.layers.abstract.conv_2d import AbstractConv2DNumpy

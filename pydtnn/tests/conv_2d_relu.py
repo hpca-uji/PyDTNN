@@ -48,8 +48,8 @@ class Conv2DReluTestCase(Conv2DCommonTestCase):
             A tuple containing the standard ConcatenationBlock and the fused Conv2DRelu layer.
         """
         params_chain = Params()
-        params_chain.tensor_format = TensorFormat.NCHW.upper()
-        params_chain.batch_size = d.b  # type: ignore (it's okay)
+        params_chain.tensor_format = TensorFormat.NCHW
+        params_chain.batch_size = d.b
         params_chain.backend = "cpu;conv_2d:gemm"
         model_chain = Model(**vars(params_chain))
         model_chain.mode = Model.Mode.TRAIN
@@ -69,7 +69,7 @@ class Conv2DReluTestCase(Conv2DCommonTestCase):
         model_chain.add(chain)
 
         params_fuse = deepcopy(params_chain)
-        params_fuse.fused_conv_relu = True  # type: ignore
+        params_fuse.fused_conv_relu = True
         model_fuse = Model(**vars(params_fuse))
         model_fuse.mode = Model.Mode.EVALUATE
         model_fuse.add(Input(model_fuse.encode_shape((d.c, d.h, d.w))))

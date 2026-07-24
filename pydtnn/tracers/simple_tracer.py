@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 if TYPE_CHECKING:
-    from pympi.MPI import Comm  # type: ignore
+    from pympi.MPI import Comm
 
 
 class SimpleTracer(Tracer):
@@ -72,8 +72,8 @@ class SimpleTracer(Tracer):
                     "Received an 'End' event for a different event type than expected!"
                 )
             _evt_type_val, _evt_val, tic = self.pending_events.pop()
-            self.events[_evt_type_val][_evt_val][0] += 1  # type: ignore
-            self.events[_evt_type_val][_evt_val][1].append(toc - tic)  # type: ignore
+            self.events[_evt_type_val][_evt_val][0] += 1  # pyright: ignore[reportOperatorIssue]
+            self.events[_evt_type_val][_evt_val][1].append(toc - tic)  # pyright: ignore[reportAttributeAccessIssue]
 
     def _emit_nevent(
         self,
@@ -129,7 +129,7 @@ class SimpleTracer(Tracer):
 
         This method will be called at exit only if tracing has been enabled at any time
         """
-        output_filename = utils.string_substitute(self.output_filename, rank=self.rank)  # type: ignore (It's fine)
+        output_filename = utils.string_substitute(self.output_filename, rank=self.rank)
         if output_filename != self.output_filename or self.rank == 0:
             if len(self.pending_events):
                 logger.warning(

@@ -22,7 +22,7 @@ if ompi_stdout_rank and os.environ.get("OMPI_COMM_WORLD_RANK", "0") != ompi_stdo
 Extrae_tracing = False
 if os.environ.get("EXTRAE_ON", None) == "1":
     TracingLibrary = "libptmpitrace.so"
-    import pyextrae.common.extrae as pyextrae  # type: ignore
+    import pyextrae.common.extrae as pyextrae
 
     pyextrae.startTracing(TracingLibrary)
     Extrae_tracing = True
@@ -41,7 +41,7 @@ def _start() -> int:
     config = parser.parse_args()
 
     with traceback_context():
-        return main(config)  # type: ignore
+        return main(config) or 0
 
 
 def main(config: Namespace) -> None:  # noqa: C901
@@ -55,6 +55,7 @@ def main(config: Namespace) -> None:  # noqa: C901
     # Create model
     from pydtnn.model import Model
 
+    pr = cProfile.Profile()
     model = Model(**vars(config))
     model._ensure_model_runnable()
 
@@ -70,11 +71,11 @@ def main(config: Namespace) -> None:  # noqa: C901
     if model.evaluate_on_train or model.evaluate_only:
         if model.comm_rank == 0:
             logger.info("**** Evaluating on test dataset...")
-            t1 = time.time()
+        t1 = time.time()
         _ = model.evaluate()
+        t2 = time.time()
+        total_time = t2 - t1
         if model.comm_rank == 0:
-            t2 = time.time()
-            total_time = t2 - t1
             if model.evaluate_only:
                 logger.info(f"Testing time: {total_time:5.4f} s")
                 logger.info(
@@ -92,14 +93,15 @@ def main(config: Namespace) -> None:  # noqa: C901
     if model.comm_rank == 0:
         # print('**** Model time: ', model.calculate_time())
         logger.info("**** Training...")
-        t1 = time.time()
         if model.profile:
-            pr = cProfile.Profile()
             pr.enable()
     # Training a model directly from a dataset
     # or alternatively, define any custom data
     # mode.dataset = CustomDataset(model, x, y)
+    t1 = time.time()
     history = model.train()
+    t2 = time.time()
+    total_time = t2 - t1
 
     # Barrier
     if model.comm:
@@ -112,19 +114,16 @@ def main(config: Namespace) -> None:  # noqa: C901
             path = Path(f"profile-{timestamp}.stat").resolve()
             pr.dump_stats(path)
             logger.info(f"Dumped profile stats to: {path}")
-        t2 = time.time()
         logger.info("**** Done...")
-        total_time = t2 - t1
         logger.info(f"Training and validation time: {total_time:5.4f} s")
         if model.perf_counter.num_epochs > 0:
             logger.info(
-                f"Training and validation time per epoch: {
-                    total_time / model.perf_counter.num_epochs:5.4f} s"
+                "Training and validation time per epoch:"
+                f" {total_time / model.perf_counter.num_epochs:5.4f} s"
             )
             logger.info(
-                f"Training and validation throughput: {
-                    (model.dataset.train_nsamples * model.perf_counter.num_epochs)
-                    / total_time:5.4f} samples/s"
+                "Training and validation throughput:"
+                f" {(model.dataset.train_nsamples * model.perf_counter.num_epochs) / total_time:5.4f} samples/s"
             )
 
     # Store history information

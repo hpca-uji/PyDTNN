@@ -31,8 +31,8 @@ logger = logging.getLogger(__name__)
 
 # NOTE: mpi4py has more functions, but no typing
 if TYPE_CHECKING:
-    from pycuda.driver import Stream  # type: ignore
-    from pympi.MPI import Comm as MPI_COMM  # type: ignore  # noqa: N814
+    from pycuda.driver import Stream
+    from pympi.MPI import Comm as MPI_COMM  # noqa: N814
 
 
 class Base[T: Array]:  # noqa: D101 (generics not detected)
@@ -46,7 +46,6 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
 
     def __init__(self, **kwargs: Any) -> None:
         """Initialize the base model instance."""
-        pass
 
     class Mode(enum.StrEnum):
         """Enumeration for model execution modes."""
@@ -82,7 +81,7 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
     evaluate_only: bool = False
     model_state_filename: str = ""
     history_file: str = ""
-    tensor_format: TensorFormat = None  # type: ignore (properly initialized later)
+    tensor_format: TensorFormat = None  # pyright: ignore[reportAssignmentType]
     random_seed: int = 57005
     shared_tmp_memory: bool = False
     shared_data: bool = True
@@ -136,7 +135,7 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
     conv_direct_method: str = ""
     optimizer_name: str = "sgd"
     learning_rate: float = 1e-2
-    learning_rate_scaling: bool = None  # type: ignore (properly initialized later)
+    learning_rate_scaling: bool = None  # pyright: ignore[reportAssignmentType]
     optimizer_momentum: float = 0.9
     optimizer_decay: float = 0.0
     optimizer_nesterov: bool = False
@@ -152,7 +151,7 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
     oktopk_reduce_method: str = "collective_allreduce_then_slice"
     loss_func_name: str = "categorical_cross_entropy"
     loss_eps: float = 1e-8
-    loss_weights: ArrayShape = ()
+    loss_weights: tuple[float, ...] = ()
     use_loss_weights: bool = False
     metrics: tuple[str, ...] = ("categorical_accuracy",)
     schedulers_names: tuple[str, ...] = (
@@ -178,7 +177,7 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
     parallel_data: bool = False
     parallel_pipeline: bool = False
     use_blocking_mpi: bool = True
-    use_mpi_buffers: bool = None  # type: ignore (properly initialized later)
+    use_mpi_buffers: bool = None  # pyright: ignore[reportAssignmentType]
     use_cudnn: bool = False
     use_gpudirect: bool = False
     use_nccl: bool = False

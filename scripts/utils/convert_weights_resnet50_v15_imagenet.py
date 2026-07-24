@@ -4,7 +4,7 @@ import logging
 import os
 import urllib.request
 
-import h5py  # type: ignore
+import h5py
 import numpy as np
 
 from pydtnn.utils.constants import Parameters
@@ -127,8 +127,8 @@ layers = {
 weights = {
     "kernel": Parameters.WEIGHTS,
     "bias": Parameters.BIASES,
-    Parameters.GAMMA: Parameters.GAMMA,
-    Parameters.BETA: Parameters.BETA,
+    Parameters.WEIGHTS: Parameters.WEIGHTS,  # GAMMA
+    Parameters.BIASES: Parameters.BIASES,  # BETA
     "running_mean": "running_mean",
     "running_var": "running_var",
 }

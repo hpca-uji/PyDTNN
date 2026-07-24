@@ -35,7 +35,7 @@ class PrivateMemory:
 
     def ndarray(self, shape: ArrayShape, dtype: np.dtype, order: str = "C") -> np.ndarray:
         """Create a new numpy array."""
-        return np.zeros(shape, dtype, order)  # type: ignore
+        return np.zeros(shape, dtype, order)  # pyright: ignore[reportArgumentType,reportCallIssue]
 
     def __enter__(self) -> Self:
         """Enter the context manager."""

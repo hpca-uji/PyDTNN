@@ -22,7 +22,7 @@ class RMSPropNumpy(RMSProp[np.ndarray], OptimizerNumpy):
 
     def _model_init(self, layers: list[LayerNumpy]) -> None:
         """Initialize optimizer state for each layer."""
-        super()._model_init(layers)  # type: ignore (it is the right type)
+        super()._model_init(layers)  # pyright: ignore[reportArgumentType]
 
         temp_memory_size = []
 
@@ -31,7 +31,7 @@ class RMSPropNumpy(RMSProp[np.ndarray], OptimizerNumpy):
                 continue
 
             list_grad_vars = list(layer.grad_vars.keys())
-            self.context[layer.id] = dict[str, np.ndarray]()  # type: ignore
+            self.context[layer.id] = {}
             tmp_memory_used_layer = 0
 
             for w_ in list_grad_vars:
@@ -44,7 +44,7 @@ class RMSPropNumpy(RMSProp[np.ndarray], OptimizerNumpy):
                 # NOTE: int(math.prod(w.shape)): temp_.nbytes = w.nbytes
 
                 self.context[layer.id]["cache_%s" % w_] = cache
-                self.context[layer.id]["temp_%s" % w_] = temp  # type: ignore (it is the right type)
+                self.context[layer.id]["temp_%s" % w_] = temp  # pyright: ignore[reportArgumentType]
 
             temp_memory_size.append(tmp_memory_used_layer)
 
@@ -59,7 +59,7 @@ class RMSPropNumpy(RMSProp[np.ndarray], OptimizerNumpy):
                 for key in self.context[layer_id].keys():
                     if "temp_" in key:
                         w_ = key.split("temp_")[-1]
-                        w_shape = self.context[layer_id]["cache_%s" % w_].shape  # type: ignore (it is correct)
+                        w_shape = self.context[layer_id]["cache_%s" % w_].shape  # pyright: ignore[reportAttributeAccessIssue]
                         w_shape = self.context[layer_id][key] = self.model.memory.ndarray(
                             w_shape, dtype=self.model.dtype
                         )
@@ -71,8 +71,8 @@ class RMSPropNumpy(RMSProp[np.ndarray], OptimizerNumpy):
 
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
-            cache: np.ndarray = self.context[layer.id]["cache_%s" % w_]  # type: ignore
-            temp: np.ndarray = self.context[layer.id]["temp_%s" % w_]  # type: ignore
+            cache: np.ndarray = self.context[layer.id]["cache_%s" % w_]
+            temp: np.ndarray = self.context[layer.id]["temp_%s" % w_]
             w: np.ndarray
             dw: np.ndarray
 

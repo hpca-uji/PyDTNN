@@ -5,7 +5,7 @@ import math
 from typing import Any
 
 import numpy as np
-from pycuda import gpuarray  # type: ignore
+from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 
 from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
@@ -30,7 +30,7 @@ class AdaptiveAveragePool2DPycuda(AdaptiveAveragePool2D[TensorArray], LayerPycud
         """Initialize the AdaptiveAveragePool2DPycuda layer."""
         super().__init__(*args, **kwargs)
         # NOTE: Will be initalized later.
-        self.y = None  # type: ignore
+        self.y = None  # pyright: ignore[reportAttributeAccessIssue]
 
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
         """Initialize model parameters and CUDA kernels."""
@@ -61,14 +61,14 @@ class AdaptiveAveragePool2DPycuda(AdaptiveAveragePool2D[TensorArray], LayerPycud
             cpu_speed=self.model.cpu_speed,
             memory_bw=self.model.memory_bw,
             dtype=self.model.dtype,
-        )  # type: ignore (it's fine)
+        )
         self.bwd_time = col2im_time(
             m=self.co,
             n=(self.model.batch_size * self.ho * self.wo * self.ci),
             cpu_speed=self.model.cpu_speed,
             memory_bw=self.model.memory_bw,
             dtype=self.model.dtype,
-        )  # type: ignore (it's fine)
+        )
 
     def forward(self, x: TensorArray) -> TensorArray:
         """Perform the forward pass of the adaptive average pooling operation."""

@@ -20,7 +20,7 @@ class FlattenPycuda(Flatten[TensorArray], LayerPycuda):
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
         """Initialize layer parameters and output reference."""
         super()._model_init(prev_shape, x)
-        self.y = x  # type: ignore (it's okay)
+        self.y = x
 
     def forward(self, x: TensorArray) -> TensorArray:
         """Perform forward pass by reshaping the input tensor."""

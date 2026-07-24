@@ -13,10 +13,10 @@ import sys
 __all__ = ("get_soname", "find_lib_path")
 
 try:
-    import elftools.construct.macros as macros  # type: ignore
-    import elftools.elf.elffile as elffile  # type: ignore
-    import elftools.elf.sections as sections  # type: ignore
-    import elftools.elf.structs as structs  # type: ignore
+    import elftools.construct.macros as macros
+    import elftools.elf.elffile as elffile
+    import elftools.elf.sections as sections
+    import elftools.elf.structs as structs
 
 except ImportError:
 
@@ -90,7 +90,7 @@ else:
 
         """
 
-        Struct = structs.Struct  # type: ignore # noqa: N806
+        Struct = structs.Struct  # pyright: ignore[reportPrivateImportUsage] # noqa: N806
         stream = open(filename, "rb")
         f = elffile.ELFFile(stream)
         dynamic = f.get_section_by_name(".dynamic")

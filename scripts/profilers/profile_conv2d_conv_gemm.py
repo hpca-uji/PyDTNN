@@ -19,6 +19,7 @@ import numpy as np
 
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.model import Model
+from pydtnn.model.base import Base
 from pydtnn.utils import rand
 from pydtnn.utils.initializers import glorot_uniform, zeros
 
@@ -75,20 +76,18 @@ def _print_with_header(header: str, to_be_printed: str | None = None) -> None:
         print(to_be_printed)
 
 
-class Params:
+class Params(Base):
     """Configuration object for model initialization."""
-
-    pass
 
 
 def get_conv2d_layers(d: D) -> tuple[Conv2D, Conv2D]:
     """Initializes and returns im2col and convGemm Conv2D layers."""
     params = Params()
-    params.batch_size = d.b  # type: ignore (It's fine)
-    params.backend = "cpu"  # type: ignore (It's fine)
+    params.batch_size = d.b
+    params.backend = "cpu"
     model_i2c = Model(**vars(params))
     params_gc = deepcopy(params)
-    params_gc.backend = "cpu;conv_2d:gemm"  # type: ignore (It's fine)
+    params_gc.backend = "cpu;conv_2d:gemm"
     model_cg = Model(**vars(params_gc))
     conv2d_i2c = Conv2D(
         nfilters=d.kn,

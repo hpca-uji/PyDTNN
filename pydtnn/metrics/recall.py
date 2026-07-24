@@ -15,7 +15,7 @@ class Recall[T: Array](Metric[T]):  # noqa: D101 (generics not detected)
     """Calculates the recall score based on a binary confusion matrix."""
 
     order = BinaryConfusionMatrix.order + 1
-    conf_matrix_metric: BinaryConfusionMatrix = None  # type: ignore
+    conf_matrix_metric: BinaryConfusionMatrix = None  # pyright: ignore[reportAssignmentType]
     format = "rec: %.4f"
 
     def _model_init(self) -> None:

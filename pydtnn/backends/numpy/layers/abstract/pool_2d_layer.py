@@ -77,14 +77,14 @@ class AbstractPool2DLayerNumpy(AbstractPool2DLayer[np.ndarray], LayerNumpy):
             cpu_speed=self.model.cpu_speed,
             memory_bw=self.model.memory_bw,
             dtype=self.model.dtype,
-        )  # type: ignore (it's fine)
+        )
         self.bwd_time = col2im_time(
             m=(self.kh * self.kw),
             n=(self.model.batch_size * self.ho * self.wo * self.ci),
             cpu_speed=self.model.cpu_speed,
             memory_bw=self.model.memory_bw,
             dtype=self.model.dtype,
-        )  # type: ignore (it's fine)
+        )
 
     def get_y(self, batch_size: int) -> np.ndarray:
         """Retrieve the output tensor from the shared memory buffer."""

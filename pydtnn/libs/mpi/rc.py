@@ -4,12 +4,12 @@ import os as _os
 import typing as _typing
 
 try:
-    import pympi.rc as _rc  # type: ignore
+    import pympi.rc as _rc
 except Exception:
     _rc = None
 
 if _rc:
-    __all__ = _rc.__all__  # type: ignore
+    __all__ = _rc.__all__  # pyright: ignore[reportUnsupportedDunderAll]
 
 
 # Redefine backend

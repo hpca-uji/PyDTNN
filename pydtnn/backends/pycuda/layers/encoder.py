@@ -6,7 +6,7 @@ from typing import Any
 import numpy as np
 
 from pydtnn.backends.pycuda.layers.abstract.block_layer import AbstractBlockLayerPycuda
-from pydtnn.backends.pycuda.libs import libcudnn as cudnn  # type: ignore
+from pydtnn.backends.pycuda.libs import libcudnn as cudnn
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.layers.dropout import Dropout
 from pydtnn.layers.encoder import Encoder
@@ -48,8 +48,8 @@ class EncoderPycuda(Encoder[TensorArray], AbstractBlockLayerPycuda):
         ]
 
         # The next attributes will be initialized later
-        self.y: TensorArray = None  # type: ignore
-        self.dx: TensorArray = None  # type: ignore
+        self.y: TensorArray = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.dx: TensorArray = None  # pyright: ignore[reportAttributeAccessIssue]
 
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
         """Initializes the backend model and sub-layers with input shapes."""
@@ -64,7 +64,7 @@ class EncoderPycuda(Encoder[TensorArray], AbstractBlockLayerPycuda):
             mask_enc = None
             mask_enc_shape = ()  # noqa: F841
 
-        self.shape = x_enc_shape  # type: ignore (This layer has special shape)
+        self.shape = x_enc_shape  # pyright: ignore[reportAttributeAccessIssue]
         self.first_dims = x_enc.shape[:-1]
 
         # Initialize all sublayers
@@ -140,7 +140,7 @@ class EncoderPycuda(Encoder[TensorArray], AbstractBlockLayerPycuda):
         # self.model.test("Forward")
         alpha, beta = 1.0, 1.0
         # Self Attention
-        self.multiheadattention.forward(x, x, x, mask, x)  # type: ignore (multiheadattention uses more parameters)
+        self.multiheadattention.forward(x, x, x, mask, x)  # pyright: ignore[reportCallIssue]
         self.layernormalization_1.forward(self.multiheadattention.y)
         # self.layernormalization_1.forward(x)
 

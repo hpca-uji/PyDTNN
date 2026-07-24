@@ -4,8 +4,8 @@ import logging
 from typing import Any
 
 import numpy as np
-import pycuda.driver as drv  # type: ignore
-from pycuda import gpuarray  # type: ignore
+import pycuda.driver as drv
+from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 
 from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
 from pydtnn.backends.pycuda.utils import matmul_gpu, matvec_gpu
@@ -129,7 +129,7 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
             cpu_speed=self.model.cpu_speed,
             memory_bw=self.model.memory_bw,
             dtype=self.model.dtype,
-        )  # type: ignore (it's fine)
+        )
         self.bwd_time += matmul_time(
             m=self.weights_cpu.shape[0],
             n=self.weights_cpu.shape[1],
@@ -145,7 +145,7 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
             cpu_speed=self.model.cpu_speed,
             memory_bw=self.model.memory_bw,
             dtype=self.model.dtype,
-        )  # type: ignore (This is correct)
+        )
 
     def forward(self, x: TensorArray) -> TensorArray:
         """Perform forward pass computation."""
@@ -223,7 +223,7 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
             self.x.gpudata,
             lda,
             beta,
-            self.dw.ptr_intp if self.model.gpudirect else self.dw.gpudata,  # type: ignore (dw.gpudata has a correct type)
+            self.dw.ptr_intp if self.model.gpudirect else self.dw.gpudata,  # pyright: ignore[reportArgumentType]
             ldc,
             self.model.dtype,
         )
@@ -256,7 +256,7 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
                 self.one_vec_gpu.gpudata,
                 inc_x,
                 beta,
-                self.db.ptr_intp if self.model.gpudirect else self.db.gpudata,  # type: ignore (dw.gpudata has a correct type)
+                self.db.ptr_intp if self.model.gpudirect else self.db.gpudata,  # pyright: ignore[reportArgumentType]
                 inc_y,
                 self.model.dtype,
             )

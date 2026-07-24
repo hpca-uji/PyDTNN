@@ -2,7 +2,7 @@
 
 import functools
 
-from cupy import RawKernel, RawModule  # type: ignore
+from cupy import RawKernel, RawModule  # pyright: ignore[reportAttributeAccessIssue]
 
 from pydtnn.backends.numpy.abstract.base import BaseNumpy
 from pydtnn.utils.uses_cuda import UsesCudaCode

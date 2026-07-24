@@ -12,7 +12,7 @@ import time
 from pathlib import Path
 from warnings import warn
 
-from openai import InternalServerError, OpenAI  # type: ignore
+from openai import InternalServerError, OpenAI
 
 
 limit = 64_000

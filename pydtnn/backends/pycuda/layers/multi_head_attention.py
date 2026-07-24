@@ -7,7 +7,7 @@ import logging
 from typing import Any
 
 import numpy as np
-from pycuda import gpuarray  # type: ignore
+from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 
 from pydtnn import drv
 from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
@@ -32,8 +32,8 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
         self.grad_vars = {"weights": "dw"}
 
         # The next attributes will be initialized later
-        self.y: TensorArray = None  # type: ignore
-        self.dx: TensorArray = None  # type: ignore
+        self.y: TensorArray = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.dx: TensorArray = None  # pyright: ignore[reportAttributeAccessIssue]
 
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
         """Initializes model parameters, cuDNN descriptors, and GPU memory buffers."""
@@ -90,7 +90,7 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
             self.nparams += w.size
 
         # Dropout Descriptor
-        self.states_size = cudnn.cudnnDropoutGetStatesSize(self.model.cudnn_handle)  # type: ignore
+        self.states_size = cudnn.cudnnDropoutGetStatesSize(self.model.cudnn_handle)
         states_gpu = gpuarray.zeros((self.states_size,), self.model.dtype)
         self.states = TensorArray(
             states_gpu,

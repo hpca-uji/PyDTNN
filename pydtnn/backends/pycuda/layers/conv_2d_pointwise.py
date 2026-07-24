@@ -4,8 +4,8 @@ import logging
 from typing import Any, override
 
 import numpy as np
-from pycuda import gpuarray  # type: ignore
-from pycuda.driver import Function  # type: ignore
+from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
+from pycuda.driver import Function
 
 from pydtnn.backends.pycuda.layers.abstract.conv_2d import AbstractConv2DPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
@@ -82,7 +82,7 @@ class Conv2DPointwisePycuda(AbstractConv2DPycuda):
         self.x = x
         self.y.fill(0)
 
-        n, c, h, w = self.model.decode_shape(x.shape)  # type: ignore (it's okay)
+        n, c, h, w = self.model.decode_shape(x.shape)
 
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_CUDNN
@@ -129,7 +129,7 @@ class Conv2DPointwisePycuda(AbstractConv2DPycuda):
 
     def _backward_pointwise(self, dy: TensorArray) -> TensorArray:
         """Performs the backward pass of the pointwise convolution."""
-        n, c, h, w = self.model.decode_shape(dy.shape)  # type: ignore (it's okay)
+        n, c, h, w = self.model.decode_shape(dy.shape)
         self.dx.fill(0)
 
         self.model.tracer.emit_event(

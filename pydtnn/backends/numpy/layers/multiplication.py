@@ -24,15 +24,15 @@ class MultiplicationNumpy(Multiplication[np.ndarray], LayerNumpy):
         """Initialize the MultiplicationNumpy layer."""
         super().__init__(*args, **kwargs)
         # Following attributes will be initialized later
-        self.x1: np.ndarray = None  # type: ignore
-        self.x2: np.ndarray = None  # type: ignore
+        self.x1: np.ndarray = None
+        self.x2: np.ndarray = None
 
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
         """Initialize model-specific parameters and performance tracking."""
         super()._model_init(prev_shape, x)
         # Performance model
-        self.fwd_time = None  # type: ignore (defined later)
-        self.bwd_time = None  # type: ignore (defined later)
+        self.fwd_time = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.bwd_time = None  # pyright: ignore[reportAttributeAccessIssue]
 
     def transpose(self, x: np.ndarray) -> np.ndarray:
         """Transpose the last two dimensions of the input array."""

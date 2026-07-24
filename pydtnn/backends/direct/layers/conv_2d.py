@@ -1,6 +1,7 @@
 """Direct convolution layer implementation using the convDirect library."""
 
 import logging
+from collections.abc import Callable
 from functools import partial
 from typing import Any
 
@@ -31,7 +32,7 @@ class Conv2DDirect(Conv2DNumpy, AbstractConv2DDirect):
     def _algo_init(self) -> None:
         """Add the different forward and backward methods to the class."""
 
-        def new(name, func):
+        def new(name: str, func: Callable) -> None:
             func.__name__ = name
             setattr(self, name, func)
 

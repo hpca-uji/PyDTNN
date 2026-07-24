@@ -5,7 +5,7 @@ from typing import Any
 
 import numpy as np
 from numpy import ndarray
-from pycuda import gpuarray  # type: ignore
+from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 
 from pydtnn import gpu_errors
 from pydtnn.backends.pycuda.abstract.layerable import LayerablePycuda
@@ -26,17 +26,17 @@ class LayerPycuda(Layer[TensorArray], LayerablePycuda):
         super().__init__(*args, **kwargs)
         # GPU layer attributes
         # NOTE: All of these values will be initalized in the "initialize" method.
-        self.weights_cpu: ndarray = None  # type: ignore
-        self.biases_cpu: ndarray = None  # type: ignore
-        self.dx: TensorArray = None  # type: ignore
-        self.dw: TensorArray = None  # type: ignore
-        self.db: TensorArray = None  # type: ignore
-        self.dw_cpu: ndarray = None  # type: ignore
-        self.db_cpu: ndarray = None  # type: ignore
-        self.one_vec_cpu: ndarray = None  # type: ignore
-        self.one_vec_gpu: gpuarray.GPUArray = None  # type: ignore
-        self.grid: tuple[int, int, int] = None  # type: ignore
-        self.block: tuple[int, int, int] = None  # type: ignore
+        self.weights_cpu: ndarray = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.biases_cpu: ndarray = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.dx: TensorArray = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.dw: TensorArray = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.db: TensorArray = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.dw_cpu: ndarray = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.db_cpu: ndarray = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.one_vec_cpu: ndarray = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.one_vec_gpu: gpuarray.GPUArray = None
+        self.grid: tuple[int, int, int] = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.block: tuple[int, int, int] = None  # pyright: ignore[reportAttributeAccessIssue]
 
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
         """Initializes model parameters and validates CUDNN requirements."""

@@ -46,7 +46,7 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
 
     def _compute_metrics_funcs(
         self, y_pred: T, y_targ: T, loss: float, blocking: bool = True, comm: bool = True
-    ) -> tuple[np.ndarray, None] | tuple[None, Any]:
+    ) -> tuple[np.ndarray, None] | tuple[None, MPI.Request]:
         """
         Computes metrics and loss, optionally synchronizing across processes.
 
@@ -60,7 +60,7 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
         Returns:
             A tuple containing the aggregated metrics/loss and an optional MPI request.
         """
-        loss_req: Any | None = None
+        loss_req: MPI.Request | None = None
         _losses: np.ndarray | None
 
         if y_targ.shape[0] > 0:
@@ -84,7 +84,7 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
             else:
                 raise NotImplementedError("can not compute metrics non-blocking locally")
 
-        return _losses, loss_req  # type: ignore
+        return _losses, loss_req  # pyright: ignore[reportReturnType]
 
     def _update_running_average(
         self,
@@ -136,7 +136,7 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
         self.mode = Base.Mode.EVALUATE
 
         self.real_batch_size = x_batch.shape[0]
-        input_layer: Input[T] = self.layers[0]  # type: ignore (casting to the right type)
+        input_layer: Input[T] = self.layers[0]  # pyright: ignore[reportAssignmentType]
         x, y_targ = input_layer._sync_x_y(x_batch, y_batch)
 
         has_batch = x_batch.shape[0] > 0
@@ -211,10 +211,11 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
 
         if self.comm_rank == 0:
             # NOTE: pbar is a 'tqdm', it only is None in self.comm_rank != 0
-            pbar.set_postfix_str(s=f"{prev_string}{string}", refresh=True)  # type: ignore
+            assert pbar
+            pbar.set_postfix_str(s=f"{prev_string}{string}", refresh=True)
             if part != Dataset.Part.VAL:
                 # NOTE: Here there is a 'tqdm' object, pbar only is None in self.comm_rank != 0
-                pbar.update(batch_size)  # type: ignore
+                pbar.update(batch_size)
 
         return total_loss, total_size, string
 
@@ -316,7 +317,7 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
                 self.tensor_format,
                 self.cudnn_dtype,
             )
-            self.y_batch = tensor_ary  # type: ignore
+            self.y_batch = tensor_ary  # pyright: ignore[reportAttributeAccessIssue]
 
         self.comm_nsamples = list(
             zip(
@@ -357,7 +358,8 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
         )
 
         if self.comm_rank == 0:
-            pbar.close()  # type: ignore (Here is a 'tqdm', only is None in self.comm_rank != 0)
+            assert pbar
+            pbar.close()
             # Sleep for half a second to allow pbar to write its output before returning
             time.sleep(0.5)
 

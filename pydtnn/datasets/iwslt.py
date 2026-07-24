@@ -116,7 +116,7 @@ class IWSLT(Dataset):
         file.close()
         lines = [line.replace("\n", "") for line in lines]
         self.train_val_nsamples = len(lines)
-        self.train_nsamples = None  # type: ignore (it will be initialized later)
+        self.train_nsamples = None  # pyright: ignore[reportAttributeAccessIssue]
         self.lines1 = [line.split(self.split_token)[0] for line in lines]
         self.lines2 = [line.split(self.split_token)[1] for line in lines]
         # sos = None # <sos>
@@ -129,7 +129,7 @@ class IWSLT(Dataset):
 
     def get_dictionary(self, language: str) -> Language:
         """Load a spaCy language model for tokenization and embeddings."""
-        import spacy  # type: ignore
+        import spacy
 
         table = {"en": "en_core_web_md", "de": "de_core_news_md"}
         if language in table:

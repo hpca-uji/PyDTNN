@@ -5,7 +5,7 @@ import math
 from typing import Any
 
 import numpy as np
-from pycuda import gpuarray  # type: ignore
+from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 
 from pydtnn.activations.relu6 import Relu6
 from pydtnn.backends.pycuda.activations.abstract.activation import ActivationPycuda
@@ -25,8 +25,8 @@ class Relu6Pycuda(Relu6[TensorArray], ActivationPycuda):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the Relu6Pycuda layer."""
         super().__init__(*args, **kwargs)
-        self.mask: TensorArray = None  # type: ignore
-        self.y: TensorArray = None  # type: ignore
+        self.mask: TensorArray = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.y: TensorArray = None  # pyright: ignore[reportAttributeAccessIssue]
 
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
         """Initialize model parameters, CUDA kernels, and memory buffers."""
@@ -119,11 +119,11 @@ class Relu6Pycuda(Relu6[TensorArray], ActivationPycuda):
             cpu_speed=self.model.cpu_speed,
             memory_bw=self.model.memory_bw,
             dtype=self.model.dtype,
-        )  # type: ignore (it's fine)
+        )
         self.bwd_time = col2im_time(
             m=self.ci,
             n=n,
             cpu_speed=self.model.cpu_speed,
             memory_bw=self.model.memory_bw,
             dtype=self.model.dtype,
-        )  # type: ignore (it's fine)
+        )

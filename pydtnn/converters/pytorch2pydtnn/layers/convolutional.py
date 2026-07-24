@@ -76,10 +76,14 @@ def Conv2d(args: dict[str, Any]) -> Conv2D:
     layer_args[pydtnn_use_bias] = args[cm.ARGUMENTS]["_parameters"]["bias"] is not None
 
     vars_initiaizers_transpose: dict[str, tuple[str, None | tuple[str, str]]]
-    vars_initiaizers_transpose = {"weight": ("weights_initializer", None), "bias": ("biases_initializer", None)}
+    vars_initiaizers_transpose = {
+        "weight": ("weights_initializer", None),
+        "bias": ("biases_initializer", None),
+    }
 
-    initializers = cm.set_initializer_with_pytorch_values(args[cm.ARGUMENTS]["_parameters"],
-                                                          vars_initiaizers_transpose=vars_initiaizers_transpose)
+    initializers = cm.set_initializer_with_pytorch_values(
+        args[cm.ARGUMENTS]["_parameters"], vars_initiaizers_transpose=vars_initiaizers_transpose
+    )
     layer_args.update(initializers)
 
     if pydtnn_filter_shape in layer_args:

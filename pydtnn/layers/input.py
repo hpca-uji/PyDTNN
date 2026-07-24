@@ -39,4 +39,4 @@ class Input[T: Array](Layer[T]):  # noqa: D101 (generics not detected)
         Returns:
             tuple[T, T]: A tuple containing the input and target batches.
         """
-        return (x_batch, y_batch)  # type: ignore (It's fine)
+        return (x_batch, y_batch)  # pyright: ignore[reportReturnType]

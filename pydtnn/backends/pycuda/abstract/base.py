@@ -1,7 +1,7 @@
 """PyDTNN PyCUDA backend abstract base module."""
 
-from pycuda.compiler import SourceModule  # type: ignore
-from pycuda.driver import Function, Module  # type: ignore
+from pycuda.compiler import SourceModule
+from pycuda.driver import Function, Module
 
 from pydtnn.abstract.base import Base
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray

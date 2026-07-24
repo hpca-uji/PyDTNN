@@ -3,7 +3,7 @@
 import ctypes
 import functools
 import logging
-from typing import Callable
+from typing import Any, Callable
 
 import numpy as np
 
@@ -97,7 +97,7 @@ def check_pmlib_returned_status(func: Callable) -> Callable:
     """
 
     @functools.wraps(func)
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: Any, **kwargs: Any) -> None:
         """Wrapper function to execute the decorated function and check its status."""
         status = func(*args, **kwargs)
         if status != 0:
@@ -182,12 +182,12 @@ class PMLib:
         self.set_server(server_ip, port)
         self.create_lines("0-15")
         # Class properties that will be initialized later
-        self.counter_start_time: float = None  # type: ignore (It will be initalized later)
-        self.counter_end_time: float = None  # type: ignore (It will be initalized later)
-        self.period: float = None  # type: ignore (It will be initalized later)
-        self.len_lines: int = None  # type: ignore (It will be initalized later)
-        self.len_samples: int = None  # type: ignore (It will be initalized later)
-        self.times: np.ndarray = None  # type: ignore (It will be initalized later)
+        self.counter_start_time: float = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.counter_end_time: float = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.period: float = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.len_lines: int = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.len_samples: int = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.times: np.ndarray = None  # pyright: ignore[reportAttributeAccessIssue]
         self.watts = None
 
     def info(self, msg: str) -> None:
@@ -486,7 +486,7 @@ class PMLib:
             # Integrate the energy between the two interpolated samples
             joules = ((watts_on_start_time + watts_on_end_time) / 2) * (end_time - start_time)
         else:
-            joules: np.ndarray = 0  # type: ignore (It will change it's type later)
+            joules: np.ndarray = 0  # pyright: ignore[reportAssignmentType]
             # Integrate the energy between start_time and times[next_sample_from_start]
             elapsed_time: float = self.times[next_sample_from_start] - start_time
             if elapsed_time > 0:

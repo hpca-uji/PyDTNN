@@ -140,7 +140,9 @@ class TestModel(torch.nn.Module):
         return x
 
 
-def replace_layer(module: torch.nn.Module, name: str, layer_to_replace: type[torch.nn.Module]) -> None:
+def replace_layer(
+    module: torch.nn.Module, name: str, layer_to_replace: type[torch.nn.Module]
+) -> None:
     """
     Recursively put desired batch norm in nn.module module.
 
@@ -151,9 +153,14 @@ def replace_layer(module: torch.nn.Module, name: str, layer_to_replace: type[tor
     for attr_str in dir(module):
         target_attr = getattr(module, attr_str)
         if isinstance(target_attr, layer_to_replace):
-            print('replaced: ', name, attr_str)
-            new_bn = torch.nn.Identity(target_attr.num_features, target_attr.eps, target_attr.momentum, target_attr.affine,
-                                       track_running_stats=False)
+            print("replaced: ", name, attr_str)
+            new_bn = torch.nn.Identity(
+                target_attr.num_features,
+                target_attr.eps,
+                target_attr.momentum,
+                target_attr.affine,
+                track_running_stats=False,
+            )
             setattr(module, attr_str, new_bn)
 
     # iterate through immediate child modules. Note, the recursion is done by our code no need to use named_modules()
@@ -188,7 +195,7 @@ class ModelDTypeTestCase(unittest.TestCase):
     }
 
     params = Params()
-    params.tensor_format = TensorFormat.NCHW.upper()
+    params.tensor_format = TensorFormat.NCHW
     setattr(params, "number_rounds", 10)
 
     def get_tolerance(self, layer: Layerable) -> tuple[float, float]:
@@ -274,13 +281,13 @@ class ModelDTypeTestCase(unittest.TestCase):
         """
         # PyTorch Model.
         params = ModelDTypeTestCase.params
-        params.model_name = model_name  # type: ignore
+        params.model_name = model_name
 
         if model_name == "basic_model":
             torch_model = TestModel()
         else:
             torch_model = torch_models.resnet50(weights=torch_models.ResNet50_Weights.IMAGENET1K_V1)
-            torch_model.fc = torch.nn.Sequential(  # type: ignore (It's ok to set a Sequential)
+            torch_model.fc = torch.nn.Sequential(  # pyright: ignore[reportAttributeAccessIssue]
                 # torch.nn.Dropout(p=0.5),
                 torch.nn.Linear(
                     in_features=torch_model.fc.in_features,
@@ -319,7 +326,7 @@ class ModelDTypeTestCase(unittest.TestCase):
         """
         # PyDTNN Model
         params = ModelDTypeTestCase.params
-        params.model_name = None  # type: ignore
+        params.model_name = ""
         # Begin of params configuration
         params_dict = vars(params)
         try:

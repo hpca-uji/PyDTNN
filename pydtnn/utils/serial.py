@@ -9,7 +9,7 @@ __all__ = ("NumpyYaml",)
 class NumpyYaml(yaml.SafeDumper):
     """Custom YAML dumper that supports serialization of NumPy arrays and data types."""
 
-    def represent_dtype(self, data: np.ndarray) -> yaml.ScalarNode:
+    def represent_dtype(self, data: np.number) -> yaml.ScalarNode:
         """Represent a NumPy data type as a YAML scalar."""
         return self.represent_scalar("!np.type", repr(data))
 

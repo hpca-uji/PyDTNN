@@ -2,6 +2,7 @@
 
 import ctypes
 import logging
+from functools import cache
 
 import numpy as np
 
@@ -18,18 +19,16 @@ __all__ = (
 logger = logging.getLogger(__name__)
 
 
+@cache
 def blis() -> ctypes.CDLL:
     """Lazy load and return the BLIS library instance."""
-    if not hasattr(blis, "lib"):
-        blis.lib = load_library("blis")
-    return blis.lib
+    return load_library("blis")
 
 
+@cache
 def mkl() -> ctypes.CDLL:
     """Lazy load and return the MKL library instance."""
-    if not hasattr(mkl, "lib"):
-        mkl.lib = load_library("mkl_rt")
-    return mkl.lib
+    return load_library("mkl_rt")
 
 
 def _matmul_xgemm(

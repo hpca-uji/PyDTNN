@@ -5,11 +5,14 @@ from __future__ import annotations
 import copy
 import ctypes
 import logging
+import typing
 from enum import StrEnum, auto
 from typing import Any, Literal
 
 import numpy as np
 
+from pydtnn import drv as pycuda_driver
+from pydtnn import gpuarray
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import TensorFormat, decode_shape, encode_shape
 
@@ -17,14 +20,13 @@ __all__ = ("TensorArray",)
 
 logger = logging.getLogger(__name__)
 
-
 try:
-    from pycuda import driver as pycuda_driver  # type: ignore
-    from pycuda import gpuarray  # type: ignore
-
     from pydtnn.libs import cudnn as cudnn
 except Exception:
-    pass
+    cudnn = None
+
+if typing.TYPE_CHECKING:
+    from pycuda.driver import Stream
 
 
 class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
@@ -131,7 +133,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
 
     @staticmethod
     def new_pair_gpudirect(
-        drv: pycuda_driver,
+        drv: pycuda_driver,  # pyright: ignore[reportGeneralTypeIssues]
         shape: S,
         dtype: D,
         tensor_format: TensorFormat,
@@ -191,7 +193,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
         desc: int | None = None,
         gpudirect: bool = False,
         cublas: bool = False,
-        drv: pycuda_driver = None,
+        drv: pycuda_driver | None = None,  # pyright: ignore[reportInvalidTypeForm]
     ) -> tuple[np.ndarray[S, D], TensorArray[S, D]]:
         """Factory method to create a CPU/GPU pair based on driver availability."""
         if drv is not None:
@@ -238,8 +240,8 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
         self.cublas = cublas
 
         self.ary: gpuarray.GPUArray
-        self.desc: int = desc  # type: ignore (if it's None it will be set later)
-        self.cpu_shape: S = cpu_shape  # type: ignore (if it's None it will be set later)
+        self.desc: int = desc  # pyright: ignore[reportAttributeAccessIssue]
+        self.cpu_shape: S = cpu_shape  # pyright: ignore[reportAttributeAccessIssue]
 
         self._set_ary(gpu_arr)
         if desc:
@@ -250,6 +252,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
     @property
     def cudnn_tensor_format(self) -> int:
         """Returns the cuDNN integer constant for the current tensor format."""
+        assert cudnn, "No cuddn support"
         return cudnn.cudnnTensorFormat[f"CUDNN_TENSOR_{self.tensor_format.upper()}"]
 
     def _encode_shape(self, shape: ArrayShape) -> ArrayShape:
@@ -331,6 +334,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
 
     def _desc_init(self) -> None:
         """Initializes the cuDNN descriptor."""
+        assert cudnn, "No cudnn support"
         match self.tensor_type:
             case self.TensorType.TENSOR:
                 n, c, h, w = self._decode_shape(self.shape)
@@ -381,6 +385,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
 
     def _del_desc(self) -> None:
         """Destroys the cuDNN descriptor."""
+        assert cudnn, "No cudnn support"
         match self.tensor_type:
             case self.TensorType.TENSOR:
                 cudnn.cudnnDestroyTensorDescriptor(self.desc)
@@ -402,7 +407,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
         self, shape: NS, order: Literal["C", "F", "A"] = "C"
     ) -> TensorArray[NS, D]:
         """Returns a reshaped view of the TensorArray."""
-        return self._view(self.ary.reshape(shape, order))  # type: ignore
+        return self._view(self.ary.reshape(shape, order))  # pyright: ignore[reportReturnType]
 
     def squeeze(self, dtype: np.dtype | None = None) -> TensorArray:
         """Squeeze operation is not supported for TensorArray."""
@@ -412,7 +417,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
         """Copies data from CPU to GPU."""
         self.ary.set(np.asarray(value.reshape(self.ary.shape), dtype=self.ary.dtype))
 
-    def set_async(self, value: np.ndarray, stream: pycuda_driver | None = None) -> None:
+    def set_async(self, value: np.ndarray, stream: Stream | None = None) -> None:
         """Asynchronously copies data from CPU to GPU."""
         self.ary.set_async(
             np.asarray(value.reshape(self.ary.shape), dtype=self.ary.dtype), stream=stream
@@ -459,10 +464,12 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
             return value
         else:
             ary[:] = value
-            return None  # type: ignore
+            return None  # pyright: ignore[reportReturnType]
 
     def get_async(
-        self, stream: pycuda_driver | None = None, ary: np.ndarray[ArrayShape, D] | None = None
+        self,
+        stream: pycuda_driver | None = None,  # pyright: ignore[reportInvalidTypeForm]
+        ary: np.ndarray[ArrayShape, D] | None = None,
     ) -> None:
         """Asynchronously copies data from GPU to CPU."""
         if ary is None:
@@ -479,7 +486,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
         """Converts TensorArray to a NumPy array."""
         if copy is False:
             raise ValueError("Must copy array")
-        return np.asarray(self.get(), dtype=dtype)  # type: ignore
+        return np.asarray(self.get(), dtype=dtype)  # pyright: ignore[reportReturnType]
 
     def _view(self, ary: gpuarray.GPUArray, keep_shape: bool = True) -> TensorArray[S, D]:
         """Creates a new TensorArray instance sharing the same underlying configuration."""

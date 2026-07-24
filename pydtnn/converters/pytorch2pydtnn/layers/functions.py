@@ -73,7 +73,7 @@ def adaptive_avg_pool_2d(args: dict[str, str]) -> tuple[AveragePool2D, str]:
     if params:
         dict_params[cm.ARGUMENTS] = {cm.PYTORCH_OUTPUT_SIZE: params}
 
-    return (AdaptiveAveragePool2D(dict_params), dict_params["input"])  # type: ignore
+    return (AdaptiveAveragePool2D(dict_params), dict_params["input"])  # pyright: ignore[reportReturnType,reportArgumentType]
 
 
 def add(args: dict[str, Any]) -> tuple[AdditionBlock, str]:
@@ -181,14 +181,15 @@ def flatten(args: dict[str, str]) -> tuple[Flatten, str]:
     def switch(list_params: list[str], dict_params: dict[str, str] = dict()) -> dict[str, str]:
         """Helper to parse flatten parameters recursively."""
         # This is a switch with "fall through".
+        # FIXME: this also changes types but typing says otherwise
         match len(list_params):
             case 3:
                 var = list_params.pop().split("end_dim=")
-                dict_params["end_dim"] = int(var.pop())  # type: ignore
+                dict_params["end_dim"] = int(var.pop())  # pyright: ignore[reportArgumentType]
                 return switch(list_params, dict_params)
             case 2:
                 var = list_params.pop().split("start_dim=")
-                dict_params["start_dim"] = int(var.pop())  # type: ignore
+                dict_params["start_dim"] = int(var.pop())  # pyright: ignore[reportArgumentType]
                 return switch(list_params, dict_params)
             case 1:
                 dict_params["input"] = list_params.pop()
@@ -199,8 +200,8 @@ def flatten(args: dict[str, str]) -> tuple[Flatten, str]:
     params = args[cm.PARAMETERS].strip()
     dict_params = switch(params.split(cm.ARGS_SEPARATOR))
 
-    # return (Flatten(**dict_params), dict_params["input"])  # type: ignore
-    return (Flatten(), dict_params["input"])  # type: ignore
+    # return (Flatten(**dict_params), dict_params["input"])
+    return (Flatten(), dict_params["input"])
 
 
 # --- Activations --
@@ -298,14 +299,15 @@ def softmax(args: dict[str, Any]) -> tuple[Softmax, str]:
     def switch(list_params: list[str], dict_params: dict[str, str] = dict()) -> dict[str, str]:
         """Helper to parse softmax parameters recursively."""
         # This is a switch with "fall through".
+        # FIXME: this also changes types but typing says otherwise
         match len(list_params):
             case 3:
                 var = list_params.pop().split("dim=")
-                dict_params["end_dim"] = int(var.pop())  # type: ignore
+                dict_params["end_dim"] = int(var.pop())  # pyright: ignore[reportArgumentType]
                 return switch(list_params, dict_params)
             case 2:
                 var = list_params.pop().split("dtype=")
-                dict_params["start_dim"] = int(var.pop())  # type: ignore
+                dict_params["start_dim"] = int(var.pop())  # pyright: ignore[reportArgumentType]
                 return switch(list_params, dict_params)
             case 1:
                 dict_params["input"] = list_params.pop()
@@ -316,7 +318,7 @@ def softmax(args: dict[str, Any]) -> tuple[Softmax, str]:
     params = args[cm.PARAMETERS].strip()
     dict_params = switch(params.split(cm.ARGS_SEPARATOR))
 
-    return (activation.softmax(**dict_params), dict_params["input"])  # type: ignore
+    return (activation.Softmax(**dict_params), dict_params["input"])  # pyright: ignore[reportArgumentType]
 
 
 def tanh(args: dict[str, Any]) -> tuple[Tanh, str]:

@@ -72,7 +72,7 @@ class State(Init):
             offset += n
 
         return {
-            "name": self.name,  # type: ignore
+            "name": self.name,  # pyright: ignore[reportAttributeAccessIssue]
             "x_train": x_train,
             "y_train": y_train,
             "x_test": x_test,
@@ -146,6 +146,6 @@ class State(Init):
         if split_weights:
             datas = self._export_split(data, split_weights)
             for split, data in enumerate(datas):
-                np.savez_compressed(path / f"archive.{split}.npz", **data)  # type: ignore
+                np.savez_compressed(path / f"archive.{split}.npz", **data)  # pyright: ignore[reportArgumentType]
         else:
-            np.savez_compressed(path / "archive.npz", **data)  # type: ignore
+            np.savez_compressed(path / "archive.npz", **data)  # pyright: ignore[reportArgumentType]

@@ -6,12 +6,13 @@ are correctly converted to PyDTNN layers by comparing their forward pass outputs
 and internal state parameters against defined precision thresholds.
 """
 
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
-import torch  # type: ignore
-import torch.nn as nn  # type: ignore
+import torch
+import torch.nn as nn
 from model_convertor import convert_model
-from torch.nn import Module as PyTorchModel  # type: ignore
+from torch.nn import Module as PyTorchModel
 
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
@@ -20,11 +21,14 @@ from pydtnn.model import Model as PyDTNN_Model
 # from pydtnn.utils.best_of import BestOf
 
 try:
-    import pycuda.gpuarray as gpuarray  # type: ignore
+    import pycuda.gpuarray as gpuarray
+except BaseException:
+    gpuarray = None
 
+try:
     from pydtnn.libs import cudnn
 except BaseException:
-    pass
+    cudnn = None
 
 from copy import deepcopy
 from math import prod
@@ -226,13 +230,15 @@ def forward_pydtnn_model(
     """Performs a forward pass through a PyDTNN model, skipping the input layer."""
     y: np.ndarray | TensorArray = dataset
 
+    layer: Layerable = None  # pyright: ignore[reportAssignmentType]
+
     for i in range(
         1, len(model.layers)
     ):  # NOTE - Remember: Layer 0 is the Input layer and it's ignored
-        layer: Layerable = model.layers[i]
+        layer = model.layers[i]
         y = layer.forward(y)
 
-    if y is None:
+    if layer is not None and y is None:
         y = layer.y
     # else: Nothing special.
     print(f"y | ({type(y)})")
@@ -246,6 +252,8 @@ def test_layers_gpu(model: PyDTNN_Model, dataset: np.ndarray) -> TensorArray:
     model.show()
     print("test_layers_gpu - model\n========")
     print(f"model.dtype: {model.dtype}")
+    assert gpuarray
+    assert cudnn
 
     print(f"TYPES_DATA_CUDA[model.dtype]: {TYPES_DATA_CUDA[model.dtype]}")
     dtype = model.dtype
@@ -265,9 +273,9 @@ def test_layers_gpu(model: PyDTNN_Model, dataset: np.ndarray) -> TensorArray:
 
     model.y_batch = _dataset
 
-    y = forward_pydtnn_model(model, _dataset)
+    y: TensorArray = forward_pydtnn_model(model, _dataset)  # pyright: ignore[reportAssignmentType]
 
-    return y  # type: ignore
+    return y
 
 
 def test_layers(
@@ -345,7 +353,7 @@ def test_layers(
     pydtnn_biases = pydtnn_layer.biases
 
     if isinstance(pydtnn_weights, TensorArray):
-        pydtnn_biases: TensorArray = pydtnn_biases.get()  # type: ignore
+        pydtnn_biases: np.ndarray = pydtnn_biases.get()  # pyright: ignore[reportAttributeAccessIssue]
 
     there_are_pytorch_biases = pytorch_biases is not None
     there_are_pydtnn_biases = pydtnn_biases is not None
@@ -423,11 +431,11 @@ def test_add_and_concat(
     print("=====================\n== Testing Forward ==\n=====================")
     print(f"pytorch_model: {pytorch_model}")
 
-    pytorch_output_t, _ = pytorch_model(torch_dataset)
     pytorch_output_t: torch.Tensor
+    pytorch_output_t, _ = pytorch_model(torch_dataset)
     # pydtnn_model.dataset = dataset  # FIXME: Paul dice que si la utiliza, MiguelA que no, revisar
-    pydtnn_output = forward_pydtnn_model(pydtnn_model, dataset)  # type: ignore
     pydtnn_output: np.ndarray
+    pydtnn_output = forward_pydtnn_model(pydtnn_model, dataset)  # pyright: ignore[reportAssignmentType]
 
     pytorch_output = pytorch_output_t.detach().to("cpu").numpy()
 

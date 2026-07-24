@@ -8,8 +8,8 @@ from pydtnn.utils import read_file
 __all__ = ("UsesCudaCode",)
 
 if TYPE_CHECKING:
-    import cupy as cp  # type: ignore
-    from pycuda.driver import Function, Module  # type: ignore
+    import cupy as cp
+    from pycuda.driver import Function, Module
 
 type Abs_Module = "Module | cp.RawModule"
 type Abs_Function = "Function | cp.RawKernel"

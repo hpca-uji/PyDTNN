@@ -155,20 +155,22 @@ def switch_pytorch_pydtnn(name: str) -> Callable[[dict[str, Any]], Layerable]:
         case "Flatten":
             return Flatten
         case "Identity":
+
             def Identity(_args):
                 logger.warning("Use this function only for debugging in cpu.")
                 return Input()
+
             return Identity
 
         # Not actual PyTorch layers (are torch functions):
         case "Add":
-            # type: ignore  # Possible FIXME: if the constants ADD values are changed,
+            # Possible FIXME: if the constants ADD values are changed,
             # change the case in order to have the same value.
-            return add  # type: ignore
+            return add  # pyright: ignore[reportReturnType]
         case "Concat":
-            # type: ignore  # Possible FIXME: if the constants CONCAT values are
+            # Possible FIXME: if the constants CONCAT values are
             # changed, change the case in order to have the same value.
-            return concat  # type: ignore
+            return concat  # pyright: ignore[reportReturnType]
         # Base case:
         case _:
             return not_implemented(name)
@@ -386,12 +388,14 @@ def set_initializer_with_pytorch_values(
             # NOTE: There are some layers (like the fully connected) where the shape
             # in PyDTNN is the transpose of the PyTorch's one.
             if transpose_values is not None:
-                value_to_set = format_transpose(value_to_set, transpose_values[0], transpose_values[1])
+                value_to_set = format_transpose(
+                    value_to_set, transpose_values[0], transpose_values[1]
+                )
 
             def pytorch_value_initializer(
                 shape: tuple,
                 dtype: np.ndarray,
-                random: np.random.Generator = None,  # type: ignore (It will be ignored.)
+                random: np.random.Generator = None,  # pyright: ignore[reportArgumentType]
                 pytorch_value_to_set: np.ndarray = value_to_set,
                 **kwargs_to_ignore: Any,
             ) -> np.ndarray:

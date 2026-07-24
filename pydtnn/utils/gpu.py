@@ -35,7 +35,10 @@ def get_gpu_memory_used() -> str:
     except (FileNotFoundError, subprocess.CalledProcessError):
         memory = str(None)
     else:
-        memory = re.search(pattern, memory).group().split(":")[-1].strip()  # type: ignore
+        if match := re.search(pattern, memory):
+            memory = match.group().split(":")[-1].strip()
+        else:
+            memory = str(None)
     return memory
 
 

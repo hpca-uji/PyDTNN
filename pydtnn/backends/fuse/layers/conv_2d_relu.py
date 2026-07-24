@@ -1,8 +1,9 @@
 """Fused 2D Convolution and ReLU layer implementation."""
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
+from pydtnn.activations.relu import Relu
 from pydtnn.backends.fuse.layers.abstract.layer import LayerFuse
 from pydtnn.backends.numpy.layers.abstract.conv_2d_standard import AbstractConv2DStandardNumpy
 from pydtnn.layers.conv_2d import Conv2D
@@ -24,8 +25,11 @@ if TYPE_CHECKING:
 class Conv2DReluFuse(LayerFuse, Conv2D[np.ndarray], AbstractConv2DStandardNumpy):
     """Numpy-based implementation of a fused 2D Convolution and ReLU layer."""
 
-    # NOTE: The "__init__" method is being made (more or less) in Model (in
-    # _apply_layer_fusion) and in FusedLayerMixIn.
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Unpack fused parents"""
+        super().__init__(*args, **kwargs)
+        self.conv_2d: Conv2D[np.ndarray] = self.parents[0]
+        self.relu: Relu[np.ndarray] = self.parents[1]
 
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
         """Initializes the layer model and maps forward/backward methods."""

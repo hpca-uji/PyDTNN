@@ -60,7 +60,7 @@ class ModelTensorTestCase(ModelCommonTestCase):
         # Tensor format NCHW
         params = Params()
         params.model_name = model_name
-        params.tensor_format = TensorFormat.NCHW.upper()
+        params.tensor_format = TensorFormat.NCHW
         params_dict = vars(params)
         try:
             model2 = Model(**params_dict)

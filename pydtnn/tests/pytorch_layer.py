@@ -11,7 +11,7 @@ from typing import Any
 from unittest import skip
 
 import numpy as np
-import torch  # type: ignore
+import torch
 
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.activations.arctanh import Arctanh
@@ -280,11 +280,11 @@ class ParamsLayerPytorch(Params):
         super().__init__()
         self.batch_size = d.b
         self.backend = "cpu"
-        self.tensor_format = TensorFormat.NCHW.upper()
+        self.tensor_format = TensorFormat.NCHW
         self.shape = format_reshape((C, H, W), "CHW", self.tensor_format[1:])
         self.evaluate_only = False
         self.parallel_data = False
-        self.loss_func = "categorical_cross_entropy"
+        self.loss_func_name = "categorical_cross_entropy"
         self.use_cudnn = False
         self.omm = None
         self.dtype = np.dtype(np.float32)
@@ -400,8 +400,8 @@ class LayerPyTorchTestCase(TestCase):
                 match layer:
                     case BatchNormalization():
                         assert isinstance(torch_layer, torch.nn.BatchNorm2d)
-                        running_mean: np.ndarray = layer.running_mean  # type: ignore (It's fine.)
-                        running_var: np.ndarray = layer.running_var  # type: ignore (It's fine.)
+                        running_mean: np.ndarray = layer.running_mean  # pyright: ignore[reportAssignmentType]
+                        running_var: np.ndarray = layer.running_var  # pyright: ignore[reportAssignmentType]
                         if running_mean is not None:
                             assert isinstance(torch_layer.running_mean, torch.Tensor)
                             torch_layer.running_mean.copy_(
@@ -463,9 +463,15 @@ class LayerPyTorchTestCase(TestCase):
             x, self.params.tensor_format.upper(), TensorFormat.NCHW.upper()
         ).copy()
 
-        x = torch.from_numpy(_x.reshape((N, C, H, W), copy=False)).to(torch.device("cpu")).float()  # type: ignore (It's fine)
-        x_torch: torch.Tensor = torch_model(x)
-        x_torch = np.asarray(x_torch.numpy(force=True), dtype=pydtnn_model.dtype, order="C").copy()  # type: ignore (It's fine)
+        x_torch_tmp: torch.Tensor
+        x_torch_tmp = (
+            torch.from_numpy(_x.reshape((N, C, H, W), copy=False)).to(torch.device("cpu")).float()
+        )
+        x_torch_tmp = torch_model(x)
+        x_torch = np.asarray(
+            x_torch_tmp.numpy(force=True), dtype=pydtnn_model.dtype, order="C"
+        ).copy()
+        del x_torch_tmp
 
         if verbose_test():
             logger.info(
@@ -534,18 +540,18 @@ class LayerPyTorchTestCase(TestCase):
         ).copy()
 
         loss_func = torch.nn.CrossEntropyLoss()
-        x_torch: torch.Tensor = (
+        x_torch_tmp: torch.Tensor = (
             torch.from_numpy(_x.reshape((N, C, H, W), copy=False)).to(torch.device("cpu")).float()
-        )  # type: ignore (It's fine)
-        y_torch: torch.Tensor = (
+        )
+        y_torch_tmp: torch.Tensor = (
             torch.from_numpy(_y.reshape((N, -1), copy=False)).to(torch.device("cpu")).float()
-        )  # type: ignore (It's fine)
-        x_torch = x_torch.requires_grad_(True)
-        x_torch.retain_grad()
-        x_torch = torch_model(x_torch)
+        )
+        x_torch_tmp = x_torch_tmp.requires_grad_(True)
+        x_torch_tmp.retain_grad()
+        x_torch_tmp = torch_model(x_torch_tmp)
 
-        x_torch = x_torch.reshape((N, -1))
-        loss: torch.Tensor = loss_func(x_torch, y_torch)
+        x_torch_tmp = x_torch_tmp.reshape((N, -1))
+        loss: torch.Tensor = loss_func(x_torch_tmp, y_torch_tmp)
         loss.retain_grad()
         print(f"before backward - {loss}\n===")
         loss.backward()
@@ -553,8 +559,9 @@ class LayerPyTorchTestCase(TestCase):
         print(f"{loss.grad=}")
 
         x_torch = np.asarray(
-            x_torch.numpy(force=True), dtype=pydtnn_model.dtype, order="C"
-        ).reshape(x_base_shape, copy=True)  # type: ignore (It's fine)
+            x_torch_tmp.numpy(force=True), dtype=pydtnn_model.dtype, order="C"
+        ).reshape(x_base_shape, copy=True)
+        del x_torch_tmp, y_torch_tmp
 
         if verbose_test():
             logger.info(

@@ -56,7 +56,7 @@ class MultiHeadAttentionNumpy(MultiHeadAttention[np.ndarray], AbstractBlockLayer
         ]
 
         # The next attributes will be initialized later
-        self.mask: np.ndarray = None  # type: ignore
+        self.mask: np.ndarray = None
 
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
         """Initializes the model structure and sublayers for the NumPy backend."""
@@ -142,8 +142,8 @@ class MultiHeadAttentionNumpy(MultiHeadAttention[np.ndarray], AbstractBlockLayer
     ) -> np.ndarray:
         """Performs the forward pass of the multi-head attention mechanism."""
         if self.model.mode == Model.Mode.TRAIN:
-            # TODO: Check this.
-            self.mask = mask  # type: ignore (in this case, mask is not None) (I hope)
+            # TODO: Check this. (in this case, mask is not None) (I hope)
+            self.mask = mask
 
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_MHA_FC_QKV
@@ -158,7 +158,7 @@ class MultiHeadAttentionNumpy(MultiHeadAttention[np.ndarray], AbstractBlockLayer
             self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_MHA_MATMUL_QK,
         )
 
-        score = self.mult_qkt.forward(query, self.transpose(key))  # type: ignore (encoder has multiple parameters)
+        score = self.mult_qkt.forward(query, self.transpose(key))  # pyright: ignore[reportCallIssue]
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         self.model.tracer.emit_event(
@@ -178,7 +178,7 @@ class MultiHeadAttentionNumpy(MultiHeadAttention[np.ndarray], AbstractBlockLayer
             self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_MHA_MATMUL_SMV,
         )
 
-        score = self.mult_smv.forward(score, value)  # type: ignore (encoder has multiple parameters)
+        score = self.mult_smv.forward(score, value)  # pyright: ignore[reportCallIssue]
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         self.model.tracer.emit_event(

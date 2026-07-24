@@ -8,6 +8,7 @@ import warnings
 
 import numpy as np
 
+from pydtnn.model.base import Base
 from pydtnn.utils import rand
 from pydtnn.utils.tensor import TensorFormat
 
@@ -27,17 +28,17 @@ def verbose_test() -> bool:
     return "-v" in sys.argv or "--verbose" in sys.argv
 
 
-class Params:
+class Params(Base):
     """Configuration parameters for test execution."""
 
     def __init__(self) -> None:
         """Initializes default test parameters."""
         self.parallel_data = False
         self.dtype: np.dtype = np.dtype(np.float32)
-        self.tensor_format = TensorFormat.NHWC.upper()
+        self.tensor_format = TensorFormat.NHWC
         self.backend = "cpu"
         self.batch_size = 8
-        self.model_name: str = None  # type: ignore
+        self.model_name: str = ""
         self.dataset_name = "synthetic"
         self.synthetic_train_samples = 128
         self.synthetic_test_samples = 128

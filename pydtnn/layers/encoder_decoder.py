@@ -38,14 +38,16 @@ class EncoderDecoder[T: Array](AbstractBlockLayer[T]):  # noqa: D101 (generics n
         self.decoder = [
             None,
         ]
-        self.paths = [self.encoder + self.decoder]  # type: ignore
+        self.paths = [
+            self.encoder + self.decoder  # pyright: ignore[reportAttributeAccessIssue]
+        ]
 
     def _model_init(self, prev_shape: ArrayShape, x: T) -> None:
         """Initializes model parameters and shape based on input dimensions."""
         super()._model_init(prev_shape, x)
 
         if len(self.shape) == 0:
-            self.shape = prev_shape[0]  # type: ignore (It's the right type)
+            self.shape = prev_shape[0]  # pyright: ignore[reportAttributeAccessIssue]
 
     def _show_props(self) -> dict:
         """Returns a dictionary containing the layer properties for inspection."""

@@ -1,12 +1,10 @@
-"""
-Utility module for element-wise division with zero-handling logic.
-"""
+"""Utility module for element-wise division with zero-handling logic."""
 
 from pydtnn.backends.cython.utils.base import _npDT, _npDT_1Dims
 
-def div_arrays_set_if_zero[T: _npDT](
+def div_arrays_set_if_zero[T: _npDT](  # noqa: D103,E302
     dividend: _npDT_1Dims[T], divider: _npDT_1Dims[T], default_value: T
-):  # type: ignore
+) -> None:
     """
     Performs element-wise division of dividend by divider, replacing results with a default value where the divider is zero.
 

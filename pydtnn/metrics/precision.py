@@ -20,7 +20,7 @@ class Precision[T: Array](Metric[T]):  # noqa: D101 (generics not detected)
     """
 
     order = BinaryConfusionMatrix.order + 1
-    conf_matrix_metric: BinaryConfusionMatrix[T] = None  # type: ignore
+    conf_matrix_metric: BinaryConfusionMatrix[T] = None  # pyright: ignore[reportAssignmentType]
     format = "prec: %.4f"
 
     def _model_init(self) -> None:

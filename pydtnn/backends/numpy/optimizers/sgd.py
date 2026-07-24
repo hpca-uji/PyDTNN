@@ -22,7 +22,7 @@ class SGDNumpy(SGD[np.ndarray], OptimizerNumpy):
 
     def _model_init(self, layers: list[LayerNumpy]) -> None:
         """Initializes optimizer state and memory buffers for layers."""
-        super()._model_init(layers)  # type: ignore (it's the right type)
+        super()._model_init(layers)  # pyright: ignore[reportArgumentType]
 
         temp_memory_size = []
 
@@ -31,7 +31,7 @@ class SGDNumpy(SGD[np.ndarray], OptimizerNumpy):
                 continue
 
             list_grad_vars = list(layer.grad_vars.keys())
-            self.context[layer.id] = dict[str, np.ndarray]()  # type: ignore
+            self.context[layer.id] = {}
             temp_memory_size_layer = 0
 
             for w_ in list_grad_vars:
@@ -46,8 +46,8 @@ class SGDNumpy(SGD[np.ndarray], OptimizerNumpy):
                 # w.nbytes ==> temp_w.nbytes + temp_v.nbytes = 2 * w.nbytes
 
                 self.context[layer.id]["velocity_%s" % w_] = velocity
-                self.context[layer.id]["temp_w_%s" % w_] = temp_w  # type: ignore (it's the right type)
-                self.context[layer.id]["temp_v_%s" % w_] = temp_v  # type: ignore (it's the right type)
+                self.context[layer.id]["temp_w_%s" % w_] = temp_w  # pyright: ignore[reportArgumentType]
+                self.context[layer.id]["temp_v_%s" % w_] = temp_v  # pyright: ignore[reportArgumentType]
 
             temp_memory_size.append(temp_memory_size_layer)
 
@@ -70,7 +70,7 @@ class SGDNumpy(SGD[np.ndarray], OptimizerNumpy):
                     if w_ is None:
                         continue
                     # if w_ is not None:
-                    w_shape = self.context[layer_id]["velocity_%s" % w_].shape  # type: ignore (it is correct)
+                    w_shape = self.context[layer_id]["velocity_%s" % w_].shape  # pyright: ignore[reportAttributeAccessIssue]
                     w_shape = self.context[layer_id][key] = self.model.memory.ndarray(
                         w_shape, dtype=self.model.dtype
                     )
@@ -82,9 +82,9 @@ class SGDNumpy(SGD[np.ndarray], OptimizerNumpy):
 
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
-            velocity: np.ndarray = self.context[layer.id]["velocity_%s" % w_]  # type: ignore
-            temp_w: np.ndarray = self.context[layer.id]["temp_w_%s" % w_]  # type: ignore
-            temp_v: np.ndarray = self.context[layer.id]["temp_v_%s" % w_]  # type: ignore
+            velocity: np.ndarray = self.context[layer.id]["velocity_%s" % w_]
+            temp_w: np.ndarray = self.context[layer.id]["temp_w_%s" % w_]
+            temp_v: np.ndarray = self.context[layer.id]["temp_v_%s" % w_]
             w: np.ndarray
             dw: np.ndarray
 

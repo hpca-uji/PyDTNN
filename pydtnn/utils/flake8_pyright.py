@@ -6,6 +6,7 @@ import itertools
 import json
 import os
 import re
+import weakref
 from argparse import Namespace
 from collections.abc import Generator, Iterable
 from pathlib import Path
@@ -13,6 +14,7 @@ from tempfile import mkstemp
 
 import pyright
 from flake8.discover_files import expand_paths
+from flake8.options.manager import OptionManager
 
 _re_pascal = re.compile("[a-z][A-Z]")
 
@@ -30,7 +32,7 @@ def run_pyright(filenames: Iterable[str] = []) -> dict[str, list[dict]]:
         ).stdout
     )
 
-    def key(diagnostic):
+    def key(diagnostic: dict) -> str:
         return diagnostic["file"]
 
     diagnostics: list[dict] = output["generalDiagnostics"]
@@ -38,6 +40,14 @@ def run_pyright(filenames: Iterable[str] = []) -> dict[str, list[dict]]:
     return {
         file: list(diagnostics) for file, diagnostics in itertools.groupby(diagnostics, key=key)
     }
+
+
+class SeverityLevel(enum.IntEnum):
+    """Pyright severity levels"""
+
+    INFORMATION = enum.auto()
+    WARNING = enum.auto()
+    ERROR = enum.auto()
 
 
 class DiagnosticRule(enum.IntEnum):
@@ -133,8 +143,21 @@ class PyrightChecker:
     version = "1.0.0"
 
     @classmethod
+    def add_options(cls, parser: OptionManager) -> None:
+        """Registers the custom command-line option for the metrics checks"""
+        parser.add_option(
+            "--min-severity-level",
+            type=str,
+            choices=[level._name_.lower() for level in SeverityLevel],
+            parse_from_config=True,
+            default=SeverityLevel.ERROR._name_.lower(),
+            help=("Minimum severity level to report"),
+        )
+
+    @classmethod
     def parse_options(cls, options: Namespace) -> None:
         """Parses and stores the maintainability threshold from options"""
+        cls.min_severity_level = SeverityLevel[options.min_severity_level.upper()]
         key = cls.name.upper()
 
         # diagnostics cached
@@ -145,6 +168,7 @@ class PyrightChecker:
         # compute diagnostics
         else:
             fd, path = mkstemp(cls.name)
+            weakref.finalize(cls, os.remove, path)
             os.environ[key] = path
 
             cls._diagnostics = run_pyright(
@@ -166,15 +190,31 @@ class PyrightChecker:
     def run(self) -> Generator[tuple[int, int, str, type]]:
         """Calculates the Maintainability Index and yields a violation if below threshold."""
         for diagnostic in self._diagnostics.get(self.filename, []):
+            severity_name = pascal_snake(diagnostic["severity"]).upper()
+            try:
+                severity = SeverityLevel[severity_name]
+            except KeyError:
+                severity = SeverityLevel.INFORMATION
+
+            if severity < self.min_severity_level:
+                continue
+
             rule_name = pascal_snake(diagnostic["rule"]).upper()
             try:
                 rule = DiagnosticRule[rule_name]
             except KeyError:
                 rule = DiagnosticRule.REPORT_GENERAL_TYPE_ISSUES
 
+            if "range" in diagnostic:
+                line = diagnostic["range"]["start"]["line"] + 1
+                column = diagnostic["range"]["start"]["character"]
+            else:
+                line = 1
+                column = 0
+
             yield (
-                diagnostic["range"]["start"]["line"] + 1,
-                diagnostic["range"]["start"]["character"],
+                line,
+                column,
                 f"T{rule:03} {diagnostic['message'].splitlines()[0]}",
                 type(self),
             )

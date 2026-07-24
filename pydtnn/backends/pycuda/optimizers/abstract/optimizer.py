@@ -4,8 +4,8 @@ import logging
 from typing import Any
 
 import numpy as np
-from pycuda.driver import Function  # type: ignore
-from pycuda.elementwise import ElementwiseKernel  # type: ignore
+from pycuda.driver import Function
+from pycuda.elementwise import ElementwiseKernel
 
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.backends.pycuda.abstract.base import BasePycuda
@@ -23,8 +23,8 @@ class OptimizerPycuda(Optimizer[TensorArray], BasePycuda):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initializes the PyCUDA optimizer with update kernels and GPU-direct functions."""
         super().__init__(*args, **kwargs)
-        self.update_kernel: ElementwiseKernel = None  # type: ignore (It will be intialized later)
-        self.update_gpudirect: Function = None  # type: ignore (It will be intialized later)
+        self.update_kernel: ElementwiseKernel = None
+        self.update_gpudirect: Function = None
 
     def get_batch_size(self, w: TensorArray) -> np.int32:
         """

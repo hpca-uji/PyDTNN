@@ -12,8 +12,6 @@ from typing import Any
 
 import numpy as np
 
-from pydtnn.utils.constants import ArrayShape  # noqa: F401
-
 __all__ = ("SparseFlatArray",)
 
 
@@ -60,11 +58,11 @@ class SparseFlatArray[S: tuple, I: np.dtype, V: np.dtype]:  # noqa: D101 (generi
     def from_dense[DS: tuple, DI: np.dtype, DV: np.dtype](
         cls: type[SparseFlatArray[DS, DI, DV]],
         array: np.ndarray[DS, DV],
-        dtype: DI = np.dtype(np.int32)
+        dtype: DI = np.dtype(np.int32),
     ) -> SparseFlatArray[DS, DI, DV]:
         """Construct from dense"""
         shape = array.shape
-        indexes: FlatArray[DI] = np.arange(array.size, dtype=dtype)  # type: ignore
+        indexes: FlatArray[DI] = np.arange(array.size, dtype=dtype)  # pyright: ignore[reportAssignmentType]
         values = array.flatten()
         return cls(shape, indexes, values)
 
@@ -72,7 +70,7 @@ class SparseFlatArray[S: tuple, I: np.dtype, V: np.dtype]:  # noqa: D101 (generi
         """Convert to dense"""
         ary = np.zeros(self.size, dtype=self.values.dtype)
         ary[self.indexes] = self.values
-        return ary.reshape(self.shape)  # type: ignore
+        return ary.reshape(self.shape)  # pyright: ignore[reportReturnType]
 
     def __copy__(self) -> SparseFlatArray[S, I, V]:  # noqa: E741
         """Shallow copy (maintain backing arrays)"""
@@ -86,11 +84,13 @@ class SparseFlatArray[S: tuple, I: np.dtype, V: np.dtype]:  # noqa: D101 (generi
         ary.values = copy.deepcopy(self.values, memo)
         return ary
 
-    def __array__(self, dtype: np.dtype | None = None, *, copy: bool | None = None) -> np.ndarray[S, V]:
+    def __array__(
+        self, dtype: np.dtype | None = None, *, copy: bool | None = None
+    ) -> np.ndarray[S, V]:
         """Converts TensorArray to a NumPy array."""
         if copy is False:
             raise ValueError("Must copy array")
-        return np.asarray(self.to_dense(), dtype=dtype)  # type: ignore
+        return np.asarray(self.to_dense(), dtype=dtype)  # pyright: ignore[reportReturnType]
 
     def copy(self) -> SparseFlatArray[S, I, V]:  # noqa: E741
         """Copy (including backing arrays)"""
@@ -109,7 +109,7 @@ class SparseFlatArray[S: tuple, I: np.dtype, V: np.dtype]:  # noqa: D101 (generi
         values: FlatArray[V] = self.values[order]
 
         # unique
-        indexes, idx = np.unique(indexes, return_index=True)  # type: ignore
+        indexes, idx = np.unique(indexes, return_index=True)  # pyright: ignore[reportAssignmentType]
         values = values[idx]
 
         return self.__class__(self.shape, indexes, values)
@@ -122,7 +122,7 @@ class SparseFlatArray[S: tuple, I: np.dtype, V: np.dtype]:  # noqa: D101 (generi
             raise ValueError("Array must have the same shape")
 
         # union
-        indexes: FlatArray[I] = np.union1d(self.indexes, other.indexes)  # type: ignore
+        indexes: FlatArray[I] = np.union1d(self.indexes, other.indexes)  # pyright: ignore[reportAssignmentType]
         values: FlatArray[V] = np.zeros(indexes.size, dtype=self.values.dtype)
 
         # self

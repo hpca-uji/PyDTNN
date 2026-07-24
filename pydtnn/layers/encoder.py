@@ -51,4 +51,4 @@ class Encoder[T: Array](AbstractBlockLayer[T]):  # noqa: D101 (generics not dete
         self.d_k = d_k
         self.d_ff = d_ff
         self.dropout_rate = dropout_rate
-        self.y = self.dx = None  # type: ignore
+        self.y = self.dx = None  # pyright: ignore[reportAttributeAccessIssue]

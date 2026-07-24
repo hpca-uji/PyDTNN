@@ -22,9 +22,9 @@ from pydtnn.model import Model
 from pydtnn.utils import rand
 
 try:
-    import pycuda.gpuarray as gpuarray  # type: ignore
+    import pycuda.gpuarray as gpuarray
 except BaseException:
-    pass
+    gpuarray = None
 
 __all__ = ("main",)
 
@@ -123,6 +123,7 @@ def main() -> None:
 
         x = deepcopy(dataset)
         if KWARGS["use_cudnn"]:
+            assert gpuarray
             _dataset = TensorArray(
                 gpu_arr=gpuarray.zeros(shape=dataset.shape, dtype=KWARGS["dtype"]),
                 tensor_format=model.tensor_format,

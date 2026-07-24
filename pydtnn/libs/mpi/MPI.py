@@ -7,15 +7,15 @@ from pydtnn.libs.mpi import rc as _rc
 
 # Select implementation
 if _rc.proto:
-    from pympi import MPI as _module  # type: ignore # noqa: N811
+    from pympi import MPI as _module  # noqa: N811
 else:
-    from mpi4py import MPI as _module  # type: ignore # noqa: N811
+    from mpi4py import MPI as _module  # noqa: N811
 
 # Replace module
 _sys.modules[__name__] = _module
 
 if hasattr(_module, "__all__"):
-    __all__ = _module.__all__  # type: ignore
+    __all__ = _module.__all__  # pyright: ignore[reportAttributeAccessIssue,reportUnsupportedDunderAll]
 
 
 def __getattr__(key: _typing.Any) -> _typing.Any:

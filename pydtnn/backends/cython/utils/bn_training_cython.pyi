@@ -1,10 +1,8 @@
-"""
-Cython-accelerated batch normalization training utilities for PyDTNN.
-"""
+"""Cython-accelerated batch normalization training utilities for PyDTNN."""
 
 from pydtnn.backends.cython.utils.base import _npDT, _npDT_1Dims, _npDT_2Dims
 
-def bn_training_fwd_cython[T: _npDT](
+def bn_training_fwd_cython[T: _npDT](  # noqa: D103,E302
     x: _npDT_2Dims[T],
     y: _npDT_2Dims[T],
     xn: _npDT_2Dims[T],
@@ -37,7 +35,7 @@ def bn_training_fwd_cython[T: _npDT](
     """
     ...
 
-def bn_training_bwd_cython[T: _npDT](
+def bn_training_bwd_cython[T: _npDT](  # noqa: D103,E302
     dx: _npDT_2Dims[T],
     dy: _npDT_2Dims[T],
     xn: _npDT_2Dims[T],

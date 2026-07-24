@@ -96,7 +96,7 @@ class ConvWinograd:
             ctypes.c_uint(r),
             ctypes.c_uint(k),
             ctypes.c_uint(c),
-            ctypes.byref(_u),  # type: ignore
+            ctypes.byref(_u),  # pyright: ignore[reportArgumentType] (revise)
         )
         return np.array([False]), _u
 
@@ -161,8 +161,8 @@ class ConvWinograd:
             ctypes.c_uint(kw),
             ctypes.c_uint(vpadding),
             ctypes.c_uint(hpadding),
-            ctypes.byref(_v),  # type: ignore
-            ctypes.byref(_m),  # type: ignore
+            ctypes.byref(_v),  # pyright: ignore[reportArgumentType]
+            ctypes.byref(_m),  # pyright: ignore[reportArgumentType]
         )
         return _v, _m
 
@@ -429,7 +429,7 @@ class ConvWinograd:
             self.register_winograd_function_2x2_5x5()
             m, r = 2, 5
 
-        m  # type: ignore (fake m use)
+        m  # pyright: ignore[reportUnusedExpression] (fake use of m)
 
         if r not in self.alternatives:
             raise NotImplementedError(f"Winograd not implemented for kernel {kh}x{kw}")
@@ -1172,7 +1172,7 @@ def time_it_func(
     res = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype=x.dtype)
     im2row_nhwc_cython(
         x,
-        res,  # type: ignore
+        res,
         kh,
         kw,
         ho,
@@ -1248,7 +1248,7 @@ def time_it_im2col(
     res = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype=x.dtype)
     im2col_nchw_cython(
         x,
-        res,  # type: ignore
+        res,
         kh,
         kw,
         ho,
@@ -1324,7 +1324,7 @@ def time_it_im2col_4_dims(
     res = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype=x.dtype)
     im2col_nchw_cython(
         x,
-        res,  # type: ignore
+        res,
         kh,
         kw,
         ho,
@@ -1697,7 +1697,7 @@ def main() -> None:
                                                 )
                                                 @ w_c
                                                 + biases
-                                            )  # type: ignore  # FIXME: disabled?
+                                            )  # pyright: ignore[reportUnusedExpression]
                                             im2col_mm_result = im2col_mm_result.reshape(
                                                 -1, ho, wo, kk
                                             )

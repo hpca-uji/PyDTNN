@@ -3,8 +3,8 @@
 import logging
 
 import numpy as np
-from pycuda import gpuarray  # type: ignore
-from pycuda.elementwise import ElementwiseKernel  # type: ignore
+from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
+from pycuda.elementwise import ElementwiseKernel
 
 from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
 from pydtnn.backends.pycuda.optimizers.abstract.optimizer import OptimizerPycuda
@@ -58,11 +58,11 @@ class NadamPycuda(Nadam[TensorArray], OptimizerPycuda):
         }
         self.update_gpudirect = self._get_kernel(func_name_subfix="_gpudirect")
 
-    def _model_init(self, list_layers: list[LayerPycuda]) -> None:
+    def _model_init(self, layers: list[LayerPycuda]) -> None:
         """Initialize optimizer state for the given layers."""
-        super()._model_init(list_layers)  # type: ignore (The type is correct: LayerPycuda extends LayerBase)
+        super()._model_init(layers)  # pyright: ignore[reportArgumentType]
 
-        for layer in list_layers:
+        for layer in layers:
             self.context[layer.id] = dict[str, int | gpuarray.GPUArray]()
             self.context[layer.id]["it"] = 0
 
@@ -76,8 +76,8 @@ class NadamPycuda(Nadam[TensorArray], OptimizerPycuda):
                 )
 
                 self.memory_used += (
-                    self.context[layer.id]["m_%s" % w_].nbytes  # type: ignore (They are both "gpuarray" and not "int")
-                    + self.context[layer.id]["v_%s" % w_].nbytes  # type: ignore (They are both "gpuarray" and not "int")
+                    self.context[layer.id]["m_%s" % w_].nbytes  # pyright: ignore[reportAttributeAccessIssue]
+                    + self.context[layer.id]["v_%s" % w_].nbytes  # pyright: ignore[reportAttributeAccessIssue]
                 )
 
     def update(self, layer: LayerPycuda, update: bool = True, sync: bool = True) -> None:
@@ -85,8 +85,8 @@ class NadamPycuda(Nadam[TensorArray], OptimizerPycuda):
         if not layer.grad_vars or not update:
             return
 
-        self.context[layer.id]["it"] += 1  # type: ignore (self.context[layer]["it"] is always an integer)
-        it: int = self.context[layer.id]["it"]  # type: ignore (self.context[layer]["it"] is always an integer)
+        self.context[layer.id]["it"] += 1
+        it: int = self.context[layer.id]["it"]  # pyright: ignore[reportAssignmentType]
 
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)

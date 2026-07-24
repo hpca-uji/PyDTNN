@@ -87,7 +87,9 @@ class Augment(Init):
         self._augment_classes = set()  # set([2, 3, 4])
 
         if self.model.augment_crop:
-            crop, size = self._calculate_crop(self.input_shape[1:])  # type: ignore (It's the right shape)
+            size = self.input_shape[1:]
+            assert len(size) == 2
+            crop, size = self._calculate_crop(size)
             self.input_shape = (self.input_shape[0], *size)
             augments_training.append(self._x_augment_adaptor(self._do_augment_crop))
             augments_always.append(self._x_augment_adaptor(self._do_augment_crop))
@@ -683,7 +685,7 @@ class Augment(Init):
     @staticmethod
     def _perspective_coeffs(
         src_points: np.ndarray | list, dst_points: np.ndarray | list
-    ) -> np.ndarray[tuple[int]]:
+    ) -> list[int]:
         """
         Calculate perspective transformation coefficients.
 
@@ -706,7 +708,7 @@ class Augment(Init):
         matrix_b = np.array(dst_points).reshape(8)
 
         res = np.dot(np.linalg.inv(matrix_a.T * matrix_a) * matrix_a.T, matrix_b)
-        return np.array(res).reshape(8)
+        return np.array(res).reshape(8).tolist()
 
     def _image_perspective(self, image: Image.Image, factor: float) -> Image.Image:
         """
@@ -778,7 +780,7 @@ class Augment(Init):
         transomed_img = image.transform(
             (width, height),
             Image.Transform.PERSPECTIVE,
-            coeffs,  # type: ignore (It's the right type)
+            coeffs,
             Image.Resampling.BICUBIC,
         )
         return transomed_img

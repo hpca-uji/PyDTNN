@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 if TYPE_CHECKING:
-    from pympi.MPI import Request  # type: ignore
+    from pympi.MPI import Request
 
     from pydtnn.activations.abstract.activation import Activation
     from pydtnn.model import Model
@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 
 
 try:
-    from pycuda.driver import Stream  # type: ignore
+    from pycuda.driver import Stream
 except Exception:
     pass
 
@@ -45,26 +45,25 @@ class Layerable[T: Array](Base[T]):  # noqa: D101 (generics not detected)
         Args:
             shape: The expected output shape of the layer. Defaults to an empty tuple.
         """
+        # The following attributes will be initialized later
         super().__init__()
         self.nparams: int = 0
         self.shape: ArrayShape = shape
-        self.x: T = None  # type: ignore
-        self.y: T = None  # type: ignore
-        self.weights: T = None  # type: ignore
-        self.biases: T = None  # type: ignore
+        self.x: T = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.y: T = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.weights: T = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.biases: T = None  # pyright: ignore[reportAttributeAccessIssue]
         self.act: type[Activation] | None = None
         self.grad_vars: dict[str, str] = {}
-        self.fwd_time: np.ndarray = None  # type: ignore
-        self.bwd_time: np.ndarray = None  # type: ignore
+        self.fwd_time: np.ndarray = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.bwd_time: np.ndarray = None  # pyright: ignore[reportAttributeAccessIssue]
         self.paths: list[list[Layerable[T]]] = []
         self.reqs_allred: dict[str, Request] = {}
         self.parent_layer: Layerable | None = None
-
-        # The following attributes will be initialized later
-        self.id: int = None  # type: ignore
-        self.model: Model = None  # type: ignore
-        self.prev_shape: ArrayShape = None  # type: ignore
-        self.stream_2: Stream = None  # type: ignore
+        self.id: int = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.model: Model = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.prev_shape: ArrayShape = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.stream_2: Stream = None
         self.is_block_layer: bool = False
 
     @property
@@ -161,7 +160,7 @@ class Layerable[T: Array](Base[T]):  # noqa: D101 (generics not detected)
         super()._model_init()
         self.id = next(self.model.layer_id_generator)
         self.prev_shape = prev_shape
-        self.x = x  # type: ignore (If it's used, it will be type "T"; if not, it will never be accesed)
+        self.x = x  # pyright: ignore[reportAttributeAccessIssue]
         self.fwd_time = np.zeros((4,), dtype=np.float32)
         self.bwd_time = np.zeros((4,), dtype=np.float32)
 
@@ -258,7 +257,9 @@ class Layerable[T: Array](Base[T]):  # noqa: D101 (generics not detected)
             children += [layer for layer in path]
         return children
 
-    def update_weights(self, optimizer: Optimizer[T], update: bool = True, sync: bool = True) -> None:
+    def update_weights(
+        self, optimizer: Optimizer[T], update: bool = True, sync: bool = True
+    ) -> None:
         """
         Update layer weights using the provided optimizer.
 

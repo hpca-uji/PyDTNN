@@ -23,7 +23,7 @@ class CategoricalMAENumpy(CategoricalMAE[np.ndarray], MetricNumpy):
         """Initializes model parameters and calculates memory requirements."""
         super()._model_init()
 
-        self.error: np.ndarray = None  # type: ignore (It will be initialized later)
+        self.error: np.ndarray = None
         self.tmp_memory_used += int(math.prod(self.shape)) * self.model.dtype.itemsize
         self.memory_used += self.tmp_memory_used
 

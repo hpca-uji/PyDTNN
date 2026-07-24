@@ -217,7 +217,7 @@ class BestOf:
         assert rounds >= 1, "Rounds must be greater or equal to one."
         assert pruning_speedup > 1, "Pruning speedup must be greater than one."
         try:
-            stages = len(alternatives[0][1])  # type: ignore
+            stages = len(alternatives[0][1])  # pyright: ignore[reportArgumentType]
         except TypeError:
             stages = 1
         if stages == 1:
@@ -249,8 +249,8 @@ class BestOf:
         self.pruning_speedup = pruning_speedup
         self.best_idx = defaultdict(lambda: -1)
         self.best_name = defaultdict(lambda: "None")
-        self.best_method: dict[Any, Callable] = defaultdict(lambda: None)  # type: ignore
-        self.best_pipeline: dict[Any, list[Callable]] = defaultdict(lambda: None)  # type: ignore
+        self.best_method: dict[Any, Callable] = defaultdict(lambda: None)  # pyright: ignore[reportAttributeAccessIssue]
+        self.best_pipeline: dict[Any, list[Callable]] = defaultdict(lambda: None)  # pyright: ignore[reportAttributeAccessIssue]
         self.total_alternatives = len(self.alternatives)
         # Protected members
         self._current_round = defaultdict(lambda: 0)
@@ -326,7 +326,7 @@ class BestOf:
         """
 
         if self.stages == 1:
-            return self.alternatives[0][1](*_args, **kwargs)  # type: ignore
+            return self.alternatives[0][1](*_args, **kwargs)  # pyright: ignore[reportCallIssue]
         else:
             # Get stage and remove stage argument from args
             args: list = list(
@@ -337,7 +337,7 @@ class BestOf:
                 f"The stage number ({stage}) must be less than the specified number of stages"
                 f" ({self.stages})."
             )
-            return self.alternatives[0][1][stage](*args, **kwargs)  # type: ignore
+            return self.alternatives[0][1][stage](*args, **kwargs)  # pyright: ignore[reportIndexIssue]
 
     def __call_best__(self, *_args: Any, **kwargs: Any) -> Any:  # noqa: C901 (cleanup)
         """The best of the provided alternatives is called.
@@ -409,10 +409,10 @@ class BestOf:
         if self.stages == 1:
             alternative = self.alternatives[current_alternative][1]
         else:
-            alternative = self.alternatives[current_alternative][1][stage]  # type: ignore
+            alternative = self.alternatives[current_alternative][1][stage]  # pyright: ignore[reportIndexIssue]
 
         tic = timer()
-        output = alternative(*args, **kwargs)  # type: ignore
+        output = alternative(*args, **kwargs)  # pyright: ignore[reportCallIssue]
         toc = timer()
         elapsed_time = toc - tic
 
@@ -507,11 +507,11 @@ class BestOf:
                         min_time
                     )  # first of the minimums
                     if self.stages == 1:
-                        self.best_name[problem_size], self.best_method[problem_size] = (  # type: ignore
+                        self.best_name[problem_size], self.best_method[problem_size] = (  # pyright: ignore[reportArgumentType]
                             self.alternatives[self.best_idx[problem_size]]
                         )
                     else:
-                        self.best_name[problem_size], self.best_pipeline[problem_size] = (  # type: ignore
+                        self.best_name[problem_size], self.best_pipeline[problem_size] = (  # pyright: ignore[reportArgumentType] # noqa: E501
                             self.alternatives[self.best_idx[problem_size]]
                         )
 
