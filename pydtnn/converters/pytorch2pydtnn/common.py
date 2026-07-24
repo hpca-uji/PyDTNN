@@ -18,6 +18,7 @@ from pydtnn.converters.pytorch2pydtnn.layers.linear import Linear
 from pydtnn.converters.pytorch2pydtnn.layers.normalization import BatchNorm2d
 from pydtnn.converters.pytorch2pydtnn.layers.pooling import AdaptiveAvgPool2d, AvgPool2d, MaxPool2d
 from pydtnn.converters.pytorch2pydtnn.layers.utility import Flatten
+from pydtnn.layers.input import Input
 from pydtnn.utils.tensor import format_transpose
 
 __all__ = (
@@ -153,6 +154,11 @@ def switch_pytorch_pydtnn(name: str) -> Callable[[dict[str, Any]], Layerable]:
             return Tanh
         case "Flatten":
             return Flatten
+        case "Identity":
+            def Identity(_args):
+                logger.warning("Use this function only for debugging in cpu.")
+                return Input()
+            return Identity
 
         # Not actual PyTorch layers (are torch functions):
         case "Add":
