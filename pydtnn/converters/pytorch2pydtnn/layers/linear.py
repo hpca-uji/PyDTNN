@@ -32,7 +32,7 @@ def Linear(args: dict[str, Any]) -> FC:
 
     # PyTorch attributes:
     # Not used: in_features (It's not used due the way the layer's initialization works in PyDTNN)
-    #pytorch_bias = "bias"
+    # pytorch_bias = "bias"
     pytorch_out_features = "out_features"
     torch_dict_keys = [
         # pytorch_bias,
@@ -44,7 +44,7 @@ def Linear(args: dict[str, Any]) -> FC:
     pydtnn_bias = "use_bias"
     pydtnn_shape = "shape"
     pydtnn_dict_keys = [
-        #pydtnn_bias,
+        # pydtnn_bias,
         pydtnn_shape]
 
     breakpoint()

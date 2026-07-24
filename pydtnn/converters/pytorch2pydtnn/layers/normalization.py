@@ -40,7 +40,7 @@ def BatchNorm2d(args: dict[str, Any]) -> BatchNormalization:
     # PyDTNN attributes:
     pydtnn_momentum = "momentum"
     pydtnn_epsilon = "epsilon"
-    #pydtnn_use_bias = "use_bias"
+    # pydtnn_use_bias = "use_bias"
 
     pydtnn_dict_keys = [pydtnn_momentum, pydtnn_epsilon]
 
@@ -50,19 +50,18 @@ def BatchNorm2d(args: dict[str, Any]) -> BatchNormalization:
         pydtnn_dict_keys=pydtnn_dict_keys,
     )
 
-    #layer_args[pydtnn_use_bias] = not (args[cm.ARGUMENTS]["_parameters"]["bias"] is None)
-
+    vars_initiaizers_transpose: dict[str, tuple[str, None | tuple[str, str]]]
+    vars_initiaizers_transpose = {"running_mean": ("running_mean_initializer", None),
+                                  "running_var": ("running_var_initializer", None),
+                                  }
     initializers = cm.set_initializer_with_pytorch_values(args[cm.ARGUMENTS]["_buffers"],
-                                                          vars_initiaizers_transpose={
-                                                            "running_mean": ("running_mean_initializer", None),
-                                                            "running_var": ("running_var_initializer", None),
-                                                          })
+                                                          vars_initiaizers_transpose=vars_initiaizers_transpose
+                                                          )
     layer_args.update(initializers)
+
+    vars_initiaizers_transpose = {"bias": ("biases_initializer", None), "weight": ("weights_initializer", None)}
     initializers = cm.set_initializer_with_pytorch_values(args[cm.ARGUMENTS]["_parameters"],
-                                                          vars_initiaizers_transpose={
-                                                            "bias": ("biases_initializer", None),
-                                                            "weight": ("weights_initializer", None),
-                                                          })
+                                                          vars_initiaizers_transpose=vars_initiaizers_transpose)
     layer_args.update(initializers)
 
     return BatchNormalization(**layer_args)

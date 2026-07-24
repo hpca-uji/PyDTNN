@@ -353,12 +353,13 @@ def set_initializer_with_pytorch_values(
     },
 ) -> dict[str, Any]:
     """Function to set the value returned by the initializers of the layer's weight, bias, etc.
-    
+
     Args:
         state_dict (dict[str, Any]): A dictionary with the values.
-        vars_and_initiaizers (dict[str, tuple[str, None | tuple[str, str]]]): Key (str): the name of the variable. 
-                                               Value[0] (str): The name of the initalizer's fuction.
-                                               Value[1] (None | tuple[str, str]): None if it's not necessary to transpose, tuple([origin shape's format], [new shape's format]) if it's necessary to transpose
+        vars_and_initiaizers (dict[str, tuple[str, None | tuple[str, str]]]): Key (str): the name of the variable.
+            Value[0] (str): The name of the initalizer's fuction.
+            Value[1] (None | tuple[str, str]): None if it's not necessary to transpose,
+                                               tuple([origin shape], [new shape]) if it's necessary to transpose.
 
     Returns:
         A dict[str, Any] where the Key is the initializer's fuction name, and the value is the initializer's function.

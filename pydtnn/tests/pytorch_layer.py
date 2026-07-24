@@ -88,8 +88,6 @@ AVG_POOL_SHAPE = (3, 3)
 AVG_POOL_PADDING = 0
 AVG_POOL_STRIDE = 1
 
-BATCH_NORMALIZATION_GAMMA = 1
-BATCH_NORMALIZATION_BETA = 0
 BATCH_NORMALIZATION_EPSILON = 1e-5
 BATCH_NORMALIZATION_MOMENTUM_PYDTNN = 0.9
 BATCH_NORMALIZATION_MOMENTUM_TORCH = BATCH_NORMALIZATION_MOMENTUM_PYDTNN
@@ -640,8 +638,6 @@ class LayerPyTorchTestCase(TestCase):
         """Tests BatchNormalization layer."""
         pydtnn_layers: list[Layerable] = [
             BatchNormalization(
-                gamma=BATCH_NORMALIZATION_GAMMA,
-                beta=BATCH_NORMALIZATION_BETA,
                 epsilon=BATCH_NORMALIZATION_EPSILON,
                 momentum=BATCH_NORMALIZATION_MOMENTUM_PYDTNN,
             )
@@ -774,8 +770,6 @@ class LayerPyTorchTestCase(TestCase):
                         dilation=CONV2D_DILATION,
                     ),
                     BatchNormalization(
-                        gamma=BATCH_NORMALIZATION_GAMMA,
-                        beta=BATCH_NORMALIZATION_BETA,
                         epsilon=BATCH_NORMALIZATION_EPSILON,
                         momentum=BATCH_NORMALIZATION_MOMENTUM_PYDTNN,
                     ),
@@ -819,8 +813,6 @@ class LayerPyTorchTestCase(TestCase):
                         dilation=CONV2D_DILATION,
                     ),
                     BatchNormalization(
-                        gamma=BATCH_NORMALIZATION_GAMMA,
-                        beta=BATCH_NORMALIZATION_BETA,
                         epsilon=BATCH_NORMALIZATION_EPSILON,
                         momentum=BATCH_NORMALIZATION_MOMENTUM_PYDTNN,
                     ),
