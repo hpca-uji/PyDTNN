@@ -32,22 +32,31 @@ def Linear(args: dict[str, Any]) -> FC:
 
     # PyTorch attributes:
     # Not used: in_features (It's not used due the way the layer's initialization works in PyDTNN)
-    pytorch_bias = "bias"
+    #pytorch_bias = "bias"
     pytorch_out_features = "out_features"
-    torch_dict_keys = [pytorch_bias, pytorch_out_features]
+    torch_dict_keys = [
+        # pytorch_bias,
+        pytorch_out_features]
 
     # PyDTNN attributes:
     # Not used: activation
     # Used, but in a different place: weights_initializer, biases_initializer
     pydtnn_bias = "use_bias"
     pydtnn_shape = "shape"
-    pydtnn_dict_keys = [pydtnn_bias, pydtnn_shape]
+    pydtnn_dict_keys = [
+        #pydtnn_bias,
+        pydtnn_shape]
+
+    breakpoint()
 
     layer_args = cm.prepare_pydtnn_arguments(
         arguments=args[cm.ARGUMENTS],
         torch_dict_keys=torch_dict_keys,
         pydtnn_dict_keys=pydtnn_dict_keys,
     )
+    layer_args[pydtnn_bias] = args[cm.ARGUMENTS]["_parameters"]["bias"] is not None
+
+    breakpoint()
 
     initializers = cm.set_initializer_with_pytorch_values(
         args[cm.ARGUMENTS]["_parameters"], vars_initiaizers_transpose={

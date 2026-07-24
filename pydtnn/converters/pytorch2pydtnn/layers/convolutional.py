@@ -34,7 +34,7 @@ def Conv2d(args: dict[str, Any]) -> Conv2D:
     pytorch_padding = "padding"  # INT or Tuple[INT, INT]
     pytorch_dilation = "dilation"  # INT
     pytorch_groups = "groups"  # INT
-    pytorch_bias = "bias"  # BOOL
+    # pytorch_bias = "bias"  # BOOL
     pytorch_ouput_channels = "out_channels"
     # PYTORCH_PADDING_MODE = "padding_mode" # STRING. Values: {"zeros",
     # "reflect", "replicate", "circular"} | In PyDTNN "zeros" is the only
@@ -45,7 +45,7 @@ def Conv2d(args: dict[str, Any]) -> Conv2D:
         pytorch_padding,
         pytorch_dilation,
         pytorch_groups,
-        pytorch_bias,
+        # pytorch_bias,
         pytorch_ouput_channels,
     ]
 
@@ -62,7 +62,7 @@ def Conv2d(args: dict[str, Any]) -> Conv2D:
         pydtnn_padding,
         pydtnn_dilation,
         pydtnn_nfilters,
-        pydtnn_use_bias,
+        # pydtnn_use_bias,
         pydtnn_nfilters,
     ]
     # Not used: "activation" and "grouping"
@@ -73,6 +73,7 @@ def Conv2d(args: dict[str, Any]) -> Conv2D:
         torch_dict_keys=torch_dict_keys,
         pydtnn_dict_keys=pydtnn_dict_keys,
     )
+    layer_args[pydtnn_use_bias] = args[cm.ARGUMENTS]["_parameters"]["bias"] is not None
 
     initializers = cm.set_initializer_with_pytorch_values(args[cm.ARGUMENTS]["_parameters"],
                                                           vars_initiaizers_transpose={
