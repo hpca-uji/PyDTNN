@@ -8,7 +8,6 @@ from pydtnn.backends.numpy.layers.abstract.layer import LayerNumpy
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.libs import numpy as np
 from pydtnn.model import Model
-from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, OpsEventEnum
 from pydtnn.utils.constants import ArrayShape, Parameters
 from pydtnn.utils.tensor import TensorFormat, format_transpose
 
@@ -52,24 +51,14 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
 
         self._xn = np.zeros(shape=vars_shape, dtype=self.model.dtype)
 
-        self.gamma = np.full(shape_, self.gamma_init_val, dtype=self.model.dtype)
-        self.beta = np.full(shape_, self.beta_init_val, dtype=self.model.dtype)
-        self.running_mean = np.asarray(
-            self.running_mean_initializer(shape_, self.model.dtype), order="C"
-        )
-        self.running_var = np.asarray(
-            self.running_var_initializer(shape_, self.model.dtype), order="C"
-        )
+        self.weights = np.asarray(self.weights_initializer(shape_, self.model.dtype), order="C")
+        self.biases = np.asarray(self.biases_initializer(shape_, self.model.dtype), order="C")
+        self.running_mean = np.asarray(self.running_mean_initializer(shape_, self.model.dtype), order="C")
+        self.running_var = np.asarray(self.running_var_initializer(shape_, self.model.dtype), order="C")
 
         self.nparams = (
-            self.gamma.size + self.beta.size + self.running_mean.size + self.running_var.size
+            self.weights.size + self.biases.size + self.running_mean.size + self.running_var.size
         )
-
-        if self.use_bias:
-            self.biases = np.asarray(
-                self.biases_initializer(shape_, self.model.dtype), order="C"
-            )
-            self.nparams += self.biases.size
 
         # NOTE: These attributes only store data, their value before the operation
         # doesn't matter; they're initalized due avoid warnings in
@@ -92,14 +81,10 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
 
         # self.dx: np.ndarray = np.zeros(shape=vars_shape, dtype=self.model.dtype)
         # self.real_memory_size += self.dx.nbytes
-        self.dgamma: np.ndarray = np.zeros(shape=shape_, dtype=self.model.dtype)
-        self.memory_used += self.dgamma.nbytes
-        self.dbeta: np.ndarray = np.zeros(shape=shape_, dtype=self.model.dtype)
-        self.memory_used += self.dbeta.nbytes
-
-        if self.use_bias:
-            self.db: np.ndarray = np.zeros(shape=shape_, dtype=self.model.dtype)
-            self.memory_used += self.db.size
+        self.dw: np.ndarray = np.zeros(shape=shape_, dtype=self.model.dtype)
+        self.memory_used += self.dw.nbytes
+        self.db: np.ndarray = np.zeros(shape=shape_, dtype=self.model.dtype)
+        self.memory_used += self.db.nbytes
 
         self._mean_shape = (self.ci,)
         self._var_shape = (self.ci,)
@@ -136,8 +121,8 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
         np.sqrt(self.std, out=self.std, dtype=self.model.dtype)
 
         np.divide(self.xn, self.std, out=self.xn, dtype=self.model.dtype)
-        np.multiply(self.gamma, self.xn, out=y, dtype=self.model.dtype)
-        np.add(y, self.beta, out=y, dtype=self.model.dtype)
+        np.multiply(self.weights, self.xn, out=y, dtype=self.model.dtype)
+        np.add(y, self.biases, out=y, dtype=self.model.dtype)
 
         self.std = np.asarray(self.std, dtype=self.model.dtype, order="C")
         self.xn = np.asarray(self.xn, dtype=self.model.dtype, order="C")
@@ -147,11 +132,11 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
         n = dy.shape[0]
         # dx = (self.gamma / (self.std * n)) * (n * dy - self.xn * self.dgamma - self.dbeta)
         np.multiply(self.std, n, out=dx)
-        np.divide(self.gamma, dx, out=dx)
+        np.divide(self.weights, dx, out=dx)
         np.multiply(n, dy, out=dy)
-        np.multiply(self.xn, self.dgamma, out=self.xn)
+        np.multiply(self.xn, self.dw, out=self.xn)
         np.subtract(dy, self.xn, out=dy)
-        np.subtract(dy, self.dbeta, out=dy)
+        np.subtract(dy, self.db, out=dy)
         np.multiply(dx, dy, out=dx)
 
     def forward(self, x: np.ndarray) -> np.ndarray:
@@ -201,15 +186,6 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
         # bn_training_fwd_cython(x, y, self.xn, self.std, self.gamma, self.beta, _mean, _var, self.epsilon)
         self._training_fwd(x, _mean, _var, y)
 
-        if self.use_bias:
-            self.model.tracer.emit_event(
-                PYDTNN_OPS_EVENT,
-                self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_SUM_BIASES,
-            )
-            np.add(y, self.biases, out=y, dtype=self.model.dtype)
-
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-
         if self.spatial:
             y = y.reshape((n, self.hi, self.wi, self.ci))
             y = format_transpose(y, TensorFormat.NHWC, self.model.tensor_format)
@@ -229,23 +205,16 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
         else:
             num_elems = n
 
-        # Biases gradient
-        if self.use_bias:
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
-                self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.BACKWARD_SUM_BIASES)
-            np.sum(dy, axis=0, out=self.db)
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-
         dx: np.ndarray = np.asarray(self.y_dx[:num_elems, :], dtype=self.model.dtype, order="C")
         # dx.fill(0)
         dy_xn: np.ndarray = np.asarray(self.dy_xn[:num_elems, :], dtype=self.model.dtype, order="C")
 
         np.multiply(dy, self.xn, out=dy_xn, dtype=self.model.dtype)
-        np.sum(dy_xn, axis=0, out=self.dgamma, dtype=self.model.dtype)
-        np.sum(dy, axis=0, out=self.dbeta, dtype=self.model.dtype)
+        np.sum(dy_xn, axis=0, out=self.dw, dtype=self.model.dtype)
+        np.sum(dy, axis=0, out=self.db, dtype=self.model.dtype)
 
-        self.dgamma = np.asarray(self.dgamma, dtype=self.model.dtype, order="C")
-        self.dbeta = np.asarray(self.dbeta, dtype=self.model.dtype, order="C")
+        self.dw = np.asarray(self.dw, dtype=self.model.dtype, order="C")
+        self.db = np.asarray(self.db, dtype=self.model.dtype, order="C")
 
         self._training_bwd(dx, dy)
 

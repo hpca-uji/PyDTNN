@@ -19,34 +19,29 @@ class BatchNormalization[T: Array](Layer[T]):  # noqa: D101 (generics not detect
 
     def __init__(
         self,
-        beta: float = 0.0,
-        gamma: float = 1.0,
         momentum: float = 0.9,
         epsilon: float = 1e-5,
         running_mean_initializer: Callable = zeros,
         running_var_initializer: Callable = ones,
+        weights_initializer: Callable = ones,
         biases_initializer: Callable = zeros,
         sync_stats: bool = False,
-        use_bias: bool = True
     ) -> None:
         """
         Initializes the BatchNormalization layer.
 
         Args:
-            beta: Initial value for the shift parameter.
-            gamma: Initial value for the scale parameter.
-            momentum: Momentum for the moving average of mean and variance.
-            epsilon: Small constant for numerical stability.
-            running_mean_initializer: Initializer function for the running mean.
-            running_var_initializer: Initializer function for the running variance.
-            sync_stats: Whether to synchronize statistics across devices.
+            momentum (float): Momentum for the moving average of mean and variance.
+            epsilon (float): Small constant for numerical stability.
+            running_mean_initializer (Callable): Initializer function for the running mean.
+            running_var_initializer (Callable): Initializer function for the running variance.
+            weights_initializer (Callable): Initializer function for the weights.
+            biases_initializer (Callable): Initializer function for the biases.
+            sync_stats (bool): Whether to synchronize statistics across devices.
         """
         super().__init__()
-        self.gamma_init_val = gamma
-        self.beta_init_val = beta
         self.momentum = momentum
         self.epsilon = epsilon
-        self.use_bias = use_bias
         self.running_mean_initializer: Callable[[ArrayShape, np.dtype], np.ndarray] = (
             running_mean_initializer
         )
@@ -56,22 +51,23 @@ class BatchNormalization[T: Array](Layer[T]):  # noqa: D101 (generics not detect
         self.biases_initializer: Callable[[ArrayShape, np.dtype], np.ndarray] = (
             biases_initializer
         )
-        self.grad_vars = {Parameters.BETA: Parameters.DBETA, Parameters.GAMMA: Parameters.DGAMMA}
-        if self.use_bias:
-            self.grad_vars[Parameters.BIASES] = Parameters.DB
+        self.weights_initializer: Callable[[ArrayShape, np.dtype], np.ndarray] = (
+            weights_initializer
+        )
+        self.grad_vars = {Parameters.WEIGHTS: Parameters.DW, Parameters.BIASES: Parameters.DB}
         self.sync_stats = sync_stats
         # The following attributes will be initialized later
         self.co = self.ci = self.hi = self.wi = 0
         self.spatial: bool = None  # type: ignore
-        self.gamma: T = None  # type: ignore
-        self.beta: T = None  # type: ignore
+        self.weights: T = None  # type: ignore
+        self.biases: T = None  # type: ignore
         self.running_mean: T = None  # type: ignore
         self.running_var: T = None  # type: ignore
         self.std: np.ndarray = None  # type: ignore
         self.xn: np.ndarray = None  # type: ignore
-        self.dgamma: T = None  # type: ignore
-        self.dbeta: T = None  # type: ignore
+        self.dw: T = None  # type: ignore
         self.db: T = None  # type: ignore
+        self.borrar: T = None  # type: ignore
 
     def export(self) -> dict[str, Any]:
         """
@@ -85,6 +81,7 @@ class BatchNormalization[T: Array](Layer[T]):  # noqa: D101 (generics not detect
         data[Parameters.RUNNING_MEAN] = self._export_prop(Parameters.RUNNING_MEAN)
         data[Parameters.RUNNING_VAR] = self._export_prop(Parameters.RUNNING_VAR)
         data[Parameters.BIASES] = self._export_prop(Parameters.BIASES)
+        data[Parameters.WEIGHTS] = self._export_prop(Parameters.WEIGHTS)
 
         return data
 
@@ -99,6 +96,7 @@ class BatchNormalization[T: Array](Layer[T]):  # noqa: D101 (generics not detect
         self._import_prop(Parameters.RUNNING_MEAN, data[Parameters.RUNNING_MEAN])
         self._import_prop(Parameters.RUNNING_VAR, data[Parameters.RUNNING_VAR])
         self._import_prop(Parameters.BIASES, data[Parameters.BIASES])
+        self._import_prop(Parameters.WEIGHTS, data[Parameters.WEIGHTS])
 
         return super().import_(data)
 

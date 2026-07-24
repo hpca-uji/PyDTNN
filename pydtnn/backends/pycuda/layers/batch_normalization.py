@@ -33,12 +33,12 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
         """Initializes the BatchNormalizationPycuda layer."""
         super().__init__(*args, **kwargs)
         # NOTE: The next attributes will be initialized later
-        self.gamma_beta_mean_var_desc: int = None  # type: ignore
+        self.weights_biases_mean_var_desc: int = None  # type: ignore
         self.mode: int = None  # type: ignore
-        self.gamma_cpu: np.ndarray = None  # type: ignore
-        self.beta_cpu: np.ndarray = None  # type: ignore
-        self.dgamma_cpu: np.ndarray = None  # type: ignore
-        self.dbeta_cpu: np.ndarray = None  # type: ignore
+        self.weights_cpu: np.ndarray = None  # type: ignore
+        self.biases_cpu: np.ndarray = None  # type: ignore
+        self.dw_cpu: np.ndarray = None  # type: ignore
+        self.db_cpu: np.ndarray = None  # type: ignore
         self.save_mean: TensorArray = None  # type: ignore
         self.save_inv_var: TensorArray = None  # type: ignore
         self.factor: float = None  # type: ignore
@@ -63,8 +63,8 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
             "CUDNN_BATCHNORM_SPATIAL" if self.spatial else "CUDNN_BATCHNORM_PER_ACTIVATION"
         ]
 
-        self.gamma_beta_mean_var_desc = cudnn.cudnnCreateTensorDescriptor()
-        cudnn.cudnnDeriveBNTensorDescriptor(self.gamma_beta_mean_var_desc, x.desc, self.mode)
+        self.weights_biases_mean_var_desc = cudnn.cudnnCreateTensorDescriptor()
+        cudnn.cudnnDeriveBNTensorDescriptor(self.weights_biases_mean_var_desc, x.desc, self.mode)
         if self.spatial:
             self.ci, self.hi, self.wi = self.model.decode_shape(prev_shape)
         else:
@@ -72,37 +72,37 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
 
         shape_ = (1, self.ci, 1, 1)
 
-        # gamma
-        self.gamma_cpu = np.full(shape_, self.gamma_init_val, self.model.dtype)
-        gamma_gpu = gpuarray.to_gpu(self.gamma_cpu)
-        self.gamma = TensorArray(gamma_gpu, self.model.tensor_format, self.model.cudnn_dtype)
-        self.memory_used += self.gamma.nbytes
+        # weights
+        self.weights_cpu = self.weights_initializer(shape_, self.model.dtype)
+        weights_gpu = gpuarray.to_gpu(self.weights_cpu)
+        self.weights = TensorArray(weights_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.memory_used += self.weights.nbytes
 
-        # beta
-        self.beta_cpu = np.full(shape_, self.beta_init_val, self.model.dtype)
-        beta_gpu = gpuarray.to_gpu(self.beta_cpu)
-        self.beta = TensorArray(beta_gpu, self.model.tensor_format, self.model.cudnn_dtype)
-        self.memory_used += self.beta.nbytes
+        # biases
+        self.biases_cpu = self.biases_initializer(shape_, self.model.dtype)
+        biases_gpu = gpuarray.to_gpu(self.biases_cpu)
+        self.biases = TensorArray(biases_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.memory_used += self.biases.nbytes
 
-        self.dgamma_cpu, self.dgamma = TensorArray.new(
-            self.gamma.shape,
+        self.dw_cpu, self.dw = TensorArray.new(
+            self.weights.shape,
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             cudnn_dtype=self.model.cudnn_dtype,
             gpudirect=self.model.gpudirect,
             drv=(drv if self.model.gpudirect else None),
         )
-        self.memory_used += self.dgamma.nbytes
+        self.memory_used += self.dw.nbytes
 
-        self.dbeta_cpu, self.dbeta = TensorArray.new(
-            self.beta.shape,
+        self.db_cpu, self.db = TensorArray.new(
+            self.biases.shape,
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             cudnn_dtype=self.model.cudnn_dtype,
             gpudirect=self.model.gpudirect,
             drv=(drv if self.model.gpudirect else None),
         )
-        self.memory_used += self.dbeta.nbytes
+        self.memory_used += self.db.nbytes
 
         running_mean_gpu = gpuarray.to_gpu(self.running_mean_initializer(shape_, self.model.dtype))
         self.running_mean = TensorArray(
@@ -131,10 +131,10 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
         self.factor = 1.0 - self.momentum
 
         self.nparams = (
-            self.gamma.size + self.beta.size + self.running_mean.size + self.running_var.size
+            self.weights.size + self.biases.size + self.running_mean.size + self.running_var.size
         )
 
-        self.memory_used += self.gamma.nbytes
+        self.memory_used += self.weights.nbytes
 
     def forward(self, x: TensorArray) -> TensorArray:
         """Performs the forward pass using cuDNN."""
@@ -154,9 +154,9 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
                     x.ptr_voidp,
                     self.y.desc,
                     self.y.ptr_voidp,
-                    self.gamma_beta_mean_var_desc,
-                    self.gamma.ptr_voidp,
-                    self.beta.ptr_voidp,
+                    self.weights_biases_mean_var_desc,
+                    self.weights.ptr_voidp,
+                    self.biases.ptr_voidp,
                     self.factor,
                     self.running_mean.ptr_voidp,
                     self.running_var.ptr_voidp,
@@ -179,9 +179,9 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
                     x.ptr_voidp,
                     self.y.desc,
                     self.y.ptr_voidp,
-                    self.gamma_beta_mean_var_desc,
-                    self.gamma.ptr_voidp,
-                    self.beta.ptr_voidp,
+                    self.weights_biases_mean_var_desc,
+                    self.weights.ptr_voidp,
+                    self.biases.ptr_voidp,
                     self.running_mean.ptr_voidp,
                     self.running_var.ptr_voidp,
                     self.epsilon,
@@ -213,10 +213,10 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
             dy.ptr_voidp,
             self.dx.desc,
             self.dx.ptr_voidp,
-            self.gamma_beta_mean_var_desc,
-            self.gamma.ptr_voidp,
-            self.dgamma.ptr_voidp,
-            self.dbeta.ptr_voidp,
+            self.weights_biases_mean_var_desc,
+            self.weights.ptr_voidp,
+            self.dw.ptr_voidp,
+            self.db.ptr_voidp,
             self.epsilon,
             self.save_mean.ptr_voidp,
             self.save_inv_var.ptr_voidp,
@@ -226,8 +226,8 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
         # DtoH dw when data parallelism and no GPU direct/NCCL is used
         if self.model.comm and not self.model.gpudirect and not self.model.use_nccl:
             # self.model.stream.synchronize()
-            self.dgamma.get_async(self.stream_2, self.dgamma_cpu)
-            self.dbeta.get_async(self.stream_2, self.dbeta_cpu)
+            self.dw.get_async(self.stream_2, self.dw_cpu)
+            self.db.get_async(self.stream_2, self.db_cpu)
         return self.dx
 
     def _export_gamma_beta(self, key: str) -> np.ndarray:
@@ -240,7 +240,7 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
     def _export_prop(self, key: str) -> Any:
         """Exports layer properties."""
         match key:
-            case Parameters.GAMMA | Parameters.DGAMMA | Parameters.BETA | Parameters.DBETA:
+            case Parameters.WEIGHTS | Parameters.DW | Parameters.BIASES | Parameters.DB:
                 return self._export_gamma_beta(key)
             case _:
                 return super()._export_prop(key)
@@ -254,7 +254,7 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
     def _import_prop(self, key: str, value: Any) -> None:
         """Imports layer properties."""
         match key:
-            case Parameters.GAMMA | Parameters.DGAMMA | Parameters.BETA | Parameters.DBETA:
+            case Parameters.WEIGHTS | Parameters.DW | Parameters.BIASES | Parameters.DB:
                 return self._import_gamma_beta(key, value)
             case _:
                 return super()._import_prop(key, value)

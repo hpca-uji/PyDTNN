@@ -46,14 +46,8 @@ class Parameters(StrEnum):
 
     RUNNING_MEAN = auto()
     RUNNING_VAR = auto()
-    GAMMA = auto()
-    DGAMMA = auto()
-    BETA = auto()
-    DBETA = auto()
-
     WEIGHTS = auto()
     DW = auto()
-
     BIASES = auto()
     DB = auto()
 

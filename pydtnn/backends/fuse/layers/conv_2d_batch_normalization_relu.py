@@ -71,8 +71,8 @@ class Conv2DBatchNormalizationReluFuse(
             bn=True,
             running_mean=self.running_mean,
             inv_std=self.inv_std,
-            gamma=self.gamma,
-            beta=self.beta,
+            gamma=self.weights,
+            beta=self.biases,
         )
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
@@ -95,8 +95,8 @@ class Conv2DBatchNormalizationReluFuse(
             biases=self.biases,
             bn_running_mean=self.running_mean,
             bn_inv_std=self.inv_std,
-            bn_gamma=self.gamma,
-            bn_beta=self.beta,
+            bn_gamma=self.weights,
+            bn_beta=self.biases,
             relu=True,
         )
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
@@ -119,8 +119,8 @@ class Conv2DBatchNormalizationReluFuse(
             biases=self.biases,
             bn_running_mean=self.running_mean,
             bn_inv_std=self.inv_std,
-            bn_gamma=self.gamma,
-            bn_beta=self.beta,
+            bn_gamma=self.weights,
+            bn_beta=self.biases,
             relu=True,
         )
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)

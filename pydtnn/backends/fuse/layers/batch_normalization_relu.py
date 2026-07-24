@@ -59,8 +59,8 @@ class BatchNormalizationReluFuse(LayerFuse, BatchNormalizationNumpy):
             y.reshape((-1, self.ci), copy=False),  # type: ignore (revise)
             self.running_mean,  # type: ignore (revise)
             self.inv_std,  # type: ignore (revise)
-            self.gamma,  # type: ignore (revise)
-            self.beta,  # type: ignore (revise)
+            self.weights,  # type: ignore (revise)
+            self.biases,  # type: ignore (revise)
         )
 
         if self.spatial:

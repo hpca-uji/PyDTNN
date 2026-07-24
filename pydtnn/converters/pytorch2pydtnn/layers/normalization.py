@@ -38,10 +38,9 @@ def BatchNorm2d(args: dict[str, Any]) -> BatchNormalization:
     torch_dict_keys = [pytorch_momentum, pytorch_eps]
 
     # PyDTNN attributes:
-    # Not used: beta, gamma
     pydtnn_momentum = "momentum"
     pydtnn_epsilon = "epsilon"
-    pydtnn_use_bias = "use_bias"
+    #pydtnn_use_bias = "use_bias"
 
     pydtnn_dict_keys = [pydtnn_momentum, pydtnn_epsilon]
 
@@ -51,7 +50,7 @@ def BatchNorm2d(args: dict[str, Any]) -> BatchNormalization:
         pydtnn_dict_keys=pydtnn_dict_keys,
     )
 
-    layer_args[pydtnn_use_bias] = not (args[cm.ARGUMENTS]["_parameters"]["bias"] is None)
+    #layer_args[pydtnn_use_bias] = not (args[cm.ARGUMENTS]["_parameters"]["bias"] is None)
 
     initializers = cm.set_initializer_with_pytorch_values(args[cm.ARGUMENTS]["_buffers"],
                                                           vars_initiaizers_transpose={
@@ -59,12 +58,11 @@ def BatchNorm2d(args: dict[str, Any]) -> BatchNormalization:
                                                             "running_var": ("running_var_initializer", None),
                                                           })
     layer_args.update(initializers)
-
-    if layer_args[pydtnn_use_bias]:
-        initializers = cm.set_initializer_with_pytorch_values(args[cm.ARGUMENTS]["_parameters"],
-                                                              vars_initiaizers_transpose={
-                                                                "bias": ("biases_initializer", None),
-                                                              })
+    initializers = cm.set_initializer_with_pytorch_values(args[cm.ARGUMENTS]["_parameters"],
+                                                          vars_initiaizers_transpose={
+                                                            "bias": ("biases_initializer", None),
+                                                            "weight": ("weights_initializer", None),
+                                                          })
     layer_args.update(initializers)
 
     return BatchNormalization(**layer_args)

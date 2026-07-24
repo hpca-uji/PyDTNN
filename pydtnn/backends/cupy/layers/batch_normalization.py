@@ -45,8 +45,8 @@ class BatchNormalizationCupy(BatchNormalizationNumpy, LayerCupy):
                 y,
                 self.xn,
                 self.std,
-                self.gamma,
-                self.beta,
+                self.weights,
+                self.biases,
                 _mean,
                 _var,
                 self.epsilon,
@@ -63,5 +63,5 @@ class BatchNormalizationCupy(BatchNormalizationNumpy, LayerCupy):
         self.bwd(
             self.model.cuda_grid,
             self.model.cuda_block,
-            (dx, dy, self.xn, self.std, self.gamma, self.dgamma, self.dbeta, dim_i, dim_j, dx.size),
+            (dx, dy, self.xn, self.std, self.weights, self.dw, self.db, dim_i, dim_j, dx.size),
         )
