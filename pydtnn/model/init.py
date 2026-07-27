@@ -1,15 +1,12 @@
 """Initialization code for the PyDTNN model"""
 
-import itertools
 import logging
-from collections import abc
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
 from pydtnn import (MPI, context, cublas, cublas_handle, cudnn, cudnn_handle, drv,
                     gpuarray, hostname, nccl, nccl_comm, num_gpus, ranks_per_node, stream)
-from pydtnn.abstract.layerable import Layerable
 from pydtnn.datasets import select as select_dataset
 from pydtnn.datasets.abstract import Dataset
 from pydtnn.libs.mpi.rc import proto as proto
@@ -34,7 +31,7 @@ else:
     except Exception:
         polyhe = None
 
-from pydtnn.utils.constants import Array, NetworkAlgoEnum
+from pydtnn.utils.constants import Array
 
 __all__ = ("Init",)
 
@@ -60,101 +57,87 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
 
         # Filter default values from base and update them from the received kwargs
         for key, value in vars(Base).items():
-            if key.startswith("_"):
-                continue
-            self.__dict__[key] = kwargs.get(key, value)
+            if not key.startswith("_"):
+                # NOTE: Skip setters (plus dict needed for utils)
+                self.__dict__[key] = kwargs.get(key, value)
 
-        # Attributes related to the given arguments
-        self.blocking_mpi: bool = self.use_blocking_mpi
-        self.use_cudnn = gpuarray is not None and drv is not None and cublas is not None
-        self.gpudirect: bool = self.use_gpudirect
-        self.use_nccl: bool = self.use_nccl
-        self.memory: PrivateMemory = None  # pyright: ignore[reportAttributeAccessIssue]
-        self.dtype: np.dtype = np.dtype(self.dtype)
-        self.param_dtype: np.dtype = np.dtype(self.quantize_dtype) if self.quantize else self.dtype
-        self.network_algo = NetworkAlgoEnum(self.network_algo.lower())
-        # self.metrics_dtype: np.dtype = np.dtype(np.float32) if np.issubdtype(self.dtype, np.int32) else self.dtype
-
-        self.nparams = 0
-        self.memory_used = 0
-        self.tmp_memory_used = 0
-
-        # Set performance counter
-        self.perf_counter = PerformanceCounter()
-
-        # Layers' attributes
-        self.layers: list[Layerable[T]] = []
-        self.layer_id_generator: abc.Iterator[int] = iter(itertools.count())
-
-        # Set current mode to unspecified
-        self.mode: Base.Mode = None  # pyright: ignore[reportAttributeAccessIssue] # Base.Mode.UNSPECIFIED
-        self.random: np.random.Generator = rand.Generator(self.random_seed)  # pyright: ignore[reportAttributeAccessIssue]
-        self.memory_cls = PreallocMemory if self.shared_tmp_memory else PrivateMemory
-
-        # Set tracer
-        self._tracer_init()
-
-        # Data format
-        self._tensor_init()
-        self._batch_init()
-
-        # Set MPI and comm
+        # MPI [NOTE: as early as possible]
         self._mpi_init()
 
-        # Encryption [NOTE: Always after initializing MPI (if you are going to use MPI)]
-        if self.encryption_name:
-            self.crypt = self._crypt_init(self.encryption_name)
-        else:
-            self.crypt = None
+        # Initialize attributes
+        self._is_model_init: bool = False
+        self.use_cudnn = gpuarray is not None and drv is not None and cublas is not None
+        self.random: np.random.Generator = rand.Generator(self.random_seed)  # pyright: ignore[reportAttributeAccessIssue]
+        self.memory_cls = PreallocMemory if self.shared_tmp_memory else PrivateMemory
+        self.memory: PrivateMemory = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.perf_counter = PerformanceCounter()
 
-        # Cuda [NOTE: Always after initializing MPI (if you are going to use MPI)]
+        # Attributes initializers
+        self._lr_init()  # NOTE: before batch_init
+        self._batch_init()
+        self._tensor_init()
+
+        # Cuda [NOTE: after MPI]
         if self.use_cudnn:
             self._cudnn_init()
         else:
             self.stream = None
 
-        # Dataset [NOTE: Always after initializing MPI (if you are going to use MPI)]
+        # Encryption [NOTE: after MPI & Cuda]
+        if self.encryption_name:
+            self.crypt = self._crypt_init(self.encryption_name)
+        else:
+            self.crypt = None
+
+        # Tracer [NOTE: after MPI & Cuda]
+        self._tracer_init()
+
+        # Dataset [NOTE: after MPI & Crypt]
+        self.dataset: Dataset
         if self.dataset_name:
-            self.dataset: Dataset = select_dataset(self.dataset_name)(self)
+            self.dataset = select_dataset(self.dataset_name)(self)
 
-        # Private attributes
-        self._is_model_init: bool = False
+        self.loss_func = select_loss(self.loss_func_name).from_model(self)
 
-        # LR scaling
-        if self.learning_rate_scaling or (
-            self.learning_rate_scaling is None and self.global_batch_size is None
-        ):
-            self.learning_rate = self.learning_rate * self.nprocs
+        metrics = [(m, select_metric(m).from_model(self)) for m in self.metrics]
+        metrics.sort(key=lambda metric: metric[1].order)
+        self.metrics, self.metrics_funcs = map(tuple, zip(*metrics))
 
-        # Optimizers
         self.optimizer = select_optimizer(self.optimizer_name).from_model(self)
-        self.optimizer._init_backend_with_model(self)
 
-        # Metrics list
-        self.metrics_list: list[str] = [m for m in self.metrics]
-
-        # Synchronization parameters
-        # NOTE: This parameter come from Parser.
-        self.model_sync_algo = self.SyncAlgorithm(self.model_sync_algo)
-
-        # NOTE: This parameter come from Parser.
-        self.model_sync_participation = self.SyncParticipation(self.model_sync_participation)
-
-        # Read the model (NOTE: must be the last action, as it calls
-        # self._model_init() if there is a model)
+        # Layers [NOTE: as late as posible, it call self._model_init]
         if model_name := self.model_name:
             self._layers_init(model_name)
 
-    def _tensor_init(self) -> None:
-        """Configures the tensor format based on hardware capabilities."""
-        if self.tensor_format:
-            tensor_format = TensorFormat(self.tensor_format.lower())
-        elif self.use_cudnn:
-            tensor_format = TensorFormat.NCHW
+    def _mpi_init(self) -> None:
+        """Initializes MPI communication settings and process ranks."""
+        # Communication type
+        if self.parallel_data or self.parallel_pipeline:
+            if not MPI:
+                raise ValueError("Please, install mpi4py to allow parallel MPI execution!")
+            self.MPI, self.comm = (MPI, MPI.COMM_WORLD)
         else:
-            tensor_format = TensorFormat.NHWC
+            self.MPI, self.comm = (None, None)  # pyright: ignore[reportAttributeAccessIssue]
 
-        self.tensor_format = tensor_format
+        # Communication weight
+        self.rank_weight = 1.0
+
+        # Communication method
+        match self.use_mpi_buffers:
+            case None:
+                self.use_mpi_buffers = proto is None
+            case bool():
+                pass
+            case _:
+                raise ValueError(f"MPI buffers option '{self.use_mpi_buffers}' not recognized.")
+
+    def _lr_init(self) -> None:
+        """Configures the learning rate based on batch size"""
+        if self.learning_rate_scaling is None:
+            self.learning_rate_scaling = not self.global_batch_size
+
+        if self.learning_rate_scaling:
+            self.learning_rate = self.learning_rate * self.nprocs
 
     def _batch_init(self, default: int = DEFAULT_BACH_SIZE) -> None:
         """
@@ -184,84 +167,18 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
             )
 
         self.batch_size = batch_size
+        self.global_batch_size = batch_size * self.comm_size
 
-    def _tracer_init(self) -> None:
-        """Initializes the performance tracing mechanism."""
-        if self.tracer_output == "":
-            from pydtnn.tracers.extrae_tracer import ExtraeTracer
-
-            tracer = ExtraeTracer(self.tracing)
+    def _tensor_init(self) -> None:
+        """Configures the tensor format based on hardware capabilities."""
+        if self.tensor_format:
+            tensor_format = TensorFormat(self.tensor_format.lower())
         elif self.use_cudnn:
-            from pydtnn.tracers.simple_tracer_gpu import SimpleTracerPycuda
-
-            tracer = SimpleTracerPycuda(self.tracing, self.tracer_output, self.comm)
-        elif self.tracer_pmlib_device != "":
-            from pydtnn.tracers.simple_tracer_pmlib import SimpleTracerPMLib
-
-            tracer = SimpleTracerPMLib(
-                self.tracing,
-                self.tracer_output,
-                self.comm,
-                self.tracer_pmlib_server,
-                self.tracer_pmlib_port,
-                self.tracer_pmlib_device,
-            )
+            tensor_format = TensorFormat.NCHW
         else:
-            from pydtnn.tracers.simple_tracer import SimpleTracer
+            tensor_format = TensorFormat.NHWC
 
-            tracer = SimpleTracer(self.tracing, self.tracer_output, self.comm)
-
-        self.tracer = tracer
-
-    def _crypt_init(self, encryption_name: str) -> "polyhe.Context":
-        """
-        Initializes the homomorphic encryption context.
-
-        Args:
-            encryption_name: Name of the encryption backend to use.
-        """
-        if polyhe is None:
-            raise RuntimeError("uHE is not avaliable, but is requiested!")
-
-        backend = polyhe.Backend(encryption_name)
-        options = polyhe.Options(
-            slots=self.encryption_slots,
-            scale=self.encryption_scale,
-            security=self.encryption_security,
-        )
-
-        crypt = polyhe.new(backend, options) if self.comm_rank == 0 else None
-
-        if self.comm:
-            crypt = self.comm.bcast(crypt)
-
-        assert crypt is not None
-        if self.use_nccl:
-            logger.warning("If NCCL is active, encryption is disabled")
-
-        return crypt
-
-    def _mpi_init(self) -> None:
-        """Initializes MPI communication settings and process ranks."""
-        # Communication type
-        if self.parallel_data or self.parallel_pipeline:
-            if not MPI:
-                raise ValueError("Please, install mpi4py to allow parallel MPI execution!")
-            self.MPI, self.comm = (MPI, MPI.COMM_WORLD)
-        else:
-            self.MPI, self.comm = (None, None)  # pyright: ignore[reportAttributeAccessIssue]
-
-        # Communication weight
-        self.rank_weight = 1.0
-
-        # Communication method
-        match self.use_mpi_buffers:
-            case None:
-                self.use_mpi_buffers = proto is None
-            case bool():
-                pass
-            case _:
-                raise ValueError(f"MPI buffers option '{self.use_mpi_buffers}' not recognized.")
+        self.tensor_format = tensor_format
 
     def _cudnn_init(self) -> None:
         """Initializes CUDA, cuDNN, and NCCL backend handles."""
@@ -322,6 +239,62 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
         self.stream = stream
         self.cudnn_dtype = cudnn_dtype
 
+    def _crypt_init(self, encryption_name: str) -> "polyhe.Context":
+        """
+        Initializes the homomorphic encryption context.
+
+        Args:
+            encryption_name: Name of the encryption backend to use.
+        """
+        if polyhe is None:
+            raise RuntimeError("uHE is not avaliable, but is requiested!")
+
+        backend = polyhe.Backend(encryption_name)
+        options = polyhe.Options(
+            slots=self.encryption_slots,
+            scale=self.encryption_scale,
+            security=self.encryption_security,
+        )
+
+        crypt = polyhe.new(backend, options) if self.comm_rank == 0 else None
+
+        if self.comm:
+            crypt = self.comm.bcast(crypt)
+
+        assert crypt is not None
+        if self.use_nccl:
+            logger.warning("If NCCL is active, encryption is disabled")
+
+        return crypt
+
+    def _tracer_init(self) -> None:
+        """Initializes the performance tracing mechanism."""
+        if self.tracer_output == "":
+            from pydtnn.tracers.extrae_tracer import ExtraeTracer
+
+            tracer = ExtraeTracer(self.tracing)
+        elif self.use_cudnn:
+            from pydtnn.tracers.simple_tracer_gpu import SimpleTracerPycuda
+
+            tracer = SimpleTracerPycuda(self.tracing, self.tracer_output, self.comm)
+        elif self.tracer_pmlib_device != "":
+            from pydtnn.tracers.simple_tracer_pmlib import SimpleTracerPMLib
+
+            tracer = SimpleTracerPMLib(
+                self.tracing,
+                self.tracer_output,
+                self.comm,
+                self.tracer_pmlib_server,
+                self.tracer_pmlib_port,
+                self.tracer_pmlib_device,
+            )
+        else:
+            from pydtnn.tracers.simple_tracer import SimpleTracer
+
+            tracer = SimpleTracer(self.tracing, self.tracer_output, self.comm)
+
+        self.tracer = tracer
+
     def _layers_init(self, model_name: str) -> None:
         """
         Initializes model layers from a predefined model name.
@@ -352,23 +325,33 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
             return
         self._is_model_init = True
 
+        temp_memory_size = []
         self.random.seed(self.random_seed)  # pyright: ignore[reportAttributeAccessIssue]
 
         self.dataset._model_init()
 
+        for i, layer in enumerate(self.layers):
+            layer._init_backend_with_model(self)
+
+            if i:
+                prev_shape = self.layers[i - 1].shape
+                y = self.layers[i - 1].y
+            else:
+                prev_shape = ()
+                y = None
+
+            layer._model_init(prev_shape, y)
+
+            self.nparams += layer.nparams
+            self.memory_used += layer.memory_used
+            temp_memory_size.append(layer.tmp_memory_used)
+
         self._apply_layer_fusion()
 
-        temp_memory_size = []
-
-        self.loss_func = select_loss(self.loss_func_name).from_model(self)
         self.loss_func._init_backend_with_model(self)
         self.loss_func._model_init()
         self.memory_used += self.loss_func.memory_used
         temp_memory_size.append(self.loss_func.tmp_memory_used)
-
-        metrics = [(m, select_metric(m).from_model(self)) for m in self.metrics_list]
-        metrics.sort(key=lambda metric: metric[1].order)
-        self.metrics_list, self.metrics_funcs = map(list, zip(*metrics))
 
         for metric in self.metrics_funcs:
             metric._init_backend_with_model(self)
@@ -376,20 +359,16 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
             self.memory_used += metric.memory_used
             temp_memory_size.append(metric.tmp_memory_used)
 
-        self.loss_and_metrics = [self.loss_func_name] + self.metrics_list
+        self.loss_and_metrics = (self.loss_func_name, *self.metrics)
         self.loss_and_metrics_format = [self.loss_func.format] + [
             metric.format for metric in self.metrics_funcs
         ]
         self.total_metrics = np.array([0] + [0] * len(self.metrics_funcs), dtype=self.dtype)
-        self.tracer.define_event_types(self)
 
+        self.optimizer._init_backend_with_model(self)
         self.optimizer._model_init(self.get_all_layers(self.layers))
         self.memory_used += self.optimizer.memory_used
         temp_memory_size.append(self.optimizer.tmp_memory_used)
-
-        for layer in self.layers:
-            self.memory_used += layer.memory_used
-            temp_memory_size.append(layer.tmp_memory_used)
 
         self.tmp_memory_used += self.memory_cls._total(*temp_memory_size)
         self.memory_used += self.tmp_memory_used
@@ -398,11 +377,14 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
         for layer in self.get_all_layers():
             layer._post_init()
 
+        self.loss_func._post_init()
+
         for metric in self.metrics_funcs:
             metric._post_init()
 
-        self.loss_func._post_init()
         self.optimizer._post_init()
+
+        self.tracer.define_event_types(self)
 
     def _ensure_model_runnable(self) -> None:
         """Validates that the model is ready for execution."""

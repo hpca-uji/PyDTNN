@@ -1,4 +1,5 @@
 """Module for the OkTopk optimizer implementation using NumPy."""
+# NOTE: Skips model-sync-quantize and encryption
 
 from __future__ import annotations
 

@@ -23,7 +23,7 @@ class Utils[T: Array](Base[T]):  # noqa: D101 (generics not detected)
     @property
     def input_shape(self) -> ArrayShape:
         """Returns the shape of the first layer."""
-        return self.layers[0].shape
+        return self.layers[0].prev_shape
 
     @property
     def output_shape(self) -> ArrayShape:
@@ -45,6 +45,11 @@ class Utils[T: Array](Base[T]):  # noqa: D101 (generics not detected)
     def decode_tensor(self, data: np.ndarray) -> np.ndarray:
         """Transpose elements of data from `model.tensor_format` format to `NCHW` format (supports 4 or 3 dimensions)."""
         return decode_tensor(data, self.tensor_format)
+
+    @property
+    def param_dtype(self) -> np.dtype:
+        """Parameters dtype"""
+        return self.quantize_dtype if self.quantize else self.dtype
 
     @property
     def dataset_path(self) -> str:

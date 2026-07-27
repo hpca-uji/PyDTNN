@@ -106,7 +106,7 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
         # Gradient update (GU)
         if self.model_sync_freq >= 0 and sync_model:
             self._weight_update(
-                gradient=True, blocking=self.blocking_mpi, pipeline=self.parallel_pipeline
+                gradient=True, blocking=self.use_blocking_mpi, pipeline=self.parallel_pipeline
             )
 
         # Optimizer
@@ -120,7 +120,7 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
         # Weight update (WU)
         if self.model_sync_freq > 0 and sync_model:
             self._weight_update(
-                gradient=False, blocking=self.blocking_mpi, pipeline=self.parallel_pipeline
+                gradient=False, blocking=self.use_blocking_mpi, pipeline=self.parallel_pipeline
             )
 
         if self.use_cudnn:
@@ -230,7 +230,7 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
             + [f"{Dataset.Part.VAL._name_.lower()}_{m}" for m in self.loss_and_metrics]
         }
 
-        self.comm_nsamples = list(
+        self.comm_nsamples = tuple(
             zip(
                 *(
                     self.comm.allgather(self.dataset._nsamples)
@@ -253,8 +253,8 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
 
         # Synchronize model
         if self.initial_model_sync:
-            self._weight_update(gradient=True, blocking=self.blocking_mpi)
-            self._weight_update(gradient=False, blocking=self.blocking_mpi)
+            self._weight_update(gradient=True, blocking=self.use_blocking_mpi)
+            self._weight_update(gradient=False, blocking=self.use_blocking_mpi)
 
         for epoch in range(self.num_epochs):
             train_batch_generator, val_batch_generator = self.dataset.get_train_val_generator()
@@ -363,8 +363,8 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
 
         # Synchronize model
         if self.final_model_sync:
-            self._weight_update(gradient=True, blocking=self.blocking_mpi)
-            self._weight_update(gradient=False, blocking=self.blocking_mpi)
+            self._weight_update(gradient=True, blocking=self.use_blocking_mpi)
+            self._weight_update(gradient=False, blocking=self.use_blocking_mpi)
 
         self.tracer.define_event_types(self)
         return self.history

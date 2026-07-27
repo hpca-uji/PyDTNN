@@ -1,7 +1,9 @@
 """Module providing the Layers management class for the PyDTNN framework."""
 
+import itertools
 import logging
 from collections import abc
+from typing import Any
 
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.activations.relu import Relu
@@ -20,23 +22,14 @@ logger = logging.getLogger(__name__)
 class Layers[T: Array](Utils[T]):  # noqa: D101 (generics not detected)
     """Manages the collection and lifecycle of neural network layers."""
 
+    def __init__(self, **kwargs: Any) -> None:
+        """Initialize the layers model instance."""
+        super().__init__(**kwargs)
+        self.layers: list[Layerable[T]] = []
+        self.layer_id_generator: abc.Iterator[int] = iter(itertools.count())
+
     def add(self, layer: Layerable[T]) -> None:
         """Adds a layer to the model and initializes its backend and parameters."""
-        layer._init_backend_with_model(self)
-
-        if self.layers:
-            prev_shape = self.layers[-1].shape
-            y = self.layers[-1].y
-        else:
-            prev_shape = ()
-            y = None
-
-        # Can you wait for model init?
-        layer._model_init(prev_shape, y)
-
-        self.nparams += layer.nparams
-        # self.memory_used += layer.memory_used
-        # self.tmp_memory_used += layer.tmp_memory_used
         self.layers.append(layer)
 
         if layer.act:

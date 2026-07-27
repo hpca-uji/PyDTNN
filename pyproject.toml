@@ -157,8 +157,8 @@ T = "pydtnn.utils.flake8_pyright:PyrightChecker"
 [tool.pyright]
 venv = ".venv"
 venvPath = "."
-include = ["pydtnn"]
-exclude = ["**/__pycache__", "build", "vendor"]
+include = ["pydtnn", "scripts"]
+exclude = [".venv", "**/.*", "**/__pycache__", "build", "vendor"]
 typeCheckingMode = "standard"
 enableReachabilityAnalysis = true
 

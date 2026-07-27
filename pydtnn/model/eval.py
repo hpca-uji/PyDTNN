@@ -319,7 +319,7 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
             )
             self.y_batch = tensor_ary  # pyright: ignore[reportAttributeAccessIssue]
 
-        self.comm_nsamples = list(
+        self.comm_nsamples = tuple(
             zip(
                 *(
                     self.comm.allgather(self.dataset._nsamples)
@@ -381,7 +381,7 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
         for layer in self.layers:
             total_time += layer.fwd_time
 
-        if self.blocking_mpi:
+        if self.use_blocking_mpi:
             # Blocking MPI
             # Back propagation. Gradient computation (GC) and weights update (WU)
             for layer in self.layers:

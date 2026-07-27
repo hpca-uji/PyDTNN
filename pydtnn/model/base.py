@@ -46,6 +46,10 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
 
     def __init__(self, **kwargs: Any) -> None:
         """Initialize the base model instance."""
+        self.nparams = 0
+        self.memory_used = 0
+        self.tmp_memory_used = 0
+        self.mode: Base.Mode = None  # pyright: ignore[reportAttributeAccessIssue] # Base.Mode.UNSPECIFIED
 
     class Mode(enum.StrEnum):
         """Enumeration for model execution modes."""
@@ -219,8 +223,8 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
     memory: PrivateMemory
     tmp_memory_used: int
     total_metrics: np.ndarray
-    metrics_funcs: list[Metric[T]]
-    loss_and_metrics: list[str]
+    metrics_funcs: tuple[Metric[T], ...]
+    loss_and_metrics: tuple[str, ...]
     layers: list[Layerable[T]]
     nprocs: int
     blocking_mpi: bool
@@ -228,7 +232,7 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
     comm: MPI_COMM
     comm_size: int
     comm_rank: int
-    comm_nsamples: list[tuple[int]]
+    comm_nsamples: tuple[tuple[int], ...]
     rank: int
     rank_weight: float
     real_batch_size: int
