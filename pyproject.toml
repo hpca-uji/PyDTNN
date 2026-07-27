@@ -154,32 +154,6 @@ per-file-ignores = [
 M = "pydtnn.utils.flake8_metrics:MetricsChecker"
 T = "pydtnn.utils.flake8_pyright:PyrightChecker"
 
-[tool.autopep8]
-max-line-length = 100
-ignore = [
-    "E501"
-]
-
-[tool.coverage.run]
-branch = true
-source_pkgs = [
-    "pydtnn"
-]
-
-[tool.coverage.report]
-include = [
-    "*/pydtnn/*"
-]
-omit = [
-    "*/pydtnn/converters/*",
-    "*/pydtnn/datasets/*",
-    "*/pydtnn/libs/*",
-    "*/pydtnn/models/*",
-    "*/pydtnn/tests/*",
-    "*/pydtnn/tracers/*",
-    "*/pydtnn/utils/*"
-]
-
 [tool.pyright]
 venv = ".venv"
 venvPath = "."
@@ -234,3 +208,29 @@ reportPropertyTypeMismatch = "warning"
 reportAssertAlwaysTrue = "error"
 reportInvalidStringEscapeSequence = "error"
 reportSelfClsParameterName = "error"
+
+[tool.autopep8]
+max-line-length = 100
+ignore = [
+    "E501"
+]
+
+[tool.coverage.run]
+branch = true
+source_pkgs = [
+    "pydtnn"
+]
+
+[tool.coverage.report]
+include = [
+    "*/pydtnn/*"
+]
+omit = [
+    "*/pydtnn/converters/*",
+    "*/pydtnn/datasets/*",
+    "*/pydtnn/libs/*",
+    "*/pydtnn/models/*",
+    "*/pydtnn/tests/*",
+    "*/pydtnn/tracers/*",
+    "*/pydtnn/utils/*"
+]
