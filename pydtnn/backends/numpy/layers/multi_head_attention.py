@@ -56,7 +56,7 @@ class MultiHeadAttentionNumpy(MultiHeadAttention[np.ndarray], AbstractBlockLayer
         ]
 
         # The next attributes will be initialized later
-        self.mask: np.ndarray = None
+        self.mask: np.ndarray = None # pyright: ignore[reportAttributeAccessIssue]
 
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
         """Initializes the model structure and sublayers for the NumPy backend."""
@@ -143,7 +143,7 @@ class MultiHeadAttentionNumpy(MultiHeadAttention[np.ndarray], AbstractBlockLayer
         """Performs the forward pass of the multi-head attention mechanism."""
         if self.model.mode == Model.Mode.TRAIN:
             # TODO: Check this. (in this case, mask is not None) (I hope)
-            self.mask = mask
+            self.mask = mask  # pyright: ignore[reportAttributeAccessIssue]
 
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_MHA_FC_QKV
