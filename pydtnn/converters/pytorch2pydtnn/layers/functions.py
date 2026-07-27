@@ -73,7 +73,7 @@ def adaptive_avg_pool_2d(args: dict[str, str]) -> tuple[AveragePool2D, str]:
     if params:
         dict_params[cm.ARGUMENTS] = {cm.PYTORCH_OUTPUT_SIZE: params}
 
-    return (AdaptiveAveragePool2D(dict_params), dict_params["input"])  # pyright: ignore[reportReturnType,reportArgumentType]
+    return (AdaptiveAveragePool2D(params), dict_params["input"])  # pyright: ignore[reportReturnType,reportArgumentType]
 
 
 def add(args: dict[str, Any]) -> tuple[AdditionBlock, str]:
