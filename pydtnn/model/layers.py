@@ -1,9 +1,7 @@
 """Module providing the Layers management class for the PyDTNN framework."""
 
 import logging
-import operator
 from collections import abc
-from functools import reduce
 
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.activations.relu import Relu
@@ -49,16 +47,15 @@ class Layers[T: Array](Utils[T]):  # noqa: D101 (generics not detected)
         for layer in layers:
             self.add(layer)
 
-    def get_all_layers(self, from_layers: list[Layerable[T]] | None = None) -> list[Layerable[T]]:
+    def get_all_layers(self, layers: list[Layerable[T]] | None = None) -> list[Layerable[T]]:
         """Recursively retrieves all layers, including nested children."""
-        if from_layers is None:
-            from_layers = self.layers
-        this_recursion_layers = []
-        for layer in from_layers:
-            this_recursion_layers.append(layer)
-            children = layer.children
-            this_recursion_layers += self.get_all_layers(children)
-        return this_recursion_layers
+        if layers is None:
+            layers = self.layers
+        result = []
+        for layer in layers:
+            result.append(layer)
+            result.extend(self.get_all_layers(layer.children))
+        return result
 
     def _select_fusion_3(
         self, fused_layers: list
