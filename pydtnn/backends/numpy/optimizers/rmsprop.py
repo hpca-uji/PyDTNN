@@ -71,8 +71,8 @@ class RMSPropNumpy(RMSProp[np.ndarray], OptimizerNumpy):
 
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
-            cache: np.ndarray = self.context[layer.id]["cache_%s" % w_]
-            temp: np.ndarray = self.context[layer.id]["temp_%s" % w_]
+            cache: np.ndarray = self.context[layer.id]["cache_%s" % w_]  # pyright: ignore[reportAssignmentType]
+            temp: np.ndarray = self.context[layer.id]["temp_%s" % w_]  # pyright: ignore[reportAssignmentType]
             w: np.ndarray
             dw: np.ndarray
 

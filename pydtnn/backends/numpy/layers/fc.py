@@ -28,9 +28,9 @@ class FCNumpy(FC[np.ndarray], LayerNumpy):
         """Initialize the FCNumpy layer."""
         super().__init__(*args, **kwargs)
         # The following attributes will be initalized in "initalize"
-        self.x: np.ndarray = None
-        self.dw: np.ndarray = None
-        self.db: np.ndarray = None
+        self.x: np.ndarray = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.dw: np.ndarray = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.db: np.ndarray = None  # pyright: ignore[reportAttributeAccessIssue]
 
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
         """Initialize layer parameters, buffers, and performance models."""

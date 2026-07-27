@@ -101,7 +101,7 @@ class EncoderDecoderNumpy(EncoderDecoder[np.ndarray], AbstractBlockLayerNumpy):
     def backward(self, prev_dx: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """Performs the backward pass through the decoder and encoder stacks."""
         dx_tgt = prev_dx
-        dx_enc: np.ndarray = 0.0
+        dx_enc: np.ndarray = 0.0  # pyright: ignore[reportAssignmentType]
         for i in range(self.dec_layers):  # Decoding layers
             dx_tgt, dx2 = self.decoder[-1 * (i + 1)].backward(dx_tgt)
             dx_enc += dx2

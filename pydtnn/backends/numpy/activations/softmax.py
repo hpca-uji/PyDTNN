@@ -35,10 +35,10 @@ class SoftmaxNumpy(Softmax[np.ndarray], ActivationNumpy):
         self.memory_used += self._y.nbytes
 
         # Temp_variables
-        self.max_x: np.ndarray = None
-        self.sum_y: np.ndarray = None
-        self.mul_dy: np.ndarray = None
-        self.sum_dy: np.ndarray = None
+        self.max_x: np.ndarray = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.sum_y: np.ndarray = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.mul_dy: np.ndarray = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.sum_dy: np.ndarray = None  # pyright: ignore[reportAttributeAccessIssue]
 
         self.temp_shape = (self.model.batch_size, *shape_intermediate_ops)
         sum_y_shape = max_x_shape = self.temp_shape

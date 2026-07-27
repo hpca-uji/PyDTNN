@@ -82,9 +82,9 @@ class SGDNumpy(SGD[np.ndarray], OptimizerNumpy):
 
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
-            velocity: np.ndarray = self.context[layer.id]["velocity_%s" % w_]
-            temp_w: np.ndarray = self.context[layer.id]["temp_w_%s" % w_]
-            temp_v: np.ndarray = self.context[layer.id]["temp_v_%s" % w_]
+            velocity: np.ndarray = self.context[layer.id]["velocity_%s" % w_]  # pyright: ignore[reportAssignmentType]
+            temp_w: np.ndarray = self.context[layer.id]["temp_w_%s" % w_]  # pyright: ignore[reportAssignmentType]
+            temp_v: np.ndarray = self.context[layer.id]["temp_v_%s" % w_]  # pyright: ignore[reportAssignmentType]
             w: np.ndarray
             dw: np.ndarray
 

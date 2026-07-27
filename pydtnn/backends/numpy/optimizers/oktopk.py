@@ -397,7 +397,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
         assert MPI and self.model.comm, "Communicator needed!"
         # There are (nprocs - 1) messages to send (excluding self)
         total_sends = self.model.comm_size - 1
-        requests: list[Request] = [None] * total_sends
+        requests: list[Request] = [None] * total_sends  # pyright: ignore[reportAssignmentType]
 
         # Compute local slice of sparse_topk (the "self" region)
         start = 0 if self.model.comm_rank == 0 else boundaries[self.model.comm_rank - 1]

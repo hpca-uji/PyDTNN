@@ -92,12 +92,12 @@ class AdamNumpy(Adam[np.ndarray], OptimizerNumpy):
             w: np.ndarray
             dw: np.ndarray
             # Momentum of the weight or bias of the given layer
-            m: np.ndarray = self.context[layer.id]["m_%s" % w_]
+            m: np.ndarray = self.context[layer.id]["m_%s" % w_]  # pyright: ignore[reportAssignmentType]
             # Velocity of the weight or bias of the given layer
-            v: np.ndarray = self.context[layer.id]["v_%s" % w_]
+            v: np.ndarray = self.context[layer.id]["v_%s" % w_]  # pyright: ignore[reportAssignmentType]
 
-            vt_temp_w: np.ndarray = self.context[layer.id]["temp_w_%s" % w_]
-            mt_temp_dw: np.ndarray = self.context[layer.id]["temp_dw_%s" % w_]
+            vt_temp_w: np.ndarray = self.context[layer.id]["temp_w_%s" % w_]  # pyright: ignore[reportAssignmentType]
+            mt_temp_dw: np.ndarray = self.context[layer.id]["temp_dw_%s" % w_]  # pyright: ignore[reportAssignmentType]
 
             if not (
                 self.are_all_zeros(w)

@@ -22,7 +22,7 @@ class ReluNumpy(Relu[np.ndarray], ActivationNumpy):
     def __init__(self, shape: ArrayShape = (1,)) -> None:
         """Initializes the ReLU layer with a specific shape."""
         super().__init__(shape)
-        self.mask: np.ndarray = None
+        self.mask: np.ndarray = None  # pyright: ignore[reportAttributeAccessIssue]
 
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
         """Initializes internal buffers for forward and backward passes."""

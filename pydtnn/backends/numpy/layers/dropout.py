@@ -24,7 +24,7 @@ class DropoutNumpy(Dropout[np.ndarray], LayerNumpy):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initializes the DropoutNumpy layer."""
         super().__init__(*args, **kwargs)
-        self.mask: np.ndarray = None
+        self.mask: np.ndarray = None  # pyright: ignore[reportAttributeAccessIssue]
 
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
         """Initializes layer parameters and calculates memory usage."""

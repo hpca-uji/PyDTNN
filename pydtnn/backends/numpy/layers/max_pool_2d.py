@@ -19,6 +19,8 @@ if TYPE_CHECKING:
     import numpy as np  # noqa: F811 (override typing)
 
 
+type tuple_4D = tuple[int, int, int, int]
+
 class MaxPool2DNumpy(MaxPool2D[np.ndarray], AbstractPool2DLayerNumpy):
     """NumPy-based 2D Max Pooling layer implementation."""
 
@@ -26,7 +28,7 @@ class MaxPool2DNumpy(MaxPool2D[np.ndarray], AbstractPool2DLayerNumpy):
         """Initialize the MaxPool2DNumpy layer."""
         super().__init__(*args, **kwargs)
         # The following attribute will be intialized later.
-        self.idx_max: np.ndarray[tuple[int, int, int, int], np.dtype[np.int32]] = None
+        self.idx_max: np.ndarray[tuple_4D, np.dtype[np.int32]] = None  # pyright: ignore[reportAttributeAccessIssue]
         self.y: np.ndarray  # NOTE: Defined and initalized in AbstractPool2DLayerNumpy's init and initialize, respectively
 
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
@@ -44,7 +46,7 @@ class MaxPool2DNumpy(MaxPool2D[np.ndarray], AbstractPool2DLayerNumpy):
         # "LayerAndActivationBase.export".
         self._idx_max: np.ndarray[tuple[int, int, int, int], np.dtype[np.int32]] = np.zeros(
             idx_max_shape, dtype=np.int32
-        )
+        )  # pyright: ignore[reportAttributeAccessIssue]
         self.memory_used += self._idx_max.nbytes
 
     def _fwd_max_pool_nhwc(self, x: np.ndarray, y: np.ndarray) -> None:
