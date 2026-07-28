@@ -16,7 +16,7 @@ import torch
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.activations.arctanh import Arctanh
 from pydtnn.activations.leaky_relu import LeakyRelu
-from pydtnn.activations.log import Log
+from pydtnn.activations.log_sigmoid import LogSigmoid
 from pydtnn.activations.relu import Relu
 from pydtnn.activations.relu6 import Relu6
 from pydtnn.activations.sigmoid import Sigmoid
@@ -281,7 +281,7 @@ class ParamsLayerPytorch(Params):
         self.batch_size = d.b
         self.backend = "cpu"
         self.tensor_format = TensorFormat.NCHW
-        self.shape = format_reshape((C, H, W), "CHW", self.tensor_format[1:])
+        self.shape = format_reshape((C, H, W), "chw", self.tensor_format[1:])
         self.evaluate_only = False
         self.parallel_data = False
         self.loss_func_name = "categorical_cross_entropy"
@@ -912,16 +912,16 @@ class LayerPyTorchTestCase(TestCase):
         _x = LayerPyTorchTestCase.get_test_data()
         self.do_test(_x=_x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="Arctanh")
 
-    def test_log(self) -> None:
-        """Tests Log activation."""
-        pydtnn_layers: list[Layerable] = [Log()]
+    def test_log_sigmoid(self) -> None:
+        """Tests Log Sigmoid activation."""
+        pydtnn_layers: list[Layerable] = [LogSigmoid()]
         torch_model = torch.nn.LogSigmoid()
         pydtnn_model = LayerPyTorchTestCase.initialize_pydtnn_model(
             pydtnn_layers, params=self.params
         )
         _x = LayerPyTorchTestCase.get_test_data()
         # _x = np.where(_x < 0, 1, _x)
-        self.do_test(_x=_x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="Log")
+        self.do_test(_x=_x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="LogSigmoid")
 
     def test_softmax(self) -> None:
         """Tests Softmax activation."""

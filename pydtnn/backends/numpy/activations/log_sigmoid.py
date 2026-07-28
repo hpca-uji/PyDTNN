@@ -3,12 +3,12 @@
 import logging
 from typing import TYPE_CHECKING
 
-from pydtnn.activations.log import Log
+from pydtnn.activations.log_sigmoid import LogSigmoid
 from pydtnn.backends.numpy.activations.abstract.activation import ActivationNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.utils.constants import ArrayShape
 
-__all__ = ("LogNumpy",)
+__all__ = ("LogSigmoidNumpy",)
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     import numpy as np  # noqa: F811 (override typing)
 
 
-class LogNumpy(Log[np.ndarray], ActivationNumpy):
+class LogSigmoidNumpy(LogSigmoid[np.ndarray], ActivationNumpy):
     """Numpy-based Log activation layer."""
 
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:

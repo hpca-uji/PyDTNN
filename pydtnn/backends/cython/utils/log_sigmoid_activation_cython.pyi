@@ -2,7 +2,7 @@
 
 from pydtnn.backends.cython.utils.base import _npDT, _npDT_1Dims
 
-def log_fwd_cython[T: _npDT](x: _npDT_1Dims[T], y: _npDT_1Dims[T]) -> None:  # noqa: D103,E302
+def log_sigmoid_fwd_cython[T: _npDT](x: _npDT_1Dims[T], y: _npDT_1Dims[T]) -> None:  # noqa: D103,E302
     """
     Computes the forward pass of the logarithmic activation function.
 
@@ -13,7 +13,7 @@ def log_fwd_cython[T: _npDT](x: _npDT_1Dims[T], y: _npDT_1Dims[T]) -> None:  # n
         Nothing. The output is stored in "y".
     """
 
-def log_bwd_cython[T: _npDT](dy: _npDT_1Dims[T], dx: _npDT_1Dims[T]) -> None:  # noqa: D103,E302
+def log_sigmoid_bwd_cython[T: _npDT](dy: _npDT_1Dims[T], dx: _npDT_1Dims[T]) -> None:  # noqa: D103,E302
     """
     Computes the backward pass of the logarithmic activation function.
 

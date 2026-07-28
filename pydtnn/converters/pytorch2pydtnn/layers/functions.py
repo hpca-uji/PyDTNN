@@ -5,7 +5,7 @@ from typing import Any
 
 import pydtnn.converters.pytorch2pydtnn.common as cm
 from pydtnn.abstract.layerable import Layerable
-from pydtnn.activations.log import Log
+from pydtnn.activations.log_sigmoid import LogSigmoid
 from pydtnn.activations.relu import Relu
 from pydtnn.activations.sigmoid import Sigmoid
 from pydtnn.activations.softmax import Softmax
@@ -207,7 +207,7 @@ def flatten(args: dict[str, str]) -> tuple[Flatten, str]:
 # --- Activations --
 
 
-def log(args: dict[str, Any]) -> tuple[Log, str]:
+def log(args: dict[str, Any]) -> tuple[LogSigmoid, str]:
     """
     Converts PyTorch log activation operation to PyDTNN Log layer.
 

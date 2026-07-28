@@ -7,17 +7,17 @@ import numpy as np
 from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 from pycuda.elementwise import ElementwiseKernel
 
-from pydtnn.activations.log import Log
+from pydtnn.activations.log_sigmoid import LogSigmoid
 from pydtnn.backends.pycuda.activations.abstract.activation import ActivationPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
 
-__all__ = ("LogPycuda",)
+__all__ = ("LogSigmoidPycuda",)
 
 logger = logging.getLogger(__name__)
 
 
-class LogPycuda(Log[TensorArray], ActivationPycuda):
+class LogSigmoidPycuda(LogSigmoid[TensorArray], ActivationPycuda):
     """PyCUDA implementation of the Log activation layer."""
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:

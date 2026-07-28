@@ -440,6 +440,39 @@ class ModelDTypeTestCase(unittest.TestCase):
             dx1.insert(0, layer.backward(dx1[0].copy()))
         return dx1
 
+    def do_pytorch_model_optimizer_pass(
+        self, _model1: PyTorch_Model, optimizer: torch.optim.Optimizer
+    ) -> None:
+        """
+        Performs a forward pass for Model 1.
+
+        Args:
+            _model1: The PyTorch model
+            loss: the loss' function output
+
+        Returns:
+            Nothing special yet.
+        """
+        # TODO: mover el loss a una función a parte (para compararlas)
+        # dx: list[torch.Tensor] = []
+        optimizer.step()
+
+    def do_pydtnn_model_optimizer_pass(
+        self, model2: PyDTNN_Model
+    ) -> None:
+        """
+        Performs a forward pass for PyDTNN's Model.
+
+        Args:
+            model: The model instance.
+            dx: Initial gradient.
+
+        Returns:
+            List of gradients after each layer.
+        """
+        for layer in model2.layers:
+            layer.update_weights(model2.optimizer, update=True, sync=False)
+
     def compare_forward(
         self, model_pydtnn: PyDTNN_Model, x_torch: list[torch.Tensor], x_pydtnn: list[np.ndarray]
     ) -> None:
@@ -558,7 +591,7 @@ class ModelDTypeTestCase(unittest.TestCase):
             # Compare backward results
             self.compare_backward(model_torch, dx_torch, model_pydtnn, dx_pydtnn)
 
-    @unittest.skip("Too big")
+    # @unittest.skip("Too big")
     def test_renset50_from_pytorch(self) -> None:
         """Compares results between an Resnet50 model using a PyTorch model and other a PyDTNN one."""
         self.do_test_model("resnet50_from_pytorch")

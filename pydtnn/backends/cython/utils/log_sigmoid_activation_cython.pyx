@@ -7,12 +7,12 @@ from cython.parallel import prange
 from pydtnn.backends.cython.utils.base cimport npDT
 
 __all__ = (
-    "log_fwd_cython",
-    "log_bwd_cython"
+    "log_sigmoid_fwd_cython",
+    "log_sigmoid_bwd_cython"
 )
 
 
-def log_fwd_cython(npDT[::1] x, npDT[::1] y) -> None:
+def log_sigmoid_fwd_cython(npDT[::1] x, npDT[::1] y) -> None:
     cdef int i
     # return np.log(1 / (1 + np.exp(-x)))
     #for i in prange(x.shape[0], nogil=True):
@@ -23,7 +23,7 @@ def log_fwd_cython(npDT[::1] x, npDT[::1] y) -> None:
         y[i] = <npDT> ((-1.0) * log( 1.0 + exp(-1.0*x[i])))
         #x[i] = <npDT> ((-1.0) * log( 1.0 + exp(-1.0*x[i])))
 
-def log_bwd_cython(npDT[::1] dy, npDT[::1] dx) -> None:
+def log_sigmoid_bwd_cython(npDT[::1] dy, npDT[::1] dx) -> None:
     cdef int i
     # return 1 / (np.exp(dy) + 1)
     

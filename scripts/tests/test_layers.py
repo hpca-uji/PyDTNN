@@ -75,7 +75,7 @@ list_activations: list[tuple[str, Layer]] = [
     # ("LeakyRelu", LeakyRelu()), # Not in older versions.
     # ("Tanh", Tanh()),
     # ("Arctanh", Arctanh()),
-    # ("Log", Log()),
+    # ("LogSigmoid", LogSigmoid()),
     # ("Softmax", Softmax())
 ]
 

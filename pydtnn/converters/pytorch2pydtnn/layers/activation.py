@@ -6,7 +6,7 @@ from typing import Any
 import pydtnn.converters.pytorch2pydtnn.common as cm
 from pydtnn.activations.arctanh import Arctanh as Arctanh_PyDTNN
 from pydtnn.activations.leaky_relu import LeakyRelu as LeakyRelu_PyDTNN
-from pydtnn.activations.log import Log as Log_PyDTNN
+from pydtnn.activations.log_sigmoid import LogSigmoid as LogSigmoid_PyDTNN
 from pydtnn.activations.relu import Relu as Relu_PyDTNN
 from pydtnn.activations.relu6 import Relu6 as Relu6_PyDTNN
 from pydtnn.activations.sigmoid import Sigmoid as Sigmoid_PyDTNN
@@ -46,7 +46,7 @@ def Arctanh(args: dict[str, Any]) -> Arctanh_PyDTNN:
     return Arctanh_PyDTNN()
 
 
-def LogSigmoid(args: dict[str, Any]) -> Log_PyDTNN:
+def LogSigmoid(args: dict[str, Any]) -> LogSigmoid_PyDTNN:
     """
     Converts a PyTorch LogSigmoid layer to a PyDTNN Log layer.
 
@@ -58,7 +58,7 @@ def LogSigmoid(args: dict[str, Any]) -> Log_PyDTNN:
     """
     # https://pytorch.org/docs/stable/generated/torch.nn.LogSigmoid.html#torch.nn.LogSigmoid
     # not_used = args
-    return Log_PyDTNN()
+    return LogSigmoid_PyDTNN()
 
 
 def ReLU(args: dict[str, Any]) -> Relu_PyDTNN:
