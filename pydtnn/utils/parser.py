@@ -20,7 +20,7 @@ import re
 import textwrap
 from importlib import resources
 from pathlib import PurePath
-from typing import Sequence
+from collections.abc import Sequence
 
 import numpy as np
 
@@ -662,30 +662,30 @@ class ArgumentParser(argparse.ArgumentParser):
             help=(f"Size to blur training images. Default: {ModelBase.augment_blur_size!r}."),
         )
         _ds_group.add_argument(
-            "--augment-crop",
+            "--input-crop",
             action=argparse.BooleanOptionalAction,
-            default=ModelBase.augment_crop,
-            help=(f"Crop the images. True if specified. Default: {ModelBase.augment_crop!r}."),
+            default=ModelBase.input_crop,
+            help=(f"Crop the images. True if specified. Default: {ModelBase.input_crop!r}."),
         )
         _ds_group.add_argument(
-            "--augment-crop-perc",
+            "--input-crop-perc",
             type=factor,
-            default=ModelBase.augment_crop_perc,
+            default=ModelBase.input_crop_perc,
             help=(
-                f"Central crop percentage of the images. Default: {ModelBase.augment_crop_perc!r}."
+                f"Central crop percentage of the images. Default: {ModelBase.input_crop_perc!r}."
             ),
         )
         _ds_group.add_argument(
-            "--augment-scale",
+            "--input-scale",
             action=argparse.BooleanOptionalAction,
-            default=ModelBase.augment_scale,
-            help=(f"Resize the images. True if specified. Default: {ModelBase.augment_scale!r}."),
+            default=ModelBase.input_scale,
+            help=(f"Resize the images. True if specified. Default: {ModelBase.input_scale!r}."),
         )
         _ds_group.add_argument(
-            "--augment-scale-size",
+            "--input-scale-size",
             type=int,
-            default=ModelBase.augment_scale_size,
-            help=(f"New size of the images. Default: {ModelBase.augment_scale_size!r}."),
+            default=ModelBase.input_scale_size,
+            help=(f"New size of the images. Default: {ModelBase.input_scale_size!r}."),
         )
         _ds_group.add_argument(
             "--augment-perspective",
@@ -707,22 +707,22 @@ class ArgumentParser(argparse.ArgumentParser):
             ),
         )
         _ds_group.add_argument(
-            "--augment-normalize",
+            "--input-normalize",
             action=argparse.BooleanOptionalAction,
-            default=ModelBase.augment_normalize,
-            help=(f"Normalize dataset. Default: {ModelBase.augment_normalize!r}."),
+            default=ModelBase.input_normalize,
+            help=(f"Normalize dataset. Default: {ModelBase.input_normalize!r}."),
         )
         _ds_group.add_argument(
-            "--augment-normalize-offset",
+            "--input-normalize-offset",
             type=float,
-            default=ModelBase.augment_normalize_offset,
-            help=(f"Offset samples by a value. Default: {ModelBase.augment_normalize_offset!r}."),
+            default=ModelBase.input_normalize_offset,
+            help=(f"Offset samples by a value. Default: {ModelBase.input_normalize_offset!r}."),
         )
         _ds_group.add_argument(
-            "--augment-normalize-scale",
+            "--input-normalize-scale",
             type=float,
-            default=ModelBase.augment_normalize_scale,
-            help=(f"Scale samples by a value. Default: {ModelBase.augment_normalize_scale!r}."),
+            default=ModelBase.input_normalize_scale,
+            help=(f"Scale samples by a value. Default: {ModelBase.input_normalize_scale!r}."),
         )
 
         # Optimization options

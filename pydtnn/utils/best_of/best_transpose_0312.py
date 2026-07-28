@@ -1,7 +1,7 @@
 """Utilities for performing 0312 tensor transposition using various backend implementations."""
 
 import logging
-from typing import Callable
+from collections.abc import Callable
 
 import numpy as np
 

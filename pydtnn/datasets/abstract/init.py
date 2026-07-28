@@ -9,7 +9,8 @@ from __future__ import annotations
 
 import functools
 import logging
-from typing import TYPE_CHECKING, Callable, Generator
+from typing import TYPE_CHECKING
+from collections.abc import Generator, Callable
 
 import numpy as np
 

@@ -9,10 +9,10 @@ pydtnn-benchmark \
   --dataset=mnist \
   --dataset-path=datasets/mnist \
   --no-test-as-validation \
-  --no-augment-crop \
-  --augment-crop-perc=0.8 \
-  --no-augment-scale \
-  --augment-scale-size=16 \
+  --no-input-crop \
+  --input-crop-perc=0.8 \
+  --no-input-scale \
+  --input-scale-size=16 \
   --augment-shuffle \
   --batch-size=64 \
   --num-epochs=50 \

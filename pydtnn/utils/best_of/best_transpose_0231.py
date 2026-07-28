@@ -1,7 +1,7 @@
 """Utilities for performing 0231 tensor transposition using various optimized backends."""
 
 import logging
-from typing import Callable
+from collections.abc import Callable
 
 import numpy as np
 

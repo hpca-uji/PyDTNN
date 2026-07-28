@@ -5,7 +5,8 @@ from __future__ import annotations
 import copy
 import logging
 import os
-from typing import TYPE_CHECKING, Generator, override
+from typing import TYPE_CHECKING, override
+from collections.abc import Generator
 
 import numpy as np
 
@@ -83,14 +84,6 @@ class Folder(Dataset):
                 f" of test classes {num_classes_test}."
             )
 
-        self.weight_classes: list[float] = [0.0] * num_classes_train
-
-        num_elementos = sum(self.folder_class_elems.values())
-        for folder_class in self.folder_class_elems.keys():
-            self.weight_classes[folder_class] = (
-                self.folder_class_elems[folder_class] / num_elementos
-            )
-
         first_path = self.labels_and_images[Dataset.Part.TRAIN][0][1]
         x = self._load_rgb_image(first_path)
 
@@ -106,6 +99,14 @@ class Folder(Dataset):
             force_test_as_validation=force_test_as_validation,
             debug=debug,
         )
+
+        self.class_weight: list[float] = [1.0] * num_classes_train
+
+        num_elementos = sum(self.folder_class_elems.values())
+        for folder_class in self.folder_class_elems.keys():
+            self.class_weight[folder_class] = (
+                num_elementos / (self.folder_class_elems[folder_class] * num_classes_train)
+            )
 
         self.labels_and_images[Dataset.Part.VAL] = copy.copy(
             self.labels_and_images[Dataset.Part.TEST]

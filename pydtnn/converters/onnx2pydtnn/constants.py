@@ -1,6 +1,7 @@
 """Constants and mapping utilities for converting ONNX operations to PyDTNN layers."""
 
-from typing import Any, Callable
+from typing import Any
+from collections.abc import Callable
 
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.converters.onnx2pydtnn.operations.implemented_operations import (Add, AveragePool,

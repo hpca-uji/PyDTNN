@@ -15,9 +15,9 @@ mpirun -np 1 "${MPI_ARGS[@]}" \
   --model=densenet121_cifar10 \
   --dataset=cifar10 \
   --dataset-path=datasets/cifar10 \
-  --augment-normalize \
-  --augment-normalize-offset=-0.472 \
-  --augment-normalize-scale=1 \
+  --input-normalize \
+  --input-normalize-offset=-0.472 \
+  --input-normalize-scale=1 \
   --augment-horizontal-flip=0.5 \
   --augment-mask=0.5 \
   --augment-mask-size=16 \

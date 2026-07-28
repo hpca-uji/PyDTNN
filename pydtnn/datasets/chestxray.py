@@ -11,7 +11,8 @@ import logging
 import tarfile
 from itertools import chain
 from pathlib import Path
-from typing import TYPE_CHECKING, Generator
+from typing import TYPE_CHECKING
+from collections.abc import Generator
 
 import numpy as np
 
@@ -122,7 +123,7 @@ class ChestXRay(Dataset):
             A binary numpy array representing the labels.
         """
         labels = self._dict_images_labels[image_file]
-        mask = np.zeros(self.output_shape, dtype=np.uint8)
+        mask = np.zeros(OUTPUT_SHAPE, dtype=np.uint8)
         for label in labels:
             mask[self.labels2classes[label]] = 1
         return mask
@@ -176,6 +177,17 @@ class ChestXRay(Dataset):
         self._xy_filenames[Dataset.Part.TEST] = [
             (f"images/{name}", self._get_labels(name)) for name in test
         ]
+
+        class_total = 0
+        num_classes = OUTPUT_SHAPE[0]
+        self.class_weight: list[float] = [1.0] * num_classes
+
+        for _, label in self._xy_filenames[Dataset.Part.TRAIN]:
+            for cls in np.flatnonzero(label).tolist():
+                self.class_weight[cls] += 1
+                class_total += 1
+        for i, v in enumerate(self.class_weight):
+            self.class_weight[i] = class_total / (v * num_classes)
 
         # Mix train and validation
         self.model.random.shuffle(self._xy_filenames[Dataset.Part.TRAIN])

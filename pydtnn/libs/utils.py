@@ -159,12 +159,8 @@ def find_lib_path(name: str) -> str | None:
     # First, check the directories in LD_LIBRARY_PATH:
     expr = r"\s+(lib%s\.[^\s]+)\s+\-\>" % re.escape(name)
     for dir_path in filter(len, os.environ.get("LD_LIBRARY_PATH", "").split(":")):
-        f = os.popen("/sbin/ldconfig -Nnv %s 2>/dev/null" % dir_path)
-        try:
-            data = f.read()
-        finally:
-            f.close()
-        res = re.search(expr, data)
+        f = subprocess.run(["/sbin/ldconfig", "-Nnv", dir_path], capture_output=True, text=True)
+        res = re.search(expr, f.stdout)
         if res:
             return os.path.join(dir_path, res.group(1))
 
@@ -186,12 +182,8 @@ def find_lib_path(name: str) -> str | None:
     }
     abi_type = mach_map.get(machine, "libc6")
     expr = r"\s+lib%s\.[^\s]+\s+\(%s.*\=\>\s(.+)" % (re.escape(name), abi_type)
-    f = os.popen("/sbin/ldconfig -p 2>/dev/null")
-    try:
-        data = f.read()
-    finally:
-        f.close()
-    res = re.search(expr, data)
+    f = subprocess.run(["/sbin/ldconfig", "-p"], capture_output=True, text=True)
+    res = re.search(expr, f.stdout)
     if not res:
         return None
 

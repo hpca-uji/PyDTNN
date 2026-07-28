@@ -1,7 +1,8 @@
 """Common utilities and mapping functions for converting PyTorch models to PyDTNN."""
 
 import logging
-from typing import Any, Callable
+from typing import Any
+from collections.abc import Callable
 
 import numpy as np
 import torch

@@ -7,7 +7,8 @@ import traceback
 from collections import abc, defaultdict
 from contextlib import suppress
 from timeit import default_timer as timer
-from typing import Any, Callable, Hashable, Union
+from typing import Any, Hashable
+from collections.abc import Callable
 
 import numpy as np
 from rich import box
@@ -206,7 +207,7 @@ class BestOf:
     def __init__(
         self,
         name: str,
-        alternatives: list[tuple[str, Union[Callable, list[Callable]]]],
+        alternatives: list[tuple[str, Callable | list[Callable]]],
         get_problem_size: Callable[..., Hashable],
         rounds: int = 10,
         pruning_speedup: float = 10.0,
@@ -241,7 +242,7 @@ class BestOf:
                     )
         # Assign its initial value to each property
         self.name = name
-        self.alternatives: list[tuple[str, Union[Callable, list[Callable]]]] = alternatives
+        self.alternatives: list[tuple[str, Callable | list[Callable]]] = alternatives
         self.get_problem_size = get_problem_size
         self.total_rounds = rounds
         self.stages = stages

@@ -7,7 +7,7 @@ archiving operations within the PyDTNN framework.
 
 import itertools
 from pathlib import Path
-from typing import Generator
+from collections.abc import Generator
 
 import numpy as np
 

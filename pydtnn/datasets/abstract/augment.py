@@ -9,7 +9,8 @@ from __future__ import annotations
 
 import functools
 import logging
-from typing import TYPE_CHECKING, Callable, Generator
+from typing import TYPE_CHECKING
+from collections.abc import Generator, Callable
 
 import numpy as np
 from PIL import Image, ImageEnhance
@@ -86,7 +87,7 @@ class Augment(Init):
         # TODO: AREA UNDER CONSTUCTION
         self._augment_classes = set()  # set([2, 3, 4])
 
-        if self.model.augment_crop:
+        if self.model.input_crop:
             size = self.input_shape[1:]
             assert len(size) == 2
             crop, size = self._calculate_crop(size)
@@ -94,11 +95,11 @@ class Augment(Init):
             augments_training.append(self._x_augment_adaptor(self._do_augment_crop))
             augments_always.append(self._x_augment_adaptor(self._do_augment_crop))
 
-        if self.model.augment_scale:
+        if self.model.input_scale:
             self.input_shape = (
                 self.input_shape[0],
-                self.model.augment_scale_size,
-                self.model.augment_scale_size,
+                self.model.input_scale_size,
+                self.model.input_scale_size,
             )
             augments_training.append(self._x_augment_adaptor(self._do_augment_scale))
             augments_always.append(self._x_augment_adaptor(self._do_augment_scale))
@@ -130,7 +131,7 @@ class Augment(Init):
         if self.model.augment_rotate > 0:
             augments_training.append(self._x_augment_adaptor(self._do_augment_rotate))
 
-        if self.model.augment_normalize:
+        if self.model.input_normalize:
             augments_training.append(self._x_augment_adaptor(self._do_augment_normalize))
             augments_always.append(self._x_augment_adaptor(self._do_augment_normalize))
 
@@ -206,8 +207,8 @@ class Augment(Init):
         Returns:
             The normalized numpy array.
         """
-        np.add(data, self.model.augment_normalize_offset, out=data)
-        np.multiply(data, self.model.augment_normalize_scale, out=data)
+        np.add(data, self.model.input_normalize_offset, out=data)
+        np.multiply(data, self.model.input_normalize_scale, out=data)
         return data
 
     def _do_augment_flip(
@@ -442,7 +443,7 @@ class Augment(Init):
         """
         data = self.model.decode_tensor(data)
 
-        size = (self.model.augment_scale_size, self.model.augment_scale_size)
+        size = (self.model.input_scale_size, self.model.input_scale_size)
         shape = (*data.shape[:2], *size)
         _n, _c, _h, _w = shape
 
@@ -483,7 +484,7 @@ class Augment(Init):
                     after cropping.
         """
         width, height = size
-        frame_fraction = (1 - self.model.augment_crop_perc) / 2
+        frame_fraction = (1 - self.model.input_crop_perc) / 2
         x_offset, y_offset = round(width * frame_fraction), round(height * frame_fraction)
         crop = (x_offset, y_offset, width - x_offset, height - y_offset)
         size = (crop[2] - crop[0], crop[3] - crop[1])

@@ -1,7 +1,7 @@
 """Utilities for selecting the optimal 1023-transpose implementation."""
 
 import logging
-from typing import Callable
+from collections.abc import Callable
 
 import numpy as np
 

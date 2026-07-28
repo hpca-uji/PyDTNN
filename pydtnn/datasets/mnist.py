@@ -5,7 +5,8 @@ from __future__ import annotations
 import logging
 import math
 import os
-from typing import IO, TYPE_CHECKING, Generator
+from typing import IO, TYPE_CHECKING
+from collections.abc import Generator
 
 import numpy as np
 

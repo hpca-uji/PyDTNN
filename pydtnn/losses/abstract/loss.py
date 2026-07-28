@@ -34,10 +34,10 @@ class Loss[T: Array](Base):  # noqa: D101 (generics not detected)
 
     format = ""
 
-    def _weights_to_tensor(self, weights: list[float] | None) -> np.ndarray:
+    def _weights_to_tensor(self, weights: list[float]) -> np.ndarray:
         w = None
         # NOTE: This may not work very well in case self.model.dtype is an int
-        if weights is not None:
+        if weights:
             w = np.ascontiguousarray(weights, dtype=self.model.dtype)
         else:
             w = np.ones(self.model.output_shape, dtype=self.model.dtype, order="C")
@@ -60,11 +60,11 @@ class Loss[T: Array](Base):  # noqa: D101 (generics not detected)
         self.shape = (self.model.batch_size, *self.model.output_shape)
         if self.model.use_loss_weights:
             if self.model.loss_weights:
-                weights = self.model.dataset.weight_classes
-            else:
                 weights = list(self.model.loss_weights)
+            else:
+                weights = self.model.dataset.class_weight
         else:
-            weights = None
+            weights = []
 
         self.weights = self._weights_to_tensor(weights)
 

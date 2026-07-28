@@ -1,7 +1,5 @@
 """Test suite for PyDTNN layers and activation functions."""
 
-# import memray
-
 from time import time
 from typing import TYPE_CHECKING
 

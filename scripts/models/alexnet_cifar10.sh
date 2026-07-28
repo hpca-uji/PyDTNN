@@ -7,9 +7,9 @@ pydtnn-benchmark \
   --model=alexnet_cifar10 \
   --dataset=cifar10 \
   --dataset-path=datasets/cifar10 \
-  --augment-normalize \
-  --augment-normalize-offset=-0.472 \
-  --augment-normalize-scale=1 \
+  --input-normalize \
+  --input-normalize-offset=-0.472 \
+  --input-normalize-scale=1 \
   --test-as-validation \
   --batch-size=64 \
   --validation-split=0.2 \

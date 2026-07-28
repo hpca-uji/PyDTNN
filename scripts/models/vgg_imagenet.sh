@@ -8,13 +8,13 @@ pydtnn-benchmark \
   --model=vgg11_imagenet \
   --dataset=imagenet \
   --dataset-path=datasets/imagenet \
-  --augment-crop \
-  --augment-crop-perc=0.875 \
-  --augment-scale \
-  --augment-scale-size=227 \
-  --augment-normalize \
-  --augment-normalize-offset=-0.449 \
-  --augment-normalize-scale=3.537 \
+  --input-crop \
+  --input-crop-perc=0.875 \
+  --input-scale \
+  --input-scale-size=227 \
+  --input-normalize \
+  --input-normalize-offset=-0.449 \
+  --input-normalize-scale=3.537 \
   --tensor-format=nchw \
   --batch-size=64 \
   --validation-split=0.2 \

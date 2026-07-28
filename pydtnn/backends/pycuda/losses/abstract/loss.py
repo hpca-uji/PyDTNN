@@ -32,7 +32,7 @@ class LossPycuda(Loss[TensorArray], BasePycuda):
         self.grid = None
         self.block = None
 
-    def _weights_to_tensor(self, weights: list[float] | None) -> TensorArray:
+    def _weights_to_tensor(self, weights: list[float]) -> TensorArray:
         w = super()._weights_to_tensor(weights)
         w = TensorArray.to_gpu(
             ary=w, tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype

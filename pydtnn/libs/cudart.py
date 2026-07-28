@@ -7,7 +7,8 @@ import ctypes
 import functools
 import re
 import sys
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any
+from collections.abc import Callable
 
 import numpy as np
 

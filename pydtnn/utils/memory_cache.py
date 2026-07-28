@@ -6,7 +6,8 @@ and global cache control mechanisms.
 """
 
 import logging
-from typing import Any, Callable
+from typing import Any
+from collections.abc import Callable
 
 __all__ = ("MemoryCache",)
 

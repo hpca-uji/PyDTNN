@@ -48,5 +48,5 @@ mpirun -np 4 "${MPI_ARGS[@]}" \
   --no-use-cudnn \
   --no-use-gpudirect \
   --dtype=float32 \
-  --augment-scale \
-  --augment-scale-size=300
+  --input-scale \
+  --input-scale-size=300

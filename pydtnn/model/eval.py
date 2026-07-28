@@ -8,7 +8,8 @@ metric computation, and performance tracking during the testing phase.
 import logging
 import time
 from timeit import default_timer as timer
-from typing import Any, Generator
+from typing import Any
+from collections.abc import Generator
 
 import numpy as np
 from tqdm import tqdm

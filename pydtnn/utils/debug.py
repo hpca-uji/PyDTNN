@@ -13,7 +13,8 @@ import threading
 from contextlib import contextmanager
 from pathlib import Path
 from traceback import TracebackException
-from typing import Any, Callable, Generator
+from typing import Any
+from collections.abc import Callable, Generator
 
 from pydtnn import timestamp
 

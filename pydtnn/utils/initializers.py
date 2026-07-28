@@ -3,7 +3,7 @@
 import logging
 import math
 from enum import StrEnum, auto
-from typing import Callable
+from collections.abc import Callable
 
 import numpy as np
 import scipy.stats as stats

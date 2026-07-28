@@ -11,7 +11,8 @@ import functools
 import re
 import sys
 from string import Template
-from typing import Any, Callable
+from typing import Any
+from collections.abc import Callable
 
 import numpy as np
 

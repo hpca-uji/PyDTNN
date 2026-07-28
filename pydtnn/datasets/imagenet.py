@@ -15,7 +15,8 @@ import typing
 from collections import abc
 from contextlib import ExitStack, contextmanager
 from pathlib import Path, PurePath
-from typing import TYPE_CHECKING, Generator
+from typing import TYPE_CHECKING
+from collections.abc import Generator, Iterable
 
 import numpy as np
 from scipy.io import loadmat
@@ -36,7 +37,7 @@ INPUT_SHAPE = (3, 227, 227)
 OUTPUT_SHAPE = (1000,)
 
 
-def list_archive(root_path: Path) -> typing.Iterator[tuple[str, ...]]:
+def list_archive(root_path: Path) -> Iterable[tuple[str, ...]]:
     """
     Recursively walk through a TAR archive or nested TAR archives.
 
@@ -191,7 +192,7 @@ class ImageNet(Dataset):
 
     def _model_init(self) -> None:
         """Initialize dataset metadata and file paths."""
-        if not self.model.augment_scale:
+        if not self.model.input_scale:
             raise ValueError("Model augment_resize must be enabled for dataset!")
 
         meta = Path(self.model.dataset_path) / "ILSVRC2012_devkit_t12.tar.gz"
@@ -225,6 +226,17 @@ class ImageNet(Dataset):
             raise ValueError(
                 f"Mismatch test samples (got: {len(val_lables)}, expect: {TEST_NSAMPLES})"
             )
+
+        class_total = 0
+        num_classes = OUTPUT_SHAPE[0]
+        self.class_weight: list[float] = [1.0] * num_classes
+
+        for _, label in train_xy:
+            for cls in np.flatnonzero(label).tolist():
+                self.class_weight[cls] += 1
+                class_total += 1
+        for i, v in enumerate(self.class_weight):
+            self.class_weight[i] = class_total / (v * num_classes)
 
         # Mix train and validation
         self.model.random.shuffle(train_xy)

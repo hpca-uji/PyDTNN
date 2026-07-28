@@ -9,7 +9,8 @@ from __future__ import annotations
 
 import logging
 from enum import IntEnum
-from typing import TYPE_CHECKING, Callable, Generator
+from typing import TYPE_CHECKING
+from collections.abc import Generator, Callable
 
 import numpy as np
 
@@ -49,7 +50,7 @@ class Base:
     y_empty_batch: np.ndarray[tuple[int, ...]]
     input_shape: ArrayShape
     output_shape: ArrayShape
-    weight_classes: list[float] | None = None
+    class_weight: list[float] = []
     _nsamples: list[int]
     _augments: dict[Base.Part, list[TransformFunc]]
     _initial_nsamples: list[int]
