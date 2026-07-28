@@ -15,7 +15,7 @@ from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.model import Model as PyDTNN_Model
-from pydtnn.tests.abstract.common import Params, verbose_test
+from pydtnn.tests.abstract.common import Params, TestCase, verbose_test
 from pydtnn.tests.abstract.model_common import ModelCommonTestCase  # noqa: F401 (It's being used)
 from pydtnn.utils import print_with_header, rand
 from pydtnn.utils.pytorch import from_pytorch
@@ -168,7 +168,7 @@ def replace_layer(
         replace_layer(immediate_child_module, name, layer_to_replace)
 
 
-class ModelDTypeTestCase(unittest.TestCase):
+class ModelDTypeTestCase(TestCase):
     """Tests that two models with different parameters lead to the same results"""
 
     # NOTE: Delete parent test to prevent re-export and re-testing
@@ -193,6 +193,12 @@ class ModelDTypeTestCase(unittest.TestCase):
         Conv2D: 1e-5,
         BatchNormalization: 1e-4,
     }
+
+    def setUp(self) -> None:
+        """Sets up the test environment."""
+        super().setUp()
+        torch.manual_seed(0)
+    # Initialization methods
 
     params = Params()
     params.tensor_format = TensorFormat.NCHW
