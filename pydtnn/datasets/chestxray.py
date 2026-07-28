@@ -85,11 +85,11 @@ class ChestXRay(Dataset):
     30216f59778f259db91d77bcd3d0495c8fce88ef images_10.tar.gz https://nihcc.box.com/shared/static/l6nilvfa9cg3s28tqv1qc1olm3gnz54p.gz
     97985118ba36f18c27d62371d28c1698478cecfa images_11.tar.gz https://nihcc.box.com/shared/static/hhq8fkdgvcari67vfhs7ppg2w6ni4jze.gz
     cb2865369f434a9deea11e2d5222b8472890681b images_12.tar.gz https://nihcc.box.com/shared/static/ioqwiy20ihqwyr8pf4c24eazhh281pbu.gz
-
-    Normalize (z-score):
-    offset: -0.509
-    scale:  +4.002
     """  # noqa: E501
+
+    # z-score
+    normal_offset: float = -0.509
+    normal_scale: float = +4.002
 
     def __init__(
         self, model: Model, force_test_as_validation: bool = False, debug: bool = False
@@ -180,14 +180,14 @@ class ChestXRay(Dataset):
 
         class_total = 0
         num_classes = OUTPUT_SHAPE[0]
-        self.class_weight: list[float] = [1.0] * num_classes
+        self.class_weights: list[float] = [1.0] * num_classes
 
         for _, label in self._xy_filenames[Dataset.Part.TRAIN]:
             for cls in np.flatnonzero(label).tolist():
-                self.class_weight[cls] += 1
+                self.class_weights[cls] += 1
                 class_total += 1
-        for i, v in enumerate(self.class_weight):
-            self.class_weight[i] = class_total / (v * num_classes)
+        for i, v in enumerate(self.class_weights):
+            self.class_weights[i] = class_total / (v * num_classes)
 
         # Mix train and validation
         self.model.random.shuffle(self._xy_filenames[Dataset.Part.TRAIN])

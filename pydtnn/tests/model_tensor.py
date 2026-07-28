@@ -14,8 +14,8 @@ from pydtnn.layers.dropout import Dropout
 from pydtnn.layers.fc import FC
 from pydtnn.layers.flatten import Flatten
 from pydtnn.model import Model
-from pydtnn.tests.abstract.common import Params, verbose_test
-from pydtnn.tests.abstract.model_common import ModelCommonTestCase
+from pydtnn.tests.abstract.base import Params, verbose_test
+from pydtnn.tests.abstract.model import ModelTestCase
 from pydtnn.utils.tensor import TensorFormat, format_transpose
 
 __all__ = ("ModelTensorTestCase",)
@@ -23,24 +23,24 @@ __all__ = ("ModelTensorTestCase",)
 logger = logging.getLogger(__name__)
 
 
-class ModelTensorTestCase(ModelCommonTestCase):
+class ModelTensorTestCase(ModelTestCase):
     """Tests that two models with different parameters lead to the same results"""
 
-    global ModelCommonTestCase
+    global ModelTestCase
 
-    rtol_dict = ModelCommonTestCase.rtol_dict | {
+    rtol_dict = ModelTestCase.rtol_dict | {
         ConcatenationBlock: 1e-0,
         AdditionBlock: 1e-1,
         Conv2D: 1e-3,
     }
-    atol_dict = ModelCommonTestCase.atol_dict | {
+    atol_dict = ModelTestCase.atol_dict | {
         ConcatenationBlock: 1e-0,
         AdditionBlock: 1e-1,
         Conv2D: 1e-3,
     }
 
     # NOTE: Delete parent test to prevent re-export and re-testing
-    del ModelCommonTestCase
+    del ModelTestCase
 
     # Compares results between an XX model {self.model1_desc} and other {self.model1_desc}
     model1_desc = "using the CPU backend tensor format NHWC"

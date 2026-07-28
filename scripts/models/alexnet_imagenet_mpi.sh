@@ -37,8 +37,6 @@ mpirun -iface ib0 -hosts $HOSTS -ppn $PROCS_PER_NODE -np $NUMPROCS "${MPI_ARGS[@
   --input-scale \
   --input-scale-size=227 \
   --input-normalize \
-  --input-normalize-offset=-0.449 \
-  --input-normalize-scale=3.537 \
   --no-test-as-validation \
   --batch-size=64 \
   --validation-split=0.2 \

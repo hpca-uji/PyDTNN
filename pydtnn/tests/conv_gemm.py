@@ -8,8 +8,8 @@ import numpy as np
 
 from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython
 from pydtnn.libs.convGemm import ConvGemm, is_conv_gemm_available
-from pydtnn.tests.abstract.common import D, verbose_test
-from pydtnn.tests.abstract.conv_common import ConvCommonTestCase
+from pydtnn.tests.abstract.base import D, verbose_test
+from pydtnn.tests.abstract.conv import ConvTestCase
 from pydtnn.utils import print_with_header
 
 __all__ = ("ConvGemmTestCase",)
@@ -18,12 +18,12 @@ logger = logging.getLogger(__name__)
 
 
 @skipUnless(is_conv_gemm_available, "requires ConvGemm")
-class ConvGemmTestCase(ConvCommonTestCase):
+class ConvGemmTestCase(ConvTestCase):
     """Tests that conv_gemm leads to the same results as i2c and mm."""
 
     # NOTE: Delete parent test to prevent re-export and re-testing
-    global ConvCommonTestCase
-    del ConvCommonTestCase
+    global ConvTestCase
+    del ConvTestCase
 
     @classmethod
     def _compute_both(

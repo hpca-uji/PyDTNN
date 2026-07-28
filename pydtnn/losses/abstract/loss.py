@@ -58,11 +58,11 @@ class Loss[T: Array](Base):  # noqa: D101 (generics not detected)
 
         super()._model_init()
         self.shape = (self.model.batch_size, *self.model.output_shape)
-        if self.model.use_loss_weights:
-            if self.model.loss_weights:
-                weights = list(self.model.loss_weights)
+        if self.model.use_class_weights:
+            if self.model.class_weights:
+                weights = list(self.model.class_weights)
             else:
-                weights = self.model.dataset.class_weight
+                weights = self.model.dataset.class_weights
         else:
             weights = []
 

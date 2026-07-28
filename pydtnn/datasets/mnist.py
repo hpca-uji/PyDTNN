@@ -38,11 +38,11 @@ class MNIST(Memory):
     2a80914081dc54586dbdf242f9805a6b8d2a15fc train-labels-idx1-ubyte.gz https://ossci-datasets.s3.amazonaws.com/mnist/train-labels-idx1-ubyte.gz
     c3a25af1f52dad7f726cce8cacb138654b760d48 t10k-images-idx3-ubyte.gz https://ossci-datasets.s3.amazonaws.com/mnist/t10k-images-idx3-ubyte.gz
     763e7fa3757d93b0cdec073cef058b2004252c17 t10k-labels-idx1-ubyte.gz https://ossci-datasets.s3.amazonaws.com/mnist/t10k-labels-idx1-ubyte.gz
-
-    Normalize (z-score):
-    offset: -0.131
-    scale:  +3.237
     """  # noqa: E501
+
+    # z-score
+    normal_offset: float = -0.131
+    normal_scale: float = +3.237
 
     def __init__(
         self, model: Model, force_test_as_validation: bool = False, debug: bool = False

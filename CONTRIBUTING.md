@@ -143,12 +143,12 @@ _How is the project organized_
 │   ├── datasets
 │   │   ├── __init__.py  # usable datasets
 │   │   ├── abstract
-│   │   │   ├── base.py     # typing interface
-│   │   │   ├── utils.py    # utility methods
-│   │   │   ├── state.py    # state management
-│   │   │   ├── init.py     # initialization
-│   │   │   ├── repr.py     # representation
-│   │   │   └── augment.py  # data augmentation
+│   │   │   ├── base.py       # typing interface
+│   │   │   ├── utils.py      # utility methods
+│   │   │   ├── state.py      # state management
+│   │   │   ├── init.py       # initialization
+│   │   │   ├── repr.py       # representation
+│   │   │   └── transform.py  # transformations
 │   │   ├── archive.py
 │   │   ├── memory.py
 │   │   ├── folder.py

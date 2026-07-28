@@ -39,10 +39,6 @@ class Tsunamis(Memory):
     Tsunamis Dataset
 
     Source (SHA1): ???
-
-    Normalize (z-score):
-    offset: ???
-    scale:  ???
     """
 
     def __init__(

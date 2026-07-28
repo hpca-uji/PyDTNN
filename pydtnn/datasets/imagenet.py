@@ -126,11 +126,11 @@ class ImageNet(Dataset):
     43eda4fe35c1705d6606a6a7a633bc965d194284 ILSVRC2012_img_train.tar
     5f3f73da3395154b60528b2b2a2caf2374f5f178 ILSVRC2012_img_val.tar
     092a94ed6a05454b8b72d1c4ecf336fa48d37fda ILSVRC2012_devkit_t12.tar.gz
-
-    Normalize (z-score):
-    offset: -0.451
-    scale:  +3.471
     """
+
+    # z-score
+    normal_offset: float = -0.451
+    normal_scale: float = +3.471
 
     def __init__(
         self, model: Model, force_test_as_validation: bool = False, debug: bool = False
@@ -229,14 +229,14 @@ class ImageNet(Dataset):
 
         class_total = 0
         num_classes = OUTPUT_SHAPE[0]
-        self.class_weight: list[float] = [1.0] * num_classes
+        self.class_weights: list[float] = [1.0] * num_classes
 
         for _, label in train_xy:
             for cls in np.flatnonzero(label).tolist():
-                self.class_weight[cls] += 1
+                self.class_weights[cls] += 1
                 class_total += 1
-        for i, v in enumerate(self.class_weight):
-            self.class_weight[i] = class_total / (v * num_classes)
+        for i, v in enumerate(self.class_weights):
+            self.class_weights[i] = class_total / (v * num_classes)
 
         # Mix train and validation
         self.model.random.shuffle(train_xy)

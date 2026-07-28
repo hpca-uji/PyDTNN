@@ -21,6 +21,7 @@ if TYPE_CHECKING:
 
 type tuple_4D = tuple[int, int, int, int]
 
+
 class MaxPool2DNumpy(MaxPool2D[np.ndarray], AbstractPool2DLayerNumpy):
     """NumPy-based 2D Max Pooling layer implementation."""
 

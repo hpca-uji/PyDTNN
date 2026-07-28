@@ -7,15 +7,15 @@ from typing import Any
 import numpy as np
 
 from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython
-from pydtnn.tests.abstract.common import D, TestCase, alexnet_layers, verbose_test
+from pydtnn.tests.abstract.base import D, TestCase, alexnet_layers, verbose_test
 from pydtnn.utils import print_with_header, rand
 
-__all__ = ("ConvCommonTestCase",)
+__all__ = ("ConvTestCase",)
 
 logger = logging.getLogger(__name__)
 
 
-class ConvCommonTestCase(TestCase):
+class ConvTestCase(TestCase):
     """Tests that conv leads to the same results as i2c and mm."""
 
     @classmethod

@@ -8,8 +8,8 @@ import numpy as np
 
 from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython
 from pydtnn.libs.convWinograd import ConvWinograd, is_conv_winograd_available
-from pydtnn.tests.abstract.common import D, verbose_test
-from pydtnn.tests.abstract.conv_common import ConvCommonTestCase
+from pydtnn.tests.abstract.base import D, verbose_test
+from pydtnn.tests.abstract.conv import ConvTestCase
 from pydtnn.utils import print_with_header
 from pydtnn.utils.tensor import TensorFormat
 
@@ -25,12 +25,12 @@ logger = logging.getLogger(__name__)
 
 
 @unittest.skipUnless(is_conv_winograd_available, "requires ConvWinograd")
-class ConvWinogradTestCase(ConvCommonTestCase):
+class ConvWinogradTestCase(ConvTestCase):
     """Tests that conv_winograd leads to the same results as i2c and mm."""
 
     # NOTE: Delete parent test to prevent re-export and re-testing
-    global ConvCommonTestCase
-    del ConvCommonTestCase
+    global ConvTestCase
+    del ConvTestCase
 
     @classmethod
     def _compute_both(

@@ -11,8 +11,8 @@ from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.input import Input
 from pydtnn.model import Model
-from pydtnn.tests.abstract.common import D, Params
-from pydtnn.tests.abstract.conv_2d_common import Conv2DCommonTestCase
+from pydtnn.tests.abstract.base import D, Params
+from pydtnn.tests.abstract.conv_2d import Conv2DTestCase
 from pydtnn.utils.tensor import TensorFormat
 
 __all__ = ("BatchNormalizationReluTestCase",)
@@ -20,12 +20,12 @@ __all__ = ("BatchNormalizationReluTestCase",)
 logger = logging.getLogger(__name__)
 
 
-class BatchNormalizationReluTestCase(Conv2DCommonTestCase):
+class BatchNormalizationReluTestCase(Conv2DTestCase):
     """Tests that BatchNormalization+Relu leads to the same results than BatchNormalizationRelu"""
 
     # NOTE: Delete parent test to prevent re-export and re-testing
-    global Conv2DCommonTestCase
-    del Conv2DCommonTestCase
+    global Conv2DTestCase
+    del Conv2DTestCase
 
     @staticmethod
     def _get_layers(d: D, deconv: bool = False, trans: bool = False) -> tuple:

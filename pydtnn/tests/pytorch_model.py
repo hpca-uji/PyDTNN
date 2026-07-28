@@ -15,8 +15,8 @@ from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.model import Model as PyDTNN_Model
-from pydtnn.tests.abstract.common import Params, verbose_test
-from pydtnn.tests.abstract.model_common import ModelCommonTestCase  # noqa: F401 (It's being used)
+from pydtnn.tests.abstract.base import Params, verbose_test
+from pydtnn.tests.abstract.model import ModelTestCase  # noqa: F401 (It's being used)
 from pydtnn.utils import print_with_header, rand
 from pydtnn.utils.pytorch import from_pytorch
 from pydtnn.utils.tensor import TensorFormat
@@ -172,8 +172,8 @@ class ModelDTypeTestCase(unittest.TestCase):
     """Tests that two models with different parameters lead to the same results"""
 
     # NOTE: Delete parent test to prevent re-export and re-testing
-    global ModelCommonTestCase
-    del ModelCommonTestCase
+    global ModelTestCase
+    del ModelTestCase
 
     # Compares results between an XX model {self.model1_desc} and other {self.model2_desc}
     model1_desc = "using PyTorch"

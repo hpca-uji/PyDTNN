@@ -18,16 +18,16 @@ from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.dropout import Dropout
 from pydtnn.losses.abstract.loss import Loss
 from pydtnn.model import Model
-from pydtnn.tests.abstract.common import Params, TestCase, verbose_test
+from pydtnn.tests.abstract.base import Params, TestCase, verbose_test
 from pydtnn.utils import print_with_header, rand
 from pydtnn.utils.tensor import TensorFormat
 
-__all__ = ("ModelCommonTestCase",)
+__all__ = ("ModelTestCase",)
 
 logger = logging.getLogger(__name__)
 
 
-class ModelCommonTestCase(TestCase):
+class ModelTestCase(TestCase):
     """Tests that two models with different parameters lead to the same results"""
 
     # Compares results between an XX model {self.model1_desc} and other {self.model1_desc}

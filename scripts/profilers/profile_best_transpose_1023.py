@@ -5,7 +5,7 @@ This script benchmarks the performance of the `best_transpose_1023` function
 against standard AlexNet layer configurations using the `BestOfProfiler`.
 """
 
-from pydtnn.tests.abstract.common import alexnet_layers
+from pydtnn.tests.abstract.base import alexnet_layers
 from pydtnn.utils import rand
 from pydtnn.utils.best_of.best_transpose_1023 import best_transpose_1023
 from pydtnn.utils.best_of_profiler import BestOfProfiler

@@ -37,7 +37,7 @@ from pydtnn.layers.flatten import Flatten
 from pydtnn.layers.input import Input
 from pydtnn.layers.max_pool_2d import MaxPool2D
 from pydtnn.model import Model
-from pydtnn.tests.abstract.common import Params, TestCase, verbose_test
+from pydtnn.tests.abstract.base import Params, TestCase, verbose_test
 from pydtnn.utils import rand
 from pydtnn.utils.constants import Parameters
 from pydtnn.utils.tensor import TensorFormat, format_reshape, format_transpose

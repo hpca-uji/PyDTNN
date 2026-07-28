@@ -14,8 +14,8 @@ from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.input import Input
 from pydtnn.libs.convGemm import is_conv_gemm_available
 from pydtnn.model import Model
-from pydtnn.tests.abstract.common import D, Params
-from pydtnn.tests.abstract.conv_2d_common import Conv2DCommonTestCase
+from pydtnn.tests.abstract.base import D, Params
+from pydtnn.tests.abstract.conv_2d import Conv2DTestCase
 from pydtnn.utils.initializers import glorot_uniform, zeros
 from pydtnn.utils.tensor import TensorFormat
 
@@ -25,12 +25,12 @@ logger = logging.getLogger(__name__)
 
 
 @unittest.skipUnless(is_conv_gemm_available, "requires ConvGemm")
-class Conv2DBatchNormalizationReluTestCase(Conv2DCommonTestCase):
+class Conv2DBatchNormalizationReluTestCase(Conv2DTestCase):
     """Tests that Conv2D+BatchNormalization+Relu leads to the same results than Conv2DBatchNormalizationRelu"""
 
     # NOTE: Delete parent test to prevent re-export and re-testing
-    global Conv2DCommonTestCase
-    del Conv2DCommonTestCase
+    global Conv2DTestCase
+    del Conv2DTestCase
 
     @staticmethod
     def _get_layers(

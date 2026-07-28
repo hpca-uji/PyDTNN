@@ -37,11 +37,11 @@ class CIFAR10(Memory):
 
     Source (SHA1): https://www.cs.toronto.edu/~kriz/cifar.html
     e8aa088b9774a44ad217101d2e2569f823d2d491 cifar-10-binary.tar.gz https://www.cs.toronto.edu/~kriz/cifar-10-binary.tar.gz
-
-    Normalize (z-score):
-    offset: -0.475
-    scale:  +3.964
     """
+
+    # z-score
+    normal_offset: float = -0.475
+    normal_scale: float = +3.964
 
     def __init__(
         self, model: Model, force_test_as_validation: bool = False, debug: bool = False

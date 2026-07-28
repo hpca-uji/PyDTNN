@@ -189,14 +189,14 @@ The PyDTNN framework comes with a utility launcher called
   - `--test-as-validation`, `--no-test-as-validation`: Prevent making partitions on training data for training+validation data, use
     test data for validation. True if specified. Default: False.
   - `--validation-split`: Split between training and validation data. Default: 0.2.
-  - `--augment-shuffle`, `--no-augment-shuffle`: Shuffle training images. Default: True.
+  - `--input-crop`, `--no-input-crop`: Crop the images. True if specified. Default: False.
+  - `--input-crop-perc`: Central crop percentage of the images. Default: 0.875.
+  - `--input-scale`, `--no-input-scale`: Resize the images. True if specified. Default: False.
+  - `--input-scale-size`: New size of the images. Default: 300.
   - `--augment-horizontal-flip`: Probability to do a horizontal flip to the training images. If the value is less
     or equal to 0 it is disabled. Default: 0.0.
   - `--augment-vertical-flip`: Probability to do a vertical flip to the training images. If the value is less
     or equal to 0 it is disabled. Default: 0.0.
-  - `--augment-rotate`: Probability to rotate training images. If the value is less or equal to 0 it is
-    disabled. Default: 0.0.
-  - `--augment-rotate-degree`: The maximum degree to rotate training images. Default: 90.0.
   - `--augment-brightness`: Probability to change the brightness to training images. If the value is less or
     equal to 0 it is disabled. Default: 0.0.
   - `--augment-brightness-factor`: The maximum brightness to apply in training images. Value ranges from 0 (no
@@ -209,23 +209,29 @@ The PyDTNN framework comes with a utility launcher called
     equal to 0 it is disabled. Default: 0.0.
   - `--augment-saturation-factor`: The maximum saturation to apply in training images. Value ranges from 0 (no
     brightness), to 1 (same), up to infinity. Default: 1.0.
-  - `--augment-mask`: Probability to mask training images. If the value is less or equal to 0 it is
-    disabled. Default: 0.0.
-  - `--augment-mask-size`: Size to mask training images. Default: 16.
   - `--augment-blur`: Probability to blur training images. If the value is less or equal to 0 it is
     disabled. Default: 0.0.
   - `--augment-blur-size`: Size to blur training images. Default: 16.
-  - `--input-crop`, `--no-input-crop`: Crop the images. True if specified. Default: False.
-  - `--input-crop-perc`: Central crop percentage of the images. Default: 0.875.
-  - `--input-scale`, `--no-input-scale`: Resize the images. True if specified. Default: False.
-  - `--input-scale-size`: New size of the images. Default: 300.
+  - `--augment-mask`: Probability to mask training images. If the value is less or equal to 0 it is
+    disabled. Default: 0.0.
+  - `--augment-mask-size`: Size to mask training images. Default: 16.
   - `--augment-perspective`: Probability to change the perspective in training images. If the value is less
     or equal to 0 it is disabled. Default: 0.0.
   - `--augment-perspective-factor`: The perspective distortion factor. The ranges are from 0.0 to 0.5. Default:
     0.25.
+  - `--augment-rotate`: Probability to rotate training images. If the value is less or equal to 0 it is
+    disabled. Default: 0.0.
+  - `--augment-rotate-degree`: The maximum degree to rotate training images. Default: 90.0.
   - `--input-normalize`, `--no-input-normalize`: Normalize dataset. Default: False.
-  - `--input-normalize-offset`: Offset samples by a value. Default: -0.45.
-  - `--input-normalize-scale`: Scale samples by a value. Default: 3.75.
+  - `--input-normalize-offset`: Offset samples by a value. Default: 0.0.
+  - `--input-normalize-scale`: Scale samples by a value. If 0 use dataset default. Default: 0.0.
+  - `--augment-shuffle`, `--no-augment-shuffle`: Shuffle training images. Default: True.
+  - `--use-class-weights`, `--no-use-class-weights`: True if use the class-weights parameter,  False to set all classes' weights with
+    the same value. Default: False.
+  - `--class-weights`: List modifiers separated by a comma to indicate the weights of every class. If
+    the value is `None` it will use the default datasets inverted value;  if the
+    dataset has not a default value, all classes will weight `1`. Example, with 3
+    classes: `0.4,1.8,0.2`. Default: ().
 
 - Optimization options:
   - `--fused-bn-relu`, `--no-fused-bn-relu`: Fuse BatchNormalization and Relu layers. True if specified. Default: False.
@@ -261,12 +267,6 @@ The PyDTNN framework comes with a utility launcher called
     `categorical_cross_entropy`, `binary_cross_entropy`, `kl_divergence`, etc.
     Default: `categorical_cross_entropy`.
   - `--loss-eps`: Value for numerical stability. Default: 1e-08.
-  - `--loss-weights`: List modifiers separated by a comma to indicate the weights of every class. If
-    the value is `None` it will use the default datasets value;  if the dataset has
-    not a default value, all classes will weight `1`. Example, with 3 classes:
-    `0.4,1.8,0.2`. Default: ().
-  - `--use-loss-weights`, `--no-use-loss-weights`: True if use the loss-weights parameter,  False to set all classes' weights with
-    the same value. Default: False.
   - `--metrics`: List of comma-separated metrics that are evaluated on each trained batch:
     `categorical_hinge`, `confusion_matrix`, `kl_divergence_metric`,
     `multiclass_confusion_matrix`, `f1_score`, `regression_mae`, `precision`,

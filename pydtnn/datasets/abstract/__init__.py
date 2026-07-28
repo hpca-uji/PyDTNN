@@ -5,7 +5,7 @@ Provides the base Dataset class and utility functions for managing,
 transforming, and generating data batches for machine learning models.
 """
 
-from pydtnn.datasets.abstract.augment import Augment
+from pydtnn.datasets.abstract.transform import Augment
 from pydtnn.datasets.abstract.repr import Repr
 from pydtnn.datasets.abstract.state import State
 
