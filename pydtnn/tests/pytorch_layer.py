@@ -467,7 +467,7 @@ class LayerPyTorchTestCase(TestCase):
         x_torch_tmp = (
             torch.from_numpy(_x.reshape((N, C, H, W), copy=False)).to(torch.device("cpu")).float()
         )
-        x_torch_tmp = torch_model(x)
+        x_torch_tmp = torch_model(x_torch_tmp)
         x_torch = np.asarray(
             x_torch_tmp.numpy(force=True), dtype=pydtnn_model.dtype, order="C"
         ).copy()
