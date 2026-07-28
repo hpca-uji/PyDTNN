@@ -40,8 +40,8 @@ class LogSigmoidNumpy(LogSigmoid[np.ndarray], ActivationNumpy):
         np.multiply(x, -1, out=x, dtype=self.model.dtype)
         np.exp(x, out=x, dtype=self.model.dtype)
         np.add(x, 1, out=x, dtype=self.model.dtype)
+        # NOTE: Log propierties: "log(a / b) = log(a) - log(b)", and "log(1) = 0"
         np.log(x, out=self.y, dtype=self.model.dtype)
-        # NOTE: Log propierty: "log(a / b) = log(a) - log(b)", and "log(1) = 0"
         np.multiply(self.y, -1, out=self.y, dtype=self.model.dtype)
         self.y = np.asarray(self.y, dtype=self.model.dtype, order="C")
         return self.y
