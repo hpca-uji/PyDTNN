@@ -148,7 +148,7 @@ class MaxPool2DCython(MaxPool2DNumpy, AbstractPool2DLayerCython):
         idx_max = argmax_cython(x_rows, y, amax, rng, axis=1)
 
         if self.model.mode is Model.Mode.TRAIN:
-            self.idx_max = idx_max # pyright: ignore[reportAttributeAccessIssue]
+            self.idx_max = idx_max  # pyright: ignore[reportAttributeAccessIssue]
         return np.asarray(
             y.reshape((-1, self.ho, self.wo, self.co)), dtype=self.model.dtype, order="C"
         )
@@ -183,7 +183,7 @@ class MaxPool2DCython(MaxPool2DNumpy, AbstractPool2DLayerCython):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         idx_max: tuple[np.ndarray, np.ndarray] = argmax_cython(x_cols, y, amax, rng, axis=0)
         if self.model.mode is Model.Mode.TRAIN:
-            self.idx_max = idx_max # pyright: ignore[reportAttributeAccessIssue]
+            self.idx_max = idx_max  # pyright: ignore[reportAttributeAccessIssue]
         return np.asarray(
             y.reshape((-1, self.co, self.ho, self.wo)), dtype=self.model.dtype, order="C"
         )

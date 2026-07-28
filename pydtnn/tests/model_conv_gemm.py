@@ -6,8 +6,8 @@ import unittest
 from pydtnn.layers.abstract.layer import LayerError
 from pydtnn.libs.convGemm import is_conv_gemm_available
 from pydtnn.model import Model
-from pydtnn.tests.abstract.common import Params
-from pydtnn.tests.abstract.model_common import ModelCommonTestCase
+from pydtnn.tests.abstract.base import Params
+from pydtnn.tests.abstract.model import ModelTestCase
 from pydtnn.utils.tensor import TensorFormat
 
 __all__ = ("ModelConvGemmTestCase",)
@@ -16,12 +16,12 @@ logger = logging.getLogger(__name__)
 
 
 @unittest.skipUnless(is_conv_gemm_available, "requires ConvGemm")
-class ModelConvGemmTestCase(ModelCommonTestCase):
+class ModelConvGemmTestCase(ModelTestCase):
     """Tests that two models with different parameters lead to the same results"""
 
     # NOTE: Delete parent test to prevent re-export and re-testing
-    global ModelCommonTestCase
-    del ModelCommonTestCase
+    global ModelTestCase
+    del ModelTestCase
 
     # Compares results between an XX model {self.model1_desc} and other {self.model1_desc}
     model1_desc = "using Im2Col+MM"

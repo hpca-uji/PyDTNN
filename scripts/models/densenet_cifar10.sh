@@ -16,8 +16,6 @@ mpirun -np 1 "${MPI_ARGS[@]}" \
   --dataset=cifar10 \
   --dataset-path=datasets/cifar10 \
   --input-normalize \
-  --input-normalize-offset=-0.472 \
-  --input-normalize-scale=1 \
   --augment-horizontal-flip=0.5 \
   --augment-mask=0.5 \
   --augment-mask-size=16 \

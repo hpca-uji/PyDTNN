@@ -90,16 +90,16 @@ class Init(Utils):
         # if len(input_shape) == 3 and not (input_shape[0] < input_shape[2]):
         elif not (input_shape[0] < input_shape[2]):
             logger.warning(
-                f"Dataset input_shape {input_shape} may not be in NCHW format, regardless of model"
-                " format!"
+                f"Dataset input_shape {input_shape} may not be in NCHW format, regardless of model format!"
             )
 
         if len(output_shape) != 1:
             logger.warning(
-                f"Output shape should have 1 dimension, but it has {
-                    len(output_shape)
-                } (Output shape: {output_shape}). This may cause issues!"
+                f"Output shape should have 1 dimension, but it has {len(output_shape)}"
+                f" (Output shape: {output_shape}). This may cause issues!"
             )
+        elif not self.class_weights:
+            self.class_weights = [1.0] * output_shape[0]
 
         self.model: Model = model
         self.debug: bool = debug
@@ -238,7 +238,7 @@ class Init(Utils):
         yield self._x[part], self._y[part]
 
     @staticmethod
-    def _x_augment_adaptor(func: Callable[[np.ndarray], np.ndarray]) -> TransformFunc:
+    def _x_transform_adaptor(func: Callable[[np.ndarray], np.ndarray]) -> TransformFunc:
         """
         Adapt a single-input transformation function to the (x, y) signature.
 
@@ -261,7 +261,7 @@ class Init(Utils):
 
         return wrapper
 
-    def _augment_data_generator(self, part: Base.Part) -> Generator[tuple[np.ndarray, np.ndarray]]:
+    def _transform_data_generator(self, part: Base.Part) -> Generator[tuple[np.ndarray, np.ndarray]]:
         """
         Yield transformed data from the dataset partition.
 
@@ -313,7 +313,7 @@ class Init(Utils):
         local_batch_size = self.model.batch_size
         global_batch_size = self.model.batch_size * self.model.nprocs
 
-        generator = self._augment_data_generator(part)
+        generator = self._transform_data_generator(part)
         nsamples = self._nsamples[part]
 
         batch_size = 0

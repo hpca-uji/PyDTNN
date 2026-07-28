@@ -80,20 +80,17 @@ class Augment(Init):
             debug,
         )
 
-        self._augments = dict[Base.Part, list[TransformFunc]]()
-        augments_training = list[TransformFunc]()
-        augments_always = list[TransformFunc]()
-
-        # TODO: AREA UNDER CONSTUCTION
-        self._augment_classes = set()  # set([2, 3, 4])
+        self._transforms = dict[Base.Part, list[TransformFunc]]()
+        transforms_training = list[TransformFunc]()
+        transforms_always = list[TransformFunc]()
 
         if self.model.input_crop:
             size = self.input_shape[1:]
             assert len(size) == 2
             crop, size = self._calculate_crop(size)
             self.input_shape = (self.input_shape[0], *size)
-            augments_training.append(self._x_augment_adaptor(self._do_augment_crop))
-            augments_always.append(self._x_augment_adaptor(self._do_augment_crop))
+            transforms_training.append(self._x_transform_adaptor(self._transform_crop))
+            transforms_always.append(self._x_transform_adaptor(self._transform_crop))
 
         if self.model.input_scale:
             self.input_shape = (
@@ -101,50 +98,50 @@ class Augment(Init):
                 self.model.input_scale_size,
                 self.model.input_scale_size,
             )
-            augments_training.append(self._x_augment_adaptor(self._do_augment_scale))
-            augments_always.append(self._x_augment_adaptor(self._do_augment_scale))
+            transforms_training.append(self._x_transform_adaptor(self._transform_scale))
+            transforms_always.append(self._x_transform_adaptor(self._transform_scale))
 
         if self.model.augment_horizontal_flip > 0:
-            augments_training.append(self._x_augment_adaptor(self._do_augment_horizontal_flip))
+            transforms_training.append(self._x_transform_adaptor(self._transform_horizontal_flip))
 
         if self.model.augment_vertical_flip > 0:
-            augments_training.append(self._x_augment_adaptor(self._do_augment_vertical_flip))
+            transforms_training.append(self._x_transform_adaptor(self._transform_vertical_flip))
 
         if self.model.augment_brightness > 0:
-            augments_training.append(self._x_augment_adaptor(self._do_augment_brightness))
+            transforms_training.append(self._x_transform_adaptor(self._transform_brightness))
 
         if self.model.augment_contrast > 0:
-            augments_training.append(self._x_augment_adaptor(self._do_augment_contrast))
+            transforms_training.append(self._x_transform_adaptor(self._transform_contrast))
 
         if self.model.augment_saturation > 0:
-            augments_training.append(self._x_augment_adaptor(self._do_augment_saturation))
+            transforms_training.append(self._x_transform_adaptor(self._transform_saturation))
 
         if self.model.augment_blur > 0:
-            augments_training.append(self._x_augment_adaptor(self._do_augment_blur))
+            transforms_training.append(self._x_transform_adaptor(self._transform_blur))
 
         if self.model.augment_mask > 0:
-            augments_training.append(self._x_augment_adaptor(self._do_augment_mask))
+            transforms_training.append(self._x_transform_adaptor(self._transform_mask))
 
         if self.model.augment_perspective > 0:
-            augments_training.append(self._x_augment_adaptor(self._do_augment_perspective))
+            transforms_training.append(self._x_transform_adaptor(self._transform_perspective))
 
         if self.model.augment_rotate > 0:
-            augments_training.append(self._x_augment_adaptor(self._do_augment_rotate))
+            transforms_training.append(self._x_transform_adaptor(self._transform_rotate))
 
         if self.model.input_normalize:
-            augments_training.append(self._x_augment_adaptor(self._do_augment_normalize))
-            augments_always.append(self._x_augment_adaptor(self._do_augment_normalize))
+            transforms_training.append(self._x_transform_adaptor(self._transform_normalize))
+            transforms_always.append(self._x_transform_adaptor(self._transform_normalize))
 
         if self.model.augment_shuffle:
-            augments_training.append(self._do_augment_shuffle)
-            augments_always.append(self._do_augment_shuffle)
+            transforms_training.append(self._augment_shuffle)
+            transforms_always.append(self._augment_shuffle)
 
-        self._augments[Base.Part.TRAIN] = augments_training
-        self._augments[Base.Part.TEST] = augments_always
-        self._augments[Base.Part.VAL] = augments_always
+        self._transforms[Base.Part.TRAIN] = transforms_training
+        self._transforms[Base.Part.TEST] = transforms_always
+        self._transforms[Base.Part.VAL] = transforms_always
 
     @staticmethod
-    def _x_augment_adaptor(func: Callable[[np.ndarray], np.ndarray]) -> TransformFunc:
+    def _x_transform_adaptor(func: Callable[[np.ndarray], np.ndarray]) -> TransformFunc:
         """
         Adapt a single-input transformation function to the (x, y) signature.
 
@@ -167,7 +164,7 @@ class Augment(Init):
 
         return wrapper
 
-    def _augment_data_generator(self, part: Base.Part) -> Generator[tuple[np.ndarray, np.ndarray]]:
+    def _transform_data_generator(self, part: Base.Part) -> Generator[tuple[np.ndarray, np.ndarray]]:
         """
         Yield transformed data from the dataset partition.
 
@@ -182,19 +179,12 @@ class Augment(Init):
         """
         for x, y in self._data_generator(part):
             x, y = x.copy(), y.copy()
-            augments = self._augments[part]
-
-            # TODO: AREA UNDER CONSTUCTION
-            if part == Base.Part.TRAIN and self._augment_classes:
-                classes = set(y.nonzero()[0].flatten())
-                if classes.isdisjoint(self._augment_classes):
-                    augments = self._augments[Base.Part.VAL]
-
-            for transformation in augments:
-                x, y = transformation(x, y)
+            transforms = self._transforms[part]
+            for transform in transforms:
+                x, y = transform(x, y)
             yield x, y
 
-    def _do_augment_normalize(self, data: np.ndarray) -> np.ndarray:
+    def _transform_normalize(self, data: np.ndarray) -> np.ndarray:
         """
         Normalize data using model parameters.
 
@@ -207,11 +197,17 @@ class Augment(Init):
         Returns:
             The normalized numpy array.
         """
-        np.add(data, self.model.input_normalize_offset, out=data)
-        np.multiply(data, self.model.input_normalize_scale, out=data)
+        if self.model.input_normalize_scale:
+            scale = self.model.input_normalize_scale
+            offset = self.model.input_normalize_offset
+        else:
+            scale = self.normal_scale
+            offset = self.normal_offset
+        np.add(data, offset, out=data)
+        np.multiply(data, scale, out=data)
         return data
 
-    def _do_augment_flip(
+    def _transform_flip(
         self, data: np.ndarray, augment_probability: float, axis: int
     ) -> np.ndarray:
         """
@@ -232,7 +228,7 @@ class Augment(Init):
 
         return data
 
-    def _do_augment_horizontal_flip(self, data: np.ndarray) -> np.ndarray:
+    def _transform_horizontal_flip(self, data: np.ndarray) -> np.ndarray:
         """
         Apply random horizontal flip augmentation to images.
 
@@ -260,11 +256,11 @@ class Augment(Init):
                     } format."
                 )
 
-        return self._do_augment_flip(
+        return self._transform_flip(
             data=data, augment_probability=self.model.augment_horizontal_flip, axis=width_dim
         )
 
-    def _do_augment_vertical_flip(self, data: np.ndarray) -> np.ndarray:
+    def _transform_vertical_flip(self, data: np.ndarray) -> np.ndarray:
         """
         Apply random vertical flip augmentation to images.
 
@@ -292,11 +288,11 @@ class Augment(Init):
                     } format."
                 )
 
-        return self._do_augment_flip(
+        return self._transform_flip(
             data=data, augment_probability=self.model.augment_vertical_flip, axis=height_dim
         )
 
-    def _do_augment_shuffle(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    def _augment_shuffle(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """
         Shuffle samples within a batch.
 
@@ -316,7 +312,7 @@ class Augment(Init):
         y[:] = y[idx]
         return x, y
 
-    def _do_augment_mask(self, data: np.ndarray) -> np.ndarray:
+    def _transform_mask(self, data: np.ndarray) -> np.ndarray:
         """
         Apply random mask augmentation.
 
@@ -363,7 +359,7 @@ class Augment(Init):
             )
         return data
 
-    def _do_augment_rotate(self, data: np.ndarray) -> np.ndarray:
+    def _transform_rotate(self, data: np.ndarray) -> np.ndarray:
         """
         Apply random rotation augmentation to images.
 
@@ -401,7 +397,7 @@ class Augment(Init):
 
         return data
 
-    def _do_augment_blur(self, data: np.ndarray) -> np.ndarray:
+    def _transform_blur(self, data: np.ndarray) -> np.ndarray:
         """
         Apply random blur augmentation to images.
 
@@ -428,7 +424,7 @@ class Augment(Init):
 
         return data
 
-    def _do_augment_scale(self, data: np.ndarray) -> np.ndarray:
+    def _transform_scale(self, data: np.ndarray) -> np.ndarray:
         """
         Resize images using PIL.
 
@@ -490,7 +486,7 @@ class Augment(Init):
         size = (crop[2] - crop[0], crop[3] - crop[1])
         return (crop, size)
 
-    def _do_augment_crop(self, data: np.ndarray) -> np.ndarray:
+    def _transform_crop(self, data: np.ndarray) -> np.ndarray:
         """
         Apply center crop transformation.
 
@@ -527,7 +523,7 @@ class Augment(Init):
 
         return new_data
 
-    def _do_augment_brightness(self, data: np.ndarray) -> np.ndarray:
+    def _transform_brightness(self, data: np.ndarray) -> np.ndarray:
         """
         Apply random brightness augmentation to images.
 
@@ -568,7 +564,7 @@ class Augment(Init):
 
         return data
 
-    def _do_augment_contrast(self, data: np.ndarray) -> np.ndarray:
+    def _transform_contrast(self, data: np.ndarray) -> np.ndarray:
         """
         Apply random contrast augmentation to images.
 
@@ -608,7 +604,7 @@ class Augment(Init):
 
         return data
 
-    def _do_augment_saturation(self, data: np.ndarray) -> np.ndarray:
+    def _transform_saturation(self, data: np.ndarray) -> np.ndarray:
         """
         Apply random saturation augmentation to images.
 
@@ -648,7 +644,7 @@ class Augment(Init):
 
         return data
 
-    def _do_augment_perspective(self, data: np.ndarray) -> np.ndarray:
+    def _transform_perspective(self, data: np.ndarray) -> np.ndarray:
         """
         Apply random perspective augmentation to images.
 

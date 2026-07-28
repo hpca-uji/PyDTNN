@@ -100,11 +100,11 @@ class Folder(Dataset):
             debug=debug,
         )
 
-        self.class_weight: list[float] = [1.0] * num_classes_train
+        self.class_weights: list[float] = [1.0] * num_classes_train
 
         num_elementos = sum(self.folder_class_elems.values())
         for folder_class in self.folder_class_elems.keys():
-            self.class_weight[folder_class] = (
+            self.class_weights[folder_class] = (
                 num_elementos / (self.folder_class_elems[folder_class] * num_classes_train)
             )
 

@@ -16,8 +16,8 @@ from pydtnn.layers.addition_block import AdditionBlock
 from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.model import Model
-from pydtnn.tests.abstract.common import Params, verbose_test
-from pydtnn.tests.abstract.model_common import ModelCommonTestCase
+from pydtnn.tests.abstract.base import Params, verbose_test
+from pydtnn.tests.abstract.model import ModelTestCase
 from pydtnn.utils.tensor import TensorFormat, format_transpose
 
 __all__ = ("ModelGpuTestCase",)
@@ -26,24 +26,24 @@ logger = logging.getLogger(__name__)
 
 
 @unittest.skipUnless(pycuda and supported_gpu, "requires GPU")
-class ModelGpuTestCase(ModelCommonTestCase):
+class ModelGpuTestCase(ModelTestCase):
     """Test case for verifying model parity between CPU and GPU implementations."""
 
-    global ModelCommonTestCase
+    global ModelTestCase
 
-    rtol_dict = ModelCommonTestCase.rtol_dict | {
+    rtol_dict = ModelTestCase.rtol_dict | {
         ConcatenationBlock: 1e-1,
         AdditionBlock: 1e-1,
         Conv2D: 1e-4,
     }
-    atol_dict = ModelCommonTestCase.atol_dict | {
+    atol_dict = ModelTestCase.atol_dict | {
         ConcatenationBlock: 1e-1,
         AdditionBlock: 1e-1,
         Conv2D: 1e-4,
     }
 
     # NOTE: Delete parent test to prevent re-export and re-testing
-    del ModelCommonTestCase
+    del ModelTestCase
 
     # Compares results between an XX model {self.model1_desc} and other {self.model1_desc}
     model1_desc = "using the CPU backend"

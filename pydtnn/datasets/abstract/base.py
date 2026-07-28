@@ -50,9 +50,11 @@ class Base:
     y_empty_batch: np.ndarray[tuple[int, ...]]
     input_shape: ArrayShape
     output_shape: ArrayShape
-    class_weight: list[float] = []
+    class_weights: list[float] = []
+    normal_offset: float = -0.45
+    normal_scale: float = 3.75
     _nsamples: list[int]
-    _augments: dict[Base.Part, list[TransformFunc]]
+    _transforms: dict[Base.Part, list[TransformFunc]]
     _initial_nsamples: list[int]
     _local_offset: list[int]
     _local_nsamples: list[int]

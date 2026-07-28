@@ -34,8 +34,6 @@ mpirun -genv LD_PRELOAD $EXTRAELIB -iface ib0 -hosts $HOSTS -ppn $PROCS_PER_NODE
   --dataset=cifar10 \
   --dataset-path=datasets/cifar10 \
   --input-normalize \
-  --input-normalize-offset=-0.472 \
-  --input-normalize-scale=1 \
   --no-test-as-validation \
   --batch-size=64 \
   --validation-split=0.2 \

@@ -56,7 +56,7 @@ class MultiHeadAttentionNumpy(MultiHeadAttention[np.ndarray], AbstractBlockLayer
         ]
 
         # The next attributes will be initialized later
-        self.mask: np.ndarray = None # pyright: ignore[reportAttributeAccessIssue]
+        self.mask: np.ndarray = None  # pyright: ignore[reportAttributeAccessIssue]
 
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
         """Initializes the model structure and sublayers for the NumPy backend."""

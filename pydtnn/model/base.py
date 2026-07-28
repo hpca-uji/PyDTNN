@@ -130,8 +130,8 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
     augment_perspective: float = 0.0
     augment_perspective_factor: float = 0.25
     input_normalize: bool = False
-    input_normalize_offset: float = -0.45
-    input_normalize_scale: float = 3.75
+    input_normalize_offset: float = 0.0
+    input_normalize_scale: float = 0.0
     fused_bn_relu: bool = False
     fused_conv_relu: bool = False
     fused_conv_bn: bool = False
@@ -155,8 +155,8 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
     oktopk_reduce_method: str = "collective_allreduce_then_slice"
     loss_func_name: str = "categorical_cross_entropy"
     loss_eps: float = 1e-8
-    loss_weights: tuple[float, ...] = ()
-    use_loss_weights: bool = False
+    class_weights: tuple[float, ...] = ()
+    use_class_weights: bool = False
     metrics: tuple[str, ...] = ("categorical_accuracy",)
     schedulers_names: tuple[str, ...] = (
         "early_stopping",

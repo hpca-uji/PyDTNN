@@ -24,8 +24,6 @@ for procs in 6 4 2 1; do
       --dataset=cifar10 \
       --dataset-path=datasets/cifar10 \
       --input-normalize \
-      --input-normalize-offset=-0.472 \
-      --input-normalize-scale=1 \
       --test-as-validation \
       --batch-size=64 \
       --validation-split=0.2 \

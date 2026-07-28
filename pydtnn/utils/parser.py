@@ -525,10 +525,30 @@ class ArgumentParser(argparse.ArgumentParser):
             ),
         )
         _ds_group.add_argument(
-            "--augment-shuffle",
+            "--input-crop",
             action=argparse.BooleanOptionalAction,
-            default=ModelBase.augment_shuffle,
-            help=(f"Shuffle training images. Default: {ModelBase.augment_shuffle!r}."),
+            default=ModelBase.input_crop,
+            help=(f"Crop the images. True if specified. Default: {ModelBase.input_crop!r}."),
+        )
+        _ds_group.add_argument(
+            "--input-crop-perc",
+            type=factor,
+            default=ModelBase.input_crop_perc,
+            help=(
+                f"Central crop percentage of the images. Default: {ModelBase.input_crop_perc!r}."
+            ),
+        )
+        _ds_group.add_argument(
+            "--input-scale",
+            action=argparse.BooleanOptionalAction,
+            default=ModelBase.input_scale,
+            help=(f"Resize the images. True if specified. Default: {ModelBase.input_scale!r}."),
+        )
+        _ds_group.add_argument(
+            "--input-scale-size",
+            type=int,
+            default=ModelBase.input_scale_size,
+            help=(f"New size of the images. Default: {ModelBase.input_scale_size!r}."),
         )
         _ds_group.add_argument(
             "--augment-horizontal-flip",
@@ -548,25 +568,6 @@ class ArgumentParser(argparse.ArgumentParser):
                 "Probability to do a vertical flip to the training images."
                 " If the value is less or equal to 0 it is disabled."
                 f" Default: {ModelBase.augment_vertical_flip!r}."
-            ),
-        )
-        _ds_group.add_argument(
-            "--augment-rotate",
-            type=factor,
-            default=ModelBase.augment_rotate,
-            help=(
-                "Probability to rotate training images."
-                " If the value is less or equal to 0 it is disabled."
-                f" Default: {ModelBase.augment_rotate!r}."
-            ),
-        )
-        _ds_group.add_argument(
-            "--augment-rotate-degree",
-            type=float,
-            default=ModelBase.augment_rotate_degree,
-            help=(
-                "The maximum degree to rotate training images."
-                f" Default: {ModelBase.augment_rotate_degree!r}."
             ),
         )
         _ds_group.add_argument(
@@ -630,22 +631,6 @@ class ArgumentParser(argparse.ArgumentParser):
             ),
         )
         _ds_group.add_argument(
-            "--augment-mask",
-            type=factor,
-            default=ModelBase.augment_mask,
-            help=(
-                "Probability to mask training images."
-                " If the value is less or equal to 0 it is disabled."
-                f" Default: {ModelBase.augment_mask!r}."
-            ),
-        )
-        _ds_group.add_argument(
-            "--augment-mask-size",
-            type=int,
-            default=ModelBase.augment_mask_size,
-            help=(f"Size to mask training images. Default: {ModelBase.augment_mask_size!r}."),
-        )
-        _ds_group.add_argument(
             "--augment-blur",
             type=factor,
             default=ModelBase.augment_blur,
@@ -662,30 +647,20 @@ class ArgumentParser(argparse.ArgumentParser):
             help=(f"Size to blur training images. Default: {ModelBase.augment_blur_size!r}."),
         )
         _ds_group.add_argument(
-            "--input-crop",
-            action=argparse.BooleanOptionalAction,
-            default=ModelBase.input_crop,
-            help=(f"Crop the images. True if specified. Default: {ModelBase.input_crop!r}."),
-        )
-        _ds_group.add_argument(
-            "--input-crop-perc",
+            "--augment-mask",
             type=factor,
-            default=ModelBase.input_crop_perc,
+            default=ModelBase.augment_mask,
             help=(
-                f"Central crop percentage of the images. Default: {ModelBase.input_crop_perc!r}."
+                "Probability to mask training images."
+                " If the value is less or equal to 0 it is disabled."
+                f" Default: {ModelBase.augment_mask!r}."
             ),
         )
         _ds_group.add_argument(
-            "--input-scale",
-            action=argparse.BooleanOptionalAction,
-            default=ModelBase.input_scale,
-            help=(f"Resize the images. True if specified. Default: {ModelBase.input_scale!r}."),
-        )
-        _ds_group.add_argument(
-            "--input-scale-size",
+            "--augment-mask-size",
             type=int,
-            default=ModelBase.input_scale_size,
-            help=(f"New size of the images. Default: {ModelBase.input_scale_size!r}."),
+            default=ModelBase.augment_mask_size,
+            help=(f"Size to mask training images. Default: {ModelBase.augment_mask_size!r}."),
         )
         _ds_group.add_argument(
             "--augment-perspective",
@@ -707,6 +682,25 @@ class ArgumentParser(argparse.ArgumentParser):
             ),
         )
         _ds_group.add_argument(
+            "--augment-rotate",
+            type=factor,
+            default=ModelBase.augment_rotate,
+            help=(
+                "Probability to rotate training images."
+                " If the value is less or equal to 0 it is disabled."
+                f" Default: {ModelBase.augment_rotate!r}."
+            ),
+        )
+        _ds_group.add_argument(
+            "--augment-rotate-degree",
+            type=float,
+            default=ModelBase.augment_rotate_degree,
+            help=(
+                "The maximum degree to rotate training images."
+                f" Default: {ModelBase.augment_rotate_degree!r}."
+            ),
+        )
+        _ds_group.add_argument(
             "--input-normalize",
             action=argparse.BooleanOptionalAction,
             default=ModelBase.input_normalize,
@@ -722,7 +716,38 @@ class ArgumentParser(argparse.ArgumentParser):
             "--input-normalize-scale",
             type=float,
             default=ModelBase.input_normalize_scale,
-            help=(f"Scale samples by a value. Default: {ModelBase.input_normalize_scale!r}."),
+            help=(
+                "Scale samples by a value. If 0 use dataset default."
+                f" Default: {ModelBase.input_normalize_scale!r}."
+            ),
+        )
+        _ds_group.add_argument(
+            "--augment-shuffle",
+            action=argparse.BooleanOptionalAction,
+            default=ModelBase.augment_shuffle,
+            help=(f"Shuffle training images. Default: {ModelBase.augment_shuffle!r}."),
+        )
+        _ds_group.add_argument(
+            "--use-class-weights",
+            action=argparse.BooleanOptionalAction,
+            default=ModelBase.use_class_weights,
+            help=(
+                "True if use the class-weights parameter, "
+                " False to set all classes' weights with the same value."
+                f" Default: {ModelBase.use_class_weights!r}."
+            ),
+        )
+        _ds_group.add_argument(
+            "--class-weights",
+            type=csf,
+            default=ModelBase.class_weights,
+            help=(
+                "List modifiers separated by a comma to indicate the weights of every class."
+                " If the value is 'None' it will use the default datasets inverted value; "
+                " if the dataset has not a default value, all classes will weight '1'."
+                " Example, with 3 classes: '0.4,1.8,0.2'."
+                f" Default: {ModelBase.class_weights!r}."
+            ),
         )
 
         # Optimization options
@@ -912,28 +937,6 @@ class ArgumentParser(argparse.ArgumentParser):
             type=float,
             default=ModelBase.loss_eps,
             help=(f"Value for numerical stability. Default: {ModelBase.loss_eps!r}."),
-        )
-        _op_group.add_argument(
-            "--loss-weights",
-            type=csf,
-            default=ModelBase.loss_weights,
-            help=(
-                "List modifiers separated by a comma to indicate the weights of every class."
-                " If the value is 'None' it will use the default datasets value; "
-                " if the dataset has not a default value, all classes will weight '1'."
-                " Example, with 3 classes: '0.4,1.8,0.2'."
-                f" Default: {ModelBase.loss_weights!r}."
-            ),
-        )
-        _op_group.add_argument(
-            "--use-loss-weights",
-            action=argparse.BooleanOptionalAction,
-            default=ModelBase.use_loss_weights,
-            help=(
-                "True if use the loss-weights parameter, "
-                " False to set all classes' weights with the same value."
-                f" Default: {ModelBase.use_loss_weights!r}."
-            ),
         )
         metrics = list_modules("metrics")
         _op_group.add_argument(
@@ -1341,7 +1344,7 @@ class ArgumentParser(argparse.ArgumentParser):
                 description = quotes(action.help or "")
                 description = textwrap.fill(
                     description,
-                    width=80,
+                    width=70,
                     initial_indent="",
                     subsequent_indent="",
                 ).replace("\n", "\n    ")

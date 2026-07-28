@@ -6,16 +6,16 @@ import logging
 import numpy as np
 
 from pydtnn.layers.conv_2d import Conv2D
-from pydtnn.tests.abstract.common import D, TestCase, verbose_test
+from pydtnn.tests.abstract.base import D, TestCase, verbose_test
 from pydtnn.utils import print_with_header, rand
 from pydtnn.utils.tensor import TensorFormat, format_transpose
 
-__all__ = ("Conv2DCommonTestCase",)
+__all__ = ("Conv2DTestCase",)
 
 logger = logging.getLogger(__name__)
 
 
-class Conv2DCommonTestCase[T: Conv2D](TestCase):  # noqa: D101 (generics not detected)
+class Conv2DTestCase[T: Conv2D](TestCase):  # noqa: D101 (generics not detected)
     """Abstract base class for testing and comparing two Conv2D layer implementations."""
 
     @staticmethod
