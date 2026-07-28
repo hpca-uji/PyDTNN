@@ -59,7 +59,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
             cudnn_dtype=cudnn_dtype,
             tensor_type=tensor_type,
             desc=desc,
-            gpudirect=gpudirect,
+            use_gpudirect=gpudirect,
             cublas=cublas,
         )
 
@@ -82,7 +82,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
             cudnn_dtype=cudnn_dtype,
             tensor_type=tensor_type,
             desc=desc,
-            gpudirect=gpudirect,
+            use_gpudirect=gpudirect,
             cublas=cublas,
         )
 
@@ -104,7 +104,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
             cudnn_dtype=cudnn_dtype,
             tensor_type=tensor_type,
             desc=desc,
-            gpudirect=gpudirect,
+            use_gpudirect=gpudirect,
             cublas=cublas,
         )
 
@@ -127,7 +127,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
             cudnn_dtype=cudnn_dtype,
             tensor_type=tensor_type,
             desc=desc,
-            gpudirect=gpudirect,
+            use_gpudirect=gpudirect,
             cublas=cublas,
         )
 
@@ -153,7 +153,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
             cudnn_dtype=cudnn_dtype,
             tensor_type=tensor_type,
             desc=desc,
-            gpudirect=gpudirect,
+            use_gpudirect=gpudirect,
             cublas=cublas,
         )
         return (x_cpu, x_gpu)
@@ -178,7 +178,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
             cudnn_dtype=cudnn_dtype,
             tensor_type=tensor_type,
             desc=desc,
-            gpudirect=gpudirect,
+            use_gpudirect=gpudirect,
             cublas=cublas,
         )
         return (x_cpu, x_gpu)
@@ -227,7 +227,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
         cudnn_dtype: int,
         tensor_type: TensorType = TensorType.TENSOR,
         desc: int | None = None,
-        gpudirect: bool = False,
+        use_gpudirect: bool = False,
         cublas: bool = False,
         cpu_shape: S | None = None,
     ) -> None:
@@ -236,7 +236,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
         self.tensor_format = TensorFormat(tensor_format.lower())
         self.cudnn_dtype = cudnn_dtype
         self.tensor_type = tensor_type
-        self.gpudirect = gpudirect
+        self.use_gpudirect = use_gpudirect
         self.cublas = cublas
 
         self.ary: gpuarray.GPUArray
@@ -322,7 +322,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
     @property
     def ptr_voidp(self) -> ctypes.c_void_p:
         """Returns the void pointer to the underlying GPU memory."""
-        if self.gpudirect:
+        if self.use_gpudirect:
             return ctypes.c_void_p(int(self.ary.base.get_device_pointer()))
         else:
             return ctypes.c_void_p(int(self.ary.gpudata))
@@ -497,7 +497,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
             tensor_format=self.tensor_format,
             cudnn_dtype=self.cudnn_dtype,
             tensor_type=self.tensor_type,
-            gpudirect=self.gpudirect,
+            use_gpudirect=self.use_gpudirect,
             cublas=self.cublas,
             desc=None,
             cpu_shape=self.cpu_shape if keep_shape else None,
@@ -518,7 +518,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
             tensor_format=self.tensor_format,
             cudnn_dtype=self.cudnn_dtype,
             tensor_type=self.tensor_type,
-            gpudirect=self.gpudirect,
+            use_gpudirect=self.use_gpudirect,
             cublas=self.cublas,
             desc=-1,
             cpu_shape=self.cpu_shape,

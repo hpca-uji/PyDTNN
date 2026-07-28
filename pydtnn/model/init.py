@@ -183,7 +183,7 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
     def _cudnn_init(self) -> None:
         """Initializes CUDA, cuDNN, and NCCL backend handles."""
 
-        if not self.gpudirect and self.use_nccl:
+        if not self.use_gpudirect and self.use_nccl:
             raise RuntimeError("It is necessary to have gpudirect active to work with NCCL.")
 
         assert cudnn is not None

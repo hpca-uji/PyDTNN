@@ -99,8 +99,8 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             cudnn_dtype=self.model.cudnn_dtype,
-            gpudirect=self.model.gpudirect,
-            drv=(drv if self.model.gpudirect else None),
+            gpudirect=self.model.use_gpudirect,
+            drv=(drv if self.model.use_gpudirect else None),
         )
         self.memory_used += self.dw.nbytes
 
@@ -111,8 +111,8 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
                 self.model.dtype,
                 tensor_format=self.model.tensor_format,
                 cudnn_dtype=self.model.cudnn_dtype,
-                gpudirect=self.model.gpudirect,
-                drv=(drv if self.model.gpudirect else None),
+                gpudirect=self.model.use_gpudirect,
+                drv=(drv if self.model.use_gpudirect else None),
             )
             self.memory_used += self.db.nbytes
 
@@ -223,14 +223,14 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
             self.x.gpudata,
             lda,
             beta,
-            self.dw.ptr_intp if self.model.gpudirect else self.dw.gpudata,  # pyright: ignore[reportArgumentType]
+            self.dw.ptr_intp if self.model.use_gpudirect else self.dw.gpudata,  # pyright: ignore[reportArgumentType]
             ldc,
             self.model.dtype,
         )
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         # DtoH dw when data parallelism and no GPU direct/NCCL is used
-        if self.model.comm and not self.model.gpudirect and not self.model.use_nccl:
+        if self.model.comm and not self.model.use_gpudirect and not self.model.use_nccl:
             # self.model.stream.synchronize()
             self.dw.get_async(self.stream_2, self.dw_cpu)
 
@@ -256,14 +256,14 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
                 self.one_vec_gpu.gpudata,
                 inc_x,
                 beta,
-                self.db.ptr_intp if self.model.gpudirect else self.db.gpudata,  # pyright: ignore[reportArgumentType]
+                self.db.ptr_intp if self.model.use_gpudirect else self.db.gpudata,  # pyright: ignore[reportArgumentType]
                 inc_y,
                 self.model.dtype,
             )
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
             # DtoH db when data parallelism and no GPU direct/NCCL is used
-            if self.model.comm and not self.model.gpudirect and not self.model.use_nccl:
+            if self.model.comm and not self.model.use_gpudirect and not self.model.use_nccl:
                 # self.model.stream.synchronize()
                 self.db.get_async(self.stream_2, self.db_cpu)
 

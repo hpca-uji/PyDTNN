@@ -232,7 +232,7 @@ class Conv2DPycuda(AbstractConv2DPycuda):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         # DtoH dw when data parallelism and no GPU direct/NCCL is used
-        if self.model.comm and not self.model.gpudirect and not self.model.use_nccl:
+        if self.model.comm and not self.model.use_gpudirect and not self.model.use_nccl:
             # self.model.stream.synchronize()
             self.dw.get_async(self.stream_2, self.dw_cpu)
 
@@ -254,7 +254,7 @@ class Conv2DPycuda(AbstractConv2DPycuda):
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
             # DtoH db when data parallelism and no GPU direct/NCCL is used
-            if self.model.comm and not self.model.gpudirect and not self.model.use_nccl:
+            if self.model.comm and not self.model.use_gpudirect and not self.model.use_nccl:
                 # self.model.stream.synchronize()
                 self.db.get_async(self.stream_2, self.db_cpu)
 

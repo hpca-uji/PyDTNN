@@ -93,8 +93,9 @@ class AdamPycuda(Adam[TensorArray], OptimizerPycuda):
             dw: TensorArray
             m: gpuarray.GPUArray
             v: gpuarray.GPUArray
+            self.use_gpudirect
 
-            if self.gpudirect:
+            if self.use_gpudirect:
                 n = self.get_batch_size(w)
                 self.update_gpudirect(
                     w.gpudata,

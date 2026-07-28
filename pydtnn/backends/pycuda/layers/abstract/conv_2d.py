@@ -90,7 +90,7 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
             dtype=self.model.dtype,
         )
 
-        if self.model.gpudirect:
+        if self.model.use_gpudirect:
             bias_tensor_type = TensorArray.TensorType.FILTER
             _drv = drv
         else:
@@ -103,7 +103,7 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             cudnn_dtype=self.model.cudnn_dtype,
-            gpudirect=self.model.gpudirect,
+            gpudirect=self.model.use_gpudirect,
             tensor_type=TensorArray.TensorType.FILTER,
             drv=_drv,
         )
@@ -116,7 +116,7 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
                 self.model.dtype,
                 tensor_format=self.model.tensor_format,
                 cudnn_dtype=self.model.cudnn_dtype,
-                gpudirect=self.model.gpudirect,
+                gpudirect=self.model.use_gpudirect,
                 tensor_type=bias_tensor_type,
                 drv=_drv,
             )

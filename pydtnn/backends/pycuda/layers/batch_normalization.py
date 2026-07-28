@@ -89,8 +89,8 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             cudnn_dtype=self.model.cudnn_dtype,
-            gpudirect=self.model.gpudirect,
-            drv=(drv if self.model.gpudirect else None),
+            gpudirect=self.model.use_gpudirect,
+            drv=(drv if self.model.use_gpudirect else None),
         )
         self.memory_used += self.dw.nbytes
 
@@ -99,8 +99,8 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             cudnn_dtype=self.model.cudnn_dtype,
-            gpudirect=self.model.gpudirect,
-            drv=(drv if self.model.gpudirect else None),
+            gpudirect=self.model.use_gpudirect,
+            drv=(drv if self.model.use_gpudirect else None),
         )
         self.memory_used += self.db.nbytes
 
@@ -224,7 +224,7 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         # DtoH dw when data parallelism and no GPU direct/NCCL is used
-        if self.model.comm and not self.model.gpudirect and not self.model.use_nccl:
+        if self.model.comm and not self.model.use_gpudirect and not self.model.use_nccl:
             # self.model.stream.synchronize()
             self.dw.get_async(self.stream_2, self.dw_cpu)
             self.db.get_async(self.stream_2, self.db_cpu)

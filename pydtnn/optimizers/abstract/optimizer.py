@@ -59,14 +59,14 @@ class Optimizer[T: Array](Base[T]):  # noqa: D101 (generics not detected)
         return self.model.dtype
 
     @property
-    def gpudirect(self) -> bool:
+    def use_gpudirect(self) -> bool:
         """
         Checks if the model supports GPU direct operations.
 
         Returns:
             bool: True if GPU direct is enabled, False otherwise.
         """
-        return self.model.gpudirect
+        return self.model.use_gpudirect
 
     def update(self, layer: Layerable[T], update: bool = True, sync: bool = True) -> None:
         """

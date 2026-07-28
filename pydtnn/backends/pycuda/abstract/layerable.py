@@ -74,7 +74,7 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
                 # In GPU direct we have to synchronize the main stream to ensure dw and db
                 # are ready.
 
-                if not self.model.gpudirect:
+                if not self.model.use_gpudirect:
                     self.stream_2.synchronize()
 
                 dw_cpu = getattr(self, f"{dw_}_cpu")
@@ -204,7 +204,7 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
                 # so we need to synchronize stream_2 before performing Allreduce.
                 # In GPU direct, the main stream is already synchronized.
 
-                if not self.model.gpudirect:
+                if not self.model.use_gpudirect:
                     self.stream_2.synchronize()
 
                 dw_cpu = getattr(self, f"{dw_}_cpu")

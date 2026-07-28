@@ -213,7 +213,7 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
     cuda_block: tuple[int, int, int]
     cudnn_handle: Cudnn_Handle_Type
     cublas_handle: Cublas_Handle_Type
-    gpudirect: bool
+    use_gpudirect: bool
     nccl_comm: Any
     nccl_type: Any
     stream: Stream
