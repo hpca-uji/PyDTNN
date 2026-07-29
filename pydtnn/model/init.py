@@ -77,6 +77,9 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
         self._batch_init()
         self._tensor_init()
 
+        # Tracer [NOTE: after MPI & before Cuda]
+        self._tracer_init()
+
         # Cuda [NOTE: after MPI]
         if self.use_cudnn:
             self._cudnn_init()
@@ -88,9 +91,6 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
             self.crypt = self._crypt_init(self.encryption_name)
         else:
             self.crypt = None
-
-        # Tracer [NOTE: after MPI & Cuda]
-        self._tracer_init()
 
         # Dataset [NOTE: after MPI & Crypt]
         self.dataset: Dataset
