@@ -62,12 +62,17 @@ class BinaryCrossEntropyNumpy(BinaryCrossEntropy[np.ndarray], LossNumpy):
         div_y: np.ndarray = self.div_y[:b]
         neg_pred: np.ndarray = self.neg_pred[:b]
 
-        # Loss
-        # loss: float = -np.sum(np.log(np.maximum((1 - y_targ) - _y_pred, eps))) / b
+        # Common:
+        # (1 - y_targ)
         np.subtract(1, y_targ, out=neg_targ)
-        np.subtract(neg_targ, y_pred, out=log_maximum)
-        np.maximum(log_maximum, self.eps, out=log_maximum)
+        # (1 - _y_pred)
+        np.subtract(1, _y_pred, out=neg_pred)
+
+        # Loss
+        # loss: float = -(np.sum( (1 - y_targ) * np.log(np.maximum(1 - _y_pred, eps))) ) / b
+        np.maximum(neg_pred, self.eps, out=log_maximum)
         np.log(log_maximum, out=log_maximum)
+        np.multiply(neg_targ, log_maximum, out=log_maximum)
         loss: float = float(-np.sum(log_maximum) / b)
 
         # Dx
@@ -76,8 +81,6 @@ class BinaryCrossEntropyNumpy(BinaryCrossEntropy[np.ndarray], LossNumpy):
         # dx: np.ndarray = (-(y_targ / _y_pred) + ((1 - y_targ) / (1 - _y_pred))) / batch_size
         np.divide(y_targ, _y_pred, out=div_y)
         np.multiply(-1, div_y, out=div_y)
-        # neg_targ = np.subtract(1, y_targ)  # Move above.
-        np.subtract(1, _y_pred, out=neg_pred)
         np.divide(neg_targ, neg_pred, out=neg_pred)
         np.add(div_y, neg_pred, out=div_y)
         np.divide(div_y, batch_size, out=dx)

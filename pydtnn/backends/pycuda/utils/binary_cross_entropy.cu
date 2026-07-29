@@ -10,7 +10,7 @@ __global__ void binary_cross_entropy(TYPE *y_targ, TYPE *y_pred, TYPE *res,
         res[idx] = 0;
         for ( i = 0; i < n; i++ )
         {
-            res[idx]+= logf(fmaxf((1 - y_targ[idx * n + i] ) - y_pred[idx * n + i], eps));
+            res[idx] += (1 - y_targ[idx * n + i] ) * logf(fmaxf(1 - y_pred[idx * n + i], eps));
             pred = y_pred[idx * n + max];
             if ( pred < eps )          pred = eps;
             else if ( pred > (1-eps) ) pred = (1-eps);
