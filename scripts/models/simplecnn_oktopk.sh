@@ -33,7 +33,7 @@ mpirun -np 4 "${MPI_ARGS[@]}" \
   --optimizer-tau=64 \
   --optimizer-tau-prime=16 \
   --oktopk-min-k=0 \
-  --loss-func=categorical_cross_entropy \
+  --loss-func=negative_log_likelihood \
   --schedulers= \
   --parallel-data \
   --no-use-mpi-buffers \

@@ -33,7 +33,7 @@ mpirun -np 2 "${MPI_ARGS[@]}" \
   --learning-rate=0.01 \
   --optimizer-momentum=0.9 \
   --optimizer-decay=1e-4 \
-  --loss-func=categorical_cross_entropy \
+  --loss-func=negative_log_likelihood \
   --metrics=categorical_accuracy \
   --schedulers=reduce_lr_on_plateau \
   --warm-up-epochs=5 \

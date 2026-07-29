@@ -29,7 +29,7 @@ pydtnn-benchmark \
   --learning-rate=0.01 \
   --optimizerdecay=1e-4 \
   --optimizer-momentum=0.9 \
-  --loss-func=categorical_cross_entropy \
+  --loss-func=negative_log_likelihood \
   --metrics=categorical_accuracy \
   --schedulers=warm_up,reduce_lr_on_plateau \
   --warm-up-epochs=5 \

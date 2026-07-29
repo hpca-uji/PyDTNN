@@ -25,7 +25,7 @@ mpirun -np 4 "${MPI_ARGS[@]}" \
   --optimizer-nesterov \
   --learning-rate=0.1 \
   --optimizer-momentum=0.9 \
-  --loss-func=categorical_cross_entropy \
+  --loss-func=negative_log_likelihood \
   --metrics=categorical_accuracy \
   --schedulers=warm_up,reduce_lr_on_plateau,early_stopping \
   --warm-up-epochs=5 \

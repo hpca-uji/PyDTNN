@@ -27,7 +27,7 @@ function run_model() {
     --evaluate \
     --optimizer=sgd \
     --learning-rate=0.01 \
-    --loss-func=categorical_cross_entropy \
+    --loss-func=negative_log_likelihood \
     --schedulers= \
     --no-parallel-data \
     --no-tracing \

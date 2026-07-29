@@ -153,7 +153,7 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
     oktopk_min_k: int = 10
     oktopk_partition_method: str = "dense"
     oktopk_reduce_method: str = "collective_allreduce_then_slice"
-    loss_func_name: str = "categorical_cross_entropy"
+    loss_func_name: str = "negative_log_likelihood"
     loss_eps: float = 1e-8
     class_weights: tuple[float, ...] = ()
     use_class_weights: bool = False

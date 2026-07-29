@@ -46,7 +46,7 @@ mpirun -iface ib0 -hosts $HOSTS -ppn $PROCS_PER_NODE -np $NUMPROCS "${MPI_ARGS[@
   --optimizer=adam \
   --learning-rate=0.5 \
   --optimizer-momentum=0.9 \
-  --loss-func=categorical_cross_entropy \
+  --loss-func=negative_log_likelihood \
   --metrics=categorical_accuracy \
   --schedulers=early_stopping,reduce_lr_on_plateau \
   --early-stopping-metric=val_categorical_cross_entropy \

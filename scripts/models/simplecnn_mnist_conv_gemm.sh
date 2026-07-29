@@ -16,7 +16,7 @@ pydtnn-benchmark \
   --evaluate \
   --optimizer=adam \
   --learning-rate=0.01 \
-  --loss-func=categorical_cross_entropy \
+  --loss-func=negative_log_likelihood \
   --schedulers=warm_up,reduce_lr_every_nepochs \
   --reduce-lr-every-nepochs-factor=0.5 \
   --reduce-lr-every-nepochs-nepochs=30 \

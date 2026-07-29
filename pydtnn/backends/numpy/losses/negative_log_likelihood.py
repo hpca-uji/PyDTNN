@@ -6,9 +6,9 @@ from typing import TYPE_CHECKING
 
 from pydtnn.backends.numpy.losses.abstract.loss import LossNumpy
 from pydtnn.libs import numpy as np
-from pydtnn.losses.categorical_cross_entropy import CategoricalCrossEntropy
+from pydtnn.losses.negative_log_likelihood import NegativeLogLikelihood
 
-__all__ = ("CategoricalCrossEntropyNumpy",)
+__all__ = ("NegativeLogLikelihoodNumpy",)
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     import numpy as np  # noqa: F811 (override typing)
 
 
-class CategoricalCrossEntropyNumpy(CategoricalCrossEntropy[np.ndarray], LossNumpy):
+class NegativeLogLikelihoodNumpy(NegativeLogLikelihood[np.ndarray], LossNumpy):
     """NumPy implementation of the Categorical Cross Entropy loss function."""
 
     def _model_init(self) -> None:

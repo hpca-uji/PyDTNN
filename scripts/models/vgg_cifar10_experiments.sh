@@ -34,7 +34,7 @@ for procs in 6 4 2 1; do
       --learning-rate=0.001 \
       --optimizer-momentum=0.9 \
       --optimizer-decay=0 \
-      --loss-func=categorical_accuracy,categorical_cross_entropy \
+      --loss-func=categorical_accuracy,negative_log_likelihood \
       --schedulers=warm_up,stop_at_loss \
       --warm-up-epochs=5 \
       --early-stopping-metric=val_categorical_cross_entropy \

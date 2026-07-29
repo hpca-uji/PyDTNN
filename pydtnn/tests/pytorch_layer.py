@@ -17,6 +17,7 @@ from pydtnn.abstract.layerable import Layerable
 from pydtnn.activations.arctanh import Arctanh
 from pydtnn.activations.leaky_relu import LeakyRelu
 from pydtnn.activations.log_sigmoid import LogSigmoid
+from pydtnn.activations.log_softmax import LogSoftmax
 from pydtnn.activations.relu import Relu
 from pydtnn.activations.relu6 import Relu6
 from pydtnn.activations.sigmoid import Sigmoid
@@ -284,7 +285,7 @@ class ParamsLayerPytorch(Params):
         self.shape = format_reshape((C, H, W), "chw", self.tensor_format[1:])
         self.evaluate_only = False
         self.parallel_data = False
-        self.loss_func_name = "categorical_cross_entropy"
+        self.loss_func_name = "negative_log_likelihood"
         self.use_cudnn = False
         self.omm = None
         self.dtype = np.dtype(np.float32)
@@ -922,6 +923,17 @@ class LayerPyTorchTestCase(TestCase):
         _x = LayerPyTorchTestCase.get_test_data()
         # _x = np.where(_x < 0, 1, _x)
         self.do_test(_x=_x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="LogSigmoid")
+
+    def test_log_softmax(self) -> None:
+        """Tests Log Softmax activation."""
+        pydtnn_layers: list[Layerable] = [LogSoftmax()]
+        torch_model = torch.nn.LogSoftmax(dim=1)
+        pydtnn_model = LayerPyTorchTestCase.initialize_pydtnn_model(
+            pydtnn_layers, params=self.params
+        )
+        _x = LayerPyTorchTestCase.get_test_data()
+        # _x = np.where(_x < 0, 1, _x)
+        self.do_test(_x=_x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="LogSoftmax")
 
     def test_softmax(self) -> None:
         """Tests Softmax activation."""

@@ -1,6 +1,6 @@
 #define TYPE "TYPE"
 
-__global__ void categorical_cross_entropy(TYPE *y_targ, TYPE *y_pred, TYPE *loss,
+__global__ void negative_log_likelihood(TYPE *y_targ, TYPE *y_pred, TYPE *loss,
                                           TYPE *weights, TYPE *dx, int b,
                                           int n, float eps)
 {

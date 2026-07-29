@@ -44,7 +44,7 @@ KWARGS = {
     "evaluate_only": True,
     "parallel": "data",
     "tensor_format": FORMAT,  # "NCHW" # "NHWC",
-    "loss_func": "categorical_cross_entropy",
+    "loss_func": "negative_log_likelihood",
     "use_cudnn": False,  # False, #True,
     "omm": None,
     "dtype": np.dtype(np.float32),

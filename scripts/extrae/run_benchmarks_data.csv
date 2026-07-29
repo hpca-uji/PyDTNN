@@ -74,7 +74,7 @@ evaluate;True;True;True;True;True;True;True;True;True;True;True;True;True;True
 optimizer;sgd;sgd;sgd;sgd;sgd;sgd;sgd;sgd;sgd;sgd;sgd;sgd;sgd;sgd
 learning_rate;0.01;0.01;0.01;0.01;0.1;0.1;0.1;0.1;0.1;0.1;0.01;0.01;0.01;0.01
 momentum;0.9;0.9;0.9;0.9;0.9;0.9;0.9;0.9;0.9;0.9;0.9;0.9;0.9;0.9
-loss_func;categorical_cross_entropy;categorical_cross_entropy;categorical_cross_entropy;categorical_cross_entropy;categorical_cross_entropy;categorical_cross_entropy;categorical_cross_entropy;categorical_cross_entropy;categorical_cross_entropy;categorical_cross_entropy;categorical_cross_entropy;categorical_cross_entropy;categorical_cross_entropy;categorical_cross_entropy
+loss_func;negative_log_likelihood;negative_log_likelihood;negative_log_likelihood;negative_log_likelihood;negative_log_likelihood;negative_log_likelihood;negative_log_likelihood;negative_log_likelihood;negative_log_likelihood;negative_log_likelihood;negative_log_likelihood;negative_log_likelihood;negative_log_likelihood;negative_log_likelihood
 metrics;categorical_accuracy;categorical_accuracy;categorical_accuracy;categorical_accuracy;categorical_accuracy;categorical_accuracy;categorical_accuracy;categorical_accuracy;categorical_accuracy;categorical_accuracy;categorical_accuracy;categorical_accuracy;categorical_accuracy;categorical_accuracy
 schedulers;;;;;;;;;;;;;;
 warm_up_epochs;5;5;5;5;5;5;5;5;5;5;5;5;5;5

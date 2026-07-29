@@ -264,8 +264,8 @@ The PyDTNN framework comes with a utility launcher called
   - `--oktopk-partition-method`: OkTopk data partition method. Default: `dense`.
   - `--oktopk-reduce-method`: OkTopk data reduce method. Default: `collective_allreduce_then_slice`.
   - `--loss-func`: Loss functions that is evaluated on each trained batch:
-    `categorical_cross_entropy`, `binary_cross_entropy`, `kl_divergence`, etc.
-    Default: `categorical_cross_entropy`.
+    `negative_log_likelihood`, `binary_cross_entropy`, `kl_divergence`, etc.
+    Default: `negative_log_likelihood`.
   - `--loss-eps`: Value for numerical stability. Default: 1e-08.
   - `--metrics`: List of comma-separated metrics that are evaluated on each trained batch:
     `categorical_hinge`, `confusion_matrix`, `kl_divergence_metric`,
@@ -354,7 +354,7 @@ $ mpirun -np 12 \
       --evaluate \
       --optimizer=adam \
       --learning-rate=0.01 \
-      --loss-func=categorical_cross_entropy \
+      --loss-func=negative_log_likelihood \
       --schedulers=warm_up,reduce_lr_every_nepochs \
       --reduce-lr-every-nepochs-factor=0.5 \
       --reduce-lr-every-nepochs-nepochs=30 \
@@ -444,7 +444,7 @@ Optimizer options
   optimizer-tau        : 64
   optimizer-tau-prime  : 32
   optimizer-density    : 0.01
-  loss-func            : categorical_cross_entropy
+  loss-func            : negative_log_likelihood
   metrics              : categorical_accuracy
 
 Schedulers options
@@ -714,7 +714,7 @@ Optimizer options
   optimizer-tau        : 64
   optimizer-tau-prime  : 32
   optimizer-density    : 0.01
-  loss-func            : categorical_cross_entropy
+  loss-func            : negative_log_likelihood
   metrics              : categorical_accuracy
 
 Schedulers options
