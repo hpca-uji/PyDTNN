@@ -5,7 +5,6 @@
 		}
 	],
 	"settings": {
-		"python.analysis.typeCheckingMode": "basic",
 		"editor.tabSize": 4,
 		"files.exclude": {
 			".ruff_cache": true,
