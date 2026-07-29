@@ -132,7 +132,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
 
             # Compute k from: layer_params * self.density
             k = int(dw.size * self.density)
-            k = max(self.min_k_layer or dw.size, k)
+            k = max(self.min_k or dw.size, k)
 
             # Initialize current layer-parameter values
             self.local_th = self.all_local_th[layer.id][dw_]
