@@ -262,7 +262,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
         self.boundaries[-1] += 1
 
         self.model.comm.Allreduce(MPI.IN_PLACE, self.boundaries, op=MPI.SUM)
-        self.boundaries /= self.model.comm_size
+        self.boundaries //= self.model.comm_size
 
         return self.boundaries
 

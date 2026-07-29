@@ -32,7 +32,9 @@ mpirun -np 4 "${MPI_ARGS[@]}" \
   --optimizer-density=0.05 \
   --optimizer-tau=64 \
   --optimizer-tau-prime=16 \
-  --oktopk-min-k=0 \
+  --oktopk-min-k=10 \
+  --oktopk-partition-method=sparse \
+  --oktopk-reduce-method=p2p_region_wise_reduce_destination_rotation_and_bucketing \
   --loss-func=categorical_cross_entropy \
   --schedulers= \
   --parallel-data \
