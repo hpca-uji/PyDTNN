@@ -132,7 +132,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
 
             # Compute k from: layer_params * self.density
             k = int(dw.size * self.density)
-            k = max(self.min_k_layer or dw.size, k)
+            k = max(self.min_k or dw.size, k)
 
             # Initialize current layer-parameter values
             self.local_th = self.all_local_th[layer.id][dw_]
@@ -262,7 +262,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
         self.boundaries[-1] += 1
 
         self.model.comm.Allreduce(MPI.IN_PLACE, self.boundaries, op=MPI.SUM)
-        self.boundaries /= self.model.comm_size
+        self.boundaries //= self.model.comm_size
 
         return self.boundaries
 

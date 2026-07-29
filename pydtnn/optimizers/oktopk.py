@@ -32,7 +32,7 @@ class OkTopk[T: Array](Optimizer[T]):  # noqa: D101 (generics not detected)
         tau: int = 64,
         tau_prime: int = 32,
         density: float = 0.01,
-        min_k_layer: int = 10,
+        min_k: int = 10,
     ) -> None:
         """
         Initialize the Ok-Topk optimizer.
@@ -43,7 +43,7 @@ class OkTopk[T: Array](Optimizer[T]):  # noqa: D101 (generics not detected)
             tau: Threshold parameter for local updates.
             tau_prime: Threshold parameter for global updates.
             density: Sparsity density for gradient compression.
-            min_k_layer: Minimum number of elements per layer to apply top-k.
+            min_k: Minimum number of elements per layer to apply top-k.
         """
 
         super().__init__(learning_rate=learning_rate)
@@ -53,7 +53,7 @@ class OkTopk[T: Array](Optimizer[T]):  # noqa: D101 (generics not detected)
         self.tau = tau
         self.tau_prime = tau_prime
         self.density = density
-        self.min_k_layer = min_k_layer
+        self.min_k = min_k
         self.iterations = {}
         self.all_local_th = {}
         self.all_global_th = {}
@@ -74,7 +74,7 @@ class OkTopk[T: Array](Optimizer[T]):  # noqa: D101 (generics not detected)
         props["tau"] = self.tau
         props["tau_prime"] = self.tau_prime
         props["density"] = self.density
-        props["min-k-layer"] = self.min_k_layer
+        props["min-k"] = self.min_k
 
         return props
 
@@ -108,5 +108,5 @@ class OkTopk[T: Array](Optimizer[T]):  # noqa: D101 (generics not detected)
             tau=model.optimizer_tau,
             tau_prime=model.optimizer_tau_prime,
             density=model.optimizer_density,
-            min_k_layer=model.oktopk_min_k,
+            min_k=model.oktopk_min_k,
         )

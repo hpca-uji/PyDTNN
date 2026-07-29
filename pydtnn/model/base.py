@@ -151,8 +151,8 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
     optimizer_tau_prime: int = 32
     optimizer_density: float = 0.01
     oktopk_min_k: int = 10
-    oktopk_partition_method: str = "dense"
-    oktopk_reduce_method: str = "collective_allreduce_then_slice"
+    oktopk_partition_method: str = "sparse"
+    oktopk_reduce_method: str = "p2p_region_wise_reduce_destination_rotation_and_bucketing"
     loss_func_name: str = "negative_log_likelihood"
     loss_eps: float = 1e-8
     class_weights: tuple[float, ...] = ()

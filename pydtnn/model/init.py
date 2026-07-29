@@ -77,6 +77,9 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
         self._batch_init()
         self._tensor_init()
 
+        # Tracer [NOTE: after MPI & before Cuda]
+        self._tracer_init()
+
         # Cuda [NOTE: after MPI]
         if self.use_cudnn:
             self._cudnn_init()
@@ -89,20 +92,20 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
         else:
             self.crypt = None
 
-        # Tracer [NOTE: after MPI & Cuda]
-        self._tracer_init()
-
         # Dataset [NOTE: after MPI & Crypt]
         self.dataset: Dataset
         if self.dataset_name:
             self.dataset = select_dataset(self.dataset_name)(self)
 
+        # Loss [NOTE: after Dataset]
         self.loss_func = select_loss(self.loss_func_name).from_model(self)
 
+        # Metic [NOTE: after Loss]
         metrics = [(m, select_metric(m).from_model(self)) for m in self.metrics]
         metrics.sort(key=lambda metric: metric[1].order)
         self.metrics, self.metrics_funcs = map(tuple, zip(*metrics))
 
+        # Optimizer [NOTE: after Metric]
         self.optimizer = select_optimizer(self.optimizer_name).from_model(self)
 
         # Layers [NOTE: as late as posible, it call self._model_init]

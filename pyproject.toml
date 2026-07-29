@@ -140,9 +140,10 @@ ignore = [
     "ANN401"
 ]
 exclude = [
-    ".venv",
+    ".*",
     "build",
-    "vendor"
+    "vendor",
+    "__pycache__"
 ]
 per-file-ignores = [
     "pydtnn/converters/*:N802",
