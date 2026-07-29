@@ -298,7 +298,7 @@ class ModelDTypeTestCase(TestCase):
                     in_features=torch_model.fc.in_features,
                     out_features=params.synthetic_output_shape[0],
                 ),
-                torch.nn.Softmax(dim=1),
+                torch.nn.LogSoftmax(dim=1),
             )
 
         # breakpoint()

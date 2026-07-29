@@ -17,7 +17,7 @@ def resnet50_from_pytorch(input_shape: ArrayShape, output_shape: ArrayShape) -> 
     torch_model.fc = torch.nn.Sequential(  # pyright: ignore[reportAttributeAccessIssue]
         torch.nn.Dropout(p=0.5),
         torch.nn.Linear(in_features=torch_model.fc.in_features, out_features=output_shape[0]),
-        torch.nn.Softmax(),
+        torch.nn.LogSoftmax(),
     )
 
     return from_pytorch(input_shape, torch_model)

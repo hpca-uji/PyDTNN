@@ -8,8 +8,8 @@ import numpy as np
 import torch
 
 from pydtnn.abstract.layerable import Layerable
-from pydtnn.converters.pytorch2pydtnn.layers.activation import (LeakyRelu, LogSigmoid, ReLU,
-                                                                ReLU6, Sigmoid, Softmax, Tanh)
+from pydtnn.converters.pytorch2pydtnn.layers.activation import (LeakyRelu, LogSigmoid, LogSoftmax,
+                                                                ReLU, ReLU6, Sigmoid, Softmax, Tanh)
 from pydtnn.converters.pytorch2pydtnn.layers.convolutional import Conv2d
 from pydtnn.converters.pytorch2pydtnn.layers.dropout import Dropout
 from pydtnn.converters.pytorch2pydtnn.layers.functions import (adaptive_avg_pool_2d, add,
@@ -147,6 +147,8 @@ def switch_pytorch_pydtnn(name: str) -> Callable[[dict[str, Any]], Layerable]:
             return LeakyRelu
         case "LogSigmoid":
             return LogSigmoid
+        case "LogSoftmax":
+            return LogSoftmax
         case "Sigmoid":
             return Sigmoid
         case "Softmax":

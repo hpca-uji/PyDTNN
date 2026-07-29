@@ -46,10 +46,10 @@ class LogSoftmaxNumpy(LogSoftmax[np.ndarray], ActivationNumpy):
             int(math.prod(max_x_shape) + math.prod(sum_y_shape)) * self.model.dtype.itemsize
         )
 
-        self.mul_dy_shape = (self.model.batch_size, *self.shape)
-        self.sum_dy_shape = (self.model.batch_size, *shape_intermediate_ops)
+        self.exp_y_shape = (self.model.batch_size, *self.shape)
+        self.sum_dy_shape = (self.model.batch_size, 1)
         self.tmp_memory_used += (
-            int(math.prod(self.mul_dy_shape) + math.prod(self.sum_dy_shape))
+            int(math.prod(self.exp_y_shape) + math.prod(self.sum_dy_shape))
             * self.model.dtype.itemsize
         )
 
@@ -61,7 +61,7 @@ class LogSoftmaxNumpy(LogSoftmax[np.ndarray], ActivationNumpy):
         with self.model.memory:
             self.max_x = self.model.memory.ndarray(self.temp_shape, dtype=self.model.dtype)
             self.sum_y = self.model.memory.ndarray(self.temp_shape, dtype=self.model.dtype)
-            self.exp_y = self.model.memory.ndarray(self.mul_dy_shape, dtype=self.model.dtype)
+            self.exp_y = self.model.memory.ndarray(self.exp_y_shape, dtype=self.model.dtype)
             self.sum_dy = self.model.memory.ndarray(self.sum_dy_shape, dtype=self.model.dtype)
 
     def forward(self, x: np.ndarray) -> np.ndarray:
@@ -101,8 +101,8 @@ class LogSoftmaxNumpy(LogSoftmax[np.ndarray], ActivationNumpy):
         np.exp(self.y, dtype=self.model.dtype, out = exp_y)
 
         np.sum(dy, axis=self.axis_dim, keepdims=True, out=sum_dy)
-        np.multiply(exp_y, sum_dy, out=sum_dy)
+        np.multiply(exp_y, sum_dy, out=exp_y)
 
-        np.subtract(dy, sum_dy, out=dy)
+        np.subtract(dy, exp_y, out=dy)
 
         return np.asarray(dy, dtype=self.model.dtype, order="C")

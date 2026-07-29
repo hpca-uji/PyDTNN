@@ -17,7 +17,7 @@ def densenet169_from_pytorch(input_shape: ArrayShape, output_shape: ArrayShape) 
     torch_model.classifier = torch.nn.Sequential(  # pyright: ignore[reportAttributeAccessIssue]
         torch.nn.Dropout(p=0.3),
         torch.nn.Linear(in_features=torch_model.classifier.in_features, out_features=output_shape[0]),
-        torch.nn.Softmax(),
+        torch.nn.LogSoftmax(),
     )
     print(torch_model)
 
