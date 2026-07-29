@@ -48,26 +48,6 @@ class Optimizer[T: Array](Base[T]):  # noqa: D101 (generics not detected)
         super()._model_init()
         self.layers = layers
 
-    @property
-    def dtype(self) -> np.dtype:
-        """
-        Returns the data type of the model parameters.
-
-        Returns:
-            np.dtype: The numpy data type.
-        """
-        return self.model.dtype
-
-    @property
-    def use_gpudirect(self) -> bool:
-        """
-        Checks if the model supports GPU direct operations.
-
-        Returns:
-            bool: True if GPU direct is enabled, False otherwise.
-        """
-        return self.model.use_gpudirect
-
     def update(self, layer: Layerable[T], update: bool = True, sync: bool = True) -> None:
         """
         Updates the parameters of the given layer.

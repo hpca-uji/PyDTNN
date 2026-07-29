@@ -97,7 +97,7 @@ class NadamPycuda(Nadam[TensorArray], OptimizerPycuda):
             m: gpuarray.GPUArray
             v: gpuarray.GPUArray
 
-            if self.use_gpudirect:
+            if self.model.use_gpudirect:
                 n = self.get_batch_size(w)
                 self.update_gpudirect(
                     w.ary.gpudata,

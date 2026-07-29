@@ -93,7 +93,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
         cudnn_dtype: int,
         tensor_type: TensorType = TensorType.TENSOR,
         desc: int | None = None,
-        gpudirect: bool = False,
+        use_gpudirect: bool = False,
         cublas: bool = False,
     ) -> TensorArray[S, D]:
         """Creates a zero-initialized TensorArray."""
@@ -104,7 +104,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
             cudnn_dtype=cudnn_dtype,
             tensor_type=tensor_type,
             desc=desc,
-            use_gpudirect=gpudirect,
+            use_gpudirect=use_gpudirect,
             cublas=cublas,
         )
 
@@ -116,7 +116,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
         cudnn_dtype: int,
         tensor_type: TensorType = TensorType.TENSOR,
         desc: int | None = None,
-        gpudirect: bool = False,
+        use_gpudirect: bool = False,
         cublas: bool = False,
     ) -> TensorArray[S, D]:
         """Creates a initialized TensorArray filled with ones."""
@@ -127,7 +127,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
             cudnn_dtype=cudnn_dtype,
             tensor_type=tensor_type,
             desc=desc,
-            use_gpudirect=gpudirect,
+            use_gpudirect=use_gpudirect,
             cublas=cublas,
         )
 
@@ -140,7 +140,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
         cudnn_dtype: int,
         tensor_type: TensorType = TensorType.TENSOR,
         desc: int | None = None,
-        gpudirect: bool = False,
+        use_gpudirect: bool = False,
         cublas: bool = False,
     ) -> tuple[np.ndarray[S, D], TensorArray[S, D]]:
         """Creates a CPU/GPU pair using GPUDirect memory registration."""
@@ -153,7 +153,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
             cudnn_dtype=cudnn_dtype,
             tensor_type=tensor_type,
             desc=desc,
-            use_gpudirect=gpudirect,
+            use_gpudirect=use_gpudirect,
             cublas=cublas,
         )
         return (x_cpu, x_gpu)
@@ -166,7 +166,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
         cudnn_dtype: int,
         tensor_type: TensorType = TensorType.TENSOR,
         desc: int | None = None,
-        gpudirect: bool = False,
+        use_gpudirect: bool = False,
         cublas: bool = False,
     ) -> tuple[np.ndarray[S, D], TensorArray[S, D]]:
         """Creates a standard CPU/GPU pair."""
@@ -178,7 +178,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
             cudnn_dtype=cudnn_dtype,
             tensor_type=tensor_type,
             desc=desc,
-            use_gpudirect=gpudirect,
+            use_gpudirect=use_gpudirect,
             cublas=cublas,
         )
         return (x_cpu, x_gpu)
@@ -205,7 +205,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
                 cudnn_dtype=cudnn_dtype,
                 tensor_type=tensor_type,
                 desc=desc,
-                gpudirect=gpudirect,
+                use_gpudirect=gpudirect,
                 cublas=cublas,
             )
         else:
@@ -216,7 +216,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
                 cudnn_dtype=cudnn_dtype,
                 tensor_type=tensor_type,
                 desc=desc,
-                gpudirect=gpudirect,
+                use_gpudirect=gpudirect,
                 cublas=cublas,
             )
 
