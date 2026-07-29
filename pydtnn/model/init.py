@@ -97,12 +97,15 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
         if self.dataset_name:
             self.dataset = select_dataset(self.dataset_name)(self)
 
+        # Loss [NOTE: after Dataset]
         self.loss_func = select_loss(self.loss_func_name).from_model(self)
 
+        # Metic [NOTE: after Loss]
         metrics = [(m, select_metric(m).from_model(self)) for m in self.metrics]
         metrics.sort(key=lambda metric: metric[1].order)
         self.metrics, self.metrics_funcs = map(tuple, zip(*metrics))
 
+        # Optimizer [NOTE: after Metric]
         self.optimizer = select_optimizer(self.optimizer_name).from_model(self)
 
         # Layers [NOTE: as late as posible, it call self._model_init]
