@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 
 class LogSigmoidNumpy(LogSigmoid[np.ndarray], ActivationNumpy):
-    """Numpy-based Log activation layer."""
+    """Numpy-based Log Sigmoid activation layer."""
 
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
         """Initialize layer buffers and memory tracking."""

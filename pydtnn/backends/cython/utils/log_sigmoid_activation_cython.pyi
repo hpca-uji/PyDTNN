@@ -4,7 +4,7 @@ from pydtnn.backends.cython.utils.base import _npDT, _npDT_1Dims
 
 def log_sigmoid_fwd_cython[T: _npDT](x: _npDT_1Dims[T], y: _npDT_1Dims[T]) -> None:  # noqa: D103,E302
     """
-    Computes the forward pass of the logarithmic activation function.
+    Computes the forward pass of the log sigmoid activation function.
 
     Args:
         x (npDT_1Dims): 1-dimensional input's array.
@@ -15,7 +15,7 @@ def log_sigmoid_fwd_cython[T: _npDT](x: _npDT_1Dims[T], y: _npDT_1Dims[T]) -> No
 
 def log_sigmoid_bwd_cython[T: _npDT](dy: _npDT_1Dims[T], dx: _npDT_1Dims[T]) -> None:  # noqa: D103,E302
     """
-    Computes the backward pass of the logarithmic activation function.
+    Computes the backward pass of the log sigmoid activation function.
 
     Args:
         dy (npDT_1Dims): 1-dimensional input's array.

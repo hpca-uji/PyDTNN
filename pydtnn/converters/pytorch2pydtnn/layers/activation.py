@@ -7,6 +7,7 @@ import pydtnn.converters.pytorch2pydtnn.common as cm
 from pydtnn.activations.arctanh import Arctanh as Arctanh_PyDTNN
 from pydtnn.activations.leaky_relu import LeakyRelu as LeakyRelu_PyDTNN
 from pydtnn.activations.log_sigmoid import LogSigmoid as LogSigmoid_PyDTNN
+from pydtnn.activations.log_softmax import LogSoftmax as LogSoftmax_PyDTNN
 from pydtnn.activations.relu import Relu as Relu_PyDTNN
 from pydtnn.activations.relu6 import Relu6 as Relu6_PyDTNN
 from pydtnn.activations.sigmoid import Sigmoid as Sigmoid_PyDTNN
@@ -17,6 +18,7 @@ __all__ = (
     "Arctanh",
     "LeakyRelu",
     "LogSigmoid",
+    "LogSoftmax",
     "ReLU",
     "ReLU6",
     "Sigmoid",
@@ -59,6 +61,20 @@ def LogSigmoid(args: dict[str, Any]) -> LogSigmoid_PyDTNN:
     # https://pytorch.org/docs/stable/generated/torch.nn.LogSigmoid.html#torch.nn.LogSigmoid
     # not_used = args
     return LogSigmoid_PyDTNN()
+
+def LogSoftmax(args: dict[str, Any]) -> LogSoftmax_PyDTNN:
+    """
+    Converts a PyTorch LogSoftmax layer to a PyDTNN Log layer.
+
+    Args:
+        args: Dictionary containing layer configuration.
+
+    Returns:
+        An instance of pydtnn.activations.log.Log_PyDTNN.
+    """
+    # https://pytorch.org/docs/stable/generated/torch.nn.LogSoftmax.html#torch.nn.LogSoftmax
+    # not_used = args
+    return LogSoftmax_PyDTNN()
 
 
 def ReLU(args: dict[str, Any]) -> Relu_PyDTNN:

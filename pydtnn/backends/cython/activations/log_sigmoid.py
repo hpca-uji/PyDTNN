@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class LogSigmoidCython(LogSigmoidNumpy, ActivationCython):
-    """Cython-accelerated Logarithmic activation layer."""
+    """Cython-accelerated Log Sigmoid activation layer."""
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         """
