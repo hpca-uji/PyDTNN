@@ -121,7 +121,7 @@ class TestModel(torch.nn.Module):
         self.avgpool = torch.nn.AdaptiveAvgPool2d(output_size=(1, 1))
         self.fc = torch.nn.Sequential(
             torch.nn.Linear(in_features=2048, out_features=10, bias=True),
-            torch.nn.Softmax(dim=None),
+            torch.nn.Softmax(dim=1),
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
