@@ -6,6 +6,7 @@ export PYTHONUNBUFFERED="True"
 
 pydtnn-benchmark \
   --model=resnet50_from_pytorch \
+  --model=resnet50_from_pytorch \
   --dataset=mnist \
   --dataset-path=datasets/mnist \
   --no-test-as-validation \
@@ -18,7 +19,7 @@ pydtnn-benchmark \
   --num-epochs=50 \
   --steps-per-epoch=0 \
   --validation-split=0.2 \
-  --evaluate \
+  --no-evaluate \
   --optimizer=sgd \
   --learning-rate=0.01 \
   --loss-func=negative_log_likelihood \

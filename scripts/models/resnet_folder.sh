@@ -11,6 +11,7 @@ if mpirun --version | grep -q 'Open MPI) [5-9].'; then
 fi
 
 mpirun -np 1 "${MPI_ARGS[@]}" \
+mpirun -np 1 "${MPI_ARGS[@]}" \
   pydtnn-benchmark \
   --model=resnet50_pytorch \
   --dataset=folder \

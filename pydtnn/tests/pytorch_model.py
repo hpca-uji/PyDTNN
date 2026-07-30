@@ -1,6 +1,7 @@
 """Tests for verifying model behavior and consistency across different data types."""
 
 import logging
+from typing import override
 import unittest
 
 import numpy as np
