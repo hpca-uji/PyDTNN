@@ -1,7 +1,7 @@
 """Test suite for verifying PyTorch to PyDTNN model conversion and inference parity."""
 
 import torch
-from model_convertor import convert_model
+from pydtnn.converters.pytorch2pydtnn.model_converter import convert_model
 from torch.nn import CrossEntropyLoss
 from torchmetrics import Accuracy, Metric
 from torchvision.models import (alexnet, densenet121, densenet169, densenet201, googlenet, resnet18,

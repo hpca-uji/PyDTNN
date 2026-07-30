@@ -1,9 +1,8 @@
 """This module provides converters to translate PyTorch activation layers to their PyDTNN equivalents."""
 
-import logging
 from typing import Any
 
-import pydtnn.converters.pytorch2pydtnn.common as cm
+import pydtnn.converters.pytorch2pydtnn.utils as cm
 from pydtnn.activations.arctanh import Arctanh as Arctanh_PyDTNN
 from pydtnn.activations.leaky_relu import LeakyRelu as LeakyRelu_PyDTNN
 from pydtnn.activations.log_sigmoid import LogSigmoid as LogSigmoid_PyDTNN
@@ -26,7 +25,6 @@ __all__ = (
     "Tanh",
 )
 
-logger = logging.getLogger(__name__)
 
 def Arctanh(args: dict[str, Any]) -> Arctanh_PyDTNN:
     """

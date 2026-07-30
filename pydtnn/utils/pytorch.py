@@ -5,7 +5,7 @@ from collections.abc import Sequence
 import torch
 
 from pydtnn.abstract.layerable import Layerable
-from pydtnn.converters.pytorch2pydtnn.model_convertor import get_layers_from_torch
+from pydtnn.converters.pytorch2pydtnn.model_converter import get_layers_from_torch
 from pydtnn.utils.constants import ArrayShape
 
 

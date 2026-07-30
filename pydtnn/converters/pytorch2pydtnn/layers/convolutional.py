@@ -1,14 +1,12 @@
 """Module for translating PyTorch convolutional layers to PyDTNN equivalent layers."""
 
-import logging
 from typing import Any
 
-import pydtnn.converters.pytorch2pydtnn.common as cm
+import pydtnn.converters.pytorch2pydtnn.utils as cm
 from pydtnn.layers.conv_2d import Conv2D
 
 __all__ = ("Conv2d",)
 
-logger = logging.getLogger(__name__)
 
 def Conv2d(args: dict[str, Any]) -> Conv2D:
     """

@@ -3,15 +3,13 @@
 # In this file must be implemented only the translation of PyTorch Dropout
 # layers to its PyDTNN equivalent.
 
-import logging
 from typing import Any
 
-import pydtnn.converters.pytorch2pydtnn.common as cm
+import pydtnn.converters.pytorch2pydtnn.utils as cm
 from pydtnn.layers.dropout import Dropout as Dropout_PyDTNN
 
 __all__ = ("Dropout",)
 
-logger = logging.getLogger(__name__)
 
 def Dropout(args: dict[str, Any]) -> Dropout_PyDTNN:
     """

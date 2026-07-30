@@ -3,15 +3,13 @@
 
 """Module for converting PyTorch Linear layers to PyDTNN FC layers."""
 
-import logging
 from typing import Any
 
-import pydtnn.converters.pytorch2pydtnn.common as cm
+import pydtnn.converters.pytorch2pydtnn.utils as cm
 from pydtnn.layers.fc import FC
 
 __all__ = ("Linear",)
 
-logger = logging.getLogger(__name__)
 
 def Linear(args: dict[str, Any]) -> FC:
     """

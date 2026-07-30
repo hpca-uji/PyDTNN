@@ -3,15 +3,13 @@
 
 """Module for converting PyTorch normalization layers to PyDTNN equivalents."""
 
-import logging
 from typing import Any
 
-import pydtnn.converters.pytorch2pydtnn.common as cm
+import pydtnn.converters.pytorch2pydtnn.utils as cm
 from pydtnn.layers.batch_normalization import BatchNormalization
 
 __all__ = ("BatchNorm2d",)
 
-logger = logging.getLogger(__name__)
 
 def BatchNorm2d(args: dict[str, Any]) -> BatchNormalization:
     """

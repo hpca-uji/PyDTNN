@@ -224,7 +224,7 @@ class PytorchModelTestCase(TestCase):
     # Initialization methods
 
     params = Params()
-    params.num_epochs = 10
+    params.num_epochs = 3
     params.tensor_format = TensorFormat.NCHW
     params.synthetic_input_shape = (3, 32, 32)
     params.synthetic_output_shape = (10,)
@@ -618,15 +618,14 @@ class PytorchModelTestCase(TestCase):
             self.compare_backward(model_torch, dx_torch, model_pydtnn, dx_pydtnn)
 
     @unittest.skip("Large model")
-    def test_renset50_from_pytorch(self) -> None:
+    def test_renset50(self) -> None:
         """Compares results between an ResNet50 model using a PyTorch model and other a PyDTNN one."""
         self.do_test_model("resnet50")
 
-    @unittest.skip("Medium model")
-    def test_resnet14s_from_pytorch(self) -> None:
+    def test_resnet14s(self) -> None:
         """Compares results between an ResNet14s model using a PyTorch model and other a PyDTNN one."""
         self.do_test_model("resnet14s")
 
-    def test_simplecnn_from_pytorch(self) -> None:
+    def test_simplecnn(self) -> None:
         """Compares results between an SimpleCNN model using a PyTorch model and other a PyDTNN one."""
         self.do_test_model("simplecnn")

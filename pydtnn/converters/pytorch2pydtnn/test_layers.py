@@ -11,7 +11,7 @@ from typing import Any
 
 import torch
 import torch.nn as nn
-from model_convertor import convert_model
+from pydtnn.converters.pytorch2pydtnn.model_converter import convert_model
 from torch.nn import Module as PyTorchModel
 
 from pydtnn.abstract.layerable import Layerable
@@ -35,7 +35,7 @@ from math import prod
 
 import numpy as np
 
-from pydtnn.converters.pytorch2pydtnn.common import TRANSPOSE_WEIGHTS_LAYERS
+from pydtnn.converters.pytorch2pydtnn.utils import TRANSPOSE_WEIGHTS_LAYERS
 from pydtnn.utils import rand
 
 __all__ = (

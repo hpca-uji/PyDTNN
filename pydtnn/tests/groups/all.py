@@ -31,6 +31,7 @@ logger = logging.getLogger(__name__)
 # Torch
 try:
     from pydtnn.tests.pytorch_layer import PytorchLayerTestCase
+    from pydtnn.tests.pytorch_model import PytorchModelTestCase
 except Exception:
     logger.warning("PyTorch not available, skiping tests!")
 

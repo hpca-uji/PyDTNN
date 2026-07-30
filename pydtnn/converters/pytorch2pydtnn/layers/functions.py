@@ -1,10 +1,9 @@
 """Translation functions to convert PyTorch functional operations into their corresponding PyDTNN layer."""
 
-import logging
 from typing import Any
 
 from pydtnn.activations.log_softmax import LogSoftmax
-import pydtnn.converters.pytorch2pydtnn.common as cm
+import pydtnn.converters.pytorch2pydtnn.utils as cm
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.activations.log_sigmoid import LogSigmoid
 from pydtnn.activations.relu import Relu
@@ -30,7 +29,6 @@ __all__ = (
     "tanh",
 )
 
-logger = logging.getLogger(__name__)
 
 # - Torch Functions
 
@@ -227,6 +225,7 @@ def log_sigmoid(args: dict[str, Any]) -> tuple[LogSigmoid, str]:
 
     return (activation.LogSigmoid(**dict_params), dict_params["input"])
 
+
 def log_softmax(args: dict[str, Any]) -> tuple[LogSoftmax, str]:
     """
     Converts PyTorch log_softmax activation operation to PyDTNN Log layer.
@@ -263,6 +262,7 @@ def log_softmax(args: dict[str, Any]) -> tuple[LogSoftmax, str]:
     dict_params = switch(params.split(cm.ARGS_SEPARATOR))
 
     return (activation.LogSoftmax(**dict_params), dict_params["input"])  # pyright: ignore[reportArgumentType]
+
 
 def relu(args: dict[str, str]) -> tuple[Relu, str]:
     """

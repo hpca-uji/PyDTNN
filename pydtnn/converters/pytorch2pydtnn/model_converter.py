@@ -1,11 +1,10 @@
 """Module for converting PyTorch models to PyDTNN models."""
 
-import logging
 from typing import Any
 
 import torch
 
-import pydtnn.converters.pytorch2pydtnn.common as cm
+import pydtnn.converters.pytorch2pydtnn.utils as cm
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.activations.abstract.activation import Activation
 from pydtnn.layers.input import Input
@@ -20,12 +19,6 @@ __all__ = (
     "extract_layers_relations",
     "load_layers",
 )
-
-logger = logging.getLogger(__name__)
-
-# Typing related
-
-# Operations/transformations related
 
 
 def load_layers(model: PyDTNN_Model, layers: list[Layerable]) -> None:

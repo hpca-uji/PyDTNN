@@ -208,28 +208,28 @@ def function_operation_to_pydtnn(name: str) -> Callable[[dict[str, Any]], tuple[
     # NOTE: I found impossible to do a switch (match-case) nor a dictionary
     # due the name may be larger than the "key" (e.g.: name =
     # torch.flatten(input, start_dim=0, end_dim=-1); "key" = "flatten")
-    if ADD in name:
-        op = add
-    elif any(pattern in name for pattern in [CONCAT, CAT]):
-        op = concat
-    elif FLATTEN in name:
-        op = flatten
-    elif RELU in name:
-        # It is not the layer, but the relu operation itself.
-        op = relu
-    elif ADP_AVG_POOL in name:
+    if ADP_AVG_POOL in name:
         op = adaptive_avg_pool_2d
     elif LOG_SIGMOID in name:
         op = log_sigmoid
+    elif LOG_SOFTMAX in name:
+        op = log_softmax
+    elif SOFTMAX in name:
+        op = softmax
+    elif FLATTEN in name:
+        op = flatten
     elif SIGMOID in name:
         # NOTE: is important that SIGMOID is after LOG_SIGMOID
         op = sigmoid
-    elif LOG_SOFTMAX in name:
-            op = log_softmax
-    elif SOFTMAX in name:
-        op = softmax
+    elif RELU in name:
+        # It is not the layer, but the relu operation itself.
+        op = relu
     elif TANH in name:
         op = tanh
+    elif ADD in name:
+        op = add
+    elif CAT in name:
+        op = concat
     # NOTE: If a new function operation handler is implemented, an "elif" must
     # be place before the followin else in order to call the handler of that
     # operation.
