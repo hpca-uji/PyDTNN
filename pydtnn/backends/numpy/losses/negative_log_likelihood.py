@@ -61,26 +61,19 @@ class NegativeLogLikelihoodNumpy(NegativeLogLikelihood[np.ndarray], LossNumpy):
         """
         b = y_pred.shape[0]
         _argmax: np.ndarray = self._argmax[:b]
-        _y_pred: np.ndarray = self._y_pred[:b]
         _y_pred_op: np.ndarray = self._y_pred_op[:b]
         dx: np.ndarray = self.dx[:b]
         dx.fill(0)
 
         # Common
         b_range: np.ndarray = np.arange(b)
-        np.clip(y_pred, a_min=self.eps, a_max=(1 - self.eps), out=_y_pred)
         np.argmax(y_targ, axis=1, out=_argmax)
 
         # Loss
-        np.log(_y_pred[b_range, _argmax], out=_y_pred_op)
-        np.multiply(_y_pred_op, self.weights[_argmax], out=_y_pred_op)
-        loss: float = float(-np.sum(_y_pred_op) / b)
+        np.multiply(y_pred[b_range, _argmax], self.weights[_argmax], out=_y_pred_op)
+        loss: float = float(-np.sum(_y_pred_op) / np.sum(self.weights[_argmax]))
 
         # DX
-        # dx: np.ndarray = np.copy(y_targ)
-        # dx_amax: np.ndarray = np.argmax(dx, axis=1)
-        # dx[b_range, dx_amax] /= (-_y_pred_sliced[b_range, dx_amax] * batch_size)
-        dx[:] = y_targ
-        np.multiply(-1 * batch_size, _y_pred, out=_y_pred)
-        dx[b_range, _argmax] /= _y_pred[b_range, _argmax]
+        dx[b_range, _argmax] = -self.weights[_argmax] / np.sum(self.weights[_argmax])
+        breakpoint()
         return loss, np.asarray(dx, dtype=self.model.dtype, order="C")
