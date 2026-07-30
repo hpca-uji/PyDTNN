@@ -3,13 +3,25 @@
 import logging
 
 from pydtnn.layers.flatten import Flatten as Flatten_PyDTNN
+from pydtnn.layers.input import Input
 
 __all__ = ("Flatten",)
 
 logger = logging.getLogger(__name__)
 
-# Functionality imports
-# import pydtnn.converters.pytorch2pydtnn.common as cm
+def Identity(_args: dict[str, str]) -> Input:
+    """
+        Converts a PyTorch Identity layer to a PyDTNN Input layer (the one with the most similar behaviour).
+    
+        Args:
+            args: A dictionary containing the configuration arguments from the PyTorch layer (they will be ignored).
+    
+        Returns:
+            An initialized PyDTNN Input layer instance.
+    """
+    # https://docs.pytorch.org/docs/2.13/generated/torch.nn.Identity.html
+
+    return Input()
 
 
 def Flatten(args: dict[str, str]) -> Flatten_PyDTNN:

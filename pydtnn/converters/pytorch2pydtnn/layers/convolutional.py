@@ -3,17 +3,12 @@
 import logging
 from typing import Any
 
-# Typing related (or non important) imports
 import pydtnn.converters.pytorch2pydtnn.common as cm
 from pydtnn.layers.conv_2d import Conv2D
 
 __all__ = ("Conv2d",)
 
 logger = logging.getLogger(__name__)
-
-
-# Functionality imports
-
 
 def Conv2d(args: dict[str, Any]) -> Conv2D:
     """

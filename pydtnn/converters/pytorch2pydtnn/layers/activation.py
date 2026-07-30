@@ -28,11 +28,6 @@ __all__ = (
 
 logger = logging.getLogger(__name__)
 
-# Typing related (or non important) imports
-
-# Functionality imports
-
-
 def Arctanh(args: dict[str, Any]) -> Arctanh_PyDTNN:
     """
     Converts a PyTorch-like Arctanh_PyDTNN configuration to a PyDTNN Arctanh layer.

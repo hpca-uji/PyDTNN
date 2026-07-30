@@ -3,6 +3,7 @@
 import logging
 from typing import Any
 
+from pydtnn.activations.log_softmax import LogSoftmax
 import pydtnn.converters.pytorch2pydtnn.common as cm
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.activations.log_sigmoid import LogSigmoid
@@ -22,7 +23,7 @@ __all__ = (
     "add",
     "concat",
     "flatten",
-    "log",
+    "log_sigmoid",
     "relu",
     "sigmoid",
     "softmax",
@@ -31,12 +32,7 @@ __all__ = (
 
 logger = logging.getLogger(__name__)
 
-# Typing related (or non important) imports
-
-# Functionality imports
-
 # - Torch Functions
-
 
 def adaptive_avg_pool_2d(args: dict[str, str]) -> tuple[AveragePool2D, str]:
     """
@@ -207,15 +203,15 @@ def flatten(args: dict[str, str]) -> tuple[Flatten, str]:
 # --- Activations --
 
 
-def log(args: dict[str, Any]) -> tuple[LogSigmoid, str]:
+def log_sigmoid(args: dict[str, Any]) -> tuple[LogSigmoid, str]:
     """
-    Converts PyTorch log activation operation to PyDTNN Log layer.
+    Converts PyTorch log_sigmoid activation operation to PyDTNN Log layer.
 
     Args:
         args: Dictionary containing operation parameters.
 
     Returns:
-        A tuple containing the initialized Log layer and the input layer name.
+        A tuple containing the initialized LogSigmoid layer and the input layer name.
     """
     # https://pytorch.org/docs/stable/generated/torch.nn.functional.logsigmoid.html#torch.nn.functional.logsigmoid
 
@@ -231,6 +227,42 @@ def log(args: dict[str, Any]) -> tuple[LogSigmoid, str]:
 
     return (activation.LogSigmoid(**dict_params), dict_params["input"])
 
+def log_softmax(args: dict[str, Any]) -> tuple[LogSoftmax, str]:
+    """
+    Converts PyTorch log_softmax activation operation to PyDTNN Log layer.
+
+    Args:
+        args: Dictionary containing operation parameters.
+
+    Returns:
+        A tuple containing the initialized LogSoftmax layer and the input layer name.
+    """
+    # https://pytorch.org/docs/stable/generated/torch.nn.functional.logsigmoid.html#torch.nn.functional.logsigmoid
+    # log_softmax(input, dim=None, _stacklevel=3, dtype=None)
+
+    def switch(list_params: list[str], dict_params: dict[str, str] = dict()) -> dict[str, str]:
+        """Helper to parse softmax parameters recursively."""
+        # This is a switch with "fall through".
+        # FIXME: this also changes types but typing says otherwise
+        match len(list_params):
+            case 3:
+                var = list_params.pop().split("dim=")
+                dict_params["end_dim"] = int(var.pop())  # pyright: ignore[reportArgumentType]
+                return switch(list_params, dict_params)
+            case 2:
+                var = list_params.pop().split("dtype=")
+                dict_params["start_dim"] = int(var.pop())  # pyright: ignore[reportArgumentType]
+                return switch(list_params, dict_params)
+            case 1:
+                dict_params["input"] = list_params.pop()
+                return switch(list_params, dict_params)
+            case _:
+                return dict_params
+
+    params = args[cm.PARAMETERS].strip()
+    dict_params = switch(params.split(cm.ARGS_SEPARATOR))
+
+    return (activation.LogSoftmax(**dict_params), dict_params["input"])  # pyright: ignore[reportArgumentType]
 
 def relu(args: dict[str, str]) -> tuple[Relu, str]:
     """

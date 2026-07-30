@@ -13,11 +13,6 @@ __all__ = ("BatchNorm2d",)
 
 logger = logging.getLogger(__name__)
 
-# Typing related (or non important) imports
-
-# Functionality imports
-
-
 def BatchNorm2d(args: dict[str, Any]) -> BatchNormalization:
     """
     Converts a PyTorch BatchNorm2d layer configuration to a PyDTNN BatchNormalization layer.

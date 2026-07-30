@@ -6,17 +6,12 @@
 import logging
 from typing import Any
 
-# Typing related (or non important) imports
 import pydtnn.converters.pytorch2pydtnn.common as cm
 from pydtnn.layers.dropout import Dropout as Dropout_PyDTNN
 
 __all__ = ("Dropout",)
 
 logger = logging.getLogger(__name__)
-
-
-# Functionality imports
-
 
 def Dropout(args: dict[str, Any]) -> Dropout_PyDTNN:
     """

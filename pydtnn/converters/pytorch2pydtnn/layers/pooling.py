@@ -16,10 +16,6 @@ __all__ = (
 
 logger = logging.getLogger(__name__)
 
-# Typing related (or non important) imports
-
-# Functionality imports
-
 # ---- CONSTANTS ----
 
 # PyTorch:

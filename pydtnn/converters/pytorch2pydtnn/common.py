@@ -12,14 +12,13 @@ from pydtnn.converters.pytorch2pydtnn.layers.activation import (LeakyRelu, LogSi
                                                                 ReLU, ReLU6, Sigmoid, Softmax, Tanh)
 from pydtnn.converters.pytorch2pydtnn.layers.convolutional import Conv2d
 from pydtnn.converters.pytorch2pydtnn.layers.dropout import Dropout
-from pydtnn.converters.pytorch2pydtnn.layers.functions import (adaptive_avg_pool_2d, add,
-                                                               concat, flatten, log, relu,
+from pydtnn.converters.pytorch2pydtnn.layers.functions import (adaptive_avg_pool_2d, add, relu,
+                                                               concat, flatten, log_sigmoid, log_softmax,
                                                                sigmoid, softmax, tanh)
 from pydtnn.converters.pytorch2pydtnn.layers.linear import Linear
 from pydtnn.converters.pytorch2pydtnn.layers.normalization import BatchNorm2d
 from pydtnn.converters.pytorch2pydtnn.layers.pooling import AdaptiveAvgPool2d, AvgPool2d, MaxPool2d
-from pydtnn.converters.pytorch2pydtnn.layers.utility import Flatten
-from pydtnn.layers.input import Input
+from pydtnn.converters.pytorch2pydtnn.layers.utility import Flatten, Identity
 from pydtnn.utils.tensor import format_transpose
 
 __all__ = (
@@ -59,6 +58,7 @@ TANH = "tanh"
 SOFTMAX = "softmax"
 SIGMOID = "sigmoid"
 LOG_SIGMOID = "logsigmoid"
+LOG_SOFTMAX = "log_softmax"
 
 ARGS_SEPARATOR = ","
 PYTORCH_OUTPUT_SIZE = "output_size"
@@ -158,11 +158,6 @@ def switch_pytorch_pydtnn(name: str) -> Callable[[dict[str, Any]], Layerable]:
         case "Flatten":
             return Flatten
         case "Identity":
-
-            def Identity(_args):
-                logger.warning("Use this function only for debugging in cpu.")
-                return Input()
-
             return Identity
 
         # Not actual PyTorch layers (are torch functions):
@@ -225,10 +220,12 @@ def function_operation_to_pydtnn(name: str) -> Callable[[dict[str, Any]], tuple[
     elif ADP_AVG_POOL in name:
         op = adaptive_avg_pool_2d
     elif LOG_SIGMOID in name:
-        op = log
+        op = log_sigmoid
     elif SIGMOID in name:
         # NOTE: is important that SIGMOID is after LOG_SIGMOID
         op = sigmoid
+    elif LOG_SOFTMAX in name:
+            op = log_softmax
     elif SOFTMAX in name:
         op = softmax
     elif TANH in name:
