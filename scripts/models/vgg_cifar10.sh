@@ -44,7 +44,6 @@ pydtnn-benchmark \
   --no-tracing \
   --no-profile \
   --backend=cpu \
-  --no-use-cudnn \
   --no-use-cudnn-auto-conv-algo \
   --no-use-gpudirect \
   --history-file="results/result_vgg3dobn.history" \

@@ -39,5 +39,4 @@ mpirun -np 8 "${MPI_ARGS[@]}" \
   --no-tracing \
   --no-profile \
   --backend=cpu \
-  --no-use-cudnn \
   --dtype=float32

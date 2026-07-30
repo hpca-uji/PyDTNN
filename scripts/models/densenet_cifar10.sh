@@ -50,7 +50,6 @@ mpirun -np 1 "${MPI_ARGS[@]}" \
   --no-tracing \
   --no-profile \
   --backend=cpu \
-  --no-use-cudnn \
   --no-use-gpudirect \
   --history-file="results/result_googlenet.history" \
   --dtype=float32

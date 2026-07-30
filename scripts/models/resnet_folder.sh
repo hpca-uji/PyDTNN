@@ -10,8 +10,7 @@ if mpirun --version | grep -q 'Open MPI) [5-9].'; then
   MPI_ARGS+=("--output=:raw")
 fi
 
-mpirun -np 1 "${MPI_ARGS[@]}" \
-mpirun -np 1 "${MPI_ARGS[@]}" \
+mpirun -np 4 "${MPI_ARGS[@]}" \
   pydtnn-benchmark \
   --model=resnet50_pytorch \
   --dataset=folder \
@@ -46,7 +45,6 @@ mpirun -np 1 "${MPI_ARGS[@]}" \
   --no-tracing \
   --no-profile \
   --backend=cpu \
-  --no-use-cudnn \
   --no-use-gpudirect \
   --dtype=float32 \
   --input-scale \

@@ -52,7 +52,6 @@ mpirun -np 2 "${MPI_ARGS[@]}" \
   --no-tracing \
   --no-profile \
   --backend=gpu \
-  --use-cudnn \
   --no-use-gpudirect \
   --history-file="results/result_resnet.history" \
   --dtype=float32

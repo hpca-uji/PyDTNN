@@ -1142,15 +1142,6 @@ class ArgumentParser(argparse.ArgumentParser):
             ),
         )
         _pe_group.add_argument(
-            "--use-cudnn",
-            action=argparse.BooleanOptionalAction,
-            default=ModelBase.use_cudnn,
-            help=(
-                "Ignored, always enabled if plausible, present just for compatibility."
-                f" Default: {ModelBase.use_cudnn!r}."
-            ),
-        )
-        _pe_group.add_argument(
             "--use-gpudirect",
             action=argparse.BooleanOptionalAction,
             default=ModelBase.use_gpudirect,

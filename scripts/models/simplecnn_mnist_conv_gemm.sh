@@ -27,5 +27,4 @@ pydtnn-benchmark \
   --no-tracing \
   --no-profile \
   --backend="cpu;conv_2d:gemm" \
-  --no-use-cudnn \
   --dtype=float32

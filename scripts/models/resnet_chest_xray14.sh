@@ -45,7 +45,6 @@ mpirun -np 4 "${MPI_ARGS[@]}" \
   --no-tracing \
   --no-profile \
   --backend=cpu \
-  --no-use-cudnn \
   --no-use-gpudirect \
   --dtype=float32 \
   --input-scale \

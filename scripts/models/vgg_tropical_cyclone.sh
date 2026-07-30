@@ -49,7 +49,6 @@ pydtnn-benchmark \
   --no-tracing \
   --no-profile \
   --backend="cpu;conv_2d:winograd" \
-  --no-use-cudnn \
   --no-enable-best-of \
   --no-use-cudnn-auto-conv-algo \
   --no-use-gpudirect \

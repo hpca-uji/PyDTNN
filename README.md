@@ -310,7 +310,6 @@ The PyDTNN framework comes with a utility launcher called
   - `--use-mpi-buffers`, `--no-use-mpi-buffers`: Enable the use of MPI buffers. Possible values: `True` (MPI operations by
     buffer), `False` (MPI operations by object) or undefined (auto-select the better
     option). Default: None.
-  - `--use-cudnn`, `--no-use-cudnn`: Ignored, always enabled if plausible, present just for compatibility. Default:
     False.
   - `--use-gpudirect`, `--no-use-gpudirect`: Enable GPU pinned memory for gradients when using a CUDA-aware MPI version.
     Default: False.
@@ -364,7 +363,6 @@ $ mpirun -np 12 \
       --parallel-data=False \
       --tracing=False \
       --profile=False \
-      --use-cudnn \
       --backend=gpu \
       --dtype=float32
 
@@ -634,7 +632,6 @@ $ pydtnn-benchmark \
     --model-state-filename=vgg16-weights-nhwc.npz \
     --no-tracing \
     --no-profile \
-    --use-cudnn \
     --backend=gpu \
     --dtype=float32
 
