@@ -168,7 +168,7 @@ class SimpleCNN(torch.nn.Module):
 
 
 def replace_layer(
-    module: torch.nn.Module, name: str, layer_to_replace: type[torch.nn.Module]
+    module: torch.nn.Module, layer_to_replace: type[torch.nn.Module]
 ) -> None:
     """
     Recursively put desired batch norm in nn.module module.
@@ -176,23 +176,19 @@ def replace_layer(
     set module = net to start code.
     https://discuss.pytorch.org/t/how-to-replace-a-layer-with-own-custom-variant/43586/7
     """
-    # go through all attributes of module nn.module (e.g. network or layer) and put batch norms if present
-    for attr_str in dir(module):
-        target_attr = getattr(module, attr_str)
-        if isinstance(target_attr, layer_to_replace):
-            print("replaced: ", name, attr_str)  # Not in verbose_test?
-            new_bn = torch.nn.Identity(
-                target_attr.num_features,
-                target_attr.eps,
-                target_attr.momentum,
-                target_attr.affine,
-                track_running_stats=False,
-            )
-            setattr(module, attr_str, new_bn)
 
-    # iterate through immediate child modules. Note, the recursion is done by our code no need to use named_modules()
-    for name, immediate_child_module in module.named_children():
-        replace_layer(immediate_child_module, name, layer_to_replace)
+    # iterate through immediate child modules
+    list_children = list(module.named_children())
+    for name, immediate_child_module in list_children:
+        setattr(module, name, replace_layer(immediate_child_module, layer_to_replace))
+
+    # go through all attributes of module nn.module (e.g. network or layer) and put batch norms if present
+    if isinstance(module, layer_to_replace):
+        if verbose_test():
+            print("replaced: ", module)
+        return torch.nn.Identity()
+    else:
+        return module
 
 
 class PytorchModelTestCase(TestCase):
@@ -336,17 +332,7 @@ class PytorchModelTestCase(TestCase):
             case _:
                 raise ValueError(f"Unknown model {model_name!r}!")
 
-        # breakpoint()
-        # class TEST(torch.nn.Module):
-        #    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        #        super().__init__(*args, **kwargs)
-        #        self.layer = torch_model.conv1
-        #    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        #        x = self.layer(x)
-        #        return x
-        # torch_model = TEST()
-        # replace_layer(torch_model, "model", layer_to_replace=torch.nn.BatchNorm2d)
-        # breakpoint()
+        replace_layer(torch_model, layer_to_replace=torch.nn.Dropout)
 
         return torch_model, torch.nn.CrossEntropyLoss()
 
@@ -634,7 +620,7 @@ class PytorchModelTestCase(TestCase):
     @unittest.skip("Large model")
     def test_renset50_from_pytorch(self) -> None:
         """Compares results between an ResNet50 model using a PyTorch model and other a PyDTNN one."""
-        self.do_test_model("resnet50_from_pytorch")
+        self.do_test_model("resnet50")
 
     @unittest.skip("Medium model")
     def test_resnet14s_from_pytorch(self) -> None:
