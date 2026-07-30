@@ -10,9 +10,9 @@ if mpirun --version | grep -q 'Open MPI) [5-9].'; then
   MPI_ARGS+=("--output=:raw")
 fi
 
-mpirun -np 4 "${MPI_ARGS[@]}" \
+mpirun -np 1 "${MPI_ARGS[@]}" \
   pydtnn-benchmark \
-  --model=resnet \
+  --model=resnet50_pytorch \
   --dataset=folder \
   --dataset-path=datasets/folder \
   --no-test-as-validation \
@@ -29,9 +29,9 @@ mpirun -np 4 "${MPI_ARGS[@]}" \
   --metrics=categorical_accuracy \
   --schedulers=warm_up,reduce_lr_on_plateau,early_stopping \
   --warm-up-epochs=5 \
-  --early-stopping-metric=val_categorical_cross_entropy \
+  --early-stopping-metric=val_negative_log_likelihood \
   --early-stopping-patience=40 \
-  --reduce-lr-on-plateau-metric=val_categorical_cross_entropy \
+  --reduce-lr-on-plateau-metric=val_negative_log_likelihood \
   --reduce-lr-on-plateau-factor=0.5 \
   --reduce-lr-on-plateau-patience=15 \
   --reduce-lr-on-plateau-min-lr=0.00001 \

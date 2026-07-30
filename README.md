@@ -282,12 +282,12 @@ The PyDTNN framework comes with a utility launcher called
   - `--warm-up-epochs`: Number of batches (ramp up) that the LR is scaled up from 0 until LR. Default:
     5.
   - `--early-stopping-metric`: Loss metric monitored by early_stopping LR scheduler. Default:
-    `val_categorical_cross_entropy`.
+    `val_negative_log_likelihood`.
   - `--early-stopping-patience`: Number of epochs with no improvement after which training will be stopped.
     Default: 10.
   - `--early-stopping-minimize`, `--no-early-stopping-minimize`: Whether to minimize the metric. If False, it will maximize. Default: True.
   - `--reduce-lr-on-plateau-metric`: Loss metric monitored by reduce_lr_on_plateau LR scheduler. Default:
-    `val_categorical_cross_entropy`.
+    `val_negative_log_likelihood`.
   - `--reduce-lr-on-plateau-factor`: Factor by which the learning rate will be reduced. new_lr = lr * factor.
     Default: 0.1.
   - `--reduce-lr-on-plateau-patience`: Number of epochs with no improvement after which LR will be reduced. Default: 5.
@@ -299,7 +299,7 @@ The PyDTNN framework comes with a utility launcher called
   - `--stop-at-loss-metric`: Loss metric monitored by stop_at_loss LR scheduler. Default: `val_accuracy`.
   - `--stop-at-loss-threshold`: Metric threshold monitored by stop_at_loss LR scheduler. Default: 0.
   - `--model-checkpoint-metric`: Loss metric monitored by model_checkpoint LR scheduler. Default:
-    `val_categorical_cross_entropy`.
+    `val_negative_log_likelihood`.
   - `--model-checkpoint-save-freq`: Frequency (in epochs) at which the model weights and bias will be saved by the
     model_checkpoint LR scheduler. Default: 2.
 
@@ -359,7 +359,7 @@ $ mpirun -np 12 \
       --reduce-lr-every-nepochs-factor=0.5 \
       --reduce-lr-every-nepochs-nepochs=30 \
       --reduce-lr-every-nepochs-min-lr=0.001 \
-      --early-stopping-metric=val_categorical_cross_entropy \
+      --early-stopping-metric=val_negative_log_likelihood \
       --early-stopping-patience=20 \
       --parallel-data=False \
       --tracing=False \
@@ -450,10 +450,10 @@ Optimizer options
 Schedulers options
   schedulers                     : warm_up,reduce_lr_every_nepochs
   warm-up-epochs                 : 5
-  early-stopping-metric          : val_categorical_cross_entropy
+  early-stopping-metric          : val_negative_log_likelihood
   early-stopping-patience        : 20
   early-stopping-minimize        : True
-  reduce-lr-on-plateau-metric    : val_categorical_cross_entropy
+  reduce-lr-on-plateau-metric    : val_negative_log_likelihood
   reduce-lr-on-plateau-factor    : 0.1
   reduce-lr-on-plateau-patience  : 5
   reduce-lr-on-plateau-min-lr    : 0
@@ -462,7 +462,7 @@ Schedulers options
   reduce-lr-every-nepochs-min-lr : 0.001
   stop-at-loss-metric            : val_accuracy
   stop-at-loss-threshold         : 0
-  model-checkpoint-metric        : val_categorical_cross_entropy
+  model-checkpoint-metric        : val_negative_log_likelihood
   model-checkpoint-save-freq     : 2
 
 Parallel execution options
@@ -720,10 +720,10 @@ Optimizer options
 Schedulers options
   schedulers                     : warm_up,reduce_lr_on_plateau,early_stopping
   warm-up-epochs                 : 5
-  early-stopping-metric          : val_categorical_cross_entropy
+  early-stopping-metric          : val_negative_log_likelihood
   early-stopping-patience        : 20
   early-stopping-minimize        : True
-  reduce-lr-on-plateau-metric    : val_categorical_cross_entropy
+  reduce-lr-on-plateau-metric    : val_negative_log_likelihood
   reduce-lr-on-plateau-factor    : 0.1
   reduce-lr-on-plateau-patience  : 15
   reduce-lr-on-plateau-min-lr    : 0.0001
@@ -732,7 +732,7 @@ Schedulers options
   reduce-lr-every-nepochs-min-lr : 0.001
   stop-at-loss-metric            : val_categorical_accuracy
   stop-at-loss-threshold         : 70.0
-  model-checkpoint-metric        : val_categorical_cross_entropy
+  model-checkpoint-metric        : val_negative_log_likelihood
   model-checkpoint-save-freq     : 2
 
 Parallel execution options

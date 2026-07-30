@@ -5,7 +5,7 @@ export PYTHONOPTIMIZE=2
 export PYTHONUNBUFFERED="True"
 
 pydtnn-benchmark \
-  --model=simplecnn \
+  --model=resnet50_from_pytorch \
   --dataset=mnist \
   --dataset-path=datasets/mnist \
   --no-test-as-validation \
@@ -26,7 +26,7 @@ pydtnn-benchmark \
   --reduce-lr-every-nepochs-factor=0.5 \
   --reduce-lr-every-nepochs-nepochs=30 \
   --reduce-lr-every-nepochs-min-lr=0.001 \
-  --early-stopping-metric=val_categorical_cross_entropy \
+  --early-stopping-metric=val_negative_log_likelihood \
   --early-stopping-patience=20 \
   --no-parallel-data \
   --no-tracing \

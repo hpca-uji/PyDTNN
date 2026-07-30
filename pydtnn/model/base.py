@@ -164,10 +164,10 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
         "model_checkpoint",
     )
     warm_up_epochs: int = 5
-    early_stopping_metric: str = "val_categorical_cross_entropy"
+    early_stopping_metric: str = "val_negative_log_likelihood"
     early_stopping_patience: int = 10
     early_stopping_minimize: bool = True
-    reduce_lr_on_plateau_metric: str = "val_categorical_cross_entropy"
+    reduce_lr_on_plateau_metric: str = "val_negative_log_likelihood"
     reduce_lr_on_plateau_factor: float = 0.1
     reduce_lr_on_plateau_patience: int = 5
     reduce_lr_on_plateau_min_lr: float = 0.0
@@ -176,7 +176,7 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
     reduce_lr_every_nepochs_min_lr: float = 0.0
     stop_at_loss_metric: str = "val_accuracy"
     stop_at_loss_threshold: float = 0
-    model_checkpoint_metric: str = "val_categorical_cross_entropy"
+    model_checkpoint_metric: str = "val_negative_log_likelihood"
     model_checkpoint_save_freq: int = 2
     parallel_data: bool = False
     parallel_pipeline: bool = False

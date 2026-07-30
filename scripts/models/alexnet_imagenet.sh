@@ -23,9 +23,9 @@ pydtnn-benchmark \
   --metrics=categorical_accuracy \
   --schedulers=early_stopping,reduce_lr_on_plateau \
   --warm-up-epochs=5 \
-  --early-stopping-metric=val_categorical_cross_entropy \
+  --early-stopping-metric=val_negative_log_likelihood \
   --early-stopping-patience=10 \
-  --reduce-lr-on-plateau-metric=val_categorical_cross_entropy \
+  --reduce-lr-on-plateau-metric=val_negative_log_likelihood \
   --reduce-lr-on-plateau-factor=0.1 \
   --reduce-lr-on-plateau-patience=5 \
   --reduce-lr-on-plateau-min-lr=0 \
