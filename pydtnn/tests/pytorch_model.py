@@ -28,7 +28,7 @@ __all__ = ("PytorchModelTestCase",)
 logger = logging.getLogger(__name__)
 
 
-class ResNet14s(torch.nn.Module):
+class ResNet14_like(torch.nn.Module):
     def __init__(self) -> None:
         super().__init__()
         self.layer1_0 = torch.nn.Sequential(
@@ -122,7 +122,7 @@ class ResNet14s(torch.nn.Module):
         self.avgpool = torch.nn.AdaptiveAvgPool2d(output_size=(1, 1))
         self.fc = torch.nn.Sequential(
             torch.nn.Linear(in_features=2048, out_features=10, bias=True),
-            torch.nn.Softmax(dim=1),
+            torch.nn.LogSoftmax(dim=1),
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -317,8 +317,8 @@ class PytorchModelTestCase(TestCase):
         match model_name:
             case "simplecnn":
                 torch_model = SimpleCNN()
-            case "resnet14s":
-                torch_model = ResNet14s()
+            case "resnet14_like":
+                torch_model = ResNet14_like()
             case "resnet50":
                 torch_model = torch_models.resnet50(weights=torch_models.ResNet50_Weights.IMAGENET1K_V1)
                 torch_model.fc = torch.nn.Sequential(  # pyright: ignore[reportAttributeAccessIssue]
@@ -334,7 +334,7 @@ class PytorchModelTestCase(TestCase):
 
         replace_layer(torch_model, layer_to_replace=torch.nn.Dropout)
 
-        return torch_model, torch.nn.CrossEntropyLoss()
+        return torch_model, torch.nn.NLLLoss()
 
     def get_model_pydtnn(self, model_pytorch: PyTorch_Model) -> PyDTNN_Model:
         """
@@ -352,6 +352,7 @@ class PytorchModelTestCase(TestCase):
         """
         # PyDTNN Model
         params = PytorchModelTestCase.params
+        params.loss_func_name = "negative_log_likelihood"
         params.model_name = ""
         # Begin of params configuration
         params_dict = vars(params)
@@ -556,6 +557,10 @@ class PytorchModelTestCase(TestCase):
         """
         pass
 
+    @staticmethod
+    def target_pydtnn2torch_format(y_pydtnn: np.ndarray) -> np.ndarray:
+        return np.argmax(y_pydtnn, axis=1)
+
     def do_test_model(self, model_name: str) -> None:
         """
         Executes the full comparison test for a given model.
@@ -582,7 +587,7 @@ class PytorchModelTestCase(TestCase):
             y_pydtnn = np.ones((params.batch_size, output_shape), dtype=params.dtype)
 
             x_torch = torch.from_numpy(x_pydtnn).to(torch.device("cpu")).float()
-            y_torch = torch.from_numpy(y_pydtnn).to(torch.device("cpu")).float()
+            y_torch = torch.from_numpy(self.target_pydtnn2torch_format(y_pydtnn)).to(torch.device("cpu")).long()
 
             # --- FORWARD ---
             if verbose_test():
@@ -601,6 +606,7 @@ class PytorchModelTestCase(TestCase):
             _loss_pydtnn, dx_pydtnn = self.do_pydtnn_model_loss(
                 model_pydtnn, x_pydtnn[-1], y_pydtnn
             )
+            # TODO: Add loss comparation
 
             # --- BACKWARD ---
             # Model 1 backward
@@ -617,14 +623,17 @@ class PytorchModelTestCase(TestCase):
             # Compare backward results
             self.compare_backward(model_torch, dx_torch, model_pydtnn, dx_pydtnn)
 
+            # TODO: Add optimizers
+            #optimizer.step()  # Torch
+
     @unittest.skip("Large model")
     def test_renset50(self) -> None:
         """Compares results between an ResNet50 model using a PyTorch model and other a PyDTNN one."""
         self.do_test_model("resnet50")
 
-    def test_resnet14s(self) -> None:
-        """Compares results between an ResNet14s model using a PyTorch model and other a PyDTNN one."""
-        self.do_test_model("resnet14s")
+    def test_resnet14_like(self) -> None:
+        """Compares results between an ResNet14_like model using a PyTorch model and other a PyDTNN one."""
+        self.do_test_model("resnet14_like")
 
     def test_simplecnn(self) -> None:
         """Compares results between an SimpleCNN model using a PyTorch model and other a PyDTNN one."""
