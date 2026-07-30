@@ -62,6 +62,7 @@ def LogSigmoid(args: dict[str, Any]) -> LogSigmoid_PyDTNN:
     # not_used = args
     return LogSigmoid_PyDTNN()
 
+
 def LogSoftmax(args: dict[str, Any]) -> LogSoftmax_PyDTNN:
     """
     Converts a PyTorch LogSoftmax layer to a PyDTNN Log layer.

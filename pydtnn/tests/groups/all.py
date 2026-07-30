@@ -9,7 +9,7 @@ test execution.
 import logging
 
 __all__ = (
-    "LayerPyTorchTestCase",
+    "PytorchLayerTestCase",
     "BatchNormalizationReluTestCase",
     "Conv2DReluTestCase",
     "Conv2DBatchNormalizationTestCase",
@@ -28,9 +28,9 @@ __all__ = (
 logger = logging.getLogger(__name__)
 
 
-# Layers
+# Torch
 try:
-    from pydtnn.tests.pytorch_layer import LayerPyTorchTestCase
+    from pydtnn.tests.pytorch_layer import PytorchLayerTestCase
 except Exception:
     logger.warning("PyTorch not available, skiping tests!")
 

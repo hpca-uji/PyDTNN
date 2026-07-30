@@ -1,7 +1,6 @@
 """Tests for verifying model behavior and consistency across different data types."""
 
 import logging
-from typing import override
 import unittest
 
 import numpy as np
@@ -23,7 +22,7 @@ from pydtnn.utils.tensor import TensorFormat
 
 type PyTorch_Model = torch.nn.Module
 
-__all__ = ("ModelDTypeTestCase",)
+__all__ = ("PytorchModelTestCase",)
 
 logger = logging.getLogger(__name__)
 
@@ -168,7 +167,7 @@ def replace_layer(
         replace_layer(immediate_child_module, name, layer_to_replace)
 
 
-class ModelDTypeTestCase(TestCase):
+class PytorchModelTestCase(TestCase):
     """Tests that two models with different parameters lead to the same results"""
 
     # NOTE: Delete parent test to prevent re-export and re-testing
@@ -286,7 +285,7 @@ class ModelDTypeTestCase(TestCase):
             A tuple containing the initialized PyTorch_Model and Loss objects.
         """
         # PyTorch Model.
-        params = ModelDTypeTestCase.params
+        params = PytorchModelTestCase.params
         params.model_name = model_name
 
         if model_name == "basic_model":
@@ -331,7 +330,7 @@ class ModelDTypeTestCase(TestCase):
             unittest.SkipTest: If the model is incompatible with the dataset.
         """
         # PyDTNN Model
-        params = ModelDTypeTestCase.params
+        params = PytorchModelTestCase.params
         params.model_name = ""
         # Begin of params configuration
         params_dict = vars(params)
@@ -545,7 +544,7 @@ class ModelDTypeTestCase(TestCase):
         model_pydtnn = self.get_model_pydtnn(model_torch)
         model_pydtnn.mode = PyDTNN_Model.Mode.TRAIN
 
-        params = ModelDTypeTestCase.params
+        params = PytorchModelTestCase.params
         input_shape = params.synthetic_input_shape
         output_shape = params.synthetic_output_shape[0]
         number_rounds = getattr(params, "number_rounds")

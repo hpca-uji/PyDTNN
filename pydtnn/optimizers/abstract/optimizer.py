@@ -7,8 +7,6 @@ function to dynamically select optimizers by name.
 
 import logging
 
-import numpy as np
-
 from pydtnn.abstract.base import Base
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.utils.constants import Array

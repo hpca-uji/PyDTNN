@@ -68,7 +68,7 @@ class LogSoftmaxNumpy(LogSoftmax[np.ndarray], ActivationNumpy):
         """Perform the forward pass of the LogSoftmax activation."""
         #  self.y = log(np.exp(x - np.max(x, axis=1, keepdims=True)) /
         #               np.sum(np.exp(x - np.max(x, axis=1, keepdims=True)), axis=1, keepdims=True)) =
-        #         = log(np.exp(x - np.max(x, axis=1, keepdims=True))) - 
+        #         = log(np.exp(x - np.max(x, axis=1, keepdims=True))) -
         #           log(np.sum(np.exp(x - np.max(x, axis=1, keepdims=True)), axis=1, keepdims=True)) =
         #         = x - np.max(x, axis=1, keepdims=True) -
         #           log(np.sum(np.exp(x - np.max(x, axis=1, keepdims=True)), axis=1, keepdims=True))
@@ -98,7 +98,7 @@ class LogSoftmaxNumpy(LogSoftmax[np.ndarray], ActivationNumpy):
         sum_dy = self.sum_dy[: dy.shape[0], :]
         exp_y = self.exp_y[: dy.shape[0], :]
 
-        np.exp(self.y, dtype=self.model.dtype, out = exp_y)
+        np.exp(self.y, dtype=self.model.dtype, out=exp_y)
 
         np.sum(dy, axis=self.axis_dim, keepdims=True, out=sum_dy)
         np.multiply(exp_y, sum_dy, out=exp_y)
