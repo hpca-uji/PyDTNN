@@ -58,5 +58,4 @@ mpirun -genv LD_PRELOAD $EXTRAELIB -iface ib0 -hosts $HOSTS -ppn $PROCS_PER_NODE
   --tracing \
   --no-profile \
   --backend=cpu \
-  --no-use-cudnn \
   --dtype=float32
