@@ -2,6 +2,7 @@
 
 import logging
 import unittest
+import warnings
 
 import numpy as np
 import torch
@@ -27,7 +28,7 @@ __all__ = ("PytorchModelTestCase",)
 logger = logging.getLogger(__name__)
 
 
-class TestModel(torch.nn.Module):
+class ResNet14s(torch.nn.Module):
     def __init__(self) -> None:
         super().__init__()
         self.layer1_0 = torch.nn.Sequential(
@@ -139,6 +140,33 @@ class TestModel(torch.nn.Module):
         return x
 
 
+class SimpleCNN(torch.nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        # Feature layers
+        self.features = torch.nn.Sequential(
+            torch.nn.Conv2d(3, 4, kernel_size=3, padding=1),
+            torch.nn.ReLU(inplace=True),
+            torch.nn.Conv2d(4, 8, kernel_size=3, padding=1),
+            torch.nn.ReLU(inplace=True),
+            torch.nn.MaxPool2d(kernel_size=2, stride=2),
+        )
+        # Classifier layers
+        self.classifier = torch.nn.Sequential(
+            torch.nn.Linear(2048, 128),
+            torch.nn.ReLU(inplace=True),
+            torch.nn.Dropout(),
+            torch.nn.Linear(128, 10),
+            torch.nn.LogSoftmax(dim=1)
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = self.features(x)
+        x = torch.flatten(x, 1)
+        x = self.classifier(x)
+        return x
+
+
 def replace_layer(
     module: torch.nn.Module, name: str, layer_to_replace: type[torch.nn.Module]
 ) -> None:
@@ -152,7 +180,7 @@ def replace_layer(
     for attr_str in dir(module):
         target_attr = getattr(module, attr_str)
         if isinstance(target_attr, layer_to_replace):
-            print("replaced: ", name, attr_str)
+            print("replaced: ", name, attr_str)  # Not in verbose_test?
             new_bn = torch.nn.Identity(
                 target_attr.num_features,
                 target_attr.eps,
@@ -200,8 +228,10 @@ class PytorchModelTestCase(TestCase):
     # Initialization methods
 
     params = Params()
+    params.num_epochs = 10
     params.tensor_format = TensorFormat.NCHW
-    setattr(params, "number_rounds", 10)
+    params.synthetic_input_shape = (3, 32, 32)
+    params.synthetic_output_shape = (10,)
 
     def get_tolerance(self, layer: Layerable) -> tuple[float, float]:
         """
@@ -288,18 +318,23 @@ class PytorchModelTestCase(TestCase):
         params = PytorchModelTestCase.params
         params.model_name = model_name
 
-        if model_name == "basic_model":
-            torch_model = TestModel()
-        else:
-            torch_model = torch_models.resnet50(weights=torch_models.ResNet50_Weights.IMAGENET1K_V1)
-            torch_model.fc = torch.nn.Sequential(  # pyright: ignore[reportAttributeAccessIssue]
-                # torch.nn.Dropout(p=0.5),
-                torch.nn.Linear(
-                    in_features=torch_model.fc.in_features,
-                    out_features=params.synthetic_output_shape[0],
-                ),
-                torch.nn.LogSoftmax(dim=1),
-            )
+        match model_name:
+            case "simplecnn":
+                torch_model = SimpleCNN()
+            case "resnet14s":
+                torch_model = ResNet14s()
+            case "resnet50":
+                torch_model = torch_models.resnet50(weights=torch_models.ResNet50_Weights.IMAGENET1K_V1)
+                torch_model.fc = torch.nn.Sequential(  # pyright: ignore[reportAttributeAccessIssue]
+                    # torch.nn.Dropout(p=0.5),
+                    torch.nn.Linear(
+                        in_features=torch_model.fc.in_features,
+                        out_features=params.synthetic_output_shape[0],
+                    ),
+                    torch.nn.LogSoftmax(dim=1),
+                )
+            case _:
+                raise ValueError(f"Unknown model {model_name!r}!")
 
         # breakpoint()
         # class TEST(torch.nn.Module):
@@ -341,15 +376,17 @@ class PytorchModelTestCase(TestCase):
                 f"PyDTNN_Model incompatible with {params_dict['dataset_name']}"
             ) from exc
 
-        print(f"{model_pytorch=}")
+        if verbose_test():
+            print(model_pytorch)
 
         layers = from_pytorch(params.synthetic_input_shape, model_pytorch)
         model_pydtnn.add_layers(layers)
         model_pydtnn._model_init()
         model_pydtnn.mode = model_pydtnn.Mode.TRAIN
 
-        for layer in model_pydtnn.layers:
-            print(layer)
+        if verbose_test():
+            for layer in model_pydtnn.layers:
+                print(layer)
 
         # capa = model_pydtnn.layers[-1]
 
@@ -417,7 +454,9 @@ class PytorchModelTestCase(TestCase):
         """
         # TODO: mover el loss a una función a parte (para compararlas)
         # dx: list[torch.Tensor] = []
-        loss.backward()
+        with warnings.catch_warnings(action="ignore"):
+            loss.backward()
+
         dx = loss
         # TODO: Get all layers in torch and iterate over those layers.
         return [dx]
@@ -492,7 +531,6 @@ class PytorchModelTestCase(TestCase):
         """
         # assert len(x1) == len(x2), "x1 and x2 should have the same length"
         if verbose_test():
-            print()
             print("Comparing outputs of both models...")
 
         pytorch_last_layer = x_torch[-1]
@@ -547,12 +585,10 @@ class PytorchModelTestCase(TestCase):
         params = PytorchModelTestCase.params
         input_shape = params.synthetic_input_shape
         output_shape = params.synthetic_output_shape[0]
-        number_rounds = getattr(params, "number_rounds")
 
-        for i in range(number_rounds):
+        for i in range(params.num_epochs):
             if verbose_test():
-                print()
-                print_with_header(f"Round {i}/{number_rounds - 1}")
+                print(f"Round {i + 1}/{params.num_epochs}")
 
             x_pydtnn = np.asarray(
                 rand.random((params.batch_size, *input_shape)), dtype=params.dtype, order="C"
@@ -564,7 +600,6 @@ class PytorchModelTestCase(TestCase):
 
             # --- FORWARD ---
             if verbose_test():
-                print()
                 print_with_header(f"Model {model_name} 1 forward pass")
             x_torch = self.do_model1_forward_pass(model_torch, x_torch)
 
@@ -596,12 +631,16 @@ class PytorchModelTestCase(TestCase):
             # Compare backward results
             self.compare_backward(model_torch, dx_torch, model_pydtnn, dx_pydtnn)
 
-    # @unittest.skip("Too big")
+    @unittest.skip("Large model")
     def test_renset50_from_pytorch(self) -> None:
-        """Compares results between an Resnet50 model using a PyTorch model and other a PyDTNN one."""
+        """Compares results between an ResNet50 model using a PyTorch model and other a PyDTNN one."""
         self.do_test_model("resnet50_from_pytorch")
 
-    # @unittest.skip("Too small")
-    def test_basic_model_from_pytorch(self) -> None:
-        """Compares results between an Resnet50 model using a PyTorch model and other a PyDTNN one."""
-        self.do_test_model("basic_model")
+    @unittest.skip("Medium model")
+    def test_resnet14s_from_pytorch(self) -> None:
+        """Compares results between an ResNet14s model using a PyTorch model and other a PyDTNN one."""
+        self.do_test_model("resnet14s")
+
+    def test_simplecnn_from_pytorch(self) -> None:
+        """Compares results between an SimpleCNN model using a PyTorch model and other a PyDTNN one."""
+        self.do_test_model("simplecnn")
