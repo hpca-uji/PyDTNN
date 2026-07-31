@@ -75,5 +75,4 @@ class NegativeLogLikelihoodNumpy(NegativeLogLikelihood[np.ndarray], LossNumpy):
 
         # DX
         dx[b_range, _argmax] = -self.weights[_argmax] / np.sum(self.weights[_argmax])
-        breakpoint()
         return loss, np.asarray(dx, dtype=self.model.dtype, order="C")
