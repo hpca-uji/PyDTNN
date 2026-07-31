@@ -28,7 +28,7 @@ __all__ = ("PytorchModelTestCase",)
 logger = logging.getLogger(__name__)
 
 
-class ResNet14_like(torch.nn.Module):
+class ResNet14Like(torch.nn.Module):
     def __init__(self) -> None:
         super().__init__()
         self.layer1_0 = torch.nn.Sequential(
@@ -185,7 +185,7 @@ def replace_layer(
     # go through all attributes of module nn.module (e.g. network or layer) and put batch norms if present
     if isinstance(module, layer_to_replace):
         if verbose_test():
-            print("replaced: ", module)
+            print(f"Removed: {module}")
         return torch.nn.Identity()
     else:
         return module
@@ -317,8 +317,8 @@ class PytorchModelTestCase(TestCase):
         match model_name:
             case "simplecnn":
                 torch_model = SimpleCNN()
-            case "resnet14_like":
-                torch_model = ResNet14_like()
+            case "resnet14like":
+                torch_model = ResNet14Like()
             case "resnet50":
                 torch_model = torch_models.resnet50(weights=torch_models.ResNet50_Weights.IMAGENET1K_V1)
                 torch_model.fc = torch.nn.Sequential(  # pyright: ignore[reportAttributeAccessIssue]
@@ -559,6 +559,7 @@ class PytorchModelTestCase(TestCase):
 
     @staticmethod
     def target_pydtnn2torch_format(y_pydtnn: np.ndarray) -> np.ndarray:
+        """Convert PyDTNN output shape to PyTorch's format"""
         return np.argmax(y_pydtnn, axis=1)
 
     def do_test_model(self, model_name: str) -> None:
@@ -624,16 +625,16 @@ class PytorchModelTestCase(TestCase):
             self.compare_backward(model_torch, dx_torch, model_pydtnn, dx_pydtnn)
 
             # TODO: Add optimizers
-            #optimizer.step()  # Torch
+            # optimizer.step()  # Torch
 
     @unittest.skip("Large model")
     def test_renset50(self) -> None:
         """Compares results between an ResNet50 model using a PyTorch model and other a PyDTNN one."""
         self.do_test_model("resnet50")
 
-    def test_resnet14_like(self) -> None:
+    def test_resnet14like(self) -> None:
         """Compares results between an ResNet14_like model using a PyTorch model and other a PyDTNN one."""
-        self.do_test_model("resnet14_like")
+        self.do_test_model("resnet14like")
 
     def test_simplecnn(self) -> None:
         """Compares results between an SimpleCNN model using a PyTorch model and other a PyDTNN one."""

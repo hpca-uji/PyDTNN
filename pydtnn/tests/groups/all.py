@@ -10,6 +10,7 @@ import logging
 
 __all__ = (
     "PytorchLayerTestCase",
+    "PytorchModelTestCase",
     "BatchNormalizationReluTestCase",
     "Conv2DReluTestCase",
     "Conv2DBatchNormalizationTestCase",
