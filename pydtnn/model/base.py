@@ -182,7 +182,6 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
     parallel_pipeline: bool = False
     use_blocking_mpi: bool = True
     use_mpi_buffers: bool = None  # pyright: ignore[reportAssignmentType]
-    use_cudnn: bool = False
     use_gpudirect: bool = False
     use_nccl: bool = False
     use_cudnn_auto_conv_algo: bool = True
@@ -203,6 +202,7 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
     network_lat: float = 0.5e-6
     network_algo: NetworkAlgoEnum = NetworkAlgoEnum.VDG
 
+    use_cudnn: bool
     tracer: Tracer
     random: np.random.Generator
     kwargs: dict[str, Any]
@@ -222,7 +222,6 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
     memory_cls: type[PrivateMemory]
     memory: PrivateMemory
     tmp_memory_used: int
-    total_metrics: np.ndarray
     metrics_funcs: tuple[Metric[T], ...]
     loss_and_metrics: tuple[str, ...]
     layers: list[Layerable[T]]

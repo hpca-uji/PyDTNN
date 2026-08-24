@@ -59,13 +59,13 @@ class State(Init):
 
         # Populate data
         offset = 0
-        for i, (x_batch, y_batch, _) in enumerate(gen_train):
+        for i, (x_batch, y_batch) in enumerate(gen_train):
             n = x_batch.shape[0]
             x_train[offset: offset + n] = self.model.decode_tensor(x_batch)
             y_train[offset: offset + n] = y_batch
             offset += n
         offset = 0
-        for i, (x_batch, y_batch, _) in enumerate(gen_test):
+        for i, (x_batch, y_batch) in enumerate(gen_test):
             n = x_batch.shape[0]
             x_test[offset: offset + n] = self.model.decode_tensor(x_batch)
             y_test[offset: offset + n] = y_batch

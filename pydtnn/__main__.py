@@ -57,6 +57,10 @@ def main(config: Namespace) -> None:  # noqa: C901
 
     pr = cProfile.Profile()
     model = Model(**vars(config))
+
+    if model.comm_rank == 0:
+        logger.info("# PyDTNN benchmark")
+
     model._ensure_model_runnable()
 
     from pydtnn import timestamp, utils
@@ -70,7 +74,7 @@ def main(config: Namespace) -> None:  # noqa: C901
     # First (or unique) evaluation
     if model.evaluate_on_train or model.evaluate_only:
         if model.comm_rank == 0:
-            logger.info("**** Evaluating on test dataset...")
+            logger.info("\n# Testing...")
         t1 = time.time()
         _ = model.evaluate()
         t2 = time.time()
@@ -82,7 +86,8 @@ def main(config: Namespace) -> None:  # noqa: C901
                     f"Testing throughput: {model.dataset.test_nsamples / total_time:5.4f} samples/s"
                 )
         if model.evaluate_only:
-            model.perf_counter.print_report()
+            if model.comm_rank == 0:
+                model.perf_counter.print_report()
             raise SystemExit(0)
 
     # Barrier
@@ -91,8 +96,8 @@ def main(config: Namespace) -> None:  # noqa: C901
 
     # Training
     if model.comm_rank == 0:
-        # print('**** Model time: ', model.calculate_time())
-        logger.info("**** Training...")
+        # print('# Model time: ', model.calculate_time())
+        logger.info("\n# Training...")
         if model.profile:
             pr.enable()
     # Training a model directly from a dataset
@@ -114,7 +119,6 @@ def main(config: Namespace) -> None:  # noqa: C901
             path = Path(f"profile-{timestamp}.stat").resolve()
             pr.dump_stats(path)
             logger.info(f"Dumped profile stats to: {path}")
-        logger.info("**** Done...")
         logger.info(f"Training and validation time: {total_time:5.4f} s")
         if model.perf_counter.num_epochs > 0:
             logger.info(
@@ -144,7 +148,7 @@ def main(config: Namespace) -> None:  # noqa: C901
     # Second (and last) evaluation
     if model.evaluate_on_train:
         if model.comm_rank == 0:
-            logger.info("**** Evaluating on test dataset...")
+            logger.info("\n# Testing...")
             t1 = time.time()
         _ = model.evaluate()
         if model.comm_rank == 0:

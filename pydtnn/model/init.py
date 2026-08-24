@@ -366,7 +366,6 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
         self.loss_and_metrics_format = [self.loss_func.format] + [
             metric.format for metric in self.metrics_funcs
         ]
-        self.total_metrics = np.array([0] + [0] * len(self.metrics_funcs), dtype=self.dtype)
 
         self.optimizer._init_backend_with_model(self)
         self.optimizer._model_init(self.get_all_layers(self.layers))

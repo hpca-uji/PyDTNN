@@ -133,7 +133,7 @@ class Memory(Dataset):
         x = self.__x_source[part]
         y = self.__y_source[part]
 
-        if part is Dataset.Part.TRAIN and self.model.augment_shuffle and False:
+        if part is Dataset.Part.TRAIN and self.model.augment_shuffle:
             idx = np.arange(x.shape[0])
             self.model.random.shuffle(idx[: self.train_nsamples])
             x = x[idx]

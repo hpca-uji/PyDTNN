@@ -148,7 +148,7 @@ class Init(Utils):
     def get_train_val_generator(
         self,
     ) -> tuple[
-        Generator[tuple[np.ndarray, np.ndarray, int]], Generator[tuple[np.ndarray, np.ndarray, int]]
+        Generator[tuple[np.ndarray, np.ndarray]], Generator[tuple[np.ndarray, np.ndarray]]
     ]:
         """
         Return generators for training and validation sets.
@@ -164,7 +164,7 @@ class Init(Utils):
             self._get_batch_generator(Base.Part.VAL),
         )
 
-    def get_test_generator(self) -> Generator[tuple[np.ndarray, np.ndarray, int]]:
+    def get_test_generator(self) -> Generator[tuple[np.ndarray, np.ndarray]]:
         """
         Return generator for test set.
 
@@ -278,7 +278,7 @@ class Init(Utils):
             x, y = x.copy(), y.copy()
             yield x, y
 
-    def _batch_generator(self, part: Base.Part) -> Generator[tuple[np.ndarray, np.ndarray, int]]:
+    def _batch_generator(self, part: Base.Part) -> Generator[tuple[np.ndarray, np.ndarray]]:
         """
         Generate batches of data for the specified partition.
 
@@ -303,7 +303,7 @@ class Init(Utils):
 
         # Casos:
         # -> El generador ha devuelto más datos que los que se necesita (es decir, que batch_size >= local_batch_size)
-        #   ==> Se tienen que hacer un corte y guardarnos el restante para la sigueinte
+        #   ==> Se tienen que hacer un corte y guardarnos el restante para la siguiente
         # -> El generador ha devuelto menos datos que los que se necesita (es decir, que batch_size < local_batch_size)
         #    * Queda dataset:
         #       ==> Guardarnos los datos y usarlos en la siguiente iteración.
@@ -311,10 +311,10 @@ class Init(Utils):
         #       ==> Devolver lo que tengamos
 
         local_batch_size = self.model.batch_size
-        global_batch_size = self.model.batch_size * self.model.nprocs
+        real_batch_size = local_batch_size
 
         generator = self._transform_data_generator(part)
-        nsamples = self._nsamples[part]
+        nsamples = self._local_nsamples[part]
 
         batch_size = 0
         batch_online = []
@@ -345,18 +345,17 @@ class Init(Utils):
                 batch_size += extra_size
 
             while (x_data.shape[0] > 0) and (
-                (x_data.shape[0] >= local_batch_size) or (global_batch_size >= nsamples)
+                (x_data.shape[0] >= local_batch_size) or (real_batch_size >= nsamples)
             ):
-                x_batch, x_data = x_data[:local_batch_size], x_data[local_batch_size:]
-                y_batch, y_data = y_data[:local_batch_size], y_data[local_batch_size:]
-
-                global_batch_size = min(nsamples, global_batch_size)
-                yield x_batch[:nsamples], y_batch[:nsamples], global_batch_size
-                nsamples -= global_batch_size
+                real_batch_size = min(nsamples, real_batch_size)
+                x_batch, x_data = x_data[:real_batch_size], x_data[real_batch_size:]
+                y_batch, y_data = y_data[:real_batch_size], y_data[real_batch_size:]
+                yield x_batch, y_batch
+                nsamples -= real_batch_size
 
     def _get_batch_generator(
         self, part: Base.Part
-    ) -> Generator[tuple[np.ndarray, np.ndarray, int]]:
+    ) -> Generator[tuple[np.ndarray, np.ndarray]]:
         """
         Yield batches with background prefetching.
 
@@ -373,9 +372,8 @@ class Init(Utils):
 
         # NOTE: The following infinite loop provides of empty batches
         #       if there are asked more batches than actually are.
-        x_empty_batch = np.zeros(
-            shape=self.model.encode_shape((0, *self.input_shape)), dtype=self.model.dtype
-        )
+        input_shape = self.model.encode_shape(self.input_shape)
+        x_empty_batch = np.zeros(shape=(0, *input_shape), dtype=self.model.dtype)
         y_empty_batch = np.zeros(shape=(0, *self.output_shape), dtype=self.model.dtype)
         while True:
-            yield x_empty_batch, y_empty_batch, 0
+            yield x_empty_batch, y_empty_batch

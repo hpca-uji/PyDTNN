@@ -46,7 +46,7 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
         self._evaluate_round: int = 0
 
     def _compute_metrics_funcs(
-        self, y_pred: T, y_targ: T, loss: float, blocking: bool = True, comm: bool = True
+        self, y_pred: T, y_targ: T, loss: float, batch_size: int
     ) -> tuple[np.ndarray, None] | tuple[None, MPI.Request]:
         """
         Computes metrics and loss, optionally synchronizing across processes.
@@ -64,61 +64,28 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
         loss_req: MPI.Request | None = None
         _losses: np.ndarray | None
 
-        if y_targ.shape[0] > 0:
+        if batch_size > 0:
             metrics = [func.compute(y_pred, y_targ) for func in self.metrics_funcs]
-            _losses = np.array([loss, *metrics], dtype=np.object_)
+            _losses = np.array([loss, *metrics, 1], dtype=np.object_)
+            _losses *= batch_size
         else:
-            _losses = self.total_metrics.copy()
-            _losses[0] = loss
-
-        if self.comm and comm:
-            assert MPI
-
-            _losses /= self.comm_size
-            if blocking:
-                _losses = self.comm.allreduce(_losses, op=MPI.SUM)
-            else:
-                loss_req = self.comm.iallreduce(_losses, op=MPI.SUM)
-        else:
-            if blocking:
-                pass
-            else:
-                raise NotImplementedError("can not compute metrics non-blocking locally")
+            _losses = np.zeros(len(self.metrics_funcs) + 2, dtype=np.object_)
 
         return _losses, loss_req  # pyright: ignore[reportReturnType]
 
-    def _update_running_average(
+    def _format_metrics(
         self,
-        batch_metric: np.ndarray,
-        total_metric: np.ndarray,
-        total_size: int,
-        batch_size: int,
+        metric: np.ndarray,
         prefix: str = "",
-    ) -> tuple[np.ndarray, int, str]:
-        """
-        Updates the running average of metrics and generates a status string.
-
-        Args:
-            curr: Current batch metrics.
-            total: Accumulated metrics.
-            count: Total samples processed.
-            batch_size: Current batch size.
-            prefix: String prefix for output.
-
-        Returns:
-            Updated total metrics, updated count, and formatted status string.
-        """
+    ) -> str:
+        """Generates a metrics status string"""
         string = ""
-        total_metric = ((batch_metric * batch_size) + (total_metric * total_size)) / (
-            total_size + batch_size
-        )
-        total_size += batch_size
         for c in range(len(self.loss_and_metrics)):
             loss_str = self.loss_and_metrics_format[c]
             if loss_str:
-                string += ("%s, " % (prefix + loss_str)) % total_metric[c]
+                string += ("%s, " % (prefix + loss_str)) % (metric[c] / metric[-1])
         string = string[:-2]
-        return total_metric, total_size, string
+        return string
 
     def _evaluate_batch(
         self, x_batch: np.ndarray, y_batch: np.ndarray, sync_model: bool = True
@@ -139,8 +106,7 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
         self.real_batch_size = x_batch.shape[0]
         input_layer: Input[T] = self.layers[0]  # pyright: ignore[reportAssignmentType]
         x, y_targ = input_layer._sync_x_y(x_batch, y_batch)
-
-        has_batch = x_batch.shape[0] > 0
+        has_batch = self.real_batch_size > 0
 
         # Forward pass (FP)
         if has_batch:
@@ -161,34 +127,29 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
                 )
             loss, _ = 0.0, y_targ
 
-        total_metrics = None
-        total_metrics, _ = self._compute_metrics_funcs(x, y_targ, loss, comm=sync_model)
-        assert total_metrics is not None
-        self.total_metrics = total_metrics
+        metrics = None
+        metrics, _ = self._compute_metrics_funcs(x, y_targ, loss, self.real_batch_size)
+        assert metrics is not None
 
-        return self.total_metrics
+        return metrics
 
     def _update_status(
         self,
         pbar: tqdm | None,
         batch_loss: np.ndarray,
-        total_loss: np.ndarray,
-        total_size: int,
-        batch_size: int,
+        global_loss: np.ndarray,
         output_prefix: str,
         current_round: int,
         delta: float = -1,
         prev_string: str = "",
-    ) -> tuple[np.ndarray, int, str]:
+    ) -> str:
         """
         Updates the progress bar and internal performance counters.
 
         Args:
             pbar: Tqdm progress bar instance.
-            batch_loss: Loss/metrics for the current batch.
-            total_loss: Accumulated loss/metrics.
-            total_size: Total samples processed.
-            batch_size: Size of the current batch.
+            local_loss: Loss/metrics for the current batch.
+            global_loss: Accumulated loss/metrics.
             output_prefix: Prefix for logging.
             current_round: The current training/evaluation round.
             delta: Time taken for the batch.
@@ -200,38 +161,34 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
 
         part = Dataset.Part[output_prefix.strip("_").upper()]
 
-        total_loss, total_size, string = self._update_running_average(
-            batch_metric=batch_loss,
-            total_metric=total_loss,
-            total_size=total_size,
-            batch_size=batch_size,
+        string = self._format_metrics(
+            metric=global_loss,
             prefix=output_prefix,
         )
 
-        self.perf_counter._add_time_and_batch_size(part, current_round, delta, batch_size)
+        self.perf_counter._add_time_and_batch_size(part, current_round, delta, batch_loss[-1])
 
         if self.comm_rank == 0:
             # NOTE: pbar is a 'tqdm', it only is None in self.comm_rank != 0
             assert pbar
             pbar.set_postfix_str(s=f"{prev_string}{string}", refresh=True)
-            if part != Dataset.Part.VAL:
-                # NOTE: Here there is a 'tqdm' object, pbar only is None in self.comm_rank != 0
-                pbar.update(batch_size)
+            # if part != Dataset.Part.VAL:
+            pbar.update(int(global_loss[-1]) - pbar.n)
 
-        return total_loss, total_size, string
+        return string
 
     def _evalutate_round(
         self,
         pbar: tqdm | None,
-        batch_generator: Generator[tuple[np.ndarray, np.ndarray, int]],
+        batch_generator: Generator[tuple[np.ndarray, np.ndarray]],
         model_sync_count: int,
         batches_min: float,
-        total_loss: np.ndarray,
-        total_size: int,
+        local_loss: np.ndarray,
+        global_loss: np.ndarray,
         terminate: bool = False,
         prev_string: str = "",
         out_prefix: str = "",
-    ) -> tuple[np.ndarray, int, int, bool, str]:
+    ) -> tuple[int, bool, str]:
         """
         Executes a single evaluation round over the provided batch generator.
 
@@ -242,7 +199,7 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
         string = ""
         part = Dataset.Part[out_prefix.rstrip("_").upper()]
 
-        for i_batch, (x_batch, y_batch, batch_size) in enumerate(batch_generator):
+        for i_batch, (x_batch, y_batch) in enumerate(batch_generator):
             if terminate:
                 x_batch = x_batch[:0]
                 y_batch = y_batch[:0]
@@ -276,22 +233,22 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
             self.rank_weight = self._compute_rank_weight(rank_mask, part)
 
             tic = timer()
-            test_batch_loss = self._evaluate_batch(x_batch, y_batch, sync_model=sync_model)
+            batch_loss = self._evaluate_batch(x_batch, y_batch, sync_model=sync_model)
             toc = timer()
             delta = toc - tic
 
-            if part is not Dataset.Part.TEST:
-                delta = -1
+            local_loss += batch_loss
 
-            if batch_size <= 0:
-                continue
+            if sync_model:
+                if self.comm:
+                    local_loss = self.comm.allreduce(local_loss)
+                global_loss += local_loss
+                local_loss.fill(0)
 
-            total_loss, total_size, string = self._update_status(
+            string = self._update_status(
                 pbar=pbar,
-                batch_loss=test_batch_loss,
-                total_loss=total_loss,
-                total_size=total_size,
-                batch_size=batch_size,
+                batch_loss=batch_loss,
+                global_loss=global_loss,
                 output_prefix=out_prefix,
                 current_round=self._evaluate_round,
                 delta=delta,
@@ -300,7 +257,7 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
 
         # Increment self._evaluate_round
         self._evaluate_round += 1
-        return (total_loss, total_size, model_sync_count, sync_epoch, string)
+        return (model_sync_count, sync_epoch, string)
 
     def evaluate(self) -> None:
         """
@@ -323,9 +280,9 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
         self.comm_nsamples = tuple(
             zip(
                 *(
-                    self.comm.allgather(self.dataset._nsamples)
+                    self.comm.allgather(self.dataset._local_nsamples)
                     if self.comm
-                    else [self.dataset._nsamples]
+                    else [self.dataset._local_nsamples]
                 )
             )
         )
@@ -334,12 +291,14 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
         test_batches_min: float = min(self.comm_nsamples[Dataset.Part.TEST]) / (
             self.batch_size * self.nprocs
         )
-        test_total_loss, test_total_size = np.zeros(len(self.loss_and_metrics), np.float32), 0
+
+        test_local_loss = np.zeros(len(self.metrics_funcs) + 2, np.object_)
+        test_global_loss = np.zeros(len(self.metrics_funcs) + 2, np.object_)
 
         if self.comm_rank == 0:
             pbar = tqdm(
                 file=TqdmLogger(),
-                total=self.dataset.test_nsamples,
+                total=sum(self.comm_nsamples[Dataset.Part.TEST]),
                 ascii=" ▁▂▃▄▅▆▇█",
                 smoothing=0.3,
                 desc="Testing",
@@ -353,8 +312,8 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
             batch_generator=test_batch_generator,
             model_sync_count=0,
             batches_min=test_batches_min,
-            total_loss=test_total_loss,
-            total_size=test_total_size,
+            local_loss=test_local_loss,
+            global_loss=test_global_loss,
             out_prefix=f"{Dataset.Part.TEST._name_.lower()}_",
         )
 

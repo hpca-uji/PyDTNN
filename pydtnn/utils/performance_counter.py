@@ -101,12 +101,10 @@ class PerformanceCounter:
 
     def print_report(self) -> None:
         """Logs a formatted performance report to the logger."""
-        _report = [""]
+        _report = []
 
         if self.num_epochs > 0:
-            _report.append(" -------------------------------------")
-            _report.append("| Performance counter training report |")
-            _report.append(" -------------------------------------")
+            _report.append("\n# Training report")
             _report.append(f"Training time (from model): {self.training_time:5.4f} s")
             _report.append(
                 f"Training time per epoch (from model): {
@@ -131,9 +129,7 @@ class PerformanceCounter:
             )
 
         if self.num_evaluations > 0:
-            _report.append(" ------------------------------------")
-            _report.append("| Performance counter testing report |")
-            _report.append(" ------------------------------------")
+            _report.append("\n# Testing report")
             _report.append(
                 f"Testing time (from model): {self.testing_time / self.num_evaluations:5.4f} s"
             )

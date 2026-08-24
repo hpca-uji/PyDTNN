@@ -750,9 +750,9 @@ class ArgumentParser(argparse.ArgumentParser):
             ),
         )
 
-        # Optimization options
-        _oo_group = self.add_argument_group("Optimization options")
-        _oo_group.add_argument(
+        # Fused options
+        _fs_group = self.add_argument_group("Fused options")
+        _fs_group.add_argument(
             "--fused-bn-relu",
             action=argparse.BooleanOptionalAction,
             default=ModelBase.fused_bn_relu,
@@ -761,7 +761,7 @@ class ArgumentParser(argparse.ArgumentParser):
                 f" Default: {ModelBase.fused_bn_relu!r}."
             ),
         )
-        _oo_group.add_argument(
+        _fs_group.add_argument(
             "--fused-conv-relu",
             action=argparse.BooleanOptionalAction,
             default=ModelBase.fused_conv_relu,
@@ -770,7 +770,7 @@ class ArgumentParser(argparse.ArgumentParser):
                 f" Default: {ModelBase.fused_conv_relu!r}."
             ),
         )
-        _oo_group.add_argument(
+        _fs_group.add_argument(
             "--fused-conv-bn",
             action=argparse.BooleanOptionalAction,
             default=ModelBase.fused_conv_bn,
@@ -779,7 +779,7 @@ class ArgumentParser(argparse.ArgumentParser):
                 f" Default: {ModelBase.fused_conv_bn!r}."
             ),
         )
-        _oo_group.add_argument(
+        _fs_group.add_argument(
             "--fused-conv-bn-relu",
             action=argparse.BooleanOptionalAction,
             default=ModelBase.fused_conv_bn_relu,
