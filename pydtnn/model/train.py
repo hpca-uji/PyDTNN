@@ -275,7 +275,7 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
             # --- TRAIN ---
             if self.comm_rank == 0:
                 string = ""
-                fmt = "%%%dd" % (len(str(self.num_epochs)))
+                fmt = "%%0%dd" % (len(str(self.num_epochs)))
                 epoch_string = "Training (%s/%s)" % (fmt, fmt)
                 pbar = tqdm(
                     file=TqdmLogger(),

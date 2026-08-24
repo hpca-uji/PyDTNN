@@ -107,40 +107,47 @@ class PerformanceCounter:
             _report.append("\n# Training report")
             _report.append(f"Training time (from model): {self.training_time:5.4f} s")
             _report.append(
-                f"Training time per epoch (from model): {
-                    self.training_time / self.num_epochs:5.4f} s"
+                "Training time per epoch (from model):"
+                f" {self.training_time / self.num_epochs:5.4f} s"
             )
             _report.append(
-                f"Training throughput (from model): {self.training_throughput:5.4f} samples/s"
+                "Training throughput (from model):"
+                f" {self.training_throughput:5.4f} samples/s"
             )
             _report.append(
-                f"Training time (from model, estimated from last half of each epoch): {
-                    self.training_time_estimated_from_last_half_of_each_epoch:5.4f} s"
+                "Training time (from model, estimated from last half of each epoch):"
+                f" {self.training_time_estimated_from_last_half_of_each_epoch:5.4f} s"
             )
             _report.append(
-                f"Training throughput (from model, from last half of each epoch): {
-                    self.training_throughput_only_last_half_of_each_epoch:5.4f} samples/s"
+                "Training throughput (from model, from last half of each epoch):"
+                f" {self.training_throughput_only_last_half_of_each_epoch:5.4f} samples/s"
             )
             _report.append(
-                f"Training maximum memory allocated: {self.training_maximum_memory / 1024:.2f} MiB"
+                "Training maximum memory allocated:"
+                f" {self.training_maximum_memory / 1024:.2f} MiB"
             )
             _report.append(
-                f"Training mean memory allocated: {self.training_mean_memory / 1024:.2f} MiB"
+                "Training mean memory allocated:"
+                f" {self.training_mean_memory / 1024:.2f} MiB"
             )
 
         if self.num_evaluations > 0:
             _report.append("\n# Testing report")
             _report.append(
-                f"Testing time (from model): {self.testing_time / self.num_evaluations:5.4f} s"
+                "Testing time (from model):"
+                f" {self.testing_time / self.num_evaluations:5.4f} s"
             )
             _report.append(
-                f"Testing throughput (from model): {self.testing_throughput:5.4f} samples/s"
+                "Testing throughput (from model):"
+                f" {self.testing_throughput:5.4f} samples/s"
             )
             _report.append(
-                f"Testing maximum memory allocated: {self.testing_maximum_memory / 1024:.2f} MiB"
+                "Testing maximum memory allocated:"
+                f" {self.testing_maximum_memory / 1024:.2f} MiB"
             )
             _report.append(
-                f"Testing mean memory allocated: {self.testing_mean_memory / 1024:.2f} MiB"
+                "Testing mean memory allocated:"
+                f" {self.testing_mean_memory / 1024:.2f} MiB"
             )
 
         report = "\n".join(_report)
