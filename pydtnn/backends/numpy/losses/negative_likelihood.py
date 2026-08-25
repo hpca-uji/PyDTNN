@@ -45,21 +45,19 @@ class NegativeLikelihoodNumpy(NegativeLikelihood[np.ndarray], LossNumpy):
             )
             self._y_pred = self.model.memory.ndarray(self._y_pred_shape, dtype=self.model.dtype)
 
-    def compute(
-        self, y_pred: np.ndarray, y_targ: np.ndarray, batch_size: int
-    ) -> tuple[float, np.ndarray]:
+    def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> tuple[float, np.ndarray]:
         """
         Compute the categorical cross entropy loss and gradients.
 
         Args:
             y_pred: Predicted probabilities.
             y_targ: Target labels in one-hot encoded format.
-            batch_size: The size of the current batch.
 
         Returns:
             A tuple containing the scalar loss value and the gradient array.
         """
-        b = y_pred.shape[0]
+
+        b = self.model.real_batch_size
         _argmax: np.ndarray = self._argmax[:b]
         _y_pred_op: np.ndarray = self._y_pred_op[:b]
         dx: np.ndarray = self.dx[:b]

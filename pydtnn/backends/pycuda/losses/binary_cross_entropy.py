@@ -2,6 +2,7 @@
 
 import logging
 
+import numpy as np
 from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 
 from pydtnn.backends.pycuda.losses.abstract.loss import LossPycuda
@@ -16,20 +17,25 @@ logger = logging.getLogger(__name__)
 class BinaryCrossEntropyPycuda(LossPycuda, BinaryCrossEntropy[TensorArray]):
     """PyCUDA-accelerated Binary Cross Entropy loss implementation."""
 
-    def compute(
-        self, y_pred: TensorArray, y_targ: TensorArray, batch_size: int
-    ) -> tuple[float, TensorArray]:
+    def _model_init(self) -> None:
+        """Initializes GPU memory buffers and model-dependent parameters."""
+        super()._model_init()
+        # NOTE: the model must be executed before this one.
+        self.argmax = gpuarray.zeros((self.model.batch_size,), np.dtype(np.int32))
+        self.memory_used += self.argmax.nbytes
+
+    def compute(self, y_pred: TensorArray, y_targ: TensorArray) -> tuple[float, TensorArray]:
         """
         Computes the binary cross entropy loss and its gradient on the GPU.
 
         Args:
             y_pred: Predicted values from the model.
             y_targ: Target ground truth values.
-            batch_size: Number of samples in the current batch.
 
         Returns:
             A tuple containing the scalar loss value and the gradient TensorArray.
         """
+        batch_size = self.model.real_batch_size
 
         assert len(y_targ.shape) == 2
         self.kernel(
@@ -37,6 +43,8 @@ class BinaryCrossEntropyPycuda(LossPycuda, BinaryCrossEntropy[TensorArray]):
             y_pred,
             self.loss,
             self.dx.ary,
+            self.weights,
+            self.argmax,
             batch_size,
             self.shape[1],
             self.eps,
@@ -44,5 +52,9 @@ class BinaryCrossEntropyPycuda(LossPycuda, BinaryCrossEntropy[TensorArray]):
             block=self.block,
             stream=self.model.stream,
         )
-        loss = -gpuarray.sum(self.loss[:batch_size]).get() / batch_size
+        sum_weights: float = gpuarray.sum(self.argmax[:batch_size]).get()
+
+        loss = -gpuarray.sum(self.loss[:batch_size]).get() / sum_weights
+        self.dx /= sum_weights
+
         return loss.item(), self.dx

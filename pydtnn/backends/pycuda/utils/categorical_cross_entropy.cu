@@ -23,7 +23,7 @@ __global__ void categorical_cross_entropy(TYPE *y_targ, TYPE *y_pred, TYPE *loss
                 max_value = y_targ[idx * n + i];
             }
         }
-        argmax[idx] = max;
+        argmax[idx] = weights[max];
 
         pred = (TYPE) (y_pred[idx * n + max] / sum_y_targ);
         if ( pred < eps )          pred = eps;

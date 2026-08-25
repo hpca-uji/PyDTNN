@@ -24,21 +24,18 @@ class NegativeLikelihoodPycuda(NegativeLikelihood[TensorArray], LossPycuda):
         self.argmax = gpuarray.zeros((self.model.batch_size,), np.dtype(np.int32))
         self.memory_used += self.argmax.nbytes
 
-    def compute(
-        self, y_pred: TensorArray, y_targ: TensorArray, batch_size: int
-    ) -> tuple[float, TensorArray]:
+    def compute(self, y_pred: TensorArray, y_targ: TensorArray) -> tuple[float, TensorArray]:
         """
         Computes the categorical cross-entropy loss and gradients on the GPU.
 
         Args:
             y_pred: Predicted probabilities from the model.
             y_targ: Ground truth labels.
-            batch_size: Number of samples in the current batch.
 
         Returns:
             A tuple containing the scalar loss value and the gradient tensor.
         """
-        # np.sum(self.weights[_argmax]): Suma de los pesos que ha predecido
+        batch_size = self.model.real_batch_size
 
         self.kernel(
             y_targ.ary,

@@ -68,14 +68,13 @@ class Loss[T: Array](Base):  # noqa: D101 (generics not detected)
 
         self.weights = self._weights_to_tensor(weights)
 
-    def compute(self, y_pred: T, y_targ: T, batch_size: int) -> tuple[float, T]:
+    def compute(self, y_pred: T, y_targ: T) -> tuple[float, T]:
         """
         Computes the loss value and the gradient.
 
         Args:
             y_pred (T): Predicted values.
             y_targ (T): Target values.
-            batch_size (int): Size of the current batch.
 
         Returns:
             tuple[float, T]: A tuple containing the scalar loss and the gradient.
