@@ -1,7 +1,8 @@
 """Initialization code for the PyDTNN model"""
 
-import itertools
+import copy
 import logging
+import itertools
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -60,7 +61,8 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
         for key, value in vars(Base).items():
             if not key.startswith("_"):
                 # NOTE: Skip setters (plus dict needed for utils)
-                self.__dict__[key] = kwargs.get(key, value)
+                # Also values are copied so Base class is not modified
+                self.__dict__[key] = copy.deepcopy(kwargs.get(key, value))
 
         # MPI [NOTE: as early as possible]
         self._mpi_init()

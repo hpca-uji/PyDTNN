@@ -23,7 +23,6 @@ from pydtnn.tracers.tracer import Tracer
 from pydtnn.utils.constants import Array, ArrayShape, NetworkAlgoEnum
 from pydtnn.utils.memory_pool import PrivateMemory
 from pydtnn.utils.tensor import TensorFormat
-from pydtnn.utils import rand
 
 __all__ = ("Base",)
 
@@ -71,8 +70,47 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
         WAVG = enum.auto()
         INVAVG = enum.auto()
 
-    # Explicit declaration of those model attributes that are referenced by other parts of PyDTNN
-    #   NOTE: The following parameters come from "Parser"
+    # NOTE: typing only (NO DEFAULTS)
+    _model_inited: bool
+    comm_nsamples: tuple[tuple[int], ...]
+    comm_rank: int
+    comm_size: int
+    comm: MPI_COMM
+    cublas_handle: Cublas_Handle_Type
+    cuda_block: tuple[int, int, int]
+    cuda_grid: tuple[int, int, int]
+    cudnn_dtype: int
+    cudnn_handle: Cudnn_Handle_Type
+    history: dict[str, list[np.ndarray]]
+    input_shape: ArrayShape
+    kwargs: dict[str, Any]
+    layers: list[Layerable[T]]
+    loss_and_metrics: tuple[str, ...]
+    loss_func: Loss[T]
+    memory_cls: type[PrivateMemory]
+    memory_used: int
+    memory: PrivateMemory
+    metrics_funcs: tuple[Metric[T], ...]
+    MPI: MPI_MODULE
+    nccl_comm: Any
+    nccl_type: Any
+    nparams: int
+    nprocs: int
+    optimizer: Optimizer[T]
+    output_shape: ArrayShape
+    random: np.random.Generator
+    rank_weight: float
+    rank: int
+    real_batch_size: int
+    stream: Stream
+    tmp_memory_used: int
+    tracer: Tracer
+    use_cudnn: bool
+    use_gpudirect: bool
+    use_memory_pool: bool
+    y_batch: T
+
+    # NOTE: Kwargs defaults (DEFAULT REQUIRED)
     model_name: str = ""
     backend: str = "cpu"
     batch_size: int = 0
@@ -196,51 +234,8 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
     tracer_pmlib_port: int = 6526
     tracer_pmlib_device: str = ""
     profile: bool = False
-
     cpu_speed: float = 4e12
     memory_bw: float = 50e9
     network_bw: float = 1e9
     network_lat: float = 0.5e-6
     network_algo: NetworkAlgoEnum = NetworkAlgoEnum.VDG
-
-    use_cudnn: bool = False
-    random: np.random.Generator = rand  # pyright: ignore[reportAssignmentType]
-    kwargs: dict[str, Any] = {}
-    history: dict[str, list[np.ndarray]] = {}
-    nparams: int = 0
-    use_gpudirect: bool = False
-    memory_used: int = 0
-    use_memory_pool: bool = False
-    tmp_memory_used: int = 0
-    metrics_funcs: tuple[Metric[T], ...] = ()
-    loss_and_metrics: tuple[str, ...] = ()
-    layers: list[Layerable[T]] = []
-    nprocs: int = 1
-    comm_size: int = 1
-    comm_rank: int = 0
-    comm_nsamples: tuple[tuple[int], ...] = ()
-    rank: int = 0
-    rank_weight: float = 1.0
-    real_batch_size: int = 0
-    input_shape: ArrayShape = ()
-    output_shape: ArrayShape = ()
-    dataset_train_path: str = ""
-    dataset_test_path: str = ""
-    _model_inited: bool = False
-
-    tracer: Tracer
-    cudnn_dtype: int
-    cuda_grid: tuple[int, int, int]
-    cuda_block: tuple[int, int, int]
-    cudnn_handle: Cudnn_Handle_Type
-    cublas_handle: Cublas_Handle_Type
-    nccl_comm: Any
-    nccl_type: Any
-    stream: Stream
-    memory_cls: type[PrivateMemory]
-    memory: PrivateMemory
-    MPI: MPI_MODULE
-    comm: MPI_COMM
-    y_batch: T
-    optimizer: Optimizer[T]
-    loss_func: Loss[T]

@@ -154,9 +154,8 @@ KWARGS = {
     "parallel_data": False,
     "tensor_format": "nchw",  # "NCHW" # "NHWC",
     "loss_func": "categorical_cross_entropy",
-    "use_cudnn": False,  # True,
-    "dataset_train_path": DATASET_PATH,
-    "dataset_test_path": DATASET_PATH,
+    "dataset_path": DATASET_PATH,
+    "dataset_path": DATASET_PATH,
 }
 
 

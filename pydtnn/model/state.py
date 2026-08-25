@@ -72,7 +72,7 @@ class State[T: Array](Init[T]):  # noqa: D101 (generics not detected)
         if isinstance(data, State):
             data = data.export()
 
-        model_name = str(data.get(Parameters.MODEL_NAME))
+        model_name = str(data.get(Parameters.MODEL_NAME, ""))
         if model_name != str(self.model_name):
             logger.warning(
                 f"Importing from different models! (self: {self.model_name}, got: {model_name})"
