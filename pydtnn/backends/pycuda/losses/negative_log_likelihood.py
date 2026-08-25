@@ -56,6 +56,6 @@ class NegativeLogLikelihoodPycuda(NegativeLogLikelihood[TensorArray], LossPycuda
         sum_weights = gpuarray.sum(self.argmax[:batch_size]).get()
 
         loss = -gpuarray.sum(self.loss[:batch_size]).get() / sum_weights
-        self.dx /= sum_weights
 
         return loss.item(), self.dx
+

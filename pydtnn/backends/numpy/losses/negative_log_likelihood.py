@@ -71,11 +71,15 @@ class NegativeLogLikelihoodNumpy(NegativeLogLikelihood[np.ndarray], LossNumpy):
         sum_weights_argmax = np.sum(self.weights[_argmax])
 
         # Loss
-        np.multiply(y_pred[b_range, _argmax], self.weights[_argmax], out=_y_pred_op)
+        np.log(y_pred[b_range, _argmax], out=_y_pred_op)
+        np.multiply(_y_pred_op, self.weights[_argmax], out=_y_pred_op)
         loss: float = float(-np.sum(_y_pred_op) / sum_weights_argmax)
 
         # DX
-        dx[b_range, _argmax] = -self.weights[_argmax]
-        dx[b_range, _argmax] /= sum_weights_argmax
+        dx[:] = y_targ
+        np.multiply(self.weights[_argmax], y_pred, out=y_pred)
+        np.multiply(-1, y_pred, out=y_pred)
+        dx[b_range, _argmax] /= y_pred[b_range, _argmax]
 
         return loss, np.asarray(dx, dtype=self.model.dtype, order="C")
+

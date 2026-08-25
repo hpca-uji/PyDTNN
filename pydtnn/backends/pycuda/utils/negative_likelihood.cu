@@ -1,9 +1,9 @@
 #define TYPE "TYPE"
 
-__global__ void negative_log_likelihood(TYPE *y_targ, TYPE *y_pred,
-                                        TYPE *loss, TYPE *weights,
-                                        TYPE *dx, TYPE *argmax,
-                                        int b, int n)
+__global__ void negative_likelihood(TYPE *y_targ, TYPE *y_pred,
+                                    TYPE *loss, TYPE *weights,
+                                    TYPE *dx, TYPE *argmax,
+                                    int b, int n)
 {
     const int base_idx = blockIdx.x * blockDim.x + threadIdx.x;
     const int workers = blockDim.x * gridDim.x;
@@ -26,20 +26,18 @@ __global__ void negative_log_likelihood(TYPE *y_targ, TYPE *y_pred,
         }
         argmax[idx] = max;
 
-        // Calculating the Loss and "DX"
+        // Calculating the Loss and "dx"
 
         // Common
-        pred = (TYPE) (y_pred[idx * n + max] / sum_y_targ);
-        if ( pred < eps )          pred = eps;
-        else if ( pred > (1-eps) ) pred = (1-eps);
+        max = argmax[idx];
 
         // Loss
-        loss[idx] = (TYPE) logf(pred);
-        loss[idx] = (TYPE) (weights[max] * loss[idx]);
-        // The rest of the loss's operations will be done in the python's code.
-        
+        pred = y_pred[idx * n + max];
+        loss[idx] = (TYPE) (weights[max] * pred);
+        // NOTE: The rest of the loss' calculation will be done outside.
+
         // DX
-        dx[idx * n + max] /= -(pred * weights[max]);
+        dx[idx * n + max] = (TYPE) (-1 * weights[max]);
     }
     return;
 }

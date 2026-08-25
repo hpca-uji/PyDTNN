@@ -26,17 +26,20 @@ __global__ void negative_log_likelihood(TYPE *y_targ, TYPE *y_pred,
         }
         argmax[idx] = max;
 
-        // Calculating the Loss and "dx"
+        // Calculating the Loss and "DX"
 
         // Common
-        max = argmax[idx];
+        pred = (TYPE) (y_pred[idx * n + max] / sum_y_targ);
+        if ( pred < eps )          pred = eps;
+        else if ( pred > (1-eps) ) pred = (1-eps);
 
         // Loss
-        pred = y_pred[idx * n + max];
-        loss[idx] = (TYPE) (weights[max] * pred); // NOTE: The rest of the loss' calculation will be done outside.
-
+        loss[idx] = (TYPE) logf(pred);
+        loss[idx] = (TYPE) (weights[max] * loss[idx]);
+        // The rest of the loss's operations will be done in the python's code.
+        
         // DX
-        dx[idx * n + max] = (TYPE) (-1 * weights[max]);
+        dx[idx * n + max] /= -(pred * weights[max]);
     }
     return;
 }
