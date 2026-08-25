@@ -152,8 +152,8 @@ class ModelTestCase(TestCase):
         # random y target
         y_targ = np.asarray(rand.random(x.shape), dtype=model.dtype, order="C").copy()
         # obtain first dx1
-        global_batch_size = model.batch_size
-        loss, dx = loss_func.compute(x, y_targ, global_batch_size)
+        loss_func.model.real_batch_size = model.batch_size
+        loss, dx = loss_func.compute(x, y_targ)
         return dx
 
     def print_stats(self, x1: np.ndarray, x2: np.ndarray, rtol: float, atol: float) -> str:

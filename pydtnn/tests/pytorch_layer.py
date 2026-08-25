@@ -534,7 +534,10 @@ class PytorchLayerTestCase(TestCase):
         x_base_shape = x.shape
         x_reshaped = x.reshape(N, -1)
         print(f"{x_reshaped=}")
-        _loss, dx = pydtnn_model.loss_func.compute(x_reshaped, y, N)
+
+        pydtnn_model.real_batch_size = N
+        _loss, dx = pydtnn_model.loss_func.compute(x_reshaped, y)
+
         dx: np.ndarray = dx.reshape(x_base_shape)
         for layer in reversed(pydtnn_model.layers):
             dx = layer.backward(dx)

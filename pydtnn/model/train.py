@@ -76,7 +76,7 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
                 )
                 x = layer.forward(x)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
-            loss, dx = self.loss_func.compute(x, y_targ, self.real_batch_size)
+            loss, dx = self.loss_func.compute(x, y_targ)
         else:
             if y_targ.shape[0] != x_batch.shape[0]:
                 raise ValueError(

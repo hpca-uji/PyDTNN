@@ -423,7 +423,8 @@ class PytorchModelTestCase(TestCase):
         self, model: PyDTNN_Model, x: np.ndarray, y: np.ndarray
     ) -> tuple[float, np.ndarray]:
         """Method execute the pydtnn's loss"""
-        loss, dx = model.loss_func.compute(x.copy(), y, model.batch_size)
+        model.real_batch_size = model.batch_size
+        loss, dx = model.loss_func.compute(x.copy(), y)
         return loss, dx
 
     def do_pytorch_model_backward_pass(

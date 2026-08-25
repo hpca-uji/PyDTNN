@@ -120,7 +120,7 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
                 )
                 x = self.layers[i].forward(x)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
-            loss, _ = self.loss_func.compute(x, y_targ, self.real_batch_size)
+            loss, _ = self.loss_func.compute(x, y_targ)
         else:
             if y_targ.shape[0] != x_batch.shape[0]:
                 raise ValueError(
