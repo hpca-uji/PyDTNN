@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 
 class NegativeLogLikelihoodNumpy(NegativeLogLikelihood[np.ndarray], LossNumpy):
-    """NumPy implementation of the Categorical Cross Entropy loss function."""
+    """NumPy implementation of the Negative Log Likelihood loss function."""
 
     def _model_init(self) -> None:
         """Initialize memory requirements and shapes for the loss computation."""
@@ -68,11 +68,14 @@ class NegativeLogLikelihoodNumpy(NegativeLogLikelihood[np.ndarray], LossNumpy):
         # Common
         b_range: np.ndarray = np.arange(b)
         np.argmax(y_targ, axis=1, out=_argmax)
+        sum_weights_argmax = np.sum(self.weights[_argmax])
 
         # Loss
         np.multiply(y_pred[b_range, _argmax], self.weights[_argmax], out=_y_pred_op)
-        loss: float = float(-np.sum(_y_pred_op) / np.sum(self.weights[_argmax]))
+        loss: float = float(-np.sum(_y_pred_op) / sum_weights_argmax)
 
         # DX
-        dx[b_range, _argmax] = -self.weights[_argmax] / np.sum(self.weights[_argmax])
+        dx[b_range, _argmax] = -self.weights[_argmax]
+        dx[b_range, _argmax] /= sum_weights_argmax
+
         return loss, np.asarray(dx, dtype=self.model.dtype, order="C")

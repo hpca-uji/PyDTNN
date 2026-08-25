@@ -7,14 +7,14 @@ from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 
 from pydtnn.backends.pycuda.losses.abstract.loss import LossPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.losses.negative_log_likelihood import NegativeLogLikelihood
+from pydtnn.losses.negative_likelihood import NegativeLikelihood
 
-__all__ = ("NegativeLogLikelihoodPycuda",)
+__all__ = ("NegativeLikelihoodPycuda",)
 
 logger = logging.getLogger(__name__)
 
 
-class NegativeLogLikelihoodPycuda(NegativeLogLikelihood[TensorArray], LossPycuda):
+class NegativeLikelihoodPycuda(NegativeLikelihood[TensorArray], LossPycuda):
     """Categorical Cross-Entropy loss implementation for PyCUDA backends."""
 
     def _model_init(self) -> None:
@@ -56,6 +56,5 @@ class NegativeLogLikelihoodPycuda(NegativeLogLikelihood[TensorArray], LossPycuda
         sum_weights = gpuarray.sum(self.argmax[:batch_size]).get()
 
         loss = -gpuarray.sum(self.loss[:batch_size]).get() / sum_weights
-        self.dx /= sum_weights
 
         return loss.item(), self.dx
