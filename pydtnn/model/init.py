@@ -1,5 +1,6 @@
 """Initialization code for the PyDTNN model"""
 
+import itertools
 import logging
 from typing import TYPE_CHECKING, Any
 
@@ -65,7 +66,7 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
         self._mpi_init()
 
         # Initialize attributes
-        self._is_model_init: bool = False
+        self._model_inited: bool = False
         self.use_cudnn = gpuarray is not None and drv is not None and cublas is not None
         self.random: np.random.Generator = rand.Generator(self.random_seed)  # pyright: ignore[reportAttributeAccessIssue]
         self.memory_cls = PreallocMemory if self.shared_tmp_memory else PrivateMemory
@@ -324,12 +325,13 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
 
     def _model_init(self) -> None:
         """Finalizes model initialization, including memory allocation and component setup."""
-        if self._is_model_init:
+        if self._model_inited:
             return
-        self._is_model_init = True
+        self._model_inited = True
 
         temp_memory_size = []
         self.random.seed(self.random_seed)  # pyright: ignore[reportAttributeAccessIssue]
+        self._layer_ids = iter(itertools.count())
 
         self.dataset._model_init()
 
@@ -388,7 +390,7 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
 
         self.tracer.define_event_types(self)
 
-    def _ensure_model_runnable(self) -> None:
+    def _ensure_runnable(self) -> None:
         """Validates that the model is ready for execution."""
         if not self.layers:
             raise ValueError("The model has no layers in it.")

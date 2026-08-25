@@ -60,7 +60,7 @@ class Layerable[T: Array](Base[T]):  # noqa: D101 (generics not detected)
         self.paths: list[list[Layerable[T]]] = []
         self.reqs_allred: dict[str, Request] = {}
         self.parent_layer: Layerable | None = None
-        self.id: int = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.id: int = -id(self)  # pyright: ignore[reportAttributeAccessIssue]
         self.model: Model = None  # pyright: ignore[reportAttributeAccessIssue]
         self.prev_shape: ArrayShape = None  # pyright: ignore[reportAttributeAccessIssue]
         self.stream_2: Stream = None
@@ -87,7 +87,7 @@ class Layerable[T: Array](Base[T]):  # noqa: D101 (generics not detected)
         layer IDs are displayed with a consistent number of digits.
         """
         prefix = ""
-        if self.id is not None and self.model is not None:
+        if self.id >= 0 and self.model is not None:
             try:
                 model__last_layer = self.model.layers[-1]
             except IndexError:
@@ -110,7 +110,7 @@ class Layerable[T: Array](Base[T]):  # noqa: D101 (generics not detected)
         """
         props = {}
 
-        if self.id is not None:
+        if self.id >= 0:
             props["id"] = self.id
 
         paths = []
@@ -158,7 +158,7 @@ class Layerable[T: Array](Base[T]):  # noqa: D101 (generics not detected)
             x: Optional input tensor. If provided, it's stored for potential use.
         """
         super()._model_init()
-        self.id = next(self.model.layer_id_generator)
+        self.id = next(self.model._layer_ids)
         self.prev_shape = prev_shape
         self.x = x  # pyright: ignore[reportAttributeAccessIssue]
         self.fwd_time = np.zeros((4,), dtype=np.float32)
