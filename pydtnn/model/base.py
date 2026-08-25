@@ -23,6 +23,7 @@ from pydtnn.tracers.tracer import Tracer
 from pydtnn.utils.constants import Array, ArrayShape, NetworkAlgoEnum
 from pydtnn.utils.memory_pool import PrivateMemory
 from pydtnn.utils.tensor import TensorFormat
+from pydtnn.utils import rand
 
 __all__ = ("Base",)
 
@@ -202,44 +203,44 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
     network_lat: float = 0.5e-6
     network_algo: NetworkAlgoEnum = NetworkAlgoEnum.VDG
 
-    use_cudnn: bool
+    use_cudnn: bool = False
+    random: np.random.Generator = rand  # pyright: ignore[reportAssignmentType]
+    kwargs: dict[str, Any] = {}
+    history: dict[str, list[np.ndarray]] = {}
+    nparams: int = 0
+    use_gpudirect: bool = False
+    memory_used: int = 0
+    use_memory_pool: bool = False
+    tmp_memory_used: int = 0
+    metrics_funcs: tuple[Metric[T], ...] = ()
+    loss_and_metrics: tuple[str, ...] = ()
+    layers: list[Layerable[T]] = []
+    nprocs: int = 1
+    comm_size: int = 1
+    comm_rank: int = 0
+    comm_nsamples: tuple[tuple[int], ...] = ()
+    rank: int = 0
+    rank_weight: float = 1.0
+    real_batch_size: int = 0
+    input_shape: ArrayShape = ()
+    output_shape: ArrayShape = ()
+    dataset_train_path: str = ""
+    dataset_test_path: str = ""
+    _model_inited: bool = False
+
     tracer: Tracer
-    random: np.random.Generator
-    kwargs: dict[str, Any]
-    history: dict[str, list[np.ndarray]]
-    nparams: int
     cudnn_dtype: int
     cuda_grid: tuple[int, int, int]
     cuda_block: tuple[int, int, int]
     cudnn_handle: Cudnn_Handle_Type
     cublas_handle: Cublas_Handle_Type
-    use_gpudirect: bool
     nccl_comm: Any
     nccl_type: Any
     stream: Stream
-    memory_used: int
-    use_memory_pool: bool
     memory_cls: type[PrivateMemory]
     memory: PrivateMemory
-    tmp_memory_used: int
-    metrics_funcs: tuple[Metric[T], ...]
-    loss_and_metrics: tuple[str, ...]
-    layers: list[Layerable[T]]
-    nprocs: int
-    blocking_mpi: bool
     MPI: MPI_MODULE
     comm: MPI_COMM
-    comm_size: int
-    comm_rank: int
-    comm_nsamples: tuple[tuple[int], ...]
-    rank: int
-    rank_weight: float
-    real_batch_size: int
-    input_shape: ArrayShape
-    output_shape: ArrayShape
-    dataset_train_path: str
-    dataset_test_path: str
     y_batch: T
     optimizer: Optimizer[T]
     loss_func: Loss[T]
-    _is_model_init: bool

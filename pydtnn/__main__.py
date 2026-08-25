@@ -61,7 +61,7 @@ def main(config: Namespace) -> None:  # noqa: C901
     if model.comm_rank == 0:
         logger.info("# PyDTNN benchmark")
 
-    model._ensure_model_runnable()
+    model._ensure_runnable()
 
     from pydtnn import timestamp, utils
 

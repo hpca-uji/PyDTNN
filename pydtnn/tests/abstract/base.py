@@ -113,7 +113,7 @@ class D:
         """Returns the input shape as a tuple (b, c, h, w)."""
         return self.b, self.c, self.h, self.w
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         """Returns a formatted string representation of the layer dimensions."""
         return f"""\
 x, weights, and y parameters:

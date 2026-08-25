@@ -78,7 +78,7 @@ class State[T: Array](Init[T]):  # noqa: D101 (generics not detected)
                 f"Importing from different models! (self: {self.model_name}, got: {model_name})"
             )
 
-        if model_name and not self._is_model_init and not self.layers:
+        if model_name and not self._model_inited and not self.layers:
             self._layers_init(model_name)
 
         for layer, data in zip(self.layers, data[Parameters.LAYERS]):

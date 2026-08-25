@@ -167,8 +167,7 @@ class Namespace(argparse.Namespace):
                 option_string = f"{action.option_strings[0].replace('--', '')}"
                 tab = " " * (length - len(option_string))
                 lines.append(f"{indent}{option_string}{tab}: {getattr(self, action.dest)}")
-        lines.append("")
-        return "\n".join(lines)
+        return "\n".join(lines).strip()
 
 
 class ArgumentParser(argparse.ArgumentParser):
@@ -1167,8 +1166,7 @@ class ArgumentParser(argparse.ArgumentParser):
             help=(
                 "Let cuDNN to select the best performing convolution algorithm."
                 f" Default: {ModelBase.use_cudnn_auto_conv_algo!r}."
-            ),
-            deprecated=True,
+            )
         )
 
         # Encryption options
@@ -1343,7 +1341,7 @@ class ArgumentParser(argparse.ArgumentParser):
 
             lines.append("")
 
-        return "\n".join(lines)
+        return "\n".join(lines).strip()
 
 
 if __name__ == "__main__":

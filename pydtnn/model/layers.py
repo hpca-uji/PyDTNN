@@ -1,9 +1,8 @@
 """Module providing the Layers management class for the PyDTNN framework."""
 
-import itertools
 import logging
-from collections import abc
 from typing import Any
+from collections import abc
 
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.activations.relu import Relu
@@ -26,12 +25,10 @@ class Layers[T: Array](Utils[T]):  # noqa: D101 (generics not detected)
         """Initialize the layers model instance."""
         super().__init__(**kwargs)
         self.layers: list[Layerable[T]] = []
-        self.layer_id_generator: abc.Iterator[int] = iter(itertools.count())
 
     def add(self, layer: Layerable[T]) -> None:
         """Adds a layer to the model and initializes its backend and parameters."""
         self.layers.append(layer)
-
         if layer.act:
             self.add(layer.act())
 

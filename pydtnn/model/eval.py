@@ -266,7 +266,7 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
         Args:
             bar_width: Width of the progress bar.
         """
-        self._ensure_model_runnable()
+        self._ensure_runnable()
 
         if self.use_cudnn and self.y_batch is None:
             assert gpuarray and self.cudnn_dtype
@@ -316,16 +316,13 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
             global_loss=test_global_loss,
             out_prefix=f"{Dataset.Part.TEST._name_.lower()}_",
         )
+        test_global_loss[:-1] /= test_global_loss[-1]
 
         if self.comm_rank == 0:
             assert pbar
             pbar.close()
             # Sleep for half a second to allow pbar to write its output before returning
             time.sleep(0.5)
-
-        # End pipelines
-        self._model_reduce_wait(gradient=True)
-        self._model_reduce_wait(gradient=False)
 
     def calculate_time(self) -> np.ndarray:
         """

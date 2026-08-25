@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 class Repr[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
     """Mixin class providing string representation and summary visualization for models."""
 
-    def _show_props(self) -> dict:
+    def _show_props(self) -> dict:  # noqa: C901
         """Collects model properties for representation and summary.
 
         Returns:
@@ -32,25 +32,34 @@ class Repr[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
             props["params"] = self.nparams
 
         if self.memory_used > 0:
-            memory = utils.convert_size_bytes(self.memory_used)
-            if self.tmp_memory_used > 0:
-                tmp_memory = utils.convert_size_bytes(self.tmp_memory_used)
-                memory = f"{memory} ({tmp_memory} tmp)"
-            props["memory"] = memory
+            memory = utils.convert_size_bytes(self.memory_used) if self.memory_used > 0 else ""
+            tmp_memory = f"{utils.convert_size_bytes(self.tmp_memory_used)} tmp" if self.tmp_memory_used > 0 else ""
+            if memory and tmp_memory:
+                memory = f"{memory} ({tmp_memory})"
+            elif tmp_memory:
+                memory = tmp_memory
+            if memory:
+                props["memory"] = memory
 
         if self.optimizer:
-            optimizer_memory = utils.convert_size_bytes(self.optimizer.memory_used)
-            if self.optimizer.tmp_memory_used > 0:
-                optimizer_tmp_memory = utils.convert_size_bytes(self.optimizer.tmp_memory_used)
-                optimizer_memory = f"{optimizer_memory} ({optimizer_tmp_memory} tmp)"
-            props["optimizer-memory"] = optimizer_memory
+            optimizer_memory = utils.convert_size_bytes(self.optimizer.memory_used) if self.optimizer.memory_used > 0 else ""
+            optimizer_tmp_memory = f"{utils.convert_size_bytes(self.optimizer.tmp_memory_used)} tmp" if self.optimizer.tmp_memory_used > 0 else ""  # noqa: E501
+            if optimizer_memory and optimizer_tmp_memory:
+                optimizer_memory = f"{optimizer_memory} ({optimizer_tmp_memory})"
+            elif optimizer_tmp_memory:
+                optimizer_memory = optimizer_tmp_memory
+            if optimizer_memory:
+                props["optimizer-memory"] = optimizer_memory
 
         if self.loss_func:
-            loss_memory = utils.convert_size_bytes(self.loss_func.memory_used)
-            if self.loss_func.tmp_memory_used > 0:
-                loss_tmp_memory = utils.convert_size_bytes(self.loss_func.tmp_memory_used)
-                loss_memory = f"{loss_memory} ({loss_tmp_memory} tmp)"
-            props["loss-memory"] = loss_memory
+            loss_memory = utils.convert_size_bytes(self.loss_func.memory_used) if self.loss_func.memory_used > 0 else ""
+            loss_tmp_memory = f"{utils.convert_size_bytes(self.loss_func.tmp_memory_used)} tmp" if self.loss_func.tmp_memory_used > 0 else ""  # noqa: E501
+            if loss_memory and loss_tmp_memory:
+                loss_memory = f"{loss_memory} ({loss_tmp_memory})"
+            elif loss_tmp_memory:
+                loss_memory = loss_tmp_memory
+            if loss_memory:
+                props["loss-memory"] = loss_memory
 
         if self.metrics_funcs:
             metrics_size = 0
@@ -58,11 +67,14 @@ class Repr[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
             for metric in self.metrics_funcs:
                 metrics_size += metric.memory_used
                 metric_temp_size += metric.tmp_memory_used
-            metrics_memory = utils.convert_size_bytes(metrics_size)
-            if metric_temp_size > 0:
-                metrics_tmp_memory = utils.convert_size_bytes(metric_temp_size)
-                metrics_memory = f"{metrics_memory} ({metrics_tmp_memory} tmp)"
-            props["metrics-memory"] = metrics_memory
+            metrics_memory = utils.convert_size_bytes(metrics_size) if metrics_size > 0 else ""
+            metrics_tmp_memory = f"{utils.convert_size_bytes(metric_temp_size)} tmp" if metric_temp_size > 0 else ""
+            if metrics_memory and metrics_tmp_memory:
+                metrics_memory = f"{metrics_memory} ({metrics_tmp_memory})"
+            elif metrics_tmp_memory:
+                metrics_memory = metrics_tmp_memory
+            if metrics_memory:
+                props["metrics-memory"] = metrics_memory
 
         if self.layers:
             props["input"] = self.layers[0].shape
@@ -74,9 +86,9 @@ class Repr[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
 
     def __repr__(self) -> str:
         """Returns a concise string representation of the model instance."""
+        name = self.__class__.__name__
         props = " ".join(f"{key}={value!r}" for key, value in self._show_props().items())
-
-        return f"<{self.__class__.__name__} {props}>"
+        return f"<{name} {props}>" if props else f"<{name}>"
 
     def show_layers(self) -> None:
         """Logs a formatted table of all layers and their properties to the logger."""

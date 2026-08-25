@@ -204,9 +204,7 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
         """Return a string representation of the object."""
         props = self._show_props()
         name = props.pop("name")
-
         props = " ".join(f"{key}={value!r}" for key, value in props.items())
-
         return f"<{name} {props}>" if props else f"<{name}>"
 
     def _model_init(self) -> None:

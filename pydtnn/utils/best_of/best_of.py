@@ -55,7 +55,7 @@ class _BestOfExecution:
 
     def __repr__(self) -> str:
         """Returns the name of the execution node."""
-        return self.name
+        return f"<BestOf name={self.name!r}>"
 
     def block_parent(self) -> None:
         """Blocks the parent execution node until this node completes."""

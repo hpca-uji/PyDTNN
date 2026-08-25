@@ -53,7 +53,7 @@ class D:
         """Calculates output width."""
         return (self.w + 2 * self.hpadding - self.hdilation * (self.kw - 1) - 1) // self.hstride + 1
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         """Returns string representation of parameters."""
         return f"""\
 x, weights, and y parameters:

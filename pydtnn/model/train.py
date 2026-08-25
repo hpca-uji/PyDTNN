@@ -215,7 +215,7 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
 
     def train(self) -> dict[str, list[np.ndarray]]:  # noqa: C901
         """Runs the full training process over multiple epochs."""
-        self._ensure_model_runnable()
+        self._ensure_runnable()
 
         # If working with CUDA, self.y_batch must be in a GPU's data structure.
         if self.use_cudnn and self.y_batch is None:
@@ -274,9 +274,8 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
 
             # --- TRAIN ---
             if self.comm_rank == 0:
-                string = ""
                 fmt = "%%0%dd" % (len(str(self.num_epochs)))
-                epoch_string = "Training (%s/%s)" % (fmt, fmt)
+                epoch_string = "Training   (%s/%s)" % (fmt, fmt)
                 pbar = tqdm(
                     file=TqdmLogger(),
                     total=sum(self.comm_nsamples[Dataset.Part.TRAIN]),
@@ -300,8 +299,8 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
                     out_prefix=f"{Dataset.Part.TRAIN._name_.lower()}_",
                 )
             )
+            train_global_loss[:-1] /= train_global_loss[-1]
             sync_epoch = sync_epoch or train_sync_epoch
-            # train_string = string
 
             for c in range(len(self.loss_and_metrics)):
                 self.history[
@@ -316,8 +315,7 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
 
             # --- VAL ---
             if self.comm_rank == 0:
-                string = ""
-                fmt = "%%%dd" % (len(str(self.num_epochs)))
+                fmt = "%%0%dd" % (len(str(self.num_epochs)))
                 epoch_string = "Validating (%s/%s)" % (fmt, fmt)
                 pbar = tqdm(
                     file=TqdmLogger(),
@@ -338,14 +336,13 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
                     batches_min=val_batches_min,
                     local_loss=val_local_loss,
                     global_loss=val_global_loss,
-                    prev_string="",  # f"{train_string}, ",
+                    prev_string="",
                     out_prefix=f"{Dataset.Part.VAL._name_.lower()}_",
                 )
             )
+            val_global_loss[:-1] /= val_global_loss[-1]
             sync_epoch = sync_epoch or val_sync_epoch
-            # val_string = string
 
-            # if self.comm_rank == 0:  # All nodes must have history, not only the 0.
             for c in range(len(self.loss_and_metrics)):
                 self.history[
                     f"{Dataset.Part.VAL._name_.lower()}_" + self.loss_and_metrics[c]
