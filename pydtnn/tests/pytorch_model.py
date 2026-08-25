@@ -597,6 +597,8 @@ class PytorchModelTestCase(TestCase):
 
             if verbose_test():
                 print_with_header(f"Model {model_pydtnn.model_name} 2 forward pass")
+
+            model_pydtnn.real_batch_size = x_pydtnn.shape[0]
             x_pydtnn = self.do_model2_forward_pass(model_pydtnn, x_pydtnn)
 
             # Compare forward results

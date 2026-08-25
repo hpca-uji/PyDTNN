@@ -458,6 +458,7 @@ class PytorchLayerTestCase(TestCase):
             logger.info(f"\n\n{'=' * num_elems}\nTesting: {name_test}\n{'=' * num_elems}")
 
         x = np.copy(_x)
+        pydtnn_model.real_batch_size = x.shape[0]
 
         x = x.astype(dtype=self.params.dtype)
 

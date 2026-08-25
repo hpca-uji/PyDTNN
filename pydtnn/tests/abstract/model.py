@@ -443,6 +443,10 @@ class ModelTestCase(TestCase):
         if verbose_test():
             print()
             print_with_header(f"Model {model1.model_name} 1 forward pass")
+
+        model1.real_batch_size = x[0].shape[0]
+        model2.real_batch_size = x[0].shape[0]
+
         x1 = self.do_model1_forward_pass(model1, x)
 
         x2 = x1.copy()
