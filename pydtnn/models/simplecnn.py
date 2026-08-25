@@ -3,7 +3,6 @@
 from collections.abc import Sequence
 
 from pydtnn.abstract.layerable import Layerable
-from pydtnn.activations.log_softmax import LogSoftmax
 from pydtnn.activations.relu import Relu
 from pydtnn.activations.softmax import Softmax
 from pydtnn.layers.conv_2d import Conv2D
