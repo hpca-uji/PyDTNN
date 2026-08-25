@@ -53,7 +53,7 @@ class NegativeLikelihoodPycuda(NegativeLikelihood[TensorArray], LossPycuda):
             block=self.block,
             stream=self.model.stream,
         )
-        sum_weights = gpuarray.sum(self.argmax[:batch_size]).get()
+        sum_weights = float(gpuarray.sum(self.argmax[:batch_size]).get())
 
         loss = -gpuarray.sum(self.loss[:batch_size]).get() / sum_weights
         self.dx /= sum_weights

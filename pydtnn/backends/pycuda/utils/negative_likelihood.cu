@@ -24,12 +24,9 @@ __global__ void negative_likelihood(TYPE *y_targ, TYPE *y_pred,
                 max_value = y_targ[idx * n + i];
             }
         }
-        argmax[idx] = max;
+        argmax[idx] = weights[max];
 
         // Calculating the Loss and "dx"
-
-        // Common
-        max = argmax[idx];
 
         // Loss
         pred = y_pred[idx * n + max];
