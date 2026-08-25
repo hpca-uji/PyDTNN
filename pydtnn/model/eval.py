@@ -80,10 +80,13 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
     ) -> str:
         """Generates a metrics status string"""
         string = ""
+        size = metric[-1]
+        if not size:
+            return "waiting…"
         for c in range(len(self.loss_and_metrics)):
             loss_str = self.loss_and_metrics_format[c]
             if loss_str:
-                string += ("%s, " % (prefix + loss_str)) % (metric[c] / metric[-1])
+                string += ("%s, " % (prefix + loss_str)) % (metric[c] / size)
         string = string[:-2]
         return string
 
