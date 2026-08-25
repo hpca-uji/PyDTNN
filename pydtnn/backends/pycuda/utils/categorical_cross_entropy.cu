@@ -1,8 +1,8 @@
 #define TYPE "TYPE"
 
 __global__ void categorical_cross_entropy(TYPE *y_targ, TYPE *y_pred, TYPE *loss,
-                                          TYPE *weights, TYPE *dx, int b,
-                                          int n, float eps, TYPE sum_y_targ)
+                                          TYPE *weights, TYPE *dx, TYPE *argmax,
+                                          int b, int n, float eps, TYPE sum_y_targ)
 {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     const int workers = blockDim.x * gridDim.x;
@@ -23,6 +23,7 @@ __global__ void categorical_cross_entropy(TYPE *y_targ, TYPE *y_pred, TYPE *loss
                 max_value = y_targ[idx * n + i];
             }
         }
+        argmax[idx] = max;
 
         pred = (TYPE) (y_pred[idx * n + max] / sum_y_targ);
         if ( pred < eps )          pred = eps;
@@ -30,7 +31,9 @@ __global__ void categorical_cross_entropy(TYPE *y_targ, TYPE *y_pred, TYPE *loss
         
         loss[idx] = logf(pred);
         loss[idx] = (TYPE) (weights[max] * loss[idx]);
-        dx[idx * n + max] /= -(pred * b);
+
+        dx[idx * n + max] /= -pred;
+        // The rest of the operations will be done in the python's code
     }
     return;
 }

@@ -17,6 +17,13 @@ logger = logging.getLogger(__name__)
 class CategoricalCrossEntropyPycuda(CategoricalCrossEntropy[TensorArray], LossPycuda):
     """Categorical Cross-Entropy loss implementation for PyCUDA backends."""
 
+    def _model_init(self) -> None:
+        """Initializes GPU memory buffers and model-dependent parameters."""
+        super()._model_init()
+        # NOTE: the model must be executed before this one.
+        self.argmax = gpuarray.zeros((self.model.batch_size,), np.dtype(np.int32))
+        self.memory_used += self.argmax.nbytes
+
     def compute(
         self, y_pred: TensorArray, y_targ: TensorArray, batch_size: int
     ) -> tuple[float, TensorArray]:
@@ -38,6 +45,7 @@ class CategoricalCrossEntropyPycuda(CategoricalCrossEntropy[TensorArray], LossPy
             self.loss,
             self.weights,
             self.dx.ary,
+            self.argmax,
             np.int32(batch_size),
             np.int32(self.shape[1]),
             np.float32(self.eps),
@@ -47,5 +55,9 @@ class CategoricalCrossEntropyPycuda(CategoricalCrossEntropy[TensorArray], LossPy
             stream=self.model.stream,
         )
 
-        loss = -gpuarray.sum(self.loss[:batch_size]).get() / batch_size
+        sum_weights: float = gpuarray.sum(self.argmax[:batch_size]).get()
+
+        loss = -gpuarray.sum(self.loss[:batch_size]).get() / sum_weights
+        self.dx /= sum_weights
+
         return loss.item(), self.dx
