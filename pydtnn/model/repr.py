@@ -86,8 +86,9 @@ class Repr[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
 
     def __repr__(self) -> str:
         """Returns a concise string representation of the model instance."""
+        name = self.__class__.__name__
         props = " ".join(f"{key}={value!r}" for key, value in self._show_props().items())
-        return f"<{self.__class__.__name__} {props}>"
+        return f"<{name} {props}>" if props else f"<{name}>"
 
     def show_layers(self) -> None:
         """Logs a formatted table of all layers and their properties to the logger."""

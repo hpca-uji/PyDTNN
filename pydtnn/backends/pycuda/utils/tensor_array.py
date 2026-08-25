@@ -315,9 +315,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
     def __repr__(self) -> str:
         """Returns string representation of the TensorArray."""
         desc = hex(self.desc) if self.desc else None
-        return f"<{self.__class__.__name__} type={self.tensor_type} format={self.tensor_format} at {
-            desc
-        }>"
+        return f"<{self.__class__.__name__} type={self.tensor_type} format={self.tensor_format} at {desc}>"
 
     @property
     def ptr_voidp(self) -> ctypes.c_void_p:

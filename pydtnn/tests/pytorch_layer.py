@@ -356,6 +356,7 @@ class PytorchLayerTestCase(TestCase):
         list_layers: list[Layerable], params: PytorchLayerParams = params
     ) -> Model:
         """Initializes a PyDTNN model with the provided layers."""
+        breakpoint()
         model = Model(**params.asdict())
         model.add(Input(params.shape))
         model.add_layers(list_layers)

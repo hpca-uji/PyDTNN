@@ -1529,18 +1529,15 @@ class CudnnConvolutionFwdAlgoPerf(ctypes.Structure):
         ("memory", ctypes.c_size_t),
     ]
 
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         """Performance result structure for forward convolution algorithms representation."""
-        return "(algo=%d, status=%d, time=%f, memory=%d)" % (
+        return "%s(algo=%d, status=%d, time=%f, memory=%d)" % (
+            self.__class__.__name__,
             self.algo,
             self.status,
             self.time,
             self.memory,
         )
-
-    def __repr__(self) -> str:
-        """Performance result structure for forward convolution algorithms representation."""
-        return self.__str__()
 
 
 _libcudnn.cudnnFindConvolutionForwardAlgorithm.restype = int
@@ -1925,18 +1922,15 @@ class CudnnConvolutionBwdDataAlgoPerf(ctypes.Structure):
         ("memory", ctypes.c_size_t),
     ]
 
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         """Performance result structure for backward data convolution algorithms representation."""
-        return "(algo=%d, status=%d, time=%f, memory=%d)" % (
+        return "%s(algo=%d, status=%d, time=%f, memory=%d)" % (
+            self.__class__.__name__,
             self.algo,
             self.status,
             self.time,
             self.memory,
         )
-
-    def __repr__(self) -> str:
-        """Performance result structure for backward data convolution algorithms representation."""
-        return self.__str__()
 
 
 _libcudnn.cudnnFindConvolutionBackwardDataAlgorithm.restype = int
@@ -2205,18 +2199,15 @@ class CudnnConvolutionBwdFilterAlgoPerf(ctypes.Structure):
         ("memory", ctypes.c_size_t),
     ]
 
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         """Performance result structure for backward filter convolution algorithms representation."""
-        return "(algo=%d, status=%d, time=%f, memory=%d)" % (
+        return "%s(algo=%d, status=%d, time=%f, memory=%d)" % (
+            self.__class__.__name__,
             self.algo,
             self.status,
             self.time,
             self.memory,
         )
-
-    def __repr__(self) -> str:
-        """Performance result structure for backward filter convolution algorithms representation."""
-        return self.__str__()
 
 
 _libcudnn.cudnnFindConvolutionBackwardFilterAlgorithm.restype = int
