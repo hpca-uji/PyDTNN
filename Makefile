@@ -643,6 +643,7 @@ pydtnn-clean:
 		rm -rf "$(PYDTNN_DST)" && \
 		find "$(PYDTNN_SRC)/pydtnn" \
 			-iname "*.pyc" \
+			-iname "*.o" \
 			-iname "*.so" \
 			-iname "*.dll" \
 			-iname "*.dsym" \
