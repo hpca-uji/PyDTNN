@@ -27,7 +27,7 @@ function run_model() {
     --evaluate \
     --optimizer=sgd \
     --learning-rate=0.01 \
-    --loss-func=negative_log_likelihood \
+    --loss-func=negative_likelihood \
     --schedulers= \
     --no-parallel-data \
     --no-tracing \

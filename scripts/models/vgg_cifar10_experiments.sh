@@ -34,12 +34,12 @@ for procs in 6 4 2 1; do
       --learning-rate=0.001 \
       --optimizer-momentum=0.9 \
       --optimizer-decay=0 \
-      --loss-func=negative_log_likelihood \
+      --loss-func=negative_likelihood \
       --schedulers=warm_up,stop_at_loss \
       --warm-up-epochs=5 \
-      --early-stopping-metric=val_negative_log_likelihood \
+      --early-stopping-metric=val_negative_likelihood \
       --early-stopping-patience=20 \
-      --reduce-lr-on-plateau-metric=val_negative_log_likelihood \
+      --reduce-lr-on-plateau-metric=val_negative_likelihood \
       --reduce-lr-on-plateau-factor=0.1 \
       --reduce-lr-on-plateau-patience=5 \
       --reduce-lr-on-plateau-min-lr=0 \

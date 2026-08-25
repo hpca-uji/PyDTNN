@@ -82,7 +82,7 @@ class CategoricalCrossEntropyNumpy(CategoricalCrossEntropy[np.ndarray], LossNump
         # dx_amax: np.ndarray = np.argmax(dx, axis=1)
         # dx[b_range, dx_amax] /= (-_y_pred_sliced[b_range, dx_amax] * batch_size)
         dx[:] = y_targ
-        np.multiply(self.weights[_argmax], _y_pred, out=_y_pred)
+        np.multiply(np.sum(y_pred, axis=-1, keepdims=True), _y_pred, out=_y_pred)
         np.multiply(-1, _y_pred, out=_y_pred)
         dx[b_range, _argmax] /= _y_pred[b_range, _argmax]
         return loss, np.asarray(dx, dtype=self.model.dtype, order="C")

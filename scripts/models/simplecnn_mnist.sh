@@ -21,12 +21,12 @@ pydtnn-benchmark \
   --no-evaluate \
   --optimizer=sgd \
   --learning-rate=0.01 \
-  --loss-func=negative_log_likelihood \
+  --loss-func=negative_likelihood \
   --schedulers=warm_up,reduce_lr_every_nepochs \
   --reduce-lr-every-nepochs-factor=0.5 \
   --reduce-lr-every-nepochs-nepochs=30 \
   --reduce-lr-every-nepochs-min-lr=0.001 \
-  --early-stopping-metric=val_negative_log_likelihood \
+  --early-stopping-metric=val_negative_likelihood \
   --early-stopping-patience=20 \
   --no-parallel-data \
   --no-tracing \

@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class NegativeLikelihoodPycuda(NegativeLikelihood[TensorArray], LossPycuda):
     """Categorical Cross-Entropy loss implementation for PyCUDA backends."""
 
-        def _model_init(self) -> None:
+    def _model_init(self) -> None:
         """Initializes GPU memory buffers and model-dependent parameters."""
         super()._model_init()
         # NOTE: the model must be executed before this one.

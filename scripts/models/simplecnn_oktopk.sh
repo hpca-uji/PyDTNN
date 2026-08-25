@@ -35,7 +35,7 @@ mpirun -np 4 "${MPI_ARGS[@]}" \
   --oktopk-min-k=10 \
   --oktopk-partition-method=sparse \
   --oktopk-reduce-method=p2p_region_wise_reduce_destination_rotation_and_bucketing \
-  --loss-func=negative_log_likelihood \
+  --loss-func=negative_likelihood \
   --schedulers= \
   --parallel-data \
   --no-use-mpi-buffers \

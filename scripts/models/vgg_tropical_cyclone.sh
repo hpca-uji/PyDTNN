@@ -29,13 +29,13 @@ pydtnn-benchmark \
   --learning-rate=0.01 \
   --optimizerdecay=1e-4 \
   --optimizer-momentum=0.9 \
-  --loss-func=negative_log_likelihood \
+  --loss-func=negative_likelihood \
   --metrics=categorical_accuracy \
   --schedulers=warm_up,reduce_lr_on_plateau \
   --warm-up-epochs=5 \
-  --early-stopping-metric=val_negative_log_likelihood \
+  --early-stopping-metric=val_negative_likelihood \
   --early-stopping-patience=20 \
-  --reduce-lr-on-plateau-metric=val_negative_log_likelihood \
+  --reduce-lr-on-plateau-metric=val_negative_likelihood \
   --reduce-lr-on-plateau-factor=0.1 \
   --reduce-lr-on-plateau-patience=15 \
   --reduce-lr-on-plateau-min-lr=0.0001 \

@@ -264,8 +264,8 @@ The PyDTNN framework comes with a utility launcher called
   - `--oktopk-partition-method`: OkTopk data partition method. Default: `dense`.
   - `--oktopk-reduce-method`: OkTopk data reduce method. Default: `collective_allreduce_then_slice`.
   - `--loss-func`: Loss functions that is evaluated on each trained batch:
-    `negative_log_likelihood`, `binary_cross_entropy`, `kl_divergence`, etc.
-    Default: `negative_log_likelihood`.
+    `negative_likelihood`, `binary_cross_entropy`, `kl_divergence`, etc.
+    Default: `negative_likelihood`.
   - `--loss-eps`: Value for numerical stability. Default: 1e-08.
   - `--metrics`: List of comma-separated metrics that are evaluated on each trained batch:
     `categorical_hinge`, `confusion_matrix`, `kl_divergence_metric`,
@@ -282,12 +282,12 @@ The PyDTNN framework comes with a utility launcher called
   - `--warm-up-epochs`: Number of batches (ramp up) that the LR is scaled up from 0 until LR. Default:
     5.
   - `--early-stopping-metric`: Loss metric monitored by early_stopping LR scheduler. Default:
-    `val_negative_log_likelihood`.
+    `val_negative_likelihood`.
   - `--early-stopping-patience`: Number of epochs with no improvement after which training will be stopped.
     Default: 10.
   - `--early-stopping-minimize`, `--no-early-stopping-minimize`: Whether to minimize the metric. If False, it will maximize. Default: True.
   - `--reduce-lr-on-plateau-metric`: Loss metric monitored by reduce_lr_on_plateau LR scheduler. Default:
-    `val_negative_log_likelihood`.
+    `val_negative_likelihood`.
   - `--reduce-lr-on-plateau-factor`: Factor by which the learning rate will be reduced. new_lr = lr * factor.
     Default: 0.1.
   - `--reduce-lr-on-plateau-patience`: Number of epochs with no improvement after which LR will be reduced. Default: 5.
@@ -299,7 +299,7 @@ The PyDTNN framework comes with a utility launcher called
   - `--stop-at-loss-metric`: Loss metric monitored by stop_at_loss LR scheduler. Default: `val_accuracy`.
   - `--stop-at-loss-threshold`: Metric threshold monitored by stop_at_loss LR scheduler. Default: 0.
   - `--model-checkpoint-metric`: Loss metric monitored by model_checkpoint LR scheduler. Default:
-    `val_negative_log_likelihood`.
+    `val_negative_likelihood`.
   - `--model-checkpoint-save-freq`: Frequency (in epochs) at which the model weights and bias will be saved by the
     model_checkpoint LR scheduler. Default: 2.
 
@@ -353,12 +353,12 @@ $ mpirun -np 12 \
       --evaluate \
       --optimizer=adam \
       --learning-rate=0.01 \
-      --loss-func=negative_log_likelihood \
+      --loss-func=negative_likelihood \
       --schedulers=warm_up,reduce_lr_every_nepochs \
       --reduce-lr-every-nepochs-factor=0.5 \
       --reduce-lr-every-nepochs-nepochs=30 \
       --reduce-lr-every-nepochs-min-lr=0.001 \
-      --early-stopping-metric=val_negative_log_likelihood \
+      --early-stopping-metric=val_negative_likelihood \
       --early-stopping-patience=20 \
       --parallel-data=False \
       --tracing=False \
@@ -442,16 +442,16 @@ Optimizer options
   optimizer-tau        : 64
   optimizer-tau-prime  : 32
   optimizer-density    : 0.01
-  loss-func            : negative_log_likelihood
+  loss-func            : negative_likelihood
   metrics              : categorical_accuracy
 
 Schedulers options
   schedulers                     : warm_up,reduce_lr_every_nepochs
   warm-up-epochs                 : 5
-  early-stopping-metric          : val_negative_log_likelihood
+  early-stopping-metric          : val_negative_likelihood
   early-stopping-patience        : 20
   early-stopping-minimize        : True
-  reduce-lr-on-plateau-metric    : val_negative_log_likelihood
+  reduce-lr-on-plateau-metric    : val_negative_likelihood
   reduce-lr-on-plateau-factor    : 0.1
   reduce-lr-on-plateau-patience  : 5
   reduce-lr-on-plateau-min-lr    : 0
@@ -460,7 +460,7 @@ Schedulers options
   reduce-lr-every-nepochs-min-lr : 0.001
   stop-at-loss-metric            : val_accuracy
   stop-at-loss-threshold         : 0
-  model-checkpoint-metric        : val_negative_log_likelihood
+  model-checkpoint-metric        : val_negative_likelihood
   model-checkpoint-save-freq     : 2
 
 Parallel execution options
@@ -711,16 +711,16 @@ Optimizer options
   optimizer-tau        : 64
   optimizer-tau-prime  : 32
   optimizer-density    : 0.01
-  loss-func            : negative_log_likelihood
+  loss-func            : negative_likelihood
   metrics              : categorical_accuracy
 
 Schedulers options
   schedulers                     : warm_up,reduce_lr_on_plateau,early_stopping
   warm-up-epochs                 : 5
-  early-stopping-metric          : val_negative_log_likelihood
+  early-stopping-metric          : val_negative_likelihood
   early-stopping-patience        : 20
   early-stopping-minimize        : True
-  reduce-lr-on-plateau-metric    : val_negative_log_likelihood
+  reduce-lr-on-plateau-metric    : val_negative_likelihood
   reduce-lr-on-plateau-factor    : 0.1
   reduce-lr-on-plateau-patience  : 15
   reduce-lr-on-plateau-min-lr    : 0.0001
@@ -729,7 +729,7 @@ Schedulers options
   reduce-lr-every-nepochs-min-lr : 0.001
   stop-at-loss-metric            : val_categorical_accuracy
   stop-at-loss-threshold         : 70.0
-  model-checkpoint-metric        : val_negative_log_likelihood
+  model-checkpoint-metric        : val_negative_likelihood
   model-checkpoint-save-freq     : 2
 
 Parallel execution options

@@ -19,13 +19,13 @@ pydtnn-benchmark \
   --optimizer=sgd \
   --learning-rate=0.01 \
   --optimizer-momentum=0.9 \
-  --loss-func=negative_log_likelihood \
+  --loss-func=negative_likelihood \
   --metrics=categorical_accuracy \
   --schedulers=early_stopping,reduce_lr_on_plateau \
   --warm-up-epochs=5 \
-  --early-stopping-metric=val_negative_log_likelihood \
+  --early-stopping-metric=val_negative_likelihood \
   --early-stopping-patience=10 \
-  --reduce-lr-on-plateau-metric=val_negative_log_likelihood \
+  --reduce-lr-on-plateau-metric=val_negative_likelihood \
   --reduce-lr-on-plateau-factor=0.1 \
   --reduce-lr-on-plateau-patience=5 \
   --reduce-lr-on-plateau-min-lr=0 \

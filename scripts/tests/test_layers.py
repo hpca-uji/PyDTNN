@@ -44,7 +44,7 @@ KWARGS = {
     "evaluate_only": True,
     "parallel": "data",
     "tensor_format": FORMAT,  # "NCHW" # "NHWC",
-    "loss_func": "negative_log_likelihood",
+    "loss_func": "negative_likelihood",
     "use_cudnn": False,  # False, #True,
     "omm": None,
     "dtype": np.dtype(np.float32),
