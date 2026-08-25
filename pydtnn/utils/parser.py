@@ -1166,8 +1166,7 @@ class ArgumentParser(argparse.ArgumentParser):
             help=(
                 "Let cuDNN to select the best performing convolution algorithm."
                 f" Default: {ModelBase.use_cudnn_auto_conv_algo!r}."
-            ),
-            deprecated=True,
+            )
         )
 
         # Encryption options
