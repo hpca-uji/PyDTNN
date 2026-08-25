@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     import numpy as np  # noqa: F811 (override typing)
 
+
 class NegativeLikelihoodNumpy(NegativeLikelihood[np.ndarray], LossNumpy):
     """NumPy implementation of the Negative Likelihood loss function."""
 

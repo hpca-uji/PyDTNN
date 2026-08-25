@@ -38,6 +38,6 @@ def simplecnn(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Lay
     _(Flatten())
     _(FC(shape=(128,), activation=Relu))
     _(Dropout(rate=0.5))
-    _(FC(shape=output_shape, activation=LogSoftmax))
+    _(FC(shape=output_shape, activation=Softmax))
 
     return model
