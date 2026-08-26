@@ -1345,4 +1345,4 @@ class ArgumentParser(argparse.ArgumentParser):
 
 
 if __name__ == "__main__":
-    print(ArgumentParser())
+    print(ArgumentParser())  # noqa: DB100

@@ -119,6 +119,6 @@ def traceback_context() -> Generator[None, Any, None]:
     except Exception as exc:
         path = Path(f"traceback-{timestamp}.log").resolve()
         with path.open(mode="a") as file:
-            TracebackException.from_exception(exc, capture_locals=True).print(file=file)
+            TracebackException.from_exception(exc, capture_locals=True).print(file=file)  # noqa: DB100
         logger.info(f"Dumped traceback details to: {path}")
         raise

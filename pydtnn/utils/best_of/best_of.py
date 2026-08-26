@@ -159,7 +159,9 @@ class _BestOfExecution:
         tree = Tree("BestOf execution graph")
         _BestOfExecution._walk_nodes(self, tree)
         c = Console(force_terminal=True, width=120)
-        c.print(tree)
+        with c.capture() as capture:
+            c.print(tree)  # noqa: DB100
+        logger.info(capture.get())
 
     # Protected members
 
@@ -588,7 +590,9 @@ class BestOf:
                 row_contents.insert(0, str(execution.problem_sizes[problem_size]))
             row_contents.insert(0, str(problem_size))
             t.add_row(*row_contents)
-        c.print(t)
+        with c.capture() as capture:
+            c.print(t)  # noqa: DB100
+        logger.info(capture.get())
 
     @staticmethod
     def _walk_nodes_and_print_as_table(node: _BestOfExecution) -> None:

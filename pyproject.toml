@@ -83,6 +83,7 @@ lint = [
     "flake8-docstrings~=1.7",
     "flake8-annotations~=3.2",
     "flake8-pyproject~=1.2",
+    "flake8-debug~=0.3",
     "mccabe~=0.7",
     "pep8-naming~=0.15",
     "pycodestyle~=2.14",
@@ -146,8 +147,10 @@ exclude = [
     "__pycache__"
 ]
 per-file-ignores = [
-    "pydtnn/converters/*:N802",
-    "pydtnn/converters/onnx2pydtnn/*:N802,N806",
+    "scripts/*:DB100",
+    "pydtnn/tests/*:DB100",
+    "pydtnn/converters/*:N802,DB100",
+    "pydtnn/converters/onnx2pydtnn/*:N802,N806,DB100",
     "pydtnn/libs/*:N801,N802,N803,N816,N818,E501,M100"
 ]
 
