@@ -46,7 +46,7 @@ class BinaryConfusionMatrixPycuda(BinaryConfusionMatrix[TensorArray], MetricPycu
               |F| FP | TN |
         """
 
-        n = self.model.batch_size
+        n = self.model.real_batch_size
         target_classes = self.model.output_shape[0]
 
         self.conf_matrix.fill(0)
