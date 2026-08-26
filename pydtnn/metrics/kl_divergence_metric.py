@@ -12,5 +12,3 @@ logger = logging.getLogger(__name__)
 
 class KLDivergenceMetric[T: Array](Metric[T]):  # noqa: D101 (generics not detected)
     """Metric class for computing the Kullback-Leibler divergence between two distributions."""
-
-    format = "kld: %.7f"

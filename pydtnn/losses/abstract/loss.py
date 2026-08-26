@@ -7,8 +7,9 @@ loss implementations.
 
 from __future__ import annotations
 
+import re
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
@@ -32,7 +33,12 @@ class Loss[T: Array](Base):  # noqa: D101 (generics not detected)
         format (str): Format string for loss representation.
     """
 
-    format = ""
+    def format(self, value: Any) -> str:
+        name = re.sub("[^A-Z]", "", self.canonical_name).lower()
+        if isinstance(value, (float, np.floating)):
+            return f"{name}: {value:.5f}"
+        else:
+            return f"{name}: {value}"
 
     def _weights_to_tensor(self, weights: list[float]) -> np.ndarray:
         w = None

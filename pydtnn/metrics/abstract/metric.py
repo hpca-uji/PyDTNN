@@ -7,6 +7,8 @@ function for dynamically selecting metric implementations.
 
 import logging
 from abc import abstractmethod
+import re
+from typing import Any
 
 import numpy as np
 
@@ -28,8 +30,15 @@ class Metric[T: Array](Base):  # noqa: D101 (generics not detected)
         eps (float): Small epsilon value for numerical stability.
     """
 
-    format = ""
-    order = 0  # No need of special order.
+    def order(self) -> int:
+        return 0  # No need of special order.
+
+    def format(self, value: Any) -> str:
+        name = re.sub("[^A-Z]", "", self.canonical_name).lower()
+        if isinstance(value, (float, np.floating)):
+            return f"{name}: {value:.5f}"
+        else:
+            return f"{name}: {value}"
 
     def __init__(self, eps: float = 1e-8) -> None:
         """

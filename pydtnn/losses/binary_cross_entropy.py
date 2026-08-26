@@ -12,5 +12,3 @@ logger = logging.getLogger(__name__)
 
 class BinaryCrossEntropy[T: Array](Loss[T]):  # noqa: D101 (generics not detected)
     """Computes the binary cross-entropy loss between target and output logits."""
-
-    format = "bce: %.7f"

@@ -79,16 +79,15 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
         prefix: str = "",
     ) -> str:
         """Generates a metrics status string"""
-        string = ""
+        string = []
         size = metric[-1]
         if not size:
             return "processing…"
-        for c in range(len(self.loss_and_metrics)):
-            loss_str = self.loss_and_metrics_format[c]
-            if loss_str:
-                string += ("%s, " % (prefix + loss_str)) % (metric[c] / size)
-        string = string[:-2]
-        return string
+        for i in range(len(self.loss_and_metrics)):
+            value = self.loss_and_metrics_format[i](metric[i] / size)
+            if "\n" not in value:
+                string.append(prefix + value)
+        return ", ".join(string)
 
     def _evaluate_batch(
         self, x_batch: np.ndarray, y_batch: np.ndarray, sync_model: bool = True
@@ -247,6 +246,7 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
                 if self.comm:
                     diff_loss = self.comm.allreduce(diff_loss)
                 global_loss += diff_loss
+                local_loss[:] = global_loss
 
             string = self._update_status(
                 pbar=pbar,

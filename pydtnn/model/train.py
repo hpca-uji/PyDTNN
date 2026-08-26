@@ -193,6 +193,7 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
                 if self.comm:
                     diff_loss = self.comm.allreduce(diff_loss)
                 global_loss += diff_loss
+                local_loss[:] = global_loss
 
             string = self._update_status(
                 pbar=pbar,
@@ -297,10 +298,10 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
             train_global_loss[:-1] /= train_global_loss[-1]
             sync_epoch = sync_epoch or train_sync_epoch
 
-            for c in range(len(self.loss_and_metrics)):
+            for m in range(len(self.loss_and_metrics)):
                 self.history[
-                    f"{Dataset.Part.TRAIN._name_.lower()}_" + self.loss_and_metrics[c]
-                ].append(train_global_loss[c])
+                    f"{Dataset.Part.TRAIN._name_.lower()}_" + self.loss_and_metrics[m]
+                ].append(train_global_loss[m])
 
             if self.comm_rank == 0:
                 assert pbar
@@ -338,10 +339,10 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
             val_global_loss[:-1] /= val_global_loss[-1]
             sync_epoch = sync_epoch or val_sync_epoch
 
-            for c in range(len(self.loss_and_metrics)):
+            for m in range(len(self.loss_and_metrics)):
                 self.history[
-                    f"{Dataset.Part.VAL._name_.lower()}_" + self.loss_and_metrics[c]
-                ].append(val_global_loss[c])
+                    f"{Dataset.Part.VAL._name_.lower()}_" + self.loss_and_metrics[m]
+                ].append(val_global_loss[m])
 
             if self.comm_rank == 0:
                 assert pbar
@@ -354,18 +355,15 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
                 if sched.stop_training:
                     terminate = True
 
-            for c in range(len(self.loss_and_metrics)):
-                if not self.loss_and_metrics_format[c]:
-                    logger.info(
-                        f"{Dataset.Part.TRAIN._name_.lower()}_{self.loss_and_metrics[c]}:"
-                        f" {train_global_loss[c]}"
-                    )
-            for c in range(len(self.loss_and_metrics)):
-                if not self.loss_and_metrics_format[c]:
-                    logger.info(
-                        f"{Dataset.Part.VAL._name_.lower()}_{self.loss_and_metrics[c]}:"
-                        f" {val_global_loss[c]}"
-                    )
+            for m in range(len(self.loss_and_metrics)):
+                value = self.loss_and_metrics_format[m](train_global_loss[m] / train_global_loss[-1])
+                if "\n" in value:
+                    logger.info(f"{Dataset.Part.TRAIN._name_.lower()}_{value}")
+
+            for m in range(len(self.loss_and_metrics)):
+                value = self.loss_and_metrics_format[m](val_global_loss[m] / val_global_loss[-1])
+                if "\n" in value:
+                    logger.info(f"{Dataset.Part.VAL._name_.lower()}_{value}")
 
             if sync_epoch:
                 if self.comm:

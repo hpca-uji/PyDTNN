@@ -12,5 +12,3 @@ logger = logging.getLogger(__name__)
 
 class CategoricalCrossEntropy[T: Array](Loss[T]):  # noqa: D101 (generics not detected)
     """Computes the categorical cross-entropy loss between predictions and targets."""
-
-    format = "cce: %.7f"

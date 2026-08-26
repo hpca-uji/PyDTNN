@@ -105,7 +105,6 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
 
         # Metic [NOTE: after Loss]
         metrics = [(m, select_metric(m).from_model(self)) for m in self.metrics]
-        metrics.sort(key=lambda metric: metric[1].order)
         self.metrics, self.metrics_funcs = map(tuple, zip(*metrics))
 
         # Optimizer [NOTE: after Metric]
@@ -365,6 +364,10 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
             metric._model_init()
             self.memory_used += metric.memory_used
             temp_memory_size.append(metric.tmp_memory_used)
+
+        metrics = list(zip(self.metrics, self.metrics_funcs))
+        metrics.sort(key=lambda metric: metric[1].order())
+        self.metrics, self.metrics_funcs = map(tuple, zip(*metrics))
 
         self.loss_and_metrics = (self.loss_func_name, *self.metrics)
         self.loss_and_metrics_format = [self.loss_func.format] + [

@@ -12,5 +12,3 @@ logger = logging.getLogger(__name__)
 
 class KLDivergence[T: Array](Loss[T]):  # noqa: D101 (generics not detected)
     """Computes the Kullback-Leibler divergence between two probability distributions."""
-
-    format = "kld: %.7f"

@@ -14,9 +14,15 @@ logger = logging.getLogger(__name__)
 class F1Score[T: Array](Metric[T]):  # noqa: D101 (generics not detected)
     """Computes the F1-score based on a BinaryConfusionMatrix."""
 
-    order = BinaryConfusionMatrix.order + 1
     conf_matrix_metric: BinaryConfusionMatrix = None  # pyright: ignore[reportAssignmentType]
-    format = "f1: %.4f"
+
+    def order(self) -> int:
+        for metric in self.model.metrics_funcs:
+            if isinstance(metric, BinaryConfusionMatrix):
+                break
+        else:
+            return 0
+        return metric.order() + 1
 
     def _model_init(self) -> None:
         """Initializes the metric by locating the required BinaryConfusionMatrix in the model."""

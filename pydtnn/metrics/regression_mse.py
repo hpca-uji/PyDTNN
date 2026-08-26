@@ -12,5 +12,3 @@ logger = logging.getLogger(__name__)
 
 class RegressionMSE[T: Array](Metric[T]):  # noqa: D101 (generics not detected)
     """Computes the Mean Squared Error (MSE) for regression tasks."""
-
-    format = "mse: %.7f"
