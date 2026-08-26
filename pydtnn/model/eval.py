@@ -262,7 +262,7 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
         self._evaluate_round += 1
         return (model_sync_count, sync_epoch, string)
 
-    def evaluate(self) -> dict[str, list[np.ndarray]]:
+    def evaluate(self) -> None:
         """
         Runs the full evaluation process on the test dataset.
 
@@ -336,8 +336,6 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
             value = self.loss_and_metrics_format[m](test_global_loss[m])
             if "\n" in value:
                 logger.info(f"{Dataset.Part.TEST._name_.lower()}_{value}")
-
-        return self.history
 
     def calculate_time(self) -> np.ndarray:
         """

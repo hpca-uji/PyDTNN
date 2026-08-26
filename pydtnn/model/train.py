@@ -208,7 +208,7 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
         self._training_round += 1
         return (model_sync_count, sync_epoch, string)
 
-    def train(self) -> dict[str, list[np.ndarray]]:  # noqa: C901
+    def train(self) -> None:  # noqa: C901
         """Runs the full training process over multiple epochs."""
         self._ensure_runnable()
 
@@ -376,6 +376,3 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
         if self.final_model_sync:
             self._weight_update(gradient=True, blocking=self.use_blocking_mpi)
             self._weight_update(gradient=False, blocking=self.use_blocking_mpi)
-
-        self.tracer.define_event_types(self)
-        return self.history

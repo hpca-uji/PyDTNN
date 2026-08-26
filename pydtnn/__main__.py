@@ -104,7 +104,7 @@ def main(config: Namespace) -> None:  # noqa: C901
     # or alternatively, define any custom data
     # mode.dataset = CustomDataset(model, x, y)
     t1 = time.time()
-    history = model.train()
+    model.train()
     t2 = time.time()
     total_time = t2 - t1
 
@@ -135,7 +135,7 @@ def main(config: Namespace) -> None:  # noqa: C901
         history_file = utils.string_substitute(model.history_file, rank=model.comm_rank)
         if history_file != model.history_file or model.comm_rank == 0:
             from pydtnn.utils.serial import NumpyYaml
-
+            history = model.history
             path = Path(history_file).resolve()
             events = []
             epochs = max(len(v) for v in history.values())
