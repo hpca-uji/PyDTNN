@@ -51,5 +51,5 @@ class CategoricalAccuracyNumpy(CategoricalAccuracy[np.ndarray], MetricNumpy):
         np.argmax(y_pred, axis=1, out=_argmax)
         y: np.ndarray = y_targ[np.arange(b), _argmax]
         y = np.sum(y, dtype=self.model.dtype)
-        y *= 100 / b
+        y /= b
         return y.item()

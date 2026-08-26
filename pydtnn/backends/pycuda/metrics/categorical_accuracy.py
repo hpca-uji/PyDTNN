@@ -43,4 +43,4 @@ class CategoricalAccuracyPycuda(CategoricalAccuracy[TensorArray], MetricPycuda):
             block=self.block,
             stream=self.model.stream,
         )
-        return float(gpuarray.sum(self.cost).get() * 100 / self.model.real_batch_size)
+        return float(gpuarray.sum(self.cost).get() / self.model.real_batch_size)
