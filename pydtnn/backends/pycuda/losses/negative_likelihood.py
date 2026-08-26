@@ -21,7 +21,7 @@ class NegativeLikelihoodPycuda(NegativeLikelihood[TensorArray], LossPycuda):
         """Initializes GPU memory buffers and model-dependent parameters."""
         super()._model_init()
         # NOTE: the model must be executed before this one.
-        self.argmax = gpuarray.zeros((self.model.batch_size,), np.dtype(np.int32))
+        self.argmax: gpuarray.GPUArray = gpuarray.zeros((self.model.batch_size,), np.dtype(np.int32))
         self.memory_used += self.argmax.nbytes
 
     def compute(self, y_pred: TensorArray, y_targ: TensorArray) -> tuple[float, TensorArray]:
@@ -41,7 +41,7 @@ class NegativeLikelihoodPycuda(NegativeLikelihood[TensorArray], LossPycuda):
             y_targ.ary,
             y_pred.ary,
             self.loss,
-            self.weights,
+            self.weights.ary,
             self.dx.ary,
             self.argmax,
             np.int32(batch_size),

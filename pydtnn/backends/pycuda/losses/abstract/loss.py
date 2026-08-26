@@ -2,6 +2,8 @@
 
 import logging
 
+import numpy as np
+
 from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 from pycuda.driver import Function
 
@@ -29,13 +31,13 @@ class LossPycuda(Loss[TensorArray], BasePycuda):
         """
         super().__init__(eps)
         # NOTE: The following attributes will be initialized later.
-        self.grid = None
-        self.block = None
+        self.grid: tuple[int, int, int] = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.block: tuple[int, int, int] = None  # pyright: ignore[reportAttributeAccessIssue]
 
     def _weights_to_tensor(self, weights: list[float]) -> TensorArray:
-        w = super()._weights_to_tensor(weights)
+        _w: np.ndarray = super()._weights_to_tensor(weights)  # pyright: ignore[reportAssignmentType]
         w = TensorArray.to_gpu(
-            ary=w, tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype
+            ary=_w, tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype
         )
         return w
 
@@ -45,8 +47,8 @@ class LossPycuda(Loss[TensorArray], BasePycuda):
         # NOTE: the model must be executed before this one.
         self.grid = self.model.cuda_grid
         self.block = self.model.cuda_block
-        self.loss = gpuarray.zeros((self.model.batch_size,), self.model.dtype)
-        dx_gpu = gpuarray.zeros(self.shape, self.model.dtype)
+        self.loss: gpuarray.GPUArray = gpuarray.zeros((self.model.batch_size,), self.model.dtype)
+        dx_gpu: gpuarray.GPUArray = gpuarray.zeros(self.shape, self.model.dtype)
         self.dx = TensorArray(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
         self.memory_used += self.dx.nbytes + self.loss.nbytes
 

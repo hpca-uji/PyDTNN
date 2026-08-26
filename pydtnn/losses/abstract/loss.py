@@ -40,14 +40,14 @@ class Loss[T: Array](Base):  # noqa: D101 (generics not detected)
         else:
             return f"{name}: {value}"
 
-    def _weights_to_tensor(self, weights: list[float]) -> np.ndarray:
-        w = None
+    def _weights_to_tensor(self, weights: list[float]) -> T:
+        w: np.ndarray = None  # pyright: ignore[reportAssignmentType]
         # NOTE: This may not work very well in case self.model.dtype is an int
         if weights:
             w = np.ascontiguousarray(weights, dtype=self.model.dtype)
         else:
             w = np.ones(self.model.output_shape, dtype=self.model.dtype, order="C")
-        return w
+        return w  # pyright: ignore[reportReturnType]  (NOTE: the pycuda's method overcharges this method)
 
     def __init__(self, eps: float = 1e-8) -> None:
         """
@@ -72,7 +72,7 @@ class Loss[T: Array](Base):  # noqa: D101 (generics not detected)
         else:
             weights = []
 
-        self.weights = self._weights_to_tensor(weights)
+        self.weights: T = self._weights_to_tensor(weights)
 
     def compute(self, y_pred: T, y_targ: T) -> tuple[float, T]:
         """
