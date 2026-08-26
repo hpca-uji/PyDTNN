@@ -47,7 +47,7 @@ class MulticlassConfusionMatrixPycuda(MulticlassConfusionMatrix[TensorArray], Me
               |2| F0 | F1 | T2 |
         """
 
-        n = y_pred.shape[0]
+        n = self.model.real_batch_size
         target_classes = self.model.output_shape[0]
 
         self.conf_matrix.fill(0)

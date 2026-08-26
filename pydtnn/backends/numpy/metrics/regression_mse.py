@@ -43,8 +43,9 @@ class RegressionMSENumpy(RegressionMSE[np.ndarray], MetricNumpy):
         Returns:
             The calculated MSE as a float.
         """
-        y_targ = np.asarray(y_targ, dtype=self.model.dtype, order="C")
-        diff: np.ndarray = self.diff[: y_pred.shape[0]]
+        b = self.model.real_batch_size
+        y_targ = np.asarray(y_targ[: b], dtype=self.model.dtype, order="C")
+        diff: np.ndarray = self.diff[: b]
         # return np.square(y_targ - y_pred).mean()
         np.subtract(y_targ, y_pred, dtype=self.model.dtype, out=diff)
         np.square(diff, out=diff, dtype=self.model.dtype, casting="unsafe")

@@ -48,7 +48,7 @@ class RegressionMSEPycuda(RegressionMSE[TensorArray], MetricPycuda):
         Returns:
             The calculated MSE as a float.
         """
-        n = y_pred.shape[0]
+        n = self.model.real_batch_size
         num_classes = y_pred.shape[1]
 
         self.res.fill(0)

@@ -43,8 +43,9 @@ class KLDivergenceMetricNumpy(KLDivergenceMetric[np.ndarray], MetricNumpy):
         Returns:
             The calculated KL divergence as a float.
         """
-        y_targ = np.asarray(y_targ, dtype=self.model.dtype, order="C")
-        loss = self.loss[: y_pred.shape[0]]
+        b = self.model.real_batch_size
+        y_targ = np.asarray(y_targ[: b], dtype=self.model.dtype, order="C")
+        loss = self.loss[: b]
         # loss = np.abs(y_pred * np.log(np.abs(y_pred / (y_targ + eps) + eps)))
         np.add(y_targ, self.eps, out=loss)
         np.divide(y_pred, loss, out=loss)
@@ -54,5 +55,5 @@ class KLDivergenceMetricNumpy(KLDivergenceMetric[np.ndarray], MetricNumpy):
         np.multiply(y_pred, loss, out=loss)
         np.abs(loss, out=loss)
 
-        loss = np.sum(loss) / y_pred.shape[0]
+        loss = np.sum(loss) / b
         return loss.item()

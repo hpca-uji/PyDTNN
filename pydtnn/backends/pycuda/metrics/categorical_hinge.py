@@ -42,7 +42,7 @@ class CategoricalHingePycuda(CategoricalHinge[TensorArray], MetricPycuda):
         Returns:
             The computed categorical hinge loss as a float.
         """
-        n = y_pred.shape[0]
+        n = self.model.real_batch_size
 
         self.res.fill(0)
         self.local_res.fill(0)

@@ -59,14 +59,15 @@ class BinaryConfusionMatrixNumpy(BinaryConfusionMatrix[np.ndarray], MetricNumpy)
               |F| FP | TN |
         """
 
-        y_targ = np.asarray(y_targ, dtype=self.model.dtype, order="C")
+        b = self.model.real_batch_size
+        y_targ = np.asarray(y_targ[:b], dtype=self.model.dtype, order="C")
         # NOTE: y_pred.shape == y_targ.shape == (n<=self.model.batch_size, self.model.output_shape)
-        n, target_classes = y_pred.shape
+        _, target_classes = y_pred.shape
         # assert target_classes == pred_classes, f"target_classes ({target_classes}) != pred_classes {pred_classes},"
         #                                           " and must have the same value."
         self.conf_matrix.fill(0)
 
-        for i in range(n):
+        for i in range(b):
             for label in range(target_classes):
                 expected = bool(
                     np.isclose(y_targ[i, label], y_pred[i, label], rtol=1e-03, atol=1e-3)

@@ -44,7 +44,7 @@ class CategoricalAccuracyNumpy(CategoricalAccuracy[np.ndarray], MetricNumpy):
             The calculated accuracy as a percentage.
         """
         y_targ = np.asarray(y_targ, dtype=self.model.dtype, order="C")
-        b = y_targ.shape[0]
+        b = self.model.real_batch_size
         _argmax = self._argmax[:b]
         # return np.sum(y_targ[np.arange(b), np.argmax(y_pred, axis=1)]) * 100 / b
 

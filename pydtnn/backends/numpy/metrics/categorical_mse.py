@@ -23,7 +23,7 @@ class CategoricalMSENumpy(CategoricalMSE[np.ndarray], MetricNumpy):
         """Initializes model-specific parameters and memory tracking for the metric."""
         super()._model_init()
 
-        self.error: np.ndarray = None
+        self.error: np.ndarray = None  # pyright: ignore[reportAttributeAccessIssue]
         self.tmp_memory_used += int(math.prod(self.shape)) * self.model.dtype.itemsize
         self.memory_used += self.tmp_memory_used
 
@@ -44,8 +44,9 @@ class CategoricalMSENumpy(CategoricalMSE[np.ndarray], MetricNumpy):
         Returns:
             The calculated mean squared error as a float.
         """
-        y_targ = np.asarray(y_targ, dtype=self.model.dtype, order="C")
-        error = self.error[: y_pred.shape[0]]
+        b = self.model.real_batch_size
+        y_targ = np.asarray(y_targ[: b], dtype=self.model.dtype, order="C")
+        error = self.error[: b]
         # return np.square(1 - y_pred[np.arange(b), np.argmax(y_targ, axis=1)]).mean()
         np.subtract(y_pred, y_targ, dtype=self.model.dtype, out=error)
         np.power(error, 2, out=error, dtype=self.model.dtype, casting="unsafe")

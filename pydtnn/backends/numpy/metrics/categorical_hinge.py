@@ -57,11 +57,12 @@ class CategoricalHingeNumpy(CategoricalHinge[np.ndarray], MetricNumpy):
         Returns:
             The computed categorical hinge loss as a float.
         """
-        y_targ = np.asarray(y_targ, dtype=self.model.dtype, order="C")
-        _pos: np.ndarray = self._pos[: y_pred.shape[0]]
-        _neg: np.ndarray = self._neg[: y_pred.shape[0]]
-        pos_maxm: np.ndarray = self.pos_maxm[: y_pred.shape[0]]
-        neg: np.ndarray = self.neg[: y_pred.shape[0]]
+        b = self.model.real_batch_size
+        y_targ = np.asarray(y_targ[: b], dtype=self.model.dtype, order="C")
+        _pos: np.ndarray = self._pos[: b]
+        _neg: np.ndarray = self._neg[: b]
+        pos_maxm: np.ndarray = self.pos_maxm[: b]
+        neg: np.ndarray = self.neg[: b]
 
         # pos = np.sum(y_targ * y_pred, axis=-1)
         # neg = np.max((1.0 - y_targ) * y_pred, axis=-1)
