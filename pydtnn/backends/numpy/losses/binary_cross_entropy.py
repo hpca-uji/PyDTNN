@@ -31,7 +31,7 @@ class BinaryCrossEntropyNumpy(BinaryCrossEntropy[np.ndarray], LossNumpy):
         self.memory_used += self.tmp_memory_used
 
         # The following attribute will be initialized later
-        self._argmax: np.ndarray = None # pyright: ignore[reportAttributeAccessIssue]
+        self._argmax: np.ndarray = None  # pyright: ignore[reportAttributeAccessIssue]
 
     def _post_init(self) -> None:
         """Allocate memory buffers for intermediate calculations."""
