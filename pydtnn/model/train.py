@@ -188,16 +188,11 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
 
             local_loss += batch_loss
 
-            # if local_batch_size <= 0:
-            #     if self.comm_rank == 0:
-            #         assert pbar
-            #         pbar.set_postfix_str(s=f"{string}, waiting…", refresh=True)
-
             if sync_model:
+                diff_loss = local_loss - global_loss
                 if self.comm:
-                    local_loss = self.comm.allreduce(local_loss)
-                global_loss += local_loss
-                local_loss.fill(0)
+                    diff_loss = self.comm.allreduce(diff_loss)
+                global_loss += diff_loss
 
             string = self._update_status(
                 pbar=pbar,

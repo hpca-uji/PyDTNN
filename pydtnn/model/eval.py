@@ -82,7 +82,7 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
         string = ""
         size = metric[-1]
         if not size:
-            return "waiting…"
+            return "processing…"
         for c in range(len(self.loss_and_metrics)):
             loss_str = self.loss_and_metrics_format[c]
             if loss_str:
@@ -243,10 +243,10 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
             local_loss += batch_loss
 
             if sync_model:
+                diff_loss = local_loss - global_loss
                 if self.comm:
-                    local_loss = self.comm.allreduce(local_loss)
-                global_loss += local_loss
-                local_loss.fill(0)
+                    diff_loss = self.comm.allreduce(diff_loss)
+                global_loss += diff_loss
 
             string = self._update_status(
                 pbar=pbar,
