@@ -1,4 +1,4 @@
-"""2D Max Pooling layer implementation for the PyDTNN framework."""
+"""Log layer implementation for the PyDTNN framework."""
 
 import logging
 
