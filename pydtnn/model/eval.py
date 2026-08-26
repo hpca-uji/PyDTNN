@@ -262,7 +262,7 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
         self._evaluate_round += 1
         return (model_sync_count, sync_epoch, string)
 
-    def evaluate(self) -> None:
+    def evaluate(self) -> dict[str, list[np.ndarray]]:
         """
         Runs the full evaluation process on the test dataset.
 
@@ -326,6 +326,18 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
             pbar.close()
             # Sleep for half a second to allow pbar to write its output before returning
             time.sleep(0.5)
+
+        for m in range(len(self.loss_and_metrics)):
+            self.history[
+                f"{Dataset.Part.TEST._name_.lower()}_" + self.loss_and_metrics[m]
+            ].append(test_global_loss[m])
+
+        for m in range(len(self.loss_and_metrics)):
+            value = self.loss_and_metrics_format[m](test_global_loss[m])
+            if "\n" in value:
+                logger.info(f"{Dataset.Part.TEST._name_.lower()}_{value}")
+
+        return self.history
 
     def calculate_time(self) -> np.ndarray:
         """

@@ -393,6 +393,13 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
 
         self.optimizer._post_init()
 
+        lms = [
+            f"{part._name_.lower()}_{m}"
+            for m in self.loss_and_metrics
+            for part in Dataset.Part
+        ]
+        self.history = {lm: [] for lm in lms}
+
         self.tracer.define_event_types(self)
 
     def _ensure_runnable(self) -> None:

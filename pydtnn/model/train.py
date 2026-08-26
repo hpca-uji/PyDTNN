@@ -223,12 +223,6 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
             )
             self.y_batch = tensor_ary  # pyright: ignore[reportAttributeAccessIssue]
 
-        self.history = {
-            lm: []
-            for lm in [f"{Dataset.Part.TRAIN._name_.lower()}_{m}" for m in self.loss_and_metrics]
-            + [f"{Dataset.Part.VAL._name_.lower()}_{m}" for m in self.loss_and_metrics]
-        }
-
         self.comm_nsamples = tuple(
             zip(
                 *(
@@ -298,16 +292,16 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
             train_global_loss[:-1] /= train_global_loss[-1]
             sync_epoch = sync_epoch or train_sync_epoch
 
-            for m in range(len(self.loss_and_metrics)):
-                self.history[
-                    f"{Dataset.Part.TRAIN._name_.lower()}_" + self.loss_and_metrics[m]
-                ].append(train_global_loss[m])
-
             if self.comm_rank == 0:
                 assert pbar
                 pbar.close()
                 # Sleep for half a second to allow pbar to write its output before returning
                 time.sleep(0.5)
+
+            for m in range(len(self.loss_and_metrics)):
+                self.history[
+                    f"{Dataset.Part.TRAIN._name_.lower()}_" + self.loss_and_metrics[m]
+                ].append(train_global_loss[m])
 
             # --- VAL ---
             if self.comm_rank == 0:
@@ -339,16 +333,16 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
             val_global_loss[:-1] /= val_global_loss[-1]
             sync_epoch = sync_epoch or val_sync_epoch
 
-            for m in range(len(self.loss_and_metrics)):
-                self.history[
-                    f"{Dataset.Part.VAL._name_.lower()}_" + self.loss_and_metrics[m]
-                ].append(val_global_loss[m])
-
             if self.comm_rank == 0:
                 assert pbar
                 pbar.close()
                 # Sleep for half a second to allow pbar to write its output before returning
                 time.sleep(0.5)
+
+            for m in range(len(self.loss_and_metrics)):
+                self.history[
+                    f"{Dataset.Part.VAL._name_.lower()}_" + self.loss_and_metrics[m]
+                ].append(val_global_loss[m])
 
             for sched in self.schedulers:
                 sched.on_epoch_end(train_global_loss, val_global_loss)
@@ -356,12 +350,12 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
                     terminate = True
 
             for m in range(len(self.loss_and_metrics)):
-                value = self.loss_and_metrics_format[m](train_global_loss[m] / train_global_loss[-1])
+                value = self.loss_and_metrics_format[m](train_global_loss[m])
                 if "\n" in value:
                     logger.info(f"{Dataset.Part.TRAIN._name_.lower()}_{value}")
 
             for m in range(len(self.loss_and_metrics)):
-                value = self.loss_and_metrics_format[m](val_global_loss[m] / val_global_loss[-1])
+                value = self.loss_and_metrics_format[m](val_global_loss[m])
                 if "\n" in value:
                     logger.info(f"{Dataset.Part.VAL._name_.lower()}_{value}")
 
