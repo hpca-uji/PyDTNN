@@ -47,7 +47,7 @@ class NegativeLikelihoodNumpy(NegativeLikelihood[np.ndarray], LossNumpy):
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> tuple[float, np.ndarray]:
         """
-        Compute the categorical cross entropy loss and gradients.
+        Compute the Negative Likelihood loss and gradients.
 
         Args:
             y_pred: Predicted probabilities.
