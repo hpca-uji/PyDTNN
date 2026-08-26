@@ -67,7 +67,6 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
 
         has_batch = x_batch.shape[0] > 0
 
-        dx: T
         if has_batch:
             # Forward pass (FP)
             for layer in self.layers:
@@ -86,7 +85,7 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
                 )
             loss, dx = 0.0, y_targ
 
-        metrics = None
+        metrics: np.ndarray | None = None
         metrics, _ = self._compute_metrics_funcs(x, y_targ, loss, self.real_batch_size)
         assert metrics is not None
 
