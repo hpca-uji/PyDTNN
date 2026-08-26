@@ -57,6 +57,6 @@ def vgg16bn(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layer
     _(FC(shape=(512,), weights_initializer=he_uniform))
     _(BatchNormalization())
     _(Relu())
-    _(FC(shape=output_shape, activation=Softmax, weights_initializer=he_uniform))
+    _(FC(shape=output_shape, activation=LogSoftmax, weights_initializer=he_uniform))
 
     return model

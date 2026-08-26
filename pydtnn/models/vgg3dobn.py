@@ -48,7 +48,6 @@ def vgg3dobn(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Laye
     _(Relu())
     _(BatchNormalization())
     _(Dropout(rate=0.5))
-    _(FC(shape=output_shape, weights_initializer=he_uniform))
-    _(Softmax())
+    _(FC(shape=output_shape, activation=LogSoftmax, weights_initializer=he_uniform))
 
     return model
