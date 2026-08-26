@@ -7,14 +7,14 @@ from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 
 from pydtnn.backends.pycuda.losses.abstract.loss import LossPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.losses.categorical_cross_entropy import CategoricalCrossEntropy
+from pydtnn.losses.cross_entropy import CrossEntropy
 
 __all__ = ("CrossEntropyPycuda",)
 
 logger = logging.getLogger(__name__)
 
 
-class CrossEntropyPycuda(CategoricalCrossEntropy[TensorArray], LossPycuda):
+class CrossEntropyPycuda(CrossEntropy[TensorArray], LossPycuda):
     """Cross Entropy loss implementation for PyCUDA backends."""
 
     def _model_init(self) -> None:
