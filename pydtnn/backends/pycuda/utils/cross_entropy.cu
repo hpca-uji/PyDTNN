@@ -1,7 +1,7 @@
 #define TYPE "TYPE"
 
 __global__ void cross_entropy(TYPE *y_targ, TYPE *y_pred, TYPE *loss,
-                              TYPE *weights, TYPE *dx, int *argmax,
+                              TYPE *weights, TYPE *dx, TYPE *argmax,
                               TYPE *sample_weights, int b, int n)
 {
     const int base_idx = blockIdx.x * blockDim.x + threadIdx.x;

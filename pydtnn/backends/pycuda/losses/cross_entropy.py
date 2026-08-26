@@ -20,7 +20,7 @@ class CrossEntropyPycuda(CategoricalCrossEntropy[TensorArray], LossPycuda):
     def _model_init(self) -> None:
         """Initialize GPU memory buffers and model-dependent parameters."""
         super()._model_init()
-        self.argmax = gpuarray.zeros((self.model.batch_size,), np.dtype(np.int32))
+        self.argmax = gpuarray.zeros((self.model.batch_size,), np.dtype(self.model.dtype))
         self.sample_weights = gpuarray.zeros((self.model.batch_size,), np.dtype(self.model.dtype))
         self.memory_used += self.argmax.nbytes
         self.memory_used += self.sample_weights.nbytes
