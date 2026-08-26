@@ -4,7 +4,7 @@ from collections.abc import Sequence
 
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.activations.relu6 import Relu6
-from pydtnn.activations.softmax import Softmax
+from pydtnn.activations.log_softmax import LogSoftmax
 from pydtnn.layers.average_pool_2d import AveragePool2D
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.conv_2d import Conv2D
@@ -68,6 +68,6 @@ def mobilenetv1_tensorflow(
     _(Flatten())
     _(FC(shape=(512,), activation=Relu6))
     _(Dropout(0.3))
-    _(FC(shape=output_shape, activation=Softmax))
+    _(FC(shape=output_shape, activation=LogSoftmax))
 
     return model

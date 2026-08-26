@@ -4,7 +4,7 @@ from collections.abc import Sequence
 
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.activations.relu import Relu
-from pydtnn.activations.softmax import Softmax
+from pydtnn.activations.log_softmax import LogSoftmax
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.dropout import Dropout
@@ -57,6 +57,6 @@ def vgg11bn(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layer
     _(FC(shape=(512,), weights_initializer=he_uniform))
     _(BatchNormalization())
     _(Relu())
-    _(FC(shape=output_shape, activation=Softmax, weights_initializer=he_uniform))
+    _(FC(shape=output_shape, activation=LogSoftmax, weights_initializer=he_uniform))
 
     return model

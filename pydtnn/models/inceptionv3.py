@@ -4,7 +4,7 @@ from collections.abc import Sequence
 
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.activations.relu import Relu
-from pydtnn.activations.softmax import Softmax
+from pydtnn.activations.log_softmax import LogSoftmax
 from pydtnn.layers.average_pool_2d import AveragePool2D
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.concatenation_block import ConcatenationBlock
@@ -278,6 +278,6 @@ def inceptionv3(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[L
     _(FC(shape=(1024,)))
     _(BatchNormalization())
     _(Relu())
-    _(FC(shape=output_shape, activation=Softmax))
+    _(FC(shape=output_shape, activation=LogSoftmax))
 
     return model

@@ -3,6 +3,7 @@
 from collections.abc import Sequence
 
 from pydtnn.abstract.layerable import Layerable
+from pydtnn.activations.log_softmax import LogSoftmax
 from pydtnn.activations.relu import Relu
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.fc import FC
@@ -47,6 +48,6 @@ def vgg_cyclone(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[L
     _(FC(shape=(256,), activation=Relu))
     _(FC(shape=(128,), activation=Relu))
     _(FC(shape=(64,), activation=Relu))
-    _(FC(shape=output_shape))
+    _(FC(shape=output_shape, activation=LogSoftmax))
 
     return model

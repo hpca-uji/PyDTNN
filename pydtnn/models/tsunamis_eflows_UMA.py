@@ -4,7 +4,7 @@ from collections.abc import Sequence
 
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.activations.relu import Relu
-from pydtnn.activations.sigmoid import Sigmoid
+from pydtnn.activations.log_sigmoid import LogSigmoid
 from pydtnn.layers.average_pool_2d import AveragePool2D
 from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.conv_2d import Conv2D
@@ -103,6 +103,6 @@ def tsunamis_eflows_uma(input_shape: ArrayShape, output_shape: ArrayShape) -> Se
     for fc in range(3):
         _(FC(shape=(500,), activation=Relu))
 
-    _(FC(shape=output_shape, activation=Sigmoid))
+    _(FC(shape=output_shape, activation=LogSigmoid))
 
     return model

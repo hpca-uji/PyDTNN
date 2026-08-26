@@ -4,7 +4,7 @@ from collections.abc import Sequence
 
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.activations.relu6 import Relu6
-from pydtnn.activations.softmax import Softmax
+from pydtnn.activations.log_softmax import LogSoftmax
 from pydtnn.layers.adaptive_average_pool_2d import AdaptiveAveragePool2D
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.conv_2d import Conv2D
@@ -91,6 +91,6 @@ def mobilenetv2_tiny(input_shape: ArrayShape, output_shape: ArrayShape) -> Seque
     _(Flatten())
     # _( FC(shape=(1024,)) )
     _(Dropout(0.2))
-    _(FC(shape=output_shape, activation=Softmax))
+    _(FC(shape=output_shape, activation=LogSoftmax))
 
     return model

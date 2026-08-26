@@ -4,7 +4,7 @@ from collections.abc import Sequence
 
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.activations.relu import Relu
-from pydtnn.activations.softmax import Softmax
+from pydtnn.activations.log_softmax import LogSoftmax
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.fc import FC
 from pydtnn.layers.flatten import Flatten
@@ -48,7 +48,7 @@ def vgg16(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerab
     _(Flatten())
     _(FC(shape=(4096,), activation=Relu))
     _(FC(shape=(4096,), activation=Relu))
-    _(FC(shape=output_shape, activation=Softmax))
+    _(FC(shape=output_shape, activation=LogSoftmax))
 
     return model
 
@@ -75,7 +75,7 @@ def vgg8(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerabl
 
     _(Flatten())
     _(FC(shape=(512,), activation=Relu))
-    _(FC(shape=output_shape, activation=Softmax))
+    _(FC(shape=output_shape, activation=LogSoftmax))
 
     return model
 
@@ -102,7 +102,7 @@ def vgg6(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerabl
 
     _(Flatten())
     _(FC(shape=(256,), activation=Relu))
-    _(FC(shape=output_shape, activation=Softmax))
+    _(FC(shape=output_shape, activation=LogSoftmax))
 
     return model
 

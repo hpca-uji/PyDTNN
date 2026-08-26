@@ -4,7 +4,7 @@ from collections.abc import Sequence
 
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.activations.relu import Relu
-from pydtnn.activations.softmax import Softmax
+from pydtnn.activations.log_softmax import LogSoftmax
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.dropout import Dropout
 from pydtnn.layers.fc import FC
@@ -95,6 +95,6 @@ def vgg3do2(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layer
     _(Flatten())
     _(FC(shape=(128,), activation=Relu, weights_initializer=he_uniform))
     _(Dropout(rate=0.5))
-    _(FC(shape=output_shape, activation=Softmax))
+    _(FC(shape=output_shape, activation=LogSoftmax))
 
     return model
