@@ -2,7 +2,7 @@
 
 import logging
 import typing
-from enum import StrEnum, auto
+from enum import Flag, StrEnum, auto
 
 import numpy as np
 
@@ -50,6 +50,10 @@ class Parameters(StrEnum):
     DW = auto()
     BIASES = auto()
     DB = auto()
+
+class SyncMode(Flag):
+    GRADIENT = auto()
+    WEIGHT = auto()
 
 
 # NOTE: It is necessary to have "ArrayShape" initialized before TensorGPU

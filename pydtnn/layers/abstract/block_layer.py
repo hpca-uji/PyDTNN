@@ -4,9 +4,8 @@ import logging
 from typing import Any
 
 from pydtnn.layers.abstract.layer import Layer
-from pydtnn.model.sync import SyncMode
 from pydtnn.optimizers.abstract.optimizer import Optimizer
-from pydtnn.utils.constants import Array, ArrayShape
+from pydtnn.utils.constants import Array, ArrayShape, SyncMode
 
 __all__ = ("AbstractBlockLayer",)
 

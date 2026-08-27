@@ -15,12 +15,11 @@ from pydtnn.datasets.abstract import Dataset
 from pydtnn.layers.input import Input
 from pydtnn.model.base import Base
 from pydtnn.model.eval import Eval
-from pydtnn.model.sync import SyncMode
 from pydtnn.schedulers import select as select_scheduler
 from pydtnn.schedulers.abstract.scheduler import Scheduler
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT,
                                    PYDTNN_MDL_EVENTS, MdlEventEnum)
-from pydtnn.utils.constants import Array
+from pydtnn.utils.constants import Array, SyncMode
 from pydtnn.utils.logs import TqdmLogger
 
 __all__ = ("Train",)

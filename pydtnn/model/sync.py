@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from enum import Flag, auto
 import logging
 from typing import TYPE_CHECKING
 
@@ -14,7 +13,7 @@ from pydtnn.model.base import Base
 from pydtnn.model.init import Init
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT,
                                    PYDTNN_MDL_EVENTS, MdlEventEnum)
-from pydtnn.utils.constants import Array
+from pydtnn.utils.constants import Array, SyncMode
 
 if TYPE_CHECKING:
     from pympi.MPI import Request
@@ -22,10 +21,6 @@ if TYPE_CHECKING:
 __all__ = ("Sync",)
 
 logger = logging.getLogger(__name__)
-
-class SyncMode(Flag):
-    GRADIENT: auto()
-    WEIGHT: auto()
 
 class Sync[T: Array](Init[T]):  # noqa: D101 (generics not detected)
     """
