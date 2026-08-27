@@ -33,6 +33,15 @@ class Sync[T: Array](Init[T]):  # noqa: D101 (generics not detected)
     encoding, decoding, and performing collective communication reductions.
     """
 
+    def _model_init(self) -> None:
+        super()._model_init()
+        if self.use_blocking_mpi:
+            self._update_parameters = self._update_parameters_blocking_mpi
+        elif self.parallel_pipeline:
+            self._update_parameters = self._update_parameters_parallel_pipeline
+        else:
+            self._update_parameters = self._update_parameters_non_blocking_non_parallel_pipeline
+
     def _layer_reduce_encode(self, data: np.ndarray) -> np.ndarray:
         """
         Prepares data for reduction by applying weights, quantization, and encryption.
@@ -150,15 +159,21 @@ class Sync[T: Array](Init[T]):  # noqa: D101 (generics not detected)
 
     def _update_parameters(self, parameters: ReductionParameter) -> None:
         """Updates model weights or gradients based on the configured synchronization strategy."""
+        raise NotImplementedError("This is a fake method, use an actual _update_parameters_* method")
 
-        if self.use_blocking_mpi:
-            self._model_reduce_sync(parameters)
-        elif self.parallel_pipeline:
-            self._model_reduce_wait(parameters)
-            self._model_reduce_async(parameters)
-        else:
-            self._model_reduce_async(parameters)
-            self._model_reduce_wait(parameters)
+    def _update_parameters_blocking_mpi(self, parameters: ReductionParameter) -> None:
+        """Updates the weights or gradients with a blocking MPI reduction."""
+        self._model_reduce_sync(parameters)
+
+    def _update_parameters_parallel_pipeline(self, parameters: ReductionParameter) -> None:
+        """Updates the weights or gradients using a parallel pipeline."""
+        self._model_reduce_wait(parameters)
+        self._model_reduce_async(parameters)
+
+    def _update_parameters_non_blocking_non_parallel_pipeline(self, parameters: ReductionParameter) -> None:
+        """Updates the weights or gradients using a non-blocking parallel pipeline."""
+        self._model_reduce_async(parameters)
+        self._model_reduce_wait(parameters)
 
     def _compute_rank_weight(self, mask: list[int], part: Dataset.Part) -> float:
         """Calculates the weight contribution of the current rank based on dataset participation."""
