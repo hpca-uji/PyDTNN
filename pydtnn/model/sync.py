@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from enum import IntFlag, auto
 import logging
 from typing import TYPE_CHECKING
 
@@ -22,6 +23,9 @@ __all__ = ("Sync",)
 
 logger = logging.getLogger(__name__)
 
+class ReductionParameter(IntFlag):
+    GRADIENT: auto()
+    WEIGHT: auto()
 
 class Sync[T: Array](Init[T]):  # noqa: D101 (generics not detected)
     """
@@ -45,7 +49,7 @@ class Sync[T: Array](Init[T]):  # noqa: D101 (generics not detected)
             data = np.astype(data, self.model_sync_dtype)
 
         if self.crypt:
-            data = self.crypt.encrypt(data)
+            data = self.crypt.encrypt(data)  # pyright: ignore[reportAssignmentType]
 
         return data
 
@@ -61,7 +65,7 @@ class Sync[T: Array](Init[T]):  # noqa: D101 (generics not detected)
         """
 
         if self.crypt:
-            data = self.crypt.decrypt(data)
+            data = self.crypt.decrypt(data)  # pyright: ignore[reportArgumentType]
 
         if self.model_sync_quantize:
             data = np.astype(data, self.dtype)
@@ -117,46 +121,44 @@ class Sync[T: Array](Init[T]):  # noqa: D101 (generics not detected)
             data = response
         return data
 
-    def _model_reduce_sync(self, gradient: bool = True) -> None:
+    def _model_reduce_sync(self, parameters: ReductionParameter) -> None:
         """Performs a synchronous all-reduce operation on model weights or gradients."""
         for layer in self.layers:
             self.tracer.emit_event(
                 PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + MdlEventEnum.ALLREDUCE_DW
             )
-            layer.reduce_weights_sync(gradient=gradient)
+            layer.reduce_values_sync(parameters=parameters)
             self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
-    def _model_reduce_async(self, gradient: bool = True) -> None:
+    def _model_reduce_async(self, parameters: ReductionParameter) -> None:
         """Initiates an asynchronous all-reduce operation on model weights or gradients."""
         for layer in self.layers:
             self.tracer.emit_event(
                 PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + MdlEventEnum.ALLREDUCE_DW
             )
-            layer.reduce_weights_async(gradient=gradient)
+            layer.reduce_values_async(parameters=parameters)
             self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
-    def _model_reduce_wait(self, gradient: bool = True) -> None:
+    def _model_reduce_wait(self, parameters: ReductionParameter) -> None:
         """Waits for completion of pending asynchronous all-reduce operations."""
         for layer in self.layers:
             self.tracer.emit_event(
                 PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + MdlEventEnum.WAIT_DW
             )
-            layer.wait_allreduce_async(gradient=gradient)
+            layer.wait_allreduce_async(parameters=parameters)
             self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
-    # TODO: Modify the method's name.
-    def _weight_update(
-        self, gradient: bool = True, blocking: bool = True, pipeline: bool = False
-    ) -> None:
+    def _update_parameters(self, parameters: ReductionParameter) -> None:
         """Updates model weights or gradients based on the configured synchronization strategy."""
-        if blocking:
-            self._model_reduce_sync(gradient)
-        elif pipeline:
-            self._model_reduce_wait(gradient)
-            self._model_reduce_async(gradient)
+
+        if self.use_blocking_mpi:
+            self._model_reduce_sync(parameters)
+        elif self.parallel_pipeline:
+            self._model_reduce_wait(parameters)
+            self._model_reduce_async(parameters)
         else:
-            self._model_reduce_async(gradient)
-            self._model_reduce_wait(gradient)
+            self._model_reduce_async(parameters)
+            self._model_reduce_wait(parameters)
 
     def _compute_rank_weight(self, mask: list[int], part: Dataset.Part) -> float:
         """Calculates the weight contribution of the current rank based on dataset participation."""
