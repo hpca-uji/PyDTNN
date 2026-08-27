@@ -235,6 +235,15 @@ class Layerable[T: Array](Base[T]):  # noqa: D101 (generics not detected)
         """
         pass
 
+    def _reduce_weights_async(self, weights_: str) -> None:
+        raise NotImplementedError("This is an abstract method. It's necessary to use the right method instead of this.")
+
+    def _wait_allreduce_async(self, weights_: str) -> None:
+        raise NotImplementedError("This is an abstract method. It's necessary to use the right method instead of this.")
+
+    def _reduce_weights_sync(self, weights_: str) -> None:
+        raise NotImplementedError("This is an abstract method. It's necessary to use the right method instead of this.")
+
     def print_in_convdirect_format(self) -> None:
         """
         Print layer configuration in convdirect format.

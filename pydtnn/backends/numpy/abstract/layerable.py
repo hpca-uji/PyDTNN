@@ -24,17 +24,22 @@ class LayerableNumpy(Layerable[np.ndarray], BaseNumpy):
         if not self.model.comm:
             return
 
-        for w_, dw_ in self.grad_vars.items():
-            dw_ = dw_ if gradient else w_
-            dw: np.ndarray = getattr(self, dw_)
-            self.model.tracer.emit_event(
-                PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.LAYER_ENCODE
-            )
-            dw = self.model._layer_reduce_encode(dw)
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-            assert dw_ not in self.reqs_allred, f"MPI request overwritten ({dw_} not waited)!"
-            req = self.model._layer_reduce_async(dw)
-            self.reqs_allred[dw_] = req
+        # NOTE:  self.grad_vars = {[VAR]: [VAR's GRADIENT]}
+        vars_to_iterate = self.grad_vars.values() if gradient else self.grad_vars.keys()
+
+        for w_dw in vars_to_iterate:
+            self._reduce_weights_sync(w_dw)
+
+    def _reduce_weights_async(self, weights_: str) -> None:
+        weights: np.ndarray = getattr(self, weights_)
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.LAYER_ENCODE
+        )
+        weights = self.model._layer_reduce_encode(weights)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+        assert weights_ not in self.reqs_allred, f"MPI request overwritten ({weights_} not waited)!"
+        req = self.model._layer_reduce_async(weights)
+        self.reqs_allred[weights_] = req
 
     def wait_allreduce_async(self, gradient: bool = True) -> None:
         """
@@ -44,21 +49,27 @@ class LayerableNumpy(Layerable[np.ndarray], BaseNumpy):
             gradient (bool): If True, waits for gradients; otherwise, waits for weights.
         """
         # NOTE: Keep in sync with Layer
-        if not self.model.comm or self.model.use_nccl:
+        #if not self.model.comm or self.model.use_nccl:
+        if not self.model.comm:
             return
-        for w_, dw_ in self.grad_vars.items():
-            dw_ = dw_ if gradient else w_
-            dw = getattr(self, dw_)
-            req = self.reqs_allred.pop(dw_, None)
-            if req is None:
-                continue  # noqa: E701
-            dw = self.model._layer_reduce_wait(dw, req)
-            self.model.tracer.emit_event(
-                PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.LAYER_DECODE
-            )
-            dw = self.model._layer_reduce_decode(dw)
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-            setattr(self, dw_, dw)
+
+        # NOTE:  self.grad_vars = {[VAR]: [VAR's GRADIENT]}
+        vars_to_iterate = self.grad_vars.values() if gradient else self.grad_vars.keys()
+        for w_dw in vars_to_iterate:
+            self._wait_allreduce_async(w_dw)
+
+    def _wait_allreduce_async(self, weights_: str) -> None:
+        weights = getattr(self, weights_)
+        req = self.reqs_allred.pop(weights_, None)
+        if req is None:
+            return
+        weights = self.model._layer_reduce_wait(weights, req)
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.LAYER_DECODE
+        )
+        weights = self.model._layer_reduce_decode(weights)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+        setattr(self, weights_, weights)
 
     def reduce_weights_sync(self, gradient: bool = True) -> None:
         """
@@ -70,27 +81,33 @@ class LayerableNumpy(Layerable[np.ndarray], BaseNumpy):
         # NOTE: Keep in sync with Layer
         if not self.model.comm:
             return
-        for w_, dw_ in self.grad_vars.items():
-            dw_ = dw_ if gradient else w_
-            dw: np.ndarray = getattr(self, dw_)
 
-            self.model.tracer.emit_event(
-                PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.LAYER_ENCODE
-            )
-            dw = self.model._layer_reduce_encode(dw)
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+        # NOTE:  self.grad_vars = {[VAR]: [VAR's GRADIENT]}
+        vars_to_iterate = self.grad_vars.values() if gradient else self.grad_vars.keys()
 
-            self.model.tracer.emit_event(
-                PYDTNN_OPS_EVENT,
-                self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.OPS_ALLREDUCE_DW,
-            )
-            dw = self.model._layer_reduce_sync(dw)
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+        for w_dw in vars_to_iterate:
+            self._reduce_weights_sync(w_dw)
 
-            self.model.tracer.emit_event(
-                PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.LAYER_DECODE
-            )
-            dw = self.model._layer_reduce_decode(dw)
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+    def _reduce_weights_sync(self, weights_: str) -> None:
+        weights: np.ndarray = getattr(self, weights_)
+        
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.LAYER_ENCODE
+        )
+        weights = self.model._layer_reduce_encode(weights)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-            setattr(self, dw_, dw)
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT,
+            self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.OPS_ALLREDUCE_DW,
+        )
+        weights = self.model._layer_reduce_sync(weights)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.LAYER_DECODE
+        )
+        weights = self.model._layer_reduce_decode(weights)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+
+        setattr(self, weights_, weights)
