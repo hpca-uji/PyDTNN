@@ -326,10 +326,7 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
 
     def _model_init(self) -> None:
         """Finalizes model initialization, including memory allocation and component setup."""
-        if self._model_inited:
-            return
         self._model_inited = True
-
         temp_memory_size = []
         self.random.seed(self.random_seed)  # pyright: ignore[reportAttributeAccessIssue]
         self._layer_ids = iter(itertools.count())
@@ -402,4 +399,5 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
             raise ValueError("The model has no layers in it.")
         elif not self.dataset:
             raise ValueError("There is no dataset and the model has layers.")
-        self._model_init()
+        if not self._model_inited:
+            self._model_init()
