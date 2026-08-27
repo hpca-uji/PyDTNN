@@ -84,13 +84,8 @@ def list_modules(path: str) -> list[str]:
 
 def _get_mpi_processes() -> int:
     """Returns the number of MPI processes from the environment."""
-    try:
-        from pympi import MPI
-    except Exception:
-        mpi_processes = 1
-    else:
-        mpi_processes = MPI.COMM_WORLD.Get_size()
-    return mpi_processes
+    from pydtnn import nprocs
+    return nprocs
 
 
 def _get_threads_per_process() -> int:

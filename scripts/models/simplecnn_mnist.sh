@@ -18,7 +18,7 @@ pydtnn-benchmark \
   --num-epochs=50 \
   --steps-per-epoch=0 \
   --validation-split=0.2 \
-  --no-evaluate \
+  --evaluate \
   --optimizer=sgd \
   --learning-rate=0.01 \
   --loss-func=negative_likelihood \

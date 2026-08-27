@@ -15,30 +15,30 @@ import yaml
 
 __all__ = ("main",)
 
-ompi_stdout_rank = os.environ.get("OMPI_STDOUT_RANK", None)
-if ompi_stdout_rank and os.environ.get("OMPI_COMM_WORLD_RANK", "0") != ompi_stdout_rank:
-    sys.stdout = sys.stderr = open(os.devnull, "w")
-
-Extrae_tracing = False
-if os.environ.get("EXTRAE_ON", None) == "1":
-    TracingLibrary = "libptmpitrace.so"
-    import pyextrae.common.extrae as pyextrae
-
-    pyextrae.startTracing(TracingLibrary)
-    Extrae_tracing = True
 
 logger = logging.getLogger(__name__)
-log_conf = yaml.safe_load(resources.read_text("pydtnn", "logger.yaml"))
-logging.config.dictConfig(log_conf)
 
 
 def _start() -> int:
     """System entry point"""
-    from pydtnn.utils.debug import traceback_context
+    if os.environ.get("PYEXTRAE"):
+        import pyextrae.common.extrae as pyextrae
+        pyextrae.startTracing("libptmpitrace.so")
+
+    from pydtnn import rank
+
+    if rank == 0:
+        config = yaml.safe_load(resources.read_text("pydtnn", "logger.yaml"))
+        logging.config.dictConfig(config)
+    else:
+        sys.stdout = sys.stderr = open(os.devnull, "w")
+
     from pydtnn.utils.parser import ArgumentParser
 
     parser = ArgumentParser()
     config = parser.parse_args()
+
+    from pydtnn.utils.debug import traceback_context
 
     with traceback_context():
         return main(config) or 0

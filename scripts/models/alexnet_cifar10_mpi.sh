@@ -3,7 +3,7 @@
 # set -x # Debugging flag
 export PYTHONPATH=/mnt/beegfs/users/dolzm/install/extrae-3.6.0/libexec:$PYTHONPATH
 export EXTRAE_CONFIG_FILE=./extrae.xml
-export EXTRAE_ON=1
+export PYEXTRAE=1
 #
 EXTRAELIB=/mnt/beegfs/users/dolzm/install/extrae-3.6.0/lib/libmpitrace.so
 #EXTRAELIB=/mnt/beegfs/users/dolzm/install/extrae-3.6.0/lib/libptmpitrace.so

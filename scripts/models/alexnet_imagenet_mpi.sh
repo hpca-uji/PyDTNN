@@ -4,7 +4,7 @@
 # export PYTHONPATH=/home/dolzm/install/extrae-3.6.0/libexec:$PYTHONPATH
 # export EXTRAE_CONFIG_FILE=./extrae.xml
 # export MKL_NUM_THREADS=12
-# export EXTRAE_ON=1
+# export PYEXTRAE=1
 #
 # EXTRAELIB=/home/dolzm/install/extrae-3.6.0/lib/libompitrace.so
 
