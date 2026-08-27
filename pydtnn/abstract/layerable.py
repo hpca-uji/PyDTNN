@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 
 from pydtnn.abstract.base import Base
+from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, OpsEventEnum
 from pydtnn.utils.constants import Array, ArrayShape, Parameters
 
 __all__ = ("Layerable",)
@@ -206,7 +207,15 @@ class Layerable[T: Array](Base[T]):  # noqa: D101 (generics not detected)
         Args:
             gradient: If True, reduce gradients; otherwise, reduce weights.
         """
-        pass
+        # NOTE: Keep in sync with Layer
+        if not self.model.comm:
+            return
+
+        # NOTE:  self.grad_vars = {[VAR]: [VAR's GRADIENT]}
+        vars_to_iterate = self.grad_vars.values() if gradient else self.grad_vars.keys()
+
+        for w_dw in vars_to_iterate:
+            self._reduce_weights_async(w_dw)
 
     def wait_allreduce_async(self, gradient: bool = True) -> None:
         """
@@ -219,7 +228,15 @@ class Layerable[T: Array](Base[T]):  # noqa: D101 (generics not detected)
         Args:
             gradient: If True, wait for gradients; otherwise, wait for weights.
         """
-        pass
+        # NOTE: Keep in sync with Layer
+        if not self.model.comm:
+            return
+
+        # NOTE:  self.grad_vars = {[VAR]: [VAR's GRADIENT]}
+        vars_to_iterate = self.grad_vars.values() if gradient else self.grad_vars.keys()
+
+        for w_dw in vars_to_iterate:
+            self._wait_allreduce_async(w_dw)
 
     def reduce_weights_sync(self, gradient: bool = True) -> None:
         """
@@ -233,16 +250,63 @@ class Layerable[T: Array](Base[T]):  # noqa: D101 (generics not detected)
         Args:
             gradient: If True, reduce gradients; otherwise, reduce weights.
         """
-        pass
+        # NOTE: Keep in sync with Layer
+        if not self.model.comm:
+            return
+
+        # NOTE:  self.grad_vars = {[VAR]: [VAR's GRADIENT]}
+        vars_to_iterate = self.grad_vars.values() if gradient else self.grad_vars.keys()
+
+        for w_dw in vars_to_iterate:
+            self._reduce_weights_sync(w_dw)
 
     def _reduce_weights_async(self, weights_: str) -> None:
-        raise NotImplementedError("This is an abstract method. It's necessary to use the right method instead of this.")
+        weights: np.ndarray = getattr(self, weights_)
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.LAYER_ENCODE
+        )
+        weights = self.model._layer_reduce_encode(weights)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+        assert weights_ not in self.reqs_allred, f"MPI request overwritten ({weights_} not waited)!"
+        req = self.model._layer_reduce_async(weights)
+        self.reqs_allred[weights_] = req
 
     def _wait_allreduce_async(self, weights_: str) -> None:
-        raise NotImplementedError("This is an abstract method. It's necessary to use the right method instead of this.")
+        weights = getattr(self, weights_)
+        req = self.reqs_allred.pop(weights_, None)
+        if req is None:
+            return
+        weights = self.model._layer_reduce_wait(weights, req)
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.LAYER_DECODE
+        )
+        weights = self.model._layer_reduce_decode(weights)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+        setattr(self, weights_, weights)
 
     def _reduce_weights_sync(self, weights_: str) -> None:
-        raise NotImplementedError("This is an abstract method. It's necessary to use the right method instead of this.")
+        weights: np.ndarray = getattr(self, weights_)
+        
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.LAYER_ENCODE
+        )
+        weights = self.model._layer_reduce_encode(weights)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT,
+            self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.OPS_ALLREDUCE_DW,
+        )
+        weights = self.model._layer_reduce_sync(weights)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+
+        self.model.tracer.emit_event(
+            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.LAYER_DECODE
+        )
+        weights = self.model._layer_reduce_decode(weights)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+
+        setattr(self, weights_, weights)
 
     def print_in_convdirect_format(self) -> None:
         """

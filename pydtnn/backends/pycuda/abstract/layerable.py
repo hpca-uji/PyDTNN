@@ -1,5 +1,7 @@
 """PyCUDA implementation of layerable components for distributed training."""
 
+import numpy as np
+
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.backends.pycuda.abstract.base import BasePycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
@@ -27,24 +29,6 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
             self._reduce_weights_async = self._reduce_weights_async_no_nccl
             self._reduce_weights_sync = self._reduce_weights_sync_no_nccl
             self._wait_allreduce_async = self._wait_allreduce_async_no_nccl
-
-    def reduce_weights_async(self, gradient: bool = True) -> None:
-        """Initiates asynchronous weight reduction across distributed processes."""
-        # NOTE: Keep in sync with Layer
-        if not self.model.comm:
-            return
-
-        # if self.model.use_cudnn:
-        #     if self.model.use_nccl or self.model.gpudirect:
-        #        self.model.stream.synchronize()
-        #     else:
-        #        self.stream_2.synchronize()
-
-        # NOTE:  self.grad_vars = {[VAR]: [VAR's GRADIENT]}
-        vars_to_iterate = self.grad_vars.values() if gradient else self.grad_vars.keys()
-
-        for w_dw in vars_to_iterate:
-            self._reduce_weights_async(w_dw)
 
     def _reduce_weights_async_nccl(self, weights_: str) -> None:
         dw = getattr(self, weights_)
@@ -92,31 +76,8 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
         if not self.model.use_gpudirect:
             self.stream_2.synchronize()
 
-        dw_cpu = getattr(self, f"{weights_}_cpu")
-        # NOTE: Desde aquí es igual a la versión de Numpy
-        self.model.tracer.emit_event(
-            PYDTNN_OPS_EVENT,
-            self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.LAYER_ENCODE,
-        )
-        dw_cpu = self.model._layer_reduce_encode(dw_cpu)
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-
-        assert weights_ not in self.reqs_allred, f"MPI request overwritten ({weights_} not waited)!"
-        req = self.model._layer_reduce_async(dw_cpu)
-        self.reqs_allred[weights_] = req
-        # NOTE: Has aquí es igual a la versión de Numpy
-
-    def wait_allreduce_async(self, gradient: bool = True) -> None:
-        """Waits for completion of asynchronous weight reduction operations."""
-        # NOTE: Keep in sync with Layer
-        if not self.model.comm:
-            return
-
-        # NOTE:  self.grad_vars = {[VAR]: [VAR's GRADIENT]}
-        vars_to_iterate = self.grad_vars.values() if gradient else self.grad_vars.keys()
-
-        for w_dw in vars_to_iterate:
-            self._wait_allreduce_async(w_dw)
+        weights_cpu_: str = f"{weights_}_cpu"
+        super()._reduce_weights_async(weights_cpu_)
 
     def _wait_allreduce_async_nccl(self, weights_: str) -> None:
         # self.model.stream.synchronize()
@@ -140,39 +101,14 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
         #                            stream=self.stream_2.handle)
 
     def _wait_allreduce_async_no_nccl(self, weights_: str) -> None:
-        weights_cpu = getattr(self, f"{weights_}_cpu")
-        req = self.reqs_allred.pop(weights_, None)
-        if req is None:
-            return
-        weights_cpu = self.model._layer_reduce_wait(weights_cpu, req)
+        weights_cpu_:str = f"{weights_}_cpu"
+        super()._wait_allreduce_async(weights_cpu_)
 
-        self.model.tracer.emit_event(
-            PYDTNN_OPS_EVENT,
-            self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.LAYER_DECODE,
-        )
-        weights_cpu = self.model._layer_reduce_decode(
-            weights_cpu
-        )  # FIXME: dw and dw_cpu relation unclear
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        setattr(self, f"{weights_}_cpu", weights_cpu)
-
-        dw = getattr(self, weights_)
-        weights_cpu = getattr(self, f"{weights_}_cpu")
+        weights = getattr(self, weights_)
+        weights_cpu = getattr(self, weights_cpu_)
 
         # If there is no CUDA-aware MPI, copy data back to GPU
-        dw.set_async(weights_cpu, self.stream_2)
-
-    def reduce_weights_sync(self, gradient: bool = True) -> None:
-        """Performs synchronous weight reduction across distributed processes."""
-        # NOTE: Keep in sync with Layer
-        if not self.model.comm:
-            return
-
-        # NOTE:  self.grad_vars = {[VAR]: [VAR's GRADIENT]}
-        vars_to_iterate = self.grad_vars.values() if gradient else self.grad_vars.keys()
-
-        for w_dw in vars_to_iterate:
-            self._reduce_weights_sync(w_dw)
+        weights.set_async(weights_cpu, self.stream_2)
 
     def _reduce_weights_sync_nccl(self, weights_: str) -> None:
         # stream = self.stream_2.handle)
@@ -232,32 +168,10 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
         if not self.model.use_gpudirect:
             self.stream_2.synchronize()
 
-        # NOTE: Desde aquí, igual que el de numpy, pero trabajando con "{weights_}_cpu" en vez de con "{weights_}"
-        weights_cpu = getattr(self, f"{weights_}_cpu")
+        weights_cpu_ = f"{weights_}_cpu"
 
-        self.model.tracer.emit_event(
-            PYDTNN_OPS_EVENT,
-            self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.LAYER_ENCODE,
-        )
-        weights_cpu = self.model._layer_reduce_encode(weights_cpu)
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-
-        self.model.tracer.emit_event(
-            PYDTNN_OPS_EVENT,
-            self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.OPS_ALLREDUCE_DW,
-        )
-        weights_cpu = self.model._layer_reduce_sync(weights_cpu)
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-
-        self.model.tracer.emit_event(
-            PYDTNN_OPS_EVENT,
-            self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.LAYER_DECODE,
-        )
-        weights_cpu = self.model._layer_reduce_decode(weights_cpu)
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-
-        setattr(self, f"{weights_}_cpu", weights_cpu)
-        # NOTE: Hasta aquí, igual que el de numpy, pero trabajando con "{weights_}_cpu" en vez de con "{weights_}"
+        super()._reduce_weights_sync(weights_cpu_)
+        weights_cpu: np.ndarray = getattr(self, weights_cpu_)
 
         # If there is no CUDA-aware MPI, copy data back to GPU
         weights.set_async(weights_cpu, self.stream_2)
