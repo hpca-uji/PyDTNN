@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from enum import IntFlag, auto
+from enum import Flag, auto
 import logging
 from typing import TYPE_CHECKING
 
@@ -23,7 +23,7 @@ __all__ = ("Sync",)
 
 logger = logging.getLogger(__name__)
 
-class ReductionParameter(IntFlag):
+class SyncMode(Flag):
     GRADIENT: auto()
     WEIGHT: auto()
 
@@ -36,11 +36,11 @@ class Sync[T: Array](Init[T]):  # noqa: D101 (generics not detected)
     def _model_init(self) -> None:
         super()._model_init()
         if self.use_blocking_mpi:
-            self._update_parameters = self._update_parameters_blocking_mpi
+            self._model_sync = self._model_sync_blocking_mpi
         elif self.parallel_pipeline:
-            self._update_parameters = self._update_parameters_parallel_pipeline
+            self._model_sync = self._model_sync_parallel_pipeline
         else:
-            self._update_parameters = self._update_parameters_non_blocking_non_parallel_pipeline
+            self._model_sync = self._model_sync_non_blocking
 
     def _layer_reduce_encode(self, data: np.ndarray) -> np.ndarray:
         """
@@ -130,50 +130,50 @@ class Sync[T: Array](Init[T]):  # noqa: D101 (generics not detected)
             data = response
         return data
 
-    def _model_reduce_sync(self, parameters: ReductionParameter) -> None:
+    def _model_reduce_sync(self, parameters: SyncMode) -> None:
         """Performs a synchronous all-reduce operation on model weights or gradients."""
         for layer in self.layers:
             self.tracer.emit_event(
                 PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + MdlEventEnum.ALLREDUCE_DW
             )
-            layer.reduce_values_sync(parameters=parameters)
+            layer.reduce_state_sync(mode=parameters)
             self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
-    def _model_reduce_async(self, parameters: ReductionParameter) -> None:
+    def _model_reduce_async(self, parameters: SyncMode) -> None:
         """Initiates an asynchronous all-reduce operation on model weights or gradients."""
         for layer in self.layers:
             self.tracer.emit_event(
                 PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + MdlEventEnum.ALLREDUCE_DW
             )
-            layer.reduce_values_async(parameters=parameters)
+            layer.reduce_state_async(mode=parameters)
             self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
-    def _model_reduce_wait(self, parameters: ReductionParameter) -> None:
+    def _model_reduce_wait(self, mode: SyncMode) -> None:
         """Waits for completion of pending asynchronous all-reduce operations."""
         for layer in self.layers:
             self.tracer.emit_event(
                 PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + MdlEventEnum.WAIT_DW
             )
-            layer.wait_allreduce_async(parameters=parameters)
+            layer.reduce_state_wait(mode=mode)
             self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
-    def _update_parameters(self, parameters: ReductionParameter) -> None:
+    def _model_sync(self, mode: SyncMode) -> None:
         """Updates model weights or gradients based on the configured synchronization strategy."""
-        raise NotImplementedError("This is a fake method, use an actual _update_parameters_* method")
+        raise NotImplementedError("This is a fake method, use an actual _model_sync_* method")
 
-    def _update_parameters_blocking_mpi(self, parameters: ReductionParameter) -> None:
+    def _model_sync_blocking_mpi(self, mode: SyncMode) -> None:
         """Updates the weights or gradients with a blocking MPI reduction."""
-        self._model_reduce_sync(parameters)
+        self._model_reduce_sync(mode)
 
-    def _update_parameters_parallel_pipeline(self, parameters: ReductionParameter) -> None:
+    def _model_sync_parallel_pipeline(self, mode: SyncMode) -> None:
         """Updates the weights or gradients using a parallel pipeline."""
-        self._model_reduce_wait(parameters)
-        self._model_reduce_async(parameters)
+        self._model_reduce_wait(mode)
+        self._model_reduce_async(mode)
 
-    def _update_parameters_non_blocking_non_parallel_pipeline(self, parameters: ReductionParameter) -> None:
+    def _model_sync_non_blocking(self, mode: SyncMode) -> None:
         """Updates the weights or gradients using a non-blocking parallel pipeline."""
-        self._model_reduce_async(parameters)
-        self._model_reduce_wait(parameters)
+        self._model_reduce_async(mode)
+        self._model_reduce_wait(mode)
 
     def _compute_rank_weight(self, mask: list[int], part: Dataset.Part) -> float:
         """Calculates the weight contribution of the current rank based on dataset participation."""

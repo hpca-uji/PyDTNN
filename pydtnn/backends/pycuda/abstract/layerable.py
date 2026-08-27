@@ -22,32 +22,32 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
     def _model_init(self, prev_shape: tuple[int, ...], x: TensorArray | None) -> None:
         super()._model_init(prev_shape, x)
         if self.model.use_nccl:
-            self._reduce_values_async = self._reduce_values_async_nccl
-            self._reduce_values_sync = self._reduce_values_sync_nccl
+            self._reduce_state_async = self._reduce_state_async_nccl
+            self._reduce_state_sync = self._reduce_state_sync_nccl
             self._wait_allreduce_async = self._wait_allreduce_async_nccl
         else:
-            self._reduce_values_async = self._reduce_values_async_no_nccl
-            self._reduce_values_sync = self._reduce_values_sync_no_nccl
+            self._reduce_state_async = self._reduce_state_async_no_nccl
+            self._reduce_state_sync = self._reduce_state_sync_no_nccl
             self._wait_allreduce_async = self._wait_allreduce_async_no_nccl
 
-    def _reduce_values_async_nccl(self, values_: str) -> None:
-        values = getattr(self, values_)
+    def _reduce_state_async_nccl(self, state_: str) -> None:
+        state = getattr(self, state_)
         assert nccl is not None
 
         # self.model.stream.synchronize()
-        values *= self.model.rank_weight
+        state *= self.model.rank_weight
         # TODO: self.model._encode_reduce
         nccl.ncclAllReduce(
-            values.ptr,
-            values.ptr,
-            values.size,
+            state.ptr,
+            state.ptr,
+            state.size,
             self.model.nccl_type,
             nccl.RedOp.Sum,
             comm=self.model.nccl_comm,
             stream=self.stream_2.handle,
         )
 
-        # NOTE: values where called "dw" before the renaming.
+        # NOTE: state where called "dw" before the renaming.
         # # Hierarchical mode NCCL + MPI
         # if len(self.model.inter_ranks) == 1:
         #     nccl.ncclAllReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type,
@@ -67,7 +67,7 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
         #         self.stream_2.synchronize()
         #         req = self.model.inter_comm.Iallreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
 
-    def _reduce_values_async_no_nccl(self, values_: str) -> None:
+    def _reduce_state_async_no_nccl(self, state_: str) -> None:
         # Without NCCL
         # We have asynchronously moved the dw and db to dw_cpu and db_cpu in stream_2
         # so we need to synchronize stream_2 before performing Allreduce.
@@ -77,14 +77,14 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
         if not self.model.use_gpudirect:
             self.stream_2.synchronize()
 
-        values_cpu_: str = f"{values_}_cpu"
-        super()._reduce_values_async(values_cpu_)
+        state_cpu_: str = f"{state_}_cpu"
+        super()._reduce_state_async(state_cpu_)
 
-    def _wait_allreduce_async_nccl(self, values_: str) -> None:
+    def _wait_allreduce_async_nccl(self, state_: str) -> None:
         # self.model.stream.synchronize()
-        values: TensorArray = getattr(self, values_)
+        state: TensorArray = getattr(self, state_)
         # TODO: self.model._decode_reduce
-        setattr(self, values_, values)
+        setattr(self, state_, state)
         # # Hierarchical mode NCCL + MPI
         # if self.model.use_nccl:
         #     if len(self.model.inter_ranks) == 1:
@@ -101,33 +101,33 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
         #                            root=0, comm=self.model.nccl_comm,
         #                            stream=self.stream_2.handle)
 
-    def _wait_allreduce_async_no_nccl(self, values_: str) -> None:
-        values_cpu_: str = f"{values_}_cpu"
-        super()._wait_allreduce_async(values_cpu_)
+    def _wait_allreduce_async_no_nccl(self, state_: str) -> None:
+        state_cpu_: str = f"{state_}_cpu"
+        super()._wait_allreduce_async(state_cpu_)
 
-        values = getattr(self, values_)
-        values_cpu = getattr(self, values_cpu_)
+        state = getattr(self, state_)
+        state_cpu = getattr(self, state_cpu_)
 
         # If there is no CUDA-aware MPI, copy data back to GPU
-        values.set_async(values_cpu, self.stream_2)
+        state.set_async(state_cpu, self.stream_2)
 
-    def _reduce_values_sync_nccl(self, values_: str) -> None:
+    def _reduce_state_sync_nccl(self, state_: str) -> None:
         # stream = self.stream_2.handle)
-        values = getattr(self, values_)
+        state = getattr(self, state_)
 
         assert nccl is not None
 
         # self.stream_2.synchronize()
-        values *= self.model.rank_weight
+        state *= self.model.rank_weight
         # TODO: self.model._encode_reduce
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT,
             self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.OPS_ALLREDUCE_DW,
         )
         nccl.ncclAllReduce(
-            values.ptr,
-            values.ptr,
-            values.size,
+            state.ptr,
+            state.ptr,
+            state.size,
             self.model.nccl_type,
             nccl.RedOp.Sum,
             comm=self.model.nccl_comm,
@@ -162,17 +162,17 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
         #                        root=0, comm=self.model.nccl_comm,
         #                        stream=self.stream_2.handle)
 
-    def _reduce_values_sync_no_nccl(self, values_: str) -> None:
+    def _reduce_state_sync_no_nccl(self, state_: str) -> None:
         # stream = self.stream_2.handle)
-        values = getattr(self, values_)
+        state = getattr(self, state_)
 
         if not self.model.use_gpudirect:
             self.stream_2.synchronize()
 
-        weights_cpu_ = f"{values_}_cpu"
+        weights_cpu_ = f"{state_}_cpu"
 
-        super()._reduce_values_sync(weights_cpu_)
+        super()._reduce_state_sync(weights_cpu_)
         weights_cpu: np.ndarray = getattr(self, weights_cpu_)
 
         # If there is no CUDA-aware MPI, copy data back to GPU
-        values.set_async(weights_cpu, self.stream_2)
+        state.set_async(weights_cpu, self.stream_2)

@@ -15,7 +15,7 @@ from pydtnn.datasets.abstract import Dataset
 from pydtnn.layers.input import Input
 from pydtnn.model.base import Base
 from pydtnn.model.eval import Eval
-from pydtnn.model.sync import ReductionParameter
+from pydtnn.model.sync import SyncMode
 from pydtnn.schedulers import select as select_scheduler
 from pydtnn.schedulers.abstract.scheduler import Scheduler
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT,
@@ -104,7 +104,7 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
 
         # Gradient update (GU)
         if self.model_sync_freq >= 0 and sync_model:
-            self._update_parameters(parameters=ReductionParameter.GRADIENT)
+            self._model_sync(mode=SyncMode.GRADIENT)
 
         # Optimizer
         for layer in self.layers:
@@ -116,7 +116,7 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
 
         # Weight update (WU)
         if self.model_sync_freq > 0 and sync_model:
-            self._update_parameters(parameters=ReductionParameter.WEIGHT)
+            self._model_sync(mode=SyncMode.WEIGHT)
 
         if self.use_cudnn:
             for layer in self.layers:
@@ -242,7 +242,7 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
 
         # Synchronize model
         if self.initial_model_sync:
-            self._update_parameters(parameters=ReductionParameter.GRADIENT | ReductionParameter.WEIGHT)
+            self._model_sync(mode=SyncMode.GRADIENT | SyncMode.WEIGHT)
 
         for epoch in range(self.num_epochs):
             train_batch_generator, val_batch_generator = self.dataset.get_train_val_generator()
@@ -365,11 +365,11 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
                 break
 
         # End pipelines
-        self._model_reduce_wait(parameters= ReductionParameter.GRADIENT | ReductionParameter.WEIGHT)
+        self._model_reduce_wait(mode=SyncMode.GRADIENT | SyncMode.WEIGHT)
 
         # Synchronize model
         if self.final_model_sync:
-            self._update_parameters(parameters=ReductionParameter.GRADIENT | ReductionParameter.WEIGHT)
+            self._model_sync(mode=SyncMode.GRADIENT | SyncMode.WEIGHT)
 
         self.tracer.define_event_types(self)
         return self.history

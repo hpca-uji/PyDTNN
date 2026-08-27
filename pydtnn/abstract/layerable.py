@@ -9,7 +9,7 @@ from collections.abc import Callable
 import numpy as np
 
 from pydtnn.abstract.base import Base
-from pydtnn.model.sync import ReductionParameter
+from pydtnn.model.sync import SyncMode
 from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, OpsEventEnum
 from pydtnn.utils.constants import Array, ArrayShape, Parameters
 
@@ -197,7 +197,7 @@ class Layerable[T: Array](Base[T]):  # noqa: D101 (generics not detected)
         """
         return dy
 
-    def reduce_values_async(self, parameters: ReductionParameter) -> None:
+    def reduce_state_async(self, mode: SyncMode) -> None:
         """
         Initiate asynchronous weight reduction.
 
@@ -209,9 +209,9 @@ class Layerable[T: Array](Base[T]):  # noqa: D101 (generics not detected)
         Args:
             gradient: If True, reduce gradients; otherwise, reduce weights.
         """
-        self._reduce_values(parameters, self._reduce_values_async)
+        self._reduce_state(mode, self._reduce_state_async)
 
-    def wait_allreduce_async(self, parameters: ReductionParameter) -> None:
+    def reduce_state_wait(self, mode: SyncMode) -> None:
         """
         Wait for completion of asynchronous weight reduction.
 
@@ -222,9 +222,9 @@ class Layerable[T: Array](Base[T]):  # noqa: D101 (generics not detected)
         Args:
             gradient: If True, wait for gradients; otherwise, wait for weights.
         """
-        self._reduce_values(parameters, self._wait_allreduce_async)
+        self._reduce_state(mode, self._wait_allreduce_async)
 
-    def reduce_values_sync(self, parameters: ReductionParameter) -> None:
+    def reduce_state_sync(self, mode: SyncMode) -> None:
         """
         Perform synchronous weight reduction.
 
@@ -236,79 +236,76 @@ class Layerable[T: Array](Base[T]):  # noqa: D101 (generics not detected)
         Args:
             gradient: If True, reduce gradients; otherwise, reduce weights.
         """
-        self._reduce_values(parameters, self._reduce_values_sync)
+        self._reduce_state(mode, self._reduce_state_sync)
 
-    def _reduce_values(self, parameters: ReductionParameter, reduce_operation: Callable[[str], None]) -> None:
+    def _reduce_state(self, mode: SyncMode, reduce_operation: Callable[[str], None]) -> None:
         """Method that unifies all the common steps in reductions operations"""
         # NOTE: Keep in sync with Layer
         if not self.model.comm:
             return
 
+        vars_to_iterate = list()
+
         # NOTE: self.grad_vars = {[VAR]: [VAR's GRADIENT]}
-        match parameters:
-            case ReductionParameter.GRADIENT:
-                vars_to_iterate = self.grad_vars.values()
-            case ReductionParameter.WEIGHT:
-                vars_to_iterate = self.grad_vars.keys()
-            case ReductionParameter.WEIGHT | ReductionParameter.GRADIENT:
-                vars_to_iterate = list(self.grad_vars.keys())
-                vars_to_iterate.extend(self.grad_vars.values())
-            case _:
-                raise NotImplementedError(f"Reduction not implemented for the following ReductionParameter {parameters}")
+        if SyncMode.WEIGHT in mode:
+            vars_to_iterate.extend(self.grad_vars.values())
+
+        if SyncMode.GRADIENT in mode:
+            vars_to_iterate.extend(self.grad_vars.keys())
 
         for w_dw in vars_to_iterate:
             reduce_operation(w_dw)
 
-    def _reduce_values_async(self, values_: str) -> None:
+    def _reduce_state_async(self, state_: str) -> None:
         """Method where the values are reduced asynchronously."""
-        values: np.ndarray = getattr(self, values_)
+        state: np.ndarray = getattr(self, state_)
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.LAYER_ENCODE
         )
-        values = self.model._layer_reduce_encode(values)
+        state = self.model._layer_reduce_encode(state)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        assert values_ not in self.reqs_allred, f"MPI request overwritten ({values_} not waited)!"
-        req = self.model._layer_reduce_async(values)
-        self.reqs_allred[values_] = req
+        assert state_ not in self.reqs_allred, f"MPI request overwritten ({state_} not waited)!"
+        req = self.model._layer_reduce_async(state)
+        self.reqs_allred[state_] = req
 
-    def _wait_allreduce_async(self, values_: str) -> None:
+    def _wait_allreduce_async(self, state_: str) -> None:
         """Method where the values reduced asynchronously are setted."""
-        values = getattr(self, values_)
-        req = self.reqs_allred.pop(values_, None)
+        state = getattr(self, state_)
+        req = self.reqs_allred.pop(state_, None)
         if req is None:
             return
-        values = self.model._layer_reduce_wait(values, req)
+        state = self.model._layer_reduce_wait(state, req)
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.LAYER_DECODE
         )
-        values = self.model._layer_reduce_decode(values)
+        state = self.model._layer_reduce_decode(state)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        setattr(self, values_, values)
+        setattr(self, state_, state)
 
-    def _reduce_values_sync(self, values_: str) -> None:
-        """Method where the values are reduced synchronously."""
-        values: np.ndarray = getattr(self, values_)
+    def _reduce_state_sync(self, state_: str) -> None:
+        """Method where the state are reduced synchronously."""
+        state: np.ndarray = getattr(self, state_)
         
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.LAYER_ENCODE
         )
-        values = self.model._layer_reduce_encode(values)
+        state = self.model._layer_reduce_encode(state)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT,
             self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.OPS_ALLREDUCE_DW,
         )
-        values = self.model._layer_reduce_sync(values)
+        state = self.model._layer_reduce_sync(state)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.LAYER_DECODE
         )
-        values = self.model._layer_reduce_decode(values)
+        state = self.model._layer_reduce_decode(state)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-        setattr(self, values_, values)
+        setattr(self, state_, state)
 
     def print_in_convdirect_format(self) -> None:
         """

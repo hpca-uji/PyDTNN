@@ -4,7 +4,7 @@ import logging
 from typing import Any
 
 from pydtnn.layers.abstract.layer import Layer
-from pydtnn.model.sync import ReductionParameter
+from pydtnn.model.sync import SyncMode
 from pydtnn.optimizers.abstract.optimizer import Optimizer
 from pydtnn.utils.constants import Array, ArrayShape
 
@@ -64,23 +64,23 @@ class AbstractBlockLayer[T: Array](Layer[T]):  # noqa: D101 (generics not detect
             for layer in p:
                 layer.update_weights(optimizer, update, sync)
 
-    def reduce_values_async(self, parameters: ReductionParameter) -> None:
+    def reduce_state_async(self, mode: SyncMode) -> None:
         """Initiates asynchronous weight reduction for all layers."""
         for p in self.paths:
             for layer in p:
-                layer.reduce_values_async(parameters=parameters)
+                layer.reduce_state_async(mode=mode)
 
-    def wait_allreduce_async(self, parameters: ReductionParameter) -> None:
+    def reduce_state_wait(self, mode: SyncMode) -> None:
         """Waits for completion of asynchronous weight reductions."""
         for p in self.paths:
             for layer in p:
-                layer.wait_allreduce_async(parameters=parameters)
+                layer.reduce_state_wait(mode=mode)
 
-    def reduce_values_sync(self, parameters: ReductionParameter) -> None:
+    def reduce_state_sync(self, mode: SyncMode) -> None:
         """Performs synchronous weight reduction for all layers."""
         for p in self.paths:
             for layer in p:
-                layer.reduce_values_sync(parameters=parameters)
+                layer.reduce_state_sync(mode=mode)
 
     def print_in_convdirect_format(self) -> None:
         """Prints the layer configuration in convdirect format."""
