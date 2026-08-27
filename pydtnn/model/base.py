@@ -81,7 +81,7 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
     cuda_grid: tuple[int, int, int]
     cudnn_dtype: int
     cudnn_handle: Cudnn_Handle_Type
-    history: dict[str, list[np.ndarray]]
+    history: list[dict[str, Any]]
     input_shape: ArrayShape
     kwargs: dict[str, Any]
     layers: list[Layerable[T]]

@@ -297,10 +297,10 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
                 # Sleep for half a second to allow pbar to write its output before returning
                 time.sleep(0.5)
 
-            for m in range(len(self.loss_and_metrics)):
-                self.history[
-                    f"{Dataset.Part.TRAIN._name_.lower()}_" + self.loss_and_metrics[m]
-                ].append(train_global_loss[m])
+            self.history.append({
+                f"{Dataset.Part.TRAIN._name_.lower()}_" + self.loss_and_metrics[m]: train_global_loss[m]
+                for m in range(len(self.loss_and_metrics))
+            })
 
             # --- VAL ---
             if self.comm_rank == 0:
@@ -338,10 +338,10 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
                 # Sleep for half a second to allow pbar to write its output before returning
                 time.sleep(0.5)
 
-            for m in range(len(self.loss_and_metrics)):
-                self.history[
-                    f"{Dataset.Part.VAL._name_.lower()}_" + self.loss_and_metrics[m]
-                ].append(val_global_loss[m])
+            self.history.append({
+                f"{Dataset.Part.VAL._name_.lower()}_" + self.loss_and_metrics[m]: val_global_loss[m]
+                for m in range(len(self.loss_and_metrics))
+            })
 
             for sched in self.schedulers:
                 sched.on_epoch_end(train_global_loss, val_global_loss)
