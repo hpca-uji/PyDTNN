@@ -68,10 +68,10 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
             loss, dx = self.loss_func.compute(x, y_targ)
         else:
-            if y_targ.shape[0] != x_batch.shape[0]:
+            if y_targ.shape[0] != x.shape[0]:
                 raise ValueError(
                     f"y_targ.shape[0] ({y_targ.shape[0]})"
-                    " and x_batch.shape[0] ({x_batch.shape[0]})"
+                    f" and x.shape[0] ({x.shape[0]})"
                     " must have the same value."
                 )
             loss, dx = 0.0, y_targ
@@ -271,7 +271,6 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
                     file=TqdmLogger(term.FANCY),
                     total=sum(self.comm_nsamples[Dataset.Part.TRAIN]),
                     ascii=" ▁▂▃▄▅▆▇█",
-                    smoothing=0.3,
                     desc=epoch_string % (epoch + 1, self.num_epochs),
                     unit=" samples",
                     colour="BLUE" if term.FANCY else None
@@ -313,7 +312,6 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
                     file=TqdmLogger(term.FANCY),
                     total=sum(self.comm_nsamples[Dataset.Part.VAL]),
                     ascii=" ▁▂▃▄▅▆▇█",
-                    smoothing=0.3,
                     desc=epoch_string % (epoch + 1, self.num_epochs),
                     unit=" samples",
                     colour="BLUE" if term.FANCY else None

@@ -128,10 +128,10 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
             loss, _ = self.loss_func.compute(x, y_targ)
         else:
-            if y_targ.shape[0] != x_batch.shape[0]:
+            if y_targ.shape[0] != x.shape[0]:
                 raise ValueError(
                     f"y_targ.shape[0] ({y_targ.shape[0]})"
-                    f" and x_batch.shape[0] ({x_batch.shape[0]})"
+                    f" and x.shape[0] ({x.shape[0]})"
                     " must have the same value."
                 )
             loss, _ = 0.0, y_targ
@@ -326,7 +326,6 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
                 file=TqdmLogger(term.FANCY),
                 total=sum(self.comm_nsamples[Dataset.Part.TEST]),
                 ascii=" ▁▂▃▄▅▆▇█",
-                smoothing=0.3,
                 desc="Testing",
                 unit=" samples",
                 colour="BLUE" if term.FANCY else None
