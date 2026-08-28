@@ -72,8 +72,8 @@ class BackgroundGenerator[T](threading.Thread):
 def header(header: str, text: Any = "") -> None:
     """Print header with and optional value"""
     from pydtnn.utils.term import BOLD, RESET
-    lines = list[str]()
-    lines.append(f"\n# {BOLD}{header}{RESET}")
+    lines = [""]
+    lines.append(f"# {BOLD}{header}{RESET}")
     if text:
         lines.append(str(text))
     info_to_print = "\n".join(lines)

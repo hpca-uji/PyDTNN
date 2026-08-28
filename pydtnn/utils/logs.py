@@ -14,7 +14,8 @@ class TqdmLogger:
     def __init__(self, csi: bool = True) -> None:
         """Pad string to the logger."""
         self._csi = csi
-        logger.info(self.__class__.__name__)
+        if self._csi:
+            logger.info(self.__class__.__name__)
 
     def write(self, s: str) -> int:
         """Write string to the logger."""
