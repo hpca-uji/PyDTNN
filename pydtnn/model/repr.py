@@ -42,16 +42,6 @@ class Repr[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
             if memory:
                 props["memory"] = memory
 
-        if self.optimizer:
-            optimizer_memory = utils.convert_size_bytes(self.optimizer.memory_used) if self.optimizer.memory_used > 0 else ""
-            optimizer_tmp_memory = f"{utils.convert_size_bytes(self.optimizer.tmp_memory_used)} tmp" if self.optimizer.tmp_memory_used > 0 else ""  # noqa: E501
-            if optimizer_memory and optimizer_tmp_memory:
-                optimizer_memory = f"{optimizer_memory} ({optimizer_tmp_memory})"
-            elif optimizer_tmp_memory:
-                optimizer_memory = optimizer_tmp_memory
-            if optimizer_memory:
-                props["optimizer-memory"] = optimizer_memory
-
         if self.loss_func:
             loss_memory = utils.convert_size_bytes(self.loss_func.memory_used) if self.loss_func.memory_used > 0 else ""
             loss_tmp_memory = f"{utils.convert_size_bytes(self.loss_func.tmp_memory_used)} tmp" if self.loss_func.tmp_memory_used > 0 else ""  # noqa: E501
@@ -64,18 +54,43 @@ class Repr[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
 
         if self.metrics_funcs:
             metrics_size = 0
-            metric_temp_size = 0
+            metrics_temp_size = 0
             for metric in self.metrics_funcs:
                 metrics_size += metric.memory_used
-                metric_temp_size += metric.tmp_memory_used
+                metrics_temp_size += metric.tmp_memory_used
             metrics_memory = utils.convert_size_bytes(metrics_size) if metrics_size > 0 else ""
-            metrics_tmp_memory = f"{utils.convert_size_bytes(metric_temp_size)} tmp" if metric_temp_size > 0 else ""
+            metrics_tmp_memory = f"{utils.convert_size_bytes(metrics_temp_size)} tmp" if metrics_temp_size > 0 else ""
             if metrics_memory and metrics_tmp_memory:
                 metrics_memory = f"{metrics_memory} ({metrics_tmp_memory})"
             elif metrics_tmp_memory:
                 metrics_memory = metrics_tmp_memory
             if metrics_memory:
                 props["metrics-memory"] = metrics_memory
+
+        if self.optimizer:
+            optimizer_memory = utils.convert_size_bytes(self.optimizer.memory_used) if self.optimizer.memory_used > 0 else ""
+            optimizer_tmp_memory = f"{utils.convert_size_bytes(self.optimizer.tmp_memory_used)} tmp" if self.optimizer.tmp_memory_used > 0 else ""  # noqa: E501
+            if optimizer_memory and optimizer_tmp_memory:
+                optimizer_memory = f"{optimizer_memory} ({optimizer_tmp_memory})"
+            elif optimizer_tmp_memory:
+                optimizer_memory = optimizer_tmp_memory
+            if optimizer_memory:
+                props["optimizer-memory"] = optimizer_memory
+
+        if self.schedulers:
+            schedulers_size = 0
+            schedulers_temp_size = 0
+            for scheduler in self.schedulers:
+                schedulers_size += scheduler.memory_used
+                schedulers_temp_size += scheduler.tmp_memory_used
+            schedulers_memory = utils.convert_size_bytes(schedulers_size) if schedulers_size > 0 else ""
+            schedulers_tmp_memory = f"{utils.convert_size_bytes(schedulers_temp_size)} tmp" if schedulers_temp_size > 0 else ""
+            if schedulers_memory and schedulers_tmp_memory:
+                schedulers_memory = f"{schedulers_memory} ({schedulers_tmp_memory})"
+            elif schedulers_tmp_memory:
+                schedulers_memory = schedulers_tmp_memory
+            if schedulers_memory:
+                props["schedulers-memory"] = schedulers_memory
 
         if self.layers:
             props["input"] = self.layers[0].shape

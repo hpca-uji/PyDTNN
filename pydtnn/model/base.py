@@ -19,6 +19,7 @@ from pydtnn.abstract.layerable import Layerable
 from pydtnn.losses.abstract.loss import Loss
 from pydtnn.metrics.abstract.metric import Metric
 from pydtnn.optimizers.abstract.optimizer import Optimizer
+from pydtnn.schedulers.abstract.scheduler import Scheduler
 from pydtnn.tracers.tracer import Tracer
 from pydtnn.utils.constants import Array, ArrayShape, NetworkAlgoEnum
 from pydtnn.utils.memory_pool import PrivateMemory
@@ -87,6 +88,7 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
     layers: list[Layerable[T]]
     loss_and_metrics: tuple[str, ...]
     loss_func: Loss[T]
+    schedulers: list[Scheduler]
     memory_cls: type[PrivateMemory]
     memory_used: int
     memory: PrivateMemory

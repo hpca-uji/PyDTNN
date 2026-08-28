@@ -1281,8 +1281,7 @@ class ArgumentParser(argparse.ArgumentParser):
 
     def parse_args(self, args: Sequence[str] | None = None) -> Namespace:
         """Parses command line arguments and injects runtime environment data."""
-        namespace = Namespace()
-        result = super().parse_args(args, namespace)
+        result = super().parse_args(args, Namespace())
 
         result.mpi_procs = _get_mpi_processes()
         result.proc_threads = _get_threads_per_process()
