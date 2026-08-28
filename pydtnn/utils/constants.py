@@ -51,6 +51,7 @@ class Parameters(StrEnum):
     BIASES = auto()
     DB = auto()
 
+
 class SyncMode(Flag):
     GRADIENT = auto()
     WEIGHT = auto()

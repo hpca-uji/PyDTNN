@@ -284,7 +284,7 @@ class Layerable[T: Array](Base[T]):  # noqa: D101 (generics not detected)
     def _reduce_state_sync(self, state_: str) -> None:
         """Method where the state are reduced synchronously."""
         state: np.ndarray = getattr(self, state_)
-        
+
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.LAYER_ENCODE
         )

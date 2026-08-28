@@ -22,6 +22,7 @@ __all__ = ("Sync",)
 
 logger = logging.getLogger(__name__)
 
+
 class Sync[T: Array](Init[T]):  # noqa: D101 (generics not detected)
     """
     Base class for distributed synchronization operations, providing methods for
