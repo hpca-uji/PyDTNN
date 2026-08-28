@@ -10,12 +10,13 @@ __all__ = (
 )
 
 
+FANCY = sys.stderr.isatty()  # pyright: ignore[reportConstantRedefinition]
 try:
     from _colorize import can_colorize  # pyright: ignore[reportMissingTypeStubs]
-except Exception:
-    FANCY = sys.stderr.isatty()  # pyright: ignore[reportConstantRedefinition]
-else:
+    FANCY = can_colorize()  # pyright: ignore[reportConstantRedefinition]
     FANCY = can_colorize(file=sys.stderr)  # pyright: ignore[reportConstantRedefinition]
+except Exception:
+    pass
 
 
 # Characters
