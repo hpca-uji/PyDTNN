@@ -10,7 +10,7 @@ from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.fc import FC
 from pydtnn.layers.flatten import Flatten
-from pydtnn.layers.input import Input
+from pydtnn.layers.identity import Identity
 from pydtnn.layers.max_pool_2d import MaxPool2D
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.initializers import he_uniform
@@ -32,7 +32,7 @@ def tsunamis_eflows_uma(input_shape: ArrayShape, output_shape: ArrayShape) -> Se
     model = list[Layerable]()
     _ = model.append
 
-    _(Input(shape=input_shape))
+    _(Identity(shape=input_shape))
     _(Conv2D(nfilters=32, filter_shape=(3, 3), padding=1, weights_initializer=he_uniform))
     _(Conv2D(nfilters=32, filter_shape=(3, 3), padding=1, weights_initializer=he_uniform))
 

@@ -13,7 +13,7 @@ from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.conv_2d_depthwise import Conv2DDepthwise
 from pydtnn.layers.conv_2d_pointwise import Conv2DPointwise
 from pydtnn.layers.flatten import Flatten
-from pydtnn.layers.input import Input
+from pydtnn.layers.identity import Identity
 from pydtnn.model import Model
 from pydtnn.optimizers.abstract.optimizer import Optimizer
 from pydtnn.optimizers.sgd import SGD
@@ -99,7 +99,7 @@ def test_keras(_x: np.ndarray) -> None:
     """Performs a basic forward pass test on a Keras-like model structure."""
 
     model = Model(**KWARGS)
-    model.add(Input(SHAPE))
+    model.add(Identity(SHAPE))
     model.add(Conv2D(nfilters=3))
     model.mode = Model.Mode.TRAIN
     model._model_init()
@@ -123,7 +123,7 @@ def test_layers_activations(_x: np.ndarray, opt: Optimizer) -> None:
         for name, test_elem in dict_test[test]:
             print(f"- Testing: {name}")
             model = Model(**KWARGS)
-            model.add(Input(SHAPE))
+            model.add(Identity(SHAPE))
             if name == "FC":
                 model.add(Flatten())
             model.add(test_elem)
@@ -185,7 +185,7 @@ def test_add_concat(_x: np.ndarray, opt: Optimizer) -> None:
     for test, layer in [addition_test_layers, concatenation_test_layers]:
         print(f"=====\nTesting the: {test}\n=====")
         model = Model(**KWARGS)
-        model.add(Input(SHAPE))
+        model.add(Identity(SHAPE))
         model.add(layer)
         model.mode = Model.Mode.TRAIN
         model._model_init()

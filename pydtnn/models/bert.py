@@ -20,7 +20,7 @@ from collections.abc import Sequence
 
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.layers.encoder import Encoder
-from pydtnn.layers.input import Input
+from pydtnn.layers.identity import Identity
 from pydtnn.utils.constants import ArrayShape
 
 __all__ = ("bert",)
@@ -35,7 +35,7 @@ def bert(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerabl
     max_seq = 512
     embedl = 512
 
-    _(Input(shape=(1, max_seq, embedl)))
+    _(Identity(shape=(1, max_seq, embedl)))
     for i in range(n_encoders):
         _(Encoder(embedl=embedl, d_k=64, heads=8, d_ff=2048, dropout_rate=0.1))
 

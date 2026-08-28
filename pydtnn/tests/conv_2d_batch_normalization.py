@@ -10,7 +10,7 @@ from pydtnn.backends.numpy.layers.abstract.conv_2d import AbstractConv2DNumpy
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.conv_2d import Conv2D
-from pydtnn.layers.input import Input
+from pydtnn.layers.identity import Identity
 from pydtnn.libs.convGemm import is_conv_gemm_available
 from pydtnn.model import Model
 from pydtnn.tests.abstract.base import D, Params
@@ -55,7 +55,7 @@ class Conv2DBatchNormalizationTestCase(Conv2DTestCase):
         params_chain.backend = "cpu;conv_2d:gemm"
         model_chain = Model(**vars(params_chain))
         model_chain.mode = Model.Mode.EVALUATE
-        model_chain.add(Input(model_chain.encode_shape((d.c, d.h, d.w))))
+        model_chain.add(Identity(model_chain.encode_shape((d.c, d.h, d.w))))
         conv2d_chain = Conv2D(
             nfilters=d.kn,
             filter_shape=(d.kh, d.kw),
@@ -74,7 +74,7 @@ class Conv2DBatchNormalizationTestCase(Conv2DTestCase):
         params_fuse.fused_conv_bn = True
         model_fuse = Model(**vars(params_fuse))
         model_fuse.mode = Model.Mode.EVALUATE
-        model_fuse.add(Input(model_fuse.encode_shape((d.c, d.h, d.w))))
+        model_fuse.add(Identity(model_fuse.encode_shape((d.c, d.h, d.w))))
         conv2d_fuse = Conv2D(
             nfilters=d.kn,
             filter_shape=(d.kh, d.kw),

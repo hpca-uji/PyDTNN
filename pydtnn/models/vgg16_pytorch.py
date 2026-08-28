@@ -9,7 +9,7 @@ from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.dropout import Dropout
 from pydtnn.layers.fc import FC
 from pydtnn.layers.flatten import Flatten
-from pydtnn.layers.input import Input
+from pydtnn.layers.identity import Identity
 from pydtnn.layers.max_pool_2d import MaxPool2D
 from pydtnn.utils.constants import ArrayShape
 
@@ -32,7 +32,7 @@ def vgg16(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerab
     """
     model = []
     _ = model.append
-    _(Input(shape=input_shape))
+    _(Identity(shape=input_shape))
 
     conv_pattern = [[2, 64], [2, 128], [3, 256], [3, 512], [3, 512]]
     for nlayers, nfilters in conv_pattern:
@@ -64,7 +64,7 @@ def vgg8(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerabl
     """
     model = []
     _ = model.append
-    _(Input(shape=input_shape))
+    _(Identity(shape=input_shape))
 
     conv_pattern = [[2, 64], [2, 128], [2, 256]]
     for nlayers, nfilters in conv_pattern:
@@ -91,7 +91,7 @@ def vgg6(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerabl
     """
     model = []
     _ = model.append
-    _(Input(shape=input_shape))
+    _(Identity(shape=input_shape))
 
     conv_pattern = [[1, 64], [1, 128], [2, 256]]
     for nlayers, nfilters in conv_pattern:

@@ -9,16 +9,16 @@ from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 
 from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.layers.input import Input
+from pydtnn.layers.identity import Identity
 from pydtnn.utils.constants import ArrayShape
 
-__all__ = ("InputPycuda",)
+__all__ = ("IdentityPycuda",)
 
 logger = logging.getLogger(__name__)
 
 
-class InputPycuda(Input[TensorArray], LayerPycuda):
-    """PyCUDA-specific implementation of the Input layer."""
+class IdentityPycuda(Identity[TensorArray], LayerPycuda):
+    """PyCUDA-specific implementation of the identity layer."""
 
     ws_size = 0
     ws: drv.DeviceAllocation = None

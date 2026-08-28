@@ -35,7 +35,7 @@ from pydtnn.layers.conv_2d_pointwise import Conv2DPointwise
 from pydtnn.layers.dropout import Dropout
 from pydtnn.layers.fc import FC
 from pydtnn.layers.flatten import Flatten
-from pydtnn.layers.input import Input
+from pydtnn.layers.identity import Identity
 from pydtnn.layers.max_pool_2d import MaxPool2D
 from pydtnn.model import Model
 from pydtnn.tests.abstract.base import Params, TestCase, verbose_test
@@ -357,7 +357,7 @@ class PytorchLayerTestCase(TestCase):
     ) -> Model:
         """Initializes a PyDTNN model with the provided layers."""
         model = Model(**params.asdict())
-        model.add(Input(params.shape))
+        model.add(Identity(params.shape))
         model.add_layers(list_layers)
         model.mode = Model.Mode.TRAIN
         model._model_init()
@@ -384,7 +384,7 @@ class PytorchLayerTestCase(TestCase):
             if not isinstance(layer, AbstractBlockLayer)
         ]
 
-        if isinstance(layers[0], Input):
+        if isinstance(layers[0], Identity):
             layers.pop(0)
 
         torch_layers = list()

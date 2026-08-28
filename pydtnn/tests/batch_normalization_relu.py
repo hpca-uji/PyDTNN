@@ -9,7 +9,7 @@ import numpy as np
 from pydtnn.activations.relu import Relu
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.concatenation_block import ConcatenationBlock
-from pydtnn.layers.input import Input
+from pydtnn.layers.identity import Identity
 from pydtnn.model import Model
 from pydtnn.tests.abstract.base import D, Params
 from pydtnn.tests.abstract.conv_2d import Conv2DTestCase
@@ -46,7 +46,7 @@ class BatchNormalizationReluTestCase(Conv2DTestCase):
         params_chain.backend = "cpu"  # cpu;conv_2d:gemm
         model_chain = Model(**vars(params_chain))
         model_chain.mode = Model.Mode.EVALUATE
-        model_chain.add(Input(model_chain.encode_shape((d.c, d.h, d.w))))
+        model_chain.add(Identity(model_chain.encode_shape((d.c, d.h, d.w))))
         bn_chain = BatchNormalization()
         relu_chain = Relu()
         chain = ConcatenationBlock([bn_chain, relu_chain])
@@ -56,7 +56,7 @@ class BatchNormalizationReluTestCase(Conv2DTestCase):
         params_fuse.fused_bn_relu = True
         model_fuse = Model(**vars(params_fuse))
         model_fuse.mode = Model.Mode.EVALUATE
-        model_fuse.add(Input(model_fuse.encode_shape((d.c, d.h, d.w))))
+        model_fuse.add(Identity(model_fuse.encode_shape((d.c, d.h, d.w))))
         bn_fuse = BatchNormalization()
         relu_fuse = Relu()
         model_fuse.add_layers([bn_fuse, relu_fuse])

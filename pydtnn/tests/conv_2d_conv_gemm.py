@@ -5,7 +5,7 @@ from copy import deepcopy
 from unittest import skipUnless
 
 from pydtnn.layers.conv_2d import Conv2D
-from pydtnn.layers.input import Input
+from pydtnn.layers.identity import Identity
 from pydtnn.libs.convGemm import is_conv_gemm_available
 from pydtnn.model import Model
 from pydtnn.tests.abstract.base import D, Params
@@ -39,7 +39,7 @@ class Conv2DConvGemmTestCase(Conv2DTestCase):
         params_i2c.backend = "cpu"
         model_i2c = Model(**vars(params_i2c))
         model_i2c.mode = Model.Mode.TRAIN
-        model_i2c.add(Input(model_i2c.encode_shape((d.c, d.h, d.w))))
+        model_i2c.add(Identity(model_i2c.encode_shape((d.c, d.h, d.w))))
         conv2d_i2c = Conv2D(
             nfilters=d.kn,
             filter_shape=(d.kh, d.kw),
@@ -56,7 +56,7 @@ class Conv2DConvGemmTestCase(Conv2DTestCase):
         params_gc.backend = "cpu;conv_2d:gemm"
         model_cg = Model(**vars(params_gc))
         model_cg.mode = Model.Mode.TRAIN
-        model_cg.add(Input(model_cg.encode_shape((d.c, d.h, d.w))))
+        model_cg.add(Identity(model_cg.encode_shape((d.c, d.h, d.w))))
         conv2d_cg = Conv2D(
             nfilters=d.kn,
             filter_shape=(d.kh, d.kw),

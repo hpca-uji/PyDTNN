@@ -8,7 +8,7 @@ from pydtnn.activations.relu import Relu
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.fc import FC
 from pydtnn.layers.flatten import Flatten
-from pydtnn.layers.input import Input
+from pydtnn.layers.identity import Identity
 from pydtnn.layers.max_pool_2d import MaxPool2D
 from pydtnn.utils.constants import ArrayShape
 
@@ -29,7 +29,7 @@ def vgg_cyclone(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[L
     model = list[Layerable]()
     _ = model.append
 
-    _(Input(shape=input_shape))
+    _(Identity(shape=input_shape))
     conv_pattern = [[3, 3, 1, 64], [2, 3, 1, 128], [2, 3, 1, 256], [3, 3, 1, 512]]
     for nlayers, filter_, padding_, nfilters_ in conv_pattern:
         for layer in range(nlayers):

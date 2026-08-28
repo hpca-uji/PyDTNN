@@ -14,7 +14,7 @@ import onnx
 
 import pydtnn.converters.onnx2pydtnn.constants as cons
 from pydtnn.abstract.layerable import Layerable
-from pydtnn.layers.input import Input
+from pydtnn.layers.identity import Identity
 from pydtnn.model import Model as PyDTNN_Model
 from pydtnn.utils.tensor import TensorFormat
 
@@ -296,7 +296,7 @@ def get_layers(
 
     # [] indicates that it has no previous layers.
     operations: dict[str, tuple[Layerable, list[str]]] = {
-        output_first_layer: (Input(shape=inputs[list(inputs.keys())[0]]), [])
+        output_first_layer: (Identity(shape=inputs[list(inputs.keys())[0]]), [])
     }
 
     for i in range(num_operations - 1):

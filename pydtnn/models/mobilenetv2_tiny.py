@@ -13,7 +13,7 @@ from pydtnn.layers.conv_2d_pointwise import Conv2DPointwise
 from pydtnn.layers.dropout import Dropout
 from pydtnn.layers.fc import FC
 from pydtnn.layers.flatten import Flatten
-from pydtnn.layers.input import Input
+from pydtnn.layers.identity import Identity
 from pydtnn.utils.constants import ArrayShape
 
 __all__ = ("mobilenetv2_tiny",)
@@ -35,7 +35,7 @@ def mobilenetv2_tiny(input_shape: ArrayShape, output_shape: ArrayShape) -> Seque
 
     model = []
     _ = model.append
-    _(Input(shape=input_shape))
+    _(Identity(shape=input_shape))
     _(Conv2D(nfilters=first_filters, filter_shape=(3, 3), padding=1, stride=2, use_bias=False))
     _(BatchNormalization())
     _(Relu6())

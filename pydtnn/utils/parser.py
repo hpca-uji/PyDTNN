@@ -1269,11 +1269,9 @@ class ArgumentParser(argparse.ArgumentParser):
 
         # Add Runtime parallel execution options
         _re_group = self.add_argument_group("Runtime parallel execution options")
-        _re_group.add_argument("--gpus-per-node", type=int, default=-1, help=argparse.SUPPRESS)
-        _re_group.add_argument("--mpi-processes", type=int, default=-1, help=argparse.SUPPRESS)
-        _re_group.add_argument(
-            "--threads-per-process", type=int, default=-1, help=argparse.SUPPRESS
-        )
+        _re_group.add_argument("--gpus-node", type=int, default=-1, help=argparse.SUPPRESS)
+        _re_group.add_argument("--mpi-procs", type=int, default=-1, help=argparse.SUPPRESS)
+        _re_group.add_argument("--proc-threads", type=int, default=-1, help=argparse.SUPPRESS)
 
         # Add Communication options
         _cm_group = self.add_argument_group("Communication options")
@@ -1287,13 +1285,14 @@ class ArgumentParser(argparse.ArgumentParser):
         namespace = Namespace()
         result = super().parse_args(args, namespace)
         # Add runtime data
-        result.mpi_processes = _get_mpi_processes()
-        result.threads_per_process = _get_threads_per_process()
-        result.gpus_per_node = get_gpus_per_node()
+        result.mpi_procs = _get_mpi_processes()
+        result.proc_threads = _get_threads_per_process()
+        result.gpus_node = get_gpus_per_node()
         result.mpi_protocol = _get_mpi_protocol()
         result.mpi_server = _get_mpi_server()
         result.mpi_port = _get_mpi_port()
         result.use_cudnn = _get_use_cudnn()
+
         result.groups = self._action_groups
         return result
 

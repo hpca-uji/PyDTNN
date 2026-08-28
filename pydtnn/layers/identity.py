@@ -7,13 +7,13 @@ import numpy as np
 from pydtnn.layers.abstract.layer import Layer
 from pydtnn.utils.constants import Array, ArrayShape
 
-__all__ = ("Input",)
+__all__ = ("Identity",)
 
 logger = logging.getLogger(__name__)
 
 
-class Input[T: Array](Layer[T]):  # noqa: D101 (generics not detected)
-    """Represents the input layer of a neural network."""
+class Identity[T: Array](Layer[T]):  # noqa: D101 (generics not detected)
+    """Represents the identity layer of a neural network."""
 
     def __init__(self, shape: tuple = ()) -> None:
         """

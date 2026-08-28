@@ -17,7 +17,7 @@ from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.conv_2d_depthwise import Conv2DDepthwise
 from pydtnn.layers.conv_2d_pointwise import Conv2DPointwise
-from pydtnn.layers.input import Input
+from pydtnn.layers.identity import Identity
 from pydtnn.model import Model
 from pydtnn.utils import rand
 
@@ -88,12 +88,12 @@ def main() -> None:
     for _, model in models:
         model: Model
 
-    model_relu.add(Input(SHAPE))
+    model_relu.add(Identity(SHAPE))
     model_relu.add(LeakyRelu(negative_slope=-32))
     model_relu.add(Relu6())
     model_relu._model_init()
 
-    model_depth.add(Input(SHAPE))
+    model_depth.add(Identity(SHAPE))
     model_depth.add(
         Conv2DDepthwise(
             nfilters=CONV_OUT_CHANNELS, filter_shape=CONV_KERNEL_SIZE, use_bias=use_bias
@@ -101,7 +101,7 @@ def main() -> None:
     )
     model_depth._model_init()
 
-    model_point.add(Input(SHAPE))
+    model_point.add(Identity(SHAPE))
     model_point.add(
         Conv2DPointwise(
             nfilters=CONV_OUT_CHANNELS, filter_shape=CONV_KERNEL_SIZE, use_bias=use_bias
@@ -109,7 +109,7 @@ def main() -> None:
     )
     model_point._model_init()
 
-    model_i2c.add(Input(SHAPE))
+    model_i2c.add(Identity(SHAPE))
     model_i2c.add(
         Conv2D(nfilters=CONV_OUT_CHANNELS, filter_shape=CONV_KERNEL_SIZE, use_bias=use_bias)
     )

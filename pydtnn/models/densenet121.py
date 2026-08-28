@@ -11,7 +11,7 @@ from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.fc import FC
 from pydtnn.layers.flatten import Flatten
-from pydtnn.layers.input import Input
+from pydtnn.layers.identity import Identity
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.initializers import he_uniform
 
@@ -32,7 +32,7 @@ def densenet121(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[L
     model = list[Layerable]()
     _ = model.append
 
-    _(Input(shape=input_shape))
+    _(Identity(shape=input_shape))
 
     blocks, growth_rate = [6, 12, 24, 16], 32  # DenseNet121
 

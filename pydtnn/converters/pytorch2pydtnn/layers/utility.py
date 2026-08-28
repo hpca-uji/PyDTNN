@@ -1,12 +1,12 @@
 """This module provides utilities for converting PyTorch convolutional layers to their PyDTNN equivalents."""
 
 from pydtnn.layers.flatten import Flatten as Flatten_PyDTNN
-from pydtnn.layers.input import Input
+from pydtnn.layers.identity import Identity
 
 __all__ = ("Flatten",)
 
 
-def Identity(_args: dict[str, str]) -> Input:
+def Identity(_args: dict[str, str]) -> Identity:
     """
     Converts a PyTorch Identity layer to a PyDTNN Input layer (the one with the most similar behaviour).
 
@@ -18,7 +18,7 @@ def Identity(_args: dict[str, str]) -> Input:
     """
     # https://docs.pytorch.org/docs/2.13/generated/torch.nn.Identity.html
 
-    return Input()
+    return Identity()
 
 
 def Flatten(args: dict[str, str]) -> Flatten_PyDTNN:

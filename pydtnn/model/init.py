@@ -9,6 +9,7 @@ import numpy as np
 
 from pydtnn import (MPI, context, cublas, cublas_handle, cudnn, cudnn_handle, drv,
                     gpuarray, hostname, nccl, nccl_comm, num_gpus, ranks_per_node, stream)
+from pydtnn.layers.identity import Identity
 from pydtnn.schedulers import select as select_scheduler
 from pydtnn.datasets import select as select_dataset
 from pydtnn.datasets.abstract import Dataset
@@ -412,9 +413,11 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
 
     def _ensure_runnable(self) -> None:
         """Validates that the model is ready for execution."""
+        if not self.dataset:
+            raise ValueError("There is no dataset and the model has layers")
         if not self.layers:
-            raise ValueError("The model has no layers in it.")
-        elif not self.dataset:
-            raise ValueError("There is no dataset and the model has layers.")
-        elif not self._model_inited:
+            logger.warning("The model has no layers in it")
+        if self.layers and not isinstance(self.layers[0], Identity):
+            logger.warning("The model has no input layer")
+        if not self._model_inited:
             self._model_init()

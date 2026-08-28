@@ -9,7 +9,7 @@ from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.dropout import Dropout
 from pydtnn.layers.fc import FC
 from pydtnn.layers.flatten import Flatten
-from pydtnn.layers.input import Input
+from pydtnn.layers.identity import Identity
 from pydtnn.layers.max_pool_2d import MaxPool2D
 from pydtnn.utils.constants import ArrayShape
 
@@ -30,7 +30,7 @@ def alexnet_cifar10(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequen
     model = list[Layerable]()
     _ = model.append
 
-    _(Input(shape=input_shape))
+    _(Identity(shape=input_shape))
     _(Conv2D(nfilters=64, filter_shape=(3, 3), padding=1, stride=2, activation=Relu))
     _(MaxPool2D(pool_shape=(2, 2), stride=2))
     _(Conv2D(nfilters=192, filter_shape=(3, 3), padding=1, stride=1, activation=Relu))

@@ -148,7 +148,7 @@ class Repr[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
         _show = [""]
         _show.append(f"# {fb}{key}{fr}")
         for key, value in props.items():
-            _show.append(f"  {key.replace('-', ' '):{size}s}: {value}")
+            _show.append(f"  {key:{size}s}: {value}")
         logger.info("\n".join(_show))
 
     def show(self) -> None:

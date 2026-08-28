@@ -9,7 +9,7 @@ from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.dropout import Dropout
 from pydtnn.layers.fc import FC
 from pydtnn.layers.flatten import Flatten
-from pydtnn.layers.input import Input
+from pydtnn.layers.identity import Identity
 from pydtnn.layers.max_pool_2d import MaxPool2D
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.initializers import he_uniform
@@ -30,7 +30,7 @@ def vgg19(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerab
     model = list[Layerable]()
     _ = model.append
 
-    _(Input(shape=input_shape))
+    _(Identity(shape=input_shape))
     conv_pattern = [[2, 64], [2, 128], [4, 256], [4, 512], [4, 512]]
     for nlayers, nfilters in conv_pattern:
         for layer in range(nlayers):

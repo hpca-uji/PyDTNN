@@ -9,7 +9,7 @@ import onnx
 
 import pydtnn.converters.pydtnn2onnx.constants as cons
 from pydtnn.abstract.layerable import Layerable
-from pydtnn.layers.input import Input
+from pydtnn.layers.identity import Identity
 from pydtnn.model import Model as PyDTNN_Model
 
 # In order to made some parts of this code, I used other converors' code
@@ -289,7 +289,7 @@ def get_operations(
         list_inputs=onnx_model.graph.node[0].input, weights_names=list(weights.keys())
     )[0]
     operations: dict[str, tuple[Layerable, list[str]]] = {
-        output_first_layer: (Input(shape=inputs), [])  # pyright: ignore[reportArgumentType]
+        output_first_layer: (Identity(shape=inputs), [])  # pyright: ignore[reportArgumentType]
     }
 
     for i in range(num_operations - 1):

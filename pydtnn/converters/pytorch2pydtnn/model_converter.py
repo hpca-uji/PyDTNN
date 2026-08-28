@@ -7,7 +7,7 @@ import torch
 import pydtnn.converters.pytorch2pydtnn.utils as cm
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.activations.abstract.activation import Activation
-from pydtnn.layers.input import Input
+from pydtnn.layers.identity import Identity
 from pydtnn.model import Model as PyDTNN_Model
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import TensorFormat
@@ -186,7 +186,7 @@ def convert_layers(
 
     fst_layer = layer_var_names[0]
     _input = layers[fst_layer][1]
-    converted_layers[_input] = (Input(input_shape), None)
+    converted_layers[_input] = (Identity(input_shape), None)
 
     dict_equivalent_layer = dict()
     # If there are two layers like the following ones:
