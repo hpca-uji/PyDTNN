@@ -8,7 +8,7 @@ __all__ = ("Flatten",)
 
 def Identity(_args: dict[str, str]) -> Identity_PyDTNN:
     """
-    Converts a PyTorch Identity layer to a PyDTNN Input layer (the one with the most similar behaviour).
+    Converts a PyTorch Identity layer to a PyDTNN Identity layer (the one with the most similar behavior).
 
     Args:
         args: A dictionary containing the configuration arguments from the PyTorch layer (they will be ignored).
