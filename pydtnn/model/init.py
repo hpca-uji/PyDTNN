@@ -9,6 +9,7 @@ import numpy as np
 
 from pydtnn import (MPI, context, cublas, cublas_handle, cudnn, cudnn_handle, drv,
                     gpuarray, hostname, nccl, nccl_comm, num_gpus, ranks_per_node, stream)
+from pydtnn.schedulers import select as select_scheduler
 from pydtnn.datasets import select as select_dataset
 from pydtnn.datasets.abstract import Dataset
 from pydtnn.libs.mpi.rc import proto as proto
@@ -107,7 +108,13 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
         metrics = [(m, select_metric(m).from_model(self)) for m in self.metrics]
         self.metrics, self.metrics_funcs = map(tuple, zip(*metrics))
 
-        # Optimizer [NOTE: after Metric]
+        # Schedulers [NOTE: after Metric]
+        self.schedulers = [
+            select_scheduler(scheduler_name).from_model(self)
+            for scheduler_name in self.schedulers_names
+        ]
+
+        # Optimizer [NOTE: after Schedulers]
         self.optimizer = select_optimizer(self.optimizer_name).from_model(self)
 
         # Layers [NOTE: as late as posible, it call self._model_init]
@@ -371,6 +378,13 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
             metric.format for metric in self.metrics_funcs
         ]
 
+        for scheduler in self.schedulers:
+            # NOTE: scheduler currently use no backend
+            scheduler.model = self  # pyright: ignore[reportAttributeAccessIssue]
+            scheduler._model_init()
+            self.memory_used += scheduler.memory_used
+            temp_memory_size.append(scheduler.tmp_memory_used)
+
         self.optimizer._init_backend_with_model(self)
         self.optimizer._model_init(self.get_all_layers(self.layers))
         self.memory_used += self.optimizer.memory_used
@@ -388,6 +402,9 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
         for metric in self.metrics_funcs:
             metric._post_init()
 
+        for scheduler in self.schedulers:
+            scheduler._post_init()
+
         self.optimizer._post_init()
 
         self.history = []
@@ -399,5 +416,5 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
             raise ValueError("The model has no layers in it.")
         elif not self.dataset:
             raise ValueError("There is no dataset and the model has layers.")
-        if not self._model_inited:
+        elif not self._model_inited:
             self._model_init()

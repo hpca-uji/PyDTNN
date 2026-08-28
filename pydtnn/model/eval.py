@@ -43,7 +43,7 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
         """Initializes the Eval instance."""
         super().__init__(**kwargs)
         # Private attributes
-        self._evaluate_round: int = 0
+        self._evaluation_round: int = 0
 
     def _compute_metrics_funcs(
         self, y_pred: T, y_targ: T, loss: float, batch_size: int
@@ -168,7 +168,8 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
             prefix=output_prefix,
         )
 
-        self.perf_counter._add_time_and_batch_size(part, current_round, delta, batch_loss[-1])
+        if delta >= 0 and batch_loss[-1] > 0:
+            self.perf_counter._add_time_and_batch_size(part, current_round, delta, batch_loss[-1])
 
         if self.comm_rank == 0:
             # NOTE: pbar is a 'tqdm', it only is None in self.comm_rank != 0
@@ -179,7 +180,7 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
 
         return string
 
-    def _evalutate_round(
+    def _evaluate_round(
         self,
         pbar: tqdm | None,
         batch_generator: Generator[tuple[np.ndarray, np.ndarray]],
@@ -198,7 +199,6 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
             A tuple containing updated total loss, sync count, sync status, and status string.
         """
         sync_epoch = False
-        string = ""
         part = Dataset.Part[out_prefix.rstrip("_").upper()]
 
         for i_batch, (x_batch, y_batch) in enumerate(batch_generator):
@@ -248,18 +248,34 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
                 global_loss += diff_loss
                 local_loss[:] = global_loss
 
-            string = self._update_status(
+            self._update_status(
                 pbar=pbar,
                 batch_loss=batch_loss,
                 global_loss=global_loss,
                 output_prefix=out_prefix,
-                current_round=self._evaluate_round,
+                current_round=self._evaluation_round,
                 delta=delta,
                 prev_string=prev_string,
             )
 
+        diff_loss = local_loss - global_loss
+        if self.comm:
+            diff_loss = self.comm.allreduce(diff_loss)
+        global_loss += diff_loss
+        local_loss[:] = global_loss
+
+        string = self._update_status(
+            pbar=pbar,
+            batch_loss=local_loss,
+            global_loss=global_loss,
+            output_prefix=out_prefix,
+            current_round=self._evaluation_round,
+            delta=-1,
+            prev_string=prev_string,
+        )
+
         # Increment self._evaluate_round
-        self._evaluate_round += 1
+        self._evaluation_round += 1
         return (model_sync_count, sync_epoch, string)
 
     def evaluate(self) -> None:
@@ -310,7 +326,7 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
         else:
             pbar = None
 
-        self._evalutate_round(
+        self._evaluate_round(
             pbar=pbar,
             batch_generator=test_batch_generator,
             model_sync_count=0,
@@ -319,7 +335,15 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
             global_loss=test_global_loss,
             out_prefix=f"{Dataset.Part.TEST._name_.lower()}_",
         )
-        test_global_loss[:-1] /= test_global_loss[-1]
+
+        test_diff_loss = test_local_loss - test_global_loss
+        if self.comm:
+            test_diff_loss = self.comm.allreduce(test_diff_loss)
+        test_global_loss += test_local_loss
+        test_local_loss[:] = test_global_loss
+
+        if test_nsamples_loss := test_global_loss[-1]:
+            test_global_loss[:-1] /= test_nsamples_loss
 
         if self.comm_rank == 0:
             assert pbar

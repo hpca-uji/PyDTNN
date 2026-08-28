@@ -15,8 +15,6 @@ from pydtnn.datasets.abstract import Dataset
 from pydtnn.layers.input import Input
 from pydtnn.model.base import Base
 from pydtnn.model.eval import Eval
-from pydtnn.schedulers import select as select_scheduler
-from pydtnn.schedulers.abstract.scheduler import Scheduler
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT,
                                    PYDTNN_MDL_EVENTS, MdlEventEnum)
 from pydtnn.utils.constants import Array, SyncMode
@@ -37,19 +35,6 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
         """Initializes the training instance with synchronization parameters and schedulers."""
         super().__init__(**kwargs)
         self._training_round: int = 0
-        # Synchronization parameters
-        # NOTE: This parameter come from Parser.
-        self.model_sync_algo = Base.SyncAlgorithm(self.model_sync_algo)
-
-        # NOTE: This parameter come from Parser.
-        self.model_sync_participation = Base.SyncParticipation(self.model_sync_participation)
-
-        self.schedulers: list[Scheduler] = [
-            select_scheduler(scheduler_name).from_model(self)
-            for scheduler_name in self.schedulers_names
-        ]
-        for scheduler in self.schedulers:
-            scheduler.model = self  # pyright: ignore[reportAttributeAccessIssue]
 
     def _train_batch(  # noqa: C901
         self, x_batch: np.ndarray, y_batch: np.ndarray, sync_model: bool = True
@@ -200,6 +185,22 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
                 prev_string=prev_string,
             )
 
+        diff_loss = local_loss - global_loss
+        if self.comm:
+            diff_loss = self.comm.allreduce(diff_loss)
+        global_loss += diff_loss
+        local_loss[:] = global_loss
+
+        string = self._update_status(
+            pbar=pbar,
+            batch_loss=local_loss,
+            global_loss=global_loss,
+            output_prefix=out_prefix,
+            current_round=self._evaluation_round,
+            delta=-1,
+            prev_string=prev_string,
+        )
+
         # Increment self._train_round
         self._training_round += 1
         return (model_sync_count, sync_epoch, string)
@@ -313,7 +314,7 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
                 pbar = None
 
             model_sync_count, val_sync_epoch, string = (
-                self._evalutate_round(
+                self._evaluate_round(
                     pbar=pbar,
                     batch_generator=val_batch_generator,
                     model_sync_count=model_sync_count,
