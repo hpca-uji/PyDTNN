@@ -1103,8 +1103,8 @@ class ArgumentParser(argparse.ArgumentParser):
             ),
         )
 
-        # Parallel execution options
-        _pe_group = self.add_argument_group("Parallel execution options")
+        # Parallel options
+        _pe_group = self.add_argument_group("Parallel options")
         _pe_group.add_argument(
             "--parallel-data",
             action=argparse.BooleanOptionalAction,
@@ -1203,7 +1203,7 @@ class ArgumentParser(argparse.ArgumentParser):
             ),
         )
 
-        # Tracing and profiling
+        # Tracing options
         _tr_group = self.add_argument_group("Tracing options")
         _tr_group.add_argument(
             "--tracing",
@@ -1245,8 +1245,8 @@ class ArgumentParser(argparse.ArgumentParser):
             help=(f"Obtain Python profiles. Default: {ModelBase.profile!r}."),
         )
 
-        # Performance modeling options
-        _pm_group = self.add_argument_group("Performance modeling options")
+        # Modeling options
+        _pm_group = self.add_argument_group("Modeling options")
         _pm_group.add_argument(
             "--cpu-speed", type=float, default=ModelBase.cpu_speed, help=argparse.SUPPRESS
         )
@@ -1267,13 +1267,13 @@ class ArgumentParser(argparse.ArgumentParser):
             help=argparse.SUPPRESS,
         )
 
-        # Add Runtime parallel execution options
-        _re_group = self.add_argument_group("Runtime parallel execution options")
+        # Environment options
+        _re_group = self.add_argument_group("Environment options")
         _re_group.add_argument("--gpus-node", type=int, default=-1, help=argparse.SUPPRESS)
         _re_group.add_argument("--mpi-procs", type=int, default=-1, help=argparse.SUPPRESS)
         _re_group.add_argument("--proc-threads", type=int, default=-1, help=argparse.SUPPRESS)
 
-        # Add Communication options
+        # Communication options
         _cm_group = self.add_argument_group("Communication options")
         _cm_group.add_argument("--mpi-protocol", type=str, default="", help=argparse.SUPPRESS)
         _cm_group.add_argument("--mpi-server", type=str, default="", help=argparse.SUPPRESS)
@@ -1281,10 +1281,9 @@ class ArgumentParser(argparse.ArgumentParser):
 
     def parse_args(self, args: Sequence[str] | None = None) -> Namespace:
         """Parses command line arguments and injects runtime environment data."""
-        # Call super.parse_args
         namespace = Namespace()
         result = super().parse_args(args, namespace)
-        # Add runtime data
+
         result.mpi_procs = _get_mpi_processes()
         result.proc_threads = _get_threads_per_process()
         result.gpus_node = get_gpus_per_node()
@@ -1303,7 +1302,6 @@ class ArgumentParser(argparse.ArgumentParser):
         The output is intentionally very similar to argparse --help,
         only adding Markdown formatting.
         """
-
         lines = []
 
         def quotes(text: str) -> str:
