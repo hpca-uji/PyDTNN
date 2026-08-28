@@ -6,7 +6,7 @@ from pydtnn.layers.identity import Identity as Identity_PyDTNN
 __all__ = ("Flatten",)
 
 
-def Identity(_args: dict[str, str]) -> Identity_PyDTNN:
+def Identity(args: dict[str, str]) -> Identity_PyDTNN:
     """
     Converts a PyTorch Identity layer to a PyDTNN Identity layer (the one with the most similar behavior).
 
