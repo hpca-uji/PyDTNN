@@ -27,7 +27,7 @@ __all__ = (
     "get_npz_shape",
     "load_library",
     "parse_bool",
-    "print_with_header",
+    "header",
     "read_file",
     "string_substitute",
 )
@@ -69,13 +69,14 @@ class BackgroundGenerator[T](threading.Thread):
         return self
 
 
-def print_with_header(header: str, to_be_printed: Any | None = None) -> None:
+def header(header: str, text: Any = "") -> None:
     """Print header with and optional value"""
-    to_print = list[str]()
-    to_print.append(f"# {header}")
-    if to_be_printed is not None:
-        to_print.append(str(to_be_printed))
-    info_to_print = "\n".join(to_print)
+    from pydtnn.utils.term import BOLD, RESET
+    lines = list[str]()
+    lines.append(f"\n# {BOLD}{header}{RESET}")
+    if text:
+        lines.append(str(text))
+    info_to_print = "\n".join(lines)
     logger.info(info_to_print)
 
 

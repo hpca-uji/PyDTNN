@@ -49,6 +49,7 @@ def main(config: Namespace) -> None:  # noqa: C901
 
     # Initialize random seed
     from pydtnn.utils import rand
+    from pydtnn.utils import header
 
     rand.seed(config.random_seed)
 
@@ -59,7 +60,7 @@ def main(config: Namespace) -> None:  # noqa: C901
     model = Model(**vars(config))
 
     if model.comm_rank == 0:
-        logger.info("# PyDTNN benchmark")
+        header("PyDTNN benchmark")
 
     model._ensure_runnable()
 
@@ -74,7 +75,7 @@ def main(config: Namespace) -> None:  # noqa: C901
     # First (or unique) evaluation
     if model.evaluate_on_train or model.evaluate_only:
         if model.comm_rank == 0:
-            logger.info("\n# Testing...")
+            header("Testing...")
         t1 = time.time()
         _ = model.evaluate()
         t2 = time.time()
@@ -97,7 +98,7 @@ def main(config: Namespace) -> None:  # noqa: C901
     # Training
     if model.comm_rank == 0:
         # print('# Model time: ', model.calculate_time())
-        logger.info("\n# Training...")
+        header("Training...")
         if model.profile:
             pr.enable()
     # Training a model directly from a dataset
@@ -133,7 +134,7 @@ def main(config: Namespace) -> None:  # noqa: C901
     # Second (and last) evaluation
     if model.evaluate_on_train:
         if model.comm_rank == 0:
-            logger.info("\n# Testing...")
+            header("Testing...")
             t1 = time.time()
         _ = model.evaluate()
         if model.comm_rank == 0:

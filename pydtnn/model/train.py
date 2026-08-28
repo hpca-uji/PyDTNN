@@ -17,6 +17,7 @@ from pydtnn.model.base import Base
 from pydtnn.model.eval import Eval
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT,
                                    PYDTNN_MDL_EVENTS, MdlEventEnum)
+from pydtnn.utils import term
 from pydtnn.utils.constants import Array, SyncMode
 from pydtnn.utils.logs import TqdmLogger
 
@@ -268,6 +269,7 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
                     smoothing=0.3,
                     desc=epoch_string % (epoch + 1, self.num_epochs),
                     unit=" samples",
+                    colour="BLUE" if term.FANCY else None
                 )
             else:
                 pbar = None
@@ -309,6 +311,7 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
                     smoothing=0.3,
                     desc=epoch_string % (epoch + 1, self.num_epochs),
                     unit=" samples",
+                    colour="BLUE" if term.FANCY else None
                 )
             else:
                 pbar = None

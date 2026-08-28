@@ -19,7 +19,7 @@ from pydtnn.layers.dropout import Dropout
 from pydtnn.losses.abstract.loss import Loss
 from pydtnn.model import Model
 from pydtnn.tests.abstract.base import Params, TestCase, verbose_test
-from pydtnn.utils import print_with_header, rand
+from pydtnn.utils import header, rand
 from pydtnn.utils.tensor import TensorFormat
 
 __all__ = ("ModelTestCase",)
@@ -442,7 +442,7 @@ class ModelTestCase(TestCase):
 
         if verbose_test():
             print()
-            print_with_header(f"Model {model1.model_name} 1 forward pass")
+            header(f"Model {model1.model_name} 1 forward pass")
 
         model1.real_batch_size = x[0].shape[0]
         model2.real_batch_size = x[0].shape[0]
@@ -453,7 +453,7 @@ class ModelTestCase(TestCase):
 
         # Model 2 forward
         if verbose_test():
-            print_with_header(f"Model {model2.model_name} 2 forward pass")
+            header(f"Model {model2.model_name} 2 forward pass")
         x2 = self.do_model2_forward_pass(model2, x2)
 
         # Compare forward results
@@ -461,7 +461,7 @@ class ModelTestCase(TestCase):
 
         # Model 1 backward
         if verbose_test():
-            print_with_header(f"Model {model1.model_name} 1 backward pass")
+            header(f"Model {model1.model_name} 1 backward pass")
         dx = [self.get_first_dx(model1, loss_func1, x1[-1])]
 
         dx1 = self.do_model1_backward_pass(model1, dx)
@@ -470,7 +470,7 @@ class ModelTestCase(TestCase):
 
         # Model 2 backward
         if verbose_test():
-            print_with_header(f"Model {model2.model_name} 2 backward pass")
+            header(f"Model {model2.model_name} 2 backward pass")
         dx2 = self.do_model2_backward_pass(model2, dx2)
 
         # Compare backward results

@@ -22,6 +22,7 @@ from pydtnn.model.base import Base
 from pydtnn.model.sync import Sync
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT,
                                    PYDTNN_MDL_EVENTS, MdlEventEnum)
+from pydtnn.utils import term
 from pydtnn.utils.constants import Array
 from pydtnn.utils.logs import TqdmLogger
 from pydtnn.utils.performance_models import allreduce_time
@@ -322,6 +323,7 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
                 smoothing=0.3,
                 desc="Testing",
                 unit=" samples",
+                colour="BLUE" if term.FANCY else None
             )
         else:
             pbar = None

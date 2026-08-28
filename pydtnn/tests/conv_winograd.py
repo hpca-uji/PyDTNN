@@ -10,7 +10,7 @@ from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython
 from pydtnn.libs.convWinograd import ConvWinograd, is_conv_winograd_available
 from pydtnn.tests.abstract.base import D, verbose_test
 from pydtnn.tests.abstract.conv import ConvTestCase
-from pydtnn.utils import print_with_header
+from pydtnn.utils import header
 from pydtnn.utils.tensor import TensorFormat
 
 __all__ = ("ConvWinogradTestCase",)
@@ -98,7 +98,7 @@ class ConvWinogradTestCase(ConvTestCase):
                 dtype=im2row_mm_result.dtype,
             )
         if verbose_test():
-            print_with_header(
+            header(
                 "{} conv_winograd_result".format(inspect.stack()[1][3]), conv_winograd_result
             )
             logger.info(
@@ -111,7 +111,7 @@ class ConvWinogradTestCase(ConvTestCase):
                 " Max: ",
                 conv_winograd_result.max(),
             )
-            print_with_header("{} im2row_mm_result".format(inspect.stack()[1][3]), im2row_mm_result)
+            header("{} im2row_mm_result".format(inspect.stack()[1][3]), im2row_mm_result)
             logger.info(
                 "Shape: ",
                 im2row_mm_result.shape,

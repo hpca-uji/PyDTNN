@@ -8,6 +8,7 @@ from typing import Any
 import numpy as np
 
 from pydtnn.datasets.abstract import Dataset
+from pydtnn.utils import header
 
 __all__ = ("PerformanceCounter",)
 
@@ -101,10 +102,10 @@ class PerformanceCounter:
 
     def print_report(self) -> None:
         """Logs a formatted performance report to the logger."""
-        _report = []
 
         if self.num_epochs > 0:
-            _report.append("\n# Training report")
+            header("Training report")
+            _report = []
             _report.append(f"Training time (from model): {self.training_time:5.4f} s")
             _report.append(
                 "Training time per epoch (from model):"
@@ -130,9 +131,11 @@ class PerformanceCounter:
                 "Training mean memory allocated:"
                 f" {self.training_mean_memory / 1024:.2f} MiB"
             )
+            logger.info("\n".join(_report))
 
         if self.num_evaluations > 0:
-            _report.append("\n# Testing report")
+            header("Testing report")
+            _report = []
             _report.append(
                 "Testing time (from model):"
                 f" {self.testing_time / self.num_evaluations:5.4f} s"
@@ -149,9 +152,7 @@ class PerformanceCounter:
                 "Testing mean memory allocated:"
                 f" {self.testing_mean_memory / 1024:.2f} MiB"
             )
-
-        report = "\n".join(_report)
-        logger.info(report)
+            logger.info("\n".join(_report))
 
     #  Private methods
     def _add_time_and_batch_size(

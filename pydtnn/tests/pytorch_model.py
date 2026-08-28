@@ -17,7 +17,7 @@ from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.model import Model as PyDTNN_Model
 from pydtnn.tests.abstract.base import Params, verbose_test, TestCase
-from pydtnn.utils import print_with_header, rand
+from pydtnn.utils import header, rand
 from pydtnn.utils.pytorch import from_pytorch
 from pydtnn.utils.tensor import TensorFormat
 
@@ -593,11 +593,11 @@ class PytorchModelTestCase(TestCase):
 
             # --- FORWARD ---
             if verbose_test():
-                print_with_header(f"Model {model_name} 1 forward pass")
+                header(f"Model {model_name} 1 forward pass")
             x_torch = self.do_model1_forward_pass(model_torch, x_torch)
 
             if verbose_test():
-                print_with_header(f"Model {model_pydtnn.model_name} 2 forward pass")
+                header(f"Model {model_pydtnn.model_name} 2 forward pass")
 
             model_pydtnn.real_batch_size = x_pydtnn.shape[0]
             x_pydtnn = self.do_model2_forward_pass(model_pydtnn, x_pydtnn)
@@ -615,13 +615,13 @@ class PytorchModelTestCase(TestCase):
             # --- BACKWARD ---
             # Model 1 backward
             if verbose_test():
-                print_with_header(f"Model {model_torch} 1 backward pass")
+                header(f"Model {model_torch} 1 backward pass")
 
             dx_torch = self.do_pytorch_model_backward_pass(model_torch, loss_torch)
 
             # Model 2 backward
             if verbose_test():
-                print_with_header(f"Model {model_pydtnn.model_name} 2 backward pass")
+                header(f"Model {model_pydtnn.model_name} 2 backward pass")
             dx_pydtnn = self.do_pydtnn_model_backward_pass(model_pydtnn, dx_pydtnn)
 
             # Compare backward results

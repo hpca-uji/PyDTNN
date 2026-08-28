@@ -7,7 +7,7 @@ from typing import Any
 
 import numpy as np
 
-from pydtnn.utils import print_with_header
+from pydtnn.utils import header
 from pydtnn.utils.best_of.best_of import BestOf
 
 __all__ = ("BestOfProfiler",)
@@ -73,5 +73,5 @@ class BestOfProfiler:
 
         num_threads = os.environ.get("OMP_NUM_THREADS", multiprocessing.cpu_count())
         msg = "{}  {}  OMP_NUM_THREADS: {}".format(self.header, platform.node(), num_threads)
-        print_with_header(msg)
+        header(msg)
         self.best_method.print_as_table()

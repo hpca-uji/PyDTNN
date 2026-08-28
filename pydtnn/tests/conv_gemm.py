@@ -10,7 +10,7 @@ from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython
 from pydtnn.libs.convGemm import ConvGemm, is_conv_gemm_available
 from pydtnn.tests.abstract.base import D, verbose_test
 from pydtnn.tests.abstract.conv import ConvTestCase
-from pydtnn.utils import print_with_header
+from pydtnn.utils import header
 
 __all__ = ("ConvGemmTestCase",)
 
@@ -96,7 +96,7 @@ class ConvGemmTestCase(ConvTestCase):
                 dtype=im2row_mm_result.dtype,
             )
         if verbose_test():
-            print_with_header("{} conv_gemm_result".format(inspect.stack()[1][3]), conv_gemm_result)
+            header("{} conv_gemm_result".format(inspect.stack()[1][3]), conv_gemm_result)
             logger.info(
                 "Shape: ",
                 conv_gemm_result.shape,
@@ -107,7 +107,7 @@ class ConvGemmTestCase(ConvTestCase):
                 " Max: ",
                 conv_gemm_result.max(),
             )
-            print_with_header("{} im2row_mm_result".format(inspect.stack()[1][3]), im2row_mm_result)
+            header("{} im2row_mm_result".format(inspect.stack()[1][3]), im2row_mm_result)
             logger.info(
                 "Shape: ",
                 im2row_mm_result.shape,

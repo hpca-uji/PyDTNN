@@ -7,7 +7,7 @@ import numpy as np
 
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.tests.abstract.base import D, TestCase, verbose_test
-from pydtnn.utils import print_with_header, rand
+from pydtnn.utils import header, rand
 from pydtnn.utils.tensor import TensorFormat, format_transpose
 
 __all__ = ("Conv2DTestCase",)
@@ -100,7 +100,7 @@ class Conv2DTestCase[T: Conv2D](TestCase):  # noqa: D101 (generics not detected)
         dx_allclose = np.allclose(dx_ref, dx_test)
 
         if verbose_test():
-            print_with_header(inspect.stack()[1][3])
+            header(inspect.stack()[1][3])
             # np.set_printoptions(threshold=50)  # default is 1000
             print(d)
             print("---=[ Forward results ]=---")
@@ -149,7 +149,7 @@ class Conv2DTestCase[T: Conv2D](TestCase):  # noqa: D101 (generics not detected)
         y_ref = conv2d_ref.forward(x.copy()).copy()
         y_test = conv2d_test.forward(x.copy()).copy()
         if verbose_test():
-            print_with_header("test forward defaults")
+            header("test forward defaults")
             print(y_ref)
             print(y_test)
             print("y_ref.shape:", y_ref.shape)

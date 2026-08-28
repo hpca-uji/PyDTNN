@@ -3,6 +3,7 @@
 import logging
 
 from pydtnn import utils
+from pydtnn.utils import term
 from pydtnn.model.layers import Layers
 from pydtnn.utils.constants import Array
 
@@ -105,40 +106,49 @@ class Repr[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
             struct[header] += 2
 
         # Generate separator
-        sep = ""
+        sep = []
         for header, size in struct.items():
-            sep += "+" + "-" * size
-        sep += "+"
+            sep.append(term.BOX_H * size)
+        tsep = f"{term.BOX_TL}{term.BOX_T.join(sep)}{term.BOX_TR}"
+        csep = f"{term.BOX_L}{term.BOX_C.join(sep)}{term.BOX_R}"
+        bsep = f"{term.BOX_BL}{term.BOX_B.join(sep)}{term.BOX_BR}"
 
         # Show header
         _show = [""]
-        _show.append(sep)
+        _show.append(tsep)
         _show.append("")
         for header, size in struct.items():
-            _show[-1] += f"|{header.replace('-', ' ').capitalize():^{size}s}"
-        _show[-1] += "|"
+            _show[-1] += f"{term.BOX_V}{term.BOLD}{header.replace('-', ' ').capitalize():^{size}s}{term.RESET}"
+        _show[-1] += term.BOX_V
 
         # Show layers
         top_layers = {layer.id for layer in self.layers}
         for layer_id, props in all_props.items():
             if layer_id in top_layers:
-                _show.append(sep)
+                _show.append(csep)
             _show.append("")
             for header, size in struct.items():
                 value = props.get(header, "")
-                _show[-1] += f"|{str(value):^{size}s}"
-            _show[-1] += "|"
-        _show.append(sep)
+                _show[-1] += f"{term.BOX_V}{str(value):^{size}s}"
+            _show[-1] += term.BOX_V
+        _show.append(bsep)
         logger.info("\n".join(_show))
 
     def show_model(self) -> None:
         """Logs a summary of the model configuration to the logger."""
-        key: str = "Model Summary"
+        key = "Model Summary"
+        props = self._show_props()
+        size = max(map(len, props))
+
+        if term.FANCY:
+            fb, fr = "\x1b[1m", "\x1b[0m"  # noqa: E741
+        else:
+            fb = fr = ""  # noqa: E741
+
         _show = [""]
-        _show.append(key)
-        _show.append("=" * len(key))
-        for key, value in self._show_props().items():
-            _show.append(f"- {key.replace('-', ' ').capitalize()}: {value}")
+        _show.append(f"# {fb}{key}{fr}")
+        for key, value in props.items():
+            _show.append(f"  {key.replace('-', ' '):{size}s}: {value}")
         logger.info("\n".join(_show))
 
     def show(self) -> None:
