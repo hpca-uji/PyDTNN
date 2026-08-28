@@ -317,7 +317,7 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
 
         if self.comm_rank == 0:
             pbar = tqdm(
-                file=TqdmLogger(),
+                file=TqdmLogger(term.FANCY),
                 total=sum(self.comm_nsamples[Dataset.Part.TEST]),
                 ascii=" ▁▂▃▄▅▆▇█",
                 smoothing=0.3,

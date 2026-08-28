@@ -263,7 +263,7 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
                 fmt = "%%0%dd" % (len(str(self.num_epochs)))
                 epoch_string = "Training   (%s/%s)" % (fmt, fmt)
                 pbar = tqdm(
-                    file=TqdmLogger(),
+                    file=TqdmLogger(term.FANCY),
                     total=sum(self.comm_nsamples[Dataset.Part.TRAIN]),
                     ascii=" ▁▂▃▄▅▆▇█",
                     smoothing=0.3,
@@ -305,7 +305,7 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
                 fmt = "%%0%dd" % (len(str(self.num_epochs)))
                 epoch_string = "Validating (%s/%s)" % (fmt, fmt)
                 pbar = tqdm(
-                    file=TqdmLogger(),
+                    file=TqdmLogger(term.FANCY),
                     total=sum(self.comm_nsamples[Dataset.Part.VAL]),
                     ascii=" ▁▂▃▄▅▆▇█",
                     smoothing=0.3,
