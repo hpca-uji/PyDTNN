@@ -229,5 +229,3 @@ if cudnn is not None and stream_handle is not None:
 # SYNC CUBLAS+CUDA
 if cublas is not None and stream_handle is not None:
     cublas.cublasSetStream(cublas_handle, stream_handle)
-
-print("FINAL")
