@@ -147,7 +147,7 @@ try:
     num_gpus = subprocess.check_output(["nvidia-smi", "-L"]).count(b"UUID")
 except (FileNotFoundError, subprocess.CalledProcessError):
     num_gpus = 0
-os.environ["CUDA_VISIBLE_DEVICES"] = "all"
+os.environ["CUDA_VISIBLE_DEVICES"] = str(rank % num_gpus) if num_gpus else ""
 supported_gpu = bool(num_gpus)
 
 # INIT NCCL
@@ -229,3 +229,5 @@ if cudnn is not None and stream_handle is not None:
 # SYNC CUBLAS+CUDA
 if cublas is not None and stream_handle is not None:
     cublas.cublasSetStream(cublas_handle, stream_handle)
+
+print("FINAL")
