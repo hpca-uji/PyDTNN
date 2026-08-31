@@ -147,7 +147,7 @@ try:
     num_gpus = subprocess.check_output(["nvidia-smi", "-L"]).count(b"UUID")
 except (FileNotFoundError, subprocess.CalledProcessError):
     num_gpus = 0
-os.environ["CUDA_VISIBLE_DEVICES"] = str(rank % num_gpus) if num_gpus else ""
+os.environ["CUDA_VISIBLE_DEVICES"] = "all"
 supported_gpu = bool(num_gpus)
 
 # INIT NCCL
@@ -185,7 +185,7 @@ if drv is not None:
     drv.init()
     from pycuda.driver import Stream as PycudaStream
 
-    device = drv.Device(rank % drv.Device.count())
+    device = drv.Device(rank % num_gpus)
     context = device.make_context()
     stream: PycudaStream = drv.Stream()
     stream_handle = stream.handle
