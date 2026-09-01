@@ -141,7 +141,7 @@ class ConvGemm:
             raise _libconvGemm  # pyright: ignore[reportGeneralTypeIssues]
 
         self.dtype = dtype
-    
+
         # Declare ac_pack and bc_pack and allocate space for them
         self.ac_pack = ctypes.POINTER(ctypes.c_float)()
         self.bc_pack = ctypes.POINTER(ctypes.c_float)()
