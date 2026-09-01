@@ -12,6 +12,7 @@ from pydtnn.libs import numpy as libnp
 
 __all__ = ("BaseCupy",)
 
+
 class BaseCupy(UsesCudaCode[RawModule, RawKernel], BaseNumpy):
     """Abstract base class for CuPy-based operations
 

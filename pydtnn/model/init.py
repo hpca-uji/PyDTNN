@@ -200,7 +200,11 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
             raise RuntimeError("It is necessary to have gpudirect active to work with NCCL.")
 
         if cudnn is None or cudnn_handle is None or cublas_handle is None or stream is None:
-            raise RuntimeError(f"Neither of the following parameters must be \'None\' cudnn ({cudnn=}), cudnn_handle ({cudnn_handle=}), cublas_handle ({cublas_handle=}), stream ({stream=})")
+            raise RuntimeError(
+                "Neither of the following parameters must be \'None\':"
+                f" cudnn ({cudnn=}), cudnn_handle ({cudnn_handle=}),"
+                f" cublas_handle ({cublas_handle=}), stream ({stream=})"
+            )
 
         assert drv is not None
         assert context is not None

@@ -24,7 +24,7 @@ from collections.abc import Sequence
 
 import numpy as np
 
-from pydtnn import cublas, drv, gpuarray, package_name
+from pydtnn import package_name
 from pydtnn.abstract.base import Base
 from pydtnn.datasets.abstract.base import Base as DatasetBase
 from pydtnn.model.base import Base as ModelBase
@@ -128,6 +128,7 @@ def _get_mpi_port() -> int | None:
     except Exception:
         port = None
     return port
+
 
 class Namespace(argparse.Namespace):
     """Custom namespace for storing parsed arguments and group information."""
