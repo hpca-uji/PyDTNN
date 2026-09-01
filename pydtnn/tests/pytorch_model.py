@@ -352,7 +352,7 @@ class PytorchModelTestCase(TestCase):
         """
         # PyDTNN Model
         params = PytorchModelTestCase.params
-        params.loss_func_name = "negative_likelihood"
+        params.loss_name = "negative_likelihood"
         params.model_name = ""
         # Begin of params configuration
         params_dict = vars(params)

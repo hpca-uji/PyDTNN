@@ -39,7 +39,7 @@ class SchedulerWithLossOrMetric(Scheduler):
             ValueError: If the metric is not found in the model.
         """
         try:
-            return self.model.loss_and_metrics.index(self.loss_or_metric)
+            return self.model.loss_and_metric_names.index(self.loss_or_metric)
         except ValueError as e:
             raise ValueError(
                 f"{self}: loss or metric '{self.loss_or_metric}' not found in current model!"

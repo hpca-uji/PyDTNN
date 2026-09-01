@@ -103,11 +103,11 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
             self.dataset = select_dataset(self.dataset_name)(self)
 
         # Loss [NOTE: after Dataset]
-        self.loss_func = select_loss(self.loss_func_name).from_model(self)
+        self.loss_func = select_loss(self.loss_name).from_model(self)
 
         # Metic [NOTE: after Loss]
-        metrics = [(m, select_metric(m).from_model(self)) for m in self.metrics]
-        self.metrics, self.metrics_funcs = map(tuple, zip(*metrics))
+        metrics = [(m, select_metric(m).from_model(self)) for m in self.metric_names]
+        self.metric_names, self.metrics_funcs = map(tuple, zip(*metrics))
 
         # Schedulers [NOTE: after Metric]
         self.schedulers = [
@@ -370,12 +370,12 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
             self.memory_used += metric.memory_used
             temp_memory_size.append(metric.tmp_memory_used)
 
-        metrics = list(zip(self.metrics, self.metrics_funcs))
+        metrics = list(zip(self.metric_names, self.metrics_funcs))
         metrics.sort(key=lambda metric: metric[1].order())
-        self.metrics, self.metrics_funcs = map(tuple, zip(*metrics))
+        self.metric_names, self.metrics_funcs = map(tuple, zip(*metrics))
 
-        self.loss_and_metrics = (self.loss_func_name, *self.metrics)
-        self.loss_and_metrics_format = [self.loss_func.format] + [
+        self.loss_and_metric_names = (self.loss_name, *self.metric_names)
+        self.loss_and_metric_format = [self.loss_func.format] + [
             metric.format for metric in self.metrics_funcs
         ]
 

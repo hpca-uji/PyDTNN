@@ -292,10 +292,10 @@ class ArgumentParser(argparse.ArgumentParser):
             help=(f"Only evaluate the model. Default: {ModelBase.evaluate_only!r}."),
         )
         self.add_argument(
-            "--model-state-filename",
+            "--model-state-file",
             type=str,
-            default=ModelBase.model_state_filename,
-            help=(f"Load weights and bias from file. Default: {ModelBase.model_state_filename!r}."),
+            default=ModelBase.model_state_file,
+            help=(f"Load weights and bias from file. Default: {ModelBase.model_state_file!r}."),
         )
         self.add_argument(
             "--history-file",
@@ -916,14 +916,14 @@ class ArgumentParser(argparse.ArgumentParser):
         losses = list_modules("losses")
         _op_group.add_argument(
             "--loss-func",
-            dest="loss_func_name",
+            dest="loss_name",
             type=str,
-            default=ModelBase.loss_func_name,
+            default=ModelBase.loss_name,
             choices=losses,
             help=(
                 "Loss functions that is evaluated on each trained batch:"
                 f" {', '.join(map(repr, losses[:3]))}, etc."
-                f" Default: {ModelBase.loss_func_name!r}."
+                f" Default: {ModelBase.loss_name!r}."
             ),
         )
         _op_group.add_argument(
@@ -935,12 +935,13 @@ class ArgumentParser(argparse.ArgumentParser):
         metrics = list_modules("metrics")
         _op_group.add_argument(
             "--metrics",
+            dest="metric_names",
             type=css,
-            default=ModelBase.metrics,
+            default=ModelBase.metric_names,
             help=(
                 "List of comma-separated metrics that are evaluated on each trained batch:"
                 f" {', '.join(map(repr, metrics))}, etc."
-                f" Default: {ModelBase.metrics!r}."
+                f" Default: {ModelBase.metric_names!r}."
             ),
         )
 
@@ -1269,7 +1270,7 @@ class ArgumentParser(argparse.ArgumentParser):
 
         # Environment options
         _re_group = self.add_argument_group("Environment options")
-        _re_group.add_argument("--gpus-node", type=int, default=-1, help=argparse.SUPPRESS)
+        _re_group.add_argument("--node-gpus", type=int, default=-1, help=argparse.SUPPRESS)
         _re_group.add_argument("--mpi-procs", type=int, default=-1, help=argparse.SUPPRESS)
         _re_group.add_argument("--proc-threads", type=int, default=-1, help=argparse.SUPPRESS)
 
@@ -1285,7 +1286,7 @@ class ArgumentParser(argparse.ArgumentParser):
 
         result.mpi_procs = _get_mpi_processes()
         result.proc_threads = _get_threads_per_process()
-        result.gpus_node = get_gpus_per_node()
+        result.node_gpus = get_gpus_per_node()
         result.mpi_protocol = _get_mpi_protocol()
         result.mpi_server = _get_mpi_server()
         result.mpi_port = _get_mpi_port()

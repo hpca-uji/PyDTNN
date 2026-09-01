@@ -86,7 +86,7 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
     input_shape: ArrayShape
     kwargs: dict[str, Any]
     layers: list[Layerable[T]]
-    loss_and_metrics: tuple[str, ...]
+    loss_and_metric_names: tuple[str, ...]
     loss_func: Loss[T]
     schedulers: list[Scheduler]
     memory_cls: type[PrivateMemory]
@@ -124,7 +124,7 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
     steps_per_epoch: int = 0
     evaluate_on_train: bool = False
     evaluate_only: bool = False
-    model_state_filename: str = ""
+    model_state_file: str = ""
     history_file: str = ""
     tensor_format: TensorFormat = None  # pyright: ignore[reportAssignmentType]
     random_seed: int = 57005
@@ -194,11 +194,11 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
     oktopk_min_k: int = 10
     oktopk_partition_method: str = "sparse"
     oktopk_reduce_method: str = "p2p_region_wise_reduce_destination_rotation_and_bucketing"
-    loss_func_name: str = "negative_likelihood"
+    loss_name: str = "negative_likelihood"
     loss_eps: float = 1e-8
     class_weights: tuple[float, ...] = ()
     use_class_weights: bool = False
-    metrics: tuple[str, ...] = ("categorical_accuracy",)
+    metric_names: tuple[str, ...] = ("categorical_accuracy",)
     schedulers_names: tuple[str, ...] = (
         "early_stopping",
         "reduce_lr_on_plateau",

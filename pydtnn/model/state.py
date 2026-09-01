@@ -29,13 +29,13 @@ class State[T: Array](Init[T]):  # noqa: D101 (generics not detected)
         Initializes the model and loads state from a file if specified.
 
         This method is called during the model's initialization phase. If a
-        `model_state_filename` is configured, it attempts to load the model's
+        `model_state_file` is configured, it attempts to load the model's
         state from that file.
         """
         super()._model_init()
         # Load weights and bias
-        if self.model_state_filename:
-            self.load_model_state(self.model_state_filename)
+        if self.model_state_file:
+            self.load_model_state(self.model_state_file)
 
     def export(self) -> dict[str, Any]:
         """

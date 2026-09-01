@@ -255,7 +255,7 @@ def pydtnn_inference(
     model: PyDTNN_Model, metrics_list: list | None = None, dataset: Dataset | None = None
 ) -> None:
     """Runs inference on a PyDTNN model and prints reports."""
-    metrics_list = [f for f in model.metrics] if metrics_list is None else metrics_list
+    metrics_list = [f for f in model.metric_names] if metrics_list is None else metrics_list
     model.dataset = dataset if dataset is not None else model.dataset
     model.show()
     model.evaluate()

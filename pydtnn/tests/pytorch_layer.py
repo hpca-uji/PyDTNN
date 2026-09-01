@@ -285,7 +285,7 @@ class PytorchLayerParams(Params):
         self.shape = format_reshape((C, H, W), "chw", self.tensor_format[1:])
         self.evaluate_only = False
         self.parallel_data = False
-        self.loss_func_name = "negative_likelihood"
+        self.loss_name = "negative_likelihood"
         self.use_cudnn = False
         self.omm = None
         self.dtype = np.dtype(np.float32)

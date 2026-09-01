@@ -300,8 +300,8 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
                 time.sleep(0.5)
 
             self.history.append({
-                f"{Dataset.Part.TRAIN._name_.lower()}_" + self.loss_and_metrics[m]: train_global_loss[m]
-                for m in range(len(self.loss_and_metrics))
+                f"{Dataset.Part.TRAIN._name_.lower()}_" + self.loss_and_metric_names[m]: train_global_loss[m]
+                for m in range(len(self.loss_and_metric_names))
             })
 
             # --- VAL ---
@@ -341,8 +341,8 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
                 time.sleep(0.5)
 
             self.history.append({
-                f"{Dataset.Part.VAL._name_.lower()}_" + self.loss_and_metrics[m]: val_global_loss[m]
-                for m in range(len(self.loss_and_metrics))
+                f"{Dataset.Part.VAL._name_.lower()}_" + self.loss_and_metric_names[m]: val_global_loss[m]
+                for m in range(len(self.loss_and_metric_names))
             })
 
             for sched in self.schedulers:
@@ -350,13 +350,13 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
                 if sched.stop_training:
                     terminate = True
 
-            for m in range(len(self.loss_and_metrics)):
-                value = self.loss_and_metrics_format[m](train_global_loss[m])
+            for m in range(len(self.loss_and_metric_names)):
+                value = self.loss_and_metric_format[m](train_global_loss[m])
                 if "\n" in value:
                     logger.info(f"{Dataset.Part.TRAIN._name_.lower()}_{value}")
 
-            for m in range(len(self.loss_and_metrics)):
-                value = self.loss_and_metrics_format[m](val_global_loss[m])
+            for m in range(len(self.loss_and_metric_names)):
+                value = self.loss_and_metric_format[m](val_global_loss[m])
                 if "\n" in value:
                     logger.info(f"{Dataset.Part.VAL._name_.lower()}_{value}")
 

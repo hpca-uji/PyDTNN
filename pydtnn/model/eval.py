@@ -84,8 +84,8 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
         size = metric[-1]
         if not size:
             return "processing…"
-        for i in range(len(self.loss_and_metrics)):
-            value = self.loss_and_metrics_format[i](metric[i] / size)
+        for i in range(len(self.loss_and_metric_names)):
+            value = self.loss_and_metric_format[i](metric[i] / size)
             if "\n" not in value:
                 string.append(prefix + value)
         return ", ".join(string)
@@ -359,12 +359,12 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
             time.sleep(0.5)
 
         self.history.append({
-            f"{Dataset.Part.TEST._name_.lower()}_" + self.loss_and_metrics[m]: test_global_loss[m]
-            for m in range(len(self.loss_and_metrics))
+            f"{Dataset.Part.TEST._name_.lower()}_" + self.loss_and_metric_names[m]: test_global_loss[m]
+            for m in range(len(self.loss_and_metric_names))
         })
 
-        for m in range(len(self.loss_and_metrics)):
-            value = self.loss_and_metrics_format[m](test_global_loss[m])
+        for m in range(len(self.loss_and_metric_names)):
+            value = self.loss_and_metric_format[m](test_global_loss[m])
             if "\n" in value:
                 logger.info(f"{Dataset.Part.TEST._name_.lower()}_{value}")
 

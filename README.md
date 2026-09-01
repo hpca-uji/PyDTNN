@@ -151,7 +151,7 @@ The PyDTNN framework comes with a utility launcher called
     `0`, then no trim, full dataset.Default: 0.
   - `--evaluate`, `--no-evaluate`: Evaluate the model before and after training the model. Default: False.
   - `--evaluate-only`, `--no-evaluate-only`: Only evaluate the model. Default: False.
-  - `--model-state-filename`: Load weights and bias from file. Default: ` `.
+  - `--model-state-file`: Load weights and bias from file. Default: ` `.
   - `--history-file`: Filename to save training loss and metrics. Default: ` `.
   - `--tensor-format`: Data format to be used: `nchw`, `nhwc`. If not defined value sets `nchw` when
     cuDNN is available, `nhwc` otherwise. Default: None.
@@ -366,23 +366,24 @@ $ mpirun -np 12 \
       --backend=gpu \
       --dtype=float32
 
-options
-  model                    : simplecnn
-  backend                  : gpu
-  batch-size               : 64
-  global-batch-size        : None
-  dtype                    : <class 'numpy.float32'>
-  quantize                 : False
-  quantize-dtype           : <class 'numpy.float16'>
-  num-epochs               : 50
-  steps-per-epoch          : 0.0
-  evaluate                 : False
-  evaluate-only            : False
-  model-state-filename: None
-  history-file             : 
-  tensor-format            : 
-  random-seed              : 57005
-  shared-tmp-memory        : False
+# PyDTNN benchmark
+Model options
+  model            : simplecnn
+  backend          : gpu
+  batch-size       : 64
+  global-batch-size: None
+  dtype            : float32
+  quantize         : False
+  quantize-dtype   : float16
+  num-epochs       : 50
+  steps-per-epoch  : 0.0
+  evaluate         : False
+  evaluate-only    : False
+  model-state-file : None
+  history-file     : 
+  tensor-format    : 
+  random-seed      : 57005
+  shared-tmp-memory: False
 
 Synchronization options
   shared-data             : True
@@ -393,33 +394,48 @@ Synchronization options
   initial-model-sync      : True
   final-model-sync        : True
   model-sync-quantize     : False
-  model-sync-dtype        : <class 'numpy.float16'>
+  model-sync-dtype        : float16
 
 Dataset options
-  dataset                : mnist
-  dataset-percentage     : 0.0
-  dataset-path           : datasets/mnist
-  dataset-lang           : en
-  dataset-lang2          : de
-  synthetic-train-samples: 1000
-  synthetic-test-samples : 100
-  synthetic-input-shape  : 3,32,32
-  synthetic-output-shape : 10
-  test-as-validation     : False
-  validation-split       : 0.2
-  augment-shuffle        : True
-  augment-flip           : 0.0
-  augment-crop           : 0.0
-  augment-crop-size      : 16
-  transform-crop         : False
-  transform-crop-perc    : 0.8
-  transform-resize       : False
-  transform-resize-size  : 16
-  normalize              : False
-  normalize-offset       : -0.45
-  normalize-scale        : 3.75
+  dataset                   : mnist
+  dataset-percentage        : 0.0
+  dataset-path              : datasets/mnist
+  dataset-lang              : en
+  dataset-lang2             : de
+  synthetic-train-samples   : 1000
+  synthetic-test-samples    : 100
+  synthetic-input-shape     : (3, 32, 32)
+  synthetic-output-shape    : (10,)
+  test-as-validation        : False
+  validation-split          : 0.2
+  input-crop                : False
+  input-crop-perc           : 0.8
+  input-scale               : False
+  input-scale-size          : 16
+  augment-horizontal-flip   : 0.0
+  augment-vertical-flip     : 0.0
+  augment-brightness        : 0.0
+  augment-brightness-factor : 1.0
+  augment-contrast          : 0.0
+  augment-contrast-factor   : 1.0
+  augment-saturation        : 0.0
+  augment-saturation-factor : 1.0
+  augment-blur              : 0.0
+  augment-blur-size         : 16
+  augment-mask              : 0.0
+  augment-mask-size         : 16
+  augment-perspective       : 0.0
+  augment-perspective-factor: 0.25
+  augment-rotate            : 0.0
+  augment-rotate-degree     : 90.0
+  input-normalize           : False
+  input-normalize-offset    : 0.0
+  input-normalize-scale     : 0.0
+  augment-shuffle           : True
+  use-class-weights         : False
+  class-weights             : ()
 
-Optimization options
+Fused options
   fused-bn-relu     : False
   fused-conv-relu   : False
   fused-conv-bn     : False
@@ -442,11 +458,15 @@ Optimizer options
   optimizer-tau        : 64
   optimizer-tau-prime  : 32
   optimizer-density    : 0.01
-  loss-func            : negative_likelihood
-  metrics              : categorical_accuracy
+  oktopk-min-k           : 10
+  oktopk-partition-method: sparse
+  oktopk-reduce-method   : p2p_region_wise_reduce_destination_rotation_and_bucketing
+  loss-func              : negative_likelihood
+  loss-eps               : 1e-08
+  metrics                : ('categorical_accuracy',)
 
 Schedulers options
-  schedulers                     : warm_up,reduce_lr_every_nepochs
+  schedulers                     : ('warm_up', 'reduce_lr_every_nepochs')
   warm-up-epochs                 : 5
   early-stopping-metric          : val_negative_likelihood
   early-stopping-patience        : 20
@@ -463,11 +483,11 @@ Schedulers options
   model-checkpoint-metric        : val_negative_likelihood
   model-checkpoint-save-freq     : 2
 
-Parallel execution options
-  parallel-data             : False
-  parallel-pipeline         : False
-  use-blocking-mpi          : True
-  use-mpi-buffers           : None
+Parallel options
+  parallel-data          : False
+  parallel-pipeline      : False
+  use-blocking-mpi       : True
+  use-mpi-buffers        : None
   use-cudnn              : False
   use-gpudirect          : False
   use-nccl               : False
@@ -487,41 +507,40 @@ Tracing options
   tracer-pmlib-device: 
   profile            : False
 
-Performance modeling options
+Modeling options
   cpu-speed   : 4000000000000.0
   memory-bw   : 50000000000.0
   network-bw  : 1000000000.0
   network-lat : 5e-07
   network-algo: vdg
 
-Runtime parallel execution options
-  mpi-processes      : 1
-  threads-per-process: 16
-  gpus-per-node      : 2
+Environment options
+  mpi-procs   : 1
+  proc-threads: 16
+  node-gpus   : 2
 
 Communication options
   mpi-protocol: native
   mpi-server  : 127.0.0.1
   mpi-port    : 61642
 
-Model Summary
-=============
-- Name: simplecnn
-- Dataset: mnist
-- Params: 808824
-- Memory: 21.19MB
-- Optimizer memory: 790.85KB
-- Loss memory: 2.75KB
-- Metrics memory: 0B
-- Input: (1, 28, 28)
-- Output: (10,)
-- Batch size: 64
-- Layers: 12
+# Model Summary
+- name: simplecnn
+- dataset: mnist
+- params: 808824
+- memory: 21.19MB
+- loss-memory: 2.75KB
+- metrics-memory: 0B
+- optimizer-memory: 790.85KB
+- input: (1, 28, 28)
+- output: (10,)
+- batch-size: 64
+- layers: 12
 
 +----+-----------+---------+---------+--------+-------------+-------------+-------------------+---------+--------+----------+--------+
 | Id |   Name    | Backend | Memory  | Params |    Input    |   Output    |      Weights      | Padding | Stride | Dilation |  Pool  |
 +----+-----------+---------+---------+--------+-------------+-------------+-------------------+---------+--------+----------+--------+
-| 0  |   Input   | pycuda  | 196.0KB |        |             | (1, 28, 28) |                   |         |        |          |        |
+| 0  | Identity  | pycuda  | 196.0KB |        |             | (1, 28, 28) |                   |         |        |          |        |
 +----+-----------+---------+---------+--------+-------------+-------------+-------------------+---------+--------+----------+--------+
 | 1  |  Conv2D   | pycuda  | 3.11MB  |   40   | (1, 28, 28) | (4, 28, 28) |   (4, 1, 3, 3)    | (1, 1)  | (1, 1) |  (1, 1)  |        |
 +----+-----------+---------+---------+--------+-------------+-------------+-------------------+---------+--------+----------+--------+
@@ -546,68 +565,64 @@ Model Summary
 | 11 |  Softmax  | pycuda  |  5.0KB  |        |    (10,)    |    (10,)    |                   |         |        |          |        |
 +----+-----------+---------+---------+--------+-------------+-------------+-------------------+---------+--------+----------+--------+
 
-**** Training...
-Epoch  1/50: 100%|████████| 48000/48000 [00:13<00:00, 3455.71 samples/s, train_cce: 1.1184705, train_acc: 62.32%, val_cce: 0.7023183, val_acc: 77.95%]
-Epoch  2/50: 100%|████████| 48000/48000 [00:12<00:00, 3752.62 samples/s, train_cce: 0.6748989, train_acc: 78.77%, val_cce: 0.5968420, val_acc: 81.47%]
-Epoch  3/50: 100%|████████| 48000/48000 [00:12<00:00, 3809.99 samples/s, train_cce: 0.5856293, train_acc: 81.59%, val_cce: 0.5133920, val_acc: 83.88%]
-Epoch  4/50: 100%|████████| 48000/48000 [00:13<00:00, 3598.30 samples/s, train_cce: 0.5017195, train_acc: 84.08%, val_cce: 0.4584806, val_acc: 85.58%]
-Epoch  5/50: 100%|████████| 48000/48000 [00:13<00:00, 3666.76 samples/s, train_cce: 0.4397651, train_acc: 86.20%, val_cce: 0.4184231, val_acc: 86.84%]
-Epoch  6/50: 100%|████████| 48000/48000 [00:13<00:00, 3453.78 samples/s, train_cce: 0.4097258, train_acc: 86.96%, val_cce: 0.3892847, val_acc: 87.96%]
-Epoch  7/50: 100%|████████| 48000/48000 [00:13<00:00, 3458.85 samples/s, train_cce: 0.3888468, train_acc: 87.68%, val_cce: 0.3704451, val_acc: 88.19%]
-Epoch  8/50: 100%|████████| 48000/48000 [00:13<00:00, 3662.07 samples/s, train_cce: 0.3821366, train_acc: 87.90%, val_cce: 0.3650805, val_acc: 88.22%]
-Epoch  9/50: 100%|████████| 48000/48000 [00:12<00:00, 3802.80 samples/s, train_cce: 0.3780845, train_acc: 88.06%, val_cce: 0.3555509, val_acc: 88.73%]
-Epoch 10/50: 100%|████████| 48000/48000 [00:14<00:00, 3404.88 samples/s, train_cce: 0.3715006, train_acc: 87.95%, val_cce: 0.3681258, val_acc: 88.07%]
-Epoch 11/50: 100%|████████| 48000/48000 [00:13<00:00, 3579.19 samples/s, train_cce: 0.3639101, train_acc: 88.19%, val_cce: 0.3594698, val_acc: 88.51%]
-Epoch 12/50: 100%|████████| 48000/48000 [00:13<00:00, 3546.87 samples/s, train_cce: 0.3627393, train_acc: 88.31%, val_cce: 0.3599054, val_acc: 88.11%]
-Epoch 13/50: 100%|████████| 48000/48000 [00:13<00:00, 3634.02 samples/s, train_cce: 0.3599829, train_acc: 88.59%, val_cce: 0.3425802, val_acc: 89.25%]
-Epoch 14/50: 100%|████████| 48000/48000 [00:13<00:00, 3542.70 samples/s, train_cce: 0.3640404, train_acc: 88.40%, val_cce: 0.3528128, val_acc: 88.71%]
-Epoch 15/50: 100%|████████| 48000/48000 [00:13<00:00, 3505.95 samples/s, train_cce: 0.3599551, train_acc: 88.48%, val_cce: 0.3551110, val_acc: 88.88%]
-Epoch 16/50: 100%|████████| 48000/48000 [00:12<00:00, 3711.92 samples/s, train_cce: 0.3572799, train_acc: 88.57%, val_cce: 0.3349612, val_acc: 89.40%]
-Epoch 17/50: 100%|████████| 48000/48000 [00:13<00:00, 3575.03 samples/s, train_cce: 0.3551838, train_acc: 88.65%, val_cce: 0.3405531, val_acc: 89.38%]
-Epoch 18/50: 100%|████████| 48000/48000 [00:13<00:00, 3624.12 samples/s, train_cce: 0.3534711, train_acc: 88.79%, val_cce: 0.3470441, val_acc: 89.01%]
-Epoch 19/50: 100%|████████| 48000/48000 [00:13<00:00, 3442.18 samples/s, train_cce: 0.3484907, train_acc: 88.92%, val_cce: 0.3311701, val_acc: 89.67%]
-Epoch 20/50: 100%|████████| 48000/48000 [00:14<00:00, 3423.23 samples/s, train_cce: 0.3441238, train_acc: 88.95%, val_cce: 0.3360619, val_acc: 89.24%]
-Epoch 21/50: 100%|████████| 48000/48000 [00:13<00:00, 3587.19 samples/s, train_cce: 0.3479733, train_acc: 88.88%, val_cce: 0.3403825, val_acc: 89.65%]
-Epoch 22/50: 100%|████████| 48000/48000 [00:13<00:00, 3546.39 samples/s, train_cce: 0.3463119, train_acc: 88.89%, val_cce: 0.3362577, val_acc: 89.77%]
-Epoch 23/50: 100%|████████| 48000/48000 [00:13<00:00, 3506.51 samples/s, train_cce: 0.3460476, train_acc: 88.86%, val_cce: 0.3373249, val_acc: 89.10%]
-Epoch 24/50: 100%|████████| 48000/48000 [00:12<00:00, 3708.42 samples/s, train_cce: 0.3435737, train_acc: 89.05%, val_cce: 0.3395897, val_acc: 89.25%]
-Epoch 25/50: 100%|████████| 48000/48000 [00:13<00:00, 3525.08 samples/s, train_cce: 0.3438735, train_acc: 89.26%, val_cce: 0.3333109, val_acc: 89.50%]
-Epoch 26/50: 100%|████████| 48000/48000 [00:13<00:00, 3566.45 samples/s, train_cce: 0.3414197, train_acc: 89.10%, val_cce: 0.3265650, val_acc: 89.43%]
-Epoch 27/50: 100%|████████| 48000/48000 [00:13<00:00, 3579.69 samples/s, train_cce: 0.3437447, train_acc: 89.01%, val_cce: 0.3319236, val_acc: 89.57%]
-Epoch 28/50: 100%|████████| 48000/48000 [00:13<00:00, 3590.92 samples/s, train_cce: 0.3387754, train_acc: 89.22%, val_cce: 0.3345976, val_acc: 89.70%]
-Epoch 29/50: 100%|████████| 48000/48000 [00:13<00:00, 3481.79 samples/s, train_cce: 0.3417804, train_acc: 89.12%, val_cce: 0.3417696, val_acc: 89.32%]
-Epoch 30/50: 100%|███████| 48000/48000 [00:13<00:00, 24522.59 samples/s, train_cce: 0.3385290, train_acc: 89.17%, val_cce: 0.3353500, val_acc: 89.52%]
+# Training...
+Epoch  1/50: 100%|████████| 48000/48000 [00:13<00:00, 3455.71 samples/s, train_nl: 1.1184705, train_ca: 62.32%, val_nl: 0.7023183, val_ca: 77.95%]
+Epoch  2/50: 100%|████████| 48000/48000 [00:12<00:00, 3752.62 samples/s, train_nl: 0.6748989, train_ca: 78.77%, val_nl: 0.5968420, val_ca: 81.47%]
+Epoch  3/50: 100%|████████| 48000/48000 [00:12<00:00, 3809.99 samples/s, train_nl: 0.5856293, train_ca: 81.59%, val_nl: 0.5133920, val_ca: 83.88%]
+Epoch  4/50: 100%|████████| 48000/48000 [00:13<00:00, 3598.30 samples/s, train_nl: 0.5017195, train_ca: 84.08%, val_nl: 0.4584806, val_ca: 85.58%]
+Epoch  5/50: 100%|████████| 48000/48000 [00:13<00:00, 3666.76 samples/s, train_nl: 0.4397651, train_ca: 86.20%, val_nl: 0.4184231, val_ca: 86.84%]
+Epoch  6/50: 100%|████████| 48000/48000 [00:13<00:00, 3453.78 samples/s, train_nl: 0.4097258, train_ca: 86.96%, val_nl: 0.3892847, val_ca: 87.96%]
+Epoch  7/50: 100%|████████| 48000/48000 [00:13<00:00, 3458.85 samples/s, train_nl: 0.3888468, train_ca: 87.68%, val_nl: 0.3704451, val_ca: 88.19%]
+Epoch  8/50: 100%|████████| 48000/48000 [00:13<00:00, 3662.07 samples/s, train_nl: 0.3821366, train_ca: 87.90%, val_nl: 0.3650805, val_ca: 88.22%]
+Epoch  9/50: 100%|████████| 48000/48000 [00:12<00:00, 3802.80 samples/s, train_nl: 0.3780845, train_ca: 88.06%, val_nl: 0.3555509, val_ca: 88.73%]
+Epoch 10/50: 100%|████████| 48000/48000 [00:14<00:00, 3404.88 samples/s, train_nl: 0.3715006, train_ca: 87.95%, val_nl: 0.3681258, val_ca: 88.07%]
+Epoch 11/50: 100%|████████| 48000/48000 [00:13<00:00, 3579.19 samples/s, train_nl: 0.3639101, train_ca: 88.19%, val_nl: 0.3594698, val_ca: 88.51%]
+Epoch 12/50: 100%|████████| 48000/48000 [00:13<00:00, 3546.87 samples/s, train_nl: 0.3627393, train_ca: 88.31%, val_nl: 0.3599054, val_ca: 88.11%]
+Epoch 13/50: 100%|████████| 48000/48000 [00:13<00:00, 3634.02 samples/s, train_nl: 0.3599829, train_ca: 88.59%, val_nl: 0.3425802, val_ca: 89.25%]
+Epoch 14/50: 100%|████████| 48000/48000 [00:13<00:00, 3542.70 samples/s, train_nl: 0.3640404, train_ca: 88.40%, val_nl: 0.3528128, val_ca: 88.71%]
+Epoch 15/50: 100%|████████| 48000/48000 [00:13<00:00, 3505.95 samples/s, train_nl: 0.3599551, train_ca: 88.48%, val_nl: 0.3551110, val_ca: 88.88%]
+Epoch 16/50: 100%|████████| 48000/48000 [00:12<00:00, 3711.92 samples/s, train_nl: 0.3572799, train_ca: 88.57%, val_nl: 0.3349612, val_ca: 89.40%]
+Epoch 17/50: 100%|████████| 48000/48000 [00:13<00:00, 3575.03 samples/s, train_nl: 0.3551838, train_ca: 88.65%, val_nl: 0.3405531, val_ca: 89.38%]
+Epoch 18/50: 100%|████████| 48000/48000 [00:13<00:00, 3624.12 samples/s, train_nl: 0.3534711, train_ca: 88.79%, val_nl: 0.3470441, val_ca: 89.01%]
+Epoch 19/50: 100%|████████| 48000/48000 [00:13<00:00, 3442.18 samples/s, train_nl: 0.3484907, train_ca: 88.92%, val_nl: 0.3311701, val_ca: 89.67%]
+Epoch 20/50: 100%|████████| 48000/48000 [00:14<00:00, 3423.23 samples/s, train_nl: 0.3441238, train_ca: 88.95%, val_nl: 0.3360619, val_ca: 89.24%]
+Epoch 21/50: 100%|████████| 48000/48000 [00:13<00:00, 3587.19 samples/s, train_nl: 0.3479733, train_ca: 88.88%, val_nl: 0.3403825, val_ca: 89.65%]
+Epoch 22/50: 100%|████████| 48000/48000 [00:13<00:00, 3546.39 samples/s, train_nl: 0.3463119, train_ca: 88.89%, val_nl: 0.3362577, val_ca: 89.77%]
+Epoch 23/50: 100%|████████| 48000/48000 [00:13<00:00, 3506.51 samples/s, train_nl: 0.3460476, train_ca: 88.86%, val_nl: 0.3373249, val_ca: 89.10%]
+Epoch 24/50: 100%|████████| 48000/48000 [00:12<00:00, 3708.42 samples/s, train_nl: 0.3435737, train_ca: 89.05%, val_nl: 0.3395897, val_ca: 89.25%]
+Epoch 25/50: 100%|████████| 48000/48000 [00:13<00:00, 3525.08 samples/s, train_nl: 0.3438735, train_ca: 89.26%, val_nl: 0.3333109, val_ca: 89.50%]
+Epoch 26/50: 100%|████████| 48000/48000 [00:13<00:00, 3566.45 samples/s, train_nl: 0.3414197, train_ca: 89.10%, val_nl: 0.3265650, val_ca: 89.43%]
+Epoch 27/50: 100%|████████| 48000/48000 [00:13<00:00, 3579.69 samples/s, train_nl: 0.3437447, train_ca: 89.01%, val_nl: 0.3319236, val_ca: 89.57%]
+Epoch 28/50: 100%|████████| 48000/48000 [00:13<00:00, 3590.92 samples/s, train_nl: 0.3387754, train_ca: 89.22%, val_nl: 0.3345976, val_ca: 89.70%]
+Epoch 29/50: 100%|████████| 48000/48000 [00:13<00:00, 3481.79 samples/s, train_nl: 0.3417804, train_ca: 89.12%, val_nl: 0.3417696, val_ca: 89.32%]
+Epoch 30/50: 100%|███████| 48000/48000 [00:13<00:00, 24522.59 samples/s, train_nl: 0.3385290, train_ca: 89.17%, val_nl: 0.3353500, val_ca: 89.52%]
 Scheduler ReduceLREveryNEpochs: Setting learning rate to 0.00500000!
-Epoch 30/50: 100%|████████| 48000/48000 [00:13<00:00, 3596.27 samples/s, train_cce: 0.3385290, train_acc: 89.17%, val_cce: 0.3353500, val_acc: 89.52%]
-Epoch 31/50: 100%|████████| 48000/48000 [00:13<00:00, 3543.55 samples/s, train_cce: 0.3262158, train_acc: 89.56%, val_cce: 0.3149563, val_acc: 90.25%]
-Epoch 32/50: 100%|████████| 48000/48000 [00:13<00:00, 3496.25 samples/s, train_cce: 0.3222284, train_acc: 89.81%, val_cce: 0.3056272, val_acc: 90.32%]
-Epoch 33/50: 100%|████████| 48000/48000 [00:12<00:00, 3705.79 samples/s, train_cce: 0.3210438, train_acc: 89.67%, val_cce: 0.3245406, val_acc: 89.61%]
-Epoch 34/50: 100%|████████| 48000/48000 [00:12<00:00, 3820.55 samples/s, train_cce: 0.3233700, train_acc: 89.63%, val_cce: 0.3098261, val_acc: 90.35%]
-Epoch 35/50: 100%|████████| 48000/48000 [00:13<00:00, 3568.94 samples/s, train_cce: 0.3225272, train_acc: 89.76%, val_cce: 0.3156418, val_acc: 90.00%]
-Epoch 36/50: 100%|████████| 48000/48000 [00:13<00:00, 3583.64 samples/s, train_cce: 0.3222091, train_acc: 89.83%, val_cce: 0.3227611, val_acc: 89.84%]
-Epoch 37/50: 100%|████████| 48000/48000 [00:13<00:00, 3689.22 samples/s, train_cce: 0.3263476, train_acc: 89.64%, val_cce: 0.3303543, val_acc: 89.53%]
-Epoch 38/50: 100%|████████| 48000/48000 [00:12<00:00, 3818.57 samples/s, train_cce: 0.3201116, train_acc: 89.90%, val_cce: 0.3213890, val_acc: 90.01%]
-Epoch 39/50: 100%|████████| 48000/48000 [00:13<00:00, 3457.16 samples/s, train_cce: 0.3255080, train_acc: 89.51%, val_cce: 0.3159171, val_acc: 90.02%]
-Epoch 40/50: 100%|████████| 48000/48000 [00:13<00:00, 3548.30 samples/s, train_cce: 0.3240053, train_acc: 89.63%, val_cce: 0.3084729, val_acc: 90.22%]
-Epoch 41/50: 100%|████████| 48000/48000 [00:13<00:00, 3508.52 samples/s, train_cce: 0.3220426, train_acc: 89.73%, val_cce: 0.3169541, val_acc: 89.98%]
-Epoch 42/50: 100%|████████| 48000/48000 [00:13<00:00, 3622.97 samples/s, train_cce: 0.3210119, train_acc: 89.58%, val_cce: 0.3271742, val_acc: 89.85%]
-Epoch 43/50: 100%|████████| 48000/48000 [00:12<00:00, 3744.07 samples/s, train_cce: 0.3192258, train_acc: 89.86%, val_cce: 0.3215209, val_acc: 89.89%]
-Epoch 44/50: 100%|████████| 48000/48000 [00:12<00:00, 3809.49 samples/s, train_cce: 0.3244888, train_acc: 89.55%, val_cce: 0.3067044, val_acc: 90.12%]
-Epoch 45/50: 100%|████████| 48000/48000 [00:13<00:00, 3626.12 samples/s, train_cce: 0.3195171, train_acc: 89.81%, val_cce: 0.3191177, val_acc: 90.17%]
-Epoch 46/50: 100%|████████| 48000/48000 [00:13<00:00, 3568.72 samples/s, train_cce: 0.3168551, train_acc: 89.89%, val_cce: 0.3225888, val_acc: 89.83%]
-Epoch 47/50: 100%|████████| 48000/48000 [00:13<00:00, 3486.95 samples/s, train_cce: 0.3193468, train_acc: 89.84%, val_cce: 0.3129438, val_acc: 90.23%]
-Epoch 48/50: 100%|████████| 48000/48000 [00:12<00:00, 3708.50 samples/s, train_cce: 0.3167030, train_acc: 89.94%, val_cce: 0.3166687, val_acc: 90.21%]
-Epoch 49/50: 100%|████████| 48000/48000 [00:12<00:00, 3741.18 samples/s, train_cce: 0.3168798, train_acc: 89.89%, val_cce: 0.3169060, val_acc: 90.00%]
-Epoch 50/50: 100%|████████| 48000/48000 [00:12<00:00, 3755.39 samples/s, train_cce: 0.3211099, train_acc: 89.83%, val_cce: 0.3139842, val_acc: 90.19%]
-
-**** Done...
+Epoch 30/50: 100%|████████| 48000/48000 [00:13<00:00, 3596.27 samples/s, train_nl: 0.3385290, train_ca: 89.17%, val_nl: 0.3353500, val_ca: 89.52%]
+Epoch 31/50: 100%|████████| 48000/48000 [00:13<00:00, 3543.55 samples/s, train_nl: 0.3262158, train_ca: 89.56%, val_nl: 0.3149563, val_ca: 90.25%]
+Epoch 32/50: 100%|████████| 48000/48000 [00:13<00:00, 3496.25 samples/s, train_nl: 0.3222284, train_ca: 89.81%, val_nl: 0.3056272, val_ca: 90.32%]
+Epoch 33/50: 100%|████████| 48000/48000 [00:12<00:00, 3705.79 samples/s, train_nl: 0.3210438, train_ca: 89.67%, val_nl: 0.3245406, val_ca: 89.61%]
+Epoch 34/50: 100%|████████| 48000/48000 [00:12<00:00, 3820.55 samples/s, train_nl: 0.3233700, train_ca: 89.63%, val_nl: 0.3098261, val_ca: 90.35%]
+Epoch 35/50: 100%|████████| 48000/48000 [00:13<00:00, 3568.94 samples/s, train_nl: 0.3225272, train_ca: 89.76%, val_nl: 0.3156418, val_ca: 90.00%]
+Epoch 36/50: 100%|████████| 48000/48000 [00:13<00:00, 3583.64 samples/s, train_nl: 0.3222091, train_ca: 89.83%, val_nl: 0.3227611, val_ca: 89.84%]
+Epoch 37/50: 100%|████████| 48000/48000 [00:13<00:00, 3689.22 samples/s, train_nl: 0.3263476, train_ca: 89.64%, val_nl: 0.3303543, val_ca: 89.53%]
+Epoch 38/50: 100%|████████| 48000/48000 [00:12<00:00, 3818.57 samples/s, train_nl: 0.3201116, train_ca: 89.90%, val_nl: 0.3213890, val_ca: 90.01%]
+Epoch 39/50: 100%|████████| 48000/48000 [00:13<00:00, 3457.16 samples/s, train_nl: 0.3255080, train_ca: 89.51%, val_nl: 0.3159171, val_ca: 90.02%]
+Epoch 40/50: 100%|████████| 48000/48000 [00:13<00:00, 3548.30 samples/s, train_nl: 0.3240053, train_ca: 89.63%, val_nl: 0.3084729, val_ca: 90.22%]
+Epoch 41/50: 100%|████████| 48000/48000 [00:13<00:00, 3508.52 samples/s, train_nl: 0.3220426, train_ca: 89.73%, val_nl: 0.3169541, val_ca: 89.98%]
+Epoch 42/50: 100%|████████| 48000/48000 [00:13<00:00, 3622.97 samples/s, train_nl: 0.3210119, train_ca: 89.58%, val_nl: 0.3271742, val_ca: 89.85%]
+Epoch 43/50: 100%|████████| 48000/48000 [00:12<00:00, 3744.07 samples/s, train_nl: 0.3192258, train_ca: 89.86%, val_nl: 0.3215209, val_ca: 89.89%]
+Epoch 44/50: 100%|████████| 48000/48000 [00:12<00:00, 3809.49 samples/s, train_nl: 0.3244888, train_ca: 89.55%, val_nl: 0.3067044, val_ca: 90.12%]
+Epoch 45/50: 100%|████████| 48000/48000 [00:13<00:00, 3626.12 samples/s, train_nl: 0.3195171, train_ca: 89.81%, val_nl: 0.3191177, val_ca: 90.17%]
+Epoch 46/50: 100%|████████| 48000/48000 [00:13<00:00, 3568.72 samples/s, train_nl: 0.3168551, train_ca: 89.89%, val_nl: 0.3225888, val_ca: 89.83%]
+Epoch 47/50: 100%|████████| 48000/48000 [00:13<00:00, 3486.95 samples/s, train_nl: 0.3193468, train_ca: 89.84%, val_nl: 0.3129438, val_ca: 90.23%]
+Epoch 48/50: 100%|████████| 48000/48000 [00:12<00:00, 3708.50 samples/s, train_nl: 0.3167030, train_ca: 89.94%, val_nl: 0.3166687, val_ca: 90.21%]
+Epoch 49/50: 100%|████████| 48000/48000 [00:12<00:00, 3741.18 samples/s, train_nl: 0.3168798, train_ca: 89.89%, val_nl: 0.3169060, val_ca: 90.00%]
+Epoch 50/50: 100%|████████| 48000/48000 [00:12<00:00, 3755.39 samples/s, train_nl: 0.3211099, train_ca: 89.83%, val_nl: 0.3139842, val_ca: 90.19%]
 Training and validation time: 691.9629 s
 Training and validation time per epoch: 691.9629 s
 Training and validation throughput: 69.3679 samples/s
 
- -------------------------------------
-| Performance counter training report |
- -------------------------------------
+# Training report
 Training time (from model): 60.6756 s
 Training time per epoch (from model): 60.6756 s
 Training throughput (from model): 39554.6417 samples/s
@@ -629,20 +644,21 @@ $ pydtnn-benchmark \
     --evaluate-only \
     --batch-size=64 \
     --validation-split=0.2 \
-    --model-state-filename=vgg16-weights-nhwc.npz \
+    --model-state-file=vgg16-weights-nhwc.npz \
     --no-tracing \
     --no-profile \
     --backend=gpu \
     --dtype=float32
 
-options
+# PyDTNN benchmark
+Model options
   model                    : vgg16_cifar10
   backend                  : cpu
   batch-size               : 64
   global-batch-size        : None
-  dtype                    : <class 'numpy.float32'>
+  dtype                    : numpy.float32
   quantize                 : False
-  quantize-dtype           : <class 'numpy.float16'>
+  quantize-dtype           : float16
   num-epochs               : 400
   steps-per-epoch          : 0.0
   evaluate                 : False
@@ -662,33 +678,48 @@ Synchronization options
   initial-model-sync      : True
   final-model-sync        : True
   model-sync-quantize     : False
-  model-sync-dtype        : <class 'numpy.float16'>
+  model-sync-dtype        : numpy.float16
 
 Dataset options
-  dataset                : cifar10
-  dataset-percentage     : 0.0
-  dataset-path           : datasets/cifar10
-  dataset-lang           : en
-  dataset-lang2          : de
-  synthetic-train-samples: 1000
-  synthetic-test-samples : 100
-  synthetic-input-shape  : 3,32,32
-  synthetic-output-shape : 10
-  test-as-validation     : True
-  validation-split       : 0.2
-  augment-shuffle        : True
-  augment-flip           : 0.5
-  augment-crop           : 0.5
-  augment-crop-size      : 16
-  transform-crop         : False
-  transform-crop-perc    : 0.875
-  transform-resize       : False
-  transform-resize-size  : 300
-  normalize              : True
-  normalize-offset       : -0.472
-  normalize-scale        : 1.0
+  dataset                   : cifar10
+  dataset-percentage        : 0.0
+  dataset-path              : datasets/cifar10
+  dataset-lang              : en
+  dataset-lang2             : de
+  synthetic-train-samples   : 1000
+  synthetic-test-samples    : 100
+  synthetic-input-shape     : (3, 32, 32)
+  synthetic-output-shape    : 10
+  test-as-validation        : True
+  validation-split          : 0.2
+  input-crop                : False
+  input-crop-perc           : 0.8
+  input-scale               : False
+  input-scale-size          : 16
+  augment-horizontal-flip   : 0.0
+  augment-vertical-flip     : 0.0
+  augment-brightness        : 0.0
+  augment-brightness-factor : 1.0
+  augment-contrast          : 0.0
+  augment-contrast-factor   : 1.0
+  augment-saturation        : 0.0
+  augment-saturation-factor : 1.0
+  augment-blur              : 0.0
+  augment-blur-size         : 16
+  augment-mask              : 0.0
+  augment-mask-size         : 16
+  augment-perspective       : 0.0
+  augment-perspective-factor: 0.25
+  augment-rotate            : 0.0
+  augment-rotate-degree     : 90.0
+  input-normalize           : True
+  input-normalize-offset    : -0.472
+  input-normalize-scale     : 1.0
+  augment-shuffle           : True
+  use-class-weights         : False
+  class-weights             : ()
 
-Optimization options
+Fused options
   fused-bn-relu     : False
   fused-conv-relu   : False
   fused-conv-bn     : False
@@ -711,8 +742,12 @@ Optimizer options
   optimizer-tau        : 64
   optimizer-tau-prime  : 32
   optimizer-density    : 0.01
-  loss-func            : negative_likelihood
-  metrics              : categorical_accuracy
+  oktopk-min-k           : 10
+  oktopk-partition-method: sparse
+  oktopk-reduce-method   : p2p_region_wise_reduce_destination_rotation_and_bucketing
+  loss-func              : negative_likelihood
+  loss-eps               : 1e-08
+  metrics              : ('categorical_accuracy',)
 
 Schedulers options
   schedulers                     : warm_up,reduce_lr_on_plateau,early_stopping
@@ -732,11 +767,11 @@ Schedulers options
   model-checkpoint-metric        : val_negative_likelihood
   model-checkpoint-save-freq     : 2
 
-Parallel execution options
-  parallel-data              : False
-  parallel-pipeline          : False
-  use-blocking-mpi           : True
-  use-mpi-buffers            : None
+Parallel options
+  parallel-data           : False
+  parallel-pipeline       : False
+  use-blocking-mpi        : True
+  use-mpi-buffers         : None
   use-cudnn               : False
   use-gpudirect           : False
   use-nccl                : False
@@ -756,41 +791,40 @@ Tracing options
   tracer-pmlib-device: 
   profile            : False
 
-Performance modeling options
+Modeling options
   cpu-speed   : 4000000000000.0
   memory-bw   : 50000000000.0
   network-bw  : 1000000000.0
   network-lat : 5e-07
   network-algo: vdg
 
-Runtime parallel execution options
-  mpi-processes      : 1
-  threads-per-process: 8
-  gpus-per-node      : 2
+Environment options
+  mpi-procs   : 1
+  proc-threads: 8
+  node-grpus  : 2
 
 Communication options
   mpi-protocol: native
   mpi-server  : 127.0.0.1
   mpi-port    : 61642
 
-Model Summary
-=============
-- Name: vgg16_cifar10
-- Dataset: cifar10
-- Params: 33638218
-- Memory: 1.39GB (256.65MB tmp)
-- Optimizer memory: 384.96MB (256.64MB tmp)
-- Loss memory: 5.5KB (3.0KB tmp)
-- Metrics memory: 256.0B (256.0B tmp)
-- Input: (3, 32, 32)
-- Output: (10,)
-- Batch size: 64
-- Layers: 41
+# Model Summary
+- name: vgg16_cifar10
+- dataset: cifar10
+- params: 33638218
+- memory: 1.39GB (256.65MB tmp)
+- metrics-memory: 256.0B (256.0B tmp)
+- loss-memory: 5.5KB (3.0KB tmp)
+- optimizer-memory: 384.96MB (256.64MB tmp)
+- input: (3, 32, 32)
+- output: (10,)
+- batch-size: 64
+- layers: 41
 
 +----+-----------+---------+---------------------+----------+---------------+---------------+------------------+---------+--------+----------+--------+
 | Id |   Name    | Backend |       Memory        |  Params  |     Input     |    Output     |     Weights      | Padding | Stride | Dilation |  Pool  |
 +----+-----------+---------+---------------------+----------+---------------+---------------+------------------+---------+--------+----------+--------+
-| 0  |   Input   |  numpy  |                     |          |               |  (3, 32, 32)  |                  |         |        |          |        |
+| 0  | Identity  |  numpy  |                     |          |               |  (3, 32, 32)  |                  |         |        |          |        |
 +----+-----------+---------+---------------------+----------+---------------+---------------+------------------+---------+--------+----------+--------+
 | 1  |  Conv2D   | cython  |       22.76MB       |   1792   |  (3, 32, 32)  | (64, 32, 32)  |  (64, 3, 3, 3)   | (1, 1)  | (1, 1) |  (1, 1)  |        |
 +----+-----------+---------+---------------------+----------+---------------+---------------+------------------+---------+--------+----------+--------+
@@ -873,14 +907,12 @@ Model Summary
 | 40 |  Softmax  |  numpy  | 5.75KB (3.25KB tmp) |          |     (10,)     |     (10,)     |                  |         |        |          |        |
 +----+-----------+---------+---------------------+----------+---------------+---------------+------------------+---------+--------+----------+--------+
 
-**** Evaluating on test dataset...
-Testing: 100%|████████████████████████████████████████████████████| 10000/10000 [00:28<00:00, 346.26 samples/s, test_cce: 0.7342598, test_acc: 77.91%]
+# Testing...
+Testing: 100%|████████████████████████████████████████████████████| 10000/10000 [00:28<00:00, 346.26 samples/s, test_nl: 0.7342598, test_ca: 77.91%]
 Testing time: 29.3891 s
 Testing throughput: 340.2627 samples/s
 
- ------------------------------------
-| Performance counter testing report |
- ------------------------------------
+# Testing report
 Testing time (from model): 28.3266 s
 Testing throughput (from model): 353.0247 samples/s
 Testing maximum memory allocated: 2205.47 MiB
