@@ -286,7 +286,7 @@ class PytorchLayerParams(Params):
         self.evaluate_only = False
         self.parallel_data = False
         self.loss_name = "negative_likelihood"
-        self.use_cudnn = False
+        self.use_cuda = False
         self.omm = None
         self.dtype = np.dtype(np.float32)
         self.tracing = False

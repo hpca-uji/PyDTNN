@@ -294,7 +294,7 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
         """
         self._ensure_runnable()
 
-        if self.use_cudnn and self.y_batch is None:
+        if self.use_cuda and self.y_batch is None:
             assert gpuarray and self.cudnn_dtype
             tensor_ary = TensorArray(
                 gpuarray.empty((self.batch_size, *self.layers[-1].shape), self.dtype),

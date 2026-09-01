@@ -71,7 +71,7 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
 
         # Initialize attributes
         self._model_inited: bool = False
-        self.use_cudnn = gpuarray is not None and drv is not None and cublas is not None
+        self.use_cuda = gpuarray is not None and drv is not None and cublas is not None
         self.random: np.random.Generator = rand.Generator(self.random_seed)  # pyright: ignore[reportAttributeAccessIssue]
         self.memory_cls = PreallocMemory if self.shared_tmp_memory else PrivateMemory
         self.memory: PrivateMemory = None  # pyright: ignore[reportAttributeAccessIssue]
@@ -86,8 +86,8 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
         self._tracer_init()
 
         # Cuda [NOTE: after MPI]
-        if self.use_cudnn:
-            self._cudnn_init()
+        if self.use_cuda:
+            self._cuda_init()
         else:
             self.stream = None
 
@@ -186,25 +186,24 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
         """Configures the tensor format based on hardware capabilities."""
         if self.tensor_format:
             tensor_format = TensorFormat(self.tensor_format.lower())
-        elif self.use_cudnn:
+        elif self.use_cuda:
             tensor_format = TensorFormat.NCHW
         else:
             tensor_format = TensorFormat.NHWC
 
         self.tensor_format = tensor_format
 
-    def _cudnn_init(self) -> None:
+    def _cuda_init(self) -> None:
         """Initializes CUDA, cuDNN, and NCCL backend handles."""
 
         if not self.use_gpudirect and self.use_nccl:
             raise RuntimeError("It is necessary to have gpudirect active to work with NCCL.")
 
-        assert cudnn is not None
+        if cudnn is None or cudnn_handle is None or cublas_handle is None or stream is None:
+            raise RuntimeError(f"Neither of the following parameters must be \'None\' cudnn ({cudnn=}), cudnn_handle ({cudnn_handle=}), cublas_handle ({cublas_handle=}), stream ({stream=})")
+
         assert drv is not None
         assert context is not None
-        assert cudnn_handle is not None
-        assert cublas_handle is not None
-        assert stream is not None
 
         self.y_batch = None  # pyright: ignore[reportAttributeAccessIssue]
 
@@ -286,7 +285,7 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
             from pydtnn.tracers.extrae_tracer import ExtraeTracer
 
             tracer = ExtraeTracer(self.tracing)
-        elif self.use_cudnn:
+        elif self.use_cuda:
             from pydtnn.tracers.simple_tracer_gpu import SimpleTracerPycuda
 
             tracer = SimpleTracerPycuda(self.tracing, self.tracer_output, self.comm)

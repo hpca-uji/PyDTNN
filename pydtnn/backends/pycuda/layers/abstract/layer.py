@@ -42,7 +42,7 @@ class LayerPycuda(Layer[TensorArray], LayerablePycuda):
         """Initializes model parameters and validates CUDNN requirements."""
         super()._model_init(prev_shape, x)
 
-        if not self.model.use_cudnn:
+        if not self.model.use_cuda:
             raise ExceptionGroup("GPU layers requires CUDNN to be enabled!", gpu_errors)
 
         self.grid = self.model.cuda_grid

@@ -129,12 +129,6 @@ def _get_mpi_port() -> int | None:
         port = None
     return port
 
-
-def _get_use_cudnn() -> bool:
-    """Get if cudnn is enabled."""
-    return gpuarray is not None and drv is not None and cublas is not None
-
-
 class Namespace(argparse.Namespace):
     """Custom namespace for storing parsed arguments and group information."""
 
@@ -1290,7 +1284,6 @@ class ArgumentParser(argparse.ArgumentParser):
         result.mpi_protocol = _get_mpi_protocol()
         result.mpi_server = _get_mpi_server()
         result.mpi_port = _get_mpi_port()
-        result.use_cudnn = _get_use_cudnn()
 
         result.groups = self._action_groups
         return result
