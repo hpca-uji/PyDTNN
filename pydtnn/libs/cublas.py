@@ -6,19 +6,19 @@
 
 from __future__ import absolute_import
 
+import re
 import ctypes
 import functools
-import re
-import sys
-from string import Template
 from typing import Any
+from string import Template
 from collections.abc import Callable
 
 import numpy as np
 
 from pydtnn.libs import cuda, utils
+from pydtnn.utils import load_library
 
-# Load library:
+
 __all__ = (
     "cublasAllocFailed",
     "cublasArchMismatch",
@@ -230,60 +230,12 @@ __all__ = (
     "cublasZtrsv",
 )
 
-_linux_version_list = [
-    11.0,
-    10.2,
-    10.1,
-    10.0,
-    9.2,
-    9.1,
-    9.0,
-    8.0,
-    7.5,
-    7.0,
-    6.5,
-    6.0,
-    5.5,
-    5.0,
-    4.0,
-]
-_win32_version_list = [11, 10, 10, 100, 92, 91, 90, 80, 75, 70, 65, 60, 55, 50, 40]
-if "linux" in sys.platform:
-    _libcublas_libname_list = ["libcublas.so"] + [
-        "libcublas.so.%s" % v for v in _linux_version_list
-    ]
-elif sys.platform == "darwin":
-    _libcublas_libname_list = ["libcublas.dylib"]
-elif sys.platform == "win32":
-    if sys.maxsize > 2**32:
-        _libcublas_libname_list = ["cublas.dll"] + [
-            "cublas64_%s.dll" % v for v in _win32_version_list
-        ]
-    else:
-        _libcublas_libname_list = ["cublas.dll"] + [
-            "cublas32_%s.dll" % v for v in _win32_version_list
-        ]
-else:
-    raise RuntimeError("unsupported platform")
 
-# Print understandable error message when library cannot be found:
-_libcublas = None
-for _libcublas_libname in _libcublas_libname_list:
-    try:
-        if sys.platform == "win32":
-            _libcublas = ctypes.windll.LoadLibrary(_libcublas_libname)
-        else:
-            _libcublas = ctypes.cdll.LoadLibrary(_libcublas_libname)
-    except OSError:
-        pass
-    else:
-        break
-if _libcublas is None:
-    raise OSError("cublas library not found")
+# Load library:
+_libcublas = load_library("cublas")
+
 
 # Generic CUBLAS error:
-
-
 class cublasError(Exception):
     """Base class for CUBLAS errors."""
 

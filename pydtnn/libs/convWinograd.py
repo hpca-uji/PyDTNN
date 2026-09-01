@@ -7,23 +7,23 @@ tensor formats (NCHW, NHWC) and aims to provide a faster alternative to
 standard convolution implementations for specific kernel and stride configurations.
 """
 
+import math
 import ctypes
 import logging
-import math
 import platform
 import weakref
-from collections import defaultdict
-from functools import partial
 from typing import Any
+from functools import partial
+from collections import defaultdict
 from collections.abc import Callable
 
 import numpy as np
 
+from pydtnn.utils import load_library
+from pydtnn.utils.best_of.best_of import BestOf
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.backends.cython.utils.im2col_nchw_cython import im2col_nchw_cython
 from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython
-from pydtnn.utils import load_library
-from pydtnn.utils.best_of.best_of import BestOf
 from pydtnn.utils.tensor import TensorFormat, decode_shape, encode_shape
 
 __all__ = ("ConvWinograd", "is_conv_winograd_available")
@@ -32,9 +32,10 @@ logger = logging.getLogger(__name__)
 
 
 try:
-    load_library("convwinograd")
+    _libconvwinograd = load_library("convwinograd")
     is_conv_winograd_available = True
-except Exception:
+except Exception as e:
+    _libconvwinograd = e
     is_conv_winograd_available = False
 
 
@@ -67,7 +68,7 @@ class ConvWinograd:
     (see tests/winograd.py for more instructions on testing)
     """
 
-    lib_cw = None  # will link to the libconvwinograd.so library
+    lib_cw: ctypes.CDLL = None  # pyright: ignore[reportAssignmentType]
 
     def winograd_workspace_alloc_pre(
         self, m: int, r: int, k: int, c: int
@@ -222,8 +223,8 @@ class ConvWinograd:
                         rn[0],
                         (
                             self._conv_winograd_c,
-                            getattr(self.__class__.lib_cw, f"{rn[1]}_pre"),
-                            getattr(self.__class__.lib_cw, f"{rn[1]}_kernel"),
+                            getattr(self.lib_cw, f"{rn[1]}_pre"),
+                            getattr(self.lib_cw, f"{rn[1]}_kernel"),
                         ),
                     )
                 )
@@ -231,7 +232,7 @@ class ConvWinograd:
                 pass
         if not funcs:
             logger.warning("Winograd routine not found. Fallback to numpy version!")
-            funcs = [("numpy", (self._conv_winograd_numpy, None, None))]
+            funcs = [("numpy", (self._conv_winograd_numpy, lambda: None, lambda: None))]
 
         for intr, f in funcs:
             assert f[1], f"{f[0]} missing pre function"
@@ -388,6 +389,10 @@ class ConvWinograd:
         parent_layer: object, optional
             The layer that is using this Winograd implementation (for tracing purposes). Defaults to None.
         """
+        if is_conv_winograd_available:
+            self.lib_cw = _libconvwinograd  # pyright: ignore[reportAttributeAccessIssue]
+        else:
+            raise _libconvwinograd  # pyright: ignore[reportGeneralTypeIssues]
 
         # Parent layer
         if parent_layer is not None:
@@ -407,9 +412,6 @@ class ConvWinograd:
                 raise NotImplementedError("dtype '{}' not recognized".format(dtype))
 
         self.tensor_format = tensor_format
-
-        if ConvWinograd.lib_cw is None:
-            ConvWinograd.lib_cw = load_library("convwinograd")
 
         self.alternatives = defaultdict(lambda: [])
         m, r = None, None
@@ -437,10 +439,10 @@ class ConvWinograd:
 
         try:
             self.conv_winograd_workspace_alloc_pre = getattr(
-                self.__class__.lib_cw, "conv_winograd_workspace_alloc_pre"
+                self.lib_cw, "conv_winograd_workspace_alloc_pre"
             )
             self.conv_winograd_workspace_alloc_kernel = getattr(
-                self.__class__.lib_cw, "conv_winograd_workspace_alloc_kernel"
+                self.lib_cw, "conv_winograd_workspace_alloc_kernel"
             )
         except AttributeError:
             logger.error("Winograd conv_winograd_workspace_alloc_pre/kernel routines not found.")

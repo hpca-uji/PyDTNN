@@ -1,15 +1,13 @@
 """Utility functions and classes for the PyDTNN framework."""
 
-import ctypes
-import logging
-import math
-import os
-import string
 import sys
-import threading
+import math
+import ctypes
+import string
 import zipfile
+import logging
+import threading
 from collections.abc import Iterable
-from ctypes.util import find_library
 from importlib import import_module, resources
 from pathlib import PurePath
 from queue import Queue
@@ -131,10 +129,6 @@ def load_library(name: str) -> ctypes.CDLL:
     """
     Loads an external library using ctypes.CDLL.
 
-    It searches the library using ctypes.util.find_library(). If the library is
-    not found, it traverses the LD_LIBRARY_PATH until it finds it. If it is not
-    in any of the LD_LIBRARY_PATH paths, an ImportError exception is raised.
-
     Parameters
     ----------
     name : str
@@ -145,33 +139,15 @@ def load_library(name: str) -> ctypes.CDLL:
     -------
     The loaded library.
     """
-    path = find_library(name)
-    if path is None:
-        if sys.platform in ("linux2", "linux"):
-            full_name = f"lib{name}.so"
-        elif sys.platform == "darwin":
-            full_name = f"lib{name}.dylib"
-        elif sys.platform == "win32":
-            full_name = f"lib{name}.dll"
-        else:
-            raise NotImplementedError(
-                f"Trying to load '{name}' library, but platform '{
-                    sys.platform
-                }' is not yet supported!"
-            )
-
-        for current_path in os.environ.get("LD_LIBRARY_PATH", "").split(":"):
-            if os.path.exists(os.path.join(current_path, full_name)):
-                path = os.path.join(current_path, full_name)
-                break
-        else:
-            # Didn't find the library
-            raise ImportError(
-                f"Library '{full_name}' could not be found. Please add its path to LD_LIBRARY_PATH "
-                f"using 'export LD_LIBRARY_PATH={name.upper()}_LIB_PATH:$LD_LIBRARY_PATH' and "
-                "then call this application again."
-            )
-    return ctypes.CDLL(path)
+    match sys.platform:
+        case "linux" | "linux2":
+            return ctypes.cdll.LoadLibrary(f"lib{name}.so")
+        case "win32":
+            return ctypes.windll.LoadLibrary(f"{name}.dll")  # pyright: ignore[reportAttributeAccessIssue]
+        case "darwin":
+            return ctypes.cdll.LoadLibrary(f"lib{name}.dylib")
+        case _:
+            raise NotImplementedError(f"{name} platform is not yet supported!")
 
 
 def get_npz_shape(file: str) -> dict[str, tuple[int, ...]]:

@@ -2,8 +2,10 @@
 
 import ctypes
 import logging
-import sys
 from enum import Enum
+
+from pydtnn.utils import load_library
+
 
 __all__ = (
     "DataType",
@@ -36,25 +38,9 @@ __all__ = (
 logger = logging.getLogger(__name__)
 
 
-if sys.platform in ("linux2", "linux"):
-    _libnccl_libname_list = ["libnccl.so"]
-elif sys.platform == "darwin":
-    _libnccl_libname_list = ["libnccl.dylib"]
-elif sys.platform == "win32":
-    _libnccl_libname_list = ["libnccl.dll"]
-else:
-    raise NotImplementedError("PyDTNN NCCL: current platform is not yet supported!")
+# Load library:
+_libnccl = load_library("nccl")
 
-_libnccl = None
-for _libnccl_libname in _libnccl_libname_list:
-    try:
-        _libnccl = ctypes.cdll.LoadLibrary(_libnccl_libname)
-    except OSError:
-        pass
-    else:
-        break
-if _libnccl is None:
-    raise OSError("NCCL library not found")
 
 # NCCL error
 _libnccl.ncclGetErrorString.restype = ctypes.c_char_p

@@ -11,11 +11,11 @@ import weakref
 
 import numpy as np
 
-from pydtnn.abstract.layerable import Layerable
-from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython
 from pydtnn.utils import load_library
 from pydtnn.utils.constants import ArrayShape
+from pydtnn.abstract.layerable import Layerable
 from pydtnn.utils.tensor import TensorFormat, decode_shape, encode_shape
+from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython
 
 __all__ = ("ConvDirect", "is_conv_direct_available")
 
@@ -23,9 +23,10 @@ logger = logging.getLogger(__name__)
 
 
 try:
-    load_library("convDirect")
+    _libconvDirect = load_library("convDirect")
     is_conv_direct_available = True
-except Exception:
+except Exception as e:
+    _libconvDirect = e
     is_conv_direct_available = False
 
 
@@ -39,9 +40,8 @@ class ConvDirect:
 
     Attributes
     ----------
-    lib_cd : ctypes.CDLL or None
-        The loaded `libconvDirect.so` library. It is loaded on the first
-        instantiation of `ConvDirect` or when `load_library` is called.
+    lib_cd : ctypes.CDLL
+        The loaded `libconvDirect.so` library.
 
     Methods
     -------
@@ -63,7 +63,7 @@ class ConvDirect:
     (see tests/winograd.py for more instructions on testing)
     """
 
-    lib_cd = None  # will link to the libconvDirect.so library
+    lib_cd: ctypes.CDLL = None  # pyright: ignore[reportAssignmentType]
 
     def _set_methods(self, method_name: str) -> None:
         """Placeholder method. Currently does nothing."""
@@ -106,6 +106,10 @@ class ConvDirect:
             If the specified `method_name` is not supported by the `libconvDirect.so`
             library, or if the module is used in a mode other than `evaluate_only`.
         """
+        if is_conv_direct_available:
+            self.lib_cd = _libconvDirect  # pyright: ignore[reportAttributeAccessIssue]
+        else:
+            raise _libconvDirect  # pyright: ignore[reportGeneralTypeIssues]
 
         # self properties from parameters
         self.dtype = dtype
@@ -121,22 +125,19 @@ class ConvDirect:
         else:
             self.evaluate_only = True
 
-        if ConvDirect.lib_cd is None:
-            ConvDirect.lib_cd = load_library("convDirect")
-
         self._DT = ctypes.POINTER(ctypes.c_float)()
         self._FT = ctypes.POINTER(ctypes.c_float)()
         self._YT = ctypes.POINTER(ctypes.c_float)()
 
         try:
             [self._conv_direct_pre, self._conv_direct_kernel, self._conv_direct_post] = [
-                getattr(self.__class__.lib_cd, method_name + suffix)
+                getattr(self.lib_cd, method_name + suffix)
                 for suffix in ("_pre", "_kernel", "_post")
             ]
         except AttributeError as exc:
             raise NotImplementedError(
-                "Error: Method '{}' not supported by convDirect library.\n       Run"
-                " convDirect_info to see the convDirect supported methods.".format(method_name)
+                f"Error: Method '{method_name}' not supported by convDirect library."
+                " Run convDirect_info to see the convDirect supported methods."
             ) from exc
 
         self._reuse_processed_weights = False

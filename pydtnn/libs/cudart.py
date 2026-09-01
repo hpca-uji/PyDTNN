@@ -3,14 +3,15 @@
 
 from __future__ import annotations
 
+import re
 import ctypes
 import functools
-import re
-import sys
 from typing import TYPE_CHECKING, Any
 from collections.abc import Callable
 
 import numpy as np
+
+from pydtnn.utils import load_library
 
 # Source: https://github.com/lebedov/scikit-cuda
 
@@ -19,7 +20,6 @@ if TYPE_CHECKING:
     import gpuarray
 
 
-# Load library:
 __all__ = (
     "POINTER",
     "cuDoubleComplex",
@@ -121,60 +121,12 @@ __all__ = (
     "gpuarray_ptr",
 )
 
-_linux_version_list = [
-    11.0,
-    10.2,
-    10.1,
-    10.0,
-    9.2,
-    9.1,
-    9.0,
-    8.0,
-    7.5,
-    7.0,
-    6.5,
-    6.0,
-    5.5,
-    5.0,
-    4.0,
-]
-_win32_version_list = [110, 102, 101, 100, 92, 91, 90, 80, 75, 70, 65, 60, 55, 50, 40]
-if "linux" in sys.platform:
-    _libcudart_libname_list = ["libcudart.so"] + [
-        "libcudart.so.%s" % v for v in _linux_version_list
-    ]
-elif sys.platform == "darwin":
-    _libcudart_libname_list = ["libcudart.dylib"]
-elif sys.platform == "win32":
-    if sys.maxsize > 2**32:
-        _libcudart_libname_list = ["cudart.dll"] + [
-            "cudart64_%s.dll" % v for v in _win32_version_list
-        ]
-    else:
-        _libcudart_libname_list = ["cudart.dll"] + [
-            "cudart32_%s.dll" % v for v in _win32_version_list
-        ]
-else:
-    raise RuntimeError("unsupported platform")
 
-# Print understandable error message when library cannot be found:
-_libcudart = None
-for _libcudart_libname in _libcudart_libname_list:
-    try:
-        if sys.platform == "win32":
-            _libcudart = ctypes.windll.LoadLibrary(_libcudart_libname)
-        else:
-            _libcudart = ctypes.cdll.LoadLibrary(_libcudart_libname)
-    except OSError:
-        pass
-    else:
-        break
-if _libcudart is None:
-    raise OSError("CUDA runtime library not found")
+# Load library:
+_libcudart = load_library("cudart")
+
 
 # Code adapted from PARRET:
-
-
 @functools.wraps(ctypes.POINTER)
 def POINTER(type: type) -> type[ctypes._Pointer]:
     """

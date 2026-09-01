@@ -4,7 +4,9 @@
 
 import ctypes
 import logging
-import sys
+
+from pydtnn.utils import load_library
+
 
 __all__ = (
     "CudnnConvolutionBwdDataAlgoPerf",
@@ -93,25 +95,9 @@ __all__ = (
 logger = logging.getLogger(__name__)
 
 
-if sys.platform in ("linux2", "linux"):
-    _libcudnn_libname_list = ["libcudnn.so", "libcudnn.so.7", "libcudnn.so.6.0.21"]
-elif sys.platform == "darwin":
-    _libcudnn_libname_list = ["libcudnn.dylib", "libcudnn.6.dylib"]
-elif sys.platform == "win32":
-    _libcudnn_libname_list = ["cudnn64_6.dll"]
-else:
-    raise NotImplementedError("PyDTNN CUDNN: current platform is not yet supported!")
+# Load library:
+_libcudnn = load_library("cudnn")
 
-_libcudnn = None
-for _libcudnn_libname in _libcudnn_libname_list:
-    try:
-        _libcudnn = ctypes.cdll.LoadLibrary(_libcudnn_libname)
-    except OSError:
-        pass
-    else:
-        break
-if _libcudnn is None:
-    raise OSError("cuDNN library not found")
 
 # cuDNN error
 _libcudnn.cudnnGetErrorString.restype = ctypes.c_char_p

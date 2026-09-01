@@ -25,9 +25,10 @@ logger = logging.getLogger(__name__)
 
 
 try:
-    load_library("convGemm")
+    _libconvGemm = load_library("convGemm")
     is_conv_gemm_available = True
-except Exception:
+except Exception as e:
+    _libconvGemm = e
     is_conv_gemm_available = False
 
 
@@ -99,7 +100,7 @@ class ConvGemm:
     (see tests/conv_gemm.py for more instructions on testing)
     """
 
-    lib_cg = None  # will link to the libconvGemm.so library
+    lib_cg: ctypes.CDLL = None  # pyright: ignore[reportAssignmentType]
 
     def __init__(
         self,
@@ -134,11 +135,13 @@ class ConvGemm:
             If the specified `dtype` is not supported by the loaded `libconvGemm`
             library.
         """
-        self.dtype = dtype
-        if ConvGemm.lib_cg is None:
-            ConvGemm.lib_cg = load_library("convGemm")
-        assert self.lib_cg
+        if is_conv_gemm_available:
+            self.lib_cg = _libconvGemm  # pyright: ignore[reportAttributeAccessIssue]
+        else:
+            raise _libconvGemm  # pyright: ignore[reportGeneralTypeIssues]
 
+        self.dtype = dtype
+    
         # Declare ac_pack and bc_pack and allocate space for them
         self.ac_pack = ctypes.POINTER(ctypes.c_float)()
         self.bc_pack = ctypes.POINTER(ctypes.c_float)()

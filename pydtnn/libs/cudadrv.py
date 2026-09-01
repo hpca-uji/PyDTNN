@@ -4,9 +4,10 @@
 # Source: https://github.com/lebedov/scikit-cuda
 
 import ctypes
-import sys
 
-# Load library:
+from pydtnn.utils import load_library
+
+
 __all__ = (
     "CUDA_ERROR",
     "CUDA_ERROR_ALREADY_ACQUIRED",
@@ -70,33 +71,12 @@ __all__ = (
     "cuPointerGetAttribute",
 )
 
-if "linux" in sys.platform:
-    _libcuda_libname_list = ["libcuda.so"]
-elif sys.platform == "darwin":
-    _libcuda_libname_list = ["libcuda.dylib"]
-elif sys.platform == "win32":
-    _libcuda_libname_list = ["cuda.dll", "nvcuda.dll"]
-else:
-    raise RuntimeError("unsupported platform")
 
-# Print understandable error message when library cannot be found:
-_libcuda = None
-for _libcuda_libname in _libcuda_libname_list:
-    try:
-        if sys.platform == "win32":
-            _libcuda = ctypes.windll.LoadLibrary(_libcuda_libname)
-        else:
-            _libcuda = ctypes.cdll.LoadLibrary(_libcuda_libname)
-    except OSError:
-        pass
-    else:
-        break
-if _libcuda is None:
-    raise OSError("CUDA driver library not found")
+# Load library:
+_libcuda = load_library("cuda")
+
 
 # Exceptions corresponding to various CUDA driver errors:
-
-
 class CUDA_ERROR(Exception):
     """CUDA error."""
 

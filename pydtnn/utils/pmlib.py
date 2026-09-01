@@ -117,7 +117,7 @@ class PMLib:
     retrieving measurement data.
     """
 
-    _pmlib = None
+    _pmlib: ctypes.CDLL = None  # pyright: ignore[reportAssignmentType]
 
     def __init__(self, server_ip: str, port: int, verbose: bool = False) -> None:
         """Initialize the PMLib interface with server details.
@@ -133,6 +133,7 @@ class PMLib:
         """
         if self._pmlib is None:
             self._pmlib = load_library("pmlib")
+
         self.verbose = verbose
         # Helper functions
         # int pm_set_server( char *ip, int port, server_t *pm_server);
