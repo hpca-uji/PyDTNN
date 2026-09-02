@@ -8,7 +8,8 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 
 from pydtnn import (MPI, context, cublas, cublas_handle, cudnn, cudnn_handle, drv,
-                    gpuarray, hostname, nccl, nccl_comm, num_gpus, ranks_per_node, stream)
+                    gpuarray, hostname, nccl, nccl_comm, num_gpus, ranks_per_node,
+                    gpu_errors, stream)
 from pydtnn.datasets import select as select_dataset
 from pydtnn.datasets.abstract import Dataset
 from pydtnn.layers.identity import Identity
@@ -200,11 +201,7 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
             raise RuntimeError("It is necessary to have gpudirect active to work with NCCL.")
 
         if cudnn is None or cudnn_handle is None or cublas_handle is None or stream is None:
-            raise RuntimeError(
-                "Neither of the following parameters must be 'None':"
-                f" cudnn ({cudnn=}), cudnn_handle ({cudnn_handle=}),"
-                f" cublas_handle ({cublas_handle=}), stream ({stream=})"
-            )
+            raise RuntimeError(f"CUDA dependencies not met: {gpu_errors}")
 
         assert drv is not None
         assert context is not None
