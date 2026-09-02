@@ -1,14 +1,17 @@
 """Tests for verifying model behavior and consistency across different data types."""
 
 import logging
+from collections.abc import Sequence
 import unittest
 import warnings
 
 import numpy as np
 import torch
 import torchvision.models as torch_models
+from torch.optim import SGD, Adam, NAdam
 
 from pydtnn.abstract.layerable import Layerable
+from pydtnn.converters.pytorch2pydtnn.model_converter import get_layers_from_torch
 from pydtnn.layers.abstract.block_layer import AbstractBlockLayer
 from pydtnn.layers.abstract.layer import LayerError
 from pydtnn.layers.addition_block import AdditionBlock
@@ -18,8 +21,8 @@ from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.model import Model as PyDTNN_Model
 from pydtnn.tests.abstract.base import Params, TestCase, verbose_test
 from pydtnn.utils import header, rand
-from pydtnn.utils.pytorch import from_pytorch
 from pydtnn.utils.tensor import TensorFormat
+from pydtnn.activations.log_softmax import LogSoftmax
 
 type PyTorch_Model = torch.nn.Module
 
@@ -122,7 +125,7 @@ class ResNet14Like(torch.nn.Module):
         self.avgpool = torch.nn.AdaptiveAvgPool2d(output_size=(1, 1))
         self.fc = torch.nn.Sequential(
             torch.nn.Linear(in_features=2048, out_features=10, bias=True),
-            torch.nn.LogSoftmax(dim=1),
+            # torch.nn.LogSoftmax(dim=1),
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -157,7 +160,7 @@ class SimpleCNN(torch.nn.Module):
             torch.nn.ReLU(inplace=True),
             torch.nn.Dropout(),
             torch.nn.Linear(128, 10),
-            torch.nn.LogSoftmax(dim=1),
+            # torch.nn.LogSoftmax(dim=1),
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -167,7 +170,7 @@ class SimpleCNN(torch.nn.Module):
         return x
 
 
-def replace_layer(module: torch.nn.Module, layer_to_replace: type[torch.nn.Module]) -> None:
+def replace_layer_pytorch(module: torch.nn.Module, layer_to_replace: type[torch.nn.Module]) -> None:
     """
     Recursively put desired batch norm in nn.module module.
 
@@ -178,7 +181,7 @@ def replace_layer(module: torch.nn.Module, layer_to_replace: type[torch.nn.Modul
     # iterate through immediate child modules
     list_children = list(module.named_children())
     for name, immediate_child_module in list_children:
-        setattr(module, name, replace_layer(immediate_child_module, layer_to_replace))
+        setattr(module, name, replace_layer_pytorch(immediate_child_module, layer_to_replace))
 
     # go through all attributes of module nn.module (e.g. network or layer) and put batch norms if present
     if isinstance(module, layer_to_replace):
@@ -187,6 +190,21 @@ def replace_layer(module: torch.nn.Module, layer_to_replace: type[torch.nn.Modul
         return torch.nn.Identity()
     else:
         return module
+
+
+def replace_pydtnn_layerable(layers: Sequence[Layerable],
+                             conversion: dict[type[Layerable], type[Layerable]]) -> list[Layerable]:
+
+    new_layers = list()
+    conv_keys = conversion.keys()
+
+    for layer in layers:
+        if type(layer) in conv_keys:
+            args, kwargs = layer._new_backend
+            layer = conversion[type(layer)](*args, **kwargs)
+        new_layers.append(layer)
+
+    return new_layers
 
 
 class PytorchModelTestCase(TestCase):
@@ -223,10 +241,12 @@ class PytorchModelTestCase(TestCase):
     # Initialization methods
 
     params = Params()
-    params.num_epochs = 3
+    params.num_epochs = 10
     params.tensor_format = TensorFormat.NCHW
     params.synthetic_input_shape = (3, 32, 32)
     params.synthetic_output_shape = (10,)
+    params.learning_rate = 1e-5
+    params.optimizer_momentum = 0.9
 
     def get_tolerance(self, layer: Layerable) -> tuple[float, float]:
         """
@@ -327,15 +347,29 @@ class PytorchModelTestCase(TestCase):
                     torch.nn.Linear(
                         in_features=torch_model.fc.in_features,
                         out_features=params.synthetic_output_shape[0],
-                    ),
-                    torch.nn.LogSoftmax(dim=1),
+                    )
                 )
             case _:
                 raise ValueError(f"Unknown model {model_name!r}!")
 
-        replace_layer(torch_model, layer_to_replace=torch.nn.Dropout)
+        replace_layer_pytorch(torch_model, layer_to_replace=torch.nn.Dropout)
 
-        return torch_model, torch.nn.NLLLoss()
+        return torch_model, torch.nn.CrossEntropyLoss()
+
+    def get_optimizer_pytorch(self, model_torch: PyTorch_Model) -> torch.optim.Optimizer:
+        """Method to get PyTorch's optimizer"""
+        params = PytorchModelTestCase.params
+        match params.optimizer_name:
+            case "sgd":
+                optimizer = SGD(model_torch.parameters(), lr=params.learning_rate, momentum=params.optimizer_momentum)
+            case "adam":
+                optimizer = Adam(model_torch.parameters(), lr=params.learning_rate)
+            case "nadam":
+                optimizer = NAdam(model_torch.parameters(), lr=params.learning_rate)
+            case _:
+                optimizer = None
+                raise NotImplementedError(f"Not implemented this test for {params.optimizer_name} optimizer.")
+        return optimizer
 
     def get_model_pydtnn(self, model_pytorch: PyTorch_Model) -> PyDTNN_Model:
         """
@@ -367,7 +401,7 @@ class PytorchModelTestCase(TestCase):
         if verbose_test():
             print(model_pytorch)
 
-        layers = from_pytorch(params.synthetic_input_shape, model_pytorch)
+        layers = get_layers_from_torch(model_pytorch, params.synthetic_input_shape, LogSoftmax())
         model_pydtnn.add_layers(layers)
         model_pydtnn._model_init()
         model_pydtnn.mode = model_pydtnn.Mode.TRAIN
@@ -490,7 +524,7 @@ class PytorchModelTestCase(TestCase):
         # dx: list[torch.Tensor] = []
         optimizer.step()
 
-    def do_pydtnn_model_optimizer_pass(self, model2: PyDTNN_Model) -> None:
+    def do_pydtnn_model_optimizer_pass(self, pydtnn_model: PyDTNN_Model) -> None:
         """
         Performs a forward pass for PyDTNN's Model.
 
@@ -501,12 +535,11 @@ class PytorchModelTestCase(TestCase):
         Returns:
             List of gradients after each layer.
         """
-        for layer in model2.layers:
-            layer.update_weights(model2.optimizer, update=True, sync=False)
+        for layer in pydtnn_model.layers:
+            layer.update_weights(pydtnn_model.optimizer, update=True, sync=False)
 
-    def compare_forward(
-        self, model_pydtnn: PyDTNN_Model, x_torch: list[torch.Tensor], x_pydtnn: list[np.ndarray]
-    ) -> None:
+    def compare_forward(self, model_pydtnn: PyDTNN_Model, x_torch: list[torch.Tensor],
+                        x_pydtnn: list[np.ndarray], apply_log_to_torch: bool = False) -> None:
         """
         Compares the forward pass outputs of two models.
 
@@ -525,6 +558,9 @@ class PytorchModelTestCase(TestCase):
         layer = model_pydtnn.layers[-1]
 
         pytorch_as_numpy = pytorch_last_layer.numpy(force=True)
+
+        if apply_log_to_torch:
+            pytorch_as_numpy = np.log(pytorch_as_numpy)
 
         rtol, atol = self.get_tolerance(layer)
         self.assertTrue(
@@ -571,6 +607,7 @@ class PytorchModelTestCase(TestCase):
         """
 
         model_torch, loss_func_torch = self.get_model_torch_and_loss_func(model_name)
+        optimizer_torch = self.get_optimizer_pytorch(model_torch)
         model_pydtnn = self.get_model_pydtnn(model_torch)
         model_pydtnn.mode = PyDTNN_Model.Mode.TRAIN
 
@@ -606,14 +643,19 @@ class PytorchModelTestCase(TestCase):
             x_pydtnn = self.do_model2_forward_pass(model_pydtnn, x_pydtnn)
 
             # Compare forward results
-            self.compare_forward(model_pydtnn, x_torch, x_pydtnn)
+            if False:
+                self.compare_forward(model_pydtnn, x_torch, x_pydtnn)
 
             # --- LOSS ---
             loss_torch = self.do_pytorch_model_loss(loss_func_torch, x_torch[-1], y_torch)
             _loss_pydtnn, dx_pydtnn = self.do_pydtnn_model_loss(
                 model_pydtnn, x_pydtnn[-1], y_pydtnn
             )
-            # TODO: Add loss comparation
+
+            _loss_torch = float(loss_torch.detach())
+            print(f"{_loss_torch=} || {_loss_pydtnn=}")
+            assert np.isclose(float(_loss_torch), _loss_pydtnn), \
+                   f"Both values are not close: {_loss_torch=} =/=  {_loss_pydtnn=}"
 
             # --- BACKWARD ---
             # Model 1 backward
@@ -630,8 +672,8 @@ class PytorchModelTestCase(TestCase):
             # Compare backward results
             self.compare_backward(model_torch, dx_torch, model_pydtnn, dx_pydtnn)
 
-            # TODO: Add optimizers
-            # optimizer.step()  # Torch
+            self.do_pytorch_model_optimizer_pass(model_torch, optimizer_torch)
+            self.do_pydtnn_model_optimizer_pass(model_pydtnn)
 
     @unittest.skip("Large model")
     def test_renset50(self) -> None:

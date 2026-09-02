@@ -6,8 +6,8 @@ import torch
 import torchvision.models as torch_models
 
 from pydtnn.abstract.layerable import Layerable
+from pydtnn.converters.pytorch2pydtnn.model_converter import get_layers_from_torch
 from pydtnn.utils.constants import ArrayShape
-from pydtnn.utils.pytorch import from_pytorch
 
 __all__ = ("densenet169_coverter_pytorch",)
 
@@ -26,4 +26,4 @@ def densenet169_coverter_pytorch(
         torch.nn.LogSoftmax(),
     )
 
-    return from_pytorch(input_shape, torch_model)
+    return get_layers_from_torch(torch_model, input_shape)

@@ -6,8 +6,8 @@ import torch
 import torchvision.models as torch_models
 
 from pydtnn.abstract.layerable import Layerable
+from pydtnn.converters.pytorch2pydtnn.model_converter import get_layers_from_torch
 from pydtnn.utils.constants import ArrayShape
-from pydtnn.utils.pytorch import from_pytorch
 
 __all__ = ("resnet50_converter_pytorch",)
 
@@ -23,5 +23,4 @@ def resnet50_converter_pytorch(
         torch.nn.Linear(in_features=torch_model.fc.in_features, out_features=output_shape[0]),
         torch.nn.LogSoftmax(),
     )
-
-    return from_pytorch(input_shape, torch_model)
+    return get_layers_from_torch(torch_model, input_shape)
