@@ -11,11 +11,11 @@ from typing import Any
 
 import torch
 import torch.nn as nn
-from pydtnn.converters.pytorch2pydtnn.model_converter import convert_model
 from torch.nn import Module as PyTorchModel
 
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.converters.pytorch2pydtnn.model_converter import convert_model
 from pydtnn.model import Model as PyDTNN_Model
 
 # from pydtnn.utils.best_of import BestOf

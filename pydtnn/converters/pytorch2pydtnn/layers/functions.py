@@ -2,10 +2,10 @@
 
 from typing import Any
 
-from pydtnn.activations.log_softmax import LogSoftmax
 import pydtnn.converters.pytorch2pydtnn.utils as cm
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.activations.log_sigmoid import LogSigmoid
+from pydtnn.activations.log_softmax import LogSoftmax
 from pydtnn.activations.relu import Relu
 from pydtnn.activations.sigmoid import Sigmoid
 from pydtnn.activations.softmax import Softmax
@@ -31,6 +31,7 @@ __all__ = (
 
 
 # - Torch Functions
+
 
 def adaptive_avg_pool_2d(args: dict[str, str]) -> tuple[AveragePool2D, str]:
     """

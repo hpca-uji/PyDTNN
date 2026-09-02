@@ -12,7 +12,9 @@ from pydtnn.utils.pytorch import from_pytorch
 __all__ = ("resnet50_converter_pytorch",)
 
 
-def resnet50_converter_pytorch(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerable]:
+def resnet50_converter_pytorch(
+    input_shape: ArrayShape, output_shape: ArrayShape
+) -> Sequence[Layerable]:
     """Returns a PyDTNN conversion from a PyTorch's Resnet50."""
 
     torch_model = torch_models.resnet50(weights=torch_models.ResNet50_Weights.IMAGENET1K_V1)

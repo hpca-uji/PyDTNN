@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from functools import reduce
 import logging
 import operator
+from functools import reduce
 from typing import Any
 
 import numpy as np
@@ -29,12 +29,8 @@ class LayerFuse(Layer[np.ndarray]):
         """
         parents = kwargs.pop("parents")
 
-        dict_params = reduce(
-            operator.or_, (layer.__dict__ for layer in reversed(parents))
-        )
-        memory_used = reduce(
-            operator.add, (layer.memory_used for layer in reversed(parents))
-        )
+        dict_params = reduce(operator.or_, (layer.__dict__ for layer in reversed(parents)))
+        memory_used = reduce(operator.add, (layer.memory_used for layer in reversed(parents)))
         tmp_memory_used = reduce(
             parents[0].model.memory_cls._total,
             (layer.tmp_memory_used for layer in reversed(parents)),
@@ -42,7 +38,7 @@ class LayerFuse(Layer[np.ndarray]):
         dict_params |= {
             "parents": parents,
             "memory_used": memory_used,
-            "tmp_memory_used": tmp_memory_used
+            "tmp_memory_used": tmp_memory_used,
         }
 
         self.__dict__.update(dict_params)

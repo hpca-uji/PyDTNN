@@ -3,8 +3,8 @@
 import ctypes
 import functools
 import logging
-from typing import Any
 from collections.abc import Callable
+from typing import Any
 
 import numpy as np
 

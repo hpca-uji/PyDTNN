@@ -3,7 +3,6 @@
 import logging
 
 import numpy as np
-
 from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 from pycuda.driver import Function
 

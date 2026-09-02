@@ -3,8 +3,8 @@
 import logging
 
 from pydtnn import utils
-from pydtnn.utils import term
 from pydtnn.model.layers import Layers
+from pydtnn.utils import header, term
 from pydtnn.utils.constants import Array
 
 __all__ = ("Repr",)
@@ -34,7 +34,11 @@ class Repr[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
 
         if self.memory_used > 0:
             memory = utils.convert_size_bytes(self.memory_used) if self.memory_used > 0 else ""
-            tmp_memory = f"{utils.convert_size_bytes(self.tmp_memory_used)} tmp" if self.tmp_memory_used > 0 else ""
+            tmp_memory = (
+                f"{utils.convert_size_bytes(self.tmp_memory_used)} tmp"
+                if self.tmp_memory_used > 0
+                else ""
+            )
             if memory and tmp_memory:
                 memory = f"{memory} ({tmp_memory})"
             elif tmp_memory:
@@ -43,8 +47,16 @@ class Repr[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
                 props["memory"] = memory
 
         if self.loss_func:
-            loss_memory = utils.convert_size_bytes(self.loss_func.memory_used) if self.loss_func.memory_used > 0 else ""
-            loss_tmp_memory = f"{utils.convert_size_bytes(self.loss_func.tmp_memory_used)} tmp" if self.loss_func.tmp_memory_used > 0 else ""  # noqa: E501
+            loss_memory = (
+                utils.convert_size_bytes(self.loss_func.memory_used)
+                if self.loss_func.memory_used > 0
+                else ""
+            )
+            loss_tmp_memory = (
+                f"{utils.convert_size_bytes(self.loss_func.tmp_memory_used)} tmp"
+                if self.loss_func.tmp_memory_used > 0
+                else ""
+            )
             if loss_memory and loss_tmp_memory:
                 loss_memory = f"{loss_memory} ({loss_tmp_memory})"
             elif loss_tmp_memory:
@@ -59,7 +71,11 @@ class Repr[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
                 metrics_size += metric.memory_used
                 metrics_temp_size += metric.tmp_memory_used
             metrics_memory = utils.convert_size_bytes(metrics_size) if metrics_size > 0 else ""
-            metrics_tmp_memory = f"{utils.convert_size_bytes(metrics_temp_size)} tmp" if metrics_temp_size > 0 else ""
+            metrics_tmp_memory = (
+                f"{utils.convert_size_bytes(metrics_temp_size)} tmp"
+                if metrics_temp_size > 0
+                else ""
+            )
             if metrics_memory and metrics_tmp_memory:
                 metrics_memory = f"{metrics_memory} ({metrics_tmp_memory})"
             elif metrics_tmp_memory:
@@ -68,8 +84,16 @@ class Repr[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
                 props["metrics-memory"] = metrics_memory
 
         if self.optimizer:
-            optimizer_memory = utils.convert_size_bytes(self.optimizer.memory_used) if self.optimizer.memory_used > 0 else ""
-            optimizer_tmp_memory = f"{utils.convert_size_bytes(self.optimizer.tmp_memory_used)} tmp" if self.optimizer.tmp_memory_used > 0 else ""  # noqa: E501
+            optimizer_memory = (
+                utils.convert_size_bytes(self.optimizer.memory_used)
+                if self.optimizer.memory_used > 0
+                else ""
+            )
+            optimizer_tmp_memory = (
+                f"{utils.convert_size_bytes(self.optimizer.tmp_memory_used)} tmp"
+                if self.optimizer.tmp_memory_used > 0
+                else ""
+            )
             if optimizer_memory and optimizer_tmp_memory:
                 optimizer_memory = f"{optimizer_memory} ({optimizer_tmp_memory})"
             elif optimizer_tmp_memory:
@@ -83,8 +107,14 @@ class Repr[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
             for scheduler in self.schedulers:
                 schedulers_size += scheduler.memory_used
                 schedulers_temp_size += scheduler.tmp_memory_used
-            schedulers_memory = utils.convert_size_bytes(schedulers_size) if schedulers_size > 0 else ""
-            schedulers_tmp_memory = f"{utils.convert_size_bytes(schedulers_temp_size)} tmp" if schedulers_temp_size > 0 else ""
+            schedulers_memory = (
+                utils.convert_size_bytes(schedulers_size) if schedulers_size > 0 else ""
+            )
+            schedulers_tmp_memory = (
+                f"{utils.convert_size_bytes(schedulers_temp_size)} tmp"
+                if schedulers_temp_size > 0
+                else ""
+            )
             if schedulers_memory and schedulers_tmp_memory:
                 schedulers_memory = f"{schedulers_memory} ({schedulers_tmp_memory})"
             elif schedulers_tmp_memory:
@@ -117,12 +147,12 @@ class Repr[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
                 struct[key] = max(struct.get(key, len(key)), len(str(value)))
 
         # Add header padding
-        for header, size in struct.items():
-            struct[header] += 2
+        for key, size in struct.items():
+            struct[key] += 2
 
         # Generate separator
         sep = []
-        for header, size in struct.items():
+        for key, size in struct.items():
             sep.append(term.BOX_H * size)
         tsep = f"{term.BOX_TL}{term.BOX_T.join(sep)}{term.BOX_TR}"
         csep = f"{term.BOX_L}{term.BOX_C.join(sep)}{term.BOX_R}"
@@ -132,8 +162,10 @@ class Repr[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
         _show = [""]
         _show.append(tsep)
         _show.append("")
-        for header, size in struct.items():
-            _show[-1] += f"{term.BOX_V}{term.BOLD}{header.replace('-', ' ').capitalize():^{size}s}{term.RESET}"
+        for key, size in struct.items():
+            _show[-1] += (
+                f"{term.BOX_V}{term.BOLD}{key.replace('-', ' ').capitalize():^{size}s}{term.RESET}"
+            )
         _show[-1] += term.BOX_V
 
         # Show layers
@@ -142,8 +174,8 @@ class Repr[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
             if layer_id in top_layers:
                 _show.append(csep)
             _show.append("")
-            for header, size in struct.items():
-                value = props.get(header, "")
+            for key, size in struct.items():
+                value = props.get(key, "")
                 _show[-1] += f"{term.BOX_V}{str(value):^{size}s}"
             _show[-1] += term.BOX_V
         _show.append(bsep)
@@ -155,13 +187,8 @@ class Repr[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
         props = self._show_props()
         size = max(map(len, props))
 
-        if term.FANCY:
-            fb, fr = "\x1b[1m", "\x1b[0m"  # noqa: E741
-        else:
-            fb = fr = ""  # noqa: E741
-
-        _show = [""]
-        _show.append(f"# {fb}{key}{fr}")
+        header(key)
+        _show = []
         for key, value in props.items():
             _show.append(f"  {key:{size}s}: {value}")
         logger.info("\n".join(_show))

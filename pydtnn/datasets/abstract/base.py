@@ -8,9 +8,9 @@ transforming, and generating data batches for machine learning models.
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable, Generator
 from enum import IntEnum
 from typing import TYPE_CHECKING
-from collections.abc import Generator, Callable
 
 import numpy as np
 

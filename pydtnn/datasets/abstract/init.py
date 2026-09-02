@@ -9,8 +9,8 @@ from __future__ import annotations
 
 import functools
 import logging
+from collections.abc import Callable, Generator
 from typing import TYPE_CHECKING
-from collections.abc import Generator, Callable
 
 import numpy as np
 
@@ -147,9 +147,7 @@ class Init(Utils):
 
     def get_train_val_generator(
         self,
-    ) -> tuple[
-        Generator[tuple[np.ndarray, np.ndarray]], Generator[tuple[np.ndarray, np.ndarray]]
-    ]:
+    ) -> tuple[Generator[tuple[np.ndarray, np.ndarray]], Generator[tuple[np.ndarray, np.ndarray]]]:
         """
         Return generators for training and validation sets.
 
@@ -261,7 +259,9 @@ class Init(Utils):
 
         return wrapper
 
-    def _transform_data_generator(self, part: Base.Part) -> Generator[tuple[np.ndarray, np.ndarray]]:
+    def _transform_data_generator(
+        self, part: Base.Part
+    ) -> Generator[tuple[np.ndarray, np.ndarray]]:
         """
         Yield transformed data from the dataset partition.
 
@@ -353,9 +353,7 @@ class Init(Utils):
                 yield x_batch, y_batch
                 nsamples -= real_batch_size
 
-    def _get_batch_generator(
-        self, part: Base.Part
-    ) -> Generator[tuple[np.ndarray, np.ndarray]]:
+    def _get_batch_generator(self, part: Base.Part) -> Generator[tuple[np.ndarray, np.ndarray]]:
         """
         Yield batches with background prefetching.
 

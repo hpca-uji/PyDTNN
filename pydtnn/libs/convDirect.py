@@ -11,11 +11,11 @@ import weakref
 
 import numpy as np
 
+from pydtnn.abstract.layerable import Layerable
+from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython
 from pydtnn.utils import load_library
 from pydtnn.utils.constants import ArrayShape
-from pydtnn.abstract.layerable import Layerable
 from pydtnn.utils.tensor import TensorFormat, decode_shape, encode_shape
-from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython
 
 __all__ = ("ConvDirect", "is_conv_direct_available")
 

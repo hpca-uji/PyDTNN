@@ -13,10 +13,10 @@ import logging
 import tarfile
 import typing
 from collections import abc
+from collections.abc import Generator, Iterable
 from contextlib import ExitStack, contextmanager
 from pathlib import Path, PurePath
 from typing import TYPE_CHECKING
-from collections.abc import Generator, Iterable
 
 import numpy as np
 from scipy.io import loadmat

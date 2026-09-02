@@ -47,7 +47,7 @@ class MulticlassConfusionMatrixNumpy(MulticlassConfusionMatrix[np.ndarray], Metr
         """
 
         b = self.model.real_batch_size
-        y_targ = np.asarray(y_targ[: b], dtype=self.model.dtype, order="C")
+        y_targ = np.asarray(y_targ[:b], dtype=self.model.dtype, order="C")
 
         # NOTE: y_pred.shape == y_targ.shape == (n<=self.model.batch_size, self.model.output_shape)
         # assert target_classes == pred_classes, f"target_classes ({target_classes}) != pred_classes {pred_classes},"

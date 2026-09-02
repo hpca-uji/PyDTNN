@@ -6,18 +6,17 @@
 
 from __future__ import absolute_import
 
-import re
 import ctypes
 import functools
-from typing import Any
-from string import Template
+import re
 from collections.abc import Callable
+from string import Template
+from typing import Any
 
 import numpy as np
 
 from pydtnn.libs import cuda, utils
 from pydtnn.utils import load_library
-
 
 __all__ = (
     "cublasAllocFailed",

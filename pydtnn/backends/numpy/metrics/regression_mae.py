@@ -44,8 +44,8 @@ class RegressionMAENumpy(RegressionMAE[np.ndarray], MetricNumpy):
             The calculated MAE as a float.
         """
         b = self.model.real_batch_size
-        y_targ = np.asarray(y_targ[: b], dtype=self.model.dtype, order="C")
-        diff = self.diff[: b]
+        y_targ = np.asarray(y_targ[:b], dtype=self.model.dtype, order="C")
+        diff = self.diff[:b]
         # return np.sum(np.absolute(y_targ - y_pred))
         np.subtract(y_targ, y_pred, dtype=self.model.dtype, out=diff)
         np.absolute(diff, out=diff, dtype=self.model.dtype, casting="unsafe")

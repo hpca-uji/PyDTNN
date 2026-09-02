@@ -45,8 +45,8 @@ class CategoricalMAENumpy(CategoricalMAE[np.ndarray], MetricNumpy):
             The calculated mean absolute error as a float.
         """
         b = self.model.real_batch_size
-        y_targ = np.asarray(y_targ[: b], dtype=self.model.dtype, order="C")
-        error = self.error[: b]
+        y_targ = np.asarray(y_targ[:b], dtype=self.model.dtype, order="C")
+        error = self.error[:b]
         # return np.sum(np.absolute(1 - y_pred[np.arange(b), np.argmax(y_targ, axis=1)]))
         np.subtract(y_pred, y_targ, dtype=self.model.dtype, out=error)
         np.absolute(error, out=error, dtype=self.model.dtype)

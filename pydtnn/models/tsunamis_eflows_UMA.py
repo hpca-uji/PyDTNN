@@ -3,8 +3,8 @@
 from collections.abc import Sequence
 
 from pydtnn.abstract.layerable import Layerable
-from pydtnn.activations.relu import Relu
 from pydtnn.activations.log_sigmoid import LogSigmoid
+from pydtnn.activations.relu import Relu
 from pydtnn.layers.average_pool_2d import AveragePool2D
 from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.conv_2d import Conv2D

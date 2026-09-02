@@ -8,7 +8,7 @@ from pydtnn.backends.numpy.losses.abstract.loss import LossNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.losses.cross_entropy import CrossEntropy
 
-__all__ = ("CrossEntropyNumpy")
+__all__ = ("CrossEntropyNumpy",)
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +49,9 @@ class CrossEntropyNumpy(CrossEntropy[np.ndarray], LossNumpy):
 
         with self.model.memory:
             self._argmax = self.model.memory.ndarray(self._argmax_shape, dtype=np.dtype(np.int32))
-            self._y_pred_op = self.model.memory.ndarray(self._y_pred_op_shape, dtype=self.model.dtype)
+            self._y_pred_op = self.model.memory.ndarray(
+                self._y_pred_op_shape, dtype=self.model.dtype
+            )
             self._y_pred = self.model.memory.ndarray(self._y_pred_shape, dtype=self.model.dtype)
             self._max_x = self.model.memory.ndarray(self._max_x_shape, dtype=self.model.dtype)
             self._sum_y = self.model.memory.ndarray(self._sum_y_shape, dtype=self.model.dtype)

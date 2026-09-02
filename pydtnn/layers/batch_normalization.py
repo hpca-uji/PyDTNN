@@ -1,8 +1,8 @@
 """Batch normalization layer implementation for PyDTNN."""
 
 import logging
-from typing import Any
 from collections.abc import Callable
+from typing import Any
 
 import numpy as np
 

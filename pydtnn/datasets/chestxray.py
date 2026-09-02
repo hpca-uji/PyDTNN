@@ -9,10 +9,10 @@ from __future__ import annotations
 import csv
 import logging
 import tarfile
+from collections.abc import Generator
 from itertools import chain
 from pathlib import Path
 from typing import TYPE_CHECKING
-from collections.abc import Generator
 
 import numpy as np
 

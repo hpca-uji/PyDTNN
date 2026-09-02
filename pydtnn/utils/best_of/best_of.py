@@ -5,10 +5,10 @@ from __future__ import annotations
 import logging
 import traceback
 from collections import abc, defaultdict
+from collections.abc import Callable
 from contextlib import suppress
 from timeit import default_timer as timer
 from typing import Any, Hashable
-from collections.abc import Callable
 
 import numpy as np
 from rich import box

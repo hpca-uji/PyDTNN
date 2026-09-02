@@ -6,8 +6,8 @@ import logging
 import math
 import os
 import tarfile
-from typing import IO, TYPE_CHECKING
 from collections.abc import Generator
+from typing import IO, TYPE_CHECKING
 
 import numpy as np
 

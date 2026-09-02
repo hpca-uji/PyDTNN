@@ -98,9 +98,7 @@ class ConvWinogradTestCase(ConvTestCase):
                 dtype=im2row_mm_result.dtype,
             )
         if verbose_test():
-            header(
-                "{} conv_winograd_result".format(inspect.stack()[1][3]), conv_winograd_result
-            )
+            header("{} conv_winograd_result".format(inspect.stack()[1][3]), conv_winograd_result)
             logger.info(
                 "Shape: ",
                 conv_winograd_result.shape,

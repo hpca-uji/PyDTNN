@@ -8,9 +8,9 @@ transforming, and generating data batches for machine learning models.
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from pathlib import Path
 from typing import IO
-from collections.abc import Callable
 
 import numpy as np
 import rapidgzip

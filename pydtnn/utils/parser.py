@@ -18,9 +18,9 @@ import logging
 import os
 import re
 import textwrap
+from collections.abc import Sequence
 from importlib import resources
 from pathlib import PurePath
-from collections.abc import Sequence
 
 import numpy as np
 
@@ -85,6 +85,7 @@ def list_modules(path: str) -> list[str]:
 def _get_mpi_processes() -> int:
     """Returns the number of MPI processes from the environment."""
     from pydtnn import nprocs
+
     return nprocs
 
 
@@ -1157,7 +1158,7 @@ class ArgumentParser(argparse.ArgumentParser):
             help=(
                 "Let cuDNN to select the best performing convolution algorithm."
                 f" Default: {ModelBase.use_cudnn_auto_conv_algo!r}."
-            )
+            ),
         )
 
         # Encryption options

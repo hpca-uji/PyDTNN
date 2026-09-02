@@ -45,8 +45,8 @@ class CategoricalMSENumpy(CategoricalMSE[np.ndarray], MetricNumpy):
             The calculated mean squared error as a float.
         """
         b = self.model.real_batch_size
-        y_targ = np.asarray(y_targ[: b], dtype=self.model.dtype, order="C")
-        error = self.error[: b]
+        y_targ = np.asarray(y_targ[:b], dtype=self.model.dtype, order="C")
+        error = self.error[:b]
         # return np.square(1 - y_pred[np.arange(b), np.argmax(y_targ, axis=1)]).mean()
         np.subtract(y_pred, y_targ, dtype=self.model.dtype, out=error)
         np.power(error, 2, out=error, dtype=self.model.dtype, casting="unsafe")

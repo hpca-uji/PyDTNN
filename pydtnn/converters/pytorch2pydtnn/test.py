@@ -1,13 +1,13 @@
 """Test suite for verifying PyTorch to PyDTNN model conversion and inference parity."""
 
 import torch
-from pydtnn.converters.pytorch2pydtnn.model_converter import convert_model
 from torch.nn import CrossEntropyLoss
 from torchmetrics import Accuracy, Metric
 from torchvision.models import (alexnet, densenet121, densenet169, densenet201, googlenet, resnet18,
                                 resnet34, resnet50, resnet101, resnet152, vgg11, vgg16, vgg19)
 
 from pydtnn.activations.softmax import Softmax
+from pydtnn.converters.pytorch2pydtnn.model_converter import convert_model
 from pydtnn.datasets import select as select_dataset
 from pydtnn.datasets.abstract import Dataset
 from pydtnn.model import Model as PyDTNN_Model
@@ -154,7 +154,6 @@ KWARGS = {
     "parallel_data": False,
     "tensor_format": "nchw",  # "NCHW" # "NHWC",
     "loss_func": "categorical_cross_entropy",
-    "dataset_path": DATASET_PATH,
     "dataset_path": DATASET_PATH,
 }
 

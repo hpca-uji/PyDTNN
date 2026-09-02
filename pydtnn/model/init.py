@@ -1,18 +1,17 @@
 """Initialization code for the PyDTNN model"""
 
 import copy
-import logging
 import itertools
+import logging
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
 from pydtnn import (MPI, context, cublas, cublas_handle, cudnn, cudnn_handle, drv,
                     gpuarray, hostname, nccl, nccl_comm, num_gpus, ranks_per_node, stream)
-from pydtnn.layers.identity import Identity
-from pydtnn.schedulers import select as select_scheduler
 from pydtnn.datasets import select as select_dataset
 from pydtnn.datasets.abstract import Dataset
+from pydtnn.layers.identity import Identity
 from pydtnn.libs.mpi.rc import proto as proto
 from pydtnn.losses import select as select_loss
 from pydtnn.metrics import select as select_metric
@@ -21,6 +20,7 @@ from pydtnn.model.layers import Layers
 from pydtnn.model.utils import DEFAULT_BACH_SIZE, LIMIT_THREADS_AND_BLOCKS
 from pydtnn.models import select as select_model
 from pydtnn.optimizers import select as select_optimizer
+from pydtnn.schedulers import select as select_scheduler
 from pydtnn.utils import rand
 from pydtnn.utils.gpu import CudnnDataType
 from pydtnn.utils.memory_pool import PreallocMemory, PrivateMemory
@@ -201,7 +201,7 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
 
         if cudnn is None or cudnn_handle is None or cublas_handle is None or stream is None:
             raise RuntimeError(
-                "Neither of the following parameters must be \'None\':"
+                "Neither of the following parameters must be 'None':"
                 f" cudnn ({cudnn=}), cudnn_handle ({cudnn_handle=}),"
                 f" cublas_handle ({cublas_handle=}), stream ({stream=})"
             )

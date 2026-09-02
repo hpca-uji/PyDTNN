@@ -6,9 +6,8 @@ import cupy as cp
 from cupy import RawKernel, RawModule  # pyright: ignore[reportAttributeAccessIssue]
 
 from pydtnn.backends.numpy.abstract.base import BaseNumpy
-from pydtnn.utils.uses_cuda import UsesCudaCode
-
 from pydtnn.libs import numpy as libnp
+from pydtnn.utils.uses_cuda import UsesCudaCode
 
 __all__ = ("BaseCupy",)
 

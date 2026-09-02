@@ -6,8 +6,8 @@ function for dynamically selecting metric implementations.
 """
 
 import logging
-from abc import abstractmethod
 import re
+from abc import abstractmethod
 from typing import Any
 
 import numpy as np

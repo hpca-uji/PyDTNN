@@ -37,7 +37,11 @@ class LogPycuda(Log[TensorArray], ActivationPycuda):
 
         # Derivative dx
         dx_gpu = gpuarray.zeros((self.model.batch_size, *self.shape), self.model.dtype)
-        self.dx = TensorArray(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype,)
+        self.dx = TensorArray(
+            dx_gpu,
+            self.model.tensor_format,
+            self.model.cudnn_dtype,
+        )
 
         self.memory_used += self.y.nbytes + self.dx.nbytes
 
@@ -48,9 +52,7 @@ class LogPycuda(Log[TensorArray], ActivationPycuda):
         self.cuda_fwd_func = self._fwd_kernel()
         self.cuda_bwd_func = self._bwd_kernel()
 
-        self.total_num_threads = np.int32(
-            math.prod(self.grid) * math.prod(self.block)
-        )
+        self.total_num_threads = np.int32(math.prod(self.grid) * math.prod(self.block))
 
     def forward(self, x: TensorArray) -> TensorArray:
         """Perform the forward pass of the Log activation."""

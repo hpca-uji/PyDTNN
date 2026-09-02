@@ -7,23 +7,23 @@ tensor formats (NCHW, NHWC) and aims to provide a faster alternative to
 standard convolution implementations for specific kernel and stride configurations.
 """
 
-import math
 import ctypes
 import logging
+import math
 import platform
 import weakref
-from typing import Any
-from functools import partial
 from collections import defaultdict
 from collections.abc import Callable
+from functools import partial
+from typing import Any
 
 import numpy as np
 
-from pydtnn.utils import load_library
-from pydtnn.utils.best_of.best_of import BestOf
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.backends.cython.utils.im2col_nchw_cython import im2col_nchw_cython
 from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython
+from pydtnn.utils import load_library
+from pydtnn.utils.best_of.best_of import BestOf
 from pydtnn.utils.tensor import TensorFormat, decode_shape, encode_shape
 
 __all__ = ("ConvWinograd", "is_conv_winograd_available")

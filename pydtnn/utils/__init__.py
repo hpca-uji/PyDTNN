@@ -1,12 +1,12 @@
 """Utility functions and classes for the PyDTNN framework."""
 
-import sys
-import math
 import ctypes
-import string
-import zipfile
 import logging
+import math
+import string
+import sys
 import threading
+import zipfile
 from collections.abc import Iterable
 from importlib import import_module, resources
 from pathlib import PurePath
@@ -70,6 +70,7 @@ class BackgroundGenerator[T](threading.Thread):
 def header(header: str, text: Any = "") -> None:
     """Print header with and optional value"""
     from pydtnn.utils.term import BOLD, RESET
+
     lines = [""]
     lines.append(f"# {BOLD}{header}{RESET}")
     if text:

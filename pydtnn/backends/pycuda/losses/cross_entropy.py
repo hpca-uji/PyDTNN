@@ -54,7 +54,7 @@ class CrossEntropyPycuda(CrossEntropy[TensorArray], LossPycuda):
         )
 
         sum_weights = float(gpuarray.sum(self.sample_weights[:batch_size]).get())
-        loss = (-gpuarray.sum(self.loss[:batch_size]).get() / sum_weights)
+        loss = -gpuarray.sum(self.loss[:batch_size]).get() / sum_weights
         self.dx /= sum_weights
 
         return loss.item(), self.dx

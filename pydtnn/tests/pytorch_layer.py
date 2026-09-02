@@ -930,7 +930,9 @@ class PytorchLayerTestCase(TestCase):
         )
         _x = PytorchLayerTestCase.get_test_data()
         # _x = np.where(_x < 0, 1, _x)
-        self.do_test(_x=_x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="LogSigmoid")
+        self.do_test(
+            _x=_x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="LogSigmoid"
+        )
 
     def test_log_softmax(self) -> None:
         """Tests Log Softmax activation."""
@@ -941,7 +943,9 @@ class PytorchLayerTestCase(TestCase):
         )
         _x = PytorchLayerTestCase.get_test_data()
         # _x = np.where(_x < 0, 1, _x)
-        self.do_test(_x=_x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="LogSoftmax")
+        self.do_test(
+            _x=_x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="LogSoftmax"
+        )
 
     def test_softmax(self) -> None:
         """Tests Softmax activation."""

@@ -7,7 +7,6 @@ import ctypes
 
 from pydtnn.utils import load_library
 
-
 __all__ = (
     "CUDA_ERROR",
     "CUDA_ERROR_ALREADY_ACQUIRED",

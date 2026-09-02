@@ -6,8 +6,8 @@ import abc
 import logging
 import resource
 import sys
-from typing import TYPE_CHECKING, Any
 from collections.abc import Iterable
+from typing import TYPE_CHECKING, Any
 
 from pydtnn.tracers.events import (PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT,
                                    PYDTNN_OPS_EVENTS, MdlEventEnum, OpsEventEnum)

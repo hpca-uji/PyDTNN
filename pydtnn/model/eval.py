@@ -7,9 +7,9 @@ metric computation, and performance tracking during the testing phase.
 
 import logging
 import time
+from collections.abc import Generator
 from timeit import default_timer as timer
 from typing import Any
-from collections.abc import Generator
 
 import numpy as np
 from tqdm import tqdm
@@ -328,7 +328,7 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
                 ascii=" ▁▂▃▄▅▆▇█",
                 desc="Testing",
                 unit=" samples",
-                colour="BLUE" if term.FANCY else None
+                colour="BLUE" if term.FANCY else None,
             )
         else:
             pbar = None
@@ -358,10 +358,13 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
             # Sleep for half a second to allow pbar to write its output before returning
             time.sleep(0.5)
 
-        self.history.append({
-            f"{Dataset.Part.TEST._name_.lower()}_" + self.loss_and_metric_names[m]: test_global_loss[m]
-            for m in range(len(self.loss_and_metric_names))
-        })
+        self.history.append(
+            {
+                f"{Dataset.Part.TEST._name_.lower()}_"
+                + self.loss_and_metric_names[m]: test_global_loss[m]
+                for m in range(len(self.loss_and_metric_names))
+            }
+        )
 
         for m in range(len(self.loss_and_metric_names)):
             value = self.loss_and_metric_format[m](test_global_loss[m])

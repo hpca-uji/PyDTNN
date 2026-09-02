@@ -96,9 +96,7 @@ class ConvDirectTestCase(ConvTestCase):
                 dtype=im2row_mm_result.dtype,
             )
         if verbose_test():
-            header(
-                "{} conv_direct_result".format(inspect.stack()[1][3]), conv_direct_result
-            )
+            header("{} conv_direct_result".format(inspect.stack()[1][3]), conv_direct_result)
             logger.info(
                 "Shape: ",
                 conv_direct_result.shape,

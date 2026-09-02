@@ -4,9 +4,9 @@ import logging
 import math
 from typing import TYPE_CHECKING
 
-from pydtnn.libs import numpy as np
 from pydtnn.activations.log import Log
 from pydtnn.backends.numpy.activations.abstract.activation import ActivationNumpy
+from pydtnn.libs import numpy as np
 from pydtnn.utils.constants import ArrayShape
 
 __all__ = ("LogNumpy",)
@@ -30,10 +30,7 @@ class LogNumpy(Log[np.ndarray], ActivationNumpy):
 
         self.exp_y: np.ndarray = None  # pyright: ignore[reportAttributeAccessIssue]
         self.exp_y_shape = (self.model.batch_size, *self.shape)
-        self.tmp_memory_used += (
-            int(math.prod(self.exp_y_shape))
-            * self.model.dtype.itemsize
-        )
+        self.tmp_memory_used += int(math.prod(self.exp_y_shape)) * self.model.dtype.itemsize
 
         self.memory_used += self.tmp_memory_used
 

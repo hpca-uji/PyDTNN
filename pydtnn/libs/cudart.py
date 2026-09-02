@@ -3,11 +3,11 @@
 
 from __future__ import annotations
 
-import re
 import ctypes
 import functools
-from typing import TYPE_CHECKING, Any
+import re
 from collections.abc import Callable
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 

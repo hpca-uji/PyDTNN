@@ -5,8 +5,8 @@ import logging
 from pydtnn.activations.log_softmax import LogSoftmax
 from pydtnn.backends.pycuda.activations.softmax import SoftmaxPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
-from pydtnn.utils.constants import ArrayShape
 from pydtnn.libs import cudnn as cudnn
+from pydtnn.utils.constants import ArrayShape
 
 __all__ = ("LogSoftmaxPycuda",)
 

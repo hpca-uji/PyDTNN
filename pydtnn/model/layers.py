@@ -1,8 +1,8 @@
 """Module providing the Layers management class for the PyDTNN framework."""
 
 import logging
-from typing import Any
 from collections import abc
+from typing import Any
 
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.activations.relu import Relu

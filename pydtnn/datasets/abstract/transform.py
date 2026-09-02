@@ -9,8 +9,8 @@ from __future__ import annotations
 
 import functools
 import logging
+from collections.abc import Callable, Generator
 from typing import TYPE_CHECKING
-from collections.abc import Generator, Callable
 
 import numpy as np
 from PIL import Image, ImageEnhance
@@ -164,7 +164,9 @@ class Augment(Init):
 
         return wrapper
 
-    def _transform_data_generator(self, part: Base.Part) -> Generator[tuple[np.ndarray, np.ndarray]]:
+    def _transform_data_generator(
+        self, part: Base.Part
+    ) -> Generator[tuple[np.ndarray, np.ndarray]]:
         """
         Yield transformed data from the dataset partition.
 

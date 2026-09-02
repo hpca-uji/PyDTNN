@@ -58,8 +58,12 @@ class AbstractPool2DLayer[T: Array](Layer[T]):  # noqa: D101 (generics not detec
             self.pool_shape = (self.pool_shape[0], self.wi)
         self.kh, self.kw = self.pool_shape
         self.co = self.ci
-        self.ho = (self.hi + 2 * self.hpadding - self.hdilation * (self.kh - 1) - 1) // self.hstride + 1
-        self.wo = (self.wi + 2 * self.wpadding - self.wdilation * (self.kw - 1) - 1) // self.wstride + 1
+        self.ho = (
+            self.hi + 2 * self.hpadding - self.hdilation * (self.kh - 1) - 1
+        ) // self.hstride + 1
+        self.wo = (
+            self.wi + 2 * self.wpadding - self.wdilation * (self.kw - 1) - 1
+        ) // self.wstride + 1
         if not (self.ho > 0 and self.wo > 0):
             raise LayerError(
                 f"Output dimensions must be greater than 0. ho: {self.ho}, wo: {self.wo}."

@@ -21,7 +21,9 @@ class BinaryCrossEntropyPycuda(LossPycuda, BinaryCrossEntropy[TensorArray]):
         """Initializes GPU memory buffers and model-dependent parameters."""
         super()._model_init()
         # NOTE: the model must be executed before this one.
-        self.argmax: gpuarray.GPUArray = gpuarray.zeros((self.model.batch_size,), np.dtype(self.model.dtype))
+        self.argmax: gpuarray.GPUArray = gpuarray.zeros(
+            (self.model.batch_size,), np.dtype(self.model.dtype)
+        )
         self.memory_used += self.argmax.nbytes
 
     def compute(self, y_pred: TensorArray, y_targ: TensorArray) -> tuple[float, TensorArray]:

@@ -5,8 +5,8 @@ from __future__ import annotations
 import copy
 import logging
 import os
-from typing import TYPE_CHECKING, override
 from collections.abc import Generator
+from typing import TYPE_CHECKING, override
 
 import numpy as np
 
@@ -104,8 +104,8 @@ class Folder(Dataset):
 
         num_elementos = sum(self.folder_class_elems.values())
         for folder_class in self.folder_class_elems.keys():
-            self.class_weights[folder_class] = (
-                num_elementos / (self.folder_class_elems[folder_class] * num_classes_train)
+            self.class_weights[folder_class] = num_elementos / (
+                self.folder_class_elems[folder_class] * num_classes_train
             )
 
         self.labels_and_images[Dataset.Part.VAL] = copy.copy(

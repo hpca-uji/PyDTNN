@@ -6,7 +6,6 @@ from enum import Enum
 
 from pydtnn.utils import load_library
 
-
 __all__ = (
     "DataType",
     "NcclComm",

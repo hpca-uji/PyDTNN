@@ -16,7 +16,7 @@ from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.model import Model as PyDTNN_Model
-from pydtnn.tests.abstract.base import Params, verbose_test, TestCase
+from pydtnn.tests.abstract.base import Params, TestCase, verbose_test
 from pydtnn.utils import header, rand
 from pydtnn.utils.pytorch import from_pytorch
 from pydtnn.utils.tensor import TensorFormat
@@ -157,7 +157,7 @@ class SimpleCNN(torch.nn.Module):
             torch.nn.ReLU(inplace=True),
             torch.nn.Dropout(),
             torch.nn.Linear(128, 10),
-            torch.nn.LogSoftmax(dim=1)
+            torch.nn.LogSoftmax(dim=1),
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -167,9 +167,7 @@ class SimpleCNN(torch.nn.Module):
         return x
 
 
-def replace_layer(
-    module: torch.nn.Module, layer_to_replace: type[torch.nn.Module]
-) -> None:
+def replace_layer(module: torch.nn.Module, layer_to_replace: type[torch.nn.Module]) -> None:
     """
     Recursively put desired batch norm in nn.module module.
 
@@ -221,6 +219,7 @@ class PytorchModelTestCase(TestCase):
         """Sets up the test environment."""
         super().setUp()
         torch.manual_seed(0)
+
     # Initialization methods
 
     params = Params()
@@ -320,7 +319,9 @@ class PytorchModelTestCase(TestCase):
             case "resnet14like":
                 torch_model = ResNet14Like()
             case "resnet50":
-                torch_model = torch_models.resnet50(weights=torch_models.ResNet50_Weights.IMAGENET1K_V1)
+                torch_model = torch_models.resnet50(
+                    weights=torch_models.ResNet50_Weights.IMAGENET1K_V1
+                )
                 torch_model.fc = torch.nn.Sequential(  # pyright: ignore[reportAttributeAccessIssue]
                     # torch.nn.Dropout(p=0.5),
                     torch.nn.Linear(
@@ -489,9 +490,7 @@ class PytorchModelTestCase(TestCase):
         # dx: list[torch.Tensor] = []
         optimizer.step()
 
-    def do_pydtnn_model_optimizer_pass(
-        self, model2: PyDTNN_Model
-    ) -> None:
+    def do_pydtnn_model_optimizer_pass(self, model2: PyDTNN_Model) -> None:
         """
         Performs a forward pass for PyDTNN's Model.
 
@@ -589,7 +588,11 @@ class PytorchModelTestCase(TestCase):
             y_pydtnn = np.ones((params.batch_size, output_shape), dtype=params.dtype)
 
             x_torch = torch.from_numpy(x_pydtnn).to(torch.device("cpu")).float()
-            y_torch = torch.from_numpy(self.target_pydtnn2torch_format(y_pydtnn)).to(torch.device("cpu")).long()
+            y_torch = (
+                torch.from_numpy(self.target_pydtnn2torch_format(y_pydtnn))
+                .to(torch.device("cpu"))
+                .long()
+            )
 
             # --- FORWARD ---
             if verbose_test():

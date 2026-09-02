@@ -3,8 +3,8 @@
 from collections.abc import Sequence
 
 from pydtnn.abstract.layerable import Layerable
-from pydtnn.activations.relu import Relu
 from pydtnn.activations.log_softmax import LogSoftmax
+from pydtnn.activations.relu import Relu
 from pydtnn.layers.fc import FC
 from pydtnn.layers.flatten import Flatten
 from pydtnn.layers.identity import Identity

@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any
 from collections.abc import Generator
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from spacy.language import Language

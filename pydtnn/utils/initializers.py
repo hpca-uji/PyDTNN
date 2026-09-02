@@ -2,8 +2,8 @@
 
 import logging
 import math
-from enum import StrEnum, auto
 from collections.abc import Callable
+from enum import StrEnum, auto
 
 import numpy as np
 import scipy.stats as stats

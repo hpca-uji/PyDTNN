@@ -3,8 +3,8 @@
 from collections.abc import Sequence
 
 from pydtnn.abstract.layerable import Layerable
-from pydtnn.activations.relu import Relu
 from pydtnn.activations.log_softmax import LogSoftmax
+from pydtnn.activations.relu import Relu
 from pydtnn.layers.adaptive_average_pool_2d import AdaptiveAveragePool2D
 from pydtnn.layers.addition_block import AdditionBlock
 from pydtnn.layers.batch_normalization import BatchNormalization

@@ -112,8 +112,7 @@ class PerformanceCounter:
                 f" {self.training_time / self.num_epochs:5.4f} s"
             )
             _report.append(
-                "Training throughput (from model):"
-                f" {self.training_throughput:5.4f} samples/s"
+                f"Training throughput (from model): {self.training_throughput:5.4f} samples/s"
             )
             _report.append(
                 "Training time (from model, estimated from last half of each epoch):"
@@ -124,12 +123,10 @@ class PerformanceCounter:
                 f" {self.training_throughput_only_last_half_of_each_epoch:5.4f} samples/s"
             )
             _report.append(
-                "Training maximum memory allocated:"
-                f" {self.training_maximum_memory / 1024:.2f} MiB"
+                f"Training maximum memory allocated: {self.training_maximum_memory / 1024:.2f} MiB"
             )
             _report.append(
-                "Training mean memory allocated:"
-                f" {self.training_mean_memory / 1024:.2f} MiB"
+                f"Training mean memory allocated: {self.training_mean_memory / 1024:.2f} MiB"
             )
             logger.info("\n".join(_report))
 
@@ -137,20 +134,16 @@ class PerformanceCounter:
             header("Testing report")
             _report = []
             _report.append(
-                "Testing time (from model):"
-                f" {self.testing_time / self.num_evaluations:5.4f} s"
+                f"Testing time (from model): {self.testing_time / self.num_evaluations:5.4f} s"
             )
             _report.append(
-                "Testing throughput (from model):"
-                f" {self.testing_throughput:5.4f} samples/s"
+                f"Testing throughput (from model): {self.testing_throughput:5.4f} samples/s"
             )
             _report.append(
-                "Testing maximum memory allocated:"
-                f" {self.testing_maximum_memory / 1024:.2f} MiB"
+                f"Testing maximum memory allocated: {self.testing_maximum_memory / 1024:.2f} MiB"
             )
             _report.append(
-                "Testing mean memory allocated:"
-                f" {self.testing_mean_memory / 1024:.2f} MiB"
+                f"Testing mean memory allocated: {self.testing_mean_memory / 1024:.2f} MiB"
             )
             logger.info("\n".join(_report))
 

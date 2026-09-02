@@ -23,6 +23,7 @@ def _start() -> int:
     """System entry point"""
     if os.environ.get("PYEXTRAE"):
         import pyextrae.common.extrae as pyextrae
+
         pyextrae.startTracing("libptmpitrace.so")
 
     from pydtnn import rank
@@ -48,8 +49,7 @@ def main(config: Namespace) -> None:  # noqa: C901
     """Application entry point"""
 
     # Initialize random seed
-    from pydtnn.utils import rand
-    from pydtnn.utils import header
+    from pydtnn.utils import header, rand
 
     rand.seed(config.random_seed)
 
@@ -151,6 +151,7 @@ def main(config: Namespace) -> None:  # noqa: C901
         history_file = utils.string_substitute(model.history_file, rank=model.comm_rank)
         if history_file != model.history_file or model.comm_rank == 0:
             from pydtnn.utils.serial import NumpyYaml
+
             history = model.history
             path = Path(history_file).resolve()
             with open(path, "w") as f:
