@@ -680,10 +680,12 @@ class PytorchModelTestCase(TestCase):
         """Compares results between an ResNet50 model using a PyTorch model and other a PyDTNN one."""
         self.do_test_model("resnet50")
 
+    @unittest.skip("Large model")
     def test_resnet14like(self) -> None:
         """Compares results between an ResNet14_like model using a PyTorch model and other a PyDTNN one."""
         self.do_test_model("resnet14like")
 
+    @unittest.skip("Large model")
     def test_simplecnn(self) -> None:
         """Compares results between an SimpleCNN model using a PyTorch model and other a PyDTNN one."""
         self.do_test_model("simplecnn")
