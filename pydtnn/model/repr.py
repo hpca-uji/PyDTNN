@@ -122,9 +122,12 @@ class Repr[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
             if schedulers_memory:
                 props["schedulers-memory"] = schedulers_memory
 
+        if self.dataset:
+            props["samples"] = repr(tuple(self.dataset._nsamples))
+
         if self.layers:
-            props["input"] = self.layers[0].shape
-            props["output"] = self.layers[-1].shape
+            props["input"] = repr(self.layers[0].shape)
+            props["output"] = repr(self.layers[-1].shape)
             props["batch-size"] = self.batch_size
             props["layers"] = len(self.get_all_layers())
 

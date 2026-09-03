@@ -133,10 +133,10 @@ class Layerable[T: Array](Base[T]):  # noqa: D101 (generics not detected)
             props["params"] = self.nparams
 
         if self.prev_shape:
-            props["input"] = self.prev_shape
+            props["input"] = repr(self.prev_shape)
 
         if self.shape:
-            props["output"] = self.shape
+            props["output"] = repr(self.shape)
 
         if len(self.paths) > 0:
             props["paths"] = ", ".join(
@@ -144,7 +144,7 @@ class Layerable[T: Array](Base[T]):  # noqa: D101 (generics not detected)
             )
 
         if self.weights is not None:
-            props["weights"] = self.weights.shape
+            props["weights"] = repr(self.weights.shape)
 
         return props
 
@@ -197,7 +197,7 @@ class Layerable[T: Array](Base[T]):  # noqa: D101 (generics not detected)
         """
         return dy
 
-    def reduce_state_async(self, mode: SyncMode) -> None:
+    def state_reduce_async(self, mode: SyncMode) -> None:
         """
         Initiate asynchronous weight reduction.
 
@@ -209,9 +209,9 @@ class Layerable[T: Array](Base[T]):  # noqa: D101 (generics not detected)
         Args:
             gradient: If True, reduce gradients; otherwise, reduce weights.
         """
-        self._reduce_state(mode, self._reduce_state_async)
+        self._state_reduce(mode, self._state_reduce_async)
 
-    def reduce_state_wait(self, mode: SyncMode) -> None:
+    def state_reduce_wait(self, mode: SyncMode) -> None:
         """
         Wait for completion of asynchronous weight reduction.
 
@@ -222,9 +222,9 @@ class Layerable[T: Array](Base[T]):  # noqa: D101 (generics not detected)
         Args:
             gradient: If True, wait for gradients; otherwise, wait for weights.
         """
-        self._reduce_state(mode, self._wait_allreduce_async)
+        self._state_reduce(mode, self._state_reduce_wait)
 
-    def reduce_state_sync(self, mode: SyncMode) -> None:
+    def state_reduce_sync(self, mode: SyncMode) -> None:
         """
         Perform synchronous weight reduction.
 
@@ -236,76 +236,76 @@ class Layerable[T: Array](Base[T]):  # noqa: D101 (generics not detected)
         Args:
             gradient: If True, reduce gradients; otherwise, reduce weights.
         """
-        self._reduce_state(mode, self._reduce_state_sync)
+        self._state_reduce(mode, self._state_reduce_sync)
 
-    def _reduce_state(self, mode: SyncMode, reduce_operation: Callable[[str], None]) -> None:
+    def _state_reduce(self, mode: SyncMode, reduce_operation: Callable[[str], None]) -> None:
         """Method that unifies all the common steps in reductions operations"""
         # NOTE: Keep in sync with Layer
         if not self.model.comm:
             return
 
-        vars_to_iterate = list()
+        vars_to_iterate = set()
 
         # NOTE: self.grad_vars = {[VAR]: [VAR's GRADIENT]}
         if SyncMode.WEIGHT in mode:
-            vars_to_iterate.extend(self.grad_vars.keys())
+            vars_to_iterate.update(self.grad_vars.keys())
 
         if SyncMode.GRADIENT in mode:
-            vars_to_iterate.extend(self.grad_vars.values())
+            vars_to_iterate.update(self.grad_vars.values())
 
         for w_dw in vars_to_iterate:
             reduce_operation(w_dw)
 
-    def _reduce_state_async(self, state_: str) -> None:
+    def _state_reduce_async(self, key: str) -> None:
         """Method where the values are reduced asynchronously."""
-        state: np.ndarray = getattr(self, state_)
+        value: np.ndarray = getattr(self, key)
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.LAYER_ENCODE
         )
-        state = self.model._layer_reduce_encode(state)
+        value = self.model._layer_reduce_encode(value)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        assert state_ not in self.reqs_allred, f"MPI request overwritten ({state_} not waited)!"
-        req = self.model._layer_reduce_async(state)
-        self.reqs_allred[state_] = req
+        assert key not in self.reqs_allred, f"MPI request overwritten ({key} not waited)!"
+        req = self.model._layer_reduce_async(value)
+        self.reqs_allred[key] = req
 
-    def _wait_allreduce_async(self, state_: str) -> None:
+    def _state_reduce_wait(self, key: str) -> None:
         """Method where the values reduced asynchronously are setted."""
-        state = getattr(self, state_)
-        req = self.reqs_allred.pop(state_, None)
+        value = getattr(self, key)
+        req = self.reqs_allred.pop(key, None)
         if req is None:
             return
-        state = self.model._layer_reduce_wait(state, req)
+        value = self.model._layer_reduce_wait(value, req)
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.LAYER_DECODE
         )
-        state = self.model._layer_reduce_decode(state)
+        value = self.model._layer_reduce_decode(value)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        setattr(self, state_, state)
+        setattr(self, key, value)
 
-    def _reduce_state_sync(self, state_: str) -> None:
+    def _state_reduce_sync(self, key: str) -> None:
         """Method where the state are reduced synchronously."""
-        state: np.ndarray = getattr(self, state_)
+        value: np.ndarray = getattr(self, key)
 
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.LAYER_ENCODE
         )
-        state = self.model._layer_reduce_encode(state)
+        value = self.model._layer_reduce_encode(value)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT,
             self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.OPS_ALLREDUCE_DW,
         )
-        state = self.model._layer_reduce_sync(state)
+        value = self.model._layer_reduce_sync(value)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.LAYER_DECODE
         )
-        state = self.model._layer_reduce_decode(state)
+        value = self.model._layer_reduce_decode(value)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-        setattr(self, state_, state)
+        setattr(self, key, value)
 
     def print_in_convdirect_format(self) -> None:
         """

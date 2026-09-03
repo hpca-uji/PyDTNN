@@ -22,15 +22,11 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
     def _model_init(self, prev_shape: tuple[int, ...], x: TensorArray | None) -> None:
         super()._model_init(prev_shape, x)
         if self.model.use_nccl:
-            self._reduce_state_async = self._reduce_state_async_nccl
-            self._reduce_state_sync = self._reduce_state_sync_nccl
-            self._wait_allreduce_async = self._wait_allreduce_async_nccl
-        else:
-            self._reduce_state_async = self._reduce_state_async_no_nccl
-            self._reduce_state_sync = self._reduce_state_sync_no_nccl
-            self._wait_allreduce_async = self._wait_allreduce_async_no_nccl
+            self._state_reduce_async = self._state_reduce_async_nccl
+            self._state_reduce_sync = self._state_reduce_sync_nccl
+            self._state_reduce_wait = self._state_reduce_wait_nccl
 
-    def _reduce_state_async_nccl(self, state_: str) -> None:
+    def _state_reduce_async_nccl(self, state_: str) -> None:
         state = getattr(self, state_)
         assert nccl is not None
 
@@ -67,7 +63,7 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
         #         self.stream_2.synchronize()
         #         req = self.model.inter_comm.Iallreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
 
-    def _reduce_state_async_no_nccl(self, state_: str) -> None:
+    def _state_reduce_async(self, state_: str) -> None:
         # Without NCCL
         # We have asynchronously moved the dw and db to dw_cpu and db_cpu in stream_2
         # so we need to synchronize stream_2 before performing Allreduce.
@@ -78,9 +74,9 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
             self.stream_2.synchronize()
 
         state_cpu_: str = f"{state_}_cpu"
-        super()._reduce_state_async(state_cpu_)
+        super()._state_reduce_async(state_cpu_)
 
-    def _wait_allreduce_async_nccl(self, state_: str) -> None:
+    def _state_reduce_wait_nccl(self, state_: str) -> None:
         # self.model.stream.synchronize()
         state: TensorArray = getattr(self, state_)
         # TODO: self.model._decode_reduce
@@ -101,9 +97,9 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
         #                            root=0, comm=self.model.nccl_comm,
         #                            stream=self.stream_2.handle)
 
-    def _wait_allreduce_async_no_nccl(self, state_: str) -> None:
+    def _state_reduce_wait(self, state_: str) -> None:
         state_cpu_: str = f"{state_}_cpu"
-        super()._wait_allreduce_async(state_cpu_)
+        super()._state_reduce_wait(state_cpu_)
 
         state = getattr(self, state_)
         state_cpu = getattr(self, state_cpu_)
@@ -111,7 +107,7 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
         # If there is no CUDA-aware MPI, copy data back to GPU
         state.set_async(state_cpu, self.stream_2)
 
-    def _reduce_state_sync_nccl(self, state_: str) -> None:
+    def _state_reduce_sync_nccl(self, state_: str) -> None:
         # stream = self.stream_2.handle)
         state = getattr(self, state_)
 
@@ -162,7 +158,7 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
         #                        root=0, comm=self.model.nccl_comm,
         #                        stream=self.stream_2.handle)
 
-    def _reduce_state_sync_no_nccl(self, state_: str) -> None:
+    def _state_reduce_sync(self, state_: str) -> None:
         # stream = self.stream_2.handle)
         state = getattr(self, state_)
 
@@ -171,7 +167,7 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
 
         weights_cpu_ = f"{state_}_cpu"
 
-        super()._reduce_state_sync(weights_cpu_)
+        super()._state_reduce_sync(weights_cpu_)
         weights_cpu: np.ndarray = getattr(self, weights_cpu_)
 
         # If there is no CUDA-aware MPI, copy data back to GPU

@@ -47,24 +47,20 @@ def _start() -> int:
 
 def main(config: Namespace) -> None:  # noqa: C901
     """Application entry point"""
+    from pydtnn import rank, timestamp
+    from pydtnn.utis import header, rand
 
-    # Initialize random seed
-    from pydtnn.utils import header, rand
-
+    # Initialize
     rand.seed(config.random_seed)
+    if rank == 0:
+        header("PyDTNN benchmark")
 
     # Create model
     from pydtnn.model import Model
 
     pr = cProfile.Profile()
     model = Model(**vars(config))
-
-    if model.comm_rank == 0:
-        header("PyDTNN benchmark")
-
     model._ensure_runnable()
-
-    from pydtnn import timestamp, utils
 
     # Print model
     if model.comm_rank == 0:
@@ -145,18 +141,6 @@ def main(config: Namespace) -> None:  # noqa: C901
                 logger.info(
                     f"Testing throughput: {model.dataset.test_nsamples / total_time:5.4f} samples/s"
                 )
-
-    # Store history information
-    if model.history_file:
-        history_file = utils.string_substitute(model.history_file, rank=model.comm_rank)
-        if history_file != model.history_file or model.comm_rank == 0:
-            from pydtnn.utils.serial import NumpyYaml
-
-            history = model.history
-            path = Path(history_file).resolve()
-            with open(path, "w") as f:
-                yaml.dump_all(history, f, NumpyYaml, allow_unicode=True, sort_keys=False)
-            logger.info(f"Dumped metric history to: {path}")
 
     # Print model reports
     if model.comm_rank == 0:

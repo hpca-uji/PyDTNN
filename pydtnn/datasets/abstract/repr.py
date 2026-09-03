@@ -33,9 +33,9 @@ class Repr(Init, Baser):
         """Returns a dictionary containing the dataset properties for inspection."""
         props = super()._show_props()
 
-        props["train"] = (self.train_nsamples, *self.input_shape)
-        props["val"] = (self.val_nsamples, *self.input_shape)
-        props["test"] = (self.test_nsamples, *self.output_shape)
+        props["train"] = repr((self.train_nsamples, *self.input_shape))
+        props["val"] = repr((self.val_nsamples, *self.input_shape))
+        props["test"] = repr((self.test_nsamples, *self.output_shape))
 
         return props
 

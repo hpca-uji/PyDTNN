@@ -150,7 +150,6 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
         output_prefix: str,
         current_round: int,
         delta: float = -1,
-        prev_string: str = "",
     ) -> str:
         """
         Updates the progress bar and internal performance counters.
@@ -181,7 +180,7 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
         if self.comm_rank == 0:
             # NOTE: pbar is a 'tqdm', it only is None in self.comm_rank != 0
             assert pbar
-            pbar.set_postfix_str(s=f"{prev_string}{string}", refresh=True)
+            pbar.set_postfix_str(s=string, refresh=True)
             # if part != Dataset.Part.VAL:
             pbar.update(int(global_loss[-1]) - pbar.n)
 
@@ -196,15 +195,15 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
         local_loss: np.ndarray,
         global_loss: np.ndarray,
         terminate: bool = False,
-        prev_string: str = "",
         out_prefix: str = "",
-    ) -> tuple[int, bool, str]:
+    ) -> tuple[int, bool, float]:
         """
         Executes a single evaluation round over the provided batch generator.
 
         Returns:
             A tuple containing updated total loss, sync count, sync status, and status string.
         """
+        total_delta = 0
         sync_epoch = False
         part = Dataset.Part[out_prefix.rstrip("_").upper()]
 
@@ -246,6 +245,7 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
             toc = timer()
             delta = toc - tic
 
+            total_delta += delta
             local_loss += batch_loss
 
             if sync_model:
@@ -262,7 +262,6 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
                 output_prefix=out_prefix,
                 current_round=self._evaluation_round,
                 delta=delta,
-                prev_string=prev_string,
             )
 
         diff_loss = local_loss - global_loss
@@ -271,19 +270,18 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
         global_loss += diff_loss
         local_loss[:] = global_loss
 
-        string = self._update_status(
+        self._update_status(
             pbar=pbar,
             batch_loss=local_loss,
             global_loss=global_loss,
             output_prefix=out_prefix,
             current_round=self._evaluation_round,
             delta=-1,
-            prev_string=prev_string,
         )
 
         # Increment self._evaluate_round
         self._evaluation_round += 1
-        return (model_sync_count, sync_epoch, string)
+        return (model_sync_count, sync_epoch, total_delta)
 
     def evaluate(self) -> None:
         """
@@ -313,6 +311,7 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
             )
         )
 
+        model_sync_count = 0
         test_batch_generator = self.dataset.get_test_generator()
         test_batches_min: float = min(self.comm_nsamples[Dataset.Part.TEST]) / (
             self.batch_size * self.nprocs
@@ -333,10 +332,10 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
         else:
             pbar = None
 
-        self._evaluate_round(
+        model_sync_count, test_sync_epoch, delta = self._evaluate_round(
             pbar=pbar,
             batch_generator=test_batch_generator,
-            model_sync_count=0,
+            model_sync_count=model_sync_count,
             batches_min=test_batches_min,
             local_loss=test_local_loss,
             global_loss=test_global_loss,
@@ -358,11 +357,11 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
             # Sleep for half a second to allow pbar to write its output before returning
             time.sleep(0.5)
 
-        self.history.append(
+        self.history_append(
             {
-                f"{Dataset.Part.TEST._name_.lower()}_"
-                + self.loss_and_metric_names[m]: test_global_loss[m]
-                for m in range(len(self.loss_and_metric_names))
+                "part": Dataset.Part.TEST._name_.lower(),
+                "time": delta,
+                **dict(zip(self.loss_and_metric_names, test_global_loss)),
             }
         )
 

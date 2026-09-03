@@ -6,6 +6,7 @@ import logging
 from typing import Any
 
 import numpy as np
+import yaml
 
 from pydtnn.model.init import Init
 from pydtnn.utils.constants import Array, Parameters
@@ -33,9 +34,16 @@ class State[T: Array](Init[T]):  # noqa: D101 (generics not detected)
         state from that file.
         """
         super()._model_init()
+        self.history = []
+
         # Load weights and bias
         if self.model_state_file:
             self.load_model_state(self.model_state_file)
+
+        props = self._show_props()
+        if _ := props.pop("layers", None):
+            props["layers"] = [layer._show_props() for layer in self.get_all_layers()]
+        self.history_append(props)
 
     def export(self) -> dict[str, Any]:
         """
@@ -112,3 +120,15 @@ class State[T: Array](Init[T]):  # noqa: D101 (generics not detected)
         """
         save = np.savez_compressed if compress else np.savez
         save(filename, **self.export())
+
+    def history_append(self, event: dict) -> str:
+        """Append history event"""
+        if history_file := self.history_file:
+            mode = "a" if self.history else "w"
+            from pydtnn.utils.serial import NumpyYaml
+
+            with open(history_file, mode) as f:
+                if self.history:
+                    f.write("---\n")
+                yaml.dump(event, f, NumpyYaml, allow_unicode=True, sort_keys=False)
+        self.history.append(event)

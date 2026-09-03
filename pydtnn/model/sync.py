@@ -10,7 +10,7 @@ import numpy as np
 from pydtnn import MPI
 from pydtnn.datasets.abstract import Dataset
 from pydtnn.model.base import Base
-from pydtnn.model.init import Init
+from pydtnn.model.state import State
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT,
                                    PYDTNN_MDL_EVENTS, MdlEventEnum)
 from pydtnn.utils.constants import Array, SyncMode
@@ -23,7 +23,7 @@ __all__ = ("Sync",)
 logger = logging.getLogger(__name__)
 
 
-class Sync[T: Array](Init[T]):  # noqa: D101 (generics not detected)
+class Sync[T: Array](State[T]):  # noqa: D101 (generics not detected)
     """
     Base class for distributed synchronization operations, providing methods for
     encoding, decoding, and performing collective communication reductions.
@@ -132,7 +132,7 @@ class Sync[T: Array](Init[T]):  # noqa: D101 (generics not detected)
             self.tracer.emit_event(
                 PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + MdlEventEnum.ALLREDUCE_DW
             )
-            layer.reduce_state_sync(mode=parameters)
+            layer.state_reduce_sync(mode=parameters)
             self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
     def _model_reduce_async(self, parameters: SyncMode) -> None:
@@ -141,7 +141,7 @@ class Sync[T: Array](Init[T]):  # noqa: D101 (generics not detected)
             self.tracer.emit_event(
                 PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + MdlEventEnum.ALLREDUCE_DW
             )
-            layer.reduce_state_async(mode=parameters)
+            layer.state_reduce_async(mode=parameters)
             self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
     def _model_reduce_wait(self, mode: SyncMode) -> None:
@@ -150,7 +150,7 @@ class Sync[T: Array](Init[T]):  # noqa: D101 (generics not detected)
             self.tracer.emit_event(
                 PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + MdlEventEnum.WAIT_DW
             )
-            layer.reduce_state_wait(mode=mode)
+            layer.state_reduce_wait(mode=mode)
             self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
     def _model_sync(self, mode: SyncMode) -> None:

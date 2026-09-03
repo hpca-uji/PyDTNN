@@ -8,7 +8,7 @@ from typing import Any
 import numpy as np
 
 from pydtnn.datasets.abstract import Dataset
-from pydtnn.utils import header
+from pydtnn.utils import convert_size_bytes, header
 
 __all__ = ("PerformanceCounter",)
 
@@ -72,12 +72,12 @@ class PerformanceCounter:
 
     @property
     def training_maximum_memory(self) -> int:
-        """Returns the maximum memory usage recorded during training in KiB."""
+        """Returns the maximum memory usage recorded during training in bytes."""
         return self._maximum_memory(Dataset.Part.TRAIN)
 
     @property
     def training_mean_memory(self) -> float:
-        """Returns the mean memory usage recorded during training in KiB."""
+        """Returns the mean memory usage recorded during training in bytes."""
         return self._mean_memory(Dataset.Part.TRAIN)
 
     @property
@@ -92,12 +92,12 @@ class PerformanceCounter:
 
     @property
     def testing_maximum_memory(self) -> int:
-        """Returns the maximum memory usage recorded during testing in KiB."""
+        """Returns the maximum memory usage recorded during testing in bytes."""
         return self._maximum_memory(Dataset.Part.TEST)
 
     @property
     def testing_mean_memory(self) -> float:
-        """Returns the mean memory usage recorded during testing in KiB."""
+        """Returns the mean memory usage recorded during testing in bytes."""
         return self._mean_memory(Dataset.Part.TEST)
 
     def print_report(self) -> None:
@@ -123,10 +123,10 @@ class PerformanceCounter:
                 f" {self.training_throughput_only_last_half_of_each_epoch:5.4f} samples/s"
             )
             _report.append(
-                f"Training maximum memory allocated: {self.training_maximum_memory / 1024:.2f} MiB"
+                f"Training maximum memory allocated: {convert_size_bytes(self.training_maximum_memory)}"
             )
             _report.append(
-                f"Training mean memory allocated: {self.training_mean_memory / 1024:.2f} MiB"
+                f"Training mean memory allocated: {convert_size_bytes(round(self.training_mean_memory))}"
             )
             logger.info("\n".join(_report))
 
@@ -140,10 +140,10 @@ class PerformanceCounter:
                 f"Testing throughput (from model): {self.testing_throughput:5.4f} samples/s"
             )
             _report.append(
-                f"Testing maximum memory allocated: {self.testing_maximum_memory / 1024:.2f} MiB"
+                f"Testing maximum memory allocated: {convert_size_bytes(self.testing_maximum_memory)}"
             )
             _report.append(
-                f"Testing mean memory allocated: {self.testing_mean_memory / 1024:.2f} MiB"
+                f"Testing mean memory allocated: {convert_size_bytes(round(self.testing_mean_memory))}"
             )
             logger.info("\n".join(_report))
 
@@ -157,8 +157,8 @@ class PerformanceCounter:
         mem = (
             resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
             + resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss
-        )
-        self._memory_record[where][epoch].append(mem)  # KiB in GNU/Linux
+        ) * 1024  # KiB in GNU/Linux
+        self._memory_record[where][epoch].append(mem)
 
     def _time(self, where: Dataset.Part, last_half: bool = False) -> float:
         """Calculates total time for a given phase."""

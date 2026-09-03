@@ -7,9 +7,8 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from pydtnn import (MPI, context, cublas, cublas_handle, cudnn, cudnn_handle, drv,
-                    gpuarray, hostname, nccl, nccl_comm, num_gpus, ranks_per_node,
-                    gpu_errors, stream)
+from pydtnn import (MPI, context, cublas, cublas_handle, cudnn, cudnn_handle, drv, gpu_errors,
+                    gpuarray, hostname, nccl, nccl_comm, num_gpus, ranks_per_node, stream)
 from pydtnn.datasets import select as select_dataset
 from pydtnn.datasets.abstract import Dataset
 from pydtnn.layers.identity import Identity
@@ -17,7 +16,7 @@ from pydtnn.libs.mpi.rc import proto as proto
 from pydtnn.losses import select as select_loss
 from pydtnn.metrics import select as select_metric
 from pydtnn.model.base import Base
-from pydtnn.model.layers import Layers
+from pydtnn.model.repr import Repr
 from pydtnn.model.utils import DEFAULT_BACH_SIZE, LIMIT_THREADS_AND_BLOCKS
 from pydtnn.models import select as select_model
 from pydtnn.optimizers import select as select_optimizer
@@ -43,7 +42,7 @@ __all__ = ("Init",)
 logger = logging.getLogger(__name__)
 
 
-class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
+class Init[T: Array](Repr[T]):  # noqa: D101 (generics not detected)
     """
     Main initialization class for PyDTNN models.
 
@@ -408,7 +407,6 @@ class Init[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
 
         self.optimizer._post_init()
 
-        self.history = []
         self.tracer.define_event_types(self)
 
     def _ensure_runnable(self) -> None:

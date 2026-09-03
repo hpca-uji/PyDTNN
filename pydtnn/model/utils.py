@@ -57,6 +57,17 @@ class Utils[T: Array](Base[T]):  # noqa: D101 (generics not detected)
         return utils.string_substitute(self.__dict__["dataset_path"], rank=self.comm_rank)
 
     @property
+    def history_file(self) -> str:
+        """Raw history path with rank substituted"""
+        history_file = self.__dict__["history_file"]
+        if not history_file:
+            return ""
+        rank_history_file = utils.string_substitute(history_file, rank=self.comm_rank)
+        if self.comm_rank > 0 and rank_history_file == history_file:
+            return ""
+        return rank_history_file
+
+    @property
     def comm_rank(self) -> int:
         """Communicator rank"""
         return self.comm.rank if self.comm else 0

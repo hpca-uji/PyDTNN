@@ -16,6 +16,7 @@ import numpy as np
 
 from pydtnn import MPI_MODULE, Cublas_Handle_Type, Cudnn_Handle_Type
 from pydtnn.abstract.layerable import Layerable
+from pydtnn.datasets.abstract import Dataset
 from pydtnn.losses.abstract.loss import Loss
 from pydtnn.metrics.abstract.metric import Metric
 from pydtnn.optimizers.abstract.optimizer import Optimizer
@@ -111,6 +112,7 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
     use_gpudirect: bool
     use_memory_pool: bool
     y_batch: T
+    dataset: Dataset
 
     # NOTE: Kwargs defaults (DEFAULT REQUIRED)
     model_name: str = ""

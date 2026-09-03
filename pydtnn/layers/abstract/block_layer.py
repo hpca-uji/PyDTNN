@@ -63,23 +63,23 @@ class AbstractBlockLayer[T: Array](Layer[T]):  # noqa: D101 (generics not detect
             for layer in p:
                 layer.update_weights(optimizer, update, sync)
 
-    def reduce_state_async(self, mode: SyncMode) -> None:
+    def state_reduce_async(self, mode: SyncMode) -> None:
         """Initiates asynchronous weight reduction for all layers."""
         for p in self.paths:
             for layer in p:
-                layer.reduce_state_async(mode=mode)
+                layer.state_reduce_async(mode=mode)
 
-    def reduce_state_wait(self, mode: SyncMode) -> None:
+    def state_reduce_wait(self, mode: SyncMode) -> None:
         """Waits for completion of asynchronous weight reductions."""
         for p in self.paths:
             for layer in p:
-                layer.reduce_state_wait(mode=mode)
+                layer.state_reduce_wait(mode=mode)
 
-    def reduce_state_sync(self, mode: SyncMode) -> None:
+    def state_reduce_sync(self, mode: SyncMode) -> None:
         """Performs synchronous weight reduction for all layers."""
         for p in self.paths:
             for layer in p:
-                layer.reduce_state_sync(mode=mode)
+                layer.state_reduce_sync(mode=mode)
 
     def print_in_convdirect_format(self) -> None:
         """Prints the layer configuration in convdirect format."""

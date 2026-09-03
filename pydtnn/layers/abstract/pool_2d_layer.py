@@ -80,9 +80,9 @@ class AbstractPool2DLayer[T: Array](Layer[T]):  # noqa: D101 (generics not detec
         """
         props = super()._show_props()
 
-        props["pool"] = self.pool_shape
-        props["padding"] = (self.hpadding, self.wpadding)
-        props["stride"] = (self.hstride, self.wstride)
-        props["dilation"] = (self.hdilation, self.wdilation)
+        props["pool"] = repr(self.pool_shape)
+        props["padding"] = repr((self.hpadding, self.wpadding))
+        props["stride"] = repr((self.hstride, self.wstride))
+        props["dilation"] = repr((self.hdilation, self.wdilation))
 
         return props

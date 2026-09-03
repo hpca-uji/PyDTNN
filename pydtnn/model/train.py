@@ -128,12 +128,11 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
         local_loss: np.ndarray,
         global_loss: np.ndarray,
         terminate: bool = False,
-        prev_string: str = "",
         out_prefix: str = "",
-    ) -> tuple[int, bool, str]:  # noqa: C901
+    ) -> tuple[int, bool, float]:  # noqa: C901
         """Executes a full training round over the provided batch generator."""
         sync_epoch = False
-        string = ""
+        total_delta = 0
 
         for i_batch, (x_batch, y_batch) in enumerate(batch_generator):
             if terminate:
@@ -173,6 +172,7 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
             toc = timer()
             delta = toc - tic
 
+            total_delta += delta
             local_loss += batch_loss
 
             if sync_model:
@@ -182,14 +182,13 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
                 global_loss += diff_loss
                 local_loss[:] = global_loss
 
-            string = self._update_status(
+            self._update_status(
                 pbar=pbar,
                 batch_loss=batch_loss,
                 global_loss=global_loss,
                 output_prefix=out_prefix,
                 current_round=self._training_round,
                 delta=delta,
-                prev_string=prev_string,
             )
 
         diff_loss = local_loss - global_loss
@@ -198,19 +197,18 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
         global_loss += diff_loss
         local_loss[:] = global_loss
 
-        string = self._update_status(
+        self._update_status(
             pbar=pbar,
             batch_loss=local_loss,
             global_loss=global_loss,
             output_prefix=out_prefix,
             current_round=self._evaluation_round,
             delta=-1,
-            prev_string=prev_string,
         )
 
         # Increment self._train_round
         self._training_round += 1
-        return (model_sync_count, sync_epoch, string)
+        return (model_sync_count, sync_epoch, total_delta)
 
     def train(self) -> None:  # noqa: C901
         """Runs the full training process over multiple epochs."""
@@ -279,14 +277,13 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
             else:
                 pbar = None
 
-            model_sync_count, train_sync_epoch, string = self._train_round(
+            model_sync_count, train_sync_epoch, delta = self._train_round(
                 pbar=pbar,
                 batch_generator=train_batch_generator,
                 model_sync_count=model_sync_count,
                 batches_min=train_batches_min,
                 local_loss=train_local_loss,
                 global_loss=train_global_loss,
-                prev_string="",
                 out_prefix=f"{Dataset.Part.TRAIN._name_.lower()}_",
             )
             train_global_loss[:-1] /= train_global_loss[-1]
@@ -298,11 +295,11 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
                 # Sleep for half a second to allow pbar to write its output before returning
                 time.sleep(0.5)
 
-            self.history.append(
+            self.history_append(
                 {
-                    f"{Dataset.Part.TRAIN._name_.lower()}_"
-                    + self.loss_and_metric_names[m]: train_global_loss[m]
-                    for m in range(len(self.loss_and_metric_names))
+                    "part": Dataset.Part.TRAIN._name_.lower(),
+                    "time": delta,
+                    **dict(zip(self.loss_and_metric_names, train_global_loss)),
                 }
             )
 
@@ -321,14 +318,13 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
             else:
                 pbar = None
 
-            model_sync_count, val_sync_epoch, string = self._evaluate_round(
+            model_sync_count, val_sync_epoch, delta = self._evaluate_round(
                 pbar=pbar,
                 batch_generator=val_batch_generator,
                 model_sync_count=model_sync_count,
                 batches_min=val_batches_min,
                 local_loss=val_local_loss,
                 global_loss=val_global_loss,
-                prev_string="",
                 out_prefix=f"{Dataset.Part.VAL._name_.lower()}_",
             )
             val_global_loss[:-1] /= val_global_loss[-1]
@@ -340,11 +336,11 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
                 # Sleep for half a second to allow pbar to write its output before returning
                 time.sleep(0.5)
 
-            self.history.append(
+            self.history_append(
                 {
-                    f"{Dataset.Part.VAL._name_.lower()}_"
-                    + self.loss_and_metric_names[m]: val_global_loss[m]
-                    for m in range(len(self.loss_and_metric_names))
+                    "part": Dataset.Part.VAL._name_.lower(),
+                    "time": delta,
+                    **dict(zip(self.loss_and_metric_names, val_global_loss)),
                 }
             )
 
@@ -381,4 +377,3 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
             self._model_sync(mode=SyncMode.GRADIENT | SyncMode.WEIGHT)
 
         self.tracer.define_event_types(self)
-        return self.history
