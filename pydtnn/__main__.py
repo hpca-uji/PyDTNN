@@ -48,7 +48,7 @@ def _start() -> int:
 def main(config: Namespace) -> None:  # noqa: C901
     """Application entry point"""
     from pydtnn import rank, timestamp
-    from pydtnn.utis import header, rand
+    from pydtnn.utils import header, rand
 
     # Initialize
     rand.seed(config.random_seed)
