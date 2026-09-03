@@ -170,6 +170,16 @@ class SimpleCNN(torch.nn.Module):
         return x
 
 
+class TorchLayer(torch.nn.Module):
+    def __init__(self, layer: torch.nn.Module) -> None:
+        super().__init__()
+        self.layer = layer
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = self.layer(x)
+        return x
+
+
 def replace_layer_pytorch(module: torch.nn.Module, layer_to_replace: type[torch.nn.Module]) -> None:
     """
     Recursively put desired batch norm in nn.module module.
@@ -316,9 +326,7 @@ class PytorchModelTestCase(TestCase):
         )
 
     @staticmethod
-    def get_model_torch_and_loss_func(
-        model_name: str,
-    ) -> tuple[PyTorch_Model, torch.nn.modules.loss._Loss]:
+    def get_model_torch(model_name: str) -> PyTorch_Model:
         """
         Initializes a model and its corresponding loss function.
 
@@ -354,7 +362,11 @@ class PytorchModelTestCase(TestCase):
 
         replace_layer_pytorch(torch_model, layer_to_replace=torch.nn.Dropout)
 
-        return torch_model, torch.nn.CrossEntropyLoss()
+        return torch_model
+
+    @staticmethod
+    def get_torch_loss_func() -> torch.nn.modules.loss._Loss:
+        return torch.nn.CrossEntropyLoss()
 
     def get_optimizer_pytorch(self, model_torch: PyTorch_Model) -> torch.optim.Optimizer:
         """Method to get PyTorch's optimizer"""
@@ -522,6 +534,7 @@ class PytorchModelTestCase(TestCase):
         """
         # TODO: mover el loss a una función a parte (para compararlas)
         # dx: list[torch.Tensor] = []
+        optimizer.zero_grad()
         optimizer.step()
 
     def do_pydtnn_model_optimizer_pass(self, pydtnn_model: PyDTNN_Model) -> None:
@@ -598,15 +611,16 @@ class PytorchModelTestCase(TestCase):
         """Convert PyDTNN output shape to PyTorch's format"""
         return np.argmax(y_pydtnn, axis=1)
 
-    def do_test_model(self, model_name: str) -> None:
+    def do_test_model(self, model_torch: torch.nn.Module, model_name: str) -> None:
         """
         Executes the full comparison test for a given model.
 
         Args:
-            model_name: Name of the model to test.
+            model_torch (torch.nn.Module): Model to test.
+            model_name (str): Name of the model to test.
         """
 
-        model_torch, loss_func_torch = self.get_model_torch_and_loss_func(model_name)
+        loss_func_torch = self.get_torch_loss_func()
         optimizer_torch = self.get_optimizer_pytorch(model_torch)
         model_pydtnn = self.get_model_pydtnn(model_torch)
         model_pydtnn.mode = PyDTNN_Model.Mode.TRAIN
@@ -678,14 +692,58 @@ class PytorchModelTestCase(TestCase):
     @unittest.skip("Large model")
     def test_renset50(self) -> None:
         """Compares results between an ResNet50 model using a PyTorch model and other a PyDTNN one."""
-        self.do_test_model("resnet50")
+        model_name = "resnet50"
+        self.do_test_model(self.get_model_torch(model_name), model_name)
 
     @unittest.skip("Large model")
     def test_resnet14like(self) -> None:
         """Compares results between an ResNet14_like model using a PyTorch model and other a PyDTNN one."""
-        self.do_test_model("resnet14like")
+        model_name = "resnet14like"
+        self.do_test_model(self.get_model_torch(model_name), model_name)
 
     @unittest.skip("Large model")
     def test_simplecnn(self) -> None:
         """Compares results between an SimpleCNN model using a PyTorch model and other a PyDTNN one."""
-        self.do_test_model("simplecnn")
+        model_name = "simplecnn"
+        self.do_test_model(self.get_model_torch(model_name), model_name)
+
+    @unittest.skip("Large model")
+    def test_layer_conv_2d(self) -> None:
+            """Compares results between an SimpleCNN model using a PyTorch model and other a PyDTNN one."""
+            params = PytorchModelTestCase.params
+
+            k_size = 3
+            c_in = params.synthetic_input_shape[0]
+            c_out = params.synthetic_output_shape[0]
+    
+            layer = torch.nn.Sequential(torch.nn.Conv2d(in_channels=c_in, out_channels=c_out, kernel_size=k_size),
+                                        torch.nn.Flatten())
+
+            self.do_test_model(TorchLayer(layer), "Conv2d")
+
+    @unittest.skip("Large model")
+    def test_layer_linear(self) -> None:
+        """Compares results between an SimpleCNN model using a PyTorch model and other a PyDTNN one."""
+        params = PytorchModelTestCase.params
+
+        in_elems = int(np.prod(params.synthetic_input_shape))
+        out_elems = int(np.prod(params.synthetic_output_shape))
+
+        layer =  torch.nn.Sequential(torch.nn.Flatten(),
+                                     torch.nn.Linear(in_features = in_elems, out_features = out_elems))
+
+        self.do_test_model(TorchLayer(layer), "Linear")
+
+    @unittest.skip("Large model")
+    def test_layer_batch_norm_2d(self) -> None:
+        """Compares results between an SimpleCNN model using a PyTorch model and other a PyDTNN one."""
+        params = PytorchModelTestCase.params
+
+        eps = params.optimizer_epsilon
+        momentum = params.optimizer_momentum
+        c_in = params.synthetic_input_shape[0]
+
+        layer = torch.nn.Sequential(torch.nn.BatchNorm2d(num_features=c_in, eps=eps, momentum=momentum),
+                                    torch.nn.Flatten())
+
+        self.do_test_model(TorchLayer(layer), "BatchNorm2d")
