@@ -131,7 +131,6 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
     evaluate_on_train: bool = False
     evaluate_only: bool = False
     model_state_file: str = ""
-    logger: bool = True
     use_history: bool = False
     tensor_format: TensorFormat = None  # pyright: ignore[reportAssignmentType]
     random_seed: int = 57005

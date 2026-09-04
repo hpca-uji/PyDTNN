@@ -17,23 +17,21 @@ DATASET=${DATASET:-cifar10}
 TENSOR_FORMAT=${TENSOR_FORMAT:-nhwc}
 case "${DATASET}" in
 cifar10)
-  DATASET_TRAIN_PATH=${DATASET_TRAIN_PATH:-${HOME}/opt/hpca_pydtnn/data/cifar10}
+  DATASET_PATH=${DATASET_TRAIN_PATH:-${HOME}/opt/hpca_pydtnn/data/cifar10}
   ;;
 imagenet)
-  DATASET_TRAIN_PATH=${DATASET_TRAIN_PATH:-${HOME}/opt/hpca_pydtnn/data/imagenet}
+  DATASET_PATH=${DATASET_TRAIN_PATH:-${HOME}/opt/hpca_pydtnn/data/imagenet}
   ;;
 *)
   echo "Dataset '${DATASET}' not yet supported"
   exit 1
   ;;
 esac
-DATASET_TEST_PATH=${DATASET_TEST_PATH:-${DATASET_TRAIN_PATH}}
 BATCH_SIZE=${BATCH_SIZE:-64}
 ENABLE_BEST_OF=${ENABLE_BEST_OF:-False}
 ENABLE_CONV_GEMM=${ENABLE_CONV_GEMM:-False}
 ENABLE_CONV_WINOGRAD=${ENABLE_CONV_WINOGRAD:-False}
 ENABLE_CONV_DIRECT=${ENABLE_CONV_DIRECT:-False}
-ENABLE_MEMORY_CACHE=${ENABLE_MEMORY_CACHE:-False}
 TRACER_PMLIB_DEVICE=${TRACER_PMLIB_DEVICE:-""}
 NODES=${NODES:-1}
 
@@ -42,17 +40,17 @@ NODES=${NODES:-1}
 #--------------------------
 # Evaluation parameters
 #--------------------------
-EVALUATE=${EVALUATE:-True}
-EVALUATE_ONLY=${EVALUATE_ONLY:-False}
-TEST_AS_VALIDATION=${TEST_AS_VALIDATION:-True}
+NO_EVALUATE=
+NO_EVALUATE_ONLY=no-
+NO_TEST_AS_VALIDATION=
 if [ -n "${ONLY_TRAINING-}" ]; then
   # shellcheck disable=SC2034
-  EVALUATE=False
-  TEST_AS_VALIDATION=False
+  NO_EVALUATE=no-
+  NO_TEST_AS_VALIDATION=no-
 elif [ -n "${ONLY_INFERENCE-}" ]; then
   # shellcheck disable=SC2034
-  EVALUATE_ONLY=True
-  TEST_AS_VALIDATION=False
+  NO_EVALUATE_ONLY=
+  NO_TEST_AS_VALIDATION=no-
 fi
 
 #-------------------
@@ -221,10 +219,10 @@ function run_benchmark() {
 
   # 2) Select sequential or parallel mode
   if [ "${NODES}" == 1 ]; then
-    PARALLEL=sequential
+    NO_PARALLEL_DATA=no-
     CMD=""
   else
-    PARALLEL=data
+    NO_PARALLEL_DATA=
     # Example of Intel MPI CMD: mpirun -np $procs -iface ib0 -ppn 1 -host $hosts
     MPI_RUN=${MPI_RUN:-mpirun}
     export MPICH_UNBUFFERED_STDIO="true"
@@ -268,18 +266,15 @@ function run_benchmark() {
     --model="${MODEL}" \
     --backend="${BACKEND}" \
     --tensor-format="${TENSOR_FORMAT}" \
-    --dataset-train-path="${DATASET_TRAIN_PATH}" \
-    --dataset-test-path="${DATASET_TEST_PATH}" \
-    --parallel="${PARALLEL}" \
+    --dataset-path="${DATASET_PATH}" \
+    --${NO_PARALLEL_DATA}parallel-data \
     --tracer-output="${SIMPLE_TRACER_OUTPUT}" \
     --tracer-pmlib-device="${TRACER_PMLIB_DEVICE}" \
-    --evaluate="${EVALUATE}" \
-    --evaluate-only="${EVALUATE_ONLY}" \
-    --test-as-validation="${TEST_AS_VALIDATION}" \
+    --${NO_EVALUATE}evaluate \
+    --${NO_EVALUATE_ONLY}evaluate-only \
+    --${NO_TEST_AS_VALIDATION}test-as-validation \
     --conv-direct-method="${CONV_DIRECT_METHOD:-""}" \
-    --conv-direct-methods-for-best-of="${CONV_DIRECT_METHODS_FOR_BEST_OF:-""}" \
-    --enable-memory-cache="${ENABLE_MEMORY_CACHE}" \
-    --history="${HISTORY_FILENAME}" \
+    --history \
     ${MODEL_FLAGS} |
     tee "${OUTPUT_FILENAME}"
 }

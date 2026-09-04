@@ -183,15 +183,16 @@ class ArgumentParser(argparse.ArgumentParser):
         # Model
         self._optionals.title = "model"
         models = list_modules("models")
+        model_name = "simplecnn"
         self.add_argument(
             "--model",
             dest="model_name",
             type=str,
             choices=models,
-            default="simplecnn",
+            default=model_name,
             help=(
                 f"Neural network model: {', '.join(map(repr, models[:3]))}, etc."
-                f" Default: {ModelBase.model_name!r}."
+                f" Default: {model_name!r}."
             ),
         )
         backends = read_dir("backends")
@@ -295,11 +296,12 @@ class ArgumentParser(argparse.ArgumentParser):
             default=ModelBase.model_state_file,
             help=(f"Load weights and bias from file. Default: {ModelBase.model_state_file!r}."),
         )
+        use_logger = True
         self.add_argument(
             "--logger",
             action=argparse.BooleanOptionalAction,
-            default=ModelBase.logger,
-            help=(f"Save output log file. Default: {ModelBase.logger!r}."),
+            default=use_logger,
+            help=(f"Save output log file. Default: {use_logger!r}."),
         )
         self.add_argument(
             "--history",
@@ -426,16 +428,17 @@ class ArgumentParser(argparse.ArgumentParser):
         # Dataset options
         datasets = list_modules("datasets")
         datasets.remove("memory")
+        dataset = "mnist"
         _ds_group = self.add_argument_group("dataset")
         _ds_group.add_argument(
             "--dataset",
             dest="dataset_name",
             type=str,
-            default="mnist",
+            default=dataset,
             choices=datasets,
             help=(
                 f"Dataset to train: {', '.join(map(repr, datasets[:3]))}, etc."
-                f" Default: {ModelBase.dataset_name!r}."
+                f" Default: {dataset!r}."
             ),
         )
         _ds_group.add_argument(
