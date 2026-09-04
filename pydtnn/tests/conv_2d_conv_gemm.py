@@ -8,6 +8,7 @@ from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.identity import Identity
 from pydtnn.libs.convGemm import is_conv_gemm_available
 from pydtnn.model import Model
+from pydtnn.model.base import ModelMode
 from pydtnn.tests.abstract.base import D, Params
 from pydtnn.tests.abstract.conv_2d import Conv2DTestCase
 from pydtnn.utils.initializers import glorot_uniform, zeros
@@ -38,7 +39,7 @@ class Conv2DConvGemmTestCase(Conv2DTestCase):
         params_i2c.batch_size = d.b
         params_i2c.backend = "cpu"
         model_i2c = Model(**vars(params_i2c))
-        model_i2c.mode = Model.Mode.TRAIN
+        model_i2c.mode = ModelMode.TRAIN
         model_i2c.add(Identity(model_i2c.encode_shape((d.c, d.h, d.w))))
         conv2d_i2c = Conv2D(
             nfilters=d.kn,
@@ -55,7 +56,7 @@ class Conv2DConvGemmTestCase(Conv2DTestCase):
         params_gc = deepcopy(params_i2c)
         params_gc.backend = "cpu;conv_2d:gemm"
         model_cg = Model(**vars(params_gc))
-        model_cg.mode = Model.Mode.TRAIN
+        model_cg.mode = ModelMode.TRAIN
         model_cg.add(Identity(model_cg.encode_shape((d.c, d.h, d.w))))
         conv2d_cg = Conv2D(
             nfilters=d.kn,

@@ -45,6 +45,15 @@ class WarmUp(Scheduler):
         self.init_lr = init_lr
         self.epoch_count: int = 0
 
+    def _show_props(self) -> dict[str, str]:
+        props = super()._show_props()
+
+        props["epochs"] = str(self.warmup_epochs)
+        props["base-lr"] = str(self.base_lr)
+        props["init-lr"] = str(self.init_lr)
+
+        return props
+
     def on_epoch_end(self, train_loss: ndarray, val_loss: ndarray) -> None:
         """
         Update the model's learning rate at the end of each epoch if within the warm-up period.

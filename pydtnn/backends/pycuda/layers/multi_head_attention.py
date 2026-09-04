@@ -286,7 +286,7 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
         residuals: TensorArray | None = None,
     ) -> TensorArray:
         """Performs the forward pass of the Multi-Head Attention layer."""
-        if True:  # self.model.mode == Model.Mode.TRAIN:
+        if True:  # self.model.mode == Mode.TRAIN:
             self.query, self.key, self.value = query, key, value
             # return self.query
             assert residuals

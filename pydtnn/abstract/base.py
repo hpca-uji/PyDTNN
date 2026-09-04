@@ -182,7 +182,7 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
         """Return the class name of the frontend instance."""
         return self.name.removeprefix(self.canonical_name).lower()
 
-    def _show_props(self) -> dict:
+    def _show_props(self) -> dict[str, str]:
         """Return a dictionary of properties for representation."""
         props = {}
 

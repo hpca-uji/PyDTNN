@@ -71,7 +71,7 @@ class AbstractPool2DLayer[T: Array](Layer[T]):  # noqa: D101 (generics not detec
         self.shape = self.model.encode_shape((self.co, self.ho, self.wo))
         self.n = math.prod(self.shape)
 
-    def _show_props(self) -> dict:
+    def _show_props(self) -> dict[str, str]:
         """
         Returns a dictionary of layer properties for inspection.
 
@@ -80,9 +80,9 @@ class AbstractPool2DLayer[T: Array](Layer[T]):  # noqa: D101 (generics not detec
         """
         props = super()._show_props()
 
-        props["pool"] = repr(self.pool_shape)
-        props["padding"] = repr((self.hpadding, self.wpadding))
-        props["stride"] = repr((self.hstride, self.wstride))
-        props["dilation"] = repr((self.hdilation, self.wdilation))
+        props["pool"] = str(self.pool_shape)
+        props["padding"] = str((self.hpadding, self.wpadding))
+        props["stride"] = str((self.hstride, self.wstride))
+        props["dilation"] = str((self.hdilation, self.wdilation))
 
         return props

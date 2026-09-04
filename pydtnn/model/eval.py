@@ -18,7 +18,7 @@ from pydtnn import MPI, gpuarray
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.datasets.abstract import Dataset
 from pydtnn.layers.identity import Identity
-from pydtnn.model.base import Base
+from pydtnn.model.base import ModelMode
 from pydtnn.model.sync import Sync
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT,
                                    PYDTNN_MDL_EVENTS, MdlEventEnum)
@@ -40,9 +40,9 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
     metric aggregation across distributed processes.
     """
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initializes the Eval instance."""
-        super().__init__(**kwargs)
+        super().__init__(*args, **kwargs)
         # Private attributes
         self._evaluation_round: int = 0
 
@@ -104,7 +104,7 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
         Returns:
             The computed metrics for the batch.
         """
-        self.mode = Base.Mode.EVALUATE
+        self.mode = ModelMode.EVALUATE
 
         self.real_batch_size = x_batch.shape[0]
         has_batch = self.real_batch_size > 0
@@ -317,6 +317,9 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
             self.batch_size * self.nprocs
         )
 
+        if self.profile:
+            self.profiler.enable()
+
         test_local_loss = np.zeros(len(self.metrics_funcs) + 2, np.object_)
         test_global_loss = np.zeros(len(self.metrics_funcs) + 2, np.object_)
 
@@ -369,6 +372,9 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
             value = self.loss_and_metric_format[m](test_global_loss[m])
             if "\n" in value:
                 logger.info(f"{Dataset.Part.TEST._name_.lower()}_{value}")
+
+        if self.profile:
+            self.profiler.disable()
 
     def calculate_time(self) -> np.ndarray:
         """

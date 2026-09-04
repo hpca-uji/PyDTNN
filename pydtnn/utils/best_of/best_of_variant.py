@@ -10,7 +10,7 @@ import numpy as np
 
 from pydtnn.backends.numpy.layers.conv_2d.direct_cpu import Conv2DDirectNumpy
 from pydtnn.backends.numpy.layers.conv_2d.winograd_cpu import Conv2DWinogradNumpy
-from pydtnn.model import Model
+from pydtnn.model.base import ModelMode
 from pydtnn.utils.best_of.best_of import BestOf
 from pydtnn.utils.constants import ArrayShape
 
@@ -148,9 +148,9 @@ class BestOfVariant(Conv2DWinogradNumpy, Conv2DDirectNumpy):  # pyright: ignore[
             x_or_y: The input tensor for forward or gradient tensor for backward.
         """
         match self.model.mode:
-            case Model.Mode.TRAIN:
+            case ModelMode.TRAIN:
                 return self._best_fw_bw_pipeline(stage, self, x_or_y)
-            case Model.Mode.EVALUATE:
+            case ModelMode.EVALUATE:
                 return self._best_fw(self, x_or_y)
             case _:
                 raise RuntimeError(

@@ -13,7 +13,7 @@ from pydtnn import MPI, gpuarray
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.datasets.abstract import Dataset
 from pydtnn.layers.identity import Identity
-from pydtnn.model.base import Base
+from pydtnn.model.base import ModelMode
 from pydtnn.model.eval import Eval
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT,
                                    PYDTNN_MDL_EVENTS, MdlEventEnum)
@@ -32,16 +32,16 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
     gradient updates, and training loop management.
     """
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initializes the training instance with synchronization parameters and schedulers."""
-        super().__init__(**kwargs)
+        super().__init__(*args, **kwargs)
         self._training_round: int = 0
 
     def _train_batch(  # noqa: C901
         self, x_batch: np.ndarray, y_batch: np.ndarray, sync_model: bool = True
     ) -> np.ndarray:
         """Executes a single training batch including forward pass, backward pass, and weight updates."""
-        self.mode = Base.Mode.TRAIN
+        self.mode = ModelMode.TRAIN
 
         # Schedulers begin
         for sched in self.schedulers:
@@ -249,6 +249,9 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
         if self.initial_model_sync:
             self._model_sync(mode=SyncMode.GRADIENT | SyncMode.WEIGHT)
 
+        if self.profile:
+            self.profiler.enable()
+
         for epoch in range(self.num_epochs):
             train_batch_generator, val_batch_generator = self.dataset.get_train_val_generator()
             sync_epoch = False
@@ -371,6 +374,9 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
 
         # End pipelines
         self._model_reduce_wait(mode=SyncMode.GRADIENT | SyncMode.WEIGHT)
+
+        if self.profile:
+            self.profiler.disable()
 
         # Synchronize model
         if self.final_model_sync:

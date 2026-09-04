@@ -5,6 +5,7 @@ import logging
 import os
 import platform
 import subprocess
+import uuid
 from collections import Counter
 from datetime import datetime
 from types import ModuleType
@@ -38,6 +39,7 @@ __all__ = (
     "stream_handle",
     "cudnn_handle",
     "cublas_handle",
+    "environ",
 )
 
 logger = logging.getLogger(__name__)
@@ -147,8 +149,24 @@ try:
     num_gpus = subprocess.check_output(["nvidia-smi", "-L"]).count(b"UUID")
 except (FileNotFoundError, subprocess.CalledProcessError):
     num_gpus = 0
-os.environ["CUDA_VISIBLE_DEVICES"] = str(rank % num_gpus) if num_gpus else ""
-supported_gpu = bool(num_gpus)
+supported_gpu = num_gpus > 0
+cuda_gpu = rank % num_gpus if supported_gpu else None
+if supported_gpu:
+    os.environ["CUDA_VISIBLE_DEVICES"] = str(cuda_gpu)
+
+# INIT META
+environ = [
+    {
+        "id": uuid.getnode(),
+        "name": " ".join(platform.uname()),
+        "cpu": os.process_cpu_count(),
+        "gpu": cuda_gpu,
+        "mpi": rank,
+        "env": dict(os.environ),
+    }
+]
+if MPI is not None:
+    environ = MPI.COMM_WORLD.allgather(environ[0])
 
 # INIT NCCL
 if nccl is not None and num_gpus > 0:

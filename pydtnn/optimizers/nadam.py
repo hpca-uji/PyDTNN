@@ -50,7 +50,7 @@ class Nadam[T: Array](Optimizer[T]):  # noqa: D101 (generics not detected)
         self.epsilon = epsilon
         self.decay = decay
 
-    def _show_props(self) -> dict:
+    def _show_props(self) -> dict[str, str]:
         """
         Return a dictionary of optimizer properties.
 
@@ -63,10 +63,10 @@ class Nadam[T: Array](Optimizer[T]):  # noqa: D101 (generics not detected)
         """
         props = super()._show_props()
 
-        props["beta1"] = self.beta1
-        props["beta2"] = self.beta2
-        props["epsilon"] = self.epsilon
-        props["decay"] = self.decay
+        props["beta1"] = str(self.beta1)
+        props["beta2"] = str(self.beta2)
+        props["epsilon"] = str(self.epsilon)
+        props["decay"] = str(self.decay)
 
         return props
 

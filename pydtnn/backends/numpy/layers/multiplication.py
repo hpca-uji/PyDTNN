@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any
 from pydtnn.backends.numpy.layers.abstract.layer import LayerNumpy
 from pydtnn.layers.multiplication import Multiplication
 from pydtnn.libs import numpy as np
-from pydtnn.model import Model
+from pydtnn.model.base import ModelMode
 from pydtnn.utils.constants import ArrayShape
 
 __all__ = ("MultiplicationNumpy",)
@@ -40,7 +40,7 @@ class MultiplicationNumpy(Multiplication[np.ndarray], LayerNumpy):
 
     def forward(self, x1: np.ndarray, x2: np.ndarray) -> np.ndarray:
         """Perform matrix multiplication of two inputs."""
-        if self.model.mode == Model.Mode.TRAIN:
+        if self.model.mode == ModelMode.TRAIN:
             self.x1 = x1
             self.x2 = x2
         return np.matmul(x1, x2)

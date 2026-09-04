@@ -15,6 +15,7 @@ from pydtnn.layers.conv_2d_pointwise import Conv2DPointwise
 from pydtnn.layers.flatten import Flatten
 from pydtnn.layers.identity import Identity
 from pydtnn.model import Model
+from pydtnn.model.base import ModelMode
 from pydtnn.optimizers.abstract.optimizer import Optimizer
 from pydtnn.optimizers.sgd import SGD
 from pydtnn.utils import rand
@@ -101,7 +102,7 @@ def test_keras(_x: np.ndarray) -> None:
     model = Model(**KWARGS)
     model.add(Identity(SHAPE))
     model.add(Conv2D(nfilters=3))
-    model.mode = Model.Mode.TRAIN
+    model.mode = ModelMode.TRAIN
     model._model_init()
 
     x = np.copy(_x)
@@ -127,7 +128,7 @@ def test_layers_activations(_x: np.ndarray, opt: Optimizer) -> None:
             if name == "FC":
                 model.add(Flatten())
             model.add(test_elem)
-            model.mode = Model.Mode.TRAIN
+            model.mode = ModelMode.TRAIN
             model._model_init()
             opt._model_init(model.get_all_layers(model.layers))
 
@@ -187,7 +188,7 @@ def test_add_concat(_x: np.ndarray, opt: Optimizer) -> None:
         model = Model(**KWARGS)
         model.add(Identity(SHAPE))
         model.add(layer)
-        model.mode = Model.Mode.TRAIN
+        model.mode = ModelMode.TRAIN
         model._model_init()
         opt._model_init(model.get_all_layers(model.layers))
 

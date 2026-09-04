@@ -9,7 +9,7 @@ import numpy as np
 
 from pydtnn import MPI
 from pydtnn.datasets.abstract import Dataset
-from pydtnn.model.base import Base
+from pydtnn.model.base import SyncAlgorithm, SyncParticipation
 from pydtnn.model.state import State
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT,
                                    PYDTNN_MDL_EVENTS, MdlEventEnum)
@@ -174,9 +174,9 @@ class Sync[T: Array](State[T]):  # noqa: D101 (generics not detected)
     def _compute_rank_weight(self, mask: list[int], part: Dataset.Part) -> float:
         """Calculates the weight contribution of the current rank based on dataset participation."""
         match self.model_sync_participation:
-            case Base.SyncParticipation.ALL:
+            case SyncParticipation.ALL:
                 comm_nsamples = self.comm_nsamples[part]
-            case Base.SyncParticipation.AVAIL2ALL:
+            case SyncParticipation.AVAIL2ALL:
                 if mask[self.comm_rank]:
                     comm_nsamples = [
                         nsamples for nsamples, mask in zip(self.comm_nsamples[part], mask) if mask
@@ -186,7 +186,7 @@ class Sync[T: Array](State[T]):  # noqa: D101 (generics not detected)
             case _:
                 raise ValueError(
                     f"Model synchronization participation option {self.model_sync_participation} not recognized."
-                    f" Only recognized: {list(Base.SyncParticipation)}"
+                    f" Only recognized: {list(SyncParticipation)}"
                 )
 
         min_nsamples, max_nsamples, total_nsamples = (
@@ -197,15 +197,15 @@ class Sync[T: Array](State[T]):  # noqa: D101 (generics not detected)
         comm_size = len(comm_nsamples)
 
         match self.model_sync_algo:
-            case Base.SyncAlgorithm.AVG:
+            case SyncAlgorithm.AVG:
                 return 1.0 / comm_size
-            case Base.SyncAlgorithm.WAVG:
+            case SyncAlgorithm.WAVG:
                 return self.dataset._nsamples[part] / total_nsamples
-            case Base.SyncAlgorithm.INVAVG:
+            case SyncAlgorithm.INVAVG:
                 inverse_nsamples = min_nsamples + (max_nsamples - self.dataset._nsamples[part])
                 return inverse_nsamples / total_nsamples
             case _:
                 raise ValueError(
                     f"Model synchronization algorithm option {self.model_sync_algo} not recognized."
-                    f" Only recognized: {list(Base.SyncAlgorithm)}"
+                    f" Only recognized: {list(SyncAlgorithm)}"
                 )

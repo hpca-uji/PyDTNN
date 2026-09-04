@@ -1,9 +1,9 @@
 """Tests for verifying model behavior and consistency across different data types."""
 
 import logging
-from collections.abc import Sequence
 import unittest
 import warnings
+from collections.abc import Sequence
 
 import numpy as np
 import torch
@@ -11,6 +11,7 @@ import torchvision.models as torch_models
 from torch.optim import SGD, Adam, NAdam
 
 from pydtnn.abstract.layerable import Layerable
+from pydtnn.activations.log_softmax import LogSoftmax
 from pydtnn.converters.pytorch2pydtnn.model_converter import get_layers_from_torch
 from pydtnn.layers.abstract.block_layer import AbstractBlockLayer
 from pydtnn.layers.abstract.layer import LayerError
@@ -19,10 +20,10 @@ from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.model import Model as PyDTNN_Model
+from pydtnn.model.base import ModelMode
 from pydtnn.tests.abstract.base import Params, TestCase, verbose_test
 from pydtnn.utils import header, rand
 from pydtnn.utils.tensor import TensorFormat
-from pydtnn.activations.log_softmax import LogSoftmax
 
 type PyTorch_Model = torch.nn.Module
 
@@ -202,8 +203,9 @@ def replace_layer_pytorch(module: torch.nn.Module, layer_to_replace: type[torch.
         return module
 
 
-def replace_pydtnn_layerable(layers: Sequence[Layerable],
-                             conversion: dict[type[Layerable], type[Layerable]]) -> list[Layerable]:
+def replace_pydtnn_layerable(
+    layers: Sequence[Layerable], conversion: dict[type[Layerable], type[Layerable]]
+) -> list[Layerable]:
 
     new_layers = list()
     conv_keys = conversion.keys()
@@ -373,14 +375,20 @@ class PytorchModelTestCase(TestCase):
         params = PytorchModelTestCase.params
         match params.optimizer_name:
             case "sgd":
-                optimizer = SGD(model_torch.parameters(), lr=params.learning_rate, momentum=params.optimizer_momentum)
+                optimizer = SGD(
+                    model_torch.parameters(),
+                    lr=params.learning_rate,
+                    momentum=params.optimizer_momentum,
+                )
             case "adam":
                 optimizer = Adam(model_torch.parameters(), lr=params.learning_rate)
             case "nadam":
                 optimizer = NAdam(model_torch.parameters(), lr=params.learning_rate)
             case _:
                 optimizer = None
-                raise NotImplementedError(f"Not implemented this test for {params.optimizer_name} optimizer.")
+                raise NotImplementedError(
+                    f"Not implemented this test for {params.optimizer_name} optimizer."
+                )
         return optimizer
 
     def get_model_pydtnn(self, model_pytorch: PyTorch_Model) -> PyDTNN_Model:
@@ -416,7 +424,7 @@ class PytorchModelTestCase(TestCase):
         layers = get_layers_from_torch(model_pytorch, params.synthetic_input_shape, LogSoftmax())
         model_pydtnn.add_layers(layers)
         model_pydtnn._model_init()
-        model_pydtnn.mode = model_pydtnn.Mode.TRAIN
+        model_pydtnn.mode = ModelMode.TRAIN
 
         if verbose_test():
             for layer in model_pydtnn.layers:
@@ -551,8 +559,13 @@ class PytorchModelTestCase(TestCase):
         for layer in pydtnn_model.layers:
             layer.update_weights(pydtnn_model.optimizer, update=True, sync=False)
 
-    def compare_forward(self, model_pydtnn: PyDTNN_Model, x_torch: list[torch.Tensor],
-                        x_pydtnn: list[np.ndarray], apply_log_to_torch: bool = False) -> None:
+    def compare_forward(
+        self,
+        model_pydtnn: PyDTNN_Model,
+        x_torch: list[torch.Tensor],
+        x_pydtnn: list[np.ndarray],
+        apply_log_to_torch: bool = False,
+    ) -> None:
         """
         Compares the forward pass outputs of two models.
 
@@ -623,7 +636,7 @@ class PytorchModelTestCase(TestCase):
         loss_func_torch = self._get_torch_loss_func()
         optimizer_torch = self.get_optimizer_pytorch(model_torch)
         model_pydtnn = self.get_model_pydtnn(model_torch)
-        model_pydtnn.mode = PyDTNN_Model.Mode.TRAIN
+        model_pydtnn.mode = ModelMode.TRAIN
 
         params = PytorchModelTestCase.params
         input_shape = params.synthetic_input_shape
@@ -668,8 +681,9 @@ class PytorchModelTestCase(TestCase):
 
             _loss_torch = float(loss_torch.detach())
             print(f"{_loss_torch=} || {_loss_pydtnn=}")
-            assert np.isclose(float(_loss_torch), _loss_pydtnn), \
-                   f"Both values are not close: {_loss_torch=} =/=  {_loss_pydtnn=}"
+            assert np.isclose(float(_loss_torch), _loss_pydtnn), (
+                f"Both values are not close: {_loss_torch=} =/=  {_loss_pydtnn=}"
+            )
 
             # --- BACKWARD ---
             # Model 1 backward

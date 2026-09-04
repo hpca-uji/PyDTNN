@@ -28,6 +28,14 @@ class SchedulerWithLossOrMetric(Scheduler):
         self.loss_or_metric = metric
         self.compare = operator.lt if "accuracy" in self.loss_or_metric else operator.gt
 
+    def _show_props(self) -> dict[str, str]:
+        props = super()._show_props()
+
+        type = "val" if self.is_val_metric else "train"
+        props["metric"] = f"{type}_{self.loss_or_metric}"
+
+        return props
+
     def _get_idx(self) -> int:
         """
         Retrieves the index of the tracked metric within the model's metrics list.

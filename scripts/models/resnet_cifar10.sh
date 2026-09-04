@@ -50,5 +50,5 @@ mpirun -np 2 "${MPI_ARGS[@]}" \
   --no-profile \
   --backend=gpu \
   --no-use-gpudirect \
-  --history-file="results/result_resnet.history" \
+  --history \
   --dtype=float32

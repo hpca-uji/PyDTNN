@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any
 from pydtnn.backends.numpy.layers.abstract.layer import LayerNumpy
 from pydtnn.layers.dropout import Dropout
 from pydtnn.libs import numpy as np
-from pydtnn.model import Model
+from pydtnn.model.base import ModelMode
 from pydtnn.utils.constants import ArrayShape
 
 __all__ = ("DropoutNumpy",)
@@ -43,7 +43,7 @@ class DropoutNumpy(Dropout[np.ndarray], LayerNumpy):
         """
 
         match self.model.mode:
-            case Model.Mode.TRAIN:
+            case ModelMode.TRAIN:
                 # NOTE: Remember, it's necessary a new random mask every training's forward call.
                 # self.mask = random.binomial(1, (1 - self.rate), size=self.shape).astype(self.model.dtype) / (1 - self.rate)
                 self.mask = np.asarray(
@@ -53,7 +53,7 @@ class DropoutNumpy(Dropout[np.ndarray], LayerNumpy):
                 )
                 np.divide(self.mask, (1 - self.rate), out=self.mask, dtype=self.model.dtype)
                 np.multiply(x, self.mask, out=x, dtype=self.model.dtype)
-            case Model.Mode.EVALUATE:
+            case ModelMode.EVALUATE:
                 pass  # Just returns x.
             case _:
                 raise RuntimeError(f"Unexpected model mode '{self.model.mode}'.")

@@ -1,37 +1,46 @@
 """Utilities for serializing NumPy objects to YAML format."""
 
+from typing import Any
+
 import numpy as np
 import yaml
 
-__all__ = ("NumpyYaml",)
+__all__ = ("ReprYaml",)
 
 
-class NumpyYaml(yaml.SafeDumper):
-    """Custom YAML dumper that supports serialization of NumPy arrays and data types."""
+class ReprYaml(yaml.SafeDumper):
+    """Custom YAML dumper that supports serialization of extra data types."""
 
-    def represent_dtype(self, data: np.number) -> yaml.ScalarNode:
-        """Represent a NumPy data type as a YAML scalar."""
-        return self.represent_scalar("!np.type", repr(data))
+    def represent_inline(self, data: Any) -> yaml.ScalarNode:
+        """Represent a data type as a YAML scalar."""
+        return self.represent_scalar("!repr", repr(data))
 
-    def represent_ndarray(self, data: np.ndarray) -> yaml.ScalarNode:
-        """Represent a NumPy array as a YAML scalar using block style."""
-        return self.represent_scalar("!np.array", repr(data), style="|")
+    def represent_block(self, data: Any) -> yaml.ScalarNode:
+        """Represent a data type as a YAML scalar using block style."""
+        return self.represent_scalar("!repr", repr(data), style="|")
 
 
-_numeric = [
-    np.int8,
-    np.int16,
-    np.int32,
-    np.int64,
-    np.uint8,
-    np.uint16,
-    np.uint32,
-    np.uint64,
-    np.float16,
-    np.float32,
-    np.float64,
-]
+REPR_TYPES = {
+    ReprYaml.represent_inline: [
+        np.dtype,
+        np.str_,
+        np.object_,
+        np.int8,
+        np.int16,
+        np.int32,
+        np.int64,
+        np.uint8,
+        np.uint16,
+        np.uint32,
+        np.uint64,
+        np.float16,
+        np.float32,
+        np.float64,
+    ],
+    ReprYaml.represent_block: [np.ndarray],
+}
 
-NumpyYaml.add_representer(np.ndarray, NumpyYaml.represent_ndarray)
-for dtype in _numeric:
-    NumpyYaml.add_representer(dtype, NumpyYaml.represent_dtype)
+
+for representer, types in REPR_TYPES.items():
+    for cls in types:
+        ReprYaml.add_representer(cls, representer)

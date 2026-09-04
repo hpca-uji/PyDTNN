@@ -43,7 +43,7 @@ class RMSProp[T: Array](Optimizer[T]):  # noqa: D101 (generics not detected)
         self.epsilon = epsilon
         self.decay = decay
 
-    def _show_props(self) -> dict:
+    def _show_props(self) -> dict[str, str]:
         """
         Return a dictionary of optimizer properties.
 
@@ -52,9 +52,9 @@ class RMSProp[T: Array](Optimizer[T]):  # noqa: D101 (generics not detected)
         """
         props = super()._show_props()
 
-        props["rho"] = self.rho
-        props["epsilon"] = self.epsilon
-        props["decay"] = self.decay
+        props["rho"] = str(self.rho)
+        props["epsilon"] = str(self.epsilon)
+        props["decay"] = str(self.decay)
 
         return props
 

@@ -38,6 +38,7 @@ from pydtnn.layers.flatten import Flatten
 from pydtnn.layers.identity import Identity
 from pydtnn.layers.max_pool_2d import MaxPool2D
 from pydtnn.model import Model
+from pydtnn.model.base import ModelMode
 from pydtnn.tests.abstract.base import Params, TestCase, verbose_test
 from pydtnn.utils import rand
 from pydtnn.utils.constants import Parameters
@@ -359,7 +360,7 @@ class PytorchLayerTestCase(TestCase):
         model = Model(**params.asdict())
         model.add(Identity(params.shape))
         model.add_layers(list_layers)
-        model.mode = Model.Mode.TRAIN
+        model.mode = ModelMode.TRAIN
         model._model_init()
         return model
 

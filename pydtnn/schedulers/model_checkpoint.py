@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from pydtnn import timestamp
-from pydtnn.schedulers.scheduler_with_loss_or_metric import SchedulerWithLossOrMetric
+from pydtnn.schedulers.abstract.scheduler_with_loss_or_metric import SchedulerWithLossOrMetric
 
 __all__ = ("ModelCheckpoint",)
 

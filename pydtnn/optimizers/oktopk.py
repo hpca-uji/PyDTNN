@@ -60,7 +60,7 @@ class OkTopk[T: Array](Optimizer[T]):  # noqa: D101 (generics not detected)
         self.all_residuals = {}
         self.all_boundaries = {}
 
-    def _show_props(self) -> dict:
+    def _show_props(self) -> dict[str, str]:
         """
         Return a dictionary of optimizer properties.
 
@@ -69,12 +69,12 @@ class OkTopk[T: Array](Optimizer[T]):  # noqa: D101 (generics not detected)
         """
         props = super()._show_props()
 
-        props["momentum"] = self.momentum
-        props["decay"] = self.decay
-        props["tau"] = self.tau
-        props["tau_prime"] = self.tau_prime
-        props["density"] = self.density
-        props["min-k"] = self.min_k
+        props["momentum"] = str(self.momentum)
+        props["decay"] = str(self.decay)
+        props["tau"] = str(self.tau)
+        props["tau_prime"] = str(self.tau_prime)
+        props["density"] = str(self.density)
+        props["min-k"] = str(self.min_k)
 
         return props
 

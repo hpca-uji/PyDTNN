@@ -6,6 +6,7 @@ from copy import deepcopy
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.identity import Identity
 from pydtnn.model import Model
+from pydtnn.model.base import ModelMode
 from pydtnn.tests.abstract.base import D, Params
 from pydtnn.tests.abstract.conv_2d import Conv2DTestCase
 from pydtnn.utils.initializers import glorot_uniform, zeros
@@ -35,7 +36,7 @@ class Conv2DCythonTestCase(Conv2DTestCase):
         params_np.batch_size = d.b
         params_np.backend = "numpy"
         model_np = Model(**vars(params_np))
-        model_np.mode = Model.Mode.TRAIN
+        model_np.mode = ModelMode.TRAIN
         model_np.add(Identity(model_np.encode_shape((d.c, d.h, d.w))))
         conv2d_np = Conv2D(
             nfilters=d.kn,
@@ -52,7 +53,7 @@ class Conv2DCythonTestCase(Conv2DTestCase):
         params_cy = deepcopy(params_np)
         params_cy.backend = "numpy,cython"
         model_cy = Model(**vars(params_cy))
-        model_cy.mode = Model.Mode.TRAIN
+        model_cy.mode = ModelMode.TRAIN
         model_cy.add(Identity(model_cy.encode_shape((d.c, d.h, d.w))))
         conv2d_cy = Conv2D(
             nfilters=d.kn,

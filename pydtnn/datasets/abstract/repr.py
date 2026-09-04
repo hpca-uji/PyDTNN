@@ -29,13 +29,13 @@ class Repr(Init, Baser):
         if self.debug:
             self._print_report()
 
-    def _show_props(self) -> dict:
+    def _show_props(self) -> dict[str, str]:
         """Returns a dictionary containing the dataset properties for inspection."""
         props = super()._show_props()
 
-        props["train"] = repr((self.train_nsamples, *self.input_shape))
-        props["val"] = repr((self.val_nsamples, *self.input_shape))
-        props["test"] = repr((self.test_nsamples, *self.output_shape))
+        props["train"] = str((self.train_nsamples, *self.input_shape))
+        props["val"] = str((self.val_nsamples, *self.input_shape))
+        props["test"] = str((self.test_nsamples, *self.output_shape))
 
         return props
 

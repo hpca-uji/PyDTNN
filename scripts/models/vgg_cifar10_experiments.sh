@@ -50,7 +50,7 @@ for procs in 6 4 2 1; do
       --no-tracing \
       --no-profile \
       --backend=cpu \
-      --history-file="results/result_vgg9_${procs}p_${thrds}t.history" \
+      --history \
       --dtype=float32 | tee results/result_vgg9_${procs}p_${thrds}t.dat
   done
 done

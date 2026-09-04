@@ -100,6 +100,37 @@ class PerformanceCounter:
         """Returns the mean memory usage recorded during testing in bytes."""
         return self._mean_memory(Dataset.Part.TEST)
 
+    def _show_props(self) -> dict:
+        props = {}
+
+        if self.num_epochs > 0:
+            props["train"] = {
+                "time": str(self.training_time),
+                "epoch-time": str(self.training_time / self.num_epochs),
+                "throughput": str(self.training_throughput),
+                "half-time": str(self.training_time_estimated_from_last_half_of_each_epoch),
+                "half-throughput": str(self.training_throughput_only_last_half_of_each_epoch),
+                "max-memory": convert_size_bytes(self.training_maximum_memory),
+                "mean-memory": convert_size_bytes(round(self.training_mean_memory)),
+            }
+
+        if self.num_evaluations > 0:
+            props["test"] = {
+                "time": str(self.testing_time / self.num_evaluations),
+                "throughput": str(self.testing_throughput),
+                "max-memory": convert_size_bytes(self.testing_maximum_memory),
+                "mean-memory": convert_size_bytes(round(self.testing_mean_memory)),
+            }
+
+        return props
+
+    def __repr__(self) -> str:
+        """Return a string representation of the object."""
+        props = self._show_props()
+        name = self.__class__.__name__
+        props = " ".join(f"{key}={value!r}" for key, value in props.items())
+        return f"<{name} {props}>" if props else f"<{name}>"
+
     def print_report(self) -> None:
         """Logs a formatted performance report to the logger."""
 

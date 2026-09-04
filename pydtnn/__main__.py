@@ -1,15 +1,14 @@
 #!/usr/bin/env python
 """PyDTNN Benchmark script."""
 
-import cProfile
 import logging
 import logging.config
 import os
+import platform
 import sys
 import time
 from argparse import Namespace
-from importlib import resources
-from pathlib import Path
+from importlib import metadata, resources
 
 import yaml
 
@@ -47,7 +46,8 @@ def _start() -> int:
 
 def main(config: Namespace) -> None:  # noqa: C901
     """Application entry point"""
-    from pydtnn import rank, timestamp
+    from pydtnn import environ as devices
+    from pydtnn import package_name, rank, timestamp
     from pydtnn.utils import header, rand
 
     # Initialize
@@ -55,11 +55,18 @@ def main(config: Namespace) -> None:  # noqa: C901
     if rank == 0:
         header("PyDTNN benchmark")
 
+    # Environment
+    packages = {platform.python_implementation().lower(): platform.python_version()}
+    for packs in metadata.packages_distributions().values():
+        for pack in packs:
+            packages[pack] = metadata.version(pack)
+    environ = {"timestamp": timestamp, "packages": packages, "devices": devices}
+
     # Create model
     from pydtnn.model import Model
 
-    pr = cProfile.Profile()
     model = Model(**vars(config))
+    model.history_append(environ)
     model._ensure_runnable()
 
     # Print model
@@ -72,15 +79,15 @@ def main(config: Namespace) -> None:  # noqa: C901
     if model.evaluate_on_train or model.evaluate_only:
         if model.comm_rank == 0:
             header("Testing...")
-        t1 = time.time()
+        tic = time.time()
         _ = model.evaluate()
-        t2 = time.time()
-        total_time = t2 - t1
+        toc = time.time()
+        delta = toc - tic
         if model.comm_rank == 0:
             if model.evaluate_only:
-                logger.info(f"Testing time: {total_time:5.4f} s")
+                logger.info(f"Testing time: {delta:5.4f} s")
                 logger.info(
-                    f"Testing throughput: {model.dataset.test_nsamples / total_time:5.4f} samples/s"
+                    f"Testing throughput: {model.dataset.test_nsamples / delta:5.4f} samples/s"
                 )
         if model.evaluate_only:
             if model.comm_rank == 0:
@@ -95,15 +102,13 @@ def main(config: Namespace) -> None:  # noqa: C901
     if model.comm_rank == 0:
         # print('# Model time: ', model.calculate_time())
         header("Training...")
-        if model.profile:
-            pr.enable()
     # Training a model directly from a dataset
     # or alternatively, define any custom data
     # mode.dataset = CustomDataset(model, x, y)
-    t1 = time.time()
+    tic = time.time()
     model.train()
-    t2 = time.time()
-    total_time = t2 - t1
+    toc = time.time()
+    delta = toc - tic
 
     # Barrier
     if model.comm:
@@ -111,39 +116,38 @@ def main(config: Namespace) -> None:  # noqa: C901
 
     # Print performance results and evaluation history
     if model.comm_rank == 0:
-        if model.profile:
-            pr.disable()
-            path = Path(f"profile-{timestamp}.stat").resolve()
-            pr.dump_stats(path)
-            logger.info(f"Dumped profile stats to: {path}")
-        logger.info(f"Training and validation time: {total_time:5.4f} s")
+        logger.info(f"Training and validation time: {delta:5.4f} s")
         if model.perf_counter.num_epochs > 0:
             logger.info(
                 "Training and validation time per epoch:"
-                f" {total_time / model.perf_counter.num_epochs:5.4f} s"
+                f" {delta / model.perf_counter.num_epochs:5.4f} s"
             )
             logger.info(
                 "Training and validation throughput:"
-                f" {(model.dataset.train_nsamples * model.perf_counter.num_epochs) / total_time:5.4f} samples/s"
+                f" {(model.dataset.train_nsamples * model.perf_counter.num_epochs) / delta:5.4f} samples/s"
             )
 
     # Second (and last) evaluation
     if model.evaluate_on_train:
         if model.comm_rank == 0:
             header("Testing...")
-            t1 = time.time()
-        _ = model.evaluate()
+        tic = time.time()
+        model.evaluate()
+        toc = time.time()
+        delta = toc - tic
+
         if model.comm_rank == 0:
-            t2 = time.time()
-            total_time = t2 - t1
             if not model.evaluate_only:
-                logger.info(f"Testing time: {total_time:5.4f} s")
+                logger.info(f"Testing time: {delta:5.4f} s")
                 logger.info(
-                    f"Testing throughput: {model.dataset.test_nsamples / total_time:5.4f} samples/s"
+                    f"Testing throughput: {model.dataset.test_nsamples / delta:5.4f} samples/s"
                 )
 
     # Print model reports
     if model.comm_rank == 0:
+        if model.profile:
+            model.profiler.dump_stats(f"{package_name}-{timestamp}.prof")
+        model.history_append(model.perf_counter._show_props())
         model.perf_counter.print_report()
 
     # Barrier and finalize

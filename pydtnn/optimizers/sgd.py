@@ -41,7 +41,7 @@ class SGD[T: Array](Optimizer[T]):  # noqa: D101 (generics not detected)
         self.nesterov: bool = nesterov
         self.decay: float = decay
 
-    def _show_props(self) -> dict:
+    def _show_props(self) -> dict[str, str]:
         """
         Return a dictionary of optimizer properties for logging or inspection.
 
@@ -50,9 +50,9 @@ class SGD[T: Array](Optimizer[T]):  # noqa: D101 (generics not detected)
         """
         props = super()._show_props()
 
-        props["momentum"] = self.momentum
-        props["nesterov"] = self.nesterov
-        props["decay"] = self.decay
+        props["momentum"] = str(self.momentum)
+        props["nesterov"] = str(self.nesterov)
+        props["decay"] = str(self.decay)
 
         return props
 

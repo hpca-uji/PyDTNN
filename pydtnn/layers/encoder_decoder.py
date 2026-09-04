@@ -49,11 +49,11 @@ class EncoderDecoder[T: Array](AbstractBlockLayer[T]):  # noqa: D101 (generics n
         if len(self.shape) == 0:
             self.shape = prev_shape[0]  # pyright: ignore[reportAttributeAccessIssue]
 
-    def _show_props(self) -> dict:
+    def _show_props(self) -> dict[str, str]:
         """Returns a dictionary containing the layer properties for inspection."""
         props = super()._show_props()
 
-        props["encodes"] = self.enc_layers
-        props["decodes"] = self.dec_layers
+        props["encodes"] = str(self.enc_layers)
+        props["decodes"] = str(self.dec_layers)
 
         return props

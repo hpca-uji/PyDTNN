@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 from pydtnn.backends.numpy.layers.abstract.layer import LayerNumpy
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.libs import numpy as np
-from pydtnn.model import Model
+from pydtnn.model.base import ModelMode
 from pydtnn.utils.constants import ArrayShape, Parameters
 from pydtnn.utils.tensor import TensorFormat, format_transpose
 
@@ -160,10 +160,10 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
             self._xn[: x.shape[0], :], dtype=self.model.dtype, order="C"
         )
 
-        if self.model.mode is Model.Mode.EVALUATE:
+        if self.model.mode is ModelMode.EVALUATE:
             _mean = self.running_mean
             _var = self.running_var
-        else:  # Model.Mode.TRAIN:
+        else:  # Mode.TRAIN:
             _mean: np.ndarray = self._mean
             _var: np.ndarray = self._var
             np.mean(x, axis=0, dtype=self.model.dtype, out=_mean)

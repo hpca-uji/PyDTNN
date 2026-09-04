@@ -21,10 +21,10 @@ logger = logging.getLogger(__name__)
 class Layers[T: Array](Utils[T]):  # noqa: D101 (generics not detected)
     """Manages the collection and lifecycle of neural network layers."""
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the layers model instance."""
-        super().__init__(**kwargs)
-        self.layers: list[Layerable[T]] = []
+        super().__init__(*args, **kwargs)
+        self.layers = []
 
     def add(self, layer: Layerable[T]) -> None:
         """Adds a layer to the model and initializes its backend and parameters."""

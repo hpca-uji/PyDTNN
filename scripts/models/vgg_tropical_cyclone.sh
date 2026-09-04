@@ -52,5 +52,5 @@ pydtnn-benchmark \
   --no-enable-best-of \
   --no-use-cudnn-auto-conv-algo \
   --no-use-gpudirect \
-  --history-file="results/result_vgg3dobn.history" \
+  --history \
   --dtype=float32

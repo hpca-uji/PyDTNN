@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 class Repr[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
     """Mixin class providing string representation and summary visualization for models."""
 
-    def _show_props(self) -> dict:  # noqa: C901
+    def _show_props(self) -> dict[str, str]:  # noqa: C901
         """Collects model properties for representation and summary.
 
         Returns:
@@ -26,11 +26,22 @@ class Repr[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
         if self.model_name:
             props["name"] = self.model_name
 
+        if self.nparams > 0:
+            props["params"] = str(self.nparams)
+
         if self.dataset_name:
             props["dataset"] = self.dataset_name
 
-        if self.nparams > 0:
-            props["params"] = self.nparams
+        if self.dataset:
+            props["samples"] = str(tuple(self.dataset._nsamples))
+
+        if self.layers:
+            props["input"] = str(self.input_shape)
+            props["output"] = str(self.output_shape)
+            props["layers"] = str(len(self.get_all_layers()))
+
+        if self.batch_size:
+            props["batch-size"] = str(self.batch_size)
 
         if self.memory_used > 0:
             memory = utils.convert_size_bytes(self.memory_used) if self.memory_used > 0 else ""
@@ -121,15 +132,6 @@ class Repr[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
                 schedulers_memory = schedulers_tmp_memory
             if schedulers_memory:
                 props["schedulers-memory"] = schedulers_memory
-
-        if self.dataset:
-            props["samples"] = repr(tuple(self.dataset._nsamples))
-
-        if self.layers:
-            props["input"] = repr(self.layers[0].shape)
-            props["output"] = repr(self.layers[-1].shape)
-            props["batch-size"] = self.batch_size
-            props["layers"] = len(self.get_all_layers())
 
         return props
 

@@ -32,4 +32,4 @@ class TimestampedFileHandler(logging.FileHandler):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize file logger"""
         path = Path(f"{package_name}-{timestamp}.log").resolve()
-        super().__init__(filename=path, mode="a", *args, **kwargs)
+        super().__init__(filename=path, mode="w", *args, **kwargs)

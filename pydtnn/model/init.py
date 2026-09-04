@@ -3,6 +3,8 @@
 import copy
 import itertools
 import logging
+from collections import abc
+from cProfile import Profile
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -10,7 +12,6 @@ import numpy as np
 from pydtnn import (MPI, context, cublas, cublas_handle, cudnn, cudnn_handle, drv, gpu_errors,
                     gpuarray, hostname, nccl, nccl_comm, num_gpus, ranks_per_node, stream)
 from pydtnn.datasets import select as select_dataset
-from pydtnn.datasets.abstract import Dataset
 from pydtnn.layers.identity import Identity
 from pydtnn.libs.mpi.rc import proto as proto
 from pydtnn.losses import select as select_loss
@@ -50,21 +51,32 @@ class Init[T: Array](Repr[T]):  # noqa: D101 (generics not detected)
     dataset loading, and model layer construction.
     """
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """
         Initializes the model environment and configuration.
 
         Args:
             **kwargs: Configuration arguments to override default parser settings.
         """
-        super().__init__(**kwargs)
+        super().__init__(*args, **kwargs)
 
-        # Filter default values from base and update them from the received kwargs
-        for key, value in vars(Base).items():
-            if not key.startswith("_"):
-                # NOTE: Skip setters (plus dict needed for utils)
-                # Also values are copied so Base class is not modified
-                self.__dict__[key] = copy.deepcopy(kwargs.get(key, value))
+        # Merge configurations
+        self.config = {}
+        for config in [Base, *args, kwargs]:
+            if not isinstance(config, abc.Mapping):
+                config = vars(config)
+            for key, value in config.items():
+                if key.startswith("_"):
+                    continue
+                self.config[key] = value
+        self.config = copy.deepcopy(self.config)
+
+        # Filter values using base
+        for key in vars(Base):
+            if key not in self.config:
+                continue
+            # NOTE: Skip setters (plus dict needed for utils)
+            self.__dict__[key] = self.config[key]
 
         # MPI [NOTE: as early as possible]
         self._mpi_init()
@@ -76,6 +88,7 @@ class Init[T: Array](Repr[T]):  # noqa: D101 (generics not detected)
         self.memory_cls = PreallocMemory if self.shared_tmp_memory else PrivateMemory
         self.memory: PrivateMemory = None  # pyright: ignore[reportAttributeAccessIssue]
         self.perf_counter = PerformanceCounter()
+        self.profiler = Profile()
 
         # Attributes initializers
         self._lr_init()  # NOTE: before batch_init
@@ -98,9 +111,10 @@ class Init[T: Array](Repr[T]):  # noqa: D101 (generics not detected)
             self.crypt = None
 
         # Dataset [NOTE: after MPI & Crypt]
-        self.dataset: Dataset
         if self.dataset_name:
             self.dataset = select_dataset(self.dataset_name)(self)
+        else:
+            self.dataset = None  # pyright: ignore[reportAttributeAccessIssue]
 
         # Loss [NOTE: after Dataset]
         self.loss_func = select_loss(self.loss_name).from_model(self)
@@ -412,9 +426,9 @@ class Init[T: Array](Repr[T]):  # noqa: D101 (generics not detected)
     def _ensure_runnable(self) -> None:
         """Validates that the model is ready for execution."""
         if not self.dataset:
-            raise ValueError("There is no dataset and the model has layers")
+            raise ValueError("The model has no dataset")
         if not self.layers:
-            logger.warning("The model has no layers in it")
+            logger.warning("The model has no layers")
         if self.layers and not isinstance(self.layers[0], Identity):
             logger.warning("The model has no input layer")
         if not self._model_inited:

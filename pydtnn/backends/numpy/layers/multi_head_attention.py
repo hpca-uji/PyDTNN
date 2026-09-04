@@ -11,7 +11,7 @@ from pydtnn.layers.multi_head_attention import MultiHeadAttention
 from pydtnn.layers.multiplication import Multiplication
 from pydtnn.layers.scalar import Scalar
 from pydtnn.libs import numpy as np
-from pydtnn.model import Model
+from pydtnn.model.base import ModelMode
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, OpsEventEnum
 from pydtnn.utils.constants import ArrayShape
 
@@ -141,7 +141,7 @@ class MultiHeadAttentionNumpy(MultiHeadAttention[np.ndarray], AbstractBlockLayer
         self, query: np.ndarray, key: np.ndarray, value: np.ndarray, mask: np.ndarray | None = None
     ) -> np.ndarray:
         """Performs the forward pass of the multi-head attention mechanism."""
-        if self.model.mode == Model.Mode.TRAIN:
+        if self.model.mode == ModelMode.TRAIN:
             # TODO: Check this. (in this case, mask is not None) (I hope)
             self.mask = mask  # pyright: ignore[reportAttributeAccessIssue]
 

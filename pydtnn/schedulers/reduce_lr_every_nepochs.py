@@ -38,6 +38,14 @@ class ReduceLREveryNEpochs(Scheduler):
         self.nepochs = nepochs
         self.min_lr = min_lr
 
+    def _show_props(self) -> dict[str, str]:
+        props = super()._show_props()
+
+        props["factor"] = str(self.factor)
+        props["min-lr"] = str(self.min_lr)
+
+        return props
+
     def on_epoch_end(self, train_loss: ndarray, val_loss: ndarray) -> None:
         """
         Update the learning rate at the end of an epoch if the interval is reached.

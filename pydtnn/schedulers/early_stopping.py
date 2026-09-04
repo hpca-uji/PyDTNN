@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from pydtnn import timestamp
-from pydtnn.schedulers.scheduler_with_loss_or_metric import SchedulerWithLossOrMetric
+from pydtnn.schedulers.abstract.scheduler_with_loss_or_metric import SchedulerWithLossOrMetric
 
 __all__ = ("EarlyStopping",)
 
@@ -54,6 +54,14 @@ class EarlyStopping(SchedulerWithLossOrMetric):
         self.best_loss_or_metric: float = np.inf * {True: -1, False: 1}[not self.minimize]
         self.best_weights_filename: str | None = None
         self.compare = operator.lt if self.minimize else operator.gt
+
+    def _show_props(self) -> dict[str, str]:
+        props = super()._show_props()
+
+        props["patience"] = str(self.patience)
+        props["minimize"] = str(self.minimize)
+
+        return props
 
     def on_epoch_end(
         self, train_loss_or_metrics: np.ndarray, val_loss_or_metrics: np.ndarray

@@ -104,7 +104,7 @@ class AbstractConv2D[T: Array](Layer[T]):  # noqa: D101 (generics not detected)
         # NOTE: self.weights_shape must be defined in "self._initializing_special_parameters"
         self.nparams = int(math.prod(self.weights_shape) + (self.co if self.use_bias else 0))
 
-    def _show_props(self) -> dict:
+    def _show_props(self) -> dict[str, str]:
         """
         Returns a dictionary of layer properties for debugging or logging.
 
@@ -113,8 +113,8 @@ class AbstractConv2D[T: Array](Layer[T]):  # noqa: D101 (generics not detected)
         """
         props = super()._show_props()
 
-        props["padding"] = repr((self.hpadding, self.wpadding))
-        props["stride"] = repr((self.hstride, self.wstride))
-        props["dilation"] = repr((self.hdilation, self.wdilation))
+        props["padding"] = str((self.hpadding, self.wpadding))
+        props["stride"] = str((self.hstride, self.wstride))
+        props["dilation"] = str((self.hdilation, self.wdilation))
 
         return props

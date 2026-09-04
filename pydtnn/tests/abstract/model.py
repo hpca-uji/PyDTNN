@@ -18,6 +18,7 @@ from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.dropout import Dropout
 from pydtnn.losses.abstract.loss import Loss
 from pydtnn.model import Model
+from pydtnn.model.base import ModelMode
 from pydtnn.tests.abstract.base import Params, TestCase, verbose_test
 from pydtnn.utils import header, rand
 from pydtnn.utils.tensor import TensorFormat
@@ -426,10 +427,10 @@ class ModelTestCase(TestCase):
 
         # Model 1 forward
         model1, loss_func1 = self.get_model1_and_loss_func(model_name)
-        model1.mode = Model.Mode.TRAIN
+        model1.mode = ModelMode.TRAIN
 
         model2 = self.get_model2(model_name)
-        model2.mode = Model.Mode.TRAIN
+        model2.mode = ModelMode.TRAIN
         self.copy_weights_and_biases(model1, model2)
 
         x = [

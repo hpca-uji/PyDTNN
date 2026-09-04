@@ -19,6 +19,7 @@ from pydtnn.layers.conv_2d_depthwise import Conv2DDepthwise
 from pydtnn.layers.conv_2d_pointwise import Conv2DPointwise
 from pydtnn.layers.identity import Identity
 from pydtnn.model import Model
+from pydtnn.model.base import ModelMode
 from pydtnn.utils import rand
 
 try:
@@ -118,7 +119,7 @@ def main() -> None:
     for name, model in models:
         print(f"{name}")
 
-        model.mode = Model.Mode.TRAIN
+        model.mode = ModelMode.TRAIN
         # model.show()
 
         x = deepcopy(dataset)

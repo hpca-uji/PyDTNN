@@ -25,6 +25,11 @@ class State[T: Array](Init[T]):  # noqa: D101 (generics not detected)
     with the initialization process to load pre-trained states.
     """
 
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Initialize the layers model instance."""
+        super().__init__(*args, **kwargs)
+        self.history = []
+
     def _model_init(self) -> None:
         """
         Initializes the model and loads state from a file if specified.
@@ -34,15 +39,47 @@ class State[T: Array](Init[T]):  # noqa: D101 (generics not detected)
         state from that file.
         """
         super()._model_init()
-        self.history = []
 
         # Load weights and bias
         if self.model_state_file:
             self.load_model_state(self.model_state_file)
 
-        props = self._show_props()
-        if _ := props.pop("layers", None):
+        # Store current configuration
+        props = {}
+
+        if groups := self.config.get("groups"):
+            config = {}
+            for group in groups:
+                if not group.title:
+                    continue
+                config[group.title] = {
+                    action.dest: str(self.config[action.dest])
+                    for action in group._group_actions
+                    if action.dest in self.config
+                }
+        else:
+            config = self.config
+        if config:
+            props["config"] = config
+
+        if self.loss_func:
+            props["loss"] = self.loss_func._show_props()
+
+        if self.metrics_funcs:
+            props["metrics"] = [metric._show_props() for metric in self.metrics_funcs]
+
+        if self.optimizer:
+            props["optimizer"] = self.optimizer._show_props()
+
+        if self.schedulers:
+            props["schedulers"] = [scheduler._show_props() for scheduler in self.schedulers]
+
+        if self.dataset:
+            props["dataset"] = self.dataset._show_props()
+
+        if self.layers:
             props["layers"] = [layer._show_props() for layer in self.get_all_layers()]
+
         self.history_append(props)
 
     def export(self) -> dict[str, Any]:
@@ -125,10 +162,10 @@ class State[T: Array](Init[T]):  # noqa: D101 (generics not detected)
         """Append history event"""
         if history_file := self.history_file:
             mode = "a" if self.history else "w"
-            from pydtnn.utils.serial import NumpyYaml
+            from pydtnn.utils.serial import ReprYaml
 
             with open(history_file, mode) as f:
                 if self.history:
                     f.write("---\n")
-                yaml.dump(event, f, NumpyYaml, allow_unicode=True, sort_keys=False)
+                yaml.dump(event, f, ReprYaml, allow_unicode=True, sort_keys=False)
         self.history.append(event)

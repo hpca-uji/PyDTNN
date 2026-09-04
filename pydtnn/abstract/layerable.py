@@ -103,7 +103,7 @@ class Layerable[T: Array](Base[T]):  # noqa: D101 (generics not detected)
             prefix = "{:0{width}d}_".format(self.id, width=max_digits)
         return prefix
 
-    def _show_props(self) -> dict:
+    def _show_props(self) -> dict[str, str]:
         """
         Return a dictionary of layer properties for inspection.
 
@@ -114,7 +114,7 @@ class Layerable[T: Array](Base[T]):  # noqa: D101 (generics not detected)
         props = {}
 
         if self.id >= 0:
-            props["id"] = self.id
+            props["id"] = str(self.id)
 
         paths = []
         curr = self
@@ -130,13 +130,13 @@ class Layerable[T: Array](Base[T]):  # noqa: D101 (generics not detected)
         props.update(super()._show_props())
 
         if self.nparams > 0:
-            props["params"] = self.nparams
+            props["params"] = str(self.nparams)
 
         if self.prev_shape:
-            props["input"] = repr(self.prev_shape)
+            props["input"] = str(self.prev_shape)
 
         if self.shape:
-            props["output"] = repr(self.shape)
+            props["output"] = str(self.shape)
 
         if len(self.paths) > 0:
             props["paths"] = ", ".join(
@@ -144,7 +144,7 @@ class Layerable[T: Array](Base[T]):  # noqa: D101 (generics not detected)
             )
 
         if self.weights is not None:
-            props["weights"] = repr(self.weights.shape)
+            props["weights"] = str(self.weights.shape)
 
         return props
 

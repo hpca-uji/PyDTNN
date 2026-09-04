@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 from numpy import ndarray
 
-from pydtnn.schedulers.scheduler_with_loss_or_metric import SchedulerWithLossOrMetric
+from pydtnn.schedulers.abstract.scheduler_with_loss_or_metric import SchedulerWithLossOrMetric
 
 __all__ = ("StopAtLoss",)
 
@@ -35,6 +35,13 @@ class StopAtLoss(SchedulerWithLossOrMetric):
         # NOTE: loss_or_metric default value is "val_accuracy" in Parser.
         super().__init__(loss_or_metric, verbose)
         self.threshold_value = threshold_value
+
+    def _show_props(self) -> dict[str, str]:
+        props = super()._show_props()
+
+        props["threshold"] = str(self.threshold_value)
+
+        return props
 
     def on_epoch_end(self, train_loss: ndarray, val_loss: ndarray) -> None:
         """

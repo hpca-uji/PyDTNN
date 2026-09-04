@@ -28,6 +28,7 @@ from pydtnn import package_name
 from pydtnn.abstract.base import Base
 from pydtnn.datasets.abstract.base import Base as DatasetBase
 from pydtnn.model.base import Base as ModelBase
+from pydtnn.model.base import SyncAlgorithm, SyncParticipation
 from pydtnn.utils import read_dir
 from pydtnn.utils.constants import NetworkAlgoEnum
 from pydtnn.utils.gpu import get_gpus_per_node
@@ -140,22 +141,22 @@ class Namespace(argparse.Namespace):
         for group in self.groups:
             indent = ""
             length = 0
-            if group.title not in ("positional arguments", "optional arguments"):
+            if group.title:
                 indent = "  "
                 lines.append("")
-                lines.append(group.title)
+                lines.append(f"{group.title}:")
                 if group.description is not None:
                     lines.append(group.description)
             for action in group._group_actions:
-                if action.default == "==SUPPRESS==":
+                if action.default == argparse.SUPPRESS:
                     continue
-                option_string = f"{action.option_strings[0].replace('--', '')}"
+                option_string = f"{action.option_strings[0].lstrip('-')}"
                 if len(option_string) > length:
                     length = len(option_string)
             for action in group._group_actions:
-                if action.default == "==SUPPRESS==":
+                if action.default == argparse.SUPPRESS:
                     continue
-                option_string = f"{action.option_strings[0].replace('--', '')}"
+                option_string = f"{action.option_strings[0].lstrip('-')}"
                 tab = " " * (length - len(option_string))
                 lines.append(f"{indent}{option_string}{tab}: {getattr(self, action.dest)}")
         return "\n".join(lines).strip()
@@ -177,9 +178,10 @@ class ArgumentParser(argparse.ArgumentParser):
 
         # Parser and the supported arguments with their default values
         # (argparse.SUPPRESS is used to avoid showing them on the message)
+        self._positionals.title = ""
 
         # Model
-        self._optionals.title = "Model options"
+        self._optionals.title = "model"
         models = list_modules("models")
         self.add_argument(
             "--model",
@@ -294,12 +296,11 @@ class ArgumentParser(argparse.ArgumentParser):
             help=(f"Load weights and bias from file. Default: {ModelBase.model_state_file!r}."),
         )
         self.add_argument(
-            "--history-file",
-            type=str,
-            default=ModelBase.history_file,
-            help=(
-                f"Filename to save training loss and metrics. Default: {ModelBase.history_file!r}."
-            ),
+            "--history",
+            dest="use_history",
+            action=argparse.BooleanOptionalAction,
+            default=ModelBase.use_history,
+            help=(f"Save event history. Default: {ModelBase.use_history!r}."),
         )
         self.add_argument(
             "--tensor-format",
@@ -330,7 +331,7 @@ class ArgumentParser(argparse.ArgumentParser):
         )
 
         # Synchronization options
-        _sy_group = self.add_argument_group("Synchronization options")
+        _sy_group = self.add_argument_group("synchronization")
         _sy_group.add_argument(
             "--shared-data",
             action=argparse.BooleanOptionalAction,
@@ -354,21 +355,21 @@ class ArgumentParser(argparse.ArgumentParser):
         )
         _sy_group.add_argument(
             "--model-sync-algo",
-            type=ModelBase.SyncAlgorithm,
+            type=SyncAlgorithm,
             default=ModelBase.model_sync_algo,
-            choices=ModelBase.SyncAlgorithm,
+            choices=SyncAlgorithm,
             help=(
-                f"Aggregation method used to synchronize models: {', '.join(map(repr, map(str, ModelBase.SyncAlgorithm)))}."
+                f"Aggregation method used to synchronize models: {', '.join(map(repr, map(str, SyncAlgorithm)))}."
                 f" Default: {str(ModelBase.model_sync_algo)!r}."
             ),
         )
         _sy_group.add_argument(
             "--model-sync-participation",
-            type=ModelBase.SyncParticipation,
+            type=SyncParticipation,
             default=ModelBase.model_sync_participation,
-            choices=ModelBase.SyncParticipation,
+            choices=SyncParticipation,
             help=(
-                f"Rank participation to synchronize models: {', '.join(map(repr, map(str, ModelBase.SyncParticipation)))}."
+                f"Rank participation to synchronize models: {', '.join(map(repr, map(str, SyncParticipation)))}."
                 f" Default: {str(ModelBase.model_sync_participation)!r}."
             ),
         )
@@ -419,7 +420,7 @@ class ArgumentParser(argparse.ArgumentParser):
         # Dataset options
         datasets = list_modules("datasets")
         datasets.remove("memory")
-        _ds_group = self.add_argument_group("Dataset options")
+        _ds_group = self.add_argument_group("dataset")
         _ds_group.add_argument(
             "--dataset",
             dest="dataset_name",
@@ -741,7 +742,7 @@ class ArgumentParser(argparse.ArgumentParser):
         )
 
         # Fused options
-        _fs_group = self.add_argument_group("Fused options")
+        _fs_group = self.add_argument_group("fused")
         _fs_group.add_argument(
             "--fused-bn-relu",
             action=argparse.BooleanOptionalAction,
@@ -780,7 +781,7 @@ class ArgumentParser(argparse.ArgumentParser):
         )
 
         # Convolution methods
-        _cm_group = self.add_argument_group("Convolution options")
+        _cm_group = self.add_argument_group("convolution")
         _cm_group.add_argument(
             "--conv-direct-method",
             type=str,
@@ -794,7 +795,7 @@ class ArgumentParser(argparse.ArgumentParser):
 
         # Optimizer options
         optimizers = list_modules("optimizers")
-        _op_group = self.add_argument_group("Optimizer options")
+        _op_group = self.add_argument_group("optimizer")
         _op_group.add_argument(
             "--optimizer",
             dest="optimizer_name",
@@ -947,7 +948,7 @@ class ArgumentParser(argparse.ArgumentParser):
             for part in DatasetBase.Part:
                 scheduler_metric.append(f"{part._name_.lower()}_{metric}")
         schedulers = list_modules("schedulers")
-        _sh_group = self.add_argument_group("Schedulers options")
+        _sh_group = self.add_argument_group("schedulers")
         _sh_group.add_argument(
             "--schedulers",
             dest="schedulers_names",
@@ -1101,7 +1102,7 @@ class ArgumentParser(argparse.ArgumentParser):
         )
 
         # Parallel options
-        _pe_group = self.add_argument_group("Parallel options")
+        _pe_group = self.add_argument_group("parallel")
         _pe_group.add_argument(
             "--parallel-data",
             action=argparse.BooleanOptionalAction,
@@ -1162,7 +1163,7 @@ class ArgumentParser(argparse.ArgumentParser):
         )
 
         # Encryption options
-        _cy_group = self.add_argument_group("Encryption options")
+        _cy_group = self.add_argument_group("encryption")
         _cy_group.add_argument(
             "--encryption",
             dest="encryption_name",
@@ -1201,7 +1202,7 @@ class ArgumentParser(argparse.ArgumentParser):
         )
 
         # Tracing options
-        _tr_group = self.add_argument_group("Tracing options")
+        _tr_group = self.add_argument_group("tracing")
         _tr_group.add_argument(
             "--tracing",
             action=argparse.BooleanOptionalAction,
@@ -1243,7 +1244,7 @@ class ArgumentParser(argparse.ArgumentParser):
         )
 
         # Modeling options
-        _pm_group = self.add_argument_group("Modeling options")
+        _pm_group = self.add_argument_group("modeling")
         _pm_group.add_argument(
             "--cpu-speed", type=float, default=ModelBase.cpu_speed, help=argparse.SUPPRESS
         )
@@ -1265,13 +1266,13 @@ class ArgumentParser(argparse.ArgumentParser):
         )
 
         # Environment options
-        _re_group = self.add_argument_group("Environment options")
+        _re_group = self.add_argument_group("environment")
         _re_group.add_argument("--node-gpus", type=int, default=-1, help=argparse.SUPPRESS)
         _re_group.add_argument("--mpi-procs", type=int, default=-1, help=argparse.SUPPRESS)
         _re_group.add_argument("--proc-threads", type=int, default=-1, help=argparse.SUPPRESS)
 
         # Communication options
-        _cm_group = self.add_argument_group("Communication options")
+        _cm_group = self.add_argument_group("communication")
         _cm_group.add_argument("--mpi-protocol", type=str, default="", help=argparse.SUPPRESS)
         _cm_group.add_argument("--mpi-server", type=str, default="", help=argparse.SUPPRESS)
         _cm_group.add_argument("--mpi-port", type=int, default=-1, help=argparse.SUPPRESS)

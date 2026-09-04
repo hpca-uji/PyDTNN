@@ -51,5 +51,5 @@ mpirun -np 1 "${MPI_ARGS[@]}" \
   --no-profile \
   --backend=cpu \
   --no-use-gpudirect \
-  --history-file="results/result_googlenet.history" \
+  --history \
   --dtype=float32

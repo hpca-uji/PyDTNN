@@ -37,6 +37,28 @@ if TYPE_CHECKING:
     from pympi.MPI import Comm as MPI_COMM  # noqa: N814
 
 
+class ModelMode(enum.StrEnum):
+    """Enumeration for model execution modes."""
+
+    EVALUATE = enum.auto()
+    TRAIN = enum.auto()
+
+
+class SyncParticipation(enum.StrEnum):
+    """Defines strategies for node participation in model synchronization."""
+
+    ALL = enum.auto()
+    AVAIL2ALL = enum.auto()
+
+
+class SyncAlgorithm(enum.StrEnum):
+    """Defines algorithms for weight aggregation during synchronization."""
+
+    AVG = enum.auto()
+    WAVG = enum.auto()
+    INVAVG = enum.auto()
+
+
 class Base[T: Array]:  # noqa: D101 (generics not detected)
     """
     Base class for all models in PyDTNN.
@@ -46,33 +68,15 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
     handling.
     """
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the base model instance."""
         self.nparams = 0
         self.memory_used = 0
         self.tmp_memory_used = 0
-        self.mode: Base.Mode = None  # pyright: ignore[reportAttributeAccessIssue] # Base.Mode.UNSPECIFIED
-
-    class Mode(enum.StrEnum):
-        """Enumeration for model execution modes."""
-
-        EVALUATE = enum.auto()
-        TRAIN = enum.auto()
-
-    class SyncParticipation(enum.StrEnum):
-        """Defines strategies for node participation in model synchronization."""
-
-        ALL = enum.auto()
-        AVAIL2ALL = enum.auto()
-
-    class SyncAlgorithm(enum.StrEnum):
-        """Defines algorithms for weight aggregation during synchronization."""
-
-        AVG = enum.auto()
-        WAVG = enum.auto()
-        INVAVG = enum.auto()
+        self.mode: ModelMode = None  # pyright: ignore[reportAttributeAccessIssue] # Mode.UNSPECIFIED
 
     # NOTE: typing only (NO DEFAULTS)
+    config: dict
     _model_inited: bool
     comm_nsamples: tuple[tuple[int], ...]
     comm_rank: int
@@ -127,7 +131,7 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
     evaluate_on_train: bool = False
     evaluate_only: bool = False
     model_state_file: str = ""
-    history_file: str = ""
+    use_history: bool = False
     tensor_format: TensorFormat = None  # pyright: ignore[reportAssignmentType]
     random_seed: int = 57005
     shared_tmp_memory: bool = False

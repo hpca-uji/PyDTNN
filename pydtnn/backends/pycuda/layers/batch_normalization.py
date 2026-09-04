@@ -11,7 +11,7 @@ from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
 from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.libs import cudnn as cudnn
-from pydtnn.model import Model
+from pydtnn.model.base import ModelMode
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
                                    PYDTNN_OPS_EVENTS, OpsEventEnum)
 from pydtnn.utils.constants import ArrayShape, Parameters
@@ -140,7 +140,7 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
         """Performs the forward pass using cuDNN."""
         alpha, beta = 1.0, 0.0
         match self.model.mode:
-            case Model.Mode.TRAIN:
+            case ModelMode.TRAIN:
                 self.model.tracer.emit_event(
                     PYDTNN_OPS_EVENT,
                     self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_CUDNN,
@@ -165,7 +165,7 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
                     self.save_inv_var.ptr_voidp,
                 )
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-            case Model.Mode.EVALUATE:
+            case ModelMode.EVALUATE:
                 self.model.tracer.emit_event(
                     PYDTNN_OPS_EVENT,
                     self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_CUDNN,

@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from pydtnn.schedulers.scheduler_with_loss_or_metric import SchedulerWithLossOrMetric
+from pydtnn.schedulers.abstract.scheduler_with_loss_or_metric import SchedulerWithLossOrMetric
 
 __all__ = ("ReduceLROnPlateau",)
 
@@ -46,6 +46,15 @@ class ReduceLROnPlateau(SchedulerWithLossOrMetric):
         self.min_lr = min_lr
         self.best_epoch: int = 0
         self.best_loss: float = np.inf * {True: -1, False: 1}["accuracy" in self.loss_or_metric]
+
+    def _show_props(self) -> dict[str, str]:
+        props = super()._show_props()
+
+        props["factor"] = str(self.factor)
+        props["patience"] = str(self.patience)
+        props["min-lr"] = str(self.min_lr)
+
+        return props
 
     def on_epoch_end(self, train_loss: np.ndarray, val_loss: np.ndarray) -> None:
         """
