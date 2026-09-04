@@ -24,7 +24,6 @@ mpirun -np 8 "${MPI_ARGS[@]}" \
   --steps-per-epoch=0 \
   --num-epochs=10 \
   --evaluate \
-  --history \
   --optimizer=sgd \
   --learning-rate=0.01 \
   --loss-func=negative_likelihood \
