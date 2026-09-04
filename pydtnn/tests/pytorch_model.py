@@ -365,7 +365,7 @@ class PytorchModelTestCase(TestCase):
         return torch_model
 
     @staticmethod
-    def get_torch_loss_func() -> torch.nn.modules.loss._Loss:
+    def _get_torch_loss_func() -> torch.nn.modules.loss._Loss:
         return torch.nn.CrossEntropyLoss()
 
     def get_optimizer_pytorch(self, model_torch: PyTorch_Model) -> torch.optim.Optimizer:
@@ -620,7 +620,7 @@ class PytorchModelTestCase(TestCase):
             model_name (str): Name of the model to test.
         """
 
-        loss_func_torch = self.get_torch_loss_func()
+        loss_func_torch = self._get_torch_loss_func()
         optimizer_torch = self.get_optimizer_pytorch(model_torch)
         model_pydtnn = self.get_model_pydtnn(model_torch)
         model_pydtnn.mode = PyDTNN_Model.Mode.TRAIN
@@ -709,17 +709,17 @@ class PytorchModelTestCase(TestCase):
 
     @unittest.skip("Large model")
     def test_layer_conv_2d(self) -> None:
-            """Compares results between an SimpleCNN model using a PyTorch model and other a PyDTNN one."""
-            params = PytorchModelTestCase.params
+        """Compares results between an SimpleCNN model using a PyTorch model and other a PyDTNN one."""
+        params = PytorchModelTestCase.params
 
-            k_size = 3
-            c_in = params.synthetic_input_shape[0]
-            c_out = params.synthetic_output_shape[0]
-    
-            layer = torch.nn.Sequential(torch.nn.Conv2d(in_channels=c_in, out_channels=c_out, kernel_size=k_size),
-                                        torch.nn.Flatten())
+        k_size = 3
+        c_in = params.synthetic_input_shape[0]
+        c_out = params.synthetic_output_shape[0]
 
-            self.do_test_model(TorchLayer(layer), "Conv2d")
+        layer = torch.nn.Sequential(torch.nn.Conv2d(in_channels=c_in, out_channels=c_out, kernel_size=k_size),
+                                    torch.nn.Flatten())
+
+        self.do_test_model(TorchLayer(layer), "Conv2d")
 
     @unittest.skip("Large model")
     def test_layer_linear(self) -> None:
@@ -729,8 +729,8 @@ class PytorchModelTestCase(TestCase):
         in_elems = int(np.prod(params.synthetic_input_shape))
         out_elems = int(np.prod(params.synthetic_output_shape))
 
-        layer =  torch.nn.Sequential(torch.nn.Flatten(),
-                                     torch.nn.Linear(in_features = in_elems, out_features = out_elems))
+        layer = torch.nn.Sequential(torch.nn.Flatten(),
+                                    torch.nn.Linear(in_features=in_elems, out_features=out_elems))
 
         self.do_test_model(TorchLayer(layer), "Linear")
 
