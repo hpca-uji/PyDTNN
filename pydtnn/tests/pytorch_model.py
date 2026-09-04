@@ -215,7 +215,6 @@ def remove_inplace_pytorch(torch_model: torch.nn.Module) -> None:
         for name, immediate_child_module in list_children:
             if len(list(immediate_child_module.named_children())) == 0:
                 if hasattr(immediate_child_module, "inplace"):
-                    # breakpoint()
                     if verbose_test():
                         print(
                             f"INPLACE (before) -> {immediate_child_module} || {immediate_child_module.inplace=} =="

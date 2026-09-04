@@ -8,6 +8,7 @@ memory management, and infrastructure for distributed training.
 
 from __future__ import annotations
 
+import cProfile
 import enum
 import logging
 from typing import TYPE_CHECKING, Any
@@ -117,6 +118,7 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
     use_memory_pool: bool
     y_batch: T
     dataset: Dataset
+    profiler: cProfile.Profile
 
     # NOTE: Kwargs defaults (DEFAULT REQUIRED)
     model_name: str = ""

@@ -244,14 +244,15 @@ class Layerable[T: Array](Base[T]):  # noqa: D101 (generics not detected)
         if not self.model.comm:
             return
 
-        vars_to_iterate = set()
+        # NOTE: order must be stable between procs
+        vars_to_iterate = []
 
         # NOTE: self.grad_vars = {[VAR]: [VAR's GRADIENT]}
         if SyncMode.WEIGHT in mode:
-            vars_to_iterate.update(self.grad_vars.keys())
+            vars_to_iterate.extend(self.grad_vars.keys())
 
         if SyncMode.GRADIENT in mode:
-            vars_to_iterate.update(self.grad_vars.values())
+            vars_to_iterate.extend(self.grad_vars.values())
 
         for w_dw in vars_to_iterate:
             reduce_operation(w_dw)

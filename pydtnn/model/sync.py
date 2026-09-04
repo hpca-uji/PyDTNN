@@ -126,22 +126,22 @@ class Sync[T: Array](State[T]):  # noqa: D101 (generics not detected)
             data = response
         return data
 
-    def _model_reduce_sync(self, parameters: SyncMode) -> None:
+    def _model_reduce_sync(self, mode: SyncMode) -> None:
         """Performs a synchronous all-reduce operation on model weights or gradients."""
         for layer in self.layers:
             self.tracer.emit_event(
                 PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + MdlEventEnum.ALLREDUCE_DW
             )
-            layer.state_reduce_sync(mode=parameters)
+            layer.state_reduce_sync(mode=mode)
             self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
-    def _model_reduce_async(self, parameters: SyncMode) -> None:
+    def _model_reduce_async(self, mode: SyncMode) -> None:
         """Initiates an asynchronous all-reduce operation on model weights or gradients."""
         for layer in self.layers:
             self.tracer.emit_event(
                 PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + MdlEventEnum.ALLREDUCE_DW
             )
-            layer.state_reduce_async(mode=parameters)
+            layer.state_reduce_async(mode=mode)
             self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
     def _model_reduce_wait(self, mode: SyncMode) -> None:
