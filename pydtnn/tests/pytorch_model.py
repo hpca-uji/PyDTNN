@@ -1,10 +1,10 @@
 """Tests for verifying model behavior and consistency across different data types."""
 
 import logging
-from typing import Any
 import unittest
 import warnings
 from collections.abc import Sequence
+from typing import Any
 
 import numpy as np
 import torch
@@ -205,32 +205,41 @@ def replace_layer_pytorch(module: torch.nn.Module, layer_to_replace: type[torch.
     else:
         return module
 
+
 def remove_inplace_pytorch(torch_model: torch.nn.Module) -> None:
     """Recursively replaces inplace methods with normal methods."""
+
     def _get_all_layers_pytorch(module: torch.nn.Module) -> None:
         # iterate through immediate child modules
         list_children = list(module.named_children())
         for name, immediate_child_module in list_children:
             if len(list(immediate_child_module.named_children())) == 0:
                 if hasattr(immediate_child_module, "inplace"):
-                    #breakpoint()
+                    # breakpoint()
                     if verbose_test():
-                        print(f"INPLACE (before) -> {immediate_child_module} || {immediate_child_module.inplace=} ==")
+                        print(
+                            f"INPLACE (before) -> {immediate_child_module} || {immediate_child_module.inplace=} =="
+                        )
                     immediate_child_module.inplace = False  # pyright: ignore[reportArgumentType] (It's fine)
                     if verbose_test():
-                        print(f"INPLACE (after) -> {immediate_child_module} || {immediate_child_module.inplace=} ==")
+                        print(
+                            f"INPLACE (after) -> {immediate_child_module} || {immediate_child_module.inplace=} =="
+                        )
             _get_all_layers_pytorch(immediate_child_module)
-    # ----
+
     _get_all_layers_pytorch(torch_model)
+
 
 def set_forward_hook(torch_model: torch.nn.Module) -> list[tuple[torch.nn.Module, torch.Tensor]]:
     """Recursively sets the forward's 'hook' method."""
 
     torch_forward_outputs = list[tuple[torch.nn.Module, torch.Tensor]]()
 
-    def hook(module: torch.nn.Module, args: tuple[Any, ...], output: torch.Tensor) -> torch.Tensor | None:
+    def hook(
+        module: torch.nn.Module, args: tuple[Any, ...], output: torch.Tensor
+    ) -> torch.Tensor | None:
         torch_forward_outputs.append((module, output.clone()))
-        #return output
+        # return output
 
     def _get_all_layers_pytorch(module: torch.nn.Module) -> None:
         # iterate through immediate child modules
@@ -245,18 +254,22 @@ def set_forward_hook(torch_model: torch.nn.Module) -> list[tuple[torch.nn.Module
     return torch_forward_outputs
 
 
-def set_backward_hook(torch_model: torch.nn.Module) -> list[tuple[torch.nn.Module, tuple[torch.Tensor, ...] | torch.Tensor]]:
+def set_backward_hook(
+    torch_model: torch.nn.Module,
+) -> list[tuple[torch.nn.Module, tuple[torch.Tensor, ...] | torch.Tensor]]:
     """Recursively sets the forward's 'hook' method."""
 
     torch_backward_outputs = list[tuple[torch.nn.Module, tuple[torch.Tensor, ...] | torch.Tensor]]()
 
-
     # _grad_t = tuple[Tensor, ...] | Tensor
-    def hook(module: torch.nn.Module, grad_input: tuple[torch.Tensor, ...] | torch.Tensor,
-             grad_output: tuple[torch.Tensor, ...] | torch.Tensor) -> tuple[torch.Tensor, ...] | torch.Tensor | None:
+    def hook(
+        module: torch.nn.Module,
+        grad_input: tuple[torch.Tensor, ...] | torch.Tensor,
+        grad_output: tuple[torch.Tensor, ...] | torch.Tensor,
+    ) -> tuple[torch.Tensor, ...] | torch.Tensor | None:
         output_copy = tuple([elem if elem is None else elem.clone() for elem in grad_output])
         torch_backward_outputs.append((module, output_copy))
-        #return output
+        # return output
 
     def _get_all_layers_pytorch(module: torch.nn.Module) -> None:
         # iterate through immediate child modules
@@ -271,8 +284,9 @@ def set_backward_hook(torch_model: torch.nn.Module) -> list[tuple[torch.nn.Modul
     return torch_backward_outputs
 
 
-def replace_pydtnn_layerable(layers: Sequence[Layerable],
-                             conversion: dict[type[Layerable], type[Layerable]]) -> list[Layerable]:
+def replace_pydtnn_layerable(
+    layers: Sequence[Layerable], conversion: dict[type[Layerable], type[Layerable]]
+) -> list[Layerable]:
 
     new_layers = list()
     conv_keys = conversion.keys()
@@ -395,7 +409,9 @@ class PytorchModelTestCase(TestCase):
         )
 
     @staticmethod
-    def get_model_torch(model_name: str) -> tuple[PyTorch_Model, list[tuple[torch.nn.Module, torch.Tensor]]]:
+    def get_model_torch(
+        model_name: str,
+    ) -> tuple[PyTorch_Model, list[tuple[torch.nn.Module, torch.Tensor]]]:
         """
         Initializes a model and its corresponding loss function.
 
@@ -550,11 +566,13 @@ class PytorchModelTestCase(TestCase):
         loss, dx = model.loss_func.compute(x.copy(), y)
         return loss, dx
 
-    def compare_loss(self, loss_torch: torch.Tensor, _loss_pydtnn: float):
+    def compare_loss(self, loss_torch: torch.Tensor, _loss_pydtnn: float) -> None:
+        """Compare torch's loss and pydtnn's loss"""
         _loss_torch = float(loss_torch.detach())
         print(f"{_loss_torch=} || {_loss_pydtnn=}")
-        assert np.isclose(float(_loss_torch), _loss_pydtnn), \
-                          f"Both values are not close: {_loss_torch=} =/=  {_loss_pydtnn=}"
+        assert np.isclose(float(_loss_torch), _loss_pydtnn), (
+            f"Both values are not close: {_loss_torch=} =/=  {_loss_pydtnn=}"
+        )
 
     def do_pytorch_model_backward_pass(
         self, _model1: PyTorch_Model, loss: torch.Tensor
@@ -633,8 +651,12 @@ class PytorchModelTestCase(TestCase):
         for layer in pydtnn_model.layers:
             layer.update_weights(pydtnn_model.optimizer, update=True, sync=False)
 
-    def compare_forward(self, model_pydtnn: PyDTNN_Model, x_torch: list[tuple[torch.nn.Module, torch.Tensor]],
-                        x_pydtnn: list[np.ndarray]) -> None:
+    def compare_forward(
+        self,
+        model_pydtnn: PyDTNN_Model,
+        x_torch: list[tuple[torch.nn.Module, torch.Tensor]],
+        x_pydtnn: list[np.ndarray],
+    ) -> None:
         """
         Compares the forward pass outputs of two models.
 
@@ -649,7 +671,7 @@ class PytorchModelTestCase(TestCase):
             print("Comparing outputs of both models...")
 
         torch_layer, pytorch_last_layer = x_torch[-1]
-        
+
         pydtnn_values = x_pydtnn[-2]
         pydtnn_values = model_pydtnn.layers[-1]
 
@@ -705,8 +727,12 @@ class PytorchModelTestCase(TestCase):
         """Convert PyDTNN output shape to PyTorch's format"""
         return np.argmax(y_pydtnn, axis=1)
 
-    def do_test_model(self, model_torch: torch.nn.Module, torch_forward_outputs: list[tuple[torch.nn.Module, torch.Tensor]],
-                      model_name: str) -> None:
+    def do_test_model(
+        self,
+        model_torch: torch.nn.Module,
+        torch_forward_outputs: list[tuple[torch.nn.Module, torch.Tensor]],
+        model_name: str,
+    ) -> None:
         """
         Executes the full comparison test for a given model.
 
@@ -745,8 +771,6 @@ class PytorchModelTestCase(TestCase):
             if verbose_test():
                 header(f"Model {model_name} 1 forward pass")
             x_torch = self.do_model1_forward_pass(model_torch, x_torch)
-
-            
 
             if verbose_test():
                 header(f"Model {model_pydtnn.model_name} 2 forward pass")
@@ -810,8 +834,10 @@ class PytorchModelTestCase(TestCase):
         c_in = params.synthetic_input_shape[0]
         c_out = params.synthetic_output_shape[0]
 
-        layer = torch.nn.Sequential(torch.nn.Conv2d(in_channels=c_in, out_channels=c_out, kernel_size=k_size),
-                                    torch.nn.Flatten())
+        layer = torch.nn.Sequential(
+            torch.nn.Conv2d(in_channels=c_in, out_channels=c_out, kernel_size=k_size),
+            torch.nn.Flatten(),
+        )
 
         torch_model = TorchLayer(layer)
         torch_forward_outputs = set_forward_hook(torch_model)
@@ -825,8 +851,9 @@ class PytorchModelTestCase(TestCase):
         in_elems = int(np.prod(params.synthetic_input_shape))
         out_elems = int(np.prod(params.synthetic_output_shape))
 
-        layer = torch.nn.Sequential(torch.nn.Flatten(),
-                                    torch.nn.Linear(in_features=in_elems, out_features=out_elems))
+        layer = torch.nn.Sequential(
+            torch.nn.Flatten(), torch.nn.Linear(in_features=in_elems, out_features=out_elems)
+        )
 
         torch_model = TorchLayer(layer)
         torch_forward_outputs = set_forward_hook(torch_model)
@@ -841,8 +868,9 @@ class PytorchModelTestCase(TestCase):
         momentum = params.optimizer_momentum
         c_in = params.synthetic_input_shape[0]
 
-        layer = torch.nn.Sequential(torch.nn.BatchNorm2d(num_features=c_in, eps=eps, momentum=momentum),
-                                    torch.nn.Flatten())
+        layer = torch.nn.Sequential(
+            torch.nn.BatchNorm2d(num_features=c_in, eps=eps, momentum=momentum), torch.nn.Flatten()
+        )
 
         torch_model = TorchLayer(layer)
         torch_forward_outputs = set_forward_hook(torch_model)

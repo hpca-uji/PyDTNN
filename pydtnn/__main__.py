@@ -45,8 +45,9 @@ def main(config: Namespace) -> None:  # noqa: C901
     """Application entry point"""
     from pydtnn import environ as devices
     from pydtnn import package_name, rank, timestamp
-    from pydtnn.utils import header, rand
     from pydtnn.model import Model
+    from pydtnn.utils import header, rand
+
     rand.seed(config.random_seed)
 
     # Initialize
