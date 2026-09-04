@@ -296,6 +296,12 @@ class ArgumentParser(argparse.ArgumentParser):
             help=(f"Load weights and bias from file. Default: {ModelBase.model_state_file!r}."),
         )
         self.add_argument(
+            "--logger",
+            action=argparse.BooleanOptionalAction,
+            default=ModelBase.logger,
+            help=(f"Save output log file. Default: {ModelBase.logger!r}."),
+        )
+        self.add_argument(
             "--history",
             dest="use_history",
             action=argparse.BooleanOptionalAction,

@@ -27,10 +27,7 @@ def _start() -> int:
 
     from pydtnn import rank
 
-    if rank == 0:
-        config = yaml.safe_load(resources.read_text("pydtnn", "logger.yaml"))
-        logging.config.dictConfig(config)
-    else:
+    if rank != 0:
         sys.stdout = sys.stderr = open(os.devnull, "w")
 
     from pydtnn.utils.parser import ArgumentParser
@@ -49,10 +46,16 @@ def main(config: Namespace) -> None:  # noqa: C901
     from pydtnn import environ as devices
     from pydtnn import package_name, rank, timestamp
     from pydtnn.utils import header, rand
+    from pydtnn.model import Model
+    rand.seed(config.random_seed)
 
     # Initialize
-    rand.seed(config.random_seed)
     if rank == 0:
+        log_conf = yaml.safe_load(resources.read_text("pydtnn", "logger.yaml"))
+        if not config.logger:
+            log_conf["loggers"][package_name]["handlers"].remove("file")
+            log_conf["handlers"].pop("file")
+        logging.config.dictConfig(log_conf)
         header("PyDTNN benchmark")
 
     # Environment
@@ -63,8 +66,6 @@ def main(config: Namespace) -> None:  # noqa: C901
     environ = {"timestamp": timestamp, "packages": packages, "devices": devices}
 
     # Create model
-    from pydtnn.model import Model
-
     model = Model(**vars(config))
     model.history_append(environ)
     model._ensure_runnable()

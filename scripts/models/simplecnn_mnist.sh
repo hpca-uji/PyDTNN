@@ -15,8 +15,7 @@ pydtnn-benchmark \
   --input-scale-size=16 \
   --augment-shuffle \
   --batch-size=64 \
-  --num-epochs=3 \
-  --history \
+  --num-epochs=10 \
   --steps-per-epoch=0 \
   --validation-split=0.2 \
   --evaluate \
