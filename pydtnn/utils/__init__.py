@@ -225,9 +225,9 @@ def map_factor[T: Mapping](*maps: T) -> tuple[T, list[T]]:
     keys = dict.fromkeys(itertools.chain.from_iterable(maps))
 
     for key in keys:
-        values = [item[key] for item in maps]
+        values = [item[key] for item in maps if key in item]
 
-        if all(isinstance(v, dict) for v in values):
+        if all(isinstance(v, Mapping) for v in values):
             sub_share, sub_diffs = map_factor(*values)
             if sub_share:
                 share[key] = sub_share
