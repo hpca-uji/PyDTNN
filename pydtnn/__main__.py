@@ -58,9 +58,9 @@ def main(config: Namespace) -> None:  # noqa: C901
         header("PyDTNN benchmark")
 
     # Environment
-    share, diffs = map_factor(*metadata)
-    diffs = list(filter(None, diffs))
-    environ = {**share, "config": diffs}
+    environ, diffs = map_factor(*metadata)
+    if diffs := list(filter(None, diffs)):
+        environ["config"] = diffs
 
     # Create model
     model = Model(**vars(config))
