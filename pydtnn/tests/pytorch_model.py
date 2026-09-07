@@ -260,9 +260,12 @@ def set_backward_hook(
     torch_backward_outputs = list[tuple[torch.nn.Module, tuple[torch.Tensor, ...] | torch.Tensor]]()
 
     # _grad_t = tuple[Tensor, ...] | Tensor
-    def hook(module: torch.nn.Module, grad_input: tuple[torch.Tensor, ...] | torch.Tensor,
-             grad_output: tuple[torch.Tensor, ...] | torch.Tensor) -> tuple[torch.Tensor, ...] | torch.Tensor | None:
-        """Torch backward's hook """
+    def hook(
+        module: torch.nn.Module,
+        grad_input: tuple[torch.Tensor, ...] | torch.Tensor,
+        grad_output: tuple[torch.Tensor, ...] | torch.Tensor,
+    ) -> tuple[torch.Tensor, ...] | torch.Tensor | None:
+        """Torch backward's hook"""
         output_copy = tuple([elem if elem is None else elem.clone() for elem in grad_output])
         torch_backward_outputs.append((module, output_copy))
 

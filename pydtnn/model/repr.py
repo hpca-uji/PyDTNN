@@ -59,9 +59,7 @@ class Repr[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
 
         if self.loss:
             loss_memory = (
-                utils.convert_size_bytes(self.loss.memory_used)
-                if self.loss.memory_used > 0
-                else ""
+                utils.convert_size_bytes(self.loss.memory_used) if self.loss.memory_used > 0 else ""
             )
             loss_tmp_memory = (
                 f"{utils.convert_size_bytes(self.loss.tmp_memory_used)} tmp"

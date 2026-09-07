@@ -4,11 +4,10 @@
 import logging
 import logging.config
 import os
-import platform
 import sys
 import time
 from argparse import Namespace
-from importlib import metadata, resources
+from importlib import resources
 
 import yaml
 
@@ -43,10 +42,9 @@ def _start() -> int:
 
 def main(config: Namespace) -> None:  # noqa: C901
     """Application entry point"""
-    from pydtnn import metadata
-    from pydtnn import package_name, rank, timestamp
+    from pydtnn import metadata, package_name, rank, timestamp
     from pydtnn.model import Model
-    from pydtnn.utils import header, rand, map_factor
+    from pydtnn.utils import header, map_factor, rand
 
     rand.seed(config.random_seed)
 

@@ -1,15 +1,15 @@
 """Utility functions and classes for the PyDTNN framework."""
 
-from copy import deepcopy
 import ctypes
+import itertools
 import logging
 import math
 import string
 import sys
 import threading
 import zipfile
-import itertools
 from collections.abc import Iterable, Mapping
+from copy import deepcopy
 from importlib import import_module, resources
 from pathlib import PurePath
 from queue import Queue
@@ -207,11 +207,7 @@ def map_merge[T: Mapping](*maps: T) -> T:
 
     for src in maps:
         for key, value in src.items():
-            if (
-                key in dst
-                and isinstance(dst[key], Mapping)
-                and isinstance(value, Mapping)
-            ):
+            if key in dst and isinstance(dst[key], Mapping) and isinstance(value, Mapping):
                 dst[key] = map_merge(dst[key], value)
             else:
                 dst[key] = deepcopy(value)

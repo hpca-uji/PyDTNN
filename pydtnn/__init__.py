@@ -1,15 +1,15 @@
 """PyDTNN environment initialization"""
 
 import atexit
+import itertools
 import logging
 import os
 import platform
 import subprocess
 import uuid
-import itertools
-from importlib import metadata as libdata
 from collections import Counter
 from datetime import datetime
+from importlib import metadata as libdata
 from types import ModuleType
 
 import psutil
@@ -251,9 +251,9 @@ metadata = [
             **{
                 pack: libdata.version(pack)
                 for pack in itertools.chain.from_iterable(libdata.packages_distributions().values())
-            }
+            },
         },
-        "environ": dict(os.environ)
+        "environ": dict(os.environ),
     }
 ]
 if MPI is not None:
