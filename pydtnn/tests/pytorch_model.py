@@ -231,7 +231,6 @@ def remove_inplace_pytorch(torch_model: torch.nn.Module) -> None:
 
 def set_forward_hook(torch_model: torch.nn.Module) -> list[tuple[torch.nn.Module, torch.Tensor]]:
     """Recursively sets the forward's 'hook' method."""
-
     torch_forward_outputs = list[tuple[torch.nn.Module, torch.Tensor]]()
 
     def hook(
@@ -261,14 +260,11 @@ def set_backward_hook(
     torch_backward_outputs = list[tuple[torch.nn.Module, tuple[torch.Tensor, ...] | torch.Tensor]]()
 
     # _grad_t = tuple[Tensor, ...] | Tensor
-    def hook(
-        module: torch.nn.Module,
-        grad_input: tuple[torch.Tensor, ...] | torch.Tensor,
-        grad_output: tuple[torch.Tensor, ...] | torch.Tensor,
-    ) -> tuple[torch.Tensor, ...] | torch.Tensor | None:
+    def hook(module: torch.nn.Module, grad_input: tuple[torch.Tensor, ...] | torch.Tensor,
+             grad_output: tuple[torch.Tensor, ...] | torch.Tensor) -> tuple[torch.Tensor, ...] | torch.Tensor | None:
+        """Torch backward's hook """
         output_copy = tuple([elem if elem is None else elem.clone() for elem in grad_output])
         torch_backward_outputs.append((module, output_copy))
-        # return output
 
     def _get_all_layers_pytorch(module: torch.nn.Module) -> None:
         # iterate through immediate child modules
@@ -566,7 +562,7 @@ class PytorchModelTestCase(TestCase):
         return loss, dx
 
     def compare_loss(self, loss_torch: torch.Tensor, _loss_pydtnn: float) -> None:
-        """Compare torch's loss and pydtnn's loss"""
+        """Method to compare Torch and PyDTNN losses."""
         _loss_torch = float(loss_torch.detach())
         print(f"{_loss_torch=} || {_loss_pydtnn=}")
         assert np.isclose(float(_loss_torch), _loss_pydtnn), (
