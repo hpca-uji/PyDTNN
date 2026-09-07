@@ -27,14 +27,14 @@ def BatchNorm2d(args: dict[str, Any]) -> BatchNormalization:
     # Not used: num_features, affine, track_running_stats
     pytorch_eps = "eps"  # Float
     pytorch_momentum = "momentum"  # Float
-    #pytorch_bias = "bias"  # Bool
+    # pytorch_bias = "bias"  # Bool
 
     torch_dict_keys = [pytorch_momentum, pytorch_eps]
 
     # PyDTNN attributes:
     pydtnn_momentum = "momentum"
     pydtnn_epsilon = "epsilon"
-    #pydtnn_use_bias = "use_bias"
+    # pydtnn_use_bias = "use_bias"
 
     pydtnn_dict_keys = [pydtnn_momentum, pydtnn_epsilon]
 

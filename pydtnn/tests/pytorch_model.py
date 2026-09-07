@@ -920,8 +920,8 @@ class PytorchModelTestCase(TestCase):
         torch_params = get_torch_parameters_values(torch_model)
         pydtnn_params = get_pydtnn_vars_values(pydtnn_model)
         assert len(torch_params) == len(pydtnn_params), "Torch and PyDTNN parameters must have the same " \
-                                                         f"number of elements: {len(torch_params)=} || " \
-                                                         f"{len(pydtnn_params)=}"
+                                                        f"number of elements: {len(torch_params)=} || " \
+                                                        f"{len(pydtnn_params)=}"
 
         for i in pydtnn_params.keys():
             pydtnn_layer = pydtnn_model.layers[i]
@@ -931,7 +931,8 @@ class PytorchModelTestCase(TestCase):
                 if torch_param is None:
                     if verbose_test():
                         print(f"{pydtnn_layer} - torch_param is None")
-                    assert pydtnn_param is None, f"{pydtnn_layer} torch's parameter is None, but the PyDTNN one is: {pydtnn_param}"
+                    assert pydtnn_param is None, f"{pydtnn_layer} torch's parameter is None, " \
+                                                 f"but the PyDTNN one is: {pydtnn_param}"
                 else:
                     if verbose_test():
                         print(f"{pydtnn_layer} - torch_param is not None")
@@ -939,7 +940,7 @@ class PytorchModelTestCase(TestCase):
                     if verbose_test():
                         print(f"{pydtnn_layer.name_with_id} || {torch_param.size} || {pydtnn_param.size}")
                     assert torch_param.size == pydtnn_param.size, f"{pydtnn_layer} Both tensors must have the same size: " \
-                                                                f"({torch_param.size=} =/= {pydtnn_param.size=})"
+                                                                  f"({torch_param.size=} =/= {pydtnn_param.size=})"
                     if isinstance(pydtnn_layer, FC) and var_key is Parameters.WEIGHTS:
                         if verbose_test():
                             print(f"The layer is \"FC\" and the var is \"{Parameters.WEIGHTS}\""
@@ -1039,7 +1040,6 @@ class PytorchModelTestCase(TestCase):
 
             # Compare Optimizer's results
             self.compare_parameters(model_torch, model_pydtnn)
-
 
     @unittest.skip("Large model")
     def test_renset50(self) -> None:
