@@ -27,6 +27,7 @@ class BatchNormalization[T: Array](Layer[T]):  # noqa: D101 (generics not detect
         weights_initializer: Callable = ones,
         biases_initializer: Callable = zeros,
         sync_stats: bool = False,
+        use_bias: bool = True
     ) -> None:
         """
         Initializes the BatchNormalization layer.
@@ -39,19 +40,26 @@ class BatchNormalization[T: Array](Layer[T]):  # noqa: D101 (generics not detect
             weights_initializer (Callable): Initializer function for the weights.
             biases_initializer (Callable): Initializer function for the biases.
             sync_stats (bool): Whether to synchronize statistics across devices.
+            use_bias(bool): Whether to include a bias term.
         """
         super().__init__()
         self.momentum = momentum
         self.epsilon = epsilon
+        self.use_bias = use_bias
         self.running_mean_initializer: Callable[[ArrayShape, np.dtype], np.ndarray] = (
             running_mean_initializer
         )
         self.running_var_initializer: Callable[[ArrayShape, np.dtype], np.ndarray] = (
             running_var_initializer
         )
+        if self.use_bias:
+            biases_initializer = zeros
+
         self.biases_initializer: Callable[[ArrayShape, np.dtype], np.ndarray] = biases_initializer
         self.weights_initializer: Callable[[ArrayShape, np.dtype], np.ndarray] = weights_initializer
-        self.grad_vars = {Parameters.WEIGHTS: Parameters.DW, Parameters.BIASES: Parameters.DB}
+        self.grad_vars = {Parameters.WEIGHTS: Parameters.DW}
+        if self.use_bias:
+            self.grad_vars[Parameters.BIASES] = Parameters.DB
         self.sync_stats = sync_stats
         # The following attributes will be initialized later
         self.co = self.ci = self.hi = self.wi = 0

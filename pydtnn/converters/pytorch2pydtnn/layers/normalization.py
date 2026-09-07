@@ -27,13 +27,14 @@ def BatchNorm2d(args: dict[str, Any]) -> BatchNormalization:
     # Not used: num_features, affine, track_running_stats
     pytorch_eps = "eps"  # Float
     pytorch_momentum = "momentum"  # Float
+    #pytorch_bias = "bias"  # Bool
 
     torch_dict_keys = [pytorch_momentum, pytorch_eps]
 
     # PyDTNN attributes:
     pydtnn_momentum = "momentum"
     pydtnn_epsilon = "epsilon"
-    # pydtnn_use_bias = "use_bias"
+    #pydtnn_use_bias = "use_bias"
 
     pydtnn_dict_keys = [pydtnn_momentum, pydtnn_epsilon]
 
@@ -42,6 +43,7 @@ def BatchNorm2d(args: dict[str, Any]) -> BatchNormalization:
         torch_dict_keys=torch_dict_keys,
         pydtnn_dict_keys=pydtnn_dict_keys,
     )
+    layer_args["use_bias"] = args[cm.ARGUMENTS]["_parameters"]["bias"] is not None
 
     vars_initiaizers_transpose: dict[str, tuple[str, None | tuple[str, str]]]
     vars_initiaizers_transpose = {

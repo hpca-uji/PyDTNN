@@ -215,10 +215,11 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
 
         np.multiply(dy, self.xn, out=dy_xn, dtype=self.model.dtype)
         np.sum(dy_xn, axis=0, out=self.dw, dtype=self.model.dtype)
-        np.sum(dy, axis=0, out=self.db, dtype=self.model.dtype)
-
         self.dw = np.asarray(self.dw, dtype=self.model.dtype, order="C")
-        self.db = np.asarray(self.db, dtype=self.model.dtype, order="C")
+
+        if self.use_bias:
+            np.sum(dy, axis=0, out=self.db, dtype=self.model.dtype)
+            self.db = np.asarray(self.db, dtype=self.model.dtype, order="C")
 
         self._training_bwd(dx, dy)
 
