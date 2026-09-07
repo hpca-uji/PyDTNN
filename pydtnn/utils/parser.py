@@ -943,11 +943,11 @@ class ArgumentParser(argparse.ArgumentParser):
             "--metrics",
             dest="metric_names",
             type=css,
-            default=ModelBase.metric_names,
+            default=ModelBase.metrics,
             help=(
                 "List of comma-separated metrics that are evaluated on each trained batch:"
                 f" {', '.join(map(repr, metrics))}, etc."
-                f" Default: {ModelBase.metric_names!r}."
+                f" Default: {ModelBase.metrics!r}."
             ),
         )
 

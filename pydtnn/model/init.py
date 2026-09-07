@@ -117,11 +117,11 @@ class Init[T: Array](Repr[T]):  # noqa: D101 (generics not detected)
             self.dataset = None  # pyright: ignore[reportAttributeAccessIssue]
 
         # Loss [NOTE: after Dataset]
-        self.loss_func = select_loss(self.loss_name).from_model(self)
+        self.loss = select_loss(self.loss_name).from_model(self)
 
         # Metic [NOTE: after Loss]
-        metrics = [(m, select_metric(m).from_model(self)) for m in self.metric_names]
-        self.metric_names, self.metrics_funcs = map(tuple, zip(*metrics))
+        metrics = [(m, select_metric(m).from_model(self)) for m in self.metrics]
+        self.metrics, self.metric_funcs = map(tuple, zip(*metrics))
 
         # Schedulers [NOTE: after Metric]
         self.schedulers = [
@@ -134,7 +134,7 @@ class Init[T: Array](Repr[T]):  # noqa: D101 (generics not detected)
 
         # Layers [NOTE: as late as posible, it call self._model_init]
         if model_name := self.model_name:
-            self._layers_init(model_name)
+            self._select_layers(model_name)
 
     def _mpi_init(self) -> None:
         """Initializes MPI communication settings and process ranks."""
@@ -321,7 +321,7 @@ class Init[T: Array](Repr[T]):  # noqa: D101 (generics not detected)
 
         self.tracer = tracer
 
-    def _layers_init(self, model_name: str) -> None:
+    def _select_layers(self, model_name: str) -> None:
         """
         Initializes model layers from a predefined model name.
 
@@ -372,24 +372,24 @@ class Init[T: Array](Repr[T]):  # noqa: D101 (generics not detected)
 
         self._apply_layer_fusion()
 
-        self.loss_func._init_backend_with_model(self)
-        self.loss_func._model_init()
-        self.memory_used += self.loss_func.memory_used
-        temp_memory_size.append(self.loss_func.tmp_memory_used)
+        self.loss._init_backend_with_model(self)
+        self.loss._model_init()
+        self.memory_used += self.loss.memory_used
+        temp_memory_size.append(self.loss.tmp_memory_used)
 
-        for metric in self.metrics_funcs:
+        for metric in self.metric_funcs:
             metric._init_backend_with_model(self)
             metric._model_init()
             self.memory_used += metric.memory_used
             temp_memory_size.append(metric.tmp_memory_used)
 
-        metrics = list(zip(self.metric_names, self.metrics_funcs))
+        metrics = list(zip(self.metrics, self.metric_funcs))
         metrics.sort(key=lambda metric: metric[1].order())
-        self.metric_names, self.metrics_funcs = map(tuple, zip(*metrics))
+        self.metrics, self.metric_funcs = map(tuple, zip(*metrics))
 
-        self.loss_and_metric_names = (self.loss_name, *self.metric_names)
-        self.loss_and_metric_format = [self.loss_func.format] + [
-            metric.format for metric in self.metrics_funcs
+        self.loss_and_metric_names = (self.loss_name, *self.metrics)
+        self.loss_and_metric_formats = [self.loss.format] + [
+            metric.format for metric in self.metric_funcs
         ]
 
         for scheduler in self.schedulers:
@@ -411,9 +411,9 @@ class Init[T: Array](Repr[T]):  # noqa: D101 (generics not detected)
         for layer in self.get_all_layers():
             layer._post_init()
 
-        self.loss_func._post_init()
+        self.loss._post_init()
 
-        for metric in self.metrics_funcs:
+        for metric in self.metric_funcs:
             metric._post_init()
 
         for scheduler in self.schedulers:

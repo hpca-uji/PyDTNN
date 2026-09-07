@@ -515,8 +515,8 @@ class PytorchLayerTestCase(TestCase):
         flattened_output_shape = (int(np.prod(pydtnn_model.layers[-1].shape)),)
         pydtnn_model.layers[-1].shape = flattened_output_shape
         # pydtnn_model.loss_func.shape = (_x.shape[0], flattened_output_shape)
-        pydtnn_model.loss_func._model_init()
-        pydtnn_model.loss_func._post_init()
+        pydtnn_model.loss._model_init()
+        pydtnn_model.loss._post_init()
 
         num_elems = len("Testing: ") + len(name_test)
         if verbose_test():
@@ -537,7 +537,7 @@ class PytorchLayerTestCase(TestCase):
         print(f"{x_reshaped=}")
 
         pydtnn_model.real_batch_size = N
-        _loss, dx = pydtnn_model.loss_func.compute(x_reshaped, y)
+        _loss, dx = pydtnn_model.loss.compute(x_reshaped, y)
 
         dx: np.ndarray = dx.reshape(x_base_shape)
         for layer in reversed(pydtnn_model.layers):

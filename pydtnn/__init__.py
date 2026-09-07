@@ -6,9 +6,13 @@ import os
 import platform
 import subprocess
 import uuid
+import itertools
+from importlib import metadata as libdata
 from collections import Counter
 from datetime import datetime
 from types import ModuleType
+
+import psutil
 
 __all__ = (
     "MPI_MODULE",
@@ -39,7 +43,7 @@ __all__ = (
     "stream_handle",
     "cudnn_handle",
     "cublas_handle",
-    "environ",
+    "metadata",
 )
 
 logger = logging.getLogger(__name__)
@@ -131,7 +135,6 @@ except Exception as e:
     cublas = None
     gpu_errors.append(e)
 
-
 # INIT MPI
 if MPI is not None:
     rank = MPI.COMM_WORLD.rank
@@ -153,20 +156,6 @@ supported_gpu = num_gpus > 0
 cuda_gpu = rank % num_gpus if supported_gpu else None
 if supported_gpu:
     os.environ["CUDA_VISIBLE_DEVICES"] = str(cuda_gpu)
-
-# INIT META
-environ = [
-    {
-        "id": uuid.getnode(),
-        "name": " ".join(platform.uname()),
-        "cpu": os.process_cpu_count(),
-        "gpu": cuda_gpu,
-        "mpi": rank,
-        "env": dict(os.environ),
-    }
-]
-if MPI is not None:
-    environ = MPI.COMM_WORLD.allgather(environ[0])
 
 # INIT NCCL
 if nccl is not None and num_gpus > 0:
@@ -247,3 +236,25 @@ if cudnn is not None and stream_handle is not None:
 # SYNC CUBLAS+CUDA
 if cublas is not None and stream_handle is not None:
     cublas.cublasSetStream(cublas_handle, stream_handle)
+
+# ENVIRONMENT
+metadata = [
+    {
+        "time": timestamp,
+        "node": uuid.getnode(),
+        "host": " ".join(platform.uname()).strip(),
+        "cpu": str(tuple(psutil.Process().cpu_affinity())),
+        "gpu": str((cuda_gpu,) if cuda_gpu is not None else ()),
+        "mpi": str((rank,)),
+        "packages": {
+            platform.python_implementation().lower(): platform.python_version(),
+            **{
+                pack: libdata.version(pack)
+                for pack in itertools.chain.from_iterable(libdata.packages_distributions().values())
+            }
+        },
+        "environ": dict(os.environ)
+    }
+]
+if MPI is not None:
+    metadata = MPI.COMM_WORLD.allgather(metadata[0])

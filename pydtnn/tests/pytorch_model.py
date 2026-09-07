@@ -558,7 +558,7 @@ class PytorchModelTestCase(TestCase):
     ) -> tuple[float, np.ndarray]:
         """Method execute the pydtnn's loss"""
         model.real_batch_size = model.batch_size
-        loss, dx = model.loss_func.compute(x.copy(), y)
+        loss, dx = model.loss.compute(x.copy(), y)
         return loss, dx
 
     def compare_loss(self, loss_torch: torch.Tensor, _loss_pydtnn: float) -> None:

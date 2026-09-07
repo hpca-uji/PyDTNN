@@ -112,7 +112,7 @@ class ModelTestCase(TestCase):
             ) from exc
         model1._model_init()
         # loss function
-        loss_func = model1.loss_func
+        loss_func = model1.loss
         return model1, loss_func
 
     def get_model2(self, model_name: str, overwrite_params: dict | None = None) -> Model:

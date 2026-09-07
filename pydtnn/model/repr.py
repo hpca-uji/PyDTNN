@@ -57,15 +57,15 @@ class Repr[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
             if memory:
                 props["memory"] = memory
 
-        if self.loss_func:
+        if self.loss:
             loss_memory = (
-                utils.convert_size_bytes(self.loss_func.memory_used)
-                if self.loss_func.memory_used > 0
+                utils.convert_size_bytes(self.loss.memory_used)
+                if self.loss.memory_used > 0
                 else ""
             )
             loss_tmp_memory = (
-                f"{utils.convert_size_bytes(self.loss_func.tmp_memory_used)} tmp"
-                if self.loss_func.tmp_memory_used > 0
+                f"{utils.convert_size_bytes(self.loss.tmp_memory_used)} tmp"
+                if self.loss.tmp_memory_used > 0
                 else ""
             )
             if loss_memory and loss_tmp_memory:
@@ -75,10 +75,10 @@ class Repr[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
             if loss_memory:
                 props["loss-memory"] = loss_memory
 
-        if self.metrics_funcs:
+        if self.metric_funcs:
             metrics_size = 0
             metrics_temp_size = 0
-            for metric in self.metrics_funcs:
+            for metric in self.metric_funcs:
                 metrics_size += metric.memory_used
                 metrics_temp_size += metric.tmp_memory_used
             metrics_memory = utils.convert_size_bytes(metrics_size) if metrics_size > 0 else ""

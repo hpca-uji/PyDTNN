@@ -22,7 +22,7 @@ class Precision[T: Array](Metric[T]):  # noqa: D101 (generics not detected)
     conf_matrix_metric: BinaryConfusionMatrix[T] = None  # pyright: ignore[reportAssignmentType]
 
     def order(self) -> int:
-        for metric in self.model.metrics_funcs:
+        for metric in self.model.metric_funcs:
             if isinstance(metric, BinaryConfusionMatrix):
                 break
         else:
@@ -32,7 +32,7 @@ class Precision[T: Array](Metric[T]):  # noqa: D101 (generics not detected)
     def _model_init(self) -> None:
         """Initializes the metric by locating the required BinaryConfusionMatrix within the model's metrics."""
         super()._model_init()
-        for metric in self.model.metrics_funcs:
+        for metric in self.model.metric_funcs:
             if isinstance(metric, BinaryConfusionMatrix):
                 self.conf_matrix_metric = metric
                 break

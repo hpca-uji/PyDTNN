@@ -62,11 +62,11 @@ class State[T: Array](Init[T]):  # noqa: D101 (generics not detected)
         if config:
             props["config"] = config
 
-        if self.loss_func:
-            props["loss"] = self.loss_func._show_props()
+        if self.loss:
+            props["loss"] = self.loss._show_props()
 
-        if self.metrics_funcs:
-            props["metrics"] = [metric._show_props() for metric in self.metrics_funcs]
+        if self.metric_funcs:
+            props["metrics"] = [metric._show_props() for metric in self.metric_funcs]
 
         if self.optimizer:
             props["optimizer"] = self.optimizer._show_props()
@@ -124,7 +124,7 @@ class State[T: Array](Init[T]):  # noqa: D101 (generics not detected)
             )
 
         if model_name and not self._model_inited and not self.layers:
-            self._layers_init(model_name)
+            self._select_layers(model_name)
 
         for layer, data in zip(self.layers, data[Parameters.LAYERS]):
             layer.import_(data)  # pyright: ignore[reportArgumentType]

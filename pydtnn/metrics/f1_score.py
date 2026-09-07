@@ -17,7 +17,7 @@ class F1Score[T: Array](Metric[T]):  # noqa: D101 (generics not detected)
     conf_matrix_metric: BinaryConfusionMatrix = None  # pyright: ignore[reportAssignmentType]
 
     def order(self) -> int:
-        for metric in self.model.metrics_funcs:
+        for metric in self.model.metric_funcs:
             if isinstance(metric, BinaryConfusionMatrix):
                 break
         else:
@@ -27,7 +27,7 @@ class F1Score[T: Array](Metric[T]):  # noqa: D101 (generics not detected)
     def _model_init(self) -> None:
         """Initializes the metric by locating the required BinaryConfusionMatrix in the model."""
 
-        for metric in self.model.metrics_funcs:
+        for metric in self.model.metric_funcs:
             if isinstance(metric, BinaryConfusionMatrix):
                 self.conf_matrix_metric = metric
                 break

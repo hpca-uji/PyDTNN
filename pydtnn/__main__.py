@@ -43,10 +43,10 @@ def _start() -> int:
 
 def main(config: Namespace) -> None:  # noqa: C901
     """Application entry point"""
-    from pydtnn import environ as devices
+    from pydtnn import metadata
     from pydtnn import package_name, rank, timestamp
     from pydtnn.model import Model
-    from pydtnn.utils import header, rand
+    from pydtnn.utils import header, rand, map_factor
 
     rand.seed(config.random_seed)
 
@@ -60,11 +60,9 @@ def main(config: Namespace) -> None:  # noqa: C901
         header("PyDTNN benchmark")
 
     # Environment
-    packages = {platform.python_implementation().lower(): platform.python_version()}
-    for packs in metadata.packages_distributions().values():
-        for pack in packs:
-            packages[pack] = metadata.version(pack)
-    environ = {"timestamp": timestamp, "packages": packages, "devices": devices}
+    share, diffs = map_factor(*metadata)
+    diffs = list(filter(None, diffs))
+    environ = {**share, "config": diffs}
 
     # Create model
     model = Model(**vars(config))

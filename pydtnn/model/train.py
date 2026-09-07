@@ -66,7 +66,7 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
                 )
                 x = layer.forward(x)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
-            loss, dx = self.loss_func.compute(x, y_targ)
+            loss, dx = self.loss.compute(x, y_targ)
         else:
             if y_targ.shape[0] != x.shape[0]:
                 raise ValueError(
@@ -256,11 +256,11 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
             train_batch_generator, val_batch_generator = self.dataset.get_train_val_generator()
             sync_epoch = False
 
-            train_local_loss = np.zeros(len(self.metrics_funcs) + 2, dtype=np.object_)
-            val_local_loss = np.zeros(len(self.metrics_funcs) + 2, dtype=np.object_)
+            train_local_loss = np.zeros(len(self.metric_funcs) + 2, dtype=np.object_)
+            val_local_loss = np.zeros(len(self.metric_funcs) + 2, dtype=np.object_)
 
-            train_global_loss = np.zeros(len(self.metrics_funcs) + 2, dtype=np.object_)
-            val_global_loss = np.zeros(len(self.metrics_funcs) + 2, dtype=np.object_)
+            train_global_loss = np.zeros(len(self.metric_funcs) + 2, dtype=np.object_)
+            val_global_loss = np.zeros(len(self.metric_funcs) + 2, dtype=np.object_)
 
             for sched in self.schedulers:
                 sched.on_epoch_begin()
@@ -353,12 +353,12 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
                     terminate = True
 
             for m in range(len(self.loss_and_metric_names)):
-                value = self.loss_and_metric_format[m](train_global_loss[m])
+                value = self.loss_and_metric_formats[m](train_global_loss[m])
                 if "\n" in value:
                     logger.info(f"{Dataset.Part.TRAIN._name_.lower()}_{value}")
 
             for m in range(len(self.loss_and_metric_names)):
-                value = self.loss_and_metric_format[m](val_global_loss[m])
+                value = self.loss_and_metric_formats[m](val_global_loss[m])
                 if "\n" in value:
                     logger.info(f"{Dataset.Part.VAL._name_.lower()}_{value}")
 

@@ -93,12 +93,12 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
     kwargs: dict[str, Any]
     layers: list[Layerable[T]]
     loss_and_metric_names: tuple[str, ...]
-    loss_func: Loss[T]
+    loss: Loss[T]
     schedulers: list[Scheduler]
     memory_cls: type[PrivateMemory]
     memory_used: int
     memory: PrivateMemory
-    metrics_funcs: tuple[Metric[T], ...]
+    metric_funcs: tuple[Metric[T], ...]
     MPI: MPI_MODULE
     nccl_comm: Any
     nccl_type: Any
@@ -206,7 +206,7 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
     loss_eps: float = 1e-8
     class_weights: tuple[float, ...] = ()
     use_class_weights: bool = False
-    metric_names: tuple[str, ...] = ("categorical_accuracy",)
+    metrics: tuple[str, ...] = ("categorical_accuracy",)
     schedulers_names: tuple[str, ...] = (
         "early_stopping",
         "reduce_lr_on_plateau",

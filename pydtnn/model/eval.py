@@ -66,11 +66,11 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
         _losses: np.ndarray | None
 
         if batch_size > 0:
-            metrics = [func.compute(y_pred, y_targ) for func in self.metrics_funcs]
+            metrics = [func.compute(y_pred, y_targ) for func in self.metric_funcs]
             _losses = np.array([loss, *metrics, 1], dtype=np.object_)
             _losses *= batch_size
         else:
-            _losses = np.zeros(len(self.metrics_funcs) + 2, dtype=np.object_)
+            _losses = np.zeros(len(self.metric_funcs) + 2, dtype=np.object_)
 
         return _losses, loss_req  # pyright: ignore[reportReturnType]
 
@@ -85,7 +85,7 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
         if not size:
             return "processing…"
         for i in range(len(self.loss_and_metric_names)):
-            value = self.loss_and_metric_format[i](metric[i] / size)
+            value = self.loss_and_metric_formats[i](metric[i] / size)
             if "\n" not in value:
                 string.append(prefix + value)
         return ", ".join(string)
@@ -126,7 +126,7 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
                 )
                 x = self.layers[i].forward(x)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
-            loss, _ = self.loss_func.compute(x, y_targ)
+            loss, _ = self.loss.compute(x, y_targ)
         else:
             if y_targ.shape[0] != x.shape[0]:
                 raise ValueError(
@@ -320,8 +320,8 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
         if self.profile:
             self.profiler.enable()
 
-        test_local_loss = np.zeros(len(self.metrics_funcs) + 2, np.object_)
-        test_global_loss = np.zeros(len(self.metrics_funcs) + 2, np.object_)
+        test_local_loss = np.zeros(len(self.metric_funcs) + 2, np.object_)
+        test_global_loss = np.zeros(len(self.metric_funcs) + 2, np.object_)
 
         if self.comm_rank == 0:
             pbar = tqdm(
@@ -369,7 +369,7 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
         )
 
         for m in range(len(self.loss_and_metric_names)):
-            value = self.loss_and_metric_format[m](test_global_loss[m])
+            value = self.loss_and_metric_formats[m](test_global_loss[m])
             if "\n" in value:
                 logger.info(f"{Dataset.Part.TEST._name_.lower()}_{value}")
 

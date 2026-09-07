@@ -1,5 +1,6 @@
 """Utility functions and classes for the PyDTNN framework."""
 
+from copy import deepcopy
 import ctypes
 import logging
 import math
@@ -7,7 +8,8 @@ import string
 import sys
 import threading
 import zipfile
-from collections.abc import Iterable
+import itertools
+from collections.abc import Iterable, Mapping
 from importlib import import_module, resources
 from pathlib import PurePath
 from queue import Queue
@@ -197,3 +199,52 @@ def read_file(path: str, replaces: dict[str, str] = {}) -> str:
 def read_dir(path: str) -> list[str]:
     """List directory content from inside the package"""
     return [resource.name for resource in resources.files(package_name).joinpath(path).iterdir()]
+
+
+def map_merge[T: Mapping](*maps: T) -> T:
+    """Merge mappings recursively"""
+    dst = {}
+
+    for src in maps:
+        for key, value in src.items():
+            if (
+                key in dst
+                and isinstance(dst[key], Mapping)
+                and isinstance(value, Mapping)
+            ):
+                dst[key] = map_merge(dst[key], value)
+            else:
+                dst[key] = deepcopy(value)
+
+    return dst
+
+
+def map_factor[T: Mapping](*maps: T) -> tuple[T, list[T]]:
+    """Factor mappings recursively"""
+    if not maps:
+        return {}, []
+
+    share = {}
+    diffs = [{} for _ in maps]
+    keys = dict.fromkeys(itertools.chain.from_iterable(maps))
+
+    for key in keys:
+        values = [item[key] for item in maps]
+
+        if all(isinstance(v, dict) for v in values):
+            sub_share, sub_diffs = map_factor(*values)
+            if sub_share:
+                share[key] = sub_share
+            for dst, src in zip(diffs, sub_diffs):
+                if src:
+                    dst[key] = src
+
+        elif all(v == values[0] for v in values[1:]):
+            share[key] = deepcopy(values[0])
+
+    for i, item in enumerate(maps):
+        for key, value in item.items():
+            if key not in share and key not in diffs[i]:
+                diffs[i][key] = deepcopy(value)
+
+    return share, diffs
