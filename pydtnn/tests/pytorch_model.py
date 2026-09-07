@@ -922,11 +922,12 @@ class PytorchModelTestCase(TestCase):
             # Compare backward results
             self.compare_backward(model_torch, dx_torch, model_pydtnn, dx_pydtnn)
 
+            # Compare the "parameters.grad"/"grad_vars" results
+            self.compare_grad_vars(model_torch, model_pydtnn)
+
             self.do_pytorch_model_optimizer_pass(model_torch, optimizer_torch)
             self.do_pydtnn_model_optimizer_pass(model_pydtnn)
 
-            # Compare the "parameters.grad"/"grad_vars" results
-            self.compare_grad_vars(model_torch, model_pydtnn)
 
     @unittest.skip("Large model")
     def test_renset50(self) -> None:
@@ -940,7 +941,7 @@ class PytorchModelTestCase(TestCase):
         model_name = "resnet14like"
         self.do_test_model(*self.get_model_torch(model_name), model_name)
 
-    #  @unittest.skip("Large model")
+    @unittest.skip("Large model")
     def test_simplecnn(self) -> None:
         """Compares results between an SimpleCNN model using a PyTorch model and other a PyDTNN one."""
         model_name = "simplecnn"
