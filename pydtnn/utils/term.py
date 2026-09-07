@@ -27,7 +27,7 @@ try:
     from _colorize import can_colorize  # pyright: ignore[reportMissingTypeStubs]
 
     FANCY = can_colorize()  # pyright: ignore[reportConstantRedefinition]
-    FANCY = can_colorize(file=sys.stderr)  # pyright: ignore[reportConstantRedefinition]
+    FANCY = can_colorize(file=sys.stderr)  # pyright: ignore[reportCallIssue, reportConstantRedefinition]
 except Exception:
     pass
 
