@@ -225,7 +225,7 @@ def map_factor[T: Mapping](*maps: T) -> tuple[T, list[T]]:
     keys = dict.fromkeys(itertools.chain.from_iterable(maps))
 
     for key in keys:
-        values = [item[key] for item in maps if key in item]
+        values = [src[key] for src in maps if key in src]
 
         if all(isinstance(v, Mapping) for v in values):
             sub_share, sub_diffs = map_factor(*values)
@@ -238,8 +238,8 @@ def map_factor[T: Mapping](*maps: T) -> tuple[T, list[T]]:
         elif all(v == values[0] for v in values[1:]):
             share[key] = deepcopy(values[0])
 
-    for i, item in enumerate(maps):
-        for key, value in item.items():
+    for i, src in enumerate(maps):
+        for key, value in src.items():
             if key not in share and key not in diffs[i]:
                 diffs[i][key] = deepcopy(value)
 
