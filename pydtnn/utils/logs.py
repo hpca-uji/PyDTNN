@@ -4,7 +4,7 @@ import logging
 from pathlib import Path
 from typing import Any
 
-from pydtnn import package_name, timestamp
+from pydtnn import package_name, timestamp, state_path
 from pydtnn.utils import logger
 
 
@@ -31,5 +31,5 @@ class TimestampedFileHandler(logging.FileHandler):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize file logger"""
-        path = Path(f"{package_name}-{timestamp}.log").resolve()
+        path = Path(f"{state_path}/{package_name}-{timestamp}.log").resolve()
         super().__init__(filename=path, mode="w", *args, **kwargs)

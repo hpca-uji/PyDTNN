@@ -4,7 +4,7 @@ import logging
 
 import numpy as np
 
-from pydtnn import package_name, timestamp, utils
+from pydtnn import package_name, timestamp, utils, state_path
 from pydtnn.model.base import Base
 from pydtnn.utils.constants import Array, ArrayShape
 from pydtnn.utils.tensor import decode_shape, decode_tensor, encode_shape, encode_tensor
@@ -60,7 +60,7 @@ class Utils[T: Array](Base[T]):  # noqa: D101 (generics not detected)
     def history_file(self) -> str:
         """Raw history path with rank substituted"""
         if self.use_history and self.comm_rank == 0:
-            return f"{package_name}-{timestamp}.yaml"
+            return f"{state_path}/{package_name}-{timestamp}.yaml"
         else:
             return ""
 

@@ -16,7 +16,7 @@ from pathlib import Path
 from traceback import TracebackException
 from typing import Any
 
-from pydtnn import package_name, timestamp
+from pydtnn import package_name, timestamp, state_path
 
 __all__ = (
     "debug_func",
@@ -117,8 +117,7 @@ def traceback_context() -> Generator[None, Any, None]:
     try:
         yield
     except Exception as exc:
-        path = Path(f"{package_name}-{timestamp}.err").resolve()
+        path = Path(f"{state_path}/{package_name}-{timestamp}.err").resolve()
         with path.open(mode="a") as file:
             TracebackException.from_exception(exc, capture_locals=True).print(file=file)  # noqa: DB100
-        logger.info(f"Dumped traceback details to: {path}")
         raise

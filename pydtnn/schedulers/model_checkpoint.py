@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from pydtnn import timestamp
+from pydtnn import state_path, package_name, timestamp
 from pydtnn.schedulers.abstract.scheduler_with_loss_or_metric import SchedulerWithLossOrMetric
 
 __all__ = ("ModelCheckpoint",)
@@ -90,12 +90,12 @@ class ModelCheckpoint(SchedulerWithLossOrMetric):
             # Save the model if the epoch count is a multiple of the save frequency.
             if (self.epoch_count % self.epoch_save_frequency) == 0:
                 # Construct a unique filename including model name, epoch, and timestamp.
-                self.filename = (
-                    f"./model-{self.model.model_name}-epoch-{self.epoch_count}-{timestamp}.npz"
-                )
+                name = f"{self.model.model_name or package_name}-e{self.epoch_count}-{timestamp}.npz"
+                self.filename = f"{state_path}/{name}"
                 # Save the model's state.
                 self.model.save_model_state(self.filename)
-                self.log(f"Saving model weights and bias in '{self.filename}'.")
+                if self.model.comm_rank == 0:
+                    logger.info(f"Saving model weights and bias in '{self.filename}'.")
                 # If this is a distributed training setup and we have a previous file,
                 # remove the old checkpoint to save disk space.
                 if self.model.comm_rank == 0 and self.last_filename is not None:

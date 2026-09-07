@@ -43,6 +43,7 @@ __all__ = (
     "stream_handle",
     "cudnn_handle",
     "cublas_handle",
+    "state_path",
     "metadata",
 )
 
@@ -55,6 +56,7 @@ type Cublas_Handle_Type = int
 
 gpu_errors = []
 package_name = __name__
+state_path = os.environ.get(f"{package_name.upper()}_STATE", ".")
 timestamp = (
     datetime.now()
     .isoformat(timespec="seconds")

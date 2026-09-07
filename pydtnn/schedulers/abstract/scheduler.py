@@ -47,13 +47,3 @@ class Scheduler(Base):
     def on_epoch_end(self, *args: Any) -> None:
         """Hook called at the end of a training epoch."""
         pass
-
-    def log(self, text: str) -> None:
-        """
-        Log a message if verbose mode is enabled and the process is the primary rank.
-
-        Args:
-            text: The message to log.
-        """
-        if self.verbose and self.model.comm_rank == 0:
-            logger.info(f"{self}: {text}")

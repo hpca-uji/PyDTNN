@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from pydtnn import timestamp
+from pydtnn import state_path, package_name, timestamp
 from pydtnn.schedulers.abstract.scheduler_with_loss_or_metric import SchedulerWithLossOrMetric
 
 __all__ = ("EarlyStopping",)
@@ -82,20 +82,16 @@ class EarlyStopping(SchedulerWithLossOrMetric):
             self.best_epoch = self.epoch_count
             # Save weights + bias
             if not self.best_weights_filename:
-                self.best_weights_filename = f"./model-{self.model.model_name}-weights-rank_{
-                    self.model.comm_rank
-                }-{timestamp}.npz"
+                name = f"{self.model.model_name or package_name}-r{self.model.comm_rank}-{timestamp}.npz"
+                self.best_weights_filename = f"{state_path}/{name}"
             self.model.save_model_state(self.best_weights_filename, compress=False)
         elif (self.epoch_count - self.best_epoch) >= self.patience:
             self.stop_training = True
             # Restore weights + bias
             assert self.best_weights_filename
             self.model.load_model_state(self.best_weights_filename)
-            self.log(
-                f"Metric '{self.loss_or_metric}' did not improve for {
-                    self.patience
-                } epochs, stop training."
-            )
+            if self.model.comm_rank == 0:
+                logger.info(f"Metric '{self.loss_or_metric}' did not improve for {self.patience} epochs, stop training.")
         # else: do nothing.
 
     @classmethod
