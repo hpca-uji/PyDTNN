@@ -4,7 +4,7 @@ import logging
 
 import numpy as np
 
-from pydtnn import package_name, timestamp, utils, state_path
+from pydtnn import package_name, state_path, timestamp, utils
 from pydtnn.model.base import Base
 from pydtnn.utils.constants import Array, ArrayShape
 from pydtnn.utils.tensor import decode_shape, decode_tensor, encode_shape, encode_tensor

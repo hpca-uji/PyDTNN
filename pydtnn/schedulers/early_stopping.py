@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from pydtnn import state_path, package_name, timestamp
+from pydtnn import package_name, state_path, timestamp
 from pydtnn.schedulers.abstract.scheduler_with_loss_or_metric import SchedulerWithLossOrMetric
 
 __all__ = ("EarlyStopping",)
@@ -91,7 +91,9 @@ class EarlyStopping(SchedulerWithLossOrMetric):
             assert self.best_weights_filename
             self.model.load_model_state(self.best_weights_filename)
             if self.model.comm_rank == 0:
-                logger.info(f"Metric '{self.loss_or_metric}' did not improve for {self.patience} epochs, stop training.")
+                logger.info(
+                    f"Metric '{self.loss_or_metric}' did not improve for {self.patience} epochs, stop training."
+                )
         # else: do nothing.
 
     @classmethod

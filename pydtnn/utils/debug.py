@@ -16,7 +16,7 @@ from pathlib import Path
 from traceback import TracebackException
 from typing import Any
 
-from pydtnn import package_name, timestamp, state_path
+from pydtnn import package_name, state_path, timestamp
 
 __all__ = (
     "debug_func",

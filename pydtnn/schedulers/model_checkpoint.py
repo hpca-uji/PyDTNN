@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from pydtnn import state_path, package_name, timestamp
+from pydtnn import package_name, state_path, timestamp
 from pydtnn.schedulers.abstract.scheduler_with_loss_or_metric import SchedulerWithLossOrMetric
 
 __all__ = ("ModelCheckpoint",)
@@ -90,7 +90,9 @@ class ModelCheckpoint(SchedulerWithLossOrMetric):
             # Save the model if the epoch count is a multiple of the save frequency.
             if (self.epoch_count % self.epoch_save_frequency) == 0:
                 # Construct a unique filename including model name, epoch, and timestamp.
-                name = f"{self.model.model_name or package_name}-e{self.epoch_count}-{timestamp}.npz"
+                name = (
+                    f"{self.model.model_name or package_name}-e{self.epoch_count}-{timestamp}.npz"
+                )
                 self.filename = f"{state_path}/{name}"
                 # Save the model's state.
                 self.model.save_model_state(self.filename)

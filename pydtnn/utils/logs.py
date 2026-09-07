@@ -4,7 +4,7 @@ import logging
 from pathlib import Path
 from typing import Any
 
-from pydtnn import package_name, timestamp, state_path
+from pydtnn import package_name, state_path, timestamp
 from pydtnn.utils import logger
 
 
