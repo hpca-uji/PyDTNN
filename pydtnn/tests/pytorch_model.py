@@ -364,8 +364,7 @@ def get_pydtnn_grad_vars_values(pydtnn_model: PyDTNN_Model) -> dict[int, dict[st
                 grad_vars = dict[str, np.ndarray | None]()
 
                 for grad_v_key in layer.grad_vars.values():
-                    param = getattr(layer, grad_v_key)
-                    grad_vars[grad_v_key] = param
+                    grad_vars[grad_v_key] = getattr(layer, grad_v_key)
                 layers_grad_vars[i] = grad_vars
                 #  print(f"number: {i}, layer: {name}, grad_vars: {grad_vars}")
             case _:
@@ -373,6 +372,79 @@ def get_pydtnn_grad_vars_values(pydtnn_model: PyDTNN_Model) -> dict[int, dict[st
                     print(f"number: {i}, layer: {name}, with no grad_vars: {layer.grad_vars}")
         i += 1
     return layers_grad_vars
+
+
+def get_torch_parameters_values(torch_model: PyTorch_Model) -> dict[int, dict[str, np.ndarray | None]]:
+    """Method to get all the parameter's gradients."""
+    layers = get_all_pytorch_layers(torch_model)
+    # weight = weights (dw); bias = biases (db)
+    equivalence = {"weight": Parameters.WEIGHTS,
+                   "bias": Parameters.BIASES,
+                   "running_mean": Parameters.RUNNING_MEAN,
+                   "running_var": Parameters.RUNNING_VAR}
+    layers_parameters = dict[int, dict[str, np.ndarray | None]]()
+
+    i = 0
+    for layer in layers:
+        name = layer._get_name()
+
+        match name:
+            case "BatchNorm2d" | "Conv2d" | "Linear":
+                if verbose_test():
+                    print(f"number: {i}, {layer=}, layer.bias={layer.bias is not None}, parameters: {layer._parameters.keys()}")
+                parameters = dict[str, np.ndarray | None]()
+
+                #  if name == "BatchNorm2d":
+                #      for key in ["running_mean", "running_var"]:
+                #          param = layer._buffers[key]
+                #          if param is not None:
+                #              param = None if param is None else param.numpy(force=True)
+                #          parameters[equivalence[key]] = param
+                # else: Nothing special.
+
+                for key in layer._parameters.keys():
+                    param = layer._parameters[key]
+                    if param is not None:
+                        param = None if param is None else param.numpy(force=True)
+                    parameters[equivalence[key]] = param
+                layers_parameters[i] = parameters
+                #  print(f"number: {i}, layer: {name}, parameters: {parameters}")
+            case _:
+                if verbose_test():
+                    print(f"number: {i}, layer: {name}, with no parameters: {layer._parameters}")
+        i += 1
+    return layers_parameters
+
+
+def get_pydtnn_vars_values(pydtnn_model: PyDTNN_Model) -> dict[int, dict[str, np.ndarray | None]]:
+    """Method to get all the parameter's gradients."""
+    layers = pydtnn_model.get_all_layers()
+    layers_parameters = dict[int, dict[str, np.ndarray | None]]()
+
+    i = 0
+    for layer in layers:
+        name = layer.name
+
+        match layer:
+            case BatchNormalization() | Conv2D() | FC():
+                if verbose_test():
+                    print(f"number: {i}, {layer=}, {layer.use_bias=}, grad_vars: {layer.grad_vars.keys()}")
+                parameters = dict[str, np.ndarray | None]()
+
+                #  if isinstance(layer, BatchNormalization):
+                #      for param_key in [Parameters.RUNNING_MEAN, Parameters.RUNNING_VAR]:
+                #          parameters[param_key] = getattr(layer, param_key)
+                # else: Nothing special.
+
+                for param_key in layer.grad_vars.keys():
+                    parameters[param_key] = getattr(layer, param_key)
+                layers_parameters[i] = parameters
+                #  print(f"number: {i}, layer: {name}, grad_vars: {grad_vars}")
+            case _:
+                if verbose_test():
+                    print(f"number: {i}, layer: {name}, with no params: {layer.grad_vars}")
+        i += 1
+    return layers_parameters
 
 
 class PytorchModelTestCase(TestCase):
@@ -839,7 +911,43 @@ class PytorchModelTestCase(TestCase):
                                   f"({torch_grad.shape=} != {pydtnn_grad.shape=}).")
                         torch_grad = torch_grad.T
                     assert np.isclose(torch_grad, pydtnn_grad).all(), \
-                           f"{pydtnn_layer} Both values of {torch_grad} are not close."
+                           f"Both values of {pydtnn_layer.name_with_id}'s {grad_var_k} are not close enough: "\
+                           f"{torch_grad=}\n{pydtnn_grad=}"
+
+    def compare_parameters(self, torch_model: PyTorch_Model, pydtnn_model: PyDTNN_Model) -> None:
+        """Method to comparte PyTorch 'parameters.grad' and PyDTNN grad vars's values"""
+
+        torch_params = get_torch_parameters_values(torch_model)
+        pydtnn_params = get_pydtnn_vars_values(pydtnn_model)
+        assert len(torch_params) == len(pydtnn_params), "Torch and PyDTNN parameters must have the same " \
+                                                         f"number of elements: {len(torch_params)=} || " \
+                                                         f"{len(pydtnn_params)=}"
+
+        for i in pydtnn_params.keys():
+            pydtnn_layer = pydtnn_model.layers[i]
+            for var_key in pydtnn_params[i].keys():
+                torch_param = torch_params[i][var_key]
+                pydtnn_param = pydtnn_params[i][var_key]
+                if torch_param is None:
+                    if verbose_test():
+                        print(f"{pydtnn_layer} - torch_param is None")
+                    assert pydtnn_param is None, f"{pydtnn_layer} torch's parameter is None, but the PyDTNN one is: {pydtnn_param}"
+                else:
+                    if verbose_test():
+                        print(f"{pydtnn_layer} - torch_param is not None")
+                    assert pydtnn_param is not None, f"{pydtnn_layer} torch's parameter is not None, but the PyDTNN it is."
+                    if verbose_test():
+                        print(f"{pydtnn_layer.name_with_id} || {torch_param.size} || {pydtnn_param.size}")
+                    assert torch_param.size == pydtnn_param.size, f"{pydtnn_layer} Both tensors must have the same size: " \
+                                                                f"({torch_param.size=} =/= {pydtnn_param.size=})"
+                    if isinstance(pydtnn_layer, FC) and var_key is Parameters.WEIGHTS:
+                        if verbose_test():
+                            print(f"The layer is \"FC\" and the var is \"{Parameters.WEIGHTS}\""
+                                  f"({torch_param.shape=} != {pydtnn_param.shape=}).")
+                        torch_param = torch_param.T
+                    assert np.isclose(torch_param, pydtnn_param).all(), \
+                           f"Both values of {pydtnn_layer.name_with_id}'s \"{var_key}\" are not close enough: "\
+                           f"{torch_param=}\n{pydtnn_param=}"
 
     @staticmethod
     def target_pydtnn2torch_format(y_pydtnn: np.ndarray) -> np.ndarray:
@@ -925,8 +1033,12 @@ class PytorchModelTestCase(TestCase):
             # Compare the "parameters.grad"/"grad_vars" results
             self.compare_grad_vars(model_torch, model_pydtnn)
 
+            # Optimizer pass
             self.do_pytorch_model_optimizer_pass(model_torch, optimizer_torch)
             self.do_pydtnn_model_optimizer_pass(model_pydtnn)
+
+            # Compare Optimizer's results
+            self.compare_parameters(model_torch, model_pydtnn)
 
 
     @unittest.skip("Large model")
@@ -935,19 +1047,19 @@ class PytorchModelTestCase(TestCase):
         model_name = "resnet50"
         self.do_test_model(*self.get_model_torch(model_name), model_name)
 
-    @unittest.skip("Large model")
+    @unittest.skip("Work in progress.")
     def test_resnet14like(self) -> None:
         """Compares results between an ResNet14_like model using a PyTorch model and other a PyDTNN one."""
         model_name = "resnet14like"
         self.do_test_model(*self.get_model_torch(model_name), model_name)
 
-    @unittest.skip("Large model")
+    @unittest.skip("Work in progress.")
     def test_simplecnn(self) -> None:
         """Compares results between an SimpleCNN model using a PyTorch model and other a PyDTNN one."""
         model_name = "simplecnn"
         self.do_test_model(*self.get_model_torch(model_name), model_name)
 
-    @unittest.skip("Large model")
+    @unittest.skip("Work in progress.")
     def test_layer_conv_2d(self) -> None:
         """Compares results between an SimpleCNN model using a PyTorch model and other a PyDTNN one."""
         params = PytorchModelTestCase.params
@@ -965,7 +1077,7 @@ class PytorchModelTestCase(TestCase):
         torch_forward_outputs = set_forward_hook(torch_model)
         self.do_test_model(torch_model, torch_forward_outputs, "Conv2d")
 
-    @unittest.skip("Large model")
+    @unittest.skip("Work in progress.")
     def test_layer_linear(self) -> None:
         """Compares results between an SimpleCNN model using a PyTorch model and other a PyDTNN one."""
         params = PytorchModelTestCase.params
@@ -974,14 +1086,15 @@ class PytorchModelTestCase(TestCase):
         out_elems = int(np.prod(params.synthetic_output_shape))
 
         layer = torch.nn.Sequential(
-            torch.nn.Flatten(), torch.nn.Linear(in_features=in_elems, out_features=out_elems)
+            torch.nn.Flatten(),
+            torch.nn.Linear(in_features=in_elems, out_features=out_elems)
         )
 
         torch_model = TorchLayer(layer)
         torch_forward_outputs = set_forward_hook(torch_model)
         self.do_test_model(torch_model, torch_forward_outputs, "Linear")
 
-    @unittest.skip("Large model")
+    @unittest.skip("Work in progress.")
     def test_layer_batch_norm_2d(self) -> None:
         """Compares results between an SimpleCNN model using a PyTorch model and other a PyDTNN one."""
         params = PytorchModelTestCase.params
@@ -991,7 +1104,8 @@ class PytorchModelTestCase(TestCase):
         c_in = params.synthetic_input_shape[0]
 
         layer = torch.nn.Sequential(
-            torch.nn.BatchNorm2d(num_features=c_in, eps=eps, momentum=momentum), torch.nn.Flatten()
+            torch.nn.BatchNorm2d(num_features=c_in, eps=eps, momentum=momentum),
+            torch.nn.Flatten()
         )
 
         torch_model = TorchLayer(layer)
