@@ -260,14 +260,27 @@ def set_backward_hook(
 ) -> list[tuple[torch.nn.Module, tuple[torch.Tensor, ...] | torch.Tensor]]:
     """Recursively sets the forward's 'hook' method."""
 
-    torch_backward_outputs = list[tuple[torch.nn.Module, tuple[torch.Tensor, ...] | torch.Tensor]]()
+    # Forward
+    # Input -> Layer -> Output
+    # PyDTNN's Backward:
+    # Output <- Layer <- Input
+    # PyDTNN's Backward:
+    # Input.grad <- Layer <- Output.grad
+
+    # torch_backward_outputs = list[tuple[torch.nn.Module, tuple[torch.Tensor, ...] | torch.Tensor]]()
+    torch_backward_inputs = list[tuple[torch.nn.Module, tuple[torch.Tensor, ...] | torch.Tensor]]()
 
     # _grad_t = tuple[Tensor, ...] | Tensor
     def hook(module: torch.nn.Module, grad_input: tuple[torch.Tensor, ...] | torch.Tensor,
              grad_output: tuple[torch.Tensor, ...] | torch.Tensor) -> tuple[torch.Tensor, ...] | torch.Tensor | None:
         """Torch backward's hook."""
         output_copy = tuple([elem if elem is None else elem.clone() for elem in grad_output])
-        torch_backward_outputs.append((module, output_copy))
+        # torch_backward_outputs.append((module, output_copy))
+
+        input_copy = tuple([elem if elem is None else elem.clone() for elem in grad_input])
+        if verbose_test():
+            print(f"{module} - {input_copy[0].size()=} - {output_copy[0].size()=}")
+        torch_backward_inputs.append((module, input_copy))
 
     def _get_all_layers_pytorch(module: torch.nn.Module) -> None:
         # iterate through immediate child modules
@@ -279,7 +292,7 @@ def set_backward_hook(
 
     _get_all_layers_pytorch(torch_model)
 
-    return torch_backward_outputs
+    return torch_backward_inputs
 
 
 def replace_pydtnn_layerable(
@@ -716,14 +729,15 @@ class PytorchModelTestCase(TestCase):
     def compare_loss(self, loss_torch: torch.Tensor, _loss_pydtnn: float) -> None:
         """Method to compare Torch and PyDTNN losses."""
         _loss_torch = float(loss_torch.detach())
-        print(f"{_loss_torch=} || {_loss_pydtnn=}")
+        if verbose_test():
+            print(f"{_loss_torch=} || {_loss_pydtnn=}")
         assert np.isclose(float(_loss_torch), _loss_pydtnn), (
             f"Both values are not close: {_loss_torch=} =/=  {_loss_pydtnn=}"
         )
 
     def do_pytorch_model_backward_pass(
         self, _model1: PyTorch_Model, loss: torch.Tensor
-    ) -> list[torch.Tensor]:
+    ) -> None:
         """
         Performs a forward pass for Model 1.
 
@@ -734,18 +748,13 @@ class PytorchModelTestCase(TestCase):
         Returns:
             Nothing special yet.
         """
-        # TODO: mover el loss a una función a parte (para compararlas)
         # dx: list[torch.Tensor] = []
         with warnings.catch_warnings(action="ignore"):
             loss.backward()
 
-        dx = loss
-        # TODO: Get all layers in torch and iterate over those layers.
-        return [dx]
-
     def do_pydtnn_model_backward_pass(
         self, model2: PyDTNN_Model, dx: np.ndarray
-    ) -> list[np.ndarray]:
+    ) -> list[tuple[Layerable, np.ndarray]]:
         """
         Performs a forward pass for PyDTNN's Model.
 
@@ -756,14 +765,13 @@ class PytorchModelTestCase(TestCase):
         Returns:
             List of gradients after each layer.
         """
-        # TODO: Get all layers in torch and iterate over those layers.
-        dx1 = list[np.ndarray]()
-        # NOTE: Since we're iterating the layers from the end do the start,
-        #   we're inserting the data in the first element so at the end the gradients
-        #   will be at the same index as it's layer.
-        dx1.insert(0, dx)
+        dx1 = list[tuple[Layerable, np.ndarray]]()
+        layer_dx = dx
         for layer in reversed(model2.layers):
-            dx1.insert(0, layer.backward(dx1[0].copy()))
+            layer_dx = layer.backward(layer_dx.copy())
+            if verbose_test():
+                print(f"{layer} - {layer_dx.shape}")
+            dx1.append((layer, layer_dx))
         return dx1
 
     def do_pytorch_model_optimizer_pass(
@@ -862,10 +870,8 @@ class PytorchModelTestCase(TestCase):
 
     def compare_backward(
         self,
-        torch_model: PyTorch_Model,
-        torch_dx: list[torch.Tensor],
-        pydtnn_model: PyDTNN_Model,
-        pydtnn_dx: list[np.ndarray],
+        torch_dx: list[tuple[torch.nn.Module, tuple[torch.Tensor, ...] | torch.Tensor]],
+        pydtnn_dx: list[tuple[Layerable, np.ndarray]],
     ) -> None:
         """Compares the backward pass gradients of two models.
 
@@ -877,7 +883,55 @@ class PytorchModelTestCase(TestCase):
             model2: Second model.
             dx2: Backward pass gradients of model 2.
         """
-        pass
+        if verbose_test():
+            print("Comparing outputs of both models...")
+
+        # NOTE: PyDTNN adds the first input to it's operations
+        #   pydtnn_dx[0]: Loss backward (as identity)
+        #   pydtnn_dx[1]: Log Softmax
+        #   pydtnn_dx[2]: Lasst layer gradient
+        pydtnn_i = 1
+        pydtnn_layer, pydtnn_values = pydtnn_dx[pydtnn_i]
+        pydtnn_extra_index = 0
+
+        for torch_i in range(len(torch_dx)):
+            # TODO: This check cases where there are concatenations and additions.
+
+            # NOTE: The Torch's model doesnt' have the last activation
+
+            torch_layer, torch_values = torch_dx[torch_i]
+            if isinstance(torch_values, tuple):
+                torch_values = torch_values[0]
+            pytorch_as_numpy = torch_values.numpy(force=True)
+
+            pydtnn_i = torch_i + 1 + pydtnn_extra_index
+            pydtnn_layer, pydtnn_values = pydtnn_dx[pydtnn_i]
+
+            # NOTE: PyDTNN first layer is always "Identity"
+            if verbose_test():
+                print(f"{isinstance(pydtnn_layer, Flatten)=} || {not isinstance(torch_layer, torch.nn.Flatten)=}")
+            if isinstance(pydtnn_layer, Flatten) and not isinstance(torch_layer, torch.nn.Flatten):
+                if verbose_test():
+                    print(f"{torch_i}\n{torch_layer=}\n{pydtnn_layer=}\n=====")
+                pydtnn_extra_index += 1
+                pydtnn_i = torch_i + 1 + pydtnn_extra_index
+                pydtnn_layer, pydtnn_values = pydtnn_dx[pydtnn_i]
+
+            if verbose_test():
+                print(f"{torch_i} - {torch_layer._get_name()=} [{pytorch_as_numpy.size=}] ||\n"
+                      f"{pydtnn_i} - {pydtnn_layer.name=} [{pydtnn_values.size=}]")
+
+            rtol, atol = self.get_tolerance(pydtnn_layer)
+            self.assertTrue(
+                pytorch_as_numpy.size == pydtnn_values.size,
+                f"Both tensors doesn't have the same number of elements "
+                f"({pytorch_as_numpy.size=} != {pydtnn_values.size=})",
+            )
+            self.assertTrue(
+                np.allclose(pytorch_as_numpy, pydtnn_values, rtol=rtol, atol=atol),
+                f"Backward result from layers {pydtnn_layer.name_with_id} differ "
+                f"({self.print_stats(pytorch_as_numpy, pydtnn_values, rtol, atol)})",
+            )
 
     def compare_grad_vars(self, torch_model: PyTorch_Model, pydtnn_model: PyDTNN_Model) -> None:
         """Method to comparte PyTorch 'parameters.grad' and PyDTNN grad vars's values"""
@@ -975,6 +1029,8 @@ class PytorchModelTestCase(TestCase):
         model_pydtnn = self.get_model_pydtnn(model_torch)
         model_pydtnn.mode = ModelMode.TRAIN
 
+        dx_torch = set_backward_hook(model_torch)
+
         params = PytorchModelTestCase.params
         input_shape = params.synthetic_input_shape
         output_shape = params.synthetic_output_shape[0]
@@ -994,6 +1050,7 @@ class PytorchModelTestCase(TestCase):
                 .to(torch.device("cpu"))
                 .long()
             )
+            x_torch.requires_grad_(True)
 
             # --- FORWARD ---
             if verbose_test():
@@ -1021,7 +1078,7 @@ class PytorchModelTestCase(TestCase):
             if verbose_test():
                 header(f"Model {model_torch} 1 backward pass")
 
-            dx_torch = self.do_pytorch_model_backward_pass(model_torch, loss_torch)
+            self.do_pytorch_model_backward_pass(model_torch, loss_torch)
 
             # Model 2 backward
             if verbose_test():
@@ -1029,7 +1086,7 @@ class PytorchModelTestCase(TestCase):
             dx_pydtnn = self.do_pydtnn_model_backward_pass(model_pydtnn, dx_pydtnn)
 
             # Compare backward results
-            self.compare_backward(model_torch, dx_torch, model_pydtnn, dx_pydtnn)
+            self.compare_backward(dx_torch, dx_pydtnn)
 
             # Compare the "parameters.grad"/"grad_vars" results
             self.compare_grad_vars(model_torch, model_pydtnn)
