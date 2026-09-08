@@ -159,15 +159,15 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
             residuals[indexes] = 0
             self.residuals = residuals.reshape(acc.shape)
 
+            # Perform the weights update
+            self._update_weights(w, sparse_u)
+
             # Save for next updates thresholds and boundaries
             self.all_local_th[layer.id][dw_] = self.local_th
             self.all_global_th[layer.id][dw_] = self.global_th
             self.all_residuals[layer.id][dw_] = self.residuals
             self.all_velocity[layer.id][dw_] = self.velocity
             self.all_boundaries[layer.id][dw_] = self.boundaries
-
-            # Perform the weights update
-            self._update_weights(w, sparse_u)
 
         self.iterations[layer.id] += 1
 
