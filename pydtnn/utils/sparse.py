@@ -8,17 +8,20 @@ from __future__ import annotations
 
 import copy
 import math
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
-import numpy as np
+from pydtnn.libs import numpy as np
+
+if TYPE_CHECKING:
+    import numpy as np  # noqa: F811
 
 __all__ = ("SparseFlatArray",)
 
 
-type FlatArray[T: np.dtype] = np.ndarray[tuple[int], T]
+type FlatArray[T: np.dtype] = np.ndarray[tuple[int], T]  # pyright: ignore[reportGeneralTypeIssues]
 
 
-class SparseFlatArray[S: tuple, I: np.dtype, V: np.dtype]:  # noqa: D101 (generics not detected)
+class SparseFlatArray[S: tuple, I: np.dtype, V: np.dtype]:  # pyright: ignore[reportGeneralTypeIssues]  # noqa: D101
     """Sparse flatten array"""
 
     def __init__(self, shape: S, indexes: FlatArray[I], values: FlatArray[V]) -> None:
@@ -55,7 +58,7 @@ class SparseFlatArray[S: tuple, I: np.dtype, V: np.dtype]:  # noqa: D101 (generi
         return self.indexes.nbytes + self.values.nbytes
 
     @classmethod
-    def from_dense[DS: tuple, DI: np.dtype, DV: np.dtype](
+    def from_dense[DS: tuple, DI: np.dtype, DV: np.dtype](  # pyright: ignore[reportGeneralTypeIssues]
         cls: type[SparseFlatArray[DS, DI, DV]],
         array: np.ndarray[DS, DV],
         dtype: DI = np.dtype(np.int32),
