@@ -18,9 +18,6 @@ if TYPE_CHECKING:
     from pydtnn.model import Model
 
 
-# TODO: Remove all row,col, use new flat structure, allows balanced partitioning
-
-
 class OkTopk[T: Array](Optimizer[T]):  # noqa: D101 (generics not detected)
     """OkTopk Optimizer"""
 
