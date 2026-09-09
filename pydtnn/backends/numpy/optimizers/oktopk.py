@@ -316,8 +316,8 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
         assert MPI and self.model.comm, "Communicator needed!"
         sparse_topk = self.model.comm.allreduce(sparse_topk, op=MPI.SUM)
 
-        start = 0 if self.model.comm_rank == 0 else self.boundaries[self.model.comm_rank - 1]
-        end = self.boundaries[self.model.comm_rank]
+        start = 0 if self.model.comm_rank == 0 else boundaries[self.model.comm_rank - 1]
+        end = boundaries[self.model.comm_rank]
         start, end = np.searchsorted(sparse_topk.indexes, (start, end))
 
         sparse_topk = sparse_topk[start: end]
