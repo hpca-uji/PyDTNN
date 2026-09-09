@@ -113,6 +113,12 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
         else:
             self._reduce_topk = self._reduce_topk_local
 
+        # Gather
+        if comm and self.model.comm_size > 1:
+            self._allgather = self._allgather_comm
+        else:
+            self._allgather = self._allgather_local
+
     def update(self, layer: Layerable, update: bool = True, sync: bool = True) -> None:
         """Optimizer update step for a given layer.
 
@@ -216,7 +222,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
         )
 
         if t % thresholds_re_evaluation_t == 0:
-            sparse_all_reduced_topk = self._sparse_allgather(sparse_reduced_region_topk)
+            sparse_all_reduced_topk = self._allgather(sparse_reduced_region_topk)
             self.global_th = self._th_re_evaluate(sparse_all_reduced_topk.values, k)
 
         sparse_u, global_topk_indexes = self._balance_and_allgather(
@@ -420,7 +426,13 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
         sparse_reduced_region.values *= self.model.rank_weight
         return sparse_reduced_region
 
-    def _sparse_allgather(self, local_data: SparseFlatArray) -> SparseFlatArray:
+    def _allgather(self, local_data: SparseFlatArray) -> SparseFlatArray:
+        raise ValueError("No reduce method selected")
+
+    def _allgather_local(self, local_data: SparseFlatArray) -> SparseFlatArray:
+        return local_data
+
+    def _allgather_comm(self, local_data: SparseFlatArray) -> SparseFlatArray:
         """
         Gathers data from all processes.
 
@@ -475,7 +487,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
         # TODO
 
         # 4. Allgatherv using recursive doubling
-        sparse_allgather_topk = self._sparse_allgather(sparse_reduced_region_global_topk)
+        sparse_allgather_topk = self._allgather(sparse_reduced_region_global_topk)
         return sparse_allgather_topk, sparse_allgather_topk.indexes
 
     def _update_weights(
