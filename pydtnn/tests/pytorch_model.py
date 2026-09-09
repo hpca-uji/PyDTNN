@@ -234,16 +234,16 @@ def remove_inplace_pytorch(torch_model: torch.nn.Module) -> None:
 
 def set_forward_hook(torch_model: torch.nn.Module) -> list[tuple[torch.nn.Module, torch.Tensor]]:
     """Recursively sets the forward's 'hook' method."""
-    params = PytorchModelTestCase.params
+    # params = PytorchModelTestCase.params
     torch_forward_outputs = list[tuple[torch.nn.Module, torch.Tensor]]()
 
     def hook(
         module: torch.nn.Module, args: tuple[Any, ...], output: torch.Tensor
     ) -> torch.Tensor | None:
         _output = output.clone()
-        #if params.dtype is np.dtype(np.float64):
+        # if params.dtype is np.dtype(np.float64):
         #    _output = _output.double()
-        #else:
+        # else:
         #    _output = _output.float()
 
         torch_forward_outputs.append((module, _output))
@@ -870,10 +870,10 @@ class PytorchModelTestCase(TestCase):
 
             # NOTE: PyDTNN first layer is always "Identity"
             pydtnn_layer = model_pydtnn.layers[torch_i + 1 + pydtnn_extra_index]
-            if isinstance(pydtnn_layer, Flatten): 
+            if isinstance(pydtnn_layer, Flatten):
                 if isinstance(torch_layer, torch.nn.Flatten):
                     if verbose_test():
-                        print(f"Flatten layers are ignored.")
+                        print("Flatten layers are ignored.")
                     continue
                 else:
                     if verbose_test():
@@ -947,10 +947,10 @@ class PytorchModelTestCase(TestCase):
             if verbose_test():
                 print(f"{isinstance(pydtnn_layer, Flatten)=} || {not isinstance(torch_layer, torch.nn.Flatten)=}")
 
-            if isinstance(pydtnn_layer, Flatten): 
+            if isinstance(pydtnn_layer, Flatten):
                 if isinstance(torch_layer, torch.nn.Flatten):
                     if verbose_test():
-                        print(f"Flatten layers are ignored.")
+                        print("Flatten layers are ignored.")
                     continue
                 else:
                     if verbose_test():
@@ -1075,7 +1075,7 @@ class PytorchModelTestCase(TestCase):
         output_shape = params.synthetic_output_shape[0]
 
         if params.dtype is np.dtype(np.float64):
-            model_torch = model_torch.double() 
+            model_torch = model_torch.double()
 
         loss_func_torch = self._get_torch_loss_func()
         optimizer_torch = self.get_optimizer_pytorch(model_torch)
