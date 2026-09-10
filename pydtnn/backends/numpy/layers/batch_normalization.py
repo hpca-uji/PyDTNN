@@ -171,7 +171,7 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
 
             inv_momentum = 1.0 - self.momentum
             # self.running_mean = self.momentum * self.running_mean + inv_momentum * _mean
-            
+
             # Torch-like:
             # np.multiply(inv_momentum, self.running_mean, out=self.running_mean, dtype=self.model.dtype)
             # np.multiply(self.momentum, _mean, out=self._mean_inv, dtype=self.model.dtype)
