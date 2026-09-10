@@ -736,10 +736,10 @@ class PytorchModelTestCase(TestCase):
         Returns:
             List of outputs after each layer.
         """
-        x1: list[np.ndarray] = [x0]
-        # TODO: Get all layers in torch and iterate over those layers.
+        x1 = list[np.ndarray]()
         for layer in model2.layers:
-            x1.append(layer.forward(x1[-1].copy()))
+            x0 = layer.forward(x0.copy())
+            x1.append(x0.copy())
         return x1
 
     def do_pytorch_model_loss(
@@ -856,8 +856,6 @@ class PytorchModelTestCase(TestCase):
         if verbose_test():
             print("Comparing outputs of both models...")
 
-        pydtnn_values = x_pydtnn[-2]
-        pydtnn_values = model_pydtnn.layers[-1]
         pydtnn_extra_index = 0
 
         for torch_i in range(len(x_torch)):
@@ -876,16 +874,15 @@ class PytorchModelTestCase(TestCase):
                         print("Flatten layers are ignored.")
                     continue
                 else:
+                    pydtnn_extra_index += 1
                     if verbose_test():
                         print(f"{torch_i}\n{torch_layer=}\n{pydtnn_layer=}\n=====")
-                    pydtnn_extra_index += 1
                     pydtnn_layer = model_pydtnn.layers[torch_i + 1 + pydtnn_extra_index]
 
             # NOTE: PyDTNN adds the first input to it's operations
-            #   x_pydtnn[0]: Model's Input
-            #   x_pydtnn[1]: Identity's outputs/1st layer input
-            #   x_pydtnn[2]: 1st layer output
-            pydtnn_i = torch_i + 2 + pydtnn_extra_index
+            #   x_pydtnn[0]: Identity's outputs/1st layer input
+            #   x_pydtnn[1]: 1st layer output
+            pydtnn_i = torch_i + 1 + pydtnn_extra_index
             pydtnn_values = x_pydtnn[pydtnn_i]
 
             if verbose_test():
@@ -893,6 +890,7 @@ class PytorchModelTestCase(TestCase):
                       f"{torch_i} - {pydtnn_layer.name=} [{pydtnn_values.size=}]")
 
             rtol, atol = self.get_tolerance(pydtnn_layer)
+            # try:
             self.assertTrue(
                 pytorch_values.size == pydtnn_values.size,
                 f"Both tensors doesn't have the same number of elements "
@@ -903,6 +901,11 @@ class PytorchModelTestCase(TestCase):
                 f"Forward result from layers {pydtnn_layer.name_with_id} differ "
                 f"({self.print_stats(pytorch_values, pydtnn_values, rtol, atol)})",
             )
+            # except Exception as e:
+            #     print(e)
+            #     print(f"{pytorch_values=}")
+            #     print(f"{pydtnn_values=}")
+            #     breakpoint()
 
     def compare_backward(
         self,

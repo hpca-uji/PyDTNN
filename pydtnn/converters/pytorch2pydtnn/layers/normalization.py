@@ -43,6 +43,7 @@ def BatchNorm2d(args: dict[str, Any]) -> BatchNormalization:
         torch_dict_keys=torch_dict_keys,
         pydtnn_dict_keys=pydtnn_dict_keys,
     )
+    layer_args[pydtnn_momentum] = 1 - layer_args[pydtnn_momentum]
     layer_args["use_bias"] = args[cm.ARGUMENTS]["_parameters"]["bias"] is not None
 
     vars_initiaizers_transpose: dict[str, tuple[str, None | tuple[str, str]]]
