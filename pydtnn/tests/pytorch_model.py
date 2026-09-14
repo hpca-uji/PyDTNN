@@ -523,7 +523,7 @@ class PytorchModelTestCase(TestCase):
     params.optimizer_beta1 = 0.9
     params.optimizer_beta2 = 0.999
     params.optimizer_epsilon = 1e-08
-    params.optimizer_decay = 0.0
+    params.optimizer_decay = 1.0
 
     def get_tolerance(self, layer: Layerable) -> tuple[float, float]:
         """
@@ -593,9 +593,7 @@ class PytorchModelTestCase(TestCase):
         )
 
     @staticmethod
-    def get_model_torch(
-        model_name: str,
-    ) -> tuple[PyTorch_Model, list[tuple[torch.nn.Module, torch.Tensor]]]:
+    def get_model_torch(model_name: str) -> PyTorch_Model:
         """
         Initializes a model and its corresponding loss function.
 
@@ -631,9 +629,8 @@ class PytorchModelTestCase(TestCase):
 
         replace_layer_pytorch(torch_model, layer_to_replace=torch.nn.Dropout)
         remove_inplace_pytorch(torch_model)
-        torch_forward_outputs = set_forward_hook(torch_model)
 
-        return torch_model, torch_forward_outputs
+        return torch_model
 
     @staticmethod
     def _get_torch_loss_func() -> torch.nn.modules.loss._Loss:
@@ -653,13 +650,18 @@ class PytorchModelTestCase(TestCase):
                 )
             case "adam":
                 betas = (params.optimizer_beta1, params.optimizer_beta2)
-                optimizer = Adam(model_torch.parameters(), lr=params.learning_rate,
-                                 betas=betas, eps=params.optimizer_epsilon,
-                                 weight_decay=params.optimizer_decay)
+                optimizer = Adam(model_torch.parameters(),
+                                 lr=params.learning_rate,
+                                 betas=betas,
+                                 eps=params.optimizer_epsilon,
+                                 weight_decay=params.optimizer_decay, 
+                                 decoupled_weight_decay=False)
             case "nadam":
                 betas = (params.optimizer_beta1, params.optimizer_beta2)
-                optimizer = NAdam(model_torch.parameters(), lr=params.learning_rate,
-                                  betas=betas, eps=params.optimizer_epsilon,
+                optimizer = NAdam(model_torch.parameters(),
+                                  lr=params.learning_rate,
+                                  betas=betas,
+                                  eps=params.optimizer_epsilon,
                                   weight_decay=params.optimizer_decay)
             case _:
                 optimizer = None
@@ -1016,7 +1018,7 @@ class PytorchModelTestCase(TestCase):
                            f"{torch_grad=}\n{pydtnn_grad=}" \
                            f"({self.print_stats(torch_grad, pydtnn_grad, rtol, atol)})"
 
-    def compare_parameters(self, torch_model: PyTorch_Model, pydtnn_model: PyDTNN_Model) -> None:
+    def compare_optimizer_parameters(self, torch_model: PyTorch_Model, pydtnn_model: PyDTNN_Model) -> None:
         """Method to comparte PyTorch 'parameters.grad' and PyDTNN grad vars's values"""
 
         torch_params = get_torch_parameters_values(torch_model)
@@ -1062,7 +1064,6 @@ class PytorchModelTestCase(TestCase):
     def do_test_model(
         self,
         model_torch: torch.nn.Module,
-        torch_forward_outputs: list[tuple[torch.nn.Module, torch.Tensor]],
         model_name: str,
     ) -> None:
         """
@@ -1085,6 +1086,7 @@ class PytorchModelTestCase(TestCase):
         model_pydtnn = self.get_model_pydtnn(model_torch)
         model_pydtnn.mode = ModelMode.TRAIN
 
+        x_outputs = set_forward_hook(model_torch)
         dx_torch = set_backward_hook(model_torch)
 
         for i in range(params.num_epochs):
@@ -1121,7 +1123,7 @@ class PytorchModelTestCase(TestCase):
             x_pydtnn = self.do_pydtnn_model_forward_pass(model_pydtnn, x_pydtnn)
 
             # Compare forward results
-            self.compare_forward(model_pydtnn, torch_forward_outputs, x_pydtnn)
+            self.compare_forward(model_pydtnn, x_outputs, x_pydtnn)
 
             # --- LOSS ---
             loss_torch = self.do_pytorch_model_loss(loss_func_torch, x_torch, y_torch)
@@ -1153,25 +1155,29 @@ class PytorchModelTestCase(TestCase):
             self.do_pydtnn_model_optimizer_pass(model_pydtnn)
 
             # Compare Optimizer's results
-            self.compare_parameters(model_torch, model_pydtnn)
+            self.compare_optimizer_parameters(model_torch, model_pydtnn)
+
+            # Delete torch outputs:
+            x_outputs.clear()
+            dx_torch.clear()
 
     @unittest.skip("Large model")
     def test_renset50(self) -> None:
         """Compares results between an ResNet50 model using a PyTorch model and other a PyDTNN one."""
         model_name = "resnet50"
-        self.do_test_model(*self.get_model_torch(model_name), model_name)
+        self.do_test_model(self.get_model_torch(model_name), model_name)
 
     @unittest.skip("Work in progress.")
     def test_resnet14like(self) -> None:
         """Compares results between an ResNet14_like model using a PyTorch model and other a PyDTNN one."""
         model_name = "resnet14like"
-        self.do_test_model(*self.get_model_torch(model_name), model_name)
+        self.do_test_model(self.get_model_torch(model_name), model_name)
 
     @unittest.skip("Work in progress.")
     def test_simplecnn(self) -> None:
         """Compares results between an SimpleCNN model using a PyTorch model and other a PyDTNN one."""
         model_name = "simplecnn"
-        self.do_test_model(*self.get_model_torch(model_name), model_name)
+        self.do_test_model(self.get_model_torch(model_name), model_name)
 
     @unittest.skip("Work in progress.")
     def test_layer_conv_2d(self) -> None:
@@ -1188,10 +1194,9 @@ class PytorchModelTestCase(TestCase):
         )
 
         torch_model = TorchLayer(layer)
-        torch_forward_outputs = set_forward_hook(torch_model)
-        self.do_test_model(torch_model, torch_forward_outputs, "Conv2d")
+        self.do_test_model(torch_model, "Conv2d")
 
-    @unittest.skip("Work in progress.")
+    # @unittest.skip("Work in progress.")
     def test_layer_linear(self) -> None:
         """Compares results between an SimpleCNN model using a PyTorch model and other a PyDTNN one."""
         params = PytorchModelTestCase.params
@@ -1205,8 +1210,7 @@ class PytorchModelTestCase(TestCase):
         )
 
         torch_model = TorchLayer(layer)
-        torch_forward_outputs = set_forward_hook(torch_model)
-        self.do_test_model(torch_model, torch_forward_outputs, "Linear")
+        self.do_test_model(torch_model, "Linear")
 
     @unittest.skip("Work in progress.")
     def test_layer_batch_norm_2d(self) -> None:
@@ -1223,5 +1227,4 @@ class PytorchModelTestCase(TestCase):
         )
 
         torch_model = TorchLayer(layer)
-        torch_forward_outputs = set_forward_hook(torch_model)
-        self.do_test_model(torch_model, torch_forward_outputs, "BatchNorm2d")
+        self.do_test_model(torch_model, "BatchNorm2d")
