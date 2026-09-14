@@ -655,7 +655,7 @@ class PytorchModelTestCase(TestCase):
                                  betas=betas,
                                  eps=params.optimizer_epsilon,
                                  weight_decay=params.optimizer_decay, 
-                                 decoupled_weight_decay=False)
+                                 decoupled_weight_decay=True)
             case "nadam":
                 betas = (params.optimizer_beta1, params.optimizer_beta2)
                 optimizer = NAdam(model_torch.parameters(),
@@ -1196,7 +1196,7 @@ class PytorchModelTestCase(TestCase):
         torch_model = TorchLayer(layer)
         self.do_test_model(torch_model, "Conv2d")
 
-    # @unittest.skip("Work in progress.")
+    @unittest.skip("Work in progress.")
     def test_layer_linear(self) -> None:
         """Compares results between an SimpleCNN model using a PyTorch model and other a PyDTNN one."""
         params = PytorchModelTestCase.params

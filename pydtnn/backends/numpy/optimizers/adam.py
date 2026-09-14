@@ -25,6 +25,7 @@ class AdamNumpy(Adam[np.ndarray], OptimizerNumpy):
         super()._model_init(layers)  # pyright: ignore[reportArgumentType]
 
         temp_memory_size = []
+        self.decoupled_decay: bool = True
 
         for layer in layers:
             if not layer.grad_vars:
@@ -107,6 +108,14 @@ class AdamNumpy(Adam[np.ndarray], OptimizerNumpy):
             ):
                 # NOTE: The operations are unrolled in order to reduce the memory consumed by intermediate
                 #  copies of the variables during the operations.
+
+                if self.decoupled_decay:
+                    w = (1 - self.learning_rate*self.decay) * w
+                else:
+                    dw = dw.copy()  # Para no trabajar con la misma dirección de memoria.
+                    if self.decay != 0:
+                        dw += self.decay * w
+
                 # m = self.beta1 * m + (1 - self.beta1) * dw
                 np.multiply((1 - self.beta1), dw, dtype=self.model.dtype, out=mt_temp_dw)
 
@@ -127,13 +136,14 @@ class AdamNumpy(Adam[np.ndarray], OptimizerNumpy):
 
                 # w -= self.learning_rate * (self.decay * w + (mt / np.sqrt(vt + self.epsilon)))
 
-                np.add(vt_temp_w, self.epsilon, dtype=self.model.dtype, out=vt_temp_w)
                 np.sqrt(vt_temp_w, dtype=self.model.dtype, out=vt_temp_w)
+                np.add(vt_temp_w, self.epsilon, dtype=self.model.dtype, out=vt_temp_w)
                 np.divide(mt_temp_dw, vt_temp_w, dtype=self.model.dtype, out=mt_temp_dw)
 
-                np.multiply(self.decay, w, dtype=self.model.dtype, out=vt_temp_w)
-                np.add(vt_temp_w, mt_temp_dw, dtype=self.model.dtype, out=vt_temp_w)
-                np.multiply(vt_temp_w, self.learning_rate, dtype=self.model.dtype, out=vt_temp_w)
+                # np.multiply(self.decay, w, dtype=self.model.dtype, out=vt_temp_w)
+                # np.add(vt_temp_w, mt_temp_dw, dtype=self.model.dtype, out=vt_temp_w)
+                # np.multiply(vt_temp_w, self.learning_rate, dtype=self.model.dtype, out=vt_temp_w)
+                np.multiply(mt_temp_dw, self.learning_rate, dtype=self.model.dtype, out=vt_temp_w)
 
                 np.subtract(w, vt_temp_w, dtype=self.model.dtype, out=w)
             # else: continue
