@@ -97,8 +97,8 @@ class AdamNumpy(Adam[np.ndarray], OptimizerNumpy):
             # Velocity of the weight or bias of the given layer
             v: np.ndarray = self.context[layer.id]["v_%s" % w_]  # pyright: ignore[reportAssignmentType]
 
-            vt_temp_w: np.ndarray = self.context[layer.id]["temp_w_%s" % w_]  # pyright: ignore[reportAssignmentType]
-            mt_temp_dw: np.ndarray = self.context[layer.id]["temp_dw_%s" % w_]  # pyright: ignore[reportAssignmentType]
+            vt_temp_1: np.ndarray = self.context[layer.id]["temp_w_%s" % w_]  # pyright: ignore[reportAssignmentType]
+            mt_temp_2: np.ndarray = self.context[layer.id]["temp_dw_%s" % w_]  # pyright: ignore[reportAssignmentType]
 
             if not (
                 self.are_all_zeros(w)
@@ -109,41 +109,46 @@ class AdamNumpy(Adam[np.ndarray], OptimizerNumpy):
                 # NOTE: The operations are unrolled in order to reduce the memory consumed by intermediate
                 #  copies of the variables during the operations.
 
+                vt_temp_1 = dw
                 if self.decoupled_decay:
-                    w = (1 - self.learning_rate*self.decay) * w
+                    np.multiply((1 - (self.learning_rate * self.decay)), w, dtype=self.model.dtype, out=w)
+                    # vt_temp_1 = dw
                 else:
-                    dw = dw.copy()  # Para no trabajar con la misma dirección de memoria.
                     if self.decay != 0:
-                        dw += self.decay * w
+                        # dw += self.decay * w
+                        np.multiply(self.decay, w, dtype=self.model.dtype, out=vt_temp_1)
+                        np.add(dw, vt_temp_1, out=vt_temp_1)
+                    # else:
+                    #     vt_temp_1 = dw
 
                 # m = self.beta1 * m + (1 - self.beta1) * dw
-                np.multiply((1 - self.beta1), dw, dtype=self.model.dtype, out=mt_temp_dw)
+                np.multiply((1 - self.beta1), vt_temp_1, dtype=self.model.dtype, out=mt_temp_2)
 
                 np.multiply(m, self.beta1, dtype=self.model.dtype, out=m)
-                np.add(m, mt_temp_dw, dtype=self.model.dtype, out=m)
+                np.add(m, mt_temp_2, dtype=self.model.dtype, out=m)
 
                 # v = self.beta2 * v + (1 - self.beta2) * dw ** 2
-                np.pow(dw, 2, dtype=self.model.dtype, out=mt_temp_dw)
+                np.pow(dw, 2, dtype=self.model.dtype, out=mt_temp_2)
 
                 np.multiply(v, self.beta2, dtype=self.model.dtype, out=v)
-                np.multiply(mt_temp_dw, (1 - self.beta2), dtype=self.model.dtype, out=mt_temp_dw)
-                np.add(v, mt_temp_dw, dtype=self.model.dtype, out=v)
+                np.multiply(mt_temp_2, (1 - self.beta2), dtype=self.model.dtype, out=mt_temp_2)
+                np.add(v, mt_temp_2, dtype=self.model.dtype, out=v)
 
                 # mt = m / (1 - self.beta1 ** it)
-                np.divide(m, (1 - self.beta1**it), dtype=self.model.dtype, out=mt_temp_dw)
+                np.divide(m, (1 - self.beta1**it), dtype=self.model.dtype, out=mt_temp_2)
                 # vt = v / (1 - self.beta2 ** it)
-                np.divide(v, (1 - self.beta2**it), dtype=self.model.dtype, out=vt_temp_w)
+                np.divide(v, (1 - self.beta2**it), dtype=self.model.dtype, out=vt_temp_1)
 
                 # w -= self.learning_rate * (self.decay * w + (mt / np.sqrt(vt + self.epsilon)))
 
-                np.sqrt(vt_temp_w, dtype=self.model.dtype, out=vt_temp_w)
-                np.add(vt_temp_w, self.epsilon, dtype=self.model.dtype, out=vt_temp_w)
-                np.divide(mt_temp_dw, vt_temp_w, dtype=self.model.dtype, out=mt_temp_dw)
+                np.sqrt(vt_temp_1, dtype=self.model.dtype, out=vt_temp_1)
+                np.add(vt_temp_1, self.epsilon, dtype=self.model.dtype, out=vt_temp_1)
+                np.divide(mt_temp_2, vt_temp_1, dtype=self.model.dtype, out=mt_temp_2)
 
                 # np.multiply(self.decay, w, dtype=self.model.dtype, out=vt_temp_w)
                 # np.add(vt_temp_w, mt_temp_dw, dtype=self.model.dtype, out=vt_temp_w)
                 # np.multiply(vt_temp_w, self.learning_rate, dtype=self.model.dtype, out=vt_temp_w)
-                np.multiply(mt_temp_dw, self.learning_rate, dtype=self.model.dtype, out=vt_temp_w)
+                np.multiply(mt_temp_2, self.learning_rate, dtype=self.model.dtype, out=vt_temp_1)
 
-                np.subtract(w, vt_temp_w, dtype=self.model.dtype, out=w)
+                np.subtract(w, vt_temp_1, dtype=self.model.dtype, out=w)
             # else: continue
