@@ -654,7 +654,7 @@ class PytorchModelTestCase(TestCase):
                                  lr=params.learning_rate,
                                  betas=betas,
                                  eps=params.optimizer_epsilon,
-                                 weight_decay=params.optimizer_decay, 
+                                 weight_decay=params.optimizer_decay,
                                  decoupled_weight_decay=True)
             case "nadam":
                 betas = (params.optimizer_beta1, params.optimizer_beta2)
@@ -662,7 +662,8 @@ class PytorchModelTestCase(TestCase):
                                   lr=params.learning_rate,
                                   betas=betas,
                                   eps=params.optimizer_epsilon,
-                                  weight_decay=params.optimizer_decay)
+                                  weight_decay=params.optimizer_decay,
+                                  decoupled_weight_decay=True)
             case _:
                 optimizer = None
                 raise NotImplementedError(

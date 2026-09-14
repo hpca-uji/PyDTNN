@@ -118,8 +118,7 @@ class AdamNumpy(Adam[np.ndarray], OptimizerNumpy):
                         # dw += self.decay * w
                         np.multiply(self.decay, w, dtype=self.model.dtype, out=vt_temp_1)
                         np.add(dw, vt_temp_1, out=vt_temp_1)
-                    # else:
-                    #     vt_temp_1 = dw
+                    # else: vt_temp_1 = dw
 
                 # m = self.beta1 * m + (1 - self.beta1) * dw
                 np.multiply((1 - self.beta1), vt_temp_1, dtype=self.model.dtype, out=mt_temp_2)
@@ -139,7 +138,7 @@ class AdamNumpy(Adam[np.ndarray], OptimizerNumpy):
                 # vt = v / (1 - self.beta2 ** it)
                 np.divide(v, (1 - self.beta2**it), dtype=self.model.dtype, out=vt_temp_1)
 
-                # w -= self.learning_rate * (self.decay * w + (mt / np.sqrt(vt + self.epsilon)))
+                # w -= self.learning_rate * (mt / np.sqrt(vt) + self.epsilon))
 
                 np.sqrt(vt_temp_1, dtype=self.model.dtype, out=vt_temp_1)
                 np.add(vt_temp_1, self.epsilon, dtype=self.model.dtype, out=vt_temp_1)
