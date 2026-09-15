@@ -32,6 +32,7 @@ class Adam[T: Array](Optimizer[T]):  # noqa: D101 (generics not detected)
         beta2: float = 0.999,
         epsilon: float = 1e-7,
         decay: float = 0.0,
+        decoupled_decay: bool = False,
     ) -> None:
         """
         Initialize the Adam optimizer.
@@ -48,6 +49,7 @@ class Adam[T: Array](Optimizer[T]):  # noqa: D101 (generics not detected)
         self.beta2: float = beta2
         self.epsilon: float = epsilon
         self.decay: float = decay
+        self.decoupled_decay: bool = decoupled_decay
 
     def _show_props(self) -> dict[str, str]:
         """
@@ -82,4 +84,5 @@ class Adam[T: Array](Optimizer[T]):  # noqa: D101 (generics not detected)
             beta2=model.optimizer_beta2,
             epsilon=model.optimizer_epsilon,
             decay=model.optimizer_decay,
+            decoupled_decay=model.optimizer_decoupled_decay,
         )

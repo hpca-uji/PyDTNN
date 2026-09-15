@@ -845,6 +845,13 @@ class ArgumentParser(argparse.ArgumentParser):
             help=(f"Decay rate for optimizers. Default: {ModelBase.optimizer_decay!r}."),
         )
         _op_group.add_argument(
+            "--optimizer-decoupled-decay",
+            type=float,
+            default=ModelBase.optimizer_decay,
+            help=("Decouple the weight decay from the momentum and variance."
+                  f"Default: {ModelBase.optimizer_decoupled_decay!r}."),
+        )
+        _op_group.add_argument(
             "--optimizer-nesterov",
             action=argparse.BooleanOptionalAction,
             default=ModelBase.optimizer_nesterov,

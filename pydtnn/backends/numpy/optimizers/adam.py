@@ -25,7 +25,6 @@ class AdamNumpy(Adam[np.ndarray], OptimizerNumpy):
         super()._model_init(layers)  # pyright: ignore[reportArgumentType]
 
         temp_memory_size = []
-        self.decoupled_decay: bool = True
 
         for layer in layers:
             if not layer.grad_vars:
@@ -141,8 +140,8 @@ class AdamNumpy(Adam[np.ndarray], OptimizerNumpy):
                 # w -= self.learning_rate * (mt / np.sqrt(vt) + self.epsilon))
 
                 np.sqrt(vt_temp_1, dtype=self.model.dtype, out=vt_temp_1)
-                np.add(vt_temp_1, self.epsilon, dtype=self.model.dtype, out=vt_temp_1)
                 np.divide(mt_temp_2, vt_temp_1, dtype=self.model.dtype, out=mt_temp_2)
+                np.add(mt_temp_2, self.epsilon, dtype=self.model.dtype, out=vt_temp_1)
 
                 # np.multiply(self.decay, w, dtype=self.model.dtype, out=vt_temp_w)
                 # np.add(vt_temp_w, mt_temp_dw, dtype=self.model.dtype, out=vt_temp_w)

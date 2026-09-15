@@ -191,6 +191,7 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
     learning_rate_scaling: bool = None  # pyright: ignore[reportAssignmentType]
     optimizer_momentum: float = 0.9
     optimizer_decay: float = 0.0
+    optimizer_decoupled_decay: bool = False
     optimizer_nesterov: bool = False
     optimizer_beta1: float = 0.99
     optimizer_beta2: float = 0.999
