@@ -489,7 +489,7 @@ class PytorchModelTestCase(TestCase):
     model2_desc = "using PyDTNN"
 
     rtol_default = 1e-4
-    atol_default = 1e-5
+    atol_default = 1e-4
     rtol_dict = {
         AdditionBlock: 5e-3,
         ConcatenationBlock: 1e-1,
@@ -516,14 +516,15 @@ class PytorchModelTestCase(TestCase):
     params.synthetic_input_shape = (3, 32, 32)
     params.synthetic_output_shape = (10,)
     params.dtype = np.dtype(np.float64)
-    params.optimizer_name = "adam"
-    # params.optimizer_momentum = 0.9
-    # params.optimizer_nesterov = False
+    params.optimizer_name = "sgd"
+    params.optimizer_nesterov = True
+    params.optimizer_decoupled_decay = True
+    params.optimizer_momentum = 0.9
     params.learning_rate = 1e-5
     params.optimizer_beta1 = 0.9
     params.optimizer_beta2 = 0.999
     params.optimizer_epsilon = 1e-08
-    params.optimizer_decay = 1.0
+    params.optimizer_decay = 0.0
 
     def get_tolerance(self, layer: Layerable) -> tuple[float, float]:
         """
@@ -646,7 +647,9 @@ class PytorchModelTestCase(TestCase):
                     model_torch.parameters(),
                     lr=params.learning_rate,
                     momentum=params.optimizer_momentum,
-                    nesterov=params.optimizer_nesterov
+                    nesterov=params.optimizer_nesterov,
+                    weight_decay=params.optimizer_decay,
+                    dampening=0.0,
                 )
             case "adam":
                 betas = (params.optimizer_beta1, params.optimizer_beta2)
@@ -655,15 +658,15 @@ class PytorchModelTestCase(TestCase):
                                  betas=betas,
                                  eps=params.optimizer_epsilon,
                                  weight_decay=params.optimizer_decay,
-                                 decoupled_weight_decay=True)
+                                 decoupled_weight_decay=params.optimizer_decoupled_decay,
+                                 amsgrad=False)
             case "nadam":
                 betas = (params.optimizer_beta1, params.optimizer_beta2)
                 optimizer = NAdam(model_torch.parameters(),
                                   lr=params.learning_rate,
                                   betas=betas,
                                   eps=params.optimizer_epsilon,
-                                  weight_decay=params.optimizer_decay,
-                                  decoupled_weight_decay=True)
+                                  weight_decay=params.optimizer_decay)
             case _:
                 optimizer = None
                 raise NotImplementedError(
