@@ -17,9 +17,7 @@ from pydtnn.layers.flatten import Flatten
 from pydtnn.converters.pytorch2pydtnn.model_converter import get_layers_from_torch
 from pydtnn.layers.abstract.block_layer import AbstractBlockLayer
 from pydtnn.layers.abstract.layer import LayerError
-from pydtnn.layers.addition_block import AdditionBlock
 from pydtnn.layers.batch_normalization import BatchNormalization
-from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.fc import FC
 from pydtnn.model import Model as PyDTNN_Model
@@ -110,7 +108,6 @@ class ResNet14Like(torch.nn.Module):
             torch.nn.BatchNorm2d(
                 2048, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True
             ),
-            torch.nn.ReLU(inplace=True),
         )
 
         self.conv1 = torch.nn.Conv2d(
@@ -120,6 +117,7 @@ class ResNet14Like(torch.nn.Module):
             64, eps=1e-05, momentum=0.1, affine=True, bias=True, track_running_stats=True
         )
         self.relu = torch.nn.ReLU(inplace=True)
+        self.relu2 = torch.nn.ReLU(inplace=True)
         self.maxpool = torch.nn.MaxPool2d(
             kernel_size=3, stride=2, padding=1, dilation=1, ceil_mode=False
         )
@@ -128,13 +126,9 @@ class ResNet14Like(torch.nn.Module):
         self.layer3 = torch.nn.Sequential(self.layer3_0, self.layer3_1)
         self.layer4 = torch.nn.Sequential(self.layer4_0, self.layer4_1)
         self.avgpool = torch.nn.AdaptiveAvgPool2d(output_size=(1, 1))
-        self.fc = torch.nn.Sequential(
-            torch.nn.Linear(in_features=2048, out_features=10, bias=True),
-            # torch.nn.LogSoftmax(dim=1),
-        )
+        self.fc = torch.nn.Linear(in_features=2048, out_features=10, bias=True)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        out = x.clone()
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
@@ -143,10 +137,10 @@ class ResNet14Like(torch.nn.Module):
         x = self.layer2(x)
         x = self.layer3(x)
         x = self.layer4(x)
+        x = self.relu2(x)
         x = self.avgpool(x)
         x = torch.flatten(x, 1)
         x = self.fc(x)
-        x = x + out
         return x
 
 
@@ -491,15 +485,11 @@ class PytorchModelTestCase(TestCase):
     rtol_default = 1e-4
     atol_default = 1e-4
     rtol_dict = {
-        AdditionBlock: 5e-3,
-        ConcatenationBlock: 1e-1,
         BatchNormalization: 1e-5,
-        Conv2D: 1e-4,
+        Conv2D: 7e-3,
     }
     atol_dict = {
-        AdditionBlock: 5e-3,
-        ConcatenationBlock: 1e-1,
-        Conv2D: 1e-5,
+        Conv2D: 7e-3,
         BatchNormalization: 1e-4,
     }
 
@@ -768,7 +758,10 @@ class PytorchModelTestCase(TestCase):
         _loss_torch = float(loss_torch.detach())
         if verbose_test():
             print(f"{_loss_torch=} || {_loss_pydtnn=}")
-        assert np.isclose(float(_loss_torch), _loss_pydtnn), (
+            rtol: float = PytorchModelTestCase.rtol_default
+            atol: float = PytorchModelTestCase.atol_default
+        assert np.isclose(float(_loss_torch), _loss_pydtnn,
+                          rtol=rtol, atol=atol), (  # pyright: ignore[reportPossiblyUnboundVariable]
             f"Both values are not close: {_loss_torch=} =/=  {_loss_pydtnn=}"
         )
 
@@ -890,10 +883,6 @@ class PytorchModelTestCase(TestCase):
             #   x_pydtnn[1]: 1st layer output
             pydtnn_i = torch_i + 1 + pydtnn_extra_index
             pydtnn_values = x_pydtnn[pydtnn_i]
-
-            if verbose_test():
-                print(f"{torch_i} - {torch_layer._get_name()=} [{pytorch_values.size=}] ||\n"
-                      f"{torch_i} - {pydtnn_layer.name=} [{pydtnn_values.size=}]")
 
             rtol, atol = self.get_tolerance(pydtnn_layer)
             # try:

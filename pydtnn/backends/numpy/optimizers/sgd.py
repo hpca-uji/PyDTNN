@@ -104,7 +104,7 @@ class SGDNumpy(SGD[np.ndarray], OptimizerNumpy):
                 # velocity = self.momentum * velocity + dw
                 np.multiply(velocity, self.momentum, dtype=self.model.dtype, out=velocity)
                 np.add(velocity, temp_dw, out=velocity, dtype=self.model.dtype)
-                
+
                 # if self.nesterov:
                 #   "dw" = (dw + self.momentum * velocity)
                 # else:
