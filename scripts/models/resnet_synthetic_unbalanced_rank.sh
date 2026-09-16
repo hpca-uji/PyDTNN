@@ -1,7 +1,5 @@
 #!/bin/bash
 
-percentage=0.10
-
 case $PMI_RANK in 
   0)
   percentage=0.04
@@ -16,21 +14,20 @@ case $PMI_RANK in
   percentage=0.002
   ;;
 esac
-
-echo "PMI_RANK: $PMI_RANK | percentage: $percentage"
+echo "R${PMI_RANK:?}: ${percentage:?}" >&2
 
 pydtnn-benchmark \
   --model=resnet50 \
   --dataset=synthetic \
   --dataset-path=datasets/mnist \
-  --test-as-validation=False \
+  --no-test-as-validation \
   --batch-size=2 \
   --validation-split=0.2 \
   --steps-per-epoch=0 \
   --num-epochs=5 \
-  --evaluate=False \
+  --no-evaluate \
   --optimizer=sgd \
-  --optimizer-nesterov=True \
+  --optimizer-nesterov \
   --learning-rate=0.1 \
   --optimizer-momentum=0.9 \
   --loss-func=negative_likelihood \
@@ -48,14 +45,13 @@ pydtnn-benchmark \
   --reduce-lr-every-nepochs-factor=0.1 \
   --stop-at-loss-metric=val_categorical_accuracy \
   --stop-at-loss-threshold=70.0 \
-  --parallel-data=True \
-  --shared-data=False \
-  --use-blocking-mpi=False \
+  --parallel-data \
+  --no-shared-data \
+  --use-blocking-mpi \
   --tracing=False \
   --profile=False \
   --backend=cpu \
-  --enable-cudnn=True \
-  --enable-gpudirect=False \
+  --no-use-gpudirect \
   --dtype=float32 \
   --tensor-format=nhwc \
   --augment-scale=True \
