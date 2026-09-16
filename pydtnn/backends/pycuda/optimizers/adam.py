@@ -32,7 +32,7 @@ class AdamPycuda(Adam[TensorArray], OptimizerPycuda):
 
         ops_gpu = {
             True: "w[i] *= (1 - lr * decay)",
-            False: "dw[i] += self.decay * w[i]",
+            False: "dw[i] += decay * w[i]",
         }[self.decoupled_decay]
 
         operations_gpu = """
