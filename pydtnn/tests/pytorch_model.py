@@ -505,11 +505,11 @@ class PytorchModelTestCase(TestCase):
     params.tensor_format = TensorFormat.NCHW
     params.synthetic_input_shape = (3, 32, 32)
     params.synthetic_output_shape = (10,)
-    params.dtype = np.dtype(np.float32)
-    params.optimizer_name = "sgd"
+    params.dtype = np.dtype(np.float64)
+    params.optimizer_name = "adam"
     params.optimizer_nesterov = True
     params.optimizer_decoupled_decay = True
-    params.optimizer_momentum = 0.0
+    params.optimizer_momentum = 1
     params.learning_rate = 1e-8
     params.optimizer_beta1 = 0.99
     params.optimizer_beta2 = 0.999
@@ -1221,3 +1221,102 @@ class PytorchModelTestCase(TestCase):
 
         torch_model = TorchLayer(layer)
         self.do_test_model(torch_model, "BatchNorm2d")
+
+    @unittest.skip("Work in progress.")
+    def test_sigmoid(self) -> None:
+        """Tests Sigmoid activation."""
+        torch_model = torch.nn.Sequential(
+            torch.nn.Flatten(),
+            torch.nn.Sigmoid()
+        )
+        self.do_test_model(torch_model, "Sigmoid")
+
+    @unittest.skip("Work in progress.")
+    def test_relu(self) -> None:
+        """Tests Relu activation."""
+        torch_model = torch.nn.Sequential(
+            torch.nn.Flatten(),
+            torch.nn.ReLU()
+        )
+        self.do_test_model(torch_model, "Relu")
+
+    @unittest.skip("Work in progress.")
+    def test_relu6(self) -> None:
+        """Tests Relu6 activation."""
+        torch_model = torch.nn.Sequential(
+            torch.nn.Flatten(),
+            torch.nn.ReLU6()
+        )
+        self.do_test_model(torch_model, "Relu6")
+
+    @unittest.skip("Work in progress.")
+    def test_leaky_relu(self) -> None:
+        """Tests LeakyRelu activation."""
+        torch_model = torch.nn.Sequential(
+            torch.nn.Flatten(),
+            torch.nn.LeakyReLU()
+        )
+        self.do_test_model(torch_model, "LeakyRelu")
+
+    @unittest.skip("Work in progress.")
+    def test_tanh(self) -> None:
+        """Tests Tanh activation."""
+        torch_model = torch.nn.Sequential(
+            torch.nn.Flatten(),
+            torch.nn.Tanh()
+        )
+        self.do_test_model(torch_model, "Tanh")
+
+    @unittest.skip("Work in progress.")
+    def test_log_sigmoid(self) -> None:
+        """Tests Log Sigmoid activation."""
+        torch_model = torch.nn.Sequential(
+            torch.nn.Flatten(),
+            torch.nn.LogSigmoid()
+        )
+        self.do_test_model(torch_model, "Log_Sigmoid")
+
+    @unittest.skip("Work in progress.")
+    def test_log_softmax(self) -> None:
+        """Tests Log Softmax activation."""
+        torch_model = torch.nn.Sequential(
+            torch.nn.Flatten(),
+            torch.nn.LogSoftmax()
+        )
+        self.do_test_model(torch_model, "Log_Softmax")
+
+    @unittest.skip("Work in progress.")
+    def test_softmax(self) -> None:
+        """Tests Softmax activation."""
+        torch_model = torch.nn.Sequential(
+            torch.nn.Flatten(),
+            torch.nn.Softmax(),
+        )
+        self.do_test_model(torch_model, "Softmax")
+
+    @unittest.skip("Work in progress.")
+    def test_maxpool2d(self) -> None:
+        """Tests MaxPool2D layer."""
+        # params = PytorchModelTestCase.params
+        kernel_size = (3, 3)
+        padding = (1, 1)
+        stride = 1
+        dilation = 0
+
+        torch_model =  torch.nn.Sequential(
+            torch.nn.MaxPool2d(kernel_size=kernel_size, padding=padding, 
+                               stride=stride, dilation=dilation),
+            torch.nn.Flatten()
+        )
+        self.do_test_model(torch_model, "Max_Pool_2D")
+
+    @unittest.skip("Work in progress.")
+    def test_adaptive_average_pool2d(self) -> None:
+        """Tests AdaptiveAveragePool2D layer."""
+        params = PytorchModelTestCase.params
+        output_size = params.synthetic_output_shape[0]
+
+        torch_model = torch.nn.Sequential(torch.nn.AdaptiveAvgPool2d(output_size=output_size),
+                                          torch.nn.Flatten())
+        
+        self.do_test_model(torch_model, "Adaptive_Average_Pool")
