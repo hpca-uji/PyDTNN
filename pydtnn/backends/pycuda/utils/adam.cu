@@ -28,7 +28,7 @@ __global__ void adam_gpudirect(TYPE *w, TYPE *dw, TYPE *m, TYPE *v,
     #ifdef DECOUPLED_DECAY_OPS
         w[i] *= (1 - lr * decay);
     #else
-        dw[i] += self.decay * w[i];
+        dw[i] += decay * w[i];
     #endif
 
         m[i] = beta1 * m[i] + (1 - beta1) * dw[i];
