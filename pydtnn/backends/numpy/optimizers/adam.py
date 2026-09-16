@@ -100,10 +100,10 @@ class AdamNumpy(Adam[np.ndarray], OptimizerNumpy):
             mt_temp_dw: np.ndarray = self.context[layer.id]["temp_dw_%s" % w_]  # pyright: ignore[reportAssignmentType]
 
             if not (self.are_all_zeros(w)
-                and self.are_all_zeros(dw)
-                and self.are_all_zeros(m)
-                and self.are_all_zeros(v)
-            ):
+                    and self.are_all_zeros(dw)
+                    and self.are_all_zeros(m)
+                    and self.are_all_zeros(v)
+                    ):
                 # NOTE: The operations are unrolled in order to reduce the memory consumed by intermediate
                 #  copies of the variables during the operations.
 

@@ -51,7 +51,7 @@ class AdamPycuda(Adam[TensorArray], OptimizerPycuda):
             m[i] = beta1 * m[i] + (1 - beta1) * dw[i];
             v[i] = beta2 * v[i] + (1 - beta2) * {func}(dw[i], 2);
             w[i] -= lr * ((m[i] / (1 - {func}(beta1, it))) / sqrt(v[i] / (1 - {func}(beta2, it)) + epsilon));
-        """.format(func=func_pow[self.model.dtype], 
+        """.format(func=func_pow[self.model.dtype],
                    decoupled_decay_ops=ops_gpu)
 
         self.update_kernel = ElementwiseKernel(parameters_gpu, operations_gpu, "Adam_kernel")
