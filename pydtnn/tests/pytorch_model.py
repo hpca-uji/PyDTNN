@@ -209,7 +209,7 @@ def remove_inplace_pytorch(torch_model: torch.nn.Module) -> None:
     def _get_all_layers_pytorch(module: torch.nn.Module) -> None:
         # iterate through immediate child modules
         list_children = list(module.named_children())
-        for name, immediate_child_module in list_children:
+        for _name, immediate_child_module in list_children:
             if len(list(immediate_child_module.named_children())) == 0:
                 if hasattr(immediate_child_module, "inplace"):
                     if verbose_test():
@@ -506,15 +506,15 @@ class PytorchModelTestCase(TestCase):
     params.synthetic_input_shape = (3, 32, 32)
     params.synthetic_output_shape = (10,)
     params.dtype = np.dtype(np.float32)
-    params.optimizer_name = "adam"
-    params.optimizer_nesterov = False
+    params.optimizer_name = "sgd"
+    params.optimizer_nesterov = True
     params.optimizer_decoupled_decay = True
-    params.optimizer_momentum = 0.9
+    params.optimizer_momentum = 0.0
     params.learning_rate = 1e-8
     params.optimizer_beta1 = 0.99
     params.optimizer_beta2 = 0.999
     params.optimizer_epsilon = 1e-08
-    params.optimizer_decay = 0.0
+    params.optimizer_decay = 0.5
 
     def get_tolerance(self, layer: Layerable) -> tuple[float, float]:
         """
