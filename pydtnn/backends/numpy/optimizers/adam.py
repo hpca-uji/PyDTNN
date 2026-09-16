@@ -96,11 +96,10 @@ class AdamNumpy(Adam[np.ndarray], OptimizerNumpy):
             # Velocity of the weight or bias of the given layer
             v: np.ndarray = self.context[layer.id]["v_%s" % w_]  # pyright: ignore[reportAssignmentType]
 
-            vt_temp: np.ndarray = self.context[layer.id]["temp_w_%s" % w_]  # pyright: ignore[reportAssignmentType]
+            vt_temp_w: np.ndarray = self.context[layer.id]["temp_w_%s" % w_]  # pyright: ignore[reportAssignmentType]
             mt_temp_dw: np.ndarray = self.context[layer.id]["temp_dw_%s" % w_]  # pyright: ignore[reportAssignmentType]
 
-            if not (
-                self.are_all_zeros(w)
+            if not (self.are_all_zeros(w)
                 and self.are_all_zeros(dw)
                 and self.are_all_zeros(m)
                 and self.are_all_zeros(v)
@@ -111,21 +110,18 @@ class AdamNumpy(Adam[np.ndarray], OptimizerNumpy):
                 if self.decoupled_decay:
                     # w = w - lr * decay * w = (1 - lr * decay) * w
                     np.multiply((1 - (self.learning_rate * self.decay)), w, dtype=self.model.dtype, out=w)
-                    mt_temp_dw[:] = dw
                 else:
                     # dw += self.decay * w
                     np.multiply(self.decay, w, dtype=self.model.dtype, out=mt_temp_dw)
-                    np.add(dw, mt_temp_dw, out=mt_temp_dw)
+                    np.add(dw, mt_temp_dw, out=dw)
 
                 # m = self.beta1 * m + (1 - self.beta1) * dw
-                np.multiply((1 - self.beta1), mt_temp_dw, dtype=self.model.dtype, out=mt_temp_dw)
-
+                np.multiply((1 - self.beta1), dw, dtype=self.model.dtype, out=mt_temp_dw)
                 np.multiply(m, self.beta1, dtype=self.model.dtype, out=m)
                 np.add(m, mt_temp_dw, dtype=self.model.dtype, out=m)
 
                 # v = self.beta2 * v + (1 - self.beta2) * dw ** 2
-                np.pow(mt_temp_dw, 2, dtype=self.model.dtype, out=mt_temp_dw)
-
+                np.pow(dw, 2, dtype=self.model.dtype, out=mt_temp_dw)
                 np.multiply(v, self.beta2, dtype=self.model.dtype, out=v)
                 np.multiply(mt_temp_dw, (1 - self.beta2), dtype=self.model.dtype, out=mt_temp_dw)
                 np.add(v, mt_temp_dw, dtype=self.model.dtype, out=v)
@@ -133,13 +129,12 @@ class AdamNumpy(Adam[np.ndarray], OptimizerNumpy):
                 # mt = m / (1 - self.beta1 ** it)
                 np.divide(m, (1 - self.beta1**it), dtype=self.model.dtype, out=mt_temp_dw)
                 # vt = v / (1 - self.beta2 ** it)
-                np.divide(v, (1 - self.beta2**it), dtype=self.model.dtype, out=vt_temp)
+                np.divide(v, (1 - self.beta2**it), dtype=self.model.dtype, out=vt_temp_w)
 
-                # w -= self.learning_rate * (mt / np.sqrt(vt) + self.epsilon))
-
-                np.sqrt(vt_temp, dtype=self.model.dtype, out=vt_temp)
-                np.add(vt_temp, self.epsilon, dtype=self.model.dtype, out=vt_temp)
-                np.divide(mt_temp_dw, vt_temp, dtype=self.model.dtype, out=mt_temp_dw)
-                np.multiply(self.learning_rate, mt_temp_dw, dtype=self.model.dtype, out=mt_temp_dw)
-                np.subtract(w, mt_temp_dw, dtype=self.model.dtype, out=w)
+                # w -= self.learning_rate * (mt / (np.sqrt(vt) + self.epsilon))
+                np.sqrt(vt_temp_w, dtype=self.model.dtype, out=vt_temp_w)
+                np.add(vt_temp_w, self.epsilon, dtype=self.model.dtype, out=vt_temp_w)
+                np.divide(mt_temp_dw, vt_temp_w, dtype=self.model.dtype, out=vt_temp_w)
+                np.multiply(vt_temp_w, self.learning_rate, dtype=self.model.dtype, out=vt_temp_w)
+                np.subtract(w, vt_temp_w, dtype=self.model.dtype, out=w)
             # else: continue
