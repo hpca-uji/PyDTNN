@@ -846,8 +846,8 @@ class ArgumentParser(argparse.ArgumentParser):
         )
         _op_group.add_argument(
             "--optimizer-decoupled-decay",
-            type=float,
-            default=ModelBase.optimizer_decay,
+            type=bool,
+            default=ModelBase.optimizer_decoupled_decay,
             help=("Decouple the weight decay from the momentum and variance."
                   f"Default: {ModelBase.optimizer_decoupled_decay!r}."),
         )

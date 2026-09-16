@@ -45,16 +45,17 @@ class SGDPycuda(SGD[TensorArray], OptimizerPycuda):
             T=DTYPE2CTYPE[self.model.dtype]
         )
         ops_gpu = {
-            True: "w[i] -= lr * (decay * w[i] + dw[i] + momentum * v[i])",
-            False: "w[i] -= lr * (decay * w[i] + v[i])",
+            True: "w[i] -= lr * (dw[i] + momentum * v[i])",
+            False: "w[i] -= lr * v[i]",
         }[self.nesterov]
-        operations_gpu = "v[i] = momentum * v[i] + dw[i]; {nesterov_ops};".format(
-            nesterov_ops=ops_gpu
-        )
+        operations_gpu = "dw[i] = ({T}) dw[i] + decay * w[i];" \
+                         "v[i] = momentum * v[i] + dw[i];" \
+                         "{nesterov_ops};".format(T=DTYPE2CTYPE[self.model.dtype],
+                                                  nesterov_ops=ops_gpu)
 
         self.update_kernel = ElementwiseKernel(parameters_gpu, operations_gpu, "SGD_kernel")
 
-        # GPU Direct -
+        # --- GPU Direct ---
         self.defines_replaces: dict[str, str] = {
             '"TYPE"': DTYPE2CTYPE[self.model.dtype],
             "NESTEROV_OPS": "NESTEROV_OPS" if self.nesterov else "NOT_NESTEROV",
@@ -101,9 +102,9 @@ class SGDPycuda(SGD[TensorArray], OptimizerPycuda):
             w: TensorArray
             dw: TensorArray
             velocity: gpuarray.GPUArray
+            n = self.get_batch_size(w)
 
             if self.model.use_gpudirect:
-                n = self.get_batch_size(w)
                 self.update_gpudirect(
                     w.gpudata,
                     dw.ptr_intp,
@@ -117,7 +118,6 @@ class SGDPycuda(SGD[TensorArray], OptimizerPycuda):
                     stream=layer.stream_2,
                 )
             else:
-                n = np.int32(np.prod(w.shape))
                 self.update_kernel(
                     w.ary,
                     dw.ary,

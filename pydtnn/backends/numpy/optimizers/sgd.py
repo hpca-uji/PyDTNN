@@ -83,8 +83,7 @@ class SGDNumpy(SGD[np.ndarray], OptimizerNumpy):
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
             velocity: np.ndarray = self.context[layer.id]["velocity_%s" % w_]  # pyright: ignore[reportAssignmentType]
-            temp_dw: np.ndarray = self.context[layer.id]["temp_w_%s" % w_]  # pyright: ignore[reportAssignmentType]
-            temp_v: np.ndarray = self.context[layer.id]["temp_v_%s" % w_]  # pyright: ignore[reportAssignmentType]
+            temp_v_dw: np.ndarray = self.context[layer.id]["temp_v_%s" % w_]  # pyright: ignore[reportAssignmentType]
             w: np.ndarray
             dw: np.ndarray
 
@@ -94,28 +93,25 @@ class SGDNumpy(SGD[np.ndarray], OptimizerNumpy):
                 # NOTE: The operations are unrolled in order to reduce the memory consumed
                 # by intermediate copies of the variables during the operations.
 
-                # temp_w_dw = dw + self.decay * w
                 if self.decay != 0:
-                    np.multiply(self.decay, w, dtype=self.model.dtype, out=temp_dw)
-                    np.add(temp_dw, dw, out=temp_dw)
-                else:
-                    temp_dw[:] = dw
+                    # dw += self.decay * w
+                    np.multiply(self.decay, w, dtype=self.model.dtype, out=temp_v_dw)
+                    np.add(temp_v_dw, dw, out=dw)
+                # else: dw = dw
 
-                # velocity = self.momentum * velocity + dw
-                np.multiply(velocity, self.momentum, dtype=self.model.dtype, out=velocity)
-                np.add(velocity, temp_dw, out=velocity, dtype=self.model.dtype)
+                if self.momentum != 0:
+                    # velocity = self.momentum * velocity + dw
+                    np.multiply(velocity, self.momentum, dtype=self.model.dtype, out=velocity)
+                    np.add(velocity, dw, out=velocity, dtype=self.model.dtype)
 
-                # if self.nesterov:
-                #   "dw" = (dw + self.momentum * velocity)
-                # else:
-                #    "dw" = velocity
-                if self.nesterov:
-                    np.multiply(velocity, self.momentum, dtype=self.model.dtype, out=temp_v)
-                    np.add(temp_v, temp_dw, dtype=self.model.dtype, out=temp_dw)
-                else:
-                    temp_dw[:] = velocity
+                    if self.nesterov:
+                        # dw = (dw + self.momentum * velocity)
+                        np.multiply(velocity, self.momentum, dtype=self.model.dtype, out=temp_v_dw)
+                        np.add(temp_v_dw, dw, dtype=self.model.dtype, out=dw)
+                    else:
+                        dw[:] = velocity
 
                 # w -= self.learning_rate * dw
-                np.multiply(temp_dw, self.learning_rate, dtype=self.model.dtype, out=temp_dw)
-                np.subtract(w, temp_dw, dtype=self.model.dtype, out=w)
+                np.multiply(dw, self.learning_rate, dtype=self.model.dtype, out=dw)
+                np.subtract(w, dw, dtype=self.model.dtype, out=w)
             # else: continue
