@@ -1303,8 +1303,8 @@ class PytorchModelTestCase(TestCase):
         stride = 1
         dilation = 0
 
-        torch_model =  torch.nn.Sequential(
-            torch.nn.MaxPool2d(kernel_size=kernel_size, padding=padding, 
+        torch_model = torch.nn.Sequential(
+            torch.nn.MaxPool2d(kernel_size=kernel_size, padding=padding,
                                stride=stride, dilation=dilation),
             torch.nn.Flatten()
         )
@@ -1318,5 +1318,4 @@ class PytorchModelTestCase(TestCase):
 
         torch_model = torch.nn.Sequential(torch.nn.AdaptiveAvgPool2d(output_size=output_size),
                                           torch.nn.Flatten())
-        
         self.do_test_model(torch_model, "Adaptive_Average_Pool")
