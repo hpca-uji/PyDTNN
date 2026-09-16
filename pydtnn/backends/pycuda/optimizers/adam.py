@@ -40,18 +40,28 @@ class AdamPycuda(Adam[TensorArray], OptimizerPycuda):
             "{T} *w, {T} *dw, {T} *m, {T} *v, float it, float lr, float decay, float beta1, float"
             " beta2, float epsilon".format(T=DTYPE2CTYPE[self.model.dtype])
         )
+
+        ops_gpu = {
+            True: "w[i] *= (1 - lr * decay)",
+            False: "dw[i] += self.decay * w[i]",
+        }[self.decoupled_decay]
+
         operations_gpu = """
+            {decoupled_decay_ops};
             m[i] = beta1 * m[i] + (1 - beta1) * dw[i];
             v[i] = beta2 * v[i] + (1 - beta2) * {func}(dw[i], 2);
-            w[i] -= lr * (decay * w[i] + ((m[i] / (1 - {func}(beta1, it))) / sqrt(v[i] / (1 - {func}(beta2, it)) + epsilon)));
-        """.format(func=func_pow[self.model.dtype])
+            w[i] -= lr * ((m[i] / (1 - {func}(beta1, it))) / sqrt(v[i] / (1 - {func}(beta2, it)) + epsilon));
+        """.format(func=func_pow[self.model.dtype], 
+                   decoupled_decay_ops=ops_gpu)
 
         self.update_kernel = ElementwiseKernel(parameters_gpu, operations_gpu, "Adam_kernel")
 
-        # GPU DIRECT-
+        # --- GPU DIRECT ---
         self.defines_replaces: dict[str, str] = {
             '"TYPE"': DTYPE2CTYPE[self.model.dtype],
             "powf_or_pow": func_pow[self.model.dtype],
+            "DECOUPLED_DECAY_OPS": "DECOUPLED_DECAY_OPS" if self.decoupled_decay
+                                   else "NOT_DECOUPLED_DECAY"
         }
         self.update_gpudirect = self._get_kernel(func_name_subfix="_gpudirect")
 

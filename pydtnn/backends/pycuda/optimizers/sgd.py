@@ -44,10 +44,12 @@ class SGDPycuda(SGD[TensorArray], OptimizerPycuda):
         parameters_gpu = "{T} *w, {T} * dw, {T} * v, float lr, float decay, float momentum".format(
             T=DTYPE2CTYPE[self.model.dtype]
         )
+
         ops_gpu = {
             True: "w[i] -= lr * (dw[i] + momentum * v[i])",
             False: "w[i] -= lr * v[i]",
         }[self.nesterov]
+
         operations_gpu = "dw[i] = ({T}) dw[i] + decay * w[i];" \
                          "v[i] = momentum * v[i] + dw[i];" \
                          "{nesterov_ops};".format(T=DTYPE2CTYPE[self.model.dtype],

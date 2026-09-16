@@ -144,8 +144,8 @@ class NadamNumpy(Nadam[np.ndarray], OptimizerNumpy):
                 # )
 
                 # w -= (self.learning_rate * (mt / np.sqrt(vt + epsilon))))
-                np.add(vt_temp_w, self.epsilon, dtype=self.model.dtype, out=vt_temp_w)
                 np.sqrt(vt_temp_w, dtype=self.model.dtype, out=vt_temp_w)
+                np.add(vt_temp_w, self.epsilon, dtype=self.model.dtype, out=vt_temp_w)
                 np.divide(mt_temp_dw, vt_temp_w, dtype=self.model.dtype, out=mt_temp_dw)
                 np.multiply(self.learning_rate, mt_temp_dw, dtype=self.model.dtype, out=mt_temp_dw)
                 np.subtract(w, mt_temp_dw, dtype=self.model.dtype, out=w)
