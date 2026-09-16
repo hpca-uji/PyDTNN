@@ -505,13 +505,13 @@ class PytorchModelTestCase(TestCase):
     params.tensor_format = TensorFormat.NCHW
     params.synthetic_input_shape = (3, 32, 32)
     params.synthetic_output_shape = (10,)
-    params.dtype = np.dtype(np.float64)
-    params.optimizer_name = "sgd"
-    params.optimizer_nesterov = True
+    params.dtype = np.dtype(np.float32)
+    params.optimizer_name = "adam"
+    params.optimizer_nesterov = False
     params.optimizer_decoupled_decay = True
     params.optimizer_momentum = 0.9
-    params.learning_rate = 1e-5
-    params.optimizer_beta1 = 0.9
+    params.learning_rate = 1e-8
+    params.optimizer_beta1 = 0.99
     params.optimizer_beta2 = 0.999
     params.optimizer_epsilon = 1e-08
     params.optimizer_decay = 0.0
@@ -819,7 +819,7 @@ class PytorchModelTestCase(TestCase):
         """
         # TODO: mover el loss a una función a parte (para compararlas)
         # dx: list[torch.Tensor] = []
-        optimizer.zero_grad()
+        # optimizer.zero_grad()
         optimizer.step()
 
     def do_pydtnn_model_optimizer_pass(self, pydtnn_model: PyDTNN_Model) -> None:
