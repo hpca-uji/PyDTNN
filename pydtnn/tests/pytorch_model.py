@@ -1147,7 +1147,8 @@ class PytorchModelTestCase(TestCase):
 
             # Optimizer pass
             if not without_weighted_layers:
-                self.do_pytorch_model_optimizer_pass(model_torch, optimizer_torch)  # pyright: ignore[reportPossiblyUnboundVariable]
+                self.do_pytorch_model_optimizer_pass(model_torch,
+                                                     optimizer_torch)  # pyright: ignore[reportPossiblyUnboundVariable]
                 self.do_pydtnn_model_optimizer_pass(model_pydtnn)
 
                 # Compare Optimizer's results
