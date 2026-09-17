@@ -1157,6 +1157,8 @@ class PytorchModelTestCase(TestCase):
             # Delete torch outputs:
             x_outputs.clear()
             dx_torch.clear()
+            if not without_weighted_layers:
+                optimizer_torch.zero_grad()  # pyright: ignore
 
     @unittest.skip("Large model")
     def test_renset50(self) -> None:
