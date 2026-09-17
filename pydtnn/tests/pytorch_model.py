@@ -259,7 +259,7 @@ def set_forward_hook(torch_model: torch.nn.Module) -> list[tuple[torch.nn.Module
 def set_backward_hook(
     torch_model: torch.nn.Module,
 ) -> list[tuple[torch.nn.Module, tuple[torch.Tensor, ...] | torch.Tensor]]:
-    """Recursively sets the forward's 'hook' method."""
+    """Recursively sets the backwards's 'hook' method."""
 
     # Forward
     # Input -> Layer -> Output
@@ -888,8 +888,8 @@ class PytorchModelTestCase(TestCase):
             # try:
             self.assertTrue(
                 pytorch_values.size == pydtnn_values.size,
-                f"Both tensors doesn't have the same number of elements "
-                f"({pytorch_values.size=} != {pydtnn_values.size=})",
+                f"Both tensors ({pydtnn_layer.name_with_id}) doesn't have the same number of elements"
+                f" ({pytorch_values.size=} != {pydtnn_values.size=})",
             )
             self.assertTrue(
                 np.allclose(pytorch_values, pydtnn_values, rtol=rtol, atol=atol),
