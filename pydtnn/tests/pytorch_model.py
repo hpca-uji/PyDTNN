@@ -1148,7 +1148,7 @@ class PytorchModelTestCase(TestCase):
             # Optimizer pass
             if not without_weighted_layers:
                 self.do_pytorch_model_optimizer_pass(model_torch,
-                                                     optimizer_torch)  # pyright: ignore[reportPossiblyUnboundVariable]
+                                                     optimizer_torch)  # pyright: ignore
                 self.do_pydtnn_model_optimizer_pass(model_pydtnn)
 
                 # Compare Optimizer's results
@@ -1231,7 +1231,7 @@ class PytorchModelTestCase(TestCase):
         """Tests Sigmoid activation."""
         torch_model = torch.nn.Sequential(
             torch.nn.Flatten(),
-            torch.nn.Sigmoid()
+            torch.nn.Sigmoid(dim=1)
         )
         torch_model = TorchLayer(torch_model)
         self.do_test_model(torch_model, "Sigmoid", without_weighted_layers=True)
@@ -1271,7 +1271,7 @@ class PytorchModelTestCase(TestCase):
         """Tests Tanh activation."""
         torch_model = torch.nn.Sequential(
             torch.nn.Flatten(),
-            torch.nn.Tanh()
+            torch.nn.Tanh(dim=1)
         )
         torch_model = TorchLayer(torch_model)
         self.do_test_model(torch_model, "Tanh", without_weighted_layers=True)
@@ -1281,7 +1281,7 @@ class PytorchModelTestCase(TestCase):
         """Tests Log Sigmoid activation."""
         torch_model = torch.nn.Sequential(
             torch.nn.Flatten(),
-            torch.nn.LogSigmoid()
+            torch.nn.LogSigmoid(dim=1)
         )
         torch_model = TorchLayer(torch_model)
         self.do_test_model(torch_model, "Log_Sigmoid", without_weighted_layers=True)
@@ -1291,7 +1291,7 @@ class PytorchModelTestCase(TestCase):
         """Tests Log Softmax activation."""
         torch_model = torch.nn.Sequential(
             torch.nn.Flatten(),
-            torch.nn.LogSoftmax()
+            torch.nn.LogSoftmax(dim=1)
         )
         torch_model = TorchLayer(torch_model)
         self.do_test_model(torch_model, "Log_Softmax", without_weighted_layers=True)
@@ -1301,7 +1301,7 @@ class PytorchModelTestCase(TestCase):
         """Tests Softmax activation."""
         torch_model = torch.nn.Sequential(
             torch.nn.Flatten(),
-            torch.nn.Softmax(),
+            torch.nn.Softmax(dim=1),
         )
         torch_model = TorchLayer(torch_model)
         self.do_test_model(torch_model, "Softmax", without_weighted_layers=True)
@@ -1311,9 +1311,9 @@ class PytorchModelTestCase(TestCase):
         """Tests MaxPool2D layer."""
         # params = PytorchModelTestCase.params
         kernel_size = (3, 3)
-        padding = (1, 1)
+        padding = 0
         stride = 1
-        dilation = 0
+        dilation = 1
 
         torch_model = torch.nn.Sequential(
             torch.nn.MaxPool2d(kernel_size=kernel_size, padding=padding,
