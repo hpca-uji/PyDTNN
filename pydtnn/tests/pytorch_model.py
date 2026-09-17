@@ -1058,6 +1058,7 @@ class PytorchModelTestCase(TestCase):
         self,
         model_torch: torch.nn.Module,
         model_name: str,
+        without_weighted_layers: bool = False,
     ) -> None:
         """
         Executes the full comparison test for a given model.
@@ -1075,7 +1076,8 @@ class PytorchModelTestCase(TestCase):
             model_torch = model_torch.double()
 
         loss_func_torch = self._get_torch_loss_func()
-        optimizer_torch = self.get_optimizer_pytorch(model_torch)
+        if not without_weighted_layers:
+            optimizer_torch = self.get_optimizer_pytorch(model_torch)
         model_pydtnn = self.get_model_pydtnn(model_torch)
         model_pydtnn.mode = ModelMode.TRAIN
 
@@ -1144,11 +1146,12 @@ class PytorchModelTestCase(TestCase):
             self.compare_grad_vars(model_torch, model_pydtnn)
 
             # Optimizer pass
-            self.do_pytorch_model_optimizer_pass(model_torch, optimizer_torch)
-            self.do_pydtnn_model_optimizer_pass(model_pydtnn)
+            if not without_weighted_layers:
+                self.do_pytorch_model_optimizer_pass(model_torch, optimizer_torch)  # pyright: ignore[reportPossiblyUnboundVariable]
+                self.do_pydtnn_model_optimizer_pass(model_pydtnn)
 
-            # Compare Optimizer's results
-            self.compare_optimizer_parameters(model_torch, model_pydtnn)
+                # Compare Optimizer's results
+                self.compare_optimizer_parameters(model_torch, model_pydtnn)
 
             # Delete torch outputs:
             x_outputs.clear()
@@ -1229,7 +1232,8 @@ class PytorchModelTestCase(TestCase):
             torch.nn.Flatten(),
             torch.nn.Sigmoid()
         )
-        self.do_test_model(torch_model, "Sigmoid")
+        torch_model = TorchLayer(torch_model)
+        self.do_test_model(torch_model, "Sigmoid", without_weighted_layers=True)
 
     @unittest.skip("Work in progress.")
     def test_relu(self) -> None:
@@ -1238,7 +1242,8 @@ class PytorchModelTestCase(TestCase):
             torch.nn.Flatten(),
             torch.nn.ReLU()
         )
-        self.do_test_model(torch_model, "Relu")
+        torch_model = TorchLayer(torch_model)
+        self.do_test_model(torch_model, "Relu", without_weighted_layers=True)
 
     @unittest.skip("Work in progress.")
     def test_relu6(self) -> None:
@@ -1247,7 +1252,8 @@ class PytorchModelTestCase(TestCase):
             torch.nn.Flatten(),
             torch.nn.ReLU6()
         )
-        self.do_test_model(torch_model, "Relu6")
+        torch_model = TorchLayer(torch_model)
+        self.do_test_model(torch_model, "Relu6", without_weighted_layers=True)
 
     @unittest.skip("Work in progress.")
     def test_leaky_relu(self) -> None:
@@ -1256,7 +1262,8 @@ class PytorchModelTestCase(TestCase):
             torch.nn.Flatten(),
             torch.nn.LeakyReLU()
         )
-        self.do_test_model(torch_model, "LeakyRelu")
+        torch_model = TorchLayer(torch_model)
+        self.do_test_model(torch_model, "LeakyRelu", without_weighted_layers=True)
 
     @unittest.skip("Work in progress.")
     def test_tanh(self) -> None:
@@ -1265,7 +1272,8 @@ class PytorchModelTestCase(TestCase):
             torch.nn.Flatten(),
             torch.nn.Tanh()
         )
-        self.do_test_model(torch_model, "Tanh")
+        torch_model = TorchLayer(torch_model)
+        self.do_test_model(torch_model, "Tanh", without_weighted_layers=True)
 
     @unittest.skip("Work in progress.")
     def test_log_sigmoid(self) -> None:
@@ -1274,7 +1282,8 @@ class PytorchModelTestCase(TestCase):
             torch.nn.Flatten(),
             torch.nn.LogSigmoid()
         )
-        self.do_test_model(torch_model, "Log_Sigmoid")
+        torch_model = TorchLayer(torch_model)
+        self.do_test_model(torch_model, "Log_Sigmoid", without_weighted_layers=True)
 
     @unittest.skip("Work in progress.")
     def test_log_softmax(self) -> None:
@@ -1283,7 +1292,8 @@ class PytorchModelTestCase(TestCase):
             torch.nn.Flatten(),
             torch.nn.LogSoftmax()
         )
-        self.do_test_model(torch_model, "Log_Softmax")
+        torch_model = TorchLayer(torch_model)
+        self.do_test_model(torch_model, "Log_Softmax", without_weighted_layers=True)
 
     @unittest.skip("Work in progress.")
     def test_softmax(self) -> None:
@@ -1292,7 +1302,8 @@ class PytorchModelTestCase(TestCase):
             torch.nn.Flatten(),
             torch.nn.Softmax(),
         )
-        self.do_test_model(torch_model, "Softmax")
+        torch_model = TorchLayer(torch_model)
+        self.do_test_model(torch_model, "Softmax", without_weighted_layers=True)
 
     @unittest.skip("Work in progress.")
     def test_maxpool2d(self) -> None:
@@ -1308,7 +1319,8 @@ class PytorchModelTestCase(TestCase):
                                stride=stride, dilation=dilation),
             torch.nn.Flatten()
         )
-        self.do_test_model(torch_model, "Max_Pool_2D")
+        torch_model = TorchLayer(torch_model)
+        self.do_test_model(torch_model, "Max_Pool_2D", without_weighted_layers=True)
 
     @unittest.skip("Work in progress.")
     def test_adaptive_average_pool2d(self) -> None:
@@ -1318,4 +1330,5 @@ class PytorchModelTestCase(TestCase):
 
         torch_model = torch.nn.Sequential(torch.nn.AdaptiveAvgPool2d(output_size=output_size),
                                           torch.nn.Flatten())
-        self.do_test_model(torch_model, "Adaptive_Average_Pool")
+        torch_model = TorchLayer(torch_model)
+        self.do_test_model(torch_model, "Adaptive_Average_Pool", without_weighted_layers=True)
