@@ -15,13 +15,13 @@ def adaptive_avg_pooling_fwd_nhwc_cython[T: _npDT](  # noqa: D103,E302
         Nothing; the return is stored in "dx".
     """
 
-def adaptive_avg_pooling_bwd_nhwc_cython[T: _npDT](dy: _npDT_4Dims[T], dx: _npDT_4Dims[T]) -> None:  # noqa: D103,E302
+def adaptive_avg_pooling_bwd_nhwc_cython[T: _npDT](dx: _npDT_4Dims[T], dy: _npDT_4Dims[T]) -> None:  # noqa: D103,E302
     """
     Performs backward adaptive average pooling on NHWC input data.
 
     Args:
-        dy (npDT_4Dims): data input.
         dx (npDT_4Dims): ndarray where the output will be stored.
+        dy (npDT_4Dims): data input.
     Returns:
         Nothing; the return is stored in "dx".
     """

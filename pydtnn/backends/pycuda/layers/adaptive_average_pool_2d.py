@@ -138,7 +138,7 @@ class AdaptiveAveragePool2DPycuda(AdaptiveAveragePool2D[TensorArray], LayerPycud
 
         self.cuda_bwd_func(
             self.dx.ary,
-            self.y.ary,
+            dy.ary,
             np.int32(n),
             np.int32(c),
             np.int32(h),

@@ -55,8 +55,8 @@ def adaptive_avg_pooling_fwd_nchw_cython(npDT[:,:,:,::1] x,
 
 
 # --- BACKWARD ---
-def adaptive_avg_pooling_bwd_nchw_cython(npDT[:,:,:,::1] dy, 
-                                         npDT[:,:,:,::1] dx) -> None:
+def adaptive_avg_pooling_bwd_nchw_cython(npDT[:,:,:,::1] dx,
+                                         npDT[:,:,:,::1] dy) -> None:
     cdef int n = dy.shape[0]
     cdef int c = dy.shape[1]
     cdef int h = dy.shape[2]
