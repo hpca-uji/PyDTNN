@@ -52,7 +52,7 @@ class BatchNormalization[T: Array](Layer[T]):  # noqa: D101 (generics not detect
         self.running_var_initializer: Callable[[ArrayShape, np.dtype], np.ndarray] = (
             running_var_initializer
         )
-        if self.use_bias:
+        if not self.use_bias:
             biases_initializer = zeros
 
         self.biases_initializer: Callable[[ArrayShape, np.dtype], np.ndarray] = biases_initializer
