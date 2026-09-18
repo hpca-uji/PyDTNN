@@ -508,7 +508,7 @@ class PytorchModelTestCase(TestCase):
     params.dtype = np.dtype(np.float64)
     params.optimizer_name = "adam"
     params.optimizer_nesterov = True
-    params.optimizer_decoupled_decay = True
+    params.optimizer_decoupled_decay = False
     params.optimizer_momentum = 1
     params.learning_rate = 1e-8
     params.optimizer_beta1 = 0.99
@@ -707,9 +707,9 @@ class PytorchModelTestCase(TestCase):
 
         return model_pydtnn
 
-    def do_torch_model_forward_pass(self, model1: PyTorch_Model, x0: torch.Tensor) -> torch.Tensor:
+    def do_torch_model_forward_pass(self, torch_model: PyTorch_Model, x0: torch.Tensor) -> torch.Tensor:
         """
-        Performs a forward pass for Model 1.
+        Performs a forward pass for the PyTorch model.
 
         Args:
             model1: The model instance.
@@ -719,11 +719,11 @@ class PytorchModelTestCase(TestCase):
             torch.Tensor: The last layer's output.
             The list of layer's outputs must be set in the hook. The variable should be "torch_forward_outputs"
         """
-        return model1(x0)
+        return torch_model(x0)
 
-    def do_pydtnn_model_forward_pass(self, model2: PyDTNN_Model, x0: np.ndarray) -> list[np.ndarray]:
+    def do_pydtnn_model_forward_pass(self, pydtnn_model: PyDTNN_Model, x0: np.ndarray) -> list[np.ndarray]:
         """
-        Performs a forward pass for Model 1.
+        Performs a forward pass for the PyDTNN model.
 
         Args:
             model1: The model instance.
@@ -733,7 +733,7 @@ class PytorchModelTestCase(TestCase):
             List of outputs after each layer.
         """
         x1 = list[np.ndarray]()
-        for layer in model2.layers:
+        for layer in pydtnn_model.layers:
             x0 = layer.forward(x0.copy())
             x1.append(x0.copy())
         return x1
@@ -783,10 +783,10 @@ class PytorchModelTestCase(TestCase):
             loss.backward()
 
     def do_pydtnn_model_backward_pass(
-        self, model2: PyDTNN_Model, dx: np.ndarray
+        self, pydtnn_model: PyDTNN_Model, dx: np.ndarray
     ) -> list[tuple[Layerable, np.ndarray]]:
         """
-        Performs a forward pass for PyDTNN's Model.
+        Performs a backward pass for PyDTNN's Model.
 
         Args:
             model: The model instance.
@@ -797,7 +797,7 @@ class PytorchModelTestCase(TestCase):
         """
         dx1 = list[tuple[Layerable, np.ndarray]]()
         layer_dx = dx
-        for layer in reversed(model2.layers):
+        for layer in reversed(pydtnn_model.layers):
             layer_dx = layer.backward(layer_dx.copy())
             if verbose_test():
                 print(f"{layer} - {layer_dx.shape}")
@@ -805,10 +805,10 @@ class PytorchModelTestCase(TestCase):
         return dx1
 
     def do_pytorch_model_optimizer_pass(
-        self, _model1: PyTorch_Model, optimizer: torch.optim.Optimizer
+        self, _torch_model: PyTorch_Model, optimizer: torch.optim.Optimizer
     ) -> None:
         """
-        Performs a forward pass for Model 1.
+        Execute the PyTorch's optimizer.
 
         Args:
             _model1: The PyTorch model
@@ -824,7 +824,7 @@ class PytorchModelTestCase(TestCase):
 
     def do_pydtnn_model_optimizer_pass(self, pydtnn_model: PyDTNN_Model) -> None:
         """
-        Performs a forward pass for PyDTNN's Model.
+        Execute the PyDTNN's optimizer.
 
         Args:
             model: The model instance.
