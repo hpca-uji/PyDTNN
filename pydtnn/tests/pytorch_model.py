@@ -308,7 +308,7 @@ def set_backward_hook(
 def replace_pydtnn_layerable(
     layers: Sequence[Layerable], conversion: dict[type[Layerable], type[Layerable]]
 ) -> list[Layerable]:
-    """Method to replace PyDTNN's layers and activations."""
+    """Function to replace PyDTNN's layers and activations."""
 
     new_layers = list()
     conv_keys = conversion.keys()
@@ -342,7 +342,7 @@ def get_all_pytorch_layers(
 
 
 def get_torch_grad_parameters_values(torch_model: PyTorch_Model) -> dict[int, dict[str, np.ndarray | None]]:
-    """Method to get all the parameter's gradients."""
+    """Function to get all the parameter's gradients."""
     layers = get_all_pytorch_layers(torch_model)
     # weight = weights (dw); bias = biases (db)
     equivalence = {"weight": Parameters.DW,
@@ -364,42 +364,50 @@ def get_torch_grad_parameters_values(torch_model: PyTorch_Model) -> dict[int, di
                         param = None if param.grad is None else param.grad.numpy(force=True)
                     parameters[equivalence[key]] = param
                 layers_grad_vars[i] = parameters
+                i += 1
                 #  print(f"number: {i}, layer: {name}, parameters: {parameters}")
             case _:
-                if verbose_test():
-                    print(f"number: {i}, layer: {name}, with no parameters: {layer._parameters}")
-        i += 1
+                pass
+                # if verbose_test():
+                #     print(f"number: {i}, layer: {name}, with no parameters: {layer._parameters}")
     return layers_grad_vars
 
 
 def get_pydtnn_grad_vars_values(pydtnn_model: PyDTNN_Model) -> dict[int, dict[str, np.ndarray | None]]:
-    """Method to get all the parameter's gradients."""
-    layers = pydtnn_model.get_all_layers()
+    """Function to get all the parameter's gradients."""
+    # layers = pydtnn_model.layers
     layers_grad_vars = dict[int, dict[str, np.ndarray | None]]()
 
-    i = 0
-    for layer in layers:
-        name = layer.name
+    def _get_pydtnn_grad_vars_values(i: int, layers: list[Layerable]) -> int:
+        for layer in layers:
+            name = layer.name_with_id
 
-        match layer:
-            case BatchNormalization() | Conv2D() | FC():
-                if verbose_test():
-                    print(f"number: {i}, {layer=}, {layer.use_bias=}, grad_vars: {layer.grad_vars.keys()}")
-                grad_vars = dict[str, np.ndarray | None]()
+            match layer:
+                case BatchNormalization() | Conv2D() | FC():
+                    if verbose_test():
+                        print(f"number: {i}, {name}, {layer.use_bias=}, grad_vars: {layer.grad_vars.keys()}")
+                    grad_vars = dict[str, np.ndarray | None]()
 
-                for grad_v_key in layer.grad_vars.values():
-                    grad_vars[grad_v_key] = getattr(layer, grad_v_key)
-                layers_grad_vars[i] = grad_vars
-                #  print(f"number: {i}, layer: {name}, grad_vars: {grad_vars}")
-            case _:
-                if verbose_test():
-                    print(f"number: {i}, layer: {name}, with no grad_vars: {layer.grad_vars}")
-        i += 1
+                    for grad_v_key in layer.grad_vars.values():
+                        grad_vars[grad_v_key] = getattr(layer, grad_v_key)
+                    layers_grad_vars[i] = grad_vars
+                    #  print(f"number: {i}, layer: {name}, grad_vars: {grad_vars}")
+                    i += 1
+                case AbstractBlockLayer():
+                    for path in layer.paths:
+                        i = _get_pydtnn_grad_vars_values(i, path)
+                case _:
+                    pass
+                    # if verbose_test():
+                    #     print(f"number: {i}, layer: {name}, with no grad_vars: {layer.grad_vars}")
+        return i
+    _get_pydtnn_grad_vars_values(0, pydtnn_model.layers)
+
     return layers_grad_vars
 
 
 def get_torch_parameters_values(torch_model: PyTorch_Model) -> dict[int, dict[str, np.ndarray | None]]:
-    """Method to get all the parameter's gradients."""
+    """Function to get all the parameter's gradients."""
     layers = get_all_pytorch_layers(torch_model)
     # weight = weights (dw); bias = biases (db)
     equivalence = {"weight": Parameters.WEIGHTS,
@@ -418,30 +426,21 @@ def get_torch_parameters_values(torch_model: PyTorch_Model) -> dict[int, dict[st
                     print(f"number: {i}, {layer=}, layer.bias={layer.bias is not None}, parameters: {layer._parameters.keys()}")
                 parameters = dict[str, np.ndarray | None]()
 
-                #  if name == "BatchNorm2d":
-                #      for key in ["running_mean", "running_var"]:
-                #          param = layer._buffers[key]
-                #          if param is not None:
-                #              param = None if param is None else param.numpy(force=True)
-                #          parameters[equivalence[key]] = param
-                # else: Nothing special.
-
                 for key in layer._parameters.keys():
                     param = layer._parameters[key]
                     if param is not None:
                         param = None if param is None else param.numpy(force=True)
                     parameters[equivalence[key]] = param
                 layers_parameters[i] = parameters
-                #  print(f"number: {i}, layer: {name}, parameters: {parameters}")
+                i += 1
             case _:
                 if verbose_test():
                     print(f"number: {i}, layer: {name}, with no parameters: {layer._parameters}")
-        i += 1
     return layers_parameters
 
 
-def get_pydtnn_vars_values(pydtnn_model: PyDTNN_Model) -> dict[int, dict[str, np.ndarray | None]]:
-    """Method to get all the parameter's gradients."""
+def __get_pydtnn_vars_values(pydtnn_model: PyDTNN_Model) -> dict[int, dict[str, np.ndarray | None]]:
+    """Function to get all the parameter's gradients."""
     layers = pydtnn_model.get_all_layers()
     layers_parameters = dict[int, dict[str, np.ndarray | None]]()
 
@@ -454,21 +453,55 @@ def get_pydtnn_vars_values(pydtnn_model: PyDTNN_Model) -> dict[int, dict[str, np
                 if verbose_test():
                     print(f"number: {i}, {layer=}, {layer.use_bias=}, grad_vars: {layer.grad_vars.keys()}")
                 parameters = dict[str, np.ndarray | None]()
-
-                #  if isinstance(layer, BatchNormalization):
-                #      for param_key in [Parameters.RUNNING_MEAN, Parameters.RUNNING_VAR]:
-                #          parameters[param_key] = getattr(layer, param_key)
-                # else: Nothing special.
-
                 for param_key in layer.grad_vars.keys():
                     parameters[param_key] = getattr(layer, param_key)
                 layers_parameters[i] = parameters
                 #  print(f"number: {i}, layer: {name}, grad_vars: {grad_vars}")
+                i += 1
             case _:
                 if verbose_test():
                     print(f"number: {i}, layer: {name}, with no params: {layer.grad_vars}")
-        i += 1
     return layers_parameters
+
+
+def get_pydtnn_vars_values(pydtnn_model: PyDTNN_Model) -> dict[int, dict[str, np.ndarray | None]]:
+    """Function to get all the parameter's gradients."""
+    # layers = pydtnn_model.get_all_layers()
+    layers_parameters = dict[int, dict[str, np.ndarray | None]]()
+
+    def _get_pydtnn_vars_values(i: int, layers: list[Layerable]) -> int:
+        for layer in layers:
+            name = layer.name_with_id
+
+            match layer:
+                case BatchNormalization() | Conv2D() | FC():
+                    if verbose_test():
+                        print(f"number: {i}, {layer=}, {layer.use_bias=}, grad_vars: {layer.grad_vars.keys()}")
+                    parameters = dict[str, np.ndarray | None]()
+                    for param_key in layer.grad_vars.keys():
+                        parameters[param_key] = getattr(layer, param_key)
+                    layers_parameters[i] = parameters
+                    i += 1
+                case AbstractBlockLayer():
+                    for path in layer.paths:
+                        i = _get_pydtnn_vars_values(i, path)
+                case _:
+                    if verbose_test():
+                        print(f"number: {i}, layer: {name}, with no params: {layer.grad_vars}")
+        return i
+    _get_pydtnn_vars_values(0, pydtnn_model.layers)
+
+    return layers_parameters
+
+
+def remove_elements(dict_to_modify: dict[int, Any], paths_id_and_number: dict[int, int]) -> None:
+    """Function to remove all entries of the first parameters between the numbers of the second parameter."""
+    for start in paths_id_and_number.keys():
+        end = paths_id_and_number[start] + 1
+        start += 1
+        for to_remove in range(start, end):
+            if to_remove in dict_to_modify:
+                del dict_to_modify[to_remove]
 
 
 class PytorchModelTestCase(TestCase):
@@ -734,6 +767,13 @@ class PytorchModelTestCase(TestCase):
         """
         x1 = list[np.ndarray]()
         for layer in pydtnn_model.layers:
+            # if isinstance(layer, AbstractBlockLayer):
+            #     _x0: np.ndarray = x0.copy()
+            #     for path in layer.paths:
+            #         for _layer in path:
+            #             _x0 = _layer.forward(_x0.copy())
+            #             x1.append(_x0.copy())
+
             x0 = layer.forward(x0.copy())
             x1.append(x0.copy())
         return x1
@@ -766,10 +806,10 @@ class PytorchModelTestCase(TestCase):
         )
 
     def do_pytorch_model_backward_pass(
-        self, _model1: PyTorch_Model, loss: torch.Tensor
+        self, _torch_model: PyTorch_Model, loss: torch.Tensor
     ) -> None:
         """
-        Performs a forward pass for Model 1.
+        Performs a backward pass for PyTorch
 
         Args:
             _model1: The PyTorch model
@@ -856,17 +896,20 @@ class PytorchModelTestCase(TestCase):
             print("Comparing outputs of both models...")
 
         pydtnn_extra_index = 0
+        torch_extra_index = 0
+        torch_i = 0
 
-        for torch_i in range(len(x_torch)):
-            # TODO: This check cases where there are concatenations and additions.
+        while (torch_i + torch_extra_index) < len(x_torch):
+            # NOTE: It will skip the PyDTNN's concatenations and additions.
+            # TODO: Check the layers inside the concatenations and additions.
 
             # NOTE: The Torch's model doesnt' have the last activation
-
-            torch_layer, torch_base_values = x_torch[torch_i]
+            torch_layer, torch_base_values = x_torch[torch_i + torch_extra_index]
             pytorch_values = torch_base_values.numpy(force=True)
 
             # NOTE: PyDTNN first layer is always "Identity"
             pydtnn_layer = model_pydtnn.layers[torch_i + 1 + pydtnn_extra_index]
+            print(f"{pydtnn_layer=}")
             if isinstance(pydtnn_layer, Flatten):
                 if isinstance(torch_layer, torch.nn.Flatten):
                     if verbose_test():
@@ -877,6 +920,12 @@ class PytorchModelTestCase(TestCase):
                     if verbose_test():
                         print(f"{torch_i}\n{torch_layer=}\n{pydtnn_layer=}\n=====")
                     pydtnn_layer = model_pydtnn.layers[torch_i + 1 + pydtnn_extra_index]
+            elif isinstance(pydtnn_layer, AbstractBlockLayer):
+                torch_extra_index += len(sum(pydtnn_layer.paths, [])) - 1  # "-1" due the "continue"
+                if verbose_test():
+                    print("Skipping layers inside an addition or concatenation layer.")
+                    print(f"{torch_i}\n{torch_extra_index=}\n{torch_layer=}\n{pydtnn_layer=}\n=====")
+                continue
 
             # NOTE: PyDTNN adds the first input to it's operations
             #   x_pydtnn[0]: Identity's outputs/1st layer input
@@ -901,6 +950,7 @@ class PytorchModelTestCase(TestCase):
             #     print(f"{pytorch_values=}")
             #     print(f"{pydtnn_values=}")
             #     breakpoint()
+            torch_i += 1
 
     def compare_backward(
         self,
@@ -927,13 +977,14 @@ class PytorchModelTestCase(TestCase):
         pydtnn_i = 1
         pydtnn_layer, pydtnn_values = pydtnn_dx[pydtnn_i]
         pydtnn_extra_index = 0
+        torch_extra_index = 0
+        torch_i = 0
 
-        for torch_i in range(len(torch_dx)):
+        while (torch_i + torch_extra_index) < len(torch_dx):
             # TODO: This check cases where there are concatenations and additions.
 
             # NOTE: The Torch's model doesnt' have the last activation
-
-            torch_layer, torch_values = torch_dx[torch_i]
+            torch_layer, torch_values = torch_dx[torch_i + torch_extra_index]
             if isinstance(torch_values, tuple):
                 torch_values = torch_values[0]
             pytorch_as_numpy = torch_values.numpy(force=True)
@@ -956,6 +1007,12 @@ class PytorchModelTestCase(TestCase):
                     pydtnn_extra_index += 1
                     pydtnn_i = torch_i + 1 + pydtnn_extra_index
                     pydtnn_layer, pydtnn_values = pydtnn_dx[pydtnn_i]
+            elif isinstance(pydtnn_layer, AbstractBlockLayer):
+                torch_extra_index += len(sum(pydtnn_layer.paths, [])) - 1  # "-1" due the "continue"
+                if verbose_test():
+                    print("Skipping layers inside an addition or concatenation layer.")
+                    print(f"{torch_i}\n{torch_extra_index=}\n{torch_layer=}\n{pydtnn_layer=}\n=====")
+                continue
 
             if verbose_test():
                 print(f"{torch_i} - {torch_layer._get_name()=} [{pytorch_as_numpy.size=}] ||\n"
@@ -972,6 +1029,7 @@ class PytorchModelTestCase(TestCase):
                 f"Backward result from layers {pydtnn_layer.name_with_id} differ "
                 f"({self.print_stats(pytorch_as_numpy, pydtnn_values, rtol, atol)})",
             )
+            torch_i += 1
 
     def compare_grad_vars(self, torch_model: PyTorch_Model, pydtnn_model: PyDTNN_Model) -> None:
         """Method to comparte PyTorch 'parameters.grad' and PyDTNN grad vars's values"""
@@ -983,7 +1041,8 @@ class PytorchModelTestCase(TestCase):
                                                               f"{len(pydtnn_gradients)=}"
 
         for i in pydtnn_gradients.keys():
-            pydtnn_layer = pydtnn_model.layers[i]
+            # pydtnn_layer = pydtnn_model.layers[i]
+            pydtnn_layer = pydtnn_model.get_all_layers()[i]
             for grad_var_k in pydtnn_gradients[i].keys():
                 torch_grad = torch_gradients[i][grad_var_k]
                 pydtnn_grad = pydtnn_gradients[i][grad_var_k]
@@ -999,17 +1058,18 @@ class PytorchModelTestCase(TestCase):
                         print(f"{pydtnn_layer.name_with_id} || {torch_grad.size} || {pydtnn_grad.size}")
                     assert torch_grad.size == pydtnn_grad.size, f"{pydtnn_layer} Both tensors must have the same size: " \
                                                                 f"({torch_grad.size=} =/= {pydtnn_grad.size=})"
-                    if isinstance(pydtnn_layer, FC) and grad_var_k is Parameters.DW:
+
+                    if torch_grad.T.shape == pydtnn_grad.shape:
                         if verbose_test():
-                            print(f"The layer is \"FC\" and the var is \"{Parameters.DW}\""
+                            print(f"The layer's values are transposed on this layer ({pydtnn_layer.name_with_id})."
                                   f"({torch_grad.shape=} != {pydtnn_grad.shape=}).")
                         torch_grad = torch_grad.T
 
                     rtol, atol = self.get_tolerance(pydtnn_layer)
                     assert np.isclose(torch_grad, pydtnn_grad, rtol=rtol, atol=atol).all(), \
-                           f"Both values of {pydtnn_layer.name_with_id}'s {grad_var_k} are not close enough: " \
-                           f"{torch_grad=}\n{pydtnn_grad=}" \
-                           f"({self.print_stats(torch_grad, pydtnn_grad, rtol, atol)})"
+                        f"Both values of {pydtnn_layer.name_with_id}'s {grad_var_k} are not close enough: " \
+                        f"{torch_grad=}\n{pydtnn_grad=}" \
+                        f"({self.print_stats(torch_grad, pydtnn_grad, rtol, atol)})"
 
     def compare_optimizer_parameters(self, torch_model: PyTorch_Model, pydtnn_model: PyDTNN_Model) -> None:
         """Method to comparte PyTorch 'parameters.grad' and PyDTNN grad vars's values"""
@@ -1021,7 +1081,7 @@ class PytorchModelTestCase(TestCase):
                                                         f"{len(pydtnn_params)=}"
 
         for i in pydtnn_params.keys():
-            pydtnn_layer = pydtnn_model.layers[i]
+            pydtnn_layer = pydtnn_model.get_all_layers()[i]
             for var_key in pydtnn_params[i].keys():
                 torch_param = torch_params[i][var_key]
                 pydtnn_param = pydtnn_params[i][var_key]
@@ -1038,16 +1098,18 @@ class PytorchModelTestCase(TestCase):
                         print(f"{pydtnn_layer.name_with_id} || {torch_param.size} || {pydtnn_param.size}")
                     assert torch_param.size == pydtnn_param.size, f"{pydtnn_layer} Both tensors must have the same size: " \
                                                                   f"({torch_param.size=} =/= {pydtnn_param.size=})"
-                    if isinstance(pydtnn_layer, FC) and var_key is Parameters.WEIGHTS:
+
+                    if torch_param.T.shape == pydtnn_param.shape:
                         if verbose_test():
-                            print(f"The layer is \"FC\" and the var is \"{Parameters.WEIGHTS}\""
+                            print(f"The layer's values are transposed on this layer ({pydtnn_layer.name_with_id})."
                                   f"({torch_param.shape=} != {pydtnn_param.shape=}).")
                         torch_param = torch_param.T
+
                     rtol, atol = self.get_tolerance(pydtnn_layer)
                     assert np.isclose(torch_param, pydtnn_param, rtol=rtol, atol=atol).all(), \
-                           f"Both values of {pydtnn_layer.name_with_id}'s \"{var_key}\" are not close enough: "\
-                           f"{torch_param=}\n{pydtnn_param=}" \
-                           f"({self.print_stats(torch_param, pydtnn_param, rtol, atol)})"
+                        f"Both values of {pydtnn_layer.name_with_id}'s \"{var_key}\" are not close enough: "\
+                        f"{torch_param=}\n{pydtnn_param=}" \
+                        f"({self.print_stats(torch_param, pydtnn_param, rtol, atol)})"
 
     @staticmethod
     def target_pydtnn2torch_format(y_pydtnn: np.ndarray) -> np.ndarray:
@@ -1087,6 +1149,9 @@ class PytorchModelTestCase(TestCase):
         for i in range(params.num_epochs):
             if verbose_test():
                 print(f"Round {i + 1}/{params.num_epochs}")
+
+            if not without_weighted_layers:
+                optimizer_torch.zero_grad()  # pyright: ignore
 
             x_pydtnn = np.asarray(
                 rand.random((params.batch_size, *input_shape)), dtype=params.dtype, order="C"
@@ -1157,8 +1222,6 @@ class PytorchModelTestCase(TestCase):
             # Delete torch outputs:
             x_outputs.clear()
             dx_torch.clear()
-            if not without_weighted_layers:
-                optimizer_torch.zero_grad()  # pyright: ignore
 
     @unittest.skip("Large model")
     def test_renset50(self) -> None:
