@@ -20,6 +20,7 @@ from pydtnn.layers.abstract.layer import LayerError
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.fc import FC
+from pydtnn.layers.identity import Identity
 from pydtnn.model import Model as PyDTNN_Model
 from pydtnn.model.base import ModelMode
 from pydtnn.tests.abstract.base import Params, TestCase, verbose_test
@@ -754,7 +755,7 @@ class PytorchModelTestCase(TestCase):
         """
         return torch_model(x0)
 
-    def do_pydtnn_model_forward_pass(self, pydtnn_model: PyDTNN_Model, x0: np.ndarray) -> list[np.ndarray]:
+    def do_pydtnn_model_forward_pass(self, pydtnn_model: PyDTNN_Model, x0: np.ndarray) -> tuple [list[np.ndarray], list[tuple[Layerable, np.ndarray]]]:
         """
         Performs a forward pass for the PyDTNN model.
 
@@ -765,18 +766,31 @@ class PytorchModelTestCase(TestCase):
         Returns:
             List of outputs after each layer.
         """
-        x1 = list[np.ndarray]()
-        for layer in pydtnn_model.layers:
-            # if isinstance(layer, AbstractBlockLayer):
-            #     _x0: np.ndarray = x0.copy()
-            #     for path in layer.paths:
-            #         for _layer in path:
-            #             _x0 = _layer.forward(_x0.copy())
-            #             x1.append(_x0.copy())
+        if verbose_test():
+            print("Start \'do_pydtnn_model_forward_pass\'")
 
-            x0 = layer.forward(x0.copy())
+        x1 = list[np.ndarray]()
+        x_to_compare = list[tuple[Layerable, np.ndarray]]()
+        for layer in pydtnn_model.layers:
+            x0_base = x0  # No hace falta copiarlo, se va a "machacar" el valor luego
+
+            if isinstance(layer, AbstractBlockLayer):
+                for path in layer.paths:
+                    _x0: np.ndarray = x0_base.copy()
+                    for _layer in path:
+                        _x0 = _layer.forward(_x0.copy())  # pyright: ignore[reportAssignmentType]
+                        x_to_compare.append((_layer, _x0.copy()))
+
+            # Every layer:
+            x0 = layer.forward(x0.copy())  # pyright: ignore[reportAssignmentType]
             x1.append(x0.copy())
-        return x1
+
+            if not isinstance(layer, (Identity, Flatten, AbstractBlockLayer)):
+                x_to_compare.append((layer, x0.copy()))
+
+        if verbose_test():
+            print("End \'do_pydtnn_model_forward_pass\'")
+        return x1, x_to_compare
 
     def do_pytorch_model_loss(
         self, loss_func: torch.nn.modules.loss._Loss, x: torch.Tensor, y: torch.Tensor
@@ -878,9 +892,8 @@ class PytorchModelTestCase(TestCase):
 
     def compare_forward(
         self,
-        model_pydtnn: PyDTNN_Model,
         x_torch: list[tuple[torch.nn.Module, torch.Tensor]],
-        x_pydtnn: list[np.ndarray],
+        x_pydtnn: list[tuple[Layerable, np.ndarray]],
     ) -> None:
         """
         Compares the forward pass outputs of two models.
@@ -895,50 +908,17 @@ class PytorchModelTestCase(TestCase):
         if verbose_test():
             print("Comparing outputs of both models...")
 
-        pydtnn_extra_index = 0
-        torch_extra_index = 0
-        torch_i = 0
-
-        while (torch_i + torch_extra_index) < len(x_torch):
-            # NOTE: It will skip the PyDTNN's concatenations and additions.
-            # TODO: Check the layers inside the concatenations and additions.
-
-            # NOTE: The Torch's model doesnt' have the last activation
-            torch_layer, torch_base_values = x_torch[torch_i + torch_extra_index]
-            pytorch_values = torch_base_values.numpy(force=True)
-
-            # NOTE: PyDTNN first layer is always "Identity"
-            pydtnn_layer = model_pydtnn.layers[torch_i + 1 + pydtnn_extra_index]
-            print(f"{pydtnn_layer=}")
-            if isinstance(pydtnn_layer, Flatten):
-                if isinstance(torch_layer, torch.nn.Flatten):
-                    if verbose_test():
-                        print("Flatten layers are ignored.")
-                    continue
-                else:
-                    pydtnn_extra_index += 1
-                    if verbose_test():
-                        print(f"{torch_i}\n{torch_layer=}\n{pydtnn_layer=}\n=====")
-                    pydtnn_layer = model_pydtnn.layers[torch_i + 1 + pydtnn_extra_index]
-            elif isinstance(pydtnn_layer, AbstractBlockLayer):
-                torch_extra_index += len(sum(pydtnn_layer.paths, [])) - 1  # "-1" due the "continue"
-                if verbose_test():
-                    print("Skipping layers inside an addition or concatenation layer.")
-                    print(f"{torch_i}\n{torch_extra_index=}\n{torch_layer=}\n{pydtnn_layer=}\n=====")
-                continue
-
-            # NOTE: PyDTNN adds the first input to it's operations
-            #   x_pydtnn[0]: Identity's outputs/1st layer input
-            #   x_pydtnn[1]: 1st layer output
-            pydtnn_i = torch_i + 1 + pydtnn_extra_index
-            pydtnn_values = x_pydtnn[pydtnn_i]
-
+        for i in range(len(x_torch)):
+            torch_layer, pytorch_base_values = x_torch[i]
+            pydtnn_layer, pydtnn_values = x_pydtnn[i]
+            pytorch_values = pytorch_base_values.numpy(force=True)
+            # breakpoint()
             rtol, atol = self.get_tolerance(pydtnn_layer)
             # try:
             self.assertTrue(
                 pytorch_values.size == pydtnn_values.size,
-                f"Both tensors ({pydtnn_layer.name_with_id}) doesn't have the same number of elements"
-                f" ({pytorch_values.size=} != {pydtnn_values.size=})",
+                f"Both tensors (PyDTNN: {pydtnn_layer.name_with_id}, PyTorch: {torch_layer})"
+                f" doesn't have the same number of elements ({pytorch_values.size=} != {pydtnn_values.size=})",
             )
             self.assertTrue(
                 np.allclose(pytorch_values, pydtnn_values, rtol=rtol, atol=atol),
@@ -950,7 +930,6 @@ class PytorchModelTestCase(TestCase):
             #     print(f"{pytorch_values=}")
             #     print(f"{pydtnn_values=}")
             #     breakpoint()
-            torch_i += 1
 
     def compare_backward(
         self,
@@ -1180,10 +1159,10 @@ class PytorchModelTestCase(TestCase):
                 header(f"Model {model_pydtnn.model_name} 2 forward pass")
 
             model_pydtnn.real_batch_size = x_pydtnn.shape[0]
-            x_pydtnn = self.do_pydtnn_model_forward_pass(model_pydtnn, x_pydtnn)
+            x_pydtnn, x_to_compare = self.do_pydtnn_model_forward_pass(model_pydtnn, x_pydtnn)
 
             # Compare forward results
-            self.compare_forward(model_pydtnn, x_outputs, x_pydtnn)
+            self.compare_forward(x_outputs, x_to_compare)
 
             # --- LOSS ---
             loss_torch = self.do_pytorch_model_loss(loss_func_torch, x_torch, y_torch)
@@ -1223,7 +1202,7 @@ class PytorchModelTestCase(TestCase):
             x_outputs.clear()
             dx_torch.clear()
 
-    @unittest.skip("Large model")
+    # @unittest.skip("Large model")
     def test_renset50(self) -> None:
         """Compares results between an ResNet50 model using a PyTorch model and other a PyDTNN one."""
         model_name = "resnet50"
@@ -1398,3 +1377,22 @@ class PytorchModelTestCase(TestCase):
                                           torch.nn.Flatten())
         torch_model = TorchLayer(torch_model)
         self.do_test_model(torch_model, "Adaptive_Average_Pool", without_weighted_layers=True)
+
+##########################   #######          #######
+##########################   #######          #######
+#######                      #######          #######
+#######                      #######          #######
+#######                      #######          #######
+####################         ########################
+#######REVISA#######         ##########ESTO##########
+####################         ########################
+#######                      #######          #######
+#######                      #######          #######
+#######                      #######          #######
+##########################   #######          #######
+##########################   #######          #######
+# Por hacer:
+# - Permitir que se puedan establecer funciones de pérdida (en vez de tener Torch: Cross Entropy y PyTorch: Softmax + NLL)
+# - Mirar cómo hacer que se comparen los "paths" (seguramente, en la función de forward y de backwards habrá que deshacerlos)
+# Esto saca una lista con todas las capas: sum(pydtnn_layer.paths, [])
+# Hacer lo mismo que has hecho con el match-case, pero en el forward y en el backward (para guardarte todos los valores, pero saltarte los que no quieres guardarte)
