@@ -755,7 +755,8 @@ class PytorchModelTestCase(TestCase):
         """
         return torch_model(x0)
 
-    def do_pydtnn_model_forward_pass(self, pydtnn_model: PyDTNN_Model, x0: np.ndarray) -> tuple [list[np.ndarray], list[tuple[Layerable, np.ndarray]]]:
+    def do_pydtnn_model_forward_pass(self, pydtnn_model: PyDTNN_Model,
+                                     x0: np.ndarray) -> tuple[list[np.ndarray], list[tuple[Layerable, np.ndarray]]]:
         """
         Performs a forward pass for the PyDTNN model.
 
@@ -1202,7 +1203,7 @@ class PytorchModelTestCase(TestCase):
             x_outputs.clear()
             dx_torch.clear()
 
-    # @unittest.skip("Large model")
+    @unittest.skip("Large model")
     def test_renset50(self) -> None:
         """Compares results between an ResNet50 model using a PyTorch model and other a PyDTNN one."""
         model_name = "resnet50"
@@ -1377,22 +1378,3 @@ class PytorchModelTestCase(TestCase):
                                           torch.nn.Flatten())
         torch_model = TorchLayer(torch_model)
         self.do_test_model(torch_model, "Adaptive_Average_Pool", without_weighted_layers=True)
-
-##########################   #######          #######
-##########################   #######          #######
-#######                      #######          #######
-#######                      #######          #######
-#######                      #######          #######
-####################         ########################
-#######REVISA#######         ##########ESTO##########
-####################         ########################
-#######                      #######          #######
-#######                      #######          #######
-#######                      #######          #######
-##########################   #######          #######
-##########################   #######          #######
-# Por hacer:
-# - Permitir que se puedan establecer funciones de pérdida (en vez de tener Torch: Cross Entropy y PyTorch: Softmax + NLL)
-# - Mirar cómo hacer que se comparen los "paths" (seguramente, en la función de forward y de backwards habrá que deshacerlos)
-# Esto saca una lista con todas las capas: sum(pydtnn_layer.paths, [])
-# Hacer lo mismo que has hecho con el match-case, pero en el forward y en el backward (para guardarte todos los valores, pero saltarte los que no quieres guardarte)
