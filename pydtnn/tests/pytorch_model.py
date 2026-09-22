@@ -826,8 +826,8 @@ class PytorchModelTestCase(TestCase):
         _loss_torch = float(loss_torch.detach())
         if verbose_test():
             print(f"{_loss_torch=} || {_loss_pydtnn=}")
-            rtol: float = PytorchModelTestCase.rtol_default
-            atol: float = PytorchModelTestCase.atol_default
+        rtol: float = PytorchModelTestCase.rtol_default
+        atol: float = PytorchModelTestCase.atol_default
         assert np.isclose(float(_loss_torch), _loss_pydtnn,
                           rtol=rtol, atol=atol), (  # pyright: ignore[reportPossiblyUnboundVariable]
             f"Both values are not close: {_loss_torch=} =/=  {_loss_pydtnn=}"
@@ -1211,19 +1211,19 @@ class PytorchModelTestCase(TestCase):
         model_name = "resnet50"
         self.do_test_model(self.get_model_torch(model_name), model_name)
 
-    @unittest.skip("Work in progress.")
+    # @unittest.skip("Work in progress.")
     def test_resnet14like(self) -> None:
         """Compares results between an ResNet14_like model using a PyTorch model and other a PyDTNN one."""
         model_name = "resnet14like"
         self.do_test_model(self.get_model_torch(model_name), model_name)
 
-    @unittest.skip("Work in progress.")
+    # @unittest.skip("Work in progress.")
     def test_simplecnn(self) -> None:
         """Compares results between an SimpleCNN model using a PyTorch model and other a PyDTNN one."""
         model_name = "simplecnn"
         self.do_test_model(self.get_model_torch(model_name), model_name)
 
-    @unittest.skip("Work in progress.")
+    # @unittest.skip("Work in progress.")
     def test_layer_conv_2d(self) -> None:
         """Compares results between an SimpleCNN model using a PyTorch model and other a PyDTNN one."""
         params = PytorchModelTestCase.params
@@ -1240,7 +1240,7 @@ class PytorchModelTestCase(TestCase):
         torch_model = TorchLayer(layer)
         self.do_test_model(torch_model, "Conv2d")
 
-    @unittest.skip("Work in progress.")
+    # @unittest.skip("Work in progress.")
     def test_layer_linear(self) -> None:
         """Compares results between an SimpleCNN model using a PyTorch model and other a PyDTNN one."""
         params = PytorchModelTestCase.params
@@ -1256,7 +1256,7 @@ class PytorchModelTestCase(TestCase):
         torch_model = TorchLayer(layer)
         self.do_test_model(torch_model, "Linear")
 
-    @unittest.skip("Work in progress.")
+    # @unittest.skip("Work in progress.")
     def test_layer_batch_norm_2d(self) -> None:
         """Compares results between an SimpleCNN model using a PyTorch model and other a PyDTNN one."""
         params = PytorchModelTestCase.params
@@ -1273,7 +1273,7 @@ class PytorchModelTestCase(TestCase):
         torch_model = TorchLayer(layer)
         self.do_test_model(torch_model, "BatchNorm2d")
 
-    @unittest.skip("Work in progress.")
+    # @unittest.skip("Work in progress.")
     def test_maxpool2d(self) -> None:
         """Tests MaxPool2D layer."""
         # params = PytorchModelTestCase.params
@@ -1290,7 +1290,7 @@ class PytorchModelTestCase(TestCase):
         torch_model = TorchLayer(torch_model)
         self.do_test_model(torch_model, "Max_Pool_2D", without_weighted_layers=True)
 
-    @unittest.skip("Work in progress.")
+    # @unittest.skip("Work in progress.")
     def test_adaptive_average_pool2d(self) -> None:
         """Tests AdaptiveAveragePool2D layer."""
         params = PytorchModelTestCase.params
