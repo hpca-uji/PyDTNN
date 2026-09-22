@@ -1147,9 +1147,7 @@ class PytorchModelTestCase(TestCase):
                 x_torch = x_torch.float()
 
             y_torch = (
-                torch.from_numpy(self.target_pydtnn2torch_format(y_pydtnn).copy())
-                .to(torch.device("cpu"))
-                .long()
+                torch.from_numpy(self.target_pydtnn2torch_format(y_pydtnn).copy()).to(torch.device("cpu")).long()
             )
             x_torch.requires_grad_(True)
 
