@@ -941,25 +941,25 @@ class PytorchModelTestCase(TestCase):
             pydtnn_layer, pydtnn_values = x_pydtnn[i]
             pytorch_values = pytorch_base_values.numpy(force=True)
             rtol, atol = self.get_tolerance(pydtnn_layer)
-            try:
-                self.assertTrue(
-                    pytorch_values.size == pydtnn_values.size,
-                    f"Both tensors (PyDTNN: {pydtnn_layer.name_with_id}, PyTorch: {torch_layer})"
-                    f" doesn't have the same number of elements ({pytorch_values.size=} != {pydtnn_values.size=})",
-                )
-                self.assertTrue(
-                    np.allclose(pytorch_values, pydtnn_values, rtol=rtol, atol=atol),
-                    f"Forward result from layers {pydtnn_layer.name_with_id} differ "
-                    f"({self.print_stats(pytorch_values, pydtnn_values, rtol, atol)})",
-                )
-            except Exception as e:
-                print(e)
-                print(f"{pytorch_values=}")
-                print(f"{pydtnn_values=}")
-                if pytorch_values.size == pydtnn_values.size:
-                    print(self.print_stats(pytorch_values, pydtnn_values, rtol, atol))
-                print(f"{pydtnn_layer=}\n{torch_layer=}")
-                breakpoint()
+            # try:
+            self.assertTrue(
+                pytorch_values.size == pydtnn_values.size,
+                f"Both tensors (PyDTNN: {pydtnn_layer.name_with_id}, PyTorch: {torch_layer})"
+                f" doesn't have the same number of elements ({pytorch_values.size=} != {pydtnn_values.size=})",
+            )
+            self.assertTrue(
+                np.allclose(pytorch_values, pydtnn_values, rtol=rtol, atol=atol),
+                f"Forward result from layers {pydtnn_layer.name_with_id} differ "
+                f"({self.print_stats(pytorch_values, pydtnn_values, rtol, atol)})",
+            )
+            # except Exception as e:
+            #     print(e)
+            #     print(f"{pytorch_values=}")
+            #     print(f"{pydtnn_values=}")
+            #     if pytorch_values.size == pydtnn_values.size:
+            #         print(self.print_stats(pytorch_values, pydtnn_values, rtol, atol))
+            #     print(f"{pydtnn_layer=}\n{torch_layer=}")
+            #     breakpoint()
 
     def compare_backward(
         self,
