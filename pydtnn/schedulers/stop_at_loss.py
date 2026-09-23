@@ -22,18 +22,23 @@ class StopAtLoss(SchedulerWithLossOrMetric):
     """Scheduler that stops training when a specific loss or metric reaches a threshold."""
 
     def __init__(
-        self, loss_or_metric: str = "", threshold_value: float = 0.0, verbose: bool = True
+        self,
+        loss_or_metric: str = "",
+        threshold_value: float = 0.0,
+        minimize: bool = True,
+        verbose: bool = True
     ) -> None:
         """
         Initialize the StopAtLoss scheduler.
 
         Args:
-            loss_or_metric: The name of the loss or metric to monitor.
-            threshold_value: The value at which to stop training.
-            verbose: Whether to log status updates.
+            loss_or_metric (str): The name of the loss or metric to monitor.
+            threshold_value (float): The value at which to stop training.
+            minimize (bool): Whether the metric should be minimized.
+            verbose: Whether (bool) to log status updates.
         """
-        # NOTE: loss_or_metric default value is "val_accuracy" in Parser.
-        super().__init__(loss_or_metric, verbose)
+        # NOTE: loss_or_metric default value is "val_categorical_accuracy" in Parser.
+        super().__init__(loss_or_metric, verbose, minimize)
         self.threshold_value = threshold_value
 
     def _show_props(self) -> dict[str, str]:
@@ -73,4 +78,6 @@ class StopAtLoss(SchedulerWithLossOrMetric):
         Returns:
             An instance of StopAtLoss.
         """
-        return StopAtLoss(model.stop_at_loss_metric, model.stop_at_loss_threshold)
+        return StopAtLoss(model.stop_at_loss_metric,
+                          model.stop_at_loss_threshold,
+                          model.stop_at_loss_minimize)

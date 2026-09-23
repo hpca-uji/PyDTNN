@@ -1014,6 +1014,15 @@ class ArgumentParser(argparse.ArgumentParser):
             ),
         )
         _sh_group.add_argument(
+            "--reduce-lr-on-plateau-minimize",
+            action=argparse.BooleanOptionalAction,
+            default=ModelBase.reduce_lr_on_plateau_minimize,
+            help=(
+                "Whether to minimize the metric. If False, it will maximize."
+                f" Default: {ModelBase.early_stopping_minimize!r}."
+            ),
+        )
+        _sh_group.add_argument(
             "--reduce-lr-on-plateau-metric",
             type=str,
             default=ModelBase.reduce_lr_on_plateau_metric,
@@ -1078,6 +1087,15 @@ class ArgumentParser(argparse.ArgumentParser):
             ),
         )
         _sh_group.add_argument(
+            "--stop-at-loss-minimize",
+            action=argparse.BooleanOptionalAction,
+            default=ModelBase.stop_at_loss_minimize,
+            help=(
+                "Whether to minimize the metric. If False, it will maximize."
+                f" Default: {ModelBase.early_stopping_minimize!r}."
+            ),
+        )
+        _sh_group.add_argument(
             "--stop-at-loss-metric",
             type=str,
             default=ModelBase.stop_at_loss_metric,
@@ -1094,6 +1112,15 @@ class ArgumentParser(argparse.ArgumentParser):
             help=(
                 "Metric threshold monitored by stop_at_loss LR scheduler."
                 f" Default: {ModelBase.stop_at_loss_threshold!r}."
+            ),
+        )
+        _sh_group.add_argument(
+            "--model-checkpoint-minimize",
+            action=argparse.BooleanOptionalAction,
+            default=ModelBase.model_checkpoint_minimize,
+            help=(
+                "Whether to minimize the metric. If False, it will maximize."
+                f" Default: {ModelBase.early_stopping_minimize!r}."
             ),
         )
         _sh_group.add_argument(

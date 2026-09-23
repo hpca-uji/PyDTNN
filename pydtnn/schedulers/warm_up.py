@@ -34,10 +34,10 @@ class WarmUp(Scheduler):
         Initialize the WarmUp scheduler.
 
         Args:
-            warmup_epochs: Number of epochs to perform warm-up.
-            base_lr: The starting learning rate.
-            init_lr: The target learning rate after warm-up.
-            verbose: Whether to log learning rate updates.
+            warmup_epochs (int): Number of epochs to perform warm-up.
+            base_lr (float): The starting learning rate.
+            init_lr (float): The target learning rate after warm-up.
+            verbose (bool): Whether to log learning rate updates.
         """
         super().__init__(verbose)
         self.warmup_epochs = warmup_epochs
@@ -68,7 +68,7 @@ class WarmUp(Scheduler):
             ) * (self.init_lr - self.base_lr)
             self.epoch_count += 1
             if self.model.comm_rank == 0:
-                logger.info(f"Setting learning rate to {self.model.optimizer.learning_rate:.8f}.")
+                logger.info(f"Setting learning rate to {self.model.optimizer.learning_rate:.8f} due warm up.")
 
     @classmethod
     def from_model(cls, model: Model) -> WarmUp:

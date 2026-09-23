@@ -36,24 +36,28 @@ class ModelCheckpoint(SchedulerWithLossOrMetric):
     It also manages the deletion of older checkpoints to save disk space.
     """
 
-    model: Model
-
     def __init__(
-        self, loss_or_metric: str = "", epoch_save_frequency: int = 1, verbose: bool = True
+        self,
+        loss_or_metric: str = "",
+        epoch_save_frequency: int = 1,
+        minimize: bool = False,
+        verbose: bool = True
     ) -> None:
         """
         Initializes the ModelCheckpoint scheduler.
 
         Args:
-            loss_or_metric: The name of the loss or metric to monitor for
-                            performance improvement. If empty, it defaults to
-                            monitoring validation loss.
-            epoch_save_frequency: The number of epochs between saving checkpoints,
-                                  regardless of performance improvement.
-            verbose: If True, logs checkpointing actions to the console/logger.
+            loss_or_metric (str): The name of the loss or metric to monitor for
+                                  performance improvement. If empty, it defaults to
+                                  monitoring validation loss.
+            epoch_save_frequency (int): The number of epochs between saving checkpoints,
+                                        regardless of performance improvement.
+            minimize (bool): Whether the metric should be minimized.
+            verbose (bool): If True, logs checkpointing actions to the console/logger.
         """
-        super().__init__(loss_or_metric, verbose)
+        super().__init__(loss_or_metric, verbose, minimize)
         self.epoch_count = self.best_epoch = 0
+        self.epoch_save_frequency = epoch_save_frequency
         # Initialize best_loss to positive infinity for minimization metrics
         # and negative infinity for maximization metrics (like accuracy).
         self.best_loss = np.inf * {True: -1, False: 1}["accuracy" in self.loss_or_metric]
@@ -122,4 +126,6 @@ class ModelCheckpoint(SchedulerWithLossOrMetric):
         Returns:
             A configured `ModelCheckpoint` instance ready to be used in training.
         """
-        return ModelCheckpoint(model.model_checkpoint_metric, model.model_checkpoint_save_freq)
+        return ModelCheckpoint(model.model_checkpoint_metric,
+                               model.model_checkpoint_save_freq,
+                               model.model_checkpoint_minimize)

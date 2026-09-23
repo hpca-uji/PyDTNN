@@ -28,10 +28,10 @@ class ReduceLREveryNEpochs(Scheduler):
         Initialize the scheduler.
 
         Args:
-            factor: Multiplicative factor of learning rate decay.
-            nepochs: Number of epochs to wait before reducing the learning rate.
-            min_lr: Lower bound for the learning rate.
-            verbose: Whether to log updates.
+            factor (float): Multiplicative factor of learning rate decay.
+            nepochs (int): Number of epochs to wait before reducing the learning rate.
+            min_lr (float): Lower bound for the learning rate.
+            verbose (bool): Whether to log updates.
         """
         super().__init__(verbose)
         self.factor = factor

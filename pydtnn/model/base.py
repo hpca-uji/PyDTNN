@@ -224,10 +224,13 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
     reduce_lr_every_nepochs_factor: float = 0.1
     reduce_lr_every_nepochs_nepochs: int = 5
     reduce_lr_every_nepochs_min_lr: float = 0.0
-    stop_at_loss_metric: str = "val_accuracy"
+    reduce_lr_on_plateau_minimize: bool = False
+    stop_at_loss_metric: str = "val_categorical_accuracy"
     stop_at_loss_threshold: float = 0
+    stop_at_loss_minimize: bool = True
     model_checkpoint_metric: str = "val_negative_likelihood"
     model_checkpoint_save_freq: int = 2
+    model_checkpoint_minimize: bool = False
     parallel_data: bool = False
     parallel_pipeline: bool = False
     use_blocking_mpi: bool = True

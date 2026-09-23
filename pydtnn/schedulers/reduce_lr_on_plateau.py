@@ -27,20 +27,22 @@ class ReduceLROnPlateau(SchedulerWithLossOrMetric):
         factor: float = 0.1,
         patience: float = 5,
         min_lr: float = 0.0,
+        minimize: bool = False,
         verbose: bool = True,
     ) -> None:
         """
         Initialize the ReduceLROnPlateau scheduler.
 
         Args:
-            loss_or_metric: The name of the loss or metric to monitor.
-            factor: Factor by which the learning rate will be reduced.
-            patience: Number of epochs with no improvement after which learning rate will be reduced.
-            min_lr: A lower bound on the learning rate.
-            verbose: Whether to print updates to the logger.
+            loss_or_metric (str): The name of the loss or metric to monitor.
+            factor (float): Factor by which the learning rate will be reduced.
+            patience (float): Number of epochs with no improvement after which learning rate will be reduced.
+            min_lr (float): A lower bound on the learning rate.
+            minimize (bool): Whether the metric should be minimized.
+            verbose (bool): Whether to print updates to the logger.
         """
-        # NOTE: loss_or_metric default value is "val_accuracy" in Parser.
-        super().__init__(loss_or_metric, verbose)
+        # NOTE: loss_or_metric default value is "val_categorical_accuracy" in Parser.
+        super().__init__(loss_or_metric, verbose, minimize)
         self.factor = factor
         self.patience = patience
         self.min_lr = min_lr
@@ -98,4 +100,5 @@ class ReduceLROnPlateau(SchedulerWithLossOrMetric):
             model.reduce_lr_on_plateau_factor,
             model.reduce_lr_on_plateau_patience,
             model.reduce_lr_on_plateau_min_lr,
+            model.reduce_lr_on_plateau_minimize
         )

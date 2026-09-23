@@ -9,7 +9,6 @@ within a specified number of epochs.
 from __future__ import annotations
 
 import logging
-import operator
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -29,8 +28,6 @@ if TYPE_CHECKING:
 class EarlyStopping(SchedulerWithLossOrMetric):
     """Early stopping scheduler to terminate training when a monitored metric stops improving."""
 
-    model: Model
-
     def __init__(
         self,
         loss_or_metric: str = "",
@@ -42,18 +39,16 @@ class EarlyStopping(SchedulerWithLossOrMetric):
         Initialize the EarlyStopping scheduler.
 
         Args:
-            loss_or_metric: Name of the metric to monitor.
-            patience: Number of epochs to wait for improvement before stopping.
-            minimize: Whether the metric should be minimized.
-            verbose: Whether to log status updates.
+            loss_or_metric (str): Name of the metric to monitor.
+            patience (int): Number of epochs to wait for improvement before stopping.
+            minimize (bool): Whether the metric should be minimized.
+            verbose (bool): Whether to log status updates.
         """
-        super().__init__(loss_or_metric, verbose)
+        super().__init__(loss_or_metric, verbose, minimize)
         self.patience = patience
-        self.minimize = minimize
         self.best_epoch: int = 0
         self.best_loss_or_metric: float = np.inf * {True: -1, False: 1}[not self.minimize]
         self.best_weights_filename: str | None = None
-        self.compare = operator.lt if self.minimize else operator.gt
 
     def _show_props(self) -> dict[str, str]:
         props = super()._show_props()
