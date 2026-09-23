@@ -6,7 +6,7 @@ import numpy as np
 from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 
 from pydtnn.backends.pycuda.losses.abstract.loss import LossPycuda
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.utils.tensor_array import TensorArray
 from pydtnn.losses.negative_likelihood import NegativeLikelihood
 
 __all__ = ("NegativeLikelihoodPycuda",)

@@ -6,7 +6,7 @@ import numpy as np
 from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 
 from pydtnn.backends.pycuda.metrics.abstract.metric import MetricPycuda
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.utils.tensor_array import TensorArray
 from pydtnn.metrics.categorical_accuracy import CategoricalAccuracy
 
 __all__ = ("CategoricalAccuracyPycuda",)

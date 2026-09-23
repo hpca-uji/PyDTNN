@@ -8,7 +8,7 @@ from pycuda.elementwise import ElementwiseKernel
 
 from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
 from pydtnn.backends.pycuda.optimizers.abstract.optimizer import OptimizerPycuda
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.utils.tensor_array import TensorArray
 from pydtnn.optimizers.sgd import SGD
 from pydtnn.utils.constants import DTYPE2CTYPE
 
@@ -104,7 +104,6 @@ class SGDPycuda(SGD[TensorArray], OptimizerPycuda):
             w: TensorArray
             dw: TensorArray
             velocity: gpuarray.GPUArray
-            n = self.get_batch_size(w)
 
             if self.model.use_gpudirect:
                 self.update_gpudirect(
@@ -114,10 +113,10 @@ class SGDPycuda(SGD[TensorArray], OptimizerPycuda):
                     np.float32(self.learning_rate),
                     np.float32(self.decay),
                     np.float32(self.momentum),
-                    np.int32(n),
+                    np.int32(w.size),
                     self.model.cuda_grid,
                     block=self.model.cuda_block,
-                    stream=layer.stream_2,
+                    stream=self.model.stream,
                 )
             else:
                 self.update_kernel(
@@ -127,6 +126,5 @@ class SGDPycuda(SGD[TensorArray], OptimizerPycuda):
                     np.float32(self.learning_rate),
                     np.float32(self.decay),
                     np.float32(self.momentum),
-                    stream=layer.stream_2,
+                    stream=self.model.stream,
                 )
-            self._dtoh_ary(layer=layer, w_gpu=w, w_cpu=getattr(layer, f"{w_}_cpu"))

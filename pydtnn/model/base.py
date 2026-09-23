@@ -233,6 +233,7 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
     use_blocking_mpi: bool = True
     use_mpi_buffers: bool = None  # pyright: ignore[reportAssignmentType]
     use_gpudirect: bool = False
+    use_mpi_cuda: bool = False
     use_nccl: bool = False
     use_cudnn_auto_conv_algo: bool = True
     encryption_name: str = ""

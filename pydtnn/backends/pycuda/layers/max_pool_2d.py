@@ -3,7 +3,7 @@
 import logging
 
 from pydtnn.backends.pycuda.layers.abstract.pool_2d_layer import AbstractPool2DLayerPycuda
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.utils.tensor_array import TensorArray
 from pydtnn.layers.max_pool_2d import MaxPool2D
 from pydtnn.libs import cudnn as cudnn
 from pydtnn.utils.constants import ArrayShape

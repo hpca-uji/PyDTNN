@@ -1,7 +1,6 @@
 """Test suite for PyDTNN layers and activation functions."""
 
 from time import time
-from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -21,10 +20,7 @@ from pydtnn.optimizers.sgd import SGD
 from pydtnn.utils import rand
 from pydtnn.utils.tensor import TensorFormat
 
-if TYPE_CHECKING:
-    import pycuda.gpuarray as gpuarray
-
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.utils.tensor_array import TensorArray
 
 # setting random seed
 SEED = 1234
@@ -135,7 +131,7 @@ def test_layers_activations(_x: np.ndarray, opt: Optimizer) -> None:
             x = np.copy(_x)
 
             if KWARGS["use_cudnn"]:
-                x = TensorArray(gpuarray.to_gpu(x), model.tensor_format, model.cudnn_dtype)
+                x = TensorArray.to_gpu(x, model.tensor_format, model.cudnn_dtype)
 
             t_forward = 0.0
             t_backward = 0.0
@@ -198,7 +194,7 @@ def test_add_concat(_x: np.ndarray, opt: Optimizer) -> None:
         t_opt = 0
 
         if KWARGS["use_cudnn"]:
-            x = TensorArray(gpuarray.to_gpu(x), model.tensor_format, model.cudnn_dtype)
+            x = TensorArray.to_gpu(x, model.tensor_format, model.cudnn_dtype)
 
         for _ in range(NUM_REPETITIONS):
             if True:

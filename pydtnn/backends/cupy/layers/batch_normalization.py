@@ -3,8 +3,6 @@
 import logging
 from typing import TYPE_CHECKING
 
-from cupy.cuda import Stream
-
 from pydtnn.backends.cupy.layers.abstract.layer import LayerCupy
 from pydtnn.backends.numpy.layers.batch_normalization import BatchNormalizationNumpy
 from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
@@ -25,7 +23,6 @@ class BatchNormalizationCupy(BatchNormalizationNumpy, LayerCupy):
         """Initialize model parameters and CUDA kernels."""
         super()._model_init(prev_shape, x)
 
-        self.stream_2 = Stream()
         self.defines_replaces = {'"TYPE"': DTYPE2CTYPE[self.model.dtype]}
 
         self.fwd = self._fwd_kernel()

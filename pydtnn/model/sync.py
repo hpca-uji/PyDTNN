@@ -171,8 +171,11 @@ class Sync[T: Array](State[T]):  # noqa: D101 (generics not detected)
         self._model_reduce_async(mode)
         self._model_reduce_wait(mode)
 
-    def _compute_rank_weight(self, mask: list[int], part: Dataset.Part) -> float:
+    def _compute_rank_weight(self, part: Dataset.Part, mask: list[int] = []) -> float:
         """Calculates the weight contribution of the current rank based on dataset participation."""
+        if not mask:
+            mask = [1 for _ in range(self.comm_size)]
+
         match self.model_sync_participation:
             case SyncParticipation.ALL:
                 comm_nsamples = self.comm_nsamples[part]

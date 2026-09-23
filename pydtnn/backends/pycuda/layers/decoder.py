@@ -7,7 +7,7 @@ import numpy as np
 
 from pydtnn.backends.pycuda.layers.abstract.block_layer import AbstractBlockLayerPycuda
 from pydtnn.backends.pycuda.libs import libcudnn as cudnn
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.utils.tensor_array import TensorArray
 from pydtnn.layers.decoder import Decoder
 from pydtnn.layers.dropout import Dropout
 from pydtnn.layers.feed_forward import FeedForward

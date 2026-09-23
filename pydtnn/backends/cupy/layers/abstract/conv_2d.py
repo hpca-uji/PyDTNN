@@ -6,7 +6,6 @@ import logging
 from typing import TYPE_CHECKING
 
 from cupy import ndarray  # pyright: ignore[reportAttributeAccessIssue]
-from cupy.cuda import Stream
 
 from pydtnn.backends.cupy.layers.abstract.layer import LayerCupy
 from pydtnn.backends.numpy.layers.abstract.conv_2d import AbstractConv2DNumpy
@@ -27,8 +26,6 @@ class AbstractConv2DCupy(AbstractConv2DNumpy, AbstractConv2D[ndarray], LayerCupy
     def _model_init(self, prev_shape: ArrayShape, x: ndarray) -> None:
         """Initialize model parameters and CUDA kernels."""
         super()._model_init(prev_shape, x)
-
-        self.stream_2 = Stream()
 
         self._im2row = self._get_kernel(
             func_name="im2_row_col",

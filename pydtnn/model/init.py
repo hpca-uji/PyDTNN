@@ -263,6 +263,7 @@ class Init[T: Array](Repr[T]):  # noqa: D101 (generics not detected)
         self.cudnn_handle = cudnn_handle
         self.cublas_handle = cublas_handle
         self.stream = stream
+        self.context = context
         self.cudnn_dtype = cudnn_dtype
 
     def _crypt_init(self, encryption_name: str) -> "polyhe.Context":

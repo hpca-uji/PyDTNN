@@ -5,7 +5,7 @@ import logging
 import numpy as np
 
 from pydtnn.backends.pycuda.metrics.abstract.metric import MetricPycuda
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.utils.tensor_array import TensorArray
 from pydtnn.metrics.f1_score import F1Score
 
 __all__ = ("F1ScorePycuda",)

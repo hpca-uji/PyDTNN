@@ -7,7 +7,7 @@ from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 
 from pydtnn.activations.tanh import Tanh
 from pydtnn.backends.pycuda.activations.abstract.activation import ActivationPycuda
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.utils.tensor_array import TensorArray
 from pydtnn.libs import cudnn as cudnn
 from pydtnn.utils.constants import ArrayShape
 

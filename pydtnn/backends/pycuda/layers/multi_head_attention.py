@@ -11,7 +11,7 @@ from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 
 from pydtnn import drv
 from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.utils.tensor_array import TensorArray
 from pydtnn.layers.multi_head_attention import MultiHeadAttention
 from pydtnn.libs import cudnn as cudnn
 from pydtnn.utils.constants import ArrayShape
@@ -231,38 +231,12 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
         )
         # self.dev_seq_lengths_QO = np.full(shape=(self.batch*self.beam), fill_value=self.seq, dtype=np.int32)
         dev_seq_lengths_qo = np.copy(self.y.seq_length_array)
+        # TODO: Use TensorArray with TensorType.OTHER
         self.dev_seq_lengths_qo = gpuarray.to_gpu(dev_seq_lengths_qo)
         # self.dev_seq_lengths_KV = np.full(shape=(self.batch*self.beam), fill_value=self.seq, dtype=np.int32)
         dev_seq_lengths_kv = np.copy(self.dkey.seq_length_array)
+        # TODO: Use TensorArray with TensorType.OTHER
         self.dev_seq_lengths_kv = gpuarray.to_gpu(dev_seq_lengths_kv)
-
-    def copy_weights(self) -> None:
-        """Copies weights from CPU to GPU memory."""
-        # _weights_types = [
-        #     "CUDNN_MH_ATTN_Q_WEIGHTS",
-        #     "CUDNN_MH_ATTN_K_WEIGHTS",
-        #     "CUDNN_MH_ATTN_V_WEIGHTS",
-        #     "CUDNN_MH_ATTN_O_WEIGHTS",
-        #     "CUDNN_MH_ATTN_Q_BIASES",
-        #     "CUDNN_MH_ATTN_K_BIASES",
-        #     "CUDNN_MH_ATTN_V_BIASES",
-        #     "CUDNN_MH_ATTN_O_BIASES",
-        # ]
-        _weights = [
-            self.q_weights_cpu,
-            self.k_weights_cpu,
-            self.v_weights_cpu,
-            self.o_weights_cpu,
-            self.q_biases_cpu,
-            self.k_biases_cpu,
-            self.v_biases_cpu,
-            self.o_biases_cpu,
-        ]
-
-        drv.memcpy_htod(
-            self.weights.ptr_voidp.value, np.concatenate([w.flatten() for w in _weights])
-        )
-        return
 
         # for i in range(len(_weights)):
         #     wDesc, dest = cudnn.cudnnGetMultiHeadAttnWeights(

@@ -11,8 +11,8 @@ from typing import Any, Literal
 
 import numpy as np
 
-from pydtnn import drv as pycuda_driver
 from pydtnn import gpuarray
+from pydtnn import drv as pycuda_driver
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import TensorFormat, decode_shape, encode_shape
 
@@ -41,29 +41,6 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
         OTHER = auto()
 
     @staticmethod
-    def new_empty(
-        shape: S,
-        dtype: D,
-        tensor_format: TensorFormat,
-        cudnn_dtype: int,
-        tensor_type: TensorType = TensorType.TENSOR,
-        desc: int | None = None,
-        gpudirect: bool = False,
-        cublas: bool = False,
-    ) -> TensorArray[S, D]:
-        """Creates an uninitialized TensorArray."""
-        gpu_arr = gpuarray.empty(shape, dtype)
-        return TensorArray(
-            gpu_arr=gpu_arr,
-            tensor_format=tensor_format,
-            cudnn_dtype=cudnn_dtype,
-            tensor_type=tensor_type,
-            desc=desc,
-            use_gpudirect=gpudirect,
-            cublas=cublas,
-        )
-
-    @staticmethod
     def new_zeros(
         shape: S,
         dtype: D,
@@ -73,9 +50,14 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
         desc: int | None = None,
         gpudirect: bool = False,
         cublas: bool = False,
+        drv: pycuda_driver | None = None  # pyright: ignore[reportInvalidTypeForm]
     ) -> TensorArray[S, D]:
         """Creates a zero-initialized TensorArray."""
-        gpu_arr = gpuarray.zeros(shape, dtype)
+        if drv is not None:
+            gpu_arr = drv.aligned_zeros(shape, dtype)
+            gpu_arr = drv.register_host_memory(gpu_arr, flags=drv.mem_host_register_flags.DEVICEMAP)
+        else:
+            gpu_arr = gpuarray.zeros(shape, dtype)
         return TensorArray(
             gpu_arr=gpu_arr,
             tensor_format=tensor_format,
@@ -95,130 +77,24 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
         desc: int | None = None,
         use_gpudirect: bool = False,
         cublas: bool = False,
+        drv: pycuda_driver | None = None  # pyright: ignore[reportInvalidTypeForm]
     ) -> TensorArray[S, D]:
         """Creates a zero-initialized TensorArray."""
-        gpu_arr = gpuarray.to_gpu(ary)
-        return TensorArray(
-            gpu_arr=gpu_arr,
-            tensor_format=tensor_format,
-            cudnn_dtype=cudnn_dtype,
-            tensor_type=tensor_type,
-            desc=desc,
-            use_gpudirect=use_gpudirect,
-            cublas=cublas,
-        )
-
-    @staticmethod
-    def new_ones(
-        shape: S,
-        dtype: D,
-        tensor_format: TensorFormat,
-        cudnn_dtype: int,
-        tensor_type: TensorType = TensorType.TENSOR,
-        desc: int | None = None,
-        use_gpudirect: bool = False,
-        cublas: bool = False,
-    ) -> TensorArray[S, D]:
-        """Creates a initialized TensorArray filled with ones."""
-        gpu_arr = gpuarray.ones(shape, dtype)
-        return TensorArray(
-            gpu_arr=gpu_arr,
-            tensor_format=tensor_format,
-            cudnn_dtype=cudnn_dtype,
-            tensor_type=tensor_type,
-            desc=desc,
-            use_gpudirect=use_gpudirect,
-            cublas=cublas,
-        )
-
-    @staticmethod
-    def new_pair_gpudirect(
-        drv: pycuda_driver,  # pyright: ignore[reportGeneralTypeIssues]
-        shape: S,
-        dtype: D,
-        tensor_format: TensorFormat,
-        cudnn_dtype: int,
-        tensor_type: TensorType = TensorType.TENSOR,
-        desc: int | None = None,
-        use_gpudirect: bool = False,
-        cublas: bool = False,
-    ) -> tuple[np.ndarray[S, D], TensorArray[S, D]]:
-        """Creates a CPU/GPU pair using GPUDirect memory registration."""
-        x_cpu = drv.aligned_zeros(shape, dtype)
-        x_gpu = drv.register_host_memory(x_cpu, flags=drv.mem_host_register_flags.DEVICEMAP)
-
-        x_gpu = TensorArray[S, D](
-            x_gpu,
-            tensor_format=tensor_format,
-            cudnn_dtype=cudnn_dtype,
-            tensor_type=tensor_type,
-            desc=desc,
-            use_gpudirect=use_gpudirect,
-            cublas=cublas,
-        )
-        return (x_cpu, x_gpu)
-
-    @staticmethod
-    def new_pair(
-        shape: S,
-        dtype: D,
-        tensor_format: TensorFormat,
-        cudnn_dtype: int,
-        tensor_type: TensorType = TensorType.TENSOR,
-        desc: int | None = None,
-        use_gpudirect: bool = False,
-        cublas: bool = False,
-    ) -> tuple[np.ndarray[S, D], TensorArray[S, D]]:
-        """Creates a standard CPU/GPU pair."""
-        x_cpu = np.zeros(shape, dtype)
-        x_gpu = gpuarray.zeros(shape, dtype)
-        x_gpu = TensorArray[S, D](
-            x_gpu,
-            tensor_format=tensor_format,
-            cudnn_dtype=cudnn_dtype,
-            tensor_type=tensor_type,
-            desc=desc,
-            use_gpudirect=use_gpudirect,
-            cublas=cublas,
-        )
-        return (x_cpu, x_gpu)
-
-    @staticmethod
-    def new(
-        shape: S,
-        dtype: D,
-        tensor_format: TensorFormat,
-        cudnn_dtype: int,
-        tensor_type: TensorType = TensorType.TENSOR,
-        desc: int | None = None,
-        gpudirect: bool = False,
-        cublas: bool = False,
-        drv: pycuda_driver | None = None,  # pyright: ignore[reportInvalidTypeForm]
-    ) -> tuple[np.ndarray[S, D], TensorArray[S, D]]:
-        """Factory method to create a CPU/GPU pair based on driver availability."""
         if drv is not None:
-            return TensorArray[S, D].new_pair_gpudirect(
-                drv=drv,
-                shape=shape,
-                dtype=dtype,
-                tensor_format=tensor_format,
-                cudnn_dtype=cudnn_dtype,
-                tensor_type=tensor_type,
-                desc=desc,
-                use_gpudirect=gpudirect,
-                cublas=cublas,
-            )
+            gpu_arr = drv.aligned_zeros(ary.shape, ary.dtype)
+            gpu_arr = drv.register_host_memory(gpu_arr, flags=drv.mem_host_register_flags.DEVICEMAP)
+            np.copyto(gpu_arr, ary)
         else:
-            return TensorArray[S, D].new_pair(
-                shape=shape,
-                dtype=dtype,
-                tensor_format=tensor_format,
-                cudnn_dtype=cudnn_dtype,
-                tensor_type=tensor_type,
-                desc=desc,
-                use_gpudirect=gpudirect,
-                cublas=cublas,
-            )
+            gpu_arr = gpuarray.to_gpu(ary)
+        return TensorArray(
+            gpu_arr=gpu_arr,
+            tensor_format=tensor_format,
+            cudnn_dtype=cudnn_dtype,
+            tensor_type=tensor_type,
+            desc=desc,
+            use_gpudirect=use_gpudirect,
+            cublas=cublas,
+        )
 
     def __init__(
         self,
@@ -328,7 +204,10 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
     @property
     def ptr_intp(self) -> np.intp:
         """Returns the integer pointer to the underlying GPU memory."""
-        return np.intp(self.ary.base.get_device_pointer())
+        if self.use_gpudirect:
+            return np.intp(int(self.ary.base.get_device_pointer()))
+        else:
+            return np.intp(int(self.ary.gpudata))
 
     def _desc_init(self) -> None:
         """Initializes the cuDNN descriptor."""
@@ -527,8 +406,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
         """Releases resources associated with the TensorArray."""
         if self.ary is not None:
             self._del_desc()
-            del self.ary
-        self.size = -1
+            self.ary = None
         self.desc = -1
 
     def __del__(self) -> None:

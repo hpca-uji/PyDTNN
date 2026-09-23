@@ -7,7 +7,7 @@ import numpy as np
 from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 
 from pydtnn.backends.pycuda.layers.abstract.conv_2d import AbstractConv2DPycuda
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.utils.tensor_array import TensorArray
 from pydtnn.libs import cudnn as cudnn
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
                                    PYDTNN_OPS_EVENTS, OpsEventEnum)
@@ -231,11 +231,6 @@ class Conv2DPycuda(AbstractConv2DPycuda):
         )
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-        # DtoH dw when data parallelism and no GPU direct/NCCL is used
-        if self.model.comm and not self.model.use_gpudirect and not self.model.use_nccl:
-            # self.model.stream.synchronize()
-            self.dw.get_async(self.stream_2, self.dw_cpu)
-
         if self.use_bias:
             self.model.tracer.emit_event(
                 PYDTNN_OPS_EVENT,
@@ -252,11 +247,6 @@ class Conv2DPycuda(AbstractConv2DPycuda):
                 self.db.ptr_voidp,
             )
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-
-            # DtoH db when data parallelism and no GPU direct/NCCL is used
-            if self.model.comm and not self.model.use_gpudirect and not self.model.use_nccl:
-                # self.model.stream.synchronize()
-                self.db.get_async(self.stream_2, self.db_cpu)
 
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.BACKWARD_CUDNN_DX

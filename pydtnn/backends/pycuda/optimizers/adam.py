@@ -8,7 +8,7 @@ from pycuda.elementwise import ElementwiseKernel
 
 from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
 from pydtnn.backends.pycuda.optimizers.abstract.optimizer import OptimizerPycuda
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.utils.tensor_array import TensorArray
 from pydtnn.optimizers.adam import Adam
 from pydtnn.utils.constants import DTYPE2CTYPE
 
@@ -94,7 +94,6 @@ class AdamPycuda(Adam[TensorArray], OptimizerPycuda):
             v: gpuarray.GPUArray
 
             if self.model.use_gpudirect:
-                n = self.get_batch_size(w)
                 self.update_gpudirect(
                     w.gpudata,
                     dw.ptr_intp,
@@ -106,10 +105,10 @@ class AdamPycuda(Adam[TensorArray], OptimizerPycuda):
                     np.float32(self.beta1),
                     np.float32(self.beta2),
                     np.float32(self.epsilon),
-                    np.int32(n),
+                    np.int32(w.size),
                     self.model.cuda_grid,
                     block=self.model.cuda_block,
-                    stream=layer.stream_2,
+                    stream=self.model.stream,
                 )
             else:
                 self.update_kernel(
@@ -123,6 +122,5 @@ class AdamPycuda(Adam[TensorArray], OptimizerPycuda):
                     np.float32(self.beta1),
                     np.float32(self.beta2),
                     np.float32(self.epsilon),
-                    stream=layer.stream_2,
+                    stream=self.model.stream,
                 )
-            self._dtoh_ary(layer=layer, w_gpu=w, w_cpu=getattr(layer, f"{w_}_cpu"))

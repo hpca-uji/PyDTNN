@@ -10,7 +10,7 @@ from pycuda import gpuarray
 
 from pydtnn import pycuda, supported_gpu
 from pydtnn.abstract.layerable import Layerable
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.utils.tensor_array import TensorArray
 from pydtnn.layers.abstract.layer import LayerError
 from pydtnn.layers.addition_block import AdditionBlock
 from pydtnn.layers.concatenation_block import ConcatenationBlock
@@ -97,9 +97,8 @@ class ModelGpuTestCase(ModelTestCase):
             else:
                 gpu_layer.weights_cpu = cpu_layer.weights.copy()
             if gpu_layer.weights_cpu is not None:
-                weights_gpu = gpuarray.to_gpu(gpu_layer.weights_cpu)
-                gpu_layer.weights = TensorArray(
-                    weights_gpu,
+                gpu_layer.weights = TensorArray.to_gpu(
+                    gpu_layer.weights_cpu,
                     gpu_layer.model.tensor_format,
                     gpu_layer.model.cudnn_dtype,
                     TensorArray.TensorType.FILTER,
@@ -110,9 +109,8 @@ class ModelGpuTestCase(ModelTestCase):
 
                 gpu_layer.biases_cpu = cpu_layer.biases.copy()
                 if gpu_layer.biases_cpu is not None:
-                    biases_gpu = gpuarray.to_gpu(gpu_layer.biases_cpu)
-                    gpu_layer.biases = TensorArray(
-                        biases_gpu, gpu_layer.model.tensor_format, gpu_layer.model.cudnn_dtype
+                    gpu_layer.biases = TensorArray.to_gpu(
+                        gpu_layer.biases_cpu, gpu_layer.model.tensor_format, gpu_layer.model.cudnn_dtype
                     )
 
     def set_data_to_ary(

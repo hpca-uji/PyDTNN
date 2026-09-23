@@ -9,7 +9,7 @@ from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 
 from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
 from pydtnn.backends.pycuda.utils import matmul_gpu, matvec_gpu
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.utils.tensor_array import TensorArray
 from pydtnn.layers.fc import FC
 from pydtnn.libs import cudnn as cudnn
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
@@ -67,23 +67,19 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
         """Initialize model parameters and GPU buffers."""
         super()._model_init(prev_shape, x)
-        self.stream_2 = drv.Stream()
 
         # Weights
-        self.weights_cpu = self.weights_initializer(
-            self.weights_shape, self.model.dtype, self.model.random
+        self.weights = TensorArray.to_gpu(
+            self.weights_initializer(self.weights_shape, self.model.dtype, self.model.random),
+            self.model.tensor_format, self.model.cudnn_dtype
         )
-        weights_gpu = gpuarray.to_gpu(self.weights_cpu)
-        self.weights = TensorArray(weights_gpu, self.model.tensor_format, self.model.cudnn_dtype)
         self.memory_used += self.weights.nbytes
 
         if self.use_bias:
             # Biases
-            self.biases_cpu = self.biases_initializer(
-                (1, *self.shape), self.model.dtype, self.model.random
-            )
-            biases_gpu = gpuarray.to_gpu(self.biases_cpu)
-            self.biases = TensorArray(biases_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+            self.biases = TensorArray.to_gpu(
+                self.biases_initializer((1, *self.shape), self.model.dtype, self.model.random),
+                self.model.tensor_format, self.model.cudnn_dtype)
             self.memory_used += self.biases.nbytes
 
         y_gpu = gpuarray.zeros((self.model.batch_size, self.shape[0]), self.model.dtype)
@@ -94,7 +90,7 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
         self.dx = TensorArray(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
         self.memory_used += self.dx.nbytes
 
-        self.dw_cpu, self.dw = TensorArray.new(
+        self.dw = TensorArray.new_zeros(
             self.weights.ary.shape,
             self.model.dtype,
             tensor_format=self.model.tensor_format,
@@ -106,7 +102,7 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
 
         if self.use_bias:
             self.biases: TensorArray
-            self.db_cpu, self.db = TensorArray.new(
+            self.db = TensorArray.new_zeros(
                 self.biases.ary.shape,
                 self.model.dtype,
                 tensor_format=self.model.tensor_format,
@@ -116,6 +112,7 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
             )
             self.memory_used += self.db.nbytes
 
+        # TODO: Use TensorArray with TensorType.OTHER
         self.one_vec_gpu = gpuarray.to_gpu(np.ones((self.model.batch_size,), self.model.dtype))
         self.memory_used += self.one_vec_gpu.nbytes
 
@@ -124,15 +121,15 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
         self.fwd_time = self.bwd_time = np.zeros((4,), dtype=np.float32)
         self.fwd_time += matmul_time(
             m=self.model.batch_size,
-            n=self.weights_cpu.shape[1],
-            k=self.weights_cpu.shape[0],
+            n=self.weights.cpu_shape[1],
+            k=self.weights.cpu_shape[0],
             cpu_speed=self.model.cpu_speed,
             memory_bw=self.model.memory_bw,
             dtype=self.model.dtype,
         )
         self.bwd_time += matmul_time(
-            m=self.weights_cpu.shape[0],
-            n=self.weights_cpu.shape[1],
+            m=self.weights.cpu_shape[0],
+            n=self.weights.cpu_shape[1],
             k=self.model.batch_size,
             cpu_speed=self.model.cpu_speed,
             memory_bw=self.model.memory_bw,
@@ -140,8 +137,8 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
         )
         self.bwd_time += matmul_time(
             m=self.model.batch_size,
-            n=self.weights_cpu.shape[0],
-            k=self.weights_cpu.shape[1],
+            n=self.weights.cpu_shape[0],
+            k=self.weights.cpu_shape[1],
             cpu_speed=self.model.cpu_speed,
             memory_bw=self.model.memory_bw,
             dtype=self.model.dtype,
@@ -229,11 +226,6 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
         )
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-        # DtoH dw when data parallelism and no GPU direct/NCCL is used
-        if self.model.comm and not self.model.use_gpudirect and not self.model.use_nccl:
-            # self.model.stream.synchronize()
-            self.dw.get_async(self.stream_2, self.dw_cpu)
-
         if self.use_bias:
             self.biases: TensorArray
             # Compute db
@@ -261,11 +253,6 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
                 self.model.dtype,
             )
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-
-            # DtoH db when data parallelism and no GPU direct/NCCL is used
-            if self.model.comm and not self.model.use_gpudirect and not self.model.use_nccl:
-                # self.model.stream.synchronize()
-                self.db.get_async(self.stream_2, self.db_cpu)
 
         # Compute dx
         m = dy.shape[0]

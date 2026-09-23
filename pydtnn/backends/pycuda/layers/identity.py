@@ -8,7 +8,7 @@ import pycuda.driver as drv
 from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 
 from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.utils.tensor_array import TensorArray
 from pydtnn.layers.identity import Identity
 from pydtnn.utils.constants import ArrayShape
 
@@ -95,3 +95,27 @@ class IdentityPycuda(Identity[TensorArray], LayerPycuda):
     def get_convolution_workspace_size(self) -> int:
         """Return the workspace size in bytes."""
         return self.ws_size
+
+    def _state_reduce_async_nccl(self, state_: str) -> None:
+        self.model.stream.synchronize()
+        super()._state_reduce_async_nccl(state_)
+
+    def _state_reduce_sync_nccl(self, state_: str) -> None:
+        self.model.stream.synchronize()
+        super()._state_reduce_sync_nccl(state_)
+
+    def _state_reduce_async_cpu(self, state_: str) -> None:
+        self.model.stream.synchronize()
+        super()._state_reduce_async_cpu(state_)
+
+    def _state_reduce_sync_cpu(self, state_: str) -> None:
+        self.model.stream.synchronize()
+        super()._state_reduce_sync_cpu(state_)
+
+    def _state_reduce_async(self, state_: str) -> None:
+        self.model.stream.synchronize()
+        super()._state_reduce_async(state_)
+
+    def _state_reduce_sync(self, state_: str) -> None:
+        self.model.stream.synchronize()
+        super()._state_reduce_sync(state_)

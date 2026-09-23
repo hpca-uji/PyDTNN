@@ -1159,6 +1159,15 @@ class ArgumentParser(argparse.ArgumentParser):
             ),
         )
         _pe_group.add_argument(
+            "--use-mpi-cuda",
+            action=argparse.BooleanOptionalAction,
+            default=ModelBase.use_mpi_cuda,
+            help=(
+                "Enable the use of the MPI CUDA-aware collective communications on GPUs."
+                f" Default: {ModelBase.use_mpi_cuda!r}."
+            ),
+        )
+        _pe_group.add_argument(
             "--use-nccl",
             action=argparse.BooleanOptionalAction,
             default=ModelBase.use_nccl,

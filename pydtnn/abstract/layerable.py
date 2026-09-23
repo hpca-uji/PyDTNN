@@ -26,12 +26,6 @@ if TYPE_CHECKING:
     from pydtnn.optimizers.abstract.optimizer import Optimizer
 
 
-try:
-    from pycuda.driver import Stream
-except Exception:
-    pass
-
-
 class Layerable[T: Array](Base[T]):  # noqa: D101 (generics not detected)
     """
     Abstract base class for all neural network layers in the PyDTNN framework.
@@ -66,7 +60,6 @@ class Layerable[T: Array](Base[T]):  # noqa: D101 (generics not detected)
         self.id: int = -id(self)  # pyright: ignore[reportAttributeAccessIssue]
         self.model: Model = None  # pyright: ignore[reportAttributeAccessIssue]
         self.prev_shape: ArrayShape = None  # pyright: ignore[reportAttributeAccessIssue]
-        self.stream_2: Stream = None
         self.is_block_layer: bool = False
 
     @property
@@ -222,7 +215,10 @@ class Layerable[T: Array](Base[T]):  # noqa: D101 (generics not detected)
         Args:
             gradient: If True, wait for gradients; otherwise, wait for weights.
         """
-        self._state_reduce(mode, self._state_reduce_wait)
+        def reducer(key):
+            if key in self.reqs_allred:
+                return self._state_reduce_wait(key)
+        self._state_reduce(mode, reducer)
 
     def state_reduce_sync(self, mode: SyncMode) -> None:
         """
@@ -272,9 +268,7 @@ class Layerable[T: Array](Base[T]):  # noqa: D101 (generics not detected)
     def _state_reduce_wait(self, key: str) -> None:
         """Method where the values reduced asynchronously are setted."""
         value = getattr(self, key)
-        req = self.reqs_allred.pop(key, None)
-        if req is None:
-            return
+        req = self.reqs_allred.pop(key)
         value = self.model._layer_reduce_wait(value, req)
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.LAYER_DECODE

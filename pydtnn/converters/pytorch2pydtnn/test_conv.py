@@ -13,7 +13,7 @@ import numpy as np
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.activations.leaky_relu import LeakyRelu
 from pydtnn.activations.relu6 import Relu6
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.utils.tensor_array import TensorArray
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.conv_2d_depthwise import Conv2DDepthwise
 from pydtnn.layers.conv_2d_pointwise import Conv2DPointwise

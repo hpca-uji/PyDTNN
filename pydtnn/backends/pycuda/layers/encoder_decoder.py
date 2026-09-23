@@ -5,7 +5,7 @@ from typing import Any
 
 from pydtnn.backends.pycuda.layers.abstract.block_layer import AbstractBlockLayerPycuda
 from pydtnn.backends.pycuda.libs import libcudnn as cudnn
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.utils.tensor_array import TensorArray
 from pydtnn.layers.decoder import Decoder
 from pydtnn.layers.encoder import Encoder
 from pydtnn.layers.encoder_decoder import EncoderDecoder

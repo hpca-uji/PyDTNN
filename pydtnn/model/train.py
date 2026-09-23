@@ -10,7 +10,7 @@ import numpy as np
 from tqdm import tqdm
 
 from pydtnn import MPI, gpuarray
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.utils.tensor_array import TensorArray
 from pydtnn.datasets.abstract import Dataset
 from pydtnn.layers.identity import Identity
 from pydtnn.model.base import ModelMode
@@ -89,9 +89,6 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
                 dx = layer.backward(dx)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
-        if self.stream:
-            self.stream.synchronize()
-
         # Gradient update (GU)
         if self.model_sync_freq >= 0 and sync_model:
             self._model_sync(mode=SyncMode.GRADIENT)
@@ -107,11 +104,6 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
         # Weight update (WU)
         if self.model_sync_freq > 0 and sync_model:
             self._model_sync(mode=SyncMode.WEIGHT)
-
-        if self.use_cuda:
-            for layer in self.layers:
-                if layer.grad_vars and layer.stream_2:
-                    layer.stream_2.synchronize()
 
         # Schedulers end
         for sched in self.schedulers:
@@ -165,7 +157,7 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
             if rank_avail < self.model_sync_min_avail:
                 sync_model = False
 
-            self.rank_weight = self._compute_rank_weight(rank_mask, Dataset.Part.TRAIN)
+            self.rank_weight = self._compute_rank_weight(Dataset.Part.TRAIN, rank_mask)
 
             tic = timer()
             batch_loss = self._train_batch(x_batch, y_batch, sync_model=sync_model)
@@ -247,7 +239,8 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
 
         # Synchronize model
         if self.initial_model_sync:
-            self._model_sync(mode=SyncMode.GRADIENT | SyncMode.WEIGHT)
+            self.rank_weight = self._compute_rank_weight(Dataset.Part.TRAIN)
+            self._model_reduce_sync(mode=SyncMode.GRADIENT | SyncMode.WEIGHT)
 
         if self.profile:
             self.profiler.enable()
@@ -300,8 +293,7 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
 
             self.history_append(
                 {
-                    "part": Dataset.Part.TRAIN._name_.lower(),
-                    "time": delta,
+                    "part": Dataset.Part.TRAIN._name_.lower(), "time": delta,
                     **dict(zip(self.loss_and_metric_names, train_global_loss)),
                 }
             )
@@ -341,8 +333,7 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
 
             self.history_append(
                 {
-                    "part": Dataset.Part.VAL._name_.lower(),
-                    "time": delta,
+                    "part": Dataset.Part.VAL._name_.lower(), "time": delta,
                     **dict(zip(self.loss_and_metric_names, val_global_loss)),
                 }
             )
@@ -380,6 +371,7 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
 
         # Synchronize model
         if self.final_model_sync:
-            self._model_sync(mode=SyncMode.GRADIENT | SyncMode.WEIGHT)
+            self.rank_weight = self._compute_rank_weight(Dataset.Part.TRAIN)
+            self._model_reduce_sync(mode=SyncMode.GRADIENT | SyncMode.WEIGHT)
 
         self.tracer.define_event_types(self)

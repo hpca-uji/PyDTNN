@@ -15,7 +15,7 @@ import numpy as np
 from tqdm import tqdm
 
 from pydtnn import MPI, gpuarray
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.utils.tensor_array import TensorArray
 from pydtnn.datasets.abstract import Dataset
 from pydtnn.layers.identity import Identity
 from pydtnn.model.base import ModelMode
@@ -23,7 +23,7 @@ from pydtnn.model.sync import Sync
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT,
                                    PYDTNN_MDL_EVENTS, MdlEventEnum)
 from pydtnn.utils import term
-from pydtnn.utils.constants import Array
+from pydtnn.utils.constants import Array, SyncMode
 from pydtnn.utils.logs import TqdmLogger
 from pydtnn.utils.performance_models import allreduce_time
 
@@ -238,7 +238,7 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
             if rank_avail < self.model_sync_min_avail:
                 sync_model = False
 
-            self.rank_weight = self._compute_rank_weight(rank_mask, part)
+            self.rank_weight = self._compute_rank_weight(part, rank_mask)
 
             tic = timer()
             batch_loss = self._evaluate_batch(x_batch, y_batch, sync_model=sync_model)
@@ -317,6 +317,11 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
             self.batch_size * self.nprocs
         )
 
+        # Synchronize model
+        if self.initial_model_sync:
+            self.rank_weight = self._compute_rank_weight(Dataset.Part.TEST)
+            self._model_reduce_sync(mode=SyncMode.GRADIENT | SyncMode.WEIGHT)
+
         if self.profile:
             self.profiler.enable()
 
@@ -362,8 +367,7 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
 
         self.history_append(
             {
-                "part": Dataset.Part.TEST._name_.lower(),
-                "time": delta,
+                "part": Dataset.Part.TEST._name_.lower(), "time": delta,
                 **dict(zip(self.loss_and_metric_names, test_global_loss)),
             }
         )
@@ -375,6 +379,11 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
 
         if self.profile:
             self.profiler.disable()
+
+        # Synchronize model
+        if self.final_model_sync:
+            self.rank_weight = self._compute_rank_weight(Dataset.Part.TEST)
+            self._model_reduce_sync(mode=SyncMode.GRADIENT | SyncMode.WEIGHT)
 
     def calculate_time(self) -> np.ndarray:
         """

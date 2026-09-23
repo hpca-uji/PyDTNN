@@ -6,7 +6,7 @@ import numpy as np
 from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 
 from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.utils.tensor_array import TensorArray
 from pydtnn.layers.layer_normalization import LayerNormalization
 from pydtnn.utils.constants import ArrayShape
 
@@ -34,30 +34,29 @@ class LayerNormalizationPycuda(LayerNormalization[TensorArray], LayerPycuda):
         # Shape same as x input, but batch = 1. For scaling at the end: output =
         # scale * post_normalization + bias
         gamma_shape = (int(np.prod([x.shape[i] for i in self.axis])),)
-        gamma = gpuarray.to_gpu(np.full(gamma_shape, self.gamma_init_val, self.model.dtype))
-        self.gamma: TensorArray = TensorArray(
-            gamma,
+        self.gamma: TensorArray = TensorArray.to_gpu(
+            np.full(gamma_shape, self.gamma_init_val, self.model.dtype),
             self.model.tensor_format,
             self.model.cudnn_dtype,
             tensor_type=TensorArray.TensorType.OTHER,
         )
-        beta = gpuarray.zeros(gamma_shape, self.model.dtype)
-        self.beta: TensorArray = TensorArray(
-            beta,
+        self.beta: TensorArray = TensorArray.new_zeros(
+            gamma_shape,
+            self.model.dtype,
             self.model.tensor_format,
             self.model.cudnn_dtype,
             tensor_type=TensorArray.TensorType.OTHER,
         )
-        dgamma = gpuarray.zeros(gamma_shape, self.model.dtype)
-        self.dgamma: TensorArray = TensorArray(
-            dgamma,
+        self.dgamma: TensorArray = TensorArray.new_zeros(
+            gamma_shape,
+            self.model.dtype,
             self.model.tensor_format,
             self.model.cudnn_dtype,
             tensor_type=TensorArray.TensorType.OTHER,
         )
-        dbeta = gpuarray.zeros(gamma_shape, self.model.dtype)
-        self.dbeta: TensorArray = TensorArray(
-            dbeta,
+        self.dbeta: TensorArray = TensorArray.new_zeros(
+            gamma_shape,
+            self.model.dtype,
             self.model.tensor_format,
             self.model.cudnn_dtype,
             tensor_type=TensorArray.TensorType.OTHER,

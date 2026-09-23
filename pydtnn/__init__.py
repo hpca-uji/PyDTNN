@@ -102,7 +102,7 @@ else:
     has_drv = True
 
 try:
-    from pydtnn.backends.pycuda.utils import tensor_array
+    from pydtnn.utils import tensor_array
 
     logger.debug("tensor_array available")
 except Exception as e:

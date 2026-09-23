@@ -9,7 +9,7 @@ from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 
 from pydtnn import gpu_errors
 from pydtnn.backends.pycuda.abstract.layerable import LayerablePycuda
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.utils.tensor_array import TensorArray
 from pydtnn.layers.abstract.layer import Layer
 from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
 

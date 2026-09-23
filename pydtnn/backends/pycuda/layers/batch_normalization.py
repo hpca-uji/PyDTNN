@@ -8,7 +8,7 @@ import pycuda.driver as drv
 from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 
 from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.utils.tensor_array import TensorArray
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.libs import cudnn as cudnn
 from pydtnn.model.base import ModelMode
@@ -46,7 +46,6 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
         """Initializes GPU memory and cuDNN descriptors for the layer."""
         super()._model_init(prev_shape, x)
-        self.stream_2 = drv.Stream()
 
         # Activations y
         y_gpu = gpuarray.zeros(x.shape, self.model.dtype)
@@ -73,18 +72,20 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
         shape_ = (1, self.ci, 1, 1)
 
         # weights
-        self.weights_cpu = self.weights_initializer(shape_, self.model.dtype)
-        weights_gpu = gpuarray.to_gpu(self.weights_cpu)
-        self.weights = TensorArray(weights_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.weights = TensorArray.to_gpu(
+            self.weights_initializer(shape_, self.model.dtype),
+            self.model.tensor_format, self.model.cudnn_dtype
+        )
         self.memory_used += self.weights.nbytes
 
         # biases
-        self.biases_cpu = self.biases_initializer(shape_, self.model.dtype)
-        biases_gpu = gpuarray.to_gpu(self.biases_cpu)
-        self.biases = TensorArray(biases_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.biases = TensorArray.to_gpu(
+            self.biases_initializer(shape_, self.model.dtype),
+            self.model.tensor_format, self.model.cudnn_dtype
+        )
         self.memory_used += self.biases.nbytes
 
-        self.dw_cpu, self.dw = TensorArray.new(
+        self.dw = TensorArray.new_zeros(
             self.weights.shape,
             self.model.dtype,
             tensor_format=self.model.tensor_format,
@@ -94,7 +95,7 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
         )
         self.memory_used += self.dw.nbytes
 
-        self.db_cpu, self.db = TensorArray.new(
+        self.db = TensorArray.new_zeros(
             self.biases.shape,
             self.model.dtype,
             tensor_format=self.model.tensor_format,
@@ -104,21 +105,20 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
         )
         self.memory_used += self.db.nbytes
 
-        running_mean_gpu = gpuarray.to_gpu(self.running_mean_initializer(shape_, self.model.dtype))
-        self.running_mean = TensorArray(
-            running_mean_gpu, self.model.tensor_format, self.model.cudnn_dtype
+        self.running_mean = TensorArray.to_gpu(
+            self.running_mean_initializer(shape_, self.model.dtype),
+            self.model.tensor_format, self.model.cudnn_dtype
         )
         self.memory_used += self.running_mean.nbytes
 
-        running_var_gpu = gpuarray.to_gpu(self.running_var_initializer(shape_, self.model.dtype))
-        self.running_var = TensorArray(
-            running_var_gpu, self.model.tensor_format, self.model.cudnn_dtype
+        self.running_var = TensorArray.to_gpu(
+            self.running_var_initializer(shape_, self.model.dtype),
+            self.model.tensor_format, self.model.cudnn_dtype
         )
         self.memory_used += self.running_var.nbytes
 
-        save_mean_gpu = gpuarray.zeros(shape_, self.model.dtype)
-        self.save_mean = TensorArray(
-            save_mean_gpu, self.model.tensor_format, self.model.cudnn_dtype
+        self.save_mean = TensorArray.new_zeros(
+            shape_, self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype
         )
         self.memory_used += self.save_mean.nbytes
 
@@ -223,11 +223,6 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
         )
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-        # DtoH dw when data parallelism and no GPU direct/NCCL is used
-        if self.model.comm and not self.model.use_gpudirect and not self.model.use_nccl:
-            # self.model.stream.synchronize()
-            self.dw.get_async(self.stream_2, self.dw_cpu)
-            self.db.get_async(self.stream_2, self.db_cpu)
         return self.dx
 
     def _export_gamma_beta(self, key: str) -> np.ndarray:

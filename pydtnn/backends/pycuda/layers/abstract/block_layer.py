@@ -3,7 +3,7 @@
 import logging
 
 from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.utils.tensor_array import TensorArray
 from pydtnn.layers.abstract.block_layer import AbstractBlockLayer
 
 __all__ = ("AbstractBlockLayerPycuda",)

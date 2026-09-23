@@ -6,7 +6,7 @@ from typing import Any
 from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 
 from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
-from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
+from pydtnn.utils.tensor_array import TensorArray
 from pydtnn.layers.abstract.layer import ParameterException
 from pydtnn.layers.abstract.pool_2d_layer import AbstractPool2DLayer
 from pydtnn.libs import cudnn as cudnn

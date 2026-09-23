@@ -10,7 +10,7 @@ from pydtnn.backends.numpy.abstract.layerable import Layerable
 from pydtnn.backends.numpy.optimizers.abstract.optimizer import OptimizerNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.optimizers.oktopk import OkTopk
-from pydtnn.utils.sparse import SparseFlatArray
+from pydtnn.utils.sparse_array import SparseFlatArray
 
 __all__ = ("OkTopkNumpy",)
 
@@ -427,7 +427,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
         return sparse_reduced_region
 
     def _allgather(self, local_data: SparseFlatArray) -> SparseFlatArray:
-        raise ValueError("No reduce method selected")
+        raise ValueError("No gather method selected")
 
     def _allgather_local(self, local_data: SparseFlatArray) -> SparseFlatArray:
         return local_data
