@@ -132,9 +132,14 @@ class Layerable[T: Array](Base[T]):  # noqa: D101 (generics not detected)
             props["output"] = str(self.shape)
 
         if len(self.paths) > 0:
-            props["paths"] = ", ".join(
-                f"{path[0].id}-{path[-1].id}" if path else "Empty" for path in self.paths
-            )
+            if all(layer.id >= 0 for path in self.paths for layer in path):
+                props["paths"] = ", ".join(
+                    f"{path[0].id}-{path[-1].id}"
+                    if path else "Empty"
+                    for path in self.paths
+                )
+            else:
+                props["paths"] = str(len(self.paths))
 
         if self.weights is not None:
             props["weights"] = str(self.weights.shape)
