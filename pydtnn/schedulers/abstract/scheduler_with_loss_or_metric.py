@@ -35,6 +35,7 @@ class SchedulerWithLossOrMetric(Scheduler):
 
         type = "val" if self.is_val_metric else "train"
         props["metric"] = f"{type}_{self.loss_or_metric}"
+        props["minimize"] = str(self.minimize)
 
         return props
 

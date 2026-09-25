@@ -54,7 +54,6 @@ class EarlyStopping(SchedulerWithLossOrMetric):
         props = super()._show_props()
 
         props["patience"] = str(self.patience)
-        props["minimize"] = str(self.minimize)
 
         return props
 
