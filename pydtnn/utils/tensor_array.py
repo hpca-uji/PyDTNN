@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+import re
 import copy
+import typing
 import ctypes
 import logging
-import typing
 from enum import StrEnum, auto
 from typing import Any, Literal
 
@@ -190,8 +191,8 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
 
     def __repr__(self) -> str:
         """Returns string representation of the TensorArray."""
-        desc = hex(self.desc) if self.desc else None
-        return f"<{self.__class__.__name__} type={self.tensor_type} format={self.tensor_format} at {desc}>"
+        data = re.sub(r"[\s\n]+", " ", repr(self.ary))
+        return f"<{self.__class__.__name__} type={self.tensor_type} format={self.tensor_format} data={data}>"
 
     @property
     def ptr_voidp(self) -> ctypes.c_void_p:
