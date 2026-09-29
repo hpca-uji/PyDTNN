@@ -8,6 +8,7 @@ import sys
 import time
 from argparse import Namespace
 from importlib import resources
+from contextlib import nullcontext
 
 import yaml
 
@@ -25,21 +26,18 @@ def _start() -> int:
         pyextrae.startTracing("libptmpitrace.so")
 
     from pydtnn import rank
-
-    if rank != 0:
-        sys.stdout = sys.stderr = open(os.devnull, "w")
-
     from pydtnn.utils.parser import ArgumentParser
+    from pydtnn.utils.debug import traceback_context
 
     parser = ArgumentParser()
     config = parser.parse_args()
+    tracer = traceback_context if config.traceback else nullcontext
 
-    if config.traceback:
-        from pydtnn.utils.debug import traceback_context as tracing
-    else:
-        from contextlib import nullcontext as tracing
+    if not config.trace_ranks and rank != 0:
+        sys.stdout = sys.stderr = open(os.devnull, "w")
+        tracer = nullcontext
 
-    with tracing():
+    with tracer():
         return main(config) or 0
 
 

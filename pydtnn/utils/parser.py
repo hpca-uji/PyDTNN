@@ -310,6 +310,13 @@ class ArgumentParser(argparse.ArgumentParser):
             default=use_traceback,
             help=(f"Save traceback file. Default: {use_traceback!r}."),
         )
+        use_trace_ranks = True
+        self.add_argument(
+            "--trace-ranks",
+            action=argparse.BooleanOptionalAction,
+            default=use_trace_ranks,
+            help=(f"Trace per rank. Default: {use_trace_ranks!r}."),
+        )
         self.add_argument(
             "--history",
             dest="use_history",
