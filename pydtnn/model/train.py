@@ -96,7 +96,7 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
         # Optimizer
         for layer in self.layers:
             self.tracer.emit_event(
-                PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + MdlEventEnum.UPDATE_DW
+                PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + MdlEventEnum.OPTIMIZER
             )
             layer.update_weights(self.optimizer, has_batch, sync_model)
             self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)

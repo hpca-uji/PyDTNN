@@ -20,24 +20,6 @@ logger = logging.getLogger(__name__)
 class RMSPropPycuda(RMSProp[TensorArray], OptimizerPycuda):
     """RMSProp optimizer implementation using PyCUDA for GPU acceleration."""
 
-    def __init__(
-        self,
-        learning_rate: float = 1e-2,
-        rho: float = 0.9,
-        epsilon: float = 1e-7,
-        decay: float = 0.0,
-    ) -> None:
-        """
-        Initialize the RMSPropPycuda optimizer.
-
-        Args:
-            learning_rate (float): Step size for parameter updates.
-            rho (float): Discounting factor for the history of squared gradients.
-            epsilon (float): Small value to prevent division by zero.
-            decay (float): Weight decay coefficient.
-        """
-        super().__init__(learning_rate, rho, epsilon, decay)
-
     def _kernel_init(self) -> None:
         """Initialize the PyCUDA ElementwiseKernels for parameter updates."""
         pow_func = {np.dtype(np.float32): "powf", np.dtype(np.float64): "pow"}[self.model.dtype]

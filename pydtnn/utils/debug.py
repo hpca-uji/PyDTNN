@@ -5,6 +5,7 @@ Provides tools for tracing function calls, stack execution, and logging
 detailed exception tracebacks to files.
 """
 
+import faulthandler
 import functools
 import inspect
 import logging
@@ -114,10 +115,16 @@ def traceback_context() -> Generator[None, Any, None]:
 
     The traceback includes local variables and is saved with a timestamped filename.
     """
+    path = Path(f"{state_path}/{package_name}-{timestamp}.err").resolve()
+    file = path.open(mode="w")
     try:
+        faulthandler.enable(file)
         yield
     except Exception as exc:
-        path = Path(f"{state_path}/{package_name}-{timestamp}.err").resolve()
-        with path.open(mode="a") as file:
-            TracebackException.from_exception(exc, capture_locals=True).print(file=file)  # noqa: DB100
+        TracebackException.from_exception(exc, capture_locals=True).print(file=file)  # noqa: DB100
         raise
+    else:
+        path.unlink(missing_ok=True)
+    finally:
+        faulthandler.disable()
+        file.close()

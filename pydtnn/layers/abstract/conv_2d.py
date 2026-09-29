@@ -66,7 +66,7 @@ class AbstractConv2D[T: Array](Layer[T]):  # noqa: D101 (generics not detected)
         self.use_bias = use_bias
         self.weights_initializer: InitializerFunc = weights_initializer
         self.biases_initializer: InitializerFunc = biases_initializer
-        self.grad_vars = {Parameters.WEIGHTS: Parameters.DW}
+        self.grad_vars[Parameters.WEIGHTS] = Parameters.DW
         if self.use_bias:
             self.grad_vars[Parameters.BIASES] = Parameters.DB
         self.debug = False

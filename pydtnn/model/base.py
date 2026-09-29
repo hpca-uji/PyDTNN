@@ -55,6 +55,7 @@ class SyncParticipation(enum.StrEnum):
 class SyncAlgorithm(enum.StrEnum):
     """Defines algorithms for weight aggregation during synchronization."""
 
+    SUM = enum.auto()
     AVG = enum.auto()
     WAVG = enum.auto()
     INVAVG = enum.auto()

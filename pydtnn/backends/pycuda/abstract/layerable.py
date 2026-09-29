@@ -87,7 +87,7 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
         # TODO: self.model._encode_reduce
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT,
-            self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.OPS_ALLREDUCE_DW,
+            self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.ALLREDUCE,
         )
         nccl.ncclAllReduce(
             state.ptr_voidp,

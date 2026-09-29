@@ -221,8 +221,11 @@ class Layerable[T: Array](Base[T]):  # noqa: D101 (generics not detected)
             gradient: If True, wait for gradients; otherwise, wait for weights.
         """
         def reducer(key):
-            if key in self.reqs_allred:
-                return self._state_reduce_wait(key)
+            try:
+                self._state_reduce_wait(key)
+            except KeyError:
+                pass  # no request
+
         self._state_reduce(mode, reducer)
 
     def state_reduce_sync(self, mode: SyncMode) -> None:
@@ -260,20 +263,20 @@ class Layerable[T: Array](Base[T]):  # noqa: D101 (generics not detected)
 
     def _state_reduce_async(self, key: str) -> None:
         """Method where the values are reduced asynchronously."""
+        assert key not in self.reqs_allred, f"MPI request overwritten ({key} not waited)!"
         value: np.ndarray = getattr(self, key)
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.LAYER_ENCODE
         )
         value = self.model._layer_reduce_encode(value)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        assert key not in self.reqs_allred, f"MPI request overwritten ({key} not waited)!"
         req = self.model._layer_reduce_async(value)
         self.reqs_allred[key] = req
 
     def _state_reduce_wait(self, key: str) -> None:
         """Method where the values reduced asynchronously are setted."""
-        value = getattr(self, key)
         req = self.reqs_allred.pop(key)
+        value = getattr(self, key)
         value = self.model._layer_reduce_wait(value, req)
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.LAYER_DECODE
@@ -294,7 +297,7 @@ class Layerable[T: Array](Base[T]):  # noqa: D101 (generics not detected)
 
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT,
-            self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.OPS_ALLREDUCE_DW,
+            self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.ALLREDUCE,
         )
         value = self.model._layer_reduce_sync(value)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)

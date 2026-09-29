@@ -34,9 +34,12 @@ def _start() -> int:
     parser = ArgumentParser()
     config = parser.parse_args()
 
-    from pydtnn.utils.debug import traceback_context
+    if config.traceback:
+        from pydtnn.utils.debug import traceback_context as tracing
+    else:
+        from contextlib import nullcontext as tracing
 
-    with traceback_context():
+    with tracing():
         return main(config) or 0
 
 

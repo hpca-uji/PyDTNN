@@ -303,6 +303,13 @@ class ArgumentParser(argparse.ArgumentParser):
             default=use_logger,
             help=(f"Save output log file. Default: {use_logger!r}."),
         )
+        use_traceback = True
+        self.add_argument(
+            "--traceback",
+            action=argparse.BooleanOptionalAction,
+            default=use_traceback,
+            help=(f"Save traceback file. Default: {use_traceback!r}."),
+        )
         self.add_argument(
             "--history",
             dest="use_history",

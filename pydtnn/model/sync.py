@@ -130,7 +130,7 @@ class Sync[T: Array](State[T]):  # noqa: D101 (generics not detected)
         """Performs a synchronous all-reduce operation on model weights or gradients."""
         for layer in self.layers:
             self.tracer.emit_event(
-                PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + MdlEventEnum.ALLREDUCE_DW
+                PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + MdlEventEnum.ALLREDUCE
             )
             layer.state_reduce_sync(mode=mode)
             self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
@@ -139,7 +139,7 @@ class Sync[T: Array](State[T]):  # noqa: D101 (generics not detected)
         """Initiates an asynchronous all-reduce operation on model weights or gradients."""
         for layer in self.layers:
             self.tracer.emit_event(
-                PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + MdlEventEnum.ALLREDUCE_DW
+                PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + MdlEventEnum.ALLREDUCE
             )
             layer.state_reduce_async(mode=mode)
             self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
@@ -148,7 +148,7 @@ class Sync[T: Array](State[T]):  # noqa: D101 (generics not detected)
         """Waits for completion of pending asynchronous all-reduce operations."""
         for layer in self.layers:
             self.tracer.emit_event(
-                PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + MdlEventEnum.WAIT_DW
+                PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + MdlEventEnum.WAITREDUCE
             )
             layer.state_reduce_wait(mode=mode)
             self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
@@ -200,6 +200,8 @@ class Sync[T: Array](State[T]):  # noqa: D101 (generics not detected)
         comm_size = len(comm_nsamples)
 
         match self.model_sync_algo:
+            case SyncAlgorithm.SUM:
+                return 1.0
             case SyncAlgorithm.AVG:
                 return 1.0 / comm_size
             case SyncAlgorithm.WAVG:

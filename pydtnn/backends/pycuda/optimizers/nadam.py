@@ -20,17 +20,6 @@ logger = logging.getLogger(__name__)
 class NadamPycuda(Nadam[TensorArray], OptimizerPycuda):
     """Nadam optimizer implementation for PyCUDA backends."""
 
-    def __init__(
-        self,
-        learning_rate: float = 1e-2,
-        beta1: float = 0.99,
-        beta2: float = 0.999,
-        epsilon: float = 1e-7,
-        decay: float = 0.0,
-    ) -> None:
-        """Initialize the NadamPycuda optimizer."""
-        super().__init__(learning_rate, beta1, beta2, epsilon, decay)
-
     def _kernel_init(self) -> None:
         """Initialize CUDA kernels for weight updates."""
         func_pow = {np.dtype(np.float32): "powf", np.dtype(np.float64): "pow"}

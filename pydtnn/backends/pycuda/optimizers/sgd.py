@@ -20,24 +20,6 @@ logger = logging.getLogger(__name__)
 class SGDPycuda(SGD[TensorArray], OptimizerPycuda):
     """PyCUDA-accelerated Stochastic Gradient Descent optimizer."""
 
-    def __init__(
-        self,
-        learning_rate: float = 1e-2,
-        momentum: float = 0.9,
-        nesterov: bool = False,
-        decay: float = 0.0,
-    ) -> None:
-        """
-        Initializes the SGDPycuda optimizer.
-
-        Args:
-            learning_rate (float): Step size for parameter updates.
-            momentum (float): Momentum factor.
-            nesterov (bool): Whether to use Nesterov momentum.
-            decay (float): Weight decay factor.
-        """
-        super().__init__(learning_rate, momentum, nesterov, decay)
-
     def _kernel_init(self) -> None:
         """Initializes the PyCUDA elementwise kernels for parameter updates."""
         # --- GPU ---
