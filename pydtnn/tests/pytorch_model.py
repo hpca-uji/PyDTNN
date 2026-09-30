@@ -441,31 +441,6 @@ def get_torch_parameters_values(torch_model: PyTorch_Model) -> dict[int, dict[st
     return layers_parameters
 
 
-def __get_pydtnn_vars_values(pydtnn_model: PyDTNN_Model) -> dict[int, dict[str, np.ndarray | None]]:
-    """Function to get all the parameter's gradients."""
-    layers = pydtnn_model.get_all_layers()
-    layers_parameters = dict[int, dict[str, np.ndarray | None]]()
-
-    i = 0
-    for layer in layers:
-        name = layer.name
-
-        match layer:
-            case BatchNormalization() | Conv2D() | FC():
-                if verbose_test():
-                    print(f"number: {i}, {layer=}, {layer.use_bias=}, grad_vars: {layer.grad_vars.keys()}")
-                parameters = dict[str, np.ndarray | None]()
-                for param_key in layer.grad_vars.keys():
-                    parameters[param_key] = getattr(layer, param_key)
-                layers_parameters[i] = parameters
-                #  print(f"number: {i}, layer: {name}, grad_vars: {grad_vars}")
-                i += 1
-            case _:
-                if verbose_test():
-                    print(f"number: {i}, layer: {name}, with no params: {layer.grad_vars}")
-    return layers_parameters
-
-
 def get_pydtnn_vars_values(pydtnn_model: PyDTNN_Model) -> dict[int, dict[str, np.ndarray | None]]:
     """Function to get all the parameter's gradients."""
     # layers = pydtnn_model.get_all_layers()
@@ -511,8 +486,7 @@ def delete_torch_flatten_and_identity_outputs(torch_outputs: list[tuple[torch.nn
     for i, (layer, _) in enumerate(torch_outputs):
         if isinstance(layer, (torch.nn.Flatten, torch.nn.Identity)):
             indexes_to_remove.append(i)
-
-    for index in indexes_to_remove:
+    for index in reversed(indexes_to_remove):
         del torch_outputs[index]
 
 
@@ -527,16 +501,10 @@ class PytorchModelTestCase(TestCase):
     model1_desc = "using PyTorch"
     model2_desc = "using PyDTNN"
 
-    rtol_default = 1e-4
-    atol_default = 1e-4
-    rtol_dict = {
-        BatchNormalization: 1e-5,
-        Conv2D: 7e-3,
-    }
-    atol_dict = {
-        Conv2D: 7e-3,
-        BatchNormalization: 1e-4,
-    }
+    rtol_default = 1e-10  # 1e-4
+    atol_default = 1e-10  # 1e-4
+    rtol_dict = {}  # BatchNormalization: 1e-5, Conv2D: 1e-5,
+    atol_dict = {}  # BatchNormalization: 1e-4, Conv2D: 1e-5,
 
     def setUp(self) -> None:
         """Sets up the test environment."""
@@ -546,7 +514,7 @@ class PytorchModelTestCase(TestCase):
     # Initialization methods
 
     params = Params()
-    params.num_epochs = 10
+    params.num_epochs = 30
     params.tensor_format = TensorFormat.NCHW
     params.synthetic_input_shape = (3, 32, 32)
     params.synthetic_output_shape = (10,)
@@ -560,6 +528,7 @@ class PytorchModelTestCase(TestCase):
     params.optimizer_beta2 = 0.999
     params.optimizer_epsilon = 1e-08
     params.optimizer_decay = 0.5
+    params.backend = "cpu"
 
     def get_tolerance(self, layer: Layerable) -> tuple[float, float]:
         """
@@ -664,6 +633,7 @@ class PytorchModelTestCase(TestCase):
                 raise ValueError(f"Unknown model {model_name!r}!")
 
         replace_layer_pytorch(torch_model, layer_to_replace=torch.nn.Dropout)
+        # replace_layer_pytorch(torch_model, torch.nn.BatchNorm2d)
         remove_inplace_pytorch(torch_model)
 
         return torch_model
@@ -793,7 +763,8 @@ class PytorchModelTestCase(TestCase):
                     _x0: np.ndarray = x0_base.copy()
                     for _layer in path:
                         _x0 = _layer.forward(_x0.copy())  # pyright: ignore[reportAssignmentType]
-                        x_to_compare.append((_layer, _x0.copy()))
+                        if not isinstance(_layer, (Identity, Flatten, AbstractBlockLayer)):
+                            x_to_compare.append((_layer, _x0.copy()))
 
             # Every layer:
             x0 = layer.forward(x0.copy())  # pyright: ignore[reportAssignmentType]
@@ -879,7 +850,8 @@ class PytorchModelTestCase(TestCase):
                     _dx: np.ndarray = dx_base.copy()
                     for _layer in reversed(path):
                         _dx = _layer.backward(_dx.copy())  # pyright: ignore[reportAssignmentType]
-                        dx_to_compare.append((_layer, _dx.copy()))
+                        if not isinstance(_layer, (Identity, Flatten, AbstractBlockLayer)):
+                            dx_to_compare.append((_layer, _dx.copy()))
                     paths_outputs.append(_dx.copy())
                 dx = np.sum(paths_outputs, axis=0)
             else:
@@ -951,13 +923,14 @@ class PytorchModelTestCase(TestCase):
             )
             self.assertTrue(
                 np.allclose(pytorch_values, pydtnn_values, rtol=rtol, atol=atol),
-                f"Forward result from layers {pydtnn_layer.name_with_id} differ "
+                f"Forward result from PyDTNN's layer \"{pydtnn_layer.name_with_id}\" "
+                f"and PyTorch's layer \"{torch_layer}\" differ [Compared layer: {i}] "
                 f"({self.print_stats(pytorch_values, pydtnn_values, rtol, atol)})",
             )
             # except Exception as e:
             #     print(e)
-            #     print(f"{pytorch_values=}")
-            #     print(f"{pydtnn_values=}")
+            #     # print(f"{pytorch_values=}")
+            #     # print(f"{pydtnn_values=}")
             #     if pytorch_values.size == pydtnn_values.size:
             #         print(self.print_stats(pytorch_values, pydtnn_values, rtol, atol))
             #     print(f"{pydtnn_layer=}\n{torch_layer=}")
@@ -1047,7 +1020,7 @@ class PytorchModelTestCase(TestCase):
                     rtol, atol = self.get_tolerance(pydtnn_layer)
                     assert np.isclose(torch_grad, pydtnn_grad, rtol=rtol, atol=atol).all(), \
                         f"Both values of {pydtnn_layer.name_with_id}'s {grad_var_k} are not close enough: " \
-                        f"{torch_grad=}\n{pydtnn_grad=}" \
+                        f"{torch_grad.flatten()=}\n{pydtnn_grad.flatten()=}" \
                         f"({self.print_stats(torch_grad, pydtnn_grad, rtol, atol)})"
                     # except Exception as e:
                     #     print(e)
@@ -1127,7 +1100,7 @@ class PytorchModelTestCase(TestCase):
         model_pydtnn = self.get_model_pydtnn(model_torch)
         model_pydtnn.mode = ModelMode.TRAIN
 
-        x_outputs = set_forward_hook(model_torch)
+        x_outputs_torch = set_forward_hook(model_torch)
         dx_torch = set_backward_hook(model_torch)
 
         for i in range(params.num_epochs):
@@ -1142,14 +1115,14 @@ class PytorchModelTestCase(TestCase):
             )
             y_pydtnn = np.ones((params.batch_size, output_shape), dtype=params.dtype)
 
-            x_torch = torch.from_numpy(x_pydtnn.copy()).to(torch.device("cpu"))
+            x_torch = torch.from_numpy(x_pydtnn.copy()).to(torch.device(params.backend))
             if params.dtype is np.dtype(np.float64):
                 x_torch = x_torch.double()
             else:
                 x_torch = x_torch.float()
 
             y_torch = (
-                torch.from_numpy(self.target_pydtnn2torch_format(y_pydtnn).copy()).to(torch.device("cpu")).long()
+                torch.from_numpy(self.target_pydtnn2torch_format(y_pydtnn).copy()).to(torch.device(params.backend)).long()
             )
             x_torch.requires_grad_(True)
 
@@ -1165,7 +1138,7 @@ class PytorchModelTestCase(TestCase):
             x_pydtnn, x_to_compare = self.do_pydtnn_model_forward_pass(model_pydtnn, x_pydtnn)
 
             # Compare forward results
-            self.compare_forward(x_outputs, x_to_compare)
+            self.compare_forward(x_outputs_torch, x_to_compare)
 
             # --- LOSS ---
             loss_torch = self.do_pytorch_model_loss(loss_func_torch, x_torch, y_torch)
@@ -1202,7 +1175,7 @@ class PytorchModelTestCase(TestCase):
                 self.compare_optimizer_parameters(model_torch, model_pydtnn)
 
             # Delete torch outputs:
-            x_outputs.clear()
+            x_outputs_torch.clear()
             dx_torch.clear()
 
     @unittest.skip("Large model")

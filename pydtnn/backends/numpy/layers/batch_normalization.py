@@ -125,7 +125,7 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
         np.sqrt(self.std, out=self.std, dtype=self.model.dtype)
 
         np.divide(self.xn, self.std, out=self.xn, dtype=self.model.dtype)
-        np.multiply(self.weights, self.xn, out=y, dtype=self.model.dtype)
+        np.multiply(self.xn, self.weights, out=y, dtype=self.model.dtype)
         np.add(y, self.biases, out=y, dtype=self.model.dtype)
 
         self.std = np.asarray(self.std, dtype=self.model.dtype, order="C")
@@ -145,8 +145,6 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         """Computes the forward pass of the layer."""
-
-        self.y_dx: np.ndarray
         n = x.shape[0]
 
         if self.spatial:
@@ -167,30 +165,26 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
             _mean: np.ndarray = self._mean
             _var: np.ndarray = self._var
             np.mean(x, axis=0, dtype=self.model.dtype, out=_mean)
-            np.var(x, axis=0, dtype=self.model.dtype, out=_var)
 
             inv_momentum = 1.0 - self.momentum
             # self.running_mean = self.momentum * self.running_mean + inv_momentum * _mean
-
-            # Torch-like:
-            # np.multiply(inv_momentum, self.running_mean, out=self.running_mean, dtype=self.model.dtype)
-            # np.multiply(self.momentum, _mean, out=self._mean_inv, dtype=self.model.dtype)
-
             np.multiply(self.momentum, self.running_mean, out=self.running_mean, dtype=self.model.dtype)
             np.multiply(inv_momentum, _mean, out=self._mean_inv, dtype=self.model.dtype)
             np.add(self.running_mean, self._mean_inv, out=self.running_mean, dtype=self.model.dtype)
             self.running_mean = np.asarray(self.running_mean, dtype=self.model.dtype, order="C")
 
+            # NOTE: "ddof=1": the division is by "N - 1" due is an sample variance (see numpy's documentation)
+            # Torch implementation: https://github.com/pytorch/pytorch/blob/v2.14.0/aten/src/ATen/native/Normalization.cpp#L281
+            np.var(x, axis=0, dtype=self.model.dtype, ddof=1, out=_var)
+
             # self.running_var = self.momentum * self.running_var + inv_momentum * _var
-
-            # Torch-like:
-            # np.multiply(inv_momentum, self.running_var, out=self.running_var, dtype=self.model.dtype)
-            # np.multiply(self.momentum, _var, out=self._var_inv, dtype=self.model.dtype)
-
             np.multiply(self.momentum, self.running_var, out=self.running_var, dtype=self.model.dtype)
             np.multiply(inv_momentum, _var, out=self._var_inv, dtype=self.model.dtype)
             np.add(self.running_var, self._var_inv, out=self.running_var, dtype=self.model.dtype)
             self.running_var = np.asarray(self.running_var, dtype=self.model.dtype, order="C")
+
+            # NOTE: "ddof=0": the division is by "N" due is a population variance (see numpy's documentation).
+            np.var(x, axis=0, dtype=self.model.dtype, ddof=0, out=_var)
         # anyways:
 
         # bn_training_fwd_cython(x, y, self.xn, self.std, self.gamma, self.beta, _mean, _var, self.epsilon)
@@ -216,7 +210,6 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
             num_elems = n
 
         dx: np.ndarray = np.asarray(self.y_dx[:num_elems, :], dtype=self.model.dtype, order="C")
-        # dx.fill(0)
         dy_xn: np.ndarray = np.asarray(self.dy_xn[:num_elems, :], dtype=self.model.dtype, order="C")
 
         np.multiply(dy, self.xn, out=dy_xn, dtype=self.model.dtype)
