@@ -493,6 +493,14 @@ def delete_torch_flatten_and_identity_outputs(torch_outputs: list[tuple[torch.nn
         del torch_outputs[index]
 
 
+class ParamsTestTorch(Params):
+    """Class where all the test parameters are stored"""
+
+    @property
+    def device(self) -> str:
+        return self.backend if self.backend == "cpu" else "cuda"
+
+
 class PytorchModelTestCase(TestCase):
     """Tests that two models with different parameters lead to the same results"""
 
@@ -516,7 +524,7 @@ class PytorchModelTestCase(TestCase):
 
     # Initialization methods
 
-    params = Params()
+    params = ParamsTestTorch()
     params.num_epochs = 30
     params.tensor_format = TensorFormat.NCHW
     params.synthetic_input_shape = (3, 32, 32)
@@ -532,7 +540,6 @@ class PytorchModelTestCase(TestCase):
     params.optimizer_epsilon = 1e-08
     params.optimizer_decay = 0.5
     params.backend = "gpu"
-    params.device = params.backend if params.backend == "cpu" else "cuda"
 
     def get_tolerance(self, layer: Layerable) -> tuple[float, float]:
         """
@@ -956,7 +963,6 @@ class PytorchModelTestCase(TestCase):
         """
         if verbose_test():
             print("Comparing outputs of both models...")
-        params = PytorchModelTestCase.params
 
         delete_torch_flatten_and_identity_outputs(torch_dx)
 
