@@ -256,7 +256,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
                     None,
                 )
             case self.TensorType.OTHER:
-                pass
+                self.desc = -1
 
             case tensor_type:
                 raise NotImplementedError(f"Tensor type not implemented! ({tensor_type})")
@@ -280,6 +280,10 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
     def __getattr__(self, name: str) -> Any:
         """Delegates attribute access to the underlying GPUArray."""
         return getattr(self.ary, name)
+
+    def flatten(self, order: Literal["C", "F", "A"] = "C") -> TensorArray:
+        """Returns a flattened view of the TensorArray."""
+        return self._view(self.ary.reshape((-1, ), order))  # pyright: ignore[reportReturnType]
 
     def reshape[NS: tuple = ArrayShape](
         self, shape: NS, order: Literal["C", "F", "A"] = "C"
@@ -398,7 +402,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
             tensor_type=self.tensor_type,
             use_gpudirect=self.use_gpudirect,
             cublas=self.cublas,
-            desc=-1,
+            desc=None,
             cpu_shape=self.cpu_shape,
         )
         return obj
