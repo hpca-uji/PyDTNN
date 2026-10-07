@@ -1,0 +1,45 @@
+#!/bin/bash
+
+export OMP_NUM_THREADS=16
+export PYTHONOPTIMIZE=2
+export PYTHONUNBUFFERED="True"
+mpirun \
+  pydtnn-benchmark \
+  --model=resnet \
+  --dataset=folder \
+  --dataset_train_path=/home/pluijter/proyecto/Datasets/dataset_prueba/train \
+  --dataset_test_path=/home/pluijter/proyecto/Datasets/dataset_prueba/test \
+  --test_as_validation=False \
+  --batch_size=12 \
+  --validation_split=0.2 \
+  --steps_per_epoch=4 \
+  --num_epochs=15 \
+  --evaluate=False \
+  --optimizer=sgd \
+  --nesterov=True \
+  --learning_rate=0.1 \
+  --momentum=0.9 \
+  --loss_func=categorical_cross_entropy \
+  --metrics=categorical_accuracy \
+  --lr_schedulers=warm_up,reduce_lr_on_plateau,early_stopping \
+  --warm_up_epochs=5 \
+  --early_stopping_metric=val_categorical_cross_entropy \
+  --early_stopping_patience=40 \
+  --reduce_lr_on_plateau_metric=val_categorical_cross_entropy \
+  --reduce_lr_on_plateau_factor=0.5 \
+  --reduce_lr_on_plateau_patience=15 \
+  --reduce_lr_on_plateau_min_lr=0.00001 \
+  --reduce_lr_every_nepochs_nepochs=30 \
+  --reduce_lr_every_nepochs_min_lr=0.00001 \
+  --reduce_lr_every_nepochs_factor=0.1 \
+  --stop_at_loss_metric=val_categorical_accuracy \
+  --stop_at_loss_threshold=70.0 \
+  --parallel=data \
+  --use_blocking_mpi=True \
+  --tracing=False \
+  --profile=False \
+  --enable_gpu=True \
+  --enable_gpudirect=True \
+  --dtype=float32 \
+  --resize=True \
+  --resize_dimension=300
