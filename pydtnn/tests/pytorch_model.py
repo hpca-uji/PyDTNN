@@ -1,4 +1,4 @@
-# pyright: ignore [M100]
+# noqa: M100
 """Tests for verifying model behavior and consistency across different data types."""
 
 import logging
@@ -442,10 +442,10 @@ def get_torch_parameters_values(torch_model: PyTorch_Model) -> dict[int, dict[st
     return layers_parameters
 
 
-def get_pydtnn_vars_values(pydtnn_model: PyDTNN_Model) -> dict[int, dict[str, np.ndarray | None]]:
+def get_pydtnn_vars_values(pydtnn_model: PyDTNN_Model) -> dict[int, dict[str, Array | None]]:
     """Function to get all the parameter's gradients."""
     # layers = pydtnn_model.get_all_layers()
-    layers_parameters = dict[int, dict[str, np.ndarray | None]]()
+    layers_parameters = dict[int, dict[str, Array | None]]()
 
     def _get_pydtnn_vars_values(i: int, layers: list[Layerable]) -> int:
         for layer in layers:
@@ -455,7 +455,7 @@ def get_pydtnn_vars_values(pydtnn_model: PyDTNN_Model) -> dict[int, dict[str, np
                 case BatchNormalization() | Conv2D() | FC():
                     if verbose_test():
                         print(f"number: {i}, {layer=}, {layer.use_bias=}, grad_vars: {layer.grad_vars.keys()}")
-                    parameters = dict[str, np.ndarray | None]()
+                    parameters = dict[str, Array | None]()
                     for param_key in layer.grad_vars.keys():
                         param = getattr(layer, param_key)
                         if isinstance(param, TensorArray):
@@ -540,7 +540,7 @@ class PytorchModelTestCase(TestCase):
     params.optimizer_beta2 = 0.999
     params.optimizer_epsilon = 1e-08
     params.optimizer_decay = 0.5
-    params.backend = "gpu"
+    params.backend = "cpu"
 
     def get_tolerance(self, layer: Layerable) -> tuple[float, float]:
         """
@@ -907,70 +907,22 @@ class PytorchModelTestCase(TestCase):
         for layer in pydtnn_model.layers:
             layer.update_weights(pydtnn_model.optimizer, update=True, sync=False)
 
-    def compare_forward(
+    def _compare_fwd_bwd(
         self,
-        x_torch: list[tuple[torch.nn.Module, torch.Tensor]],
-        x_pydtnn: list[tuple[Layerable, Array]],
+        layers_and_values_torch: list[tuple[torch.nn.Module, torch.Tensor]] | list[tuple[torch.nn.Module, tuple[torch.Tensor, ...] | torch.Tensor]],  # noqa: E501
+        layers_and_values_pydtnn: list[tuple[Layerable, Array]],
+        off_set_pydtnn: int = 0,
+        message: str = ""
     ) -> None:
-        """
-        Compares the forward pass outputs of two models.
+        """Method to compare both forward and backward's outputs."""
 
-        Args:
-            x_torch (list[torch.Tensor]): Forward pass outputs of PyTorch's model.
-            x_torch (list[np.ndarray]): Forward pass outputs of PyDTNN's model.
-        """
-        # assert len(x1) == len(x2), "x1 and x2 should have the same length"
         if verbose_test():
             print("Comparing outputs of both models...")
+        delete_torch_flatten_and_identity_outputs(layers_and_values_torch)
 
-        delete_torch_flatten_and_identity_outputs(x_torch)
-
-        for i in range(len(x_torch)):
-            torch_layer, pytorch_base_values = x_torch[i]
-            pydtnn_layer, pydtnn_values = x_pydtnn[i]
-            pytorch_values = pytorch_base_values.numpy(force=True)
-            rtol, atol = self.get_tolerance(pydtnn_layer)
-
-            if pydtnn_layer.model.use_cuda:
-                assert isinstance(pydtnn_values, TensorArray)
-                pydtnn_values = pydtnn_values.get()
-            else:
-                assert isinstance(pydtnn_values, np.ndarray)
-
-            self.assertTrue(
-                pytorch_values.size == pydtnn_values.size,
-                f"Both tensors (PyDTNN: {pydtnn_layer.name_with_id}, PyTorch: {torch_layer})"
-                f" doesn't have the same number of elements ({pytorch_values.size=} != {pydtnn_values.size=})",
-            )
-            self.assertTrue(
-                np.allclose(pytorch_values, pydtnn_values, rtol=rtol, atol=atol),
-                f"Forward result from PyDTNN's layer \"{pydtnn_layer.name_with_id}\" "
-                f"and PyTorch's layer \"{torch_layer}\" differ [Compared layer: {i}] "
-                f"({self.print_stats(pytorch_values, pydtnn_values, rtol, atol)})",
-            )
-
-    def compare_backward(
-        self,
-        torch_dx: list[tuple[torch.nn.Module, tuple[torch.Tensor, ...] | torch.Tensor]],
-        pydtnn_dx: list[tuple[Layerable, Array]],
-    ) -> None:
-        """Compares the backward pass gradients of two models.
-
-        Due the differences of implementation, right now it's not possible to compare the both gradients.
-
-        Args:
-            torch_dx: Backward pass gradients of model 1.
-            pydtnn_dx: Backward pass gradients of model 2.
-        """
-        if verbose_test():
-            print("Comparing outputs of both models...")
-
-        delete_torch_flatten_and_identity_outputs(torch_dx)
-
-        for i in range(len(torch_dx)):
-            torch_layer, pytorch_base_values = torch_dx[i]
-            # NOTE: i + 1 to ignore the last pydtnn's
-            pydtnn_layer, pydtnn_values = pydtnn_dx[i + 1]
+        for i in range(len(layers_and_values_torch)):
+            torch_layer, pytorch_base_values = layers_and_values_torch[i]
+            pydtnn_layer, pydtnn_values = layers_and_values_pydtnn[i + off_set_pydtnn]
             if isinstance(pytorch_base_values, tuple):
                 pytorch_base_values = pytorch_base_values[0]
             pytorch_values = pytorch_base_values.numpy(force=True)
@@ -980,7 +932,7 @@ class PytorchModelTestCase(TestCase):
                 pydtnn_values = pydtnn_values.get()
             else:
                 assert isinstance(pydtnn_values, np.ndarray)
-
+            # try:
             rtol, atol = self.get_tolerance(pydtnn_layer)
             self.assertTrue(
                 pytorch_values.size == pydtnn_values.size,
@@ -989,9 +941,42 @@ class PytorchModelTestCase(TestCase):
             )
             self.assertTrue(
                 np.allclose(pytorch_values, pydtnn_values, rtol=rtol, atol=atol),
-                f"Forward result from layers {pydtnn_layer.name_with_id} differ "
+                f"{message} result from layers {pydtnn_layer.name_with_id} and {torch_layer} differ [layer: {i}] "
                 f"({self.print_stats(pytorch_values, pydtnn_values, rtol, atol)})",
             )
+            # except Exception as e:
+            #     print(e)
+            #     breakpoint()
+
+    def compare_forward(
+        self,
+        values_torch: list[tuple[torch.nn.Module, torch.Tensor]],
+        values_pydtnn: list[tuple[Layerable, Array]],
+    ) -> None:
+        """
+        Compares the forward pass outputs of two models.
+
+        Args:
+            values_torch: Forward pass outputs of PyTorch's model.
+            values_pydtnn: Forward pass outputs of PyDTNN's model.
+        """
+        self._compare_fwd_bwd(values_torch, values_pydtnn, message="Forward")
+
+    def compare_backward(
+        self,
+        values_torch: list[tuple[torch.nn.Module, tuple[torch.Tensor, ...] | torch.Tensor]],
+        values_pydtnn: list[tuple[Layerable, Array]],
+    ) -> None:
+        """Compares the backward pass gradients of two models.
+
+        Due the differences of implementation, right now it's not possible to compare the both gradients.
+
+        Args:
+            values_torch: Backward pass gradients of torch's model.
+            values_pydtnn: Backward pass gradients of pydtnn's model.
+        """
+        # NOTE: The offset is 1 to ignore the last pydtnn's activation.
+        self._compare_fwd_bwd(values_torch, values_pydtnn, off_set_pydtnn=1, message="Backward")
 
     def compare_grad_vars(self, torch_model: PyTorch_Model, pydtnn_model: PyDTNN_Model) -> None:
         """Method to comparte PyTorch 'parameters.grad' and PyDTNN grad vars's values"""
@@ -1054,6 +1039,11 @@ class PytorchModelTestCase(TestCase):
             for var_key in pydtnn_params[i].keys():
                 torch_param = torch_params[i][var_key]
                 pydtnn_param = pydtnn_params[i][var_key]
+                if pydtnn_layer.model.use_cuda:
+                    assert isinstance(pydtnn_param, TensorArray)
+                    pydtnn_param = pydtnn_param.get()
+                else:
+                    assert isinstance(pydtnn_param, np.ndarray)
 
                 if torch_param is None:
                     if verbose_test():
@@ -1217,13 +1207,13 @@ class PytorchModelTestCase(TestCase):
         model_name = "resnet14like"
         self.do_test_model(self.get_model_torch(model_name), model_name)
 
-    @unittest.skip("Work in progress.")
+    # @unittest.skip("Work in progress.")
     def test_simplecnn(self) -> None:
         """Compares results between an SimpleCNN model using a PyTorch model and other a PyDTNN one."""
         model_name = "simplecnn"
         self.do_test_model(self.get_model_torch(model_name), model_name)
 
-    @unittest.skip("Work in progress.")
+    # @unittest.skip("Work in progress.")
     def test_layer_conv_2d(self) -> None:
         """Compares results between an SimpleCNN model using a PyTorch model and other a PyDTNN one."""
         params = PytorchModelTestCase.params
@@ -1256,7 +1246,7 @@ class PytorchModelTestCase(TestCase):
         torch_model = TorchLayer(layer)
         self.do_test_model(torch_model, "Linear")
 
-    @unittest.skip("Work in progress.")
+    # @unittest.skip("Work in progress.")
     def test_layer_batch_norm_2d(self) -> None:
         """Compares results between an SimpleCNN model using a PyTorch model and other a PyDTNN one."""
         params = PytorchModelTestCase.params
@@ -1273,7 +1263,7 @@ class PytorchModelTestCase(TestCase):
         torch_model = TorchLayer(layer)
         self.do_test_model(torch_model, "BatchNorm2d")
 
-    @unittest.skip("Work in progress.")
+    # @unittest.skip("Work in progress.")
     def test_maxpool2d(self) -> None:
         """Tests MaxPool2D layer."""
         # params = PytorchModelTestCase.params
