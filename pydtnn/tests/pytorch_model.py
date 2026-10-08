@@ -927,7 +927,7 @@ class PytorchModelTestCase(TestCase):
                 pytorch_base_values = pytorch_base_values[0]
             pytorch_values = pytorch_base_values.numpy(force=True)
 
-            if pydtnn_layer.model.use_cuda:
+            if PytorchModelTestCase.params.device == "cuda":
                 assert isinstance(pydtnn_values, TensorArray)
                 pydtnn_values = pydtnn_values.get()
             else:
@@ -992,7 +992,7 @@ class PytorchModelTestCase(TestCase):
             for grad_var_k in pydtnn_grad_vars.keys():
                 torch_layer, torch_grad = torch_gradients[i][grad_var_k]
                 pydtnn_grad = pydtnn_grad_vars[grad_var_k]
-                if pydtnn_layer.model.use_cuda:
+                if PytorchModelTestCase.params.device == "cuda":
                     assert isinstance(pydtnn_grad, TensorArray)
                     pydtnn_grad = pydtnn_grad.get()
                 else:
@@ -1039,7 +1039,7 @@ class PytorchModelTestCase(TestCase):
             for var_key in pydtnn_params[i].keys():
                 torch_param = torch_params[i][var_key]
                 pydtnn_param = pydtnn_params[i][var_key]
-                if pydtnn_layer.model.use_cuda:
+                if PytorchModelTestCase.params.device == "cuda":
                     assert isinstance(pydtnn_param, TensorArray)
                     pydtnn_param = pydtnn_param.get()
                 else:
@@ -1132,7 +1132,7 @@ class PytorchModelTestCase(TestCase):
                 torch.from_numpy(self.target_pydtnn2torch_format(y_pydtnn_base).copy()).long()
             ).to(torch.device(params.device))
 
-            if model_pydtnn.use_cuda:
+            if PytorchModelTestCase.params.device == "cuda":
                 tensor_ary = TensorArray(
                     gpuarray.empty((model_pydtnn.batch_size, *model_pydtnn.layers[-1].shape), model_pydtnn.dtype),
                     model_pydtnn.tensor_format,
