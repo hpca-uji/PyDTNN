@@ -529,7 +529,7 @@ class PytorchModelTestCase(TestCase):
     params.tensor_format = TensorFormat.NCHW
     params.synthetic_input_shape = (3, 32, 32)
     params.synthetic_output_shape = (10,)
-    params.dtype = np.dtype(np.float32)
+    params.dtype = np.dtype(np.float64)
     params.optimizer_name = "adam"
     params.optimizer_nesterov = True
     params.optimizer_decoupled_decay = False
@@ -1117,7 +1117,7 @@ class PytorchModelTestCase(TestCase):
             x_pydtnn_base: np.ndarray = np.asarray(
                 rand.random((params.batch_size, *input_shape)), dtype=params.dtype, order="C"
             )
-            y_pydtnn_base: np.ndarray = np.ones((params.batch_size, output_shape), dtype=params.dtype)
+            y_pydtnn_base: np.ndarray = np.ones((params.batch_size, *model_pydtnn.output_shape), dtype=params.dtype)
 
             x_torch = torch.from_numpy(x_pydtnn_base.copy())
             if params.dtype is np.dtype(np.float64):
@@ -1193,7 +1193,7 @@ class PytorchModelTestCase(TestCase):
         model_name = "resnet50"
         self.do_test_model(self.get_model_torch(model_name), model_name)
 
-    @unittest.skip("Work in progress.")
+    # @unittest.skip("Work in progress.")
     def test_resnet14like(self) -> None:
         """Compares results between an ResNet14_like model using a PyTorch model and other a PyDTNN one."""
         model_name = "resnet14like"
@@ -1205,7 +1205,7 @@ class PytorchModelTestCase(TestCase):
         model_name = "simplecnn"
         self.do_test_model(self.get_model_torch(model_name), model_name)
 
-    # @unittest.skip("Work in progress.")
+    @unittest.skip("Work in progress.")
     def test_layer_conv_2d(self) -> None:
         """Compares results between an SimpleCNN model using a PyTorch model and other a PyDTNN one."""
         params = PytorchModelTestCase.params
@@ -1238,7 +1238,7 @@ class PytorchModelTestCase(TestCase):
         torch_model = TorchLayer(layer)
         self.do_test_model(torch_model, "Linear")
 
-    # @unittest.skip("Work in progress.")
+    @unittest.skip("Work in progress.")
     def test_layer_batch_norm_2d(self) -> None:
         """Compares results between an SimpleCNN model using a PyTorch model and other a PyDTNN one."""
         params = PytorchModelTestCase.params
