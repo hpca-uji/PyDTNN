@@ -9,8 +9,7 @@ from typing import Any
 import numpy as np
 from tqdm import tqdm
 
-from pydtnn import MPI, gpuarray
-from pydtnn.utils.tensor_array import TensorArray
+from pydtnn import MPI
 from pydtnn.datasets.abstract import Dataset
 from pydtnn.layers.identity import Identity
 from pydtnn.model.base import ModelMode
@@ -205,16 +204,6 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
     def train(self) -> None:  # noqa: C901
         """Runs the full training process over multiple epochs."""
         self._ensure_runnable()
-
-        # If working with CUDA, self.y_batch must be in a GPU's data structure.
-        if self.use_cuda and self.y_batch is None:
-            assert gpuarray and self.cudnn_dtype
-            tensor_ary = TensorArray(
-                gpuarray.empty((self.batch_size, *self.layers[-1].shape), self.dtype),
-                self.tensor_format,
-                self.cudnn_dtype,
-            )
-            self.y_batch = tensor_ary  # pyright: ignore[reportAttributeAccessIssue]
 
         self.comm_nsamples = tuple(
             zip(

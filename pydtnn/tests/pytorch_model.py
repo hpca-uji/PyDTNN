@@ -12,7 +12,6 @@ import torch
 import torchvision.models as torch_models
 from torch.optim import SGD, Adam, NAdam
 
-from pydtnn import gpuarray
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.activations.log_softmax import LogSoftmax
 from pydtnn.layers.flatten import Flatten
@@ -1132,13 +1131,6 @@ class PytorchModelTestCase(TestCase):
                 torch.from_numpy(self.target_pydtnn2torch_format(y_pydtnn_base).copy()).long()
             ).to(torch.device(params.device))
 
-            if PytorchModelTestCase.params.device == "cuda":
-                tensor_ary = TensorArray(
-                    gpuarray.empty((model_pydtnn.batch_size, *model_pydtnn.layers[-1].shape), model_pydtnn.dtype),
-                    model_pydtnn.tensor_format,
-                    model_pydtnn.cudnn_dtype,
-                )
-                model_pydtnn.y_batch = tensor_ary  # pyright: ignore[reportAttributeAccessIssue]
             input_layer = model_pydtnn.layers[0]
             assert isinstance(input_layer, Identity)
             x_pydtnn, y_pydtnn = input_layer._sync_x_y(x_pydtnn_base, y_pydtnn_base)

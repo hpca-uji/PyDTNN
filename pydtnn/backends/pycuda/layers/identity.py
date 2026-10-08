@@ -30,7 +30,14 @@ class IdentityPycuda(Identity[TensorArray], LayerPycuda):
         y_gpu = gpuarray.zeros((self.model.batch_size, *self.shape), self.model.dtype)
         self.y = TensorArray(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
-        self.memory_used += self.y.nbytes
+        tensor_ary = TensorArray(
+            gpuarray.empty((self.batch_size, *self.layers[-1].shape), self.dtype),
+            self.tensor_format,
+            self.cudnn_dtype,
+        )
+        self.y_batch = tensor_ary  # pyright: ignore[reportAttributeAccessIssue]
+
+        self.memory_used += self.y.nbytes + self.y_batch.nbytes
 
     def forward(self, x: TensorArray) -> TensorArray:
         """Perform forward pass."""

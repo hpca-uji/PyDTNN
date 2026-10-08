@@ -83,8 +83,8 @@ class Init[T: Array](Repr[T]):  # noqa: D101 (generics not detected)
 
         # Initialize attributes
         self._model_inited: bool = False
-        self.use_cuda = gpuarray is not None and drv is not None and cublas is not None
         self.random: np.random.Generator = rand.Generator(self.random_seed)  # pyright: ignore[reportAttributeAccessIssue]
+        self.cuda_available = gpuarray is not None and drv is not None and cublas is not None
         self.memory_cls = PreallocMemory if self.shared_tmp_memory else PrivateMemory
         self.memory: PrivateMemory = None  # pyright: ignore[reportAttributeAccessIssue]
         self.perf_counter = PerformanceCounter()
@@ -99,7 +99,7 @@ class Init[T: Array](Repr[T]):  # noqa: D101 (generics not detected)
         self._tracer_init()
 
         # Cuda [NOTE: after MPI]
-        if self.use_cuda:
+        if self.cuda_available:
             self._cuda_init()
         else:
             self.stream = None
@@ -200,7 +200,7 @@ class Init[T: Array](Repr[T]):  # noqa: D101 (generics not detected)
         """Configures the tensor format based on hardware capabilities."""
         if self.tensor_format:
             tensor_format = TensorFormat(self.tensor_format.lower())
-        elif self.use_cuda:
+        elif self.cuda_available:
             tensor_format = TensorFormat.NCHW
         else:
             tensor_format = TensorFormat.NHWC
@@ -300,7 +300,7 @@ class Init[T: Array](Repr[T]):  # noqa: D101 (generics not detected)
             from pydtnn.tracers.extrae_tracer import ExtraeTracer
 
             tracer = ExtraeTracer(self.tracing)
-        elif self.use_cuda:
+        elif self.cuda_available:
             from pydtnn.tracers.simple_tracer_gpu import SimpleTracerPycuda
 
             tracer = SimpleTracerPycuda(self.tracing, self.tracer_output, self.comm)

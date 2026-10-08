@@ -129,7 +129,7 @@ class Layers[T: Array](Utils[T]):  # noqa: D101 (generics not detected)
     def _apply_layer_fusion(self) -> None:
         """Apply layer fusion in a recursive manner"""
 
-        if not self.use_cuda and any(
+        if not self.cuda_available and any(
             [
                 self.fused_bn_relu,
                 self.fused_conv_relu,
