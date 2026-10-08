@@ -806,7 +806,7 @@ class PytorchModelTestCase(TestCase):
         loss, dx = model.loss.compute(x.copy(), y)
         return loss, dx
 
-    def compare_loss(self, loss_torch: torch.Tensor, _loss_pydtnn: float) -> None:
+    def compare_loss(self, loss_torch: torch.Tensor, _loss_pydtnn: float, round: int) -> None:
         """Method to compare Torch and PyDTNN losses."""
         _loss_torch = float(loss_torch.detach())
         if verbose_test():
@@ -815,7 +815,7 @@ class PytorchModelTestCase(TestCase):
         atol: float = PytorchModelTestCase.atol_default
         assert np.isclose(float(_loss_torch), _loss_pydtnn,
                           rtol=rtol, atol=atol), (  # pyright: ignore[reportPossiblyUnboundVariable]
-            f"Both values are not close: {_loss_torch=} =/=  {_loss_pydtnn=}"
+            f"[ROUND {round}] Both values are not close: {_loss_torch=} =/=  {_loss_pydtnn=}"
         )
 
     def do_pytorch_model_backward_pass(
@@ -910,13 +910,14 @@ class PytorchModelTestCase(TestCase):
         self,
         layers_and_values_torch: list[tuple[torch.nn.Module, torch.Tensor]] | list[tuple[torch.nn.Module, tuple[torch.Tensor, ...] | torch.Tensor]],  # noqa: E501
         layers_and_values_pydtnn: list[tuple[Layerable, Array]],
+        round: int,
         off_set_pydtnn: int = 0,
         message: str = ""
     ) -> None:
         """Method to compare both forward and backward's outputs."""
 
         if verbose_test():
-            print("Comparing outputs of both models...")
+            print(f"[Round: {round}] Comparing outputs of both models {message}...")
         delete_torch_flatten_and_identity_outputs(layers_and_values_torch)
 
         for i in range(len(layers_and_values_torch)):
@@ -935,13 +936,13 @@ class PytorchModelTestCase(TestCase):
             rtol, atol = self.get_tolerance(pydtnn_layer)
             self.assertTrue(
                 pytorch_values.size == pydtnn_values.size,
-                f"Both tensors (PyDTNN: {pydtnn_layer.name_with_id}, PyTorch: {torch_layer})"
+                f"[Round: {round}] Both tensors (PyDTNN: {pydtnn_layer.name_with_id}, PyTorch: {torch_layer})"
                 f" doesn't have the same number of elements ({pytorch_values.size=} != {pydtnn_values.size=})",
             )
             self.assertTrue(
                 np.allclose(pytorch_values, pydtnn_values, rtol=rtol, atol=atol),
-                f"{message} result from layers {pydtnn_layer.name_with_id} and {torch_layer} differ [layer: {i}] "
-                f"({self.print_stats(pytorch_values, pydtnn_values, rtol, atol)})",
+                f"[Round: {round}] {message} result from layers {pydtnn_layer.name_with_id} and "
+                f" {torch_layer} differ [layer: {i}] ({self.print_stats(pytorch_values, pydtnn_values, rtol, atol)})",
             )
             # except Exception as e:
             #     print(e)
@@ -951,6 +952,7 @@ class PytorchModelTestCase(TestCase):
         self,
         values_torch: list[tuple[torch.nn.Module, torch.Tensor]],
         values_pydtnn: list[tuple[Layerable, Array]],
+        round: int,
     ) -> None:
         """
         Compares the forward pass outputs of two models.
@@ -959,12 +961,13 @@ class PytorchModelTestCase(TestCase):
             values_torch: Forward pass outputs of PyTorch's model.
             values_pydtnn: Forward pass outputs of PyDTNN's model.
         """
-        self._compare_fwd_bwd(values_torch, values_pydtnn, message="Forward")
+        self._compare_fwd_bwd(values_torch, values_pydtnn, round=round, message="Forward")
 
     def compare_backward(
         self,
         values_torch: list[tuple[torch.nn.Module, tuple[torch.Tensor, ...] | torch.Tensor]],
         values_pydtnn: list[tuple[Layerable, Array]],
+        round: int
     ) -> None:
         """Compares the backward pass gradients of two models.
 
@@ -975,16 +978,16 @@ class PytorchModelTestCase(TestCase):
             values_pydtnn: Backward pass gradients of pydtnn's model.
         """
         # NOTE: The offset is 1 to ignore the last pydtnn's activation.
-        self._compare_fwd_bwd(values_torch, values_pydtnn, off_set_pydtnn=1, message="Backward")
+        self._compare_fwd_bwd(values_torch, values_pydtnn, round=round, off_set_pydtnn=1, message="Backward")
 
-    def compare_grad_vars(self, torch_model: PyTorch_Model, pydtnn_model: PyDTNN_Model) -> None:
+    def compare_grad_vars(self, torch_model: PyTorch_Model, pydtnn_model: PyDTNN_Model, round: int) -> None:
         """Method to comparte PyTorch 'parameters.grad' and PyDTNN grad vars's values"""
 
         torch_gradients = get_torch_grad_parameters_values(torch_model)
         pydtnn_gradients = get_pydtnn_grad_vars_values(pydtnn_model)
-        assert len(torch_gradients) == len(pydtnn_gradients), "Torch and PyDTNN gradients must have the same " \
-                                                              f"number of elements: {len(torch_gradients)=} || " \
-                                                              f"{len(pydtnn_gradients)=}"
+        assert len(torch_gradients) == len(pydtnn_gradients), f"[ROUND {round}] Torch and PyDTNN gradients " \
+                                                              "must have the same number of elements: " \
+                                                              f"{len(torch_gradients)=} || {len(pydtnn_gradients)=}" \
 
         for i in pydtnn_gradients.keys():
             pydtnn_layer, pydtnn_grad_vars = pydtnn_gradients[i]
@@ -998,38 +1001,33 @@ class PytorchModelTestCase(TestCase):
                     assert isinstance(pydtnn_grad, np.ndarray)
 
                 if torch_grad is None:
-                    if verbose_test():
-                        print(f"{torch_layer} - torch_grad is None")
-                    assert pydtnn_grad is None, f"{torch_layer} torch's gradient is None, " \
+                    assert pydtnn_grad is None, f"[ROUND {round}] {torch_layer} torch's gradient is None, " \
                                                 f"but the PyDTNN {pydtnn_layer} is: {pydtnn_grad}"
                 else:
-                    if verbose_test():
-                        print(f"{torch_layer} - torch_grad is not None")
-                    assert pydtnn_grad is not None, f"{torch_layer} torch's gradient is not None, " \
+                    assert pydtnn_grad is not None, f"[ROUND {round}] {torch_layer} torch's gradient is not None, " \
                                                     f"but the PyDTNN {pydtnn_layer} it is."
-                    if verbose_test():
-                        print(f"{pydtnn_layer.name_with_id} || {torch_grad.size} || {pydtnn_grad.size}")
-                    assert torch_grad.size == pydtnn_grad.size, f"{pydtnn_layer} Both tensors must have the same size: " \
+                    assert torch_grad.size == pydtnn_grad.size, f"[ROUND {round}] {pydtnn_layer} Both tensors must " \
+                                                                "have the same size: " \
                                                                 f"({torch_grad.size=} =/= {pydtnn_grad.size=})"
 
-                    if torch_grad.T.shape == pydtnn_grad.shape:
+                    if torch_grad.shape != pydtnn_grad.shape and torch_grad.T.shape == pydtnn_grad.shape:
                         if verbose_test():
-                            print(f"The layer's values are transposed on this layer ({pydtnn_layer.name_with_id})."
-                                  f"({torch_grad.shape=} != {pydtnn_grad.shape=}).")
+                            print(f"[ROUND {round}] The layer's values are transposed on this layer "
+                                  f"({pydtnn_layer.name_with_id}). ({torch_grad.shape=} != {pydtnn_grad.shape=}).")
                         torch_grad = torch_grad.T
 
                     rtol, atol = self.get_tolerance(pydtnn_layer)
                     assert np.isclose(torch_grad, pydtnn_grad, rtol=rtol, atol=atol).all(), \
-                        f"Both values of {pydtnn_layer.name_with_id}'s {grad_var_k} are not close enough: " \
+                        f"[ROUND {round}] Both values of {pydtnn_layer.name_with_id}'s {grad_var_k} are not close enough: " \
                         f"{torch_grad.flatten()=}\n{pydtnn_grad.flatten()=}" \
                         f"({self.print_stats(torch_grad, pydtnn_grad, rtol, atol)})"
 
-    def compare_optimizer_parameters(self, torch_model: PyTorch_Model, pydtnn_model: PyDTNN_Model) -> None:
+    def compare_optimizer_parameters(self, torch_model: PyTorch_Model, pydtnn_model: PyDTNN_Model, round: int) -> None:
         """Method to comparte PyTorch 'parameters.grad' and PyDTNN grad vars's values"""
 
         torch_params = get_torch_parameters_values(torch_model)
         pydtnn_params = get_pydtnn_vars_values(pydtnn_model)
-        assert len(torch_params) == len(pydtnn_params), "Torch and PyDTNN parameters must have the same " \
+        assert len(torch_params) == len(pydtnn_params), f"[ROUND {round}] Torch and PyDTNN parameters must have the same " \
                                                         f"number of elements: {len(torch_params)=} || " \
                                                         f"{len(pydtnn_params)=}"
 
@@ -1045,28 +1043,23 @@ class PytorchModelTestCase(TestCase):
                     assert isinstance(pydtnn_param, np.ndarray)
 
                 if torch_param is None:
-                    if verbose_test():
-                        print(f"{pydtnn_layer} - torch_param is None")
-                    assert pydtnn_param is None, f"{pydtnn_layer} torch's parameter is None, " \
+                    assert pydtnn_param is None, f"[ROUND {round}] {pydtnn_layer} torch's parameter is None, " \
                                                  f"but the PyDTNN one is: {pydtnn_param}"
                 else:
-                    if verbose_test():
-                        print(f"{pydtnn_layer} - torch_param is not None")
-                    assert pydtnn_param is not None, f"{pydtnn_layer} torch's parameter is not None, but the PyDTNN it is."
-                    if verbose_test():
-                        print(f"{pydtnn_layer.name_with_id} || {torch_param.size} || {pydtnn_param.size}")
-                    assert torch_param.size == pydtnn_param.size, f"{pydtnn_layer} Both tensors must have the same size: " \
-                                                                  f"({torch_param.size=} =/= {pydtnn_param.size=})"
+                    assert pydtnn_param is not None, f"[ROUND {round}] {pydtnn_layer} torch's parameter is not None, " \
+                                                     "but the PyDTNN it is."
+                    assert torch_param.size == pydtnn_param.size, f"[ROUND {round}] {pydtnn_layer} Both tensors must have the "\
+                                                                  f"same size: ({torch_param.size=} =/= {pydtnn_param.size=})"
 
-                    if torch_param.T.shape == pydtnn_param.shape:
+                    if torch_param.shape != pydtnn_param.shape and torch_param.T.shape == pydtnn_param.shape:
                         if verbose_test():
-                            print(f"The layer's values are transposed on this layer ({pydtnn_layer.name_with_id})."
-                                  f"({torch_param.shape=} != {pydtnn_param.shape=}).")
+                            print(f"[ROUND {round}] The layer's values are transposed on this layer "
+                                  f"({pydtnn_layer.name_with_id}). ({torch_param.shape=} != {pydtnn_param.shape=}).")
                         torch_param = torch_param.T
 
                     rtol, atol = self.get_tolerance(pydtnn_layer)
                     assert np.isclose(torch_param, pydtnn_param, rtol=rtol, atol=atol).all(), \
-                        f"Both values of {pydtnn_layer.name_with_id}'s \"{var_key}\" are not close enough: "\
+                        f"[ROUND {round}]  Both values of {pydtnn_layer.name_with_id}'s \"{var_key}\" are not close enough: "\
                         f"{torch_param=}\n{pydtnn_param=}" \
                         f"({self.print_stats(torch_param, pydtnn_param, rtol, atol)})"
 
@@ -1091,7 +1084,7 @@ class PytorchModelTestCase(TestCase):
         """
         params = PytorchModelTestCase.params
         input_shape = params.synthetic_input_shape
-        output_shape = params.synthetic_output_shape[0]
+        # output_shape = params.synthetic_output_shape[0]
 
         if params.dtype is np.dtype(np.float64):
             model_torch = model_torch.double()
@@ -1147,14 +1140,14 @@ class PytorchModelTestCase(TestCase):
             x_pydtnn, x_to_compare = self.do_pydtnn_model_forward_pass(model_pydtnn, x_pydtnn)
 
             # Compare forward results
-            self.compare_forward(x_outputs_torch, x_to_compare)
+            self.compare_forward(x_outputs_torch, x_to_compare, round=i)
 
             # --- LOSS ---
             loss_torch = self.do_pytorch_model_loss(loss_func_torch, x_torch, y_torch)
             _loss_pydtnn, dx_pydtnn = self.do_pydtnn_model_loss(
                 model_pydtnn, x_pydtnn[-1], y_pydtnn
             )
-            self.compare_loss(loss_torch, _loss_pydtnn)
+            self.compare_loss(loss_torch, _loss_pydtnn, round=i)
 
             # --- BACKWARD ---
             # Model 1 backward
@@ -1169,10 +1162,10 @@ class PytorchModelTestCase(TestCase):
             dx_pydtnn = self.do_pydtnn_model_backward_pass(model_pydtnn, dx_pydtnn)
 
             # Compare backward results
-            self.compare_backward(dx_torch, dx_pydtnn)
+            self.compare_backward(dx_torch, dx_pydtnn, round=i)
 
             # Compare the "parameters.grad"/"grad_vars" results
-            self.compare_grad_vars(model_torch, model_pydtnn)
+            self.compare_grad_vars(model_torch, model_pydtnn, round=i)
 
             # Optimizer pass
             if not without_weighted_layers:
@@ -1181,7 +1174,7 @@ class PytorchModelTestCase(TestCase):
                 self.do_pydtnn_model_optimizer_pass(model_pydtnn)
 
                 # Compare Optimizer's results
-                self.compare_optimizer_parameters(model_torch, model_pydtnn)
+                self.compare_optimizer_parameters(model_torch, model_pydtnn, round=i)
 
             # Delete torch outputs:
             x_outputs_torch.clear()
