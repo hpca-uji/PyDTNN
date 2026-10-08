@@ -334,6 +334,8 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
                         raise NotImplementedError(
                             "Shape padding not implemented for 3-dim shape on NHWC"
                         )
+                    case tensor_format:
+                        raise NotImplementedError(f"Unsupported tensor format {tensor_format}!")
             case 4:
                 value = value
             case _:
@@ -381,7 +383,6 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
             tensor_type=self.tensor_type,
             use_gpudirect=self.use_gpudirect,
             cublas=self.cublas,
-            desc=None,
             cpu_shape=self.cpu_shape if keep_shape else None,
         )
 
@@ -402,7 +403,6 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
             tensor_type=self.tensor_type,
             use_gpudirect=self.use_gpudirect,
             cublas=self.cublas,
-            desc=None,
             cpu_shape=self.cpu_shape,
         )
         return obj
