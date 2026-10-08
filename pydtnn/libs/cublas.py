@@ -231,7 +231,7 @@ __all__ = (
 
 
 # Load library:
-_libcublas = load_library("cublas")
+_libcublas = load_library("cublas", ver="12.9.2.10", src="nvidia.cublas.lib")
 
 
 # Generic CUBLAS error:

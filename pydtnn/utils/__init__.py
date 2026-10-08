@@ -1,6 +1,7 @@
 """Utility functions and classes for the PyDTNN framework."""
 
 import ctypes
+import functools
 import itertools
 import logging
 import math
@@ -8,6 +9,7 @@ import string
 import sys
 import threading
 import zipfile
+from contextlib import nullcontext
 from collections.abc import Iterable, Mapping
 from copy import deepcopy
 from importlib import import_module, resources
@@ -128,29 +130,64 @@ def find_component(package: str, name: str) -> Any:
         raise ValueError(f"{name!r} not found in {module!r}!")
 
 
-def load_library(name: str) -> ctypes.CDLL:
+@functools.cache
+def load_library(name: str, ver: str = "", src: str = "") -> ctypes.CDLL:
     """
-    Loads an external library using ctypes.CDLL.
+    Loads an external library using ctypes.
 
-    Parameters
-    ----------
-    name : str
-        The library name without any prefix like lib, suffix like .so, .dylib or
-        version number (this is the form used for the posix linker option -l).
-
-    Returns
-    -------
-    The loaded library.
+    name: without prefix or suffix
+    src: source package
+    ver: full version
     """
+    load = ctypes.cdll.LoadLibrary
+
+    libs = []
+    seps = ["."]
+    pres = ["lib", ""]
+    vers = ver.split(".") if ver else []
+    vers = [".".join(vers[:i]) for i in range(len(vers), -1, -1)]
+
+    # Define platform
     match sys.platform:
-        case "linux" | "linux2":
-            return ctypes.cdll.LoadLibrary(f"lib{name}.so")
         case "win32":
-            return ctypes.windll.LoadLibrary(f"{name}.dll")  # pyright: ignore[reportAttributeAccessIssue]
+            load = ctypes.windll.LoadLibrary  # pyright: ignore[reportAttributeAccessIssue]
+            seps = ["-", "_", "."]
+            temp = "{name}{ver}.dll"
         case "darwin":
-            return ctypes.cdll.LoadLibrary(f"lib{name}.dylib")
+            sep = [".", "-", "_"]
+            temp = "{name}{ver}.dylib"
         case _:
-            raise NotImplementedError(f"{name} platform is not yet supported!")
+            temp = "{name}.so{ver}"
+
+    # Compute posibilites
+    for ver, pre, sep in itertools.product(vers, pres, seps):
+        kwds = {"name": name, "ver": ver}
+        if pre:
+            kwds["name"] = f"{pre}{name}"
+        if ver:
+            kwds["ver"] = f"{sep}{ver}"
+        lib = temp.format(**kwds)
+        if lib not in libs:
+            libs.append(lib)
+
+    # Load library
+    logger.debug(f"DLL loading {name!r} ({len(libs)} options)")
+    for lib in libs:
+        try:
+            ctx = resources.path(src, name)
+        except ModuleNotFoundError:
+            ctx = nullcontext(name)
+        try:
+            with ctx as path:
+                module = load(str(path))
+        except Exception as exc:
+            logger.debug(f"DLL missing {lib!r} ({exc})")
+            continue
+        else:
+            logger.debug(f"DLL loaded {lib!r}")
+            return module
+
+    raise ModuleNotFoundError(f"No library named {name!r}", name=name, path=src)
 
 
 def get_npz_shape(file: str) -> dict[str, tuple[int, ...]]:

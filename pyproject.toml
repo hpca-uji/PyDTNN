@@ -60,7 +60,11 @@ mpi = [
 ]
 gpu = [
     "pycuda~=2026.1",
-    "cupy-cuda12x~=14.0"
+    "cupy-cuda12x~=14.0",
+    "nvidia-cublas-cu12~=12.9",
+    "nvidia-cuda-runtime-cu12~=12.9",
+    "nvidia-cudnn-cu12~=9.27",
+    "nvidia-nccl-cu12~=2.32",
 ]
 fhe = [
     "polyhe~=1.0"

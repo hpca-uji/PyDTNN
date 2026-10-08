@@ -207,10 +207,7 @@ _How is the project organized_
 _Things to do_
 
 - Skip `bias` and `velocity` reservation when unused
-- Migrate `libs/{cuda,cudadrv,cudart}` to `cuda-bindings` (and/or `nvidia-cuda-runtime-cu12`)
-- Migrate `libs/nccl` to `nvidia-nccl-cu12`
-- Migrate `libs/cudnn` to `nvidia-cudnn-cu12`
-- Migrate `libs/cublas` to `nvidia-cublas-cu12`
+- Migrate `libs/{cuda,cudadrv,cudart}` to `cuda-bindings`
 - Add PyCUDA parameter quantization (operate on `model.dtype`, weights on `model.param_dtype`)
 - Add cuDNN graph backend
 - Fix NLP support

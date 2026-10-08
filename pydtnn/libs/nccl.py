@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 
 
 # Load library:
-_libnccl = load_library("nccl")
+_libnccl = load_library("nccl", ver="2.32.3", src="nvidia.nccl.lib")
 
 
 # NCCL error
