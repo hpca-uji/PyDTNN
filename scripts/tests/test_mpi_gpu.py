@@ -2,7 +2,7 @@
 
 import numpy as np
 from mpi4py import MPI
-import pycuda.autoinit
+import pycuda.autoinit  # pyright: ignore[reportUnusedImport, reportMissingImports] # noqa: F401, T009
 from pycuda import gpuarray
 
 comm = MPI.COMM_WORLD
