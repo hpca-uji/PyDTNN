@@ -376,6 +376,8 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
         """Creates a new TensorArray instance sharing the same underlying configuration."""
         # NOTE: In some cases, it would be possible to share the descriptor more
         # aggressively, but we don't have enough information to decide when.
+        # NOTE: Currently the descriptor is never shared, but if this is changed
+        # the descriptor destruction handling must be changed to mirror it.
         return TensorArray[S, D](
             gpu_arr=ary,
             tensor_format=self.tensor_format,
