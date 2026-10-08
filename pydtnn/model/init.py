@@ -84,7 +84,6 @@ class Init[T: Array](Repr[T]):  # noqa: D101 (generics not detected)
         # Initialize attributes
         self._model_inited: bool = False
         self.random: np.random.Generator = rand.Generator(self.random_seed)  # pyright: ignore[reportAttributeAccessIssue]
-        self.cuda_available = gpuarray is not None and drv is not None and cublas is not None
         self.memory_cls = PreallocMemory if self.shared_tmp_memory else PrivateMemory
         self.memory: PrivateMemory = None  # pyright: ignore[reportAttributeAccessIssue]
         self.perf_counter = PerformanceCounter()
@@ -135,6 +134,10 @@ class Init[T: Array](Repr[T]):  # noqa: D101 (generics not detected)
         # Layers [NOTE: as late as posible, it call self._model_init]
         if model_name := self.model_name:
             self._select_layers(model_name)
+
+    @property
+    def cuda_available(self) -> bool:
+        return gpuarray is not None and drv is not None and cublas is not None
 
     def _mpi_init(self) -> None:
         """Initializes MPI communication settings and process ranks."""

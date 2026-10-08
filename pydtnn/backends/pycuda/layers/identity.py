@@ -29,7 +29,12 @@ class IdentityPycuda(Identity[TensorArray], LayerPycuda):
 
         y_gpu = gpuarray.zeros((self.model.batch_size, *self.shape), self.model.dtype)
         self.y = TensorArray(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.memory_used += self.y.nbytes
 
+    def _post_init(self) -> None:
+        super()._post_init()
+
+        # NOTE: The actual "self.model.output_shape" is only available after initializating all layers.
         tensor_ary = TensorArray(
             gpuarray.empty((self.model.batch_size, *self.model.output_shape), self.model.dtype),
             self.model.tensor_format,
@@ -37,7 +42,9 @@ class IdentityPycuda(Identity[TensorArray], LayerPycuda):
         )
         self.y_model = tensor_ary  # pyright: ignore[reportAttributeAccessIssue]
 
-        self.memory_used += self.y.nbytes + self.y_model.nbytes
+        # NOTE: It's necessary to handle this here.
+        self.memory_used += self.y_model.nbytes
+        self.model.memory_used += self.y_model.nbytes
 
     def forward(self, x: TensorArray) -> TensorArray:
         """Perform forward pass."""
