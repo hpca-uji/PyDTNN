@@ -117,7 +117,6 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
     cuda_available: bool
     use_gpudirect: bool
     use_memory_pool: bool
-    y_batch: T
     dataset: Dataset
     profiler: cProfile.Profile
 

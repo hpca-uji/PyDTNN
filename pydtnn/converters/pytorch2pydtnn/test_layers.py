@@ -272,7 +272,7 @@ def test_layers_gpu(model: PyDTNN_Model, dataset: np.ndarray) -> TensorArray:
         }"
     )
 
-    model.y_batch = _dataset
+    model.layers[0].y_batch = _dataset
 
     y: TensorArray = forward_pydtnn_model(model, _dataset)  # pyright: ignore[reportAssignmentType]
 

@@ -219,8 +219,6 @@ class Init[T: Array](Repr[T]):  # noqa: D101 (generics not detected)
         assert drv is not None
         assert context is not None
 
-        self.y_batch = None  # pyright: ignore[reportAttributeAccessIssue]
-
         self.cuda_threads = min(self.batch_size, LIMIT_THREADS_AND_BLOCKS)
         self.cuda_blocks = (max(self.batch_size, LIMIT_THREADS_AND_BLOCKS) // self.cuda_threads) + 1
         # NOTE: Seems that in PyDTNN, usually the ".x" (blockIdx.x, threadIdx.x,
