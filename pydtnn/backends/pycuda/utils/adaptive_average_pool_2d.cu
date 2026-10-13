@@ -1,155 +1,156 @@
-#define TYPE "TYPE"
+extern "C"
 
+#define TYPE "TYPE"
 #define TENSOR_FORMAT "Replace this define with the actual tensor format (nchw or nhwc)"
 
-#define MACRO_INDEX_N(idx, N, n) idx * n / N
-#define INDEX_C_NCHW(idx, c, h, w) (idx / (h * w)) % c
-#define INDEX_H_NCHW(idx, c, h, w) (idx / w) % h
-#define INDEX_W_NCHW(idx, c, h, w) idx % w
-#define SHIFT_POINTER_NCHW(p, c, h, w, ni, ci, hi, wi) p + ((ni * c + ci) * h + hi) * w + wi
+#define INDEX_FIRST_ELEMENT(index, dim_in, dim_out) ((index * dim_in) / dim_out)
+#define INDEX_LAST_ELEMENT(index, dim_in, dim_out) ((((index + 1) * dim_in) + dim_out - 1) / dim_out)
 
-#define INDEX_H_NHWC(idx, c, h, w) (idx / (w * c)) % h
-#define INDEX_W_NHWC(idx, c, h, w) (idx / c) % w
-#define INDEX_C_NHWC(idx, c, h, w) idx % c
-#define SHIFT_POINTER_NHWC(p, c, h, w, ni, ci, hi, wi) p + ((ni * h + hi) * w + wi) * c + ci
+#define GET_N_NCHW(idx, n, c, h, w) (idx / (w * h * c))
+#define GET_C_NCHW(idx, n, c, h, w) (idx / (w * h)) % c
+#define GET_H_NCHW(idx, n, c, h, w) (idx / w) % h
+#define GET_W_NCHW(idx, n, c, h, w) (idx % w)
+#define SHIFT_NCHW(ni, ci, hi, wi, n, c, h, w) (((ni * c + ci) * h + hi) * w + wi)
 
-#define INDEX_FIRST_ELEMENT(index, dim_in, dim_out) (int) ((index * dim_in) / dim_out)
-#define INDEX_LAST_ELEMENT(index, dim_in, dim_out) (int) ((((index + 1) * dim_in) + dim_out - 1) / dim_out)
-
-#define TRUE  1
-#define FALSE 0
+#define GET_N_NHWC(idx, n, c, h, w) (idx / (c * w * h))
+#define GET_H_NHWC(idx, n, c, h, w) (idx / (c * w)) % h
+#define GET_W_NHWC(idx, n, c, h, w) (idx / c) % w
+#define GET_C_NHWC(idx, n, c, h, w) (idx % c)
+#define SHIFT_NHWC(ni, ci, hi, wi, n, c, h, w) (((ni * h + hi) * w + wi) * c + ci)
 
 #ifdef nhwc
-    #define INDEX_H INDEX_H_NHWC
-    #define INDEX_W INDEX_W_NHWC
-    #define INDEX_C INDEX_C_NHWC
-    #define SHIFT_POINTER SHIFT_POINTER_NHWC
+    #define GET_N GET_N_NHWC
+    #define GET_C GET_H_NHWC
+    #define GET_H GET_W_NHWC
+    #define GET_W GET_C_NHWC
+    #define SHIFT SHIFT_NHWC
 #else
-    #define INDEX_C INDEX_C_NCHW
-    #define INDEX_H INDEX_H_NCHW
-    #define INDEX_W INDEX_W_NCHW
-    #define SHIFT_POINTER SHIFT_POINTER_NCHW
+    #define GET_N GET_N_NCHW
+    #define GET_C GET_C_NCHW
+    #define GET_H GET_H_NCHW
+    #define GET_W GET_W_NCHW
+    #define SHIFT SHIFT_NCHW
 #endif
 
+/////////
+// FWD //
+/////////
 
 __global__ void adaptive_average_pool_2d_fwd(TYPE* x, TYPE* y,
-                                             int n, int c, int h, int w,
-                                             int new_h, int new_w, int N,
-                                             int num_active_workers,
-                                             int num_ops_per_worker,
-                                             int num_ops_last_worker)
+                                             int n, int c,
+                                             int hi, int wi,
+                                             int ho, int wo,
+                                             int N)
 {
-    int idx, ops_remaining;
-    int ni, ci, wi, hi, i, j;
-    int h_start, h_end, w_start, w_end, elements_h, elements;
-    unsigned short first_iteration;
+    int h_start, h_end, elements_h, w_start, w_end, elements;
+    int ni, ci, i, j, index_h, index_w;
     TYPE add;
 
-    idx = blockIdx.x * blockDim.x + threadIdx.x;
+    int idx;
+    const int base_idx = blockIdx.x * blockDim.x + threadIdx.x;
+    const int num_workers = blockDim.x * gridDim.x;
+    int samples_worker, samples_overworker, overworkers;
+    int n_samples, n_offset, end_offset;
 
-    if (idx >= N) return;
-    ops_remaining = ((idx + 1) == num_active_workers) ? num_ops_last_worker : num_ops_per_worker;
-    idx *= num_ops_per_worker;
+    overworkers = N % num_workers;
+    samples_worker = N / num_workers;
+    samples_overworker = samples_worker + 1;
 
-    ni = MACRO_INDEX_N(idx, N, n);
-    ci = INDEX_C_NCHW(idx, c, new_h, new_w);
-    hi = INDEX_H_NCHW(idx, c, new_h, new_w);
-    wi = INDEX_W_NCHW(idx, c, new_h, new_w);
-    first_iteration = TRUE;
-
-    for(ni = ni;
-        (ni < n) && (ops_remaining > 0);
-        ni++)
+    if (base_idx < overworkers)
     {
-        for(ci = (first_iteration ? ci : 0);
-            (ci < c) && (ops_remaining > 0);
-            ci++)
-        {
-            for(hi = (first_iteration ? hi : 0);
-                (hi < new_h) && (ops_remaining > 0);
-                hi++)
-            {
-                h_start = INDEX_FIRST_ELEMENT(hi, h, new_h);
-                h_end = INDEX_LAST_ELEMENT(hi, h, new_h);
-                elements_h = h_end - h_start;
+        n_samples = samples_overworker;
+        n_offset = base_idx * n_samples;
+    }
+    else
+    {
+        n_samples = samples_worker;
+        n_offset = samples_overworker * overworkers + n_samples * (base_idx - overworkers);
+    }
+    end_offset = n_offset + n_samples;
 
-                for(wi = (first_iteration ? wi : 0), first_iteration = FALSE;
-                    (wi < new_w) && (ops_remaining > 0);
-                    wi++, ops_remaining--)
-                {
-                    w_start = INDEX_FIRST_ELEMENT(wi, w, new_w);
-                    w_end = INDEX_LAST_ELEMENT(wi, w, new_w);
-                    elements = elements_h * (w_end - w_start);
+    for(idx = n_offset; idx < end_offset; idx++)
+    {
+        ni = GET_N(idx, n, c, ho, wo);
+        index_h = GET_H(idx, n, c, ho, wo);
+        index_w = GET_W(idx, n, c, ho, wo);
+        ci = GET_C(idx, n, c, ho, wo);
 
-                    for(i = h_start, add = (TYPE) 0.0; i < h_end; i++)
-                        for(j = w_start; j < w_end; j++)
-                            add += (TYPE) (*(SHIFT_POINTER(x, c, h, w, ni, ci, i, j)) );
+        h_start = INDEX_FIRST_ELEMENT(index_h, hi, ho);
+        h_end = INDEX_LAST_ELEMENT(index_h, hi, ho);
+        elements_h = h_end - h_start;
+        
+        w_start = INDEX_FIRST_ELEMENT(index_w, wi, wo);
+        w_end = INDEX_LAST_ELEMENT(index_w, wi, wo);
+        elements = elements_h * (w_end - w_start);
 
-                    (*(SHIFT_POINTER(y, c, new_h, new_w, ni, ci, hi, wi))) = (TYPE) (add / elements);
-                }
-            }
-        }
+        add = (TYPE) 0.0;
+        for(i = h_start; i < h_end; i++)
+            for(j = w_start; j < w_end; j++)
+                add += *(x + SHIFT(ni, ci, i, j, n, c, hi, wi));
+
+        *(y + SHIFT(ni, ci, index_h, index_w, n, c, ho, wo)) = add / elements;
     }
 }
 
-////
+/////////
+// BWD //
+/////////
 
 __global__ void adaptive_average_pool_2d_bwd(TYPE* dx, TYPE* dy,
-                                             int n, int c, int h, int w,
-                                             int new_h, int new_w, int N,
-                                             int num_active_workers,
-                                             int num_ops_per_worker,
-                                             int num_ops_last_worker)
+                                             int n, int c,
+                                             int hi, int wi,
+                                             int ho, int wo,
+                                             int N)
 {
-    int idx, ops_remaining;
-    int ni, ci, wi, hi, i, j;
-    int h_start, h_end, w_start, w_end, elements_h, elements;
-    unsigned short first_iteration;
+    int h_start, h_end, elements_kh, w_start, w_end, elements_kw;
+    int ni, ci, index_h, index_w, index_ho, index_wo;
     TYPE delta;
 
-    idx = blockIdx.x * blockDim.x + threadIdx.x;
+    // BLOCK DISTRIBUTION
+    int idx;
+    const int base_idx = blockIdx.x * blockDim.x + threadIdx.x;
+    const int num_workers = blockDim.x * gridDim.x;
+    int samples_worker, samples_overworker, overworkers;
+    int n_samples, n_offset, end_offset;
 
-    if (idx >= N) return;
-    ops_remaining = ((idx + 1) == num_active_workers) ? num_ops_last_worker : num_ops_per_worker;
-    idx *= num_ops_per_worker;
+    overworkers = N % num_workers;
+    samples_worker = N / num_workers;
+    samples_overworker = samples_worker + 1;
 
-    ni = MACRO_INDEX_N(idx, N, n);
-    ci = INDEX_C_NCHW(idx, c, new_h, new_w);
-    hi = INDEX_H_NCHW(idx, c, new_h, new_w);
-    wi = INDEX_W_NCHW(idx, c, new_h, new_w);
-    first_iteration = TRUE;
-
-    for(ni = ni;
-        (ni < n) && (ops_remaining > 0);
-        ni++)
+    if (base_idx < overworkers)
     {
-        for(ci = (first_iteration ? ci : 0);
-            (ci < c) && (ops_remaining > 0);
-            ci++)
+        n_samples = samples_overworker;
+        n_offset = base_idx * n_samples;
+    }
+    else
+    {
+        n_samples = samples_worker;
+        n_offset = samples_overworker * overworkers + n_samples * (base_idx - overworkers);
+    }
+    end_offset = n_offset + n_samples;
+    // BLOCK DISTRIBUTION
+
+    for(idx = n_offset; idx < end_offset; idx++)
+    {
+        ni = GET_N(idx, n, c, ho, wo);
+        index_h = GET_H(idx, n, c, ho, wo);
+        index_w = GET_W(idx, n, c, ho, wo);
+        ci = GET_C(idx, n, c, ho, wo);
+
+        h_start = INDEX_FIRST_ELEMENT(index_h, hi, ho);
+        w_start = INDEX_FIRST_ELEMENT(index_w, wi, wo);
+        h_end = INDEX_LAST_ELEMENT(index_h, hi, ho);
+        w_end = INDEX_LAST_ELEMENT(index_w, wi, wo);
+
+        for(index_ho = h_start; index_ho < h_end; index_ho++)
         {
-            for(hi = (first_iteration ? hi : 0);
-                (hi < h) && (ops_remaining > 0);
-                hi++)
+            elements_kh = INDEX_LAST_ELEMENT(index_h, ho, hi) - INDEX_FIRST_ELEMENT(index_h, ho, hi);
+            for(index_wo = w_start; index_wo < w_end; index_wo++)
             {
-                h_start = INDEX_FIRST_ELEMENT(hi, new_h, h);
-                h_end = INDEX_LAST_ELEMENT(hi, new_h, h);
-                elements_h = h_end - h_start;
-
-                for(wi = (first_iteration ? wi : 0), first_iteration = FALSE;
-                    (wi < w) && (ops_remaining > 0);
-                    wi++, ops_remaining--)
-                {
-                    w_start = INDEX_FIRST_ELEMENT(wi, new_w, w);
-                    w_end = INDEX_LAST_ELEMENT(wi, new_w, w);
-                    elements = elements_h * (w_end - w_start);
-
-                    delta = (TYPE) (*(SHIFT_POINTER(dy, c, new_h, new_w, ni, ci, hi, wi)) / elements);
-                    for(i = h_start; i < h_end; i++)
-                        for(j = w_start; j < w_end; j++)
-                            (*(SHIFT_POINTER(dx, c, h, w, ni, ci, i, j))) += delta;
-                }
+                elements_kw = INDEX_LAST_ELEMENT(index_w, wo, wi) - INDEX_FIRST_ELEMENT(index_w, wo, wi);
+                delta = (TYPE) (*(dy + SHIFT(ni, ci, index_ho, index_wo, n, c, ho, wo)) / (elements_kh * elements_kw));
+                *(dx + SHIFT(ni, ci, index_h, index_w, n, c, hi, wi)) += delta;
             }
         }
     }
 }
-

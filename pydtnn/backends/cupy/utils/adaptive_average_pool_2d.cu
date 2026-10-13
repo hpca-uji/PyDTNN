@@ -84,12 +84,11 @@ __global__ void adaptive_average_pool_2d_fwd(TYPE* x, TYPE* y,
         elements = elements_h * (w_end - w_start);
 
         add = (TYPE) 0.0;
-        for(i = h_start; wi < h_end; i++)
-            for(j = w_start; wi < w_end; j++)
-        {
-            add += *(x + SHIFT(ni, ci, i, j, n, c, hi, wi));
-            *(y + SHIFT(ni, ci, index_h, index_w, n, c, ho, wo)) = add / elements;
-        }
+        for(i = h_start; i < h_end; i++)
+            for(j = w_start; j < w_end; j++)
+                add += *(x + SHIFT(ni, ci, i, j, n, c, hi, wi));
+
+        *(y + SHIFT(ni, ci, index_h, index_w, n, c, ho, wo)) = add / elements;
     }
 }
 
@@ -106,7 +105,6 @@ __global__ void adaptive_average_pool_2d_bwd(TYPE* dx, TYPE* dy,
     int h_start, h_end, elements_kh, w_start, w_end, elements_kw;
     int ni, ci, index_h, index_w, index_ho, index_wo;
     TYPE delta;
-
 
     // BLOCK DISTRIBUTION
     int idx;
@@ -146,12 +144,12 @@ __global__ void adaptive_average_pool_2d_bwd(TYPE* dx, TYPE* dy,
 
         for(index_ho = h_start; index_ho < h_end; index_ho++)
         {
-            elements_kh = INDEX_LAST_ELEMENT(index_h, ho, hi) - INDEX_FIRST_ELEMENT(index_h, ho, hi)
+            elements_kh = INDEX_LAST_ELEMENT(index_h, ho, hi) - INDEX_FIRST_ELEMENT(index_h, ho, hi);
             for(index_wo = w_start; index_wo < w_end; index_wo++)
             {
-                elements_kw = INDEX_LAST_ELEMENT(index_w, wo, wi) - INDEX_FIRST_ELEMENT(index_w, wo, wi)
-                delta = (TYPE) (*(dy + SHIFT(idx, ci, index_ho, index_wo, n, c, ho, wo)) / (elements_kh * elements_kw));
-                *(dx + SHIFT(idx, ci, index_h, index_w, n, c, hi, wi)) += delta;
+                elements_kw = INDEX_LAST_ELEMENT(index_w, wo, wi) - INDEX_FIRST_ELEMENT(index_w, wo, wi);
+                delta = (TYPE) (*(dy + SHIFT(ni, ci, index_ho, index_wo, n, c, ho, wo)) / (elements_kh * elements_kw));
+                *(dx + SHIFT(ni, ci, index_h, index_w, n, c, hi, wi)) += delta;
             }
         }
     }
