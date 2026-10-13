@@ -392,7 +392,10 @@ def get_pydtnn_grad_vars_values(pydtnn_model: PyDTNN_Model) -> dict[int, tuple[L
                     grad_vars = dict[str, np.ndarray | None]()
 
                     for grad_v_key in layer.grad_vars.values():
-                        grad_vars[grad_v_key] = getattr(layer, grad_v_key)
+                        pydtnn_grad = getattr(layer, grad_v_key)
+                        if isinstance(pydtnn_grad, TensorArray):
+                            pydtnn_grad = pydtnn_grad.get().reshape(pydtnn_grad.cpu_shape)
+                        grad_vars[grad_v_key] = pydtnn_grad
                     layers_grad_vars[i] = (layer, grad_vars)
                     i += 1
                 case AbstractBlockLayer():
@@ -441,10 +444,10 @@ def get_torch_parameters_values(torch_model: PyTorch_Model) -> dict[int, dict[st
     return layers_parameters
 
 
-def get_pydtnn_vars_values(pydtnn_model: PyDTNN_Model) -> dict[int, dict[str, Array | None]]:
+def get_pydtnn_vars_values(pydtnn_model: PyDTNN_Model) -> dict[int, dict[str, np.ndarray | None]]:
     """Function to get all the parameter's gradients."""
     # layers = pydtnn_model.get_all_layers()
-    layers_parameters = dict[int, dict[str, Array | None]]()
+    layers_parameters = dict[int, dict[str, np.ndarray | None]]()
 
     def _get_pydtnn_vars_values(i: int, layers: list[Layerable]) -> int:
         for layer in layers:
@@ -454,11 +457,11 @@ def get_pydtnn_vars_values(pydtnn_model: PyDTNN_Model) -> dict[int, dict[str, Ar
                 case BatchNormalization() | Conv2D() | FC():
                     if verbose_test():
                         print(f"number: {i}, {layer=}, {layer.use_bias=}, grad_vars: {layer.grad_vars.keys()}")
-                    parameters = dict[str, Array | None]()
+                    parameters = dict[str, np.ndarray | None]()
                     for param_key in layer.grad_vars.keys():
                         param = getattr(layer, param_key)
                         if isinstance(param, TensorArray):
-                            param = param.get()
+                            param = param.get().reshape(param.cpu_shape)
                         parameters[param_key] = param
                     layers_parameters[i] = parameters
                     i += 1
@@ -929,7 +932,7 @@ class PytorchModelTestCase(TestCase):
 
             if PytorchModelTestCase.params.device == "cuda":
                 assert isinstance(pydtnn_values, TensorArray)
-                pydtnn_values = pydtnn_values.get()
+                pydtnn_values = pydtnn_values.get().reshape(pydtnn_values.cpu_shape)
             else:
                 assert isinstance(pydtnn_values, np.ndarray)
             # try:
@@ -940,7 +943,7 @@ class PytorchModelTestCase(TestCase):
                 f" doesn't have the same number of elements ({pytorch_values.size=} != {pydtnn_values.size=})",
             )
             self.assertTrue(
-                np.allclose(pytorch_values, pydtnn_values, rtol=rtol, atol=atol),
+                np.allclose(pytorch_values.flatten(), pydtnn_values.flatten(), rtol=rtol, atol=atol),
                 f"[Round: {round}] {message} result from layers {pydtnn_layer.name_with_id} and "
                 f" {torch_layer} differ [layer: {i}] ({self.print_stats(pytorch_values, pydtnn_values, rtol, atol)})",
             )
@@ -961,7 +964,7 @@ class PytorchModelTestCase(TestCase):
             values_torch: Forward pass outputs of PyTorch's model.
             values_pydtnn: Forward pass outputs of PyDTNN's model.
         """
-        self._compare_fwd_bwd(values_torch, values_pydtnn, round=round, message="Forward")
+        self._compare_fwd_bwd(values_torch, values_pydtnn, round=round, message="forwards")
 
     def compare_backward(
         self,
@@ -978,10 +981,13 @@ class PytorchModelTestCase(TestCase):
             values_pydtnn: Backward pass gradients of pydtnn's model.
         """
         # NOTE: The offset is 1 to ignore the last pydtnn's activation.
-        self._compare_fwd_bwd(values_torch, values_pydtnn, round=round, off_set_pydtnn=1, message="Backward")
+        self._compare_fwd_bwd(values_torch, values_pydtnn, round=round, off_set_pydtnn=1, message="backwards")
 
     def compare_grad_vars(self, torch_model: PyTorch_Model, pydtnn_model: PyDTNN_Model, round: int) -> None:
         """Method to comparte PyTorch 'parameters.grad' and PyDTNN grad vars's values"""
+
+        if verbose_test():
+            print(f"[Round: {round}] Comparing outputs of both models gradients...")
 
         torch_gradients = get_torch_grad_parameters_values(torch_model)
         pydtnn_gradients = get_pydtnn_grad_vars_values(pydtnn_model)
@@ -994,11 +1000,8 @@ class PytorchModelTestCase(TestCase):
             for grad_var_k in pydtnn_grad_vars.keys():
                 torch_layer, torch_grad = torch_gradients[i][grad_var_k]
                 pydtnn_grad = pydtnn_grad_vars[grad_var_k]
-                if PytorchModelTestCase.params.device == "cuda":
-                    assert isinstance(pydtnn_grad, TensorArray)
-                    pydtnn_grad = pydtnn_grad.get()
-                else:
-                    assert isinstance(pydtnn_grad, np.ndarray)
+                if verbose_test():
+                    print(f"Comparing {pydtnn_layer=} and {torch_layer=}'s \'{grad_var_k}\'.")
 
                 if torch_grad is None:
                     assert pydtnn_grad is None, f"[ROUND {round}] {torch_layer} torch's gradient is None, " \
@@ -1017,13 +1020,16 @@ class PytorchModelTestCase(TestCase):
                         torch_grad = torch_grad.T
 
                     rtol, atol = self.get_tolerance(pydtnn_layer)
-                    assert np.isclose(torch_grad, pydtnn_grad, rtol=rtol, atol=atol).all(), \
+                    assert np.isclose(torch_grad.flatten(), pydtnn_grad.flatten(), rtol=rtol, atol=atol).all(), \
                         f"[ROUND {round}] Both values of {pydtnn_layer.name_with_id}'s {grad_var_k} are not close enough: " \
                         f"{torch_grad.flatten()=}\n{pydtnn_grad.flatten()=}" \
                         f"({self.print_stats(torch_grad, pydtnn_grad, rtol, atol)})"
 
     def compare_optimizer_parameters(self, torch_model: PyTorch_Model, pydtnn_model: PyDTNN_Model, round: int) -> None:
         """Method to comparte PyTorch 'parameters.grad' and PyDTNN grad vars's values"""
+
+        if verbose_test():
+            print(f"[Round: {round}] Comparing outputs of both models optimizer's parameters...")
 
         torch_params = get_torch_parameters_values(torch_model)
         pydtnn_params = get_pydtnn_vars_values(pydtnn_model)
@@ -1036,11 +1042,8 @@ class PytorchModelTestCase(TestCase):
             for var_key in pydtnn_params[i].keys():
                 torch_param = torch_params[i][var_key]
                 pydtnn_param = pydtnn_params[i][var_key]
-                if PytorchModelTestCase.params.device == "cuda":
-                    assert isinstance(pydtnn_param, TensorArray)
-                    pydtnn_param = pydtnn_param.get()
-                else:
-                    assert isinstance(pydtnn_param, np.ndarray)
+                if verbose_test():
+                    print(f"Comparing {pydtnn_layer=}'s \'{var_key}\'.")
 
                 if torch_param is None:
                     assert pydtnn_param is None, f"[ROUND {round}] {pydtnn_layer} torch's parameter is None, " \
@@ -1058,7 +1061,7 @@ class PytorchModelTestCase(TestCase):
                         torch_param = torch_param.T
 
                     rtol, atol = self.get_tolerance(pydtnn_layer)
-                    assert np.isclose(torch_param, pydtnn_param, rtol=rtol, atol=atol).all(), \
+                    assert np.isclose(torch_param.flatten(), pydtnn_param.flatten(), rtol=rtol, atol=atol).all(), \
                         f"[ROUND {round}]  Both values of {pydtnn_layer.name_with_id}'s \"{var_key}\" are not close enough: "\
                         f"{torch_param=}\n{pydtnn_param=}" \
                         f"({self.print_stats(torch_param, pydtnn_param, rtol, atol)})"
