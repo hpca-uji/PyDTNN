@@ -69,7 +69,7 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
         else:
             (self.ci,) = prev_shape
 
-        shape_ = (1, self.ci, 1, 1)
+        shape_ = (self.ci, )
 
         # weights
         self.weights = TensorArray.to_gpu(
@@ -86,7 +86,7 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
         self.memory_used += self.biases.nbytes
 
         self.dw = TensorArray.new_zeros(
-            self.weights.shape,
+            self.weights.cpu_shape,
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             cudnn_dtype=self.model.cudnn_dtype,
@@ -96,7 +96,7 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
         self.memory_used += self.dw.nbytes
 
         self.db = TensorArray.new_zeros(
-            self.biases.shape,
+            self.biases.cpu_shape,
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             cudnn_dtype=self.model.cudnn_dtype,

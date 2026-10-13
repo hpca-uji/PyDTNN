@@ -91,7 +91,7 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
         self.memory_used += self.dx.nbytes
 
         self.dw = TensorArray.new_zeros(
-            self.weights.ary.shape,
+            self.weights.cpu_shape,
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             cudnn_dtype=self.model.cudnn_dtype,
@@ -101,9 +101,8 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
         self.memory_used += self.dw.nbytes
 
         if self.use_bias:
-            self.biases: TensorArray
             self.db = TensorArray.new_zeros(
-                self.biases.ary.shape,
+                self.biases.cpu_shape,
                 self.model.dtype,
                 tensor_format=self.model.tensor_format,
                 cudnn_dtype=self.model.cudnn_dtype,
@@ -112,7 +111,6 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
             )
             self.memory_used += self.db.nbytes
 
-        # TODO: Use TensorArray with TensorType.OTHER
         self.one_vec_gpu = gpuarray.to_gpu(np.ones((self.model.batch_size,), self.model.dtype))
         self.memory_used += self.one_vec_gpu.nbytes
 

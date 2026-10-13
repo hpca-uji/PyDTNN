@@ -51,7 +51,7 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
 
         # Biases
         if self.use_bias:
-            biases_shape = self.model.encode_shape((1, self.co, 1, 1))
+            biases_shape = (self.co, )
             self.biases = TensorArray.to_gpu(
                 self.biases_initializer(biases_shape, self.model.dtype, self.model.random),
                 self.model.tensor_format, self.model.cudnn_dtype
@@ -91,7 +91,7 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
 
         # Derivative dw and derivative db
         self.dw = TensorArray.new_zeros(
-            self.weights.shape,
+            self.weights.cpu_shape,
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             cudnn_dtype=self.model.cudnn_dtype,
@@ -102,9 +102,8 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
         self.memory_used += self.dw.nbytes
 
         if self.use_bias:
-            self.biases: TensorArray
             self.db = TensorArray.new_zeros(
-                self.biases.shape,
+                self.biases.cpu_shape,
                 self.model.dtype,
                 tensor_format=self.model.tensor_format,
                 cudnn_dtype=self.model.cudnn_dtype,

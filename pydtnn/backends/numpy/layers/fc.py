@@ -22,8 +22,6 @@ if TYPE_CHECKING:
 class FCNumpy(FC[np.ndarray], LayerNumpy):
     """Fully connected layer implementation using NumPy."""
 
-    biases: np.ndarray
-
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the FCNumpy layer."""
         super().__init__(*args, **kwargs)
