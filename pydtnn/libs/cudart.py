@@ -123,7 +123,7 @@ __all__ = (
 
 
 # Load library:
-_libcudart = load_library("cudart", ver="12.9.79", src="nvidia.cuda_runtime.lib")
+_libcudart = load_library("cudart", ver="12.6.77", src="nvidia.cuda_runtime.lib")
 
 
 # Code adapted from PARRET:
