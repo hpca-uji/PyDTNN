@@ -9,6 +9,7 @@ import string
 import sys
 import threading
 import zipfile
+import ctypes.util
 from contextlib import nullcontext
 from collections.abc import Iterable, Mapping
 from copy import deepcopy
@@ -169,10 +170,13 @@ def load_library(name: str, ver: str = "", src: str = "") -> ctypes.CDLL:
         lib = temp.format(**kwds)
         if lib not in libs:
             libs.append(lib)
+    if lib := ctypes.util.find_library(name):
+        libs.append(lib)
 
     # Load library
-    logger.debug(f"DLL loading {name!r} ({len(libs)} options)")
+    logger.debug(f"DLL options {name!r} ({len(libs)})")
     for lib in libs:
+        logger.debug(f"DLL trying {lib!r}")
         try:
             ctx = resources.path(src, name)
         except ModuleNotFoundError:
