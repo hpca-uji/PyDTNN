@@ -6,7 +6,7 @@ SRC="${1:-.}"
 MAX_LINE_LENGTH="${MAX_LINE_LENGTH:-100}"
 PYS=('(' -name '*.py' -o -name '*.py' -o -name '*.pyi' -o -name '*.pyx' ')')
 
-ruff check --fix "${SRC:?}"
+ruff check --fix-only "${SRC:?}"
 ruff format --line-length "${MAX_LINE_LENGTH:?}" "${SRC:?}"
 find "${SRC:?}" "${PYS[@]}" -exec absolufy-imports '{}' '+'
 EXPR='#{2,}' && find "${SRC:?}" "${PYS[@]}" -exec grep -qEe "${EXPR:?}" '{}' ';' -print -exec sed -Ei "s/${EXPR:?}/#/g" '{}' ';'
