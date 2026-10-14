@@ -65,11 +65,9 @@ cuda = [
     "nvidia-nccl-cu12~=2.29"
 ]
 cupy = [
-    "pydtnn[cuda]",
     "cupy-cuda12x~=14.0"
 ]
 pycuda = [
-    "pydtnn[cuda]",
     "pycuda~=2026.1"
 ]
 gpu = [
