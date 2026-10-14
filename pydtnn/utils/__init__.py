@@ -141,6 +141,7 @@ def load_library(name: str, ver: str = "", src: str = "") -> ctypes.CDLL:
     ver: full version
     """
     load = ctypes.cdll.LoadLibrary
+    src = src or f"_{package_name}"
 
     libs = []
     seps = ["."]
@@ -178,9 +179,9 @@ def load_library(name: str, ver: str = "", src: str = "") -> ctypes.CDLL:
     for lib in libs:
         logger.debug(f"DLL trying {lib!r}")
         try:
-            ctx = resources.path(src, name)
+            ctx = resources.path(src, lib)
         except ModuleNotFoundError:
-            ctx = nullcontext(name)
+            ctx = nullcontext(lib)
         try:
             with ctx as path:
                 module = load(str(path))

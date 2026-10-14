@@ -26,15 +26,15 @@ def pascal_snake(pascal: str) -> str:
 
 def run_pyright(filenames: Iterable[str] = []) -> dict[str, list[dict]]:
     """Run pyright and group results by filename"""
-    output = json.loads(
-        pyright.run(
-            "--outputjson", "-", input="\n".join(filenames), text=True, capture_output=True
-        ).stdout
-    )
+    proc = pyright.run("--outputjson", "-", input="\n".join(filenames), text=True, capture_output=True)
+
+    if proc.returncode:
+        return {}
 
     def key(diagnostic: dict) -> str:
         return diagnostic["file"]
 
+    output = json.loads(proc.stdout)
     diagnostics: list[dict] = output["generalDiagnostics"]
     diagnostics.sort(key=key)
     return {

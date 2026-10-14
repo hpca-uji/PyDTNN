@@ -137,6 +137,7 @@ class Init[T: Array](Repr[T]):  # noqa: D101 (generics not detected)
 
     @property
     def cuda_available(self) -> bool:
+        """Is CUDA support avaiable"""
         return gpuarray is not None and drv is not None and cublas is not None
 
     def _mpi_init(self) -> None:

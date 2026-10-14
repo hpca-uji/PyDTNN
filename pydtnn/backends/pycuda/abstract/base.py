@@ -19,7 +19,7 @@ class BasePycuda(UsesCudaCode[Module, Function], Base[TensorArray]):
         """Initializes the model and associated CUDA kernels."""
         super()._model_init()
         if not self.model.cuda_available:
-            raise RuntimeError("PyCuda layers requies CUDA enabled!")
+            raise RuntimeError("PyCUDA layers requies CUDA enabled!")
         self._kernel_init()
 
     def _kernel_init(self) -> Function:
