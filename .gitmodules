@@ -19,6 +19,6 @@
 [submodule "vendor/openfhe-python"]
 	path = vendor/openfhe-python
 	url = https://github.com/openfheorg/openfhe-python.git
-[submodule "vendor/net-queue"]
-	path = vendor/net-queue
-	url = https://github.com/hpca-uji/net-queue.git
+[submodule "vendor/polyhe"]
+	path = vendor/polyhe
+	url = https://github.com/hpca-uji/polyhe.git
