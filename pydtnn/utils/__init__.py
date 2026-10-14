@@ -17,8 +17,14 @@ from importlib import import_module, resources
 from pathlib import PurePath
 from queue import Queue
 from typing import Any, Literal, Self
+from gzip import GzipFile
 
 import numpy as np
+
+try:
+    from rapidgzip import RapidgzipFile
+except ModuleNotFoundError:
+    RapidgzipFile = None
 
 from pydtnn import package_name
 
@@ -33,6 +39,7 @@ __all__ = (
     "header",
     "read_file",
     "string_substitute",
+    "gzip_open"
 )
 
 logger = logging.getLogger(__name__)
@@ -110,6 +117,45 @@ def convert_size(units: int, scale: int = 1000) -> str:
 def convert_size_bytes(size_bytes: int) -> str:
     """Convert byte count to human readable"""
     return f"{convert_size(size_bytes, scale=1024)}B"
+
+
+def gzip_open(self, filename: str, mode: str = "rb") -> IO[bytes]:
+    """
+    Open a gZIP file.
+
+    This method handles opening gZIP files, creating or loading their
+    seek tables for efficient random access.
+
+    Args:
+        filename: The path to the gZIP file.
+        mode: The file mode.
+
+    Returns:
+        A file-like object opened in binary read mode.
+
+    Raises:
+        FileNotFoundError: If the specified file does not exist.
+        Exception: If there's an error during rapidgzip file operations.
+    """
+    f = None
+    path = Path(filename)
+    plain = path.with_suffix("")
+    idx = path.with_suffix(f"{path.suffix}.idx")
+
+    if plain.exists():
+        return open(plain, mode=mode)
+    elif not path.exists():
+        raise FileNotFoundError(path)
+    elif RapidgzipFile:
+        f = rapidgzip.RapidgzipFile(path, mode=mode, parallelization=1)
+        try:
+            f.import_index(str(idx))
+        except Exception:
+            f.export_index(str(idx))
+    else:
+        f = GzipFile(path, mode=mode)
+
+    return f
 
 
 def find_component(package: str, name: str) -> Any:

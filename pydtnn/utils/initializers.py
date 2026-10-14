@@ -6,7 +6,6 @@ from collections.abc import Callable
 from enum import StrEnum, auto
 
 import numpy as np
-import scipy.stats as stats
 
 from pydtnn.utils import rand
 from pydtnn.utils.constants import ArrayShape
@@ -43,8 +42,7 @@ class ProbabilisticDistribution(StrEnum):
     NORMAL = auto()
 
 
-# 0.879... = scipy.stats.truncnorm.std(a=-2, b=2, loc=0., scale=1.)
-STD_DEV_CONST = 0.87962566103423978
+STD_DEV_CONST = 0.87962566103423978  # scipy.stats.truncnorm.std(a=-2, b=2, loc=0., scale=1.)
 
 
 def _compute_fans(shape: ArrayShape) -> tuple[int, int]:

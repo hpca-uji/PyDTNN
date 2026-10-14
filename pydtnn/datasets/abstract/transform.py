@@ -13,8 +13,16 @@ from collections.abc import Callable, Generator
 from typing import TYPE_CHECKING
 
 import numpy as np
-from PIL import Image, ImageEnhance
-from scipy.ndimage import gaussian_filter
+
+try:  # optional
+    from PIL import Image, ImageEnhance
+except ModuleNotFoundError:
+    Image = ImageEnhance = None
+
+try:  # optional
+    from scipy.ndimage import gaussian_filter
+except ModuleNotFoundError:
+    gaussian_filter = None
 
 from pydtnn.datasets.abstract.base import Base
 from pydtnn.datasets.abstract.init import Init
@@ -377,6 +385,7 @@ class Augment(Init):
         Raises:
             NotImplementedError: If the `self.model.tensor_format` is not supported.
         """
+        assert Image, "pillow required"
         data = self.model.decode_tensor(data)
         _n, _c, _h, _w = data.shape
         # NOTE: _c not included so all channels in a sample rotate by the same amount
@@ -412,6 +421,7 @@ class Augment(Init):
         Raises:
             NotImplementedError: If the `self.model.tensor_format` is not supported.
         """
+        assert gaussian_filter, "scipy required"
         data = self.model.decode_tensor(data)
         _n, _c, _h, _w = data.shape
 
@@ -439,6 +449,7 @@ class Augment(Init):
         Returns:
             The array with images resized.
         """
+        assert Image, "pillow required"
         data = self.model.decode_tensor(data)
 
         size = (self.model.input_scale_size, self.model.input_scale_size)
@@ -501,6 +512,7 @@ class Augment(Init):
         Returns:
             The array with images center-cropped.
         """
+        assert Image, "pillow required"
         data = self.model.decode_tensor(data)
 
         size = data.shape[2:4]
@@ -541,6 +553,7 @@ class Augment(Init):
         Raises:
             NotImplementedError: If the `self.model.tensor_format` is not supported.
         """
+        assert Image and ImageEnhance, "pillow required"
         data = self.model.decode_tensor(data)
         _n, _c, _h, _w = data.shape
         # NOTE: _c not included so all channels in a sample rotate by the same amount
@@ -582,6 +595,7 @@ class Augment(Init):
         Raises:
             NotImplementedError: If the `self.model.tensor_format` is not supported.
         """
+        assert Image and ImageEnhance, "pillow required"
         data = self.model.decode_tensor(data)
         _n, _c, _h, _w = data.shape
         # NOTE: _c not included so all channels in a sample rotate by the same amount
@@ -622,6 +636,7 @@ class Augment(Init):
         Raises:
             NotImplementedError: If the `self.model.tensor_format` is not supported.
         """
+        assert Image and ImageEnhance, "pillow required"
         data = self.model.decode_tensor(data)
         _n, _c, _h, _w = data.shape
         # NOTE: _c not included so all channels in a sample rotate by the same amount
@@ -775,6 +790,7 @@ class Augment(Init):
         )
         transformed_points = list(zip(widths, heights))
 
+        assert Image, "pillow required"
         coeffs = self._perspective_coeffs(transformed_points, rescaled_base)
         transomed_img = image.transform(
             (width, height),

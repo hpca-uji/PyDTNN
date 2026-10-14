@@ -42,34 +42,70 @@ requires-python = "~=3.13"
 dependencies = [
     "cython~=3.2",
     "numpy~=2.4",
-    "prettytable~=3.17",
-    "rich~=15.0",
-    "pillow~=12.2",
-    "scipy~=1.17",
     "tqdm~=4.67",
-    "rapidgzip~=0.16",
     "pyyaml~=6.0",
-    "psutil~=7.2"
 ]
 
 [project.optional-dependencies]
-mpi = [
-    "mpi4py~=4.1",
+mpi4py = [
+    "mpi4py~=4.1"
+]
+pympi = [
     "pympi~=1.4"
 ]
-gpu = [
-    "pycuda~=2026.1",
-    "cupy-cuda12x~=14.0",
+mpi = [
+    "pydtnn[mpi4py]",
+    "pydtnn[pympi]"
+]
+
+cuda = [
     "nvidia-cublas-cu12~=12.6",
     "nvidia-cuda-runtime-cu12~=12.6",
     "nvidia-cudnn-cu12~=9.10",
-    "nvidia-nccl-cu12~=2.29",
+    "nvidia-nccl-cu12~=2.29"
 ]
-nlp = [
+cupy = [
+    "pydtnn[cuda]",
+    "cupy-cuda12x~=14.0"
+]
+pycuda = [
+    "pydtnn[cuda]",
+    "pycuda~=2026.1"
+]
+gpu = [
+    "pydtnn[cupy]",
+    "pydtnn[pycuda]"
+]
+
+data-zip = [
+    "rapidgzip~=0.16"
+]
+data-image = [
+    "pillow~=12.2",
+    "scipy~=1.17"
+]
+data-nlp = [
     "spacy~=3.8"
 ]
+data = [
+    "pydtnn[data-zip]",
+    "pydtnn[data-image]",
+    "pydtnn[data-nlp]"
+]
+
 fhe = [
     "polyhe~=1.0"
+]
+
+torch = [
+    "torch~=2.11",
+    "torchvision~=0.26",
+    "torchmetrics~=1.9",
+]
+
+profile = [
+    "psutil~=7.2",
+    "memray~=1.19"
 ]
 format = [
     "autopep8~=2.3",
@@ -78,9 +114,6 @@ format = [
     "ruff~=0.15"
 ]
 test = [
-    "torch~=2.11",
-    "torchvision~=0.26",
-    "torchmetrics~=1.9",
     "pytest~=9.0",
     "pytest-xdist~=3.8",
     "pytest-cov~=7.1"
@@ -99,9 +132,6 @@ lint = [
     "pyflakes~=3.4",
     "radon~=6.0",
     "pyright~=1.1"
-]
-profile = [
-    "memray~=1.19"
 ]
 build = [
     "build~=1.4",

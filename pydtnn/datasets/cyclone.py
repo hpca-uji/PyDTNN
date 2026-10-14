@@ -11,6 +11,7 @@ from typing import IO, TYPE_CHECKING
 
 import numpy as np
 
+from pydtnn.util import gzip_open
 from pydtnn.datasets.abstract import Dataset
 from pydtnn.datasets.memory import Memory
 
@@ -55,7 +56,7 @@ class Cyclone(Memory):
 
         x_parts = []
         y_parts = []
-        with self._gzip_open(src_filename) as g, tarfile.open(fileobj=g) as t:
+        with gzip_open(src_filename) as g, tarfile.open(fileobj=g) as t:
             for filename, offset, nsamples in self._offset2files(
                 train_filenames,
                 IMAGES_PER_FILE,
@@ -76,7 +77,7 @@ class Cyclone(Memory):
 
         x_parts = []
         y_parts = []
-        with self._gzip_open(src_filename) as g, tarfile.open(fileobj=g) as t:
+        with gzip_open(src_filename) as g, tarfile.open(fileobj=g) as t:
             for filename, offset, nsamples in self._offset2files(
                 test_filenames,
                 IMAGES_PER_FILE,

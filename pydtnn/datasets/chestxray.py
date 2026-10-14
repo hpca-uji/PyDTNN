@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from pydtnn.util import gzip_open
 from pydtnn.datasets.abstract import Dataset
 
 __all__ = (
@@ -163,7 +164,7 @@ class ChestXRay(Dataset):
         # Get image map
         self._src_filename = dict[str, str]()
         for gz in self.files.glob("*.gz"):
-            with self._gzip_open(str(gz)) as g:
+            with gzip_open(str(gz)) as g:
                 with tarfile.TarFile(fileobj=g) as t:
                     for member in t.getmembers():
                         if not member.isfile():
@@ -220,7 +221,7 @@ class ChestXRay(Dataset):
         for path, y in xy_filenames:
             src_path = self._src_filename[path]
             with (
-                self._gzip_open(src_path) as g,
+                gzip_open(src_path) as g,
                 tarfile.TarFile(fileobj=g) as t,
                 t.extractfile(path) as fp,  # pyright: ignore[reportOptionalContextManager]
             ):

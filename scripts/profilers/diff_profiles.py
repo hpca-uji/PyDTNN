@@ -7,8 +7,6 @@ import pathlib
 import sys
 from typing import Any, TextIO
 
-from prettytable import PLAIN_COLUMNS, PrettyTable
-
 
 def my_help() -> None:
     """Print the the command line usage help."""
@@ -93,28 +91,45 @@ def file_to_dict(file: TextIO) -> tuple[dict, float]:
 
 def do_diff() -> None:
     """Do the diff"""
-    data = []
-    total_times = []
     print(f"Comparing '{INPUT_FILE_NAME[0]}' with '{INPUT_FILE_NAME[1]}'...\n")
+    headers = ["ncalls", "tottime", "percall", "cumtime", "percall2", "filename:lineno(function)"]
+    total_times = []
+    common_keys = []
+    data = []
+    rows = []
+
     for i in range(2):
         file_open = open if INPUT_FILE_NAME[i][-3:] != ".gz" else gzip.open
         with file_open(INPUT_FILE_NAME[i], "rt") as file:
             _dict, _total_time = file_to_dict(file)
             data.append(_dict)
             total_times.append(_total_time)
-    t = PrettyTable(
-        ["ncalls", "tottime", "percall", "cumtime", "percall2", "filename:lineno(function)"]
-    )
-    t.set_style(PLAIN_COLUMNS)
-    t.align = "r"
-    t.align["filename:lineno(function)"] = "l"
-    t.sortby = "tottime"
-    t.reversesort = True
-    common_keys = []
+
+    def print_rows(rows: list) -> None:
+        """Print rows as aligned columns, sorted by tottime descending."""
+        rows.sort(key=lambda row: float(row[1]), reverse=True)
+
+        table = [headers] + rows
+        widths = [
+            max(len(str(row[i])) for row in table)
+            for i in range(len(headers))
+        ]
+
+        for row in table:
+            print(
+                "  ".join(
+                    str(value).rjust(widths[i])
+                    if i < len(headers) - 1
+                    else str(value).ljust(widths[i])
+                    for i, value in enumerate(row)
+                )
+            )
+
     for key, values1 in data[0].items():
         if key in data[1]:
             common_keys.append(key)
             values2 = data[1][key]
+
             try:
                 values = [round(x - y, 3) for x, y in zip(values1, values2)]
             except TypeError:
@@ -123,32 +138,36 @@ def do_diff() -> None:
                     if isinstance(x, str):
                         x0, x1 = x.split("/")
                         y0, y1 = y.split("/")
-                        # values.append(f"{int(x0)-int(y0)}/{int(x1)-int(y1)}")
-                        values.append(
-                            int(x0) - int(y0)
-                        )  # PrettyTable sort does not work with the previous version
+                        values.append(int(x0) - int(y0))
                     else:
                         values.append(round(x - y, 3))
+
             if values == [0, 0.0, 0.0, 0.0, 0.0]:
                 continue
-            t.add_row([values[0], values[1], values[2], values[3], values[4], key])
-    print(f"Differences between '{INPUT_FILE_NAME[0]}' and '{INPUT_FILE_NAME[1]}'\n{t}\n")
-    t.clear_rows()
+
+            rows.append([*values[:5], key])
+
+    print(f"Differences between '{INPUT_FILE_NAME[0]}' and '{INPUT_FILE_NAME[1]}'")
+    print_rows(rows)
+    print()
+
     for common_key in common_keys:
         data[0].pop(common_key)
         data[1].pop(common_key)
+
     for i in range(2):
-        if data[0]:
+        if data[i]:
             print(f"Calls only in '{INPUT_FILE_NAME[i]}'")
-            for key, values in data[i].items():
-                t.add_row([values[0], values[1], values[2], values[3], values[4], key])
-            print(f"{t}\n")
-            t.clear_rows()
+            rows = [
+                [*values[:5], key]
+                for key, values in data[i].items()
+            ]
+            print_rows(rows)
+            print()
+
     print("Total times")
-    t = PrettyTable([INPUT_FILE_NAME[0], INPUT_FILE_NAME[1]])
-    t.align = "r"
-    t.add_row([round(x, 3) for x in total_times])
-    print(f"{t}\n")
+    print(f"{INPUT_FILE_NAME[0]:>15}  {INPUT_FILE_NAME[1]:>15}")
+    print(f"{total_times[0]:15.3f}  {total_times[1]:15.3f}\n")
 
 
 def main() -> None:

@@ -12,8 +12,6 @@ from datetime import datetime
 from importlib import metadata as libdata
 from types import ModuleType
 
-import psutil
-
 __all__ = (
     "MPI_MODULE",
     "Cudnn_Handle_Type",
@@ -64,6 +62,17 @@ timestamp = (
     .replace(":", "-")
     .replace(".", "-")
 )
+
+cpu_affinity = tuple(range(os.process_cpu_count()))
+try:
+    cpu_affinity = tuple(os.sched_getaffinity(0))
+except AttributeError:
+    pass  # unsupported
+try:
+    from psutil import Process
+    cpu_affinity = tuple(Process().cpu_affinity())
+except ModuleNotFoundError:
+    pass  # unavailable
 
 # OPTIONAL IMPORTS
 try:
@@ -245,7 +254,7 @@ metadata = [
         "time": timestamp,
         "node": uuid.getnode(),
         "host": " ".join(platform.uname()).strip(),
-        "cpu": str(tuple(psutil.Process().cpu_affinity())),
+        "cpu": str(cpu_affinity),
         "gpu": str((cuda_gpu,) if cuda_gpu is not None else ()),
         "mpi": str((rank,)),
         "packages": {

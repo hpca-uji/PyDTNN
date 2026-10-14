@@ -13,8 +13,11 @@ from pathlib import Path
 from typing import IO
 
 import numpy as np
-import rapidgzip
-from PIL import Image
+
+try:  # optional
+    from PIL import Image
+except ModuleNotFoundError:
+    Image = None
 
 from pydtnn.datasets.abstract.base import Base
 from pydtnn.utils.tensor import ChannelFormat, SampleFormat, TensorFormat, format_transpose
@@ -121,45 +124,6 @@ class Utils(Base):
             local_nsamples -= nsamples
         return output
 
-    def _gzip_open(self, filename: str) -> IO[bytes]:
-        """
-        Open a gZIP file.
-
-        This method handles opening gZIP files, creating or loading their
-        seek tables for efficient random access.
-
-        Args:
-            filename: The path to the gZIP file.
-
-        Returns:
-            A file-like object opened in binary read mode.
-
-        Raises:
-            FileNotFoundError: If the specified file does not exist.
-            Exception: If there's an error during rapidgzip file operations.
-        """
-        path = Path(filename)
-        plain = path.with_suffix("")
-        idx = path.with_suffix(f"{path.suffix}.idx")
-        f = None
-
-        if plain.exists():
-            return open(plain, mode="rb")
-        elif not path.exists():
-            raise FileNotFoundError(path)
-        try:
-            f = rapidgzip.RapidgzipFile(path, parallelization=1)
-            if idx.exists():
-                f.import_index(str(idx))
-            else:
-                f.export_index(str(idx))
-        except Exception:
-            if f:
-                f.close()
-            raise
-        else:
-            return f
-
     def _load_rgb_image(self, fp: IO[bytes] | str) -> np.ndarray:
         """
         Transform a file-like object (RGB image) to a numpy array.
@@ -173,6 +137,7 @@ class Utils(Base):
         Returns:
             A numpy array representing the RGB image in CHW format.
         """
+        assert Image, "pillow required"
         with Image.open(fp=fp) as image:
             image = image.convert("RGB")
             array = np.asarray(image, order="C")
@@ -193,6 +158,7 @@ class Utils(Base):
         Returns:
             A numpy array representing the grayscale image in CHW format.
         """
+        assert Image, "pillow required"
         with Image.open(fp=fp) as image:
             image = image.convert("L")
             array = np.asarray(image, order="C")

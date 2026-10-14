@@ -10,6 +10,7 @@ from typing import IO, TYPE_CHECKING
 
 import numpy as np
 
+from pydtnn.util import gzip_open
 from pydtnn.datasets.abstract import Dataset
 from pydtnn.datasets.memory import Memory
 
@@ -63,7 +64,7 @@ class MNIST(Memory):
         x_test_filename = os.path.join(model.dataset_path, "t10k-images-idx3-ubyte.gz")
         y_test_filename = os.path.join(model.dataset_path, "t10k-labels-idx1-ubyte.gz")
 
-        with self._gzip_open(x_train_filename) as f:
+        with gzip_open(x_train_filename) as f:
             size = math.prod(INPUT_SHAPE)
             offset = images_header_offset + 0 * size
             x_train = self._read_file(f, offset, size * TRAIN_NSAMPLES).reshape(
@@ -71,13 +72,13 @@ class MNIST(Memory):
             )
 
         y_train = np.zeros((TRAIN_NSAMPLES, *OUTPUT_SHAPE), dtype=np.uint8)
-        with self._gzip_open(y_train_filename) as f:
+        with gzip_open(y_train_filename) as f:
             size = 1
             offset = labels_header_offset + 0 * size
             y_class = self._read_file(f, offset, size * TRAIN_NSAMPLES)
             self._decode_class(y_train, y_class)
 
-        with self._gzip_open(x_test_filename) as f:
+        with gzip_open(x_test_filename) as f:
             size = math.prod(INPUT_SHAPE)
             offset = images_header_offset + 0 * size
             x_test = self._read_file(f, offset, size * TEST_NSAMPLES).reshape(
@@ -85,7 +86,7 @@ class MNIST(Memory):
             )
 
         y_test = np.zeros((TEST_NSAMPLES, *OUTPUT_SHAPE), dtype=np.uint8)
-        with self._gzip_open(y_test_filename) as f:
+        with gzip_open(y_test_filename) as f:
             size = 1
             offset = labels_header_offset + 0 * size
             y_class = self._read_file(f, offset, size * TEST_NSAMPLES)
