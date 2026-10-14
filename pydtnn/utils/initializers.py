@@ -84,12 +84,16 @@ def _generate_distribution(
     match distribution:
         case ProbabilisticDistribution.NORMAL:
             stddev: float = np.sqrt(scale) / STD_DEV_CONST
-            # Truncated normal distribution [-2*stddev, 2*stddev]
-            x = (
-                stats.truncnorm(-2 * stddev, 2 * stddev, loc=0, scale=stddev)
-                .rvs(shape)
-                .astype(dtype, copy=False)
-            )
+            limit = 2 * stddev
+
+            x = random.normal(0.0, stddev, shape)
+            mask = np.abs(x) > limit
+
+            while np.any(mask):
+                x[mask] = random.normal(0.0, stddev, np.count_nonzero(mask))
+                mask = np.abs(x) > limit
+
+            x = x.astype(dtype, copy=False)
         case ProbabilisticDistribution.UNIFORM:
             limit = np.sqrt(3.0 * scale)
             x = random.uniform(-limit, limit, shape).astype(dtype, copy=False)

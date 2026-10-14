@@ -14,9 +14,9 @@ from contextlib import nullcontext
 from collections.abc import Iterable, Mapping
 from copy import deepcopy
 from importlib import import_module, resources
-from pathlib import PurePath
+from pathlib import PurePath, Path
 from queue import Queue
-from typing import Any, Literal, Self
+from typing import Any, Literal, Self, IO
 from gzip import GzipFile
 
 import numpy as np
@@ -119,7 +119,7 @@ def convert_size_bytes(size_bytes: int) -> str:
     return f"{convert_size(size_bytes, scale=1024)}B"
 
 
-def gzip_open(self, filename: str, mode: str = "rb") -> IO[bytes]:
+def gzip_open(filename: str, mode: str = "rb") -> IO[bytes]:
     """
     Open a gZIP file.
 
@@ -135,7 +135,7 @@ def gzip_open(self, filename: str, mode: str = "rb") -> IO[bytes]:
 
     Raises:
         FileNotFoundError: If the specified file does not exist.
-        Exception: If there's an error during rapidgzip file operations.
+        Exception: If there's an error during gzip file operations.
     """
     f = None
     path = Path(filename)
@@ -147,7 +147,7 @@ def gzip_open(self, filename: str, mode: str = "rb") -> IO[bytes]:
     elif not path.exists():
         raise FileNotFoundError(path)
     elif RapidgzipFile:
-        f = rapidgzip.RapidgzipFile(path, mode=mode, parallelization=1)
+        f = RapidgzipFile(path, mode=mode, parallelization=1)
         try:
             f.import_index(str(idx))
         except Exception:

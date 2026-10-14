@@ -97,7 +97,7 @@ def extract_parameters() -> None:  # noqa: C901
     parameters_values = defaultdict(lambda: defaultdict(lambda: ""))
     # parameters_with_short_values = defaultdict(lambda: defaultdict(lambda: ""))
     # parameters_with_long_values = defaultdict(lambda: defaultdict(lambda: ""))
-    param_keys = list(parameters_with_short_values.keys())
+    param_keys = list(parameters_values.keys())  # parameters_with_short_values
     param_keys.sort()
 
     # Manually overwritten parameters
