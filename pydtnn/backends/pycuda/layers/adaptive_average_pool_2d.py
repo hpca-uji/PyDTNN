@@ -80,23 +80,7 @@ class AdaptiveAveragePool2DPycuda(AdaptiveAveragePool2D[TensorArray], LayerPycud
             self.y = x
         else:
             n, c, h, w = self.model.decode_shape(x.shape)
-
-            # NOTE: "num_elements" (or simply "N") is the number of elements to process. Usually it would be math.prod(x.shape),
-            # but in this case we are putting elements in the output instead of
-            # processing the input's elements.
             num_elements = np.int32(math.prod((n, c, self.ho, self.wo)))
-
-            total_num_threads = np.int32(math.prod(self.grid) * math.prod(self.block))
-
-            # If num_elements < total_num_threads, only will work "num_elements"
-            # threads. In the other cases will work "total_num_threads" threads.
-            num_active_workers = np.int32(min(total_num_threads, num_elements))
-            num_ops_per_worker = np.int32(
-                (num_elements + num_active_workers - 1) / num_active_workers
-            )
-            num_ops_last_worker = np.int32(
-                num_elements - (num_active_workers - 1) * num_ops_per_worker
-            )
 
             # NOTE: Instead of a number, PyCuda's driver expects "numpy.number"
             self.cuda_fwd_func(
@@ -109,9 +93,6 @@ class AdaptiveAveragePool2DPycuda(AdaptiveAveragePool2D[TensorArray], LayerPycud
                 np.int32(self.ho),
                 np.int32(self.wo),
                 num_elements,
-                num_active_workers,
-                num_ops_per_worker,
-                num_ops_last_worker,
                 grid=self.grid,
                 block=self.block,
                 stream=self.model.stream,
@@ -126,14 +107,6 @@ class AdaptiveAveragePool2DPycuda(AdaptiveAveragePool2D[TensorArray], LayerPycud
             PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.BACKWARD_CUDNN_DX
         )
         n, c, h, w = self.model.decode_shape(dy.shape)
-
-        num_elements = np.int32(math.prod((n, c, self.ho, self.wo)))
-
-        total_num_threads = np.int32(math.prod(self.grid) * math.prod(self.block))
-
-        num_active_workers = np.int32(min(total_num_threads, num_elements))
-        num_ops_per_worker = np.int32((num_elements + num_active_workers - 1) / num_active_workers)
-        num_ops_last_worker = np.int32(num_elements - (num_active_workers - 1) * num_ops_per_worker)
         self.dx.fill(0)
 
         self.cuda_bwd_func(
@@ -145,10 +118,6 @@ class AdaptiveAveragePool2DPycuda(AdaptiveAveragePool2D[TensorArray], LayerPycud
             np.int32(w),
             np.int32(self.ho),
             np.int32(self.wo),
-            num_elements,
-            num_active_workers,
-            num_ops_per_worker,
-            num_ops_last_worker,
             grid=self.grid,
             block=self.block,
             stream=self.model.stream,

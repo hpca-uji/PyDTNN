@@ -40,7 +40,7 @@ __global__ void adaptive_average_pool_2d_fwd(TYPE* x, TYPE* y,
                                              int n, int c,
                                              int hi, int wi,
                                              int ho, int wo,
-                                             int N)
+                                             const int N)
 {
     int h_start, h_end, elements_h, w_start, w_end, elements;
     int ni, ci, i, j, index_h, index_w;
@@ -99,12 +99,19 @@ __global__ void adaptive_average_pool_2d_fwd(TYPE* x, TYPE* y,
 __global__ void adaptive_average_pool_2d_bwd(TYPE* dx, TYPE* dy,
                                              int n, int c,
                                              int hi, int wi,
-                                             int ho, int wo,
-                                             int N)
+                                             int ho, int wo)
 {
     int h_start, h_end, elements_kh, w_start, w_end, elements_kw;
     int ni, ci, index_h, index_w, index_ho, index_wo;
     TYPE delta;
+
+    #ifdef nhwc
+    // NHWC (we are iterating over N)
+    const int N = n;
+    #else
+    //NCHW (we are iterating over NC)
+    const int N = n * c;
+    #endif
 
     // BLOCK DISTRIBUTION
     int idx;
@@ -133,23 +140,34 @@ __global__ void adaptive_average_pool_2d_bwd(TYPE* dx, TYPE* dy,
     for(idx = n_offset; idx < end_offset; idx++)
     {
         ni = GET_N(idx, n, c, ho, wo);
-        index_h = GET_H(idx, n, c, ho, wo);
-        index_w = GET_W(idx, n, c, ho, wo);
+    #ifndef nhwc
+        // Case NCHW: the threads will iterate over NC.
         ci = GET_C(idx, n, c, ho, wo);
-
-        h_start = INDEX_FIRST_ELEMENT(index_h, hi, ho);
-        w_start = INDEX_FIRST_ELEMENT(index_w, wi, wo);
-        h_end = INDEX_LAST_ELEMENT(index_h, hi, ho);
-        w_end = INDEX_LAST_ELEMENT(index_w, wi, wo);
-
-        for(index_ho = h_start; index_ho < h_end; index_ho++)
+    #else
+        // Case NCHW: the threads will iterate over N, so it's necessary to iterate over C too.
+        for(ci = 0; ci < c; ci++)
+    #endif
         {
-            elements_kh = INDEX_LAST_ELEMENT(index_h, ho, hi) - INDEX_FIRST_ELEMENT(index_h, ho, hi);
-            for(index_wo = w_start; index_wo < w_end; index_wo++)
+            for(index_h = 0; index_h < ho; index_h++)
             {
-                elements_kw = INDEX_LAST_ELEMENT(index_w, wo, wi) - INDEX_FIRST_ELEMENT(index_w, wo, wi);
-                delta = (TYPE) (*(dy + SHIFT(ni, ci, index_ho, index_wo, n, c, ho, wo)) / (elements_kh * elements_kw));
-                *(dx + SHIFT(ni, ci, index_h, index_w, n, c, hi, wi)) += delta;
+                for(index_w = 0; index_w < wo; index_w++)
+                {
+                    h_start = INDEX_FIRST_ELEMENT(index_h, hi, ho);
+                    w_start = INDEX_FIRST_ELEMENT(index_w, wi, wo);
+                    h_end = INDEX_LAST_ELEMENT(index_h, hi, ho);
+                    w_end = INDEX_LAST_ELEMENT(index_w, wi, wo);
+
+                    for(index_ho = h_start; index_ho < h_end; index_ho++)
+                    {
+                        elements_kh = INDEX_LAST_ELEMENT(index_h, ho, hi) - INDEX_FIRST_ELEMENT(index_h, ho, hi);
+                        for(index_wo = w_start; index_wo < w_end; index_wo++)
+                        {
+                            elements_kw = INDEX_LAST_ELEMENT(index_w, wo, wi) - INDEX_FIRST_ELEMENT(index_w, wo, wi);
+                            delta = (TYPE) (*(dy + SHIFT(ni, ci, index_ho, index_wo, n, c, ho, wo)) / (elements_kh * elements_kw));
+                            *(dx + SHIFT(ni, ci, index_h, index_w, n, c, hi, wi)) += delta;
+                        }
+                    }
+                }
             }
         }
     }
