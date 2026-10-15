@@ -15,6 +15,7 @@ build_pydtnn:
   variables:
     GIT_STRATEGY: fetch
     GIT_SUBMODULE_STRATEGY: recursive
+    PYTHON_VERSION: latest
     PIP_ROOT_USER_ACTION: ignore
     PIP_DISABLE_PIP_VERSION_CHECK: 1
     PIP_CACHE_DIR: $CI_PROJECT_DIR/build/pip
@@ -24,7 +25,7 @@ build_pydtnn:
   rules: [ if: $CI_COMMIT_BRANCH == $BRANCH_WORK ]
 
   tags: [ lorca-ubuntu ]
-  image: python:latest
+  image: python:$PYTHON_VERSION
 
   cache:
   - paths:
@@ -41,6 +42,7 @@ build_pydtnn:
   - make pydtnn-clean
   - make build NPROC=${RUNNER_NPROC:?}
   - make install PYDTNN_PKG=test,lint
+  - make install PYDTNN_PKG=torch || true
   - make test NPROC=${RUNNER_NPROC:?}
   - make lint NPROC=${RUNNER_NPROC:?}
 
