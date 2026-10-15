@@ -1201,7 +1201,7 @@ class PytorchModelTestCase(TestCase):
         model_name = "simplecnn"
         self.do_test_model(self.get_model_torch(model_name), model_name)
 
-    @unittest.skip("Work in progress.")
+    # @unittest.skip("Work in progress.")
     def test_layer_conv_2d(self) -> None:
         """Compares results between an SimpleCNN model using a PyTorch model and other a PyDTNN one."""
         params = PytorchModelTestCase.params
@@ -1234,7 +1234,7 @@ class PytorchModelTestCase(TestCase):
         torch_model = TorchLayer(layer)
         self.do_test_model(torch_model, "Linear")
 
-    @unittest.skip("Work in progress.")
+    # @unittest.skip("Work in progress.")
     def test_layer_batch_norm_2d(self) -> None:
         """Compares results between an SimpleCNN model using a PyTorch model and other a PyDTNN one."""
         params = PytorchModelTestCase.params
@@ -1268,7 +1268,7 @@ class PytorchModelTestCase(TestCase):
         torch_model = TorchLayer(torch_model)
         self.do_test_model(torch_model, "Max_Pool_2D", without_weighted_layers=True)
 
-    @unittest.skip("Work in progress.")
+    # @unittest.skip("Work in progress.")
     def test_adaptive_average_pool2d(self) -> None:
         """Tests AdaptiveAveragePool2D layer."""
         params = PytorchModelTestCase.params
@@ -1279,17 +1279,17 @@ class PytorchModelTestCase(TestCase):
         torch_model = TorchLayer(torch_model)
         self.do_test_model(torch_model, "Adaptive_Average_Pool", without_weighted_layers=True)
 
-    @unittest.skip("Work in progress.")
+    # @unittest.skip("Work in progress.")
     def test_sigmoid(self) -> None:
         """Tests Sigmoid activation."""
         torch_model = torch.nn.Sequential(
             torch.nn.Flatten(),
-            torch.nn.Sigmoid(dim=1)
+            torch.nn.Sigmoid()
         )
         torch_model = TorchLayer(torch_model)
         self.do_test_model(torch_model, "Sigmoid", without_weighted_layers=True)
 
-    @unittest.skip("Work in progress.")
+    # @unittest.skip("Work in progress.")
     def test_relu(self) -> None:
         """Tests Relu activation."""
         torch_model = torch.nn.Sequential(
@@ -1299,7 +1299,7 @@ class PytorchModelTestCase(TestCase):
         torch_model = TorchLayer(torch_model)
         self.do_test_model(torch_model, "Relu", without_weighted_layers=True)
 
-    @unittest.skip("Work in progress.")
+    # @unittest.skip("Work in progress.")
     def test_relu6(self) -> None:
         """Tests Relu6 activation."""
         torch_model = torch.nn.Sequential(
@@ -1309,7 +1309,7 @@ class PytorchModelTestCase(TestCase):
         torch_model = TorchLayer(torch_model)
         self.do_test_model(torch_model, "Relu6", without_weighted_layers=True)
 
-    @unittest.skip("Work in progress.")
+    # @unittest.skip("Work in progress.")
     def test_leaky_relu(self) -> None:
         """Tests LeakyRelu activation."""
         torch_model = torch.nn.Sequential(
@@ -1324,7 +1324,7 @@ class PytorchModelTestCase(TestCase):
         """Tests Tanh activation."""
         torch_model = torch.nn.Sequential(
             torch.nn.Flatten(),
-            torch.nn.Tanh(dim=1)
+            torch.nn.Tanh()
         )
         torch_model = TorchLayer(torch_model)
         self.do_test_model(torch_model, "Tanh", without_weighted_layers=True)
@@ -1334,12 +1334,12 @@ class PytorchModelTestCase(TestCase):
         """Tests Log Sigmoid activation."""
         torch_model = torch.nn.Sequential(
             torch.nn.Flatten(),
-            torch.nn.LogSigmoid(dim=1)
+            torch.nn.LogSigmoid()
         )
         torch_model = TorchLayer(torch_model)
         self.do_test_model(torch_model, "Log_Sigmoid", without_weighted_layers=True)
 
-    @unittest.skip("Work in progress.")
+    # @unittest.skip("Work in progress.")
     def test_log_softmax(self) -> None:
         """Tests Log Softmax activation."""
         torch_model = torch.nn.Sequential(
@@ -1349,7 +1349,7 @@ class PytorchModelTestCase(TestCase):
         torch_model = TorchLayer(torch_model)
         self.do_test_model(torch_model, "Log_Softmax", without_weighted_layers=True)
 
-    @unittest.skip("Work in progress.")
+    # @unittest.skip("Work in progress.")
     def test_softmax(self) -> None:
         """Tests Softmax activation."""
         torch_model = torch.nn.Sequential(

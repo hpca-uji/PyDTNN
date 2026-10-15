@@ -268,7 +268,7 @@ def get_layers_from_torch(
     # weights and biases (if it's necessary)
     layers = convert_layers(input_shape=input_shape, layers=dict_layers)
 
-    if not isinstance(layers[-1], Activation) and default_output_activation_layer is not None:
+    if default_output_activation_layer is not None:
         layers.append(default_output_activation_layer)
 
     return layers
