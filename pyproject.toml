@@ -47,32 +47,32 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-mpi4py = [
+mpi-mpi4py = [
     "mpi4py~=4.1"
 ]
-pympi = [
+mpi-pympi = [
     "pympi~=1.4"
 ]
 mpi = [
-    "pydtnn[mpi4py]",
-    "pydtnn[pympi]"
+    "pydtnn[mpi-mpi4py]",
+    "pydtnn[mpi-pympi]"
 ]
 
-cuda = [
+gpu-cuda = [
     "nvidia-cublas-cu12~=12.6",
     "nvidia-cuda-runtime-cu12~=12.6",
     "nvidia-cudnn-cu12~=9.10",
     "nvidia-nccl-cu12~=2.29"
 ]
-cupy = [
+gpu-cupy = [
     "cupy-cuda12x~=14.0"
 ]
-pycuda = [
+gpu-pycuda = [
     "pycuda~=2026.1"
 ]
 gpu = [
-    "pydtnn[cupy]",
-    "pydtnn[pycuda]"
+    "pydtnn[gpu-cupy]",
+    "pydtnn[gpu-pycuda]"
 ]
 
 data-arch = [
