@@ -75,20 +75,20 @@ gpu = [
     "pydtnn[pycuda]"
 ]
 
-data-zip = [
+data-arch = [
     "rapidgzip~=0.16"
 ]
 data-image = [
     "pillow~=12.2",
     "scipy~=1.17"
 ]
-data-nlp = [
+data-lang = [
     "spacy~=3.8"
 ]
 data = [
-    "pydtnn[data-zip]",
+    "pydtnn[data-arch]",
     "pydtnn[data-image]",
-    "pydtnn[data-nlp]"
+    "pydtnn[data-lang]"
 ]
 
 fhe = [
