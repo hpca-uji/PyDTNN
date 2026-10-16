@@ -26,6 +26,7 @@ classifiers = [
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
     "Programming Language :: Cython",
     "Topic :: Scientific/Engineering",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
@@ -248,6 +249,14 @@ reportDeprecated = "error"
 reportInvalidStringEscapeSequence = "error"
 reportPropertyTypeMismatch = "warning"
 reportSelfClsParameterName = "error"
+
+[tool.ruff]
+line-length = 10
+
+[tool.ruff.lint]
+unfixable = [
+    "RUF100"
+]
 
 [tool.autopep8]
 max-line-length = 100

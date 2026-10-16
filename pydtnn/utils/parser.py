@@ -245,7 +245,7 @@ class ArgumentParser(argparse.ArgumentParser):
             "--quantize",
             action=argparse.BooleanOptionalAction,
             default=ModelBase.quantize,
-            help=(f"Enable model quantization. Default: {ModelBase.quantize!r}"),
+            help=(f"Enable model quantization. Default: {ModelBase.quantize!r}."),
         )
         quantize_dtype = list(map(np_dtype, ["float16", "float32", "float64"]))
         self.add_argument(

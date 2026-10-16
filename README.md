@@ -59,7 +59,7 @@ Supported datasets:
 
 ## Installing PyDTNN
 ```sh
-pip install pydtnn
+pip install pydtnn[data]
 ```
 
 Optionally, if you are going to use MPI, you should have installed the
@@ -144,7 +144,7 @@ The PyDTNN framework comes with a utility launcher called
   - `--global-batch-size`: Batch size between all MPI ranks. Or `batch_size` or `global_batch_size` must
     have a value (but not both). Default: 0.
   - `--dtype`: Datatype to use: `float32`, `float64`. Default: `float32`.
-  - `--quantize`, `--no-quantize`: Enable model quantization. Default: False
+  - `--quantize`, `--no-quantize`: Enable model quantization. Default: False.
   - `--quantize-dtype`: Quantized datatype to use: `float16`, `float32`, `float64`. Default: `float16`.
   - `--num-epochs`: Number of epochs to perform. Default: 1.
   - `--steps-per-epoch`: Trims the training data depending on the given number of steps per epoch. If
