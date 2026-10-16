@@ -47,15 +47,20 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-mpi-mpi4py = [
-    "mpi4py~=4.1"
+data-arch = [
+    "rapidgzip~=0.16"
 ]
-mpi-pympi = [
-    "pympi~=1.4"
+data-image = [
+    "pillow~=12.2",
+    "scipy~=1.17"
 ]
-mpi = [
-    "pydtnn[mpi-mpi4py]",
-    "pydtnn[mpi-pympi]"
+data-lang = [
+    "spacy~=3.8"
+]
+data = [
+    "pydtnn[data-arch]",
+    "pydtnn[data-image]",
+    "pydtnn[data-lang]"
 ]
 
 gpu-cuda = [
@@ -75,30 +80,30 @@ gpu = [
     "pydtnn[gpu-pycuda]"
 ]
 
-data-arch = [
-    "rapidgzip~=0.16"
+mpi-mpi4py = [
+    "mpi4py~=4.1"
 ]
-data-image = [
-    "pillow~=12.2",
-    "scipy~=1.17"
+mpi-pympi = [
+    "pympi~=1.4"
 ]
-data-lang = [
-    "spacy~=3.8"
-]
-data = [
-    "pydtnn[data-arch]",
-    "pydtnn[data-image]",
-    "pydtnn[data-lang]"
+mpi = [
+    "pydtnn[mpi-mpi4py]",
+    "pydtnn[mpi-pympi]"
 ]
 
 fhe = [
     "polyhe~=1.0"
 ]
 
-torch = [
+test-torch = [
     "torch~=2.11",
     "torchvision~=0.26",
     "torchmetrics~=1.9",
+]
+test = [
+    "pytest~=9.0",
+    "pytest-xdist~=3.8",
+    "pytest-cov~=7.1"
 ]
 
 profile = [
@@ -110,11 +115,6 @@ format = [
     "absolufy-imports~=0.3",
     "isort~=8.0",
     "ruff~=0.15"
-]
-test = [
-    "pytest~=9.0",
-    "pytest-xdist~=3.8",
-    "pytest-cov~=7.1"
 ]
 lint = [
     "flake8~=7.3",
