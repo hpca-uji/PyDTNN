@@ -5,11 +5,11 @@ from typing import Any
 
 from pydtnn.activations.relu import Relu
 from pydtnn.backends.pycuda.layers.abstract.block_layer import AbstractBlockLayerPycuda
-from pydtnn.utils.tensor_array import TensorArray
 from pydtnn.layers.dropout import Dropout
 from pydtnn.layers.fc import FC
 from pydtnn.layers.feed_forward import FeedForward
 from pydtnn.utils.constants import ArrayShape
+from pydtnn.utils.tensor_array import TensorArray
 
 __all__ = ("FeedForwardPycuda",)
 
@@ -56,7 +56,6 @@ class FeedForwardPycuda(FeedForward[TensorArray], AbstractBlockLayerPycuda):
 
     def initialize_block_layer(self) -> None:
         """Initialize block-specific configurations."""
-        pass
 
     # Need to flatten and unflatten after the operation in order to maintain
     # the shape it recieves from pre and post layers

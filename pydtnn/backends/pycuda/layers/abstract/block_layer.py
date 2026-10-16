@@ -3,8 +3,8 @@
 import logging
 
 from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
-from pydtnn.utils.tensor_array import TensorArray
 from pydtnn.layers.abstract.block_layer import AbstractBlockLayer
+from pydtnn.utils.tensor_array import TensorArray
 
 __all__ = ("AbstractBlockLayerPycuda",)
 
@@ -13,5 +13,3 @@ logger = logging.getLogger(__name__)
 
 class AbstractBlockLayerPycuda(AbstractBlockLayer[TensorArray], LayerPycuda):
     """Base class for PyCUDA-accelerated block layers."""
-
-    pass

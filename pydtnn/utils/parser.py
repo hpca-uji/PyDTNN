@@ -151,8 +151,7 @@ class Namespace(argparse.Namespace):
                 if action.default == argparse.SUPPRESS:
                     continue
                 option_string = f"{action.option_strings[0].lstrip('-')}"
-                if len(option_string) > length:
-                    length = len(option_string)
+                length = max(length, len(option_string))
             for action in group._group_actions:
                 if action.default == argparse.SUPPRESS:
                     continue
@@ -862,8 +861,10 @@ class ArgumentParser(argparse.ArgumentParser):
             "--optimizer-decoupled-decay",
             type=bool,
             default=ModelBase.optimizer_decoupled_decay,
-            help=("Decouple the weight decay from the momentum and variance."
-                  f"Default: {ModelBase.optimizer_decoupled_decay!r}."),
+            help=(
+                "Decouple the weight decay from the momentum and variance."
+                f"Default: {ModelBase.optimizer_decoupled_decay!r}."
+            ),
         )
         _op_group.add_argument(
             "--optimizer-nesterov",

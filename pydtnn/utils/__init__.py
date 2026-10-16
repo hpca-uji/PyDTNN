@@ -1,6 +1,7 @@
 """Utility functions and classes for the PyDTNN framework."""
 
 import ctypes
+import ctypes.util
 import functools
 import itertools
 import logging
@@ -9,15 +10,14 @@ import string
 import sys
 import threading
 import zipfile
-import ctypes.util
-from contextlib import nullcontext
 from collections.abc import Iterable, Mapping
+from contextlib import nullcontext
 from copy import deepcopy
-from importlib import import_module, resources
-from pathlib import PurePath, Path
-from queue import Queue
-from typing import Any, Literal, Self, IO
 from gzip import GzipFile
+from importlib import import_module, resources
+from pathlib import Path, PurePath
+from queue import Queue
+from typing import IO, Any, Literal, Self
 
 import numpy as np
 
@@ -34,12 +34,12 @@ __all__ = (
     "convert_size_bytes",
     "find_component",
     "get_npz_shape",
+    "gzip_open",
+    "header",
     "load_library",
     "parse_bool",
-    "header",
     "read_file",
     "string_substitute",
-    "gzip_open"
 )
 
 logger = logging.getLogger(__name__)
@@ -173,8 +173,7 @@ def find_component(package: str, name: str) -> Any:
     for attr in dir(module):
         if not attr.startswith("_") and normalize(name) == normalize(attr):
             return getattr(module, attr)
-    else:
-        raise ValueError(f"{name!r} not found in {module!r}!")
+    raise ValueError(f"{name!r} not found in {module!r}!")
 
 
 @functools.cache

@@ -22,9 +22,9 @@ class PerformanceCounter:
 
     def __init__(self) -> None:
         """Initializes the performance counter with empty records."""
-        self._times_record = defaultdict(lambda: defaultdict(lambda: []))
-        self._batch_sizes_record = defaultdict(lambda: defaultdict(lambda: []))
-        self._memory_record = defaultdict(lambda: defaultdict(lambda: []))
+        self._times_record = defaultdict(lambda: defaultdict(list))
+        self._batch_sizes_record = defaultdict(lambda: defaultdict(list))
+        self._memory_record = defaultdict(lambda: defaultdict(list))
 
     #  Public methods and properties
 

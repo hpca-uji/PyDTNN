@@ -11,10 +11,10 @@ from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 
 from pydtnn import drv
 from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
-from pydtnn.utils.tensor_array import TensorArray
 from pydtnn.layers.multi_head_attention import MultiHeadAttention
 from pydtnn.libs import cudnn as cudnn
 from pydtnn.utils.constants import ArrayShape
+from pydtnn.utils.tensor_array import TensorArray
 
 __all__ = ("MultiHeadAttentionPycuda",)
 

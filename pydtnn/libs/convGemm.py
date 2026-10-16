@@ -164,9 +164,7 @@ class ConvGemm:
             self.x_conv_gemm_nchw = self.lib_cg.sconvGemmNCHW
             self.x_deconv_gemm_nchw = self.lib_cg.sconvGemmNCHW_back
         else:
-            raise TypeError(
-                f"Type '{str(self.dtype)}' not supported by this version of libconvGemm!"
-            )
+            raise TypeError(f"Type '{self.dtype!s}' not supported by this version of libconvGemm!")
 
     def __del__(self) -> None:
         """
@@ -768,9 +766,7 @@ def libc_free(pack: ctypes._Pointer) -> None:
     elif platform.system == "Darwin":
         libc = ctypes.cdll.LoadLibrary("libc.dylib")
     else:
-        raise AssertionError(
-            "Don't know how to get to libc for a '{}' system".format(platform.system())
-        )
+        raise AssertionError(f"Don't know how to get to libc for a '{platform.system()}' system")
     assert isinstance(pack, object)
     libc.free(pack)
 
@@ -965,7 +961,7 @@ def main() -> None:
         )
         / 10
     )
-    logger.info("\n".join(["Times", "-----", "conv_gemm time: {:.4f}".format(conv_gemm_t)]))
+    logger.info("\n".join(["Times", "-----", f"conv_gemm time: {conv_gemm_t:.4f}"]))
     im2col_t = (
         timeit(
             lambda: time_it_func(
@@ -990,11 +986,7 @@ def main() -> None:
         / 10
     )
     mm_t = timeit(lambda: w_c @ x_c + out, number=10) / 10
-    logger.info(
-        "im2col+mm time: {:.4f}  (im2col: {:.4f}  mm: {:.4f}".format(
-            im2col_t + mm_t, im2col_t, mm_t
-        )
-    )
+    logger.info(f"im2col+mm time: {im2col_t + mm_t:.4f}  (im2col: {im2col_t:.4f}  mm: {mm_t:.4f}")
 
 
 if __name__ == "__main__":

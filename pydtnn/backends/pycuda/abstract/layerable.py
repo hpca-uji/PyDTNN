@@ -2,12 +2,12 @@
 
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.backends.pycuda.abstract.base import BasePycuda
-from pydtnn.utils.tensor_array import TensorArray
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
                                    PYDTNN_OPS_EVENTS, OpsEventEnum)
+from pydtnn.utils.tensor_array import TensorArray
 
 try:
-    import pydtnn.libs.nccl as nccl
+    from pydtnn.libs import nccl
 except Exception:
     nccl = None
 

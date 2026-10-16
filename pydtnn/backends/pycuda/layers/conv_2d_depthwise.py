@@ -8,11 +8,11 @@ from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 from pycuda.driver import Function
 
 from pydtnn.backends.pycuda.layers.abstract.conv_2d import AbstractConv2DPycuda
-from pydtnn.utils.tensor_array import TensorArray
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
                                    PYDTNN_OPS_EVENTS, OpsEventEnum)
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import TensorFormat
+from pydtnn.utils.tensor_array import TensorArray
 
 __all__ = ("Conv2DDepthwisePycuda",)
 

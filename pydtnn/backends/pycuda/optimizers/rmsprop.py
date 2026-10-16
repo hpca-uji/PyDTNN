@@ -8,9 +8,9 @@ from pycuda.elementwise import ElementwiseKernel
 
 from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
 from pydtnn.backends.pycuda.optimizers.abstract.optimizer import OptimizerPycuda
-from pydtnn.utils.tensor_array import TensorArray
 from pydtnn.optimizers.rmsprop import RMSProp
 from pydtnn.utils.constants import DTYPE2CTYPE
+from pydtnn.utils.tensor_array import TensorArray
 
 __all__ = ("RMSPropPycuda",)
 
@@ -31,10 +31,8 @@ class RMSPropPycuda(RMSProp[TensorArray], OptimizerPycuda):
             )
         )
         operations_gpu = (
-            "cache[i] = rho * cache[i] + (1 - rho) * {func}(dw[i], 2);                             "
-            "                 w[i] -= lr * (decay * w[i] + (dw[i] / sqrtf(cache[i] + epsilon)))".format(
-                func=pow_func
-            )
+            f"cache[i] = rho * cache[i] + (1 - rho) * {pow_func}(dw[i], 2);                             "
+            "                 w[i] -= lr * (decay * w[i] + (dw[i] / sqrtf(cache[i] + epsilon)))"
         )
         self.update_kernel = ElementwiseKernel(parameters_gpu, operations_gpu, "RMSProp_kernel")
 

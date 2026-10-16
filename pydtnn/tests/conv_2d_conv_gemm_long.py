@@ -37,8 +37,8 @@ class Conv2DConvGemmLongTestCase(Conv2DConvGemmTestCase):
             range(8, 11),  # w
             range(2, 12),  # kh
             range(2, 12),  # kw
-            range(0, 4),  # vp
-            range(0, 4),  # hp
+            range(4),  # vp
+            range(4),  # hp
             range(1, 4),  # vs
             range(1, 4),  # hs
         )

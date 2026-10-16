@@ -179,7 +179,7 @@ class Repr[T: Array](Layers[T]):  # noqa: D101 (generics not detected)
             _show.append("")
             for key, size in struct.items():
                 value = props.get(key, "")
-                _show[-1] += f"{term.BOX_V}{str(value):^{size}s}"
+                _show[-1] += f"{term.BOX_V}{value!s:^{size}s}"
             _show[-1] += term.BOX_V
         _show.append(bsep)
         logger.info("\n".join(_show))

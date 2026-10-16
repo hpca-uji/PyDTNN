@@ -8,11 +8,11 @@ from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 from pycuda.driver import Function
 
 from pydtnn.backends.pycuda.layers.abstract.conv_2d import AbstractConv2DPycuda
-from pydtnn.utils.tensor_array import TensorArray
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
                                    PYDTNN_OPS_EVENTS, OpsEventEnum)
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import TensorFormat, format_transpose
+from pydtnn.utils.tensor_array import TensorArray
 
 __all__ = ("Conv2DPointwisePycuda",)
 
@@ -60,8 +60,11 @@ class Conv2DPointwisePycuda(AbstractConv2DPycuda):
         self.total_num_threads = np.int32(np.prod(self.grid) * np.prod(self.block))
 
         self.y = TensorArray.new_zeros(
-            (self.model.batch_size, *self.shape), self.model.dtype,
-            self.model.tensor_format, self.model.cudnn_dtype)
+            (self.model.batch_size, *self.shape),
+            self.model.dtype,
+            self.model.tensor_format,
+            self.model.cudnn_dtype,
+        )
         self.memory_used += self.y.nbytes
 
         dx_gpu = gpuarray.zeros((self.model.batch_size, *self.shape), self.model.dtype)

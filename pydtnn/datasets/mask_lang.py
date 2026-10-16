@@ -154,7 +154,7 @@ class MaskLang(Dataset):
 
     def _actual_data_generator_normal(
         self, part: Dataset.Part
-    ) -> Generator[tuple[np.ndarray, np.ndarray], Any, None]:
+    ) -> Generator[tuple[np.ndarray, np.ndarray], Any]:
         """
         Generator for on-the-fly data processing.
 
@@ -188,7 +188,7 @@ class MaskLang(Dataset):
 
     def _actual_data_generator_preprocess(
         self, part: Dataset.Part
-    ) -> Generator[tuple[np.ndarray, np.ndarray], Any, None]:
+    ) -> Generator[tuple[np.ndarray, np.ndarray], Any]:
         """
         Generator for pre-processed data.
 
@@ -204,7 +204,7 @@ class MaskLang(Dataset):
             y = self.tgt_embeddings[window[0]: window[1]]
             yield x, y
 
-    def _synthetic_data_generator(self) -> Generator[tuple[np.ndarray, np.ndarray], Any, None]:
+    def _synthetic_data_generator(self) -> Generator[tuple[np.ndarray, np.ndarray], Any]:
         """Generator for synthetic data."""
         batch_size = self.model.batch_size
         rank = self.model.rank

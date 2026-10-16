@@ -14,9 +14,9 @@ from pydtnn.layers.max_pool_2d import MaxPool2D
 from pydtnn.utils.constants import ArrayShape
 
 __all__ = (
-    "vgg16",
     "vgg6",
     "vgg8",
+    "vgg16",
 )
 
 

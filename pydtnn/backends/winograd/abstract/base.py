@@ -7,5 +7,3 @@ __all__ = ("BaseWinograd",)
 
 class BaseWinograd(BaseNumpy):
     """Base class providing the interface for Winograd-based convolution operations."""
-
-    ...

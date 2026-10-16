@@ -138,7 +138,7 @@ class ConvTestCase(TestCase):
         """Tests convolution correctness across varying numbers of output kernels."""
         d = self._get_config()
         if verbose_test():
-            header("{}".format(inspect.stack()[1][3]), None)
+            header(f"{inspect.stack()[1][3]}", None)
             print(" kn   Maximum difference    sum(cg_result)")
             print("----+--------------------+-----------------")
         x = rand.random((d.b, d.h, d.w, d.c)).astype(np.float32, order="C")
@@ -207,7 +207,7 @@ class ConvTestCase(TestCase):
         """Tests convolution correctness across varying batch sizes."""
         d = self._get_config()
         if verbose_test():
-            header("{}".format(inspect.stack()[1][3]), None)
+            header(f"{inspect.stack()[1][3]}", None)
             print("  b   Maximum difference")
             print("----+--------------------")
         weights = rand.random((d.c, d.kh, d.kw, d.kn)).astype(np.float32, order="C")
@@ -275,13 +275,13 @@ class ConvTestCase(TestCase):
         """Tests convolution correctness across varying padding values."""
         d = self._get_config()
         if verbose_test():
-            header("{}".format(inspect.stack()[1][3]), None)
+            header(f"{inspect.stack()[1][3]}", None)
             print("  p   Maximum difference")
             print("----+--------------------")
         weights = rand.random((d.c, d.kh, d.kw, d.kn)).astype(np.float32, order="C")
         x = rand.random((d.b, d.h, d.w, d.c)).astype(np.float32, order="C")
         np_all_close_for_all_cases = True
-        for padding in range(0, 5):
+        for padding in range(5):
             test_result: np.ndarray = self._compute(
                 weights,
                 x,
@@ -343,7 +343,7 @@ class ConvTestCase(TestCase):
         """Tests convolution correctness across varying stride values."""
         d = self._get_config()
         if verbose_test():
-            header("{}".format(inspect.stack()[1][3]), None)
+            header(f"{inspect.stack()[1][3]}", None)
             print("  s   Maximum difference")
             print("----+--------------------")
         weights = rand.random((d.c, d.kh, d.kw, d.kn)).astype(np.float32, order="C")
@@ -411,7 +411,7 @@ class ConvTestCase(TestCase):
         """Tests convolution correctness across varying combinations of vertical and horizontal strides."""
         d = self._get_config()
         if verbose_test():
-            header("{}".format(inspect.stack()[1][3]), None)
+            header(f"{inspect.stack()[1][3]}", None)
             print(" vs  hs   Maximum difference")
             print("--------+--------------------")
         weights = rand.random((d.c, d.kh, d.kw, d.kn)).astype(np.float32, order="C")
@@ -482,7 +482,7 @@ class ConvTestCase(TestCase):
         """Tests convolution correctness across varying dilation values."""
         d = self._get_config()
         if verbose_test():
-            header("{}".format(inspect.stack()[1][3]), None)
+            header(f"{inspect.stack()[1][3]}", None)
             print("  s   Maximum difference")
             print("----+--------------------")
         weights = rand.random((d.c, d.kh, d.kw, d.kn)).astype(np.float32, order="C")
@@ -549,7 +549,7 @@ class ConvTestCase(TestCase):
     def test_alexnet_layers(self) -> None:
         """Tests convolution correctness using parameters derived from AlexNet layers."""
         if verbose_test():
-            header("{}".format(inspect.stack()[1][3]), None)
+            header(f"{inspect.stack()[1][3]}", None)
             print(" layer   Maximum difference")
             print("-------+--------------------")
         layers = alexnet_layers

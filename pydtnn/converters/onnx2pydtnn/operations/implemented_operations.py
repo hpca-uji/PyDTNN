@@ -198,7 +198,7 @@ def Conv(info: dict[str, Any]) -> Layerable:
 
     # TODO: Borrar
     print("CONVOLUCION")
-    for k in args.keys():
+    for k in args:
         print(f"args[{k}]: {type(args[k])} | {args[k]}")
 
     from pydtnn.layers.conv_2d import Conv2D
@@ -428,7 +428,7 @@ def MaxPool(info: dict[str, Any]) -> Layerable:
     if ONNX_STRIDES in dict_attributes:
         args[PYDTNN_STRIDE] = dict_attributes[ONNX_STRIDES]
 
-    for k in args.keys():
+    for k in args:
         print(f"args[{k}]: {type(args[k])} | {args[k]}")
         # a = args[k]
 

@@ -19,5 +19,3 @@ class LayerGemm(LayerNumpy, LayerableGemm):
     Inherits from LayerNumpy for standard array operations and LayerableGemm
     for GEMM-specific interface requirements.
     """
-
-    ...

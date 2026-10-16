@@ -8,9 +8,9 @@ from pycuda.elementwise import ElementwiseKernel
 
 from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
 from pydtnn.backends.pycuda.optimizers.abstract.optimizer import OptimizerPycuda
-from pydtnn.utils.tensor_array import TensorArray
 from pydtnn.optimizers.adam import Adam
 from pydtnn.utils.constants import DTYPE2CTYPE
+from pydtnn.utils.tensor_array import TensorArray
 
 __all__ = ("AdamPycuda",)
 
@@ -40,8 +40,7 @@ class AdamPycuda(Adam[TensorArray], OptimizerPycuda):
             m[i] = beta1 * m[i] + (1 - beta1) * dw[i];
             v[i] = beta2 * v[i] + (1 - beta2) * {func}(dw[i], 2);
             w[i] -= lr * ((m[i] / (1 - {func}(beta1, it))) / sqrt(v[i] / (1 - {func}(beta2, it)) + epsilon));
-        """.format(func=func_pow[self.model.dtype],
-                   decoupled_decay_ops=ops_gpu)
+        """.format(func=func_pow[self.model.dtype], decoupled_decay_ops=ops_gpu)
 
         self.update_kernel = ElementwiseKernel(parameters_gpu, operations_gpu, "Adam_kernel")
 
@@ -49,8 +48,9 @@ class AdamPycuda(Adam[TensorArray], OptimizerPycuda):
         self.defines_replaces: dict[str, str] = {
             '"TYPE"': DTYPE2CTYPE[self.model.dtype],
             "powf_or_pow": func_pow[self.model.dtype],
-            "DECOUPLED_DECAY_OPS": "DECOUPLED_DECAY_OPS" if self.decoupled_decay
-                                   else "NOT_DECOUPLED_DECAY"
+            "DECOUPLED_DECAY_OPS": "DECOUPLED_DECAY_OPS"
+            if self.decoupled_decay
+            else "NOT_DECOUPLED_DECAY",
         }
         self.update_gpudirect = self._get_kernel(func_name_subfix="_gpudirect")
 

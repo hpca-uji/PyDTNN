@@ -17,9 +17,9 @@ from pydtnn.utils.constants import ArrayShape
 
 
 __all__ = (
-    "vgg16",
     "vgg6",
     "vgg8",
+    "vgg16",
 )
 
 

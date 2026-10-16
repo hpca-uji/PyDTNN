@@ -4,8 +4,6 @@
 # Note: this module does not explicitly depend on PyCUDA.
 # Source: https://github.com/lebedov/scikit-cuda
 
-from __future__ import absolute_import
-
 import ctypes
 import functools
 import re
@@ -238,8 +236,6 @@ _libcublas = load_library("cublas", ver="12.6.4.1", src="nvidia.cublas.lib")
 class cublasError(Exception):
     """Base class for CUBLAS errors."""
 
-    pass
-
 
 # Exceptions corresponding to different CUBLAS errors:
 
@@ -247,55 +243,37 @@ class cublasError(Exception):
 class cublasNotInitialized(cublasError):
     """CUBLAS library not initialized."""
 
-    pass
-
 
 class cublasAllocFailed(cublasError):
     """Resource allocation failed."""
-
-    pass
 
 
 class cublasInvalidValue(cublasError):
     """Unsupported numerical value was passed to function."""
 
-    pass
-
 
 class cublasArchMismatch(cublasError):
     """Function requires an architectural feature absent from the device."""
-
-    pass
 
 
 class cublasMappingError(cublasError):
     """Access to GPU memory space failed."""
 
-    pass
-
 
 class cublasExecutionFailed(cublasError):
     """GPU program failed to execute."""
-
-    pass
 
 
 class cublasInternalError(cublasError):
     """An internal CUBLAS operation failed."""
 
-    pass
-
 
 class cublasNotSupported(cublasError):
     """Not supported."""
 
-    pass
-
 
 class cublasLicenseError(cublasError):
     """License error."""
-
-    pass
 
 
 cublasExceptions = {
@@ -384,7 +362,7 @@ def cublasCheckStatus(status: int) -> None:
         try:
             e = cublasExceptions[status]
         except KeyError:
-            raise cublasError("Unknown CUBLAS error code: {}".format(status))
+            raise cublasError(f"Unknown CUBLAS error code: {status}")
         else:
             raise e
 
@@ -520,7 +498,7 @@ def _get_cublas_version() -> str:
 _cublas_version = int(_get_cublas_version())
 
 
-class _cublas_version_req(object):  # noqa: N801
+class _cublas_version_req:  # noqa: N801
     """
     Decorator to conditionally enable functions based on CUBLAS version.
 
@@ -529,7 +507,7 @@ class _cublas_version_req(object):  # noqa: N801
     than the required version `v`. Otherwise, it returns the original function.
     """
 
-    def __init__(self, v: float | int) -> None:
+    def __init__(self, v: float) -> None:
         """
         Initialize the version requirement.
 

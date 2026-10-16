@@ -8,9 +8,9 @@ from pycuda.elementwise import ElementwiseKernel
 
 from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
 from pydtnn.backends.pycuda.optimizers.abstract.optimizer import OptimizerPycuda
-from pydtnn.utils.tensor_array import TensorArray
 from pydtnn.optimizers.sgd import SGD
 from pydtnn.utils.constants import DTYPE2CTYPE
+from pydtnn.utils.tensor_array import TensorArray
 
 __all__ = ("SGDPycuda",)
 
@@ -32,10 +32,11 @@ class SGDPycuda(SGD[TensorArray], OptimizerPycuda):
             False: "w[i] -= lr * v[i]",
         }[self.nesterov]
 
-        operations_gpu = "dw[i] = ({T}) dw[i] + decay * w[i];" \
-                         "v[i] = momentum * v[i] + dw[i];" \
-                         "{nesterov_ops};".format(T=DTYPE2CTYPE[self.model.dtype],
-                                                  nesterov_ops=ops_gpu)
+        operations_gpu = (
+            f"dw[i] = ({DTYPE2CTYPE[self.model.dtype]}) dw[i] + decay * w[i];"
+            "v[i] = momentum * v[i] + dw[i];"
+            f"{ops_gpu};"
+        )
 
         self.update_kernel = ElementwiseKernel(parameters_gpu, operations_gpu, "SGD_kernel")
 

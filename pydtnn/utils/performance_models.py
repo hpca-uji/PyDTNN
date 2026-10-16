@@ -20,7 +20,6 @@ __all__ = (
     "reduce_time",
     "roofline",
     "scatter_time",
-    "scatter_time",
 )
 
 __all__ = (
@@ -35,7 +34,6 @@ __all__ = (
     "reduce_scatter_time",
     "reduce_time",
     "roofline",
-    "scatter_time",
     "scatter_time",
 )
 

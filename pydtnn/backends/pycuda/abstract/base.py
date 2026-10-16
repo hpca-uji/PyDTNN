@@ -24,4 +24,3 @@ class BasePycuda(UsesCudaCode[Module, Function], Base[TensorArray]):
 
     def _kernel_init(self) -> Function:
         """Initializes and returns the required CUDA kernel function."""
-        pass

@@ -18,7 +18,7 @@ def max_pool_2d_fwd_nchw_cython[T: _npDT](  # noqa: D103,E302
     hstride: int,
     vdilation: int,
     hdilation: int,
-    minval: _npDT | int | float,
+    minval: _npDT | float,
 ) -> None:
     """
     Performs forward 2D max pooling on NCHW input using Cython.

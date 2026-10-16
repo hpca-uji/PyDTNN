@@ -6,8 +6,8 @@ import numpy as np
 from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 
 from pydtnn.backends.pycuda.metrics.abstract.metric import MetricPycuda
-from pydtnn.utils.tensor_array import TensorArray
 from pydtnn.metrics.kl_divergence_metric import KLDivergenceMetric
+from pydtnn.utils.tensor_array import TensorArray
 
 __all__ = ("KLDivergenceMetricPycuda",)
 

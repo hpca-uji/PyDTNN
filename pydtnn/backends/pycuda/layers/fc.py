@@ -9,13 +9,13 @@ from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 
 from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
 from pydtnn.backends.pycuda.utils import matmul_gpu, matvec_gpu
-from pydtnn.utils.tensor_array import TensorArray
 from pydtnn.layers.fc import FC
 from pydtnn.libs import cudnn as cudnn
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
                                    PYDTNN_OPS_EVENTS, OpsEventEnum)
 from pydtnn.utils.constants import ArrayShape, Parameters
 from pydtnn.utils.performance_models import matmul_time
+from pydtnn.utils.tensor_array import TensorArray
 
 __all__ = ("FCPycuda",)
 
@@ -37,7 +37,6 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
 
         cpu_ary = value
         attribute.set(cpu_ary)
-        return
 
     def _import_prop(self, key: str, value: Any) -> None:
         """Import layer property from CPU to GPU."""
@@ -71,7 +70,8 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
         # Weights
         self.weights = TensorArray.to_gpu(
             self.weights_initializer(self.weights_shape, self.model.dtype, self.model.random),
-            self.model.tensor_format, self.model.cudnn_dtype
+            self.model.tensor_format,
+            self.model.cudnn_dtype,
         )
         self.memory_used += self.weights.nbytes
 
@@ -79,7 +79,9 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
             # Biases
             self.biases = TensorArray.to_gpu(
                 self.biases_initializer((1, *self.shape), self.model.dtype, self.model.random),
-                self.model.tensor_format, self.model.cudnn_dtype)
+                self.model.tensor_format,
+                self.model.cudnn_dtype,
+            )
             self.memory_used += self.biases.nbytes
 
         y_gpu = gpuarray.zeros((self.model.batch_size, self.shape[0]), self.model.dtype)

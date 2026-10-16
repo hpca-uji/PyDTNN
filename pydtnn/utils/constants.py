@@ -6,7 +6,7 @@ from enum import Flag, StrEnum, auto
 
 import numpy as np
 
-__all__ = ("Components", "NetworkAlgoEnum", "Parameters", "ArrayShape", "DTYPE2CTYPE", "Array")
+__all__ = ("DTYPE2CTYPE", "Array", "ArrayShape", "Components", "NetworkAlgoEnum", "Parameters")
 
 logger = logging.getLogger(__name__)
 

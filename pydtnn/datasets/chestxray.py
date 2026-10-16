@@ -16,8 +16,8 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from pydtnn.util import gzip_open
 from pydtnn.datasets.abstract import Dataset
+from pydtnn.util import gzip_open
 
 __all__ = (
     "ChestXRay",

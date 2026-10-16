@@ -49,7 +49,7 @@ class SimpleTracerPMLib(SimpleTracer):
         if self.rank == 0:
             self.pmlib = PMLib(pmlib_server_ip, pmlib_port, verbose=True)
             self.pmlib_device = pmlib_device
-        self.times = defaultdict(lambda: defaultdict(lambda: []))
+        self.times = defaultdict(lambda: defaultdict(list))
         self.pending_times = []
 
     def enable_tracing(self) -> None:
@@ -142,6 +142,5 @@ class SimpleTracerPMLib(SimpleTracer):
                 elapsed_times_watts = np.concatenate(
                     (elapsed_times.reshape(1, -1), self.pmlib.watts)
                 ).transpose()
-                for row in elapsed_times_watts:
-                    f.write(";".join(f"{x}" for x in row) + "\n")
+                f.writelines(";".join(f"{x}" for x in row) + "\n" for row in elapsed_times_watts)
             self.pmlib.finalize_counter()

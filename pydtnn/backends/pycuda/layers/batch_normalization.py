@@ -8,13 +8,13 @@ import pycuda.driver as drv
 from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 
 from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
-from pydtnn.utils.tensor_array import TensorArray
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.libs import cudnn as cudnn
 from pydtnn.model.base import ModelMode
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
                                    PYDTNN_OPS_EVENTS, OpsEventEnum)
 from pydtnn.utils.constants import ArrayShape, Parameters
+from pydtnn.utils.tensor_array import TensorArray
 
 __all__ = ("BatchNormalizationPycuda",)
 
@@ -69,19 +69,21 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
         else:
             (self.ci,) = prev_shape
 
-        shape_ = (self.ci, )
+        shape_ = (self.ci,)
 
         # weights
         self.weights = TensorArray.to_gpu(
             self.weights_initializer(shape_, self.model.dtype),
-            self.model.tensor_format, self.model.cudnn_dtype
+            self.model.tensor_format,
+            self.model.cudnn_dtype,
         )
         self.memory_used += self.weights.nbytes
 
         # biases
         self.biases = TensorArray.to_gpu(
             self.biases_initializer(shape_, self.model.dtype),
-            self.model.tensor_format, self.model.cudnn_dtype
+            self.model.tensor_format,
+            self.model.cudnn_dtype,
         )
         self.memory_used += self.biases.nbytes
 
@@ -107,13 +109,15 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
 
         self.running_mean = TensorArray.to_gpu(
             self.running_mean_initializer(shape_, self.model.dtype),
-            self.model.tensor_format, self.model.cudnn_dtype
+            self.model.tensor_format,
+            self.model.cudnn_dtype,
         )
         self.memory_used += self.running_mean.nbytes
 
         self.running_var = TensorArray.to_gpu(
             self.running_var_initializer(shape_, self.model.dtype),
-            self.model.tensor_format, self.model.cudnn_dtype
+            self.model.tensor_format,
+            self.model.cudnn_dtype,
         )
         self.memory_used += self.running_var.nbytes
 
@@ -244,7 +248,6 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
         """Imports gamma or beta parameters from CPU."""
         attribute = getattr(self, key)
         attribute.set(value)
-        return
 
     def _import_prop(self, key: str, value: Any) -> None:
         """Imports layer properties."""

@@ -6,8 +6,8 @@ from pycuda.driver import Function
 from pycuda.elementwise import ElementwiseKernel
 
 from pydtnn.backends.pycuda.abstract.base import BasePycuda
-from pydtnn.utils.tensor_array import TensorArray
 from pydtnn.optimizers.abstract.optimizer import Optimizer
+from pydtnn.utils.tensor_array import TensorArray
 
 __all__ = ("OptimizerPycuda",)
 

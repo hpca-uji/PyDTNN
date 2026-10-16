@@ -5,11 +5,11 @@ from typing import Any
 
 from pydtnn.backends.pycuda.layers.abstract.block_layer import AbstractBlockLayerPycuda
 from pydtnn.backends.pycuda.libs import libcudnn as cudnn
-from pydtnn.utils.tensor_array import TensorArray
 from pydtnn.layers.decoder import Decoder
 from pydtnn.layers.encoder import Encoder
 from pydtnn.layers.encoder_decoder import EncoderDecoder
 from pydtnn.utils.constants import ArrayShape
+from pydtnn.utils.tensor_array import TensorArray
 
 __all__ = ("EncoderDecoderPycuda",)
 
@@ -81,7 +81,6 @@ class EncoderDecoderPycuda(EncoderDecoder[TensorArray], AbstractBlockLayerPycuda
 
     def initialize_block_layer(self) -> None:
         """Placeholder for block layer initialization."""
-        pass
 
     def forward(self, x: TensorArray) -> TensorArray:
         """Performs the forward pass through the encoder and decoder stacks."""

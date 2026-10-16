@@ -11,9 +11,9 @@ from typing import IO, TYPE_CHECKING
 
 import numpy as np
 
-from pydtnn.util import gzip_open
 from pydtnn.datasets.abstract import Dataset
 from pydtnn.datasets.memory import Memory
+from pydtnn.util import gzip_open
 
 __all__ = ("Cyclone",)
 

@@ -26,7 +26,9 @@ def pascal_snake(pascal: str) -> str:
 
 def run_pyright(filenames: Iterable[str] = []) -> dict[str, list[dict]]:
     """Run pyright and group results by filename"""
-    proc = pyright.run("--outputjson", "-", input="\n".join(filenames), text=True, capture_output=True)
+    proc = pyright.run(
+        "--outputjson", "-", input="\n".join(filenames), text=True, capture_output=True
+    )
 
     if proc.returncode:
         return {}

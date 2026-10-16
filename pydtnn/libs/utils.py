@@ -10,13 +10,11 @@ import struct
 import subprocess
 import sys
 
-__all__ = ("get_soname", "find_lib_path")
+__all__ = ("find_lib_path", "get_soname")
 
 try:
-    import elftools.construct.macros as macros
-    import elftools.elf.elffile as elffile
-    import elftools.elf.sections as sections
-    import elftools.elf.structs as structs
+    from elftools.construct import macros
+    from elftools.elf import elffile, sections, structs
 
 except ImportError:
 
@@ -50,7 +48,7 @@ except ImportError:
             p = subprocess.Popen(cmds, stdout=subprocess.PIPE, env=dict(os.environ, LANG="en"))
             out = p.communicate()[0].decode()
         except BaseException:
-            raise RuntimeError("error executing {0}".format(cmds))
+            raise RuntimeError(f"error executing {cmds}")
 
         if sys.platform == "darwin":
             result = re.search("^\\s@rpath/(lib.+.dylib)", out, re.MULTILINE)
@@ -61,7 +59,7 @@ except ImportError:
             return result.group(1)
         else:
             # No SONAME found:
-            raise RuntimeError("no library name found for {0}".format((filename,)))
+            raise RuntimeError(f"no library name found for {(filename,)}")
 
 else:
     import ctypes
@@ -114,7 +112,7 @@ else:
                 assert isinstance(dynstr, sections.StringTableSection)
                 return dynstr.get_string(result.d_val)
 
-        raise RuntimeError("no library name found for {0}".format((filename,)))
+        raise RuntimeError(f"no library name found for {(filename,)}")
 
 
 def find_lib_path(name: str) -> str | None:

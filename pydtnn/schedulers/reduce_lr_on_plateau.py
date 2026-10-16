@@ -100,5 +100,5 @@ class ReduceLROnPlateau(SchedulerWithLossOrMetric):
             model.reduce_lr_on_plateau_factor,
             model.reduce_lr_on_plateau_patience,
             model.reduce_lr_on_plateau_min_lr,
-            model.reduce_lr_on_plateau_minimize
+            model.reduce_lr_on_plateau_minimize,
         )

@@ -109,7 +109,7 @@ def debug_func(func: Callable) -> Callable:
 
 
 @contextmanager
-def traceback_context() -> Generator[None, Any, None]:
+def traceback_context() -> Generator[None, Any]:
     """
     Context manager that catches exceptions and writes a detailed traceback to a log file.
 

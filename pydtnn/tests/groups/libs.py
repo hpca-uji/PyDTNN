@@ -4,10 +4,10 @@ import logging
 
 __all__ = (
     "Conv2DConvGemmTestCase",
-    "ConvGemmTestCase",
-    "ModelConvGemmTestCase",
-    "ConvWinogradTestCase",
     "ConvDirectTestCase",
+    "ConvGemmTestCase",
+    "ConvWinogradTestCase",
+    "ModelConvGemmTestCase",
 )
 
 logger = logging.getLogger(__name__)

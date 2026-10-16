@@ -26,7 +26,7 @@ class StopAtLoss(SchedulerWithLossOrMetric):
         loss_or_metric: str = "",
         threshold_value: float = 0.0,
         minimize: bool = True,
-        verbose: bool = True
+        verbose: bool = True,
     ) -> None:
         """
         Initialize the StopAtLoss scheduler.
@@ -78,6 +78,6 @@ class StopAtLoss(SchedulerWithLossOrMetric):
         Returns:
             An instance of StopAtLoss.
         """
-        return StopAtLoss(model.stop_at_loss_metric,
-                          model.stop_at_loss_threshold,
-                          model.stop_at_loss_minimize)
+        return StopAtLoss(
+            model.stop_at_loss_metric, model.stop_at_loss_threshold, model.stop_at_loss_minimize
+        )

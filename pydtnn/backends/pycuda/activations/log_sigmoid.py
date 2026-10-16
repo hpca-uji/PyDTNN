@@ -9,8 +9,8 @@ from pycuda.elementwise import ElementwiseKernel
 
 from pydtnn.activations.log_sigmoid import LogSigmoid
 from pydtnn.backends.pycuda.activations.abstract.activation import ActivationPycuda
-from pydtnn.utils.tensor_array import TensorArray
 from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
+from pydtnn.utils.tensor_array import TensorArray
 
 __all__ = ("LogSigmoidPycuda",)
 

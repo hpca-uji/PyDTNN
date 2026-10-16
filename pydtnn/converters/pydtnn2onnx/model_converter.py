@@ -84,7 +84,7 @@ def get_relevant_data(
     inputs_dict = {
         _input.name: extract_shape(_input)
         for _input in model_graph.input
-        if _input.name not in weights_dict.keys()
+        if _input.name not in weights_dict
     }
 
     # Outputs dicionary. Key: output name. Value: the shape of the output.

@@ -96,7 +96,7 @@ class ConvGemmTestCase(ConvTestCase):
                 dtype=im2row_mm_result.dtype,
             )
         if verbose_test():
-            header("{} conv_gemm_result".format(inspect.stack()[1][3]), conv_gemm_result)
+            header(f"{inspect.stack()[1][3]} conv_gemm_result", conv_gemm_result)
             logger.info(
                 "Shape: ",
                 conv_gemm_result.shape,
@@ -107,7 +107,7 @@ class ConvGemmTestCase(ConvTestCase):
                 " Max: ",
                 conv_gemm_result.max(),
             )
-            header("{} im2row_mm_result".format(inspect.stack()[1][3]), im2row_mm_result)
+            header(f"{inspect.stack()[1][3]} im2row_mm_result", im2row_mm_result)
             logger.info(
                 "Shape: ",
                 im2row_mm_result.shape,

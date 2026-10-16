@@ -12,5 +12,3 @@ logger = logging.getLogger(__name__)
 
 class AbstractConv2DWinograd(AbstractConv2DNumpy, LayerWinograd):
     """Abstract base class for 2D convolution layers utilizing the Winograd algorithm."""
-
-    ...

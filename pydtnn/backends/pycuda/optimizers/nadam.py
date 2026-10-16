@@ -8,9 +8,9 @@ from pycuda.elementwise import ElementwiseKernel
 
 from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
 from pydtnn.backends.pycuda.optimizers.abstract.optimizer import OptimizerPycuda
-from pydtnn.utils.tensor_array import TensorArray
 from pydtnn.optimizers.nadam import Nadam
 from pydtnn.utils.constants import DTYPE2CTYPE
+from pydtnn.utils.tensor_array import TensorArray
 
 __all__ = ("NadamPycuda",)
 

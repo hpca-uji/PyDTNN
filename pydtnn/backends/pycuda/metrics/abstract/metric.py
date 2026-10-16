@@ -5,9 +5,9 @@ import logging
 from pycuda.driver import Function
 
 from pydtnn.backends.pycuda.abstract.base import BasePycuda
-from pydtnn.utils.tensor_array import TensorArray
 from pydtnn.metrics.abstract.metric import Metric
 from pydtnn.utils.constants import DTYPE2CTYPE
+from pydtnn.utils.tensor_array import TensorArray
 
 __all__ = ("MetricPycuda",)
 

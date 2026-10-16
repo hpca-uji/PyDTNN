@@ -99,17 +99,20 @@ class AdamNumpy(Adam[np.ndarray], OptimizerNumpy):
             vt_temp_w: np.ndarray = self.context[layer.id]["temp_w_%s" % w_]  # pyright: ignore[reportAssignmentType]
             mt_temp_dw: np.ndarray = self.context[layer.id]["temp_dw_%s" % w_]  # pyright: ignore[reportAssignmentType]
 
-            if not (self.are_all_zeros(w)
-                    and self.are_all_zeros(dw)
-                    and self.are_all_zeros(m)
-                    and self.are_all_zeros(v)
-                    ):
+            if not (
+                self.are_all_zeros(w)
+                and self.are_all_zeros(dw)
+                and self.are_all_zeros(m)
+                and self.are_all_zeros(v)
+            ):
                 # NOTE: The operations are unrolled in order to reduce the memory consumed by intermediate
                 #  copies of the variables during the operations.
 
                 if self.decoupled_decay:
                     # w = w - lr * decay * w = (1 - lr * decay) * w
-                    np.multiply((1 - (self.learning_rate * self.decay)), w, dtype=self.model.dtype, out=w)
+                    np.multiply(
+                        (1 - (self.learning_rate * self.decay)), w, dtype=self.model.dtype, out=w
+                    )
                 else:
                     # dw += self.decay * w
                     np.multiply(self.decay, w, dtype=self.model.dtype, out=mt_temp_dw)

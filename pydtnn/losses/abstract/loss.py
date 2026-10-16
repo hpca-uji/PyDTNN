@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Self
 
 import numpy as np
 
@@ -91,7 +91,7 @@ class Loss[T: Array](Base):  # noqa: D101 (generics not detected)
         raise NotImplementedError()
 
     @classmethod
-    def from_model[Y: Loss](cls: type[Y], model: Model[T]) -> Y:
+    def from_model(cls, model: Model[T]) -> Self:
         """
         Create an CategoricalCrossEntropy instance from a model configuration.
 

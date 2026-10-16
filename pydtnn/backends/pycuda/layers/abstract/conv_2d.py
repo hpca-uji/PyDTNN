@@ -7,11 +7,11 @@ import numpy as np
 import pycuda.driver as drv
 
 from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
-from pydtnn.utils.tensor_array import TensorArray
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.utils.constants import ArrayShape, Parameters
 from pydtnn.utils.performance_models import matmul_time
 from pydtnn.utils.tensor import TensorFormat
+from pydtnn.utils.tensor_array import TensorArray
 
 __all__ = ("AbstractConv2DPycuda",)
 
@@ -51,10 +51,11 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
 
         # Biases
         if self.use_bias:
-            biases_shape = (self.co, )
+            biases_shape = (self.co,)
             self.biases = TensorArray.to_gpu(
                 self.biases_initializer(biases_shape, self.model.dtype, self.model.random),
-                self.model.tensor_format, self.model.cudnn_dtype
+                self.model.tensor_format,
+                self.model.cudnn_dtype,
             )
             self.memory_used += self.biases.nbytes
 

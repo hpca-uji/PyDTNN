@@ -5,10 +5,10 @@ from __future__ import annotations
 import logging
 import traceback
 from collections import abc, defaultdict
-from collections.abc import Callable
+from collections.abc import Callable, Hashable
 from contextlib import suppress
 from timeit import default_timer as timer
-from typing import Any, Hashable
+from typing import Any
 
 import numpy as np
 from rich import box
@@ -144,7 +144,7 @@ class _BestOfExecution:
         return speedup / total
 
     @staticmethod
-    def _walk_nodes(node: "_BestOfExecution", tree: Tree) -> None:
+    def _walk_nodes(node: _BestOfExecution, tree: Tree) -> None:
         """Recursively builds the execution tree for reporting."""
         for child in node.children:
             txt = f"{child.name:{_BestOfExecution._longest_name}s}   {child.summary}"
@@ -258,7 +258,7 @@ class BestOf:
         # Protected members
         self._current_round = defaultdict(lambda: 0)
         self._current_alternative = defaultdict(lambda: 0)
-        self._executions: dict[Any, list[_BestOfExecution]] = defaultdict(lambda: [])
+        self._executions: dict[Any, list[_BestOfExecution]] = defaultdict(list)
         self._times = defaultdict[Hashable, list[list]](self._times_arrays)
         self._stages_times = defaultdict(self._stages_times_arrays)
         self._stages_executions = defaultdict(lambda: [0] * self.stages)
@@ -314,9 +314,9 @@ class BestOf:
     def _set_instance_call(self) -> None:
         """Configures the instance call method based on the current mode."""
         if self.__class__._use_first_alternative:
-            setattr(self, "__call__", self.__call_first_alternative__)
+            self.__call__ = self.__call_first_alternative__
         else:
-            setattr(self, "__call__", self.__call_best__)
+            self.__call__ = self.__call_best__
 
     def __call__(self, /, *args: Any, **kwargs: Any) -> Any:
         """__call__ is defined as an object's type. It simply calls the instance __call__."""
@@ -580,10 +580,8 @@ class BestOf:
                 row_contents[i] = "{0:{1}}".format(medians[problem_size][i], time_format)
             best_idx = self.best_idx[problem_size]
             if best_idx != -1:
-                row_contents[best_idx] = "*[bold green]{}[/bold green]".format(
-                    row_contents[best_idx]
-                )
-                row_contents.append("{:.1f}".format(speedups[problem_size]))
+                row_contents[best_idx] = f"*[bold green]{row_contents[best_idx]}[/bold green]"
+                row_contents.append(f"{speedups[problem_size]:.1f}")
             else:
                 row_contents.append("")
             if execution is not None:

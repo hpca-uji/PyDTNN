@@ -18,7 +18,7 @@ def max_pool_2d_fwd_nhwc_cython[T: _npDT](  # noqa: D103,E302
     hstride: int,
     vdilation: int,
     hdilation: int,
-    minval: _npDT | int | float,
+    minval: _npDT | float,
 ) -> None:
     """
     Performs the forward pass of 2D max pooling for NHWC input.

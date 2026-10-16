@@ -71,4 +71,3 @@ class Metric[T: Array](Base):  # noqa: D101 (generics not detected)
         Returns:
             float | np.ndarray: The computed metric result.
         """
-        pass

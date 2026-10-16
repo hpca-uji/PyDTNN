@@ -103,7 +103,6 @@ def check_pmlib_returned_status(func: Callable) -> Callable:
         status = func(*args, **kwargs)
         if status != 0:
             raise PMLibError(f"Call to '{func.__name__}' failed!") from None
-        return None
 
     return wrapper
 

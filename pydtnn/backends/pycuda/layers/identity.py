@@ -8,9 +8,9 @@ import pycuda.driver as drv
 from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 
 from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
-from pydtnn.utils.tensor_array import TensorArray
 from pydtnn.layers.identity import Identity
 from pydtnn.utils.constants import ArrayShape
+from pydtnn.utils.tensor_array import TensorArray
 
 __all__ = ("IdentityPycuda",)
 

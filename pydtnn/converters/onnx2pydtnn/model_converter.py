@@ -88,7 +88,7 @@ def get_relevant_data(
     inputs_dict = {
         _input.name: extract_shape(_input)
         for _input in model_graph.input
-        if _input.name not in weights_dict.keys()
+        if _input.name not in weights_dict
     }
 
     # Outputs dicionary. Key: output name. Value: the shape of the output.
@@ -306,7 +306,7 @@ def get_layers(
             operations=operations,
             weights=weights,
         )
-        print("")  # TODO: Borrar
+        print()  # TODO: Borrar
     _get_and_put_layer(
         node=onnx_model.graph.node[-1],
         opset_version=opset_version,
@@ -336,7 +336,7 @@ def load_layers(model: PyDTNN_Model, operations: list[Layerable]) -> None:
         print(f"=> Layer shape: {operation.shape}")
     print("Layers loaded")
 
-    return  # None (No value is returned)
+    # None (No value is returned)
 
 
 def convert_model(

@@ -134,9 +134,7 @@ class Layerable[T: Array](Base[T]):  # noqa: D101 (generics not detected)
         if len(self.paths) > 0:
             if all(layer.id >= 0 for path in self.paths for layer in path):
                 props["paths"] = ", ".join(
-                    f"{path[0].id}-{path[-1].id}"
-                    if path else "Empty"
-                    for path in self.paths
+                    f"{path[0].id}-{path[-1].id}" if path else "Empty" for path in self.paths
                 )
             else:
                 props["paths"] = str(len(self.paths))
@@ -220,6 +218,7 @@ class Layerable[T: Array](Base[T]):  # noqa: D101 (generics not detected)
         Args:
             gradient: If True, wait for gradients; otherwise, wait for weights.
         """
+
         def reducer(key):
             try:
                 self._state_reduce_wait(key)
@@ -317,7 +316,6 @@ class Layerable[T: Array](Base[T]):  # noqa: D101 (generics not detected)
         This method is a placeholder for generating a specific output format,
         likely for compatibility or debugging with other tools.
         """
-        pass
 
     @property
     def children(self) -> list[Layerable[T]]:

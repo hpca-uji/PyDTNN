@@ -5,8 +5,8 @@ from typing import Any
 
 from pydtnn.activations.abstract.activation import Activation
 from pydtnn.backends.pycuda.abstract.layerable import LayerablePycuda
-from pydtnn.utils.tensor_array import TensorArray
 from pydtnn.utils.constants import ArrayShape
+from pydtnn.utils.tensor_array import TensorArray
 
 __all__ = ("ActivationPycuda",)
 

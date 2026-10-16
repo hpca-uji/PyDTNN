@@ -46,8 +46,8 @@ from pydtnn.utils.tensor import TensorFormat, format_reshape, format_transpose
 
 __all__ = (
     "D",
-    "PytorchLayerTestCase",
     "PytorchLayerParams",
+    "PytorchLayerTestCase",
     "TorchAdditionBlock",
     "TorchArcTanH",
     "TorchConcatenationBlock",

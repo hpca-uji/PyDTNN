@@ -6,9 +6,9 @@ import numpy as np
 from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 
 from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
-from pydtnn.utils.tensor_array import TensorArray
 from pydtnn.layers.layer_normalization import LayerNormalization
 from pydtnn.utils.constants import ArrayShape
+from pydtnn.utils.tensor_array import TensorArray
 
 __all__ = ("LayerNormalizationPycuda",)
 
@@ -150,4 +150,3 @@ class LayerNormalizationPycuda(LayerNormalization[TensorArray], LayerPycuda):
         self.kernel_backward_weigths = self._get_kernel(
             func_name="layer_normalization_backward_weights"
         )
-        return

@@ -268,8 +268,6 @@ def cudaGetErrorString(e: int) -> str:
 class cudaError(Exception):
     """Base class for CUDA runtime errors."""
 
-    pass
-
 
 # Exceptions corresponding to various CUDA runtime errors:
 
@@ -1536,7 +1534,7 @@ except BaseException:
     _cudart_version = 99999
 
 
-class _cudart_version_req(object):
+class _cudart_version_req:
     """
     Required CUDA Runtime decorator
 
@@ -1544,7 +1542,7 @@ class _cudart_version_req(object):
     if the installed CUDA Runtime version is not greater than `v`.
     """
 
-    def __init__(self, v: int | float) -> None:
+    def __init__(self, v: float) -> None:
         self.vs = str(v)
         if isinstance(v, int):
             major = str(v)

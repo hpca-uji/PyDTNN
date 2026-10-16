@@ -14,5 +14,3 @@ class BaseGemm(BaseNumpy):
     Inherits from BaseNumpy to provide a foundation for backends that utilize
     optimized matrix multiplication routines.
     """
-
-    ...

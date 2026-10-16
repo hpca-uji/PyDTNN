@@ -11,5 +11,3 @@ __all__ = ("AbstractPool2DLayerCupy",)
 
 class AbstractPool2DLayerCupy(AbstractPool2DLayerNumpy, AbstractPool2DLayer[np.ndarray], LayerCupy):
     """Abstract base class for 2D pooling layers using the CuPy backend."""
-
-    ...

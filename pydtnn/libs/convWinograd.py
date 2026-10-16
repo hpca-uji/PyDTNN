@@ -200,7 +200,7 @@ class ConvWinograd:
                 ]
             else:
                 raise NotImplementedError(
-                    f"Type {str(self.dtype)} not supported by this version of libconvWinograd!"
+                    f"Type {self.dtype!s} not supported by this version of libconvWinograd!"
                 )
         elif platform.machine() == "x86_64":
             if self.dtype == np.float32:
@@ -210,10 +210,10 @@ class ConvWinograd:
                 ]
             else:
                 raise NotImplementedError(
-                    f"Type {str(self.dtype)} not supported by this version of libconvWinograd!"
+                    f"Type {self.dtype!s} not supported by this version of libconvWinograd!"
                 )
         else:
-            raise NotImplementedError(f"Platform '{str(platform.machine())}' not yet supported")
+            raise NotImplementedError(f"Platform '{platform.machine()!s}' not yet supported")
 
         funcs = []
         for rn in routine_names:
@@ -409,11 +409,11 @@ class ConvWinograd:
             try:
                 self.dtype = {"float32": np.float32, "float64": np.float64}[dtype]
             except KeyError:
-                raise NotImplementedError("dtype '{}' not recognized".format(dtype))
+                raise NotImplementedError(f"dtype '{dtype}' not recognized")
 
         self.tensor_format = tensor_format
 
-        self.alternatives = defaultdict(lambda: [])
+        self.alternatives = defaultdict(list)
         m, r = None, None
 
         if (kh, kw) == (2, 2) and (vstride, hstride) == (1, 1) and (vdilation, hdilation) == (1, 1):
@@ -438,11 +438,9 @@ class ConvWinograd:
             raise NotImplementedError(f"Winograd not implemented for kernel {kh}x{kw}")
 
         try:
-            self.conv_winograd_workspace_alloc_pre = getattr(
-                self.lib_cw, "conv_winograd_workspace_alloc_pre"
-            )
-            self.conv_winograd_workspace_alloc_kernel = getattr(
-                self.lib_cw, "conv_winograd_workspace_alloc_kernel"
+            self.conv_winograd_workspace_alloc_pre = self.lib_cw.conv_winograd_workspace_alloc_pre
+            self.conv_winograd_workspace_alloc_kernel = (
+                self.lib_cw.conv_winograd_workspace_alloc_kernel
             )
         except AttributeError:
             logger.error("Winograd conv_winograd_workspace_alloc_pre/kernel routines not found.")
@@ -498,7 +496,6 @@ class ConvWinograd:
 
         This method is intended to be overridden or called by the C library.
         """
-        pass
 
     def conv_winograd_workspace_alloc_pre(
         self,
@@ -513,7 +510,6 @@ class ConvWinograd:
 
         This method is intended to be overridden or called by the C library.
         """
-        pass
 
     def conv_winograd_nchw(
         self,
@@ -1419,7 +1415,7 @@ def main() -> None:
         )
         / 10
     )
-    logger.info("conv_winograd time: {:.4f}".format(conv_winograd_t))
+    logger.info(f"conv_winograd time: {conv_winograd_t:.4f}")
     logger.info("Using im2col and mm NCHW ...")
     x_c = np.zeros((c * kh * kw, b * ho * wo))
     im2col_nchw_cython(
@@ -1450,7 +1446,7 @@ def main() -> None:
         )
         / 10
     )
-    logger.info("mm time: {:.4f}".format(mm_t))
+    logger.info(f"mm time: {mm_t:.4f}")
 
     # NHWC --------------------------
     weights = rand.random((c, kh, kw, kn)).astype(np.float32, order="C")
@@ -1488,7 +1484,7 @@ def main() -> None:
         )
         / 10
     )
-    logger.info("conv_winograd time: {:.4f}".format(conv_winograd_t))
+    logger.info(f"conv_winograd time: {conv_winograd_t:.4f}")
     logger.info("Using im2col and mm NHWC ...")
     x_c = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype=x.dtype)
     im2row_nhwc_cython(
@@ -1519,7 +1515,7 @@ def main() -> None:
         )
         / 10
     )
-    logger.info("mm time: {:.4f}".format(mm_t))
+    logger.info(f"mm time: {mm_t:.4f}")
 
     logger.info(
         "\n".join(
@@ -1762,8 +1758,8 @@ def main() -> None:
                                             )
 
                                     logger.info(
-                                        " conv_winograd time: {:.4f} ".format(conv_winograd_t)
-                                        + "mm time: {:.4f} ".format(im2col_t)
+                                        f" conv_winograd time: {conv_winograd_t:.4f} "
+                                        + f"mm time: {im2col_t:.4f} "
                                         + "np.allclose: {}".format(
                                             np.allclose(
                                                 conv_winograd_result, im2col_mm_result, atol=1e-3

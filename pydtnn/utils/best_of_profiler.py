@@ -57,9 +57,7 @@ class BestOfProfiler:
         # Rest runs
 
         logger.info(" \nNext runs (getting times)")
-        for i in range(
-            0, (self.best_method.total_rounds - 1) * self.best_method.total_alternatives
-        ):
+        for i in range((self.best_method.total_rounds - 1) * self.best_method.total_alternatives):
             if self.best_method.best_method_has_been_found(*args, **kwargs):
                 break
             self.best_method(*args, **kwargs)
@@ -72,6 +70,6 @@ class BestOfProfiler:
         import multiprocessing
 
         num_threads = os.environ.get("OMP_NUM_THREADS", multiprocessing.cpu_count())
-        msg = "{}  {}  OMP_NUM_THREADS: {}".format(self.header, platform.node(), num_threads)
+        msg = f"{self.header}  {platform.node()}  OMP_NUM_THREADS: {num_threads}"
         header(msg)
         self.best_method.print_as_table()

@@ -41,7 +41,7 @@ class ModelCheckpoint(SchedulerWithLossOrMetric):
         loss_or_metric: str = "",
         epoch_save_frequency: int = 1,
         minimize: bool = False,
-        verbose: bool = True
+        verbose: bool = True,
     ) -> None:
         """
         Initializes the ModelCheckpoint scheduler.
@@ -126,6 +126,8 @@ class ModelCheckpoint(SchedulerWithLossOrMetric):
         Returns:
             A configured `ModelCheckpoint` instance ready to be used in training.
         """
-        return ModelCheckpoint(model.model_checkpoint_metric,
-                               model.model_checkpoint_save_freq,
-                               model.model_checkpoint_minimize)
+        return ModelCheckpoint(
+            model.model_checkpoint_metric,
+            model.model_checkpoint_save_freq,
+            model.model_checkpoint_minimize,
+        )

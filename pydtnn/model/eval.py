@@ -357,7 +357,8 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
 
         self.history_append(
             {
-                "part": Dataset.Part.TEST._name_.lower(), "time": delta,
+                "part": Dataset.Part.TEST._name_.lower(),
+                "time": delta,
                 **dict(zip(self.loss_and_metric_names, test_global_loss)),
             }
         )

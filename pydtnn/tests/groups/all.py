@@ -9,20 +9,20 @@ test execution.
 import logging
 
 __all__ = (
+    "BatchNormalizationReluTestCase",
+    "Conv2DBatchNormalizationReluTestCase",
+    "Conv2DBatchNormalizationTestCase",
+    "Conv2DConvGemmTestCase",
+    "Conv2DReluTestCase",
+    "ConvDirectTestCase",
+    "ConvGemmTestCase",
+    "ConvWinogradTestCase",
+    "ModelConvGemmTestCase",
+    "ModelDTypeTestCase",
+    "ModelGpuTestCase",
+    "ModelTensorTestCase",
     "PytorchLayerTestCase",
     "PytorchModelTestCase",
-    "BatchNormalizationReluTestCase",
-    "Conv2DReluTestCase",
-    "Conv2DBatchNormalizationTestCase",
-    "Conv2DBatchNormalizationReluTestCase",
-    "ModelDTypeTestCase",
-    "ModelTensorTestCase",
-    "ModelGpuTestCase",
-    "Conv2DConvGemmTestCase",
-    "ConvGemmTestCase",
-    "ModelConvGemmTestCase",
-    "ConvWinogradTestCase",
-    "ConvDirectTestCase",
 )
 
 

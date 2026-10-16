@@ -168,7 +168,9 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
 
             inv_momentum = 1.0 - self.momentum
             # self.running_mean = self.momentum * self.running_mean + inv_momentum * _mean
-            np.multiply(self.momentum, self.running_mean, out=self.running_mean, dtype=self.model.dtype)
+            np.multiply(
+                self.momentum, self.running_mean, out=self.running_mean, dtype=self.model.dtype
+            )
             np.multiply(inv_momentum, _mean, out=self._mean_inv, dtype=self.model.dtype)
             np.add(self.running_mean, self._mean_inv, out=self.running_mean, dtype=self.model.dtype)
             self.running_mean = np.asarray(self.running_mean, dtype=self.model.dtype, order="C")
@@ -178,7 +180,9 @@ class BatchNormalizationNumpy(BatchNormalization[np.ndarray], LayerNumpy):
             np.var(x, axis=0, dtype=self.model.dtype, ddof=1, out=_var)
 
             # self.running_var = self.momentum * self.running_var + inv_momentum * _var
-            np.multiply(self.momentum, self.running_var, out=self.running_var, dtype=self.model.dtype)
+            np.multiply(
+                self.momentum, self.running_var, out=self.running_var, dtype=self.model.dtype
+            )
             np.multiply(inv_momentum, _var, out=self._var_inv, dtype=self.model.dtype)
             np.add(self.running_var, self._var_inv, out=self.running_var, dtype=self.model.dtype)
             self.running_var = np.asarray(self.running_var, dtype=self.model.dtype, order="C")

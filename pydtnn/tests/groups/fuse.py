@@ -2,8 +2,8 @@
 
 __all__ = (
     "BatchNormalizationReluTestCase",
-    "Conv2DBatchNormalizationTestCase",
     "Conv2DBatchNormalizationReluTestCase",
+    "Conv2DBatchNormalizationTestCase",
     "Conv2DReluTestCase",
 )
 

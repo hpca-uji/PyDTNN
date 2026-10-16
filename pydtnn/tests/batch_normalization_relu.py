@@ -81,7 +81,6 @@ class BatchNormalizationReluTestCase(Conv2DTestCase):
             layer: The BatchNormalization layer instance.
             weights: The weights to be applied.
         """
-        pass
 
     @unittest.skip("Backward not implemented")
     def test_forward_backward_larger_handmade_array_stride3(self) -> None:

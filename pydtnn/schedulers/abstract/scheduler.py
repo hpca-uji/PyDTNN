@@ -34,16 +34,12 @@ class Scheduler(Base):
 
     def on_batch_begin(self, *args: Any) -> None:
         """Hook called at the beginning of a training batch."""
-        pass
 
     def on_batch_end(self, *args: Any) -> None:
         """Hook called at the end of a training batch."""
-        pass
 
     def on_epoch_begin(self, *args: Any) -> None:
         """Hook called at the beginning of a training epoch."""
-        pass
 
     def on_epoch_end(self, *args: Any) -> None:
         """Hook called at the end of a training epoch."""
-        pass

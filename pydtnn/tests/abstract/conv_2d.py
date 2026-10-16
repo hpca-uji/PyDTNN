@@ -126,14 +126,12 @@ class Conv2DTestCase[T: Conv2D](TestCase):  # noqa: D101 (generics not detected)
                 print("---[ times comparison ]---")
                 print("            ref     test")
                 print("         +-------+--------+")
-                print(" forward | {:.3f} | {:.3f} |".format(forward_ref_t, forward_test_t))
+                print(f" forward | {forward_ref_t:.3f} | {forward_test_t:.3f} |")
                 print("         +-------+--------+")
-                print("backward | {:.3f} | {:.3f} |".format(backward_ref_t, backward_test_t))
+                print(f"backward | {backward_ref_t:.3f} | {backward_test_t:.3f} |")
                 print("         +-------+--------+")
                 print(
-                    "           {:.3f}   {:.3f}  ".format(
-                        forward_ref_t + backward_ref_t, forward_test_t + backward_test_t
-                    )
+                    f"           {forward_ref_t + backward_ref_t:.3f}   {forward_test_t + backward_test_t:.3f}  "
                 )
 
         self.assertTrue(y_allclose, "y matrices differ")

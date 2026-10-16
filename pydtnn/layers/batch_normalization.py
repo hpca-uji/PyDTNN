@@ -27,7 +27,7 @@ class BatchNormalization[T: Array](Layer[T]):  # noqa: D101 (generics not detect
         weights_initializer: Callable = ones,
         biases_initializer: Callable = zeros,
         sync_stats: bool = False,
-        use_bias: bool = True
+        use_bias: bool = True,
     ) -> None:
         """
         Initializes the BatchNormalization layer.

@@ -19,5 +19,3 @@ class Conv2DCython(Conv2DNumpy, AbstractConv2DCython):
     Inherits from Conv2DNumpy for high-level logic and AbstractConv2DCython
     for Cython-specific interface definitions.
     """
-
-    ...

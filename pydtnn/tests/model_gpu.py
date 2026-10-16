@@ -10,7 +10,6 @@ from pycuda import gpuarray
 
 from pydtnn import pycuda, supported_gpu
 from pydtnn.abstract.layerable import Layerable
-from pydtnn.utils.tensor_array import TensorArray
 from pydtnn.layers.abstract.layer import LayerError
 from pydtnn.layers.addition_block import AdditionBlock
 from pydtnn.layers.concatenation_block import ConcatenationBlock
@@ -19,6 +18,7 @@ from pydtnn.model import Model
 from pydtnn.tests.abstract.base import Params, verbose_test
 from pydtnn.tests.abstract.model import ModelTestCase
 from pydtnn.utils.tensor import TensorFormat, format_transpose
+from pydtnn.utils.tensor_array import TensorArray
 
 __all__ = ("ModelGpuTestCase",)
 
@@ -109,7 +109,9 @@ class ModelGpuTestCase(ModelTestCase):
                 gpu_layer.biases_cpu = cpu_layer.biases.copy()
                 if gpu_layer.biases_cpu is not None:
                     gpu_layer.biases = TensorArray.to_gpu(
-                        gpu_layer.biases_cpu, gpu_layer.model.tensor_format, gpu_layer.model.cudnn_dtype
+                        gpu_layer.biases_cpu,
+                        gpu_layer.model.tensor_format,
+                        gpu_layer.model.cudnn_dtype,
                     )
 
     def set_data_to_ary(

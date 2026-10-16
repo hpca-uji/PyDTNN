@@ -576,8 +576,8 @@ def main() -> None:
         / 10
     )
 
-    logger.info("conv_direct time: {:.4f}".format(conv_direct_t))
-    logger.info("im2row + mm time: {:.4f}".format(mm_t))
+    logger.info(f"conv_direct time: {conv_direct_t:.4f}")
+    logger.info(f"im2row + mm time: {mm_t:.4f}")
     logger.info(f"Sum WINOGRAD NHWC: {conv_direct_result.sum()} {conv_direct_result.shape}")
     logger.info(f"Sum   IM2COL NHWC: {im2col_mm_result_nhwc.sum()} {im2col_mm_result_nhwc.shape}")
     logger.info(

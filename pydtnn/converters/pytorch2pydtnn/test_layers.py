@@ -10,19 +10,19 @@ from collections.abc import Callable
 from typing import Any
 
 import torch
-import torch.nn as nn
+from torch import nn
 from torch.nn import Module as PyTorchModel
 
 from pydtnn.abstract.layerable import Layerable
-from pydtnn.utils.tensor_array import TensorArray
 from pydtnn.converters.pytorch2pydtnn.model_converter import convert_model
 from pydtnn.model import Model as PyDTNN_Model
 from pydtnn.model.base import ModelMode
+from pydtnn.utils.tensor_array import TensorArray
 
 # from pydtnn.utils.best_of import BestOf
 
 try:
-    import pycuda.gpuarray as gpuarray
+    from pycuda import gpuarray
 except BaseException:
     gpuarray = None
 
@@ -470,7 +470,7 @@ def main() -> None:
     dataset = np.concat([dataset_p, dataset_p_int, dataset_n, dataset_n_int]).reshape((N, *SHAPE))
 
     function_to_test_layers = test_layers_gpu if device.type == "cuda" else forward_pydtnn_model
-    for name in DICT_SUPPORTED_LAYERS.keys():
+    for name in DICT_SUPPORTED_LAYERS:
         layer, threshold = DICT_SUPPORTED_LAYERS[name]
         model = PyTorchModelTest(layer)
         print(f"Testing: {name}")

@@ -13,7 +13,7 @@ from pydtnn.tracers.events import (PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_O
                                    PYDTNN_OPS_EVENTS, MdlEventEnum, OpsEventEnum)
 from pydtnn.utils import find_component
 
-__all__ = ("EventType", "PostInitCaller", "Tracer", "select", "StreamType")
+__all__ = ("EventType", "PostInitCaller", "StreamType", "Tracer", "select")
 
 logger = logging.getLogger(__name__)
 
@@ -124,43 +124,39 @@ class Tracer(metaclass=PostInitCaller):
 
     def enable_tracing(self) -> None:
         """Enable tracing methods by binding them to the instance."""
-        setattr(self, "define_event_types", self._define_event_types)
-        setattr(self, "emit_event", self._emit_event)
-        setattr(self, "emit_nevent", self._emit_nevent)
+        self.define_event_types = self._define_event_types
+        self.emit_event = self._emit_event
+        self.emit_nevent = self._emit_nevent
 
     def disable_tracing(self) -> None:
         """Disable tracing methods by binding them to no-op lambdas."""
-        setattr(self, "define_event_types", lambda *args, **kwargs: None)
-        setattr(self, "emit_event", lambda *args, **kwargs: None)
-        setattr(self, "emit_nevent", lambda *args, **kwargs: None)
+        self.define_event_types = lambda *args, **kwargs: None
+        self.emit_event = lambda *args, **kwargs: None
+        self.emit_nevent = lambda *args, **kwargs: None
 
     def enable_print_memory_usage(self) -> None:
         """Enable memory usage printing by binding the method."""
-        setattr(self, "print_memory_usage", self._print_memory_usage)
+        self.print_memory_usage = self._print_memory_usage
 
     def disable_print_memory_usage(self) -> None:
         """Disable memory usage printing by binding to a no-op lambda."""
-        setattr(self, "print_memory_usage", lambda *args, **kwargs: None)
+        self.print_memory_usage = lambda *args, **kwargs: None
 
     def define_event_types(self, model: Model) -> None:
         """Placeholder for defining event types, replaced at runtime."""
-        pass
 
     def emit_event(self, evt_type: int, evt_val: int, stream: StreamType | None = None) -> None:
         """Placeholder for emitting a single event, replaced at runtime."""
-        pass
 
     def emit_nevent(
         self, evt_evt: list[int], evt_val: list[int], stream: StreamType | None = None
     ) -> None:
         """Placeholder for emitting multiple events, replaced at runtime."""
-        pass
 
     def print_memory_usage(self, text: str) -> None:
         """Placeholder for printing memory usage, replaced at runtime."""
-        pass
 
-    def _get_layers_recursively(self, layers: list["Layerable"]) -> list["Layerable"]:
+    def _get_layers_recursively(self, layers: list[Layerable]) -> list[Layerable]:
         """
         Recursively collect all layers from a list of layerable objects.
 
@@ -202,14 +198,12 @@ class Tracer(metaclass=PostInitCaller):
     @abc.abstractmethod
     def _emit_event(self, evt_type: int, evt_val: int, stream: StreamType | None = None) -> None:
         """Abstract method to emit a single event."""
-        pass
 
     @abc.abstractmethod
     def _emit_nevent(
         self, evt_evt: list[int], evt_val: list[int], stream: StreamType | None = None
     ) -> None:
         """Abstract method to emit multiple events."""
-        pass
 
     @staticmethod
     def _print_memory_usage(text: str = "") -> None:
@@ -233,7 +227,6 @@ class Tracer(metaclass=PostInitCaller):
         Args:
             stream: The stream object to use for output.
         """
-        pass
 
 
 def select(name: str) -> type[Tracer]:

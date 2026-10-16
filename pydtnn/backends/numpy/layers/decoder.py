@@ -105,7 +105,6 @@ class DecoderNumpy(Decoder[np.ndarray], AbstractBlockLayerNumpy):
 
     def initialize_block_layer(self) -> None:
         """Placeholder for block layer initialization."""
-        pass
 
     def flatten(self, x: np.ndarray) -> np.ndarray:
         """Flattens the input tensor for feed-forward processing."""

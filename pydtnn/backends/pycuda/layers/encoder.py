@@ -7,13 +7,13 @@ import numpy as np
 
 from pydtnn.backends.pycuda.layers.abstract.block_layer import AbstractBlockLayerPycuda
 from pydtnn.backends.pycuda.libs import libcudnn as cudnn
-from pydtnn.utils.tensor_array import TensorArray
 from pydtnn.layers.dropout import Dropout
 from pydtnn.layers.encoder import Encoder
 from pydtnn.layers.feed_forward import FeedForward
 from pydtnn.layers.layer_normalization import LayerNormalization
 from pydtnn.layers.multi_head_attention import MultiHeadAttention
 from pydtnn.utils.constants import ArrayShape
+from pydtnn.utils.tensor_array import TensorArray
 
 __all__ = ("EncoderPycuda",)
 
@@ -123,7 +123,6 @@ class EncoderPycuda(Encoder[TensorArray], AbstractBlockLayerPycuda):
 
     def initialize_block_layer(self) -> None:
         """Placeholder for block layer initialization."""
-        pass
 
     def flatten(self, x: TensorArray) -> TensorArray:
         """Flattens the input tensor to 2D."""

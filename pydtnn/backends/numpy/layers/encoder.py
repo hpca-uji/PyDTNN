@@ -109,7 +109,6 @@ class EncoderNumpy(Encoder[np.ndarray], AbstractBlockLayerNumpy):
 
     def initialize_block_layer(self) -> None:
         """Placeholder for block layer initialization."""
-        pass
 
     def forward(self, x: np.ndarray, mask: np.ndarray | None = None) -> np.ndarray:
         """Performs the forward pass of the encoder layer."""

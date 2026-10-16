@@ -54,7 +54,6 @@ class FeedForwardNumpy(FeedForward[np.ndarray], AbstractBlockLayerNumpy):
 
     def initialize_block_layer(self) -> None:
         """Initializes the block layer components."""
-        pass
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         """Performs the forward pass through the feed-forward network."""

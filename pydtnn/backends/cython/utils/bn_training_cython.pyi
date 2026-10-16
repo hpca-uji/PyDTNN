@@ -33,7 +33,6 @@ def bn_training_fwd_cython[T: _npDT](  # noqa: D103,E302
     Note:
         It's never used.
     """
-    ...
 
 def bn_training_bwd_cython[T: _npDT](  # noqa: D103,E302
     dx: _npDT_2Dims[T],
@@ -59,4 +58,3 @@ def bn_training_bwd_cython[T: _npDT](  # noqa: D103,E302
     Returns:
         Nothing. The output will be stored in "dx".
     """
-    ...

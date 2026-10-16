@@ -202,7 +202,7 @@ class IWSLT(Dataset):
 
     def _synthetic_data_generator(
         self,
-    ) -> Generator[tuple[list[np.ndarray], np.ndarray], Any, None]:
+    ) -> Generator[tuple[list[np.ndarray], np.ndarray], Any]:
         """Generate batches of synthetic data for testing purposes."""
         batch_size = self.model.batch_size
         rank = self.model.rank
@@ -253,9 +253,7 @@ class IWSLT(Dataset):
         file.close()
         if len(lines1) != len(lines2):
             logger.error(
-                "Los archivos tienen un numero de muestras distintas, {} y {}".format(
-                    len(lines1), len(lines2)
-                )
+                f"Los archivos tienen un numero de muestras distintas, {len(lines1)} y {len(lines2)}"
             )
             return -1
 
@@ -282,6 +280,6 @@ class IWSLT(Dataset):
         file.writelines("\n".join(lines))
         file.close()
         nlines_out = len(lines)
-        logger.info("{} lines in, {} lines out".format(nlines_in, nlines_out))
+        logger.info(f"{nlines_in} lines in, {nlines_out} lines out")
 
     # === Preprocess ===

@@ -7,8 +7,8 @@ import os
 import sys
 import time
 from argparse import Namespace
-from importlib import resources
 from contextlib import nullcontext
+from importlib import resources
 
 import yaml
 
@@ -26,8 +26,8 @@ def _start() -> int:
         pyextrae.startTracing("libptmpitrace.so")
 
     from pydtnn import rank
-    from pydtnn.utils.parser import ArgumentParser
     from pydtnn.utils.debug import traceback_context
+    from pydtnn.utils.parser import ArgumentParser
 
     parser = ArgumentParser()
     config = parser.parse_args()

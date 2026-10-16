@@ -2,7 +2,7 @@
 
 import logging
 
-__all__ = ("ModelDTypeTestCase", "ModelTensorTestCase", "ModelGpuTestCase")
+__all__ = ("ModelDTypeTestCase", "ModelGpuTestCase", "ModelTensorTestCase")
 
 logger = logging.getLogger(__name__)
 

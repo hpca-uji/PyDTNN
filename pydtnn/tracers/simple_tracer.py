@@ -140,6 +140,8 @@ class SimpleTracer(Tracer):
             with open(output_filename, "w") as f:
                 f.write(self._output_header() + "\n")
                 for event_type_value, events in self.events.items():
-                    for event_value in events.keys():
-                        f.write(self._output_row(event_type_value, event_value) + "\n")
+                    f.writelines(
+                        self._output_row(event_type_value, event_value) + "\n"
+                        for event_value in events.keys()
+                    )
             logger.info(f"Dumped tracer details to: {path}")

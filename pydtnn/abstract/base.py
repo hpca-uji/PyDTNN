@@ -209,11 +209,9 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
 
     def _model_init(self) -> None:
         """Hook for model initialization."""
-        pass
 
     def _post_init(self) -> None:
         """Hook for post-initialization logic."""
-        pass
 
     def _init_backend_with_model(self, model: model_module.Base[T]) -> None:
         """Initialize backend and link a new model instance"""
@@ -224,6 +222,6 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
         self.model = model  # pyright: ignore[reportAttributeAccessIssue]
 
     @classmethod
-    def from_model[I](cls: type[I], model: model_module.Base[T]) -> I:
+    def from_model(cls, model: model_module.Base[T]) -> typing.Self:
         """Create object from a given model"""
         return cls()

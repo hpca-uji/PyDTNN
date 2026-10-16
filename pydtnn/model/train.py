@@ -282,7 +282,8 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
 
             self.history_append(
                 {
-                    "part": Dataset.Part.TRAIN._name_.lower(), "time": delta,
+                    "part": Dataset.Part.TRAIN._name_.lower(),
+                    "time": delta,
                     **dict(zip(self.loss_and_metric_names, train_global_loss)),
                 }
             )
@@ -322,7 +323,8 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
 
             self.history_append(
                 {
-                    "part": Dataset.Part.VAL._name_.lower(), "time": delta,
+                    "part": Dataset.Part.VAL._name_.lower(),
+                    "time": delta,
                     **dict(zip(self.loss_and_metric_names, val_global_loss)),
                 }
             )

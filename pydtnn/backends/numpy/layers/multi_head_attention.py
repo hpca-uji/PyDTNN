@@ -108,15 +108,14 @@ class MultiHeadAttentionNumpy(MultiHeadAttention[np.ndarray], AbstractBlockLayer
 
     def initialize_block_layer(self) -> None:
         """Placeholder for block layer initialization."""
-        pass
 
     def transformation_addheads(self, x: np.ndarray) -> np.ndarray:
         """Reshapes input to separate attention heads."""
-        return x.reshape((x.shape[:-1] + (self.heads, self.d_k))).swapaxes(-3, -2)
+        return x.reshape(x.shape[:-1] + (self.heads, self.d_k)).swapaxes(-3, -2)
 
     def transformation_removeheads(self, x: np.ndarray) -> np.ndarray:
         """Reshapes input to merge attention heads."""
-        return x.swapaxes(-3, -2).reshape((x.shape[:-3] + (x.shape[-2], self.heads * self.d_k)))
+        return x.swapaxes(-3, -2).reshape(x.shape[:-3] + (x.shape[-2], self.heads * self.d_k))
 
     def mask_apply(self, x: np.ndarray, mask: np.ndarray) -> np.ndarray:
         """Applies an attention mask to the score tensor."""

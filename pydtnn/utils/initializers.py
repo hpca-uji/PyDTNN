@@ -12,6 +12,7 @@ from pydtnn.utils.constants import ArrayShape
 
 __all__ = (
     "DistributionModeEnum",
+    "InitializerFunc",
     "ProbabilisticDistribution",
     "glorot_normal",
     "glorot_uniform",
@@ -21,7 +22,6 @@ __all__ = (
     "lecun_uniform",
     "ones",
     "zeros",
-    "InitializerFunc",
 )
 
 logger = logging.getLogger(__name__)

@@ -13,36 +13,36 @@ from importlib import metadata as libdata
 from types import ModuleType
 
 __all__ = (
-    "MPI_MODULE",
-    "Cudnn_Handle_Type",
-    "Cublas_Handle_Type",
-    "gpu_errors",
-    "package_name",
-    "timestamp",
     "MPI",
-    "cupy",
-    "pycuda",
-    "drv",
-    "gpuarray",
-    "stream",
-    "has_drv",
-    "tensor_array",
-    "nccl",
-    "cudnn",
-    "cublas",
-    "rank",
-    "nprocs",
-    "hostname",
-    "ranks_per_node",
-    "num_gpus",
-    "supported_gpu",
-    "nccl_comm",
+    "MPI_MODULE",
+    "Cublas_Handle_Type",
+    "Cudnn_Handle_Type",
     "context",
-    "stream_handle",
-    "cudnn_handle",
+    "cublas",
     "cublas_handle",
-    "state_path",
+    "cudnn",
+    "cudnn_handle",
+    "cupy",
+    "drv",
+    "gpu_errors",
+    "gpuarray",
+    "has_drv",
+    "hostname",
     "metadata",
+    "nccl",
+    "nccl_comm",
+    "nprocs",
+    "num_gpus",
+    "package_name",
+    "pycuda",
+    "rank",
+    "ranks_per_node",
+    "state_path",
+    "stream",
+    "stream_handle",
+    "supported_gpu",
+    "tensor_array",
+    "timestamp",
 )
 
 logger = logging.getLogger(__name__)
@@ -70,6 +70,7 @@ except AttributeError:
     pass  # unsupported
 try:
     from psutil import Process
+
     cpu_affinity = tuple(Process().cpu_affinity())
 except ModuleNotFoundError:
     pass  # unavailable
@@ -106,7 +107,7 @@ except Exception as e:
     stream = None
     has_drv = False
 else:
-    import pycuda.gpuarray as gpuarray
+    from pycuda import gpuarray
 
     has_drv = True
 

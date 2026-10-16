@@ -68,7 +68,9 @@ class WarmUp(Scheduler):
             ) * (self.init_lr - self.base_lr)
             self.epoch_count += 1
             if self.model.comm_rank == 0:
-                logger.info(f"Setting learning rate to {self.model.optimizer.learning_rate:.8f} due warm up.")
+                logger.info(
+                    f"Setting learning rate to {self.model.optimizer.learning_rate:.8f} due warm up."
+                )
 
     @classmethod
     def from_model(cls, model: Model) -> WarmUp:

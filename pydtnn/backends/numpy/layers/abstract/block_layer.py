@@ -17,5 +17,3 @@ if TYPE_CHECKING:
 
 class AbstractBlockLayerNumpy(AbstractBlockLayer[np.ndarray], LayerNumpy):
     """Abstract base class for layers that operate on blocks using the NumPy backend."""
-
-    pass

@@ -3,21 +3,19 @@
 import sys
 
 __all__ = (
-    "FANCY",
-    "RESET",
     "BOLD",
-    "COLOR",
-    "BOX_TL",
-    "BOX_TR",
-    "BOX_R",
-    "BOX_L",
-    "BOX_T",
-    "BOX_R",
     "BOX_B",
-    "BOX_L",
     "BOX_C",
     "BOX_H",
+    "BOX_L",
+    "BOX_R",
+    "BOX_T",
+    "BOX_TL",
+    "BOX_TR",
     "BOX_V",
+    "COLOR",
+    "FANCY",
+    "RESET",
 )
 
 # Detect

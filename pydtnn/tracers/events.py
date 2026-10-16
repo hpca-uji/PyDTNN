@@ -5,12 +5,12 @@ from enum import IntEnum, auto
 
 __all__ = (
     "PYDTNN_EVENT_FINISHED",
-    "MdlEventEnum",
     "PYDTNN_MDL_EVENT",
     "PYDTNN_MDL_EVENTS",
-    "OpsEventEnum",
     "PYDTNN_OPS_EVENT",
     "PYDTNN_OPS_EVENTS",
+    "MdlEventEnum",
+    "OpsEventEnum",
 )
 
 logger = logging.getLogger(__name__)

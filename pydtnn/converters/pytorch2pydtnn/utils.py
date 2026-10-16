@@ -374,7 +374,7 @@ def set_initializer_with_pytorch_values(
     """
     dict_initalizers: dict[str, Any] = dict()
 
-    for variable in vars_initiaizers_transpose.keys():
+    for variable in vars_initiaizers_transpose:
         # There are layers without weight nor biases
         if variable in state_dict:
             initalizer_name = vars_initiaizers_transpose[variable][0]

@@ -6,11 +6,11 @@ from typing import Any, override
 import numpy as np
 
 from pydtnn.backends.pycuda.layers.abstract.conv_2d import AbstractConv2DPycuda
-from pydtnn.utils.tensor_array import TensorArray
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
                                    PYDTNN_OPS_EVENTS, OpsEventEnum)
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import TensorFormat, format_transpose
+from pydtnn.utils.tensor_array import TensorArray
 
 __all__ = ("AbstractConv2DStandardPycuda",)
 
