@@ -840,7 +840,7 @@ class PytorchModelTestCase(TestCase):
             print(f"{_loss_torch=} || {_loss_pydtnn=}")
         rtol: float = PytorchModelTestCase.rtol_default
         atol: float = PytorchModelTestCase.atol_default
-        assert np.isclose(float(_loss_torch), _loss_pydtnn, rtol=rtol, atol=atol), (  # pyright: ignore[reportPossiblyUnboundVariable]
+        assert np.isclose(float(_loss_torch), _loss_pydtnn, rtol=rtol, atol=atol), (
             f"[ROUND {round}] Both values are not close: {_loss_torch=} =/=  {_loss_pydtnn=}"
         )
 
