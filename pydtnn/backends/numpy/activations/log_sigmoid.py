@@ -49,7 +49,22 @@ class LogSigmoidNumpy(LogSigmoid[np.ndarray], ActivationNumpy):
     def backward(self, dy: np.ndarray) -> np.ndarray:
         """Compute the backward pass of the Log activation."""
         # return 1 / (np.exp(dy) + 1)
-        np.exp(dy, out=dy)
-        np.add(dy, 1, out=dy)
-        np.reciprocal(dy, out=dy)
+        # np.exp(dy, out=dy)
+        # np.add(dy, 1, out=dy)
+        # np.reciprocal(dy, out=dy)
+        # return np.asarray(dy, dtype=self.model.dtype, order="C")
+
+        # More or less torch's method:
+        # https://github.com/pytorch/pytorch/blob/release/2.14/aten/src/ATen/native/cpu/Activation.cpp#L33
+        # dx.fill(0)
+        # in_negative = (self.y < 0).all()
+        # max_deriv = 1 if in_negative else 0
+        # sign = 1 if in_negative else -1
+        # z = np.exp(-np.abs(self.y))
+        # dx = dy * (max_deriv - sign * (z / (1 + z)))
+
+        # dx = (dy / (np.exp(self.y) + 1.0))
+        np.exp(self.y, out=self.y)
+        np.add(self.y, 1, out=self.y)
+        np.divide(dy, self.y, out=dy)
         return np.asarray(dy, dtype=self.model.dtype, order="C")

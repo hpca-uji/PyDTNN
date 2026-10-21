@@ -39,8 +39,15 @@ class TanhNumpy(Tanh[np.ndarray], ActivationNumpy):
     def backward(self, dy: np.ndarray) -> np.ndarray:
         """Compute the backward pass of the Tanh activation."""
         # return 1 - np.tanh(dy) ** 2
-        np.tanh(dy, out=dy, casting="unsafe", dtype=dy.dtype)
-        np.power(dy, 2, out=dy, dtype=self.model.dtype)
-        np.subtract(1, dy, out=dy, dtype=self.model.dtype)
+        # np.tanh(dy, out=dy, casting="unsafe", dtype=dy.dtype)
+        # np.power(dy, 2, out=dy, dtype=self.model.dtype)
+        # np.subtract(1, dy, out=dy, dtype=self.model.dtype)
+        # return np.asarray(dy, dtype=self.model.dtype, order="C")
 
-        return np.asarray(dy, dtype=self.model.dtype, order="C")
+        # return dy * (1 - np.tanh(self.y) ** 2)
+        np.tanh(self.y, out=self.y, casting="unsafe", dtype=self.model.dtype)
+        np.power(self.y, 2, out=self.y, dtype=self.model.dtype)
+        np.subtract(1, self.y, out=self.y, dtype=self.model.dtype)
+        np.multiply(dy, self.y, out=dy, dtype=self.model.dtype)
+
+        return dy

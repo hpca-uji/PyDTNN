@@ -1,6 +1,3 @@
-
-cimport cython
-
 from cython.cimports.libc.math import exp, log
 from cython.parallel import prange
 
@@ -21,13 +18,15 @@ def log_sigmoid_fwd_cython(npDT[::1] x, npDT[::1] y) -> None:
     # NOTE: Log propierty: "log(a / b) = log(a) - log(b)", and "log(1) = 0 ==> log(1 / b) = -log(b)"
     for i in prange(x.shape[0], nogil=True):
         y[i] = <npDT> ((-1.0) * log( 1.0 + exp(-1.0*x[i])))
-        #x[i] = <npDT> ((-1.0) * log( 1.0 + exp(-1.0*x[i])))
 
-def log_sigmoid_bwd_cython(npDT[::1] dy, npDT[::1] dx) -> None:
+def log_sigmoid_bwd_cython(npDT[::1] dy, npDT[::1] dx, y: npDT[::1]) -> None:
     cdef int i
-    # return 1 / (np.exp(dy) + 1)
-    
-    for i in prange(dy.shape[0], nogil=True):
-        dx[i] = <npDT> (1 / (exp(dy[i]) + 1.0))
-        #dy[i] = <npDT> ((-1.0) * log( 1.0 + exp(-1.0*x[i])))
 
+    for i in prange(dy.shape[0], nogil=True):
+        dx[i] = <npDT> (dy[i] / (exp(y[i]) + 1.0))
+
+# def log_sigmoid_bwd_cython(npDT[::1] dy, npDT[::1] dx) -> None:
+#     cdef int i
+#     
+#     for i in prange(dy.shape[0], nogil=True):
+#         dx[i] = <npDT> (1 / (exp(dy[i]) + 1.0))

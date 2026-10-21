@@ -41,5 +41,9 @@ class LogSigmoidCython(LogSigmoidNumpy, ActivationCython):
             Gradient of the loss with respect to the input.
         """
         dx: np.ndarray = self.dx[: dy.shape[0], :]
-        log_sigmoid_bwd_cython(dy.reshape(-1, copy=False), dx.reshape(-1, copy=False))
+        # log_sigmoid_bwd_cython(self.y.reshape(-1, copy=False), dx.reshape(-1, copy=False))
+        log_sigmoid_bwd_cython(self.y.reshape(-1, copy=False),
+                               dx.reshape(-1, copy=False),
+                               self.y.reshape(-1, copy=False),)
+
         return np.asarray(dx, dtype=self.model.dtype, order="C")

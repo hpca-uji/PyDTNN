@@ -1250,6 +1250,7 @@ class PytorchModelTestCase(TestCase):
     @unittest.skip("Large model")
     def test_renset50(self) -> None:
         """Compares results between an ResNet50 model using a PyTorch model and other a PyDTNN one."""
+        # NOTE: It doesn't work well in GPU due an inplace operation (the hooks doesn't like that kind of operations).
         model_name = "resnet50"
         self.do_test_model(self.get_model_torch(model_name), model_name)
 
@@ -1374,6 +1375,7 @@ class PytorchModelTestCase(TestCase):
     @unittest.skip("Work in progress.")
     def test_tanh(self) -> None:
         """Tests Tanh activation."""
+        # NOTE: It works well in GPU.
         torch_model = torch.nn.Sequential(torch.nn.Flatten(), torch.nn.Tanh())
         torch_model = TorchLayer(torch_model)
         self.do_test_model(torch_model, "Tanh", without_weighted_layers=True)
@@ -1381,6 +1383,7 @@ class PytorchModelTestCase(TestCase):
     @unittest.skip("Work in progress.")
     def test_log_sigmoid(self) -> None:
         """Tests Log Sigmoid activation."""
+        # NOTE: It works well in GPU.
         torch_model = torch.nn.Sequential(torch.nn.Flatten(), torch.nn.LogSigmoid())
         torch_model = TorchLayer(torch_model)
         self.do_test_model(torch_model, "Log_Sigmoid", without_weighted_layers=True)

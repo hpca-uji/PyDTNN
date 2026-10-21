@@ -13,13 +13,16 @@ def log_sigmoid_fwd_cython[T: _npDT](x: _npDT_1Dims[T], y: _npDT_1Dims[T]) -> No
         Nothing. The output is stored in "y".
     """
 
-def log_sigmoid_bwd_cython[T: _npDT](dy: _npDT_1Dims[T], dx: _npDT_1Dims[T]) -> None:  # noqa: D103,E302
+def log_sigmoid_bwd_cython[T: _npDT](dy: _npDT_1Dims[T],
+                                     dx: _npDT_1Dims[T],
+                                     y: _npDT_1Dims[T]) -> None:  # noqa: D103,E302
     """
     Computes the backward pass of the log sigmoid activation function.
 
     Args:
         dy (npDT_1Dims): 1-dimensional input's array.
         dx (npDT_1Dims): 1-dimensional array where the output will be stored.
+        y (npDT_1Dims): 1-dimensional array where the forward's output is stored.
     Returns:
         Nothing. The output is stored in "dx".
     """

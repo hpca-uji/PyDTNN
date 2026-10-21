@@ -43,7 +43,13 @@ class ArctanhNumpy(Arctanh[np.ndarray], ActivationNumpy):
     def backward(self, dy: np.ndarray) -> np.ndarray:
         """Compute the backward pass of the Arctanh activation."""
         # return 1 / (1 + dy ** 2)
-        np.power(dy, 2, out=dy, casting="unsafe", dtype=self.model.dtype)
-        np.add(dy, 1, out=dy, casting="unsafe", dtype=self.model.dtype)
-        np.reciprocal(dy, out=dy, casting="unsafe", dtype=self.model.dtype)
-        return np.asarray(dy, dtype=self.model.dtype, order="C")
+        # np.power(dy, 2, out=dy, casting="unsafe", dtype=self.model.dtype)
+        # np.add(dy, 1, out=dy, casting="unsafe", dtype=self.model.dtype)
+        # np.reciprocal(dy, out=dy, casting="unsafe", dtype=self.model.dtype)
+        # return np.asarray(dy, dtype=self.model.dtype, order="C")
+
+        # return dy / (1 + self.y ** 2)
+        np.power(self.y, 2, out=self.y, casting="unsafe", dtype=self.model.dtype)
+        np.add(self.y, 1, out=self.y, casting="unsafe", dtype=self.model.dtype)
+        np.divide(dy, self.y, out=dy, casting="unsafe", dtype=self.model.dtype)
+        return dy
