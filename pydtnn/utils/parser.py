@@ -268,9 +268,9 @@ class ArgumentParser(argparse.ArgumentParser):
             type=int,
             default=ModelBase.steps_per_epoch,
             help=(
-                "Trims the training data depending on the given number of steps per epoch. "
-                "If '0', then no trim, full dataset."
-                f"Default: {ModelBase.steps_per_epoch!r}."
+                "Trims the training data depending on the given number of steps per epoch."
+                " If '0', then no trim, full dataset."
+                f" Default: {ModelBase.steps_per_epoch!r}."
             ),
         )
         self.add_argument(
@@ -1377,7 +1377,7 @@ class ArgumentParser(argparse.ArgumentParser):
                 continue
 
             description = quotes(group.description or "")
-            lines.append(f"- {group.title}: {description}".rstrip())
+            lines.append(f"- {(group.title or "").capitalize()} options: {description}".rstrip())
 
             for action in actions:
                 if not action.option_strings:
