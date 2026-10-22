@@ -147,7 +147,7 @@ def gzip_open(filename: str, mode: str = "rb") -> IO[bytes]:
     elif not path.exists():
         raise FileNotFoundError(path)
     elif RapidgzipFile:
-        f = RapidgzipFile(path, mode=mode, parallelization=1)
+        f = RapidgzipFile(path, parallelization=1)
         try:
             f.import_index(str(idx))
         except Exception:

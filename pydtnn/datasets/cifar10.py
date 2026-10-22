@@ -13,7 +13,7 @@ import numpy as np
 
 from pydtnn.datasets.abstract import Dataset
 from pydtnn.datasets.memory import Memory
-from pydtnn.util import gzip_open
+from pydtnn.utils import gzip_open
 
 __all__ = ("CIFAR10",)
 
