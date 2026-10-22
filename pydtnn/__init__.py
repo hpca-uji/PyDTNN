@@ -164,13 +164,13 @@ try:
     num_gpus = subprocess.check_output(["nvidia-smi", "-L"]).count(b"UUID")
 except (FileNotFoundError, subprocess.CalledProcessError):
     num_gpus = 0
-supported_gpu = num_gpus > 0
+supported_gpu = num_gpus > 0 and drv is not None
 cuda_gpu = rank % num_gpus if supported_gpu else None
 if supported_gpu:
     os.environ["CUDA_VISIBLE_DEVICES"] = str(cuda_gpu)
 
 # INIT NCCL
-if nccl is not None and num_gpus > 0:
+if nccl is not None and supported_gpu:
     nccl_id = nccl.ncclGetUniqueId()
     if MPI:
         nccl_id = MPI.COMM_WORLD.bcast(nccl_id)
@@ -192,7 +192,7 @@ stream = None
 stream_handle = None
 
 # INIT CUPY
-if cupy is not None and drv is not None:
+if cupy is not None and supported_gpu:
     from cupy.cuda import Stream as CupyStream
 
     cupy.cuda.runtime.setDevice(rank % cupy.cuda.runtime.getDeviceCount())
@@ -200,7 +200,7 @@ if cupy is not None and drv is not None:
     stream_handle = stream.ptr
 
 # INIT PYCUDA
-if drv is not None:
+if pycuda is not None and supported_gpu:
     drv.init()
     from pycuda.driver import Stream as PycudaStream
 
@@ -216,7 +216,7 @@ if drv is not None:
     atexit.register(_destroy)
 
 # INIT CUDNN
-if cudnn is not None and drv is not None:
+if cudnn is not None and supported_gpu:
     # NOTE: CUDNN initalization must be done after "drv.init()"
     cudnn_handle: Cudnn_Handle_Type = cudnn.cudnnCreate()
 
