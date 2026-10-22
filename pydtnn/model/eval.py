@@ -45,6 +45,16 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
         # Private attributes
         self._evaluation_round: int = 0
 
+    def create_progress_bar(self, desc: str, total: int) -> tqdm:
+        return tqdm(
+            file=TqdmLogger(term.FANCY),
+            total=total,
+            ascii=" ▁▂▃▄▅▆▇█",
+            desc=desc,
+            unit=" samples",
+            colour="BLUE" if term.FANCY else None,
+        )
+
     def _compute_metrics_funcs(
         self, y_pred: T, y_targ: T, loss: float, batch_size: int
     ) -> tuple[np.ndarray, None] | tuple[None, MPI.Request]:
@@ -146,7 +156,7 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
         pbar: tqdm | None,
         batch_loss: np.ndarray,
         global_loss: np.ndarray,
-        output_prefix: str,
+        part: Dataset.Part,
         current_round: int,
         delta: float = -1,
     ) -> str:
@@ -166,7 +176,7 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
             Updated total metrics, updated count, and formatted status string.
         """
 
-        part = Dataset.Part[output_prefix.strip("_").upper()]
+        output_prefix = f"{part._name_.lower()}_"
 
         string = self._format_metrics(
             metric=global_loss,
@@ -193,8 +203,8 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
         batches_min: float,
         local_loss: np.ndarray,
         global_loss: np.ndarray,
+        part: Dataset.Part,
         terminate: bool = False,
-        out_prefix: str = "",
     ) -> tuple[int, bool, float]:
         """
         Executes a single evaluation round over the provided batch generator.
@@ -204,7 +214,6 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
         """
         total_delta = 0
         sync_epoch = False
-        part = Dataset.Part[out_prefix.rstrip("_").upper()]
 
         for i_batch, (x_batch, y_batch) in enumerate(batch_generator):
             if terminate:
@@ -258,11 +267,12 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
                 pbar=pbar,
                 batch_loss=batch_loss,
                 global_loss=global_loss,
-                output_prefix=out_prefix,
+                part=part,
                 current_round=self._evaluation_round,
                 delta=delta,
             )
 
+        # NOTE: This is necessary if model_sync_freq > 1.
         diff_loss = local_loss - global_loss
         if self.comm:
             diff_loss = self.comm.allreduce(diff_loss)
@@ -273,7 +283,7 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
             pbar=pbar,
             batch_loss=local_loss,
             global_loss=global_loss,
-            output_prefix=out_prefix,
+            part=part,
             current_round=self._evaluation_round,
             delta=-1,
         )
@@ -315,17 +325,14 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
         if self.profile:
             self.profiler.enable()
 
+        # NOTE: "+2" is for "loss" and "nsample" (format: loss, *metrics, nsamples)
         test_local_loss = np.zeros(len(self.metric_funcs) + 2, np.object_)
         test_global_loss = np.zeros(len(self.metric_funcs) + 2, np.object_)
 
         if self.comm_rank == 0:
-            pbar = tqdm(
-                file=TqdmLogger(term.FANCY),
+            pbar = self.create_progress_bar(
                 total=sum(self.comm_nsamples[Dataset.Part.TEST]),
-                ascii=" ▁▂▃▄▅▆▇█",
-                desc="Testing",
-                unit=" samples",
-                colour="BLUE" if term.FANCY else None,
+                desc="Testing"
             )
         else:
             pbar = None
@@ -337,7 +344,7 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
             batches_min=test_batches_min,
             local_loss=test_local_loss,
             global_loss=test_global_loss,
-            out_prefix=f"{Dataset.Part.TEST._name_.lower()}_",
+            part=Dataset.Part.TEST,
         )
         if test_nsamples_loss := test_global_loss[-1]:
             test_global_loss[:-1] /= test_nsamples_loss

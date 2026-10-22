@@ -16,9 +16,7 @@ from pydtnn.model.base import ModelMode
 from pydtnn.model.eval import Eval
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT,
                                    PYDTNN_MDL_EVENTS, MdlEventEnum)
-from pydtnn.utils import term
 from pydtnn.utils.constants import Array, SyncMode
-from pydtnn.utils.logs import TqdmLogger
 
 __all__ = ("Train",)
 
@@ -118,8 +116,8 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
         batches_min: float,
         local_loss: np.ndarray,
         global_loss: np.ndarray,
+        part: Dataset.Part,
         terminate: bool = False,
-        out_prefix: str = "",
     ) -> tuple[int, bool, float]:  # noqa: C901
         """Executes a full training round over the provided batch generator."""
         sync_epoch = False
@@ -177,11 +175,12 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
                 pbar=pbar,
                 batch_loss=batch_loss,
                 global_loss=global_loss,
-                output_prefix=out_prefix,
+                part=part,
                 current_round=self._training_round,
                 delta=delta,
             )
 
+        # NOTE: This is necessary if model_sync_freq > 1.
         diff_loss = local_loss - global_loss
         if self.comm:
             diff_loss = self.comm.allreduce(diff_loss)
@@ -192,7 +191,7 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
             pbar=pbar,
             batch_loss=local_loss,
             global_loss=global_loss,
-            output_prefix=out_prefix,
+            part=part,
             current_round=self._evaluation_round,
             delta=-1,
         )
@@ -234,15 +233,20 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
         if self.profile:
             self.profiler.enable()
 
+        # NOTE: "+2" is for "loss" and "nsample" (format: loss, *metrics, nsamples)
+        train_local_loss = np.zeros(len(self.metric_funcs) + 2, dtype=np.object_)
+        val_local_loss = np.zeros(len(self.metric_funcs) + 2, dtype=np.object_)
+        train_global_loss = np.zeros(len(self.metric_funcs) + 2, dtype=np.object_)
+        val_global_loss = np.zeros(len(self.metric_funcs) + 2, dtype=np.object_)
+
         for epoch in range(self.num_epochs):
             train_batch_generator, val_batch_generator = self.dataset.get_train_val_generator()
             sync_epoch = False
 
-            train_local_loss = np.zeros(len(self.metric_funcs) + 2, dtype=np.object_)
-            val_local_loss = np.zeros(len(self.metric_funcs) + 2, dtype=np.object_)
-
-            train_global_loss = np.zeros(len(self.metric_funcs) + 2, dtype=np.object_)
-            val_global_loss = np.zeros(len(self.metric_funcs) + 2, dtype=np.object_)
+            train_local_loss.fill(0)
+            val_local_loss.fill(0)
+            train_global_loss.fill(0)
+            val_global_loss.fill(0)
 
             for sched in self.schedulers:
                 sched.on_epoch_begin()
@@ -251,13 +255,9 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
             if self.comm_rank == 0:
                 fmt = "%%0%dd" % (len(str(self.num_epochs)))
                 epoch_string = "Training   (%s/%s)" % (fmt, fmt)
-                pbar = tqdm(
-                    file=TqdmLogger(term.FANCY),
+                pbar = self.create_progress_bar(
                     total=sum(self.comm_nsamples[Dataset.Part.TRAIN]),
-                    ascii=" ▁▂▃▄▅▆▇█",
-                    desc=epoch_string % (epoch + 1, self.num_epochs),
-                    unit=" samples",
-                    colour="BLUE" if term.FANCY else None,
+                    desc=epoch_string % (epoch + 1, self.num_epochs)
                 )
             else:
                 pbar = None
@@ -269,7 +269,7 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
                 batches_min=train_batches_min,
                 local_loss=train_local_loss,
                 global_loss=train_global_loss,
-                out_prefix=f"{Dataset.Part.TRAIN._name_.lower()}_",
+                part=Dataset.Part.TRAIN,
             )
             if train_nsamples_loss := train_global_loss[-1]:
                     train_global_loss[:-1] /= train_nsamples_loss
@@ -293,13 +293,9 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
             if self.comm_rank == 0:
                 fmt = "%%0%dd" % (len(str(self.num_epochs)))
                 epoch_string = "Validating (%s/%s)" % (fmt, fmt)
-                pbar = tqdm(
-                    file=TqdmLogger(term.FANCY),
+                pbar = self.create_progress_bar(
                     total=sum(self.comm_nsamples[Dataset.Part.VAL]),
-                    ascii=" ▁▂▃▄▅▆▇█",
-                    desc=epoch_string % (epoch + 1, self.num_epochs),
-                    unit=" samples",
-                    colour="BLUE" if term.FANCY else None,
+                    desc=epoch_string % (epoch + 1, self.num_epochs)
                 )
             else:
                 pbar = None
@@ -311,7 +307,7 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
                 batches_min=val_batches_min,
                 local_loss=val_local_loss,
                 global_loss=val_global_loss,
-                out_prefix=f"{Dataset.Part.VAL._name_.lower()}_",
+                part=Dataset.Part.VAL,
             )
             if val_nsamples_loss := val_global_loss[-1]:
                 val_global_loss[:-1] /= val_nsamples_loss
