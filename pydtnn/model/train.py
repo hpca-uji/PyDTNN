@@ -271,7 +271,8 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
                 global_loss=train_global_loss,
                 out_prefix=f"{Dataset.Part.TRAIN._name_.lower()}_",
             )
-            train_global_loss[:-1] /= train_global_loss[-1]
+            if train_nsamples_loss := train_global_loss[-1]:
+                    train_global_loss[:-1] /= train_nsamples_loss
             sync_epoch = sync_epoch or train_sync_epoch
 
             if self.comm_rank == 0:
@@ -312,7 +313,8 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
                 global_loss=val_global_loss,
                 out_prefix=f"{Dataset.Part.VAL._name_.lower()}_",
             )
-            val_global_loss[:-1] /= val_global_loss[-1]
+            if val_nsamples_loss := val_global_loss[-1]:
+                val_global_loss[:-1] /= val_nsamples_loss
             sync_epoch = sync_epoch or val_sync_epoch
 
             if self.comm_rank == 0:

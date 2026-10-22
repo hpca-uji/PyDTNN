@@ -339,13 +339,6 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
             global_loss=test_global_loss,
             out_prefix=f"{Dataset.Part.TEST._name_.lower()}_",
         )
-
-        test_diff_loss = test_local_loss - test_global_loss
-        if self.comm:
-            test_diff_loss = self.comm.allreduce(test_diff_loss)
-        test_global_loss += test_local_loss
-        test_local_loss[:] = test_global_loss
-
         if test_nsamples_loss := test_global_loss[-1]:
             test_global_loss[:-1] /= test_nsamples_loss
 
