@@ -112,13 +112,12 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
         self,
         pbar: tqdm | None,
         batch_generator: Generator[tuple[np.ndarray, np.ndarray]],
-        model_sync_count: int,
         batches_min: float,
         local_loss: np.ndarray,
         global_loss: np.ndarray,
         part: Dataset.Part,
         terminate: bool = False,
-    ) -> tuple[int, bool, float]:  # noqa: C901
+    ) -> tuple[bool, float]:  # noqa: C901
         """Executes a full training round over the provided batch generator."""
         sync_epoch = False
         total_delta = 0
@@ -130,13 +129,13 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
 
             local_batch_size = x_batch.shape[0]
             sync_model = (self.model_sync_freq <= 0) or (
-                model_sync_count % self.model_sync_freq == 0
+                self._model_sync_count % self.model_sync_freq == 0
             )
 
             if sync_model:
                 sync_epoch = True
 
-            model_sync_count += 1
+            self._model_sync_count += 1
 
             if i_batch >= batches_min and sync_model:
                 rank_mask = (
@@ -198,7 +197,7 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
 
         # Increment self._train_round
         self._training_round += 1
-        return (model_sync_count, sync_epoch, total_delta)
+        return (sync_epoch, total_delta)
 
     def train(self) -> None:  # noqa: C901
         """Runs the full training process over multiple epochs."""
@@ -217,7 +216,6 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
         terminate = False  # True: ends the following loop.
         global_terminate = False
 
-        model_sync_count = 0
         train_batches_min = min(self.comm_nsamples[Dataset.Part.TRAIN]) / (
             self.batch_size * self.nprocs
         )
@@ -255,24 +253,23 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
             if self.comm_rank == 0:
                 fmt = "%%0%dd" % (len(str(self.num_epochs)))
                 epoch_string = "Training   (%s/%s)" % (fmt, fmt)
-                pbar = self.create_progress_bar(
+                pbar = self._create_progress_bar(
                     total=sum(self.comm_nsamples[Dataset.Part.TRAIN]),
                     desc=epoch_string % (epoch + 1, self.num_epochs)
                 )
             else:
                 pbar = None
 
-            model_sync_count, train_sync_epoch, delta = self._train_round(
+            train_sync_epoch, delta = self._train_round(
                 pbar=pbar,
                 batch_generator=train_batch_generator,
-                model_sync_count=model_sync_count,
                 batches_min=train_batches_min,
                 local_loss=train_local_loss,
                 global_loss=train_global_loss,
                 part=Dataset.Part.TRAIN,
             )
             if train_nsamples_loss := train_global_loss[-1]:
-                    train_global_loss[:-1] /= train_nsamples_loss
+                train_global_loss[:-1] /= train_nsamples_loss
             sync_epoch = sync_epoch or train_sync_epoch
 
             if self.comm_rank == 0:
@@ -293,17 +290,16 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
             if self.comm_rank == 0:
                 fmt = "%%0%dd" % (len(str(self.num_epochs)))
                 epoch_string = "Validating (%s/%s)" % (fmt, fmt)
-                pbar = self.create_progress_bar(
+                pbar = self._create_progress_bar(
                     total=sum(self.comm_nsamples[Dataset.Part.VAL]),
                     desc=epoch_string % (epoch + 1, self.num_epochs)
                 )
             else:
                 pbar = None
 
-            model_sync_count, val_sync_epoch, delta = self._evaluate_round(
+            val_sync_epoch, delta = self._evaluate_round(
                 pbar=pbar,
                 batch_generator=val_batch_generator,
-                model_sync_count=model_sync_count,
                 batches_min=val_batches_min,
                 local_loss=val_local_loss,
                 global_loss=val_global_loss,

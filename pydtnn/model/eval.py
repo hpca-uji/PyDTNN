@@ -44,8 +44,9 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
         super().__init__(*args, **kwargs)
         # Private attributes
         self._evaluation_round: int = 0
+        self._model_sync_count: int = 0
 
-    def create_progress_bar(self, desc: str, total: int) -> tqdm:
+    def _create_progress_bar(self, desc: str, total: int) -> tqdm:
         return tqdm(
             file=TqdmLogger(term.FANCY),
             total=total,
@@ -199,13 +200,12 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
         self,
         pbar: tqdm | None,
         batch_generator: Generator[tuple[np.ndarray, np.ndarray]],
-        model_sync_count: int,
         batches_min: float,
         local_loss: np.ndarray,
         global_loss: np.ndarray,
         part: Dataset.Part,
         terminate: bool = False,
-    ) -> tuple[int, bool, float]:
+    ) -> tuple[bool, float]:
         """
         Executes a single evaluation round over the provided batch generator.
 
@@ -222,13 +222,13 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
             local_batch_size = x_batch.shape[0]
 
             sync_model = (self.model_sync_freq <= 0) or (
-                model_sync_count % self.model_sync_freq == 0
+                self._model_sync_count % self.model_sync_freq == 0
             )
 
             if sync_model:
                 sync_epoch = True
 
-            model_sync_count += 1
+            self._model_sync_count += 1
 
             if i_batch < batches_min:
                 rank_mask = [1] * self.comm_size
@@ -290,7 +290,7 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
 
         # Increment self._evaluate_round
         self._evaluation_round += 1
-        return (model_sync_count, sync_epoch, total_delta)
+        return (sync_epoch, total_delta)
 
     def evaluate(self) -> None:
         """
@@ -311,7 +311,6 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
             )
         )
 
-        model_sync_count = 0
         test_batch_generator = self.dataset.get_test_generator()
         test_batches_min: float = min(self.comm_nsamples[Dataset.Part.TEST]) / (
             self.batch_size * self.nprocs
@@ -330,17 +329,16 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
         test_global_loss = np.zeros(len(self.metric_funcs) + 2, np.object_)
 
         if self.comm_rank == 0:
-            pbar = self.create_progress_bar(
+            pbar = self._create_progress_bar(
                 total=sum(self.comm_nsamples[Dataset.Part.TEST]),
                 desc="Testing"
             )
         else:
             pbar = None
 
-        model_sync_count, test_sync_epoch, delta = self._evaluate_round(
+        test_sync_epoch, delta = self._evaluate_round(
             pbar=pbar,
             batch_generator=test_batch_generator,
-            model_sync_count=model_sync_count,
             batches_min=test_batches_min,
             local_loss=test_local_loss,
             global_loss=test_global_loss,
