@@ -213,10 +213,10 @@ class ChestXRay(Dataset):
         nsamples = self._local_nsamples[part]
         xy_filenames = self._xy_filenames[part]
 
+        xy_filenames = xy_filenames[offset: offset + nsamples]
+
         if part is Dataset.Part.TRAIN and self.model.augment_shuffle:
             self.model.random.shuffle(xy_filenames)
-
-        xy_filenames = xy_filenames[offset: offset + nsamples]
 
         for path, y in xy_filenames:
             src_path = self._src_filename[path]

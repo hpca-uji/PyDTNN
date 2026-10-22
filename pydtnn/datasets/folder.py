@@ -181,10 +181,10 @@ class Folder(Dataset):
         nsamples = self._local_nsamples[part]
         labels_and_images = self.labels_and_images[part]
 
+        labels_and_images = labels_and_images[offset: offset + nsamples]
+
         if part is Dataset.Part.TRAIN and self.model.augment_shuffle:
             self.model.random.shuffle(labels_and_images)
-
-        labels_and_images = labels_and_images[offset: offset + nsamples]
 
         for label, path_image in labels_and_images:
             x = self._load_rgb_image(path_image)
