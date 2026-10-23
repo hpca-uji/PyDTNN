@@ -4,7 +4,6 @@
 import logging
 import unittest
 import warnings
-from collections.abc import Sequence
 from typing import Any
 
 import numpy as np
@@ -184,342 +183,26 @@ class TorchLayer(torch.nn.Module):
         return x
 
 
-def replace_layer_pytorch(
-    module: torch.nn.Module, layer_to_replace: type[torch.nn.Module]
-) -> torch.nn.Module | None:
-    """
-    Recursively put desired batch norm in nn.module module.
-
-    set module = net to start code.
-    https://discuss.pytorch.org/t/how-to-replace-a-layer-with-own-custom-variant/43586/7
-    """
-
-    # iterate through immediate child modules
-    list_children = list(module.named_children())
-    for name, immediate_child_module in list_children:
-        setattr(module, name, replace_layer_pytorch(immediate_child_module, layer_to_replace))
-
-    # go through all attributes of module nn.module (e.g. network or layer) and put batch norms if present
-    if isinstance(module, layer_to_replace):
-        if verbose_test():
-            print(f"Removed: {module}")
-        return torch.nn.Identity()
-    else:
-        return module
-
-
-def remove_inplace_pytorch(torch_model: torch.nn.Module) -> None:
-    """Recursively replaces inplace methods with normal methods."""
-
-    def _get_all_layers_pytorch(module: torch.nn.Module) -> None:
-        # iterate through immediate child modules
-        list_children = list(module.named_children())
-        for _name, immediate_child_module in list_children:
-            if len(list(immediate_child_module.named_children())) == 0:
-                if hasattr(immediate_child_module, "inplace"):
-                    if verbose_test():
-                        print(
-                            f"INPLACE (before) -> {immediate_child_module} || {immediate_child_module.inplace=} =="
-                        )
-                    immediate_child_module.inplace = False  # pyright: ignore[reportArgumentType] (It's fine)
-                    if verbose_test():
-                        print(
-                            f"INPLACE (after) -> {immediate_child_module} || {immediate_child_module.inplace=} =="
-                        )
-            _get_all_layers_pytorch(immediate_child_module)
-
-    _get_all_layers_pytorch(torch_model)
-
-
-def set_forward_hook(torch_model: torch.nn.Module) -> list[tuple[torch.nn.Module, torch.Tensor]]:
-    """Recursively sets the forward's 'hook' method."""
-    # params = PytorchModelTestCase.params
-    torch_forward_outputs = list[tuple[torch.nn.Module, torch.Tensor]]()
-
-    def hook(
-        module: torch.nn.Module, args: tuple[Any, ...], output: torch.Tensor
-    ) -> torch.Tensor | None:
-        _output = output.clone()
-        # if params.dtype is np.dtype(np.float64):
-        #    _output = _output.double()
-        # else:
-        #    _output = _output.float()
-
-        torch_forward_outputs.append((module, _output))
-        # return output
-
-    def _get_all_layers_pytorch(module: torch.nn.Module) -> None:
-        # iterate through immediate child modules
-        list_children = list(module.named_children())
-        for _name, immediate_child_module in list_children:
-            if len(list(immediate_child_module.named_children())) == 0:
-                immediate_child_module.register_forward_hook(hook)
-            _get_all_layers_pytorch(immediate_child_module)
-
-    _get_all_layers_pytorch(torch_model)
-
-    return torch_forward_outputs
-
-
-def set_backward_hook(
-    torch_model: torch.nn.Module,
-) -> list[tuple[torch.nn.Module, tuple[torch.Tensor, ...] | torch.Tensor]]:
-    """Recursively sets the backwards's 'hook' method."""
-
-    # Forward
-    # Input -> Layer -> Output
-    # PyDTNN's Backward:
-    # Output <- Layer <- Input
-    # PyDTNN's Backward:
-    # Input.grad <- Layer <- Output.grad
-
-    # torch_backward_outputs = list[tuple[torch.nn.Module, tuple[torch.Tensor, ...] | torch.Tensor]]()
-    torch_backward_inputs = list[tuple[torch.nn.Module, tuple[torch.Tensor, ...] | torch.Tensor]]()
-
-    # params = PytorchModelTestCase.params
-
-    # _grad_t = tuple[Tensor, ...] | Tensor
-    def hook(
-        module: torch.nn.Module,
-        grad_input: tuple[torch.Tensor, ...] | torch.Tensor,
-        grad_output: tuple[torch.Tensor, ...] | torch.Tensor,
-    ) -> tuple[torch.Tensor, ...] | torch.Tensor | None:
-        """Torch backward's hook."""
-        output_copy = tuple([elem if elem is None else elem.clone() for elem in grad_output])
-        # output_copy = tuple([elem if elem is None else
-        #                    (elem.clone().double() if params.dtype is np.dtype(np.float64) else elem.clone().float())
-        #                    for elem in grad_output])
-        # torch_backward_outputs.append((module, output_copy))
-
-        input_copy = tuple([elem if elem is None else elem.clone() for elem in grad_input])
-
-        # input_copy = tuple([elem if elem is None else
-        #                    (elem.clone().double() if params.dtype is np.dtype(np.float64) else elem.clone().float())
-        #                    for elem in grad_input])
-        if verbose_test():
-            print(f"{module} - {input_copy[0].size()=} - {output_copy[0].size()=}")
-        torch_backward_inputs.append((module, input_copy))
-
-    def _get_all_layers_pytorch(module: torch.nn.Module) -> None:
-        # iterate through immediate child modules
-        list_children = list(module.named_children())
-        for _name, immediate_child_module in list_children:
-            if len(list(immediate_child_module.named_children())) == 0:
-                immediate_child_module.register_full_backward_hook(hook)
-            _get_all_layers_pytorch(immediate_child_module)
-
-    _get_all_layers_pytorch(torch_model)
-
-    return torch_backward_inputs
-
-
-def replace_pydtnn_layerable(
-    layers: Sequence[Layerable], conversion: dict[type[Layerable], type[Layerable]]
-) -> list[Layerable]:
-    """Function to replace PyDTNN's layers and activations."""
-
-    new_layers = list()
-    conv_keys = conversion.keys()
-
-    for layer in layers:
-        if type(layer) in conv_keys:
-            args, kwargs = layer._new_backend
-            layer = conversion[type(layer)](*args, **kwargs)
-        new_layers.append(layer)
-
-    return new_layers
-
-
-def get_all_pytorch_layers(
-    torch_model: torch.nn.Module,
-) -> list[torch.nn.Module]:
-    """Recursively gets all the layers of a PyTorch model."""
-
-    layers = list[torch.nn.Module]()
-
-    def _get_all_layers_pytorch(module: torch.nn.Module) -> None:
-        # iterate through immediate child modules
-        list_children = list(module.named_children())
-        for _name, immediate_child_module in list_children:
-            layers.append(immediate_child_module)
-            _get_all_layers_pytorch(immediate_child_module)
-
-    _get_all_layers_pytorch(torch_model)
-
-    return layers
-
-
-def get_torch_grad_parameters_values(
-    torch_model: PyTorch_Model,
-) -> dict[int, dict[str, tuple[torch.nn.Module, np.ndarray | None]]]:
-    """Function to get all the parameter's gradients."""
-    layers = get_all_pytorch_layers(torch_model)
-    # weight = weights (dw); bias = biases (db)
-    equivalence = {"weight": Parameters.DW, "bias": Parameters.DB}
-    layers_grad_vars = dict[int, dict[str, tuple[torch.nn.Module, np.ndarray | None]]]()
-
-    i = 0
-    for layer in layers:
-        name = layer._get_name()
-
-        match name:
-            case "BatchNorm2d" | "Conv2d" | "Linear":
-                if verbose_test():
-                    print(
-                        f"number: {i}, {layer=}, layer.bias={layer.bias is not None}, parameters: {layer._parameters.keys()}"
-                    )
-                parameters = dict[str, tuple[torch.nn.Module, np.ndarray | None]]()
-                for key in layer._parameters.keys():
-                    param = layer._parameters[key]
-                    if param is not None:
-                        param = None if param.grad is None else param.grad.numpy(force=True)
-                    parameters[equivalence[key]] = (layer, param)
-                layers_grad_vars[i] = parameters
-                i += 1
-            case _:
-                pass
-                # if verbose_test():
-                #     print(f"number: {i}, layer: {name}, with no parameters: {layer._parameters}")
-    return layers_grad_vars
-
-
-def get_pydtnn_grad_vars_values(
-    pydtnn_model: PyDTNN_Model,
-) -> dict[int, tuple[Layerable, dict[str, np.ndarray | None]]]:
-    """Function to get all the parameter's gradients."""
-    # layers = pydtnn_model.layers
-    layers_grad_vars = dict[int, tuple[Layerable, dict[str, np.ndarray | None]]]()
-
-    def _get_pydtnn_grad_vars_values(i: int, layers: list[Layerable]) -> int:
-        for layer in layers:
-            name = layer.name_with_id
-
-            match layer:
-                case BatchNormalization() | Conv2D() | FC():
-                    if verbose_test():
-                        print(
-                            f"number: {i}, {name}, {layer.use_bias=}, grad_vars: {layer.grad_vars.keys()}"
-                        )
-                    grad_vars = dict[str, np.ndarray | None]()
-
-                    for grad_v_key in layer.grad_vars.values():
-                        pydtnn_grad = getattr(layer, grad_v_key)
-                        if isinstance(pydtnn_grad, TensorArray):
-                            pydtnn_grad = pydtnn_grad.get().reshape(pydtnn_grad.cpu_shape)
-                        grad_vars[grad_v_key] = pydtnn_grad
-                    layers_grad_vars[i] = (layer, grad_vars)
-                    i += 1
-                case AbstractBlockLayer():
-                    for path in layer.paths:
-                        i = _get_pydtnn_grad_vars_values(i, path)
-                case _:
-                    pass
-                    # if verbose_test():
-                    #     print(f"number: {i}, layer: {name}, with no grad_vars: {layer.grad_vars}")
-        return i
-
-    _get_pydtnn_grad_vars_values(0, pydtnn_model.layers)
-
-    return layers_grad_vars
-
-
-def get_torch_parameters_values(
-    torch_model: PyTorch_Model,
-) -> dict[int, dict[str, np.ndarray | None]]:
-    """Function to get all the parameter's gradients."""
-    layers = get_all_pytorch_layers(torch_model)
-    # weight = weights (dw); bias = biases (db)
-    equivalence = {
-        "weight": Parameters.WEIGHTS,
-        "bias": Parameters.BIASES,
-        "running_mean": Parameters.RUNNING_MEAN,
-        "running_var": Parameters.RUNNING_VAR,
-    }
-    layers_parameters = dict[int, dict[str, np.ndarray | None]]()
-
-    i = 0
-    for layer in layers:
-        name = layer._get_name()
-
-        match name:
-            case "BatchNorm2d" | "Conv2d" | "Linear":
-                if verbose_test():
-                    print(
-                        f"number: {i}, {layer=}, layer.bias={layer.bias is not None}, parameters: {layer._parameters.keys()}"
-                    )
-                parameters = dict[str, np.ndarray | None]()
-
-                for key in layer._parameters.keys():
-                    param = layer._parameters[key]
-                    if param is not None:
-                        param = None if param is None else param.numpy(force=True)
-                    parameters[equivalence[key]] = param
-                layers_parameters[i] = parameters
-                i += 1
-            case _:
-                if verbose_test():
-                    print(f"number: {i}, layer: {name}, with no parameters: {layer._parameters}")
-    return layers_parameters
-
-
-def get_pydtnn_vars_values(pydtnn_model: PyDTNN_Model) -> dict[int, dict[str, np.ndarray | None]]:
-    """Function to get all the parameter's gradients."""
-    # layers = pydtnn_model.get_all_layers()
-    layers_parameters = dict[int, dict[str, np.ndarray | None]]()
-
-    def _get_pydtnn_vars_values(i: int, layers: list[Layerable]) -> int:
-        for layer in layers:
-            name = layer.name_with_id
-
-            match layer:
-                case BatchNormalization() | Conv2D() | FC():
-                    if verbose_test():
-                        print(
-                            f"number: {i}, {layer=}, {layer.use_bias=}, grad_vars: {layer.grad_vars.keys()}"
-                        )
-                    parameters = dict[str, np.ndarray | None]()
-                    for param_key in layer.grad_vars.keys():
-                        param = getattr(layer, param_key)
-                        if isinstance(param, TensorArray):
-                            param = param.get().reshape(param.cpu_shape)
-                        parameters[param_key] = param
-                    layers_parameters[i] = parameters
-                    i += 1
-                case AbstractBlockLayer():
-                    for path in layer.paths:
-                        i = _get_pydtnn_vars_values(i, path)
-                case _:
-                    if verbose_test():
-                        print(f"number: {i}, layer: {name}, with no params: {layer.grad_vars}")
-        return i
-
-    _get_pydtnn_vars_values(0, pydtnn_model.layers)
-
-    return layers_parameters
-
-
-def remove_elements(dict_to_modify: dict[int, Any], paths_id_and_number: dict[int, int]) -> None:
-    """Function to remove all entries of the first parameters between the numbers of the second parameter."""
-    for start in paths_id_and_number:
-        end = paths_id_and_number[start] + 1
-        start += 1
-        for to_remove in range(start, end):
-            dict_to_modify.pop(to_remove, None)
-
-
-def delete_torch_flatten_and_identity_outputs(
-    torch_outputs: list[tuple[torch.nn.Module, Any]],
-) -> None:
-    indexes_to_remove = list[int]()
-    for i, (layer, _) in enumerate(torch_outputs):
-        if isinstance(layer, (torch.nn.Flatten, torch.nn.Identity)):
-            indexes_to_remove.append(i)
-    for index in reversed(indexes_to_remove):
-        del torch_outputs[index]
-
-
 class ParamsTestTorch(Params):
     """Class where all the test parameters are stored"""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.num_epochs = 30
+        self.tensor_format = TensorFormat.NCHW
+        self.synthetic_input_shape = (3, 32, 32)
+        self.synthetic_output_shape = (10,)
+        self.dtype = np.dtype(np.float64)
+        self.optimizer_name = "adam"
+        self.optimizer_nesterov = True
+        self.optimizer_decoupled_decay = False
+        self.optimizer_momentum = 1
+        self.learning_rate = 1e-8
+        self.optimizer_beta1 = 0.99
+        self.optimizer_beta2 = 0.999
+        self.optimizer_epsilon = 1e-08
+        self.optimizer_decay = 0.5
+        self.backend = "cpu"
 
     @property
     def device(self) -> str:
@@ -527,7 +210,7 @@ class ParamsTestTorch(Params):
 
 
 class PytorchModelTestCase(TestCase):
-    """Tests that two models with different parameters lead to the same results"""
+    """Tests that a PyTorch model and a PyDTNN model have to the same results."""
 
     # NOTE: Delete parent test to prevent re-export and re-testing
     global TestCase
@@ -541,30 +224,323 @@ class PytorchModelTestCase(TestCase):
     atol_default = 1e-4  # 1e-10  # 1e-4
     rtol_dict = {}  # BatchNormalization: 1e-5, Conv2D: 1e-5,
     atol_dict = {}  # BatchNormalization: 1e-4, Conv2D: 1e-5,
+    params = ParamsTestTorch()
 
     def setUp(self) -> None:
         """Sets up the test environment."""
         super().setUp()
         torch.manual_seed(0)
 
-    # Initialization methods
+    @staticmethod
+    def replace_layer_pytorch(
+        module: torch.nn.Module, layer_to_replace: type[torch.nn.Module]
+    ) -> torch.nn.Module | None:
+        """
+        Recursively put desired batch norm in nn.module module.
 
-    params = ParamsTestTorch()
-    params.num_epochs = 30
-    params.tensor_format = TensorFormat.NCHW
-    params.synthetic_input_shape = (3, 32, 32)
-    params.synthetic_output_shape = (10,)
-    params.dtype = np.dtype(np.float64)
-    params.optimizer_name = "adam"
-    params.optimizer_nesterov = True
-    params.optimizer_decoupled_decay = False
-    params.optimizer_momentum = 1
-    params.learning_rate = 1e-8
-    params.optimizer_beta1 = 0.99
-    params.optimizer_beta2 = 0.999
-    params.optimizer_epsilon = 1e-08
-    params.optimizer_decay = 0.5
-    params.backend = "cpu"
+        set module = net to start code.
+        https://discuss.pytorch.org/t/how-to-replace-a-layer-with-own-custom-variant/43586/7
+        """
+
+        # iterate through immediate child modules
+        list_children = list(module.named_children())
+        for name, immediate_child_module in list_children:
+            setattr(module, name, PytorchModelTestCase.replace_layer_pytorch(immediate_child_module, layer_to_replace))
+
+        # go through all attributes of module nn.module (e.g. network or layer) and put batch norms if present
+        if isinstance(module, layer_to_replace):
+            if verbose_test():
+                print(f"Removed: {module}")
+            return torch.nn.Identity()
+        else:
+            return module
+
+    @staticmethod
+    def remove_inplace_pytorch(torch_model: torch.nn.Module) -> None:
+        """Recursively replaces inplace methods with normal methods."""
+
+        def _get_all_layers_pytorch(module: torch.nn.Module) -> None:
+            # iterate through immediate child modules
+            list_children = list(module.named_children())
+            for _name, immediate_child_module in list_children:
+                if len(list(immediate_child_module.named_children())) == 0:
+                    if hasattr(immediate_child_module, "inplace"):
+                        if verbose_test():
+                            print(
+                                f"INPLACE (before) -> {immediate_child_module} || {immediate_child_module.inplace=} =="
+                            )
+                        immediate_child_module.inplace = False  # pyright: ignore[reportArgumentType] (It's fine)
+                        if verbose_test():
+                            print(
+                                f"INPLACE (after) -> {immediate_child_module} || {immediate_child_module.inplace=} =="
+                            )
+                _get_all_layers_pytorch(immediate_child_module)
+
+        _get_all_layers_pytorch(torch_model)
+
+    @staticmethod
+    def set_forward_hook(torch_model: torch.nn.Module) -> list[tuple[torch.nn.Module, torch.Tensor]]:
+        """Recursively sets the forward's 'hook' method."""
+        # params = PytorchModelTestCase.params
+        torch_forward_outputs = list[tuple[torch.nn.Module, torch.Tensor]]()
+
+        def hook(
+            module: torch.nn.Module, args: tuple[Any, ...], output: torch.Tensor
+        ) -> torch.Tensor | None:
+            _output = output.clone()
+            # if params.dtype is np.dtype(np.float64):
+            #    _output = _output.double()
+            # else:
+            #    _output = _output.float()
+
+            torch_forward_outputs.append((module, _output))
+            # return output
+
+        def _get_all_layers_pytorch(module: torch.nn.Module) -> None:
+            # iterate through immediate child modules
+            list_children = list(module.named_children())
+            for _name, immediate_child_module in list_children:
+                if len(list(immediate_child_module.named_children())) == 0:
+                    immediate_child_module.register_forward_hook(hook)
+                _get_all_layers_pytorch(immediate_child_module)
+
+        _get_all_layers_pytorch(torch_model)
+
+        return torch_forward_outputs
+
+    @staticmethod
+    def set_backward_hook(
+        torch_model: torch.nn.Module,
+    ) -> list[tuple[torch.nn.Module, tuple[torch.Tensor, ...] | torch.Tensor]]:
+        """Recursively sets the backwards's 'hook' method."""
+
+        # Forward
+        # Input -> Layer -> Output
+        # PyDTNN's Backward:
+        # Output <- Layer <- Input
+        # PyDTNN's Backward:
+        # Input.grad <- Layer <- Output.grad
+
+        # torch_backward_outputs = list[tuple[torch.nn.Module, tuple[torch.Tensor, ...] | torch.Tensor]]()
+        torch_backward_inputs = list[tuple[torch.nn.Module, tuple[torch.Tensor, ...] | torch.Tensor]]()
+
+        # params = PytorchModelTestCase.params
+
+        # _grad_t = tuple[Tensor, ...] | Tensor
+        def hook(
+            module: torch.nn.Module,
+            grad_input: tuple[torch.Tensor, ...] | torch.Tensor,
+            grad_output: tuple[torch.Tensor, ...] | torch.Tensor,
+        ) -> tuple[torch.Tensor, ...] | torch.Tensor | None:
+            """Torch backward's hook."""
+            output_copy = tuple([elem if elem is None else elem.clone() for elem in grad_output])
+            # output_copy = tuple([elem if elem is None else
+            #                    (elem.clone().double() if params.dtype is np.dtype(np.float64) else elem.clone().float())
+            #                    for elem in grad_output])
+            # torch_backward_outputs.append((module, output_copy))
+
+            input_copy = tuple([elem if elem is None else elem.clone() for elem in grad_input])
+
+            # input_copy = tuple([elem if elem is None else
+            #                    (elem.clone().double() if params.dtype is np.dtype(np.float64) else elem.clone().float())
+            #                    for elem in grad_input])
+            if verbose_test():
+                print(f"{module} - {input_copy[0].size()=} - {output_copy[0].size()=}")
+            torch_backward_inputs.append((module, input_copy))
+
+        def _get_all_layers_pytorch(module: torch.nn.Module) -> None:
+            # iterate through immediate child modules
+            list_children = list(module.named_children())
+            for _name, immediate_child_module in list_children:
+                if len(list(immediate_child_module.named_children())) == 0:
+                    immediate_child_module.register_full_backward_hook(hook)
+                _get_all_layers_pytorch(immediate_child_module)
+
+        _get_all_layers_pytorch(torch_model)
+
+        return torch_backward_inputs
+
+    @staticmethod
+    def get_all_pytorch_layers(
+        torch_model: torch.nn.Module,
+    ) -> list[torch.nn.Module]:
+        """Recursively gets all the layers of a PyTorch model."""
+
+        layers = list[torch.nn.Module]()
+
+        def _get_all_layers_pytorch(module: torch.nn.Module) -> None:
+            # iterate through immediate child modules
+            list_children = list(module.named_children())
+            for _name, immediate_child_module in list_children:
+                layers.append(immediate_child_module)
+                _get_all_layers_pytorch(immediate_child_module)
+
+        _get_all_layers_pytorch(torch_model)
+
+        return layers
+
+    @staticmethod
+    def get_torch_grad_parameters_values(
+        torch_model: PyTorch_Model,
+    ) -> dict[int, dict[str, tuple[torch.nn.Module, np.ndarray | None]]]:
+        """Function to get all the parameter's gradients."""
+        layers = PytorchModelTestCase.get_all_pytorch_layers(torch_model)
+        # weight = weights (dw); bias = biases (db)
+        equivalence = {"weight": Parameters.DW, "bias": Parameters.DB}
+        layers_grad_vars = dict[int, dict[str, tuple[torch.nn.Module, np.ndarray | None]]]()
+
+        i = 0
+        for layer in layers:
+            name = layer._get_name()
+
+            match name:
+                case "BatchNorm2d" | "Conv2d" | "Linear":
+                    if verbose_test():
+                        print(
+                            f"number: {i}, {layer=}, layer.bias={layer.bias is not None}, "\
+                            f"parameters: {layer._parameters.keys()}"
+                        )
+                    parameters = dict[str, tuple[torch.nn.Module, np.ndarray | None]]()
+                    for key in layer._parameters.keys():
+                        param = layer._parameters[key]
+                        if param is not None:
+                            param = None if param.grad is None else param.grad.numpy(force=True)
+                        parameters[equivalence[key]] = (layer, param)
+                    layers_grad_vars[i] = parameters
+                    i += 1
+                case _:
+                    pass
+                    # if verbose_test():
+                    #     print(f"number: {i}, layer: {name}, with no parameters: {layer._parameters}")
+        return layers_grad_vars
+
+    @staticmethod
+    def get_pydtnn_grad_vars_values(
+        pydtnn_model: PyDTNN_Model,
+    ) -> dict[int, tuple[Layerable, dict[str, np.ndarray | None]]]:
+        """Function to get all the parameter's gradients."""
+        # layers = pydtnn_model.layers
+        layers_grad_vars = dict[int, tuple[Layerable, dict[str, np.ndarray | None]]]()
+
+        def _get_pydtnn_grad_vars_values(i: int, layers: list[Layerable]) -> int:
+            for layer in layers:
+                name = layer.name_with_id
+
+                match layer:
+                    case BatchNormalization() | Conv2D() | FC():
+                        if verbose_test():
+                            print(
+                                f"number: {i}, {name}, {layer.use_bias=}, grad_vars: {layer.grad_vars.keys()}"
+                            )
+                        grad_vars = dict[str, np.ndarray | None]()
+
+                        for grad_v_key in layer.grad_vars.values():
+                            pydtnn_grad = getattr(layer, grad_v_key)
+                            if isinstance(pydtnn_grad, TensorArray):
+                                pydtnn_grad = pydtnn_grad.get().reshape(pydtnn_grad.cpu_shape)
+                            grad_vars[grad_v_key] = pydtnn_grad
+                        layers_grad_vars[i] = (layer, grad_vars)
+                        i += 1
+                    case AbstractBlockLayer():
+                        for path in layer.paths:
+                            i = _get_pydtnn_grad_vars_values(i, path)
+                    case _:
+                        pass
+                        # if verbose_test():
+                        #     print(f"number: {i}, layer: {name}, with no grad_vars: {layer.grad_vars}")
+            return i
+
+        _get_pydtnn_grad_vars_values(0, pydtnn_model.layers)
+
+        return layers_grad_vars
+
+    @staticmethod
+    def get_torch_parameters_values(
+        torch_model: PyTorch_Model,
+    ) -> dict[int, dict[str, np.ndarray | None]]:
+        """Function to get all the parameter's gradients."""
+        layers = PytorchModelTestCase.get_all_pytorch_layers(torch_model)
+        # weight = weights (dw); bias = biases (db)
+        equivalence = {
+            "weight": Parameters.WEIGHTS,
+            "bias": Parameters.BIASES,
+            "running_mean": Parameters.RUNNING_MEAN,
+            "running_var": Parameters.RUNNING_VAR,
+        }
+        layers_parameters = dict[int, dict[str, np.ndarray | None]]()
+
+        i = 0
+        for layer in layers:
+            name = layer._get_name()
+
+            match name:
+                case "BatchNorm2d" | "Conv2d" | "Linear":
+                    if verbose_test():
+                        print(
+                            f"number: {i}, {layer=}, layer.bias={layer.bias is not None}, " \
+                            f"parameters: {layer._parameters.keys()}"
+                        )
+                    parameters = dict[str, np.ndarray | None]()
+
+                    for key in layer._parameters.keys():
+                        param = layer._parameters[key]
+                        if param is not None:
+                            param = None if param is None else param.numpy(force=True)
+                        parameters[equivalence[key]] = param
+                    layers_parameters[i] = parameters
+                    i += 1
+                case _:
+                    if verbose_test():
+                        print(f"number: {i}, layer: {name}, with no parameters: {layer._parameters}")
+        return layers_parameters
+
+    @staticmethod
+    def get_pydtnn_vars_values(pydtnn_model: PyDTNN_Model) -> dict[int, dict[str, np.ndarray | None]]:
+        """Function to get all the parameter's gradients."""
+        # layers = pydtnn_model.get_all_layers()
+        layers_parameters = dict[int, dict[str, np.ndarray | None]]()
+
+        def _get_pydtnn_vars_values(i: int, layers: list[Layerable]) -> int:
+            for layer in layers:
+                name = layer.name_with_id
+
+                match layer:
+                    case BatchNormalization() | Conv2D() | FC():
+                        if verbose_test():
+                            print(
+                                f"number: {i}, {layer=}, {layer.use_bias=}, grad_vars: {layer.grad_vars.keys()}"
+                            )
+                        parameters = dict[str, np.ndarray | None]()
+                        for param_key in layer.grad_vars.keys():
+                            param = getattr(layer, param_key)
+                            if isinstance(param, TensorArray):
+                                param = param.get().reshape(param.cpu_shape)
+                            parameters[param_key] = param
+                        layers_parameters[i] = parameters
+                        i += 1
+                    case AbstractBlockLayer():
+                        for path in layer.paths:
+                            i = _get_pydtnn_vars_values(i, path)
+                    case _:
+                        if verbose_test():
+                            print(f"number: {i}, layer: {name}, with no params: {layer.grad_vars}")
+            return i
+
+        _get_pydtnn_vars_values(0, pydtnn_model.layers)
+
+        return layers_parameters
+
+    @staticmethod
+    def delete_torch_flatten_and_identity_outputs(
+        torch_outputs: list[tuple[torch.nn.Module, Any]],
+    ) -> None:
+        """Function to remove the flatten and identity layer's outputs"""
+        indexes_to_remove = list[int]()
+        for i, (layer, _) in enumerate(torch_outputs):
+            if isinstance(layer, (torch.nn.Flatten, torch.nn.Identity)):
+                indexes_to_remove.append(i)
+        for index in reversed(indexes_to_remove):
+            del torch_outputs[index]
 
     def get_tolerance(self, layer: Layerable) -> tuple[float, float]:
         """
@@ -668,9 +644,8 @@ class PytorchModelTestCase(TestCase):
             case _:
                 raise ValueError(f"Unknown model {model_name!r}!")
 
-        replace_layer_pytorch(torch_model, layer_to_replace=torch.nn.Dropout)
-        # replace_layer_pytorch(torch_model, torch.nn.BatchNorm2d)
-        remove_inplace_pytorch(torch_model)
+        PytorchModelTestCase.replace_layer_pytorch(torch_model, layer_to_replace=torch.nn.Dropout)
+        PytorchModelTestCase.remove_inplace_pytorch(torch_model)
 
         return torch_model
 
@@ -681,7 +656,7 @@ class PytorchModelTestCase(TestCase):
 
     def get_optimizer_pytorch(self, model_torch: PyTorch_Model) -> torch.optim.Optimizer:
         """Method to get PyTorch's optimizer"""
-        params = PytorchModelTestCase.params
+        params = self.params
         match params.optimizer_name:
             case "sgd":
                 optimizer = SGD(
@@ -734,7 +709,7 @@ class PytorchModelTestCase(TestCase):
             unittest.SkipTest: If the model is incompatible with the dataset.
         """
         # PyDTNN Model
-        params = PytorchModelTestCase.params
+        params = self.params
         params.loss_name = "negative_likelihood"
         params.model_name = ""
         # Begin of params configuration
@@ -838,8 +813,8 @@ class PytorchModelTestCase(TestCase):
         _loss_torch = float(loss_torch.detach())
         if verbose_test():
             print(f"{_loss_torch=} || {_loss_pydtnn=}")
-        rtol: float = PytorchModelTestCase.rtol_default
-        atol: float = PytorchModelTestCase.atol_default
+        rtol: float = self.rtol_default
+        atol: float = self.atol_default
         assert np.isclose(float(_loss_torch), _loss_pydtnn, rtol=rtol, atol=atol), (
             f"[ROUND {round}] Both values are not close: {_loss_torch=} =/=  {_loss_pydtnn=}"
         )
@@ -945,7 +920,7 @@ class PytorchModelTestCase(TestCase):
 
         if verbose_test():
             print(f"[Round: {round}] Comparing outputs of both models {message}...")
-        delete_torch_flatten_and_identity_outputs(layers_and_values_torch)
+        self.delete_torch_flatten_and_identity_outputs(layers_and_values_torch)
 
         for i in range(len(layers_and_values_torch)):
             torch_layer, pytorch_base_values = layers_and_values_torch[i]
@@ -954,7 +929,7 @@ class PytorchModelTestCase(TestCase):
                 pytorch_base_values = pytorch_base_values[0]
             pytorch_values = pytorch_base_values.numpy(force=True)
 
-            if PytorchModelTestCase.params.device == "cuda":
+            if self.params.device == "cuda":
                 assert isinstance(pydtnn_values, TensorArray)
                 pydtnn_values = pydtnn_values.get().reshape(pydtnn_values.cpu_shape)
             else:
@@ -1019,8 +994,8 @@ class PytorchModelTestCase(TestCase):
         if verbose_test():
             print(f"[Round: {round}] Comparing outputs of both models gradients...")
 
-        torch_gradients = get_torch_grad_parameters_values(torch_model)
-        pydtnn_gradients = get_pydtnn_grad_vars_values(pydtnn_model)
+        torch_gradients = self.get_torch_grad_parameters_values(torch_model)
+        pydtnn_gradients = self.get_pydtnn_grad_vars_values(pydtnn_model)
         assert len(torch_gradients) == len(pydtnn_gradients), (
             f"[ROUND {round}] Torch and PyDTNN gradients "
             "must have the same number of elements: "
@@ -1078,8 +1053,8 @@ class PytorchModelTestCase(TestCase):
         if verbose_test():
             print(f"[Round: {round}] Comparing outputs of both models optimizer's parameters...")
 
-        torch_params = get_torch_parameters_values(torch_model)
-        pydtnn_params = get_pydtnn_vars_values(pydtnn_model)
+        torch_params = self.get_torch_parameters_values(torch_model)
+        pydtnn_params = self.get_pydtnn_vars_values(pydtnn_model)
         assert len(torch_params) == len(pydtnn_params), (
             f"[ROUND {round}] Torch and PyDTNN parameters must have the same "
             f"number of elements: {len(torch_params)=} || "
@@ -1148,7 +1123,10 @@ class PytorchModelTestCase(TestCase):
             torch_forward_outputs (list[torch.Tensor]): list where the torch forward's outputs will be stored.
             model_name (str): Name of the model to test.
         """
-        params = PytorchModelTestCase.params
+        model_pydtnn = self.get_model_pydtnn(model_torch)
+        model_pydtnn.mode = ModelMode.TRAIN
+
+        params = self.params
         input_shape = params.synthetic_input_shape
         # output_shape = params.synthetic_output_shape[0]
 
@@ -1158,13 +1136,11 @@ class PytorchModelTestCase(TestCase):
         loss_func_torch = self._get_torch_loss_func()
         if not without_weighted_layers:
             optimizer_torch = self.get_optimizer_pytorch(model_torch)
-        model_pydtnn = self.get_model_pydtnn(model_torch)
-        model_pydtnn.mode = ModelMode.TRAIN
 
         model_torch = model_torch.to(torch.device(params.device))
 
-        x_outputs_torch = set_forward_hook(model_torch)
-        dx_torch = set_backward_hook(model_torch)
+        x_outputs_torch = self.set_forward_hook(model_torch)
+        dx_torch = self.set_backward_hook(model_torch)
 
         for i in range(params.num_epochs):
             if verbose_test():
@@ -1218,13 +1194,13 @@ class PytorchModelTestCase(TestCase):
             self.compare_loss(loss_torch, _loss_pydtnn, round=i)
 
             # --- BACKWARD ---
-            # Model 1 backward
+            # Torch Model backward
             if verbose_test():
                 header(f"Model {model_torch} 1 backward pass")
 
             self.do_pytorch_model_backward_pass(model_torch, loss_torch)
 
-            # Model 2 backward
+            # PyDTNN Model backward
             if verbose_test():
                 header(f"Model {model_pydtnn.model_name} 2 backward pass")
             dx_pydtnn = self.do_pydtnn_model_backward_pass(model_pydtnn, dx_pydtnn)
