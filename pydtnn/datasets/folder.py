@@ -54,12 +54,13 @@ class Folder(Dataset):
 
         # NOTE: Validation dataset is extracted from the Test one.
         self.model = model
+
         if not os.path.isdir(self.model.dataset_path):
             raise NotADirectoryError(f"{self.model.dataset_path!r} should be a directory.")
+
         dataset_train_path = os.path.join(self.model.dataset_path, "train")
         dataset_test_path = os.path.join(self.model.dataset_path, "test")
 
-        # self.new_size = (new_size, new_size) if isinstance(new_size, int) else new_size
         self._nsamples = [0, 0, 0]  # train, val, test
         self.labels_and_images = dict[Dataset.Part, list[tuple[ClassName, DataPath]]]()
         self.folder_class_elems = dict[int, int]()
@@ -74,9 +75,6 @@ class Folder(Dataset):
             num_classes_test,
             self._nsamples[Dataset.Part.TEST],
         ) = self._get_dict_class_and_file(path=dataset_test_path)
-
-        # Mix train and validation
-        self.model.random.shuffle(self.labels_and_images[Dataset.Part.TRAIN])
 
         if num_classes_train != num_classes_test:
             raise ValueError(
@@ -100,13 +98,21 @@ class Folder(Dataset):
             debug=debug,
         )
 
+    def _model_init(self) -> None:
+        super()._model_init()
+
+        # Get class weights
+        num_classes_train = self.output_shape[0]
         self.class_weights: list[float] = [1.0] * num_classes_train
 
-        num_elementos = sum(self.folder_class_elems.values())
+        num_elems = sum(self.folder_class_elems.values())
         for folder_class in self.folder_class_elems.keys():
-            self.class_weights[folder_class] = num_elementos / (
+            self.class_weights[folder_class] = num_elems / (
                 self.folder_class_elems[folder_class] * num_classes_train
             )
+
+        # Mix train and validation
+        self.model.random.shuffle(self.labels_and_images[Dataset.Part.TRAIN])
 
         self.labels_and_images[Dataset.Part.VAL] = copy.copy(
             self.labels_and_images[Dataset.Part.TEST]
@@ -177,14 +183,17 @@ class Folder(Dataset):
         Yields:
             tuple: A tuple containing the input data tensor and the label tensor.
         """
-        offset = self._local_offset[part]
-        nsamples = self._local_nsamples[part]
+        nsamples = self._nsamples[part]
+        local_offset = self._local_offset[part]
+        local_nsamples = self._local_nsamples[part]
         labels_and_images = self.labels_and_images[part]
 
-        labels_and_images = labels_and_images[offset: offset + nsamples]
-
         if part is Dataset.Part.TRAIN and self.model.augment_shuffle:
-            self.model.random.shuffle(labels_and_images)
+            labels_and_images_part = labels_and_images[:nsamples]
+            self.model.random.shuffle(labels_and_images_part)
+            labels_and_images[:nsamples] = labels_and_images_part
+
+        labels_and_images = labels_and_images[local_offset: local_offset + local_nsamples]
 
         for label, path_image in labels_and_images:
             x = self._load_rgb_image(path_image)

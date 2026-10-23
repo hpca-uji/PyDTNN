@@ -43,10 +43,10 @@ class Repr(Init, Baser):
         """Print a summary report of the dataset configuration."""
         report = list[str]()
         if self.model.comm_rank == 0:
-            report.append("Initial nsamples:")
-            report.append(f" train: {self._initial_nsamples[self.Part.TRAIN]} ")
-            report.append(f" val: {self._initial_nsamples[self.Part.VAL]} ")
-            report.append(f" test: {self._initial_nsamples[self.Part.TEST]} ")
+            report.append("nsamples:")
+            report.append(f" train: {self._nsamples[self.Part.TRAIN]} ")
+            report.append(f" val: {self._nsamples[self.Part.VAL]} ")
+            report.append(f" test: {self._nsamples[self.Part.TEST]} ")
 
         desc = ["train", "val", "test"]
         for part in (self.Part.TRAIN, self.Part.VAL, self.Part.TEST):

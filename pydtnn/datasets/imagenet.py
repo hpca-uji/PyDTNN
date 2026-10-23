@@ -254,14 +254,17 @@ class ImageNet(Dataset):
         Args:
             part: The dataset partition (TRAIN, VALIDATION, or TEST).
         """
-        offset = self._local_offset[part]
-        nsamples = self._local_nsamples[part]
+        nsamples = self._nsamples[part]
+        local_offset = self._local_offset[part]
+        local_nsamples = self._local_nsamples[part]
         xy_filenames = self._xy_filenames[part]
 
-        xy_filenames = xy_filenames[offset: offset + nsamples]
-
         if part is Dataset.Part.TRAIN and self.model.augment_shuffle:
-            self.model.random.shuffle(xy_filenames)
+            xy_filenames_part = xy_filenames[:nsamples]
+            self.model.random.shuffle(xy_filenames_part)
+            xy_filenames[:nsamples] = xy_filenames_part
+
+        xy_filenames = xy_filenames[local_offset: local_offset + local_nsamples]
 
         for path, y in xy_filenames:
             with load_archive(*path) as fp:

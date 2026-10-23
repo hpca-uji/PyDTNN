@@ -119,7 +119,7 @@ def convert_size_bytes(size_bytes: int) -> str:
     return f"{convert_size(size_bytes, scale=1024)}B"
 
 
-def gzip_open(filename: str, mode: str = "rb") -> IO[bytes]:
+def gzip_open(filename: str) -> IO[bytes]:
     """
     Open a gZIP file.
 
@@ -128,7 +128,6 @@ def gzip_open(filename: str, mode: str = "rb") -> IO[bytes]:
 
     Args:
         filename: The path to the gZIP file.
-        mode: The file mode.
 
     Returns:
         A file-like object opened in binary read mode.
@@ -138,6 +137,7 @@ def gzip_open(filename: str, mode: str = "rb") -> IO[bytes]:
         Exception: If there's an error during gzip file operations.
     """
     f = None
+    mode = "rb"
     path = Path(filename)
     plain = path.with_suffix("")
     idx = path.with_suffix(f"{path.suffix}.idx")

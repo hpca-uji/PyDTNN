@@ -55,6 +55,9 @@ class Synthetic(Dataset):
         """Initializes the internal synthetic data arrays based on model shapes and batch sizes."""
         super()._model_init()
 
+        # -1 is used to mark each part as not initialized
+        self._local_remaining_nsamples = [-1] * len(Dataset.Part)
+
         for part in Dataset.Part:
             local_batches = self._local_nsamples[part] // self.model.batch_size
             nsamples = local_batches * self.model.batch_size

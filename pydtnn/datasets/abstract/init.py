@@ -123,18 +123,10 @@ class Init(Utils):
         self.input_shape: ArrayShape = tuple(input_shape)
         self.output_shape: ArrayShape = tuple(output_shape)
 
-        self._initial_nsamples = [
-            self._nsamples[Base.Part.TRAIN],
-            self._nsamples[Base.Part.VAL],
-            self._nsamples[Base.Part.TEST],
-        ]
         # Offset (in number of samples) and number of samples for the current job
         # for each dataset part
         self._local_offset = [0] * len(Base.Part)
         self._local_nsamples = [0] * len(Base.Part)
-        self._local_remaining_nsamples = [-1] * len(
-            Base.Part
-        )  # -1 is used to mark each part as not initialized
 
         for part in Base.Part.TRAIN, Base.Part.VAL, Base.Part.TEST:
             self._local_offset[part], self._local_nsamples[part], self._nsamples[part] = (
@@ -142,8 +134,8 @@ class Init(Utils):
             )
 
         if not self.test_as_validation:
-            self._local_offset[Base.Part.VAL] += self._initial_nsamples[Base.Part.TRAIN]
-        # self._local_offset[Base.Part.TEST] += self._initial_nsamples[Base.Part.TRAIN]
+            self._local_offset[Base.Part.VAL] += self._nsamples[Base.Part.TRAIN]
+        # self._local_offset[Base.Part.TEST] += self._nsamples[Base.Part.TRAIN]
 
     def get_train_val_generator(
         self,

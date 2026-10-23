@@ -96,11 +96,15 @@ class Memory(Dataset):
 
         test_as_validation = model.test_as_validation or force_test_as_validation
 
-        # Mix train and validation
-        idx = np.arange(x_train.shape[0])
-        model.random.shuffle(idx)
-        x_train = np.ascontiguousarray(x_train[idx])
-        y_train = np.ascontiguousarray(y_train[idx])
+        super().__init__(
+            model,
+            x_train.shape[0],
+            x_test.shape[0],
+            input_shape,
+            output_shape,
+            force_test_as_validation=force_test_as_validation,
+            debug=debug,
+        )
 
         self.__x_source: list[np.ndarray] = []
         self.__y_source: list[np.ndarray] = []
@@ -118,15 +122,17 @@ class Memory(Dataset):
         self.__x_source.append(x_test)
         self.__y_source.append(y_test)
 
-        super().__init__(
-            model,
-            x_train.shape[0],
-            x_test.shape[0],
-            input_shape,
-            output_shape,
-            force_test_as_validation=force_test_as_validation,
-            debug=debug,
-        )
+    def _model_init(self) -> None:
+        super()._model_init()
+
+        x_train = self.__x_source[Dataset.Part.TRAIN]
+        y_train = self.__y_source[Dataset.Part.TRAIN]
+
+        # Mix train and validation
+        idx = np.arange(x_train.shape[0])
+        self.model.random.shuffle(idx)
+        x_train = np.ascontiguousarray(x_train[idx])
+        y_train = np.ascontiguousarray(y_train[idx])
 
     def _data_generator(self, part: Dataset.Part) -> Generator[tuple[np.ndarray, np.ndarray]]:
         """Yield raw data from the dataset partition."""
