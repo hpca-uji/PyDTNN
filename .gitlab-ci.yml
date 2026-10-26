@@ -17,7 +17,6 @@ build_pydtnn:
     GIT_SUBMODULE_STRATEGY: recursive
     PYTHON_VERSION: latest
     PIP_ROOT_USER_ACTION: ignore
-    PIP_DISABLE_PIP_VERSION_CHECK: 1
     PIP_CACHE_DIR: $CI_PROJECT_DIR/build/pip
 
   stage: build
@@ -37,17 +36,20 @@ build_pydtnn:
   - apt-get update
   - mkdir -p ./build
   - export $(make env | xargs)
+  - pip install --upgrade pip
   - make deps APT="apt-get -o dir::cache::archives=${PWD:?}/build/apt"
   script:
   - make pydtnn-clean
   - make build NPROC=${RUNNER_NPROC:?}
   - make install PYDTNN_PKG=test,lint
   - make install PYDTNN_PKG=torch || true
+  - make audit
   - make test NPROC=${RUNNER_NPROC:?}
   - make lint NPROC=${RUNNER_NPROC:?}
 
   artifacts:
     reports:
+      cyclonedx: ./build/pydtnn/audit.json
       junit: ./build/pydtnn/tests.xml
       coverage_report:
         coverage_format: cobertura

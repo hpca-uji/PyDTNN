@@ -52,7 +52,7 @@ data-arch = [
     "rapidgzip~=0.16"
 ]
 data-image = [
-    "pillow~=12.2",
+    "pillow~=13.0",
     "scipy~=1.17"
 ]
 data-lang = [
@@ -135,7 +135,8 @@ lint = [
 build = [
     "build~=1.4",
     "auditwheel~=6.6",
-    "twine~=6.2"
+    "twine~=6.2",
+    "pip-audit~=2.10"
 ]
 dev = [
     "pydtnn[profile]",
@@ -145,12 +146,20 @@ dev = [
     "pydtnn[build]"
 ]
 
+full = [
+    "pydtnn[data]",
+    "pydtnn[gpu,gpu-cuda]",
+    "pydtnn[mpi]",
+    "pydtnn[fhe]",
+    "pydtnn[dev,test-torch]"
+]
+
 [project.scripts]
 pydtnn-benchmark = "pydtnn.__main__:_start"
 
 [build-system]
 requires = [
-    "setuptools~=82.0",
+    "setuptools~=84.1",
     "setuptools-scm~=10.0",
     "cython~=3.2",
     "numpy~=2.4",

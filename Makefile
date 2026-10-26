@@ -46,6 +46,7 @@ PYDTNN_DST := $(DST)/pydtnn
 	help \
 	deps \
 	src \
+	audit \
 	build \
 	install \
 	dev \
@@ -97,6 +98,9 @@ deps: \
 	convdirect-deps \
 	openfhe-deps \
 	openfhe-python-deps
+
+audit: \
+	pydtnn-audit
 
 src: \
 	pydtnn-src \
@@ -566,6 +570,7 @@ uarchfhe-clean:
 	pydtnn \
 	pydtnn-deps \
 	pydtnn-src \
+	pydtnn-audit \
 	pydtnn-build \
 	pydtnn-install \
 	pydtnn-dev \
@@ -578,11 +583,18 @@ pydtnn: pydtnn-build
 
 pydtnn-deps:
 	$(APT) install -y python3 nodejs gcc patchelf
-	$(PIP) install build auditwheel twine
+	$(PIP) install build auditwheel twine pip-audit
 
 pydtnn-src: $(PYDTNN_SRC)/.git
 $(PYDTNN_SRC)/.git:
 	git clone "https://github.com/hpca-uji/PyDTNN.git" .
+
+pydtnn-audit:
+	mkdir -p "$(PYDTNN_DST)"
+	pip-audit \
+		--strict \
+		--format=cyclonedx-json \
+		--output="$(PYDTNN_DST)/audit.json"
 
 pydtnn-build: $(PYDTNN_DST)/.build
 $(PYDTNN_DST)/.build: $(PYDTNN_SRC)/.git | $(DST)/.gitignore
@@ -605,6 +617,7 @@ pydtnn-install: $(PYDTNN_DST)/.build
 pydtnn-dev: PYDTNN_PKG := dev
 pydtnn-dev:
 	$(PIP) install \
+		--upgrade \
 		-C=editable_mode=compat \
 		-C="--global-option=build_ext --parallel=$(NPROC)" \
 		-e "$(PYDTNN_SRC)$(if $(PYDTNN_PKG),[$(PYDTNN_PKG)])"
