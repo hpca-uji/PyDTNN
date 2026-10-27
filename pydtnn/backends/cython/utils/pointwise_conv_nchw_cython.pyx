@@ -59,14 +59,14 @@ def bwd_pointwise_conv_cython_nchw(npDT[:,:,:,::1] dy,
     cdef npDT val_dy
 
     for nn in prange(n, nogil=True):
-        for cco in range(co):
-            for xx in range(ho):
-                x_x = hstride * xx - hpadding
-                if 0 <= x_x < h:
-                    for yy in range(wo):
-                        x_y = wstride * yy - wpadding
-                        val_dy = dy[nn, cco, xx, yy]
-                        if 0 <= x_y < w:
+        for xx in range(ho):
+            x_x = hstride * xx - hpadding
+            if 0 <= x_x < h:
+                for yy in range(wo):
+                    x_y = wstride * yy - wpadding
+                    if 0 <= x_y < w:
+                        for cco in range(co):
                             for cc in range(c):
+                                val_dy = dy[nn, cco, xx, yy]
                                 dw[cco, cc] += (x[nn, cc, x_x, x_y] * val_dy)
                                 dx[nn, cc, x_x, x_y] += (k[cco, cc] * val_dy)
