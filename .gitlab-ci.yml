@@ -41,9 +41,9 @@ build_pydtnn:
   script:
   - make pydtnn-clean
   - make build NPROC=${RUNNER_NPROC:?}
-  - make install PYDTNN_PKG=audit,test,lint
-  - ./scripts/utils/extras.py | xargs -I@ make install PYDTNN_PKG=@ || true
-  - pip-audit --strict -f cyclonedx-json -o "./build/pydtnn/audit.json"
+  - make install NPROC=${RUNNER_NPROC:?} PYDTNN_PKG=audit,test,lint
+  - ./scripts/utils/extras.py | xargs -I@ make pydtnn-install NPROC=${RUNNER_NPROC:?} PYDTNN_PKG=@ || true
+  - pip-audit --format cyclonedx-json --output "./build/pydtnn/audit.json"
   - make test NPROC=${RUNNER_NPROC:?}
   - make lint NPROC=${RUNNER_NPROC:?}
 
@@ -109,7 +109,7 @@ deploy_gitlab:
   - GIT_TAG=$(basename ./build/pydtnn/pydtnn-*.tar.gz | sed -nE 's|^pydtnn-(.*)\.tar\.gz$|v\1|p')
   - glab auth login --hostname "${CI_SERVER_FQDN:?}" --token "${GITLAB_TOKEN:?}"
   script:
-  - glab release delete "${RELEASE_TAG:?}" -ty || true
+  - glab release delete "${RELEASE_TAG:?}" --with-tag --yes || true
   - glab release create "${RELEASE_TAG:?}" ./build/pydtnn/* --ref "${CI_COMMIT_SHA:?}" --name 'Continuous build' --notes 'Latest stable commit'
 
 deploy_pypi:
@@ -137,4 +137,4 @@ deploy_pypi:
   - '[ "${GIT_COMMIT:?}" = "${CI_COMMIT_SHA:?}" ] || exit 0'
   - make pydtnn-deps APT="true"
   script:
-  - twine upload -u '__token__' -p "${PYPI_TOKEN:?}" ./build/pydtnn/pydtnn-*
+  - twine upload --username '__token__' --password "${PYPI_TOKEN:?}" ./build/pydtnn/pydtnn-*
