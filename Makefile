@@ -46,7 +46,6 @@ PYDTNN_DST := $(DST)/pydtnn
 	help \
 	deps \
 	src \
-	audit \
 	build \
 	install \
 	dev \
@@ -98,9 +97,6 @@ deps: \
 	convdirect-deps \
 	openfhe-deps \
 	openfhe-python-deps
-
-audit: \
-	pydtnn-audit
 
 src: \
 	pydtnn-src \
@@ -570,7 +566,6 @@ uarchfhe-clean:
 	pydtnn \
 	pydtnn-deps \
 	pydtnn-src \
-	pydtnn-audit \
 	pydtnn-build \
 	pydtnn-install \
 	pydtnn-dev \
@@ -583,22 +578,11 @@ pydtnn: pydtnn-build
 
 pydtnn-deps:
 	$(APT) install -y python3 nodejs gcc patchelf
-	$(PIP) install build auditwheel twine pip-audit
+	$(PIP) install build auditwheel twine
 
 pydtnn-src: $(PYDTNN_SRC)/.git
 $(PYDTNN_SRC)/.git:
 	git clone "https://github.com/hpca-uji/PyDTNN.git" .
-
-pydtnn-audit:
-	mkdir -p "$(PYDTNN_DST)"
-	TMPDIR=$$(mktemp -d) && \
-	trap "rm -r $${TMPDIR:?}" EXIT && \
-	"$(PYDTNN_SRC)/scripts/utils/requirements.py" \
-		> "$${TMPDIR:?}/requirements.txt" && \
-	pip-audit \
-		--format=cyclonedx-json \
-		--requirement="$${TMPDIR:?}/requirements.txt" \
-		--output="$(PYDTNN_DST)/audit.json"
 
 pydtnn-build: $(PYDTNN_DST)/.build
 $(PYDTNN_DST)/.build: $(PYDTNN_SRC)/.git | $(DST)/.gitignore

@@ -41,9 +41,8 @@ build_pydtnn:
   script:
   - make pydtnn-clean
   - make build NPROC=${RUNNER_NPROC:?}
-  - make install PYDTNN_PKG=test,lint
-  - make install PYDTNN_PKG=torch || true
-  - make audit
+  - ./scripts/utils/extras.py | xargs -I@ make install PYDTNN_PKG=@ || true
+  - pip-audit --strict -f cyclonedx-json -o "./build/pydtnn/audit.json"
   - make test NPROC=${RUNNER_NPROC:?}
   - make lint NPROC=${RUNNER_NPROC:?}
 

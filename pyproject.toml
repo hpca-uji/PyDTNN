@@ -107,37 +107,68 @@ test = [
     "pytest-cov~=7.1"
 ]
 
-profile = [
-    "psutil~=7.2",
+audit-sys = [
+    "psutil~=7.2"
+]
+audit-env = [
+    "pip-audit~=2.10"
+]
+audit-mem = [
     "memray~=1.19"
 ]
+audit = [
+    "pydtnn[audit-sys]",
+    "pydtnn[audit-env]",
+    "pydtnn[audit-mem]"
+]
+
 format = [
     "autopep8~=2.3",
     "absolufy-imports~=0.3",
     "isort~=8.0",
     "ruff~=0.15"
 ]
-lint = [
+
+lint-flake = [
     "flake8~=7.3",
-    "flake8-gl-codeclimate~=0.2",
-    "flake8-docstrings~=1.7",
-    "flake8-annotations~=3.2",
     "flake8-pyproject~=1.2",
-    "flake8-debug~=0.3",
-    "mccabe~=0.7",
-    "pep8-naming~=0.15",
-    "pycodestyle~=2.14",
-    "pydocstyle~=6.3",
+    "flake8-gl-codeclimate~=0.2",
+]
+lint-logic = [
     "pyflakes~=3.4",
-    "radon~=6.0",
     "pyright~=1.1"
 ]
+lint-complex = [
+    "radon~=6.0",
+    "mccabe~=0.7",
+]
+lint-style = [
+    "pep8-naming~=0.15",
+    "pycodestyle~=2.14",
+]
+lint-docs = [
+    "flake8-docstrings~=1.7",
+    "pydocstyle~=6.3",
+]
+lint-extra = [
+    "flake8-annotations~=3.2",
+    "flake8-debug~=0.3",
+]
+lint = [
+    "pydtnn[lint-flake]",
+    "pydtnn[lint-logic]",
+    "pydtnn[lint-complex]",
+    "pydtnn[lint-style]",
+    "pydtnn[lint-docs]",
+    "pydtnn[lint-extra]",
+]
+
 build = [
     "build~=1.4",
     "auditwheel~=6.6",
-    "pip-audit~=2.10",
     "twine~=6.2"
 ]
+
 dev = [
     "pydtnn[profile]",
     "pydtnn[format]",
