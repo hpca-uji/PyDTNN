@@ -591,9 +591,13 @@ $(PYDTNN_SRC)/.git:
 
 pydtnn-audit:
 	mkdir -p "$(PYDTNN_DST)"
+	TMPDIR=$$(mktemp -d) && \
+	trap "rm -r $${TMPDIR:?}" EXIT && \
+	"$(PYDTNN_SRC)/scripts/utils/requirements.py" \
+		> "$${TMPDIR:?}/requirements.txt" && \
 	pip-audit \
-		--strict \
-		--format=cyclonedx-json \
+		--requirement="$${TMPDIR:?}/requirements.txt" \
+		--format=cyclonedx-json --strict \
 		--output="$(PYDTNN_DST)/audit.json"
 
 pydtnn-build: $(PYDTNN_DST)/.build
@@ -601,6 +605,10 @@ $(PYDTNN_DST)/.build: $(PYDTNN_SRC)/.git | $(DST)/.gitignore
 	mkdir -p "$(PYDTNN_DST)"
 	TMPDIR=$$(mktemp -d) && \
 	trap "rm -r $${TMPDIR:?}" EXIT && \
+	cp -t "$(PYDTNN_SRC)/pydtnn/libs" \
+		"$(CONVGEMM_DST)/lib"/*.so \
+		"$(CONVWINOGRAD_DST)/lib"/*.so \
+		"$(CONVDIRECT_DST)/lib"/*.so || true
 	cd "$(PYDTNN_SRC)" && \
 		python3 -m build -so "$(PYDTNN_DST)" && \
 		python3 -m build -wo "$${TMPDIR:?}" && \
@@ -659,5 +667,5 @@ pydtnn-clean:
 			-iname "*.o" \
 			-iname "*.so" \
 			-iname "*.dll" \
-			-iname "*.dsym" \
+			-iname "*.dylib" \
 			-delete

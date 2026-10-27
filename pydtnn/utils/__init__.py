@@ -177,7 +177,7 @@ def find_component(package: str, name: str) -> Any:
 
 
 @functools.cache
-def load_library(name: str, ver: str = "", src: str = "") -> ctypes.CDLL:
+def load_library(name: str, ver: str = "", src: str = f"{package_name}.libs") -> ctypes.CDLL:
     """
     Loads an external library using ctypes.
 
@@ -186,7 +186,6 @@ def load_library(name: str, ver: str = "", src: str = "") -> ctypes.CDLL:
     ver: full version
     """
     load = ctypes.cdll.LoadLibrary
-    src = src or f"_{package_name}"
 
     libs = []
     seps = ["."]

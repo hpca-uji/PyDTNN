@@ -135,8 +135,8 @@ lint = [
 build = [
     "build~=1.4",
     "auditwheel~=6.6",
-    "twine~=6.2",
-    "pip-audit~=2.10"
+    "pip-audit~=2.10",
+    "twine~=6.2"
 ]
 dev = [
     "pydtnn[profile]",
@@ -144,14 +144,6 @@ dev = [
     "pydtnn[test]",
     "pydtnn[lint]",
     "pydtnn[build]"
-]
-
-full = [
-    "pydtnn[data]",
-    "pydtnn[gpu,gpu-cuda]",
-    "pydtnn[mpi]",
-    "pydtnn[fhe]",
-    "pydtnn[dev,test-torch]"
 ]
 
 [project.scripts]
@@ -170,6 +162,13 @@ build-backend = "setuptools.build_meta"
 include = [
     "pydtnn",
     "pydtnn.*"
+]
+
+[tool.setuptools.package-data]
+pydtnn = [
+    "libs/*.so",
+    "libs/*.dll",
+    "libs/*.dylib"
 ]
 
 [tool.flake8]
