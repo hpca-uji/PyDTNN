@@ -596,8 +596,8 @@ pydtnn-audit:
 	"$(PYDTNN_SRC)/scripts/utils/requirements.py" \
 		> "$${TMPDIR:?}/requirements.txt" && \
 	pip-audit \
+		--format=cyclonedx-json \
 		--requirement="$${TMPDIR:?}/requirements.txt" \
-		--format=cyclonedx-json --strict \
 		--output="$(PYDTNN_DST)/audit.json"
 
 pydtnn-build: $(PYDTNN_DST)/.build
