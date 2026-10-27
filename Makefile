@@ -605,10 +605,10 @@ $(PYDTNN_DST)/.build: $(PYDTNN_SRC)/.git | $(DST)/.gitignore
 	mkdir -p "$(PYDTNN_DST)"
 	TMPDIR=$$(mktemp -d) && \
 	trap "rm -r $${TMPDIR:?}" EXIT && \
-	cp -t "$(PYDTNN_SRC)/pydtnn/libs" \
+	(cp -t "$(PYDTNN_SRC)/pydtnn/libs" \
 		"$(CONVGEMM_DST)/lib"/*.so \
 		"$(CONVWINOGRAD_DST)/lib"/*.so \
-		"$(CONVDIRECT_DST)/lib"/*.so || true
+		"$(CONVDIRECT_DST)/lib"/*.so || true) && \
 	cd "$(PYDTNN_SRC)" && \
 		python3 -m build -so "$(PYDTNN_DST)" && \
 		python3 -m build -wo "$${TMPDIR:?}" && \
