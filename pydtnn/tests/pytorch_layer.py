@@ -516,7 +516,7 @@ class PytorchLayerTestCase(PytorchModelTestCaseAbstract):
             values_torch: dict[int, dict[str, tuple[torch.nn.Module, np.ndarray | None]]],
             values_pydtnn: dict[int, tuple[Layerable, dict[str, np.ndarray | None]]],
         ) -> tuple[dict[int, dict[str, tuple[torch.nn.Module, np.ndarray | None]]],
-                        dict[int, tuple[Layerable, dict[str, np.ndarray | None]]]]:
+                   dict[int, tuple[Layerable, dict[str, np.ndarray | None]]]]:
             return (values_torch, values_pydtnn)
 
         self.compare_forward_mod_values = compare_forward_mod_values
