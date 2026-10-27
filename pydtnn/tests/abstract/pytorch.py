@@ -16,6 +16,8 @@ from pydtnn.layers.abstract.block_layer import AbstractBlockLayer
 from pydtnn.layers.abstract.layer import LayerError
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.conv_2d import Conv2D
+from pydtnn.layers.conv_2d_depthwise import Conv2DDepthwise
+from pydtnn.layers.conv_2d_pointwise import Conv2DPointwise
 from pydtnn.layers.fc import FC
 from pydtnn.layers.flatten import Flatten
 from pydtnn.layers.identity import Identity
@@ -243,7 +245,6 @@ class PytorchModelTestCaseAbstract(TestCase):
         i = 0
         for layer in layers:
             name = layer._get_name()
-
             match name:
                 case "BatchNorm2d" | "Conv2d" | "Linear":
                     if verbose_test():
@@ -276,9 +277,8 @@ class PytorchModelTestCaseAbstract(TestCase):
         def _get_pydtnn_grad_vars_values(i: int, layers: list[Layerable]) -> int:
             for layer in layers:
                 name = layer.name_with_id
-
                 match layer:
-                    case BatchNormalization() | Conv2D() | FC():
+                    case BatchNormalization() | Conv2D() | FC() | Conv2DDepthwise() | Conv2DPointwise():
                         if verbose_test():
                             print(
                                 f"number: {i}, {name}, {layer.use_bias=}, grad_vars: {layer.grad_vars.keys()}"
@@ -783,6 +783,7 @@ class PytorchModelTestCaseAbstract(TestCase):
         values_torch: list[tuple[torch.nn.Module, tuple[torch.Tensor, ...] | torch.Tensor]],
         values_pydtnn: list[tuple[Layerable, Array]],
         round: int,
+        off_set_pydtnn: int = 1
     ) -> None:
         """Compares the backward pass gradients of two models.
 
@@ -794,19 +795,15 @@ class PytorchModelTestCaseAbstract(TestCase):
         """
         # NOTE: The offset is 1 to ignore the last pydtnn's activation.
         self._compare_fwd_bwd(
-            values_torch, values_pydtnn, round=round, off_set_pydtnn=1, message="backwards"
+            values_torch, values_pydtnn, round=round, off_set_pydtnn=off_set_pydtnn, message="backwards"
         )
 
-    def compare_grad_vars(
-        self, torch_model: PyTorch_Model, pydtnn_model: PyDTNN_Model, round: int
+    def _compare_grad_vars(
+        self,
+        torch_gradients: dict[int, dict[str, tuple[torch.nn.Module, np.ndarray | None]]],
+        pydtnn_gradients: dict[int, tuple[Layerable, dict[str, np.ndarray | None]]],
+        round: int
     ) -> None:
-        """Method to comparte PyTorch 'parameters.grad' and PyDTNN grad vars's values"""
-
-        if verbose_test():
-            print(f"[Round: {round}] Comparing outputs of both models gradients...")
-
-        torch_gradients = self.get_torch_grad_parameters_values(torch_model)
-        pydtnn_gradients = self.get_pydtnn_grad_vars_values(pydtnn_model)
         assert len(torch_gradients) == len(pydtnn_gradients), (
             f"[ROUND {round}] Torch and PyDTNN gradients "
             "must have the same number of elements: "
@@ -855,6 +852,18 @@ class PytorchModelTestCaseAbstract(TestCase):
                         f"{torch_grad.flatten()=}\n{pydtnn_grad.flatten()=}"
                         f"({self.print_stats(torch_grad, pydtnn_grad, rtol, atol)})"
                     )
+
+    def compare_grad_vars(
+        self, torch_model: PyTorch_Model, pydtnn_model: PyDTNN_Model, round: int
+    ) -> None:
+        """Method to comparte PyTorch 'parameters.grad' and PyDTNN grad vars's values"""
+
+        if verbose_test():
+            print(f"[Round: {round}] Comparing outputs of both models gradients...")
+
+        torch_gradients = self.get_torch_grad_parameters_values(torch_model)
+        pydtnn_gradients = self.get_pydtnn_grad_vars_values(pydtnn_model)
+        self._compare_grad_vars(torch_gradients, pydtnn_gradients, round)
 
     def compare_optimizer_parameters(
         self, torch_model: PyTorch_Model, pydtnn_model: PyDTNN_Model, round: int
