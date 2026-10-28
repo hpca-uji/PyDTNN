@@ -79,7 +79,7 @@ def mobilenetv2_tiny(input_shape: ArrayShape, output_shape: ArrayShape) -> Seque
             _(BatchNormalization())
             _(Relu6())
 
-            _(Conv2DPointwise(nfilters=n_filt, filter_shape=(1, 1), use_bias=False))
+            _(Conv2DPointwise(nfilters=n_filt, use_bias=False))
             _(BatchNormalization())
             prev_n_filt = n_filt
 

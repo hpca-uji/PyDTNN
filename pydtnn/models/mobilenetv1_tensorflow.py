@@ -59,7 +59,7 @@ def mobilenetv1_tensorflow(
             )
             _(BatchNormalization())
             _(Relu6())
-            _(Conv2DPointwise(nfilters=n_filt, filter_shape=(1, 1), use_bias=False))
+            _(Conv2DPointwise(nfilters=n_filt, use_bias=False))
             _(BatchNormalization())
             _(Relu6())
             first_filters = n_filt

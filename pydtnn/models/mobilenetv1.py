@@ -60,7 +60,7 @@ def mobilenetv1(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[L
             )
             _(BatchNormalization())
             _(Relu())
-            _(Conv2DPointwise(nfilters=n_filt, filter_shape=(1, 1), use_bias=False))
+            _(Conv2DPointwise(nfilters=n_filt, use_bias=False))
             _(BatchNormalization())
             _(Relu())
             first_filters = n_filt
