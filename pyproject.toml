@@ -170,7 +170,7 @@ build = [
 ]
 
 dev = [
-    "pydtnn[profile]",
+    "pydtnn[audit]",
     "pydtnn[format]",
     "pydtnn[test]",
     "pydtnn[lint]",
