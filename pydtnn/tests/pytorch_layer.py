@@ -358,6 +358,13 @@ class PytorchLayerTestCase(PytorchModelTestCaseAbstract):
         """Method to pick the right grad_vars's values to test."""
         return (values_torch, values_pydtnn)
 
+    def compare_optimizer_mod_values(
+        self,
+        torch_params: dict[int, dict[str, np.ndarray | None]],
+        pydtnn_params: dict[int, dict[str, np.ndarray | None]]
+    ) -> tuple[dict[int, dict[str, np.ndarray | None]], dict[int, dict[str, np.ndarray | None]]]:
+        return (torch_params, pydtnn_params)
+
     def compare_forward(
         self,
         values_torch: list[tuple[Module, torch.Tensor]],
@@ -372,11 +379,12 @@ class PytorchLayerTestCase(PytorchModelTestCaseAbstract):
         self,
         values_torch: list[tuple[Module, tuple[torch.Tensor, ...] | torch.Tensor]],
         values_pydtnn: list[tuple[Layerable, np.ndarray | TensorArray]],
-        round: int
+        round: int,
+        off_set_pydtnn: int = 0
     ) -> None:
         """Method to adapt the backward outputs to the test."""
         values_torch, values_pydtnn = self.compare_backward_mod_values(values_torch, values_pydtnn)
-        return super().compare_backward(values_torch, values_pydtnn, round, off_set_pydtnn=0)
+        return super().compare_backward(values_torch, values_pydtnn, round, off_set_pydtnn=off_set_pydtnn)
 
     def compare_grad_vars(
         self,
@@ -388,7 +396,15 @@ class PytorchLayerTestCase(PytorchModelTestCaseAbstract):
         torch_gradients = self.get_torch_grad_parameters_values(torch_model)
         pydtnn_gradients = self.get_pydtnn_grad_vars_values(pydtnn_model)
         torch_gradients, pydtnn_gradients = self.compare_grad_vars_mod_values(torch_gradients, pydtnn_gradients)
-        return self._compare_grad_vars(torch_gradients, pydtnn_gradients, round)
+        return super()._compare_grad_vars(torch_gradients, pydtnn_gradients, round)
+
+    def compare_optimizer_parameters(
+            self, torch_model: Module, pydtnn_model: Model, round: int
+        ) -> None:
+        torch_params = self.get_torch_parameters_values(torch_model)
+        pydtnn_params = self.get_pydtnn_vars_values(pydtnn_model)
+        torch_params, pydtnn_params = self.compare_optimizer_mod_values(torch_params, pydtnn_params)
+        return super().compare_optimizer_parameters(torch_model, pydtnn_model, round)
 
     ########################
     # Unitary Test methods #
@@ -466,7 +482,7 @@ class PytorchLayerTestCase(PytorchModelTestCaseAbstract):
             model_name="ConcatenationBlock"
         )
 
-    @unittest.skip("Work in progress.")
+    # @unittest.skip("Work in progress.")
     def test_arctanh(self) -> None:
         """Tests Arctanh activation."""
         # NOTE: Domain ArcTanH: Real numbers between "]-1, 1["
@@ -475,7 +491,8 @@ class PytorchLayerTestCase(PytorchModelTestCaseAbstract):
         model_pydtnn = PytorchLayerTestCase.initialize_pydtnn_model(
             pydtnn_layers, params=self.params, torch_model=model_torch
         )
-        self.do_test_model(model_pydtnn=model_pydtnn, model_torch=model_torch, model_name="Arctanh")
+        self.do_test_model(model_pydtnn=model_pydtnn, model_torch=model_torch,
+                           model_name="Arctanh", without_weighted_layers=True)
 
     # @unittest.skip("Work in progress.")
     def test_depthwise_pointwise(self) -> None:
@@ -512,15 +529,7 @@ class PytorchLayerTestCase(PytorchModelTestCaseAbstract):
                    list[tuple[Layerable, np.ndarray | TensorArray]]]:
             return ([values_torch[-1]], [values_pydtnn[-1]])
 
-        def compare_grad_vars_mod_values(
-            values_torch: dict[int, dict[str, tuple[torch.nn.Module, np.ndarray | None]]],
-            values_pydtnn: dict[int, tuple[Layerable, dict[str, np.ndarray | None]]],
-        ) -> tuple[dict[int, dict[str, tuple[torch.nn.Module, np.ndarray | None]]],
-                   dict[int, tuple[Layerable, dict[str, np.ndarray | None]]]]:
-            return (values_torch, values_pydtnn)
-
         self.compare_forward_mod_values = compare_forward_mod_values
         self.compare_backward_mod_values = compare_backward_mod_values
-        self.compare_grad_vars_mod_values = compare_grad_vars_mod_values
 
         self.do_test_model(model_pydtnn=model_pydtnn, model_torch=model_torch, model_name="Depthwise-Pointwise")
