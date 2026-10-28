@@ -15,6 +15,7 @@ from pydtnn.converters.pytorch2pydtnn.model_converter import get_layers_from_tor
 from pydtnn.layers.abstract.block_layer import AbstractBlockLayer
 from pydtnn.layers.abstract.layer import LayerError
 from pydtnn.layers.batch_normalization import BatchNormalization
+from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.conv_2d_depthwise import Conv2DDepthwise
 from pydtnn.layers.conv_2d_pointwise import Conv2DPointwise
@@ -672,8 +673,32 @@ class PytorchModelTestCaseAbstract(TestCase):
             if isinstance(layer, AbstractBlockLayer):
                 # NOTE: Manually doing the AbstractBlockLayer backwards to get the intermediate outputs.
                 paths_outputs = list[Array]()
-                for path in reversed(layer.paths):
-                    _dx: Array = dx_base.copy()
+                # for i in reversed(layer.paths):
+                for i in range(len(layer.paths) - 1, -1, -1):
+                    path = layer.paths[i]
+
+                    if isinstance(layer, ConcatenationBlock):
+                        # Splitting the concatenation
+                        if self.params.device == "cuda":
+                            # NOTE: First moving the values to CPU, doing the split, then moving the values back to GPU.
+                            assert isinstance(dx_base, TensorArray)
+                            dx_to_split: np.ndarray = dx_base.get().reshape(dx_base.cpu_shape)
+                        else:
+                            assert isinstance(dx_base, np.ndarray)
+                            dx_to_split: np.ndarray = dx_base.copy()
+
+                        dx_splitted = np.split(dx_to_split, layer.idx_co[:-1], axis=layer.concat_dim)[i]
+
+                        if self.params.device == "cuda":
+                            # NOTE: Moving the values back to GPU.
+                            assert isinstance(dx_base, TensorArray)
+                            _dx = TensorArray.to_gpu(dx_splitted, dx_base.tensor_format,
+                                                     dx_base.cudnn_dtype, dx_base.tensor_type)
+                        else:
+                            _dx = dx_splitted
+                    else:
+                        _dx: Array = dx_base.copy()
+
                     for _layer in reversed(path):
                         _dx = _layer.backward(_dx.copy())  # pyright: ignore[reportAssignmentType]
                         if not isinstance(_layer, (Identity, Flatten, AbstractBlockLayer)):

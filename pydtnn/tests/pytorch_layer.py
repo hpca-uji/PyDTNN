@@ -7,7 +7,6 @@ PyDTNN layers and their corresponding PyTorch implementations.
 
 import logging
 from typing import Any
-import unittest
 
 import numpy as np
 import torch
@@ -16,6 +15,7 @@ from torch.nn import Module
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.activations.arctanh import Arctanh
 from pydtnn.activations.log_softmax import LogSoftmax
+from pydtnn.activations.relu import Relu
 from pydtnn.layers.abstract.block_layer import AbstractBlockLayer
 from pydtnn.layers.addition_block import AdditionBlock
 from pydtnn.layers.concatenation_block import ConcatenationBlock
@@ -139,6 +139,7 @@ class TorchAdditionBlock(torch.nn.Module):
                 stride=PARAMS.conv2d_stride,
                 dilation=PARAMS.conv2d_dilation,
             ),
+            torch.nn.ReLU()
         )
         self.block2 = torch.nn.Sequential(
             torch.nn.Conv2d(
@@ -176,6 +177,7 @@ class TorchConcatenationBlock(torch.nn.Module):
                 stride=PARAMS.conv2d_stride,
                 dilation=PARAMS.conv2d_dilation,
             ),
+            torch.nn.ReLU()
         )
         self.block2 = torch.nn.Sequential(
             torch.nn.Conv2d(
@@ -327,6 +329,8 @@ class PytorchLayerTestCase(PytorchModelTestCaseAbstract):
                                     ],
                                     "oihw")
                             PytorchLayerTestCase._copy_grad_vars(grad, grad_var, torch_layer)
+                    case Flatten():
+                        continue
                     case _:
                         for grad_var in layer.grad_vars.keys():
                             grad: np.ndarray = getattr(layer, grad_var)
@@ -347,6 +351,8 @@ class PytorchLayerTestCase(PytorchModelTestCaseAbstract):
     ) -> tuple[list[tuple[Module, tuple[torch.Tensor, ...] | torch.Tensor]],
                list[tuple[Layerable, np.ndarray | TensorArray]]]:
         """Method to pick the right backward's values to test."""
+        # NOTE: Removing the "LogSoftmax layer"
+        values_pydtnn.pop(0)
         return (values_torch, values_pydtnn)
 
     def compare_grad_vars_mod_values(
@@ -411,7 +417,7 @@ class PytorchLayerTestCase(PytorchModelTestCaseAbstract):
     ########################
     # Unitary Test methods #
     ########################
-    @unittest.skip("Work in progress.")
+    # @unittest.skip("Work in progress.")
     def test_addition_block(self) -> None:
         """Tests AdditionBlock layer."""
         pydtnn_layers: list[Layerable] = [
@@ -424,6 +430,7 @@ class PytorchLayerTestCase(PytorchModelTestCaseAbstract):
                         stride=PARAMS.conv2d_stride,
                         dilation=PARAMS.conv2d_dilation,
                     ),
+                    Relu()
                 ],
                 [
                     Conv2D(
@@ -448,7 +455,7 @@ class PytorchLayerTestCase(PytorchModelTestCaseAbstract):
             model_name="AdditionBlock",
         )
 
-    @unittest.skip("Work in progress.")
+    # @unittest.skip("Work in progress.")
     def test_concatenation_block(self) -> None:
         """Tests ConcatenationBlock layer."""
         pydtnn_layers: list[Layerable] = [
@@ -461,6 +468,7 @@ class PytorchLayerTestCase(PytorchModelTestCaseAbstract):
                         stride=PARAMS.conv2d_stride,
                         dilation=PARAMS.conv2d_dilation,
                     ),
+                    Relu()
                 ],
                 [
                     Conv2D(
@@ -516,22 +524,4 @@ class PytorchLayerTestCase(PytorchModelTestCaseAbstract):
         model_pydtnn = PytorchLayerTestCase.initialize_pydtnn_model(
             pydtnn_layers, params=self.params, torch_model=model_torch
         )
-
-        def compare_forward_mod_values(
-            values_torch: list[tuple[Module, torch.Tensor]],
-            values_pydtnn: list[tuple[Layerable, np.ndarray | TensorArray]],
-        ) -> tuple[list[tuple[Module, torch.Tensor]],
-                   list[tuple[Layerable, np.ndarray | TensorArray]]]:
-            return ([values_torch[1]], [values_pydtnn[1]])
-
-        def compare_backward_mod_values(
-            values_torch: list[tuple[Module, tuple[torch.Tensor, ...] | torch.Tensor]],
-            values_pydtnn: list[tuple[Layerable, np.ndarray | TensorArray]],
-        ) -> tuple[list[tuple[Module, tuple[torch.Tensor, ...] | torch.Tensor]],
-                   list[tuple[Layerable, np.ndarray | TensorArray]]]:
-            return ([values_torch[-1]], [values_pydtnn[-1]])
-
-        self.compare_forward_mod_values = compare_forward_mod_values
-        self.compare_backward_mod_values = compare_backward_mod_values
-
         self.do_test_model(model_pydtnn=model_pydtnn, model_torch=model_torch, model_name="Depthwise-Pointwise")

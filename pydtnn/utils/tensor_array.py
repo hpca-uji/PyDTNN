@@ -13,7 +13,7 @@ from typing import Any, Literal
 import numpy as np
 
 from pydtnn import drv as pycuda_driver
-from pydtnn import gpuarray
+from pydtnn import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import TensorFormat, decode_shape, encode_shape
 
