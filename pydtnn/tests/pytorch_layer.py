@@ -363,6 +363,7 @@ class PytorchLayerTestCase(PytorchModelTestCaseAbstract):
         torch_params: dict[int, dict[str, np.ndarray | None]],
         pydtnn_params: dict[int, dict[str, np.ndarray | None]]
     ) -> tuple[dict[int, dict[str, np.ndarray | None]], dict[int, dict[str, np.ndarray | None]]]:
+        """Method to pick the optimizer's values to test."""
         return (torch_params, pydtnn_params)
 
     def compare_forward(
@@ -392,15 +393,16 @@ class PytorchLayerTestCase(PytorchModelTestCaseAbstract):
         pydtnn_model: Model,
         round: int
     ) -> None:
-        """Method to adapt the Grad_Vars to the test."""
+        """Method to adapt the grad_vars to the test."""
         torch_gradients = self.get_torch_grad_parameters_values(torch_model)
         pydtnn_gradients = self.get_pydtnn_grad_vars_values(pydtnn_model)
         torch_gradients, pydtnn_gradients = self.compare_grad_vars_mod_values(torch_gradients, pydtnn_gradients)
         return super()._compare_grad_vars(torch_gradients, pydtnn_gradients, round)
 
     def compare_optimizer_parameters(
-            self, torch_model: Module, pydtnn_model: Model, round: int
-        ) -> None:
+        self, torch_model: Module, pydtnn_model: Model, round: int
+    ) -> None:
+        """Method to adapt the optimizer parameters's to the test."""
         torch_params = self.get_torch_parameters_values(torch_model)
         pydtnn_params = self.get_pydtnn_vars_values(pydtnn_model)
         torch_params, pydtnn_params = self.compare_optimizer_mod_values(torch_params, pydtnn_params)

@@ -9,5 +9,6 @@ __all__ = ("Conv2DPointwiseCython",)
 
 logger = logging.getLogger(__name__)
 
+
 class Conv2DPointwiseCython(Conv2DPointwiseNumpy, AbstractConv2DCython):
     """2D pointwise convolutional layer using Cython kernels for acceleration."""

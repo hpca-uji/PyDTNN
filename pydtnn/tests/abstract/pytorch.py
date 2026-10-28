@@ -878,12 +878,12 @@ class PytorchModelTestCaseAbstract(TestCase):
         return self._compare_optimizer_parameters(torch_params, pydtnn_params, pydtnn_model, round)
 
     def _compare_optimizer_parameters(
-            self,
-            torch_params: dict[int, dict[str, np.ndarray | None]],
-            pydtnn_params: dict[int, dict[str, np.ndarray | None]],
-            pydtnn_model: PyDTNN_Model,
-            round: int
-        ) -> None:
+        self,
+        torch_params: dict[int, dict[str, np.ndarray | None]],
+        pydtnn_params: dict[int, dict[str, np.ndarray | None]],
+        pydtnn_model: PyDTNN_Model,
+        round: int
+    ) -> None:
         """The actual method to comparte PyTorch 'parameters.grad' and PyDTNN grad vars's values"""
         assert len(torch_params) == len(pydtnn_params), (
             f"[ROUND {round}] Torch and PyDTNN parameters must have the same "
