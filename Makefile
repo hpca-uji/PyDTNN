@@ -35,6 +35,9 @@ OPENFHE_PYTHON_DST := $(DST)/openfhe-python
 UARCHFHE_SRC := $(SRC)/uarchfhe
 UARCHFHE_DST := $(DST)/uarchfhe
 
+PMLIB_SRC := $(SRC)/pmlib
+PMLIB_DST := $(DST)/pmlib
+
 PYDTNN_SRC := $(CURDIR)
 PYDTNN_DST := $(DST)/pydtnn
 
@@ -559,6 +562,45 @@ uarchfhe-clean:
 		rm -rf "$(UARCHFHE_DST)"
 
 # ============================================================================
+# PMLib
+# ============================================================================
+
+.PHONY: \
+	pmlib \
+	pmlib-deps \
+	pmlib-src \
+	pmlib-build \
+	pmlib-install \
+	pmlib-clean
+
+pmlib: pmlib-build
+
+pmlib-deps:
+	$(APT) install -y make gcc
+
+pmlib-src: $(PMLIB_SRC)/.git
+$(PMLIB_SRC)/.git:
+	git submodule update --init --recursive "$(PMLIB_SRC)"
+
+pmlib-build: $(PMLIB_DST)/.build
+$(PMLIB_DST)/.build: $(PMLIB_SRC)/.git | $(DST)/.gitignore
+	mkdir -p "$(PMLIB_DST)"
+	cd "$(PMLIB_SRC)/client" && \
+		make -j "$(NPROC)" PREFIX="$(PMLIB_DST)"
+	cd "$(PMLIB_SRC)/client" && \
+		make install PREFIX="$(PMLIB_DST)"
+	git -C "$(PMLIB_SRC)" rev-parse HEAD > "$@"
+
+pmlib-install: $(PMLIB_DST)/.build
+	$(call LD_ADD,$(PMLIB_DST)/lib); \
+	export LD_LIBRARY_PATH=$${LD_LIBRARY_PATH:?}
+
+pmlib-clean:
+	cd "$(PMLIB_SRC)" && \
+		rm -rf "$(PMLIB_DST)" && \
+		(make clean || true)
+
+# ============================================================================
 # PyDTNN
 # ============================================================================
 
@@ -590,9 +632,11 @@ $(PYDTNN_DST)/.build: $(PYDTNN_SRC)/.git | $(DST)/.gitignore
 	TMPDIR=$$(mktemp -d) && \
 	trap "rm -r $${TMPDIR:?}" EXIT && \
 	(cp -t "$(PYDTNN_SRC)/pydtnn/libs" \
+		"$(BLIS_DST)/lib"/*.so \
 		"$(CONVGEMM_DST)/lib"/*.so \
 		"$(CONVWINOGRAD_DST)/lib"/*.so \
-		"$(CONVDIRECT_DST)/lib"/*.so || true) && \
+		"$(CONVDIRECT_DST)/lib"/*.so \
+		"$(PMLIB_DST)/lib"/*.so || true) && \
 	cd "$(PYDTNN_SRC)" && \
 		python3 -m build -so "$(PYDTNN_DST)" && \
 		python3 -m build -wo "$${TMPDIR:?}" && \

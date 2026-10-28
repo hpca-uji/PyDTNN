@@ -11,10 +11,9 @@ import sys
 import threading
 import zipfile
 from collections.abc import Iterable, Mapping
-from contextlib import nullcontext
 from copy import deepcopy
 from gzip import GzipFile
-from importlib import import_module, resources
+from importlib import import_module, resources, metadata
 from pathlib import Path, PurePath
 from queue import Queue
 from typing import IO, Any, Literal, Self
@@ -218,17 +217,23 @@ def load_library(name: str, ver: str = "", src: str = f"{package_name}.libs") ->
     if lib := ctypes.util.find_library(name):
         libs.append(lib)
 
+    # Explore package
+    try:
+        pkgs = metadata.files(src) or []
+    except metadata.PackageNotFoundError:
+        pkgs = []
+    pkgs = [path for path in pkgs if name in path.name]
+
     # Load library
-    logger.debug(f"DLL options {name!r} ({len(libs)})")
+    logger.debug(f"DLL options {name!r} ({len(libs)} names, {len(pkgs)} resources)")
     for lib in libs:
         logger.debug(f"DLL trying {lib!r}")
+        for path in pkgs:
+            if path.name == lib:
+                lib = str(path.locate())
+                break
         try:
-            ctx = resources.path(src, lib)
-        except ModuleNotFoundError:
-            ctx = nullcontext(lib)
-        try:
-            with ctx as path:
-                module = load(str(path))
+            module = load(lib)
         except Exception as exc:
             logger.debug(f"DLL missing {lib!r} ({exc})")
             continue
