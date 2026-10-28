@@ -356,7 +356,7 @@ class PytorchModelTestCaseAbstract(TestCase):
                 name = layer.name_with_id
 
                 match layer:
-                    case BatchNormalization() | Conv2D() | FC():
+                    case BatchNormalization() | Conv2D() | FC() | Conv2DDepthwise() | Conv2DPointwise():
                         if verbose_test():
                             print(
                                 f"number: {i}, {layer=}, {layer.use_bias=}, grad_vars: {layer.grad_vars.keys()}"
@@ -875,6 +875,16 @@ class PytorchModelTestCaseAbstract(TestCase):
 
         torch_params = self.get_torch_parameters_values(torch_model)
         pydtnn_params = self.get_pydtnn_vars_values(pydtnn_model)
+        return self._compare_optimizer_parameters(torch_params, pydtnn_params, pydtnn_model, round)
+
+    def _compare_optimizer_parameters(
+            self,
+            torch_params: dict[int, dict[str, np.ndarray | None]],
+            pydtnn_params: dict[int, dict[str, np.ndarray | None]],
+            pydtnn_model: PyDTNN_Model,
+            round: int
+        ) -> None:
+        """The actual method to comparte PyTorch 'parameters.grad' and PyDTNN grad vars's values"""
         assert len(torch_params) == len(pydtnn_params), (
             f"[ROUND {round}] Torch and PyDTNN parameters must have the same "
             f"number of elements: {len(torch_params)=} || "
