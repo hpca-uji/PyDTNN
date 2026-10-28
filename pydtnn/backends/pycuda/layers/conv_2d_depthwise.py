@@ -8,6 +8,7 @@ from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 from pycuda.driver import Function
 
 from pydtnn.backends.pycuda.layers.abstract.conv_2d import AbstractConv2DPycuda
+from pydtnn.layers.conv_2d_depthwise import Conv2DDepthwise
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
                                    PYDTNN_OPS_EVENTS, OpsEventEnum)
 from pydtnn.utils.constants import ArrayShape
@@ -19,7 +20,7 @@ __all__ = ("Conv2DDepthwisePycuda",)
 logger = logging.getLogger(__name__)
 
 
-class Conv2DDepthwisePycuda(AbstractConv2DPycuda):
+class Conv2DDepthwisePycuda(Conv2DDepthwise[TensorArray], AbstractConv2DPycuda):
     """Depthwise 2D Convolution layer implementation for PyCUDA backend."""
 
     def _initializing_special_parameters(self) -> None:
