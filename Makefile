@@ -632,11 +632,11 @@ $(PYDTNN_DST)/.build: $(PYDTNN_SRC)/.git | $(DST)/.gitignore
 	TMPDIR=$$(mktemp -d) && \
 	trap "rm -r $${TMPDIR:?}" EXIT && \
 	(cp -t "$(PYDTNN_SRC)/pydtnn/libs" \
-		"$(BLIS_DST)/lib"/*.so \
-		"$(CONVGEMM_DST)/lib"/*.so \
-		"$(CONVWINOGRAD_DST)/lib"/*.so \
-		"$(CONVDIRECT_DST)/lib"/*.so \
-		"$(PMLIB_DST)/lib"/*.so || true) && \
+		"$(BLIS_DST)/lib"/* \
+		"$(CONVGEMM_DST)/lib"/* \
+		"$(CONVWINOGRAD_DST)/lib"/* \
+		"$(CONVDIRECT_DST)/lib"/* \
+		"$(PMLIB_DST)/lib"/* || true) && \
 	cd "$(PYDTNN_SRC)" && \
 		python3 -m build -so "$(PYDTNN_DST)" && \
 		python3 -m build -wo "$${TMPDIR:?}" && \
