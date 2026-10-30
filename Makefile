@@ -699,9 +699,12 @@ pydtnn-clean:
 		rm -rf "$(PYDTNN_DST)" && \
 		rm -rf "$(PYDTNN_SRC)/pydtnn.egg-info" && \
 		find "$(PYDTNN_SRC)/pydtnn" \
-			-iname "*.pyc" \
+			-iname "*.a" \
 			-iname "*.o" \
+			-iname "*.c" \
 			-iname "*.so" \
+			-iname "*.so[-._]*" \
 			-iname "*.dll" \
 			-iname "*.dylib" \
+			-iname "*.pyc" \
 			-delete
