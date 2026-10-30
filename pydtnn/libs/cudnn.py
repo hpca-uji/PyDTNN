@@ -5,7 +5,7 @@
 import ctypes
 import logging
 
-from pydtnn.utils import load_library
+from pydtnn.utils.libs import load_library
 
 __all__ = (
     "CudnnConvolutionBwdDataAlgoPerf",

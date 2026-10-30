@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from pydtnn.utils import load_library
+from pydtnn.utils.libs import load_library
 
 # Source: https://github.com/lebedov/scikit-cuda
 

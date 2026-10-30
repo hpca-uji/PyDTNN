@@ -1,8 +1,10 @@
+*.a
 *.o
 *.c
 *.so
+*.so[-._]*
 *.dll
-*.dsym
+*.dylib
 *.pyc
 *.egg-info
 *.idx

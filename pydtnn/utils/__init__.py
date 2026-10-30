@@ -1,20 +1,16 @@
 """Utility functions and classes for the PyDTNN framework."""
 
-import ctypes
-import ctypes.util
-import functools
 import itertools
 import logging
 import math
 import string
-import sys
 import threading
 import zipfile
 from collections.abc import Iterable, Mapping
 from copy import deepcopy
 from gzip import GzipFile
-from importlib import import_module, resources, metadata
-from pathlib import Path, PurePath
+from importlib import import_module, resources
+from pathlib import Path, PurePosixPath
 from queue import Queue
 from typing import IO, Any, Literal, Self
 
@@ -35,7 +31,6 @@ __all__ = (
     "get_npz_shape",
     "gzip_open",
     "header",
-    "load_library",
     "parse_bool",
     "read_file",
     "string_substitute",
@@ -175,82 +170,13 @@ def find_component(package: str, name: str) -> Any:
     raise ValueError(f"{name!r} not found in {module!r}!")
 
 
-@functools.cache
-def load_library(name: str, ver: str = "", src: str = f"{package_name}.libs") -> ctypes.CDLL:
-    """
-    Loads an external library using ctypes.
-
-    name: without prefix or suffix
-    src: source package
-    ver: full version
-    """
-    load = ctypes.cdll.LoadLibrary
-
-    libs = []
-    seps = ["."]
-    pres = ["lib", ""]
-    vers = ver.split(".") if ver else []
-    vers = [".".join(vers[:i]) for i in range(len(vers), -1, -1)]
-
-    # Define platform
-    match sys.platform:
-        case "win32":
-            load = ctypes.windll.LoadLibrary  # pyright: ignore[reportAttributeAccessIssue]
-            seps = ["-", "_", "."]
-            temp = "{name}{ver}.dll"
-        case "darwin":
-            sep = [".", "-", "_"]
-            temp = "{name}{ver}.dylib"
-        case _:
-            temp = "{name}.so{ver}"
-
-    # Compute posibilites
-    for ver, pre, sep in itertools.product(vers, pres, seps):
-        kwds = {"name": name, "ver": ver}
-        if pre:
-            kwds["name"] = f"{pre}{name}"
-        if ver:
-            kwds["ver"] = f"{sep}{ver}"
-        lib = temp.format(**kwds)
-        if lib not in libs:
-            libs.append(lib)
-    if lib := ctypes.util.find_library(name):
-        libs.append(lib)
-
-    # Explore package
-    try:
-        pkgs = metadata.files(src) or []
-    except metadata.PackageNotFoundError:
-        pkgs = []
-    pkgs = [path for path in pkgs if name in path.name]
-
-    # Load library
-    logger.debug(f"DLL options {name!r} ({len(libs)} names, {len(pkgs)} resources)")
-    for lib in libs:
-        logger.debug(f"DLL trying {lib!r}")
-        for path in pkgs:
-            if path.name == lib:
-                lib = str(path.locate())
-                break
-        try:
-            module = load(lib)
-        except Exception as exc:
-            logger.debug(f"DLL missing {lib!r} ({exc})")
-            continue
-        else:
-            logger.debug(f"DLL loaded {lib!r}")
-            return module
-
-    raise ModuleNotFoundError(f"No library named {name!r}", name=name, path=src)
-
-
 def get_npz_shape(file: str) -> dict[str, tuple[int, ...]]:
     """Get NPZ member shapes without loading the archive"""
     shapes = dict[str, tuple[int, ...]]()
 
     with zipfile.ZipFile(file, "r") as z:
         for name in z.namelist():
-            stem = PurePath(name).stem
+            stem = PurePosixPath(name).stem
 
             with z.open(name) as f:
                 version = np.lib.format.read_magic(f)

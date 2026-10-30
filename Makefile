@@ -584,11 +584,13 @@ $(PMLIB_SRC)/.git:
 
 pmlib-build: $(PMLIB_DST)/.build
 $(PMLIB_DST)/.build: $(PMLIB_SRC)/.git | $(DST)/.gitignore
-	mkdir -p "$(PMLIB_DST)"
+	mkdir -p "$(PMLIB_DST)/lib" "$(PMLIB_DST)/include"
+	LIB=libpmlib.so && \
 	cd "$(PMLIB_SRC)/client" && \
-		make -j "$(NPROC)" PREFIX="$(PMLIB_DST)"
+		make -j "$(NPROC)" LIB=$${LIB:?} $${LIB:?} && \
 	cd "$(PMLIB_SRC)/client" && \
-		make install PREFIX="$(PMLIB_DST)"
+		install -m 644 $${LIB:?} "$(PMLIB_DST)/lib" && \
+		install -m 644 line.h pmlib.h "$(PMLIB_DST)/include"
 	git -C "$(PMLIB_SRC)" rev-parse HEAD > "$@"
 
 pmlib-install: $(PMLIB_DST)/.build
@@ -631,7 +633,7 @@ $(PYDTNN_DST)/.build: $(PYDTNN_SRC)/.git | $(DST)/.gitignore
 	mkdir -p "$(PYDTNN_DST)"
 	TMPDIR=$$(mktemp -d) && \
 	trap "rm -r $${TMPDIR:?}" EXIT && \
-	(cp -t "$(PYDTNN_SRC)/pydtnn/libs" \
+	(install -m 644 -t "$(PYDTNN_SRC)/pydtnn/libs" \
 		"$(BLIS_DST)/lib"/* \
 		"$(CONVGEMM_DST)/lib"/* \
 		"$(CONVWINOGRAD_DST)/lib"/* \
@@ -690,6 +692,7 @@ pydtnn-lint:
 pydtnn-clean:
 	cd "$(PYDTNN_SRC)" && \
 		rm -rf "$(PYDTNN_DST)" && \
+		rm -rf "$(PYDTNN_SRC)/pydtnn.egg-info" && \
 		find "$(PYDTNN_SRC)/pydtnn" \
 			-iname "*.pyc" \
 			-iname "*.o" \

@@ -5,7 +5,7 @@ import logging
 
 import numpy as np
 
-from pydtnn.utils import load_library
+from pydtnn.utils.libs import load_library
 
 __all__ = (
     "blis",

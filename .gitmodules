@@ -19,3 +19,6 @@
 [submodule "vendor/openfhe-python"]
 	path = vendor/openfhe-python
 	url = https://github.com/openfheorg/openfhe-python.git
+[submodule "vendor/pmlib"]
+	path = vendor/pmlib
+	url = https://github.com/mdolz/PMLib.git

@@ -22,7 +22,7 @@ import numpy as np
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.backends.cython.utils.im2col_nchw_cython import im2col_nchw_cython
 from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython
-from pydtnn.utils import load_library
+from pydtnn.utils.libs import load_library
 from pydtnn.utils.best_of.best_of import BestOf
 from pydtnn.utils.tensor import TensorFormat, decode_shape, encode_shape
 

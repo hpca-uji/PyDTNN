@@ -17,7 +17,7 @@ import numpy as np
 
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.backends.cython.utils.im2col_nchw_cython import im2col_nchw_cython
-from pydtnn.utils import load_library
+from pydtnn.utils.libs import load_library
 
 __all__ = ("ConvGemm", "is_conv_gemm_available")
 
