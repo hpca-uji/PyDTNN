@@ -128,20 +128,20 @@ def load_library(name: str, ver: str = "", src: str = package_name) -> ctypes.CD
         return map
 
     dist = entry_map(list_distribution(src))
-    res = entry_map(list_resources(src))
+    resrc = entry_map(list_resources(src))
 
     # Find library
     logger.debug(f"DLL finding {name!r} ({ver or 'any'} preferred, {src!r} source)")
     for lib in order:
-        if lib in dist:
-            data = dist[lib].read_bytes()
+        if entry := dist.get(lib):
+            data = entry.read_bytes()
             with tempfile(data) as path:
                 module = loader(path)
             logger.debug(f"DLL loaded {lib!r} (from distribution)")
             return module
 
-        if lib in res:
-            data = res[lib].read_bytes()
+        if entry := resrc.get(lib):
+            data = entry.read_bytes()
             with tempfile(data) as path:
                 module = loader(path)
             logger.debug(f"DLL loaded {lib!r} (from resource)")
