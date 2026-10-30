@@ -99,7 +99,8 @@ deps: \
 	convwinograd-deps \
 	convdirect-deps \
 	openfhe-deps \
-	openfhe-python-deps
+	openfhe-python-deps \
+	pmlib-deps
 
 src: \
 	pydtnn-src \
@@ -109,7 +110,8 @@ src: \
 	convwinograd-src \
 	convdirect-src \
 	openfhe-src \
-	openfhe-python-src
+	openfhe-python-src \
+	pmlib-src
 
 build: \
 	$(DST)/.gitignore \
@@ -120,7 +122,8 @@ build: \
 	convdirect-build \
 	openfhe-build \
 	openfhe-python-build \
-	pydtnn-build \
+	pmlib-build \
+	pydtnn-build
 
 install: \
 	blis-install \
@@ -130,6 +133,7 @@ install: \
 	convdirect-install \
 	openfhe-install \
 	openfhe-python-install \
+	pmlib-install \
 	pydtnn-install
 
 dev: \
@@ -146,6 +150,7 @@ lint: \
 
 clean: \
 	pydtnn-clean \
+	pmlib-clean \
 	openfhe-python-clean \
 	openfhe-clean \
 	convdirect-clean \
