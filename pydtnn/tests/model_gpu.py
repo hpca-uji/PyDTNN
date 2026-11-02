@@ -84,6 +84,8 @@ class ModelGpuTestCase(ModelTestCase):
             model2: The destination GPU model.
         """
         for cpu_layer, gpu_layer in zip(model1.get_all_layers(), model2.get_all_layers()):
+            cpu_layer: Layerable[np.ndarray]
+            gpu_layer: Layerable[TensorArray]
             if cpu_layer.weights is None:
                 continue
             if isinstance(gpu_layer, Conv2D):
@@ -150,7 +152,7 @@ class ModelGpuTestCase(ModelTestCase):
         # Input layer
         layer = model2.layers[0]
         self.set_data_to_ary(layer.y, x1[0], layer)
-        out = layer.forward(layer.y)
+        out: TensorArray = layer.forward(layer.y)
         x2.append(out.get())
 
         # The rest of the layers
@@ -178,7 +180,7 @@ class ModelGpuTestCase(ModelTestCase):
 
         layer = model2.layers[-1]
         self.set_data_to_ary(model2.layers[-1].dx, dx1[-1], layer)
-        out = layer.backward(model2.layers[-1].dx)
+        out: TensorArray = layer.backward(model2.layers[-1].dx)
         dx2.insert(0, out.get().copy())
 
         for i, layer in reversed(list(enumerate(model2.layers))[:-1]):
