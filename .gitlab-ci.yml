@@ -39,6 +39,8 @@ build_pydtnn:
   - pip install --upgrade pip
   - make deps APT="apt-get -o dir::cache::archives=${PWD:?}/build/apt"
   script:
+  - make pmlib-clean
+  - rm -rf ./vendor/pmlib
   - make pydtnn-clean
   - make build NPROC=${RUNNER_NPROC:?}
   - make install NPROC=${RUNNER_NPROC:?} PYDTNN_PKG=audit,test,lint
