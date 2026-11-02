@@ -39,14 +39,14 @@ class Conv2DDepthwisePycuda(Conv2DDepthwise[TensorArray], AbstractConv2DPycuda):
             case TensorFormat.NCHW:
                 # self.bias_sum_bwd = self.cuda_sum_bias_axis_023()
                 self.bias_sum_bwd = self._get_kernel(
-                    code_file_name="conv2d", func_name="cuda_sum_bias_axis_023"
+                    code_file_name="conv_2d", func_name="cuda_sum_bias_axis_023"
                 )
                 self.forward = self._forward_depthwise_nchw
                 self.backward = self._backward_depthwise_nchw
             case TensorFormat.NHWC:
                 # self.bias_sum_bwd = self.cuda_sum_bias_axis_012()
                 self.bias_sum_bwd = self._get_kernel(
-                    code_file_name="conv2d", func_name="cuda_sum_bias_axis_012"
+                    code_file_name="conv_2d", func_name="cuda_sum_bias_axis_012"
                 )
                 self.forward = self._forward_depthwise_nhwc
                 self.backward = self._backward_depthwise_nhwc
