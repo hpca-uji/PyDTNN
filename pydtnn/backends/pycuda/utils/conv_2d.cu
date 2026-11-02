@@ -33,7 +33,7 @@
 #endif
 
 
-__global__ void cuda_sum_bias_axis_023(TYPE* dy, TYPE* db
+__global__ void cuda_sum_bias_axis_023(TYPE* dy, TYPE* db,
                                        int c, int h, int w,
                                        int N, int num_workers)
 {
