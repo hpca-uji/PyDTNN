@@ -28,16 +28,3 @@ class Identity[T: Array](Layer[T]):  # noqa: D101 (generics not detected)
         """Initialize layer state within the model context."""
         super()._model_init(prev_shape or self.shape, x)
         self.shape = self.prev_shape
-
-    def _sync_x_y(self, x_batch: np.ndarray, y_batch: np.ndarray) -> tuple[T, T]:
-        """
-        Synchronizes input and target batches.
-
-        Args:
-            x_batch (np.ndarray): The input batch.
-            y_batch (np.ndarray): The target batch.
-
-        Returns:
-            tuple[T, T]: A tuple containing the input and target batches.
-        """
-        return (x_batch, y_batch)  # pyright: ignore[reportReturnType]

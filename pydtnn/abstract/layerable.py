@@ -439,5 +439,14 @@ class Layerable[T: Array](Base[T]):  # noqa: D101 (generics not detected)
             self._import_prop(Parameters.PATHS, data[Parameters.PATHS])
 
     def _sync_x_y(self, x_batch: np.ndarray, y_batch: np.ndarray) -> tuple[T, T]:
-        """Synchronizes input and target batches to the model's dtype and memory layout."""
-        return x_batch, y_batch
+        """
+        Synchronizes input and target batches.
+
+        Args:
+            x_batch (np.ndarray): The input batch.
+            y_batch (np.ndarray): The target batch.
+
+        Returns:
+            tuple[T, T]: A tuple containing the input and target batches.
+        """
+        return (x_batch, y_batch)  # pyright: ignore[reportReturnType]

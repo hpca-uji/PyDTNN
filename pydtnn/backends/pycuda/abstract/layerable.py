@@ -8,6 +8,7 @@ from pydtnn.abstract.layerable import Layerable
 from pydtnn.backends.pycuda.abstract.base import BasePycuda
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
                                    PYDTNN_OPS_EVENTS, OpsEventEnum)
+from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor_array import TensorArray
 
 try:
@@ -20,6 +21,11 @@ __all__ = ("LayerablePycuda",)
 
 class LayerablePycuda(Layerable[TensorArray], BasePycuda):
     """Provides PyCUDA-specific weight reduction capabilities for distributed layers."""
+
+    def __init__(self, shape: tuple[int, ...] = ()) -> None:
+        super().__init__(shape)
+        # NOTE: It will be initialized later.
+        self.y_model = None  # pyright: ignore[reportAttributeAccessIssue]
 
     def _model_init(self, prev_shape: tuple[int, ...], x: TensorArray | None) -> None:
         super()._model_init(prev_shape, x)
@@ -176,7 +182,7 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
     def _post_init(self) -> None:
         super()._post_init()
 
-        if self != self.model.workspace:
+        if not self._frontend is self.model.workspace:
             return None
 
         # NOTE: The actual "self.model.output_shape" is only available after initializating all layers.
