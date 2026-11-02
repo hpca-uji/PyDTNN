@@ -7,6 +7,7 @@ PyDTNN layers and their corresponding PyTorch implementations.
 
 import logging
 from typing import Any
+# import unittest
 
 import numpy as np
 import torch
@@ -278,14 +279,20 @@ class PytorchLayerTestCase(PytorchModelTestCaseAbstract):
 
     @staticmethod
     def _copy_grad_vars(
-        grad: np.ndarray, grad_var: str, torch_layer: torch.nn.Module
+        grad: np.ndarray | TensorArray, grad_var: str, torch_layer: torch.nn.Module
     ) -> None:
         """Copies gradient variables from PyDTNN to PyTorch layers."""
         if grad is not None:
             torch_grad_var = GRAD_EQUIVALENCES[grad_var]
             torch_grad: torch.Tensor = getattr(torch_layer, torch_grad_var)
+            grad = grad.reshape(torch_grad.shape).copy()
+            if isinstance(grad, TensorArray):
+                _grad: np.ndarray = grad.get()
+            else:
+                _grad = grad
+            
             torch_grad.copy_(
-                torch.from_numpy(grad.reshape(torch_grad.shape, copy=True))
+                torch.from_numpy(_grad)
                 .to(torch.device("cpu"))
                 .float()
             )
