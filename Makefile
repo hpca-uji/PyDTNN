@@ -603,7 +603,7 @@ pmlib-install: $(PMLIB_DST)/.build
 	export LD_LIBRARY_PATH=$${LD_LIBRARY_PATH:?}
 
 pmlib-clean:
-	cd "$(PMLIB_SRC)" && \
+	cd "$(PMLIB_SRC)/client" && \
 		rm -rf "$(PMLIB_DST)" && \
 		(make clean || true)
 
