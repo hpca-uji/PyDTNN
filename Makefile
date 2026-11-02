@@ -179,6 +179,7 @@ sync:
 	$(call VER_SYNC,$(CONVDIRECT_SRC),$(CONVDIRECT_DST))
 	$(call VER_SYNC,$(OPENFHE_SRC),$(OPENFHE_DST))
 	$(call VER_SYNC,$(OPENFHE_PYTHON_SRC),$(OPENFHE_PYTHON_DST))
+	$(call VER_SYNC,$(PMLIB_SRC),$(PMLIB_DST))
 	$(call VER_SYNC,$(PYDTNN_SRC),$(PYDTNN_DST))
 
 define LD_ADD
@@ -194,6 +195,7 @@ env:
 	$(call LD_ADD,$(CONVWINOGRAD_DST)/lib); \
 	$(call LD_ADD,$(CONVDIRECT_DST)/lib); \
 	$(call LD_ADD,$(OPENFHE_DST)/lib); \
+	$(call LD_ADD,$(PMLIB_DST)/lib); \
 	printf '%s\n' "LD_LIBRARY_PATH=$${LD_LIBRARY_PATH:?}"
 
 $(DST)/.gitignore:
