@@ -66,14 +66,10 @@ class Conv2DDepthwisePycuda(Conv2DDepthwise[TensorArray], AbstractConv2DPycuda):
         self.dx = TensorArray(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
         self.memory_used += self.dx.nbytes
 
-        self.fwd_func: Function = self._fwd_kernel(defines_replaces={
-                                                    '"TYPE"': DTYPE2CTYPE[self.model.dtype],
-                                                    "TENSOR_FORMAT": self.model.tensor_format,
-                                                   })
-        self.bwd_func: Function = self._bwd_kernel(defines_replaces={
-                                                    '"TYPE"': DTYPE2CTYPE[self.model.dtype],
-                                                    "TENSOR_FORMAT": self.model.tensor_format,
-                                                   })
+        defines_replaces = {'"TYPE"': DTYPE2CTYPE[self.model.dtype], "TENSOR_FORMAT": self.model.tensor_format}
+
+        self.fwd_func: Function = self._fwd_kernel(defines_replaces=defines_replaces)
+        self.bwd_func: Function = self._bwd_kernel(defines_replaces=defines_replaces)
         self.bias_sum_fwd: Function = self._get_kernel(func_name="cuda_bias_sum_fwd_depthwise_conv")
 
     def _forward_depthwise_nchw(self, x: TensorArray) -> TensorArray:

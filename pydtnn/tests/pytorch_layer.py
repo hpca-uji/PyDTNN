@@ -290,7 +290,7 @@ class PytorchLayerTestCase(PytorchModelTestCaseAbstract):
                 _grad: np.ndarray = grad.get()
             else:
                 _grad = grad
-            
+
             torch_grad.copy_(
                 torch.from_numpy(_grad)
                 .to(torch.device("cpu"))
