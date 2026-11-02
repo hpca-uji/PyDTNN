@@ -16,7 +16,6 @@ from tqdm import tqdm
 
 from pydtnn import MPI
 from pydtnn.datasets.abstract import Dataset
-from pydtnn.layers.identity import Identity
 from pydtnn.model.base import ModelMode
 from pydtnn.model.sync import Sync
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT,
@@ -119,13 +118,7 @@ class Eval[T: Array](Sync[T]):  # noqa: D101 (generics not detected)
         self.real_batch_size = x_batch.shape[0]
         has_batch = self.real_batch_size > 0
 
-        x: T
-        y_targ: T
-        input_layer = self.layers[0]
-        if isinstance(input_layer, Identity):
-            x, y_targ = input_layer._sync_x_y(x_batch, y_batch)
-        else:
-            x, y_targ = x_batch, y_batch  # pyright: ignore[reportAssignmentType]
+        x, y_targ = self.workspace._sync_x_y(x_batch, y_batch)
 
         # Forward pass (FP)
         if has_batch:

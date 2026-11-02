@@ -51,7 +51,6 @@ class Conv2DDepthwisePycuda(Conv2DDepthwise[TensorArray], AbstractConv2DPycuda):
                 self.forward = self._forward_depthwise_nhwc
                 self.backward = self._backward_depthwise_nhwc
             case _:
-                # TODO: self devolvía la versión con el número
                 raise NotImplementedError(
                     f"{self.name} is not implemented for {self.model.tensor_format} format."
                 )

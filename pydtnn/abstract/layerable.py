@@ -437,3 +437,7 @@ class Layerable[T: Array](Base[T]):  # noqa: D101 (generics not detected)
 
         if Parameters.PATHS in data:
             self._import_prop(Parameters.PATHS, data[Parameters.PATHS])
+
+    def _sync_x_y(self, x_batch: np.ndarray, y_batch: np.ndarray) -> tuple[T, T]:
+        """Synchronizes input and target batches to the model's dtype and memory layout."""
+        return x_batch, y_batch
