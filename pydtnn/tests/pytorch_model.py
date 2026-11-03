@@ -182,7 +182,7 @@ class ParamsTestTorch(ParamsTestTorchAbstract):
         self.optimizer_beta2 = 0.999
         self.optimizer_epsilon = 1e-08
         self.optimizer_decay = 0.5
-        self.backend = "cpu"
+        self.backend_name = "cpu"
 
 
 class PytorchModelTestCase(PytorchModelTestCaseAbstract):

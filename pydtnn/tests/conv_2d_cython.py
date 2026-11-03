@@ -34,7 +34,7 @@ class Conv2DCythonTestCase(Conv2DTestCase):
         params_np = Params()
         params_np.tensor_format = TensorFormat.NHWC
         params_np.batch_size = d.b
-        params_np.backend = "numpy"
+        params_np.backend_name = "numpy"
         model_np = Model(**vars(params_np))
         model_np.mode = ModelMode.TRAIN
         model_np.add(Identity(model_np.encode_shape((d.c, d.h, d.w))))
@@ -51,7 +51,7 @@ class Conv2DCythonTestCase(Conv2DTestCase):
         model_np.add(conv2d_np)
 
         params_cy = deepcopy(params_np)
-        params_cy.backend = "numpy,cython"
+        params_cy.backend_name = "numpy,cython"
         model_cy = Model(**vars(params_cy))
         model_cy.mode = ModelMode.TRAIN
         model_cy.add(Identity(model_cy.encode_shape((d.c, d.h, d.w))))

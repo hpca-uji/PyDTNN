@@ -62,7 +62,7 @@ class ModelGpuTestCase(ModelTestCase):
         # GPU model
         params = Params()
         params.model_name = model_name
-        params.backend = "gpu"
+        params.backend_name = "gpu"
         params.use_cudnn_auto_conv_algo = True
         params.tensor_format = TensorFormat.NCHW
         params_dict = vars(params)

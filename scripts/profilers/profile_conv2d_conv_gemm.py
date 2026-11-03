@@ -84,10 +84,10 @@ def get_conv2d_layers(d: D) -> tuple[Conv2D, Conv2D]:
     """Initializes and returns im2col and convGemm Conv2D layers."""
     params = Params()
     params.batch_size = d.b
-    params.backend = "cpu"
+    params.backend_name = "cpu"
     model_i2c = Model(**vars(params))
     params_gc = deepcopy(params)
-    params_gc.backend = "cpu;conv_2d:gemm"
+    params_gc.backend_name = "cpu;conv_2d:gemm"
     model_cg = Model(**vars(params_gc))
     conv2d_i2c = Conv2D(
         nfilters=d.kn,

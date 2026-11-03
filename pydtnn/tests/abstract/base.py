@@ -36,7 +36,7 @@ class Params(Base):
         self.parallel_data = False
         self.dtype: np.dtype = np.dtype(np.float32)
         self.tensor_format = TensorFormat.NHWC
-        self.backend = "cpu"
+        self.backend_name = "cpu"
         self.batch_size = 8
         self.model_name: str = ""
         self.dataset_name = "synthetic"

@@ -122,7 +122,7 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
 
     # NOTE: Kwargs defaults (DEFAULT REQUIRED)
     model_name: str = ""
-    backend: str = "cpu"
+    backend_name: str = "cpu"
     batch_size: int = 0
     global_batch_size: int = 0
     dtype: np.dtype = np.dtype(np.float32)

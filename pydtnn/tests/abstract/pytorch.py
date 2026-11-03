@@ -56,11 +56,11 @@ class ParamsTestTorchAbstract(Params):
         self.optimizer_beta2 = 0.999
         self.optimizer_epsilon = 1e-08
         self.optimizer_decay = 0.5
-        self.backend = "cpu"
+        self.backend_name = "cpu"
 
     @property
     def device(self) -> str:
-        return self.backend if self.backend == "cpu" else "cuda"
+        return "cpu" if self.backend_name == "cpu" else "cuda"
 
 
 class PytorchModelTestCaseAbstract(TestCase):

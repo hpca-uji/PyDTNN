@@ -37,7 +37,7 @@ class Conv2DConvGemmTestCase(Conv2DTestCase):
         params_i2c = Params()
         params_i2c.tensor_format = TensorFormat.NCHW
         params_i2c.batch_size = d.b
-        params_i2c.backend = "cpu"
+        params_i2c.backend_name = "cpu"
         model_i2c = Model(**vars(params_i2c))
         model_i2c.mode = ModelMode.TRAIN
         model_i2c.add(Identity(model_i2c.encode_shape((d.c, d.h, d.w))))
@@ -54,7 +54,7 @@ class Conv2DConvGemmTestCase(Conv2DTestCase):
         model_i2c.add(conv2d_i2c)
 
         params_gc = deepcopy(params_i2c)
-        params_gc.backend = "cpu;conv_2d:gemm"
+        params_gc.backend_name = "cpu;conv_2d:gemm"
         model_cg = Model(**vars(params_gc))
         model_cg.mode = ModelMode.TRAIN
         model_cg.add(Identity(model_cg.encode_shape((d.c, d.h, d.w))))

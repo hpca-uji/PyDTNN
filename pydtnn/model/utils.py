@@ -86,6 +86,7 @@ class Utils[T: Array](Base[T]):  # noqa: D101 (generics not detected)
         return self.comm_size if self.shared_data else 1
 
     @property
-    def workspace(self) -> Layerable[T]:
+    def backend(self) -> Layerable[T]:
+        """Backend shared state (layer)"""
         # NOTE: It can be any layer.
         return self.layers[0]

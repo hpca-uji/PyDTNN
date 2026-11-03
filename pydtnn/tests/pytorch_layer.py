@@ -89,7 +89,7 @@ class PytorchLayerParams(ParamsTestTorchAbstract):
         self.optimizer_beta2 = 0.999
         self.optimizer_epsilon = 1e-08
         self.optimizer_decay = 0.5
-        self.backend = "cpu"
+        self.backend_name = "cpu"
         # torch.set_default_dtype(numpy_to_torch_dtype_dict[self.dtype.type])
         # -----
         self.conv2d_in_c_torch = self.synthetic_input_shape[0]

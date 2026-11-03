@@ -95,7 +95,7 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
         cls = self.__class__
         module_name = cls.__module__
         submodule_name = module_name.split(".", 1)[1]
-        spec = self._parse_backend(self.model.backend)
+        spec = self._parse_backend(self.model.backend_name)
 
         if module_name.startswith("pydtnn.backends."):
             return None  # We are a backend

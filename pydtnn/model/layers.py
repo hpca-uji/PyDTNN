@@ -138,6 +138,6 @@ class Layers[T: Array](Utils[T]):  # noqa: D101 (generics not detected)
             ]
         ):
             # NOTE: 1st the 3 layers fusion, then the rest:
-            self.backend = f"layers:fuse;{self.backend}"
+            self.backend_name = f"layers:fuse;{self.backend_name}"
             self._layer_fusion(self.layers, self._select_fusion_3)
             self._layer_fusion(self.layers, self._select_fusion_2)

@@ -197,8 +197,9 @@ class ArgumentParser(argparse.ArgumentParser):
         backends = read_dir("backends")
         self.add_argument(
             "--backend",
+            dest="backend_name",
             type=str,
-            default=ModelBase.backend,
+            default=ModelBase.backend_name,
             help=(
                 "Backend selection priority."
                 " Format: [module[,module[,...]]:]backend[,backend[,...]][;...]."
@@ -206,7 +207,7 @@ class ArgumentParser(argparse.ArgumentParser):
                 " Selection: More specific modules are attempted first, backend order goes from least to most priority."
                 f" Backends: {', '.join(map(repr, backends))}."
                 f" Alias: {', '.join(f'{key!r} = {value!r}' for key, value in Base._map_backend.items())}."
-                f" Default: {ModelBase.backend!r}."
+                f" Default: {ModelBase.backend_name!r}."
             ),
         )
         self.add_argument(

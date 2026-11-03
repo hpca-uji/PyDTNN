@@ -183,7 +183,7 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
     def _post_init(self) -> None:
         super()._post_init()
 
-        if self._frontend is not self.model.workspace:
+        if self.id != self.model.backend.id:
             return None
 
         # NOTE: The actual "self.model.output_shape" is only available after initializating all layers.

@@ -46,7 +46,7 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
         self.real_batch_size = x_batch.shape[0]
         has_batch = self.real_batch_size > 0
 
-        x, y_targ = self.workspace._sync_x_y(x_batch, y_batch)
+        x, y_targ = self.backend._sync_x_y(x_batch, y_batch)
 
         if has_batch:
             # Forward pass (FP)
