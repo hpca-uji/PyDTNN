@@ -7,12 +7,10 @@ import itertools
 import logging
 import os
 import sys
-from collections.abc import Callable, Iterable
+from collections.abc import Iterable
 from importlib import metadata, resources
 from importlib.resources.abc import Traversable
-from pathlib import PurePosixPath
-from tempfile import mkstemp
-from weakref import finalize
+from pathlib import Path
 
 from pydtnn import package_name
 
@@ -24,21 +22,6 @@ __all__ = (
 )
 
 logger = logging.getLogger(__name__)
-
-
-def lib_load[T: ctypes.CDLL](loader: Callable[[str], T], reader: Callable[[], bytes]) -> T:
-    """Generate a library from a bytes reader"""
-    data = reader()
-    fd, path = mkstemp()
-    os.write(fd, data)
-    os.close(fd)
-    try:
-        module = loader(path)
-        finalize(module, os.remove, path)
-        return module
-    except Exception:
-        os.remove(path)
-        raise
 
 
 def lib_names(name: str, ver: str = "") -> Iterable[str]:
@@ -106,6 +89,8 @@ def load_library(name: str, ver: str = "", src: str = package_name) -> ctypes.CD
     name: without prefix or suffix
     src: source package
     ver: full version
+
+    NOTE: Supports only concrete sources
     """
 
     # Define loader
@@ -120,30 +105,27 @@ def load_library(name: str, ver: str = "", src: str = package_name) -> ctypes.CD
     libs = frozenset(order)
 
     def entry_map(entries: Iterable) -> dict:
-        map = {}
-        for entry in entries:
-            try:
-                lib = entry.name
-            except AttributeError:
-                lib = PurePosixPath(str(entry)).name
-            if lib in libs:
-                map[lib] = entry
-        return map
+        return {
+            entry.name: entry
+            for entry in entries
+            if isinstance(entry, Path) and entry.name in libs
+        }
 
+    root = src.split(".", 1)[0]
     dist = entry_map(list_distribution(src))
-    resrc = entry_map(list_resources(src))
+    resrc = entry_map(list_resources(root))
 
     # Find library
-    logger.debug(f"DLL finding {name!r} ({ver or 'any'} preferred, {src!r} source)")
+    logger.debug(f"DLL finding {name!r} ({ver or 'any'} in {src!r} preferred)")
     for lib in order:
         if entry := dist.get(lib):
-            module = lib_load(loader, entry.read_bytes)
+            module = loader(entry)
             logger.debug(f"DLL loaded {lib!r} (from distribution)")
             return module
 
         if entry := resrc.get(lib):
-            module = lib_load(loader, entry.read_bytes)
-            logger.debug(f"DLL loaded {lib!r} (from resource)")
+            module = loader(entry)
+            logger.debug(f"DLL loaded {lib!r} (from resources)")
             return module
 
         try:
