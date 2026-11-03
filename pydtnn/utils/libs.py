@@ -28,17 +28,16 @@ logger = logging.getLogger(__name__)
 
 def lib_load[T: ctypes.CDLL](loader: Callable[[str], T], reader: Callable[[], bytes]) -> T:
     """Generate a library from a bytes reader"""
-    fd, path = mkstemp(text=False)
+    data = reader()
+    fd, path = mkstemp()
+    os.write(fd, data)
+    os.close(fd)
     try:
-        data = reader()
-        os.write(fd, data)
-        os.close(fd)
         module = loader(path)
         finalize(module, os.remove, path)
         return module
     except Exception:
         os.remove(path)
-        os.close(fd)
         raise
 
 
