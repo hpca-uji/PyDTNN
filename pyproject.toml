@@ -74,7 +74,8 @@ gpu-cupy = [
     "cupy-cuda13x~=14.0"
 ]
 gpu-pycuda = [
-    "pycuda~=2026.1"
+    "pycuda~=2026.1",
+    "cuda-pathfinder~=1.5"
 ]
 gpu = [
     "pydtnn[gpu-cupy]",

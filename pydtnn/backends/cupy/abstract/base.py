@@ -18,7 +18,7 @@ class BaseCupy(UsesCudaCode[RawModule, RawKernel], BaseNumpy):
     Integrating CUDA kernel compilation capabilities with NumPy-compatible backend logic.
     """
 
-    _cuda_kernel = functools.partial(RawModule, backend="nvcc")
+    _cuda_kernel = staticmethod(functools.partial(RawModule, backend="nvcc"))
 
     def _model_init(self) -> None:
         """
