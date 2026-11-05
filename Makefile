@@ -592,12 +592,10 @@ $(PMLIB_SRC)/.git:
 pmlib-build: $(PMLIB_DST)/.build
 $(PMLIB_DST)/.build: $(PMLIB_SRC)/.git | $(DST)/.gitignore
 	mkdir -p "$(PMLIB_DST)/lib" "$(PMLIB_DST)/include"
-	LIB=libpmlib.so && \
 	cd "$(PMLIB_SRC)/client" && \
-		make -j "$(NPROC)" LIB=$${LIB:?} $${LIB:?} && \
+		make -j "$(NPROC)" PREFIX="$(PMLIB_DST)"
 	cd "$(PMLIB_SRC)/client" && \
-		install -m 644 $${LIB:?} "$(PMLIB_DST)/lib" && \
-		install -m 644 line.h pmlib.h "$(PMLIB_DST)/include"
+		make install PREFIX="$(PMLIB_DST)"
 	git -C "$(PMLIB_SRC)" rev-parse HEAD > "$@"
 
 pmlib-install: $(PMLIB_DST)/.build
