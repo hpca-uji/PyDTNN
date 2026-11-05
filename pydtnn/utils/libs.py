@@ -5,7 +5,6 @@ import ctypes.util
 import functools
 import itertools
 import logging
-import os
 import sys
 from collections.abc import Iterable
 from importlib import metadata, resources
