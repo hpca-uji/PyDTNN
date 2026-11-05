@@ -3,6 +3,7 @@
 import logging
 from typing import Any
 
+from pydtnn.abstract.layerable import Layerable
 from pydtnn.layers.abstract.layer import Layer
 from pydtnn.optimizers.abstract.optimizer import Optimizer
 from pydtnn.utils.constants import Array, ArrayShape, SyncMode
@@ -15,11 +16,11 @@ logger = logging.getLogger(__name__)
 class AbstractBlockLayer[T: Array](Layer[T]):  # noqa: D101 (generics not detected)
     """Base class for layers that manage multiple parallel execution paths."""
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, *paths: list[Layerable[T]], **kwargs: Any) -> None:
         """Initializes the block layer with a collection of paths."""
         super().__init__(**kwargs)
         self.paths = []
-        for path in args:
+        for path in paths:
             self.paths.append(path)
         self.is_block_layer = True
         self.out_shapes: list[ArrayShape] = []
