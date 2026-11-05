@@ -1,4 +1,5 @@
 prune datasets
+prune state
 prune vendor
 global-exclude .*
 global-exclude *.so *.dll *.dylib

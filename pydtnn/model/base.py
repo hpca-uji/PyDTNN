@@ -78,7 +78,7 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
         self.mode: ModelMode = None  # pyright: ignore[reportAttributeAccessIssue] # Mode.UNSPECIFIED
 
     # NOTE: typing only (NO DEFAULTS)
-    config: dict
+    _config: dict
     _model_inited: bool
     comm_nsamples: tuple[tuple[int], ...]
     comm_rank: int

@@ -61,22 +61,22 @@ class Init[T: Array](Repr[T]):  # noqa: D101 (generics not detected)
         super().__init__(*args, **kwargs)
 
         # Merge configurations
-        self.config = {}
+        self._config = {}
         for config in [Base, *args, kwargs]:
             if not isinstance(config, abc.Mapping):
                 config = vars(config)
             for key, value in config.items():
                 if key.startswith("_"):
                     continue
-                self.config[key] = value
-        self.config = copy.deepcopy(self.config)
+                self._config[key] = value
+        self._config = copy.deepcopy(self._config)
 
         # Filter values using base
         for key in vars(Base):
-            if key not in self.config:
+            if key not in self._config:
                 continue
             # NOTE: Skip setters (plus dict needed for utils)
-            self.__dict__[key] = self.config[key]
+            self.__dict__[key] = self._config[key]
 
         # MPI [NOTE: as early as possible]
         self._mpi_init()

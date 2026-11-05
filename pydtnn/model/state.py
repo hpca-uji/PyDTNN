@@ -47,18 +47,18 @@ class State[T: Array](Init[T]):  # noqa: D101 (generics not detected)
         # Store current configuration
         props = {}
 
-        if groups := self.config.get("groups"):
+        if groups := self._config.get("groups"):
             config = {}
             for group in groups:
                 if not group.title:
                     continue
                 config[group.title] = {
-                    action.dest: str(self.config[action.dest])
+                    action.dest: str(self._config[action.dest])
                     for action in group._group_actions
-                    if action.dest in self.config
+                    if action.dest in self._config
                 }
         else:
-            config = self.config
+            config = self._config
         if config:
             props["config"] = config
 
