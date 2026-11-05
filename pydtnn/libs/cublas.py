@@ -459,40 +459,21 @@ def cublasGetVersion(handle: int) -> int:
 
 def _get_cublas_version() -> str:
     """
-    Get and save CUBLAS version using the CUBLAS library's SONAME.
+    Get and save CUBLAS version using a temporary context.
 
-    This function attempts to determine the CUBLAS version by parsing the
-    library's SONAME (Shared Object Name) to avoid creating a CUBLAS context
-    if possible, as context creation can sometimes affect performance. If
-    parsing fails or is not applicable (e.g., on macOS), it falls back to
-    calling `cublasGetVersion`.
+    This function attempts to determine the CUBLAS version by calling `cublasGetVersion`.
 
     Returns
     -------
     version : str
         The CUBLAS version as a string, formatted with trailing zeros
         (e.g., '6050' for version 6.5).
-
-    Notes
-    -----
-    On macOS, the SONAME parsing might not be reliable, so `cublasGetVersion`
-    is used as a fallback.
     """
 
-    cublas_path = utils.find_lib_path("cublas")
-    assert cublas_path
-    try:
-        match = re.search(r"[\D\.]+\.+(\d+)\.(\d+)", utils.get_soname(cublas_path))
-        assert match
-        major, minor = match.groups()
-    except BaseException:
-        # Create a temporary context to run cublasGetVersion():
-        h = cublasCreate()
-        version = cublasGetVersion(h)
-        cublasDestroy(h)
-        return str(version)
-    else:
-        return major.ljust(len(major) + 1, "0") + minor.ljust(2, "0")
+    h = cublasCreate()
+    version = cublasGetVersion(h)
+    cublasDestroy(h)
+    return str(version)
 
 
 _cublas_version = int(_get_cublas_version())
