@@ -161,11 +161,16 @@ else:
 
 # INIT GPU
 try:
-    num_gpus = subprocess.check_output(["nvidia-smi", "-L"]).count(b"UUID")
+    max_gpus = subprocess.check_output(["nvidia-smi", "-L"]).count(b"UUID")
 except (FileNotFoundError, subprocess.CalledProcessError):
-    num_gpus = 0
+    max_gpus = 0
+
+idx_gpus = list(map(int, filter(None, os.environ.get("CUDA_VISIBLE_DEVICES", "").split()))) or list(range(max_gpus))
+num_gpus = len(idx_gpus)
+
 supported_gpu = num_gpus > 0 and drv is not None
-cuda_gpu = rank % num_gpus if supported_gpu else None
+cuda_gpu = idx_gpus[rank % num_gpus] if supported_gpu else None
+
 if supported_gpu:
     os.environ["CUDA_VISIBLE_DEVICES"] = str(cuda_gpu)
 
