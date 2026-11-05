@@ -65,10 +65,11 @@ data = [
 ]
 
 gpu-cuda = [
-    "nvidia-cublas~=13.1",
+    "nvidia-nvcc~=13.0",
     "nvidia-cuda-runtime~=13.0",
-    "nvidia-cudnn-cu13~=9.24",
-    "nvidia-nccl-cu13~=2.30"
+    "nvidia-cublas~=13.0",
+    "nvidia-cudnn-cu13~=9.13",
+    "nvidia-nccl-cu13~=2.27"
 ]
 gpu-cupy = [
     "cupy-cuda13x~=14.0"
