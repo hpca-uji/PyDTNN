@@ -51,37 +51,39 @@ def inceptionv3(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[L
     for n1x1, n5x5red, n5x5, n3x3red, n3x3, pool_planes in inception_blocks:
         _(
             ConcatenationBlock(
-                [Conv2D(nfilters=n1x1, filter_shape=(1, 1), weights_initializer=he_uniform)],
                 [
-                    Conv2D(nfilters=n5x5red, filter_shape=(1, 1), weights_initializer=he_uniform),
-                    Conv2D(
-                        nfilters=n5x5,
-                        filter_shape=(5, 5),
-                        padding=2,
-                        weights_initializer=he_uniform,
-                    ),
-                ],
-                [
-                    Conv2D(nfilters=n3x3red, filter_shape=(1, 1), weights_initializer=he_uniform),
-                    Conv2D(
-                        nfilters=n3x3,
-                        filter_shape=(3, 3),
-                        padding=1,
-                        weights_initializer=he_uniform,
-                    ),
-                    Conv2D(
-                        nfilters=n3x3,
-                        filter_shape=(3, 3),
-                        padding=1,
-                        weights_initializer=he_uniform,
-                    ),
-                ],
-                [
-                    AveragePool2D(pool_shape=(3, 3), stride=1, padding=1),
-                    Conv2D(
-                        nfilters=pool_planes, filter_shape=(1, 1), weights_initializer=he_uniform
-                    ),
-                ],
+                    [Conv2D(nfilters=n1x1, filter_shape=(1, 1), weights_initializer=he_uniform)],
+                    [
+                        Conv2D(nfilters=n5x5red, filter_shape=(1, 1), weights_initializer=he_uniform),
+                        Conv2D(
+                            nfilters=n5x5,
+                            filter_shape=(5, 5),
+                            padding=2,
+                            weights_initializer=he_uniform,
+                        ),
+                    ],
+                    [
+                        Conv2D(nfilters=n3x3red, filter_shape=(1, 1), weights_initializer=he_uniform),
+                        Conv2D(
+                            nfilters=n3x3,
+                            filter_shape=(3, 3),
+                            padding=1,
+                            weights_initializer=he_uniform,
+                        ),
+                        Conv2D(
+                            nfilters=n3x3,
+                            filter_shape=(3, 3),
+                            padding=1,
+                            weights_initializer=he_uniform,
+                        ),
+                    ],
+                    [
+                        AveragePool2D(pool_shape=(3, 3), stride=1, padding=1),
+                        Conv2D(
+                            nfilters=pool_planes, filter_shape=(1, 1), weights_initializer=he_uniform
+                        ),
+                    ],
+                ]
             )
         )
 
@@ -91,26 +93,28 @@ def inceptionv3(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[L
         _(
             ConcatenationBlock(
                 [
-                    Conv2D(
-                        nfilters=n1x1,
-                        filter_shape=(3, 3),
-                        stride=2,
-                        padding=0,
-                        weights_initializer=he_uniform,
-                    )
-                ],
-                [
-                    Conv2D(nfilters=n3x3red, filter_shape=(1, 1), weights_initializer=he_uniform),
-                    Conv2D(nfilters=n3x3, filter_shape=(3, 3), weights_initializer=he_uniform),
-                    Conv2D(
-                        nfilters=n3x3,
-                        filter_shape=(3, 3),
-                        stride=2,
-                        padding=1,
-                        weights_initializer=he_uniform,
-                    ),
-                ],
-                [MaxPool2D(pool_shape=(3, 3), stride=2, padding=0)],
+                    [
+                        Conv2D(
+                            nfilters=n1x1,
+                            filter_shape=(3, 3),
+                            stride=2,
+                            padding=0,
+                            weights_initializer=he_uniform,
+                        )
+                    ],
+                    [
+                        Conv2D(nfilters=n3x3red, filter_shape=(1, 1), weights_initializer=he_uniform),
+                        Conv2D(nfilters=n3x3, filter_shape=(3, 3), weights_initializer=he_uniform),
+                        Conv2D(
+                            nfilters=n3x3,
+                            filter_shape=(3, 3),
+                            stride=2,
+                            padding=1,
+                            weights_initializer=he_uniform,
+                        ),
+                    ],
+                    [MaxPool2D(pool_shape=(3, 3), stride=2, padding=0)],
+                ]
             )
         )
 
@@ -119,53 +123,55 @@ def inceptionv3(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[L
     for n1x1, n1x7 in inception_blocks:
         _(
             ConcatenationBlock(
-                [Conv2D(nfilters=n1x1, filter_shape=(1, 1), weights_initializer=he_uniform)],
                 [
-                    Conv2D(nfilters=n1x7, filter_shape=(1, 1), weights_initializer=he_uniform),
-                    Conv2D(
-                        nfilters=n1x7,
-                        filter_shape=(1, 7),
-                        padding=(3, 0),
-                        weights_initializer=he_uniform,
-                    ),
-                    Conv2D(
-                        nfilters=n1x1,
-                        filter_shape=(7, 1),
-                        padding=(0, 3),
-                        weights_initializer=he_uniform,
-                    ),
-                ],
-                [
-                    Conv2D(nfilters=n1x7, filter_shape=(1, 1), weights_initializer=he_uniform),
-                    Conv2D(
-                        nfilters=n1x7,
-                        filter_shape=(7, 1),
-                        padding=(0, 3),
-                        weights_initializer=he_uniform,
-                    ),
-                    Conv2D(
-                        nfilters=n1x7,
-                        filter_shape=(1, 7),
-                        padding=(3, 0),
-                        weights_initializer=he_uniform,
-                    ),
-                    Conv2D(
-                        nfilters=n1x7,
-                        filter_shape=(7, 1),
-                        padding=(0, 3),
-                        weights_initializer=he_uniform,
-                    ),
-                    Conv2D(
-                        nfilters=n1x1,
-                        filter_shape=(1, 7),
-                        padding=(3, 0),
-                        weights_initializer=he_uniform,
-                    ),
-                ],
-                [
-                    AveragePool2D(pool_shape=(3, 3), stride=1, padding=1),
-                    Conv2D(nfilters=n1x1, filter_shape=(1, 1), weights_initializer=he_uniform),
-                ],
+                    [Conv2D(nfilters=n1x1, filter_shape=(1, 1), weights_initializer=he_uniform)],
+                    [
+                        Conv2D(nfilters=n1x7, filter_shape=(1, 1), weights_initializer=he_uniform),
+                        Conv2D(
+                            nfilters=n1x7,
+                            filter_shape=(1, 7),
+                            padding=(3, 0),
+                            weights_initializer=he_uniform,
+                        ),
+                        Conv2D(
+                            nfilters=n1x1,
+                            filter_shape=(7, 1),
+                            padding=(0, 3),
+                            weights_initializer=he_uniform,
+                        ),
+                    ],
+                    [
+                        Conv2D(nfilters=n1x7, filter_shape=(1, 1), weights_initializer=he_uniform),
+                        Conv2D(
+                            nfilters=n1x7,
+                            filter_shape=(7, 1),
+                            padding=(0, 3),
+                            weights_initializer=he_uniform,
+                        ),
+                        Conv2D(
+                            nfilters=n1x7,
+                            filter_shape=(1, 7),
+                            padding=(3, 0),
+                            weights_initializer=he_uniform,
+                        ),
+                        Conv2D(
+                            nfilters=n1x7,
+                            filter_shape=(7, 1),
+                            padding=(0, 3),
+                            weights_initializer=he_uniform,
+                        ),
+                        Conv2D(
+                            nfilters=n1x1,
+                            filter_shape=(1, 7),
+                            padding=(3, 0),
+                            weights_initializer=he_uniform,
+                        ),
+                    ],
+                    [
+                        AveragePool2D(pool_shape=(3, 3), stride=1, padding=1),
+                        Conv2D(nfilters=n1x1, filter_shape=(1, 1), weights_initializer=he_uniform),
+                    ],
+                ]
             )
         )
 
@@ -175,35 +181,37 @@ def inceptionv3(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[L
         _(
             ConcatenationBlock(
                 [
-                    Conv2D(nfilters=n1x1, filter_shape=(1, 1), weights_initializer=he_uniform),
-                    Conv2D(
-                        nfilters=n3x3, filter_shape=(3, 3), stride=2, weights_initializer=he_uniform
-                    ),
-                ],
-                [
-                    Conv2D(
-                        nfilters=n1x1,
-                        filter_shape=(1, 1),
-                        padding=1,
-                        weights_initializer=he_uniform,
-                    ),
-                    Conv2D(
-                        nfilters=n1x1,
-                        filter_shape=(1, 7),
-                        padding=1,
-                        weights_initializer=he_uniform,
-                    ),
-                    Conv2D(
-                        nfilters=n1x1,
-                        filter_shape=(7, 1),
-                        padding=1,
-                        weights_initializer=he_uniform,
-                    ),
-                    Conv2D(
-                        nfilters=n1x1, filter_shape=(3, 3), stride=2, weights_initializer=he_uniform
-                    ),
-                ],
-                [MaxPool2D(pool_shape=(3, 3), stride=2)],
+                    [
+                        Conv2D(nfilters=n1x1, filter_shape=(1, 1), weights_initializer=he_uniform),
+                        Conv2D(
+                            nfilters=n3x3, filter_shape=(3, 3), stride=2, weights_initializer=he_uniform
+                        ),
+                    ],
+                    [
+                        Conv2D(
+                            nfilters=n1x1,
+                            filter_shape=(1, 1),
+                            padding=1,
+                            weights_initializer=he_uniform,
+                        ),
+                        Conv2D(
+                            nfilters=n1x1,
+                            filter_shape=(1, 7),
+                            padding=1,
+                            weights_initializer=he_uniform,
+                        ),
+                        Conv2D(
+                            nfilters=n1x1,
+                            filter_shape=(7, 1),
+                            padding=1,
+                            weights_initializer=he_uniform,
+                        ),
+                        Conv2D(
+                            nfilters=n1x1, filter_shape=(3, 3), stride=2, weights_initializer=he_uniform
+                        ),
+                    ],
+                    [MaxPool2D(pool_shape=(3, 3), stride=2)],
+                ]
             )
         )
 
@@ -212,64 +220,70 @@ def inceptionv3(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[L
     for n1x1b0, n1x1b1, n1x1b2, n1x1b3 in inception_blocks:
         _(
             ConcatenationBlock(
-                [Conv2D(nfilters=n1x1b0, filter_shape=(1, 1), weights_initializer=he_uniform)],
                 [
-                    Conv2D(nfilters=n1x1b1, filter_shape=(1, 1), weights_initializer=he_uniform),
-                    ConcatenationBlock(
-                        [
-                            Conv2D(
-                                nfilters=n1x1b1,
-                                filter_shape=(1, 3),
-                                padding=(0, 1),
-                                weights_initializer=he_uniform,
-                            )
-                        ],
-                        [
-                            Conv2D(
-                                nfilters=n1x1b1,
-                                filter_shape=(3, 1),
-                                padding=(1, 0),
-                                weights_initializer=he_uniform,
-                            )
-                        ],
-                    ),
-                ],
-                [
-                    Conv2D(nfilters=n1x1b2, filter_shape=(1, 1), weights_initializer=he_uniform),
-                    Conv2D(
-                        nfilters=n1x1b1,
-                        filter_shape=(3, 3),
-                        padding=1,
-                        weights_initializer=he_uniform,
-                    ),
-                    ConcatenationBlock(
-                        [
-                            Conv2D(
-                                nfilters=n1x1b1,
-                                filter_shape=(1, 3),
-                                padding=(0, 1),
-                                weights_initializer=he_uniform,
-                            )
-                        ],
-                        [
-                            Conv2D(
-                                nfilters=n1x1b1,
-                                filter_shape=(3, 1),
-                                padding=(1, 0),
-                                weights_initializer=he_uniform,
-                            )
-                        ],
-                    ),
-                ],
-                [
-                    AveragePool2D(pool_shape=(3, 3)),
-                    Conv2D(
-                        nfilters=n1x1b3,
-                        filter_shape=(1, 1),
-                        padding=1,
-                        weights_initializer=he_uniform,
-                    ),
-                ],
+                    [Conv2D(nfilters=n1x1b0, filter_shape=(1, 1), weights_initializer=he_uniform)],
+                    [
+                        Conv2D(nfilters=n1x1b1, filter_shape=(1, 1), weights_initializer=he_uniform),
+                        ConcatenationBlock(
+                            [
+                                [
+                                    Conv2D(
+                                        nfilters=n1x1b1,
+                                        filter_shape=(1, 3),
+                                        padding=(0, 1),
+                                        weights_initializer=he_uniform,
+                                    )
+                                ],
+                                [
+                                    Conv2D(
+                                        nfilters=n1x1b1,
+                                        filter_shape=(3, 1),
+                                        padding=(1, 0),
+                                        weights_initializer=he_uniform,
+                                    )
+                                ],
+                            ]
+                        ),
+                    ],
+                    [
+                        Conv2D(nfilters=n1x1b2, filter_shape=(1, 1), weights_initializer=he_uniform),
+                        Conv2D(
+                            nfilters=n1x1b1,
+                            filter_shape=(3, 3),
+                            padding=1,
+                            weights_initializer=he_uniform,
+                        ),
+                        ConcatenationBlock(
+                            [
+                                [
+                                    Conv2D(
+                                        nfilters=n1x1b1,
+                                        filter_shape=(1, 3),
+                                        padding=(0, 1),
+                                        weights_initializer=he_uniform,
+                                    )
+                                ],
+                                [
+                                    Conv2D(
+                                        nfilters=n1x1b1,
+                                        filter_shape=(3, 1),
+                                        padding=(1, 0),
+                                        weights_initializer=he_uniform,
+                                    )
+                                ],
+                            ]
+                        ),
+                    ],
+                    [
+                        AveragePool2D(pool_shape=(3, 3)),
+                        Conv2D(
+                            nfilters=n1x1b3,
+                            filter_shape=(1, 1),
+                            padding=1,
+                            weights_initializer=he_uniform,
+                        ),
+                    ],
+                ]
             )
         )
 

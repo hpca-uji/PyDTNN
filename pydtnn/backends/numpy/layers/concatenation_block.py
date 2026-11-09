@@ -29,12 +29,17 @@ class ConcatenationBlockNumpy(ConcatenationBlock, AbstractBlockLayerNumpy):
         self.out_co: list[int] = None  # pyright: ignore[reportAttributeAccessIssue]
         self.idx_co: np.ndarray = None  # pyright: ignore[reportAttributeAccessIssue]
         self.concat_dim: int = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.dx: np.ndarray = None  # pyright: ignore[reportAttributeAccessIssue]
 
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
         """Initializes model-specific buffers and memory tracking."""
         super()._model_init(prev_shape, x)
         self.y: np.ndarray = np.zeros((self.model.batch_size, *self.shape), dtype=self.model.dtype)
         self.memory_used += self.y.nbytes
+
+        self.dx = np.zeros(self.shape if self.num_inputs > 1 else (self.num_inputs, *self.shape),
+                           dtype=self.model.dtype, order="C")
+        self.memory_used += self.dx.nbytes
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         """Performs the forward pass by concatenating outputs from multiple paths."""
@@ -46,7 +51,7 @@ class ConcatenationBlockNumpy(ConcatenationBlock, AbstractBlockLayerNumpy):
         y = self.y[: x.shape[0], :]
 
         for i, p in enumerate(self.paths):
-            x_forward = x
+            x_forward = x[i] if self.num_inputs > 1 else x
             for layer in p:
                 self.model.tracer.emit_event(
                     PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + MdlEventEnum.FORWARD
@@ -67,32 +72,32 @@ class ConcatenationBlockNumpy(ConcatenationBlock, AbstractBlockLayerNumpy):
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.BACKWARD_SPLIT
         )
-        dx: list[np.ndarray] = np.split(dy, self.idx_co[:-1], axis=self.concat_dim)
+        breakpoint()
+        self.dx[:] = np.split(dy, self.idx_co[:-1], axis=self.concat_dim)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-
         num_paths = len(self.paths)
 
-        p = self.paths[0]
-        for layer in reversed(p):
-            self.model.tracer.emit_event(
-                PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + MdlEventEnum.BACKWARD
-            )
-            dx[0] = layer.backward(np.asarray(dx[0], dtype=self.model.dtype, order="C"))
-            self.model.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
-
-        for i in range(1, num_paths):
+        for i in range(num_paths):
             p = self.paths[i]
             for layer in reversed(p):
                 self.model.tracer.emit_event(
                     PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + MdlEventEnum.BACKWARD
                 )
-                dx[i] = layer.backward(np.asarray(dx[i], dtype=self.model.dtype, order="C"))
+                self.dx[i, :] = layer.backward(np.asarray(self.dx[i], dtype=self.model.dtype, order="C"))
                 self.model.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
             self.model.tracer.emit_event(
                 PYDTNN_OPS_EVENT,
                 self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.BACKWARD_ELTW_SUM,
             )
-            np.add(dx[0], dx[i], out=dx[0], dtype=self.model.dtype)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return np.asarray(dx[0], dtype=self.model.dtype, order="C")
+
+        # TODO: Check if this is correct
+        if self.num_inputs == 1:
+            for i in range(num_paths):
+                np.add(self.dx[0], self.dx[i], out=self.dx[0], dtype=self.model.dtype)
+            output = self.dx[0]
+        else:
+            output = self.dx
+
+        return np.asarray(output, dtype=self.model.dtype, order="C")

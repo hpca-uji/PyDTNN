@@ -3,11 +3,14 @@
 import logging
 from typing import TYPE_CHECKING
 
+from numpy import ndarray
+
 from pydtnn.backends.numpy.layers.abstract.block_layer import AbstractBlockLayerNumpy
 from pydtnn.layers.addition_block import AdditionBlock
 from pydtnn.libs import numpy as np
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS,
                                    PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, MdlEventEnum, OpsEventEnum)
+from pydtnn.utils.constants import ArrayShape
 
 __all__ = ("AdditionBlockNumpy",)
 
@@ -20,6 +23,12 @@ if TYPE_CHECKING:
 
 class AdditionBlockNumpy(AdditionBlock[np.ndarray], AbstractBlockLayerNumpy):
     """Numpy implementation of an addition block that sums outputs from multiple parallel paths."""
+
+    def _model_init(self, prev_shape: ArrayShape, x: ndarray) -> None:
+        super()._model_init(prev_shape, x)
+        self.dx = np.zeros(self.shape if self.num_inputs > 1 else (self.num_inputs, *self.shape),
+                           dtype=self.model.dtype, order="C")
+        self.memory_used += self.dx.nbytes
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         """
@@ -34,7 +43,7 @@ class AdditionBlockNumpy(AdditionBlock[np.ndarray], AbstractBlockLayerNumpy):
 
         num_paths = len(self.paths)
         p = self.paths[0]
-        x_forward = x
+        x_forward = x[0] if self.num_inputs > 1 else x
         for layer in p:
             self.model.tracer.emit_event(
                 PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + MdlEventEnum.FORWARD
@@ -45,7 +54,7 @@ class AdditionBlockNumpy(AdditionBlock[np.ndarray], AbstractBlockLayerNumpy):
 
         for i in range(1, num_paths):
             p = self.paths[i]
-            x_forward = x
+            x_forward = x[i] if self.num_inputs > 1 else x
             for layer in p:
                 self.model.tracer.emit_event(
                     PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + MdlEventEnum.FORWARD
@@ -72,30 +81,29 @@ class AdditionBlockNumpy(AdditionBlock[np.ndarray], AbstractBlockLayerNumpy):
             The accumulated gradient with respect to the input.
         """
         num_paths = len(self.paths)
-        p = self.paths[0]
-        dx_backward = dy
-        for layer in reversed(p):
-            self.model.tracer.emit_event(
-                PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + MdlEventEnum.FORWARD
-            )
-            dx_backward = layer.backward(dx_backward)
-            self.model.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
-        dx = dx_backward
+        self.dx[0] = dy
 
-        for i in range(1, num_paths):
+        for i in range(num_paths):
             p = self.paths[i]
-            dx_backward = dy
             for layer in reversed(p):
                 self.model.tracer.emit_event(
                     PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + MdlEventEnum.BACKWARD
                 )
-                dx_backward = layer.backward(dx_backward)
+                self.dx[i, :] = layer.backward(self.dx[i])
                 self.model.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
             self.model.tracer.emit_event(
                 PYDTNN_OPS_EVENT,
                 self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.BACKWARD_ELTW_SUM,
             )
-            np.add(dx, dx_backward, out=dx, dtype=self.model.dtype)
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return np.asarray(dx, dtype=self.model.dtype, order="C")
+
+        # TODO: Check if this is correct
+        if self.num_inputs == 1:
+            for i in range(num_paths):
+                np.add(self.dx[0], self.dx[i], out=self.dx[0], dtype=self.model.dtype)
+            output = self.dx[0]
+        else:
+            output = self.dx
+
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+        return np.asarray(output, dtype=self.model.dtype, order="C")
