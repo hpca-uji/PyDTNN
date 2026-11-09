@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 def _start() -> int:
     """System entry point"""
-    if _pyextrae := os.environ.get("PYEXTRAE", "libptmpitrace.so"):
+    if _pyextrae := os.environ.get("PYEXTRAE"):
         import pyextrae.common.extrae as pyextrae
 
         pyextrae.startTracing(_pyextrae)
