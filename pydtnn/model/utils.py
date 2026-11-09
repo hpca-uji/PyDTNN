@@ -7,6 +7,7 @@ import numpy as np
 from pydtnn import package_name, state_path, timestamp, utils
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.model.base import Base
+from pydtnn.tracers.tracer import TracerType
 from pydtnn.utils.constants import Array, ArrayShape
 from pydtnn.utils.tensor import decode_shape, decode_tensor, encode_shape, encode_tensor
 
@@ -90,3 +91,8 @@ class Utils[T: Array](Base[T]):  # noqa: D101 (generics not detected)
         """Backend shared state (layer)"""
         # NOTE: It can be any layer.
         return self.layers[0]
+
+    @property
+    def tracing(self) -> bool:
+        """Is a tracer active"""
+        return self.tracer_name is not TracerType.NONE

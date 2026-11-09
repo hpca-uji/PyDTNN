@@ -15,14 +15,13 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from pydtnn import MPI_MODULE, Cublas_Handle_Type, Cudnn_Handle_Type
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.datasets.abstract import Dataset
 from pydtnn.losses.abstract.loss import Loss
 from pydtnn.metrics.abstract.metric import Metric
 from pydtnn.optimizers.abstract.optimizer import Optimizer
 from pydtnn.schedulers.abstract.scheduler import Scheduler
-from pydtnn.tracers.tracer import Tracer
+from pydtnn.tracers.tracer import Tracer, TracerType
 from pydtnn.utils.constants import Array, ArrayShape, NetworkAlgoEnum
 from pydtnn.utils.memory_pool import PrivateMemory
 from pydtnn.utils.tensor import TensorFormat
@@ -84,11 +83,11 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
     comm_rank: int
     comm_size: int
     comm: MPI_COMM
-    cublas_handle: Cublas_Handle_Type
+    cublas_handle: int
     cuda_block: tuple[int, int, int]
     cuda_grid: tuple[int, int, int]
     cudnn_dtype: int
-    cudnn_handle: Cudnn_Handle_Type
+    cudnn_handle: int
     history: list[dict[str, Any]]
     input_shape: ArrayShape
     kwargs: dict[str, Any]
@@ -100,7 +99,6 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
     memory_used: int
     memory: PrivateMemory
     metric_funcs: tuple[Metric[T], ...]
-    MPI: MPI_MODULE
     nccl_comm: Any
     nccl_type: Any
     nparams: int
@@ -111,10 +109,9 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
     rank_weight: float
     rank: int
     real_batch_size: int
-    stream: Stream
+    pycuda_stream: Stream
     tmp_memory_used: int
     tracer: Tracer
-    cuda_available: bool
     use_gpudirect: bool
     use_memory_pool: bool
     dataset: Dataset
@@ -243,7 +240,7 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
     encryption_slots: int = 13
     encryption_scale: int = 40
     encryption_security: int = 128
-    tracing: bool = False
+    tracer_name: TracerType = TracerType.NONE
     tracer_output: str = ""
     tracer_pmlib_server: str = "127.0.0.1"
     tracer_pmlib_port: int = 6526

@@ -36,7 +36,6 @@ mpirun -np 8 "${MPI_ARGS[@]}" \
   --parallel-data \
   --use-blocking-mpi \
   --no-use-mpi-buffers \
-  --no-tracing \
   --no-profile \
   --backend=cpu \
   --dtype=float32

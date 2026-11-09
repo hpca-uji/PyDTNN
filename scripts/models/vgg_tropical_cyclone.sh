@@ -46,7 +46,6 @@ pydtnn-benchmark \
   --stop-at-loss-threshold=70.0 \
   --no-parallel-data \
   --use-blocking-mpi \
-  --no-tracing \
   --no-profile \
   --backend="cpu;conv_2d:winograd" \
   --no-enable-best-of \

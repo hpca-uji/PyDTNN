@@ -7,7 +7,6 @@ import numpy as np
 from numpy import ndarray
 from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 
-from pydtnn import gpu_errors
 from pydtnn.backends.pycuda.abstract.layerable import LayerablePycuda
 from pydtnn.layers.abstract.layer import Layer
 from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
@@ -41,9 +40,6 @@ class LayerPycuda(Layer[TensorArray], LayerablePycuda):
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
         """Initializes model parameters and validates CUDNN requirements."""
         super()._model_init(prev_shape, x)
-
-        if not self.model.cuda_available:
-            raise ExceptionGroup("GPU layers requires CUDNN to be enabled!", gpu_errors)
 
         self.grid = self.model.cuda_grid
         self.block = self.model.cuda_block

@@ -59,7 +59,7 @@ class PrecisionPycuda(Precision[TensorArray], MetricPycuda):
             target_classes,
             grid=self.grid,
             block=self.block,
-            stream=self.model.stream,
+            stream=self.model.pycuda_stream,
         )
 
         return self.precision.get().item()

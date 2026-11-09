@@ -5,12 +5,12 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-import pycuda.driver as drv
+import pycuda.driver as drv  # TODO: Fix for CuPy Events
 
 from pydtnn.tracers.simple_tracer import SimpleTracer
 from pydtnn.tracers.tracer import StreamType
 
-__all__ = ("SimpleTracerPycuda",)
+__all__ = ("SimpleTracerGpu",)
 
 logger = logging.getLogger(__name__)
 
@@ -19,12 +19,12 @@ if TYPE_CHECKING:
     from pympi.MPI import Comm
 
 
-class SimpleTracerPycuda(SimpleTracer):
-    """A tracer implementation that records GPU execution times using PyCUDA events."""
+class SimpleTracerGpu(SimpleTracer):
+    """A tracer implementation that records GPU execution times using GPU events."""
 
     def __init__(self, tracing: bool, output_filename: str, comm: Comm | None) -> None:
         """
-        Initialize the PyCUDA tracer.
+        Initialize the GPU tracer.
 
         Args:
             tracing: Whether tracing is enabled.
@@ -34,11 +34,11 @@ class SimpleTracerPycuda(SimpleTracer):
         super().__init__(tracing, output_filename, comm)
         self.event_vars = []
         # Attributes that will be initialized later
-        self.stream: drv.Stream = None
+        self.stream = None
 
     def _get_start_end_event(self) -> tuple:
         """
-        Retrieve a pair of PyCUDA events for timing.
+        Retrieve a pair of GPU events for timing.
 
         Returns:
             A tuple containing (start_event, end_event).
@@ -48,7 +48,7 @@ class SimpleTracerPycuda(SimpleTracer):
         return self.event_vars.pop()
 
     def _release_start_end_event(self, start: drv.Event, end: drv.Event) -> None:
-        """Return a pair of PyCUDA events to the pool for reuse."""
+        """Return a pair of GPU events to the pool for reuse."""
         self.event_vars.append((start, end))
 
     def _emit_event(
@@ -95,7 +95,7 @@ class SimpleTracerPycuda(SimpleTracer):
         Args:
             evt_type_val_list: List of event category identifiers.
             evt_val_list: List of event identifiers.
-            stream: The PyCUDA stream to record on.
+            stream: The GPU stream to record on.
         """
         zipped_list = list(zip(evt_type_val_list, evt_val_list))
         if evt_val_list[0] == 0:
@@ -104,5 +104,5 @@ class SimpleTracerPycuda(SimpleTracer):
             self.emit_event(evt_type_val, evt_val, stream)
 
     def set_stream(self, stream: StreamType) -> None:
-        """Set the default PyCUDA stream for event recording."""
+        """Set the default GPU stream for event recording."""
         self.stream = stream

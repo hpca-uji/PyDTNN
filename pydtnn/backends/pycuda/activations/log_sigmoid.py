@@ -63,11 +63,11 @@ class LogSigmoidPycuda(LogSigmoid[TensorArray], ActivationPycuda):
 
     def forward(self, x: TensorArray) -> TensorArray:
         """Perform the forward pass using the log kernel."""
-        self.log(x.ary, self.y.ary, stream=self.model.stream)
+        self.log(x.ary, self.y.ary, stream=self.model.pycuda_stream)
         return self.y
 
     def backward(self, dy: TensorArray) -> TensorArray:
         """Perform the backward pass using the dlog kernel."""
         # Compute dx
-        self.dlog(dy.ary, self.dx.ary, stream=self.model.stream)
+        self.dlog(dy.ary, self.dx.ary, stream=self.model.pycuda_stream)
         return self.dx

@@ -52,7 +52,7 @@ class BinaryCrossEntropyPycuda(LossPycuda, BinaryCrossEntropy[TensorArray]):
             self.eps,
             grid=self.grid,
             block=self.block,
-            stream=self.model.stream,
+            stream=self.model.pycuda_stream,
         )
         sum_weights: float = gpuarray.sum(self.argmax[:batch_size]).get()
 

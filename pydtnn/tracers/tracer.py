@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import abc
+import enum
 import logging
 import resource
 import sys
@@ -13,7 +14,7 @@ from pydtnn.tracers.events import (PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_O
                                    PYDTNN_OPS_EVENTS, MdlEventEnum, OpsEventEnum)
 from pydtnn.utils import find_component
 
-__all__ = ("EventType", "PostInitCaller", "StreamType", "Tracer", "select")
+__all__ = ("TracerType", "EventType", "PostInitCaller", "StreamType", "Tracer", "select")
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +29,16 @@ if TYPE_CHECKING:
     type StreamType = cupy.cuda.Stream | drv.Stream
 else:
     type StreamType = Any
+
+
+class TracerType(enum.StrEnum):
+    """Tracer types"""
+
+    NONE = enum.auto()
+    SIMPLE = enum.auto()
+    EXTRAE = enum.auto()
+    GPU = enum.auto()
+    PMLIB = enum.auto()
 
 
 class EventType:

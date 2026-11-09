@@ -29,7 +29,6 @@ pydtnn-benchmark \
   --reduce-lr-on-plateau-min-lr=0 \
   --no-parallel-data \
   --use-blocking-mpi \
-  --no-tracing \
   --no-profile \
   --backend=cpu \
   --dtype=float32

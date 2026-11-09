@@ -106,6 +106,7 @@ __all__ = (
     "cudaErrorUnsupportedLimit",
     "cudaFree",
     "cudaGetDevice",
+    "cudaGetDeviceCount",
     "cudaGetErrorString",
     "cudaMalloc",
     "cudaMallocPitch",
@@ -1478,6 +1479,31 @@ def cudaGetDevice() -> int:
     status = _libcudart.cudaGetDevice(ctypes.byref(dev))
     cudaCheckStatus(status)
     return dev.value
+
+
+_libcudart.cudaGetDeviceCount.restype = int
+_libcudart.cudaGetDeviceCount.argtypes = [ctypes.POINTER(ctypes.c_int)]
+
+
+def cudaGetDeviceCount() -> int:
+    """
+    Get number of CUDA devices.
+
+    Return the number of devices that are available for execution to
+    process CUDA operations.
+
+    Returns
+    -------
+    count : int
+        Device number.
+
+    """
+
+    count = ctypes.c_int()
+    assert _libcudart
+    status = _libcudart.cudaGetDeviceCount(ctypes.byref(count))
+    cudaCheckStatus(status)
+    return count.value
 
 
 _libcudart.cudaDriverGetVersion.restype = int

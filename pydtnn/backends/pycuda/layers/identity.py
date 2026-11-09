@@ -34,25 +34,25 @@ class IdentityPycuda(Identity[TensorArray], LayerPycuda):
         return dy
 
     def _state_reduce_async_nccl(self, state_: str) -> None:
-        self.model.stream.synchronize()
+        self.model.pycuda_stream.synchronize()
         super()._state_reduce_async_nccl(state_)
 
     def _state_reduce_sync_nccl(self, state_: str) -> None:
-        self.model.stream.synchronize()
+        self.model.pycuda_stream.synchronize()
         super()._state_reduce_sync_nccl(state_)
 
     def _state_reduce_async_cpu(self, state_: str) -> None:
-        self.model.stream.synchronize()
+        self.model.pycuda_stream.synchronize()
         super()._state_reduce_async_cpu(state_)
 
     def _state_reduce_sync_cpu(self, state_: str) -> None:
-        self.model.stream.synchronize()
+        self.model.pycuda_stream.synchronize()
         super()._state_reduce_sync_cpu(state_)
 
     def _state_reduce_async(self, state_: str) -> None:
-        self.model.stream.synchronize()
+        self.model.pycuda_stream.synchronize()
         super()._state_reduce_async(state_)
 
     def _state_reduce_sync(self, state_: str) -> None:
-        self.model.stream.synchronize()
+        self.model.pycuda_stream.synchronize()
         super()._state_reduce_sync(state_)

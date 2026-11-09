@@ -36,8 +36,6 @@ mpirun \
   --stop_at_loss_threshold=70.0 \
   --parallel=data \
   --use_blocking_mpi=True \
-  --tracing=False \
-  --profile=False \
   --enable_gpu=True \
   --enable_gpudirect=True \
   --dtype=float32 \

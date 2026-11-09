@@ -65,7 +65,7 @@ class Relu6Pycuda(Relu6[TensorArray], ActivationPycuda):
             n,
             grid=self.grid,
             block=self.block,
-            stream=self.model.stream,
+            stream=self.model.pycuda_stream,
         )
 
         self.y: TensorArray = self.mask
@@ -90,7 +90,7 @@ class Relu6Pycuda(Relu6[TensorArray], ActivationPycuda):
             n,
             grid=self.grid,
             block=self.block,
-            stream=self.model.stream,
+            stream=self.model.pycuda_stream,
         )
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)

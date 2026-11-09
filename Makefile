@@ -631,12 +631,15 @@ pydtnn-deps:
 
 pydtnn-src: $(PYDTNN_SRC)/.git
 $(PYDTNN_SRC)/.git:
-	git clone "https://github.com/hpca-uji/PyDTNN.git" .
+	export GIT_DIR="$(PYDTNN_SRC)/.git" && \
+	git clone --bare "https://github.com/hpca-uji/PyDTNN.git" "$${GIT_DIR:?}" && \
+	git config core.bare false && \
+	git reset $$(sed -nE 's/^version *= *"(.*)"/v\1/p' pyproject.toml)
 
 pydtnn-build: $(PYDTNN_DST)/.build
 $(PYDTNN_DST)/.build: $(PYDTNN_SRC)/.git | $(DST)/.gitignore
 	mkdir -p "$(PYDTNN_DST)"
-	TMPDIR=$$(mktemp -d) && \
+	export TMPDIR=$$(mktemp -d) && \
 	trap "rm -r $${TMPDIR:?}" EXIT && \
 	(install -m 644 -t "$(PYDTNN_SRC)/pydtnn/libs" \
 		"$(BLIS_DST)/lib"/* \
@@ -645,6 +648,7 @@ $(PYDTNN_DST)/.build: $(PYDTNN_SRC)/.git | $(DST)/.gitignore
 		"$(CONVDIRECT_DST)/lib"/* \
 		"$(PMLIB_DST)/lib"/* || true) && \
 	cd "$(PYDTNN_SRC)" && \
+		export PYDTNN_PARALLEL="$(NPROC)" && \
 		python3 -m build -so "$(PYDTNN_DST)" && \
 		python3 -m build -wo "$${TMPDIR:?}" && \
 		python3 -m auditwheel repair -w "$(PYDTNN_DST)" "$${TMPDIR:?}"/pydtnn-*.whl
@@ -652,18 +656,17 @@ $(PYDTNN_DST)/.build: $(PYDTNN_SRC)/.git | $(DST)/.gitignore
 
 pydtnn-install: PYDTNN_PKG :=
 pydtnn-install: $(PYDTNN_DST)/.build
+	export PYDTNN_PARALLEL="$(NPROC)" && \
 	WHEEL=$$(printf '%s ' "$(PYDTNN_DST)"/pydtnn-*.whl) && \
 	$(PIP) install \
-		-C="--global-option=build_ext --parallel=$(NPROC)" \
 		"$${WHEEL:?}$(if $(PYDTNN_PKG),[$(PYDTNN_PKG)])"
 
 pydtnn-dev: PYDTNN_PKG := dev
 pydtnn-dev:
+	export PYDTNN_PARALLEL="$(NPROC)" && \
 	$(PIP) install \
-		--upgrade \
-		-C=editable_mode=compat \
-		-C="--global-option=build_ext --parallel=$(NPROC)" \
-		-e "$(PYDTNN_SRC)$(if $(PYDTNN_PKG),[$(PYDTNN_PKG)])"
+		--upgrade --editable -C=editable_mode=compat \
+		"$(PYDTNN_SRC)$(if $(PYDTNN_PKG),[$(PYDTNN_PKG)])"
 
 pydtnn-format: PYDTNN_PKG := pydtnn
 pydtnn-format:
@@ -672,7 +675,7 @@ pydtnn-format:
 pydtnn-test: PYDTNN_PKG := pydtnn.tests.groups.all
 pydtnn-test:
 	mkdir -p "$(PYDTNN_DST)"
-	TMPDIR=$$(mktemp -d) && \
+	export TMPDIR=$$(mktemp -d) && \
 	trap "rm -r $${TMPDIR:?}" EXIT && \
 	cd "$${TMPDIR:?}" && \
 		pytest -v -n "$(NPROC)" \

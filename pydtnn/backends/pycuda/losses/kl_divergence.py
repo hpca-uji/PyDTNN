@@ -43,7 +43,7 @@ class KLDivergencePycuda(KLDivergence[TensorArray], LossPycuda):
             np.float32(self.eps),
             grid=self.grid,
             block=self.block,
-            stream=self.model.stream,
+            stream=self.model.pycuda_stream,
         )
         # loss = gpuarray.sum(self.loss).get()
         loss = gpuarray.sum(self.dx.ary).get()

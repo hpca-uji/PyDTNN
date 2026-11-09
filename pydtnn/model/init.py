@@ -9,8 +9,8 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from pydtnn import (MPI, context, cublas, cublas_handle, cudnn, cudnn_handle, drv, gpu_errors,
-                    gpuarray, hostname, nccl, nccl_comm, num_gpus, ranks_per_node, stream)
+from pydtnn import (mpi_comm, cublas_handle, cudnn, cudnn_handle,
+                    nccl, nccl_comm, pycuda_stream)
 from pydtnn.datasets import select as select_dataset
 from pydtnn.layers.identity import Identity
 from pydtnn.libs.mpi.rc import proto as proto
@@ -22,6 +22,7 @@ from pydtnn.model.utils import DEFAULT_BACH_SIZE, LIMIT_THREADS_AND_BLOCKS
 from pydtnn.models import select as select_model
 from pydtnn.optimizers import select as select_optimizer
 from pydtnn.schedulers import select as select_scheduler
+from pydtnn.tracers.tracer import TracerType
 from pydtnn.utils import rand
 from pydtnn.utils.gpu import CudnnDataType
 from pydtnn.utils.memory_pool import PreallocMemory, PrivateMemory
@@ -98,10 +99,7 @@ class Init[T: Array](Repr[T]):  # noqa: D101 (generics not detected)
         self._tracer_init()
 
         # Cuda [NOTE: after MPI]
-        if self.cuda_available:
-            self._cuda_init()
-        else:
-            self.stream = None
+        self._cuda_init()
 
         # Encryption [NOTE: after MPI & Cuda]
         if self.encryption_name:
@@ -135,20 +133,14 @@ class Init[T: Array](Repr[T]):  # noqa: D101 (generics not detected)
         if model_name := self.model_name:
             self._select_layers(model_name)
 
-    @property
-    def cuda_available(self) -> bool:
-        """Is CUDA support avaiable"""
-        return gpuarray is not None and drv is not None and cublas is not None
-
     def _mpi_init(self) -> None:
         """Initializes MPI communication settings and process ranks."""
         # Communication type
+        self.comm = None  # pyright: ignore[reportAttributeAccessIssue]
         if self.parallel_data or self.parallel_pipeline:
-            if not MPI:
+            if not mpi_comm:
                 raise ValueError("Please, install mpi4py to allow parallel MPI execution!")
-            self.MPI, self.comm = (MPI, MPI.COMM_WORLD)
-        else:
-            self.MPI, self.comm = (None, None)  # pyright: ignore[reportAttributeAccessIssue]
+            self.comm = mpi_comm
 
         # Communication weight
         self.rank_weight = 1.0
@@ -204,8 +196,6 @@ class Init[T: Array](Repr[T]):  # noqa: D101 (generics not detected)
         """Configures the tensor format based on hardware capabilities."""
         if self.tensor_format:
             tensor_format = TensorFormat(self.tensor_format.lower())
-        elif self.cuda_available:
-            tensor_format = TensorFormat.NCHW
         else:
             tensor_format = TensorFormat.NHWC
 
@@ -213,15 +203,8 @@ class Init[T: Array](Repr[T]):  # noqa: D101 (generics not detected)
 
     def _cuda_init(self) -> None:
         """Initializes CUDA, cuDNN, and NCCL backend handles."""
-
         if not self.use_gpudirect and self.use_nccl:
             raise RuntimeError("It is necessary to have gpudirect active to work with NCCL.")
-
-        if cudnn is None or cudnn_handle is None or cublas_handle is None or stream is None:
-            raise RuntimeError(f"CUDA dependencies not met: {gpu_errors}")
-
-        assert drv is not None
-        assert context is not None
 
         self.cuda_threads = min(self.batch_size, LIMIT_THREADS_AND_BLOCKS)
         self.cuda_blocks = (max(self.batch_size, LIMIT_THREADS_AND_BLOCKS) // self.cuda_threads) + 1
@@ -242,13 +225,11 @@ class Init[T: Array](Repr[T]):  # noqa: D101 (generics not detected)
             }
 
             nccl_type = nccl_types.get(self.dtype, nccl.DataType.Float32)
-
-            if ranks_per_node[hostname] > num_gpus:
-                raise ValueError("Not able to run more processes than GPUs per node!")
         else:
             nccl_type = None
 
-        self.tracer.set_stream(stream)
+        if pycuda_stream is not None:
+            self.tracer.set_stream(pycuda_stream)
 
         cudnn_types = {
             np.dtype(np.float64): CudnnDataType.FLOAT64,
@@ -264,8 +245,7 @@ class Init[T: Array](Repr[T]):  # noqa: D101 (generics not detected)
         self.nccl_comm = nccl_comm
         self.cudnn_handle = cudnn_handle
         self.cublas_handle = cublas_handle
-        self.stream = stream
-        self.context = context
+        self.pycuda_stream = pycuda_stream
         self.cudnn_dtype = cudnn_dtype
 
     def _crypt_init(self, encryption_name: str) -> "polyhe.Context":
@@ -298,29 +278,34 @@ class Init[T: Array](Repr[T]):  # noqa: D101 (generics not detected)
 
     def _tracer_init(self) -> None:
         """Initializes the performance tracing mechanism."""
-        if self.tracer_output == "":
-            from pydtnn.tracers.extrae_tracer import ExtraeTracer
+        match self.tracer_name:
+            case TracerType.NONE:
+                from pydtnn.tracers.simple_tracer import SimpleTracer
 
-            tracer = ExtraeTracer(self.tracing)
-        elif self.cuda_available:
-            from pydtnn.tracers.simple_tracer_gpu import SimpleTracerPycuda
+                tracer = SimpleTracer(self.tracing, self.tracer_output, self.comm)
+            case TracerType.SIMPLE:
+                from pydtnn.tracers.simple_tracer import SimpleTracer
 
-            tracer = SimpleTracerPycuda(self.tracing, self.tracer_output, self.comm)
-        elif self.tracer_pmlib_device != "":
-            from pydtnn.tracers.simple_tracer_pmlib import SimpleTracerPMLib
+                tracer = SimpleTracer(self.tracing, self.tracer_output, self.comm)
+            case TracerType.EXTRAE:
+                from pydtnn.tracers.extrae_tracer import ExtraeTracer
 
-            tracer = SimpleTracerPMLib(
-                self.tracing,
-                self.tracer_output,
-                self.comm,
-                self.tracer_pmlib_server,
-                self.tracer_pmlib_port,
-                self.tracer_pmlib_device,
-            )
-        else:
-            from pydtnn.tracers.simple_tracer import SimpleTracer
+                tracer = ExtraeTracer(self.tracing)
+            case TracerType.GPU:
+                from pydtnn.tracers.gpu_tracer import SimpleTracerGpu
 
-            tracer = SimpleTracer(self.tracing, self.tracer_output, self.comm)
+                tracer = SimpleTracerGpu(self.tracing, self.tracer_output, self.comm)
+            case TracerType.PMLIB:
+                from pydtnn.tracers.pmlib_tracer import SimpleTracerPMLib
+
+                tracer = SimpleTracerPMLib(
+                    self.tracing,
+                    self.tracer_output,
+                    self.comm,
+                    self.tracer_pmlib_server,
+                    self.tracer_pmlib_port,
+                    self.tracer_pmlib_device,
+                )
 
         self.tracer = tracer
 

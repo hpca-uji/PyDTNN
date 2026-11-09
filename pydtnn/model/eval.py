@@ -5,16 +5,17 @@ This module provides the Eval class, which handles model evaluation,
 metric computation, and performance tracking during the testing phase.
 """
 
+from __future__ import annotations
+
 import logging
 import time
 from collections.abc import Generator
 from timeit import default_timer as timer
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 import numpy as np
 from tqdm import tqdm
 
-from pydtnn import MPI
 from pydtnn.datasets.abstract import Dataset
 from pydtnn.model.base import ModelMode
 from pydtnn.model.sync import Sync
@@ -24,6 +25,9 @@ from pydtnn.utils import term
 from pydtnn.utils.constants import Array, SyncMode
 from pydtnn.utils.logs import TqdmLogger
 from pydtnn.utils.performance_models import allreduce_time
+
+if TYPE_CHECKING:
+    from pydtnn.libs.mpi import MPI
 
 __all__ = ("Eval",)
 

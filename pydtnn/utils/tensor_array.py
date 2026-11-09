@@ -11,9 +11,9 @@ from enum import StrEnum, auto
 from typing import Any, Literal
 
 import numpy as np
+from pycuda import driver as pycuda_driver
+from pycuda import gpuarray
 
-from pydtnn import drv as pycuda_driver
-from pydtnn import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import TensorFormat, decode_shape, encode_shape
 

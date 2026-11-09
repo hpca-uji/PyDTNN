@@ -65,7 +65,7 @@ class LogPycuda(Log[TensorArray], ActivationPycuda):
             n,
             grid=self.grid,
             block=self.block,
-            stream=self.model.stream,
+            stream=self.model.pycuda_stream,
         )
 
         return self.y
@@ -82,7 +82,7 @@ class LogPycuda(Log[TensorArray], ActivationPycuda):
             n,
             grid=self.grid,
             block=self.block,
-            stream=self.model.stream,
+            stream=self.model.pycuda_stream,
         )
 
         return self.dx

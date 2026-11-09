@@ -158,8 +158,7 @@ The PyDTNN framework comes with a utility launcher called
   - `--traceback`, `--no-traceback`: Save traceback file. Default: True.
   - `--trace-ranks`, `--no-trace-ranks`: Trace per rank. Default: True.
   - `--history`, `--no-history`: Save event history. Default: False.
-  - `--tensor-format`: Data format to be used: `nchw`, `nhwc`. If not defined value sets
-    `nchw` when cuDNN is available, `nhwc` otherwise. Default: None.
+  - `--tensor-format`: Data format to be used: `nchw`, `nhwc`. Default: `nhwc`.
   - `--random-seed`: Initial state of random number generator. Default: 57005.
   - `--shared-tmp-memory`, `--no-shared-tmp-memory`: Allows to use a memory pool for all the temporary data structures.
     Default: False.
@@ -355,7 +354,7 @@ The PyDTNN framework comes with a utility launcher called
     Default: 128.
 
 - Tracing options:
-  - `--tracing`, `--no-tracing`: Obtain Simple/Extrae-based traces. Default: False.
+  - `--tracer`: Obtain Simple/Extrae/GPU-based traces. Default: `none`.
   - `--tracer-output`: Output file to store the Simple/Extrae-based traces. Default: ` `.
   - `--tracer-pmlib-server`: Address of PMlib tracer server. Default: `127.0.0.1`.
   - `--tracer-pmlib-port`: Port of PMlib tracer server. Default: 6526.
@@ -390,8 +389,7 @@ $ mpirun -np 12 \
       --early-stopping-metric=val_negative_likelihood \
       --early-stopping-patience=20 \
       --parallel-data=False \
-      --tracing=False \
-      --profile=False \
+      --tensor-format=nchw \
       --backend=gpu \
       --dtype=float32
 
@@ -410,7 +408,7 @@ Model options
   evaluate-only    : False
   model-state-file : None
   history-file     : 
-  tensor-format    : 
+  tensor-format    : nchw
   random-seed      : 57005
   shared-tmp-memory: False
 
@@ -674,8 +672,8 @@ $ pydtnn-benchmark \
     --batch-size=64 \
     --validation-split=0.2 \
     --model-state-file=vgg16-weights-nhwc.npz \
-    --no-tracing \
     --no-profile \
+    --tensor-format=nchw \
     --backend=gpu \
     --dtype=float32
 
@@ -694,7 +692,7 @@ Model options
   evaluate-only            : True
   weights-and-bias-filename: model-vgg16_cifar10-weights-rank_0-20260506.npz
   history-file             : result_vgg_cifar.yaml
-  tensor-format            : 
+  tensor-format            : nchw
   random-seed              : 57005
   shared-tmp-memory        : False
 

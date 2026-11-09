@@ -43,8 +43,6 @@ mpirun -np 2 "${MPI_ARGS[@]}" \
   --stop-at-loss-threshold=70.0 \
   --parallel-data=True \
   --use-blocking-mpi=False \
-  --tracing=False \
-  --profile=False \
   --backend=cpu \
   --enable-cudnn=False \
   --enable-gpudirect=False \

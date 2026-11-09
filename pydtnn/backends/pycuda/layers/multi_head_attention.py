@@ -9,7 +9,7 @@ from typing import Any
 import numpy as np
 from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 
-from pydtnn import drv
+from pycuda import driver as drv
 from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
 from pydtnn.layers.multi_head_attention import MultiHeadAttention
 from pydtnn.libs import cudnn as cudnn

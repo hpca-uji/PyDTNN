@@ -1,7 +1,8 @@
 """PyDTNN's setup"""
 
+from itertools import chain
 from pathlib import Path
-from os import process_cpu_count
+from os import environ, process_cpu_count
 from typing import Any
 
 import numpy
@@ -14,7 +15,7 @@ from setuptools.command.build_ext import build_ext
 PACKAGE = Path("pydtnn")
 
 EXTENSION_ARGS: dict[str, Any] = {
-    "extra_compile_args": ["-fopenmp", "-O3", "-g0"],
+    "extra_compile_args": ["-fopenmp", "-O2", "-g0"],
     "extra_link_args": ["-fopenmp", "-s"],
     "include_dirs": [numpy.get_include()],
 }
@@ -47,11 +48,14 @@ class BuildExt(build_ext):
         super().initialize_options()
 
         if self.parallel is None:
-            self.parallel = process_cpu_count()
+            self.parallel = environ.get(f"{PACKAGE.name}_parallel".upper()) or process_cpu_count()
 
     def finalize_options(self) -> None:
         """Finish extensions configuration"""
-        self.parallel = int(self.parallel)
+        try:
+            self.parallel = int(self.parallel)
+        except ValueError:
+            self.parallel = 1
 
         self.distribution.ext_modules = cythonize(
             self.distribution.ext_modules,
@@ -70,14 +74,11 @@ class BuildExt(build_ext):
 setup(
     cmdclass={"build_ext": BuildExt},
     ext_modules=[
-        Extension(BuildExt.path_module(CYTHON_UTILITY), sources=[str(CYTHON_UTILITY)]),
-        *(
-            Extension(
-                BuildExt.path_module(pyx),
-                [str(pyx)],
-                **EXTENSION_ARGS
-            )
-            for pyx in PACKAGE.rglob("*.pyx")
+        Extension(
+            BuildExt.path_module(path),
+            [str(path)],
+            **EXTENSION_ARGS
         )
+        for path in chain([CYTHON_UTILITY], PACKAGE.rglob("*.pyx"))
     ]
 )

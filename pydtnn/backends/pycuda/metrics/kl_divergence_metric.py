@@ -37,6 +37,6 @@ class KLDivergenceMetricPycuda(KLDivergenceMetric[TensorArray], MetricPycuda):
             np.float32(self.eps),
             grid=self.model.cuda_grid,
             block=self.model.cuda_block,
-            stream=self.model.stream,
+            stream=self.model.pycuda_stream,
         )
         return float(gpuarray.sum(self.cost).get() / self.model.real_batch_size)

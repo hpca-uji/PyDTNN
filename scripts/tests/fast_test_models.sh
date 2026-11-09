@@ -30,7 +30,6 @@ function run_model() {
     --loss-func=negative_likelihood \
     --schedulers= \
     --no-parallel-data \
-    --no-tracing \
     --no-profile \
     --backend=cpu \
     --dtype=float32

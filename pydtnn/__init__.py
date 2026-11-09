@@ -5,54 +5,35 @@ import itertools
 import logging
 import os
 import platform
-import subprocess
 import uuid
 from collections import Counter
 from datetime import datetime
 from importlib import metadata as libdata
-from types import ModuleType
 
 __all__ = (
-    "MPI",
-    "MPI_MODULE",
-    "Cublas_Handle_Type",
-    "Cudnn_Handle_Type",
-    "context",
-    "cublas",
     "cublas_handle",
-    "cudnn",
     "cudnn_handle",
-    "cupy",
-    "drv",
-    "gpu_errors",
-    "gpuarray",
-    "has_drv",
-    "hostname",
+    "cupy_stream",
+    "cupy_device",
+    "errors",
+    "host_uuid",
     "metadata",
-    "nccl",
     "nccl_comm",
+    "mpi_comm",
     "nprocs",
-    "num_gpus",
     "package_name",
-    "pycuda",
     "rank",
     "ranks_per_node",
     "state_path",
-    "stream",
-    "stream_handle",
-    "supported_gpu",
-    "tensor_array",
+    "pycuda_stream",
+    "pycuda_device",
     "timestamp",
 )
 
 logger = logging.getLogger(__name__)
 
-
-type MPI_MODULE = ModuleType
-type Cudnn_Handle_Type = int
-type Cublas_Handle_Type = int
-
-gpu_errors = []
+errors = []
+host_uuid = uuid.getnode()
 package_name = __name__
 state_path = os.environ.get(f"{package_name.upper()}_STATE", ".")
 timestamp = (
@@ -65,121 +46,101 @@ timestamp = (
 
 cpu_affinity = tuple(range(os.process_cpu_count()))
 try:
-    cpu_affinity = tuple(os.sched_getaffinity(0))
+    _sched_getaffinity = os.sched_getaffinity
 except AttributeError:
     pass  # unsupported
+else:
+    cpu_affinity = tuple(_sched_getaffinity(0))
 try:
     from psutil import Process
-
-    cpu_affinity = tuple(Process().cpu_affinity())
 except ModuleNotFoundError:
     pass  # unavailable
+else:
+    cpu_affinity = tuple(Process().cpu_affinity())
 
 # OPTIONAL IMPORTS
 try:
     from pydtnn.libs.mpi import MPI
-except Exception:
+except Exception as e:
+    logger.debug("MPI not available", exc_info=e)
+    errors.append(e)
     MPI = None
-
-try:
-    import cupy
-
-    logger.debug("Cupy available")
-except Exception as e:
-    logger.debug(f"Cupy not available\n{e}")
-    cupy = None
-    gpu_errors.append(e)
-
-try:
-    import pycuda
-
-    logger.debug("PyCuda available")
-
-    import pycuda.driver as drv
-
-    logger.debug("drv available")
-except Exception as e:
-    logger.debug(f"PyCuda or drv not available\n{e}")
-    gpu_errors.append(e)
-    pycuda = None
-    drv = None
-    gpuarray = None
-    stream = None
-    has_drv = False
 else:
-    from pycuda import gpuarray
-
-    has_drv = True
+    logger.debug("MPI available")
 
 try:
-    from pydtnn.utils import tensor_array
-
-    logger.debug("tensor_array available")
+    from pydtnn.libs import nccl
 except Exception as e:
-    logger.debug(f"tensor_array not available\n{e}")
-    tensor_array = None
-    gpu_errors.append(e)
-
-try:
-    from pydtnn.libs import nccl as nccl
-
-    logger.debug("nccl available")
-except Exception as e:
-    logger.debug(f"nccl not available\n{e}")
+    logger.debug("nccl not available", exc_info=e)
+    errors.append(e)
     nccl = None
-    gpu_errors.append(e)
+else:
+    logger.debug("nccl available")
 
 try:
-    from pydtnn.libs import cudnn as cudnn
-
-    logger.debug("cudnn available")
+    import cupy.cuda as cupy_driver
 except Exception as e:
-    logger.debug(f"cudnn not available\n{e}")
+    logger.debug("CuPy not available", exc_info=e)
+    errors.append(e)
+    cupy_driver = None
+else:
+    logger.debug("CuPy available")
+
+try:
+    import pycuda.driver as pycuda_driver
+except Exception as e:
+    logger.debug("PyCUDA not available", exc_info=e)
+    errors.append(e)
+    pycuda_driver = None
+else:
+    logger.debug("PyCUDA available")
+
+try:
+    from pydtnn.libs import cudnn
+except Exception as e:
+    logger.debug("cudnn not available", exc_info=e)
+    errors.append(e)
     cudnn = None
-    gpu_errors.append(e)
+else:
+    logger.debug("cudnn available")
 
 try:
     from pydtnn.libs import cublas
-
-    logger.debug("cublas available")
 except Exception as e:
-    logger.debug(f"cublas available\n{e}")
+    logger.debug("cublas available", exc_info=e)
+    errors.append(e)
     cublas = None
-    gpu_errors.append(e)
+else:
+    logger.debug("cublas available")
 
 # INIT MPI
+rank = 0
+nprocs = 1
+mpi_comm = None
+ranks_per_node = {host_uuid: nprocs}
+
 if MPI is not None:
-    rank = MPI.COMM_WORLD.rank
-    nprocs = MPI.COMM_WORLD.size
-    hostname = platform.node()
-    ranks_per_node = dict(Counter(MPI.COMM_WORLD.allgather(hostname)))
-else:
-    rank = 0
-    nprocs = 1
-    hostname = "localhost"
-    ranks_per_node = {hostname: nprocs}
-
-# INIT GPU
-try:
-    max_gpus = subprocess.check_output(["nvidia-smi", "-L"]).count(b"UUID")
-except (FileNotFoundError, subprocess.CalledProcessError):
-    max_gpus = 0
-
-idx_gpus = list(map(int, filter(None, os.environ.get("CUDA_VISIBLE_DEVICES", "").split()))) or list(range(max_gpus))
-num_gpus = len(idx_gpus)
-
-supported_gpu = num_gpus > 0 and drv is not None
-cuda_gpu = idx_gpus[rank % num_gpus] if supported_gpu else None
-
-if supported_gpu:
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(cuda_gpu)
+    mpi_comm = MPI.COMM_WORLD
+    rank = mpi_comm.rank
+    nprocs = mpi_comm.size
+    ranks_per_node = dict(Counter(mpi_comm.allgather(host_uuid)))
 
 # INIT NCCL
-if nccl is not None and supported_gpu:
+nccl_comm = None
+
+if nccl is not None:
     nccl_id = nccl.ncclGetUniqueId()
-    if MPI:
-        nccl_id = MPI.COMM_WORLD.bcast(nccl_id)
-    nccl_comm = nccl.ncclCommInitRank(nprocs, nccl_id, rank)
+    if mpi_comm:
+        nccl_id = mpi_comm.bcast(nccl_id)
+
+    try:
+        nccl_comm = nccl.ncclCommInitRank(nprocs, nccl_id, rank)
+    except Exception as e:
+        logger.debug("nccl init failed", exc_info=e)
+        errors.append(e)
+
+if nccl_comm:
+    assert nccl
     nccl_destroy = nccl.ncclCommDestroy
 
     def _destory() -> None:
@@ -187,32 +148,57 @@ if nccl is not None and supported_gpu:
         nccl.ncclCommDestroy(nccl_comm)
 
     atexit.register(_destory)
-else:
-    nccl_comm = None
-
-# DEFAULT CUDA
-device = None
-context = None
-stream = None
-stream_handle = None
 
 # INIT CUPY
-if cupy is not None and supported_gpu:
-    from cupy.cuda import Stream as CupyStream
+cupy_count = 0
+cupy_device = None
+cupy_stream = None
 
-    cupy.cuda.runtime.setDevice(rank % cupy.cuda.runtime.getDeviceCount())
-    stream: CupyStream = cupy.cuda.get_current_stream()
-    stream_handle = stream.ptr
+if cupy_driver:
+    try:
+        cupy_count = cupy_driver.runtime.getDeviceCount()
+    except Exception as e:
+        logger.debug("cupy init failed", exc_info=e)
+        errors.append(e)
+
+if cupy_count > 0:
+    assert cupy_driver
+    cupy_device = rank % cupy_count
+    if cupy_driver.runtime.is_hip:
+        os.environ["HIP_VISIBLE_DEVICES"] = str(cupy_device)
+    else:
+        os.environ["CUDA_VISIBLE_DEVICES"] = str(cupy_device)
+
+    from cupy.cuda import Stream as CupyStream
+    cupy_driver.runtime.setDevice(cupy_device)
+    cupy_stream: CupyStream = cupy_driver.get_current_stream()
+    # stream_handle = stream.ptr
+
 
 # INIT PYCUDA
-if pycuda is not None and supported_gpu:
-    drv.init()
-    from pycuda.driver import Stream as PycudaStream
+pycuda_count = 0
+pycuda_device = None
+pycuda_stream = None
 
-    device = drv.Device(rank % num_gpus)
+if pycuda_driver is not None:
+    try:
+        pycuda_driver.init()
+        pycuda_count = pycuda_driver.Device.count()
+    except Exception as e:
+        logger.debug("pycuda init failed", exc_info=e)
+        errors.append(e)
+
+if pycuda_count > 0:
+    assert pycuda_driver
+
+    pycuda_device = rank % pycuda_count
+    os.environ["CUDA_VISIBLE_DEVICES"] = str(pycuda_device)
+
+    from pycuda.driver import Stream as PycudaStream
+    device = pycuda_driver.Device(pycuda_device)
     context = device.make_context()
-    stream: PycudaStream = drv.Stream()
-    stream_handle = stream.handle
+    pycuda_stream: PycudaStream = pycuda_driver.Stream()
+    # stream_handle = stream.handle
 
     def _destroy() -> None:
         assert context
@@ -220,49 +206,59 @@ if pycuda is not None and supported_gpu:
 
     atexit.register(_destroy)
 
-# INIT CUDNN
-if cudnn is not None and supported_gpu:
-    # NOTE: CUDNN initalization must be done after "drv.init()"
-    cudnn_handle: Cudnn_Handle_Type = cudnn.cudnnCreate()
 
+# INIT CUDNN
+cudnn_handle = None  # pyright: ignore[reportAssignmentType]
+
+if cudnn is not None:
+    try:
+        cudnn_handle: int = cudnn.cudnnCreate()
+    except Exception as e:
+        logger.debug("cudnn init failed", exc_info=e)
+        errors.append(e)
+
+if cudnn_handle is not None:
     def _destroy() -> None:
         assert cudnn and cudnn_handle
         cudnn.cudnnDestroy(cudnn_handle)
 
     atexit.register(_destroy)
-else:
-    cudnn_handle = None  # pyright: ignore[reportAssignmentType]
-
 
 # INIT CUBLAS
-if cublas is not None and device is not None:
-    cublas_handle: Cublas_Handle_Type = cublas.cublasCreate()
+cublas_handle: int = None  # pyright: ignore[reportAssignmentType]
 
+if cublas is not None:
+    try:
+        cublas_handle: int = cublas.cublasCreate()
+    except Exception as e:
+        logger.debug("cublas init failed", exc_info=e)
+        errors.append(e)
+
+if cublas_handle is not None:
     def _destroy() -> None:
         assert cublas, cublas_handle
         cublas.cublasDestroy(cublas_handle)
 
     atexit.register(_destroy)
-else:
-    cublas_handle: Cublas_Handle_Type = None  # pyright: ignore[reportAssignmentType]
 
-# SYNC CUDNN+CUDA
-if cudnn is not None and stream_handle is not None:
-    cudnn.cudnnSetStream(cudnn_handle, stream_handle)
+# SYNC CUDNN
+if cudnn is not None and pycuda_stream is not None:
+    cudnn.cudnnSetStream(cudnn_handle, pycuda_stream.handle)
 
-# SYNC CUBLAS+CUDA
-if cublas is not None and stream_handle is not None:
-    cublas.cublasSetStream(cublas_handle, stream_handle)
+# SYNC CUBLAS
+if cublas is not None and pycuda_stream is not None:
+    cublas.cublasSetStream(cublas_handle, pycuda_stream.handle)
 
 # ENVIRONMENT
 metadata = [
     {
         "time": timestamp,
-        "node": uuid.getnode(),
+        "node": host_uuid,
         "host": " ".join(platform.uname()).strip(),
         "cpu": str(cpu_affinity),
-        "gpu": str((cuda_gpu,) if cuda_gpu is not None else ()),
-        "mpi": str((rank,)),
+        "pycuda": str(pycuda_device),
+        "cupy": str(cupy_device),
+        "mpi": str(rank),
         "packages": {
             platform.python_implementation().lower(): platform.python_version(),
             **{

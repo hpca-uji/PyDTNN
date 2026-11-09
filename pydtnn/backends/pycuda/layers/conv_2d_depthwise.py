@@ -102,7 +102,7 @@ class Conv2DDepthwisePycuda(Conv2DDepthwise[TensorArray], AbstractConv2DPycuda):
             self.total_num_threads,
             grid=self.grid,
             block=self.block,
-            stream=self.model.stream,
+            stream=self.model.pycuda_stream,
         )
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
@@ -124,7 +124,7 @@ class Conv2DDepthwisePycuda(Conv2DDepthwise[TensorArray], AbstractConv2DPycuda):
                 self.total_num_threads,
                 grid=self.grid,
                 block=self.block,
-                stream=self.model.stream,
+                stream=self.model.pycuda_stream,
             )
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
@@ -160,7 +160,7 @@ class Conv2DDepthwisePycuda(Conv2DDepthwise[TensorArray], AbstractConv2DPycuda):
             self.total_num_threads,
             grid=self.grid,
             block=self.block,
-            stream=self.model.stream,
+            stream=self.model.pycuda_stream,
         )
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
@@ -182,7 +182,7 @@ class Conv2DDepthwisePycuda(Conv2DDepthwise[TensorArray], AbstractConv2DPycuda):
                 self.total_num_threads,
                 grid=self.grid,
                 block=self.block,
-                stream=self.model.stream,
+                stream=self.model.pycuda_stream,
             )
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
@@ -220,7 +220,7 @@ class Conv2DDepthwisePycuda(Conv2DDepthwise[TensorArray], AbstractConv2DPycuda):
             self.total_num_threads,
             grid=self.grid,
             block=self.block,
-            stream=self.model.stream,
+            stream=self.model.pycuda_stream,
         )
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
@@ -240,7 +240,7 @@ class Conv2DDepthwisePycuda(Conv2DDepthwise[TensorArray], AbstractConv2DPycuda):
                 self.total_num_threads,
                 grid=self.grid,
                 block=self.block,
-                stream=self.model.stream,
+                stream=self.model.pycuda_stream,
             )
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
@@ -277,7 +277,7 @@ class Conv2DDepthwisePycuda(Conv2DDepthwise[TensorArray], AbstractConv2DPycuda):
             self.total_num_threads,
             grid=self.grid,
             block=self.block,
-            stream=self.model.stream,
+            stream=self.model.pycuda_stream,
         )
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
@@ -295,7 +295,7 @@ class Conv2DDepthwisePycuda(Conv2DDepthwise[TensorArray], AbstractConv2DPycuda):
                 self.total_num_threads,
                 grid=self.grid,
                 block=self.block,
-                stream=self.model.stream,
+                stream=self.model.pycuda_stream,
             )
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 

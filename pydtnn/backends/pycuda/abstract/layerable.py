@@ -52,7 +52,7 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
             self.model.nccl_type,
             nccl.RedOp.Sum,
             comm=self.model.nccl_comm,
-            stream=self.model.stream.handle,
+            stream=self.model.pycuda_stream.handle,
         )
 
         # NOTE: state where called "dw" before the renaming.
@@ -107,7 +107,7 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
             self.model.nccl_type,
             nccl.RedOp.Sum,
             comm=self.model.nccl_comm,
-            stream=self.model.stream.handle,
+            stream=self.model.pycuda_stream.handle,
         )
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         # TODO: self.mode._decode_reduce

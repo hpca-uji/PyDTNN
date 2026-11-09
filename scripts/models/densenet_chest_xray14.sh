@@ -43,8 +43,7 @@ mpirun "${MPI_ARGS[@]}" pydtnn-benchmark \
   --stop-at-loss-threshold=70.0 \
   --parallel=data \
   --use-blocking-mpi=False \
-  --tracing=False \
-  --profile=False \
+  --tensor-format=nchw \
   --backend=gpu \
   --enable-cudnn=True \
   --enable-gpudirect=False \

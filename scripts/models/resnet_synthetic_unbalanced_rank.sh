@@ -48,8 +48,6 @@ pydtnn-benchmark \
   --parallel-data \
   --no-shared-data \
   --use-blocking-mpi \
-  --tracing=False \
-  --profile=False \
   --backend=cpu \
   --no-use-gpudirect \
   --dtype=float32 \

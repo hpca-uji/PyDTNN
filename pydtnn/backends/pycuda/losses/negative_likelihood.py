@@ -50,7 +50,7 @@ class NegativeLikelihoodPycuda(NegativeLikelihood[TensorArray], LossPycuda):
             np.int32(self.shape[1]),
             grid=self.grid,
             block=self.block,
-            stream=self.model.stream,
+            stream=self.model.pycuda_stream,
         )
         sum_weights = float(gpuarray.sum(self.argmax[:batch_size]).get())
 

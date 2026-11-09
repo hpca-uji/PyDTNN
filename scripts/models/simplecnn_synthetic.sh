@@ -32,7 +32,6 @@ pydtnn-benchmark \
   --early-stopping-metric=val_negative_likelihood \
   --early-stopping-patience=20 \
   --no-parallel-data \
-  --no-tracing \
   --no-profile \
   --backend=cpu \
   --dtype=float32

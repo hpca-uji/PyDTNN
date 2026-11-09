@@ -47,7 +47,6 @@ mpirun -np 1 "${MPI_ARGS[@]}" \
   --stop-at-loss-threshold=70.0 \
   --parallel-data \
   --use-blocking-mpi \
-  --no-tracing \
   --no-profile \
   --backend=cpu \
   --no-use-gpudirect \

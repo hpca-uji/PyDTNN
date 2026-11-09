@@ -54,11 +54,16 @@ class Layers[T: Array](Utils[T]):  # noqa: D101 (generics not detected)
         layer2 = fused_layers[-1] if len(fused_layers) > 0 else None
         layer1 = fused_layers[-2] if len(fused_layers) > 1 else None
         layer0 = fused_layers[-3] if len(fused_layers) > 2 else None
-
+        layers = [layer0, layer1, layer2]
         layer_name = None
 
+        from pydtnn.backends.numpy.abstract.layerable import Layerable
+        for layer in layers:
+            if not isinstance(layer, Layerable):
+                return layer_name, layers  # skip fuse
+
         match (layer0, layer1, layer2):
-            case (_, LayerFuse(), _):
+            case (LayerFuse(), _, _):
                 pass  # skip fused
             case (Conv2D(), BatchNormalization(), Relu()):
                 if self.fused_conv_bn_relu:
@@ -66,7 +71,7 @@ class Layers[T: Array](Utils[T]):  # noqa: D101 (generics not detected)
             case _, _, _:
                 pass  # no match
 
-        return layer_name, [layer0, layer1, layer2]
+        return layer_name, layers
 
     def _select_fusion_2(
         self, fused_layers: list
@@ -74,8 +79,13 @@ class Layers[T: Array](Utils[T]):  # noqa: D101 (generics not detected)
         """Identifies potential 2-layer fusion patterns."""
         layer2 = fused_layers[-1] if len(fused_layers) > 0 else None
         layer1 = fused_layers[-2] if len(fused_layers) > 1 else None
-
+        layers = [layer1, layer2]
         layer_name = None
+
+        from pydtnn.backends.numpy.abstract.layerable import Layerable
+        for layer in layers:
+            if not isinstance(layer, Layerable):
+                return layer_name, layers  # skip fuse
 
         match (layer1, layer2):
             case (LayerFuse(), _):
@@ -92,7 +102,7 @@ class Layers[T: Array](Utils[T]):  # noqa: D101 (generics not detected)
             case _, _:
                 pass  # no match
 
-        return layer_name, [layer1, layer2]
+        return layer_name, layers
 
     def _layer_fusion(self, layers: list[Layerable], switch_fusion: abc.Callable) -> None:
         """Performs layer fusion on the provided list using a specific fusion strategy."""
@@ -128,8 +138,7 @@ class Layers[T: Array](Utils[T]):  # noqa: D101 (generics not detected)
 
     def _apply_layer_fusion(self) -> None:
         """Apply layer fusion in a recursive manner"""
-
-        if not self.cuda_available and any(
+        if any(
             [
                 self.fused_bn_relu,
                 self.fused_conv_relu,

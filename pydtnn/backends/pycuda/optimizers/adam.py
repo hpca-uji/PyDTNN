@@ -108,7 +108,7 @@ class AdamPycuda(Adam[TensorArray], OptimizerPycuda):
                     np.int32(w.size),
                     self.model.cuda_grid,
                     block=self.model.cuda_block,
-                    stream=self.model.stream,
+                    stream=self.model.pycuda_stream,
                 )
             else:
                 self.update_kernel(
@@ -122,5 +122,5 @@ class AdamPycuda(Adam[TensorArray], OptimizerPycuda):
                     np.float32(self.beta1),
                     np.float32(self.beta2),
                     np.float32(self.epsilon),
-                    stream=self.model.stream,
+                    stream=self.model.pycuda_stream,
                 )

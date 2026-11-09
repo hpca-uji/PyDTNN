@@ -145,7 +145,7 @@ class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
             np.int32(self.wdilation),
             grid=self.grid,
             block=self.block,
-            stream=self.model.stream,
+            stream=self.model.pycuda_stream,
         )
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.y
@@ -185,7 +185,7 @@ class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
             np.int32(self.wdilation),
             grid=self.grid,
             block=self.block,
-            stream=self.model.stream,
+            stream=self.model.pycuda_stream,
         )
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.dx

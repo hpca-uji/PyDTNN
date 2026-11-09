@@ -105,7 +105,7 @@ class LayerNormalizationPycuda(LayerNormalization[TensorArray], LayerPycuda):
             *self.kernel_dim_params,
             grid=(self.blocks, 1, 1),
             block=(self.threads, 1, 1),
-            stream=self.model.stream,
+            stream=self.model.pycuda_stream,
         )
         return self.y
 
@@ -121,7 +121,7 @@ class LayerNormalizationPycuda(LayerNormalization[TensorArray], LayerPycuda):
             *self.kernel_dim_params,
             grid=(self.blocks, 1, 1),
             block=(self.threads, 1, 1),
-            stream=self.model.stream,
+            stream=self.model.pycuda_stream,
         )
 
         self.kernel_backward_weigths(
@@ -133,7 +133,7 @@ class LayerNormalizationPycuda(LayerNormalization[TensorArray], LayerPycuda):
             *self.kernel_dim_params,
             grid=(self.blocks_backward_weights, 1, 1),
             block=(self.threads_backward_weights, 1, 1),
-            stream=self.model.stream,
+            stream=self.model.pycuda_stream,
         )
 
         # print(np.sum(self.beta.get()), np.sum(self.dbeta.get()))

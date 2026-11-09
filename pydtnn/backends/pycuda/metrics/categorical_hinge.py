@@ -59,6 +59,6 @@ class CategoricalHingePycuda(CategoricalHinge[TensorArray], MetricPycuda):
             num_classes,
             grid=self.grid,
             block=self.block,
-            stream=self.model.stream,
+            stream=self.model.pycuda_stream,
         )
         return self.res.get().item()

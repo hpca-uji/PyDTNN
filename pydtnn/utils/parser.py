@@ -29,6 +29,7 @@ from pydtnn.abstract.base import Base
 from pydtnn.datasets.abstract.base import Base as DatasetBase
 from pydtnn.model.base import Base as ModelBase
 from pydtnn.model.base import SyncAlgorithm, SyncParticipation
+from pydtnn.tracers.tracer import TracerType
 from pydtnn.utils import read_dir
 from pydtnn.utils.constants import NetworkAlgoEnum
 from pydtnn.utils.gpu import get_gpus_per_node
@@ -331,8 +332,6 @@ class ArgumentParser(argparse.ArgumentParser):
             choices=TensorFormat,
             help=(
                 f"Data format to be used: {', '.join(map(repr, map(str, TensorFormat)))}."
-                f" If not defined value sets {str(TensorFormat.NCHW)!r} when cuDNN is available,"
-                f" {str(TensorFormat.NHWC)!r} otherwise."
                 f" Default: {ModelBase.tensor_format!r}."
             ),
         )
@@ -1272,10 +1271,11 @@ class ArgumentParser(argparse.ArgumentParser):
         # Tracing options
         _tr_group = self.add_argument_group("tracing")
         _tr_group.add_argument(
-            "--tracing",
-            action=argparse.BooleanOptionalAction,
-            default=ModelBase.tracing,
-            help=(f"Obtain Simple/Extrae-based traces. Default: {ModelBase.tracing!r}."),
+            "--tracer",
+            dest="tracer_name",
+            choices=TracerType,
+            default=ModelBase.tracer_name,
+            help=(f"Obtain Simple/Extrae/GPU-based traces. Default: {ModelBase.tracer_name!r}."),
         )
         _tr_group.add_argument(
             "--tracer-output",

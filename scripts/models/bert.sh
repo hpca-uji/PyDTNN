@@ -19,7 +19,6 @@ pydtnn-benchmark \
   --loss-func=kl_divergence \
   --no-parallel-data \
   --use-blocking-mpi \
-  --no-tracing \
   --no-profile \
   --backend=cpu \
   --dtype=float32

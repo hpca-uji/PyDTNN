@@ -60,11 +60,11 @@ class ArctanhPycuda(Arctanh[TensorArray], ActivationPycuda):
 
     def forward(self, x: TensorArray) -> TensorArray:
         """Perform the forward pass using the PyCUDA atanh kernel."""
-        self.atanh(x.ary, self.y, stream=self.model.stream)
+        self.atanh(x.ary, self.y, stream=self.model.pycuda_stream)
         return self.y
 
     def backward(self, dy: TensorArray) -> TensorArray:
         """Perform the backward pass using the PyCUDA datanh kernel."""
         # Compute dx
-        self.datanh(dy.ary, self.dx.ary, stream=self.model.stream)
+        self.datanh(dy.ary, self.dx.ary, stream=self.model.pycuda_stream)
         return self.dx

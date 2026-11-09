@@ -99,7 +99,7 @@ class SGDPycuda(SGD[TensorArray], OptimizerPycuda):
                     np.int32(w.size),
                     self.model.cuda_grid,
                     block=self.model.cuda_block,
-                    stream=self.model.stream,
+                    stream=self.model.pycuda_stream,
                 )
             else:
                 self.update_kernel(
@@ -109,5 +109,5 @@ class SGDPycuda(SGD[TensorArray], OptimizerPycuda):
                     np.float32(self.learning_rate),
                     np.float32(self.decay),
                     np.float32(self.momentum),
-                    stream=self.model.stream,
+                    stream=self.model.pycuda_stream,
                 )

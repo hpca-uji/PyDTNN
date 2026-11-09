@@ -47,8 +47,7 @@ for procs in 6 4 2 1; do
       --stop-at-loss-threshold=70.0 \
       --parallel-data \
       --use-blocking-mpi \
-      --no-tracing \
-      --no-profile \
+        --no-profile \
       --backend=cpu \
       --history \
       --dtype=float32 | tee results/result_vgg9_${procs}p_${thrds}t.dat

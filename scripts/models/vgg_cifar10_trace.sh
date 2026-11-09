@@ -2,10 +2,10 @@ set -x
 
 # set -x # Debugging flag
 export PYTHONPATH="$HOME/extrae-3.6.0/libexec:$PYTHONPATH"
-export EXTRAE_CONFIG_FILE=./extrae.xml
-export PYEXTRAE=1
-
 EXTRAELIB="$HOME/extrae-3.6.0/lib/libmpitrace.so"
+export EXTRAE_CONFIG_FILE="./extrae.xml"
+export PYEXTRAE="$EXTRAELIB"
+
 
 altecnodes=(2 3 4 5 7 8 10)
 
@@ -53,7 +53,7 @@ mpirun -iface ib0 -genv LD_PRELOAD $EXTRAELIB -ppn 1 -np $procs -host $hosts "${
   --stop-at-loss-threshold=70.0 \
   --parallel-data \
   --no-use-blocking-mpi \
-  --tracing \
+  --tracer=extrae \
   --no-profile \
   --backend=cpu \
   --dtype=float32

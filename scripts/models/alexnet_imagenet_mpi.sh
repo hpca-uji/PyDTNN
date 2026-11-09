@@ -4,9 +4,8 @@
 # export PYTHONPATH=/home/dolzm/install/extrae-3.6.0/libexec:$PYTHONPATH
 # export EXTRAE_CONFIG_FILE=./extrae.xml
 # export MKL_NUM_THREADS=12
-# export PYEXTRAE=1
-#
 # EXTRAELIB=/home/dolzm/install/extrae-3.6.0/lib/libompitrace.so
+# export PYEXTRAE="$EXTRAELIB"
 
 NUMNODES=15
 NUMPROCS=15
@@ -57,7 +56,6 @@ mpirun -iface ib0 -hosts $HOSTS -ppn $PROCS_PER_NODE -np $NUMPROCS "${MPI_ARGS[@
   --reduce-lr-on-plateau-min-lr=0 \
   --parallel-data \
   --use-blocking-mpi \
-  --no-tracing \
   --no-profile \
   --backend=cpu \
   --dtype=float32

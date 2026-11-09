@@ -20,10 +20,10 @@ logger = logging.getLogger(__name__)
 
 def _start() -> int:
     """System entry point"""
-    if os.environ.get("PYEXTRAE"):
+    if _pyextrae := os.environ.get("PYEXTRAE", "libptmpitrace.so"):
         import pyextrae.common.extrae as pyextrae
 
-        pyextrae.startTracing("libptmpitrace.so")
+        pyextrae.startTracing(_pyextrae)
 
     from pydtnn import rank
     from pydtnn.utils.debug import traceback_context
@@ -150,11 +150,13 @@ def main(config: Namespace) -> None:  # noqa: C901
         model.perf_counter.print_report()
 
     # Barrier and finalize
-    if model.comm and model.MPI:
+    if model.comm:
         model.comm.Barrier()
         # The next line is required if running under SLURM (it seems it is not
         # automatically called at exit)
-        model.MPI.Finalize()
+
+        from pydtnn.libs.mpi import MPI
+        MPI.Finalize()
 
 
 if __name__ == "__main__":

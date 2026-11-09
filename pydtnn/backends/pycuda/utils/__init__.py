@@ -5,8 +5,6 @@ import logging
 
 import numpy as np
 
-from pydtnn import Cublas_Handle_Type
-
 __all__ = (
     "matmul_gpu",
     "matvec_gpu",
@@ -21,7 +19,7 @@ except Exception:
 
 
 def matmul_gpu(
-    handle: Cublas_Handle_Type,
+    handle: int,
     trans_a: int | str,
     trans_b: int | str,
     m: int,

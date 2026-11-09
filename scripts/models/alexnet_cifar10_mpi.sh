@@ -3,10 +3,10 @@
 # set -x # Debugging flag
 export PYTHONPATH=/mnt/beegfs/users/dolzm/install/extrae-3.6.0/libexec:$PYTHONPATH
 export EXTRAE_CONFIG_FILE=./extrae.xml
-export PYEXTRAE=1
 #
 EXTRAELIB=/mnt/beegfs/users/dolzm/install/extrae-3.6.0/lib/libmpitrace.so
 #EXTRAELIB=/mnt/beegfs/users/dolzm/install/extrae-3.6.0/lib/libptmpitrace.so
+export PYEXTRAE="$EXTRAELIB"
 
 NUMNODES=6
 NUMPROCS=6
@@ -55,7 +55,7 @@ mpirun -genv LD_PRELOAD $EXTRAELIB -iface ib0 -hosts $HOSTS -ppn $PROCS_PER_NODE
   --reduce-lr-on-plateau-min-lr=0 \
   --parallel-data \
   --use-blocking-mpi \
-  --tracing \
+  --tracer=extrae \
   --no-profile \
   --backend=cpu \
   --dtype=float32

@@ -98,7 +98,7 @@ class LeakyReluPycuda(LeakyRelu[TensorArray], ActivationPycuda):
             n,
             grid=self.grid,
             block=self.block,
-            stream=self.model.stream,
+            stream=self.model.pycuda_stream,
         )
 
         self.y: TensorArray = self.mask
@@ -123,7 +123,7 @@ class LeakyReluPycuda(LeakyRelu[TensorArray], ActivationPycuda):
             n,
             grid=self.grid,
             block=self.block,
-            stream=self.model.stream,
+            stream=self.model.pycuda_stream,
         )
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)

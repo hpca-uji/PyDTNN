@@ -46,8 +46,8 @@ mpirun -np 2 "${MPI_ARGS[@]}" \
   --stop-at-loss-threshold=70.0 \
   --no-parallel-data \
   --no-use-blocking-mpi \
-  --no-tracing \
   --no-profile \
+  --tensor-format=nchw \
   --backend=gpu \
   --no-use-gpudirect \
   --history \

@@ -13,7 +13,7 @@ from typing import Any
 
 import numpy as np
 
-from pydtnn.libs import cuda
+from pydtnn.libs import cudart as cuda
 from pydtnn.utils.libs import load_library
 
 __all__ = (
