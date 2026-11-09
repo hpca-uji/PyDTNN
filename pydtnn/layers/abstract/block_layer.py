@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 class AbstractBlockLayer[T: Array](Layer[T]):  # noqa: D101 (generics not detected)
     """Base class for layers that manage multiple parallel execution paths."""
 
-    def __init__(self, paths: list[list[Layerable[T]]], multiple_inputs:bool=False, **kwargs: Any) -> None:
+    def __init__(self, paths: list[list[Layerable[T]]], multiple_inputs: bool = False, **kwargs: Any) -> None:
         """Initializes the block layer with a collection of paths.
 
         Parameters:
@@ -29,7 +29,6 @@ class AbstractBlockLayer[T: Array](Layer[T]):  # noqa: D101 (generics not detect
                         an extra dimension: [Num. Paths]self.model.tensor_format.
                         (e.g.: prev. layer's output shape: "(32, 3, 20, 20)" and len(self.paths)=3, then
                         "self.prev_shape=(3, 32, 3, 20, 20)")).
-        
         """
         super().__init__(**kwargs)
         self.paths: list[list[Layerable[T]]] = []

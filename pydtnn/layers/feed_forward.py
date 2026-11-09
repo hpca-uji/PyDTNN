@@ -24,9 +24,7 @@ class FeedForward[T: Array](AbstractBlockLayer[T]):  # noqa: D101 (generics not 
     """
 
     def __init__(self, shape: ArrayShape = (), d_ff: int = 2048) -> None:
-        """
-        Initializes the FeedForward layer.
-        More information: https://arxiv.org/pdf/1706.03762 Section 3.3.
+        """Initializes the FeedForward layer. More information: https://arxiv.org/pdf/1706.03762 Section 3.3.
 
         Args:
             shape (ArrayShape): The input shape of the layer.
@@ -34,10 +32,8 @@ class FeedForward[T: Array](AbstractBlockLayer[T]):  # noqa: D101 (generics not 
         """
         self.d_ff = d_ff
         paths: list[list[Layerable[T]]] = [[
-            FC(shape=(self.d_ff, ),  # TODO: Check this.
-               use_bias = True),
+            FC(shape=(self.d_ff, ), use_bias=True),  # TODO: Check the shape.
             Relu(),
-            FC(shape=shape,
-               use_bias = True)
+            FC(shape=shape, use_bias=True)
         ]]
         super().__init__(paths)

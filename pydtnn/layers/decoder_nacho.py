@@ -5,12 +5,12 @@ import logging
 from pydtnn.layers.abstract.block_layer import AbstractBlockLayer
 from pydtnn.utils.constants import Array
 
-__all__ = ("Decoder_Nacho",)
+__all__ = ("DecoderNacho",)
 
 logger = logging.getLogger(__name__)
 
 
-class Decoder_Nacho[T: Array](AbstractBlockLayer[T]):  # noqa: D101 (generics not detected)
+class DecoderNacho[T: Array](AbstractBlockLayer[T]):  # noqa: D101 (generics not detected)
     """Decoder layer implementation for transformer-based architectures."""
 
     def __init__(

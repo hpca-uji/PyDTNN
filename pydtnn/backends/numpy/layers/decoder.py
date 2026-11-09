@@ -4,7 +4,7 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from pydtnn.backends.numpy.layers.abstract.block_layer import AbstractBlockLayerNumpy
-from pydtnn.layers.decoder_nacho import Decoder_Nacho
+from pydtnn.layers.decoder_nacho import DecoderNacho
 from pydtnn.layers.dropout import Dropout
 from pydtnn.layers.feed_forward_nacho import FeedForwardNacho
 from pydtnn.layers.layer_normalization import LayerNormalization
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     import numpy as np  # noqa: F811 (override typing)
 
 
-class DecoderNumpy(Decoder_Nacho[np.ndarray], AbstractBlockLayerNumpy):
+class DecoderNumpy(DecoderNacho[np.ndarray], AbstractBlockLayerNumpy):
     """NumPy implementation of the Transformer Decoder block."""
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:

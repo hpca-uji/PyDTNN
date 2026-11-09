@@ -3,7 +3,7 @@
 import logging
 
 from pydtnn.layers.scaled_dot_product_attention import ScaledDotProductAttention
-from pydtnn.utils.constants import Array  #, ArrayShape
+from pydtnn.utils.constants import Array
 
 __all__ = ("ScaledDotProductAttentionNumpy",)
 

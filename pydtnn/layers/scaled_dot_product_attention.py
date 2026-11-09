@@ -19,19 +19,20 @@ class ScaledDotProductAttention[T: Array](Multiplication[T]):  # noqa: D101 (gen
     """Implementation of a Scaled Dot-Product Attention. https://arxiv.org/pdf/1706.03762, Figure 2 (left)."""
 
     def __init__(
-            self,
-            mult_layers: tuple[list[list[Layerable[T]]], Layerable[T]] = (
-                [[Identity[T]()], [Identity[T]()]],
-                Identity[T]()
-            ),
-            with_masked_layer: bool = False,
-            **kwargs: Any
+        self,
+        mult_layers: tuple[list[list[Layerable[T]]], Layerable[T]] = (
+            [[Identity[T]()], [Identity[T]()]],
+            Identity[T]()
+        ),
+        with_masked_layer: bool = False,
+        **kwargs: Any
     ) -> None:
-        """
+        """Implementation of a Scaled Dot-Product Attention. https://arxiv.org/pdf/1706.03762, Figure 2 (left).
+
         Parameters:
             - mult_layers (tuple[list[list[Layerable[T]]], Layerable[T]]): The multiplication's input layers.
-                By default, they will be a "[[Identity()], [Identity()]]" for the first Multiplication and a Identity() for the last one
-                (that is, they will be executed without any modifications).
+                By default, they will be a "[[Identity()], [Identity()]]" for the first Multiplication and a Identity()
+                for the last one (that is, they will be executed without any modifications).
         """
         first_path: list[Layerable[T]] = [
             Multiplication(

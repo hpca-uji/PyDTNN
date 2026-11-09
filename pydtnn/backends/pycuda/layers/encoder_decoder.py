@@ -5,7 +5,7 @@ from typing import Any
 
 from pydtnn.backends.pycuda.layers.abstract.block_layer import AbstractBlockLayerPycuda
 from pydtnn.backends.pycuda.libs import libcudnn as cudnn
-from pydtnn.layers.decoder_nacho import Decoder_Nacho
+from pydtnn.layers.decoder_nacho import DecoderNacho
 from pydtnn.layers.encoder_nacho import EncoderNacho
 from pydtnn.layers.encoder_decoder import EncoderDecoder
 from pydtnn.utils.constants import ArrayShape
@@ -33,7 +33,7 @@ class EncoderDecoderPycuda(EncoderDecoder[TensorArray], AbstractBlockLayerPycuda
             for _ in range(self.enc_layers)
         ]
         self.decoder = [
-            Decoder_Nacho(
+            DecoderNacho(
                 embedl=self.embedl,
                 d_k=self.d_k,
                 d_ff=self.d_ff,

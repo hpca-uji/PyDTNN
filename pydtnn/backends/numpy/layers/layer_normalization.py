@@ -24,6 +24,7 @@ class LayerNormalizationNumpy(LayerNormalization[np.ndarray], LayerNumpy):
     def __init__(self, axis: tuple | int = (-2, -1), beta: float = 0,
                  gamma: float = 1, epsilon: float = 0.00001,
                  sync_stats: bool = False) -> None:
+        """Layer Normalization init"""
         super().__init__(axis, beta, gamma, epsilon, sync_stats)
 
     def _model_init(self, prev_shape: ArrayShape, x: ndarray[tuple[Any, ...], np.dtype[Any]]) -> None:
@@ -36,7 +37,8 @@ class LayerNormalizationNumpy(LayerNormalization[np.ndarray], LayerNumpy):
         #     print(e)
         #     breakpoint()
 
-        print("MODEL INIT LAYER NORM.")
+        # TODO: CHECK THIS!!
+        # print("MODEL INIT LAYER NORM.")
         # TODO: Check how to initialize this parameters outside (in the initalization step)
         self._mu_mean: np.ndarray = np.zeros((self.model.batch_size, *shape_mu), dtype=self.model.dtype, order="C")
         self._xc: np.ndarray = np.zeros((self.model.batch_size, *self.shape), dtype=self.model.dtype, order="C")
@@ -66,12 +68,13 @@ class LayerNormalizationNumpy(LayerNormalization[np.ndarray], LayerNumpy):
         self.xn = self._xn[x.shape[0]:]
         self.std = self._std[x.shape[0]:]
 
-        breakpoint()
+        # TODO: CHECK THIS!
+        # breakpoint()
         # mu = np.mean(x, axis=self.axis, keepdims=True)
         # xc = x - mu
         np.mean(x, axis=self.axis, keepdims=True, out=mu)
         np.subtract(x, mu, out=xc)
-        
+
         # var = np.mean(xc**2, axis=self.axis, keepdims=True)
         np.power(xc, 2, dtype=self.model.dtype, out=var)
         np.mean(var, axis=self.axis, keepdims=True, out=var)

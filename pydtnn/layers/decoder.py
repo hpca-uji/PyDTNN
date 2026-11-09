@@ -19,13 +19,14 @@ logger = logging.getLogger(__name__)
 class Decoder[T: Array](AbstractBlockLayer[T]):  # noqa: D101 (generics not detected)
     """Decoder layer implementation for transformer-based architectures."""
 
-    def __init__(self,
-                 encoder_y: T,
-                 embedl: int = 64,
-                 d_k: int = 3,
-                 d_ff: int = 256,
-                 heads: int = 10,
-        ) -> None:
+    def __init__(
+        self,
+        encoder_y: T,
+        embedl: int = 64,
+        d_k: int = 3,
+        d_ff: int = 256,
+        heads: int = 10,
+    ) -> None:
         """
         Initializes the Encoder layer with specified hyperparameters.
 
@@ -44,7 +45,7 @@ class Decoder[T: Array](AbstractBlockLayer[T]):  # noqa: D101 (generics not dete
 
         # It will be initalized later
         self.prev_output: T = None  # pyright: ignore[reportAttributeAccessIssue]
-         
+
         # NOTE: Va a tocar hacer algo un poco raro: Crear una capa que ignore la entraad devuelva el Tensor que le has seteado.
         self.special_layer = Identity()
 

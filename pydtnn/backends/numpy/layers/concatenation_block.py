@@ -72,7 +72,8 @@ class ConcatenationBlockNumpy(ConcatenationBlock, AbstractBlockLayerNumpy):
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.BACKWARD_SPLIT
         )
-        breakpoint()
+        # TODO: CHECK THIS!
+        # breakpoint()
         self.dx[:] = np.split(dy, self.idx_co[:-1], axis=self.concat_dim)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         num_paths = len(self.paths)

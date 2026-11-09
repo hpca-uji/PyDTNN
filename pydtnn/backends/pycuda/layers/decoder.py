@@ -7,7 +7,7 @@ import numpy as np
 
 from pydtnn.backends.pycuda.layers.abstract.block_layer import AbstractBlockLayerPycuda
 from pydtnn.backends.pycuda.libs import libcudnn as cudnn
-from pydtnn.layers.decoder_nacho import Decoder_Nacho
+from pydtnn.layers.decoder_nacho import DecoderNacho
 from pydtnn.layers.dropout import Dropout
 from pydtnn.layers.feed_forward_nacho import FeedForwardNacho
 from pydtnn.layers.layer_normalization import LayerNormalization
@@ -20,7 +20,7 @@ __all__ = ("DecoderPycuda",)
 logger = logging.getLogger(__name__)
 
 
-class DecoderPycuda(Decoder_Nacho[TensorArray], AbstractBlockLayerPycuda):
+class DecoderPycuda(DecoderNacho[TensorArray], AbstractBlockLayerPycuda):
     """PyCUDA-accelerated Transformer Decoder layer."""
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:

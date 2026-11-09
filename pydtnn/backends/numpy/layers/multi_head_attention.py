@@ -29,17 +29,16 @@ class MultiHeadAttentionNachoNumpy(MultiHeadAttentionNacho[np.ndarray], Abstract
     """NumPy implementation of the Multi-Head Attention mechanism."""
 
     def __init__(
-            self,
-            embedl: int = 64,
-            d_k: int = 3,
-            heads: int = 10,
-            dropout_rate: float = 0.5,
-            weights_initializer: initializers.InitializerFunc = initializers.glorot_uniform,
-            biases_initializer: initializers.InitializerFunc = initializers.zeros,
-        ) -> None:
+        self,
+        embedl: int = 64,
+        d_k: int = 3,
+        heads: int = 10,
+        dropout_rate: float = 0.5,
+        weights_initializer: initializers.InitializerFunc = initializers.glorot_uniform,
+        biases_initializer: initializers.InitializerFunc = initializers.zeros,
+    ) -> None:
         """Initializes the MultiHeadAttentionNumpy layer with required sublayers."""
         super().__init__(embedl, d_k, heads, dropout_rate, weights_initializer, biases_initializer)
-        breakpoint()
         self.FC_q = FC[np.ndarray](shape=(self.heads * self.d_k,))  # Dim: embedl x heads*d_k
         self.FC_k = FC[np.ndarray](shape=(self.heads * self.d_k,))  # Dim: embedl x heads*d_k
         self.FC_v = FC[np.ndarray](shape=(self.heads * self.d_k,))  # Dim: embedl x heads*d_k
@@ -168,7 +167,8 @@ class MultiHeadAttentionNachoNumpy(MultiHeadAttentionNacho[np.ndarray], Abstract
             self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_MHA_MATMUL_QK,
         )
 
-        breakpoint()
+        # TODO: CHECK THIS!
+        #  breakpoint()
         score = self.mult_qkt.forward(query, self.transpose(key))  # pyright: ignore[reportCallIssue]
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 

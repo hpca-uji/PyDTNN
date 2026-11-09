@@ -22,13 +22,8 @@ class MultiHeadAttention[T: Array](AbstractBlockLayer[T]):  # noqa: D101 (generi
         multi_head_attention_paths = list[Layerable]()
         paths = list[list[Layerable[T]]]()
         for _ in range(heads):
-            paths.append(
-                [ScaledDotProductAttention(
-                    with_masked_layer = with_masked_layer,
-                    mult_layers=([[FC(), FC()]], FC()))
-                ]
-            )
+            paths.append([ScaledDotProductAttention(with_masked_layer=with_masked_layer, mult_layers=([[FC(), FC()]], FC()))])
         multi_head_attention_paths.append(ConcatenationBlock[T](paths))
         multi_head_attention_paths.append(FC())
 
-        super().__init__(paths = [multi_head_attention_paths], **kwargs)
+        super().__init__(paths=[multi_head_attention_paths], **kwargs)

@@ -54,7 +54,6 @@ class Transformer[T: Array](AbstractBlockLayer[T]):  # noqa: D101 (generics not 
 
         super().__init__(paths=path)
 
-
     def forward(self, x: T) -> T:
         # TODO: Finish!
         # TODO: Add the positional enconding
