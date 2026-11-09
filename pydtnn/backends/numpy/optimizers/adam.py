@@ -36,7 +36,11 @@ class AdamNumpy(Adam[np.ndarray], OptimizerNumpy):
 
             for w_ in layer.grad_vars.keys():
                 w: np.ndarray = getattr(layer, w_)
-                shape = w.shape
+                try:
+                    shape = w.shape
+                except Exception as e:
+                    print(f"{e=} || {layer=} || {w_=}")
+                    shape = (1, )
                 momentum = np.zeros(shape, dtype=layer.model.dtype)
                 velocity = np.zeros(shape, dtype=layer.model.dtype)
                 vt_temp_w = None

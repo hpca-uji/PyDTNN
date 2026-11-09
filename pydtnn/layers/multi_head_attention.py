@@ -1,9 +1,13 @@
-"""Multi-head attention layer implementation for PyDTNN."""
+"""Scalar layer implementation for PyDTNN."""
 
 import logging
+from typing import Any
 
+from pydtnn.abstract.layerable import Layerable
 from pydtnn.layers.abstract.block_layer import AbstractBlockLayer
-from pydtnn.utils import initializers
+from pydtnn.layers.concatenation_block import ConcatenationBlock
+from pydtnn.layers.fc import FC
+from pydtnn.layers.scaled_dot_product_attention import ScaledDotProductAttention
 from pydtnn.utils.constants import Array
 
 __all__ = ("MultiHeadAttention",)
@@ -12,32 +16,19 @@ logger = logging.getLogger(__name__)
 
 
 class MultiHeadAttention[T: Array](AbstractBlockLayer[T]):  # noqa: D101 (generics not detected)
-    """Multi-head attention mechanism layer."""
+    """Implementation of a Multi-Head Attention. https://arxiv.org/pdf/1706.03762, Figure 2 (right)."""
 
-    def __init__(
-        self,
-        embedl: int = 64,
-        d_k: int = 3,
-        heads: int = 10,
-        dropout_rate: float = 0.5,
-        weights_initializer: initializers.InitializerFunc = initializers.glorot_uniform,
-        biases_initializer: initializers.InitializerFunc = initializers.zeros,
-    ) -> None:
-        """
-        Initializes the MultiHeadAttention layer.
+    def __init__(self, with_masked_layer: bool = False, heads: int = 8, **kwargs: Any) -> None:
+        multi_head_attention_paths = list[Layerable]()
+        paths = list[list[Layerable[T]]]()
+        for _ in range(heads):
+            paths.append(
+                [ScaledDotProductAttention(
+                    with_masked_layer = with_masked_layer,
+                    mult_layers=([[FC(), FC()]], FC()))
+                ]
+            )
+        multi_head_attention_paths.append(ConcatenationBlock[T](paths))
+        multi_head_attention_paths.append(FC())
 
-        Args:
-            embedl: Embedding dimension size.
-            d_k: Dimension of each attention head.
-            heads: Number of attention heads.
-            dropout_rate: Dropout probability.
-            weights_initializer: Initializer for weight matrices.
-            biases_initializer: Initializer for bias vectors.
-        """
-        super().__init__()
-        self.embedl = embedl
-        self.heads = heads
-        self.d_k = d_k
-        self.dropout_rate = dropout_rate
-        self.weights_initializer = weights_initializer
-        self.biases_initializer = biases_initializer
+        super().__init__(paths = [multi_head_attention_paths], **kwargs)

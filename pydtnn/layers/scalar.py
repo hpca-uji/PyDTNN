@@ -23,3 +23,7 @@ class Scalar[T: Array](Layer[T]):  # noqa: D101 (generics not detected)
         """
         super().__init__(shape)
         self.scale = scale
+
+    def _model_init(self, prev_shape: ArrayShape, x: T | None) -> None:
+        super()._model_init(prev_shape, x)
+        self.shape = self.prev_shape

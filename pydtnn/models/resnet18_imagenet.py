@@ -8,7 +8,6 @@ from pydtnn.activations.relu import Relu
 from pydtnn.layers.addition_block import AdditionBlock
 from pydtnn.layers.average_pool_2d import AveragePool2D
 from pydtnn.layers.batch_normalization import BatchNormalization
-from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.fc import FC
 from pydtnn.layers.flatten import Flatten
@@ -43,7 +42,7 @@ def resnet18_imagenet(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequ
             if r > 0:
                 stride = 1
             _(
-                ConcatenationBlock(
+                AdditionBlock(
                     [
                         [
                             Conv2D(

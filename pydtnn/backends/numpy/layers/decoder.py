@@ -4,11 +4,11 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from pydtnn.backends.numpy.layers.abstract.block_layer import AbstractBlockLayerNumpy
-from pydtnn.layers.decoder import Decoder
+from pydtnn.layers.decoder_nacho import Decoder_Nacho
 from pydtnn.layers.dropout import Dropout
-from pydtnn.layers.feed_forward import FeedForward
+from pydtnn.layers.feed_forward_nacho import FeedForwardNacho
 from pydtnn.layers.layer_normalization import LayerNormalization
-from pydtnn.layers.multi_head_attention import MultiHeadAttention
+from pydtnn.layers.multi_head_attention_nacho import MultiHeadAttentionNacho
 from pydtnn.libs import numpy as np
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, OpsEventEnum
 from pydtnn.utils.constants import ArrayShape
@@ -22,23 +22,23 @@ if TYPE_CHECKING:
     import numpy as np  # noqa: F811 (override typing)
 
 
-class DecoderNumpy(Decoder[np.ndarray], AbstractBlockLayerNumpy):
+class DecoderNumpy(Decoder_Nacho[np.ndarray], AbstractBlockLayerNumpy):
     """NumPy implementation of the Transformer Decoder block."""
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initializes the DecoderNumpy layer with sub-layers."""
         super().__init__(*args, **kwargs)
-        self.multiheadattention = MultiHeadAttention(
+        self.multiheadattention = MultiHeadAttentionNacho(
             embedl=self.embedl, d_k=self.d_k, heads=self.heads, dropout_rate=self.dropout_rate
         )
         # self.dropout_1 = Dropout(rate=self.dropout_rate)
         self.layernormalization_1 = LayerNormalization(axis=(1, 2))
-        self.multiheadattention_enc = MultiHeadAttention(
+        self.multiheadattention_enc = MultiHeadAttentionNacho(
             embedl=self.embedl, d_k=self.d_k, heads=self.heads, dropout_rate=self.dropout_rate
         )
         # self.dropout_enc = Dropout(rate=self.dropout_rate)
         self.layernormalization_enc = LayerNormalization(axis=(1, 2))
-        self.feedforward = FeedForward(
+        self.feedforward = FeedForwardNacho(
             shape=(self.embedl,), d_ff=self.d_ff, dropout_rate=self.dropout_rate
         )
         self.dropout_2 = Dropout(rate=self.dropout_rate)
@@ -70,14 +70,14 @@ class DecoderNumpy(Decoder[np.ndarray], AbstractBlockLayerNumpy):
             layer._init_backend_with_model(self.model)
 
         self.multiheadattention._model_init(prev_shape=mha_shape, x=(x_dec, x_dec, x_dec, mask_dec))
-        self.layernormalization_1._model_init(prev_shape=self.shape, x=self.multiheadattention.y)
+        # self.layernormalization_1._model_init(prev_shape=self.shape, x=self.multiheadattention.y)
         self.multiheadattention_enc._model_init(
             prev_shape=mha_shape, x=(x_dec, x_enc, x_enc, mask_dec)
         )
         # self.dropout_enc.initialize(prev_shape=prev_shape, x=self.multiheadattention_enc.y)
-        self.layernormalization_enc._model_init(
-            prev_shape=self.shape, x=self.multiheadattention_enc.y
-        )
+        # self.layernormalization_enc._model_init(
+        #     prev_shape=self.shape, x=self.multiheadattention_enc.y
+        # )
 
         # x_aux = self.flatten(self.layernormalization_enc.y)
         self.layernormalization_enc_y_flatten = None  # x_aux.copy()
@@ -94,13 +94,13 @@ class DecoderNumpy(Decoder[np.ndarray], AbstractBlockLayerNumpy):
             prev_shape=self.feedforward.shape, x=self.feedforward_y_unflatten
         )
 
-        self.layernormalization_2._model_init(prev_shape=self.dropout_2.shape, x=self.dropout_2.y)
+        # self.layernormalization_2._model_init(prev_shape=self.dropout_2.shape, x=self.dropout_2.y)
 
         self.y = self.layernormalization_2.y
 
         for layer in self.children:
-            self.fwd_time += layer.fwd_time
-            self.bwd_time += layer.bwd_time
+            self.fwd_time += layer.fwd_time if layer.fwd_time is not None else 0
+            self.bwd_time += layer.bwd_time if layer.bwd_time is not None else 0
             self.nparams += layer.nparams
 
     def initialize_block_layer(self) -> None:

@@ -7,11 +7,11 @@ import numpy as np
 
 from pydtnn.backends.pycuda.layers.abstract.block_layer import AbstractBlockLayerPycuda
 from pydtnn.backends.pycuda.libs import libcudnn as cudnn
-from pydtnn.layers.decoder import Decoder
+from pydtnn.layers.decoder_nacho import Decoder_Nacho
 from pydtnn.layers.dropout import Dropout
-from pydtnn.layers.feed_forward import FeedForward
+from pydtnn.layers.feed_forward_nacho import FeedForwardNacho
 from pydtnn.layers.layer_normalization import LayerNormalization
-from pydtnn.layers.multi_head_attention import MultiHeadAttention
+from pydtnn.layers.multi_head_attention_nacho import MultiHeadAttentionNacho
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor_array import TensorArray
 
@@ -20,23 +20,23 @@ __all__ = ("DecoderPycuda",)
 logger = logging.getLogger(__name__)
 
 
-class DecoderPycuda(Decoder[TensorArray], AbstractBlockLayerPycuda):
+class DecoderPycuda(Decoder_Nacho[TensorArray], AbstractBlockLayerPycuda):
     """PyCUDA-accelerated Transformer Decoder layer."""
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initializes the DecoderPycuda layer with sub-layers and internal buffers."""
         super().__init__(*args, **kwargs)
-        self.multiheadattention = MultiHeadAttention(
+        self.multiheadattention = MultiHeadAttentionNacho(
             embedl=self.embedl, d_k=self.d_k, heads=self.heads, dropout_rate=self.dropout_rate
         )
         # self.dropout_1 = DropoutPycuda(rate=self.dropout_rate)
         self.layernormalization_1 = LayerNormalization(axis=(3,))
-        self.multiheadattention_enc = MultiHeadAttention(
+        self.multiheadattention_enc = MultiHeadAttentionNacho(
             embedl=self.embedl, d_k=self.d_k, heads=self.heads, dropout_rate=self.dropout_rate
         )
         # self.dropout_enc = DropoutPycuda(rate=self.dropout_rate)
         self.layernormalization_enc = LayerNormalization(axis=(3,))
-        self.feedforward = FeedForward(
+        self.feedforward = FeedForwardNacho(
             shape=(self.embedl,), d_ff=self.d_ff, dropout_rate=self.dropout_rate
         )
         self.dropout_2 = Dropout(rate=self.dropout_rate)

@@ -1,17 +1,11 @@
 """Numpy backend implementation of the Transformer Encoder layer."""
 
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from pydtnn.backends.numpy.layers.abstract.block_layer import AbstractBlockLayerNumpy
-from pydtnn.layers.dropout import Dropout
 from pydtnn.layers.encoder import Encoder
-from pydtnn.layers.feed_forward import FeedForward
-from pydtnn.layers.layer_normalization import LayerNormalization
-from pydtnn.layers.multi_head_attention import MultiHeadAttention
 from pydtnn.libs import numpy as np
-from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, OpsEventEnum
-from pydtnn.utils.constants import ArrayShape
 
 __all__ = ("EncoderNumpy",)
 
@@ -25,135 +19,13 @@ if TYPE_CHECKING:
 class EncoderNumpy(Encoder[np.ndarray], AbstractBlockLayerNumpy):
     """Numpy-based implementation of the Transformer Encoder layer."""
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(
+            self,
+            embedl: int = 64,
+            d_k: int = 3,
+            d_ff: int = 256,
+            heads: int = 10,
+        ) -> None:
         """Initializes the EncoderNumpy layer with sub-layers."""
-        super().__init__(*args, **kwargs)
-        self.multiheadattention = MultiHeadAttention(
-            embedl=self.embedl, d_k=self.d_k, heads=self.heads, dropout_rate=self.dropout_rate
-        )
-        # self.dropout_1 = Dropout(rate=self.dropout_rate)
-        self.layernormalization_1 = LayerNormalization(axis=(-1,))
-        self.feedforward = FeedForward(
-            shape=(self.embedl,), d_ff=self.d_ff, dropout_rate=self.dropout_rate
-        )
-        self.dropout_2 = Dropout(rate=self.dropout_rate)
-        self.layernormalization_2 = LayerNormalization(axis=(-1,))
-        # self.paths = [[self.multiheadattention, self.dropout_1, self.layernormalization_1, self.feedforward,
-        #                self.dropout_2, self.layernormalization_2]]
-        self.paths = [
-            [
-                self.multiheadattention,
-                self.layernormalization_1,
-                self.feedforward,
-                self.dropout_2,
-                self.layernormalization_2,
-            ]
-        ]
-
-    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
-        """Initializes the model state and sub-layers for the Numpy backend."""
-        super()._model_init(prev_shape, x)
-        self.y = x
-        if type(prev_shape[-1]) is tuple:
-            x_enc, mask_enc = x if x else (None, None)
-            x_enc_shape, mask_enc_shape = prev_shape  # noqa: F841
-        else:
-            x_enc = x if x else None
-            x_enc_shape = prev_shape
-            mask_enc = None
-            mask_enc_shape = ()  # noqa: F841
-
-        self.shape = x_enc_shape  # pyright: ignore[reportAttributeAccessIssue]
-        self.first_dims = x_enc_shape[:-1]  # pyright: ignore[reportIndexIssue]
-
-        # Initialize all sublayers
-        for layer in self.children:
-            layer._init_backend_with_model(self.model)
-
-        self.multiheadattention._model_init(
-            prev_shape=prev_shape, x=(x_enc, x_enc, x_enc, mask_enc)
-        )
-        # self.dropout_1.initialize(prev_shape=self.multiheadattention.shape, x=self.multiheadattention.y)
-        self.layernormalization_1._model_init(prev_shape=self.shape, x=self.multiheadattention.y)
-
-        self.layernormalization_1_y_flatten = (
-            None  # self.flatten(self.layernormalization_1.y)).copy()
-        )
-
-        self.feedforward._model_init(
-            prev_shape=self.layernormalization_1.shape, x=self.layernormalization_1_y_flatten
-        )
-
-        self.feedforward_y_unflatten = None  # self.unflatten(self.feedforward.y).copy()
-        self.feedforward_dx_unflatten = None  # self.unflatten(self.feedforward.dx).copy()
-
-        self.dropout_2._model_init(
-            prev_shape=self.feedforward.shape, x=self.feedforward_y_unflatten
-        )
-        self.dropout_2_dx_flatten = None  # self.flatten(self.dropout_2.dx).copy()
-
-        self.layernormalization_2._model_init(prev_shape=self.dropout_2.shape, x=self.dropout_2.y)
-
-        self.y = self.layernormalization_2.y
-        # x_aux = self.multiheadattention.dquery
-        self.dx = None  # x_aux.copy()
-
-        # self.flatten(self.feedforward.y)  # FeedForward uses shape while LayerNormalization and Dropout dont
-        # self.flatten(self.feedforward.dx)  # FeedForward uses shape while
-        # LayerNormalization and Dropout dont
-
-        for layer in self.children:
-            self.fwd_time += layer.fwd_time
-            self.bwd_time += layer.bwd_time
-            self.nparams += layer.nparams
-
-    def initialize_block_layer(self) -> None:
-        """Placeholder for block layer initialization."""
-
-    def forward(self, x: np.ndarray, mask: np.ndarray | None = None) -> np.ndarray:
-        """Performs the forward pass of the encoder layer."""
-        # Self Attention
-        self.model.tracer.emit_event(
-            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_MHA
-        )
-        x_1 = self.multiheadattention.forward(x, x, x, mask)  # pyright: ignore[reportCallIssue]
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
-        x_1 = self.dropout_1.forward(x_1)
-        x_1 = x_1 + x
-        x_1 = self.layernormalization_1.forward(x_1)
-        # Feed Forward
-        self.model.tracer.emit_event(
-            PYDTNN_OPS_EVENT,
-            self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_FEEDFORWARD,
-        )
-        x_2 = self.feedforward.forward(x_1)
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
-        x_2 = self.dropout_2.forward(x_2)
-        x_2 = x_1 + x_2
-        self.y = self.layernormalization_2.forward(x_2)
-        return self.y
-
-    def backward(self, dy: np.ndarray) -> np.ndarray:
-        """Performs the backward pass of the encoder layer."""
-        # Feed Forward
-        dx_1 = self.layernormalization_2.backward(dy)
-        dx_2 = self.dropout_2.backward(dx_1)
-        self.model.tracer.emit_event(
-            PYDTNN_OPS_EVENT,
-            self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.BACKWARD_FEEDFORWARD,
-        )
-        dx_2 = self.feedforward.backward(dx_2)
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
-        dx_2 = dx_1 + dx_2
-        # Self Attention
-        dx_2 = self.layernormalization_1.backward(dx_2)
-        dx_3 = self.dropout_1.backward(dx_2)
-        self.model.tracer.emit_event(
-            PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.BACKWARD_MHA
-        )
-        dx_3 = self.multiheadattention.backward(dx_3)
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
-
-        dx_3, dx_4, dx_5 = dx_3
-        self.dx = dx_2 + dx_3 + dx_4 + dx_5
-        return self.dx
+        super().__init__(embedl, d_k, d_ff, heads)
+        

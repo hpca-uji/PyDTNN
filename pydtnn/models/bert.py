@@ -19,7 +19,7 @@ Tensorflow parameters names:
 from collections.abc import Sequence
 
 from pydtnn.abstract.layerable import Layerable
-from pydtnn.layers.encoder import Encoder
+from pydtnn.layers.encoder_nacho import EncoderNacho
 from pydtnn.layers.identity import Identity
 from pydtnn.utils.constants import ArrayShape
 
@@ -37,7 +37,7 @@ def bert(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Layerabl
 
     _(Identity(shape=(1, max_seq, embedl)))
     for i in range(n_encoders):
-        _(Encoder(embedl=embedl, d_k=64, heads=8, d_ff=2048, dropout_rate=0.1))
+        _(EncoderNacho(embedl=embedl, d_k=64, heads=8, d_ff=2048, dropout_rate=0.1))
 
     return model
 

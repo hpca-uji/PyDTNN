@@ -64,6 +64,7 @@ class LayerNormalization[T: Array](Layer[T]):  # noqa: D101 (generics not detect
         """
         super()._model_init(prev_shape, x)
         self.shape = shape_ = prev_shape
+        print("MODEL INIT LAYER BASE NORM.")
         self.gamma = np.full(shape_, self.gamma_init_val, self.model.dtype)
         self.beta = np.full(shape_, self.beta_init_val, self.model.dtype)
         self.nparams = self.gamma.size + self.beta.size

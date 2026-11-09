@@ -7,7 +7,7 @@ from pydtnn.activations.relu import Relu
 from pydtnn.backends.pycuda.layers.abstract.block_layer import AbstractBlockLayerPycuda
 from pydtnn.layers.dropout import Dropout
 from pydtnn.layers.fc import FC
-from pydtnn.layers.feed_forward import FeedForward
+from pydtnn.layers.feed_forward_nacho import FeedForwardNacho
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor_array import TensorArray
 
@@ -16,7 +16,7 @@ __all__ = ("FeedForwardPycuda",)
 logger = logging.getLogger(__name__)
 
 
-class FeedForwardPycuda(FeedForward[TensorArray], AbstractBlockLayerPycuda):
+class FeedForwardPycuda(FeedForwardNacho[TensorArray], AbstractBlockLayerPycuda):
     """PyCUDA-accelerated FeedForward layer implementation."""
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:

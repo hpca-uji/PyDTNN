@@ -5,8 +5,8 @@ from typing import Any
 
 from pydtnn.backends.pycuda.layers.abstract.block_layer import AbstractBlockLayerPycuda
 from pydtnn.backends.pycuda.libs import libcudnn as cudnn
-from pydtnn.layers.decoder import Decoder
-from pydtnn.layers.encoder import Encoder
+from pydtnn.layers.decoder_nacho import Decoder_Nacho
+from pydtnn.layers.encoder_nacho import EncoderNacho
 from pydtnn.layers.encoder_decoder import EncoderDecoder
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor_array import TensorArray
@@ -23,7 +23,7 @@ class EncoderDecoderPycuda(EncoderDecoder[TensorArray], AbstractBlockLayerPycuda
         """Initializes the EncoderDecoderPycuda layer with PyCUDA-specific sublayers."""
         super().__init__(*args, **kwargs)
         self.encoder = [
-            Encoder(
+            EncoderNacho(
                 embedl=self.embedl,
                 d_k=self.d_k,
                 d_ff=self.d_ff,
@@ -33,7 +33,7 @@ class EncoderDecoderPycuda(EncoderDecoder[TensorArray], AbstractBlockLayerPycuda
             for _ in range(self.enc_layers)
         ]
         self.decoder = [
-            Decoder(
+            Decoder_Nacho(
                 embedl=self.embedl,
                 d_k=self.d_k,
                 d_ff=self.d_ff,

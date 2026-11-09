@@ -39,14 +39,18 @@ class FeedForwardNumpy(FeedForward[np.ndarray], AbstractBlockLayerNumpy):
         for layer in self.children:
             layer._init_backend_with_model(self.model)
 
+        # breakpoint()
         self.FC_1._model_init(prev_shape=(self.shape[-1],), x=x)
         self.relu._model_init(prev_shape=(self.d_ff,), x=self.FC_1.y)
         self.dropout._model_init(prev_shape=(self.d_ff,), x=self.relu.y)
         self.FC_2._model_init(prev_shape=(self.d_ff,), x=self.dropout.y)
+        # breakpoint()
 
+        # NOTE: It should be like that.
         self.y = self.FC_2.y
         self.dx = self.FC_1.dx
 
+        # NOTE: In initialize_block_layer:
         for layer in self.children:
             self.fwd_time += layer.fwd_time
             self.bwd_time += layer.bwd_time
@@ -57,16 +61,15 @@ class FeedForwardNumpy(FeedForward[np.ndarray], AbstractBlockLayerNumpy):
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         """Performs the forward pass through the feed-forward network."""
-        x = self.FC_1.forward(x)
-        x = self.relu.forward(x)
-        x = self.dropout.forward(x)
-        x = self.FC_2.forward(x)
+        # NOTE: It should be only one path.
+        for layer in self.paths[0]:
+            x = layer.forward(x)
         return x
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
         """Performs the backward pass through the feed-forward network."""
-        dx = self.FC_2.backward(dy)
-        dx = self.dropout.backward(dx)
-        dx = self.relu.backward(dx)
-        dx = self.FC_1.backward(dx)
+        # NOTE: It should be only one path.
+        dx = dy
+        for layer in reversed(self.paths[0]):
+            dx = layer.backward(dx)
         return dx

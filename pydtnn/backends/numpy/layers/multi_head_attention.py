@@ -1,21 +1,22 @@
 """Multi-head attention layer implementation for the NumPy backend."""
 
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from pydtnn.activations.softmax import Softmax
 from pydtnn.backends.numpy.layers.abstract.block_layer import AbstractBlockLayerNumpy
 from pydtnn.layers.dropout import Dropout
 from pydtnn.layers.fc import FC
-from pydtnn.layers.multi_head_attention import MultiHeadAttention
+from pydtnn.layers.multi_head_attention_nacho import MultiHeadAttentionNacho
 from pydtnn.layers.multiplication import Multiplication
 from pydtnn.layers.scalar import Scalar
 from pydtnn.libs import numpy as np
 from pydtnn.model.base import ModelMode
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, OpsEventEnum
+from pydtnn.utils import initializers
 from pydtnn.utils.constants import ArrayShape
 
-__all__ = ("MultiHeadAttentionNumpy",)
+__all__ = ("MultiHeadAttentionNachoNumpy",)
 
 
 logger = logging.getLogger(__name__)
@@ -24,18 +25,27 @@ if TYPE_CHECKING:
     import numpy as np  # noqa: F811 (override typing)
 
 
-class MultiHeadAttentionNumpy(MultiHeadAttention[np.ndarray], AbstractBlockLayerNumpy):
+class MultiHeadAttentionNachoNumpy(MultiHeadAttentionNacho[np.ndarray], AbstractBlockLayerNumpy):
     """NumPy implementation of the Multi-Head Attention mechanism."""
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(
+            self,
+            embedl: int = 64,
+            d_k: int = 3,
+            heads: int = 10,
+            dropout_rate: float = 0.5,
+            weights_initializer: initializers.InitializerFunc = initializers.glorot_uniform,
+            biases_initializer: initializers.InitializerFunc = initializers.zeros,
+        ) -> None:
         """Initializes the MultiHeadAttentionNumpy layer with required sublayers."""
-        super().__init__(*args, **kwargs)
+        super().__init__(embedl, d_k, heads, dropout_rate, weights_initializer, biases_initializer)
+        breakpoint()
         self.FC_q = FC[np.ndarray](shape=(self.heads * self.d_k,))  # Dim: embedl x heads*d_k
         self.FC_k = FC[np.ndarray](shape=(self.heads * self.d_k,))  # Dim: embedl x heads*d_k
         self.FC_v = FC[np.ndarray](shape=(self.heads * self.d_k,))  # Dim: embedl x heads*d_k
-        self.FC_o = FC[np.ndarray](shape=(self.embedl,))  # Dim: heads*d_k x embedl
         self.mult_qkt = Multiplication[np.ndarray]()
-        self.scalar_dk = Scalar[np.ndarray](1.0 / np.sqrt(self.d_k))
+        self.scalar_dk = Scalar[np.ndarray](scale=1.0 / np.sqrt(self.d_k))
+        self.FC_o = FC[np.ndarray](shape=(self.embedl,))  # Dim: heads*d_k x embedl
         self.softmax = Softmax[np.ndarray]()
         self.dropout = Dropout[np.ndarray](rate=self.dropout_rate)
         self.mult_smv = Multiplication[np.ndarray]()
@@ -77,6 +87,7 @@ class MultiHeadAttentionNumpy(MultiHeadAttention[np.ndarray], AbstractBlockLayer
         self.FC_k._model_init(prev_shape=(self.embedl,), x=self.FC_q.y)
         self.FC_v._model_init(prev_shape=(self.embedl,), x=self.FC_k.y)
         self.mult_qkt._model_init(prev_shape=(1,), x=self.FC_v.y)
+        # breakpoint()
         self.scalar_dk._model_init(prev_shape=(1,), x=self.mult_qkt.y)
         self.FC_o._model_init(prev_shape=(self.heads * self.d_k,), x=self.scalar_dk.y)
         self.softmax._model_init(
@@ -157,6 +168,7 @@ class MultiHeadAttentionNumpy(MultiHeadAttention[np.ndarray], AbstractBlockLayer
             self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.FORWARD_MHA_MATMUL_QK,
         )
 
+        breakpoint()
         score = self.mult_qkt.forward(query, self.transpose(key))  # pyright: ignore[reportCallIssue]
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
