@@ -12,6 +12,7 @@ __all__ = ("LayerableNumpy",)
 if TYPE_CHECKING:
     import numpy as np  # noqa: F811 (override typing)
 
+
 class LayerableNumpy(Layerable[np.ndarray], BaseNumpy):
     """Numpy-specific implementation of a layerable component supporting distributed operations."""
 
