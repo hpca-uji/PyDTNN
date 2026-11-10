@@ -23,20 +23,20 @@ logger = logging.getLogger(__name__)
 class Encoder[T: Array](AbstractBlockLayer[T]):  # noqa: D101 (generics not detected)
     """A transformer-based encoder block layer."""
 
-    def __init__(self, embedl: int = 64, d_k: int = 3, d_ff: int = 256, heads: int = 10) -> None:
+    def __init__(self, embedl: int = 64, dim_keys: int = 3, dim_feed_forward: int = 256, heads: int = 10) -> None:
         """
         Initializes the Encoder layer with specified hyperparameters.
 
         Args:
             embedl (int): Dimension of the input embeddings.
-            d_k (int): Dimension of the key/query vectors.
-            d_ff (int): Dimension of the feed-forward network.
+            dim_keys (int): Dimension of the key/query vectors.
+            dim_feed_forward (int): Dimension of the feed-forward network.
             heads (int): Number of attention heads.
         """
         self.embedl = embedl
         self.heads = heads
-        self.d_k = d_k
-        self.d_ff = d_ff
+        self.dim_keys = dim_keys
+        self.dim_feed_forward = dim_feed_forward
 
         # TODO Add Positional Encoding.
 
@@ -45,10 +45,10 @@ class Encoder[T: Array](AbstractBlockLayer[T]):  # noqa: D101 (generics not dete
                 AdditionBlock([
                     [MultiHeadAttention(heads=self.heads)],
                     []
-                ]),
+                ], multiple_inputs=True),
                 LayerNormalization(),
                 AdditionBlock([
-                    [FeedForward(d_ff=self.d_ff)],
+                    [FeedForward(dim_hidden_layers=self.dim_feed_forward)],
                     []
                 ]),
                 LayerNormalization()
@@ -57,3 +57,12 @@ class Encoder[T: Array](AbstractBlockLayer[T]):  # noqa: D101 (generics not dete
         ]
 
         super().__init__(paths=path)
+
+    def backward(self, dy: T) -> T:
+        # NOTE: Remove this method after the implementation.
+        # Nacho did this at the end of the encoder:
+        # dx_3 = self.multiheadattention.backward(dx_3)
+        # dx_3, dx_4, dx_5 = dx_3
+        # self.dx = dx_2 + dx_3 + dx_4 + dx_5
+        # So it's seems necessary to add every output.
+        return super().backward(dy)

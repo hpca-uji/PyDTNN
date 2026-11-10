@@ -4,11 +4,11 @@ import logging
 from typing import TYPE_CHECKING
 
 from pydtnn.backends.numpy.layers.abstract.layer import LayerNumpy
-from pydtnn.layers.scalar import Scalar
+from pydtnn.layers.product_scalar import ProductScalar
 from pydtnn.libs import numpy as np
 from pydtnn.utils.constants import ArrayShape
 
-__all__ = ("ScalarNumpy",)
+__all__ = ("ProductScalarNumpy",)
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     import numpy as np  # noqa: F811 (override typing)
 
 
-class ScalarNumpy(Scalar[np.ndarray], LayerNumpy):
+class ProductScalarNumpy(ProductScalar[np.ndarray], LayerNumpy):
     """Numpy-based scalar multiplication layer."""
 
     def __init__(self, shape: ArrayShape = (1,), scale: float = 1.0) -> None:

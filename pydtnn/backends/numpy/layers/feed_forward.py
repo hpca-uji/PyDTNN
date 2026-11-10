@@ -25,7 +25,7 @@ class FeedForwardNumpy(FeedForward[np.ndarray], AbstractBlockLayerNumpy):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initializes the FeedForwardNumpy layer with sublayers."""
         super().__init__(*args, **kwargs)
-        self.FC_1 = FC(shape=(self.d_ff,))
+        self.FC_1 = FC(shape=(self.dim_hidden_layers,))
         self.relu = Relu()
         self.dropout = Dropout(rate=self.dropout_rate)
         self.FC_2 = FC(shape=(self.shape[-1],))
@@ -41,9 +41,9 @@ class FeedForwardNumpy(FeedForward[np.ndarray], AbstractBlockLayerNumpy):
 
         # breakpoint()
         self.FC_1._model_init(prev_shape=(self.shape[-1],), x=x)
-        self.relu._model_init(prev_shape=(self.d_ff,), x=self.FC_1.y)
-        self.dropout._model_init(prev_shape=(self.d_ff,), x=self.relu.y)
-        self.FC_2._model_init(prev_shape=(self.d_ff,), x=self.dropout.y)
+        self.relu._model_init(prev_shape=(self.dim_hidden_layers,), x=self.FC_1.y)
+        self.dropout._model_init(prev_shape=(self.dim_hidden_layers,), x=self.relu.y)
+        self.FC_2._model_init(prev_shape=(self.dim_hidden_layers,), x=self.dropout.y)
         # breakpoint()
 
         # NOTE: It should be like that.

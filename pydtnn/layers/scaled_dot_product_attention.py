@@ -6,8 +6,8 @@ from typing import Any
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.activations.softmax import Softmax
 from pydtnn.layers.identity import Identity
-from pydtnn.layers.multiplication import Multiplication
-from pydtnn.layers.scalar import Scalar
+from pydtnn.layers.multiplication_block import MultiplicationBlock
+from pydtnn.layers.product_scalar import ProductScalar
 from pydtnn.utils.constants import Array
 
 __all__ = ("ScaledDotProductAttention",)
@@ -15,7 +15,7 @@ __all__ = ("ScaledDotProductAttention",)
 logger = logging.getLogger(__name__)
 
 
-class ScaledDotProductAttention[T: Array](Multiplication[T]):  # noqa: D101 (generics not detected)
+class ScaledDotProductAttention[T: Array](MultiplicationBlock[T]):  # noqa: D101 (generics not detected)
     """Implementation of a Scaled Dot-Product Attention. https://arxiv.org/pdf/1706.03762, Figure 2 (left)."""
 
     def __init__(
@@ -35,11 +35,11 @@ class ScaledDotProductAttention[T: Array](Multiplication[T]):  # noqa: D101 (gen
                 for the last one (that is, they will be executed without any modifications).
         """
         first_path: list[Layerable[T]] = [
-            Multiplication(
+            MultiplicationBlock(
                 paths=[*mult_layers[0]],
                 multiple_inputs=True
             ),
-            Scalar(),
+            ProductScalar(),
         ]
         if with_masked_layer:
             first_path.append(

@@ -39,14 +39,14 @@ class Transformer[T: Array](AbstractBlockLayer[T]):  # noqa: D101 (generics not 
         self.d_ff = d_ff
 
         self.encoder = Encoder()
-        self.encoder = Decoder(self.encoder.y)
+        self.decoder = Decoder(self.encoder.y)
 
         # TODO: Add parameters and finish.
 
         path: list[list[Layerable[T]]] = [
             [
                 self.encoder,
-                self.encoder,
+                self.decoder,
                 FC(),
                 Softmax()
             ]
@@ -62,7 +62,7 @@ class Transformer[T: Array](AbstractBlockLayer[T]):  # noqa: D101 (generics not 
         for layer in self.paths[0]:
             y = layer.forward(y)
         # TODO: add the shift (or here or inside the method.)
-        self.encoder.set_prev_output(y)
+        self.decoder.set_prev_output(y)
         return y
 
     def backward(self, dy: T) -> T:

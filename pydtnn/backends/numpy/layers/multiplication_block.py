@@ -4,12 +4,12 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from pydtnn.backends.numpy.layers.abstract.block_layer import AbstractBlockLayerNumpy
-from pydtnn.layers.multiplication import Multiplication
+from pydtnn.layers.multiplication_block import MultiplicationBlock
 from pydtnn.libs import numpy as np
 from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, MdlEventEnum
 from pydtnn.utils.constants import ArrayShape
 
-__all__ = ("MultiplicationNumpy",)
+__all__ = ("MultiplicationBlockNumpy",)
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     import numpy as np  # noqa: F811 (override typing)
 
 
-class MultiplicationNumpy(Multiplication[np.ndarray], AbstractBlockLayerNumpy):
+class MultiplicationBlockNumpy(MultiplicationBlock[np.ndarray], AbstractBlockLayerNumpy):
     """Numpy-based multiplication layer for matrix operations."""
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:

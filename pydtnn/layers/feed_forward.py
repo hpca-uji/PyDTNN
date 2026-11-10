@@ -23,16 +23,16 @@ class FeedForward[T: Array](AbstractBlockLayer[T]):  # noqa: D101 (generics not 
         dropout_rate (float): The dropout probability applied to the hidden layer.
     """
 
-    def __init__(self, shape: ArrayShape = (), d_ff: int = 2048) -> None:
+    def __init__(self, shape: ArrayShape = (), dim_hidden_layers: int = 2048) -> None:
         """Initializes the FeedForward layer. More information: https://arxiv.org/pdf/1706.03762 Section 3.3.
 
         Args:
             shape (ArrayShape): The input shape of the layer.
             d_ff (int): The dimensionality of the hidden feed-forward layer.
         """
-        self.d_ff = d_ff
+        self.dim_hidden_layers = dim_hidden_layers
         paths: list[list[Layerable[T]]] = [[
-            FC(shape=(self.d_ff, ), use_bias=True),  # TODO: Check the shape.
+            FC(shape=(self.dim_hidden_layers, ), use_bias=True),  # TODO: Check the shape.
             Relu(),
             FC(shape=shape, use_bias=True)
         ]]

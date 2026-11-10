@@ -4,7 +4,7 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from pydtnn.backends.numpy.layers.abstract.block_layer import AbstractBlockLayerNumpy
-from pydtnn.backends.numpy.layers.decoder import DecoderNacho
+from pydtnn.backends.numpy.layers.decoder_nacho import DecoderNacho
 from pydtnn.backends.numpy.layers.encoder_nacho import EncoderNacho
 from pydtnn.layers.encoder_decoder import EncoderDecoder
 from pydtnn.libs import numpy as np
