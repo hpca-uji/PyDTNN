@@ -69,7 +69,7 @@ class MultiplicationNumpy(Multiplication[np.ndarray], AbstractBlockLayerNumpy):
 
         self.dx[0] = dx1
         self.dx[1] = dx2
-        
+
         for i in range(len(self.paths) - 1, -1, -1):
             path = self.paths[i]
             dx_backward = self.dx[i]
