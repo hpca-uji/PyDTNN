@@ -66,7 +66,7 @@ class Conv2DReluTestCase(Conv2DTestCase):
             biases_initializer=zeros,
         )
         relu_chain = Relu()
-        chain = ConcatenationBlock([conv2d_chain, relu_chain])
+        chain = ConcatenationBlock([[conv2d_chain, relu_chain]])
         model_chain.add(chain)
 
         params_fuse = deepcopy(params_chain)

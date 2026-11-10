@@ -50,7 +50,7 @@ class BatchNormalizationReluTestCase(Conv2DTestCase):
         model_chain.add(Identity(model_chain.encode_shape((d.c, d.h, d.w))))
         bn_chain = BatchNormalization()
         relu_chain = Relu()
-        chain = ConcatenationBlock([bn_chain, relu_chain])
+        chain = ConcatenationBlock([[bn_chain, relu_chain]])
         model_chain.add(chain)
 
         params_fuse = deepcopy(params_chain)
