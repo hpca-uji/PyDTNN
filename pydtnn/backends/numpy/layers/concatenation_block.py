@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     import numpy as np  # noqa: F811 (override typing)
 
 
-class ConcatenationBlockNumpy(ConcatenationBlock, AbstractBlockLayerNumpy):
+class ConcatenationBlockNumpy(ConcatenationBlock[np.ndarray], AbstractBlockLayerNumpy):
     """Numpy-based implementation of a concatenation block layer."""
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -37,8 +37,8 @@ class ConcatenationBlockNumpy(ConcatenationBlock, AbstractBlockLayerNumpy):
         self.y: np.ndarray = np.zeros((self.model.batch_size, *self.shape), dtype=self.model.dtype)
         self.memory_used += self.y.nbytes
 
-        self.dx = np.zeros(self.shape if self.num_inputs > 1 else (self.num_inputs, *self.shape),
-                           dtype=self.model.dtype, order="C")
+        dx_shape = (len(self.paths), self.model.batch_size, *self.prev_shape)
+        self.dx = np.zeros(dx_shape, dtype=self.model.dtype, order="C")
         self.memory_used += self.dx.nbytes
 
     def forward(self, x: np.ndarray) -> np.ndarray:
@@ -72,19 +72,21 @@ class ConcatenationBlockNumpy(ConcatenationBlock, AbstractBlockLayerNumpy):
         self.model.tracer.emit_event(
             PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.BACKWARD_SPLIT
         )
-        # TODO: CHECK THIS!
-        # breakpoint()
-        self.dx[:] = np.split(dy, self.idx_co[:-1], axis=self.concat_dim)
+        real_batch_size = dy.shape[0]
+        self.dx.fill(0)
+
+        dx: list[np.ndarray] = np.split(dy, self.idx_co[:-1], axis=self.concat_dim)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         num_paths = len(self.paths)
 
         for i in range(num_paths):
             p = self.paths[i]
+            dx_backward = dx[i]
             for layer in reversed(p):
                 self.model.tracer.emit_event(
                     PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + MdlEventEnum.BACKWARD
                 )
-                self.dx[i, :] = layer.backward(np.asarray(self.dx[i], dtype=self.model.dtype, order="C"))
+                dx_backward = layer.backward(np.asarray(dx_backward, dtype=self.model.dtype, order="C"))
                 self.model.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
             self.model.tracer.emit_event(
@@ -92,13 +94,13 @@ class ConcatenationBlockNumpy(ConcatenationBlock, AbstractBlockLayerNumpy):
                 self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.BACKWARD_ELTW_SUM,
             )
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+            self.dx[i, :real_batch_size, :] = dx_backward
 
-        # TODO: Check if this is correct
         if self.num_inputs == 1:
             for i in range(num_paths):
                 np.add(self.dx[0], self.dx[i], out=self.dx[0], dtype=self.model.dtype)
-            output = self.dx[0]
+            output = self.dx[0, :real_batch_size, :]
         else:
-            output = self.dx
+            output = self.dx[:, :real_batch_size, :]
 
         return np.asarray(output, dtype=self.model.dtype, order="C")

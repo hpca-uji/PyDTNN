@@ -26,8 +26,9 @@ class AdditionBlockNumpy(AdditionBlock[np.ndarray], AbstractBlockLayerNumpy):
 
     def _model_init(self, prev_shape: ArrayShape, x: ndarray) -> None:
         super()._model_init(prev_shape, x)
-        self.dx = np.zeros(self.shape if self.num_inputs > 1 else (self.num_inputs, *self.shape),
-                           dtype=self.model.dtype, order="C")
+
+        dx_shape = (len(self.paths), self.model.batch_size, *self.prev_shape)
+        self.dx = np.zeros(dx_shape, dtype=self.model.dtype, order="C")
         self.memory_used += self.dx.nbytes
 
     def forward(self, x: np.ndarray) -> np.ndarray:
@@ -81,29 +82,31 @@ class AdditionBlockNumpy(AdditionBlock[np.ndarray], AbstractBlockLayerNumpy):
             The accumulated gradient with respect to the input.
         """
         num_paths = len(self.paths)
-        self.dx[0] = dy
+        real_batch_size = dy.shape[0]
+        self.dx.fill(0)
 
         for i in range(num_paths):
             p = self.paths[i]
+            dx = dy
             for layer in reversed(p):
                 self.model.tracer.emit_event(
                     PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + MdlEventEnum.BACKWARD
                 )
-                self.dx[i, :] = layer.backward(self.dx[i])
+                dx = layer.backward(dx)
                 self.model.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
+            self.dx[i, :real_batch_size, :] = dx
 
             self.model.tracer.emit_event(
                 PYDTNN_OPS_EVENT,
                 self.id * PYDTNN_OPS_EVENTS + OpsEventEnum.BACKWARD_ELTW_SUM,
             )
 
-        # TODO: Check if this is correct
         if self.num_inputs == 1:
             for i in range(num_paths):
                 np.add(self.dx[0], self.dx[i], out=self.dx[0], dtype=self.model.dtype)
-            output = self.dx[0]
+            output = self.dx[0, :real_batch_size, :]
         else:
-            output = self.dx
+            output = self.dx[:, :real_batch_size, :]
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return np.asarray(output, dtype=self.model.dtype, order="C")
