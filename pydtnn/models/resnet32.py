@@ -64,13 +64,13 @@ def resnet32(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Laye
                             BatchNormalization(),
                         ],
                         [
-                                Conv2D(
-                                    nfilters=n_filt,
-                                    filter_shape=(1, 1),
-                                    stride=stride,
-                                    weights_initializer=he_uniform,
-                                ),
-                                BatchNormalization(),
+                            Conv2D(
+                                nfilters=n_filt,
+                                filter_shape=(1, 1),
+                                stride=stride,
+                                weights_initializer=he_uniform,
+                            ),
+                            BatchNormalization(),
                         ]
                         if stride != 1
                         else []

@@ -429,25 +429,27 @@ class PytorchLayerTestCase(PytorchModelTestCaseAbstract):
         """Tests AdditionBlock layer."""
         pydtnn_layers: list[Layerable] = [
             AdditionBlock(
-                [[
-                    Conv2D(
-                        nfilters=PARAMS.conv2d_n_filters,
-                        filter_shape=PARAMS.conv2d_filter_shape,
-                        padding=PARAMS.conv2d_padding,
-                        stride=PARAMS.conv2d_stride,
-                        dilation=PARAMS.conv2d_dilation,
-                    ),
-                    Relu()
-                ],
                 [
-                    Conv2D(
-                        nfilters=PARAMS.conv2d_n_filters,
-                        filter_shape=PARAMS.conv2d_filter_shape,
-                        padding=PARAMS.conv2d_padding,
-                        stride=PARAMS.conv2d_stride,
-                        dilation=PARAMS.conv2d_dilation,
-                    )
-                ]],
+                    [
+                        Conv2D(
+                            nfilters=PARAMS.conv2d_n_filters,
+                            filter_shape=PARAMS.conv2d_filter_shape,
+                            padding=PARAMS.conv2d_padding,
+                            stride=PARAMS.conv2d_stride,
+                            dilation=PARAMS.conv2d_dilation,
+                        ),
+                        Relu()
+                    ],
+                    [
+                        Conv2D(
+                            nfilters=PARAMS.conv2d_n_filters,
+                            filter_shape=PARAMS.conv2d_filter_shape,
+                            padding=PARAMS.conv2d_padding,
+                            stride=PARAMS.conv2d_stride,
+                            dilation=PARAMS.conv2d_dilation,
+                        )
+                    ]
+                ],
             ),
             Flatten()
         ]
@@ -467,25 +469,27 @@ class PytorchLayerTestCase(PytorchModelTestCaseAbstract):
         """Tests ConcatenationBlock layer."""
         pydtnn_layers: list[Layerable] = [
             ConcatenationBlock(
-                [[
-                    Conv2D(
-                        nfilters=PARAMS.conv2d_n_filters,
-                        filter_shape=PARAMS.conv2d_filter_shape,
-                        padding=PARAMS.conv2d_padding,
-                        stride=PARAMS.conv2d_stride,
-                        dilation=PARAMS.conv2d_dilation,
-                    ),
-                    Relu()
-                ],
                 [
-                    Conv2D(
-                        nfilters=PARAMS.conv2d_n_filters,
-                        filter_shape=PARAMS.conv2d_filter_shape,
-                        padding=PARAMS.conv2d_padding,
-                        stride=PARAMS.conv2d_stride,
-                        dilation=PARAMS.conv2d_dilation,
-                    )
-                ]],
+                    [
+                        Conv2D(
+                            nfilters=PARAMS.conv2d_n_filters,
+                            filter_shape=PARAMS.conv2d_filter_shape,
+                            padding=PARAMS.conv2d_padding,
+                            stride=PARAMS.conv2d_stride,
+                            dilation=PARAMS.conv2d_dilation,
+                        ),
+                        Relu()
+                    ],
+                    [
+                        Conv2D(
+                            nfilters=PARAMS.conv2d_n_filters,
+                            filter_shape=PARAMS.conv2d_filter_shape,
+                            padding=PARAMS.conv2d_padding,
+                            stride=PARAMS.conv2d_stride,
+                            dilation=PARAMS.conv2d_dilation,
+                        )
+                    ]
+                ],
             ),
             Flatten()
         ]
