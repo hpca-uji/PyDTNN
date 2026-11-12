@@ -14,7 +14,7 @@ from pydtnn.model.base import ModelMode
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
                                    PYDTNN_OPS_EVENTS, OpsEventEnum)
 from pydtnn.utils.constants import ArrayShape, Parameters
-from pydtnn.utils.tensor_array import TensorArray
+from pydtnn.utils.tensor_array import DescriptorType, MemoryType, TensorArray
 
 __all__ = ("BatchNormalizationPycuda",)
 
@@ -72,63 +72,72 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
         shape_ = (self.ci,)
 
         # weights
-        self.weights = TensorArray.to_gpu(
+        self.weights = TensorArray.from_host(
             self.weights_initializer(shape_, self.model.dtype),
-            self.model.tensor_format,
-            self.model.cudnn_dtype,
+            tensor_format=self.model.tensor_format,
+            mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+            desc_type=DescriptorType.TENSOR
         )
         self.memory_used += self.weights.nbytes
 
         # biases
-        self.biases = TensorArray.to_gpu(
+        self.biases = TensorArray.from_host(
             self.biases_initializer(shape_, self.model.dtype),
-            self.model.tensor_format,
-            self.model.cudnn_dtype,
+            tensor_format=self.model.tensor_format,
+            mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+            desc_type=DescriptorType.TENSOR
         )
         self.memory_used += self.biases.nbytes
 
         self.dw = TensorArray.new_zeros(
-            self.weights.cpu_shape,
+            self.weights.host_shape,
             self.model.dtype,
             tensor_format=self.model.tensor_format,
-            cudnn_dtype=self.model.cudnn_dtype,
-            gpudirect=self.model.use_gpudirect,
-            drv=(drv if self.model.use_gpudirect else None),
+            mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+            desc_type=DescriptorType.TENSOR
         )
         self.memory_used += self.dw.nbytes
 
         self.db = TensorArray.new_zeros(
-            self.biases.cpu_shape,
+            self.biases.host_shape,
             self.model.dtype,
             tensor_format=self.model.tensor_format,
-            cudnn_dtype=self.model.cudnn_dtype,
-            gpudirect=self.model.use_gpudirect,
-            drv=(drv if self.model.use_gpudirect else None),
+            mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+            desc_type=DescriptorType.TENSOR
         )
         self.memory_used += self.db.nbytes
 
-        self.running_mean = TensorArray.to_gpu(
+        self.running_mean = TensorArray.from_host(
             self.running_mean_initializer(shape_, self.model.dtype),
-            self.model.tensor_format,
-            self.model.cudnn_dtype,
+            tensor_format=self.model.tensor_format,
+            mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+            desc_type=DescriptorType.TENSOR
         )
         self.memory_used += self.running_mean.nbytes
 
-        self.running_var = TensorArray.to_gpu(
+        self.running_var = TensorArray.from_host(
             self.running_var_initializer(shape_, self.model.dtype),
-            self.model.tensor_format,
-            self.model.cudnn_dtype,
+            tensor_format=self.model.tensor_format,
+            mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+            desc_type=DescriptorType.TENSOR
         )
         self.memory_used += self.running_var.nbytes
 
         self.save_mean = TensorArray.new_zeros(
-            shape_, self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype
+            shape_,
+            self.model.dtype,
+            tensor_format=self.model.tensor_format,
+            mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+            desc_type=DescriptorType.TENSOR
         )
         self.memory_used += self.save_mean.nbytes
 
-        save_inv_var_gpu = gpuarray.zeros(shape_, self.model.dtype)
-        self.save_inv_var = TensorArray(
-            save_inv_var_gpu, self.model.tensor_format, self.model.cudnn_dtype
+        self.save_inv_var = TensorArray.new_zeros(
+            shape_,
+            self.model.dtype,
+            tensor_format=self.model.tensor_format,
+            mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+            desc_type=DescriptorType.TENSOR
         )
         self.memory_used += self.save_inv_var.nbytes
 

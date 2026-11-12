@@ -24,7 +24,7 @@ from pathlib import PurePath
 
 import numpy as np
 
-from pydtnn import package_name
+from pydtnn import package_name, pycuda_count, cupy_count
 from pydtnn.abstract.base import Base
 from pydtnn.datasets.abstract.base import Base as DatasetBase
 from pydtnn.model.base import Base as ModelBase
@@ -32,7 +32,6 @@ from pydtnn.model.base import SyncAlgorithm, SyncParticipation
 from pydtnn.tracers.tracer import TracerType
 from pydtnn.utils import read_dir
 from pydtnn.utils.constants import NetworkAlgoEnum
-from pydtnn.utils.gpu import get_gpus_per_node
 from pydtnn.utils.tensor import TensorFormat
 
 __all__ = (
@@ -1335,7 +1334,8 @@ class ArgumentParser(argparse.ArgumentParser):
 
         # Environment options
         _re_group = self.add_argument_group("environment")
-        _re_group.add_argument("--node-gpus", type=int, default=-1, help=argparse.SUPPRESS)
+        _re_group.add_argument("--pycuda-gpus", type=int, default=-1, help=argparse.SUPPRESS)
+        _re_group.add_argument("--cupy-gpus", type=int, default=-1, help=argparse.SUPPRESS)
         _re_group.add_argument("--mpi-procs", type=int, default=-1, help=argparse.SUPPRESS)
         _re_group.add_argument("--proc-threads", type=int, default=-1, help=argparse.SUPPRESS)
 
@@ -1349,9 +1349,11 @@ class ArgumentParser(argparse.ArgumentParser):
         """Parses command line arguments and injects runtime environment data."""
         result = super().parse_args(args, Namespace())
 
+        result.pycuda_gpus = pycuda_count
+        result.cupy_gpus = cupy_count
         result.mpi_procs = _get_mpi_processes()
         result.proc_threads = _get_threads_per_process()
-        result.node_gpus = get_gpus_per_node()
+
         result.mpi_protocol = _get_mpi_protocol()
         result.mpi_server = _get_mpi_server()
         result.mpi_port = _get_mpi_port()

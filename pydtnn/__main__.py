@@ -20,11 +20,6 @@ logger = logging.getLogger(__name__)
 
 def _start() -> int:
     """System entry point"""
-    if _pyextrae := os.environ.get("PYEXTRAE"):
-        import pyextrae.common.extrae as pyextrae
-
-        pyextrae.startTracing(_pyextrae)
-
     from pydtnn import rank
     from pydtnn.utils.debug import traceback_context
     from pydtnn.utils.parser import ArgumentParser
@@ -36,6 +31,11 @@ def _start() -> int:
     if not config.trace_ranks and rank != 0:
         sys.stdout = sys.stderr = open(os.devnull, "w")
         tracer = nullcontext
+
+    if libtrace := os.environ.get("PYEXTRAE"):
+        import pyextrae.common.extrae as pyextrae
+
+        pyextrae.startTracing(libtrace)
 
     with tracer():
         return main(config) or 0

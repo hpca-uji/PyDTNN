@@ -4,7 +4,6 @@ import logging
 from typing import Any
 
 import numpy as np
-from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 
 from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
 from pydtnn.layers.dropout import Dropout
@@ -12,7 +11,7 @@ from pydtnn.libs import cudnn as cudnn
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
                                    PYDTNN_OPS_EVENTS, OpsEventEnum)
 from pydtnn.utils.constants import ArrayShape
-from pydtnn.utils.tensor_array import TensorArray
+from pydtnn.utils.tensor_array import DescriptorType, MemoryType, TensorArray
 
 __all__ = ("DropoutPycuda",)
 
@@ -38,44 +37,52 @@ class DropoutPycuda(Dropout[TensorArray], LayerPycuda):
         super()._model_init(prev_shape, x)
 
         # Activations y
-        y_gpu = gpuarray.zeros((self.model.batch_size, *self.shape), self.model.dtype)
-        self.y = TensorArray(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.y = TensorArray.new_zeros(
+            (self.model.batch_size, *self.shape),
+            self.model.dtype,
+            tensor_format=self.model.tensor_format,
+            mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+            desc_type=DescriptorType.TENSOR
+        )
         self.memory_used += self.y.nbytes
 
         # Derivative dx
-        dx_gpu = gpuarray.zeros((self.model.batch_size, *self.shape), self.model.dtype)
-        self.dx = TensorArray(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.dx = TensorArray.new_zeros(
+            (self.model.batch_size, *self.shape),
+            self.model.dtype,
+            tensor_format=self.model.tensor_format,
+            mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+            desc_type=DescriptorType.TENSOR
+        )
         self.memory_used += self.dx.nbytes
 
-        self.states_size = cudnn.cudnnDropoutGetStatesSize(self.model.cudnn_handle)
-        self.space_size = cudnn.cudnnDropoutGetReserveSpaceSize(self.y.desc)
-
-        space_gpu = gpuarray.zeros((self.space_size,), np.byte)
-        self.space = TensorArray(
-            space_gpu,
-            self.model.tensor_format,
-            self.model.cudnn_dtype,
-            TensorArray.TensorType.OTHER,
+        space_size = cudnn.cudnnDropoutGetReserveSpaceSize(self.y.desc)
+        self.space = TensorArray.new_zeros(
+            (space_size,),
+            np.byte,
+            host_shape=True,
+            mem_type=MemoryType.DEVICE,
+            desc_type=DescriptorType.NONE
         )
         self.memory_used += self.space.nbytes
 
-        states_gpu = gpuarray.zeros((self.states_size,), np.byte)
-        self.states = TensorArray(
-            states_gpu,
-            self.model.tensor_format,
-            self.model.cudnn_dtype,
-            TensorArray.TensorType.OTHER,
+        states_size = cudnn.cudnnDropoutGetStatesSize(self.model.cudnn_handle)
+        self.states = TensorArray.new_zeros(
+            (states_size,),
+            np.byte,
+            host_shape=True,
+            mem_type=MemoryType.DEVICE,
+            desc_type=DescriptorType.NONE
         )
         self.memory_used += self.states.nbytes
 
         self.drop_desc = cudnn.cudnnCreateDropoutDescriptor()
-
         cudnn.cudnnSetDropoutDescriptor(
             self.drop_desc,
             self.model.cudnn_handle,
             self.rate,
             self.states.ptr_voidp,
-            self.states_size,
+            self.states.size,
             seed=self.model.random_seed,
         )
 
@@ -92,7 +99,7 @@ class DropoutPycuda(Dropout[TensorArray], LayerPycuda):
             self.y.desc,
             self.y.ptr_voidp,
             self.space.ptr_voidp,
-            self.space_size,
+            self.space.size,
         )
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.y
@@ -111,7 +118,7 @@ class DropoutPycuda(Dropout[TensorArray], LayerPycuda):
             self.dx.desc,
             self.dx.ptr_voidp,
             self.space.ptr_voidp,
-            self.space_size,
+            self.space.size,
         )
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.dx

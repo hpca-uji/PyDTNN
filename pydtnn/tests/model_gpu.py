@@ -3,12 +3,15 @@
 from __future__ import annotations
 
 import logging
+from typing import TYPE_CHECKING
 import unittest
 
 import numpy as np
-from pycuda import gpuarray
 
-from pydtnn import pycuda, supported_gpu
+if TYPE_CHECKING:
+    from pycuda import gpuarray
+
+from pydtnn import pycuda_count
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.layers.abstract.layer import LayerError
 from pydtnn.layers.addition_block import AdditionBlock
@@ -18,14 +21,14 @@ from pydtnn.model import Model
 from pydtnn.tests.abstract.base import Params, verbose_test
 from pydtnn.tests.abstract.model import ModelTestCase
 from pydtnn.utils.tensor import TensorFormat, format_transpose
-from pydtnn.utils.tensor_array import TensorArray
+from pydtnn.utils.tensor_array import DescriptorType, MemoryType, TensorArray
 
 __all__ = ("ModelGpuTestCase",)
 
 logger = logging.getLogger(__name__)
 
 
-@unittest.skipUnless(pycuda and supported_gpu, "requires GPU")
+@unittest.skipUnless(pycuda_count, "requires GPU")
 class ModelGpuTestCase(ModelTestCase):
     """Test case for verifying model parity between CPU and GPU implementations."""
 
@@ -98,11 +101,11 @@ class ModelGpuTestCase(ModelTestCase):
             else:
                 gpu_layer.weights_cpu = cpu_layer.weights.copy()
             if gpu_layer.weights_cpu is not None:
-                gpu_layer.weights = TensorArray.to_gpu(
+                gpu_layer.weights = TensorArray.from_host(
                     gpu_layer.weights_cpu,
-                    gpu_layer.model.tensor_format,
-                    gpu_layer.model.cudnn_dtype,
-                    TensorArray.TensorType.FILTER,
+                    tensor_format=gpu_layer.model.tensor_format,
+                    mem_type=MemoryType.GLOBAL if gpu_layer.model.use_gpudirect else MemoryType.DEVICE,
+                    desc_type=DescriptorType.FILTER,
                 )
             if gpu_layer.use_bias:
                 if cpu_layer.biases is None:
@@ -110,10 +113,11 @@ class ModelGpuTestCase(ModelTestCase):
 
                 gpu_layer.biases_cpu = cpu_layer.biases.copy()
                 if gpu_layer.biases_cpu is not None:
-                    gpu_layer.biases = TensorArray.to_gpu(
+                    gpu_layer.biases = TensorArray.from_host(
                         gpu_layer.biases_cpu,
-                        gpu_layer.model.tensor_format,
-                        gpu_layer.model.cudnn_dtype,
+                        tensor_format=gpu_layer.model.tensor_format,
+                        mem_type=MemoryType.GLOBAL if gpu_layer.model.use_gpudirect else MemoryType.DEVICE,
+                        desc_type=DescriptorType.TENSOR
                     )
 
     def set_data_to_ary(

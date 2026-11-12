@@ -289,7 +289,7 @@ class PytorchModelTestCaseAbstract(TestCase):
                         for grad_v_key in layer.grad_vars.values():
                             pydtnn_grad = getattr(layer, grad_v_key)
                             if isinstance(pydtnn_grad, TensorArray):
-                                pydtnn_grad = pydtnn_grad.get().reshape(pydtnn_grad.cpu_shape)
+                                pydtnn_grad = pydtnn_grad.get().reshape(pydtnn_grad.host_shape)
                             grad_vars[grad_v_key] = pydtnn_grad
                         layers_grad_vars[i] = (layer, grad_vars)
                         i += 1
@@ -366,7 +366,7 @@ class PytorchModelTestCaseAbstract(TestCase):
                         for param_key in layer.grad_vars.keys():
                             param = getattr(layer, param_key)
                             if isinstance(param, TensorArray):
-                                param = param.get().reshape(param.cpu_shape)
+                                param = param.get().reshape(param.host_shape)
                             parameters[param_key] = param
                         layers_parameters[i] = parameters
                         i += 1
@@ -682,7 +682,7 @@ class PytorchModelTestCaseAbstract(TestCase):
                         if self.params.device == "cuda":
                             # NOTE: First moving the values to CPU, doing the split, then moving the values back to GPU.
                             assert isinstance(dx_base, TensorArray)
-                            dx_to_split: np.ndarray = dx_base.get().reshape(dx_base.cpu_shape)
+                            dx_to_split: np.ndarray = dx_base.get().reshape(dx_base.host_shape)
                         else:
                             assert isinstance(dx_base, np.ndarray)
                             dx_to_split: np.ndarray = dx_base.copy()
@@ -692,8 +692,8 @@ class PytorchModelTestCaseAbstract(TestCase):
                         if self.params.device == "cuda":
                             # NOTE: Moving the values back to GPU.
                             assert isinstance(dx_base, TensorArray)
-                            _dx = TensorArray.to_gpu(dx_splitted, dx_base.tensor_format,
-                                                     dx_base.cudnn_dtype, dx_base.tensor_type)
+                            _dx = TensorArray.from_host(dx_splitted, dx_base.tensor_format,
+                                                     dx_base.cudnn_dtype, dx_base.desc_type)
                         else:
                             _dx = dx_splitted
                     else:
@@ -767,7 +767,7 @@ class PytorchModelTestCaseAbstract(TestCase):
 
             if self.params.device == "cuda":
                 assert isinstance(pydtnn_values, TensorArray)
-                pydtnn_values = pydtnn_values.get().reshape(pydtnn_values.cpu_shape)
+                pydtnn_values = pydtnn_values.get().reshape(pydtnn_values.host_shape)
             else:
                 assert isinstance(pydtnn_values, np.ndarray)
             # try:

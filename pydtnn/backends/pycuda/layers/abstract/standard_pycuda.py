@@ -10,7 +10,7 @@ from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
                                    PYDTNN_OPS_EVENTS, OpsEventEnum)
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import TensorFormat, format_transpose
-from pydtnn.utils.tensor_array import TensorArray
+from pydtnn.utils.tensor_array import DescriptorType, MemoryType, TensorArray
 
 __all__ = ("AbstractConv2DStandardPycuda",)
 
@@ -61,24 +61,45 @@ class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
                 raise NotImplementedError(f"{self.model.tensor_format} format not implemented.")
 
         self.im2_x = TensorArray.new_zeros(
-            im2_x_shape, self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype
+            im2_x_shape,
+            self.model.dtype,
+            tensor_format=self.model.tensor_format,
+            mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+            desc_type=DescriptorType.TENSOR
         )
+        self.memory_used += self.im2_x.nbytes
         self.x_2im_var = TensorArray.new_zeros(
-            x_2im_var_shape, self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype
+            x_2im_var_shape,
+            self.model.dtype,
+            tensor_format=self.model.tensor_format,
+            mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+            desc_type=DescriptorType.TENSOR
         )
-
+        self.memory_used += self.x_2im_var.nbytes
         self.y = TensorArray.new_zeros(
             (self.model.batch_size, *self.shape),
             self.model.dtype,
-            self.model.tensor_format,
-            self.model.cudnn_dtype,
+            tensor_format=self.model.tensor_format,
+            mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+            desc_type=DescriptorType.TENSOR
         )
+        self.memory_used += self.y.nbytes
         self.dw = TensorArray.new_zeros(
-            dw_shape, self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype
+            dw_shape,
+            self.model.dtype,
+            tensor_format=self.model.tensor_format,
+            mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+            desc_type=DescriptorType.TENSOR
         )
+        self.memory_used += self.dw.nbytes
         self.dx = TensorArray.new_zeros(
-            self.x.ary.shape, self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype
+            self.x.ary.shape,
+            self.model.dtype,
+            tensor_format=self.model.tensor_format,
+            mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+            desc_type=DescriptorType.TENSOR
         )
+        self.memory_used += self.dx.nbytes
 
     @override
     def _export_weights_dw(self, key: str) -> Any:

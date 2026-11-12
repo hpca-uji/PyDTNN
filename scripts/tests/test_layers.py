@@ -20,7 +20,7 @@ from pydtnn.optimizers.sgd import SGD
 from pydtnn.utils import rand
 from pydtnn.utils.tensor import TensorFormat
 
-from pydtnn.utils.tensor_array import TensorArray
+from pydtnn.utils.tensor_array import DescriptorType, MemoryType, TensorArray
 
 # setting random seed
 SEED = 1234
@@ -125,13 +125,18 @@ def test_layers_activations(_x: np.ndarray, opt: Optimizer) -> None:
                 model.add(Flatten())
             model.add(test_elem)
             model.mode = ModelMode.TRAIN
-            model._model_init()
-            opt._model_init(model.get_all_layers(model.layers))
+            model.optimizer = opt
+            model._ensure_runnable()
 
             x = np.copy(_x)
 
-            if KWARGS["use_cudnn"]:
-                x = TensorArray.to_gpu(x, model.tensor_format, model.cudnn_dtype)
+            if KWARGS["use_gpu"]:
+                x = TensorArray.from_host(
+                    x,
+                    tensor_format=model.tensor_format,
+                    mem_type=MemoryType.GLOBAL if model.use_gpudirect else MemoryType.DEVICE,
+                    desc_type=DescriptorType.TENSOR
+                )
 
             t_forward = 0.0
             t_backward = 0.0
@@ -148,7 +153,7 @@ def test_layers_activations(_x: np.ndarray, opt: Optimizer) -> None:
                         x = layer.forward(x)
                     t_forward += time() - t
 
-                if not KWARGS["use_cudnn"]:
+                if not KWARGS["use_gpu"]:
                     x = x.copy()
 
                 if True:
@@ -193,8 +198,13 @@ def test_add_concat(_x: np.ndarray, opt: Optimizer) -> None:
         t_backward = 0
         t_opt = 0
 
-        if KWARGS["use_cudnn"]:
-            x = TensorArray.to_gpu(x, model.tensor_format, model.cudnn_dtype)
+        if KWARGS["use_gpu"]:
+            x = TensorArray.from_host(
+                x,
+                tensor_format=model.tensor_format,
+                mem_type=MemoryType.GLOBAL if model.use_gpudirect else MemoryType.DEVICE,
+                desc_type=DescriptorType.TENSOR
+            )
 
         for _ in range(NUM_REPETITIONS):
             if True:
@@ -207,7 +217,7 @@ def test_add_concat(_x: np.ndarray, opt: Optimizer) -> None:
                     x = layer.forward(x)
                 t_forward += time() - t
 
-            if not KWARGS["use_cudnn"]:
+            if not KWARGS["use_gpu"]:
                 x = x.copy()
 
             if True:
