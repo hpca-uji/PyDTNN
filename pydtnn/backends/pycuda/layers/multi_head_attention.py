@@ -10,7 +10,7 @@ import numpy as np
 
 from pycuda import driver as drv
 from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
-from pydtnn.layers.multi_head_attention import MultiHeadAttention
+from pydtnn.layers.multi_head_attention_nacho import MultiHeadAttentionNacho
 from pydtnn.libs import cudnn as cudnn
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor_array import DescriptorType, MemoryType, TensorArray
@@ -20,7 +20,7 @@ __all__ = ("MultiHeadAttentionPycuda",)
 logger = logging.getLogger(__name__)
 
 
-class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
+class MultiHeadAttentionPycuda(MultiHeadAttentionNacho[TensorArray], LayerPycuda):
     """PyCUDA implementation of the Multi-Head Attention layer using cuDNN."""
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:

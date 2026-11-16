@@ -68,7 +68,7 @@ class Conv2DBatchNormalizationTestCase(Conv2DTestCase):
             biases_initializer=zeros,
         )
         bn_chain = BatchNormalization()
-        chain = ConcatenationBlock([conv2d_chain, bn_chain])
+        chain = ConcatenationBlock([[conv2d_chain, bn_chain]])
         model_chain.add(chain)
 
         params_fuse = deepcopy(params_chain)

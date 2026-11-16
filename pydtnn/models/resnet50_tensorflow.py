@@ -53,32 +53,32 @@ def resnet50_tensorflow(input_shape: ArrayShape, output_shape: ArrayShape) -> Se
             _(
                 AdditionBlock(
                     [
-                        Conv2D(
-                            nfilters=n_filt,
-                            filter_shape=(1, 1),
-                            stride=1,
-                            weights_initializer=he_uniform,
-                        ),
-                        BatchNormalization(),
-                        Relu(),
-                        Conv2D(
-                            nfilters=n_filt,
-                            filter_shape=(3, 3),
-                            stride=stride,
-                            padding=1,
-                            weights_initializer=he_uniform,
-                        ),
-                        BatchNormalization(),
-                        Relu(),
-                        Conv2D(
-                            nfilters=n_filt * expansion,
-                            filter_shape=(1, 1),
-                            stride=1,
-                            weights_initializer=he_uniform,
-                        ),
-                        BatchNormalization(),
-                    ],
-                    (
+                        [
+                            Conv2D(
+                                nfilters=n_filt,
+                                filter_shape=(1, 1),
+                                stride=1,
+                                weights_initializer=he_uniform,
+                            ),
+                            BatchNormalization(),
+                            Relu(),
+                            Conv2D(
+                                nfilters=n_filt,
+                                filter_shape=(3, 3),
+                                stride=stride,
+                                padding=1,
+                                weights_initializer=he_uniform,
+                            ),
+                            BatchNormalization(),
+                            Relu(),
+                            Conv2D(
+                                nfilters=n_filt * expansion,
+                                filter_shape=(1, 1),
+                                stride=1,
+                                weights_initializer=he_uniform,
+                            ),
+                            BatchNormalization(),
+                        ],
                         [
                             Conv2D(
                                 nfilters=n_filt * expansion,
@@ -90,7 +90,7 @@ def resnet50_tensorflow(input_shape: ArrayShape, output_shape: ArrayShape) -> Se
                         ]
                         if r == 0 or stride != 1
                         else []
-                    ),
+                    ]
                 )
             )
             _(Relu())

@@ -44,25 +44,25 @@ def resnet18(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Laye
             _(
                 AdditionBlock(
                     [
-                        Conv2D(
-                            nfilters=n_filt,
-                            filter_shape=(3, 3),
-                            stride=stride,
-                            padding=1,
-                            weights_initializer=he_uniform,
-                        ),
-                        BatchNormalization(),
-                        Relu(),
-                        Conv2D(
-                            nfilters=n_filt,
-                            filter_shape=(3, 3),
-                            stride=1,
-                            padding=1,
-                            weights_initializer=he_uniform,
-                        ),
-                        BatchNormalization(),
-                    ],
-                    (
+                        [
+                            Conv2D(
+                                nfilters=n_filt,
+                                filter_shape=(3, 3),
+                                stride=stride,
+                                padding=1,
+                                weights_initializer=he_uniform,
+                            ),
+                            BatchNormalization(),
+                            Relu(),
+                            Conv2D(
+                                nfilters=n_filt,
+                                filter_shape=(3, 3),
+                                stride=1,
+                                padding=1,
+                                weights_initializer=he_uniform,
+                            ),
+                            BatchNormalization(),
+                        ],
                         [
                             Conv2D(
                                 nfilters=n_filt,
@@ -71,10 +71,9 @@ def resnet18(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Laye
                                 weights_initializer=he_uniform,
                             ),
                             BatchNormalization(),
-                        ]
-                        if stride != 1
+                        ] if stride != 1
                         else []
-                    ),
+                    ]
                 )
             )
             _(Relu())

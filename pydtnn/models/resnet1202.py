@@ -44,25 +44,25 @@ def resnet1202(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[La
             _(
                 AdditionBlock(
                     [
-                        Conv2D(
-                            nfilters=n_filt,
-                            filter_shape=(3, 3),
-                            stride=stride,
-                            padding=1,
-                            weights_initializer=he_uniform,
-                        ),
-                        BatchNormalization(),
-                        Relu(),
-                        Conv2D(
-                            nfilters=n_filt,
-                            filter_shape=(3, 3),
-                            stride=1,
-                            padding=1,
-                            weights_initializer=he_uniform,
-                        ),
-                        BatchNormalization(),
-                    ],
-                    (
+                        [
+                            Conv2D(
+                                nfilters=n_filt,
+                                filter_shape=(3, 3),
+                                stride=stride,
+                                padding=1,
+                                weights_initializer=he_uniform,
+                            ),
+                            BatchNormalization(),
+                            Relu(),
+                            Conv2D(
+                                nfilters=n_filt,
+                                filter_shape=(3, 3),
+                                stride=1,
+                                padding=1,
+                                weights_initializer=he_uniform,
+                            ),
+                            BatchNormalization(),
+                        ],
                         [
                             Conv2D(
                                 nfilters=n_filt,
@@ -74,7 +74,7 @@ def resnet1202(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[La
                         ]
                         if r == 0 or stride != 1
                         else []
-                    ),
+                    ]
                 )
             )
             _(Relu())

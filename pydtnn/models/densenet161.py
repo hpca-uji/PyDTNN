@@ -54,25 +54,27 @@ def densenet161(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[L
             _(
                 ConcatenationBlock(
                     [
-                        BatchNormalization(),
-                        Relu(),
-                        Conv2D(
-                            nfilters=4 * growth_rate,
-                            filter_shape=(1, 1),
-                            use_bias=False,
-                            weights_initializer=he_uniform,
-                        ),
-                        BatchNormalization(),
-                        Relu(),
-                        Conv2D(
-                            nfilters=growth_rate,
-                            filter_shape=(3, 3),
-                            padding=1,
-                            use_bias=False,
-                            weights_initializer=he_uniform,
-                        ),
-                    ],
-                    [],
+                        [
+                            BatchNormalization(),
+                            Relu(),
+                            Conv2D(
+                                nfilters=4 * growth_rate,
+                                filter_shape=(1, 1),
+                                use_bias=False,
+                                weights_initializer=he_uniform,
+                            ),
+                            BatchNormalization(),
+                            Relu(),
+                            Conv2D(
+                                nfilters=growth_rate,
+                                filter_shape=(3, 3),
+                                padding=1,
+                                use_bias=False,
+                                weights_initializer=he_uniform,
+                            ),
+                        ],
+                        [],
+                    ]
                 )
             )
 

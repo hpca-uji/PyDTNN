@@ -23,6 +23,7 @@ TRAIN_NSAMPLES = 10000
 TEST_NSAMPLES = 2000
 INPUT_SHAPE = (1, 1, 1)
 OUTPUT_SHAPE = (1,)
+# TODO: RECUERDA AÑADIR LO DE "--seq-length"
 
 
 class IWSLT(Dataset):
@@ -175,7 +176,8 @@ class IWSLT(Dataset):
             case Dataset.Part.TEST:
                 lines1, lines2 = self.lines1_test, self.lines2_test
 
-        batch_size = self.model.batch_size
+        # batch_size = self.model.batch_size
+        batch_size = 1
 
         for i in range(self.train_val_nsamples // batch_size):
             window = (i * batch_size, (i + 1) * batch_size)
@@ -196,8 +198,9 @@ class IWSLT(Dataset):
                     tgt_embeddings[i, j] = word.vector
                     tgt_mask[i, j, 0: j + 1] = [1] * (j + 1)
 
-            x = [src_embeddings, src_mask, tgt_embeddings, tgt_mask]
-            y = tgt_embeddings
+            x = [src_embeddings[0], src_mask[0], tgt_embeddings[0], tgt_mask[0]]
+            y = tgt_embeddings[0]
+            x = np.array(x, dtype=np.object_, ndmax=1)
             yield x, y
 
     def _synthetic_data_generator(

@@ -42,29 +42,31 @@ def tsunamis_eflows_uma(input_shape: ArrayShape, output_shape: ArrayShape) -> Se
         _(
             ConcatenationBlock(
                 [
-                    Conv2D(
-                        nfilters=n3x3,
-                        filter_shape=(3, 3),
-                        padding=1,
-                        weights_initializer=he_uniform,
-                    ),
-                    Conv2D(
-                        nfilters=n3x3red,
-                        filter_shape=(3, 3),
-                        padding=1,
-                        weights_initializer=he_uniform,
-                    ),
-                    MaxPool2D(pool_shape=(3, 3), stride=2, padding=1),
-                ],
-                [
-                    Conv2D(
-                        nfilters=n2x2,
-                        filter_shape=(3, 3),
-                        padding=1,
-                        stride=2,
-                        weights_initializer=he_uniform,
-                    )
-                ],
+                    [
+                        Conv2D(
+                            nfilters=n3x3,
+                            filter_shape=(3, 3),
+                            padding=1,
+                            weights_initializer=he_uniform,
+                        ),
+                        Conv2D(
+                            nfilters=n3x3red,
+                            filter_shape=(3, 3),
+                            padding=1,
+                            weights_initializer=he_uniform,
+                        ),
+                        MaxPool2D(pool_shape=(3, 3), stride=2, padding=1),
+                    ],
+                    [
+                        Conv2D(
+                            nfilters=n2x2,
+                            filter_shape=(3, 3),
+                            padding=1,
+                            stride=2,
+                            weights_initializer=he_uniform,
+                        )
+                    ],
+                ]
             )
         )
 
@@ -74,26 +76,28 @@ def tsunamis_eflows_uma(input_shape: ArrayShape, output_shape: ArrayShape) -> Se
         _(
             ConcatenationBlock(
                 [
-                    Conv2D(
-                        nfilters=n3x3,
-                        filter_shape=(3, 3),
-                        padding=1,
-                        weights_initializer=he_uniform,
-                    ),
-                    Conv2D(
-                        nfilters=n3x3red,
-                        filter_shape=(3, 3),
-                        padding=1,
-                        weights_initializer=he_uniform,
-                    ),
-                    Conv2D(
-                        nfilters=n3x3fin,
-                        filter_shape=(3, 3),
-                        padding=1,
-                        weights_initializer=he_uniform,
-                    ),
-                ],
-                [],
+                    [
+                        Conv2D(
+                            nfilters=n3x3,
+                            filter_shape=(3, 3),
+                            padding=1,
+                            weights_initializer=he_uniform,
+                        ),
+                        Conv2D(
+                            nfilters=n3x3red,
+                            filter_shape=(3, 3),
+                            padding=1,
+                            weights_initializer=he_uniform,
+                        ),
+                        Conv2D(
+                            nfilters=n3x3fin,
+                            filter_shape=(3, 3),
+                            padding=1,
+                            weights_initializer=he_uniform,
+                        ),
+                    ],
+                    [],
+                ]
             )
         )
 

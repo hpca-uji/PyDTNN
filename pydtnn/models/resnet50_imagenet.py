@@ -48,8 +48,8 @@ def resnet50_imagenet(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequ
         for r in range(res_blocks):
             if r > 0:
                 stride = 1
-            _(
-                AdditionBlock(
+            _(AdditionBlock(
+                [
                     [
                         Conv2D(
                             nfilters=n_filt,
@@ -76,21 +76,19 @@ def resnet50_imagenet(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequ
                         ),
                         BatchNormalization(),
                     ],
-                    (
-                        [
-                            Conv2D(
-                                nfilters=n_filt * expansion,
-                                filter_shape=(1, 1),
-                                stride=stride,
-                                weights_initializer=he_uniform,
-                            ),
-                            BatchNormalization(),
-                        ]
-                        if r == 0 or stride != 1
-                        else []
-                    ),
-                )
-            )
+                    [
+                        Conv2D(
+                            nfilters=n_filt * expansion,
+                            filter_shape=(1, 1),
+                            stride=stride,
+                            weights_initializer=he_uniform,
+                        ),
+                        BatchNormalization(),
+                    ]
+                    if r == 0 or stride != 1
+                    else []
+                ]
+            ))
             _(Relu())
 
     _(AveragePool2D(pool_shape=(0, 0)))  # Global average pooling 2D

@@ -4,8 +4,8 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from pydtnn.backends.numpy.layers.abstract.block_layer import AbstractBlockLayerNumpy
-from pydtnn.backends.numpy.layers.decoder import Decoder
-from pydtnn.backends.numpy.layers.encoder import Encoder
+from pydtnn.backends.numpy.layers.decoder_nacho import DecoderNacho
+from pydtnn.backends.numpy.layers.encoder_nacho import EncoderNacho
 from pydtnn.layers.encoder_decoder import EncoderDecoder
 from pydtnn.libs import numpy as np
 from pydtnn.utils.constants import ArrayShape
@@ -26,7 +26,7 @@ class EncoderDecoderNumpy(EncoderDecoder[np.ndarray], AbstractBlockLayerNumpy):
         """Initializes the EncoderDecoderNumpy layer with encoder and decoder stacks."""
         super().__init__(*args, **kwargs)
         self.encoder = [
-            Encoder[np.ndarray](
+            EncoderNacho[np.ndarray](
                 embedl=self.embedl,
                 d_k=self.d_k,
                 d_ff=self.d_ff,
@@ -36,7 +36,7 @@ class EncoderDecoderNumpy(EncoderDecoder[np.ndarray], AbstractBlockLayerNumpy):
             for _ in range(self.enc_layers)
         ]
         self.decoder = [
-            Decoder[np.ndarray](
+            DecoderNacho[np.ndarray](
                 embedl=self.embedl,
                 d_k=self.d_k,
                 d_ff=self.d_ff,
@@ -88,7 +88,13 @@ class EncoderDecoderNumpy(EncoderDecoder[np.ndarray], AbstractBlockLayerNumpy):
             x, y = x
             x_mask = y_mask = None
         else:
-            x, x_mask, y, y_mask = x
+            try:
+                x, x_mask, y, y_mask = x
+            except Exception as e:
+                # print(e)
+                # TODO: CHECK THIS!!
+                # breakpoint()
+                e = e  # TODO REMOVE AFTER DEBUG!
         # print(x.shape, x_mask.shape, y.shape, y_mask.shape)
         for i in range(self.enc_layers):  # Encoding layers
             x = self.encoder[i].forward(x, x_mask)  # pyright: ignore[reportCallIssue] (encoder has multiple parameters)
