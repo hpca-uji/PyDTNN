@@ -1,26 +1,39 @@
 """Dynamic library loader utilities"""
 
+import errno
 import ctypes
-import ctypes.util
 import functools
 import itertools
 import logging
+import os
+import shutil
 import sys
+from pathlib import Path
 from collections.abc import Iterable
 from importlib import metadata, resources
 from importlib.resources.abc import Traversable
-from pathlib import Path
 
 from pydtnn import package_name
 
 __all__ = (
+    "top_levels",
     "lib_names",
     "list_distribution",
     "list_resources",
     "load_library",
+    "which"
 )
 
 logger = logging.getLogger(__name__)
+
+
+def top_levels(name: str) -> Iterable[str]:
+    """Get top levels from package"""
+    dists = metadata.packages_distributions()
+
+    for top, pkgs in dists.items():
+        if name in pkgs:
+            yield top
 
 
 def lib_names(name: str, ver: str = "") -> Iterable[str]:
@@ -105,14 +118,13 @@ def load_library(name: str, ver: str = "", src: str = package_name) -> ctypes.CD
 
     def entry_map(entries: Iterable) -> dict:
         return {
-            entry.name: entry
+            entry.name: str(entry)
             for entry in entries
             if isinstance(entry, Path) and entry.name in libs
         }
 
-    root = src.split(".", 1)[0]
     dist = entry_map(list_distribution(src))
-    resrc = entry_map(list_resources(root))
+    resrc = entry_map(itertools.chain.from_iterable(list_resources(top) for top in top_levels(src)))
 
     # Find library
     logger.debug(f"DLL finding {name!r} ({ver or 'any'} in {src!r} preferred)")
@@ -132,13 +144,44 @@ def load_library(name: str, ver: str = "", src: str = package_name) -> ctypes.CD
         except Exception:
             pass
         else:
-            logger.debug(f"DLL loaded {lib!r} (from environment)")
+            logger.debug(f"DLL loaded {lib!r} (from system)")
             return module
 
-    # Fallback
-    if lib := ctypes.util.find_library(name):
-        logger.debug(f"DLL loaded {name!r} (from system)")
-        return loader(lib)
-
     logger.debug(f"DLL missing {name!r}")
-    raise ModuleNotFoundError(f"No library named {name!r}", name=name, path=src)
+    raise FileNotFoundError(errno.ENOENT, f"No library named {name!r}", name)
+
+
+@functools.cache
+def which(name: str, mode: int = os.F_OK | os.X_OK, src: str = package_name) -> str:
+    """
+    Find an executable
+
+    src: source package
+
+    NOTE: Supports only concrete sources
+    """
+
+    def entry_exe(entries: Iterable) -> Iterable:
+        for entry in entries:
+            if isinstance(entry, Path) and entry.name == name and os.access(entry, mode):
+                yield str(entry)
+
+    dist = entry_exe(list_distribution(src))
+    resrc = entry_exe(itertools.chain.from_iterable(list_resources(top) for top in top_levels(src)))
+
+    # Find executable
+    logger.debug(f"EXE finding {name!r} ({src or 'any'} preferred)")
+    for entry in dist:
+        logger.debug(f"EXE found {name!r} (from distribution)")
+        return entry
+
+    for entry in resrc:
+        logger.debug(f"EXE found {name!r} (from resources)")
+        return entry
+
+    if entry := shutil.which(name):
+        logger.debug(f"EXE found {name!r} (from system)")
+        return entry
+
+    logger.debug(f"EXE missing {name!r}")
+    raise FileNotFoundError(errno.ENOENT, f"No executable named {name!r}", name)

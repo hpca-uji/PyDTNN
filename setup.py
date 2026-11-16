@@ -15,7 +15,7 @@ from setuptools.command.build_ext import build_ext
 PACKAGE = Path("pydtnn")
 
 EXTENSION_ARGS: dict[str, Any] = {
-    "extra_compile_args": ["-fopenmp", "-O2", "-g0"],
+    "extra_compile_args": ["-fopenmp", "-O3", "-g0"],
     "extra_link_args": ["-fopenmp", "-s"],
     "include_dirs": [numpy.get_include()],
 }

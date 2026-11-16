@@ -1,7 +1,6 @@
 """PyDTNN environment initialization"""
 
 import atexit
-import itertools
 import logging
 import os
 import platform
@@ -34,6 +33,8 @@ __all__ = (
 
 logger = logging.getLogger(__name__)
 
+
+# CONSTANTS
 errors = []
 host_uuid = uuid.getnode()
 package_name = __name__
@@ -59,6 +60,15 @@ except ModuleNotFoundError:
     pass  # unavailable
 else:
     cpu_affinity = tuple(Process().cpu_affinity())
+
+# OPTIONAL PATHS
+try:
+    from pydtnn.utils.libs import which
+    nvcc = which("nvcc", src="nvidia-cuda-nvcc")
+except FileNotFoundError:
+    pass
+else:
+    os.environ["PATH"] = f"{os.path.dirname(nvcc)}{os.pathsep}{os.environ["PATH"]}"
 
 # OPTIONAL IMPORTS
 try:
@@ -264,8 +274,8 @@ metadata = [
         "packages": {
             platform.python_implementation().lower(): platform.python_version(),
             **{
-                pack: libdata.version(pack)
-                for pack in itertools.chain.from_iterable(libdata.packages_distributions().values())
+                dist.name: dist.version
+                for dist in libdata.distributions()
             },
         },
         "environ": dict(os.environ),
