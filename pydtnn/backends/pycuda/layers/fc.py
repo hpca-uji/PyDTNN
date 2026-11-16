@@ -232,7 +232,7 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
             self.x.ptr_voidp,
             lda,
             beta,
-            self.dw.ptr_voidp if self.model.use_gpudirect else self.dw.ptr_voidp,  # pyright: ignore[reportArgumentType]
+            self.dw.ptr_voidp,
             ldc,
             self.model.dtype,
         )
@@ -260,7 +260,7 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
                 self.one_vec_gpu.ptr_voidp,
                 inc_x,
                 beta,
-                self.db.ptr_voidp if self.model.use_gpudirect else self.db.ptr_voidp,  # pyright: ignore[reportArgumentType]
+                self.db.ptr_voidp,
                 inc_y,
                 self.model.dtype,
             )
