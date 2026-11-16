@@ -3,12 +3,9 @@
 from __future__ import annotations
 
 import functools
-from typing import TYPE_CHECKING
 
 from pycuda.compiler import SourceModule
-
-if TYPE_CHECKING:
-    from pycuda.driver import Function, Module
+from pycuda.driver import Function, Module
 
 from pydtnn import errors, pycuda_device, cublas_handle, cudnn_handle
 from pydtnn.abstract.base import Base
