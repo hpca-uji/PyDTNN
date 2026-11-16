@@ -21,7 +21,7 @@ __all__ = ("BasePycuda",)
 class BasePycuda(UsesCudaCode[Module, Function], Base[TensorArray]):
     """Abstract base class for PyCUDA-based operations in PyDTNN."""
 
-    _cuda_kernel = staticmethod(functools.partial(SourceModule))
+    _cuda_kernel = staticmethod(functools.partial(SourceModule, nvcc="nvcc"))
 
     def _model_init(self) -> None:
         """Initializes the model and associated CUDA kernels."""

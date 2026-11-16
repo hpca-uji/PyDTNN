@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from pydtnn import (mpi_comm, cublas_handle, cudnn, cudnn_handle,
+from pydtnn import (mpi_comm, cublas_handle, cudnn_handle,
                     nccl, nccl_comm, pycuda_stream)
 from pydtnn.datasets import select as select_dataset
 from pydtnn.layers.identity import Identity
