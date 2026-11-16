@@ -5,7 +5,6 @@ from typing import Any
 
 import numpy as np
 from numpy import ndarray
-from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 
 from pydtnn.backends.pycuda.abstract.layerable import LayerablePycuda
 from pydtnn.layers.abstract.layer import Layer
@@ -33,7 +32,7 @@ class LayerPycuda(Layer[TensorArray], LayerablePycuda):
         self.dw_cpu: ndarray = None  # pyright: ignore[reportAttributeAccessIssue]
         self.db_cpu: ndarray = None  # pyright: ignore[reportAttributeAccessIssue]
         self.one_vec_cpu: ndarray = None  # pyright: ignore[reportAttributeAccessIssue]
-        self.one_vec_gpu: gpuarray.GPUArray = None
+        self.one_vec_gpu: TensorArray = None
         self.grid: tuple[int, int, int] = None  # pyright: ignore[reportAttributeAccessIssue]
         self.block: tuple[int, int, int] = None  # pyright: ignore[reportAttributeAccessIssue]
 

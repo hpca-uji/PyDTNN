@@ -20,12 +20,7 @@ from pydtnn.layers.identity import Identity
 from pydtnn.model import Model
 from pydtnn.model.base import ModelMode
 from pydtnn.utils import rand
-from pydtnn.utils.tensor_array import TensorArray
-
-try:
-    from pycuda import gpuarray
-except BaseException:
-    gpuarray = None
+from pydtnn.utils.tensor_array import DescriptorType, MemoryType, TensorArray
 
 __all__ = ("main",)
 
@@ -124,11 +119,12 @@ def main() -> None:
 
         x = deepcopy(dataset)
         if KWARGS["use_cudnn"]:
-            assert gpuarray
-            _dataset = TensorArray(
-                gpu_arr=gpuarray.zeros(shape=dataset.shape, dtype=KWARGS["dtype"]),
+            _dataset = TensorArray.zeros(
+                dataset.shape,
+                model.dtype,
                 tensor_format=model.tensor_format,
-                cudnn_dtype=model.cudnn_dtype,
+                mem_type=MemoryType.GLOBAL if model.use_gpudirect else MemoryType.DEVICE,
+                desc_type=DescriptorType.TENSOR
             )
             _dataset.set(dataset)
             x = _dataset

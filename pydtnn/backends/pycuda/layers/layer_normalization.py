@@ -3,7 +3,6 @@
 import logging
 
 import numpy as np
-from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 
 from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
 from pydtnn.layers.layer_normalization import LayerNormalization
@@ -26,14 +25,14 @@ class LayerNormalizationPycuda(LayerNormalization[TensorArray], LayerPycuda):
         self.epsilon = np.float32(self.epsilon)
 
         # Shape same as x input
-        self.y = TensorArray.new_zeros(
+        self.y = TensorArray.zeros(
             x.shape,
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
             desc_type=DescriptorType.TENSOR
         )
-        self.dx = TensorArray.new_zeros(
+        self.dx = TensorArray.zeros(
             x.shape,
             self.model.dtype,
             tensor_format=self.model.tensor_format,
@@ -44,27 +43,27 @@ class LayerNormalizationPycuda(LayerNormalization[TensorArray], LayerPycuda):
         # Shape same as x input, but batch = 1. For scaling at the end: output =
         # scale * post_normalization + bias
         gamma_shape = (int(np.prod([x.shape[i] for i in self.axis])),)
-        self.gamma: TensorArray = TensorArray.from_host(
+        self.gamma: TensorArray = TensorArray.asarray(
             np.full(gamma_shape, self.gamma_init_val, self.model.dtype),
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
             desc_type=DescriptorType.NONE
         )
-        self.beta: TensorArray = TensorArray.new_zeros(
+        self.beta: TensorArray = TensorArray.zeros(
             gamma_shape,
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
             desc_type=DescriptorType.NONE
         )
-        self.dgamma: TensorArray = TensorArray.new_zeros(
+        self.dgamma: TensorArray = TensorArray.zeros(
             gamma_shape,
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
             desc_type=DescriptorType.NONE
         )
-        self.dbeta: TensorArray = TensorArray.new_zeros(
+        self.dbeta: TensorArray = TensorArray.zeros(
             gamma_shape,
             self.model.dtype,
             tensor_format=self.model.tensor_format,
@@ -77,7 +76,7 @@ class LayerNormalizationPycuda(LayerNormalization[TensorArray], LayerPycuda):
         mean_shape = (
             int(np.prod(x.shape) / np.prod([x.shape[i] for i in self.axis])),
         )  # (*x.shape[:-2], 1, 1)
-        self.std: TensorArray = TensorArray.new_zeros(
+        self.std: TensorArray = TensorArray.zeros(
             mean_shape,
             self.model.dtype,
             tensor_format=self.model.tensor_format,
@@ -85,7 +84,7 @@ class LayerNormalizationPycuda(LayerNormalization[TensorArray], LayerPycuda):
             desc_type=DescriptorType.NONE
         )
         out_shape = x.shape
-        self.xn: TensorArray = TensorArray.new_zeros(
+        self.xn: TensorArray = TensorArray.zeros(
             out_shape,
             self.model.dtype,
             tensor_format=self.model.tensor_format,

@@ -4,7 +4,6 @@ import logging
 from typing import Any, override
 
 import numpy as np
-from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 
 from pydtnn.backends.pycuda.layers.abstract.conv_2d import AbstractConv2DPycuda
 from pydtnn.libs import cudnn as cudnn
@@ -12,7 +11,7 @@ from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
                                    PYDTNN_OPS_EVENTS, OpsEventEnum)
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import TensorFormat, format_transpose
-from pydtnn.utils.tensor_array import TensorArray
+from pydtnn.utils.tensor_array import DescriptorType, MemoryType, TensorArray
 
 __all__ = ("Conv2DPycuda",)
 
@@ -38,11 +37,21 @@ class Conv2DPycuda(AbstractConv2DPycuda):
         super()._model_init(prev_shape, x)
 
         # Activations y
-        y_gpu = gpuarray.zeros((self.model.batch_size, *self.shape), self.model.dtype)
-        self.y = TensorArray(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.y = TensorArray.zeros(
+            (self.model.batch_size, *self.shape),
+            self.model.dtype,
+            tensor_format=self.model.tensor_format,
+            mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+            desc_type=DescriptorType.TENSOR
+        )
         # Derivative dx
-        dx_gpu = gpuarray.zeros(self.x.shape, self.model.dtype)
-        self.dx = TensorArray(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.dx = TensorArray.zeros(
+            self.x.shape,
+            self.model.dtype,
+            tensor_format=self.model.tensor_format,
+            mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+            desc_type=DescriptorType.TENSOR
+        )
 
         self.memory_used += self.y.nbytes + self.dx.nbytes
 

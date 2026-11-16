@@ -5,12 +5,11 @@ import math
 from typing import Any
 
 import numpy as np
-from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 
 from pydtnn.activations.log import Log
 from pydtnn.backends.pycuda.activations.abstract.activation import ActivationPycuda
 from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
-from pydtnn.utils.tensor_array import TensorArray
+from pydtnn.utils.tensor_array import DescriptorType, MemoryType, TensorArray
 
 __all__ = ("LogPycuda",)
 
@@ -32,15 +31,21 @@ class LogPycuda(Log[TensorArray], ActivationPycuda):
         super()._model_init(prev_shape, x)
 
         # Activation output y = log(x)
-        y_gpu = gpuarray.zeros((self.model.batch_size, *self.shape), self.model.dtype)
-        self.y = TensorArray(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.y = TensorArray.zeros(
+            (self.model.batch_size, *self.shape),
+            self.model.dtype,
+            tensor_format=self.model.tensor_format,
+            mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+            desc_type=DescriptorType.TENSOR
+        )
 
         # Derivative dx
-        dx_gpu = gpuarray.zeros((self.model.batch_size, *self.shape), self.model.dtype)
-        self.dx = TensorArray(
-            dx_gpu,
-            self.model.tensor_format,
-            self.model.cudnn_dtype,
+        self.dx = TensorArray.zeros(
+            (self.model.batch_size, *self.shape),
+            self.model.dtype,
+            tensor_format=self.model.tensor_format,
+            mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+            desc_type=DescriptorType.TENSOR
         )
 
         self.memory_used += self.y.nbytes + self.dx.nbytes

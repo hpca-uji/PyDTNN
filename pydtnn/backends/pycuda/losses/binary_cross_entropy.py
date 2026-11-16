@@ -2,12 +2,11 @@
 
 import logging
 
-import numpy as np
 from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 
 from pydtnn.backends.pycuda.losses.abstract.loss import LossPycuda
 from pydtnn.losses.binary_cross_entropy import BinaryCrossEntropy
-from pydtnn.utils.tensor_array import TensorArray
+from pydtnn.utils.tensor_array import DescriptorType, MemoryType, TensorArray
 
 __all__ = ("BinaryCrossEntropyPycuda",)
 
@@ -21,8 +20,12 @@ class BinaryCrossEntropyPycuda(LossPycuda, BinaryCrossEntropy[TensorArray]):
         """Initializes GPU memory buffers and model-dependent parameters."""
         super()._model_init()
         # NOTE: the model must be executed before this one.
-        self.argmax: gpuarray.GPUArray = gpuarray.zeros(
-            (self.model.batch_size,), np.dtype(self.model.dtype)
+        self.argmax = TensorArray.zeros(
+            (self.model.batch_size,),
+            self.model.dtype,
+            tensor_format=self.model.tensor_format,
+            mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+            desc_type=DescriptorType.NONE
         )
         self.memory_used += self.argmax.nbytes
 
@@ -46,7 +49,7 @@ class BinaryCrossEntropyPycuda(LossPycuda, BinaryCrossEntropy[TensorArray]):
             self.loss,
             self.dx.ary,
             self.weights.ary,
-            self.argmax,
+            self.argmax.ary,
             batch_size,
             self.shape[1],
             self.eps,
@@ -54,9 +57,9 @@ class BinaryCrossEntropyPycuda(LossPycuda, BinaryCrossEntropy[TensorArray]):
             block=self.block,
             stream=self.model.pycuda_stream,
         )
-        sum_weights: float = gpuarray.sum(self.argmax[:batch_size]).get()
+        sum_weights: float = gpuarray.sum(self.argmax[:batch_size].ary).get()
 
-        loss = -gpuarray.sum(self.loss[:batch_size]).get() / sum_weights
+        loss = -gpuarray.sum(self.loss[:batch_size].ary).get() / sum_weights
         self.dx /= sum_weights
 
         return loss.item(), self.dx

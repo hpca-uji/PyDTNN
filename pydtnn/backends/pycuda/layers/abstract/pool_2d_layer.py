@@ -3,8 +3,6 @@
 import logging
 from typing import Any
 
-from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
-
 from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
 from pydtnn.layers.abstract.layer import ParameterException
 from pydtnn.layers.abstract.pool_2d_layer import AbstractPool2DLayer
@@ -13,7 +11,7 @@ from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
                                    PYDTNN_OPS_EVENTS, OpsEventEnum)
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.performance_models import col2im_time, im2col_time
-from pydtnn.utils.tensor_array import TensorArray
+from pydtnn.utils.tensor_array import DescriptorType, MemoryType, TensorArray
 
 __all__ = ("AbstractPool2DLayerPycuda",)
 
@@ -77,13 +75,22 @@ class AbstractPool2DLayerPycuda(AbstractPool2DLayer[TensorArray], LayerPycuda):
         self.shape = self.model.encode_shape((self.co, self.ho, self.wo))
 
         # Activations y
-        y_gpu = gpuarray.zeros((self.model.batch_size, *self.shape), self.model.dtype)
-        self.y = TensorArray(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.y = TensorArray.zeros(
+            (self.model.batch_size, *self.shape),
+            self.model.dtype,
+            tensor_format=self.model.tensor_format,
+            mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+            desc_type=DescriptorType.TENSOR
+        )
         self.memory_used += self.y.nbytes
 
         # Derivative dx
-        dx_gpu = gpuarray.zeros(self.x.shape, self.model.dtype)
-        self.dx = TensorArray(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.dx = TensorArray.zeros(
+            self.x.shape, self.model.dtype,
+            tensor_format=self.model.tensor_format,
+            mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+            desc_type=DescriptorType.TENSOR
+        )
         self.memory_used += self.dx.nbytes
 
         self.fwd_time = im2col_time(

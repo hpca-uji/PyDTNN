@@ -7,7 +7,7 @@ from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 
 from pydtnn.backends.pycuda.metrics.abstract.metric import MetricPycuda
 from pydtnn.metrics.categorical_accuracy import CategoricalAccuracy
-from pydtnn.utils.tensor_array import TensorArray
+from pydtnn.utils.tensor_array import DescriptorType, MemoryType, TensorArray
 
 __all__ = ("CategoricalAccuracyPycuda",)
 
@@ -20,7 +20,13 @@ class CategoricalAccuracyPycuda(CategoricalAccuracy[TensorArray], MetricPycuda):
     def _model_init(self) -> None:
         """Initializes the metric buffers on the GPU."""
         super()._model_init()
-        self.cost = gpuarray.zeros((self.model.batch_size,), self.model.dtype)
+        self.cost = TensorArray.zeros(
+            (self.model.batch_size,),
+            self.model.dtype,
+            tensor_format=self.model.tensor_format,
+            mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+            desc_type=DescriptorType.NONE
+        )
 
     def compute(self, y_pred: TensorArray, y_targ: TensorArray) -> float:
         """
@@ -36,11 +42,11 @@ class CategoricalAccuracyPycuda(CategoricalAccuracy[TensorArray], MetricPycuda):
         self.kernel(
             y_targ.ary,
             y_pred.ary,
-            self.cost,
+            self.cost.ary,
             np.int32(self.model.real_batch_size),
             np.int32(self.shape[1]),
             grid=self.grid,
             block=self.block,
             stream=self.model.pycuda_stream,
         )
-        return float(gpuarray.sum(self.cost).get() / self.model.real_batch_size)
+        return float(gpuarray.sum(self.cost.ary).get() / self.model.real_batch_size)

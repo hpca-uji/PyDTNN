@@ -35,7 +35,7 @@ class KLDivergencePycuda(KLDivergence[TensorArray], LossPycuda):
         self.kernel(
             y_targ.ary,
             y_pred.ary,
-            self.loss,
+            self.loss.ary,
             self.dx.ary,
             np.int32(self.model.batch_size),
             np.int32(batch_size),

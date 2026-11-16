@@ -1,8 +1,12 @@
 """PyCUDA implementation of metric calculations for the PyDTNN framework."""
 
-import logging
+from __future__ import annotations
 
-from pycuda.driver import Function
+import logging
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pycuda.driver import Function
 
 from pydtnn.backends.pycuda.abstract.base import BasePycuda
 from pydtnn.metrics.abstract.metric import Metric

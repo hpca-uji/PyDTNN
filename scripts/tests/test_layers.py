@@ -131,7 +131,7 @@ def test_layers_activations(_x: np.ndarray, opt: Optimizer) -> None:
             x = np.copy(_x)
 
             if KWARGS["use_gpu"]:
-                x = TensorArray.from_host(
+                x = TensorArray.asarray(
                     x,
                     tensor_format=model.tensor_format,
                     mem_type=MemoryType.GLOBAL if model.use_gpudirect else MemoryType.DEVICE,
@@ -199,7 +199,7 @@ def test_add_concat(_x: np.ndarray, opt: Optimizer) -> None:
         t_opt = 0
 
         if KWARGS["use_gpu"]:
-            x = TensorArray.from_host(
+            x = TensorArray.asarray(
                 x,
                 tensor_format=model.tensor_format,
                 mem_type=MemoryType.GLOBAL if model.use_gpudirect else MemoryType.DEVICE,

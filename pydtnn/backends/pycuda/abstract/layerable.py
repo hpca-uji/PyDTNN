@@ -1,15 +1,16 @@
 """PyCUDA implementation of layerable components for distributed training."""
 
 import ctypes
+
 import numpy as np
-import pycuda.driver as drv  # pyright: ignore[reportAttributeAccessIssue]
-from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
+import pycuda.driver as pycuda_driver  # pyright: ignore[reportAttributeAccessIssue]
+
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.backends.pycuda.abstract.base import BasePycuda
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
                                    PYDTNN_OPS_EVENTS, OpsEventEnum)
 from pydtnn.utils.constants import ArrayShape
-from pydtnn.utils.tensor_array import TensorArray
+from pydtnn.utils.tensor_array import DescriptorType, MemoryType, TensorArray
 
 try:
     from pydtnn.libs import nccl
@@ -187,10 +188,12 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
             return None
 
         # NOTE: The actual "self.model.output_shape" is only available after initializating all layers.
-        tensor_ary = TensorArray(
-            gpuarray.empty((self.model.batch_size, *self.model.output_shape), self.model.dtype),
-            self.model.tensor_format,
-            self.model.cudnn_dtype,
+        tensor_ary = TensorArray.zeros(
+            (self.model.batch_size, *self.model.output_shape),
+            self.model.dtype,
+            tensor_format=self.model.tensor_format,
+            mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+            desc_type=DescriptorType.TENSOR
         )
         self.y_model = tensor_ary  # pyright: ignore[reportAttributeAccessIssue]
 
@@ -203,6 +206,7 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
     ) -> tuple[TensorArray, TensorArray]:
         """Synchronize input and target batches to GPU memory."""
         # NOTE: in CUDA it's necessary to always have batches of the same size.
+        assert isinstance(self.y, TensorArray) and isinstance(self.y_model, TensorArray)
         local_batch_size = x_model.shape[0]
 
         if local_batch_size != 0:
@@ -217,21 +221,15 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
             x_model = np.asarray(x_model, dtype=self.model.dtype, order="C")
             y_model = np.asarray(y_model, dtype=self.model.dtype, order="C")
 
-            assert isinstance(self.y, TensorArray) and isinstance(self.y_model, TensorArray)
             self.y.set(x_model)
             self.y_model.set(y_model)
             x, y_targ = self.model.layers[0].y, self.y_model
         else:
-            empty_x = gpuarray.zeros((1, *self.model.dataset.input_shape), self.model.dtype)[:0]
-            empty_y_tag = gpuarray.zeros((1, *self.model.dataset.output_shape), self.model.dtype)[
-                :0
-            ]
-            x = TensorArray(empty_x, self.model.tensor_format, self.model.cudnn_dtype)
-            y_targ = TensorArray(empty_y_tag, self.model.tensor_format, self.model.cudnn_dtype)
+            x, y_targ = self.model.layers[0].y[:0], self.y_model[:0]
         return x, y_targ
 
     ws_size = 0
-    ws: drv.DeviceAllocation = None
+    ws: pycuda_driver.DeviceAllocation = None
 
     @property
     def ws_ptr(self) -> ctypes.c_void_p:
@@ -247,7 +245,7 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
             self.ws.free()
 
         self.ws_size = max(1, size)
-        self.ws = drv.mem_alloc(self.ws_size)
+        self.ws = pycuda_driver.mem_alloc(self.ws_size)
 
     def get_convolution_workspace_ptr(self) -> ctypes.c_void_p:
         """Return the workspace pointer."""

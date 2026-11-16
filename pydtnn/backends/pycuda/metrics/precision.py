@@ -20,7 +20,7 @@ class PrecisionPycuda(Precision[TensorArray], MetricPycuda):
         """Initializes the precision and local precision buffers on the GPU."""
         super()._model_init()
         target_classes = self.model.output_shape[0]
-        self.precision = TensorArray.new_zeros(
+        self.precision = TensorArray.zeros(
             (1,),
             self.model.dtype,
             tensor_format=self.model.tensor_format,
@@ -28,7 +28,7 @@ class PrecisionPycuda(Precision[TensorArray], MetricPycuda):
             desc_type=DescriptorType.TENSOR
         )
         self.memory_used += self.precision.nbytes
-        self.local_precision = TensorArray.new_zeros(
+        self.local_precision = TensorArray.zeros(
             (target_classes,),
             self.model.dtype,
             tensor_format=self.model.tensor_format,

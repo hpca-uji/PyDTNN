@@ -7,7 +7,6 @@ import logging
 from typing import Any
 
 import numpy as np
-from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 
 from pycuda import driver as drv
 from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
@@ -91,7 +90,7 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
 
         # Dropout Descriptor
         states_size = cudnn.cudnnDropoutGetStatesSize(self.model.cudnn_handle)
-        self.states = TensorArray.new_zeros(
+        self.states = TensorArray.zeros(
             (states_size,),
             self.model.dtype,
             tensor_format=self.model.tensor_format,
@@ -147,7 +146,7 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
         reserve_backward_size = (
             self.reserve_backward_size // np.dtype(self.model.dtype).itemsize + 1
         )
-        self.weights = TensorArray.new_zeros(
+        self.weights = TensorArray.zeros(
             (weights_size,),
             self.model.dtype,
             tensor_format=self.model.tensor_format,
@@ -155,7 +154,7 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
             desc_type=DescriptorType.NONE
         )
         self.memory_used += self.weights.nbytes
-        self.dw = TensorArray.new_zeros(
+        self.dw = TensorArray.zeros(
             (weights_size,),
             self.model.dtype,
             tensor_format=self.model.tensor_format,
@@ -163,7 +162,7 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
             desc_type=DescriptorType.NONE
         )
         self.memory_used += self.dw.nbytes
-        self.reserve_backward = TensorArray.new_zeros(
+        self.reserve_backward = TensorArray.zeros(
             (reserve_backward_size,),
             self.model.dtype,
             tensor_format=self.model.tensor_format,
@@ -199,7 +198,7 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
         )
 
         # Memory Allocation for Outputs
-        self.y = TensorArray.new_zeros(
+        self.y = TensorArray.zeros(
             (self.model.batch_size, self.beam, self.seq, self.embedl),
             self.model.dtype,
             tensor_format=self.model.tensor_format,
@@ -207,7 +206,7 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
             desc_type=DescriptorType.SEQ
         )
         self.memory_used += self.y.nbytes
-        self.dquery = TensorArray.new_zeros(
+        self.dquery = TensorArray.zeros(
             (self.model.batch_size, self.beam, self.seq, self.embedl),
             self.model.dtype,
             tensor_format=self.model.tensor_format,
@@ -215,7 +214,7 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
             desc_type=DescriptorType.SEQ
         )
         self.memory_used += self.dquery.nbytes
-        self.dkey = TensorArray.new_zeros(
+        self.dkey = TensorArray.zeros(
             (self.model.batch_size, self.beam, self.seq, self.embedl),
             self.model.dtype,
             tensor_format=self.model.tensor_format,
@@ -223,7 +222,7 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
             desc_type=DescriptorType.SEQ
         )
         self.memory_used += self.dkey.nbytes
-        self.dvalue = TensorArray.new_zeros(
+        self.dvalue = TensorArray.zeros(
             (self.model.batch_size, self.beam, self.seq, self.embedl),
             self.model.dtype,
             tensor_format=self.model.tensor_format,
@@ -240,14 +239,14 @@ class MultiHeadAttentionPycuda(MultiHeadAttention[TensorArray], LayerPycuda):
             shape=(self.batch, self.beam, self.seq), fill_value=self.seq, dtype=np.int32
         )
         # self.dev_seq_lengths_QO = np.full(shape=(self.batch*self.beam), fill_value=self.seq, dtype=np.int32)
-        self.dev_seq_lengths_qo = TensorArray.from_host(
+        self.dev_seq_lengths_qo = TensorArray.asarray(
             self.y.seq_length_array,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
             desc_type=DescriptorType.NONE
         )
         self.memory_used += self.dev_seq_lengths_qo.nbytes
         # self.dev_seq_lengths_KV = np.full(shape=(self.batch*self.beam), fill_value=self.seq, dtype=np.int32)
-        self.dev_seq_lengths_kv = TensorArray.from_host(
+        self.dev_seq_lengths_kv = TensorArray.asarray(
             self.dkey.seq_length_array,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
             desc_type=DescriptorType.NONE

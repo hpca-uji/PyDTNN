@@ -23,7 +23,7 @@ class RegressionMSEPycuda(RegressionMSE[TensorArray], MetricPycuda):
         n = self.model.batch_size
         num_classes = self.model.output_shape
 
-        self.res = TensorArray.new_zeros(
+        self.res = TensorArray.zeros(
             (1,),
             self.model.dtype,
             tensor_format=self.model.tensor_format,
@@ -31,7 +31,7 @@ class RegressionMSEPycuda(RegressionMSE[TensorArray], MetricPycuda):
             desc_type=DescriptorType.TENSOR
         )
         self.memory_used += self.res.nbytes
-        self.local_res = TensorArray.new_zeros(
+        self.local_res = TensorArray.zeros(
             (n, *num_classes),
             self.model.dtype,
             tensor_format=self.model.tensor_format,

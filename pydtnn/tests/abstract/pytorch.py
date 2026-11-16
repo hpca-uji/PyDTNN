@@ -692,7 +692,7 @@ class PytorchModelTestCaseAbstract(TestCase):
                         if self.params.device == "cuda":
                             # NOTE: Moving the values back to GPU.
                             assert isinstance(dx_base, TensorArray)
-                            _dx = TensorArray.from_host(dx_splitted, dx_base.tensor_format,
+                            _dx = TensorArray.asarray(dx_splitted, dx_base.tensor_format,
                                                      dx_base.cudnn_dtype, dx_base.desc_type)
                         else:
                             _dx = dx_splitted

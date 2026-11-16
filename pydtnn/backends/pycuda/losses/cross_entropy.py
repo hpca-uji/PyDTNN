@@ -7,7 +7,7 @@ from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 
 from pydtnn.backends.pycuda.losses.abstract.loss import LossPycuda
 from pydtnn.losses.cross_entropy import CrossEntropy
-from pydtnn.utils.tensor_array import TensorArray
+from pydtnn.utils.tensor_array import DescriptorType, MemoryType, TensorArray
 
 __all__ = ("CrossEntropyPycuda",)
 
@@ -20,8 +20,20 @@ class CrossEntropyPycuda(CrossEntropy[TensorArray], LossPycuda):
     def _model_init(self) -> None:
         """Initialize GPU memory buffers and model-dependent parameters."""
         super()._model_init()
-        self.argmax = gpuarray.zeros((self.model.batch_size,), np.dtype(self.model.dtype))
-        self.sample_weights = gpuarray.zeros((self.model.batch_size,), np.dtype(self.model.dtype))
+        self.argmax = TensorArray.zeros(
+            (self.model.batch_size,),
+            self.model.dtype,
+            tensor_format=self.model.tensor_format,
+            mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+            desc_type=DescriptorType.NONE
+        )
+        self.sample_weights = TensorArray.zeros(
+            (self.model.batch_size,),
+            self.model.dtype,
+            tensor_format=self.model.tensor_format,
+            mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+            desc_type=DescriptorType.NONE
+        )
         self.memory_used += self.argmax.nbytes
         self.memory_used += self.sample_weights.nbytes
 
@@ -44,8 +56,8 @@ class CrossEntropyPycuda(CrossEntropy[TensorArray], LossPycuda):
             self.loss,
             self.weights,
             self.dx.ary,
-            self.argmax,
-            self.sample_weights,
+            self.argmax.ary,
+            self.sample_weights.ary,
             np.int32(batch_size),
             np.int32(self.shape[1]),
             grid=self.grid,
@@ -53,8 +65,8 @@ class CrossEntropyPycuda(CrossEntropy[TensorArray], LossPycuda):
             stream=self.model.pycuda_stream,
         )
 
-        sum_weights = float(gpuarray.sum(self.sample_weights[:batch_size]).get())
-        loss = -gpuarray.sum(self.loss[:batch_size]).get() / sum_weights
+        sum_weights = float(gpuarray.sum(self.sample_weights[:batch_size].ary).get())
+        loss = -gpuarray.sum(self.loss[:batch_size].ary).get() / sum_weights
         self.dx /= sum_weights
 
         return loss.item(), self.dx

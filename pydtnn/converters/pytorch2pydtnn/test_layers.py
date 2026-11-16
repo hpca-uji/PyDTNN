@@ -17,14 +17,9 @@ from pydtnn.abstract.layerable import Layerable
 from pydtnn.converters.pytorch2pydtnn.model_converter import convert_model
 from pydtnn.model import Model as PyDTNN_Model
 from pydtnn.model.base import ModelMode
-from pydtnn.utils.tensor_array import TensorArray
+from pydtnn.utils.tensor_array import DescriptorType, MemoryType, TensorArray
 
 # from pydtnn.utils.best_of import BestOf
-
-try:
-    from pycuda import gpuarray
-except BaseException:
-    gpuarray = None
 
 try:
     from pydtnn.libs import cudnn
@@ -253,16 +248,17 @@ def test_layers_gpu(model: PyDTNN_Model, dataset: np.ndarray) -> TensorArray:
     model.show()
     print("test_layers_gpu - model\n========")
     print(f"model.dtype: {model.dtype}")
-    assert gpuarray
     assert cudnn
 
     print(f"TYPES_DATA_CUDA[model.dtype]: {TYPES_DATA_CUDA[model.dtype]}")
     dtype = model.dtype
     model.cudnn_dtype = cudnn.cudnnDataType[TYPES_DATA_CUDA[model.dtype]]
-    _dataset = TensorArray(
-        gpu_arr=gpuarray.zeros(shape=dataset.shape, dtype=dtype),
+    _dataset = TensorArray.zeros(
+        dataset.shape,
+        dtype,
         tensor_format=model.tensor_format,
-        cudnn_dtype=model.cudnn_dtype,
+        mem_type=MemoryType.GLOBAL if model.use_gpudirect else MemoryType.DEVICE,
+        desc_type=DescriptorType.TENSOR
     )
 
     _dataset.set(dataset)

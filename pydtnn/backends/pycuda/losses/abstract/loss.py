@@ -1,10 +1,14 @@
 """PyCUDA backend implementation for loss functions."""
 
+from __future__ import annotations
+
 import logging
+from typing import TYPE_CHECKING
 
 import numpy as np
-from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
-from pycuda.driver import Function
+
+if TYPE_CHECKING:
+    from pycuda.driver import Function
 
 from pydtnn.backends.pycuda.abstract.base import BasePycuda
 from pydtnn.losses.abstract.loss import Loss
@@ -35,7 +39,7 @@ class LossPycuda(Loss[TensorArray], BasePycuda):
 
     def _weights_to_tensor(self, weights: list[float]) -> TensorArray:
         _w: np.ndarray = super()._weights_to_tensor(weights)  # pyright: ignore[reportAssignmentType]
-        w = TensorArray.from_host(
+        w = TensorArray.asarray(
             _w,
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
@@ -49,14 +53,14 @@ class LossPycuda(Loss[TensorArray], BasePycuda):
         # NOTE: the model must be executed before this one.
         self.grid = self.model.cuda_grid
         self.block = self.model.cuda_block
-        self.loss = TensorArray.new_zeros(
+        self.loss = TensorArray.zeros(
             (self.model.batch_size,),
             self.model.dtype,
             mem_type=MemoryType.DEVICE,
             desc_type=DescriptorType.NONE
         )
         self.memory_used += self.loss.nbytes
-        self.dx = TensorArray.new_zeros(
+        self.dx = TensorArray.zeros(
             self.shape,
             self.model.dtype,
             tensor_format=self.model.tensor_format,

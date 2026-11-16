@@ -5,7 +5,6 @@ import math
 from typing import Any
 
 import numpy as np
-from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 
 from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
 from pydtnn.layers.adaptive_average_pool_2d import AdaptiveAveragePool2D
@@ -13,7 +12,7 @@ from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
                                    PYDTNN_OPS_EVENTS, OpsEventEnum)
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.performance_models import col2im_time, im2col_time
-from pydtnn.utils.tensor_array import TensorArray
+from pydtnn.utils.tensor_array import DescriptorType, MemoryType, TensorArray
 
 __all__ = ("AdaptiveAveragePool2DPycuda",)
 
@@ -46,12 +45,22 @@ class AdaptiveAveragePool2DPycuda(AdaptiveAveragePool2D[TensorArray], LayerPycud
         self.ci, self.hi, self.wi = self.model.decode_shape(prev_shape)
         self.shape = self.model.encode_shape((self.co, self.ho, self.wo))
         pooling_shape = self.model.encode_shape((self.co, self.ho, self.wo))
-        y = gpuarray.zeros((self.model.batch_size, *pooling_shape), self.model.dtype)
-        self.y: TensorArray = TensorArray(y, self.model.tensor_format, self.model.cudnn_dtype)
+
+        self.y = TensorArray.zeros(
+            (self.model.batch_size, *pooling_shape),
+            self.model.dtype,
+            tensor_format=self.model.tensor_format,
+            mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+            desc_type=DescriptorType.TENSOR
+        )
 
         # Derivative dx
-        dx_gpu = gpuarray.zeros(self.x.ary.shape, self.model.dtype)
-        self.dx = TensorArray(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.dx = TensorArray.zeros(
+            self.x.ary.shape, self.model.dtype,
+            tensor_format=self.model.tensor_format,
+            mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+            desc_type=DescriptorType.TENSOR
+        )
 
         self.memory_used += self.y.nbytes + self.dx.nbytes
 

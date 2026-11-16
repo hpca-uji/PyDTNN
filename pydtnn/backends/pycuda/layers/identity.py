@@ -2,12 +2,10 @@
 
 import logging
 
-from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
-
 from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
 from pydtnn.layers.identity import Identity
 from pydtnn.utils.constants import ArrayShape
-from pydtnn.utils.tensor_array import TensorArray
+from pydtnn.utils.tensor_array import DescriptorType, MemoryType, TensorArray
 
 __all__ = ("IdentityPycuda",)
 
@@ -21,8 +19,13 @@ class IdentityPycuda(Identity[TensorArray], LayerPycuda):
         """Initialize layer memory and GPU buffers."""
         super()._model_init(prev_shape, x)
 
-        y_gpu = gpuarray.zeros((self.model.batch_size, *self.shape), self.model.dtype)
-        self.y = TensorArray(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.y = TensorArray.zeros(
+            (self.model.batch_size, *self.shape),
+            self.model.dtype,
+            tensor_format=self.model.tensor_format,
+            mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+            desc_type=DescriptorType.TENSOR
+        )
         self.memory_used += self.y.nbytes
 
     def forward(self, x: TensorArray) -> TensorArray:

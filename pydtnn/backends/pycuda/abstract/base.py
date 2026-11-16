@@ -1,10 +1,14 @@
 """PyDTNN PyCUDA backend abstract base module."""
 
-import functools
+from __future__ import annotations
 
-from cuda.pathfinder import find_nvidia_binary_utility
+import functools
+from typing import TYPE_CHECKING
+
 from pycuda.compiler import SourceModule
-from pycuda.driver import Function, Module
+
+if TYPE_CHECKING:
+    from pycuda.driver import Function, Module
 
 from pydtnn import errors, pycuda_device, cublas_handle, cudnn_handle
 from pydtnn.abstract.base import Base
@@ -17,7 +21,7 @@ __all__ = ("BasePycuda",)
 class BasePycuda(UsesCudaCode[Module, Function], Base[TensorArray]):
     """Abstract base class for PyCUDA-based operations in PyDTNN."""
 
-    _cuda_kernel = staticmethod(functools.partial(SourceModule, nvcc=find_nvidia_binary_utility("nvcc") or "nvcc"))
+    _cuda_kernel = staticmethod(functools.partial(SourceModule))
 
     def _model_init(self) -> None:
         """Initializes the model and associated CUDA kernels."""

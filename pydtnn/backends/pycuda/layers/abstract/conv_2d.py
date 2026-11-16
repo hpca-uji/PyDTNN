@@ -4,7 +4,6 @@ import logging
 from typing import Any
 
 import numpy as np
-import pycuda.driver as drv
 
 from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
 from pydtnn.layers.conv_2d import Conv2D
@@ -41,7 +40,7 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
         """
         super()._model_init(prev_shape, x)
 
-        self.weights = TensorArray.from_host(
+        self.weights = TensorArray.asarray(
             self.weights_initializer(self.weights_shape, self.model.dtype, self.model.random),
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
@@ -52,7 +51,7 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
         # Biases
         if self.use_bias:
             biases_shape = (self.co,)
-            self.biases = TensorArray.from_host(
+            self.biases = TensorArray.asarray(
                 self.biases_initializer(biases_shape, self.model.dtype, self.model.random),
                 tensor_format=self.model.tensor_format,
                 mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
@@ -85,7 +84,7 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
         )
 
         # Derivative dw and derivative db
-        self.dw = TensorArray.new_zeros(
+        self.dw = TensorArray.zeros(
             self.weights.host_shape,
             self.model.dtype,
             tensor_format=self.model.tensor_format,
@@ -95,7 +94,7 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
         self.memory_used += self.dw.nbytes
 
         if self.use_bias:
-            self.db = TensorArray.new_zeros(
+            self.db = TensorArray.zeros(
                 self.biases.host_shape,
                 self.model.dtype,
                 tensor_format=self.model.tensor_format,

@@ -3,7 +3,6 @@
 import logging
 from typing import Any
 
-from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 from pycuda.elementwise import ElementwiseKernel
 
 from pydtnn.backends.pycuda.layers.abstract.block_layer import AbstractBlockLayerPycuda
@@ -13,7 +12,7 @@ from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDT
                                    PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, MdlEventEnum, OpsEventEnum)
 from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
 from pydtnn.utils.tensor import TensorFormat
-from pydtnn.utils.tensor_array import TensorArray
+from pydtnn.utils.tensor_array import DescriptorType, MemoryType, TensorArray
 
 __all__ = ("ConcatenationBlockPycuda",)
 
@@ -112,15 +111,23 @@ class ConcatenationBlockPycuda(ConcatenationBlock[TensorArray], AbstractBlockLay
         )
 
         # Activations y
-        y_gpu = gpuarray.zeros((self.model.batch_size, *self.shape), self.model.dtype)
-        self.y = TensorArray(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.y = TensorArray.zeros(
+            (self.model.batch_size, *self.shape),
+            self.model.dtype,
+        )
         self.memory_used += self.y.nbytes
 
         # Derivative dy
         self.dy = []
         for i, p in enumerate(self.paths):
-            dy_gpu = gpuarray.zeros((self.model.batch_size, *self.out_shapes[i]), self.model.dtype)
-            self.dy.append(TensorArray(dy_gpu, self.model.tensor_format, self.model.cudnn_dtype))
+            dy_gpu = TensorArray.zeros(
+                (self.model.batch_size, *self.out_shapes[i]),
+                self.model.dtype,
+                tensor_format=self.model.tensor_format,
+                mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+                desc_type=DescriptorType.TENSOR
+            )
+            self.dy.append(dy_gpu)
 
             self.memory_used += dy_gpu.nbytes
 

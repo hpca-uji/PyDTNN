@@ -5,14 +5,13 @@ import math
 from typing import Any
 
 import numpy as np
-from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 
 from pydtnn.activations.leaky_relu import LeakyRelu
 from pydtnn.backends.pycuda.activations.abstract.activation import ActivationPycuda
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, OpsEventEnum
 from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
 from pydtnn.utils.performance_models import col2im_time, im2col_time
-from pydtnn.utils.tensor_array import TensorArray
+from pydtnn.utils.tensor_array import DescriptorType, MemoryType, TensorArray
 
 __all__ = ("LeakyReluPycuda",)
 
@@ -33,11 +32,21 @@ class LeakyReluPycuda(LeakyRelu[TensorArray], ActivationPycuda):
         """Initialize model parameters and CUDA kernels."""
         super()._model_init(prev_shape, x)
 
-        y_gpu = gpuarray.zeros(x.shape, self.model.dtype)
-        self.y = TensorArray(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.y = TensorArray.zeros(
+            x.shape,
+            self.model.dtype,
+            tensor_format=self.model.tensor_format,
+            mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+            desc_type=DescriptorType.TENSOR
+        )
 
-        mask_gpu = gpuarray.zeros((self.model.batch_size, *self.prev_shape), self.model.dtype)
-        self.mask = TensorArray(mask_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.mask = TensorArray.zeros(
+            (self.model.batch_size, *self.prev_shape),
+            self.model.dtype,
+            tensor_format=self.model.tensor_format,
+            mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+            desc_type=DescriptorType.TENSOR
+        )
 
         self.memory_used += self.y.nbytes + self.mask.nbytes
 
@@ -56,15 +65,28 @@ class LeakyReluPycuda(LeakyRelu[TensorArray], ActivationPycuda):
 
         n: int = self.model.batch_size * self.hi * self.wi * self.ci
 
-        _max = gpuarray.zeros((self.model.batch_size, *self.shape), self.model.dtype)
-        self.max = TensorArray(_max, self.model.tensor_format, self.model.cudnn_dtype)
+        self.max = TensorArray.zeros(
+            (self.model.batch_size, *self.shape), self.model.dtype,
+            tensor_format=self.model.tensor_format,
+            mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+            desc_type=DescriptorType.TENSOR
+        )
 
-        _mask = gpuarray.zeros((self.model.batch_size, *self.shape), self.model.dtype)
-        self.mask = TensorArray(_mask, self.model.tensor_format, self.model.cudnn_dtype)
+        self.mask = TensorArray.zeros(
+            (self.model.batch_size, *self.shape), self.model.dtype,
+            tensor_format=self.model.tensor_format,
+            mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+            desc_type=DescriptorType.TENSOR
+        )
 
         # Derivative dx
-        dx_gpu = gpuarray.zeros((self.model.batch_size, *self.shape), self.model.dtype)
-        self.dx = TensorArray(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.dx = TensorArray.zeros(
+            (self.model.batch_size, *self.shape),
+            self.model.dtype,
+            tensor_format=self.model.tensor_format,
+            mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+            desc_type=DescriptorType.TENSOR
+        )
 
         self.fwd_time = im2col_time(
             m=self.ci,

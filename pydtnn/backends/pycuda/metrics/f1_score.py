@@ -20,7 +20,7 @@ class F1ScorePycuda(F1Score[TensorArray], MetricPycuda):
         """Initializes the F1-Score metric buffers on the GPU."""
         super()._model_init()
         target_classes = self.model.output_shape[0]
-        self.f1 = TensorArray.new_zeros(
+        self.f1 = TensorArray.zeros(
             (1,),
             self.model.dtype,
             tensor_format=self.model.tensor_format,
@@ -28,7 +28,7 @@ class F1ScorePycuda(F1Score[TensorArray], MetricPycuda):
             desc_type=DescriptorType.TENSOR
         )
         self.memory_used += self.f1.nbytes
-        self.local_f1 = TensorArray.new_zeros(
+        self.local_f1 = TensorArray.zeros(
             (target_classes,),
             self.model.dtype,
             tensor_format=self.model.tensor_format,
