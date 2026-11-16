@@ -665,7 +665,7 @@ pydtnn-dev: PYDTNN_PKG := dev
 pydtnn-dev:
 	export PYDTNN_PARALLEL="$(NPROC)" && \
 	$(PIP) install \
-		--upgrade --editable -C=editable_mode=compat \
+		--upgrade -C=editable_mode=compat --editable \
 		"$(PYDTNN_SRC)$(if $(PYDTNN_PKG),[$(PYDTNN_PKG)])"
 
 pydtnn-format: PYDTNN_PKG := pydtnn
