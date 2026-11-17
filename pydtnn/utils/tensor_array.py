@@ -44,26 +44,6 @@ class MemoryType(StrEnum):
     DEVICE = auto()
 
 
-type Ary = Any
-
-
-class DescriptorType(StrEnum):
-    """Enumeration of supported descriptor types."""
-
-    TENSOR = auto()
-    FILTER = auto()
-    SEQ = auto()
-    NONE = auto()
-
-
-class MemoryType(StrEnum):
-    """Enumeration of supported memory types."""
-
-    HOST = auto()
-    GLOBAL = auto()
-    DEVICE = auto()
-
-
 class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
     """Wrapper class for GPU arrays that integrates with cuDNN descriptors."""
 
