@@ -23,7 +23,14 @@ logger = logging.getLogger(__name__)
 class Encoder[T: Array](AbstractBlockLayer[T]):  # noqa: D101 (generics not detected)
     """A transformer-based encoder block layer."""
 
-    def __init__(self, embedl: int = 64, dim_keys: int = 3, dim_feed_forward: int = 256, heads: int = 10) -> None:
+    def __init__(
+        self,
+        scale_factor: float,
+        dim_keys: int = 3,
+        dim_feed_forward:
+        int = 256,
+        heads: int = 10
+    ) -> None:
         """
         Initializes the Encoder layer with specified hyperparameters.
 
@@ -33,17 +40,16 @@ class Encoder[T: Array](AbstractBlockLayer[T]):  # noqa: D101 (generics not dete
             dim_feed_forward (int): Dimension of the feed-forward network.
             heads (int): Number of attention heads.
         """
-        self.embedl = embedl
         self.heads = heads
         self.dim_keys = dim_keys
         self.dim_feed_forward = dim_feed_forward
 
         # TODO Add Positional Encoding.
-
         path: list[list[Layerable[T]]] = [
             [
                 AdditionBlock([
-                    [MultiHeadAttention(heads=self.heads)],
+                    [MultiHeadAttention(scale_factor=scale_factor,
+                                        heads=self.heads)],
                     []
                 ], multiple_inputs=True),
                 LayerNormalization(),

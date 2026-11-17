@@ -20,6 +20,7 @@ class ScaledDotProductAttention[T: Array](MultiplicationBlock[T]):  # noqa: D101
 
     def __init__(
         self,
+        scale_factor: float,
         mult_layers: tuple[list[list[Layerable[T]]], Layerable[T]] = (
             [[Identity[T]()], [Identity[T]()]],
             Identity[T]()
@@ -39,7 +40,7 @@ class ScaledDotProductAttention[T: Array](MultiplicationBlock[T]):  # noqa: D101
                 paths=[*mult_layers[0]],
                 multiple_inputs=True
             ),
-            ProductScalar(),
+            ProductScalar(scale=scale_factor),
         ]
         if with_masked_layer:
             first_path.append(

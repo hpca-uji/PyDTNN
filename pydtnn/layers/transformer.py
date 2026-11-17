@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 class Transformer[T: Array](AbstractBlockLayer[T]):  # noqa: D101 (generics not detected)
     """A transformer-based encoder block layer."""
 
-    def __init__(self, embedl: int = 64, d_k: int = 3, d_ff: int = 256, heads: int = 10) -> None:
+    def __init__(self, dim_keys: int = 3, dim_feedforward: int = 256, heads: int = 10) -> None:
         """
         Initializes the Encoder layer with specified hyperparameters.
 
@@ -33,13 +33,14 @@ class Transformer[T: Array](AbstractBlockLayer[T]):  # noqa: D101 (generics not 
             d_ff (int): Dimension of the feed-forward network.
             heads (int): Number of attention heads.
         """
-        self.embedl = embedl
         self.heads = heads
-        self.d_k = d_k
-        self.d_ff = d_ff
+        self.dim_keys = dim_keys
+        self.dim_feedforward = dim_feedforward
+        self.scale_factor = self.dim_keys ** (1 / 2)
 
-        self.encoder = Encoder()
-        self.decoder = Decoder(self.encoder.y)
+        self.encoder = Encoder(scale_factor=self.scale_factor)
+        self.decoder = Decoder(scale_factor=self.scale_factor,
+                               encoder_y=self.encoder.y)
 
         # TODO: Add parameters and finish.
 

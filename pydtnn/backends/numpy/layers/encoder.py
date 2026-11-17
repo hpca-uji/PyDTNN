@@ -34,14 +34,13 @@ class EncoderNumpy(Encoder[np.ndarray], AbstractBlockLayerNumpy):
     def backward(self, dy: ndarray) -> ndarray:
         """Encoder Numpy backward's implementation."""
         base_dx = super().backward(dy)
-        # NOTE: Remove this method after the implementation.
-        # Nacho did this at the end of the encoder:
+        # NOTE: Nacho did this at the end of the encoder:
         # dx_3 = self.multiheadattention.backward(dx_3)
         # dx_3, dx_4, dx_5 = dx_3
         # self.dx = dx_2 + dx_3 + dx_4 + dx_5
         # So it's seems necessary to add every output.
 
-        # NOTE: Hay 2 paths en el 1er AdditionLayer, y la salida del backwards MultiHeadAttention tiene 3 elementos.
+        # NOTE: There are 2 paths at the 1st AdditionLayer, and the MultiHeadAttention backward's output has 3 elements.
         query = base_dx[0][0]
         key = base_dx[0][1]
         value = base_dx[0][2]

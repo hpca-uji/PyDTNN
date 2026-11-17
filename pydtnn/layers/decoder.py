@@ -22,6 +22,7 @@ class Decoder[T: Array](AbstractBlockLayer[T]):  # noqa: D101 (generics not dete
     def __init__(
         self,
         encoder_y: T,
+        scale_factor: float,
         embedl: int = 64,
         dim_keys: int = 3,
         dim_feed_forward: int = 256,
@@ -55,7 +56,8 @@ class Decoder[T: Array](AbstractBlockLayer[T]):  # noqa: D101 (generics not dete
             [
                 # Masked multi-head attention block
                 AdditionBlock([
-                    [MultiHeadAttention(with_masked_layer=True,
+                    [MultiHeadAttention(scale_factor=scale_factor,
+                                        with_masked_layer=True,
                                         heads=self.heads)],
                     []
                 ]),
@@ -64,7 +66,7 @@ class Decoder[T: Array](AbstractBlockLayer[T]):  # noqa: D101 (generics not dete
             [
                 # Internal encoder Block
                 AdditionBlock([
-                    [MultiHeadAttention(heads=self.heads)],
+                    [MultiHeadAttention(scale_factor=scale_factor, heads=self.heads)],
                     [self.masked_mha_output]
                 ]),
                 LayerNormalization(),

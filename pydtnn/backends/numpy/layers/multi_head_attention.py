@@ -18,3 +18,13 @@ if TYPE_CHECKING:
 
 class MultiHeadAttentionNumpy(MultiHeadAttention[np.ndarray], AbstractBlockLayerNumpy):
     """NumPy implementation of the Multi-Head Attention mechanism."""
+
+    def _split(self, x: np.ndarray) -> np.ndarray:
+        """Method to split the data in self.heads parts."""
+        x_splitted = np.split(x, self.heads, axis=0)
+        x = np.array(x_splitted, dtype=np.object_, ndmax=1)
+        return x
+
+    def _concat(self, dx: np.ndarray) -> np.ndarray:
+        """Method get the data into the original shape."""
+        return np.concat(dx)
