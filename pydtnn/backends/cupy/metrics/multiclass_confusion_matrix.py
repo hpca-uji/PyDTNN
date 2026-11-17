@@ -1,16 +1,18 @@
 """CuPy implementation of the multiclass confusion matrix metric."""
 
 import logging
+from typing import TYPE_CHECKING
 
-import numpy as np
-
+from pydtnn.libs import numpy as np
 from pydtnn.backends.cupy.metrics.abstract.metric import MetricCupy
 from pydtnn.backends.numpy.metrics.multiclass_confusion_matrix import MulticlassConfusionMatrixNumpy
 
 __all__ = ("MulticlassConfusionMatrixCupy",)
 
-
 logger = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    import numpy as np  # noqa: F811 (override typing)
 
 
 class MulticlassConfusionMatrixCupy(MulticlassConfusionMatrixNumpy, MetricCupy):

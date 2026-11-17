@@ -1,16 +1,20 @@
 """CuPy backend abstract base module for PyDTNN."""
 
 import functools
+from typing import TYPE_CHECKING
 
 import cupy as cp
 from cupy import RawKernel, RawModule  # pyright: ignore[reportAttributeAccessIssue]
 
-from pydtnn import cupy_device, errors
+from pydtnn import errors
 from pydtnn.backends.numpy.abstract.base import BaseNumpy
-from pydtnn.libs import numpy as libnp
+from pydtnn.libs import numpy as np
 from pydtnn.utils.uses_cuda import UsesCudaCode
 
 __all__ = ("BaseCupy",)
+
+if TYPE_CHECKING:
+    import numpy as np  # noqa: F811 (override typing)
 
 
 class BaseCupy(UsesCudaCode[RawModule, RawKernel], BaseNumpy):
@@ -31,7 +35,7 @@ class BaseCupy(UsesCudaCode[RawModule, RawKernel], BaseNumpy):
         """
         super()._model_init()
 
-        if cupy_device is None:
+        if self.model.cupy_device is None:
             raise ExceptionGroup("CuPy layers requires CUDA support!", errors)
-        elif libnp.ndarray is not cp.ndarray:  # pyright: ignore[reportAttributeAccessIssue]
+        elif np.ndarray is not cp.ndarray:  # pyright: ignore[reportAttributeAccessIssue]
             raise RuntimeError("CuPy layers requires PYDTNN_CUPY enabled!")

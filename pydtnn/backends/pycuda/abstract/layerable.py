@@ -45,7 +45,7 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
             return None
 
         # Calculate the kernel sizes
-        attrs = pycuda_driver.Device(self.pycuda_device).get_attributes()
+        attrs = pycuda_driver.Device(self.model.pycuda_device).get_attributes()
 
         max_threads = attrs[pycuda_driver.device_attribute.MAX_BLOCK_DIM_X]
         min_threads = attrs[pycuda_driver.device_attribute.WARP_SIZE]

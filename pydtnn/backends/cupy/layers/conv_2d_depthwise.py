@@ -13,7 +13,6 @@ __all__ = ("Conv2DDepthwiseCython",)
 
 logger = logging.getLogger(__name__)
 
-
 if TYPE_CHECKING:
     import numpy as np  # noqa: F811 (override typing)
 

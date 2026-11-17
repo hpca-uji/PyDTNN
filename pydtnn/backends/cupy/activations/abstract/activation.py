@@ -1,18 +1,19 @@
 """CuPy-based activation layer implementations for the PyDTNN framework."""
 
 import logging
+from typing import TYPE_CHECKING
 
-import cupy as cp
-import numpy as np
-
+from pydtnn.libs import numpy as np
 from pydtnn.backends.cupy.abstract.layerable import LayerableCupy
 from pydtnn.backends.numpy.activations.abstract.activation import ActivationNumpy
-from pydtnn.libs import numpy as libnp
 from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
 
 __all__ = ("ActivationCupy",)
 
 logger = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    import numpy as np  # noqa: F811 (override typing)
 
 
 class ActivationCupy(ActivationNumpy, LayerableCupy):
@@ -27,9 +28,6 @@ class ActivationCupy(ActivationNumpy, LayerableCupy):
             x: Optional input data for initialization.
         """
         super()._model_init(prev_shape, x)
-
-        if libnp.ndarray is not cp.ndarray:  # pyright: ignore[reportAttributeAccessIssue]
-            raise RuntimeError("CuPy layers requies PYDTNN_CUPY enabled!")
 
         self.defines_replaces = {'"TYPE"': DTYPE2CTYPE[self.model.dtype]}
         self.fwd_kernel = self._fwd_kernel()

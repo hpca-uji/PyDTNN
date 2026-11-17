@@ -3,7 +3,6 @@
 from typing import TYPE_CHECKING
 
 from pydtnn.libs import numpy as np
-
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.backends.numpy.abstract.base import BaseNumpy
 

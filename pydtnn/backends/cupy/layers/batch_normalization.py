@@ -9,7 +9,6 @@ from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
 
 __all__ = ("BatchNormalizationCupy",)
 
-
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:

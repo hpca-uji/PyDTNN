@@ -3,8 +3,6 @@
 import logging
 from typing import TYPE_CHECKING
 
-from numpy import ndarray
-
 from pydtnn.backends.numpy.layers.abstract.block_layer import AbstractBlockLayerNumpy
 from pydtnn.layers.encoder import Encoder
 from pydtnn.libs import numpy as np
@@ -31,7 +29,7 @@ class EncoderNumpy(Encoder[np.ndarray], AbstractBlockLayerNumpy):
         """Initializes the EncoderNumpy layer with sub-layers."""
         super().__init__(embedl, dim_keys, dim_feed_forward, heads)
 
-    def backward(self, dy: ndarray) -> ndarray:
+    def backward(self, dy: np.ndarray) -> np.ndarray:
         """Encoder Numpy backward's implementation."""
         base_dx = super().backward(dy)
         # NOTE: Remove this method after the implementation.

@@ -1,5 +1,6 @@
 """CuPy-based implementation of layerable components for the PyDTNN framework."""
 import math
+from typing import TYPE_CHECKING
 
 import cupy.cuda as cupy_driver
 
@@ -9,6 +10,9 @@ from pydtnn.backends.numpy.abstract.layerable import LayerableNumpy
 from pydtnn.utils.constants import ArrayShape
 
 __all__ = ("LayerableCupy",)
+
+if TYPE_CHECKING:
+    import numpy as np  # noqa: F811 (override typing)
 
 
 class LayerableCupy(LayerableNumpy, BaseCupy):
@@ -22,10 +26,10 @@ class LayerableCupy(LayerableNumpy, BaseCupy):
             return None
 
         # Calculate the kernel sizes
-        attrs = cupy_driver.runtime.getDeviceProperties(self.cupy_device)
+        attrs = cupy_driver.runtime.getDeviceProperties(self.model.cupy_device)
 
         max_threads = attrs["maxThreadsDim"][0]
-        min_threads = cupy_driver.runtime.deviceGetAttribute(cupy_driver.runtime.cudaDevAttrWarpSize, self.cupy_device)
+        min_threads = cupy_driver.runtime.deviceGetAttribute(cupy_driver.runtime.cudaDevAttrWarpSize, self.model.cupy_device)
 
         block_size = max(min_threads, min(self.model.batch_size, max_threads))
         grid_size = math.ceil(self.model.batch_size / block_size)

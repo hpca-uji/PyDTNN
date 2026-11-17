@@ -11,9 +11,7 @@ from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
 
 __all__ = ("AdaptiveAveragePool2DCupy",)
 
-
 logger = logging.getLogger(__name__)
-
 
 if TYPE_CHECKING:
     import numpy as np  # noqa: F811 (override typing)

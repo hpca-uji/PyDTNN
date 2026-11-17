@@ -11,7 +11,6 @@ from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
 
 __all__ = ("AveragePool2DNumpy",)
 
-
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:

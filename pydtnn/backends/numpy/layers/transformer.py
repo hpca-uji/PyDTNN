@@ -4,7 +4,6 @@ import logging
 from typing import TYPE_CHECKING
 
 from pydtnn.libs import numpy as np
-
 from pydtnn.backends.numpy.layers.abstract.layer import LayerNumpy
 from pydtnn.layers.transformer import Transformer
 
