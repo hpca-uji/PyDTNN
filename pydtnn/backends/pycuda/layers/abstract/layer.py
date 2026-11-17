@@ -32,7 +32,7 @@ class LayerPycuda(Layer[TensorArray], LayerablePycuda):
         self.dw_cpu: ndarray = None  # pyright: ignore[reportAttributeAccessIssue]
         self.db_cpu: ndarray = None  # pyright: ignore[reportAttributeAccessIssue]
         self.one_vec_cpu: ndarray = None  # pyright: ignore[reportAttributeAccessIssue]
-        self.one_vec_gpu: TensorArray = None
+        self.one_vec_gpu: TensorArray = None  # pyright: ignore[reportAttributeAccessIssue]
         self.grid: tuple[int, int, int] = None  # pyright: ignore[reportAttributeAccessIssue]
         self.block: tuple[int, int, int] = None  # pyright: ignore[reportAttributeAccessIssue]
 

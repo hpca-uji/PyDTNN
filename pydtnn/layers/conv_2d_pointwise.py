@@ -6,7 +6,7 @@ import logging
 
 from pydtnn.activations.abstract.activation import Activation
 from pydtnn.layers.conv_2d import Conv2D
-from pydtnn.utils.constants import Array
+from pydtnn.utils.constants import Array, ArrayShape
 from pydtnn.utils.initializers import InitializerFunc, glorot_uniform, zeros
 
 __all__ = ("Conv2DPointwise",)
@@ -26,6 +26,7 @@ class Conv2DPointwise[T: Array](Conv2D[T]):  # noqa: D101 (generics not detected
         use_bias: bool = True,
         weights_initializer: InitializerFunc = glorot_uniform,
         biases_initializer: InitializerFunc = zeros,
+        shape: ArrayShape = ()
     ) -> None:
         """
         Initializes the Conv2DPointwise layer.
@@ -52,4 +53,5 @@ class Conv2DPointwise[T: Array](Conv2D[T]):  # noqa: D101 (generics not detected
             use_bias,
             weights_initializer,
             biases_initializer,
+            shape=shape
         )

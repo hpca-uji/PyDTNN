@@ -13,7 +13,7 @@ from pydtnn.layers.encoder import Encoder
 from pydtnn.layers.decoder import Decoder
 from pydtnn.layers.abstract.block_layer import AbstractBlockLayer
 from pydtnn.layers.fc import FC
-from pydtnn.utils.constants import Array
+from pydtnn.utils.constants import Array, ArrayShape
 
 __all__ = ("Encoder",)
 
@@ -23,7 +23,13 @@ logger = logging.getLogger(__name__)
 class Transformer[T: Array](AbstractBlockLayer[T]):  # noqa: D101 (generics not detected)
     """A transformer-based encoder block layer."""
 
-    def __init__(self, dim_keys: int = 3, dim_feedforward: int = 256, heads: int = 10) -> None:
+    def __init__(
+        self,
+        dim_keys: int = 3,
+        dim_feedforward: int = 256,
+        heads: int = 10,
+        shape: ArrayShape = ()
+    ) -> None:
         """
         Initializes the Encoder layer with specified hyperparameters.
 
@@ -53,7 +59,7 @@ class Transformer[T: Array](AbstractBlockLayer[T]):  # noqa: D101 (generics not 
             ]
         ]
 
-        super().__init__(paths=path)
+        super().__init__(paths=path, shape=shape)
 
     def forward(self, x: T) -> T:
         # TODO: Finish!

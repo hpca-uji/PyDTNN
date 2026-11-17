@@ -2,7 +2,6 @@
 
 import logging
 import math
-from typing import Any
 
 import numpy as np
 
@@ -24,12 +23,6 @@ logger = logging.getLogger(__name__)
 
 class AdaptiveAveragePool2DPycuda(AdaptiveAveragePool2D[TensorArray], LayerPycuda):
     """PyCUDA-accelerated Adaptive Average Pooling 2D layer."""
-
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        """Initialize the AdaptiveAveragePool2DPycuda layer."""
-        super().__init__(*args, **kwargs)
-        # NOTE: Will be initalized later.
-        self.y = None  # pyright: ignore[reportAttributeAccessIssue]
 
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
         """Initialize model parameters and CUDA kernels."""

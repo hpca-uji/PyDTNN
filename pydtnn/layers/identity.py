@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 class Identity[T: Array](Layer[T]):  # noqa: D101 (generics not detected)
     """Represents the identity layer of a neural network."""
 
-    def __init__(self, shape: tuple = ()) -> None:
+    def __init__(self, shape: ArrayShape = ()) -> None:
         """
         Initializes the Input layer with a specific shape.
 

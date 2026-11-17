@@ -22,9 +22,10 @@ class EncoderDecoder[T: Array](AbstractBlockLayer[T]):  # noqa: D101 (generics n
         heads: int = 10,
         d_ff: int = 256,
         dropout_rate: float = 0.5,
+        shape: ArrayShape = ()
     ) -> None:
         """Initializes the EncoderDecoder layer with specified hyperparameters."""
-        super().__init__()
+        super().__init__(shape)
         self.embedl = embedl
         self.enc_layers = enc_layers
         self.dec_layers = dec_layers

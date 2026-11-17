@@ -1,7 +1,7 @@
 """Numpy backend implementation of the Arctanh activation function."""
 
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from pydtnn.activations.arctanh import Arctanh
 from pydtnn.backends.numpy.activations.abstract.activation import ActivationNumpy
@@ -18,10 +18,6 @@ if TYPE_CHECKING:
 
 class ArctanhNumpy(Arctanh[np.ndarray], ActivationNumpy):
     """Numpy-based Arctanh activation layer."""
-
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        """Initialize the ArctanhNumpy layer."""
-        super().__init__(*args, **kwargs)
 
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
         """Initialize model parameters and allocate memory for output."""

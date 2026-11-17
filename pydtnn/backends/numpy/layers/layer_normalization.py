@@ -19,12 +19,6 @@ if TYPE_CHECKING:
 class LayerNormalizationNumpy(LayerNormalization[np.ndarray], LayerNumpy):
     """NumPy implementation of Layer Normalization."""
 
-    def __init__(self, axis: tuple | int = (-2, -1), beta: float = 0,
-                 gamma: float = 1, epsilon: float = 0.00001,
-                 sync_stats: bool = False) -> None:
-        """Layer Normalization init"""
-        super().__init__(axis, beta, gamma, epsilon, sync_stats)
-
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray[tuple[Any, ...], np.dtype[Any]]) -> None:
         super()._model_init(prev_shape, x)
         shape_mu = list(self.shape)

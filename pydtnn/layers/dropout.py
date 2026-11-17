@@ -13,14 +13,14 @@ logger = logging.getLogger(__name__)
 class Dropout[T: Array](Layer[T]):  # noqa: D101 (generics not detected)
     """A layer that randomly sets input units to 0 with a frequency of rate during training."""
 
-    def __init__(self, rate: float = 0.5) -> None:
+    def __init__(self, rate: float = 0.5, shape: ArrayShape = ()) -> None:
         """
         Initializes the Dropout layer.
 
         Args:
             rate: The dropout rate, between 0 and 1.
         """
-        super().__init__()
+        super().__init__(shape)
         self.rate = min(1.0, max(0.0, rate))
 
     def _model_init(self, prev_shape: ArrayShape, x: T | None) -> None:

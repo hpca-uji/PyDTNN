@@ -19,16 +19,6 @@ if TYPE_CHECKING:
 class EncoderNumpy(Encoder[np.ndarray], AbstractBlockLayerNumpy):
     """Numpy-based implementation of the Transformer Encoder layer."""
 
-    def __init__(
-        self,
-        embedl: int = 64,
-        dim_keys: int = 3,
-        dim_feed_forward: int = 256,
-        heads: int = 10,
-    ) -> None:
-        """Initializes the EncoderNumpy layer with sub-layers."""
-        super().__init__(embedl, dim_keys, dim_feed_forward, heads)
-
     def backward(self, dy: np.ndarray) -> np.ndarray:
         """Encoder Numpy backward's implementation."""
         base_dx = super().backward(dy)

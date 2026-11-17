@@ -20,6 +20,7 @@ class AbstractPool2DLayer[T: Array](Layer[T]):  # noqa: D101 (generics not detec
         padding: tuple[int, int] | int = 0,
         stride: tuple[int, int] | int = 1,
         dilation: tuple[int, int] | int = 1,
+        shape: ArrayShape = ()
     ) -> None:
         """
         Initializes the pooling layer parameters.
@@ -30,7 +31,7 @@ class AbstractPool2DLayer[T: Array](Layer[T]):  # noqa: D101 (generics not detec
             stride: Stride of the pooling operation.
             dilation: Dilation factor for the pooling window.
         """
-        super().__init__()
+        super().__init__(shape)
         self.pool_shape = (pool_shape, pool_shape) if isinstance(pool_shape, int) else pool_shape
         self.padding = padding
         self.stride = stride

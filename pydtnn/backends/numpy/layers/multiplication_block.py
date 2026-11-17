@@ -1,7 +1,7 @@
 """Numpy backend implementation of the Multiplication layer."""
 
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from pydtnn.backends.numpy.layers.abstract.block_layer import AbstractBlockLayerNumpy
 from pydtnn.layers.multiplication_block import MultiplicationBlock
@@ -19,13 +19,6 @@ if TYPE_CHECKING:
 
 class MultiplicationBlockNumpy(MultiplicationBlock[np.ndarray], AbstractBlockLayerNumpy):
     """Numpy-based multiplication layer for matrix operations."""
-
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        """Initialize the MultiplicationNumpy layer."""
-        super().__init__(*args, **kwargs)
-        # Following attributes will be initialized later
-        self.x: np.ndarray = None  # pyright: ignore[reportAttributeAccessIssue]
-        self.dx: np.ndarray = None  # pyright: ignore[reportAttributeAccessIssue]
 
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
         """Initialize model-specific parameters and performance tracking."""

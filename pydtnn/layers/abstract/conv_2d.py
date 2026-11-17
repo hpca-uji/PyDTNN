@@ -33,6 +33,7 @@ class AbstractConv2D[T: Array](Layer[T]):  # noqa: D101 (generics not detected)
         use_bias: bool = True,
         weights_initializer: InitializerFunc = glorot_uniform,
         biases_initializer: InitializerFunc = zeros,
+        shape: ArrayShape = ()
     ) -> None:
         """
         Initializes the 2D convolutional layer parameters.
@@ -49,7 +50,7 @@ class AbstractConv2D[T: Array](Layer[T]):  # noqa: D101 (generics not detected)
             biases_initializer: Initializer function for biases.
         """
 
-        super().__init__()
+        super().__init__(shape)
         self.co = nfilters
         self.filter_shape = (
             (filter_shape, filter_shape) if isinstance(filter_shape, int) else filter_shape

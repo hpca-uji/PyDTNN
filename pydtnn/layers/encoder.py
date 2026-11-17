@@ -13,7 +13,7 @@ from pydtnn.layers.addition_block import AdditionBlock
 from pydtnn.layers.feed_forward import FeedForward
 from pydtnn.layers.layer_normalization import LayerNormalization
 from pydtnn.layers.multi_head_attention import MultiHeadAttention
-from pydtnn.utils.constants import Array
+from pydtnn.utils.constants import Array, ArrayShape
 
 __all__ = ("Encoder",)
 
@@ -27,9 +27,9 @@ class Encoder[T: Array](AbstractBlockLayer[T]):  # noqa: D101 (generics not dete
         self,
         scale_factor: float,
         dim_keys: int = 3,
-        dim_feed_forward:
-        int = 256,
-        heads: int = 10
+        dim_feed_forward: int = 256,
+        heads: int = 10,
+        shape: ArrayShape = ()
     ) -> None:
         """
         Initializes the Encoder layer with specified hyperparameters.
@@ -62,7 +62,7 @@ class Encoder[T: Array](AbstractBlockLayer[T]):  # noqa: D101 (generics not dete
             # NOTE: One path due is a Sequence.
         ]
 
-        super().__init__(paths=path)
+        super().__init__(paths=path, shape=shape)
 
     def backward(self, dy: T) -> T:
         # NOTE: Remove this method after the implementation.

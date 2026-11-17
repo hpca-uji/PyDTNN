@@ -4,7 +4,7 @@ import logging
 
 from pydtnn.layers.abstract.block_layer import AbstractBlockLayer
 from pydtnn.utils import initializers
-from pydtnn.utils.constants import Array
+from pydtnn.utils.constants import Array, ArrayShape
 
 __all__ = ("MultiHeadAttentionNacho",)
 
@@ -22,6 +22,7 @@ class MultiHeadAttentionNacho[T: Array](AbstractBlockLayer[T]):  # noqa: D101 (g
         dropout_rate: float = 0.5,
         weights_initializer: initializers.InitializerFunc = initializers.glorot_uniform,
         biases_initializer: initializers.InitializerFunc = initializers.zeros,
+        shape: ArrayShape = ()
     ) -> None:
         """
         Initializes the MultiHeadAttention layer.
@@ -34,7 +35,7 @@ class MultiHeadAttentionNacho[T: Array](AbstractBlockLayer[T]):  # noqa: D101 (g
             weights_initializer: Initializer for weight matrices.
             biases_initializer: Initializer for bias vectors.
         """
-        super().__init__()
+        super().__init__(shape)
         self.embedl = embedl
         self.heads = heads
         self.d_k = d_k

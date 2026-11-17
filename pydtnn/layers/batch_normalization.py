@@ -28,6 +28,7 @@ class BatchNormalization[T: Array](Layer[T]):  # noqa: D101 (generics not detect
         biases_initializer: Callable = zeros,
         sync_stats: bool = False,
         use_bias: bool = True,
+        shape: ArrayShape = ()
     ) -> None:
         """
         Initializes the BatchNormalization layer.
@@ -42,7 +43,7 @@ class BatchNormalization[T: Array](Layer[T]):  # noqa: D101 (generics not detect
             sync_stats (bool): Whether to synchronize statistics across devices.
             use_bias(bool): Whether to include a bias term.
         """
-        super().__init__()
+        super().__init__(shape)
         self.momentum = momentum
         self.epsilon = epsilon
         self.use_bias = use_bias

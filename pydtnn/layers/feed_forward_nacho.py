@@ -31,7 +31,7 @@ class FeedForwardNacho[T: Array](AbstractBlockLayer[T]):  # noqa: D101 (generics
             d_ff (int): The dimensionality of the hidden feed-forward layer.
             dropout_rate (float): The dropout probability applied to the hidden layer.
         """
-        super().__init__()
+        super().__init__(shape)
         self.shape = shape
         self.d_ff = d_ff
         self.dropout_rate = dropout_rate

@@ -334,7 +334,7 @@ class Init[T: Array](Repr[T]):  # noqa: D101 (generics not detected)
                 prev_shape = self.layers[i - 1].shape
                 y = self.layers[i - 1].y
             else:
-                prev_shape = ()
+                prev_shape = self.layers[i].shape
                 y = None
 
             layer._model_init(prev_shape, y)

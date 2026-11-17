@@ -25,6 +25,7 @@ class LayerNormalization[T: Array](Layer[T]):  # noqa: D101 (generics not detect
         gamma: float = 1.0,
         epsilon: float = 1e-5,
         sync_stats: bool = False,
+        shape: ArrayShape = ()
     ) -> None:
         """
         Initializes the LayerNormalization layer.
@@ -36,7 +37,7 @@ class LayerNormalization[T: Array](Layer[T]):  # noqa: D101 (generics not detect
             epsilon: Small value added to variance for numerical stability.
             sync_stats: Whether to synchronize statistics across devices.
         """
-        super().__init__()
+        super().__init__(shape)
         if type(axis) is not tuple:
             self.axis: tuple = (axis,)
         else:

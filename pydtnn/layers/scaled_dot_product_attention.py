@@ -8,7 +8,7 @@ from pydtnn.activations.softmax import Softmax
 from pydtnn.layers.identity import Identity
 from pydtnn.layers.multiplication_block import MultiplicationBlock
 from pydtnn.layers.product_scalar import ProductScalar
-from pydtnn.utils.constants import Array
+from pydtnn.utils.constants import Array, ArrayShape
 
 __all__ = ("ScaledDotProductAttention",)
 
@@ -26,6 +26,7 @@ class ScaledDotProductAttention[T: Array](MultiplicationBlock[T]):  # noqa: D101
             Identity[T]()
         ),
         with_masked_layer: bool = False,
+        shape: ArrayShape = (),
         **kwargs: Any
     ) -> None:
         """Implementation of a Scaled Dot-Product Attention. https://arxiv.org/pdf/1706.03762, Figure 2 (left).
@@ -56,4 +57,4 @@ class ScaledDotProductAttention[T: Array](MultiplicationBlock[T]):  # noqa: D101
             ]
         ]
 
-        super().__init__(paths, multiple_inputs=True, **kwargs)
+        super().__init__(paths, multiple_inputs=True, shape=shape, **kwargs)

@@ -2,7 +2,7 @@
 
 import logging
 import math
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from pydtnn.backends.numpy.layers.abstract.layer import LayerNumpy
 from pydtnn.layers.abstract.pool_2d_layer import AbstractPool2DLayer
@@ -21,10 +21,6 @@ if TYPE_CHECKING:
 
 class AbstractPool2DLayerNumpy(AbstractPool2DLayer[np.ndarray], LayerNumpy):
     """Abstract base class for 2D pooling layers implemented with NumPy."""
-
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        """Initialize the 2D pooling layer."""
-        super().__init__(*args, **kwargs)
 
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
         """Initialize model parameters, memory buffers, and performance estimates."""

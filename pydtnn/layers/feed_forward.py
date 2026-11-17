@@ -36,4 +36,4 @@ class FeedForward[T: Array](AbstractBlockLayer[T]):  # noqa: D101 (generics not 
             Relu(),
             FC(shape=shape, use_bias=True)
         ]]
-        super().__init__(paths)
+        super().__init__(paths, shape=shape)

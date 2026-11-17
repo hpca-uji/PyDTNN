@@ -1,7 +1,7 @@
 """NumPy backend implementation of the Leaky ReLU activation function."""
 
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from pydtnn.activations.leaky_relu import LeakyRelu
 from pydtnn.backends.numpy.activations.abstract.activation import ActivationNumpy
@@ -19,10 +19,6 @@ if TYPE_CHECKING:
 
 class LeakyReluNumpy(LeakyRelu[np.ndarray], ActivationNumpy):
     """NumPy-based Leaky ReLU activation layer."""
-
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        """Initialize the LeakyReluNumpy layer."""
-        super().__init__(*args, **kwargs)
 
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
         """Initialize internal buffers for the forward and backward passes."""

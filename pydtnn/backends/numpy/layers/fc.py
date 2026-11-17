@@ -1,7 +1,7 @@
 """NumPy backend implementation of the Fully Connected (FC) layer."""
 
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from pydtnn.backends.numpy.layers.abstract.layer import LayerNumpy
 from pydtnn.layers.fc import FC
@@ -21,14 +21,6 @@ if TYPE_CHECKING:
 
 class FCNumpy(FC[np.ndarray], LayerNumpy):
     """Fully connected layer implementation using NumPy."""
-
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        """Initialize the FCNumpy layer."""
-        super().__init__(*args, **kwargs)
-        # The following attributes will be initalized in "initalize"
-        self.x: np.ndarray = None  # pyright: ignore[reportAttributeAccessIssue]
-        self.dw: np.ndarray = None  # pyright: ignore[reportAttributeAccessIssue]
-        self.db: np.ndarray = None  # pyright: ignore[reportAttributeAccessIssue]
 
     def _model_init(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
         """Initialize layer parameters, buffers, and performance models."""

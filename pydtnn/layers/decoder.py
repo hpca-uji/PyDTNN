@@ -9,7 +9,7 @@ from pydtnn.layers.feed_forward import FeedForward
 from pydtnn.layers.forwarded_output import ForwardedOutput
 from pydtnn.layers.layer_normalization import LayerNormalization
 from pydtnn.layers.multi_head_attention import MultiHeadAttention
-from pydtnn.utils.constants import Array
+from pydtnn.utils.constants import Array, ArrayShape
 
 __all__ = ("Decoder",)
 
@@ -27,6 +27,7 @@ class Decoder[T: Array](AbstractBlockLayer[T]):  # noqa: D101 (generics not dete
         dim_keys: int = 3,
         dim_feed_forward: int = 256,
         heads: int = 10,
+        shape: ArrayShape = ()
     ) -> None:
         """
         Initializes the Encoder layer with specified hyperparameters.
@@ -78,7 +79,7 @@ class Decoder[T: Array](AbstractBlockLayer[T]):  # noqa: D101 (generics not dete
             ]
         ]
 
-        super().__init__(paths=path)
+        super().__init__(paths=path, shape=shape)
 
     def set_prev_output(self, prev_output: T) -> None:
         """Set the value of the previous output"""

@@ -26,18 +26,19 @@ class AdaptiveAveragePool2D[T: Array](Layer[T]):  # noqa: D101 (generics not det
     #  -> int: if all the output shape's dimensions share values
     #  -> Tuple[int, int]: if it is necessary or it is preferred to define each output dimension individually
 
-    def __init__(self, output_shape: int | ArrayShape | None = None) -> None:
+    def __init__(self, output_shape: int | ArrayShape | None = None, shape: ArrayShape = ()) -> None:
         """
         Initializes the AdaptiveAveragePool2D layer.
 
         Args:
             output_shape: The target output shape (H, W). If None, output shape equals input shape.
         """
-        super().__init__()
+        super().__init__(shape)
         self.output_shape = output_shape
 
-        # This value will change in initialize:
+        # The following attributes will be initialized later
         self.pooling_not_needed: bool = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.y: T = None  # pyright: ignore[reportAttributeAccessIssue]
 
     def _model_init(self, prev_shape: ArrayShape, x: T | None) -> None:
         """

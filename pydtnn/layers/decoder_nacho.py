@@ -3,7 +3,7 @@
 import logging
 
 from pydtnn.layers.abstract.block_layer import AbstractBlockLayer
-from pydtnn.utils.constants import Array
+from pydtnn.utils.constants import Array, ArrayShape
 
 __all__ = ("DecoderNacho",)
 
@@ -20,6 +20,7 @@ class DecoderNacho[T: Array](AbstractBlockLayer[T]):  # noqa: D101 (generics not
         d_ff: int = 256,
         heads: int = 10,
         dropout_rate: float = 0.5,
+        shape: ArrayShape = ()
     ) -> None:
         """
         Initializes the Decoder layer.
@@ -31,7 +32,7 @@ class DecoderNacho[T: Array](AbstractBlockLayer[T]):  # noqa: D101 (generics not
             heads: Number of attention heads.
             dropout_rate: Dropout probability.
         """
-        super().__init__()
+        super().__init__(shape)
         self.embedl = embedl
         self.heads = heads
         self.d_k = d_k
