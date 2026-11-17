@@ -15,6 +15,7 @@ __all__ = (
     "cudnn_handle",
     "cupy_stream",
     "cupy_device",
+    "cupy_count",
     "errors",
     "host_uuid",
     "metadata",
@@ -27,6 +28,7 @@ __all__ = (
     "state_path",
     "pycuda_stream",
     "pycuda_device",
+    "pycuda_count",
     "timestamp",
 )
 

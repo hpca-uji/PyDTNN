@@ -24,7 +24,7 @@ from pydtnn.optimizers import select as select_optimizer
 from pydtnn.schedulers import select as select_scheduler
 from pydtnn.tracers.tracer import TracerType
 from pydtnn.utils import rand
-from pydtnn.utils.gpu import CudnnDataType
+from pydtnn.utils.gpu import nccl_dtype_from_numpy, cudnn_dtype_from_numpy
 from pydtnn.utils.memory_pool import PreallocMemory, PrivateMemory
 from pydtnn.utils.performance_counter import PerformanceCounter
 from pydtnn.utils.tensor import SampleFormat, TensorFormat, format_reshape
@@ -217,29 +217,14 @@ class Init[T: Array](Repr[T]):  # noqa: D101 (generics not detected)
             assert nccl is not None
             assert nccl_comm is not None
 
-            nccl_types = {
-                np.dtype(np.float64): nccl.DataType.Float64,
-                np.dtype(np.float32): nccl.DataType.Float32,
-                np.dtype(np.int8): nccl.DataType.Int8,
-                np.dtype(np.int32): nccl.DataType.Int32,
-            }
-
-            nccl_type = nccl_types.get(self.dtype, nccl.DataType.Float32)
+            nccl_type = nccl_dtype_from_numpy(self.dtype)
         else:
             nccl_type = None
 
+        cudnn_dtype = cudnn_dtype_from_numpy(self.dtype)
+
         if pycuda_stream is not None:
             self.tracer.set_stream(pycuda_stream)
-
-        cudnn_types = {
-            np.dtype(np.float64): CudnnDataType.FLOAT64,
-            np.dtype(np.float32): CudnnDataType.FLOAT32,
-            np.dtype(np.int8): CudnnDataType.INT8,
-            np.dtype(np.int32): CudnnDataType.INT32,
-        }
-
-        cudnn_type: str = cudnn_types.get(self.dtype, CudnnDataType.FLOAT32)
-        cudnn_dtype: int = cudnn.cudnnDataType[cudnn_type]
 
         self.nccl_type = nccl_type
         self.nccl_comm = nccl_comm

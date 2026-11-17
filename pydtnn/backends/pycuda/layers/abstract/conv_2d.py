@@ -11,7 +11,7 @@ from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.utils.constants import ArrayShape, Parameters
 from pydtnn.utils.performance_models import matmul_time
 from pydtnn.utils.tensor import TensorFormat
-from pydtnn.utils.tensor_array import TensorArray
+from pydtnn.utils.tensor_array import DescriptorType, MemoryType, TensorArray
 
 __all__ = ("AbstractConv2DPycuda",)
 
@@ -41,21 +41,22 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
         """
         super()._model_init(prev_shape, x)
 
-        self.weights = TensorArray.to_gpu(
+        self.weights = TensorArray.from_host(
             self.weights_initializer(self.weights_shape, self.model.dtype, self.model.random),
-            self.model.tensor_format,
-            self.model.cudnn_dtype,
-            TensorArray.TensorType.FILTER,
+            tensor_format=self.model.tensor_format,
+            mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+            desc_type=DescriptorType.FILTER,
         )
         self.memory_used += self.weights.nbytes
 
         # Biases
         if self.use_bias:
             biases_shape = (self.co,)
-            self.biases = TensorArray.to_gpu(
+            self.biases = TensorArray.from_host(
                 self.biases_initializer(biases_shape, self.model.dtype, self.model.random),
-                self.model.tensor_format,
-                self.model.cudnn_dtype,
+                tensor_format=self.model.tensor_format,
+                mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+                desc_type=DescriptorType.TENSOR,
             )
             self.memory_used += self.biases.nbytes
 
@@ -83,34 +84,23 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
             dtype=self.model.dtype,
         )
 
-        if self.model.use_gpudirect:
-            bias_tensor_type = TensorArray.TensorType.FILTER
-            _drv = drv
-        else:
-            bias_tensor_type = TensorArray.TensorType.TENSOR
-            _drv = None
-
         # Derivative dw and derivative db
         self.dw = TensorArray.new_zeros(
-            self.weights.cpu_shape,
+            self.weights.host_shape,
             self.model.dtype,
             tensor_format=self.model.tensor_format,
-            cudnn_dtype=self.model.cudnn_dtype,
-            gpudirect=self.model.use_gpudirect,
-            tensor_type=TensorArray.TensorType.FILTER,
-            drv=_drv,
+            mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+            desc_type=DescriptorType.FILTER,
         )
         self.memory_used += self.dw.nbytes
 
         if self.use_bias:
             self.db = TensorArray.new_zeros(
-                self.biases.cpu_shape,
+                self.biases.host_shape,
                 self.model.dtype,
                 tensor_format=self.model.tensor_format,
-                cudnn_dtype=self.model.cudnn_dtype,
-                gpudirect=self.model.use_gpudirect,
-                tensor_type=bias_tensor_type,
-                drv=_drv,
+                mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+                desc_type=DescriptorType.FILTER if self.model.use_gpudirect else DescriptorType.TENSOR,
             )
             self.memory_used += self.db.nbytes
 

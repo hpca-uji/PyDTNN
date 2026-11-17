@@ -5,26 +5,42 @@ import logging
 import re
 import subprocess
 
+import numpy as np
+
 __all__ = (
-    "CudnnDataType",
-    "get_gpu_memory_used",
-    "get_gpus_per_node",
+    "nccl_dtype_from_numpy",
+    "cudnn_dtype_from_numpy",
+    "get_cuda_memory_used",
+    "get_cuda_device_count",
 )
 
 logger = logging.getLogger(__name__)
 
 
-class CudnnDataType(enum.StrEnum):
-    """Enumeration of supported cuDNN data types."""
+def nccl_dtype_from_numpy(dtype: np.dtype) -> enum.Enum:
+    """Convert a Numpy DType to NCCL DType"""
+    from pydtnn.libs import nccl
+    return {
+        np.dtype(np.float64): nccl.DataType.Float64,
+        np.dtype(np.float32): nccl.DataType.Float32,
+        np.dtype(np.int8): nccl.DataType.Int8,
+        np.dtype(np.int32): nccl.DataType.Int32,
+    }[dtype]
 
-    FLOAT64 = "CUDNN_DATA_DOUBLE"
-    FLOAT32 = "CUDNN_DATA_FLOAT"
-    INT8 = "CUDNN_DATA_INT8"
-    INT32 = "CUDNN_DATA_INT32"
+
+def cudnn_dtype_from_numpy(dtype: np.dtype) -> int:
+    """Convert a Numpy DType to cuDNN DType"""
+    from pydtnn.libs import cudnn
+    return {
+        np.dtype(np.float64): cudnn.cudnnDataType["CUDNN_DATA_DOUBLE"],
+        np.dtype(np.float32): cudnn.cudnnDataType["CUDNN_DATA_FLOAT"],
+        np.dtype(np.int8): cudnn.cudnnDataType["CUDNN_DATA_INT8"],
+        np.dtype(np.int32): cudnn.cudnnDataType["CUDNN_DATA_INT32"],
+    }[dtype]
 
 
-def get_gpu_memory_used() -> str:
-    """Retrieves the current GPU memory usage from nvidia-smi.
+def get_cuda_memory_used() -> str:
+    """Retrieves the current CUDA memory usage from nvidia-smi.
 
     Returns:
         A string representing the used memory, or 'None' if retrieval fails.
@@ -42,11 +58,11 @@ def get_gpu_memory_used() -> str:
     return memory
 
 
-def get_gpus_per_node() -> int:
-    """Counts the number of available GPUs on the current node.
+def get_cuda_device_count() -> int:
+    """Counts the number of available CUDA devices on the current node.
 
     Returns:
-        The number of detected GPUs, or 0 if nvidia-smi is unavailable.
+        The number of detected CUDA devices, or 0 if retrieval fails.
     """
     try:
         gpus_per_node = subprocess.check_output(["nvidia-smi", "-L"]).count(b"UUID")

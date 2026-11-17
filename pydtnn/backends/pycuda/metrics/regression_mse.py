@@ -6,7 +6,7 @@ import numpy as np
 
 from pydtnn.backends.pycuda.metrics.abstract.metric import MetricPycuda
 from pydtnn.metrics.regression_mse import RegressionMSE
-from pydtnn.utils.tensor_array import TensorArray
+from pydtnn.utils.tensor_array import DescriptorType, MemoryType, TensorArray
 
 __all__ = ("RegressionMSEPycuda",)
 
@@ -24,18 +24,21 @@ class RegressionMSEPycuda(RegressionMSE[TensorArray], MetricPycuda):
         num_classes = self.model.output_shape
 
         self.res = TensorArray.new_zeros(
-            shape=(1,),
-            dtype=np.dtype(self.model.dtype),
+            (1,),
+            self.model.dtype,
             tensor_format=self.model.tensor_format,
-            cudnn_dtype=self.model.cudnn_dtype,
+            mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+            desc_type=DescriptorType.TENSOR
         )
-
+        self.memory_used += self.res.nbytes
         self.local_res = TensorArray.new_zeros(
-            shape=(n, *num_classes),
-            dtype=np.dtype(self.model.dtype),
+            (n, *num_classes),
+            self.model.dtype,
             tensor_format=self.model.tensor_format,
-            cudnn_dtype=self.model.cudnn_dtype,
+            mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+            desc_type=DescriptorType.TENSOR
         )
+        self.memory_used += self.local_res.nbytes
 
     def compute(self, y_pred: TensorArray, y_targ: TensorArray) -> float:
         """

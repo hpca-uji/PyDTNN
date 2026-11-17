@@ -6,7 +6,7 @@ import numpy as np
 
 from pydtnn.backends.pycuda.metrics.abstract.metric import MetricPycuda
 from pydtnn.metrics.recall import Recall
-from pydtnn.utils.tensor_array import TensorArray
+from pydtnn.utils.tensor_array import DescriptorType, MemoryType, TensorArray
 
 __all__ = ("RecallPycuda",)
 
@@ -21,17 +21,21 @@ class RecallPycuda(Recall[TensorArray], MetricPycuda):
         super()._model_init()
         target_classes = self.model.output_shape[0]
         self.recall = TensorArray.new_zeros(
-            shape=(1,),
-            dtype=self.model.dtype,
+            (1,),
+            self.model.dtype,
             tensor_format=self.model.tensor_format,
-            cudnn_dtype=self.model.cudnn_dtype,
+            mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+            desc_type=DescriptorType.TENSOR
         )
+        self.memory_used += self.recall.nbytes
         self.local_recall = TensorArray.new_zeros(
-            shape=(target_classes,),
-            dtype=self.model.dtype,
+            (target_classes,),
+            self.model.dtype,
             tensor_format=self.model.tensor_format,
-            cudnn_dtype=self.model.cudnn_dtype,
+            mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+            desc_type=DescriptorType.TENSOR
         )
+        self.memory_used += self.local_recall.nbytes
 
     def compute(self, y_pred: TensorArray, y_targ: TensorArray) -> float:
         """

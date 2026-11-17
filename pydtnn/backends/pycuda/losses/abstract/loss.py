@@ -9,7 +9,7 @@ from pycuda.driver import Function
 from pydtnn.backends.pycuda.abstract.base import BasePycuda
 from pydtnn.losses.abstract.loss import Loss
 from pydtnn.utils.constants import DTYPE2CTYPE
-from pydtnn.utils.tensor_array import TensorArray
+from pydtnn.utils.tensor_array import DescriptorType, MemoryType, TensorArray
 
 __all__ = ("LossPycuda",)
 
@@ -35,8 +35,11 @@ class LossPycuda(Loss[TensorArray], BasePycuda):
 
     def _weights_to_tensor(self, weights: list[float]) -> TensorArray:
         _w: np.ndarray = super()._weights_to_tensor(weights)  # pyright: ignore[reportAssignmentType]
-        w = TensorArray.to_gpu(
-            ary=_w, tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype
+        w = TensorArray.from_host(
+            _w,
+            tensor_format=self.model.tensor_format,
+            mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+            desc_type=DescriptorType.TENSOR
         )
         return w
 
@@ -46,10 +49,21 @@ class LossPycuda(Loss[TensorArray], BasePycuda):
         # NOTE: the model must be executed before this one.
         self.grid = self.model.cuda_grid
         self.block = self.model.cuda_block
-        self.loss: gpuarray.GPUArray = gpuarray.zeros((self.model.batch_size,), self.model.dtype)
-        dx_gpu: gpuarray.GPUArray = gpuarray.zeros(self.shape, self.model.dtype)
-        self.dx = TensorArray(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
-        self.memory_used += self.dx.nbytes + self.loss.nbytes
+        self.loss = TensorArray.new_zeros(
+            (self.model.batch_size,),
+            self.model.dtype,
+            mem_type=MemoryType.DEVICE,
+            desc_type=DescriptorType.NONE
+        )
+        self.memory_used += self.loss.nbytes
+        self.dx = TensorArray.new_zeros(
+            self.shape,
+            self.model.dtype,
+            tensor_format=self.model.tensor_format,
+            mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+            desc_type=DescriptorType.TENSOR
+        )
+        self.memory_used += self.dx.nbytes
 
     def _kernel_init(self) -> Function:
         """

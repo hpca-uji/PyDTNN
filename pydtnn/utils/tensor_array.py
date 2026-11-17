@@ -11,9 +11,8 @@ from enum import StrEnum, auto
 from typing import Any, Literal
 
 import numpy as np
-from pycuda import driver as pycuda_driver
-from pycuda import gpuarray
 
+from pydtnn.utils.gpu import cudnn_dtype_from_numpy
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import TensorFormat, decode_shape, encode_shape
 
@@ -21,115 +20,138 @@ __all__ = ("TensorArray",)
 
 logger = logging.getLogger(__name__)
 
-try:
-    from pydtnn.libs import cudnn as cudnn
-except Exception:
-    cudnn = None
 
 if typing.TYPE_CHECKING:
     from pycuda.driver import Stream
 
 
+type Ary = Any
+
+
+class DescriptorType(StrEnum):
+    """Enumeration of supported descriptor types."""
+
+    TENSOR = auto()
+    FILTER = auto()
+    SEQ = auto()
+    NONE = auto()
+
+
+class MemoryType(StrEnum):
+    """Enumeration of supported memory types."""
+
+    HOST = auto()
+    GLOBAL = auto()
+    DEVICE = auto()
+
+
 class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
     """Wrapper class for GPU arrays that integrates with cuDNN descriptors."""
 
-    class TensorType(StrEnum):
-        """Enumeration of supported tensor types."""
+    @classmethod
+    def wrap(
+        cls,
+        object: Any,
+        *,
+        tensor_format: TensorFormat = TensorFormat.NHWC,
+    ) -> TensorArray[tuple[()], np.dtype[np.object_]]:
+        """Wraps a object as a TensorArray"""
+        return cls(
+            np.array(object, dtype=np.object_, ndmax=1),
+            host_shape=True,
+            tensor_format=tensor_format,
+            desc_type=DescriptorType.NONE,
+            mem_type=MemoryType.HOST
+        )  # pyright: ignore[reportReturnType]
 
-        TENSOR = auto()
-        FILTER = auto()
-        SEQ = auto()
-        OTHER = auto()
-
-    @staticmethod
+    @classmethod
     def new_zeros(
+        cls,
         shape: S,
         dtype: D,
-        tensor_format: TensorFormat,
-        cudnn_dtype: int,
-        tensor_type: TensorType = TensorType.TENSOR,
-        desc: int | None = None,
-        gpudirect: bool = False,
-        cublas: bool = False,
-        drv: pycuda_driver | None = None,  # pyright: ignore[reportInvalidTypeForm]
+        *,
+        host_shape: bool = False,
+        tensor_format: TensorFormat = TensorFormat.NCHW,
+        desc_type: DescriptorType = DescriptorType.NONE,
+        mem_type: MemoryType = MemoryType.DEVICE
     ) -> TensorArray[S, D]:
         """Creates a zero-initialized TensorArray."""
-        if drv is not None:
-            gpu_arr = drv.aligned_zeros(shape, dtype)
-            gpu_arr = drv.register_host_memory(gpu_arr, flags=drv.mem_host_register_flags.DEVICEMAP)
-        else:
-            gpu_arr = gpuarray.zeros(shape, dtype)
-        return TensorArray(
-            gpu_arr=gpu_arr,
+        return cls.from_host(
+            np.zeros(shape, dtype),
+            host_shape=True if host_shape else False,
             tensor_format=tensor_format,
-            cudnn_dtype=cudnn_dtype,
-            tensor_type=tensor_type,
-            desc=desc,
-            use_gpudirect=gpudirect,
-            cublas=cublas,
+            desc_type=desc_type,
+            mem_type=mem_type
         )
 
     @staticmethod
-    def to_gpu(
+    def from_host(
         ary: np.ndarray[S, D],
-        tensor_format: TensorFormat,
-        cudnn_dtype: int,
-        tensor_type: TensorType = TensorType.TENSOR,
-        desc: int | None = None,
-        use_gpudirect: bool = False,
-        cublas: bool = False,
-        drv: pycuda_driver | None = None,  # pyright: ignore[reportInvalidTypeForm]
+        *,
+        host_shape: bool = False,
+        tensor_format: TensorFormat = TensorFormat.NCHW,
+        desc_type: DescriptorType = DescriptorType.NONE,
+        mem_type: MemoryType = MemoryType.DEVICE
     ) -> TensorArray[S, D]:
         """Creates a zero-initialized TensorArray."""
-        if drv is not None:
-            gpu_arr = drv.aligned_zeros(ary.shape, ary.dtype)
-            gpu_arr = drv.register_host_memory(gpu_arr, flags=drv.mem_host_register_flags.DEVICEMAP)
-            np.copyto(gpu_arr, ary)
-        else:
-            gpu_arr = gpuarray.to_gpu(ary)
+        match mem_type:
+            case MemoryType.GLOBAL:
+                from pycuda import driver as pycuda_driver
+                gpu_arr = pycuda_driver.aligned_zeros(ary.shape, ary.dtype)
+                gpu_arr = pycuda_driver.register_host_memory(gpu_arr, flags=pycuda_driver.mem_host_register_flags.DEVICEMAP)
+                np.copyto(gpu_arr, ary)
+            case MemoryType.DEVICE:
+                from pycuda import gpuarray
+                gpu_arr = gpuarray.to_gpu(ary)
+            case MemoryType.HOST:
+                gpu_arr = ary
         return TensorArray(
-            gpu_arr=gpu_arr,
+            gpu_arr,
+            host_shape=True if host_shape else ary.shape,
             tensor_format=tensor_format,
-            cudnn_dtype=cudnn_dtype,
-            tensor_type=tensor_type,
-            desc=desc,
-            use_gpudirect=use_gpudirect,
-            cublas=cublas,
+            desc_type=desc_type,
+            mem_type=mem_type
         )
 
     def __init__(
         self,
-        gpu_arr: gpuarray.GPUArray,
-        tensor_format: TensorFormat,
-        cudnn_dtype: int,
-        tensor_type: TensorType = TensorType.TENSOR,
+        ary: Ary,
+        *,
+        host_shape: S | bool = False,
+        tensor_format: TensorFormat = TensorFormat.NCHW,
+        mem_type: MemoryType = MemoryType.DEVICE,
+        desc_type: DescriptorType = DescriptorType.NONE,
         desc: int | None = None,
-        use_gpudirect: bool = False,
-        cublas: bool = False,
-        cpu_shape: S | None = None,
     ) -> None:
         """Initializes the TensorArray instance."""
 
+        self.ary: Ary
+        self.host_shape: S = ary.shape
         self.tensor_format = TensorFormat(tensor_format.lower())
-        self.cudnn_dtype = cudnn_dtype
-        self.tensor_type = tensor_type
-        self.use_gpudirect = use_gpudirect
-        self.cublas = cublas
-
-        self.ary: gpuarray.GPUArray
+        self.mem_type = mem_type
+        self.desc_type = desc_type
         self.desc: int = desc  # pyright: ignore[reportAttributeAccessIssue]
-        self.cpu_shape: S = cpu_shape  # pyright: ignore[reportAttributeAccessIssue]
 
-        self._set_ary(gpu_arr)
+        if host_shape is True:
+            self.host_shape = ()  # pyright: ignore[reportAttributeAccessIssue]
+            self.ary = ary
+        else:
+            self.ary = self._expand_ary(ary)
+
         if desc:
             self.desc = desc
         elif self.size > 0:
             self._desc_init()
 
     @property
+    def cudnn_dtype(self) -> int:
+        """Get cuDNN dtype"""
+        return cudnn_dtype_from_numpy(self.ary.dtype)
+
+    @property
     def cudnn_tensor_format(self) -> int:
-        """Returns the cuDNN integer constant for the current tensor format."""
-        assert cudnn, "No cuddn support"
+        """Get cuDNN integer constant for the current tensor format"""
+        from pydtnn.libs import cudnn
         return cudnn.cudnnTensorFormat[f"CUDNN_TENSOR_{self.tensor_format.upper()}"]
 
     def _encode_shape(self, shape: ArrayShape) -> ArrayShape:
@@ -140,51 +162,49 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
         """Decodes shape based on tensor format."""
         return decode_shape(shape, self.tensor_format)
 
-    def _set_ary(self, gpu_arr: gpuarray.GPUArray) -> None:
-        """Set backing gpu array and reshape to 4D for cuDNN compatibility."""
-        match len(gpu_arr.shape):
+    def _expand_ary(self, ary: Ary) -> None:
+        """Expand backing array and reshape to 4D for cuDNN compatibility."""
+        match len(ary.shape):
             case 1:
                 match self.tensor_format:
                     case TensorFormat.NCHW:
-                        shape = (1, *gpu_arr.shape, 1, 1)
+                        shape = (1, ary.shape[0], 1, 1)
                     case TensorFormat.NHWC:
-                        shape = (1, 1, 1, *gpu_arr.shape)
+                        shape = (1, 1, 1, ary.shape[0])
                     case tensor_format:
                         raise NotImplementedError(f"Unsupported tensor format {tensor_format}!")
             case 2:
                 match self.tensor_format:
                     case TensorFormat.NCHW:
-                        shape = (*gpu_arr.shape, 1, 1)
+                        shape = (ary.shape[0], ary.shape[1], 1, 1)
                     case TensorFormat.NHWC:
-                        shape = (gpu_arr.shape[0], 1, 1, gpu_arr.shape[1])
+                        shape = (ary.shape[0], 1, 1, ary.shape[1])
                     case tensor_format:
                         raise NotImplementedError(f"Unsupported tensor format {tensor_format}!")
             case 3:
                 match self.tensor_format:
                     case TensorFormat.NCHW:
-                        shape = (gpu_arr.shape[0], 1, gpu_arr.shape[1], gpu_arr.shape[2])
+                        shape = (ary.shape[0], 1, ary.shape[1], ary.shape[2])
                     case TensorFormat.NHWC:
-                        shape = (gpu_arr.shape[0], gpu_arr.shape[1], gpu_arr.shape[2], 1)
+                        shape = (ary.shape[0], ary.shape[1], ary.shape[2], 1)
                     case tensor_format:
                         raise NotImplementedError(f"Unsupported tensor format {tensor_format}!")
             case 4:
-                shape = gpu_arr.shape
+                shape = ary.shape
             case _:
                 raise ValueError(
                     "The expected len shape are 1, 2, 3 or 4. Shape received:"
-                    f" {len(gpu_arr.shape)}."
+                    f" {len(ary.shape)}."
                 )
 
-        if self.cpu_shape is None:
-            self.cpu_shape = gpu_arr.shape
-        self.ary = gpu_arr.reshape(shape)
+        return ary.reshape(shape)
 
     def __eq__(self, value: object) -> bool:
         """Checks equality with another TensorArray."""
         if not isinstance(value, TensorArray):
             return False
         return (
-            value.tensor_type == self.tensor_type
+            value.desc_type == self.desc_type
             and value.tensor_format == self.tensor_format
             and value.ary == self.ary
         )
@@ -192,29 +212,31 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
     def __repr__(self) -> str:
         """Returns string representation of the TensorArray."""
         data = re.sub(r"[\s\n]+", " ", repr(self.ary))
-        return f"<{self.__class__.__name__} type={self.tensor_type} format={self.tensor_format} data={data}>"
+        return f"<{self.__class__.__name__} type={self.desc_type} format={self.tensor_format} data={data}>"
 
     @property
     def ptr_voidp(self) -> ctypes.c_void_p:
         """Returns the void pointer to the underlying GPU memory."""
-        if self.use_gpudirect:
-            return ctypes.c_void_p(int(self.ary.base.get_device_pointer()))
-        else:
-            return ctypes.c_void_p(int(self.ary.gpudata))
+        try:
+            ptr = int(self.ary.gpudata)
+        except AttributeError:
+            ptr = int(self.ary.base.get_device_pointer())
+        return ctypes.c_void_p(ptr)
 
     @property
     def ptr_intp(self) -> np.intp:
         """Returns the integer pointer to the underlying GPU memory."""
-        if self.use_gpudirect:
-            return np.intp(int(self.ary.base.get_device_pointer()))
-        else:
-            return np.intp(int(self.ary.gpudata))
+        try:
+            ptr = int(self.ary.gpudata)
+        except AttributeError:
+            ptr = int(self.ary.base.get_device_pointer())
+        return np.intp(ptr)
 
     def _desc_init(self) -> None:
         """Initializes the cuDNN descriptor."""
-        assert cudnn, "No cudnn support"
-        match self.tensor_type:
-            case self.TensorType.TENSOR:
+        match self.desc_type:
+            case DescriptorType.TENSOR:
+                from pydtnn.libs import cudnn
                 n, c, h, w = self._decode_shape(self.shape)
                 desc = cudnn.cudnnCreateTensorDescriptor()
                 assert desc
@@ -222,7 +244,8 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
                 cudnn.cudnnSetTensor4dDescriptor(
                     self.desc, self.cudnn_tensor_format, self.cudnn_dtype, n, c, h, w
                 )
-            case self.TensorType.FILTER:
+            case DescriptorType.FILTER:
+                from pydtnn.libs import cudnn
                 n, c, h, w = self._decode_shape(self.shape)
                 desc = cudnn.cudnnCreateFilterDescriptor()
                 assert desc
@@ -230,7 +253,8 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
                 cudnn.cudnnSetFilter4dDescriptor(
                     self.desc, self.cudnn_dtype, self.cudnn_tensor_format, n, c, h, w
                 )
-            case self.TensorType.SEQ:
+            case DescriptorType.SEQ:
+                from pydtnn.libs import cudnn
                 desc = cudnn.cudnnCreateSeqDataDescriptor()
                 assert desc
                 self.desc = desc
@@ -255,7 +279,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
                     self.seq_length_array,
                     None,
                 )
-            case self.TensorType.OTHER:
+            case DescriptorType.NONE:
                 self.desc = -1
 
             case tensor_type:
@@ -263,15 +287,17 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
 
     def _del_desc(self) -> None:
         """Destroys the cuDNN descriptor."""
-        assert cudnn, "No cudnn support"
-        match self.tensor_type:
-            case self.TensorType.TENSOR:
+        match self.desc_type:
+            case DescriptorType.TENSOR:
+                from pydtnn.libs import cudnn
                 cudnn.cudnnDestroyTensorDescriptor(self.desc)
-            case self.TensorType.FILTER:
+            case DescriptorType.FILTER:
+                from pydtnn.libs import cudnn
                 cudnn.cudnnDestroyFilterDescriptor(self.desc)
-            case self.TensorType.SEQ:
+            case DescriptorType.SEQ:
+                from pydtnn.libs import cudnn
                 cudnn.cudnnDestroySeqDataDescriptor(self.desc)
-            case self.TensorType.OTHER:
+            case DescriptorType.NONE:
                 pass
             case tensor_type:
                 raise NotImplementedError(f"Tensor type not implemented! ({tensor_type})")
@@ -297,19 +323,33 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
 
     def set(self, value: np.ndarray) -> None:
         """Copies data from CPU to GPU."""
-        self.ary.set(np.asarray(value.reshape(self.ary.shape), dtype=self.ary.dtype))
+        value = np.asarray(value.reshape(self.ary.shape), dtype=self.ary.dtype)
+        try:
+            self.ary.set(value)
+        except AttributeError:
+            self.ary[:] = value
 
     def set_async(self, value: np.ndarray, stream: Stream | None = None) -> None:
         """Asynchronously copies data from CPU to GPU."""
-        self.ary.set_async(
-            np.asarray(value.reshape(self.ary.shape), dtype=self.ary.dtype), stream=stream
-        )
+        value = np.asarray(value.reshape(self.ary.shape), dtype=self.ary.dtype)
+        try:
+            self.ary.set_async(value, stream)
+        except AttributeError:
+            self.set(value)  # sync fallback
 
-    def get(self, ary: gpuarray.GPUArray | None = None) -> np.ndarray[S, D]:
+    def get(self, ary: Ary | None = None) -> np.ndarray[S, D]:
         """Copies data from GPU to CPU and removes padding."""
-        value = self.ary.get()
+        match self.mem_type:
+            case MemoryType.DEVICE:
+                value = self.ary.get()
+            case MemoryType.GLOBAL | MemoryType.HOST:
+                value = np.asarray(self.ary, copy=True)
+            case mem_type:
+                raise TypeError(f"Invalid memory type {mem_type}")
 
-        match len(self.cpu_shape):
+        match len(self.host_shape):
+            case 0:
+                return value.item()
             case 1:
                 match self.tensor_format:
                     case TensorFormat.NCHW:
@@ -338,10 +378,9 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
                         raise NotImplementedError(f"Unsupported tensor format {tensor_format}!")
             case 4:
                 value = value
-            case _:
+            case dims:
                 raise ValueError(
-                    "The expected len shape are 1, 2, 3 or 4. Shape received:"
-                    f" {len(self.ary.shape)}."
+                    f"The expected len shape are 0, 1, 2, 3 or 4. Shape received: {dims}."
                 )
 
         if ary is None:
@@ -352,7 +391,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
 
     def get_async(
         self,
-        stream: pycuda_driver | None = None,  # pyright: ignore[reportInvalidTypeForm]
+        stream: Stream | None = None,
         ary: np.ndarray[ArrayShape, D] | None = None,
     ) -> None:
         """Asynchronously copies data from GPU to CPU."""
@@ -362,7 +401,15 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
             raise TypeError("Destination must be a array!")
         if ary.dtype != self.ary.dtype:
             raise TypeError("Destination must be same dtype!")
-        self.ary.get_async(stream, ary=ary.reshape(self.ary.shape))
+        ary = ary.reshape(self.ary.shape)
+
+        match self.mem_type:
+            case MemoryType.DEVICE:
+                self.ary.get_async(stream, ary)
+            case MemoryType.GLOBAL | MemoryType.HOST:
+                self.get(ary)  # sync fallback
+            case mem_type:
+                raise TypeError(f"Invalid memory type {mem_type}")
 
     def __array__(
         self, dtype: np.dtype | None = None, *, copy: bool | None = None
@@ -372,20 +419,18 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
             raise ValueError("Must copy array")
         return np.asarray(self.get(), dtype=dtype)  # pyright: ignore[reportReturnType]
 
-    def _view(self, ary: gpuarray.GPUArray, keep_shape: bool = True) -> TensorArray[S, D]:
+    def _view(self, ary: Ary, keep_shape: bool = True) -> TensorArray[S, D]:
         """Creates a new TensorArray instance sharing the same underlying configuration."""
         # NOTE: In some cases, it would be possible to share the descriptor more
         # aggressively, but we don't have enough information to decide when.
         # NOTE: Currently the descriptor is never shared, but if this is changed
         # the descriptor destruction handling must be changed to mirror it.
-        return TensorArray[S, D](
-            gpu_arr=ary,
+        return self.__class__(
+            ary,
+            host_shape=self.host_shape if keep_shape else False,
             tensor_format=self.tensor_format,
-            cudnn_dtype=self.cudnn_dtype,
-            tensor_type=self.tensor_type,
-            use_gpudirect=self.use_gpudirect,
-            cublas=self.cublas,
-            cpu_shape=self.cpu_shape if keep_shape else None,
+            mem_type=self.mem_type,
+            desc_type=self.desc_type,
         )
 
     def copy(self) -> TensorArray[S, D]:
@@ -398,14 +443,12 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
 
     def __deepcopy__(self, memo: dict) -> TensorArray[S, D]:
         """Returns a deep copy of the TensorArray."""
-        obj = memo[id(self)] = TensorArray[S, D](
-            gpu_arr=copy.deepcopy(self.ary, memo),
+        obj = memo[id(self)] = self.__class__(
+            copy.deepcopy(self.ary, memo),
+            host_shape=self.host_shape,
             tensor_format=self.tensor_format,
-            cudnn_dtype=self.cudnn_dtype,
-            tensor_type=self.tensor_type,
-            use_gpudirect=self.use_gpudirect,
-            cublas=self.cublas,
-            cpu_shape=self.cpu_shape,
+            mem_type=self.mem_type,
+            desc_type=self.desc_type,
         )
         return obj
 
@@ -428,8 +471,8 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
         return len(self.ary)
 
     def _operable(
-        self, other: TensorArray | gpuarray.GPUArray | np.ndarray
-    ) -> gpuarray.GPUArray | np.ndarray:
+        self, other: Ary
+    ) -> Ary:
         """Prepares operand for arithmetic operations."""
         if isinstance(other, TensorArray):
             other = other.ary
@@ -437,69 +480,69 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
             other = other.astype(self.ary.dtype)
         return other
 
-    def __add__(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> TensorArray[S, D]:
+    def __add__(self, other: Ary) -> TensorArray[S, D]:
         """Addition operator."""
         other = self._operable(other)
         return self._view(self.ary.__add__(other))
 
-    def __radd__(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> TensorArray[S, D]:
+    def __radd__(self, other: Ary) -> TensorArray[S, D]:
         """Right-side addition operator."""
         other = self._operable(other)
         return self._view(self.ary.__radd__(other))
 
-    def __sub__(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> TensorArray[S, D]:
+    def __sub__(self, other: Ary) -> TensorArray[S, D]:
         """Subtraction operator."""
         other = self._operable(other)
         return self._view(self.ary.__sub__(other))
 
-    def __rsub__(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> TensorArray[S, D]:
+    def __rsub__(self, other: Ary) -> TensorArray[S, D]:
         """Right-side subtraction operator."""
         other = self._operable(other)
         return self._view(self.ary.__rsub__(other))
 
-    def __iadd__(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> TensorArray[S, D]:
+    def __iadd__(self, other: Ary) -> TensorArray[S, D]:
         """In-place addition operator."""
         other = self._operable(other)
         return self._view(self.ary.__iadd__(other))
 
-    def __isub__(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> TensorArray[S, D]:
+    def __isub__(self, other: Ary) -> TensorArray[S, D]:
         """In-place subtraction operator."""
         other = self._operable(other)
         return self._view(self.ary.__isub__(other))
 
-    def __neg__(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> TensorArray[S, D]:
+    def __neg__(self, other: Ary) -> TensorArray[S, D]:
         """Negation operator."""
         other = self._operable(other)
         return self._view(self.ary.__neg__(other))
 
-    def __mul__(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> TensorArray[S, D]:
+    def __mul__(self, other: Ary) -> TensorArray[S, D]:
         """Multiplication operator."""
         other = self._operable(other)
         return self._view(self.ary.__mul__(other))
 
-    def __rmul__(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> TensorArray[S, D]:
+    def __rmul__(self, other: Ary) -> TensorArray[S, D]:
         """Right-side multiplication operator."""
         other = self._operable(other)
         return self._view(self.ary.__rmul__(other))
 
-    def __truediv__(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> TensorArray[S, D]:
+    def __truediv__(self, other: Ary) -> TensorArray[S, D]:
         """Division operator."""
         other = self._operable(other)
         return self._view(self.ary.__truediv__(other))
 
     def __rtruediv__(
-        self, other: TensorArray | gpuarray.GPUArray | np.ndarray
+        self, other: Ary
     ) -> TensorArray[S, D]:
         """Right-side division operator."""
         other = self._operable(other)
         return self._view(self.ary.__rtruediv__(other))
 
-    def __pow__(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> TensorArray[S, D]:
+    def __pow__(self, other: Ary) -> TensorArray[S, D]:
         """Power operator."""
         other = self._operable(other)
         return self._view(self.ary.__pow__(other))
 
-    def __rpow__(self, other: TensorArray | gpuarray.GPUArray | np.ndarray) -> TensorArray[S, D]:
+    def __rpow__(self, other: Ary) -> TensorArray[S, D]:
         """Right-side power operator."""
         other = self._operable(other)
         return self._view(self.ary.__rpow__(other))
@@ -511,7 +554,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
     def __setitem__(
         self,
         key: int | tuple | slice | np.ndarray,
-        value: TensorArray | gpuarray.GPUArray | np.ndarray,
+        value: Ary,
     ) -> None:
         """Set item operator."""
         value = self._operable(value)

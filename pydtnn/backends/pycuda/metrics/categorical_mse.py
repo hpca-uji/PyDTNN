@@ -6,7 +6,7 @@ import numpy as np
 
 from pydtnn.backends.pycuda.metrics.abstract.metric import MetricPycuda
 from pydtnn.metrics.categorical_mse import CategoricalMSE
-from pydtnn.utils.tensor_array import TensorArray
+from pydtnn.utils.tensor_array import DescriptorType, MemoryType, TensorArray
 
 __all__ = ("CategoricalMSEPycuda",)
 
@@ -20,17 +20,21 @@ class CategoricalMSEPycuda(CategoricalMSE[TensorArray], MetricPycuda):
         """Initializes the internal buffers for result storage on the GPU."""
         super()._model_init()
         self.res = TensorArray.new_zeros(
-            shape=(1,),
-            dtype=np.dtype(self.model.dtype),
+            (1,),
+            self.model.dtype,
             tensor_format=self.model.tensor_format,
-            cudnn_dtype=self.model.cudnn_dtype,
+            mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+            desc_type=DescriptorType.TENSOR
         )
+        self.memory_used += self.res.nbytes
         self.local_res = TensorArray.new_zeros(
-            shape=(self.model.batch_size,),
-            dtype=np.dtype(self.model.dtype),
+            (self.model.batch_size,),
+            self.model.dtype,
             tensor_format=self.model.tensor_format,
-            cudnn_dtype=self.model.cudnn_dtype,
+            mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+            desc_type=DescriptorType.TENSOR
         )
+        self.memory_used += self.local_res.nbytes
 
     def compute(self, y_pred: TensorArray, y_targ: TensorArray) -> float:
         """
