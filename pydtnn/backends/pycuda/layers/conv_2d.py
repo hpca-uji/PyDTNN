@@ -120,7 +120,7 @@ class Conv2DPycuda(AbstractConv2DPycuda):
             self.y.desc,
             self.fwd_algo,
         )
-        self.model.backend.check_convolution_memory(local_size)
+        self.model.backend._ensure_memory_pool(local_size)
 
         self.bwd_dw_algo = (
             cudnn.cudnnFindConvolutionBackwardFilterAlgorithm(
@@ -143,7 +143,7 @@ class Conv2DPycuda(AbstractConv2DPycuda):
             self.weights.desc,
             self.bwd_dw_algo,
         )
-        self.model.backend.check_convolution_memory(local_size)
+        self.model.backend._ensure_memory_pool(local_size)
 
         self.bwd_dx_algo = (
             cudnn.cudnnFindConvolutionBackwardDataAlgorithm(
@@ -166,7 +166,7 @@ class Conv2DPycuda(AbstractConv2DPycuda):
             x.desc,
             self.bwd_dx_algo,
         )
-        self.model.backend.check_convolution_memory(local_size)
+        self.model.backend._ensure_memory_pool(local_size)
 
         self.forward = self._forward_standard
         self.backward = self._backward_standard

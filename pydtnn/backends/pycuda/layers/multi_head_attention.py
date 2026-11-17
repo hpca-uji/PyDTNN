@@ -141,7 +141,7 @@ class MultiHeadAttentionPycuda(MultiHeadAttentionNacho[TensorArray], LayerPycuda
         self.weights_size, self.workspace_size, self.reserve_backward_size = (
             cudnn.cudnnGetMultiHeadAttnBuffers(self.model.cudnn_handle, self.attn_desc)
         )
-        self.model.backend.check_convolution_memory(self.workspace_size)
+        self.model.backend._ensure_memory_pool(self.workspace_size)
         weights_size = self.weights_size // np.dtype(self.model.dtype).itemsize
         reserve_backward_size = (
             self.reserve_backward_size // np.dtype(self.model.dtype).itemsize + 1
