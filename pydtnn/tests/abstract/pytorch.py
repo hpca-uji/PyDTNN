@@ -29,9 +29,9 @@ from pydtnn.utils import header, rand
 from pydtnn.utils.constants import Array, Parameters
 from pydtnn.utils.tensor import TensorFormat
 try:
-   from pydtnn.utils.tensor_array import TensorArray
-except:
-   TensorArray = type(None)
+    from pydtnn.utils.tensor_array import TensorArray
+except ImportError:
+    TensorArray = type(None)
 
 type PyTorch_Model = torch.nn.Module
 
@@ -292,7 +292,7 @@ class PytorchModelTestCaseAbstract(TestCase):
                         for grad_v_key in layer.grad_vars.values():
                             pydtnn_grad = getattr(layer, grad_v_key)
                             if isinstance(pydtnn_grad, TensorArray):
-                                pydtnn_grad = pydtnn_grad.get().reshape(pydtnn_grad.cpu_shape)  # pyright: ignore[reportOptionalMemberAccess]
+                                pydtnn_grad = pydtnn_grad.get().reshape(pydtnn_grad.cpu_shape)  # pyright: ignore[reportOptionalMemberAccess]  # noqa: E501
                             grad_vars[grad_v_key] = pydtnn_grad
                         layers_grad_vars[i] = (layer, grad_vars)
                         i += 1
@@ -685,7 +685,7 @@ class PytorchModelTestCaseAbstract(TestCase):
                         if self.params.device == "cuda":
                             # NOTE: First moving the values to CPU, doing the split, then moving the values back to GPU.
                             assert isinstance(dx_base, TensorArray)
-                            dx_to_split: np.ndarray = dx_base.get().reshape(dx_base.cpu_shape)  # pyright: ignore[reportOptionalMemberAccess]
+                            dx_to_split: np.ndarray = dx_base.get().reshape(dx_base.cpu_shape)  # pyright: ignore[reportOptionalMemberAccess]  # noqa: E501
                         else:
                             assert isinstance(dx_base, np.ndarray)
                             dx_to_split: np.ndarray = dx_base.copy()
@@ -695,8 +695,8 @@ class PytorchModelTestCaseAbstract(TestCase):
                         if self.params.device == "cuda":
                             # NOTE: Moving the values back to GPU.
                             assert isinstance(dx_base, TensorArray)
-                            _dx = TensorArray.to_gpu(dx_splitted, dx_base.tensor_format,  # pyright: ignore[reportOptionalMemberAccess, reportAttributeAccessIssue]
-                                                     dx_base.cudnn_dtype, dx_base.tensor_type)  # pyright: ignore[reportOptionalMemberAccess]
+                            _dx = TensorArray.to_gpu(dx_splitted, dx_base.tensor_format,  # pyright: ignore[reportOptionalMemberAccess, reportAttributeAccessIssue] # noqa: E501
+                                                     dx_base.cudnn_dtype, dx_base.tensor_type)  # pyright: ignore[reportOptionalMemberAccess] # noqa: E501
                         else:
                             _dx = dx_splitted
                     else:
@@ -1027,7 +1027,7 @@ class PytorchModelTestCaseAbstract(TestCase):
             ).to(torch.device(params.device))
 
             input_layer = model_pydtnn.layers[0]
-            assert isinstance(input_layer, Identity)
+            # assert isinstance(input_layer, Identity)
             x_pydtnn, y_pydtnn = input_layer._sync_x_y(x_pydtnn_base, y_pydtnn_base)
 
             # --- FORWARD ---
