@@ -18,7 +18,6 @@ from pydtnn.losses import select as select_loss
 from pydtnn.metrics import select as select_metric
 from pydtnn.model.base import Base
 from pydtnn.model.repr import Repr
-from pydtnn.model.utils import DEFAULT_BACH_SIZE, LIMIT_THREADS_AND_BLOCKS
 from pydtnn.models import select as select_model
 from pydtnn.optimizers import select as select_optimizer
 from pydtnn.schedulers import select as select_scheduler
@@ -162,7 +161,7 @@ class Init[T: Array](Repr[T]):  # noqa: D101 (generics not detected)
         if self.learning_rate_scaling:
             self.learning_rate = self.learning_rate * self.nprocs
 
-    def _batch_init(self, default: int = DEFAULT_BACH_SIZE) -> None:
+    def _batch_init(self, default: int = 64) -> None:
         """
         Configures the batch size for training.
 
