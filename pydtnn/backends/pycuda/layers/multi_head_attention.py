@@ -298,7 +298,7 @@ class MultiHeadAttentionPycuda(MultiHeadAttentionNacho[TensorArray], LayerPycuda
                 self.weights_size,
                 self.weights.ptr_voidp,
                 self.model.backend._memory_pool_size,
-                self.model.backend.get_convolution_workspace_ptr(),
+                self.model.backend._memory_pool_ptr,
                 self.reserve_backward_size,
                 self.reserve_backward.ptr_voidp,
             )
@@ -323,7 +323,7 @@ class MultiHeadAttentionPycuda(MultiHeadAttentionNacho[TensorArray], LayerPycuda
                 self.weights_size,
                 self.weights.ptr_voidp,
                 self.model.backend._memory_pool_size,
-                self.model.backend.get_convolution_workspace_ptr(),
+                self.model.backend._memory_pool_ptr,
                 0,
                 None,
             )
@@ -352,7 +352,7 @@ class MultiHeadAttentionPycuda(MultiHeadAttentionNacho[TensorArray], LayerPycuda
             self.weights_size,
             self.weights.ptr_voidp,
             self.model.backend._memory_pool_size,
-            self.model.backend.get_convolution_workspace_ptr(),
+            self.model.backend._memory_pool_ptr,
             self.reserve_backward_size,
             self.reserve_backward.ptr_voidp,
         )
@@ -373,7 +373,7 @@ class MultiHeadAttentionPycuda(MultiHeadAttentionNacho[TensorArray], LayerPycuda
             self.weights.ptr_voidp,
             self.dw.ptr_voidp,
             self.model.backend._memory_pool_size,
-            self.model.backend.get_convolution_workspace_ptr(),
+            self.model.backend._memory_pool_ptr,
             self.reserve_backward_size,
             self.reserve_backward.ptr_voidp,
         )
