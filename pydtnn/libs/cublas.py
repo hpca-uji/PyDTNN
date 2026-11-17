@@ -720,7 +720,7 @@ def cublasIsamax(handle: int, n: int, x: ctypes.c_void_p, incx: int) -> int:
     """Finds the index of the maximum magnitude element (single precision real)."""
     result = ctypes.c_int()
     assert _libcublas
-    status = _libcublas.cublasIsamax_v2(handle, n, int(x), incx, ctypes.byref(result))
+    status = _libcublas.cublasIsamax_v2(handle, n, x, incx, ctypes.byref(result))
     cublasCheckStatus(status)
     return result.value - 1
 
@@ -746,7 +746,7 @@ def cublasIdamax(handle: int, n: int, x: ctypes.c_void_p, incx: int) -> int:
     """Finds the index of the maximum magnitude element (double precision real)."""
     result = ctypes.c_int()
     assert _libcublas
-    status = _libcublas.cublasIdamax_v2(handle, n, int(x), incx, ctypes.byref(result))
+    status = _libcublas.cublasIdamax_v2(handle, n, x, incx, ctypes.byref(result))
     cublasCheckStatus(status)
     return result.value - 1
 
@@ -772,7 +772,7 @@ def cublasIcamax(handle: int, n: int, x: ctypes.c_void_p, incx: int) -> int:
     """Finds the index of the maximum magnitude element (single precision complex)."""
     result = ctypes.c_int()
     assert _libcublas
-    status = _libcublas.cublasIcamax_v2(handle, n, int(x), incx, ctypes.byref(result))
+    status = _libcublas.cublasIcamax_v2(handle, n, x, incx, ctypes.byref(result))
     cublasCheckStatus(status)
     return result.value - 1
 
@@ -798,7 +798,7 @@ def cublasIzamax(handle: int, n: int, x: ctypes.c_void_p, incx: int) -> int:
     """Finds the index of the maximum magnitude element (double precision complex)."""
     result = ctypes.c_int()
     assert _libcublas
-    status = _libcublas.cublasIzamax_v2(handle, n, int(x), incx, ctypes.byref(result))
+    status = _libcublas.cublasIzamax_v2(handle, n, x, incx, ctypes.byref(result))
     cublasCheckStatus(status)
     return result.value - 1
 
@@ -872,7 +872,7 @@ def cublasIsamin(handle: int, n: int, x: ctypes.c_void_p, incx: int) -> int:
     """Finds the index of the minimum magnitude element (single precision real)."""
     result = ctypes.c_int()
     assert _libcublas
-    status = _libcublas.cublasIsamin_v2(handle, n, int(x), incx, ctypes.byref(result))
+    status = _libcublas.cublasIsamin_v2(handle, n, x, incx, ctypes.byref(result))
     cublasCheckStatus(status)
     return result.value - 1
 
@@ -898,7 +898,7 @@ def cublasIdamin(handle: int, n: int, x: ctypes.c_void_p, incx: int) -> int:
     """Finds the index of the minimum magnitude element (double precision real)."""
     result = ctypes.c_int()
     assert _libcublas
-    status = _libcublas.cublasIdamin_v2(handle, n, int(x), incx, ctypes.byref(result))
+    status = _libcublas.cublasIdamin_v2(handle, n, x, incx, ctypes.byref(result))
     cublasCheckStatus(status)
     return result.value - 1
 
@@ -924,7 +924,7 @@ def cublasIcamin(handle: int, n: int, x: ctypes.c_void_p, incx: int) -> int:
     """Finds the index of the minimum magnitude element (single precision complex)."""
     result = ctypes.c_int()
     assert _libcublas
-    status = _libcublas.cublasIcamin_v2(handle, n, int(x), incx, ctypes.byref(result))
+    status = _libcublas.cublasIcamin_v2(handle, n, x, incx, ctypes.byref(result))
     cublasCheckStatus(status)
     return result.value - 1
 
@@ -950,7 +950,7 @@ def cublasIzamin(handle: int, n: int, x: ctypes.c_void_p, incx: int) -> int:
     """Finds the index of the minimum magnitude element (double precision complex)."""
     result = ctypes.c_int()
     assert _libcublas
-    status = _libcublas.cublasIzamin_v2(handle, n, int(x), incx, ctypes.byref(result))
+    status = _libcublas.cublasIzamin_v2(handle, n, x, incx, ctypes.byref(result))
     cublasCheckStatus(status)
     return result.value - 1
 
@@ -1020,7 +1020,7 @@ def cublasSasum(handle: int, n: int, x: ctypes.c_void_p, incx: int) -> np.float3
     """Computes the sum of absolute values (single precision real)."""
     result = ctypes.c_float()
     assert _libcublas
-    status = _libcublas.cublasSasum_v2(handle, n, int(x), incx, ctypes.byref(result))
+    status = _libcublas.cublasSasum_v2(handle, n, x, incx, ctypes.byref(result))
     cublasCheckStatus(status)
     return np.float32(result.value)
 
@@ -1047,7 +1047,7 @@ def cublasDasum(handle: int, n: int, x: ctypes.c_void_p, incx: int) -> np.float6
     """Computes the sum of absolute values (double precision real)."""
     result = ctypes.c_double()
     assert _libcublas
-    status = _libcublas.cublasDasum_v2(handle, n, int(x), incx, ctypes.byref(result))
+    status = _libcublas.cublasDasum_v2(handle, n, x, incx, ctypes.byref(result))
     cublasCheckStatus(status)
     return np.float64(result.value)
 
@@ -1074,7 +1074,7 @@ def cublasScasum(handle: int, n: int, x: ctypes.c_void_p, incx: int) -> np.float
     """Computes the sum of absolute values (single precision complex)."""
     result = ctypes.c_float()
     assert _libcublas
-    status = _libcublas.cublasScasum_v2(handle, n, int(x), incx, ctypes.byref(result))
+    status = _libcublas.cublasScasum_v2(handle, n, x, incx, ctypes.byref(result))
     cublasCheckStatus(status)
     return np.float32(result.value)
 
@@ -1101,7 +1101,7 @@ def cublasDzasum(handle: int, n: int, x: ctypes.c_void_p, incx: int) -> np.float
     """Computes the sum of absolute values (double precision complex)."""
     result = ctypes.c_double()
     assert _libcublas
-    status = _libcublas.cublasDzasum_v2(handle, n, int(x), incx, ctypes.byref(result))
+    status = _libcublas.cublasDzasum_v2(handle, n, x, incx, ctypes.byref(result))
     cublasCheckStatus(status)
     return np.float64(result.value)
 
@@ -1191,9 +1191,9 @@ def cublasSaxpy(
         handle,
         n,
         ctypes.byref(ctypes.c_float(alpha)),  # pyright: ignore[reportArgumentType]
-        int(x),
+        x,
         incx,
-        int(y),
+        y,
         incy,
     )
     cublasCheckStatus(status)
@@ -1232,7 +1232,7 @@ def cublasDaxpy(
     """Computes y = alpha*x + y (double precision real)."""
     assert _libcublas
     status = _libcublas.cublasDaxpy_v2(
-        handle, n, ctypes.byref(ctypes.c_double(alpha)), int(x), incx, int(y), incy
+        handle, n, ctypes.byref(ctypes.c_double(alpha)), x, incx, y, incy
     )
     cublasCheckStatus(status)
 
@@ -1273,9 +1273,9 @@ def cublasCaxpy(
         handle,
         n,
         ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)),
-        int(x),
+        x,
         incx,
-        int(y),
+        y,
         incy,
     )
     cublasCheckStatus(status)
@@ -1317,9 +1317,9 @@ def cublasZaxpy(
         handle,
         n,
         ctypes.byref(cuda.cuDoubleComplex(alpha.real, alpha.imag)),
-        int(x),
+        x,
         incx,
-        int(y),
+        y,
         incy,
     )
     cublasCheckStatus(status)
@@ -1395,7 +1395,7 @@ def cublasScopy(
 ) -> None:
     """Copies vector x to vector y (single precision real)."""
     assert _libcublas
-    status = _libcublas.cublasScopy_v2(handle, n, int(x), incx, int(y), incy)
+    status = _libcublas.cublasScopy_v2(handle, n, x, incx, y, incy)
     cublasCheckStatus(status)
 
 
@@ -1422,7 +1422,7 @@ def cublasDcopy(
 ) -> None:
     """Copies vector x to vector y (double precision real)."""
     assert _libcublas
-    status = _libcublas.cublasDcopy_v2(handle, n, int(x), incx, int(y), incy)
+    status = _libcublas.cublasDcopy_v2(handle, n, x, incx, y, incy)
     cublasCheckStatus(status)
 
 
@@ -1449,7 +1449,7 @@ def cublasCcopy(
 ) -> None:
     """Copies vector x to vector y (single precision complex)."""
     assert _libcublas
-    status = _libcublas.cublasCcopy_v2(handle, n, int(x), incx, int(y), incy)
+    status = _libcublas.cublasCcopy_v2(handle, n, x, incx, y, incy)
     cublasCheckStatus(status)
 
 
@@ -1476,7 +1476,7 @@ def cublasZcopy(
 ) -> None:
     """Copies vector x to vector y (double precision complex)."""
     assert _libcublas
-    status = _libcublas.cublasZcopy_v2(handle, n, int(x), incx, int(y), incy)
+    status = _libcublas.cublasZcopy_v2(handle, n, x, incx, y, incy)
     cublasCheckStatus(status)
 
 
@@ -1557,7 +1557,7 @@ def cublasSdot(
     """Computes the dot product of two vectors (single precision real)."""
     result = ctypes.c_float()
     assert _libcublas
-    status = _libcublas.cublasSdot_v2(handle, n, int(x), incx, int(y), incy, ctypes.byref(result))
+    status = _libcublas.cublasSdot_v2(handle, n, x, incx, y, incy, ctypes.byref(result))
     cublasCheckStatus(status)
     return np.float32(result.value)
 
@@ -1589,7 +1589,7 @@ def cublasDdot(
     """Computes the dot product of two vectors (double precision real)."""
     result = ctypes.c_double()
     assert _libcublas
-    status = _libcublas.cublasDdot_v2(handle, n, int(x), incx, int(y), incy, ctypes.byref(result))
+    status = _libcublas.cublasDdot_v2(handle, n, x, incx, y, incy, ctypes.byref(result))
     cublasCheckStatus(status)
     return np.float64(result.value)
 
@@ -1621,7 +1621,7 @@ def cublasCdotu(
     """Computes the dot product of two vectors (single precision complex, non-conjugate)."""
     result = cuda.cuFloatComplex()
     assert _libcublas
-    status = _libcublas.cublasCdotu_v2(handle, n, int(x), incx, int(y), incy, ctypes.byref(result))
+    status = _libcublas.cublasCdotu_v2(handle, n, x, incx, y, incy, ctypes.byref(result))
     cublasCheckStatus(status)
     return np.complex64(result.value)
 
@@ -1653,7 +1653,7 @@ def cublasCdotc(
     """Computes the dot product of two vectors (single precision complex, conjugate)."""
     result = cuda.cuFloatComplex()
     assert _libcublas
-    status = _libcublas.cublasCdotc_v2(handle, n, int(x), incx, int(y), incy, ctypes.byref(result))
+    status = _libcublas.cublasCdotc_v2(handle, n, x, incx, y, incy, ctypes.byref(result))
     cublasCheckStatus(status)
     return np.complex64(result.value)
 
@@ -1685,7 +1685,7 @@ def cublasZdotu(
     """Computes the dot product of two vectors (double precision complex, non-conjugate)."""
     result = cuda.cuDoubleComplex()
     assert _libcublas
-    status = _libcublas.cublasZdotu_v2(handle, n, int(x), incx, int(y), incy, ctypes.byref(result))
+    status = _libcublas.cublasZdotu_v2(handle, n, x, incx, y, incy, ctypes.byref(result))
     cublasCheckStatus(status)
     return np.complex128(result.value)
 
@@ -1717,7 +1717,7 @@ def cublasZdotc(
     """Computes the dot product of two vectors (double precision complex, conjugate)."""
     result = cuda.cuDoubleComplex()
     assert _libcublas
-    status = _libcublas.cublasZdotc_v2(handle, n, int(x), incx, int(y), incy, ctypes.byref(result))
+    status = _libcublas.cublasZdotc_v2(handle, n, x, incx, y, incy, ctypes.byref(result))
     cublasCheckStatus(status)
     return np.complex128(result.value)
 
@@ -1785,7 +1785,7 @@ def cublasSnrm2(handle: int, n: int, x: ctypes.c_void_p, incx: int) -> np.float3
     """Computes the Euclidean norm of a vector (single precision real)."""
     result = ctypes.c_float()
     assert _libcublas
-    status = _libcublas.cublasSnrm2_v2(handle, n, int(x), incx, ctypes.byref(result))
+    status = _libcublas.cublasSnrm2_v2(handle, n, x, incx, ctypes.byref(result))
     cublasCheckStatus(status)
     return np.float32(result.value)
 
@@ -1812,7 +1812,7 @@ def cublasDnrm2(handle: int, n: int, x: ctypes.c_void_p, incx: int) -> np.float6
     """Computes the Euclidean norm of a vector (double precision real)."""
     result = ctypes.c_double()
     assert _libcublas
-    status = _libcublas.cublasDnrm2_v2(handle, n, int(x), incx, ctypes.byref(result))
+    status = _libcublas.cublasDnrm2_v2(handle, n, x, incx, ctypes.byref(result))
     cublasCheckStatus(status)
     return np.float64(result.value)
 
@@ -1839,7 +1839,7 @@ def cublasScnrm2(handle: int, n: int, x: ctypes.c_void_p, incx: int) -> np.float
     """Computes the Euclidean norm of a vector (single precision complex)."""
     result = ctypes.c_float()
     assert _libcublas
-    status = _libcublas.cublasScnrm2_v2(handle, n, int(x), incx, ctypes.byref(result))
+    status = _libcublas.cublasScnrm2_v2(handle, n, x, incx, ctypes.byref(result))
     cublasCheckStatus(status)
     return np.float32(result.value)
 
@@ -1866,7 +1866,7 @@ def cublasDznrm2(handle: int, n: int, x: ctypes.c_void_p, incx: int) -> np.float
     """Computes the Euclidean norm of a vector (double precision complex)."""
     result = ctypes.c_double()
     assert _libcublas
-    status = _libcublas.cublasDznrm2_v2(handle, n, int(x), incx, ctypes.byref(result))
+    status = _libcublas.cublasDznrm2_v2(handle, n, x, incx, ctypes.byref(result))
     cublasCheckStatus(status)
     return np.float64(result.value)
 
@@ -1961,9 +1961,9 @@ def cublasSrot(
     status = _libcublas.cublasSrot_v2(
         handle,
         n,
-        int(x),
+        x,
         incx,
-        int(y),
+        y,
         incy,
         ctypes.byref(ctypes.c_float(c)),  # pyright: ignore[reportArgumentType]
         ctypes.byref(ctypes.c_float(s)),  # pyright: ignore[reportArgumentType]
@@ -2010,9 +2010,9 @@ def cublasDrot(
     status = _libcublas.cublasDrot_v2(
         handle,
         n,
-        int(x),
+        x,
         incx,
-        int(y),
+        y,
         incy,
         ctypes.byref(ctypes.c_double(c)),
         ctypes.byref(ctypes.c_double(s)),
@@ -2059,9 +2059,9 @@ def cublasCrot(
     status = _libcublas.cublasCrot_v2(
         handle,
         n,
-        int(x),
+        x,
         incx,
-        int(y),
+        y,
         incy,
         ctypes.byref(ctypes.c_float(c)),  # pyright: ignore[reportArgumentType]
         ctypes.byref(cuda.cuFloatComplex(s.real, s.imag)),
@@ -2108,9 +2108,9 @@ def cublasCsrot(
     status = _libcublas.cublasCsrot_v2(
         handle,
         n,
-        int(x),
+        x,
         incx,
-        int(y),
+        y,
         incy,
         ctypes.byref(ctypes.c_float(c)),  # pyright: ignore[reportArgumentType]
         ctypes.byref(ctypes.c_float(s)),  # pyright: ignore[reportArgumentType]
@@ -2157,9 +2157,9 @@ def cublasZrot(
     status = _libcublas.cublasZrot_v2(
         handle,
         n,
-        int(x),
+        x,
         incx,
-        int(y),
+        y,
         incy,
         ctypes.byref(ctypes.c_double(c)),
         ctypes.byref(cuda.cuDoubleComplex(s.real, s.imag)),
@@ -2206,9 +2206,9 @@ def cublasZdrot(
     status = _libcublas.cublasZdrot_v2(
         handle,
         n,
-        int(x),
+        x,
         incx,
-        int(y),
+        y,
         incy,
         ctypes.byref(ctypes.c_double(c)),
         ctypes.byref(ctypes.c_double(s)),
@@ -2491,7 +2491,7 @@ def cublasSrotm(
     """Applies a real modified Givens rotation (single precision)."""
     assert _libcublas
     status = _libcublas.cublasSrotm_v2(
-        handle, n, int(x), incx, int(y), incy, int(sparam.ctypes.data)
+        handle, n, x, incx, y, incy, int(sparam.ctypes.data)
     )
     cublasCheckStatus(status)
 
@@ -2522,7 +2522,7 @@ def cublasDrotm(
     """Applies a real modified Givens rotation (double precision)."""
     assert _libcublas
     status = _libcublas.cublasDrotm_v2(
-        handle, n, int(x), incx, int(y), incy, int(sparam.ctypes.data)
+        handle, n, x, incx, y, incy, int(sparam.ctypes.data)
     )
     cublasCheckStatus(status)
 
@@ -2599,7 +2599,7 @@ def cublasSrotmg(
         ctypes.byref(_d2),
         ctypes.byref(_x1),
         ctypes.byref(_y1),
-        int(sparam.ctypes.data),
+        ctypes.c_void_p(sparam.ctypes.data),
     )
     cublasCheckStatus(status)
     return sparam
@@ -2697,7 +2697,7 @@ def cublasSscal(handle: int, n: int, alpha: np.float32, x: ctypes.c_void_p, incx
         handle,
         n,
         ctypes.byref(ctypes.c_float(alpha)),  # pyright: ignore[reportArgumentType]
-        int(x),
+        x,
         incx,
     )
     cublasCheckStatus(status)
@@ -2727,7 +2727,7 @@ def cublasDscal(handle: int, n: int, alpha: np.float64, x: ctypes.c_void_p, incx
     """Scales a vector by a scalar (double precision real)."""
     assert _libcublas
     status = _libcublas.cublasDscal_v2(
-        handle, n, ctypes.byref(ctypes.c_double(alpha)), int(x), incx
+        handle, n, ctypes.byref(ctypes.c_double(alpha)), x, incx
     )
     cublasCheckStatus(status)
 
@@ -2756,7 +2756,7 @@ def cublasCscal(handle: int, n: int, alpha: np.complex64, x: ctypes.c_void_p, in
     """Scales a vector by a scalar (single precision complex)."""
     assert _libcublas
     status = _libcublas.cublasCscal_v2(
-        handle, n, ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)), int(x), incx
+        handle, n, ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)), x, incx
     )
     cublasCheckStatus(status)
 
@@ -2788,7 +2788,7 @@ def cublasCsscal(handle: int, n: int, alpha: np.float32, x: ctypes.c_void_p, inc
         handle,
         n,
         ctypes.byref(ctypes.c_float(alpha)),  # pyright: ignore[reportArgumentType]
-        int(x),
+        x,
         incx,
     )
     cublasCheckStatus(status)
@@ -2818,7 +2818,7 @@ def cublasZscal(handle: int, n: int, alpha: np.complex128, x: ctypes.c_void_p, i
     """Scales a vector by a scalar (double precision complex)."""
     assert _libcublas
     status = _libcublas.cublasZscal_v2(
-        handle, n, ctypes.byref(cuda.cuDoubleComplex(alpha.real, alpha.imag)), int(x), incx
+        handle, n, ctypes.byref(cuda.cuDoubleComplex(alpha.real, alpha.imag)), x, incx
     )
     cublasCheckStatus(status)
 
@@ -2847,7 +2847,7 @@ def cublasZdscal(handle: int, n: int, alpha: np.float64, x: ctypes.c_void_p, inc
     """Scales a complex vector by a real scalar (double precision)."""
     assert _libcublas
     status = _libcublas.cublasZdscal_v2(
-        handle, n, ctypes.byref(ctypes.c_double(alpha)), int(x), incx
+        handle, n, ctypes.byref(ctypes.c_double(alpha)), x, incx
     )
     cublasCheckStatus(status)
 
@@ -2926,7 +2926,7 @@ def cublasSswap(
 ) -> None:
     """Swaps the contents of two vectors (single precision real)."""
     assert _libcublas
-    status = _libcublas.cublasSswap_v2(handle, n, int(x), incx, int(y), incy)
+    status = _libcublas.cublasSswap_v2(handle, n, x, incx, y, incy)
     cublasCheckStatus(status)
 
 
@@ -2953,7 +2953,7 @@ def cublasDswap(
 ) -> None:
     """Swaps the contents of two vectors (double precision real)."""
     assert _libcublas
-    status = _libcublas.cublasDswap_v2(handle, n, int(x), incx, int(y), incy)
+    status = _libcublas.cublasDswap_v2(handle, n, x, incx, y, incy)
     cublasCheckStatus(status)
 
 
@@ -2980,7 +2980,7 @@ def cublasCswap(
 ) -> None:
     """Swaps the contents of two vectors (single precision complex)."""
     assert _libcublas
-    status = _libcublas.cublasCswap_v2(handle, n, int(x), incx, int(y), incy)
+    status = _libcublas.cublasCswap_v2(handle, n, x, incx, y, incy)
     cublasCheckStatus(status)
 
 
@@ -3007,7 +3007,7 @@ def cublasZswap(
 ) -> None:
     """Swaps the contents of two vectors (double precision complex)."""
     assert _libcublas
-    status = _libcublas.cublasZswap_v2(handle, n, int(x), incx, int(y), incy)
+    status = _libcublas.cublasZswap_v2(handle, n, x, incx, y, incy)
     cublasCheckStatus(status)
 
 
@@ -3077,12 +3077,12 @@ def cublasSgbmv(
         kl,
         ku,
         ctypes.byref(ctypes.c_float(alpha)),  # pyright: ignore[reportArgumentType]
-        int(A),
+        A,
         lda,
-        int(x),
+        x,
         incx,
         ctypes.byref(ctypes.c_float(beta)),  # pyright: ignore[reportArgumentType]
-        int(y),
+        y,
         incy,
     )
     cublasCheckStatus(status)
@@ -3144,12 +3144,12 @@ def cublasDgbmv(
         kl,
         ku,
         ctypes.byref(ctypes.c_double(alpha)),
-        int(A),
+        A,
         lda,
-        int(x),
+        x,
         incx,
         ctypes.byref(ctypes.c_double(beta)),
-        int(y),
+        y,
         incy,
     )
     cublasCheckStatus(status)
@@ -3211,12 +3211,12 @@ def cublasCgbmv(
         kl,
         ku,
         ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)),
-        int(A),
+        A,
         lda,
-        int(x),
+        x,
         incx,
         ctypes.byref(cuda.cuFloatComplex(beta.real, beta.imag)),
-        int(y),
+        y,
         incy,
     )
     cublasCheckStatus(status)
@@ -3276,12 +3276,12 @@ def cublasZgbmv(
         kl,
         ku,
         ctypes.byref(cuda.cuDoubleComplex(alpha.real, alpha.imag)),
-        int(A),
+        A,
         lda,
-        int(x),
+        x,
         incx,
         ctypes.byref(cuda.cuDoubleComplex(beta.real, beta.imag)),
-        int(y),
+        y,
         incy,
     )
     cublasCheckStatus(status)
@@ -3370,12 +3370,12 @@ def cublasSgemv(
         m,
         n,
         ctypes.byref(ctypes.c_float(alpha)),  # pyright: ignore[reportArgumentType]
-        int(A),
+        A,
         lda,
-        int(x),
+        x,
         incx,
         ctypes.byref(ctypes.c_float(beta)),  # pyright: ignore[reportArgumentType]
-        int(y),
+        y,
         incy,
     )
     cublasCheckStatus(status)
@@ -3424,12 +3424,12 @@ def cublasDgemv(
         m,
         n,
         ctypes.byref(ctypes.c_double(alpha)),
-        int(A),
+        A,
         lda,
-        int(x),
+        x,
         incx,
         ctypes.byref(ctypes.c_double(beta)),
-        int(y),
+        y,
         incy,
     )
     cublasCheckStatus(status)
@@ -3478,12 +3478,12 @@ def cublasCgemv(
         m,
         n,
         ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)),
-        int(A),
+        A,
         lda,
-        int(x),
+        x,
         incx,
         ctypes.byref(cuda.cuFloatComplex(beta.real, beta.imag)),
-        int(y),
+        y,
         incy,
     )
     cublasCheckStatus(status)
@@ -3532,12 +3532,12 @@ def cublasZgemv(
         m,
         n,
         ctypes.byref(cuda.cuDoubleComplex(alpha.real, alpha.imag)),
-        int(A),
+        A,
         lda,
-        int(x),
+        x,
         incx,
         ctypes.byref(cuda.cuDoubleComplex(beta.real, beta.imag)),
-        int(y),
+        y,
         incy,
     )
     cublasCheckStatus(status)
@@ -3617,11 +3617,11 @@ def cublasSger(
         m,
         n,
         ctypes.byref(ctypes.c_float(alpha)),  # pyright: ignore[reportArgumentType]
-        int(x),
+        x,
         incx,
-        int(y),
+        y,
         incy,
-        int(A),
+        A,
         lda,
     )
     cublasCheckStatus(status)
@@ -3659,7 +3659,7 @@ def cublasDger(
     """Rank-1 operation (double precision real)."""
     assert _libcublas
     status = _libcublas.cublasDger_v2(
-        handle, m, n, ctypes.byref(ctypes.c_double(alpha)), int(x), incx, int(y), incy, int(A), lda
+        handle, m, n, ctypes.byref(ctypes.c_double(alpha)), x, incx, y, incy, A, lda
     )
     cublasCheckStatus(status)
 
@@ -3700,11 +3700,11 @@ def cublasCgerc(
         m,
         n,
         ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)),
-        int(x),
+        x,
         incx,
-        int(y),
+        y,
         incy,
-        int(A),
+        A,
         lda,
     )
     cublasCheckStatus(status)
@@ -3746,11 +3746,11 @@ def cublasCgeru(
         m,
         n,
         ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)),
-        int(x),
+        x,
         incx,
-        int(y),
+        y,
         incy,
-        int(A),
+        A,
         lda,
     )
     cublasCheckStatus(status)
@@ -3792,11 +3792,11 @@ def cublasZgerc(
         m,
         n,
         ctypes.byref(cuda.cuDoubleComplex(alpha.real, alpha.imag)),
-        int(x),
+        x,
         incx,
-        int(y),
+        y,
         incy,
-        int(A),
+        A,
         lda,
     )
     cublasCheckStatus(status)
@@ -3838,11 +3838,11 @@ def cublasZgeru(
         m,
         n,
         ctypes.byref(cuda.cuDoubleComplex(alpha.real, alpha.imag)),
-        int(x),
+        x,
         incx,
-        int(y),
+        y,
         incy,
-        int(A),
+        A,
         lda,
     )
     cublasCheckStatus(status)
@@ -3931,12 +3931,12 @@ def cublasSsbmv(
         n,
         k,
         ctypes.byref(ctypes.c_float(alpha)),  # pyright: ignore[reportArgumentType]
-        int(A),
+        A,
         lda,
-        int(x),
+        x,
         incx,
         ctypes.byref(ctypes.c_float(beta)),  # pyright: ignore[reportArgumentType]
-        int(y),
+        y,
         incy,
     )
     cublasCheckStatus(status)
@@ -3985,12 +3985,12 @@ def cublasDsbmv(
         n,
         k,
         ctypes.byref(ctypes.c_double(alpha)),
-        int(A),
+        A,
         lda,
-        int(x),
+        x,
         incx,
         ctypes.byref(ctypes.c_double(beta)),
-        int(y),
+        y,
         incy,
     )
     cublasCheckStatus(status)
@@ -4073,10 +4073,10 @@ def cublasSspmv(
         n,
         ctypes.byref(ctypes.c_float(alpha)),  # pyright: ignore[reportArgumentType]
         ctypes.byref(ctypes.c_float(AP)),  # pyright: ignore[reportArgumentType]
-        int(x),
+        x,
         incx,
         ctypes.byref(ctypes.c_float(beta)),  # pyright: ignore[reportArgumentType]
-        int(y),
+        y,
         incy,
     )
     cublasCheckStatus(status)
@@ -4121,10 +4121,10 @@ def cublasDspmv(
         n,
         ctypes.byref(ctypes.c_double(alpha)),
         ctypes.byref(ctypes.c_double(AP)),
-        int(x),
+        x,
         incx,
         ctypes.byref(ctypes.c_double(beta)),
-        int(y),
+        y,
         incy,
     )
     cublasCheckStatus(status)
@@ -4194,9 +4194,9 @@ def cublasSspr(
         _CUBLAS_FILL_MODE[uplo],
         n,
         ctypes.byref(ctypes.c_float(alpha)),  # pyright: ignore[reportArgumentType]
-        int(x),
+        x,
         incx,
-        int(AP),
+        AP,
     )
     cublasCheckStatus(status)
 
@@ -4231,9 +4231,9 @@ def cublasDspr(
         _CUBLAS_FILL_MODE[uplo],
         n,
         ctypes.byref(ctypes.c_double(alpha)),
-        int(x),
+        x,
         incx,
-        int(AP),
+        AP,
     )
     cublasCheckStatus(status)
 
@@ -4309,11 +4309,11 @@ def cublasSspr2(
         _CUBLAS_FILL_MODE[uplo],
         n,
         ctypes.byref(ctypes.c_float(alpha)),  # pyright: ignore[reportArgumentType]
-        int(x),
+        x,
         incx,
-        int(y),
+        y,
         incy,
-        int(AP),
+        AP,
     )
     cublasCheckStatus(status)
 
@@ -4352,11 +4352,11 @@ def cublasDspr2(
         _CUBLAS_FILL_MODE[uplo],
         n,
         ctypes.byref(ctypes.c_double(alpha)),
-        int(x),
+        x,
         incx,
-        int(y),
+        y,
         incy,
-        int(AP),
+        AP,
     )
     cublasCheckStatus(status)
 
@@ -4438,12 +4438,12 @@ def cublasSsymv(
         _CUBLAS_FILL_MODE[uplo],
         n,
         ctypes.byref(ctypes.c_float(alpha)),  # pyright: ignore[reportArgumentType]
-        int(A),
+        A,
         lda,
-        int(x),
+        x,
         incx,
         ctypes.byref(ctypes.c_float(beta)),  # pyright: ignore[reportArgumentType]
-        int(y),
+        y,
         incy,
     )
     cublasCheckStatus(status)
@@ -4489,12 +4489,12 @@ def cublasDsymv(
         _CUBLAS_FILL_MODE[uplo],
         n,
         ctypes.byref(ctypes.c_double(alpha)),
-        int(A),
+        A,
         lda,
-        int(x),
+        x,
         incx,
         ctypes.byref(ctypes.c_double(beta)),
-        int(y),
+        y,
         incy,
     )
     cublasCheckStatus(status)
@@ -4543,12 +4543,12 @@ def cublasCsymv(
         _CUBLAS_FILL_MODE[uplo],
         n,
         ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)),
-        int(A),
+        A,
         lda,
-        int(x),
+        x,
         incx,
         ctypes.byref(cuda.cuFloatComplex(beta.real, beta.imag)),
-        int(y),
+        y,
         incy,
     )
     cublasCheckStatus(status)
@@ -4592,12 +4592,12 @@ def cublasZsymv(
         _CUBLAS_FILL_MODE[uplo],
         n,
         ctypes.byref(cuda.cuDoubleComplex(alpha.real, alpha.imag)),
-        int(A),
+        A,
         lda,
-        int(x),
+        x,
         incx,
         ctypes.byref(cuda.cuDoubleComplex(beta.real, beta.imag)),
-        int(y),
+        y,
         incy,
     )
     cublasCheckStatus(status)
@@ -4666,9 +4666,9 @@ def cublasSsyr(
         _CUBLAS_FILL_MODE[uplo],
         n,
         ctypes.byref(ctypes.c_float(alpha)),  # pyright: ignore[reportArgumentType]
-        int(x),
+        x,
         incx,
-        int(A),
+        A,
         lda,
     )
     cublasCheckStatus(status)
@@ -4706,9 +4706,9 @@ def cublasDsyr(
         _CUBLAS_FILL_MODE[uplo],
         n,
         ctypes.byref(ctypes.c_double(alpha)),
-        int(x),
+        x,
         incx,
-        int(A),
+        A,
         lda,
     )
     cublasCheckStatus(status)
@@ -4749,9 +4749,9 @@ def cublasCsyr(
         _CUBLAS_FILL_MODE[uplo],
         n,
         ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)),
-        int(x),
+        x,
         incx,
-        int(A),
+        A,
         lda,
     )
     cublasCheckStatus(status)
@@ -4789,9 +4789,9 @@ def cublasZsyr(
         _CUBLAS_FILL_MODE[uplo],
         n,
         ctypes.byref(cuda.cuDoubleComplex(alpha.real, alpha.imag)),
-        int(x),
+        x,
         incx,
-        int(A),
+        A,
         lda,
     )
     cublasCheckStatus(status)
@@ -4869,11 +4869,11 @@ def cublasSsyr2(
         _CUBLAS_FILL_MODE[uplo],
         n,
         ctypes.byref(ctypes.c_float(alpha)),  # pyright: ignore[reportArgumentType]
-        int(x),
+        x,
         incx,
-        int(y),
+        y,
         incy,
-        int(A),
+        A,
         lda,
     )
     cublasCheckStatus(status)
@@ -4915,11 +4915,11 @@ def cublasDsyr2(
         _CUBLAS_FILL_MODE[uplo],
         n,
         ctypes.byref(ctypes.c_double(alpha)),
-        int(x),
+        x,
         incx,
-        int(y),
+        y,
         incy,
-        int(A),
+        A,
         lda,
     )
     cublasCheckStatus(status)
@@ -4964,11 +4964,11 @@ def cublasCsyr2(
         _CUBLAS_FILL_MODE[uplo],
         n,
         ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)),
-        int(x),
+        x,
         incx,
-        int(y),
+        y,
         incy,
-        int(A),
+        A,
         lda,
     )
     cublasCheckStatus(status)
@@ -5010,11 +5010,11 @@ def cublasZsyr2(
         _CUBLAS_FILL_MODE[uplo],
         n,
         ctypes.byref(cuda.cuDoubleComplex(alpha.real, alpha.imag)),
-        int(x),
+        x,
         incx,
-        int(y),
+        y,
         incy,
-        int(A),
+        A,
         lda,
     )
     cublasCheckStatus(status)
@@ -5097,9 +5097,9 @@ def cublasStbmv(
         _CUBLAS_DIAG[diag],
         n,
         k,
-        int(A),
+        A,
         lda,
-        int(x),
+        x,
         incx,
     )
     cublasCheckStatus(status)
@@ -5143,9 +5143,9 @@ def cublasDtbmv(
         _CUBLAS_DIAG[diag],
         n,
         k,
-        int(A),
+        A,
         lda,
-        int(x),
+        x,
         incx,
     )
     cublasCheckStatus(status)
@@ -5189,9 +5189,9 @@ def cublasCtbmv(
         _CUBLAS_DIAG[diag],
         n,
         k,
-        int(A),
+        A,
         lda,
-        int(x),
+        x,
         incx,
     )
     cublasCheckStatus(status)
@@ -5235,9 +5235,9 @@ def cublasZtbmv(
         _CUBLAS_DIAG[diag],
         n,
         k,
-        int(A),
+        A,
         lda,
-        int(x),
+        x,
         incx,
     )
     cublasCheckStatus(status)
@@ -5323,9 +5323,9 @@ def cublasStbsv(
         _CUBLAS_DIAG[diag],
         n,
         k,
-        int(A),
+        A,
         lda,
-        int(x),
+        x,
         incx,
     )
     cublasCheckStatus(status)
@@ -5369,9 +5369,9 @@ def cublasDtbsv(
         _CUBLAS_DIAG[diag],
         n,
         k,
-        int(A),
+        A,
         lda,
-        int(x),
+        x,
         incx,
     )
     cublasCheckStatus(status)
@@ -5415,9 +5415,9 @@ def cublasCtbsv(
         _CUBLAS_DIAG[diag],
         n,
         k,
-        int(A),
+        A,
         lda,
-        int(x),
+        x,
         incx,
     )
     cublasCheckStatus(status)
@@ -5461,9 +5461,9 @@ def cublasZtbsv(
         _CUBLAS_DIAG[diag],
         n,
         k,
-        int(A),
+        A,
         lda,
-        int(x),
+        x,
         incx,
     )
     cublasCheckStatus(status)
@@ -5540,8 +5540,8 @@ def cublasStpmv(
         _CUBLAS_OP[trans],
         _CUBLAS_DIAG[diag],
         n,
-        int(AP),
-        int(x),
+        AP,
+        x,
         incx,
     )
     cublasCheckStatus(status)
@@ -5580,8 +5580,8 @@ def cublasCtpmv(
         _CUBLAS_OP[trans],
         _CUBLAS_DIAG[diag],
         n,
-        int(AP),
-        int(x),
+        AP,
+        x,
         incx,
     )
     cublasCheckStatus(status)
@@ -5620,8 +5620,8 @@ def cublasDtpmv(
         _CUBLAS_OP[trans],
         _CUBLAS_DIAG[diag],
         n,
-        int(AP),
-        int(x),
+        AP,
+        x,
         incx,
     )
     cublasCheckStatus(status)
@@ -5660,8 +5660,8 @@ def cublasZtpmv(
         _CUBLAS_OP[trans],
         _CUBLAS_DIAG[diag],
         n,
-        int(AP),
-        int(x),
+        AP,
+        x,
         incx,
     )
     cublasCheckStatus(status)
@@ -5738,8 +5738,8 @@ def cublasStpsv(
         _CUBLAS_OP[trans],
         _CUBLAS_DIAG[diag],
         n,
-        int(AP),
-        int(x),
+        AP,
+        x,
         incx,
     )
     cublasCheckStatus(status)
@@ -5778,8 +5778,8 @@ def cublasDtpsv(
         _CUBLAS_OP[trans],
         _CUBLAS_DIAG[diag],
         n,
-        int(AP),
-        int(x),
+        AP,
+        x,
         incx,
     )
     cublasCheckStatus(status)
@@ -5818,8 +5818,8 @@ def cublasCtpsv(
         _CUBLAS_OP[trans],
         _CUBLAS_DIAG[diag],
         n,
-        int(AP),
-        int(x),
+        AP,
+        x,
         incx,
     )
     cublasCheckStatus(status)
@@ -5858,8 +5858,8 @@ def cublasZtpsv(
         _CUBLAS_OP[trans],
         _CUBLAS_DIAG[diag],
         n,
-        int(AP),
-        int(x),
+        AP,
+        x,
         incx,
     )
     cublasCheckStatus(status)
@@ -5940,9 +5940,9 @@ def cublasStrmv(
         _CUBLAS_OP[trans],
         _CUBLAS_DIAG[diag],
         n,
-        int(A),
+        A,
         lda,
-        int(x),
+        x,
         inx,
     )
     cublasCheckStatus(status)
@@ -5983,9 +5983,9 @@ def cublasCtrmv(
         _CUBLAS_OP[trans],
         _CUBLAS_DIAG[diag],
         n,
-        int(A),
+        A,
         lda,
-        int(x),
+        x,
         incx,
     )
     cublasCheckStatus(status)
@@ -6026,9 +6026,9 @@ def cublasDtrmv(
         _CUBLAS_OP[trans],
         _CUBLAS_DIAG[diag],
         n,
-        int(A),
+        A,
         lda,
-        int(x),
+        x,
         inx,
     )
     cublasCheckStatus(status)
@@ -6069,9 +6069,9 @@ def cublasZtrmv(
         _CUBLAS_OP[trans],
         _CUBLAS_DIAG[diag],
         n,
-        int(A),
+        A,
         lda,
-        int(x),
+        x,
         incx,
     )
     cublasCheckStatus(status)
@@ -6152,9 +6152,9 @@ def cublasStrsv(
         _CUBLAS_OP[trans],
         _CUBLAS_DIAG[diag],
         n,
-        int(A),
+        A,
         lda,
-        int(x),
+        x,
         incx,
     )
     cublasCheckStatus(status)
@@ -6195,9 +6195,9 @@ def cublasDtrsv(
         _CUBLAS_OP[trans],
         _CUBLAS_DIAG[diag],
         n,
-        int(A),
+        A,
         lda,
-        int(x),
+        x,
         incx,
     )
     cublasCheckStatus(status)
@@ -6238,9 +6238,9 @@ def cublasCtrsv(
         _CUBLAS_OP[trans],
         _CUBLAS_DIAG[diag],
         n,
-        int(A),
+        A,
         lda,
-        int(x),
+        x,
         incx,
     )
     cublasCheckStatus(status)
@@ -6281,9 +6281,9 @@ def cublasZtrsv(
         _CUBLAS_OP[trans],
         _CUBLAS_DIAG[diag],
         n,
-        int(A),
+        A,
         lda,
-        int(x),
+        x,
         incx,
     )
     cublasCheckStatus(status)
@@ -6366,12 +6366,12 @@ def cublasChemv(
         _CUBLAS_FILL_MODE[uplo],
         n,
         ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)),
-        int(A),
+        A,
         lda,
-        int(x),
+        x,
         incx,
         ctypes.byref(cuda.cuFloatComplex(beta.real, beta.imag)),
-        int(y),
+        y,
         incy,
     )
     cublasCheckStatus(status)
@@ -6415,12 +6415,12 @@ def cublasZhemv(
         _CUBLAS_FILL_MODE[uplo],
         n,
         ctypes.byref(cuda.cuDoubleComplex(alpha.real, alpha.imag)),
-        int(A),
+        A,
         lda,
-        int(x),
+        x,
         incx,
         ctypes.byref(cuda.cuDoubleComplex(beta.real, beta.imag)),
-        int(y),
+        y,
         incy,
     )
     cublasCheckStatus(status)
@@ -6509,12 +6509,12 @@ def cublasChbmv(
         n,
         k,
         ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)),
-        int(A),
+        A,
         lda,
-        int(x),
+        x,
         incx,
         ctypes.byref(cuda.cuFloatComplex(beta.real, beta.imag)),
-        int(y),
+        y,
         incy,
     )
     cublasCheckStatus(status)
@@ -6561,12 +6561,12 @@ def cublasZhbmv(
         n,
         k,
         ctypes.byref(cuda.cuDoubleComplex(alpha.real, alpha.imag)),
-        int(A),
+        A,
         lda,
-        int(x),
+        x,
         incx,
         ctypes.byref(cuda.cuDoubleComplex(beta.real, beta.imag)),
-        int(y),
+        y,
         incy,
     )
     cublasCheckStatus(status)
@@ -6646,11 +6646,11 @@ def cublasChpmv(
         _CUBLAS_FILL_MODE[uplo],
         n,
         ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)),
-        int(AP),
-        int(x),
+        AP,
+        x,
         incx,
         ctypes.byref(cuda.cuFloatComplex(beta.real, beta.imag)),
-        int(y),
+        y,
         incy,
     )
     cublasCheckStatus(status)
@@ -6692,11 +6692,11 @@ def cublasZhpmv(
         _CUBLAS_FILL_MODE[uplo],
         n,
         ctypes.byref(cuda.cuDoubleComplex(alpha.real, alpha.imag)),
-        int(AP),
-        int(x),
+        AP,
+        x,
         incx,
         ctypes.byref(cuda.cuDoubleComplex(beta.real, beta.imag)),
-        int(y),
+        y,
         incy,
     )
     cublasCheckStatus(status)
@@ -6764,7 +6764,7 @@ def cublasCher(
     """Rank-1 operation (single precision complex Hermitian)."""
     assert _libcublas
     status = _libcublas.cublasCher_v2(
-        handle, _CUBLAS_FILL_MODE[uplo], n, alpha, int(x), incx, int(A), lda
+        handle, _CUBLAS_FILL_MODE[uplo], n, alpha, x, incx, A, lda
     )
     cublasCheckStatus(status)
 
@@ -6797,7 +6797,7 @@ def cublasZher(
     """Rank-1 operation (double precision complex Hermitian)."""
     assert _libcublas
     status = _libcublas.cublasZher_v2(
-        handle, _CUBLAS_FILL_MODE[uplo], n, alpha, int(x), incx, int(A), lda
+        handle, _CUBLAS_FILL_MODE[uplo], n, alpha, x, incx, A, lda
     )
     cublasCheckStatus(status)
 
@@ -6876,11 +6876,11 @@ def cublasCher2(
         _CUBLAS_FILL_MODE[uplo],
         n,
         ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)),
-        int(x),
+        x,
         incx,
-        int(y),
+        y,
         incy,
-        int(A),
+        A,
         lda,
     )
     cublasCheckStatus(status)
@@ -6922,11 +6922,11 @@ def cublasZher2(
         _CUBLAS_FILL_MODE[uplo],
         n,
         ctypes.byref(cuda.cuDoubleComplex(alpha.real, alpha.imag)),
-        int(x),
+        x,
         incx,
-        int(y),
+        y,
         incy,
-        int(A),
+        A,
         lda,
     )
     cublasCheckStatus(status)
@@ -6994,9 +6994,9 @@ def cublasChpr(
         _CUBLAS_FILL_MODE[uplo],
         n,
         ctypes.byref(ctypes.c_float(alpha)),  # pyright: ignore[reportArgumentType]
-        int(x),
+        x,
         incx,
-        int(AP),
+        AP,
     )
     cublasCheckStatus(status)
 
@@ -7031,9 +7031,9 @@ def cublasZhpr(
         _CUBLAS_FILL_MODE[uplo],
         n,
         ctypes.byref(ctypes.c_double(alpha)),
-        int(x),
+        x,
         incx,
-        int(AP),
+        AP,
     )
     cublasCheckStatus(status)
 
@@ -7108,11 +7108,11 @@ def cublasChpr2(
         _CUBLAS_FILL_MODE[uplo],
         n,
         ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)),
-        int(x),
+        x,
         incx,
-        int(y),
+        y,
         incy,
-        int(AP),
+        AP,
     )
     cublasCheckStatus(status)
 
@@ -7151,11 +7151,11 @@ def cublasZhpr2(
         _CUBLAS_FILL_MODE[uplo],
         n,
         ctypes.byref(cuda.cuDoubleComplex(alpha.real, alpha.imag)),
-        int(x),
+        x,
         incx,
-        int(y),
+        y,
         incy,
-        int(AP),
+        AP,
     )
     cublasCheckStatus(status)
 
@@ -7257,12 +7257,12 @@ def cublasSgemm(
         n,
         k,
         ctypes.byref(ctypes.c_float(alpha)),  # pyright: ignore[reportArgumentType]
-        int(A),
+        A,
         lda,
-        int(B),
+        B,
         ldb,
         ctypes.byref(ctypes.c_float(beta)),  # pyright: ignore[reportArgumentType]
-        int(C),
+        C,
         ldc,
     )
     cublasCheckStatus(status)
@@ -7315,12 +7315,12 @@ def cublasCgemm(
         n,
         k,
         ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)),
-        int(A),
+        A,
         lda,
-        int(B),
+        B,
         ldb,
         ctypes.byref(cuda.cuFloatComplex(beta.real, beta.imag)),
-        int(C),
+        C,
         ldc,
     )
     cublasCheckStatus(status)
@@ -7373,12 +7373,12 @@ def cublasDgemm(
         n,
         k,
         ctypes.byref(ctypes.c_double(alpha)),
-        int(A),
+        A,
         lda,
-        int(B),
+        B,
         ldb,
         ctypes.byref(ctypes.c_double(beta)),
-        int(C),
+        C,
         ldc,
     )
     cublasCheckStatus(status)
@@ -7431,12 +7431,12 @@ def cublasZgemm(
         n,
         k,
         ctypes.byref(cuda.cuDoubleComplex(alpha.real, alpha.imag)),
-        int(A),
+        A,
         lda,
-        int(B),
+        B,
         ldb,
         ctypes.byref(cuda.cuDoubleComplex(beta.real, beta.imag)),
-        int(C),
+        C,
         ldc,
     )
     cublasCheckStatus(status)
@@ -7533,12 +7533,12 @@ def cublasSsymm(
         m,
         n,
         ctypes.byref(ctypes.c_float(alpha)),  # pyright: ignore[reportArgumentType]
-        int(A),
+        A,
         lda,
         ctypes.byref(ctypes.c_float(beta)),  # pyright: ignore[reportArgumentType]
-        int(B),
+        B,
         ldb,
-        int(C),
+        C,
         ldc,
     )
     cublasCheckStatus(status)
@@ -7588,12 +7588,12 @@ def cublasDsymm(
         m,
         n,
         ctypes.byref(ctypes.c_double(alpha)),
-        int(A),
+        A,
         lda,
         ctypes.byref(ctypes.c_double(beta)),
-        int(B),
+        B,
         ldb,
-        int(C),
+        C,
         ldc,
     )
     cublasCheckStatus(status)
@@ -7643,12 +7643,12 @@ def cublasCsymm(
         m,
         n,
         ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)),
-        int(A),
+        A,
         lda,
         ctypes.byref(cuda.cuFloatComplex(beta.real, beta.imag)),
-        int(B),
+        B,
         ldb,
-        int(C),
+        C,
         ldc,
     )
     cublasCheckStatus(status)
@@ -7698,12 +7698,12 @@ def cublasZsymm(
         m,
         n,
         ctypes.byref(cuda.cuDoubleComplex(alpha.real, alpha.imag)),
-        int(A),
+        A,
         lda,
         ctypes.byref(cuda.cuDoubleComplex(beta.real, beta.imag)),
-        int(B),
+        B,
         ldb,
-        int(C),
+        C,
         ldc,
     )
     cublasCheckStatus(status)
@@ -7793,10 +7793,10 @@ def cublasSsyrk(
         n,
         k,
         ctypes.byref(ctypes.c_float(alpha)),  # pyright: ignore[reportArgumentType]
-        int(A),
+        A,
         lda,
         ctypes.byref(ctypes.c_float(beta)),  # pyright: ignore[reportArgumentType]
-        int(C),
+        C,
         ldc,
     )
     cublasCheckStatus(status)
@@ -7842,10 +7842,10 @@ def cublasDsyrk(
         n,
         k,
         ctypes.byref(ctypes.c_double(alpha)),
-        int(A),
+        A,
         lda,
         ctypes.byref(ctypes.c_double(beta)),
-        int(C),
+        C,
         ldc,
     )
     cublasCheckStatus(status)
@@ -7891,10 +7891,10 @@ def cublasCsyrk(
         n,
         k,
         ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)),
-        int(A),
+        A,
         lda,
         ctypes.byref(cuda.cuFloatComplex(beta.real, beta.imag)),
-        int(C),
+        C,
         ldc,
     )
     cublasCheckStatus(status)
@@ -7940,10 +7940,10 @@ def cublasZsyrk(
         n,
         k,
         ctypes.byref(cuda.cuDoubleComplex(alpha.real, alpha.imag)),
-        int(A),
+        A,
         lda,
         ctypes.byref(cuda.cuDoubleComplex(beta.real, beta.imag)),
-        int(C),
+        C,
         ldc,
     )
     cublasCheckStatus(status)
@@ -8041,12 +8041,12 @@ def cublasSsyr2k(
         n,
         k,
         ctypes.byref(ctypes.c_float(alpha)),  # pyright: ignore[reportArgumentType]
-        int(A),
+        A,
         lda,
-        int(B),
+        B,
         ldb,
         ctypes.byref(ctypes.c_float(beta)),  # pyright: ignore[reportArgumentType]
-        int(C),
+        C,
         ldc,
     )
     cublasCheckStatus(status)
@@ -8096,12 +8096,12 @@ def cublasDsyr2k(
         n,
         k,
         ctypes.byref(ctypes.c_double(alpha)),
-        int(A),
+        A,
         lda,
-        int(B),
+        B,
         ldb,
         ctypes.byref(ctypes.c_double(beta)),
-        int(C),
+        C,
         ldc,
     )
     cublasCheckStatus(status)
@@ -8151,12 +8151,12 @@ def cublasCsyr2k(
         n,
         k,
         ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)),
-        int(A),
+        A,
         lda,
-        int(B),
+        B,
         ldb,
         ctypes.byref(cuda.cuFloatComplex(beta.real, beta.imag)),
-        int(C),
+        C,
         ldc,
     )
     cublasCheckStatus(status)
@@ -8207,12 +8207,12 @@ def cublasZsyr2k(
         n,
         k,
         ctypes.byref(cuda.cuDoubleComplex(alpha.real, alpha.imag)),
-        int(A),
+        A,
         lda,
-        int(B),
+        B,
         ldb,
         ctypes.byref(cuda.cuDoubleComplex(beta.real, beta.imag)),
-        int(C),
+        C,
         ldc,
     )
     cublasCheckStatus(status)
@@ -8323,11 +8323,11 @@ def cublasStrmm(
         m,
         n,
         ctypes.byref(ctypes.c_float(alpha)),  # pyright: ignore[reportArgumentType]
-        int(A),
+        A,
         lda,
-        int(B),
+        B,
         ldb,
-        int(C),
+        C,
         ldc,
     )
     cublasCheckStatus(status)
@@ -8381,11 +8381,11 @@ def cublasDtrmm(
         m,
         n,
         ctypes.byref(ctypes.c_double(alpha)),
-        int(A),
+        A,
         lda,
-        int(B),
+        B,
         ldb,
-        int(C),
+        C,
         ldc,
     )
     cublasCheckStatus(status)
@@ -8439,11 +8439,11 @@ def cublasCtrmm(
         m,
         n,
         ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)),
-        int(A),
+        A,
         lda,
-        int(B),
+        B,
         ldb,
-        int(C),
+        C,
         ldc,
     )
     cublasCheckStatus(status)
@@ -8497,11 +8497,11 @@ def cublasZtrmm(
         m,
         n,
         ctypes.byref(cuda.cuDoubleComplex(alpha.real, alpha.imag)),
-        int(A),
+        A,
         lda,
-        int(B),
+        B,
         ldb,
-        int(C),
+        C,
         ldc,
     )
     cublasCheckStatus(status)
@@ -8603,9 +8603,9 @@ def cublasStrsm(
         m,
         n,
         ctypes.byref(ctypes.c_float(alpha)),  # pyright: ignore[reportArgumentType]
-        int(A),
+        A,
         lda,
-        int(B),
+        B,
         ldb,
     )
     cublasCheckStatus(status)
@@ -8655,9 +8655,9 @@ def cublasDtrsm(
         m,
         n,
         ctypes.byref(ctypes.c_double(alpha)),
-        int(A),
+        A,
         lda,
-        int(B),
+        B,
         ldb,
     )
     cublasCheckStatus(status)
@@ -8707,9 +8707,9 @@ def cublasCtrsm(
         m,
         n,
         ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)),
-        int(A),
+        A,
         lda,
-        int(B),
+        B,
         ldb,
     )
     cublasCheckStatus(status)
@@ -8759,9 +8759,9 @@ def cublasZtrsm(
         m,
         n,
         ctypes.byref(cuda.cuDoubleComplex(alpha.real, alpha.imag)),
-        int(A),
+        A,
         lda,
-        int(B),
+        B,
         ldb,
     )
     cublasCheckStatus(status)
@@ -8861,12 +8861,12 @@ def cublasChemm(
         m,
         n,
         ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)),
-        int(A),
+        A,
         lda,
-        int(B),
+        B,
         ldb,
         ctypes.byref(cuda.cuFloatComplex(beta.real, beta.imag)),
-        int(C),
+        C,
         ldc,
     )
     cublasCheckStatus(status)
@@ -8916,12 +8916,12 @@ def cublasZhemm(
         m,
         n,
         ctypes.byref(cuda.cuDoubleComplex(alpha.real, alpha.imag)),
-        int(A),
+        A,
         lda,
-        int(B),
+        B,
         ldb,
         ctypes.byref(cuda.cuDoubleComplex(beta.real, beta.imag)),
-        int(C),
+        C,
         ldc,
     )
     cublasCheckStatus(status)
@@ -9010,10 +9010,10 @@ def cublasCherk(
         n,
         k,
         ctypes.byref(ctypes.c_float(alpha)),  # pyright: ignore[reportArgumentType]
-        int(A),
+        A,
         lda,
         ctypes.byref(ctypes.c_float(beta)),  # pyright: ignore[reportArgumentType]
-        int(C),
+        C,
         ldc,
     )
     cublasCheckStatus(status)
@@ -9059,10 +9059,10 @@ def cublasZherk(
         n,
         k,
         ctypes.byref(ctypes.c_double(alpha)),
-        int(A),
+        A,
         lda,
         ctypes.byref(ctypes.c_double(beta)),
-        int(C),
+        C,
         ldc,
     )
     cublasCheckStatus(status)
@@ -9159,12 +9159,12 @@ def cublasCher2k(
         n,
         k,
         ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)),
-        int(A),
+        A,
         lda,
-        int(B),
+        B,
         ldb,
         ctypes.byref(cuda.cuFloatComplex(beta.real, beta.imag)),
-        int(C),
+        C,
         ldc,
     )
     cublasCheckStatus(status)
@@ -9217,12 +9217,12 @@ def cublasZher2k(
         n,
         k,
         ctypes.byref(cuda.cuDoubleComplex(alpha.real, alpha.imag)),
-        int(A),
+        A,
         lda,
-        int(B),
+        B,
         ldb,
         ctypes.byref(cuda.cuDoubleComplex(beta.real, beta.imag)),
-        int(C),
+        C,
         ldc,
     )
     cublasCheckStatus(status)
@@ -9349,12 +9349,12 @@ def cublasSgeam(
         m,
         n,
         ctypes.byref(ctypes.c_float(alpha)),  # pyright: ignore[reportArgumentType]
-        int(A),
+        A,
         lda,
         ctypes.byref(ctypes.c_float(beta)),  # pyright: ignore[reportArgumentType]
-        int(B),
+        B,
         ldb,
-        int(C),
+        C,
         ldc,
     )
     cublasCheckStatus(status)
@@ -9419,12 +9419,12 @@ def cublasDgeam(
         m,
         n,
         ctypes.byref(ctypes.c_double(alpha)),
-        int(A),
+        A,
         lda,
         ctypes.byref(ctypes.c_double(beta)),
-        int(B),
+        B,
         ldb,
-        int(C),
+        C,
         ldc,
     )
     cublasCheckStatus(status)
@@ -9489,12 +9489,12 @@ def cublasCgeam(
         m,
         n,
         ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)),
-        int(A),
+        A,
         lda,
         ctypes.byref(cuda.cuFloatComplex(beta.real, beta.imag)),
-        int(B),
+        B,
         ldb,
-        int(C),
+        C,
         ldc,
     )
     cublasCheckStatus(status)
@@ -9559,12 +9559,12 @@ def cublasZgeam(
         m,
         n,
         ctypes.byref(cuda.cuDoubleComplex(alpha.real, alpha.imag)),
-        int(A),
+        A,
         lda,
         ctypes.byref(cuda.cuDoubleComplex(beta.real, beta.imag)),
-        int(B),
+        B,
         ldb,
-        int(C),
+        C,
         ldc,
     )
     cublasCheckStatus(status)
@@ -9683,12 +9683,12 @@ def cublasSgemmBatched(
         n,
         k,
         ctypes.byref(ctypes.c_float(alpha)),  # pyright: ignore[reportArgumentType]
-        int(A),
+        A,
         lda,
-        int(B),
+        B,
         ldb,
         ctypes.byref(ctypes.c_float(beta)),  # pyright: ignore[reportArgumentType]
-        int(C),
+        C,
         ldc,
         batchCount,
     )
@@ -9751,12 +9751,12 @@ def cublasDgemmBatched(
         n,
         k,
         ctypes.byref(ctypes.c_double(alpha)),
-        int(A),
+        A,
         lda,
-        int(B),
+        B,
         ldb,
         ctypes.byref(ctypes.c_double(beta)),
-        int(C),
+        C,
         ldc,
         batchCount,
     )
@@ -9819,12 +9819,12 @@ def cublasCgemmBatched(
         n,
         k,
         ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)),
-        int(A),
+        A,
         lda,
-        int(B),
+        B,
         ldb,
         ctypes.byref(cuda.cuFloatComplex(beta.real, beta.imag)),
-        int(C),
+        C,
         ldc,
         batchCount,
     )
@@ -9887,12 +9887,12 @@ def cublasZgemmBatched(
         n,
         k,
         ctypes.byref(cuda.cuDoubleComplex(alpha.real, alpha.imag)),
-        int(A),
+        A,
         lda,
-        int(B),
+        B,
         ldb,
         ctypes.byref(cuda.cuDoubleComplex(beta.real, beta.imag)),
-        int(C),
+        C,
         ldc,
         batchCount,
     )
@@ -10000,9 +10000,9 @@ def cublasStrsmBatched(
         m,
         n,
         ctypes.byref(ctypes.c_float(alpha)),  # pyright: ignore[reportArgumentType]
-        int(A),
+        A,
         lda,
-        int(B),
+        B,
         ldb,
         batchCount,
     )
@@ -10062,9 +10062,9 @@ def cublasDtrsmBatched(
         m,
         n,
         ctypes.byref(ctypes.c_double(alpha)),
-        int(A),
+        A,
         lda,
-        int(B),
+        B,
         ldb,
         batchCount,
     )
@@ -10135,7 +10135,7 @@ def cublasSgetrfBatched(
     """This function performs the LU factorization of an array of n x n matrices."""
 
     assert _libcublas
-    status = _libcublas.cublasSgetrfBatched(handle, n, int(A), lda, int(P), int(info), batchSize)
+    status = _libcublas.cublasSgetrfBatched(handle, n, A, lda, P, info, batchSize)
     cublasCheckStatus(status)
 
 
@@ -10170,7 +10170,7 @@ def cublasDgetrfBatched(
     """This function performs the LU factorization of an array of n x n matrices."""
 
     assert _libcublas
-    status = _libcublas.cublasDgetrfBatched(handle, n, int(A), lda, int(P), int(info), batchSize)
+    status = _libcublas.cublasDgetrfBatched(handle, n, A, lda, P, info, batchSize)
     cublasCheckStatus(status)
 
 
@@ -10205,7 +10205,7 @@ def cublasCgetrfBatched(
     """This function performs the LU factorization of an array of n x n matrices."""
 
     assert _libcublas
-    status = _libcublas.cublasCgetrfBatched(handle, n, int(A), lda, int(P), int(info), batchSize)
+    status = _libcublas.cublasCgetrfBatched(handle, n, A, lda, P, info, batchSize)
     cublasCheckStatus(status)
 
 
@@ -10240,7 +10240,7 @@ def cublasZgetrfBatched(
     """This function performs the LU factorization of an array of n x n matrices."""
 
     assert _libcublas
-    status = _libcublas.cublasZgetrfBatched(handle, n, int(A), lda, int(P), int(info), batchSize)
+    status = _libcublas.cublasZgetrfBatched(handle, n, A, lda, P, info, batchSize)
     cublasCheckStatus(status)
 
 
@@ -10326,10 +10326,10 @@ def cublasSgetrsBatched(
         _CUBLAS_OP[trans],
         n,
         nrhs,
-        int(Aarray),
+        Aarray,
         lda,
-        int(devIpiv),
-        int(Barray),
+        devIpiv,
+        Barray,
         ldb,
         info,
         batchSize,
@@ -10381,10 +10381,10 @@ def cublasDgetrsBatched(
         _CUBLAS_OP[trans],
         n,
         nrhs,
-        int(Aarray),
+        Aarray,
         lda,
-        int(devIpiv),
-        int(Barray),
+        devIpiv,
+        Barray,
         ldb,
         info,
         batchSize,
@@ -10436,10 +10436,10 @@ def cublasCgetrsBatched(
         _CUBLAS_OP[trans],
         n,
         nrhs,
-        int(Aarray),
+        Aarray,
         lda,
-        int(devIpiv),
-        int(Barray),
+        devIpiv,
+        Barray,
         ldb,
         info,
         batchSize,
@@ -10491,10 +10491,10 @@ def cublasZgetrsBatched(
         _CUBLAS_OP[trans],
         n,
         nrhs,
-        int(Aarray),
+        Aarray,
         lda,
-        int(devIpiv),
-        int(Barray),
+        devIpiv,
+        Barray,
         ldb,
         info,
         batchSize,
@@ -10575,7 +10575,7 @@ def cublasSgetriBatched(
 
     assert _libcublas
     status = _libcublas.cublasSgetriBatched(
-        handle, n, int(A), lda, int(P), int(C), ldc, int(info), batchSize
+        handle, n, A, lda, P, C, ldc, info, batchSize
     )
     cublasCheckStatus(status)
 
@@ -10617,7 +10617,7 @@ def cublasDgetriBatched(
 
     assert _libcublas
     status = _libcublas.cublasDgetriBatched(
-        handle, n, int(A), lda, int(P), int(C), ldc, int(info), batchSize
+        handle, n, A, lda, P, C, ldc, info, batchSize
     )
     cublasCheckStatus(status)
 
@@ -10659,7 +10659,7 @@ def cublasCgetriBatched(
 
     assert _libcublas
     status = _libcublas.cublasCgetriBatched(
-        handle, n, int(A), lda, int(P), int(C), ldc, int(info), batchSize
+        handle, n, A, lda, P, C, ldc, info, batchSize
     )
     cublasCheckStatus(status)
 
@@ -10701,7 +10701,7 @@ def cublasZgetriBatched(
 
     assert _libcublas
     status = _libcublas.cublasZgetriBatched(
-        handle, n, int(A), lda, int(P), int(C), ldc, int(info), batchSize
+        handle, n, A, lda, P, C, ldc, info, batchSize
     )
     cublasCheckStatus(status)
 
@@ -10798,12 +10798,12 @@ def cublasSgelsBatched(
         m,
         n,
         nrhs,
-        int(Aarray),
+        Aarray,
         lda,
-        int(Carray),
+        Carray,
         ldc,
         info,
-        int(devInfoArray),
+        devInfoArray,
         batchSize,
     )
     cublasCheckStatus(status)
@@ -10839,12 +10839,12 @@ def cublasDgelsBatched(
         m,
         n,
         nrhs,
-        int(Aarray),
+        Aarray,
         lda,
-        int(Carray),
+        Carray,
         ldc,
         info,
-        int(devInfoArray),
+        devInfoArray,
         batchSize,
     )
     cublasCheckStatus(status)
@@ -10880,12 +10880,12 @@ def cublasCgelsBatched(
         m,
         n,
         nrhs,
-        int(Aarray),
+        Aarray,
         lda,
-        int(Carray),
+        Carray,
         ldc,
         info,
-        int(devInfoArray),
+        devInfoArray,
         batchSize,
     )
     cublasCheckStatus(status)
@@ -10921,12 +10921,12 @@ def cublasZgelsBatched(
         m,
         n,
         nrhs,
-        int(Aarray),
+        Aarray,
         lda,
-        int(Carray),
+        Carray,
         ldc,
         info,
-        int(devInfoArray),
+        devInfoArray,
         batchSize,
     )
     cublasCheckStatus(status)
@@ -11017,7 +11017,7 @@ def cublasSdgmm(
 
     assert _libcublas
     status = _libcublas.cublasSdgmm(
-        handle, _CUBLAS_SIDE_MODE[side], m, n, int(A), lda, int(x), incx, int(C), ldc
+        handle, _CUBLAS_SIDE_MODE[side], m, n, A, lda, x, incx, C, ldc
     )
     cublasCheckStatus(status)
 
@@ -11045,7 +11045,7 @@ def cublasDdgmm(
 
     assert _libcublas
     status = _libcublas.cublasDdgmm(
-        handle, _CUBLAS_SIDE_MODE[side], m, n, int(A), lda, int(x), incx, int(C), ldc
+        handle, _CUBLAS_SIDE_MODE[side], m, n, A, lda, x, incx, C, ldc
     )
     cublasCheckStatus(status)
 
@@ -11073,7 +11073,7 @@ def cublasCdgmm(
 
     assert _libcublas
     status = _libcublas.cublasCdgmm(
-        handle, _CUBLAS_SIDE_MODE[side], m, n, int(A), lda, int(x), incx, int(C), ldc
+        handle, _CUBLAS_SIDE_MODE[side], m, n, A, lda, x, incx, C, ldc
     )
     cublasCheckStatus(status)
 
@@ -11101,7 +11101,7 @@ def cublasZdgmm(
 
     assert _libcublas
     status = _libcublas.cublasZdgmm(
-        handle, _CUBLAS_SIDE_MODE[side], m, n, int(A), lda, int(x), incx, int(C), ldc
+        handle, _CUBLAS_SIDE_MODE[side], m, n, A, lda, x, incx, C, ldc
     )
     cublasCheckStatus(status)
 
@@ -11225,14 +11225,14 @@ def cublasSgemmStridedBatched(
         n,
         k,
         ctypes.byref(ctypes.c_float(alpha)),  # pyright: ignore[reportArgumentType]
-        int(A),
+        A,
         lda,
         strideA,
-        int(B),
+        B,
         ldb,
         strideB,
         ctypes.byref(ctypes.c_float(beta)),  # pyright: ignore[reportArgumentType]
-        int(C),
+        C,
         ldc,
         strideC,
         batchCount,
@@ -11279,14 +11279,14 @@ def cublasDgemmStridedBatched(
         n,
         k,
         ctypes.byref(ctypes.c_double(alpha)),
-        int(A),
+        A,
         lda,
         strideA,
-        int(B),
+        B,
         ldb,
         strideB,
         ctypes.byref(ctypes.c_double(beta)),
-        int(C),
+        C,
         ldc,
         strideC,
         batchCount,
@@ -11333,14 +11333,14 @@ def cublasCgemmStridedBatched(
         n,
         k,
         ctypes.byref(cuda.cuFloatComplex(alpha.real, alpha.imag)),
-        int(A),
+        A,
         lda,
         strideA,
-        int(B),
+        B,
         ldb,
         strideB,
         ctypes.byref(cuda.cuFloatComplex(beta.real, beta.imag)),
-        int(C),
+        C,
         ldc,
         strideC,
         batchCount,
@@ -11387,14 +11387,14 @@ def cublasZgemmStridedBatched(
         n,
         k,
         ctypes.byref(cuda.cuDoubleComplex(alpha.real, alpha.imag)),
-        int(A),
+        A,
         lda,
         strideA,
-        int(B),
+        B,
         ldb,
         strideB,
         ctypes.byref(cuda.cuDoubleComplex(beta.real, beta.imag)),
-        int(C),
+        C,
         ldc,
         strideC,
         batchCount,
