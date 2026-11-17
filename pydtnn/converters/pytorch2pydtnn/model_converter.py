@@ -206,8 +206,7 @@ def convert_layers(
 
             name = layer._get_name()
 
-            # From "vars(layer)" it is possible to get all the information necessary
-            # from PyTorch in a dictionary.
+            # From "vars(layer)" it is possible to get all the information necessary from PyTorch in a dictionary.
             args = {
                 cm.ARGUMENTS: vars(layer)
             }  # NOTE: In this context, params are the input layers.
