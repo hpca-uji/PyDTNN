@@ -252,7 +252,7 @@ def get_lists_operations_and_outputs(
         A tuple containing the list of operations per branch, list of all output names, and the common previous layer.
     """
     # NOTE: It is assumed that the model will by a feed-forward network
-    dict_branch = {}
+    dict_branch = dict[str, dict[str, Layerable]]()
 
     # -- Making the "path" of layers for every input --
 

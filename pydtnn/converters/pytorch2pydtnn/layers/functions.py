@@ -109,7 +109,7 @@ def add(args: dict[str, Any]) -> tuple[AdditionBlock, str]:
         dict_equivalent_layers[elem] = layer_name
 
     # AdditionBlock expects every "branch" (layer list) as a different argument.
-    return (AdditionBlock(*list_layers), input_layer_name)
+    return (AdditionBlock(list_layers), input_layer_name)
 
 
 def concat(args: dict[str, Any]) -> tuple[ConcatenationBlock, str]:
@@ -157,7 +157,7 @@ def concat(args: dict[str, Any]) -> tuple[ConcatenationBlock, str]:
         dict_equivalent_layers[elem] = layer_name
 
     # ConcatenationBlock expects every "branch" (layer list) as a different argument.
-    return (ConcatenationBlock(*list_layers), input_layer_name)
+    return (ConcatenationBlock(list_layers), input_layer_name)
 
 
 def flatten(args: dict[str, str]) -> tuple[Flatten, str]:
