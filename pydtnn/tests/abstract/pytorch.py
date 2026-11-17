@@ -28,7 +28,10 @@ from pydtnn.tests.abstract.base import Params, TestCase, verbose_test
 from pydtnn.utils import header, rand
 from pydtnn.utils.constants import Array, Parameters
 from pydtnn.utils.tensor import TensorFormat
-from pydtnn.utils.tensor_array import TensorArray
+try:
+   from pydtnn.utils.tensor_array import TensorArray
+except:
+   TensorArray = type(None)
 
 type PyTorch_Model = torch.nn.Module
 
@@ -289,7 +292,7 @@ class PytorchModelTestCaseAbstract(TestCase):
                         for grad_v_key in layer.grad_vars.values():
                             pydtnn_grad = getattr(layer, grad_v_key)
                             if isinstance(pydtnn_grad, TensorArray):
-                                pydtnn_grad = pydtnn_grad.get().reshape(pydtnn_grad.cpu_shape)
+                                pydtnn_grad = pydtnn_grad.get().reshape(pydtnn_grad.cpu_shape)  # pyright: ignore[reportOptionalMemberAccess]
                             grad_vars[grad_v_key] = pydtnn_grad
                         layers_grad_vars[i] = (layer, grad_vars)
                         i += 1
@@ -366,7 +369,7 @@ class PytorchModelTestCaseAbstract(TestCase):
                         for param_key in layer.grad_vars.keys():
                             param = getattr(layer, param_key)
                             if isinstance(param, TensorArray):
-                                param = param.get().reshape(param.cpu_shape)
+                                param = param.get().reshape(param.cpu_shape)  # pyright: ignore[reportOptionalMemberAccess]
                             parameters[param_key] = param
                         layers_parameters[i] = parameters
                         i += 1
@@ -682,7 +685,7 @@ class PytorchModelTestCaseAbstract(TestCase):
                         if self.params.device == "cuda":
                             # NOTE: First moving the values to CPU, doing the split, then moving the values back to GPU.
                             assert isinstance(dx_base, TensorArray)
-                            dx_to_split: np.ndarray = dx_base.get().reshape(dx_base.cpu_shape)
+                            dx_to_split: np.ndarray = dx_base.get().reshape(dx_base.cpu_shape)  # pyright: ignore[reportOptionalMemberAccess]
                         else:
                             assert isinstance(dx_base, np.ndarray)
                             dx_to_split: np.ndarray = dx_base.copy()
@@ -692,12 +695,12 @@ class PytorchModelTestCaseAbstract(TestCase):
                         if self.params.device == "cuda":
                             # NOTE: Moving the values back to GPU.
                             assert isinstance(dx_base, TensorArray)
-                            _dx = TensorArray.to_gpu(dx_splitted, dx_base.tensor_format,
-                                                     dx_base.cudnn_dtype, dx_base.tensor_type)
+                            _dx = TensorArray.to_gpu(dx_splitted, dx_base.tensor_format,  # pyright: ignore[reportOptionalMemberAccess, reportAttributeAccessIssue]
+                                                     dx_base.cudnn_dtype, dx_base.tensor_type)  # pyright: ignore[reportOptionalMemberAccess]
                         else:
                             _dx = dx_splitted
                     else:
-                        _dx: Array = dx_base.copy()
+                        _dx: Array = dx_base.copy()  # pyright: ignore[reportOptionalMemberAccess]
 
                     for _layer in reversed(path):
                         _dx = _layer.backward(_dx.copy())  # pyright: ignore[reportAssignmentType]
