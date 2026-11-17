@@ -6,7 +6,6 @@ import math
 import numpy as np
 import pycuda.driver as pycuda_driver  # pyright: ignore[reportAttributeAccessIssue]
 
-from pydtnn import pycuda_device
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.backends.pycuda.abstract.base import BasePycuda
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
@@ -46,7 +45,7 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
             return None
 
         # Calculate the kernel sizes
-        attrs = pycuda_driver.Device(pycuda_device).get_attributes()
+        attrs = pycuda_driver.Device(self.pycuda_device).get_attributes()
 
         max_threads = attrs[pycuda_driver.device_attribute.MAX_BLOCK_DIM_X]
         min_threads = attrs[pycuda_driver.device_attribute.WARP_SIZE]
@@ -67,7 +66,7 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
             state.ptr_voidp,
             state.ptr_voidp,
             state.size,
-            self.model.nccl_type,
+            self.model.nccl_dtype,
             nccl.RedOp.Sum,
             comm=self.model.nccl_comm,
             stream=self.model.pycuda_stream.handle,
@@ -76,12 +75,12 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
         # NOTE: state where called "dw" before the renaming.
         # # Hierarchical mode NCCL + MPI
         # if len(self.model.inter_ranks) == 1:
-        #     nccl.ncclAllReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type,
+        #     nccl.ncclAllReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_dtype,
         #                        nccl.RedOp.Sum, comm=self.model.nccl_comm,
         #                        stream=self.model.stream.handle)
         # else:
         #     # Hierarchical allreduce - Phase 1: ncclReduce + Iallreduce
-        #     nccl.ncclReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type,
+        #     nccl.ncclReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_dtype,
         #                     nccl.RedOp.Sum, root=0, comm=self.model.nccl_comm,
         #                     stream=self.model.stream.handle)
         #     if self.model.rank in self.model.inter_ranks:
@@ -103,7 +102,7 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
         #         # Hierarchical allreduce - Phase 2: wait + ncclBroadcast
         #         if self.model.rank in self.model.inter_ranks:
         #             self.reqs_allred[dw_].wait()
-        #         nccl.ncclBroadcast(dw.ptr, dw.ptr, dw.size, self.model.nccl_type,
+        #         nccl.ncclBroadcast(dw.ptr, dw.ptr, dw.size, self.model.nccl_dtype,
         #                            root=0, comm=self.model.nccl_comm,
         #                            stream=self.model.stream.handle)
 
@@ -122,7 +121,7 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
             state.ptr_voidp,
             state.ptr_voidp,
             state.size,
-            self.model.nccl_type,
+            self.model.nccl_dtype,
             nccl.RedOp.Sum,
             comm=self.model.nccl_comm,
             stream=self.model.pycuda_stream.handle,
@@ -133,12 +132,12 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
         # # Hierarchical mode NCCL + MPI
         # if len(self.model.inter_ranks) == 1:
         #     # Only one node involved, perform ncclAllreduce across intra-node GPUs
-        #     nccl.ncclAllReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type,
+        #     nccl.ncclAllReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_dtype,
         #                        nccl.RedOp.Sum, comm=self.model.nccl_comm,
         #                        stream=self.model.stream.handle)
         # else:
         #     # Hierarchical allreduce: ncclReduce + Allreduce + ncclBroadcast
-        #     nccl.ncclReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type,
+        #     nccl.ncclReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_dtype,
         #                     nccl.RedOp.Sum, root=0, comm=self.model.nccl_comm,
         #                     stream=self.model.stream.handle)
         #     if self.model.rank in self.model.inter_ranks:
@@ -148,7 +147,7 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
         #             dw_cpu = dw.get()
         #             self.model.inter_comm.Allreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
         #             dw.set_async(dw_cpu, self.model.stream)
-        #     nccl.ncclBroadcast(dw.ptr, dw.ptr, dw.size, self.model.nccl_type,
+        #     nccl.ncclBroadcast(dw.ptr, dw.ptr, dw.size, self.model.nccl_dtype,
         #                        root=0, comm=self.model.nccl_comm,
         #                        stream=self.model.stream.handle)
 

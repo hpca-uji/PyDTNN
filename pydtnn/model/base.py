@@ -100,7 +100,7 @@ class Base[T: Array]:  # noqa: D101 (generics not detected)
     memory: PrivateMemory
     metric_funcs: tuple[Metric[T], ...]
     nccl_comm: Any
-    nccl_type: Any
+    nccl_dtype: Any
     nparams: int
     nprocs: int
     optimizer: Optimizer[T]

@@ -9,8 +9,8 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from pydtnn import (mpi_comm, cublas_handle, cudnn_handle,
-                    nccl_comm, pycuda_stream)
+from pydtnn import (cupy_device, mpi_comm, cublas_handle, cudnn_handle,
+                    nccl_comm, pycuda_device, pycuda_stream, cupy_stream)
 from pydtnn.datasets import select as select_dataset
 from pydtnn.layers.identity import Identity
 from pydtnn.libs.mpi.rc import proto as proto
@@ -94,13 +94,13 @@ class Init[T: Array](Repr[T]):  # noqa: D101 (generics not detected)
         self._batch_init()
         self._tensor_init()
 
-        # Tracer [NOTE: after MPI & before Cuda]
+        # Tracer [NOTE: after MPI & before GPU]
         self._tracer_init()
 
-        # Cuda [NOTE: after MPI]
-        self._cuda_init()
+        # GPU [NOTE: after MPI]
+        self._gpu_init()
 
-        # Encryption [NOTE: after MPI & Cuda]
+        # Encryption [NOTE: after MPI & GPU]
         if self.encryption_name:
             self.crypt = self._crypt_init(self.encryption_name)
         else:
@@ -200,20 +200,38 @@ class Init[T: Array](Repr[T]):  # noqa: D101 (generics not detected)
 
         self.tensor_format = tensor_format
 
-    def _cuda_init(self) -> None:
+    def _gpu_init(self) -> None:
         """Initializes CUDA, cuDNN, and NCCL backend handles."""
-        if not self.use_gpudirect and self.use_nccl:
-            raise RuntimeError("It is necessary to have gpudirect active to work with NCCL.")
+        # if not self.use_gpudirect and self.use_nccl:
+        #     raise RuntimeError("It is necessary to have gpudirect active to work with NCCL.")
 
         if pycuda_stream is not None:
             self.tracer.set_stream(pycuda_stream)
 
-        self.nccl_type = nccl_dtype_from_numpy(self.dtype) if self.use_nccl else None
-        self.nccl_comm = nccl_comm if self.use_nccl else None
+        self.nccl_comm = None  # pyright: ignore[reportAttributeAccessIssue]
+        if self.use_nccl:
+            if not nccl_comm:
+                raise ValueError("Please, install nccl to allow parallel NCCL execution!")
+            self.nccl_comm = nccl_comm
+
+        self.pycuda_device = pycuda_device
+        self.pycuda_stream = pycuda_stream
+
+        self.cupy_device = cupy_device
+        self.cupy_stream = cupy_stream
+
         self.cudnn_handle = cudnn_handle
         self.cublas_handle = cublas_handle
-        self.pycuda_stream = pycuda_stream
-        self.cudnn_dtype = cudnn_dtype_from_numpy(self.dtype)
+
+    @property
+    def cudnn_dtype(self) -> int:
+        """Get cuDNN equivalent DType"""
+        return cudnn_dtype_from_numpy(self.dtype)
+
+    @property
+    def nccl_dtype(self) -> Any:
+        """Get cuDNN equivalent DType"""
+        return nccl_dtype_from_numpy(self.dtype)
 
     def _crypt_init(self, encryption_name: str) -> "polyhe.Context":
         """

@@ -3,7 +3,6 @@ import math
 
 import cupy.cuda as cupy_driver
 
-from pydtnn import cupy_device
 from pydtnn.libs import numpy as np
 from pydtnn.backends.cupy.abstract.base import BaseCupy
 from pydtnn.backends.numpy.abstract.layerable import LayerableNumpy
@@ -23,10 +22,10 @@ class LayerableCupy(LayerableNumpy, BaseCupy):
             return None
 
         # Calculate the kernel sizes
-        attrs = cupy_driver.runtime.getDeviceProperties(cupy_device)
+        attrs = cupy_driver.runtime.getDeviceProperties(self.cupy_device)
 
         max_threads = attrs["maxThreadsDim"][0]
-        min_threads = cupy_driver.runtime.deviceGetAttribute(cupy_driver.runtime.cudaDevAttrWarpSize, cupy_device)
+        min_threads = cupy_driver.runtime.deviceGetAttribute(cupy_driver.runtime.cudaDevAttrWarpSize, self.cupy_device)
 
         block_size = max(min_threads, min(self.model.batch_size, max_threads))
         grid_size = math.ceil(self.model.batch_size / block_size)
