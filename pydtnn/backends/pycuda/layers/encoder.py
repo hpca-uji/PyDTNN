@@ -77,37 +77,24 @@ class EncoderPycuda(EncoderNacho[TensorArray], AbstractBlockLayerPycuda):
         # self.dropout_1.initialize(prev_shape=self.multiheadattention.shape, x=self.multiheadattention.y)
         self.layernormalization_1._model_init(prev_shape=self.shape, x=self.multiheadattention.y)
 
-        self.layernormalization_1_y_flatten = TensorArray(
-            self.flatten(self.layernormalization_1.y).ary,
-            self.model.tensor_format,
-            self.model.cudnn_dtype,
-        )
+        self.layernormalization_1_y_flatten = self.flatten(self.layernormalization_1.y)
 
         self.feedforward._model_init(
             prev_shape=self.layernormalization_1.shape, x=self.layernormalization_1_y_flatten
         )
 
-        self.feedforward_y_unflatten = TensorArray(
-            self.unflatten(self.feedforward.y).ary, self.model.tensor_format, self.model.cudnn_dtype
-        )
-        self.feedforward_dx_unflatten = TensorArray(
-            self.unflatten(self.feedforward.dx).ary,
-            self.model.tensor_format,
-            self.model.cudnn_dtype,
-        )
+        self.feedforward_y_unflatten = self.unflatten(self.feedforward.y)
+        self.feedforward_dx_unflatten = self.unflatten(self.feedforward.dx)
 
         self.dropout_2._model_init(
             prev_shape=self.feedforward.shape, x=self.feedforward_y_unflatten
         )
-        self.dropout_2_dx_flatten = TensorArray(
-            self.flatten(self.dropout_2.dx).ary, self.model.tensor_format, self.model.cudnn_dtype
-        )
+        self.dropout_2_dx_flatten = self.flatten(self.dropout_2.dx)
 
         self.layernormalization_2._model_init(prev_shape=self.dropout_2.shape, x=self.dropout_2.y)
 
         self.y = self.layernormalization_2.y
-        x_aux = self.multiheadattention.dquery
-        self.dx = TensorArray(x_aux.ary, self.model.tensor_format, self.model.cudnn_dtype)
+        self.dx = self.multiheadattention.dquery
 
         self.flatten(
             self.feedforward.y
@@ -154,7 +141,7 @@ class EncoderPycuda(EncoderNacho[TensorArray], AbstractBlockLayerPycuda):
             self.layernormalization_1.y.ptr,
             beta,
             self.feedforward_y_unflatten.desc,
-            self.feedforward_y_unflatten.ptr_voidp,
+            self.feedforward_y_unflatten.ptr,
         )
 
         self.layernormalization_2.forward(self.feedforward_y_unflatten)
@@ -178,7 +165,7 @@ class EncoderPycuda(EncoderNacho[TensorArray], AbstractBlockLayerPycuda):
             self.layernormalization_2.dx.ptr,
             beta,
             self.feedforward_dx_unflatten.desc,
-            self.feedforward_dx_unflatten.ptr_voidp,
+            self.feedforward_dx_unflatten.ptr,
         )
 
         # Self Attention
@@ -194,7 +181,7 @@ class EncoderPycuda(EncoderNacho[TensorArray], AbstractBlockLayerPycuda):
             self.layernormalization_1.dx.ptr,
             beta,
             self.dx.desc,
-            self.dx.ptr_voidp,
+            self.dx.ptr,
         )
         cudnn.cudnnAddTensor(
             self.model.cudnn_handle,
@@ -203,7 +190,7 @@ class EncoderPycuda(EncoderNacho[TensorArray], AbstractBlockLayerPycuda):
             self.multiheadattention.dkey.ptr,
             beta,
             self.dx.desc,
-            self.dx.ptr_voidp,
+            self.dx.ptr,
         )
         cudnn.cudnnAddTensor(
             self.model.cudnn_handle,
@@ -212,6 +199,6 @@ class EncoderPycuda(EncoderNacho[TensorArray], AbstractBlockLayerPycuda):
             self.multiheadattention.dvalue.ptr,
             beta,
             self.dx.desc,
-            self.dx.ptr_voidp,
+            self.dx.ptr,
         )
         return self.dx

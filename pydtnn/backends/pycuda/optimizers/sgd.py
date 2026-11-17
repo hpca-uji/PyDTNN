@@ -3,14 +3,13 @@
 import logging
 
 import numpy as np
-from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 from pycuda.elementwise import ElementwiseKernel
 
 from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
 from pydtnn.backends.pycuda.optimizers.abstract.optimizer import OptimizerPycuda
 from pydtnn.optimizers.sgd import SGD
 from pydtnn.utils.constants import DTYPE2CTYPE
-from pydtnn.utils.tensor_array import TensorArray
+from pydtnn.utils.tensor_array import DescriptorType, MemoryType, TensorArray
 
 __all__ = ("SGDPycuda",)
 
@@ -61,11 +60,14 @@ class SGDPycuda(SGD[TensorArray], OptimizerPycuda):
             list_grad_vars = list(layer.grad_vars.keys())
 
             if len(list_grad_vars) != 0:
-                self.context[layer.id] = dict[str, gpuarray.GPUArray]()
+                self.context[layer.id] = dict[str, TensorArray]()  # pyright: ignore[reportArgumentType]
                 for w_ in list_grad_vars:
                     w = getattr(layer, w_)
-                    self.context[layer.id]["velocity_%s" % w_] = gpuarray.zeros(
-                        w.shape, dtype=w.dtype
+                    self.context[layer.id]["velocity_%s" % w_] = TensorArray.zeros(
+                        w.shape,
+                        layer.model.dtype,
+                        mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+                        desc_type=DescriptorType.NONE
                     )
 
                     # NOTE: They are both "gpuarray" and not "int"
@@ -83,29 +85,28 @@ class SGDPycuda(SGD[TensorArray], OptimizerPycuda):
 
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
-            velocity = self.context[layer.id]["velocity_%s" % w_]
+            velocity: TensorArray = self.context[layer.id]["velocity_%s" % w_]  # pyright: ignore[reportAssignmentType]
             w: TensorArray
             dw: TensorArray
-            velocity: gpuarray.GPUArray
 
             if self.model.use_gpudirect:
                 self.update_gpudirect(
-                    w.gpudata,
-                    dw.ptr_intp,
-                    velocity.gpudata,
+                    w.ary,
+                    dw.ary,
+                    velocity.ary,
                     np.float32(self.learning_rate),
                     np.float32(self.decay),
                     np.float32(self.momentum),
                     np.int32(w.size),
-                    self.model.cuda_grid,
-                    block=self.model.cuda_block,
+                    self.model.backend.cuda_grid,
+                    block=self.model.backend.cuda_block,
                     stream=self.model.pycuda_stream,
                 )
             else:
                 self.update_kernel(
                     w.ary,
                     dw.ary,
-                    velocity,
+                    velocity.ary,
                     np.float32(self.learning_rate),
                     np.float32(self.decay),
                     np.float32(self.momentum),

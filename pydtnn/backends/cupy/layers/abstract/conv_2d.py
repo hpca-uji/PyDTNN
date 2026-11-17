@@ -5,8 +5,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-from cupy import ndarray  # pyright: ignore[reportAttributeAccessIssue]
-
+from pydtnn.libs import numpy as np
 from pydtnn.backends.cupy.layers.abstract.layer import LayerCupy
 from pydtnn.backends.numpy.layers.abstract.conv_2d import AbstractConv2DNumpy
 from pydtnn.layers.abstract.conv_2d import AbstractConv2D
@@ -17,13 +16,13 @@ __all__ = ("AbstractConv2DCupy",)
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from numpy import ndarray  # noqa: F811 (override typing)
+    import numpy as np  # noqa: F811 (override typing)
 
 
-class AbstractConv2DCupy(AbstractConv2DNumpy, AbstractConv2D[ndarray], LayerCupy):
+class AbstractConv2DCupy(AbstractConv2DNumpy, AbstractConv2D[np.ndarray], LayerCupy):
     """Abstract base class for 2D convolution layers using CuPy backend."""
 
-    def _model_init(self, prev_shape: ArrayShape, x: ndarray) -> None:
+    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
         """Initialize model parameters and CUDA kernels."""
         super()._model_init(prev_shape, x)
 
@@ -56,12 +55,12 @@ class AbstractConv2DCupy(AbstractConv2DNumpy, AbstractConv2D[ndarray], LayerCupy
             },
         )
 
-    def im2row(self, x: ndarray, x_rows: ndarray) -> None:
+    def im2row(self, x: np.ndarray, x_rows: np.ndarray) -> None:
         """Perform im2row transformation on GPU."""
         # return super().im2row(x, x_rows)
         self._im2row(
-            self.model.cuda_grid,
-            self.model.cuda_block,
+            self.model.backend.cuda_grid,
+            self.model.backend.cuda_block,
             (
                 x,
                 x_rows,
@@ -82,12 +81,12 @@ class AbstractConv2DCupy(AbstractConv2DNumpy, AbstractConv2D[ndarray], LayerCupy
             ),
         )
 
-    def row2im(self, x_rows: ndarray, dx: ndarray) -> None:
+    def row2im(self, x_rows: np.ndarray, dx: np.ndarray) -> None:
         """Perform row2im transformation on GPU."""
         # return super().im2row(x_rows, dx)
         self._row2im(
-            self.model.cuda_grid,
-            self.model.cuda_block,
+            self.model.backend.cuda_grid,
+            self.model.backend.cuda_block,
             (
                 x_rows,
                 dx,
@@ -108,12 +107,12 @@ class AbstractConv2DCupy(AbstractConv2DNumpy, AbstractConv2D[ndarray], LayerCupy
             ),
         )
 
-    def im2col(self, x: ndarray, x_cols: ndarray) -> None:
+    def im2col(self, x: np.ndarray, x_cols: np.ndarray) -> None:
         """Perform im2col transformation on GPU."""
         # return super().im2col(x, x_cols)
         self._im2row(
-            self.model.cuda_grid,
-            self.model.cuda_block,
+            self.model.backend.cuda_grid,
+            self.model.backend.cuda_block,
             (
                 x,
                 x_cols,
@@ -134,12 +133,12 @@ class AbstractConv2DCupy(AbstractConv2DNumpy, AbstractConv2D[ndarray], LayerCupy
             ),
         )
 
-    def col2im(self, x_cols: ndarray, dx: ndarray) -> None:
+    def col2im(self, x_cols: np.ndarray, dx: np.ndarray) -> None:
         """Perform col2im transformation on GPU."""
         # return super().im2row(x_cols, dx)
         self._col2im(
-            self.model.cuda_grid,
-            self.model.cuda_block,
+            self.model.backend.cuda_grid,
+            self.model.backend.cuda_block,
             (
                 x_cols,
                 dx,

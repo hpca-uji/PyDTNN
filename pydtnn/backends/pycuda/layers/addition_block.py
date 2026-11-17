@@ -49,10 +49,10 @@ class AdditionBlockPycuda(AdditionBlock[TensorArray], AbstractBlockLayerPycuda):
                     self.model.cudnn_handle,
                     alpha,
                     y_i.desc,
-                    y_i.ptr_voidp,
+                    y_i.ptr,
                     beta,
                     self.y.desc,
-                    self.y.ptr_voidp,
+                    self.y.ptr,
                 )
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.y
@@ -87,10 +87,10 @@ class AdditionBlockPycuda(AdditionBlock[TensorArray], AbstractBlockLayerPycuda):
                     self.model.cudnn_handle,
                     alpha,
                     dx_i.desc,
-                    dx_i.ptr_voidp,
+                    dx_i.ptr,
                     beta,
                     self.dx.desc,
-                    self.dx.ptr_voidp,
+                    self.dx.ptr,
                 )
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.dx

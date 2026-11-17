@@ -4,8 +4,6 @@ import logging
 from typing import Any
 
 import numpy as np
-import pycuda.driver as drv
-from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 
 from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
 from pydtnn.layers.batch_normalization import BatchNormalization
@@ -48,13 +46,23 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
         super()._model_init(prev_shape, x)
 
         # Activations y
-        y_gpu = gpuarray.zeros(x.shape, self.model.dtype)
-        self.y = TensorArray(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.y = TensorArray.zeros(
+            x.shape,
+            self.model.dtype,
+            tensor_format=self.model.tensor_format,
+            mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+            desc_type=DescriptorType.TENSOR
+        )
         self.memory_used += self.y.nbytes
 
         # Derivative dx
-        dx_gpu = gpuarray.zeros(x.shape, self.model.dtype)
-        self.dx = TensorArray(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.dx = TensorArray.zeros(
+            x.shape,
+            self.model.dtype,
+            tensor_format=self.model.tensor_format,
+            mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+            desc_type=DescriptorType.TENSOR
+        )
         self.memory_used += self.dx.nbytes
 
         self.spatial = len(self.shape) > 2
@@ -72,7 +80,7 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
         shape_ = (self.ci,)
 
         # weights
-        self.weights = TensorArray.from_host(
+        self.weights = TensorArray.asarray(
             self.weights_initializer(shape_, self.model.dtype),
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
@@ -81,7 +89,7 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
         self.memory_used += self.weights.nbytes
 
         # biases
-        self.biases = TensorArray.from_host(
+        self.biases = TensorArray.asarray(
             self.biases_initializer(shape_, self.model.dtype),
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
@@ -89,7 +97,7 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
         )
         self.memory_used += self.biases.nbytes
 
-        self.dw = TensorArray.new_zeros(
+        self.dw = TensorArray.zeros(
             self.weights.host_shape,
             self.model.dtype,
             tensor_format=self.model.tensor_format,
@@ -98,7 +106,7 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
         )
         self.memory_used += self.dw.nbytes
 
-        self.db = TensorArray.new_zeros(
+        self.db = TensorArray.zeros(
             self.biases.host_shape,
             self.model.dtype,
             tensor_format=self.model.tensor_format,
@@ -107,7 +115,7 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
         )
         self.memory_used += self.db.nbytes
 
-        self.running_mean = TensorArray.from_host(
+        self.running_mean = TensorArray.asarray(
             self.running_mean_initializer(shape_, self.model.dtype),
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
@@ -115,7 +123,7 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
         )
         self.memory_used += self.running_mean.nbytes
 
-        self.running_var = TensorArray.from_host(
+        self.running_var = TensorArray.asarray(
             self.running_var_initializer(shape_, self.model.dtype),
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
@@ -123,7 +131,7 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
         )
         self.memory_used += self.running_var.nbytes
 
-        self.save_mean = TensorArray.new_zeros(
+        self.save_mean = TensorArray.zeros(
             shape_,
             self.model.dtype,
             tensor_format=self.model.tensor_format,
@@ -132,7 +140,7 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
         )
         self.memory_used += self.save_mean.nbytes
 
-        self.save_inv_var = TensorArray.new_zeros(
+        self.save_inv_var = TensorArray.zeros(
             shape_,
             self.model.dtype,
             tensor_format=self.model.tensor_format,
@@ -164,18 +172,18 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
                     alpha,
                     beta,
                     x.desc,
-                    x.ptr_voidp,
+                    x.ptr,
                     self.y.desc,
-                    self.y.ptr_voidp,
+                    self.y.ptr,
                     self.weights_biases_mean_var_desc,
-                    self.weights.ptr_voidp,
-                    self.biases.ptr_voidp,
+                    self.weights.ptr,
+                    self.biases.ptr,
                     self.factor,
-                    self.running_mean.ptr_voidp,
-                    self.running_var.ptr_voidp,
+                    self.running_mean.ptr,
+                    self.running_var.ptr,
                     self.epsilon,
-                    self.save_mean.ptr_voidp,
-                    self.save_inv_var.ptr_voidp,
+                    self.save_mean.ptr,
+                    self.save_inv_var.ptr,
                 )
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
             case ModelMode.EVALUATE:
@@ -189,14 +197,14 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
                     alpha,
                     beta,
                     x.desc,
-                    x.ptr_voidp,
+                    x.ptr,
                     self.y.desc,
-                    self.y.ptr_voidp,
+                    self.y.ptr,
                     self.weights_biases_mean_var_desc,
-                    self.weights.ptr_voidp,
-                    self.biases.ptr_voidp,
-                    self.running_mean.ptr_voidp,
-                    self.running_var.ptr_voidp,
+                    self.weights.ptr,
+                    self.biases.ptr,
+                    self.running_mean.ptr,
+                    self.running_var.ptr,
                     self.epsilon,
                 )
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
@@ -221,18 +229,18 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
             alpha_dgb,
             beta_dgb,
             self.x.desc,
-            self.x.ptr_voidp,
+            self.x.ptr,
             dy.desc,
-            dy.ptr_voidp,
+            dy.ptr,
             self.dx.desc,
-            self.dx.ptr_voidp,
+            self.dx.ptr,
             self.weights_biases_mean_var_desc,
-            self.weights.ptr_voidp,
-            self.dw.ptr_voidp,
-            self.db.ptr_voidp,
+            self.weights.ptr,
+            self.dw.ptr,
+            self.db.ptr,
             self.epsilon,
-            self.save_mean.ptr_voidp,
-            self.save_inv_var.ptr_voidp,
+            self.save_mean.ptr,
+            self.save_inv_var.ptr,
         )
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 

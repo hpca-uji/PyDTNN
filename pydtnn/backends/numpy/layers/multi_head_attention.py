@@ -9,7 +9,6 @@ from pydtnn.libs import numpy as np
 
 __all__ = ("MultiHeadAttentionNumpy",)
 
-
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:

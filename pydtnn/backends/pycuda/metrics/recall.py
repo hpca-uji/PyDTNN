@@ -20,7 +20,7 @@ class RecallPycuda(Recall[TensorArray], MetricPycuda):
         """Initializes the internal buffers for recall calculation on the GPU."""
         super()._model_init()
         target_classes = self.model.output_shape[0]
-        self.recall = TensorArray.new_zeros(
+        self.recall = TensorArray.zeros(
             (1,),
             self.model.dtype,
             tensor_format=self.model.tensor_format,
@@ -28,7 +28,7 @@ class RecallPycuda(Recall[TensorArray], MetricPycuda):
             desc_type=DescriptorType.TENSOR
         )
         self.memory_used += self.recall.nbytes
-        self.local_recall = TensorArray.new_zeros(
+        self.local_recall = TensorArray.zeros(
             (target_classes,),
             self.model.dtype,
             tensor_format=self.model.tensor_format,

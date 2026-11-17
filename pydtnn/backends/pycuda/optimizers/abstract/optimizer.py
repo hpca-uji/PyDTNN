@@ -1,9 +1,12 @@
 """PyCUDA implementation of the base Optimizer class for PyDTNN."""
 
-from typing import Any
+from __future__ import annotations
 
-from pycuda.driver import Function
-from pycuda.elementwise import ElementwiseKernel
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from pycuda.driver import Function
+    from pycuda.elementwise import ElementwiseKernel
 
 from pydtnn.backends.pycuda.abstract.base import BasePycuda
 from pydtnn.optimizers.abstract.optimizer import Optimizer

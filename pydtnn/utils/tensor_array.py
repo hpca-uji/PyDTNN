@@ -24,6 +24,25 @@ logger = logging.getLogger(__name__)
 if typing.TYPE_CHECKING:
     from pycuda.driver import Stream
 
+type Ary = Any
+
+
+class DescriptorType(StrEnum):
+    """Enumeration of supported descriptor types."""
+
+    TENSOR = auto()
+    FILTER = auto()
+    SEQ = auto()
+    NONE = auto()
+
+
+class MemoryType(StrEnum):
+    """Enumeration of supported memory types."""
+
+    HOST = auto()
+    GLOBAL = auto()
+    DEVICE = auto()
+
 
 type Ary = Any
 
@@ -65,7 +84,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
         )  # pyright: ignore[reportReturnType]
 
     @classmethod
-    def new_zeros(
+    def zeros(
         cls,
         shape: S,
         dtype: D,
@@ -76,7 +95,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
         mem_type: MemoryType = MemoryType.DEVICE
     ) -> TensorArray[S, D]:
         """Creates a zero-initialized TensorArray."""
-        return cls.from_host(
+        return cls.asarray(
             np.zeros(shape, dtype),
             host_shape=True if host_shape else False,
             tensor_format=tensor_format,
@@ -84,8 +103,10 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
             mem_type=mem_type
         )
 
-    @staticmethod
-    def from_host(
+    @classmethod
+    def asarray(
+        cls,
+        /,
         ary: np.ndarray[S, D],
         *,
         host_shape: bool = False,
@@ -105,7 +126,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
                 gpu_arr = gpuarray.to_gpu(ary)
             case MemoryType.HOST:
                 gpu_arr = ary
-        return TensorArray(
+        return cls(
             gpu_arr,
             host_shape=True if host_shape else ary.shape,
             tensor_format=tensor_format,
@@ -133,7 +154,6 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
         self.desc: int = desc  # pyright: ignore[reportAttributeAccessIssue]
 
         if host_shape is True:
-            self.host_shape = ()  # pyright: ignore[reportAttributeAccessIssue]
             self.ary = ary
         else:
             self.ary = self._expand_ary(ary)
@@ -215,22 +235,18 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
         return f"<{self.__class__.__name__} type={self.desc_type} format={self.tensor_format} data={data}>"
 
     @property
-    def ptr_voidp(self) -> ctypes.c_void_p:
-        """Returns the void pointer to the underlying GPU memory."""
-        try:
-            ptr = int(self.ary.gpudata)
-        except AttributeError:
-            ptr = int(self.ary.base.get_device_pointer())
+    def ptr(self) -> ctypes.c_void_p:
+        """Returns a integer as a pointer to the underlying memory"""
+        match self.mem_type:
+            case MemoryType.DEVICE:
+                ptr = int(self.ary.gpudata)
+            case MemoryType.GLOBAL:
+                ptr = int(self.ary.base.get_device_pointer())
+            case MemoryType.HOST:
+                ptr = int(self.ary.ctypes.data)
+            case mem_type:
+                raise TypeError(f"Unsupported memory type {mem_type}")
         return ctypes.c_void_p(ptr)
-
-    @property
-    def ptr_intp(self) -> np.intp:
-        """Returns the integer pointer to the underlying GPU memory."""
-        try:
-            ptr = int(self.ary.gpudata)
-        except AttributeError:
-            ptr = int(self.ary.base.get_device_pointer())
-        return np.intp(ptr)
 
     def _desc_init(self) -> None:
         """Initializes the cuDNN descriptor."""
@@ -324,10 +340,13 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
     def set(self, value: np.ndarray) -> None:
         """Copies data from CPU to GPU."""
         value = np.asarray(value.reshape(self.ary.shape), dtype=self.ary.dtype)
-        try:
-            self.ary.set(value)
-        except AttributeError:
-            self.ary[:] = value
+        match self.mem_type:
+            case MemoryType.DEVICE:
+                self.ary.set(value)
+            case MemoryType.GLOBAL | MemoryType.HOST:
+                self.ary[:] = value
+            case mem_type:
+                raise TypeError(f"Unsupported memory type {mem_type}")
 
     def set_async(self, value: np.ndarray, stream: Stream | None = None) -> None:
         """Asynchronously copies data from CPU to GPU."""
@@ -347,41 +366,40 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
             case mem_type:
                 raise TypeError(f"Invalid memory type {mem_type}")
 
-        match len(self.host_shape):
-            case 0:
-                return value.item()
-            case 1:
-                match self.tensor_format:
-                    case TensorFormat.NCHW:
-                        value = np.squeeze(value, axis=(0, 2, 3))
-                    case TensorFormat.NHWC:
-                        value = np.squeeze(value, axis=(0, 1, 2))
-                    case tensor_format:
-                        raise NotImplementedError(f"Unsupported tensor format {tensor_format}!")
-            case 2:
-                match self.tensor_format:
-                    case TensorFormat.NCHW:
-                        value = np.squeeze(value, axis=(2, 3))
-                    case TensorFormat.NHWC:
-                        value = np.squeeze(value, axis=(1, 2))
-                    case tensor_format:
-                        raise NotImplementedError(f"Unsupported tensor format {tensor_format}!")
-            case 3:
-                match self.tensor_format:
-                    case TensorFormat.NCHW:
-                        value = np.squeeze(value, axis=(1,))
-                    case TensorFormat.NHWC:
-                        raise NotImplementedError(
-                            "Shape padding not implemented for 3-dim shape on NHWC"
-                        )
-                    case tensor_format:
-                        raise NotImplementedError(f"Unsupported tensor format {tensor_format}!")
-            case 4:
-                value = value
-            case dims:
-                raise ValueError(
-                    f"The expected len shape are 0, 1, 2, 3 or 4. Shape received: {dims}."
-                )
+        if value.shape != self.host_shape:
+            match len(self.host_shape):
+                case 1:
+                    match self.tensor_format:
+                        case TensorFormat.NCHW:
+                            value = np.squeeze(value, axis=(0, 2, 3))
+                        case TensorFormat.NHWC:
+                            value = np.squeeze(value, axis=(0, 1, 2))
+                        case tensor_format:
+                            raise NotImplementedError(f"Unsupported tensor format {tensor_format}!")
+                case 2:
+                    match self.tensor_format:
+                        case TensorFormat.NCHW:
+                            value = np.squeeze(value, axis=(2, 3))
+                        case TensorFormat.NHWC:
+                            value = np.squeeze(value, axis=(1, 2))
+                        case tensor_format:
+                            raise NotImplementedError(f"Unsupported tensor format {tensor_format}!")
+                case 3:
+                    match self.tensor_format:
+                        case TensorFormat.NCHW:
+                            value = np.squeeze(value, axis=(1,))
+                        case TensorFormat.NHWC:
+                            raise NotImplementedError(
+                                "Shape padding not implemented for 3-dim shape on NHWC"
+                            )
+                        case tensor_format:
+                            raise NotImplementedError(f"Unsupported tensor format {tensor_format}!")
+                case 4:
+                    value = value
+                case dims:
+                    raise ValueError(
+                        f"The expected len shape are 1, 2, 3 or 4. Shape received: {dims}."
+                    )
 
         if ary is None:
             return value

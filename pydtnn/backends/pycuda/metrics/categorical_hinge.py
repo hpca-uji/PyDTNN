@@ -19,7 +19,7 @@ class CategoricalHingePycuda(CategoricalHinge[TensorArray], MetricPycuda):
     def _model_init(self) -> None:
         """Initializes the metric buffers on the GPU."""
         super()._model_init()
-        self.res = TensorArray.new_zeros(
+        self.res = TensorArray.zeros(
             (1,),
             self.model.dtype,
             tensor_format=self.model.tensor_format,
@@ -27,7 +27,7 @@ class CategoricalHingePycuda(CategoricalHinge[TensorArray], MetricPycuda):
             desc_type=DescriptorType.TENSOR
         )
         self.memory_used += self.res.nbytes
-        self.local_res = TensorArray.new_zeros(
+        self.local_res = TensorArray.zeros(
             (self.model.batch_size,),
             self.model.dtype,
             tensor_format=self.model.tensor_format,

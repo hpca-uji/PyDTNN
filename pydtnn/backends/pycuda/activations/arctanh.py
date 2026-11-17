@@ -4,13 +4,12 @@ import logging
 from typing import Any
 
 import numpy as np
-from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 from pycuda.elementwise import ElementwiseKernel
 
 from pydtnn.activations.arctanh import Arctanh
 from pydtnn.backends.pycuda.activations.abstract.activation import ActivationPycuda
 from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
-from pydtnn.utils.tensor_array import TensorArray
+from pydtnn.utils.tensor_array import DescriptorType, MemoryType, TensorArray
 
 __all__ = ("ArctanhPycuda",)
 
@@ -49,12 +48,22 @@ class ArctanhPycuda(Arctanh[TensorArray], ActivationPycuda):
         )
 
         # Activations y
-        y_gpu = gpuarray.zeros(x.shape, self.model.dtype)
-        self.y = TensorArray(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.y = TensorArray.zeros(
+            x.shape,
+            self.model.dtype,
+            tensor_format=self.model.tensor_format,
+            mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+            desc_type=DescriptorType.TENSOR
+        )
 
         # Derivative dx
-        dx_gpu = gpuarray.zeros(x.shape, self.model.dtype)
-        self.dx = TensorArray(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.dx = TensorArray.zeros(
+            x.shape,
+            self.model.dtype,
+            tensor_format=self.model.tensor_format,
+            mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+            desc_type=DescriptorType.TENSOR
+        )
 
         self.memory_used += self.y.nbytes + self.dx.nbytes
 

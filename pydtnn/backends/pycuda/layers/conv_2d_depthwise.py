@@ -1,11 +1,14 @@
 """PyCUDA implementation of Depthwise 2D Convolution layer."""
 
+from __future__ import annotations
+
 import logging
-from typing import Any, override
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
-from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
-from pycuda.driver import Function
+
+if TYPE_CHECKING:
+    from pycuda.driver import Function
 
 from pydtnn.backends.pycuda.layers.abstract.conv_2d import AbstractConv2DPycuda
 from pydtnn.layers.conv_2d_depthwise import Conv2DDepthwise
@@ -13,7 +16,7 @@ from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
                                    PYDTNN_OPS_EVENTS, OpsEventEnum)
 from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
 from pydtnn.utils.tensor import TensorFormat
-from pydtnn.utils.tensor_array import TensorArray
+from pydtnn.utils.tensor_array import DescriptorType, MemoryType, TensorArray
 
 __all__ = ("Conv2DDepthwisePycuda",)
 
@@ -57,12 +60,22 @@ class Conv2DDepthwisePycuda(Conv2DDepthwise[TensorArray], AbstractConv2DPycuda):
 
         self.total_num_threads = np.int32(np.prod(self.grid) * np.prod(self.block))
 
-        y_gpu = gpuarray.zeros((self.model.batch_size, *self.shape), self.model.dtype)
-        self.y = TensorArray(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.y = TensorArray.zeros(
+            (self.model.batch_size, *self.shape),
+            self.model.dtype,
+            tensor_format=self.model.tensor_format,
+            mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+            desc_type=DescriptorType.TENSOR
+        )
         self.memory_used += self.y.nbytes
 
-        dx_gpu = gpuarray.zeros((self.model.batch_size, *self.shape), self.model.dtype)
-        self.dx = TensorArray(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.dx = TensorArray.zeros(
+            (self.model.batch_size, *self.shape),
+            self.model.dtype,
+            tensor_format=self.model.tensor_format,
+            mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+            desc_type=DescriptorType.TENSOR
+        )
         self.memory_used += self.dx.nbytes
 
         defines_replaces = {'"TYPE"': DTYPE2CTYPE[self.model.dtype], "TENSOR_FORMAT": self.model.tensor_format}
@@ -301,7 +314,6 @@ class Conv2DDepthwisePycuda(Conv2DDepthwise[TensorArray], AbstractConv2DPycuda):
 
         return self.dx
 
-    @override
     def _export_weights_dw(self, key: str) -> Any:
         """Export weights from GPU to CPU."""
         value = getattr(self, key)
@@ -309,7 +321,6 @@ class Conv2DDepthwisePycuda(Conv2DDepthwise[TensorArray], AbstractConv2DPycuda):
         cpu_ary = gpu_ary.get()
         return np.asarray(cpu_ary, dtype=np.float64, order="C", copy=True)
 
-    @override
     def _import_weights_dw(self, key: str, value: Any) -> None:
         """Import weights from CPU to GPU."""
         attribute = getattr(self, key)

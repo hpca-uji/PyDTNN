@@ -1,8 +1,12 @@
 """PyCUDA implementation of metric calculations for the PyDTNN framework."""
 
-import logging
+from __future__ import annotations
 
-from pycuda.driver import Function
+import logging
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pycuda.driver import Function
 
 from pydtnn.backends.pycuda.abstract.base import BasePycuda
 from pydtnn.metrics.abstract.metric import Metric
@@ -32,8 +36,8 @@ class MetricPycuda(Metric[TensorArray], BasePycuda):
     def _model_init(self) -> None:
         """Initializes the CUDA grid and block dimensions from the associated model."""
         super()._model_init()
-        self.grid = self.model.cuda_grid
-        self.block = self.model.cuda_block
+        self.grid = self.model.backend.cuda_grid
+        self.block = self.model.backend.cuda_block
 
     def _kernel_init(self) -> Function:
         """

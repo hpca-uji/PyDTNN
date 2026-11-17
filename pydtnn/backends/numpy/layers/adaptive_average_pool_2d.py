@@ -13,13 +13,8 @@ from pydtnn.utils.tensor import TensorFormat
 
 __all__ = ("AdaptiveAveragePool2DNumpy",)
 
-
 logger = logging.getLogger(__name__)
 
-
-# Imports for the method from AbstractPool2DLayerNumpy
-
-# Imports for the methods from AveragePool2DNumpy
 if TYPE_CHECKING:
     import numpy as np  # noqa: F811 (override typing)
 

@@ -3,8 +3,6 @@
 import logging
 from typing import TYPE_CHECKING
 
-from numpy import ndarray
-
 from pydtnn.backends.numpy.layers.abstract.block_layer import AbstractBlockLayerNumpy
 from pydtnn.layers.addition_block import AdditionBlock
 from pydtnn.libs import numpy as np
@@ -13,7 +11,6 @@ from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDT
 from pydtnn.utils.constants import ArrayShape
 
 __all__ = ("AdditionBlockNumpy",)
-
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +21,7 @@ if TYPE_CHECKING:
 class AdditionBlockNumpy(AdditionBlock[np.ndarray], AbstractBlockLayerNumpy):
     """Numpy implementation of an addition block that sums outputs from multiple parallel paths."""
 
-    def _model_init(self, prev_shape: ArrayShape, x: ndarray) -> None:
+    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray) -> None:
         super()._model_init(prev_shape, x)
 
         dx_shape = (len(self.paths), self.model.batch_size, *self.prev_shape)

@@ -6,7 +6,7 @@ import numpy as np
 
 from pydtnn.backends.pycuda.metrics.abstract.metric import MetricPycuda
 from pydtnn.metrics.binary_confusion_matrix import BinaryConfusionMatrix
-from pydtnn.utils.tensor_array import TensorArray
+from pydtnn.utils.tensor_array import DescriptorType, MemoryType, TensorArray
 
 __all__ = ("BinaryConfusionMatrixPycuda",)
 
@@ -22,17 +22,19 @@ class BinaryConfusionMatrixPycuda(BinaryConfusionMatrix[TensorArray], MetricPycu
         n = self.model.batch_size
         target_classes = self.model.output_shape[0]
 
-        self.conf_matrix = TensorArray[tuple[int, int, int, int], np.dtype[np.int32]].new_zeros(
-            shape=(1, target_classes, 2, 2),
-            dtype=np.dtype(np.int32),
+        self.conf_matrix = TensorArray[tuple[int, int, int, int], np.dtype[np.int32]].zeros(
+            (1, target_classes, 2, 2),
+            np.dtype(np.int32),
             tensor_format=self.model.tensor_format,
-            cudnn_dtype=self.model.cudnn_dtype,
+            mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+            desc_type=DescriptorType.NONE
         )
-        self.local_cm = TensorArray[tuple[int, int, int, int], np.dtype[np.int32]].new_zeros(
-            shape=(n, target_classes, 2, 2),
-            dtype=np.dtype(np.int32),
+        self.local_cm = TensorArray[tuple[int, int, int, int], np.dtype[np.int32]].zeros(
+            (n, target_classes, 2, 2),
+            np.dtype(np.int32),
             tensor_format=self.model.tensor_format,
-            cudnn_dtype=self.model.cudnn_dtype,
+            mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+            desc_type=DescriptorType.NONE
         )
 
     def compute(self, y_pred: TensorArray, y_targ: TensorArray) -> np.ndarray:

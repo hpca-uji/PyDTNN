@@ -29,8 +29,8 @@ class LeakyReluCupy(LeakyReluNumpy, ActivationCupy):
         self.mask = np.ascontiguousarray(self._mask[: x.shape[0], :], dtype=self.model.dtype)
 
         self.fwd_kernel(
-            self.model.cuda_grid,
-            self.model.cuda_block,
+            self.model.backend.cuda_grid,
+            self.model.backend.cuda_block,
             (x, self.y, self.mask, self.negative_slope, x.size),
         )
         return self.y
@@ -38,8 +38,8 @@ class LeakyReluCupy(LeakyReluNumpy, ActivationCupy):
     def backward(self, dy: np.ndarray) -> np.ndarray:
         """Perform the backward pass using a CUDA kernel."""
         self.bwd_kernel(
-            self.model.cuda_grid,
-            self.model.cuda_block,
+            self.model.backend.cuda_grid,
+            self.model.backend.cuda_block,
             (dy, dy, self.mask, self.negative_slope, dy.size),
         )
         return dy

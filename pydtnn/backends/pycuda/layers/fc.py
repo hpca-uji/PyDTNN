@@ -4,8 +4,6 @@ import logging
 from typing import Any
 
 import numpy as np
-import pycuda.driver as drv
-from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 
 from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
 from pydtnn.backends.pycuda.utils import matmul_gpu, matvec_gpu
@@ -68,7 +66,7 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
         super()._model_init(prev_shape, x)
 
         # Weights
-        self.weights = TensorArray.from_host(
+        self.weights = TensorArray.asarray(
             self.weights_initializer(self.weights_shape, self.model.dtype, self.model.random),
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
@@ -78,7 +76,7 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
 
         if self.use_bias:
             # Biases
-            self.biases = TensorArray.from_host(
+            self.biases = TensorArray.asarray(
                 self.biases_initializer((1, *self.shape), self.model.dtype, self.model.random),
                 tensor_format=self.model.tensor_format,
                 mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
@@ -86,7 +84,7 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
             )
             self.memory_used += self.biases.nbytes
 
-        self.y = TensorArray.new_zeros(
+        self.y = TensorArray.zeros(
             (self.model.batch_size, self.shape[0]),
             self.model.dtype,
             tensor_format=self.model.tensor_format,
@@ -95,7 +93,7 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
         )
         self.memory_used += self.y.nbytes
 
-        self.dx = TensorArray.new_zeros(
+        self.dx = TensorArray.zeros(
             (self.model.batch_size, *prev_shape),
             self.model.dtype,
             tensor_format=self.model.tensor_format,
@@ -104,7 +102,7 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
         )
         self.memory_used += self.dx.nbytes
 
-        self.dw = TensorArray.new_zeros(
+        self.dw = TensorArray.zeros(
             self.weights.host_shape,
             self.model.dtype,
             tensor_format=self.model.tensor_format,
@@ -114,7 +112,7 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
         self.memory_used += self.dw.nbytes
 
         if self.use_bias:
-            self.db = TensorArray.new_zeros(
+            self.db = TensorArray.zeros(
                 self.biases.host_shape,
                 self.model.dtype,
                 tensor_format=self.model.tensor_format,
@@ -123,7 +121,7 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
             )
             self.memory_used += self.db.nbytes
 
-        self.one_vec_gpu = TensorArray.from_host(
+        self.one_vec_gpu = TensorArray.asarray(
             np.ones((self.model.batch_size,), self.model.dtype),
             mem_type=MemoryType.DEVICE,
             desc_type=DescriptorType.NONE
@@ -178,12 +176,12 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
             m,
             k,
             alpha,
-            self.weights.ptr_voidp,
+            self.weights.ptr,
             ldb,
-            x.ptr_voidp,
+            x.ptr,
             lda,
             beta,
-            self.y.ptr_voidp,
+            self.y.ptr,
             ldc,
             self.model.dtype,
         )
@@ -201,10 +199,10 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
                 self.model.cudnn_handle,
                 alpha,
                 self.biases.desc,
-                self.biases.ptr_voidp,
+                self.biases.ptr,
                 beta,
                 self.y.desc,
-                self.y.ptr_voidp,
+                self.y.ptr,
             )
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.y
@@ -229,12 +227,12 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
             m,
             k,
             alpha,
-            dy.ptr_voidp,
+            dy.ptr,
             ldb,
-            self.x.ptr_voidp,
+            self.x.ptr,
             lda,
             beta,
-            self.dw.ptr_voidp if self.model.use_gpudirect else self.dw.ptr_voidp,  # pyright: ignore[reportArgumentType]
+            self.dw.ptr,
             ldc,
             self.model.dtype,
         )
@@ -257,12 +255,12 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
                 n,
                 m,
                 alpha,
-                dy.ptr_voidp,
+                dy.ptr,
                 lda,
-                self.one_vec_gpu.ptr_voidp,
+                self.one_vec_gpu.ptr,
                 inc_x,
                 beta,
-                self.db.ptr_voidp if self.model.use_gpudirect else self.db.ptr_voidp,  # pyright: ignore[reportArgumentType]
+                self.db.ptr,
                 inc_y,
                 self.model.dtype,
             )
@@ -286,12 +284,12 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
             m,
             k,
             alpha,
-            self.weights.ptr_voidp,
+            self.weights.ptr,
             ldb,
-            dy.ptr_voidp,
+            dy.ptr,
             lda,
             beta,
-            self.dx.ptr_voidp,
+            self.dx.ptr,
             ldc,
             self.model.dtype,
         )

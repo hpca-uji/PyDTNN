@@ -3,8 +3,6 @@
 import logging
 from typing import TYPE_CHECKING, Any
 
-from numpy import ndarray
-
 from pydtnn.backends.numpy.layers.abstract.layer import LayerNumpy
 from pydtnn.layers.layer_normalization import LayerNormalization
 from pydtnn.libs import numpy as np
@@ -27,7 +25,7 @@ class LayerNormalizationNumpy(LayerNormalization[np.ndarray], LayerNumpy):
         """Layer Normalization init"""
         super().__init__(axis, beta, gamma, epsilon, sync_stats)
 
-    def _model_init(self, prev_shape: ArrayShape, x: ndarray[tuple[Any, ...], np.dtype[Any]]) -> None:
+    def _model_init(self, prev_shape: ArrayShape, x: np.ndarray[tuple[Any, ...], np.dtype[Any]]) -> None:
         super()._model_init(prev_shape, x)
         shape_mu = list(self.shape)
         # try:

@@ -12,7 +12,6 @@ from pydtnn.utils.constants import ArrayShape
 
 __all__ = ("EncoderDecoderNumpy",)
 
-
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:

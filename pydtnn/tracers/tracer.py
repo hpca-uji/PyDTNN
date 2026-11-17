@@ -20,13 +20,13 @@ logger = logging.getLogger(__name__)
 
 
 if TYPE_CHECKING:
-    import cupy
-    import pycuda.driver as drv
+    import cupy.cuda as cupy_driver
+    import pycuda.driver as pycuda_driver
 
     from pydtnn.abstract.layerable import Layerable
     from pydtnn.model.layers import Layers as Model
 
-    type StreamType = cupy.cuda.Stream | drv.Stream
+    type StreamType = cupy_driver.Stream | pycuda_driver.Stream
 else:
     type StreamType = Any
 

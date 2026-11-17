@@ -49,8 +49,8 @@ class Layers[T: Array](Utils[T]):  # noqa: D101 (generics not detected)
         return result
 
     def _select_fusion_3(
-        self, fused_layers: list[LayerableNumpy]
-    ) -> tuple[str | None, list[LayerableNumpy | LayerFuse | None]]:
+        self, fused_layers: list[Layerable]
+    ) -> tuple[str, list[Layerable]] | tuple[None, list]:
         """Identifies potential 3-layer fusion patterns."""
         layer2 = fused_layers[-1] if len(fused_layers) > 0 else None
         layer1 = fused_layers[-2] if len(fused_layers) > 1 else None
@@ -59,23 +59,19 @@ class Layers[T: Array](Utils[T]):  # noqa: D101 (generics not detected)
         layer_name = None
 
         for layer in layers:
-            if not isinstance(layer, LayerableNumpy):
+            if isinstance(layer, LayerFuse) or not isinstance(layer, LayerableNumpy):
                 return layer_name, layers  # skip fuse
 
         match (layer0, layer1, layer2):
-            case (LayerFuse(), _, _):
-                pass  # skip fused
             case (Conv2D(), BatchNormalization(), Relu()):
                 if self.fused_conv_bn_relu:
                     layer_name = "conv_2d_batch_normalization_relu"
-            case _, _, _:
-                pass  # no match
 
-        return layer_name, layers
+        return layer_name, layers  # pyright: ignore[reportReturnType]
 
     def _select_fusion_2(
-        self, fused_layers: list[LayerableNumpy]
-    ) -> tuple[str | None, list[LayerableNumpy | LayerFuse | None]]:
+        self, fused_layers: list[Layerable]
+    ) -> tuple[str, list[Layerable]] | tuple[None, list]:
         """Identifies potential 2-layer fusion patterns."""
         layer2 = fused_layers[-1] if len(fused_layers) > 0 else None
         layer1 = fused_layers[-2] if len(fused_layers) > 1 else None
@@ -83,12 +79,10 @@ class Layers[T: Array](Utils[T]):  # noqa: D101 (generics not detected)
         layer_name = None
 
         for layer in layers:
-            if not isinstance(layer, LayerableNumpy):
+            if isinstance(layer, LayerFuse) or not isinstance(layer, LayerableNumpy):
                 return layer_name, layers  # skip fuse
 
         match (layer1, layer2):
-            case (LayerFuse(), _):
-                pass  # skip fused
             case (Conv2D(), BatchNormalization()):
                 if self.fused_conv_bn:
                     layer_name = "conv_2d_batch_normalization"
@@ -98,8 +92,6 @@ class Layers[T: Array](Utils[T]):  # noqa: D101 (generics not detected)
             case (BatchNormalization(), Relu()):
                 if self.fused_bn_relu:
                     layer_name = "batch_normalization_relu"
-            case _, _:
-                pass  # no match
 
         return layer_name, layers
 

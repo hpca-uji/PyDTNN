@@ -15,7 +15,6 @@ from pydtnn.utils.constants import ArrayShape
 
 __all__ = ("EncoderNumpyNacho",)
 
-
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:

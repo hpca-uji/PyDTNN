@@ -9,8 +9,8 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from pydtnn import (mpi_comm, cublas_handle, cudnn, cudnn_handle,
-                    nccl, nccl_comm, pycuda_stream)
+from pydtnn import (cupy_device, mpi_comm, cublas_handle, cudnn_handle,
+                    nccl_comm, pycuda_device, pycuda_stream, cupy_stream)
 from pydtnn.datasets import select as select_dataset
 from pydtnn.layers.identity import Identity
 from pydtnn.libs.mpi.rc import proto as proto
@@ -18,7 +18,6 @@ from pydtnn.losses import select as select_loss
 from pydtnn.metrics import select as select_metric
 from pydtnn.model.base import Base
 from pydtnn.model.repr import Repr
-from pydtnn.model.utils import DEFAULT_BACH_SIZE, LIMIT_THREADS_AND_BLOCKS
 from pydtnn.models import select as select_model
 from pydtnn.optimizers import select as select_optimizer
 from pydtnn.schedulers import select as select_scheduler
@@ -95,13 +94,13 @@ class Init[T: Array](Repr[T]):  # noqa: D101 (generics not detected)
         self._batch_init()
         self._tensor_init()
 
-        # Tracer [NOTE: after MPI & before Cuda]
+        # Tracer [NOTE: after MPI & before GPU]
         self._tracer_init()
 
-        # Cuda [NOTE: after MPI]
-        self._cuda_init()
+        # GPU [NOTE: after MPI]
+        self._gpu_init()
 
-        # Encryption [NOTE: after MPI & Cuda]
+        # Encryption [NOTE: after MPI & GPU]
         if self.encryption_name:
             self.crypt = self._crypt_init(self.encryption_name)
         else:
@@ -162,7 +161,7 @@ class Init[T: Array](Repr[T]):  # noqa: D101 (generics not detected)
         if self.learning_rate_scaling:
             self.learning_rate = self.learning_rate * self.nprocs
 
-    def _batch_init(self, default: int = DEFAULT_BACH_SIZE) -> None:
+    def _batch_init(self, default: int = 64) -> None:
         """
         Configures the batch size for training.
 
@@ -201,37 +200,38 @@ class Init[T: Array](Repr[T]):  # noqa: D101 (generics not detected)
 
         self.tensor_format = tensor_format
 
-    def _cuda_init(self) -> None:
+    def _gpu_init(self) -> None:
         """Initializes CUDA, cuDNN, and NCCL backend handles."""
-        if not self.use_gpudirect and self.use_nccl:
-            raise RuntimeError("It is necessary to have gpudirect active to work with NCCL.")
-
-        self.cuda_threads = min(self.batch_size, LIMIT_THREADS_AND_BLOCKS)
-        self.cuda_blocks = (max(self.batch_size, LIMIT_THREADS_AND_BLOCKS) // self.cuda_threads) + 1
-        # NOTE: Seems that in PyDTNN, usually the ".x" (blockIdx.x, threadIdx.x,
-        # ...) is the only dimension used.
-        self.cuda_grid = (self.cuda_blocks, 1, 1)
-        self.cuda_block = (self.cuda_threads, 1, 1)
-
-        if self.comm and self.use_nccl:
-            assert nccl is not None
-            assert nccl_comm is not None
-
-            nccl_type = nccl_dtype_from_numpy(self.dtype)
-        else:
-            nccl_type = None
-
-        cudnn_dtype = cudnn_dtype_from_numpy(self.dtype)
+        # if not self.use_gpudirect and self.use_nccl:
+        #     raise RuntimeError("It is necessary to have gpudirect active to work with NCCL.")
 
         if pycuda_stream is not None:
             self.tracer.set_stream(pycuda_stream)
 
-        self.nccl_type = nccl_type
-        self.nccl_comm = nccl_comm
+        self.nccl_comm = None  # pyright: ignore[reportAttributeAccessIssue]
+        if self.use_nccl:
+            if not nccl_comm:
+                raise ValueError("Please, install nccl to allow parallel NCCL execution!")
+            self.nccl_comm = nccl_comm
+
+        self.pycuda_device = pycuda_device
+        self.pycuda_stream = pycuda_stream
+
+        self.cupy_device = cupy_device
+        self.cupy_stream = cupy_stream
+
         self.cudnn_handle = cudnn_handle
         self.cublas_handle = cublas_handle
-        self.pycuda_stream = pycuda_stream
-        self.cudnn_dtype = cudnn_dtype
+
+    @property
+    def cudnn_dtype(self) -> int:
+        """Get cuDNN equivalent DType"""
+        return cudnn_dtype_from_numpy(self.dtype)
+
+    @property
+    def nccl_dtype(self) -> Any:
+        """Get cuDNN equivalent DType"""
+        return nccl_dtype_from_numpy(self.dtype)
 
     def _crypt_init(self, encryption_name: str) -> "polyhe.Context":
         """

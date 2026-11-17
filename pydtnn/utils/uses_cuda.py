@@ -1,5 +1,7 @@
 """Utilities for managing and loading CUDA kernel code within the PyDTNN framework."""
 
+from __future__ import annotations
+
 import functools
 from typing import TYPE_CHECKING, Any
 

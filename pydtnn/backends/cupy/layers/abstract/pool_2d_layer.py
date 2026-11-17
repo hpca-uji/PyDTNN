@@ -1,12 +1,16 @@
 """CuPy implementation of 2D pooling layers for the PyDTNN framework."""
 
-import numpy as np
+from typing import TYPE_CHECKING
 
+from pydtnn.libs import numpy as np
 from pydtnn.backends.cupy.layers.abstract.layer import LayerCupy
 from pydtnn.backends.numpy.layers.abstract.pool_2d_layer import AbstractPool2DLayerNumpy
 from pydtnn.layers.abstract.pool_2d_layer import AbstractPool2DLayer
 
 __all__ = ("AbstractPool2DLayerCupy",)
+
+if TYPE_CHECKING:
+    import numpy as np  # noqa: F811 (override typing)
 
 
 class AbstractPool2DLayerCupy(AbstractPool2DLayerNumpy, AbstractPool2DLayer[np.ndarray], LayerCupy):

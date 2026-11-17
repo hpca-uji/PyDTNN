@@ -60,7 +60,7 @@ class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
             case _:
                 raise NotImplementedError(f"{self.model.tensor_format} format not implemented.")
 
-        self.im2_x = TensorArray.new_zeros(
+        self.im2_x = TensorArray.zeros(
             im2_x_shape,
             self.model.dtype,
             tensor_format=self.model.tensor_format,
@@ -68,7 +68,7 @@ class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
             desc_type=DescriptorType.TENSOR
         )
         self.memory_used += self.im2_x.nbytes
-        self.x_2im_var = TensorArray.new_zeros(
+        self.x_2im_var = TensorArray.zeros(
             x_2im_var_shape,
             self.model.dtype,
             tensor_format=self.model.tensor_format,
@@ -76,7 +76,7 @@ class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
             desc_type=DescriptorType.TENSOR
         )
         self.memory_used += self.x_2im_var.nbytes
-        self.y = TensorArray.new_zeros(
+        self.y = TensorArray.zeros(
             (self.model.batch_size, *self.shape),
             self.model.dtype,
             tensor_format=self.model.tensor_format,
@@ -84,7 +84,7 @@ class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
             desc_type=DescriptorType.TENSOR
         )
         self.memory_used += self.y.nbytes
-        self.dw = TensorArray.new_zeros(
+        self.dw = TensorArray.zeros(
             dw_shape,
             self.model.dtype,
             tensor_format=self.model.tensor_format,
@@ -92,7 +92,7 @@ class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
             desc_type=DescriptorType.TENSOR
         )
         self.memory_used += self.dw.nbytes
-        self.dx = TensorArray.new_zeros(
+        self.dx = TensorArray.zeros(
             self.x.ary.shape,
             self.model.dtype,
             tensor_format=self.model.tensor_format,

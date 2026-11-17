@@ -3,14 +3,13 @@
 import logging
 
 import numpy as np
-from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 from pycuda.elementwise import ElementwiseKernel
 
 from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
 from pydtnn.backends.pycuda.optimizers.abstract.optimizer import OptimizerPycuda
 from pydtnn.optimizers.adam import Adam
 from pydtnn.utils.constants import DTYPE2CTYPE
-from pydtnn.utils.tensor_array import TensorArray
+from pydtnn.utils.tensor_array import DescriptorType, MemoryType, TensorArray
 
 __all__ = ("AdamPycuda",)
 
@@ -59,16 +58,22 @@ class AdamPycuda(Adam[TensorArray], OptimizerPycuda):
         super()._model_init(layers)  # pyright: ignore[reportArgumentType]
 
         for layer in layers:
-            self.context[layer.id] = dict[str, int | gpuarray.GPUArray]()
+            self.context[layer.id] = dict[str, int | TensorArray]()
             self.context[layer.id]["it"] = 0
 
             for w_ in layer.grad_vars.keys():
                 w = getattr(layer, w_)
-                self.context[layer.id]["m_%s" % w_] = gpuarray.zeros(
-                    w.shape, dtype=layer.model.dtype
+                self.context[layer.id]["m_%s" % w_] = TensorArray.zeros(
+                    w.shape,
+                    layer.model.dtype,
+                    mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+                    desc_type=DescriptorType.NONE
                 )
-                self.context[layer.id]["v_%s" % w_] = gpuarray.zeros(
-                    w.shape, dtype=layer.model.dtype
+                self.context[layer.id]["v_%s" % w_] = TensorArray.zeros(
+                    w.shape,
+                    layer.model.dtype,
+                    mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+                    desc_type=DescriptorType.NONE
                 )
 
                 self.memory_used += (
@@ -86,19 +91,17 @@ class AdamPycuda(Adam[TensorArray], OptimizerPycuda):
 
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
-            m = self.context[layer.id]["m_%s" % w_]
-            v = self.context[layer.id]["v_%s" % w_]
+            m: TensorArray = self.context[layer.id]["m_%s" % w_]  # pyright: ignore[reportAssignmentType]
+            v: TensorArray = self.context[layer.id]["v_%s" % w_]  # pyright: ignore[reportAssignmentType]
             w: TensorArray
             dw: TensorArray
-            m: gpuarray.GPUArray
-            v: gpuarray.GPUArray
 
             if self.model.use_gpudirect:
                 self.update_gpudirect(
-                    w.gpudata,
-                    dw.ptr_intp,
-                    m.gpudata,
-                    v.gpudata,
+                    w.ary,
+                    dw.ary,
+                    m.ary,
+                    v.ary,
                     np.float32(it),
                     np.float32(self.learning_rate),
                     np.float32(self.decay),
@@ -106,16 +109,16 @@ class AdamPycuda(Adam[TensorArray], OptimizerPycuda):
                     np.float32(self.beta2),
                     np.float32(self.epsilon),
                     np.int32(w.size),
-                    self.model.cuda_grid,
-                    block=self.model.cuda_block,
+                    self.model.backend.cuda_grid,
+                    block=self.model.backend.cuda_block,
                     stream=self.model.pycuda_stream,
                 )
             else:
                 self.update_kernel(
                     w.ary,
                     dw.ary,
-                    m,
-                    v,
+                    m.ary,
+                    v.ary,
                     np.float32(it),
                     np.float32(self.learning_rate),
                     np.float32(self.decay),

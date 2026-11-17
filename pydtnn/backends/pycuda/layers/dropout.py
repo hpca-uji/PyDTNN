@@ -37,7 +37,7 @@ class DropoutPycuda(Dropout[TensorArray], LayerPycuda):
         super()._model_init(prev_shape, x)
 
         # Activations y
-        self.y = TensorArray.new_zeros(
+        self.y = TensorArray.zeros(
             (self.model.batch_size, *self.shape),
             self.model.dtype,
             tensor_format=self.model.tensor_format,
@@ -47,7 +47,7 @@ class DropoutPycuda(Dropout[TensorArray], LayerPycuda):
         self.memory_used += self.y.nbytes
 
         # Derivative dx
-        self.dx = TensorArray.new_zeros(
+        self.dx = TensorArray.zeros(
             (self.model.batch_size, *self.shape),
             self.model.dtype,
             tensor_format=self.model.tensor_format,
@@ -57,7 +57,7 @@ class DropoutPycuda(Dropout[TensorArray], LayerPycuda):
         self.memory_used += self.dx.nbytes
 
         space_size = cudnn.cudnnDropoutGetReserveSpaceSize(self.y.desc)
-        self.space = TensorArray.new_zeros(
+        self.space = TensorArray.zeros(
             (space_size,),
             np.byte,
             host_shape=True,
@@ -67,7 +67,7 @@ class DropoutPycuda(Dropout[TensorArray], LayerPycuda):
         self.memory_used += self.space.nbytes
 
         states_size = cudnn.cudnnDropoutGetStatesSize(self.model.cudnn_handle)
-        self.states = TensorArray.new_zeros(
+        self.states = TensorArray.zeros(
             (states_size,),
             np.byte,
             host_shape=True,
@@ -81,7 +81,7 @@ class DropoutPycuda(Dropout[TensorArray], LayerPycuda):
             self.drop_desc,
             self.model.cudnn_handle,
             self.rate,
-            self.states.ptr_voidp,
+            self.states.ptr,
             self.states.size,
             seed=self.model.random_seed,
         )
@@ -95,10 +95,10 @@ class DropoutPycuda(Dropout[TensorArray], LayerPycuda):
             self.model.cudnn_handle,
             self.drop_desc,
             x.desc,
-            x.ptr_voidp,
+            x.ptr,
             self.y.desc,
-            self.y.ptr_voidp,
-            self.space.ptr_voidp,
+            self.y.ptr,
+            self.space.ptr,
             self.space.size,
         )
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
@@ -114,10 +114,10 @@ class DropoutPycuda(Dropout[TensorArray], LayerPycuda):
             self.model.cudnn_handle,
             self.drop_desc,
             dy.desc,
-            dy.ptr_voidp,
+            dy.ptr,
             self.dx.desc,
-            self.dx.ptr_voidp,
-            self.space.ptr_voidp,
+            self.dx.ptr,
+            self.space.ptr,
             self.space.size,
         )
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)

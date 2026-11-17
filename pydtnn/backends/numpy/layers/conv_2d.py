@@ -13,7 +13,6 @@ from pydtnn.utils.tensor import TensorFormat, format_transpose
 
 __all__ = ("Conv2DNumpy",)
 
-
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:

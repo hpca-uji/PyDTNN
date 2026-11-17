@@ -8,7 +8,6 @@ from pydtnn.layers.forwarded_output import ForwardedOutput
 from pydtnn.backends.numpy.layers.abstract.layer import LayerNumpy
 from pydtnn.utils.constants import ArrayShape
 
-
 __all__ = ("ForwardedOutputNumpy",)
 
 logger = logging.getLogger(__name__)

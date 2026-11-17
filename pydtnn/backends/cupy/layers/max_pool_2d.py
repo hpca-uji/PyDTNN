@@ -11,9 +11,7 @@ from pydtnn.utils.constants import ArrayShape
 
 __all__ = ("MaxPool2DCupy",)
 
-
 logger = logging.getLogger(__name__)
-
 
 if TYPE_CHECKING:
     import numpy as np  # noqa: F811 (override typing)
@@ -31,8 +29,8 @@ class MaxPool2DCupy(MaxPool2DNumpy, AbstractPool2DLayerCupy, LayerCupy):
     def _fwd_max_pool_nchw(self, x: np.ndarray, y: np.ndarray) -> None:
         """Execute forward pass for NCHW layout using CUDA kernel."""
         self.fwd_kernel(
-            self.model.cuda_grid,
-            self.model.cuda_block,
+            self.model.backend.cuda_grid,
+            self.model.backend.cuda_block,
             (
                 x,
                 y,
@@ -58,8 +56,8 @@ class MaxPool2DCupy(MaxPool2DNumpy, AbstractPool2DLayerCupy, LayerCupy):
     def _fwd_max_pool_nhwc(self, x: np.ndarray, y: np.ndarray) -> None:
         """Execute forward pass for NHWC layout using CUDA kernel."""
         self.fwd_kernel(
-            self.model.cuda_grid,
-            self.model.cuda_block,
+            self.model.backend.cuda_grid,
+            self.model.backend.cuda_block,
             (
                 x,
                 y,
@@ -85,8 +83,8 @@ class MaxPool2DCupy(MaxPool2DNumpy, AbstractPool2DLayerCupy, LayerCupy):
     def _bwd_max_pool_nchw(self, dx: np.ndarray, dy: np.ndarray) -> None:
         """Execute backward pass for NCHW layout using CUDA kernel."""
         self.bwd_kernel(
-            self.model.cuda_grid,
-            self.model.cuda_block,
+            self.model.backend.cuda_grid,
+            self.model.backend.cuda_block,
             (
                 dy,
                 dx,
@@ -111,8 +109,8 @@ class MaxPool2DCupy(MaxPool2DNumpy, AbstractPool2DLayerCupy, LayerCupy):
     def _bwd_max_pool_nhwc(self, dx: np.ndarray, dy: np.ndarray) -> None:
         """Execute backward pass for NHWC layout using CUDA kernel."""
         self.bwd_kernel(
-            self.model.cuda_grid,
-            self.model.cuda_block,
+            self.model.backend.cuda_grid,
+            self.model.backend.cuda_block,
             (
                 dy,
                 dx,

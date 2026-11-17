@@ -29,11 +29,11 @@ class ReluCupy(ReluNumpy, ActivationCupy):
         self.mask = np.ascontiguousarray(self._mask[: x.shape[0], :], dtype=self.model.dtype)
 
         self.fwd_kernel(
-            self.model.cuda_grid, self.model.cuda_block, (x, self.y, self.mask, self.y.size)
+            self.model.backend.cuda_grid, self.model.backend.cuda_block, (x, self.y, self.mask, self.y.size)
         )
         return self.y
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
         """Perform the backward pass using CUDA kernels."""
-        self.bwd_kernel(self.model.cuda_grid, self.model.cuda_block, (dy, dy, self.mask, dy.size))
+        self.bwd_kernel(self.model.backend.cuda_grid, self.model.backend.cuda_block, (dy, dy, self.mask, dy.size))
         return dy

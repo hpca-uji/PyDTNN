@@ -9,9 +9,7 @@ from pydtnn.metrics.multiclass_confusion_matrix import MulticlassConfusionMatrix
 
 __all__ = ("MulticlassConfusionMatrixNumpy",)
 
-
 logger = logging.getLogger(__name__)
-
 
 if TYPE_CHECKING:
     import numpy as np  # noqa: F811 (override typing)

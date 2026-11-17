@@ -1,16 +1,18 @@
 """CuPy implementation of the binary confusion matrix metric."""
 
 import logging
+from typing import TYPE_CHECKING
 
-import numpy as np
-
+from pydtnn.libs import numpy as np
 from pydtnn.backends.cupy.metrics.abstract.metric import MetricCupy
 from pydtnn.backends.numpy.metrics.binary_confusion_matrix import BinaryConfusionMatrixNumpy
 
 __all__ = ("BinaryConfusionMatrixCupy",)
 
-
 logger = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    import numpy as np  # noqa: F811 (override typing)
 
 
 class BinaryConfusionMatrixCupy(BinaryConfusionMatrixNumpy, MetricCupy):

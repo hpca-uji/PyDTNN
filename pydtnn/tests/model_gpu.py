@@ -101,7 +101,7 @@ class ModelGpuTestCase(ModelTestCase):
             else:
                 gpu_layer.weights_cpu = cpu_layer.weights.copy()
             if gpu_layer.weights_cpu is not None:
-                gpu_layer.weights = TensorArray.from_host(
+                gpu_layer.weights = TensorArray.asarray(
                     gpu_layer.weights_cpu,
                     tensor_format=gpu_layer.model.tensor_format,
                     mem_type=MemoryType.GLOBAL if gpu_layer.model.use_gpudirect else MemoryType.DEVICE,
@@ -113,7 +113,7 @@ class ModelGpuTestCase(ModelTestCase):
 
                 gpu_layer.biases_cpu = cpu_layer.biases.copy()
                 if gpu_layer.biases_cpu is not None:
-                    gpu_layer.biases = TensorArray.from_host(
+                    gpu_layer.biases = TensorArray.asarray(
                         gpu_layer.biases_cpu,
                         tensor_format=gpu_layer.model.tensor_format,
                         mem_type=MemoryType.GLOBAL if gpu_layer.model.use_gpudirect else MemoryType.DEVICE,
