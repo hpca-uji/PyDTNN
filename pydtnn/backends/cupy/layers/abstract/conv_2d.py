@@ -60,8 +60,8 @@ class AbstractConv2DCupy(AbstractConv2DNumpy, AbstractConv2D[ndarray], LayerCupy
         """Perform im2row transformation on GPU."""
         # return super().im2row(x, x_rows)
         self._im2row(
-            self.model.cuda_grid,
-            self.model.cuda_block,
+            self.model.backend.cuda_grid,
+            self.model.backend.cuda_block,
             (
                 x,
                 x_rows,
@@ -86,8 +86,8 @@ class AbstractConv2DCupy(AbstractConv2DNumpy, AbstractConv2D[ndarray], LayerCupy
         """Perform row2im transformation on GPU."""
         # return super().im2row(x_rows, dx)
         self._row2im(
-            self.model.cuda_grid,
-            self.model.cuda_block,
+            self.model.backend.cuda_grid,
+            self.model.backend.cuda_block,
             (
                 x_rows,
                 dx,
@@ -112,8 +112,8 @@ class AbstractConv2DCupy(AbstractConv2DNumpy, AbstractConv2D[ndarray], LayerCupy
         """Perform im2col transformation on GPU."""
         # return super().im2col(x, x_cols)
         self._im2row(
-            self.model.cuda_grid,
-            self.model.cuda_block,
+            self.model.backend.cuda_grid,
+            self.model.backend.cuda_block,
             (
                 x,
                 x_cols,
@@ -138,8 +138,8 @@ class AbstractConv2DCupy(AbstractConv2DNumpy, AbstractConv2D[ndarray], LayerCupy
         """Perform col2im transformation on GPU."""
         # return super().im2row(x_cols, dx)
         self._col2im(
-            self.model.cuda_grid,
-            self.model.cuda_block,
+            self.model.backend.cuda_grid,
+            self.model.backend.cuda_block,
             (
                 x_cols,
                 dx,

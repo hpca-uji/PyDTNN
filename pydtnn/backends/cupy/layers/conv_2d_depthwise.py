@@ -34,8 +34,8 @@ class Conv2DDepthwiseCython(Conv2DDepthwiseNumpy, AbstractConv2DCupy, LayerCupy)
     def _conv_fwd_nhwc(self, x: np.ndarray, y: np.ndarray) -> None:
         """Execute forward pass for NHWC format."""
         self.fwd(
-            self.model.cuda_grid,
-            self.model.cuda_block,
+            self.model.backend.cuda_grid,
+            self.model.backend.cuda_block,
             (
                 x,
                 self.weights,
@@ -60,8 +60,8 @@ class Conv2DDepthwiseCython(Conv2DDepthwiseNumpy, AbstractConv2DCupy, LayerCupy)
     def _conv_fwd_nchw(self, x: np.ndarray, y: np.ndarray) -> None:
         """Execute forward pass for NCHW format."""
         self.fwd(
-            self.model.cuda_grid,
-            self.model.cuda_block,
+            self.model.backend.cuda_grid,
+            self.model.backend.cuda_block,
             (
                 x,
                 self.weights,
@@ -86,8 +86,8 @@ class Conv2DDepthwiseCython(Conv2DDepthwiseNumpy, AbstractConv2DCupy, LayerCupy)
     def _conv_bwd_nhwc(self, dx: np.ndarray, dy: np.ndarray) -> None:
         """Execute backward pass for NHWC format."""
         self.bwd(
-            self.model.cuda_grid,
-            self.model.cuda_block,
+            self.model.backend.cuda_grid,
+            self.model.backend.cuda_block,
             (
                 dx,
                 dy,
@@ -114,8 +114,8 @@ class Conv2DDepthwiseCython(Conv2DDepthwiseNumpy, AbstractConv2DCupy, LayerCupy)
     def _conv_bwd_nchw(self, dx: np.ndarray, dy: np.ndarray) -> None:
         """Execute backward pass for NCHW format."""
         self.bwd(
-            self.model.cuda_grid,
-            self.model.cuda_block,
+            self.model.backend.cuda_grid,
+            self.model.backend.cuda_block,
             (
                 dx,
                 dy,

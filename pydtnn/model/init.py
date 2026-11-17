@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 
 from pydtnn import (mpi_comm, cublas_handle, cudnn_handle,
-                    nccl, nccl_comm, pycuda_stream)
+                    nccl_comm, pycuda_stream)
 from pydtnn.datasets import select as select_dataset
 from pydtnn.layers.identity import Identity
 from pydtnn.libs.mpi.rc import proto as proto
@@ -205,32 +205,15 @@ class Init[T: Array](Repr[T]):  # noqa: D101 (generics not detected)
         if not self.use_gpudirect and self.use_nccl:
             raise RuntimeError("It is necessary to have gpudirect active to work with NCCL.")
 
-        self.cuda_threads = min(self.batch_size, LIMIT_THREADS_AND_BLOCKS)
-        self.cuda_blocks = (max(self.batch_size, LIMIT_THREADS_AND_BLOCKS) // self.cuda_threads) + 1
-        # NOTE: Seems that in PyDTNN, usually the ".x" (blockIdx.x, threadIdx.x,
-        # ...) is the only dimension used.
-        self.cuda_grid = (self.cuda_blocks, 1, 1)
-        self.cuda_block = (self.cuda_threads, 1, 1)
-
-        if self.comm and self.use_nccl:
-            assert nccl is not None
-            assert nccl_comm is not None
-
-            nccl_type = nccl_dtype_from_numpy(self.dtype)
-        else:
-            nccl_type = None
-
-        cudnn_dtype = cudnn_dtype_from_numpy(self.dtype)
-
         if pycuda_stream is not None:
             self.tracer.set_stream(pycuda_stream)
 
-        self.nccl_type = nccl_type
-        self.nccl_comm = nccl_comm
+        self.nccl_type = nccl_dtype_from_numpy(self.dtype) if self.use_nccl else None
+        self.nccl_comm = nccl_comm if self.use_nccl else None
         self.cudnn_handle = cudnn_handle
         self.cublas_handle = cublas_handle
         self.pycuda_stream = pycuda_stream
-        self.cudnn_dtype = cudnn_dtype
+        self.cudnn_dtype = cudnn_dtype_from_numpy(self.dtype)
 
     def _crypt_init(self, encryption_name: str) -> "polyhe.Context":
         """

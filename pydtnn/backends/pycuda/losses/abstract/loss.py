@@ -51,8 +51,8 @@ class LossPycuda(Loss[TensorArray], BasePycuda):
         """Initializes GPU memory buffers and model-dependent parameters."""
         super()._model_init()
         # NOTE: the model must be executed before this one.
-        self.grid = self.model.cuda_grid
-        self.block = self.model.cuda_block
+        self.grid = self.model.backend.cuda_grid
+        self.block = self.model.backend.cuda_block
         self.loss = TensorArray.zeros(
             (self.model.batch_size,),
             self.model.dtype,

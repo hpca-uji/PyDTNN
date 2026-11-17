@@ -35,8 +35,8 @@ class AveragePool2DCupy(AveragePool2DNumpy, AbstractPool2DLayerCupy, LayerCupy):
     def _fwd_avg_pool_nchw(self, x: np.ndarray, y: np.ndarray) -> None:
         """Perform forward average pooling for NCHW format."""
         self.fwd_kernel(
-            self.model.cuda_grid,
-            self.model.cuda_block,
+            self.model.backend.cuda_grid,
+            self.model.backend.cuda_block,
             (
                 x,
                 y,
@@ -61,8 +61,8 @@ class AveragePool2DCupy(AveragePool2DNumpy, AbstractPool2DLayerCupy, LayerCupy):
         """Perform forward average pooling for NHWC format."""
         y.fill(0)
         self.fwd_kernel(
-            self.model.cuda_grid,
-            self.model.cuda_block,
+            self.model.backend.cuda_grid,
+            self.model.backend.cuda_block,
             (
                 x,
                 y,
@@ -86,8 +86,8 @@ class AveragePool2DCupy(AveragePool2DNumpy, AbstractPool2DLayerCupy, LayerCupy):
     def _bwd_avg_pool_nchw(self, dx: np.ndarray, dy: np.ndarray) -> None:
         """Perform backward average pooling for NCHW format."""
         self.bwd_kernel(
-            self.model.cuda_grid,
-            self.model.cuda_block,
+            self.model.backend.cuda_grid,
+            self.model.backend.cuda_block,
             (
                 dx,
                 dy,
@@ -111,8 +111,8 @@ class AveragePool2DCupy(AveragePool2DNumpy, AbstractPool2DLayerCupy, LayerCupy):
     def _bwd_avg_pool_nhwc(self, dx: np.ndarray, dy: np.ndarray) -> None:
         """Perform backward average pooling for NHWC format."""
         self.bwd_kernel(
-            self.model.cuda_grid,
-            self.model.cuda_block,
+            self.model.backend.cuda_grid,
+            self.model.backend.cuda_block,
             (
                 dx,
                 dy,

@@ -36,8 +36,8 @@ class MetricPycuda(Metric[TensorArray], BasePycuda):
     def _model_init(self) -> None:
         """Initializes the CUDA grid and block dimensions from the associated model."""
         super()._model_init()
-        self.grid = self.model.cuda_grid
-        self.block = self.model.cuda_block
+        self.grid = self.model.backend.cuda_grid
+        self.block = self.model.backend.cuda_block
 
     def _kernel_init(self) -> Function:
         """

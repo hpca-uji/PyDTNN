@@ -98,8 +98,8 @@ class SGDPycuda(SGD[TensorArray], OptimizerPycuda):
                     np.float32(self.decay),
                     np.float32(self.momentum),
                     np.int32(w.size),
-                    self.model.cuda_grid,
-                    block=self.model.cuda_block,
+                    self.model.backend.cuda_grid,
+                    block=self.model.backend.cuda_block,
                     stream=self.model.pycuda_stream,
                 )
             else:

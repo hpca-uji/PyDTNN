@@ -110,7 +110,7 @@ class Conv2DPycuda(AbstractConv2DPycuda):
             else cudnn.cudnnConvolutionFwdAlgo["CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_PRECOMP_GEMM"]
         )
 
-        base_conv_memory = self.model.backend.get_convolution_workspace_size()
+        base_conv_memory = self.model.backend._memory_pool_size
 
         local_size = cudnn.cudnnGetConvolutionForwardWorkspaceSize(
             self.model.cudnn_handle,
@@ -171,7 +171,7 @@ class Conv2DPycuda(AbstractConv2DPycuda):
         self.forward = self._forward_standard
         self.backward = self._backward_standard
 
-        self.memory_used += self.model.backend.get_convolution_workspace_size() - base_conv_memory
+        self.memory_used += self.model.backend._memory_pool_size - base_conv_memory
 
     def _forward_standard(self, x: TensorArray) -> TensorArray:
         """Perform forward pass using cuDNN convolution."""
@@ -190,7 +190,7 @@ class Conv2DPycuda(AbstractConv2DPycuda):
             self.conv_desc,
             self.fwd_algo,
             self.model.backend.get_convolution_workspace_ptr(),
-            self.model.backend.get_convolution_workspace_size(),
+            self.model.backend._memory_pool_size,
             beta,
             self.y.desc,
             self.y.ptr_voidp,
@@ -233,7 +233,7 @@ class Conv2DPycuda(AbstractConv2DPycuda):
             self.conv_desc,
             self.bwd_dw_algo,
             self.model.backend.get_convolution_workspace_ptr(),
-            self.model.backend.get_convolution_workspace_size(),
+            self.model.backend._memory_pool_size,
             beta,
             self.dw.desc,
             self.dw.ptr_voidp,
@@ -271,7 +271,7 @@ class Conv2DPycuda(AbstractConv2DPycuda):
             self.conv_desc,
             self.bwd_dx_algo,
             self.model.backend.get_convolution_workspace_ptr(),
-            self.model.backend.get_convolution_workspace_size(),
+            self.model.backend._memory_pool_size,
             beta,
             self.dx.desc,
             self.dx.ptr_voidp,

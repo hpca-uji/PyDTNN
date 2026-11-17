@@ -40,8 +40,8 @@ class LayerPycuda(Layer[TensorArray], LayerablePycuda):
         """Initializes model parameters and validates CUDNN requirements."""
         super()._model_init(prev_shape, x)
 
-        self.grid = self.model.cuda_grid
-        self.block = self.model.cuda_block
+        self.grid = self.model.backend.cuda_grid
+        self.block = self.model.backend.cuda_block
 
         self.defines_replaces = {
             '"TYPE"': DTYPE2CTYPE[self.model.dtype],

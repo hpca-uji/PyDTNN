@@ -41,5 +41,5 @@ class ActivationPycuda(Activation[TensorArray], LayerablePycuda):
             x: The input tensor array.
         """
         super()._model_init(prev_shape, x)
-        self.grid = self.model.cuda_grid
-        self.block = self.model.cuda_block
+        self.grid = self.model.backend.cuda_grid
+        self.block = self.model.backend.cuda_block

@@ -35,8 +35,8 @@ class BatchNormalizationCupy(BatchNormalizationNumpy, LayerCupy):
         # return super()._training_bwd(dx, dy)
         dim_i, dim_j = x.shape
         self.fwd(
-            self.model.cuda_grid,
-            self.model.cuda_block,
+            self.model.backend.cuda_grid,
+            self.model.backend.cuda_block,
             (
                 x,
                 y,
@@ -58,7 +58,7 @@ class BatchNormalizationCupy(BatchNormalizationNumpy, LayerCupy):
         # return super()._training_bwd(dx, dy)
         dim_i, dim_j = dx.shape
         self.bwd(
-            self.model.cuda_grid,
-            self.model.cuda_block,
+            self.model.backend.cuda_grid,
+            self.model.backend.cuda_block,
             (dx, dy, self.xn, self.std, self.weights, self.dw, self.db, dim_i, dim_j, dx.size),
         )

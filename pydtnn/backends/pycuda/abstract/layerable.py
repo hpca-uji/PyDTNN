@@ -1,10 +1,12 @@
 """PyCUDA implementation of layerable components for distributed training."""
 
 import ctypes
+import math
 
 import numpy as np
 import pycuda.driver as pycuda_driver  # pyright: ignore[reportAttributeAccessIssue]
 
+from pydtnn import pycuda_device
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.backends.pycuda.abstract.base import BasePycuda
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
@@ -39,6 +41,21 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
             self._state_reduce_async = self._state_reduce_async_cpu
             self._state_reduce_sync = self._state_reduce_sync_cpu
             self._state_reduce_wait = self._state_reduce_wait_cpu
+
+        if self.id != self.model.backend.id:
+            return None
+
+        # Calculate the kernel sizes
+        attrs = pycuda_driver.Device(pycuda_device).get_attributes()
+
+        max_threads = attrs[pycuda_driver.device_attribute.MAX_BLOCK_DIM_X]
+        min_threads = attrs[pycuda_driver.device_attribute.WARP_SIZE]
+
+        block_size = max(min_threads, min(self.model.batch_size, max_threads))
+        grid_size = math.ceil(self.model.batch_size / block_size)
+
+        self.cuda_grid = (grid_size, 1, 1)
+        self.cuda_block = (block_size, 1, 1)
 
     def _state_reduce_async_nccl(self, state_: str) -> None:
         state = getattr(self, state_)
@@ -228,29 +245,21 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
             x, y_targ = self.model.layers[0].y[:0], self.y_model[:0]
         return x, y_targ
 
-    ws_size = 0
-    ws: pycuda_driver.DeviceAllocation = None
+    _memory_pool_size = 0
+    _memory_pool: pycuda_driver.DeviceAllocation = None
 
     @property
-    def ws_ptr(self) -> ctypes.c_void_p:
+    def _memory_pool_ptr(self) -> ctypes.c_void_p:
         """Return the pointer to the workspace memory."""
-        return ctypes.c_void_p(int(self.ws))
+        return ctypes.c_void_p(int(self._memory_pool))
 
-    def check_convolution_memory(self, size: int) -> None:
+    def _ensure_memory_pool(self, size: int) -> None:
         """Allocate or reallocate workspace memory if required."""
-        if size < self.ws_size:
+        if size < self._memory_pool_size:
             return
 
-        if self.ws is not None:
-            self.ws.free()
+        if self._memory_pool is not None:
+            self._memory_pool.free()
 
-        self.ws_size = max(1, size)
-        self.ws = pycuda_driver.mem_alloc(self.ws_size)
-
-    def get_convolution_workspace_ptr(self) -> ctypes.c_void_p:
-        """Return the workspace pointer."""
-        return self.ws_ptr
-
-    def get_convolution_workspace_size(self) -> int:
-        """Return the workspace size in bytes."""
-        return self.ws_size
+        self._memory_pool_size = max(1, size)
+        self._memory_pool = pycuda_driver.mem_alloc(self._memory_pool_size)

@@ -37,8 +37,8 @@ class AdaptiveAveragePool2DCupy(AdaptiveAveragePool2DNumpy, AbstractPool2DLayerC
         """Perform the forward pass using a CUDA kernel."""
         n = x.shape[0] * self.ci * self.ho * self.wo  # y.size
         self.fwd_kernel(
-            self.model.cuda_grid,
-            self.model.cuda_block,
+            self.model.backend.cuda_grid,
+            self.model.backend.cuda_block,
             (x, y, x.shape[0], self.ci, self.hi, self.wi, self.ho, self.wo, n),
         )
 
@@ -46,8 +46,8 @@ class AdaptiveAveragePool2DCupy(AdaptiveAveragePool2DNumpy, AbstractPool2DLayerC
         """Perform the backward pass using a CUDA kernel."""
         n = dx.shape[0] * self.ci * self.hi * self.wi  # dx.size
         self.bwd_kernel(
-            self.model.cuda_grid,
-            self.model.cuda_block,
+            self.model.backend.cuda_grid,
+            self.model.backend.cuda_block,
             (dx, dy, dx.shape[0], self.ci, self.hi, self.wi, self.ho, self.wo, n),
         )
 
