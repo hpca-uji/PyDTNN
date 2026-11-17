@@ -16,6 +16,7 @@ from importlib.resources.abc import Traversable
 from pydtnn import package_name
 
 __all__ = (
+    "path_insert",
     "top_levels",
     "lib_names",
     "list_distribution",
@@ -25,6 +26,14 @@ __all__ = (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def path_insert(path: str, value: str, index: int = 0) -> str:
+    """Insert (if needed) a value into a PATH-like variable"""
+    paths = path.split(os.pathsep) if path else []
+    if value not in paths:
+        paths.insert(index, value)
+    return os.pathsep.join(paths)
 
 
 def top_levels(name: str) -> Iterable[str]:

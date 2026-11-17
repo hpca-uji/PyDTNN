@@ -63,12 +63,12 @@ else:
 
 # OPTIONAL PATHS
 try:
-    from pydtnn.utils.libs import which
+    from pydtnn.utils.libs import which, path_insert
     nvcc = which("nvcc", src="nvidia-cuda-nvcc")
 except FileNotFoundError:
     pass
 else:
-    os.environ["PATH"] = f"{os.path.dirname(nvcc)}{os.pathsep}{os.environ["PATH"]}"
+    os.environ["PATH"] = path_insert(os.environ.get("PATH", ""), os.path.dirname(nvcc))
 
 # OPTIONAL IMPORTS
 try:
