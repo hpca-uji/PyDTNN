@@ -86,9 +86,9 @@ class RMSPropPycuda(RMSProp[TensorArray], OptimizerPycuda):
 
             if self.model.use_gpudirect:
                 self.update_gpudirect(
-                    w.ptr_intp,
-                    dw.ptr_intp,
-                    cache.ptr_intp,
+                    w.ary,
+                    dw.ary,
+                    cache.ary,
                     np.float32(self.learning_rate),
                     np.float32(self.decay),
                     np.float32(self.rho),

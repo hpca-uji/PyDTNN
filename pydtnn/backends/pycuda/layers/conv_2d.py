@@ -184,16 +184,16 @@ class Conv2DPycuda(AbstractConv2DPycuda):
             self.model.cudnn_handle,
             alpha,
             x.desc,
-            x.ptr_voidp,
+            x.ptr,
             self.weights.desc,
-            self.weights.ptr_voidp,
+            self.weights.ptr,
             self.conv_desc,
             self.fwd_algo,
             self.model.backend._memory_pool_ptr,
             self.model.backend._memory_pool_size,
             beta,
             self.y.desc,
-            self.y.ptr_voidp,
+            self.y.ptr,
         )
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
@@ -208,10 +208,10 @@ class Conv2DPycuda(AbstractConv2DPycuda):
                 self.model.cudnn_handle,
                 alpha,
                 self.biases.desc,
-                self.biases.ptr_voidp,
+                self.biases.ptr,
                 beta,
                 self.y.desc,
-                self.y.ptr_voidp,
+                self.y.ptr,
             )
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.y
@@ -227,16 +227,16 @@ class Conv2DPycuda(AbstractConv2DPycuda):
             self.model.cudnn_handle,
             alpha,
             self.x.desc,
-            self.x.ptr_voidp,
+            self.x.ptr,
             dy.desc,
-            dy.ptr_voidp,
+            dy.ptr,
             self.conv_desc,
             self.bwd_dw_algo,
             self.model.backend._memory_pool_ptr,
             self.model.backend._memory_pool_size,
             beta,
             self.dw.desc,
-            self.dw.ptr_voidp,
+            self.dw.ptr,
         )
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
@@ -250,10 +250,10 @@ class Conv2DPycuda(AbstractConv2DPycuda):
                 self.model.cudnn_handle,
                 alpha,
                 dy.desc,
-                dy.ptr_voidp,
+                dy.ptr,
                 beta,
                 self.db.desc,
-                self.db.ptr_voidp,
+                self.db.ptr,
             )
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
@@ -265,16 +265,16 @@ class Conv2DPycuda(AbstractConv2DPycuda):
             self.model.cudnn_handle,
             alpha,
             self.weights.desc,
-            self.weights.ptr_voidp,
+            self.weights.ptr,
             dy.desc,
-            dy.ptr_voidp,
+            dy.ptr,
             self.conv_desc,
             self.bwd_dx_algo,
             self.model.backend._memory_pool_ptr,
             self.model.backend._memory_pool_size,
             beta,
             self.dx.desc,
-            self.dx.ptr_voidp,
+            self.dx.ptr,
         )
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.dx

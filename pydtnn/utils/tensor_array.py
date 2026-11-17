@@ -215,7 +215,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
         return f"<{self.__class__.__name__} type={self.desc_type} format={self.tensor_format} data={data}>"
 
     @property
-    def ptr(self) -> int:
+    def ptr(self) -> ctypes.c_void_p:
         """Returns a integer as a pointer to the underlying memory"""
         match self.mem_type:
             case MemoryType.DEVICE:
@@ -226,17 +226,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
                 ptr = int(self.ary.ctypes.data)
             case mem_type:
                 raise TypeError(f"Unsupported memory type {mem_type}")
-        return ptr
-
-    @property
-    def ptr_voidp(self) -> ctypes.c_void_p:
-        """Returns the void pointer to the underlying GPU memory"""
-        return ctypes.c_void_p(self.ptr)
-
-    @property
-    def ptr_intp(self) -> np.intp:
-        """Returns the integer pointer to the underlying GPU memory"""
-        return np.intp(self.ptr)
+        return ctypes.c_void_p(ptr)
 
     def _desc_init(self) -> None:
         """Initializes the cuDNN descriptor."""

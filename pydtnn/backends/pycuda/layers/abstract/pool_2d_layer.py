@@ -127,10 +127,10 @@ class AbstractPool2DLayerPycuda(AbstractPool2DLayer[TensorArray], LayerPycuda):
             self.pool_desc,
             alpha,
             x.desc,
-            x.ptr_voidp,
+            x.ptr,
             beta,
             self.y.desc,
-            self.y.ptr_voidp,
+            self.y.ptr,
         )
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.y
@@ -155,14 +155,14 @@ class AbstractPool2DLayerPycuda(AbstractPool2DLayer[TensorArray], LayerPycuda):
             self.pool_desc,
             alpha,
             self.y.desc,
-            self.y.ptr_voidp,
+            self.y.ptr,
             dy.desc,
-            dy.ptr_voidp,
+            dy.ptr,
             self.x.desc,
-            self.x.ptr_voidp,
+            self.x.ptr,
             beta,
             self.dx.desc,
-            self.dx.ptr_voidp,
+            self.dx.ptr,
         )
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.dx

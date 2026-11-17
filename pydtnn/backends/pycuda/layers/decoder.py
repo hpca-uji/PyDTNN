@@ -176,7 +176,7 @@ class DecoderPycuda(DecoderNacho[TensorArray], AbstractBlockLayerPycuda):
             self.layernormalization_2.dx.ptr,
             beta,
             self.feedforward_dx_unflatten.desc,
-            self.feedforward_dx_unflatten.ptr_voidp,
+            self.feedforward_dx_unflatten.ptr,
         )
 
         # Self Attention Encoder
@@ -215,7 +215,7 @@ class DecoderPycuda(DecoderNacho[TensorArray], AbstractBlockLayerPycuda):
             self.layernormalization_1.dx.ptr,
             beta,
             self.dx.desc,
-            self.dx.ptr_voidp,
+            self.dx.ptr,
         )
         cudnn.cudnnAddTensor(
             self.model.cudnn_handle,
@@ -224,7 +224,7 @@ class DecoderPycuda(DecoderNacho[TensorArray], AbstractBlockLayerPycuda):
             self.multiheadattention.dkey.ptr,
             beta,
             self.dx.desc,
-            self.dx.ptr_voidp,
+            self.dx.ptr,
         )
         cudnn.cudnnAddTensor(
             self.model.cudnn_handle,
@@ -233,7 +233,7 @@ class DecoderPycuda(DecoderNacho[TensorArray], AbstractBlockLayerPycuda):
             self.multiheadattention.dvalue.ptr,
             beta,
             self.dx.desc,
-            self.dx.ptr_voidp,
+            self.dx.ptr,
         )
         return self.dx, self.dx_enc
         # else:

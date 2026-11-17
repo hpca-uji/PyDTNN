@@ -57,10 +57,10 @@ class SoftmaxPycuda(Softmax[TensorArray], ActivationPycuda):
             self.mode,
             alpha,
             x.desc,
-            x.ptr_voidp,
+            x.ptr,
             beta,
             self.y.desc,
-            self.y.ptr_voidp,
+            self.y.ptr,
         )
         return self.y
 
@@ -73,11 +73,11 @@ class SoftmaxPycuda(Softmax[TensorArray], ActivationPycuda):
             self.mode,
             alpha,
             self.y.desc,
-            self.y.ptr_voidp,
+            self.y.ptr,
             dy.desc,
-            dy.ptr_voidp,
+            dy.ptr,
             beta,
             self.dx.desc,
-            self.dx.ptr_voidp,
+            self.dx.ptr,
         )
         return self.dx

@@ -193,10 +193,10 @@ class ConcatenationBlockPycuda(ConcatenationBlock[TensorArray], AbstractBlockLay
                     self.model.cudnn_handle,
                     alpha,
                     dx_i.desc,
-                    dx_i.ptr_voidp,
+                    dx_i.ptr,
                     beta,
                     self.dx.desc,
-                    self.dx.ptr_voidp,
+                    self.dx.ptr,
                 )
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.dx

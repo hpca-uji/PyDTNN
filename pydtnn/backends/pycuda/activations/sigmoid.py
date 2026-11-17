@@ -59,10 +59,10 @@ class SigmoidPycuda(Sigmoid[TensorArray], ActivationPycuda):
             self.act_desc,
             alpha,
             x.desc,
-            x.ptr_voidp,
+            x.ptr,
             beta,
             self.y.desc,
-            self.y.ptr_voidp,
+            self.y.ptr,
         )
         return self.y
 
@@ -74,13 +74,13 @@ class SigmoidPycuda(Sigmoid[TensorArray], ActivationPycuda):
             self.act_desc,
             alpha,
             self.y.desc,
-            self.y.ptr_voidp,
+            self.y.ptr,
             dy.desc,
-            dy.ptr_voidp,
+            dy.ptr,
             self.x.desc,
-            self.x.ptr_voidp,
+            self.x.ptr,
             beta,
             self.dx.desc,
-            self.dx.ptr_voidp,
+            self.dx.ptr,
         )
         return self.dx

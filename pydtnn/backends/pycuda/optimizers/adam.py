@@ -98,10 +98,10 @@ class AdamPycuda(Adam[TensorArray], OptimizerPycuda):
 
             if self.model.use_gpudirect:
                 self.update_gpudirect(
-                    w.ptr_intp,
-                    dw.ptr_intp,
-                    m.ptr_intp,
-                    v.ptr_intp,
+                    w.ary,
+                    dw.ary,
+                    m.ary,
+                    v.ary,
                     np.float32(it),
                     np.float32(self.learning_rate),
                     np.float32(self.decay),
