@@ -292,6 +292,7 @@ class PytorchModelTestCaseAbstract(TestCase):
                         for grad_v_key in layer.grad_vars.values():
                             pydtnn_grad = getattr(layer, grad_v_key)
                             if isinstance(pydtnn_grad, TensorArray):
+                                assert pydtnn_grad is not None
                                 pydtnn_grad = pydtnn_grad.get().reshape(pydtnn_grad.host_shape)
                             grad_vars[grad_v_key] = pydtnn_grad
                         layers_grad_vars[i] = (layer, grad_vars)
@@ -369,6 +370,7 @@ class PytorchModelTestCaseAbstract(TestCase):
                         for param_key in layer.grad_vars.keys():
                             param = getattr(layer, param_key)
                             if isinstance(param, TensorArray):
+                                assert param is not None
                                 param = param.get().reshape(param.host_shape)
                             parameters[param_key] = param
                         layers_parameters[i] = parameters
@@ -685,6 +687,7 @@ class PytorchModelTestCaseAbstract(TestCase):
                         if self.params.device == "cuda":
                             # NOTE: First moving the values to CPU, doing the split, then moving the values back to GPU.
                             assert isinstance(dx_base, TensorArray)
+                            assert dx_base is not None
                             dx_to_split: np.ndarray = dx_base.get().reshape(dx_base.host_shape)
                         else:
                             assert isinstance(dx_base, np.ndarray)
@@ -695,6 +698,7 @@ class PytorchModelTestCaseAbstract(TestCase):
                         if self.params.device == "cuda":
                             # NOTE: Moving the values back to GPU.
                             assert isinstance(dx_base, TensorArray)
+                            assert TensorArray is not type(None)
                             _dx = TensorArray.asarray(
                                 dx_splitted,
                                 tensor_format=dx_base.tensor_format,
