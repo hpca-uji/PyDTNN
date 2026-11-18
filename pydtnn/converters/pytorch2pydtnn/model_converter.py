@@ -196,6 +196,7 @@ def convert_layers(
 
     # layer_var_names: {value's variable (str): ([function (str) or layer
     # (nn.Module)], arguments (str))}
+    first_layer: bool = True
     for operation_variable in layer_var_names:
         operation, params = layers[operation_variable]
 
@@ -209,6 +210,8 @@ def convert_layers(
             args = {
                 cm.ARGUMENTS: vars(layer)
             }  # NOTE: In this context, params are the input layers.
+            if first_layer:
+                args[cm.SHAPE] = {cm.SHAPE: input_shape}
             converted_layer = cm.switch_pytorch_pydtnn(name)(args)
 
             converted_layers[layer_var] = (converted_layer, params)
@@ -219,10 +222,12 @@ def convert_layers(
                 cm.LAYERS: converted_layers,
                 cm.EQUIVALENT_LAYERS: dict_equivalent_layer,
                 cm.OPERATION_VAR: operation_variable,
+                cm.SHAPE: input_shape
             }
 
             converted_layers[operation_variable] = cm.function_operation_to_pydtnn(operation)(args)
             # NOTE: Remember, originally these were functions, then they does not have weights nor biases.
+        first_layer = False
     # "for operation_variable in layer_var_names" end.
 
     list_layers = [layer for layer, _input in converted_layers.values()]

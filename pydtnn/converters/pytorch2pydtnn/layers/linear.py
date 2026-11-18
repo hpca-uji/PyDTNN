@@ -61,5 +61,7 @@ def Linear(args: dict[str, Any]) -> FC:
     # PyDTNN expects the shape as a tuple instead of an int.
     if pydtnn_shape in layer_args and isinstance(layer_args[pydtnn_shape], int):
         layer_args[pydtnn_shape] = (layer_args[pydtnn_shape],)
+    elif cm.SHAPE in args:
+        layer_args[cm.SHAPE] = args[cm.SHAPE][cm.SHAPE]
 
     return FC(**layer_args)

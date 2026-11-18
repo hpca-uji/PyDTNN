@@ -13,7 +13,6 @@ from pydtnn.activations.tanh import Tanh
 from pydtnn.converters.pytorch2pydtnn.layers import activation
 from pydtnn.layers.adaptive_average_pool_2d import AdaptiveAveragePool2D
 from pydtnn.layers.addition_block import AdditionBlock
-from pydtnn.layers.average_pool_2d import AveragePool2D
 from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.flatten import Flatten
 
@@ -33,7 +32,7 @@ __all__ = (
 # - Torch Functions
 
 
-def adaptive_avg_pool_2d(args: dict[str, str]) -> tuple[AveragePool2D, str]:
+def adaptive_avg_pool_2d(args: dict[str, Any]) -> tuple[AdaptiveAveragePool2D, str]:
     """
     Converts PyTorch adaptive average pooling operation to PyDTNN AdaptiveAveragePool2D layer.
 
@@ -68,7 +67,10 @@ def adaptive_avg_pool_2d(args: dict[str, str]) -> tuple[AveragePool2D, str]:
     if params:
         dict_params[cm.ARGUMENTS] = {cm.PYTORCH_OUTPUT_SIZE: params}
 
-    return (AdaptiveAveragePool2D(params), dict_params["input"])  # pyright: ignore[reportReturnType,reportArgumentType]
+    if cm.SHAPE in args:
+        dict_params[cm.SHAPE] = args[cm.SHAPE]
+
+    return (AdaptiveAveragePool2D(**dict_params), dict_params["input"])
 
 
 def add(args: dict[str, Any]) -> tuple[AdditionBlock, str]:
@@ -108,8 +110,10 @@ def add(args: dict[str, Any]) -> tuple[AdditionBlock, str]:
     for elem in to_remove:
         dict_equivalent_layers[elem] = layer_name
 
+    shape = args[cm.SHAPE] if cm.SHAPE in args else ()
+
     # AdditionBlock expects every "branch" (layer list) as a different argument.
-    return (AdditionBlock(list_layers), input_layer_name)
+    return (AdditionBlock(paths=list_layers, shape=shape), input_layer_name)
 
 
 def concat(args: dict[str, Any]) -> tuple[ConcatenationBlock, str]:
@@ -156,11 +160,13 @@ def concat(args: dict[str, Any]) -> tuple[ConcatenationBlock, str]:
     for elem in to_remove:
         dict_equivalent_layers[elem] = layer_name
 
+    shape = args[cm.SHAPE] if cm.SHAPE in args else ()
+
     # ConcatenationBlock expects every "branch" (layer list) as a different argument.
-    return (ConcatenationBlock(list_layers), input_layer_name)
+    return (ConcatenationBlock(list_layers, shape=shape), input_layer_name)
 
 
-def flatten(args: dict[str, str]) -> tuple[Flatten, str]:
+def flatten(args: dict[str, Any]) -> tuple[Flatten, str]:
     """
     Converts PyTorch flatten operation to PyDTNN Flatten layer.
 
@@ -195,8 +201,10 @@ def flatten(args: dict[str, str]) -> tuple[Flatten, str]:
     params = args[cm.PARAMETERS].strip()
     dict_params = switch(params.split(cm.ARGS_SEPARATOR))
 
+    shape = args[cm.SHAPE] if cm.SHAPE in args else ()
+
     # return (Flatten(**dict_params), dict_params["input"])
-    return (Flatten(), dict_params["input"])
+    return (Flatten(shape=shape), dict_params["input"])
 
 
 # --- Activations --
@@ -224,7 +232,10 @@ def log_sigmoid(args: dict[str, Any]) -> tuple[LogSigmoid, str]:
     if inplace is not None:
         dict_params["inplace"] = inplace
 
-    return (activation.LogSigmoid(**dict_params), dict_params["input"])
+    if cm.SHAPE in args:
+        dict_params[cm.SHAPE] = args[cm.SHAPE]
+
+    return (activation.LogSigmoid(dict_params), dict_params["input"])
 
 
 def log_softmax(args: dict[str, Any]) -> tuple[LogSoftmax, str]:
@@ -262,7 +273,10 @@ def log_softmax(args: dict[str, Any]) -> tuple[LogSoftmax, str]:
     params = args[cm.PARAMETERS].strip()
     dict_params = switch(params.split(cm.ARGS_SEPARATOR))
 
-    return (activation.LogSoftmax(**dict_params), dict_params["input"])  # pyright: ignore[reportArgumentType]
+    if cm.SHAPE in args:
+        dict_params[cm.SHAPE] = args[cm.SHAPE]
+
+    return (activation.LogSoftmax(dict_params), dict_params["input"])  # pyright: ignore[reportArgumentType]
 
 
 def relu(args: dict[str, str]) -> tuple[Relu, str]:
@@ -291,6 +305,9 @@ def relu(args: dict[str, str]) -> tuple[Relu, str]:
     if inplace is not None:
         dict_params["inplace"] = inplace
 
+    if cm.SHAPE in args:
+        dict_params[cm.SHAPE] = args[cm.SHAPE]
+
     return (activation.ReLU(dict_params), dict_params[cm.ARGUMENTS]["input"])
 
 
@@ -313,7 +330,10 @@ def sigmoid(args: dict[str, Any]) -> tuple[Sigmoid, str]:
     # removing the input layer:
     dict_params["input"] = params.pop(0)
 
-    return (activation.Sigmoid(**dict_params), dict_params["input"])
+    if cm.SHAPE in args:
+        dict_params[cm.SHAPE] = args[cm.SHAPE][cm.SHAPE]
+
+    return (activation.Sigmoid(dict_params), dict_params["input"])
 
 
 def softmax(args: dict[str, Any]) -> tuple[Softmax, str]:
@@ -351,7 +371,10 @@ def softmax(args: dict[str, Any]) -> tuple[Softmax, str]:
     params = args[cm.PARAMETERS].strip()
     dict_params = switch(params.split(cm.ARGS_SEPARATOR))
 
-    return (activation.Softmax(**dict_params), dict_params["input"])  # pyright: ignore[reportArgumentType]
+    if cm.SHAPE in args:
+        dict_params[cm.SHAPE] = args[cm.SHAPE][cm.SHAPE]
+
+    return (activation.Softmax(dict_params), dict_params["input"])  # pyright: ignore[reportArgumentType]
 
 
 def tanh(args: dict[str, Any]) -> tuple[Tanh, str]:
@@ -371,4 +394,7 @@ def tanh(args: dict[str, Any]) -> tuple[Tanh, str]:
     # removing the input layer:
     dict_params["input"] = params.pop(0)
 
-    return (activation.Tanh(**dict_params), dict_params["input"])
+    if cm.SHAPE in args:
+        dict_params[cm.SHAPE] = args[cm.SHAPE][cm.SHAPE]
+
+    return (activation.Tanh(dict_params), dict_params["input"])

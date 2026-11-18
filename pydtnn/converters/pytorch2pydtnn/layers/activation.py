@@ -38,7 +38,11 @@ def Arctanh(args: dict[str, Any]) -> Arctanh_PyDTNN:
     """
     # NOTE: There is no equivalent in PyTorch
     # not_used = args
-    return Arctanh_PyDTNN()
+    if cm.SHAPE in args:
+        args[cm.SHAPE] = args[cm.SHAPE][cm.SHAPE]
+    else:
+        args = {}
+    return Arctanh_PyDTNN(**args)
 
 
 def LogSigmoid(args: dict[str, Any]) -> LogSigmoid_PyDTNN:
@@ -53,7 +57,11 @@ def LogSigmoid(args: dict[str, Any]) -> LogSigmoid_PyDTNN:
     """
     # https://pytorch.org/docs/stable/generated/torch.nn.LogSigmoid.html#torch.nn.LogSigmoid
     # not_used = args
-    return LogSigmoid_PyDTNN()
+    if cm.SHAPE in args:
+        args[cm.SHAPE] = args[cm.SHAPE][cm.SHAPE]
+    else:
+        args = {}
+    return LogSigmoid_PyDTNN(**args)
 
 
 def LogSoftmax(args: dict[str, Any]) -> LogSoftmax_PyDTNN:
@@ -68,7 +76,11 @@ def LogSoftmax(args: dict[str, Any]) -> LogSoftmax_PyDTNN:
     """
     # https://pytorch.org/docs/stable/generated/torch.nn.LogSoftmax.html#torch.nn.LogSoftmax
     # not_used = args
-    return LogSoftmax_PyDTNN()
+    if cm.SHAPE in args:
+        args[cm.SHAPE] = args[cm.SHAPE][cm.SHAPE]
+    else:
+        args = {}
+    return LogSoftmax_PyDTNN(**args)
 
 
 def ReLU(args: dict[str, Any]) -> Relu_PyDTNN:
@@ -84,7 +96,12 @@ def ReLU(args: dict[str, Any]) -> Relu_PyDTNN:
     # https://pytorch.org/docs/stable/generated/torch.nn.ReLU.html#torch.nn.ReLU
     # Not used Pytorch's parameters: inplace.
     # not_used = args
-    return Relu_PyDTNN()
+    if cm.SHAPE in args:
+        args[cm.SHAPE] = args[cm.SHAPE][cm.SHAPE]
+    else:
+        args = {}
+
+    return Relu_PyDTNN(**args)
 
 
 def ReLU6(args: dict[str, Any]) -> Relu6_PyDTNN:
@@ -102,8 +119,12 @@ def ReLU6(args: dict[str, Any]) -> Relu6_PyDTNN:
     # not_used = args
 
     # NOTE: max_val. A interal PyTorch variable that seems to set the cap.
+    if cm.SHAPE in args:
+        args[cm.SHAPE] = args[cm.SHAPE][cm.SHAPE]
+    else:
+        args = {}
 
-    return Relu6_PyDTNN()
+    return Relu6_PyDTNN(**args)
 
 
 def LeakyRelu(args: dict[str, Any]) -> LeakyRelu_PyDTNN:
@@ -127,6 +148,10 @@ def LeakyRelu(args: dict[str, Any]) -> LeakyRelu_PyDTNN:
         torch_dict_keys=torch_dict_keys,
         pydtnn_dict_keys=pydtnn_dict_keys,
     )
+    if cm.SHAPE in args:
+        layer_args[cm.SHAPE] = args[cm.SHAPE][cm.SHAPE]
+    else:
+        args = {}
 
     return LeakyRelu_PyDTNN(**layer_args)
 
@@ -143,7 +168,12 @@ def Sigmoid(args: dict[str, Any]) -> Sigmoid_PyDTNN:
     """
     # https://pytorch.org/docs/stable/generated/torch.nn.Sigmoid_PyDTNN.html#torch.nn.Sigmoid_PyDTNN
     # not_used = args
-    return Sigmoid_PyDTNN()
+    if cm.SHAPE in args:
+        args[cm.SHAPE] = args[cm.SHAPE][cm.SHAPE]
+    else:
+        args = {}
+
+    return Sigmoid_PyDTNN(**args)
 
 
 def Softmax(args: dict[str, Any]) -> Softmax_PyDTNN:
@@ -159,7 +189,12 @@ def Softmax(args: dict[str, Any]) -> Softmax_PyDTNN:
     # https://pytorch.org/docs/stable/generated/torch.nn.Softmax_PyDTNN.html#torch.nn.Softmax_PyDTNN
     # Not used Pytorch's parameters: dim.
     # not_used = args
-    return Softmax_PyDTNN()
+    if cm.SHAPE in args:
+        args[cm.SHAPE] = args[cm.SHAPE][cm.SHAPE]
+    else:
+        args = {}
+
+    return Softmax_PyDTNN(**args)
 
 
 def Tanh(args: dict[str, Any]) -> Tanh_PyDTNN:
@@ -174,4 +209,9 @@ def Tanh(args: dict[str, Any]) -> Tanh_PyDTNN:
     """
     # https://pytorch.org/docs/stable/generated/torch.nn.Tanh_PyDTNN.html#torch.nn.Tanh_PyDTNN
     # not_used = args
-    return Tanh_PyDTNN()
+    if cm.SHAPE in args:
+        args[cm.SHAPE] = args[cm.SHAPE][cm.SHAPE]
+    else:
+        args = {}
+
+    return Tanh_PyDTNN(**args)

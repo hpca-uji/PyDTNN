@@ -86,4 +86,7 @@ def Conv2d(args: dict[str, Any]) -> Conv2D:
         # else: It must be a Tuple[int, int], so it's okay
     # else: Nothing special
 
+    if cm.SHAPE in args:
+        layer_args[cm.SHAPE] = args[cm.SHAPE][cm.SHAPE]
+
     return Conv2D(**layer_args)

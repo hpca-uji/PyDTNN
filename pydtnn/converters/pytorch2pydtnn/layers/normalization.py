@@ -65,4 +65,7 @@ def BatchNorm2d(args: dict[str, Any]) -> BatchNormalization:
     )
     layer_args.update(initializers)
 
+    if cm.SHAPE in args:
+        layer_args[cm.SHAPE] = args[cm.SHAPE][cm.SHAPE]
+
     return BatchNormalization(**layer_args)

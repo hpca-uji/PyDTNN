@@ -59,6 +59,8 @@ def MaxPool2d(args: dict[str, Any]) -> MaxPool2D:
             layer_args[PYDTNN_POOL_SHAPE] = (pool_shape, pool_shape)
         # else: It must be a Tuple[int, int], so it's okay
     # else: Nothing special
+    if cm.SHAPE in args:
+        layer_args[cm.SHAPE] = args[cm.SHAPE][cm.SHAPE]
 
     return MaxPool2D(**layer_args)
 
@@ -94,6 +96,9 @@ def AvgPool2d(args: dict[str, Any]) -> AveragePool2D:
             layer_args[PYDTNN_POOL_SHAPE] = (pool_shape, pool_shape)
         # else: It must be a Tuple[int, int], so it's okay
 
+    if cm.SHAPE in args:
+        layer_args[cm.SHAPE] = args[cm.SHAPE][cm.SHAPE]
+
     return AveragePool2D(**layer_args)
 
 
@@ -114,5 +119,6 @@ def AdaptiveAvgPool2d(args: dict[str, Any]) -> AdaptiveAveragePool2D:
     output_shape = (
         arguments[cm.PYTORCH_OUTPUT_SIZE] if cm.PYTORCH_OUTPUT_SIZE in arguments else None
     )
+    shape = args[cm.SHAPE][cm.SHAPE] if cm.SHAPE in args else ()
 
-    return AdaptiveAveragePool2D(output_shape=output_shape)
+    return AdaptiveAveragePool2D(output_shape=output_shape, shape=shape)

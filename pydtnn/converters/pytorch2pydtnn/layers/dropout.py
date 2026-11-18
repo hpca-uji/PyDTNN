@@ -38,4 +38,7 @@ def Dropout(args: dict[str, Any]) -> Dropout_PyDTNN:
         pydtnn_dict_keys=pydtnn_dict_keys,
     )
 
+    if cm.SHAPE in args:
+        layer_args[cm.SHAPE] = args[cm.SHAPE][cm.SHAPE]
+
     return Dropout_PyDTNN(**layer_args)

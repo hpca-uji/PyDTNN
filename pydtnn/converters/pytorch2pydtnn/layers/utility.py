@@ -1,12 +1,15 @@
 """This module provides utilities for converting PyTorch convolutional layers to their PyDTNN equivalents."""
 
+from typing import Any
+
+import pydtnn.converters.pytorch2pydtnn.utils as cm
 from pydtnn.layers.flatten import Flatten as Flatten_PyDTNN
 from pydtnn.layers.identity import Identity as Identity_PyDTNN
 
 __all__ = ("Flatten",)
 
 
-def Identity(args: dict[str, str]) -> Identity_PyDTNN:
+def Identity(args: dict[str, Any]) -> Identity_PyDTNN:
     """
     Converts a PyTorch Identity layer to a PyDTNN Identity layer (the one with the most similar behavior).
 
@@ -17,11 +20,12 @@ def Identity(args: dict[str, str]) -> Identity_PyDTNN:
         An initialized PyDTNN Identity layer instance.
     """
     # https://docs.pytorch.org/docs/2.13/generated/torch.nn.Identity.html
+    shape = args[cm.SHAPE][cm.SHAPE] if cm.SHAPE in args else ()
 
-    return Identity_PyDTNN()
+    return Identity_PyDTNN(shape)
 
 
-def Flatten(args: dict[str, str]) -> Flatten_PyDTNN:
+def Flatten(args: dict[str, Any]) -> Flatten_PyDTNN:
     """
     Converts a PyTorch Flatten layer to a PyDTNN Flatten layer.
 
@@ -38,5 +42,6 @@ def Flatten(args: dict[str, str]) -> Flatten_PyDTNN:
     # Not used: start_dim, end_dim (It's not used due the way the layer's initialization works in PyDTNN)
     # PyDTNN attributes: None
     # not_used = args
+    shape = args[cm.SHAPE][cm.SHAPE] if cm.SHAPE in args else ()
 
-    return Flatten_PyDTNN()
+    return Flatten_PyDTNN(shape)

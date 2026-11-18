@@ -36,6 +36,7 @@ logger = logging.getLogger(__name__)
 
 # ---- CONSTANTS ----
 ARGUMENTS = "arguments"
+SHAPE = "shape"
 PARAMETERS = "parameters"
 LAYERS = "layers"
 EQUIVALENT_LAYERS = "equivalent_layers"
