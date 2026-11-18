@@ -12,7 +12,6 @@ import numpy as np
 from pydtnn import (cupy_device, mpi_comm, cublas_handle, cudnn_handle,
                     nccl_comm, pycuda_device, pycuda_stream, cupy_stream)
 from pydtnn.datasets import select as select_dataset
-from pydtnn.layers.identity import Identity
 from pydtnn.libs.mpi.rc import proto as proto
 from pydtnn.losses import select as select_loss
 from pydtnn.metrics import select as select_metric
