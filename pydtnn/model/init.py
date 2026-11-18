@@ -22,7 +22,6 @@ from pydtnn.optimizers import select as select_optimizer
 from pydtnn.schedulers import select as select_scheduler
 from pydtnn.tracers.abstract.base import TracerType
 from pydtnn.utils import rand
-from pydtnn.utils.gpu import nccl_dtype_from_numpy, cudnn_dtype_from_numpy
 from pydtnn.utils.memory_pool import PreallocMemory, PrivateMemory
 from pydtnn.utils.performance_counter import PerformanceCounter
 from pydtnn.utils.tensor import SampleFormat, TensorFormat, format_reshape
@@ -92,18 +91,9 @@ class Init[T: Array](Repr[T]):  # noqa: D101 (generics not detected)
         self._lr_init()  # NOTE: before batch_init
         self._batch_init()
         self._tensor_init()
-
-        # Tracer [NOTE: after MPI & before GPU]
         self._tracer_init()
-
-        # GPU [NOTE: after MPI]
         self._gpu_init()
-
-        # Encryption [NOTE: after MPI & GPU]
-        if self.encryption_name:
-            self.crypt = self._crypt_init(self.encryption_name)
-        else:
-            self.crypt = None
+        self._crypt_init()
 
         # Dataset [NOTE: after MPI & Crypt]
         if self.dataset_name:
@@ -219,27 +209,16 @@ class Init[T: Array](Repr[T]):  # noqa: D101 (generics not detected)
         self.cudnn_handle = cudnn_handle
         self.cublas_handle = cublas_handle
 
-    @property
-    def cudnn_dtype(self) -> int:
-        """Get cuDNN equivalent DType"""
-        return cudnn_dtype_from_numpy(self.dtype)
+    def _crypt_init(self) -> None:
+        """Initializes the homomorphic encryption context"""
+        self.crypt = None
+        if not self.encryption_name:
+            return
 
-    @property
-    def nccl_dtype(self) -> Any:
-        """Get cuDNN equivalent DType"""
-        return nccl_dtype_from_numpy(self.dtype)
-
-    def _crypt_init(self, encryption_name: str) -> "polyhe.Context":
-        """
-        Initializes the homomorphic encryption context.
-
-        Args:
-            encryption_name: Name of the encryption backend to use.
-        """
         if polyhe is None:
-            raise RuntimeError("uHE is not avaliable, but is requiested!")
+            raise ValueError("Please, install polyhe to allow FHE execution!")
 
-        backend = polyhe.Backend(encryption_name)
+        backend = polyhe.Backend(self.encryption_name)
         options = polyhe.Options(
             slots=self.encryption_slots,
             scale=self.encryption_scale,
@@ -255,7 +234,7 @@ class Init[T: Array](Repr[T]):  # noqa: D101 (generics not detected)
         if self.use_nccl:
             logger.warning("If NCCL is active, encryption is disabled")
 
-        return crypt
+        self.crypt = crypt
 
     def _tracer_init(self) -> None:
         """Initializes the performance tracing mechanism."""
@@ -287,6 +266,8 @@ class Init[T: Array](Repr[T]):  # noqa: D101 (generics not detected)
                     self.tracer_pmlib_port,
                     self.tracer_pmlib_device,
                 )
+            case tracer_type:
+                raise RuntimeError(f"Unknown tracer type {tracer_type}")
 
         self.tracer = tracer
 

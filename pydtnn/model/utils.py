@@ -1,6 +1,7 @@
 """Utility module for PyDTNN model operations, providing shape and tensor format transformations."""
 
 import logging
+from typing import Any
 
 import numpy as np
 
@@ -9,6 +10,7 @@ from pydtnn.abstract.layerable import Layerable
 from pydtnn.model.base import Base
 from pydtnn.tracers.abstract.base import TracerType
 from pydtnn.utils.constants import Array, ArrayShape
+from pydtnn.utils.gpu import cudnn_dtype_from_numpy, nccl_dtype_from_numpy
 from pydtnn.utils.tensor import decode_shape, decode_tensor, encode_shape, encode_tensor
 
 __all__ = ("Utils",)
@@ -93,3 +95,13 @@ class Utils[T: Array](Base[T]):  # noqa: D101 (generics not detected)
     def tracing(self) -> bool:
         """Is a tracer active"""
         return self.tracer_name is not TracerType.NONE
+
+    @property
+    def cudnn_dtype(self) -> int:
+        """Get cuDNN equivalent DType"""
+        return cudnn_dtype_from_numpy(self.dtype)
+
+    @property
+    def nccl_dtype(self) -> Any:
+        """Get cuDNN equivalent DType"""
+        return nccl_dtype_from_numpy(self.dtype)
