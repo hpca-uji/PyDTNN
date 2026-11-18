@@ -76,10 +76,10 @@ class Init[T: Array](Repr[T]):  # noqa: D101 (generics not detected)
             # NOTE: Skip setters (plus dict needed for utils)
             self.__dict__[key] = self._config[key]
 
-        # MPI [NOTE: as early as possible]
-        self._mpi_init()
+        # Early initializers
+        self._mpi_init()  # NOTE: as early as possible
 
-        # Initialize attributes
+        # Attribute initializers
         self._model_inited: bool = False
         self.random: np.random.Generator = rand.Generator(self.random_seed)  # pyright: ignore[reportAttributeAccessIssue]
         self.memory_cls = PreallocMemory if self.shared_tmp_memory else PrivateMemory
@@ -87,13 +87,13 @@ class Init[T: Array](Repr[T]):  # noqa: D101 (generics not detected)
         self.perf_counter = PerformanceCounter()
         self.profiler = Profile()
 
-        # Attributes initializers
+        # Function initializers
         self._lr_init()  # NOTE: before batch_init
         self._batch_init()
         self._tensor_init()
-        self._tracer_init()
-        self._gpu_init()
-        self._crypt_init()
+        self._tracer_init()  # NOTE: after MPI & before GPU
+        self._gpu_init()  # NOTE: after MPI
+        self._crypt_init()  # NOTE: after MPI & GPU
 
         # Dataset [NOTE: after MPI & Crypt]
         if self.dataset_name:
