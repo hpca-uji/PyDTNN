@@ -6,25 +6,21 @@ import logging
 from typing import TYPE_CHECKING
 
 from pydtnn.tracers.simple_tracer import SimpleTracer
-from pydtnn.tracers.abstract.base import StreamType
+from pydtnn.tracers.abstract.base import StreamType, EventType
 
-__all__ = ("SimpleTracerGpu",)
+__all__ = ("GpuTracer",)
 
 logger = logging.getLogger(__name__)
 
 
 if TYPE_CHECKING:
     from pympi.MPI import Comm
-    import cupy.cuda as cupy_driver
-    import pycuda.driver as pycuda_driver
-
-    type EventType = cupy_driver.Event | pycuda_driver.Event
 
 
-class SimpleTracerGpu(SimpleTracer):
+class GpuTracer(SimpleTracer):
     """A tracer implementation that records GPU execution times using GPU events."""
 
-    def __init__(self, tracing: bool, output_filename: str, event: type[EventType], comm: Comm | None) -> None:
+    def __init__(self, tracing: bool, output_filename: str, comm: Comm | None) -> None:
         """
         Initialize the GPU tracer.
 
@@ -34,7 +30,7 @@ class SimpleTracerGpu(SimpleTracer):
             comm: MPI communicator for distributed tracing.
         """
         super().__init__(tracing, output_filename, comm)
-        self.event_cls = event
+        self.event_cls = None
         self.event_vars = []
         # Attributes that will be initialized later
         self.stream = None
@@ -47,6 +43,7 @@ class SimpleTracerGpu(SimpleTracer):
             A tuple containing (start_event, end_event).
         """
         if len(self.event_vars) == 0:
+            assert self.event_cls is not None, "Event not defined"
             self.event_vars.append((self.event_cls(), self.event_cls()))
         return self.event_vars.pop()
 
@@ -106,6 +103,7 @@ class SimpleTracerGpu(SimpleTracer):
         for evt_type_val, evt_val in zipped_list:
             self.emit_event(evt_type_val, evt_val, stream)
 
-    def set_stream(self, stream: StreamType) -> None:
+    def set_stream(self, stream: StreamType, event: type[EventType]) -> None:
         """Set the default GPU stream for event recording."""
         self.stream = stream
+        self.event_cls = event

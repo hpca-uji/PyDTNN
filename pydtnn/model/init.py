@@ -273,13 +273,13 @@ class Init[T: Array](Repr[T]):  # noqa: D101 (generics not detected)
 
                 tracer = ExtraeTracer(self.tracing)
             case TracerType.GPU:
-                from pydtnn.tracers.gpu import SimpleTracerGpu
+                from pydtnn.tracers.gpu import GpuTracer
 
-                tracer = SimpleTracerGpu(self.tracing, self.tracer_output, self.comm)
+                tracer = GpuTracer(self.tracing, self.tracer_output, self.comm)
             case TracerType.PMLIB:
-                from pydtnn.tracers.pmlib import SimpleTracerPMLib
+                from pydtnn.tracers.pmlib import PmlibTracer
 
-                tracer = SimpleTracerPMLib(
+                tracer = PmlibTracer(
                     self.tracing,
                     self.tracer_output,
                     self.comm,

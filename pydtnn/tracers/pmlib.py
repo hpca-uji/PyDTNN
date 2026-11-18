@@ -13,7 +13,7 @@ from pydtnn.tracers.simple_tracer import SimpleTracer
 from pydtnn.tracers.abstract.base import StreamType
 from pydtnn.utils.pmlib import PMLib
 
-__all__ = ("SimpleTracerPMLib",)
+__all__ = ("PmlibTracer",)
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from pympi.MPI import Comm
 
 
-class SimpleTracerPMLib(SimpleTracer):
+class PmlibTracer(SimpleTracer):
     """A tracer that extends SimpleTracer to record power consumption data using PMLib."""
 
     def __init__(

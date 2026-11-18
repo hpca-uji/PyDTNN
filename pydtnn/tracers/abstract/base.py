@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Any
 from pydtnn.tracers.abstract.events import (PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT,
                                             PYDTNN_OPS_EVENTS, MdlEventEnum, OpsEventEnum)
 
-__all__ = ("TracerType", "EventType", "PostInitCaller", "StreamType", "Tracer", )
+__all__ = ("TracerType", "EventDescriptor", "PostInitCaller", "StreamType", "EventType", "Tracer", )
 
 logger = logging.getLogger(__name__)
 
@@ -26,8 +26,10 @@ if TYPE_CHECKING:
     from pydtnn.model.layers import Layers as Model
 
     type StreamType = cupy_driver.Stream | pycuda_driver.Stream
+    type EventType = cupy_driver.Event | pycuda_driver.Event
 else:
     type StreamType = Any
+    type EventType = Any
 
 
 class TracerType(enum.StrEnum):
@@ -40,12 +42,12 @@ class TracerType(enum.StrEnum):
     PMLIB = enum.auto()
 
 
-class EventType:
+class EventDescriptor:
     """Container for managing and retrieving event descriptions by code."""
 
     def __init__(self, name: str) -> None:
         """
-        Initialize the EventType container.
+        Initialize the EventDescriptor container.
 
         Args:
             name: The name of the event category.
@@ -114,8 +116,8 @@ class Tracer(metaclass=PostInitCaller):
             tracing: Whether tracing is enabled.
         """
         self.event_types = {
-            PYDTNN_MDL_EVENT: EventType("Model"),
-            PYDTNN_OPS_EVENT: EventType("Operations"),
+            PYDTNN_MDL_EVENT: EventDescriptor("Model"),
+            PYDTNN_OPS_EVENT: EventDescriptor("Operations"),
         }
         self.tracing = tracing
 
@@ -230,7 +232,7 @@ class Tracer(metaclass=PostInitCaller):
             f">>>{text} user time={u[0]:.2f}, sys time={u[1]:.2f}, mem={u[2] / 1024:.2f} MiB"
         )
 
-    def set_stream(self, stream: StreamType) -> None:
+    def set_stream(self, stream: StreamType, event: type[EventType]) -> None:
         """
         Set the output stream for the tracer.
 

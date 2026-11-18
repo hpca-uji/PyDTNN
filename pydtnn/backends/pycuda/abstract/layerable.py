@@ -45,7 +45,7 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
             return None
 
         # Set tracer stream
-        self.model.tracer.set_stream(self.model.pycuda_stream)
+        self.model.tracer.set_stream(self.model.pycuda_stream, pycuda_driver.Event)
 
         # Calculate the kernel sizes
         attrs = pycuda_driver.Device(self.model.pycuda_device).get_attributes()
