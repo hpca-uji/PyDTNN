@@ -38,10 +38,8 @@ def path_insert(path: str, value: str, index: int = 0) -> str:
 
 def top_levels(name: str) -> Iterable[str]:
     """Get top levels from package"""
-    dists = metadata.packages_distributions()
-
-    for top, pkgs in dists.items():
-        if name in pkgs:
+    for top, dists in metadata.packages_distributions().items():
+        if name in dists:
             yield top
 
 
@@ -170,6 +168,7 @@ def which(name: str, mode: int = os.F_OK | os.X_OK, src: str = package_name) -> 
     NOTE: Supports only concrete sources
     """
 
+    # Explore package
     def entry_exe(entries: Iterable) -> list:
         return [
             str(entry)
