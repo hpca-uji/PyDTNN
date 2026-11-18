@@ -231,7 +231,6 @@ def convert_layers(
     # "for operation_variable in layer_var_names" end.
 
     list_layers = [layer for layer, _input in converted_layers.values() if layer is not None]
-    breakpoint()
     return list_layers
 
 
