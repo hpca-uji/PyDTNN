@@ -129,7 +129,7 @@ def load_library(name: str, ver: str = "", src: str = package_name) -> ctypes.CD
         return {
             entry.name: str(entry)
             for entry in entries
-            if isinstance(entry, Path) and entry.name in libs
+            if isinstance(entry, Path) and entry.name in libs and entry.exists()
         }
 
     dist = entry_map(list_distribution(src))
@@ -170,10 +170,12 @@ def which(name: str, mode: int = os.F_OK | os.X_OK, src: str = package_name) -> 
     NOTE: Supports only concrete sources
     """
 
-    def entry_exe(entries: Iterable) -> Iterable:
-        for entry in entries:
-            if isinstance(entry, Path) and entry.name == name and os.access(entry, mode):
-                yield str(entry)
+    def entry_exe(entries: Iterable) -> list:
+        return [
+            str(entry)
+            for entry in entries
+            if isinstance(entry, Path) and entry.name == name and os.access(entry, mode)
+        ]
 
     dist = entry_exe(list_distribution(src))
     resrc = entry_exe(itertools.chain.from_iterable(list_resources(top) for top in top_levels(src)))
@@ -188,7 +190,7 @@ def which(name: str, mode: int = os.F_OK | os.X_OK, src: str = package_name) -> 
         logger.debug(f"EXE found {name!r} (from resources)")
         return entry
 
-    if entry := shutil.which(name):
+    if entry := shutil.which(name, mode):
         logger.debug(f"EXE found {name!r} (from system)")
         return entry
 
