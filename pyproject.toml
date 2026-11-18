@@ -96,6 +96,12 @@ mpi = [
 fhe = [
     "polyhe~=1.0"
 ]
+fhe-openfhe = [
+    "polyhe[openfhe]~=1.0"
+]
+fhe-tenseal = [
+    "polyhe[tenseal]~=1.0"
+]
 
 test-torch = [
     "torch~=2.11",
