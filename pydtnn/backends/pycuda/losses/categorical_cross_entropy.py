@@ -7,7 +7,7 @@ from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 
 from pydtnn.backends.pycuda.losses.abstract.loss import LossPycuda
 from pydtnn.losses.categorical_cross_entropy import CategoricalCrossEntropy
-from pydtnn.utils.tensor_array import DescriptorType, MemoryType, TensorArray
+from pydtnn.utils.tensor_array import FormatType, MemoryType, TensorArray
 
 __all__ = ("CategoricalCrossEntropyPycuda",)
 
@@ -26,7 +26,7 @@ class CategoricalCrossEntropyPycuda(CategoricalCrossEntropy[TensorArray], LossPy
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-            desc_type=DescriptorType.NONE
+            fmt_type=FormatType.NONE
         )
         self.memory_used += self.argmax.nbytes
 

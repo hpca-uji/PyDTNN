@@ -6,7 +6,7 @@ import numpy as np
 
 from pydtnn.backends.pycuda.metrics.abstract.metric import MetricPycuda
 from pydtnn.metrics.binary_confusion_matrix import BinaryConfusionMatrix
-from pydtnn.utils.tensor_array import DescriptorType, MemoryType, TensorArray
+from pydtnn.utils.tensor_array import FormatType, MemoryType, TensorArray
 
 __all__ = ("BinaryConfusionMatrixPycuda",)
 
@@ -27,14 +27,14 @@ class BinaryConfusionMatrixPycuda(BinaryConfusionMatrix[TensorArray], MetricPycu
             np.dtype(np.int32),
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-            desc_type=DescriptorType.NONE
+            fmt_type=FormatType.NONE
         )
         self.local_cm = TensorArray[tuple[int, int, int, int], np.dtype[np.int32]].zeros(
             (n, target_classes, 2, 2),
             np.dtype(np.int32),
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-            desc_type=DescriptorType.NONE
+            fmt_type=FormatType.NONE
         )
 
     def compute(self, y_pred: TensorArray, y_targ: TensorArray) -> np.ndarray:

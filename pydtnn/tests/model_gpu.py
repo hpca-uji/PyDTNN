@@ -21,7 +21,7 @@ from pydtnn.model import Model
 from pydtnn.tests.abstract.base import Params, verbose_test
 from pydtnn.tests.abstract.model import ModelTestCase
 from pydtnn.utils.tensor import TensorFormat, format_transpose
-from pydtnn.utils.tensor_array import DescriptorType, MemoryType, TensorArray
+from pydtnn.utils.tensor_array import FormatType, MemoryType, TensorArray
 
 __all__ = ("ModelGpuTestCase",)
 
@@ -105,7 +105,7 @@ class ModelGpuTestCase(ModelTestCase):
                     gpu_layer.weights_cpu,
                     tensor_format=gpu_layer.model.tensor_format,
                     mem_type=MemoryType.GLOBAL if gpu_layer.model.use_gpudirect else MemoryType.DEVICE,
-                    desc_type=DescriptorType.FILTER,
+                    fmt_type=FormatType.FILTER,
                 )
             if gpu_layer.use_bias:
                 if cpu_layer.biases is None:
@@ -117,7 +117,7 @@ class ModelGpuTestCase(ModelTestCase):
                         gpu_layer.biases_cpu,
                         tensor_format=gpu_layer.model.tensor_format,
                         mem_type=MemoryType.GLOBAL if gpu_layer.model.use_gpudirect else MemoryType.DEVICE,
-                        desc_type=DescriptorType.TENSOR
+                        fmt_type=FormatType.TENSOR
                     )
 
     def set_data_to_ary(

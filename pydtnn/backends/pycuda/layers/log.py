@@ -9,7 +9,7 @@ import numpy as np
 from pydtnn.activations.log import Log
 from pydtnn.backends.pycuda.activations.abstract.activation import ActivationPycuda
 from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
-from pydtnn.utils.tensor_array import DescriptorType, MemoryType, TensorArray
+from pydtnn.utils.tensor_array import FormatType, MemoryType, TensorArray
 
 __all__ = ("LogPycuda",)
 
@@ -36,7 +36,7 @@ class LogPycuda(Log[TensorArray], ActivationPycuda):
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-            desc_type=DescriptorType.TENSOR
+            fmt_type=FormatType.TENSOR
         )
 
         # Derivative dx
@@ -45,7 +45,7 @@ class LogPycuda(Log[TensorArray], ActivationPycuda):
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-            desc_type=DescriptorType.TENSOR
+            fmt_type=FormatType.TENSOR
         )
 
         self.memory_used += self.y.nbytes + self.dx.nbytes

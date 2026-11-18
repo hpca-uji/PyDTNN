@@ -20,7 +20,7 @@ from pydtnn.optimizers.sgd import SGD
 from pydtnn.utils import rand
 from pydtnn.utils.tensor import TensorFormat
 
-from pydtnn.utils.tensor_array import DescriptorType, MemoryType, TensorArray
+from pydtnn.utils.tensor_array import FormatType, MemoryType, TensorArray
 
 # setting random seed
 SEED = 1234
@@ -135,7 +135,7 @@ def test_layers_activations(_x: np.ndarray, opt: Optimizer) -> None:
                     x,
                     tensor_format=model.tensor_format,
                     mem_type=MemoryType.GLOBAL if model.use_gpudirect else MemoryType.DEVICE,
-                    desc_type=DescriptorType.TENSOR
+                    fmt_type=FormatType.TENSOR
                 )
 
             t_forward = 0.0
@@ -203,7 +203,7 @@ def test_add_concat(_x: np.ndarray, opt: Optimizer) -> None:
                 x,
                 tensor_format=model.tensor_format,
                 mem_type=MemoryType.GLOBAL if model.use_gpudirect else MemoryType.DEVICE,
-                desc_type=DescriptorType.TENSOR
+                fmt_type=FormatType.TENSOR
             )
 
         for _ in range(NUM_REPETITIONS):

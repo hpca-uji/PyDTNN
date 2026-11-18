@@ -11,7 +11,7 @@ from pydtnn.backends.pycuda.activations.abstract.activation import ActivationPyc
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, OpsEventEnum
 from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
 from pydtnn.utils.performance_models import col2im_time, im2col_time
-from pydtnn.utils.tensor_array import DescriptorType, MemoryType, TensorArray
+from pydtnn.utils.tensor_array import FormatType, MemoryType, TensorArray
 
 __all__ = ("Relu6Pycuda",)
 
@@ -35,7 +35,7 @@ class Relu6Pycuda(Relu6[TensorArray], ActivationPycuda):
             x.shape, self.model.dtype,
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-            desc_type=DescriptorType.TENSOR
+            fmt_type=FormatType.TENSOR
         )
 
         self.mask = TensorArray.zeros(
@@ -43,7 +43,7 @@ class Relu6Pycuda(Relu6[TensorArray], ActivationPycuda):
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-            desc_type=DescriptorType.TENSOR
+            fmt_type=FormatType.TENSOR
         )
 
         self.memory_used += self.y.nbytes + self.mask.nbytes
@@ -116,7 +116,7 @@ class Relu6Pycuda(Relu6[TensorArray], ActivationPycuda):
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-            desc_type=DescriptorType.TENSOR
+            fmt_type=FormatType.TENSOR
         )
 
         self.mask = TensorArray.zeros(
@@ -124,7 +124,7 @@ class Relu6Pycuda(Relu6[TensorArray], ActivationPycuda):
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-            desc_type=DescriptorType.TENSOR
+            fmt_type=FormatType.TENSOR
         )
 
         # Derivative dx
@@ -133,7 +133,7 @@ class Relu6Pycuda(Relu6[TensorArray], ActivationPycuda):
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-            desc_type=DescriptorType.TENSOR
+            fmt_type=FormatType.TENSOR
         )
 
         self.fwd_time = im2col_time(

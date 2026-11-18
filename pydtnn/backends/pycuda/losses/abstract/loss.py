@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 from pydtnn.backends.pycuda.abstract.base import BasePycuda
 from pydtnn.losses.abstract.loss import Loss
 from pydtnn.utils.constants import DTYPE2CTYPE
-from pydtnn.utils.tensor_array import DescriptorType, MemoryType, TensorArray
+from pydtnn.utils.tensor_array import FormatType, MemoryType, TensorArray
 
 __all__ = ("LossPycuda",)
 
@@ -43,7 +43,7 @@ class LossPycuda(Loss[TensorArray], BasePycuda):
             _w,
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-            desc_type=DescriptorType.TENSOR
+            fmt_type=FormatType.TENSOR
         )
         return w
 
@@ -57,7 +57,7 @@ class LossPycuda(Loss[TensorArray], BasePycuda):
             (self.model.batch_size,),
             self.model.dtype,
             mem_type=MemoryType.DEVICE,
-            desc_type=DescriptorType.NONE
+            fmt_type=FormatType.NONE
         )
         self.memory_used += self.loss.nbytes
         self.dx = TensorArray.zeros(
@@ -65,7 +65,7 @@ class LossPycuda(Loss[TensorArray], BasePycuda):
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-            desc_type=DescriptorType.TENSOR
+            fmt_type=FormatType.TENSOR
         )
         self.memory_used += self.dx.nbytes
 

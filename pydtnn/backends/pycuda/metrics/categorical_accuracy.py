@@ -7,7 +7,7 @@ from pycuda import gpuarray  # pyright: ignore[reportAttributeAccessIssue]
 
 from pydtnn.backends.pycuda.metrics.abstract.metric import MetricPycuda
 from pydtnn.metrics.categorical_accuracy import CategoricalAccuracy
-from pydtnn.utils.tensor_array import DescriptorType, MemoryType, TensorArray
+from pydtnn.utils.tensor_array import FormatType, MemoryType, TensorArray
 
 __all__ = ("CategoricalAccuracyPycuda",)
 
@@ -25,7 +25,7 @@ class CategoricalAccuracyPycuda(CategoricalAccuracy[TensorArray], MetricPycuda):
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-            desc_type=DescriptorType.NONE
+            fmt_type=FormatType.NONE
         )
 
     def compute(self, y_pred: TensorArray, y_targ: TensorArray) -> float:

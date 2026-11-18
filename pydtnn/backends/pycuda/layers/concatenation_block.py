@@ -12,7 +12,7 @@ from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDT
                                    PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, MdlEventEnum, OpsEventEnum)
 from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
 from pydtnn.utils.tensor import TensorFormat
-from pydtnn.utils.tensor_array import DescriptorType, MemoryType, TensorArray
+from pydtnn.utils.tensor_array import FormatType, MemoryType, TensorArray
 
 __all__ = ("ConcatenationBlockPycuda",)
 
@@ -125,7 +125,7 @@ class ConcatenationBlockPycuda(ConcatenationBlock[TensorArray], AbstractBlockLay
                 self.model.dtype,
                 tensor_format=self.model.tensor_format,
                 mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-                desc_type=DescriptorType.TENSOR
+                fmt_type=FormatType.TENSOR
             )
             self.dy.append(dy_gpu)
 

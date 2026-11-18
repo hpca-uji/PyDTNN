@@ -703,7 +703,7 @@ class PytorchModelTestCaseAbstract(TestCase):
                                 dx_splitted,
                                 tensor_format=dx_base.tensor_format,
                                 mem_type=dx_base.mem_type,
-                                desc_type=dx_base.desc_type
+                                fmt_type=dx_base.fmt_type
                             )
                         else:
                             _dx = dx_splitted

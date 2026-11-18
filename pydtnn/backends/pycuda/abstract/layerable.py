@@ -11,7 +11,7 @@ from pydtnn.backends.pycuda.abstract.base import BasePycuda
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
                                    PYDTNN_OPS_EVENTS, OpsEventEnum)
 from pydtnn.utils.constants import ArrayShape
-from pydtnn.utils.tensor_array import DescriptorType, MemoryType, TensorArray
+from pydtnn.utils.tensor_array import FormatType, MemoryType, TensorArray
 
 try:
     from pydtnn.libs import nccl
@@ -209,7 +209,7 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-            desc_type=DescriptorType.TENSOR
+            fmt_type=FormatType.TENSOR
         )
         self.y_model = tensor_ary  # pyright: ignore[reportAttributeAccessIssue]
 

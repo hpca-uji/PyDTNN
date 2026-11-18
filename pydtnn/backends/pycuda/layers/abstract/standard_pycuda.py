@@ -10,7 +10,7 @@ from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
                                    PYDTNN_OPS_EVENTS, OpsEventEnum)
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import TensorFormat, format_transpose
-from pydtnn.utils.tensor_array import DescriptorType, MemoryType, TensorArray
+from pydtnn.utils.tensor_array import FormatType, MemoryType, TensorArray
 
 __all__ = ("AbstractConv2DStandardPycuda",)
 
@@ -65,7 +65,7 @@ class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-            desc_type=DescriptorType.TENSOR
+            fmt_type=FormatType.TENSOR
         )
         self.memory_used += self.im2_x.nbytes
         self.x_2im_var = TensorArray.zeros(
@@ -73,7 +73,7 @@ class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-            desc_type=DescriptorType.TENSOR
+            fmt_type=FormatType.TENSOR
         )
         self.memory_used += self.x_2im_var.nbytes
         self.y = TensorArray.zeros(
@@ -81,7 +81,7 @@ class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-            desc_type=DescriptorType.TENSOR
+            fmt_type=FormatType.TENSOR
         )
         self.memory_used += self.y.nbytes
         self.dw = TensorArray.zeros(
@@ -89,7 +89,7 @@ class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-            desc_type=DescriptorType.TENSOR
+            fmt_type=FormatType.TENSOR
         )
         self.memory_used += self.dw.nbytes
         self.dx = TensorArray.zeros(
@@ -97,7 +97,7 @@ class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-            desc_type=DescriptorType.TENSOR
+            fmt_type=FormatType.TENSOR
         )
         self.memory_used += self.dx.nbytes
 

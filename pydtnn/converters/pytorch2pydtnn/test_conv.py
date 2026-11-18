@@ -20,7 +20,7 @@ from pydtnn.layers.identity import Identity
 from pydtnn.model import Model
 from pydtnn.model.base import ModelMode
 from pydtnn.utils import rand
-from pydtnn.utils.tensor_array import DescriptorType, MemoryType, TensorArray
+from pydtnn.utils.tensor_array import FormatType, MemoryType, TensorArray
 
 __all__ = ("main",)
 
@@ -124,7 +124,7 @@ def main() -> None:
                 model.dtype,
                 tensor_format=model.tensor_format,
                 mem_type=MemoryType.GLOBAL if model.use_gpudirect else MemoryType.DEVICE,
-                desc_type=DescriptorType.TENSOR
+                fmt_type=FormatType.TENSOR
             )
             _dataset.set(dataset)
             x = _dataset

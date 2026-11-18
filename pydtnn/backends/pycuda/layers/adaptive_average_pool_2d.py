@@ -11,7 +11,7 @@ from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
                                    PYDTNN_OPS_EVENTS, OpsEventEnum)
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.performance_models import col2im_time, im2col_time
-from pydtnn.utils.tensor_array import DescriptorType, MemoryType, TensorArray
+from pydtnn.utils.tensor_array import FormatType, MemoryType, TensorArray
 
 __all__ = ("AdaptiveAveragePool2DPycuda",)
 
@@ -44,7 +44,7 @@ class AdaptiveAveragePool2DPycuda(AdaptiveAveragePool2D[TensorArray], LayerPycud
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-            desc_type=DescriptorType.TENSOR
+            fmt_type=FormatType.TENSOR
         )
 
         # Derivative dx
@@ -52,7 +52,7 @@ class AdaptiveAveragePool2DPycuda(AdaptiveAveragePool2D[TensorArray], LayerPycud
             self.x.ary.shape, self.model.dtype,
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-            desc_type=DescriptorType.TENSOR
+            fmt_type=FormatType.TENSOR
         )
 
         self.memory_used += self.y.nbytes + self.dx.nbytes

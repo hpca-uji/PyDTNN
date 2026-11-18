@@ -11,7 +11,7 @@ from pydtnn.libs import cudnn as cudnn
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
                                    PYDTNN_OPS_EVENTS, OpsEventEnum)
 from pydtnn.utils.constants import ArrayShape
-from pydtnn.utils.tensor_array import DescriptorType, MemoryType, TensorArray
+from pydtnn.utils.tensor_array import FormatType, MemoryType, TensorArray
 
 __all__ = ("DropoutPycuda",)
 
@@ -42,7 +42,7 @@ class DropoutPycuda(Dropout[TensorArray], LayerPycuda):
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-            desc_type=DescriptorType.TENSOR
+            fmt_type=FormatType.TENSOR
         )
         self.memory_used += self.y.nbytes
 
@@ -52,7 +52,7 @@ class DropoutPycuda(Dropout[TensorArray], LayerPycuda):
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-            desc_type=DescriptorType.TENSOR
+            fmt_type=FormatType.TENSOR
         )
         self.memory_used += self.dx.nbytes
 
@@ -62,7 +62,7 @@ class DropoutPycuda(Dropout[TensorArray], LayerPycuda):
             np.byte,
             host_shape=True,
             mem_type=MemoryType.DEVICE,
-            desc_type=DescriptorType.NONE
+            fmt_type=FormatType.NONE
         )
         self.memory_used += self.space.nbytes
 
@@ -72,7 +72,7 @@ class DropoutPycuda(Dropout[TensorArray], LayerPycuda):
             np.byte,
             host_shape=True,
             mem_type=MemoryType.DEVICE,
-            desc_type=DescriptorType.NONE
+            fmt_type=FormatType.NONE
         )
         self.memory_used += self.states.nbytes
 

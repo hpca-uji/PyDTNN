@@ -9,7 +9,7 @@ from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
 from pydtnn.backends.pycuda.optimizers.abstract.optimizer import OptimizerPycuda
 from pydtnn.optimizers.sgd import SGD
 from pydtnn.utils.constants import DTYPE2CTYPE
-from pydtnn.utils.tensor_array import DescriptorType, MemoryType, TensorArray
+from pydtnn.utils.tensor_array import FormatType, MemoryType, TensorArray
 
 __all__ = ("SGDPycuda",)
 
@@ -67,7 +67,7 @@ class SGDPycuda(SGD[TensorArray], OptimizerPycuda):
                         w.shape,
                         layer.model.dtype,
                         mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-                        desc_type=DescriptorType.NONE
+                        fmt_type=FormatType.NONE
                     )
 
                     # NOTE: They are both "gpuarray" and not "int"

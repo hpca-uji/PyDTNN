@@ -6,7 +6,7 @@ import numpy as np
 
 from pydtnn.backends.pycuda.metrics.abstract.metric import MetricPycuda
 from pydtnn.metrics.categorical_mse import CategoricalMSE
-from pydtnn.utils.tensor_array import DescriptorType, MemoryType, TensorArray
+from pydtnn.utils.tensor_array import FormatType, MemoryType, TensorArray
 
 __all__ = ("CategoricalMSEPycuda",)
 
@@ -24,7 +24,7 @@ class CategoricalMSEPycuda(CategoricalMSE[TensorArray], MetricPycuda):
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-            desc_type=DescriptorType.TENSOR
+            fmt_type=FormatType.TENSOR
         )
         self.memory_used += self.res.nbytes
         self.local_res = TensorArray.zeros(
@@ -32,7 +32,7 @@ class CategoricalMSEPycuda(CategoricalMSE[TensorArray], MetricPycuda):
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-            desc_type=DescriptorType.TENSOR
+            fmt_type=FormatType.TENSOR
         )
         self.memory_used += self.local_res.nbytes
 

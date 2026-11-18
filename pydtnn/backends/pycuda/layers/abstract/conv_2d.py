@@ -10,7 +10,7 @@ from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.utils.constants import ArrayShape, Parameters
 from pydtnn.utils.performance_models import matmul_time
 from pydtnn.utils.tensor import TensorFormat
-from pydtnn.utils.tensor_array import DescriptorType, MemoryType, TensorArray
+from pydtnn.utils.tensor_array import FormatType, MemoryType, TensorArray
 
 __all__ = ("AbstractConv2DPycuda",)
 
@@ -44,7 +44,7 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
             self.weights_initializer(self.weights_shape, self.model.dtype, self.model.random),
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-            desc_type=DescriptorType.FILTER,
+            fmt_type=FormatType.FILTER,
         )
         self.memory_used += self.weights.nbytes
 
@@ -55,7 +55,7 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
                 self.biases_initializer(biases_shape, self.model.dtype, self.model.random),
                 tensor_format=self.model.tensor_format,
                 mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-                desc_type=DescriptorType.TENSOR,
+                fmt_type=FormatType.TENSOR,
             )
             self.memory_used += self.biases.nbytes
 
@@ -89,7 +89,7 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-            desc_type=DescriptorType.FILTER,
+            fmt_type=FormatType.FILTER,
         )
         self.memory_used += self.dw.nbytes
 
@@ -99,7 +99,7 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
                 self.model.dtype,
                 tensor_format=self.model.tensor_format,
                 mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-                desc_type=DescriptorType.FILTER if self.model.use_gpudirect else DescriptorType.TENSOR,
+                fmt_type=FormatType.FILTER if self.model.use_gpudirect else FormatType.TENSOR,
             )
             self.memory_used += self.db.nbytes
 

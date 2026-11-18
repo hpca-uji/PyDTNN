@@ -5,7 +5,7 @@ import logging
 from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
 from pydtnn.layers.forwarded_output import ForwardedOutput
 from pydtnn.utils.constants import ArrayShape
-from pydtnn.utils.tensor_array import DescriptorType, MemoryType, TensorArray
+from pydtnn.utils.tensor_array import FormatType, MemoryType, TensorArray
 
 __all__ = ("ForwardedOutputPycuda",)
 
@@ -22,7 +22,7 @@ class ForwardedOutputPycuda(ForwardedOutput[TensorArray], LayerPycuda):
             self.forward_initializer(self.shape, self.model.param_dtype, self.model.random),
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-            desc_type=DescriptorType.TENSOR
+            fmt_type=FormatType.TENSOR
         )
         self.memory_used += self.seted_forward_output.nbytes
 
@@ -30,6 +30,6 @@ class ForwardedOutputPycuda(ForwardedOutput[TensorArray], LayerPycuda):
             self.backward_initializer(self.shape, self.model.param_dtype, self.model.random),
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-            desc_type=DescriptorType.TENSOR
+            fmt_type=FormatType.TENSOR
         )
         self.memory_used += self.seted_backward_output.nbytes

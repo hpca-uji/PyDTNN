@@ -6,7 +6,7 @@ import numpy as np
 
 from pydtnn.backends.pycuda.metrics.abstract.metric import MetricPycuda
 from pydtnn.metrics.precision import Precision
-from pydtnn.utils.tensor_array import DescriptorType, MemoryType, TensorArray
+from pydtnn.utils.tensor_array import FormatType, MemoryType, TensorArray
 
 __all__ = ("PrecisionPycuda",)
 
@@ -25,7 +25,7 @@ class PrecisionPycuda(Precision[TensorArray], MetricPycuda):
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-            desc_type=DescriptorType.TENSOR
+            fmt_type=FormatType.TENSOR
         )
         self.memory_used += self.precision.nbytes
         self.local_precision = TensorArray.zeros(
@@ -33,7 +33,7 @@ class PrecisionPycuda(Precision[TensorArray], MetricPycuda):
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-            desc_type=DescriptorType.TENSOR
+            fmt_type=FormatType.TENSOR
         )
         self.memory_used += self.local_precision.nbytes
 

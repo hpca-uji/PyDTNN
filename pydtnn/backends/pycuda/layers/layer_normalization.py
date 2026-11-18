@@ -7,7 +7,7 @@ import numpy as np
 from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
 from pydtnn.layers.layer_normalization import LayerNormalization
 from pydtnn.utils.constants import ArrayShape
-from pydtnn.utils.tensor_array import DescriptorType, MemoryType, TensorArray
+from pydtnn.utils.tensor_array import FormatType, MemoryType, TensorArray
 
 __all__ = ("LayerNormalizationPycuda",)
 
@@ -30,14 +30,14 @@ class LayerNormalizationPycuda(LayerNormalization[TensorArray], LayerPycuda):
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-            desc_type=DescriptorType.TENSOR
+            fmt_type=FormatType.TENSOR
         )
         self.dx = TensorArray.zeros(
             x.shape,
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-            desc_type=DescriptorType.TENSOR
+            fmt_type=FormatType.TENSOR
         )
 
         # Shape same as x input, but batch = 1. For scaling at the end: output =
@@ -47,28 +47,28 @@ class LayerNormalizationPycuda(LayerNormalization[TensorArray], LayerPycuda):
             np.full(gamma_shape, self.gamma_init_val, self.model.dtype),
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-            desc_type=DescriptorType.NONE
+            fmt_type=FormatType.NONE
         )
         self.beta: TensorArray = TensorArray.zeros(
             gamma_shape,
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-            desc_type=DescriptorType.NONE
+            fmt_type=FormatType.NONE
         )
         self.dgamma: TensorArray = TensorArray.zeros(
             gamma_shape,
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-            desc_type=DescriptorType.NONE
+            fmt_type=FormatType.NONE
         )
         self.dbeta: TensorArray = TensorArray.zeros(
             gamma_shape,
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-            desc_type=DescriptorType.NONE
+            fmt_type=FormatType.NONE
         )
 
         # Shape same as x input, but last layer = 1. For mean computation across
@@ -81,7 +81,7 @@ class LayerNormalizationPycuda(LayerNormalization[TensorArray], LayerPycuda):
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-            desc_type=DescriptorType.NONE
+            fmt_type=FormatType.NONE
         )
         out_shape = x.shape
         self.xn: TensorArray = TensorArray.zeros(
@@ -89,7 +89,7 @@ class LayerNormalizationPycuda(LayerNormalization[TensorArray], LayerPycuda):
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-            desc_type=DescriptorType.NONE
+            fmt_type=FormatType.NONE
         )
 
         self._kernel_init()

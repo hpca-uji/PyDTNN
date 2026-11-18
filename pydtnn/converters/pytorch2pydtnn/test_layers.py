@@ -17,7 +17,7 @@ from pydtnn.abstract.layerable import Layerable
 from pydtnn.converters.pytorch2pydtnn.model_converter import convert_model
 from pydtnn.model import Model as PyDTNN_Model
 from pydtnn.model.base import ModelMode
-from pydtnn.utils.tensor_array import DescriptorType, MemoryType, TensorArray
+from pydtnn.utils.tensor_array import FormatType, MemoryType, TensorArray
 
 # from pydtnn.utils.best_of import BestOf
 
@@ -258,7 +258,7 @@ def test_layers_gpu(model: PyDTNN_Model, dataset: np.ndarray) -> TensorArray:
         dtype,
         tensor_format=model.tensor_format,
         mem_type=MemoryType.GLOBAL if model.use_gpudirect else MemoryType.DEVICE,
-        desc_type=DescriptorType.TENSOR
+        fmt_type=FormatType.TENSOR
     )
 
     _dataset.set(dataset)

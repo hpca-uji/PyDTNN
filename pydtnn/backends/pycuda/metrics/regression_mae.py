@@ -6,7 +6,7 @@ import numpy as np
 
 from pydtnn.backends.pycuda.metrics.abstract.metric import MetricPycuda
 from pydtnn.metrics.regression_mae import RegressionMAE
-from pydtnn.utils.tensor_array import DescriptorType, MemoryType, TensorArray
+from pydtnn.utils.tensor_array import FormatType, MemoryType, TensorArray
 
 __all__ = ("RegressionMAEPycuda",)
 
@@ -28,7 +28,7 @@ class RegressionMAEPycuda(RegressionMAE[TensorArray], MetricPycuda):
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-            desc_type=DescriptorType.TENSOR
+            fmt_type=FormatType.TENSOR
         )
         self.memory_used += self.recall.nbytes
         self.local_recall = TensorArray.zeros(
@@ -36,7 +36,7 @@ class RegressionMAEPycuda(RegressionMAE[TensorArray], MetricPycuda):
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-            desc_type=DescriptorType.TENSOR
+            fmt_type=FormatType.TENSOR
         )
         self.memory_used += self.local_recall.nbytes
 

@@ -12,7 +12,7 @@ from pydtnn.model.base import ModelMode
 from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
                                    PYDTNN_OPS_EVENTS, OpsEventEnum)
 from pydtnn.utils.constants import ArrayShape, Parameters
-from pydtnn.utils.tensor_array import DescriptorType, MemoryType, TensorArray
+from pydtnn.utils.tensor_array import FormatType, MemoryType, TensorArray
 
 __all__ = ("BatchNormalizationPycuda",)
 
@@ -51,7 +51,7 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-            desc_type=DescriptorType.TENSOR
+            fmt_type=FormatType.TENSOR
         )
         self.memory_used += self.y.nbytes
 
@@ -61,7 +61,7 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-            desc_type=DescriptorType.TENSOR
+            fmt_type=FormatType.TENSOR
         )
         self.memory_used += self.dx.nbytes
 
@@ -84,7 +84,7 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
             self.weights_initializer(shape_, self.model.dtype),
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-            desc_type=DescriptorType.TENSOR
+            fmt_type=FormatType.TENSOR
         )
         self.memory_used += self.weights.nbytes
 
@@ -93,7 +93,7 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
             self.biases_initializer(shape_, self.model.dtype),
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-            desc_type=DescriptorType.TENSOR
+            fmt_type=FormatType.TENSOR
         )
         self.memory_used += self.biases.nbytes
 
@@ -102,7 +102,7 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-            desc_type=DescriptorType.TENSOR
+            fmt_type=FormatType.TENSOR
         )
         self.memory_used += self.dw.nbytes
 
@@ -111,7 +111,7 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-            desc_type=DescriptorType.TENSOR
+            fmt_type=FormatType.TENSOR
         )
         self.memory_used += self.db.nbytes
 
@@ -119,7 +119,7 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
             self.running_mean_initializer(shape_, self.model.dtype),
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-            desc_type=DescriptorType.TENSOR
+            fmt_type=FormatType.TENSOR
         )
         self.memory_used += self.running_mean.nbytes
 
@@ -127,7 +127,7 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
             self.running_var_initializer(shape_, self.model.dtype),
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-            desc_type=DescriptorType.TENSOR
+            fmt_type=FormatType.TENSOR
         )
         self.memory_used += self.running_var.nbytes
 
@@ -136,7 +136,7 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-            desc_type=DescriptorType.TENSOR
+            fmt_type=FormatType.TENSOR
         )
         self.memory_used += self.save_mean.nbytes
 
@@ -145,7 +145,7 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
-            desc_type=DescriptorType.TENSOR
+            fmt_type=FormatType.TENSOR
         )
         self.memory_used += self.save_inv_var.nbytes
 

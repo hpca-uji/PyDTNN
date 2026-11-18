@@ -27,8 +27,8 @@ if typing.TYPE_CHECKING:
 type Ary = Any
 
 
-class DescriptorType(StrEnum):
-    """Enumeration of supported descriptor types."""
+class FormatType(StrEnum):
+    """Enumeration of supported format types."""
 
     TENSOR = auto()
     FILTER = auto()
@@ -52,15 +52,15 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
         cls,
         object: Any,
         *,
-        tensor_format: TensorFormat = TensorFormat.NHWC,
+        tensor_format: TensorFormat = TensorFormat.NCHW,
     ) -> TensorArray[tuple[()], np.dtype[np.object_]]:
         """Wraps a object as a TensorArray"""
         return cls(
             np.array(object, dtype=np.object_, ndmax=1),
             host_shape=True,
             tensor_format=tensor_format,
-            desc_type=DescriptorType.NONE,
-            mem_type=MemoryType.HOST
+            mem_type=MemoryType.HOST,
+            fmt_type=FormatType.NONE
         )  # pyright: ignore[reportReturnType]
 
     @classmethod
@@ -71,7 +71,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
         *,
         host_shape: bool = False,
         tensor_format: TensorFormat = TensorFormat.NCHW,
-        desc_type: DescriptorType = DescriptorType.NONE,
+        fmt_type: FormatType = FormatType.NONE,
         mem_type: MemoryType = MemoryType.DEVICE
     ) -> TensorArray[S, D]:
         """Creates a zero-initialized TensorArray."""
@@ -79,7 +79,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
             np.zeros(shape, dtype),
             host_shape=True if host_shape else False,
             tensor_format=tensor_format,
-            desc_type=desc_type,
+            fmt_type=fmt_type,
             mem_type=mem_type
         )
 
@@ -91,7 +91,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
         *,
         host_shape: bool = False,
         tensor_format: TensorFormat = TensorFormat.NCHW,
-        desc_type: DescriptorType = DescriptorType.NONE,
+        fmt_type: FormatType = FormatType.NONE,
         mem_type: MemoryType = MemoryType.DEVICE
     ) -> TensorArray[S, D]:
         """Creates a zero-initialized TensorArray."""
@@ -110,7 +110,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
             gpu_arr,
             host_shape=True if host_shape else ary.shape,
             tensor_format=tensor_format,
-            desc_type=desc_type,
+            fmt_type=fmt_type,
             mem_type=mem_type
         )
 
@@ -121,7 +121,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
         host_shape: S | bool = False,
         tensor_format: TensorFormat = TensorFormat.NCHW,
         mem_type: MemoryType = MemoryType.DEVICE,
-        desc_type: DescriptorType = DescriptorType.NONE,
+        fmt_type: FormatType = FormatType.NONE,
         desc: int | None = None,
     ) -> None:
         """Initializes the TensorArray instance."""
@@ -130,7 +130,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
         self.host_shape: S = ary.shape
         self.tensor_format = TensorFormat(tensor_format.lower())
         self.mem_type = mem_type
-        self.desc_type = desc_type
+        self.fmt_type = fmt_type
         self.desc: int = desc  # pyright: ignore[reportAttributeAccessIssue]
 
         if host_shape is True:
@@ -204,7 +204,8 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
         if not isinstance(value, TensorArray):
             return False
         return (
-            value.desc_type == self.desc_type
+            value.fmt_type == self.fmt_type
+            and value.mem_type == self.mem_type
             and value.tensor_format == self.tensor_format
             and value.ary == self.ary
         )
@@ -212,7 +213,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
     def __repr__(self) -> str:
         """Returns string representation of the TensorArray."""
         data = re.sub(r"[\s\n]+", " ", repr(self.ary))
-        return f"<{self.__class__.__name__} type={self.desc_type} format={self.tensor_format} data={data}>"
+        return f"<{self.__class__.__name__} format={self.fmt_type} memory={self.mem_type} data={data}>"
 
     @property
     def ptr(self) -> ctypes.c_void_p:
@@ -230,8 +231,8 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
 
     def _desc_init(self) -> None:
         """Initializes the cuDNN descriptor."""
-        match self.desc_type:
-            case DescriptorType.TENSOR:
+        match self.fmt_type:
+            case FormatType.TENSOR:
                 from pydtnn.libs import cudnn
                 n, c, h, w = self._decode_shape(self.shape)
                 desc = cudnn.cudnnCreateTensorDescriptor()
@@ -240,7 +241,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
                 cudnn.cudnnSetTensor4dDescriptor(
                     self.desc, self.cudnn_tensor_format, self.cudnn_dtype, n, c, h, w
                 )
-            case DescriptorType.FILTER:
+            case FormatType.FILTER:
                 from pydtnn.libs import cudnn
                 n, c, h, w = self._decode_shape(self.shape)
                 desc = cudnn.cudnnCreateFilterDescriptor()
@@ -249,7 +250,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
                 cudnn.cudnnSetFilter4dDescriptor(
                     self.desc, self.cudnn_dtype, self.cudnn_tensor_format, n, c, h, w
                 )
-            case DescriptorType.SEQ:
+            case FormatType.SEQ:
                 from pydtnn.libs import cudnn
                 desc = cudnn.cudnnCreateSeqDataDescriptor()
                 assert desc
@@ -275,7 +276,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
                     self.seq_length_array,
                     None,
                 )
-            case DescriptorType.NONE:
+            case FormatType.NONE:
                 self.desc = -1
 
             case tensor_type:
@@ -283,17 +284,17 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
 
     def _del_desc(self) -> None:
         """Destroys the cuDNN descriptor."""
-        match self.desc_type:
-            case DescriptorType.TENSOR:
+        match self.fmt_type:
+            case FormatType.TENSOR:
                 from pydtnn.libs import cudnn
                 cudnn.cudnnDestroyTensorDescriptor(self.desc)
-            case DescriptorType.FILTER:
+            case FormatType.FILTER:
                 from pydtnn.libs import cudnn
                 cudnn.cudnnDestroyFilterDescriptor(self.desc)
-            case DescriptorType.SEQ:
+            case FormatType.SEQ:
                 from pydtnn.libs import cudnn
                 cudnn.cudnnDestroySeqDataDescriptor(self.desc)
-            case DescriptorType.NONE:
+            case FormatType.NONE:
                 pass
             case tensor_type:
                 raise NotImplementedError(f"Tensor type not implemented! ({tensor_type})")
@@ -428,7 +429,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
             host_shape=self.host_shape if keep_shape else False,
             tensor_format=self.tensor_format,
             mem_type=self.mem_type,
-            desc_type=self.desc_type,
+            fmt_type=self.fmt_type,
         )
 
     def copy(self) -> TensorArray[S, D]:
@@ -446,7 +447,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
             host_shape=self.host_shape,
             tensor_format=self.tensor_format,
             mem_type=self.mem_type,
-            desc_type=self.desc_type,
+            fmt_type=self.fmt_type,
         )
         return obj
 
