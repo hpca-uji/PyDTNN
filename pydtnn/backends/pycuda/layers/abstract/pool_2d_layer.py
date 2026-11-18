@@ -7,8 +7,8 @@ from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
 from pydtnn.layers.abstract.layer import ParameterException
 from pydtnn.layers.abstract.pool_2d_layer import AbstractPool2DLayer
 from pydtnn.libs import cudnn as cudnn
-from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
-                                   PYDTNN_OPS_EVENTS, OpsEventEnum)
+from pydtnn.tracers.abstract.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
+                                            PYDTNN_OPS_EVENTS, OpsEventEnum)
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.performance_models import col2im_time, im2col_time
 from pydtnn.utils.tensor_array import FormatType, MemoryType, TensorArray

@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING
 from pydtnn.backends.numpy.layers.abstract.layer import LayerNumpy
 from pydtnn.layers.flatten import Flatten
 from pydtnn.libs import numpy as np
-from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
-                                   PYDTNN_OPS_EVENTS, OpsEventEnum)
+from pydtnn.tracers.abstract.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
+                                            PYDTNN_OPS_EVENTS, OpsEventEnum)
 
 __all__ = ("FlattenNumpy",)
 

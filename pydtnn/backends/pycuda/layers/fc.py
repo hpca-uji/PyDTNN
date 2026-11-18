@@ -9,8 +9,8 @@ from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
 from pydtnn.backends.pycuda.utils import matmul_gpu, matvec_gpu
 from pydtnn.layers.fc import FC
 from pydtnn.libs import cudnn as cudnn
-from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
-                                   PYDTNN_OPS_EVENTS, OpsEventEnum)
+from pydtnn.tracers.abstract.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
+                                            PYDTNN_OPS_EVENTS, OpsEventEnum)
 from pydtnn.utils.constants import ArrayShape, Parameters
 from pydtnn.utils.performance_models import matmul_time
 from pydtnn.utils.tensor_array import FormatType, MemoryType, TensorArray

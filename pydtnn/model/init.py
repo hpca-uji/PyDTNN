@@ -262,23 +262,23 @@ class Init[T: Array](Repr[T]):  # noqa: D101 (generics not detected)
         """Initializes the performance tracing mechanism."""
         match self.tracer_name:
             case TracerType.NONE:
-                from pydtnn.tracers.simple_tracer import SimpleTracer
+                from pydtnn.tracers.simple import SimpleTracer
 
                 tracer = SimpleTracer(self.tracing, self.tracer_output, self.comm)
             case TracerType.SIMPLE:
-                from pydtnn.tracers.simple_tracer import SimpleTracer
+                from pydtnn.tracers.simple import SimpleTracer
 
                 tracer = SimpleTracer(self.tracing, self.tracer_output, self.comm)
             case TracerType.EXTRAE:
-                from pydtnn.tracers.extrae_tracer import ExtraeTracer
+                from pydtnn.tracers.extrae import ExtraeTracer
 
                 tracer = ExtraeTracer(self.tracing)
             case TracerType.GPU:
-                from pydtnn.tracers.gpu_tracer import SimpleTracerGpu
+                from pydtnn.tracers.gpu import SimpleTracerGpu
 
                 tracer = SimpleTracerGpu(self.tracing, self.tracer_output, self.comm)
             case TracerType.PMLIB:
-                from pydtnn.tracers.pmlib_tracer import SimpleTracerPMLib
+                from pydtnn.tracers.pmlib import SimpleTracerPMLib
 
                 tracer = SimpleTracerPMLib(
                     self.tracing,
@@ -399,7 +399,5 @@ class Init[T: Array](Repr[T]):  # noqa: D101 (generics not detected)
             raise ValueError("The model has no dataset")
         if not self.layers:
             logger.warning("The model has no layers")
-        if self.layers and not isinstance(self.layers[0], Identity):
-            logger.warning("The model has no input layer")
         if not self._model_inited:
             self._model_init()

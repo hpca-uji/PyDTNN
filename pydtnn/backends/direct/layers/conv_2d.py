@@ -10,8 +10,8 @@ import numpy as np
 from pydtnn.backends.direct.layers.abstract.conv_2d import AbstractConv2DDirect
 from pydtnn.backends.numpy.layers.conv_2d import Conv2DNumpy
 from pydtnn.libs.convDirect import ConvDirect
-from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
-                                   PYDTNN_OPS_EVENTS, OpsEventEnum)
+from pydtnn.tracers.abstract.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
+                                            PYDTNN_OPS_EVENTS, OpsEventEnum)
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import encode_shape
 

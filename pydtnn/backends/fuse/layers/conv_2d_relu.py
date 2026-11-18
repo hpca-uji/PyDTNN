@@ -8,8 +8,8 @@ from pydtnn.backends.fuse.layers.abstract.layer import LayerFuse
 from pydtnn.backends.numpy.layers.abstract.conv_2d_standard import AbstractConv2DStandardNumpy
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.libs import numpy as np
-from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
-                                   PYDTNN_OPS_EVENTS, OpsEventEnum)
+from pydtnn.tracers.abstract.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
+                                            PYDTNN_OPS_EVENTS, OpsEventEnum)
 from pydtnn.utils.constants import ArrayShape
 
 __all__ = ("Conv2DReluFuse",)

@@ -15,8 +15,8 @@ from pydtnn.backends.cython.utils.im2row_1ch_nhwc_cython import (im2row_1ch_nhwc
                                                                  row2im_1ch_nhwc_cython)
 from pydtnn.backends.numpy.layers.average_pool_2d import AveragePool2DNumpy
 from pydtnn.libs import numpy as np
-from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
-                                   PYDTNN_OPS_EVENTS, OpsEventEnum)
+from pydtnn.tracers.abstract.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
+                                            PYDTNN_OPS_EVENTS, OpsEventEnum)
 
 __all__ = ("AveragePool2DCython",)
 

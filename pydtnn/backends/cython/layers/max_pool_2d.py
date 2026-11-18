@@ -16,8 +16,8 @@ from pydtnn.backends.cython.utils.max_pool_2d_nhwc_cython import (max_pool_2d_bw
 from pydtnn.backends.numpy.layers.max_pool_2d import MaxPool2DNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.model.base import ModelMode
-from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
-                                   PYDTNN_OPS_EVENTS, OpsEventEnum)
+from pydtnn.tracers.abstract.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
+                                            PYDTNN_OPS_EVENTS, OpsEventEnum)
 
 __all__ = ("MaxPool2DCython",)
 

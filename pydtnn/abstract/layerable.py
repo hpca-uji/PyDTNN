@@ -9,8 +9,8 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 
 from pydtnn.abstract.base import Base
-from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
-                                   PYDTNN_OPS_EVENTS, OpsEventEnum)
+from pydtnn.tracers.abstract.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
+                                            PYDTNN_OPS_EVENTS, OpsEventEnum)
 from pydtnn.utils.constants import Array, ArrayShape, Parameters, SyncMode
 
 __all__ = ("Layerable",)

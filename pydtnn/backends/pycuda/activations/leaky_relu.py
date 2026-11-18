@@ -8,7 +8,7 @@ import numpy as np
 
 from pydtnn.activations.leaky_relu import LeakyRelu
 from pydtnn.backends.pycuda.activations.abstract.activation import ActivationPycuda
-from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, OpsEventEnum
+from pydtnn.tracers.abstract.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, OpsEventEnum
 from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
 from pydtnn.utils.performance_models import col2im_time, im2col_time
 from pydtnn.utils.tensor_array import FormatType, MemoryType, TensorArray

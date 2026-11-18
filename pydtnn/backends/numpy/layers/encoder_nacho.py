@@ -10,7 +10,7 @@ from pydtnn.layers.feed_forward_nacho import FeedForwardNacho
 from pydtnn.layers.layer_normalization import LayerNormalization
 from pydtnn.layers.multi_head_attention_nacho import MultiHeadAttentionNacho
 from pydtnn.libs import numpy as np
-from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, OpsEventEnum
+from pydtnn.tracers.abstract.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, OpsEventEnum
 from pydtnn.utils.constants import ArrayShape
 
 __all__ = ("EncoderNumpyNacho",)

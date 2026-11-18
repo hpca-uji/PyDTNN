@@ -19,8 +19,8 @@ from tqdm import tqdm
 from pydtnn.datasets.abstract import Dataset
 from pydtnn.model.base import ModelMode
 from pydtnn.model.sync import Sync
-from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT,
-                                   PYDTNN_MDL_EVENTS, MdlEventEnum)
+from pydtnn.tracers.abstract.events import (PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT,
+                                            PYDTNN_MDL_EVENTS, MdlEventEnum)
 from pydtnn.utils import term
 from pydtnn.utils.constants import Array, SyncMode
 from pydtnn.utils.logs import TqdmLogger

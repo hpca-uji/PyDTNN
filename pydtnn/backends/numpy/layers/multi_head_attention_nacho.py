@@ -12,7 +12,7 @@ from pydtnn.layers.multiplication_block import MultiplicationBlock
 from pydtnn.layers.product_scalar import ProductScalar
 from pydtnn.libs import numpy as np
 from pydtnn.model.base import ModelMode
-from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, OpsEventEnum
+from pydtnn.tracers.abstract.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, OpsEventEnum
 from pydtnn.utils import initializers
 from pydtnn.utils.constants import ArrayShape
 

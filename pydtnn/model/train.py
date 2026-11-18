@@ -13,8 +13,8 @@ from pydtnn import MPI
 from pydtnn.datasets.abstract import Dataset
 from pydtnn.model.base import ModelMode
 from pydtnn.model.eval import Eval
-from pydtnn.tracers.events import (PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT,
-                                   PYDTNN_MDL_EVENTS, MdlEventEnum)
+from pydtnn.tracers.abstract.events import (PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT,
+                                            PYDTNN_MDL_EVENTS, MdlEventEnum)
 from pydtnn.utils.constants import Array, SyncMode
 
 __all__ = ("Train",)
