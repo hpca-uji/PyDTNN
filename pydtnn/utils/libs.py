@@ -180,7 +180,7 @@ def which(name: str, mode: int = os.F_OK | os.X_OK, src: str = package_name) -> 
     resrc = entry_exe(itertools.chain.from_iterable(list_resources(top) for top in top_levels(src)))
 
     # Find executable
-    logger.debug(f"EXE finding {name!r} ({src or 'any'} preferred)")
+    logger.debug(f"EXE finding {name!r} ({src!r} preferred)")
     for entry in dist:
         logger.debug(f"EXE found {name!r} (from distribution)")
         return entry
