@@ -21,7 +21,7 @@ from pydtnn.model.repr import Repr
 from pydtnn.models import select as select_model
 from pydtnn.optimizers import select as select_optimizer
 from pydtnn.schedulers import select as select_scheduler
-from pydtnn.tracers.tracer import TracerType
+from pydtnn.tracers.abstract.base import TracerType
 from pydtnn.utils import rand
 from pydtnn.utils.gpu import nccl_dtype_from_numpy, cudnn_dtype_from_numpy
 from pydtnn.utils.memory_pool import PreallocMemory, PrivateMemory
@@ -204,9 +204,6 @@ class Init[T: Array](Repr[T]):  # noqa: D101 (generics not detected)
         """Initializes CUDA, cuDNN, and NCCL backend handles."""
         # if not self.use_gpudirect and self.use_nccl:
         #     raise RuntimeError("It is necessary to have gpudirect active to work with NCCL.")
-
-        if pycuda_stream is not None:
-            self.tracer.set_stream(pycuda_stream)
 
         self.nccl_comm = None  # pyright: ignore[reportAttributeAccessIssue]
         if self.use_nccl:

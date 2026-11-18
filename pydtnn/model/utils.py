@@ -7,7 +7,7 @@ import numpy as np
 from pydtnn import package_name, state_path, timestamp, utils
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.model.base import Base
-from pydtnn.tracers.tracer import TracerType
+from pydtnn.tracers.abstract.base import TracerType
 from pydtnn.utils.constants import Array, ArrayShape
 from pydtnn.utils.tensor import decode_shape, decode_tensor, encode_shape, encode_tensor
 

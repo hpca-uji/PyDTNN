@@ -25,6 +25,9 @@ class LayerableCupy(LayerableNumpy, BaseCupy):
         if self.id != self.model.backend.id:
             return None
 
+        # Set tracer stream
+        self.model.tracer.set_stream(self.model.cupy_stream)
+
         # Calculate the kernel sizes
         attrs = cupy_driver.runtime.getDeviceProperties(self.model.cupy_device)
 

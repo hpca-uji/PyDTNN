@@ -29,7 +29,7 @@ from pydtnn.abstract.base import Base
 from pydtnn.datasets.abstract.base import Base as DatasetBase
 from pydtnn.model.base import Base as ModelBase
 from pydtnn.model.base import SyncAlgorithm, SyncParticipation
-from pydtnn.tracers.tracer import TracerType
+from pydtnn.tracers.abstract.base import TracerType
 from pydtnn.utils import read_dir
 from pydtnn.utils.constants import NetworkAlgoEnum
 from pydtnn.utils.tensor import TensorFormat

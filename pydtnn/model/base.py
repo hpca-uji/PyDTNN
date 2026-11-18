@@ -21,7 +21,7 @@ from pydtnn.losses.abstract.loss import Loss
 from pydtnn.metrics.abstract.metric import Metric
 from pydtnn.optimizers.abstract.optimizer import Optimizer
 from pydtnn.schedulers.abstract.scheduler import Scheduler
-from pydtnn.tracers.tracer import Tracer, TracerType
+from pydtnn.tracers.abstract.base import Tracer, TracerType
 from pydtnn.utils.constants import Array, ArrayShape, NetworkAlgoEnum
 from pydtnn.utils.memory_pool import PrivateMemory
 from pydtnn.utils.tensor import TensorFormat

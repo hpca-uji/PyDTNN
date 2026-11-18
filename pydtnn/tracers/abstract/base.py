@@ -12,9 +12,8 @@ from typing import TYPE_CHECKING, Any
 
 from pydtnn.tracers.events import (PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT,
                                    PYDTNN_OPS_EVENTS, MdlEventEnum, OpsEventEnum)
-from pydtnn.utils import find_component
 
-__all__ = ("TracerType", "EventType", "PostInitCaller", "StreamType", "Tracer", "select")
+__all__ = ("TracerType", "EventType", "PostInitCaller", "StreamType", "Tracer", )
 
 logger = logging.getLogger(__name__)
 
@@ -238,17 +237,3 @@ class Tracer(metaclass=PostInitCaller):
         Args:
             stream: The stream object to use for output.
         """
-
-
-def select(name: str) -> type[Tracer]:
-    """
-    Select and return a tracer class by name.
-
-    Args:
-        name: The name of the tracer class to retrieve.
-
-    Returns:
-        The tracer class.
-    """
-    assert __package__, "Package not found!"
-    return find_component(__package__, name)

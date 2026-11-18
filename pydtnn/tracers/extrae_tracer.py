@@ -8,7 +8,7 @@ import os
 from importlib import import_module
 from typing import TYPE_CHECKING
 
-from pydtnn.tracers.tracer import StreamType, Tracer
+from pydtnn.tracers.abstract.base import StreamType, Tracer
 
 __all__ = ("ExtraeTracer",)
 

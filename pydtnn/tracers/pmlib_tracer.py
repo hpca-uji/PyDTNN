@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from pydtnn.tracers.simple_tracer import SimpleTracer
-from pydtnn.tracers.tracer import StreamType
+from pydtnn.tracers.abstract.base import StreamType
 from pydtnn.utils.pmlib import PMLib
 
 __all__ = ("SimpleTracerPMLib",)
