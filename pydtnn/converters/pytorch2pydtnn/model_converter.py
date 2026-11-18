@@ -176,16 +176,17 @@ def convert_layers(
         A list of converted PyDTNN layers.
     """
 
-    converted_layers: dict[str, tuple[Layerable, str | None]] = dict()
+    converted_layers: dict[str, tuple[Layerable | None, str | None]] = dict()
 
     # NOTE: There is no way to get the input shape from a PyTorch model due
     # depends of the dataset ==> The input shape will be a parameter set by
     # the user.
     layer_var_names = list(layers.keys())
 
-    # fst_layer = layer_var_names[0]
-    # _input = layers[fst_layer][1]
-    # converted_layers[_input] = (Identity(input_shape), None)
+    fst_layer = layer_var_names[0]
+    _input = layers[fst_layer][1]
+    converted_layers[_input] = (None, None)
+    is_the_first_layer: bool = True
 
     dict_equivalent_layer = dict()
     # If there are two layers like the following ones:
@@ -196,7 +197,6 @@ def convert_layers(
 
     # layer_var_names: {value's variable (str): ([function (str) or layer
     # (nn.Module)], arguments (str))}
-    first_layer: bool = True
     for operation_variable in layer_var_names:
         operation, params = layers[operation_variable]
 
@@ -210,7 +210,7 @@ def convert_layers(
             args = {
                 cm.ARGUMENTS: vars(layer)
             }  # NOTE: In this context, params are the input layers.
-            if first_layer:
+            if is_the_first_layer:
                 args[cm.SHAPE] = {cm.SHAPE: input_shape}
             converted_layer = cm.switch_pytorch_pydtnn(name)(args)
 
@@ -227,10 +227,11 @@ def convert_layers(
 
             converted_layers[operation_variable] = cm.function_operation_to_pydtnn(operation)(args)
             # NOTE: Remember, originally these were functions, then they does not have weights nor biases.
-        first_layer = False
+        is_the_first_layer = False
     # "for operation_variable in layer_var_names" end.
 
-    list_layers = [layer for layer, _input in converted_layers.values()]
+    list_layers = [layer for layer, _input in converted_layers.values() if layer is not None]
+    breakpoint()
     return list_layers
 
 
