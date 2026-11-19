@@ -8,7 +8,9 @@ export PYTHONOPTIMIZE=2
 export PYTHONUNBUFFERED="True"
 python3 "${dir:?}/export_dataset.py" \
   --model=simplecnn \
-  --dataset=mnist \
+  --dataset=folder \
   --dataset-path=datasets/mnist \
-  --parallel-data=False \
-  --shared-storage=True
+  --parallel-data \
+  --shared-data \
+  --input-scale \
+  --input-scale-size=600
