@@ -88,7 +88,8 @@ class Utils[T: Array](Base[T]):  # noqa: D101 (generics not detected)
     @property
     def backend(self) -> Layerable[T]:
         """Backend shared state (layer)"""
-        # NOTE: It can be any layer.
+        # NOTE: It always will be the 1st layer.
+        # (Technically it could be any layer, but after some changes, it's better to not change it.)
         return self.layers[0]
 
     @property

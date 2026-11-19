@@ -250,11 +250,11 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
             x_model = np.asarray(x_model, dtype=self.model.dtype, order="C")
             y_model = np.asarray(y_model, dtype=self.model.dtype, order="C")
 
-            self.y.set(x_model)
+            self.x.set(x_model)
             self.y_model.set(y_model)
-            x, y_targ = self.model.layers[0].y, self.y_model
+            x, y_targ = self.model.backend.x, self.y_model
         else:
-            x, y_targ = self.model.layers[0].y[:0], self.y_model[:0]
+            x, y_targ = self.model.backend.x[:0], self.y_model[:0]
         return x, y_targ
 
     _memory_pool_size = 0
