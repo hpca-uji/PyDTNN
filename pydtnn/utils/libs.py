@@ -151,6 +151,7 @@ def load_library(name: str, ver: str = "", src: str = package_name) -> ctypes.CD
         for entry in env
         if isinstance(entry, Path) and entry.name in libs and entry.exists()
     ]
+
     env.sort(key=entry_name)
     env = {
         entry: list(map(str, entries))
