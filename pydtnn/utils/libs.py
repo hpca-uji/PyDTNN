@@ -56,6 +56,7 @@ def lib_names(name: str, ver: str = "") -> Iterable[str]:
 
     vers = ver.split(",") if ver else []
     vers = list(itertools.chain.from_iterable(map(ver_expand, vers)))
+    vers.append("")
 
     # Define template
     match sys.platform:
@@ -68,14 +69,18 @@ def lib_names(name: str, ver: str = "") -> Iterable[str]:
             tmp = "{name}.so{ver}"
 
     # Compute posibilites
+    libs = set()
     for ver, pre, sep in itertools.product(vers, pres, seps):
         kwds = {"name": name, "ver": ver}
         if pre:
             kwds["name"] = f"{pre}{name}"
         if ver:
             kwds["ver"] = f"{sep}{ver}"
-        yield tmp.format(**kwds)
-    yield tmp.format(name=name, ver="")
+        lib = tmp.format(**kwds)
+        if lib in lib:
+            continue
+        libs.add(lib)
+        yield lib
 
 
 def list_distribution(name: str) -> Iterable:
@@ -146,7 +151,7 @@ def load_library(name: str, ver: str = "", src: str = package_name) -> ctypes.CD
         for entry in env
         if isinstance(entry, Path) and entry.name in libs and entry.exists()
     ]
-
+    breakpoint()
     env.sort(key=entry_name)
     env = {
         entry: list(map(str, entries))
