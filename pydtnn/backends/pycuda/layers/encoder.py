@@ -54,12 +54,12 @@ class EncoderPycuda(EncoderNacho[TensorArray], AbstractBlockLayerPycuda):
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
         """Initializes the backend model and sub-layers with input shapes."""
         super()._model_init(prev_shape, x)
-        self.y = x
+        self.y = self.x
         if type(x) is tuple:
             x_enc, mask_enc = x
             x_enc_shape, mask_enc_shape = prev_shape  # noqa: F841
         else:
-            x_enc = x
+            x_enc = self.x
             x_enc_shape = prev_shape
             mask_enc = None
             mask_enc_shape = ()  # noqa: F841

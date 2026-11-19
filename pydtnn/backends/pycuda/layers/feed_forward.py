@@ -41,7 +41,7 @@ class FeedForwardPycuda(FeedForwardNacho[TensorArray], AbstractBlockLayerPycuda)
         for layer in self.children:
             layer._init_backend_with_model(self.model)
 
-        self.FC_1._model_init(prev_shape=(self.shape[-1],), x=x)
+        self.FC_1._model_init(prev_shape=(self.shape[-1],), x=self.x)
         self.relu._model_init(prev_shape=(self.d_ff,), x=self.FC_1.y)
         self.dropout._model_init(prev_shape=(self.d_ff,), x=self.relu.y)
         self.FC_2._model_init(prev_shape=(self.d_ff,), x=self.dropout.y)
