@@ -95,7 +95,7 @@ logger = logging.getLogger(__name__)
 
 
 # Load library:
-_libcudnn = load_library("cudnn", ver="9.24.0.43", src="nvidia-cudnn-cu13")
+_libcudnn = load_library("cudnn", ver="9.24.0.43,9.20.0.48", src="nvidia-cudnn-cu13,nvidia-cudnn-cu12")
 
 
 # cuDNN error

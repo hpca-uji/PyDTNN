@@ -43,12 +43,19 @@ def top_levels(name: str) -> Iterable[str]:
             yield top
 
 
+def ver_expand(ver: str, min: int = 0) -> Iterable[str]:
+    """Generate version specifiers"""
+    vers = ver.split(".") if ver else []
+    return [".".join(vers[:i]) for i in range(len(vers), min, -1)]
+
+
 def lib_names(name: str, ver: str = "") -> Iterable[str]:
     """Generate posible library filenames"""
     pres = ["lib", ""]
     seps = [".", "-", "_"]
-    vers = ver.split(".") if ver else []
-    vers = [".".join(vers[:i]) for i in range(len(vers), -1, -1)]
+
+    vers = ver.split(",") if ver else []
+    vers = list(itertools.chain.from_iterable(map(ver_expand, vers)))
 
     # Define template
     match sys.platform:
@@ -68,6 +75,7 @@ def lib_names(name: str, ver: str = "") -> Iterable[str]:
         if ver:
             kwds["ver"] = f"{sep}{ver}"
         yield tmp.format(**kwds)
+    yield tmp.format(name=name, ver="")
 
 
 def list_distribution(name: str) -> Iterable:
@@ -122,28 +130,35 @@ def load_library(name: str, ver: str = "", src: str = package_name) -> ctypes.CD
     # Explore package
     order = list(lib_names(name, ver))
     libs = frozenset(order)
+    srcs = src.split(",")
 
-    def entry_map(entries: Iterable) -> dict:
-        return {
-            entry.name: str(entry)
-            for entry in entries
-            if isinstance(entry, Path) and entry.name in libs and entry.exists()
-        }
+    def entry_name(entry):  # pyright: ignore[reportMissingParameterType]
+        return entry.name
 
-    dist = entry_map(list_distribution(src))
-    resrc = entry_map(itertools.chain.from_iterable(list_resources(top) for top in top_levels(src)))
+    env = []
+    for src in srcs:
+        env.extend(list_distribution(src))
+        for top in top_levels(src):
+            env.extend(list_resources(top))
+
+    env = [
+        entry
+        for entry in env
+        if isinstance(entry, Path) and entry.name in libs and entry.exists()
+    ]
+
+    env.sort(key=entry_name)
+    env = {
+        entry: list(map(str, entries))
+        for entry, entries in itertools.groupby(env, key=entry_name)
+    }
 
     # Find library
     logger.debug(f"DLL finding {name!r} ({ver or 'any'} in {src!r} preferred)")
     for lib in order:
-        if entry := dist.get(lib):
+        for entry in env.get(lib, []):
             module = loader(entry)
-            logger.debug(f"DLL loaded {lib!r} (from distribution)")
-            return module
-
-        if entry := resrc.get(lib):
-            module = loader(entry)
-            logger.debug(f"DLL loaded {lib!r} (from resources)")
+            logger.debug(f"DLL loaded {lib!r} (from environment)")
             return module
 
         try:
@@ -169,24 +184,24 @@ def which(name: str, mode: int = os.F_OK | os.X_OK, src: str = package_name) -> 
     """
 
     # Explore package
-    def entry_exe(entries: Iterable) -> list:
-        return [
-            str(entry)
-            for entry in entries
-            if isinstance(entry, Path) and entry.name == name and os.access(entry, mode)
-        ]
+    srcs = src.split(",")
 
-    dist = entry_exe(list_distribution(src))
-    resrc = entry_exe(itertools.chain.from_iterable(list_resources(top) for top in top_levels(src)))
+    env = []
+    for src in srcs:
+        env.extend(list_distribution(src))
+        for top in top_levels(src):
+            env.extend(list_resources(top))
+
+    env = [
+        str(entry)
+        for entry in env
+        if isinstance(entry, Path) and entry.name == name and os.access(entry, mode)
+    ]
 
     # Find executable
     logger.debug(f"EXE finding {name!r} ({src!r} preferred)")
-    for entry in dist:
-        logger.debug(f"EXE found {name!r} (from distribution)")
-        return entry
-
-    for entry in resrc:
-        logger.debug(f"EXE found {name!r} (from resources)")
+    for entry in env:
+        logger.debug(f"EXE found {name!r} (from environment)")
         return entry
 
     if entry := shutil.which(name, mode):

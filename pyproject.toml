@@ -58,6 +58,9 @@ data-image = [
 data-lang = [
     "spacy~=3.8"
 ]
+data-blas = [
+    "mkl~=2026.1"
+]
 data = [
     "pydtnn[data-arch]",
     "pydtnn[data-image]",
@@ -67,9 +70,9 @@ data = [
 gpu-cuda = [
     "nvidia-cuda-nvcc~=13.0",
     "nvidia-cuda-runtime~=13.0",
-    "nvidia-cublas~=13.0",
-    "nvidia-cudnn-cu13~=9.13",
-    "nvidia-nccl-cu13~=2.27"
+    "nvidia-cublas~=13.1",
+    "nvidia-cudnn-cu13~=9.24",
+    "nvidia-nccl-cu13~=2.30"
 ]
 gpu-cupy = [
     "cupy-cuda13x~=14.0"
