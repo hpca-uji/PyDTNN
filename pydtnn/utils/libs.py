@@ -77,7 +77,7 @@ def lib_names(name: str, ver: str = "") -> Iterable[str]:
         if ver:
             kwds["ver"] = f"{sep}{ver}"
         lib = tmp.format(**kwds)
-        if lib in lib:
+        if lib in libs:
             continue
         libs.add(lib)
         yield lib
