@@ -41,8 +41,15 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
             self._state_reduce_sync = self._state_reduce_sync_cpu
             self._state_reduce_wait = self._state_reduce_wait_cpu
 
+        # NOTE: 1st layer of the model it's self.model.backend, there are stored global parameters.
+        #  so "self.id == self.model.backend.id" = "it's the 1st layer".
         if self.id != self.model.backend.id:
             return None
+
+        self.x = TensorArray.zeros(prev_shape, self.model.dtype,
+                                   tensor_format=self.model.tensor_format,
+                                   mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
+                                   fmt_type=FormatType.TENSOR)
 
         # Set tracer stream
         self.model.tracer.set_stream(self.model.pycuda_stream, pycuda_driver.Event)
