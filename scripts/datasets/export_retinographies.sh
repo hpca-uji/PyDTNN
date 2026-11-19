@@ -10,7 +10,7 @@ python3 "${dir:?}/export_dataset.py" \
   --model=simplecnn \
   --dataset=folder \
   --dataset-path=datasets/mnist \
-  --parallel-data \
+  --no-parallel-data \
   --shared-data \
   --input-scale \
   --input-scale-size=600
