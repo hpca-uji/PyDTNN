@@ -26,4 +26,4 @@ class MaxPool2DPycuda(MaxPool2D[TensorArray], AbstractPool2DLayerPycuda):
         """
         super()._model_init(prev_shape, x)
         pool_mode = cudnn.cudnnPoolingMode["CUDNN_POOLING_MAX"]
-        self.initialize_pool_2d_gpu(prev_shape, x, pool_mode)
+        self.initialize_pool_2d_gpu(prev_shape, self.x, pool_mode)

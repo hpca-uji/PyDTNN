@@ -53,13 +53,13 @@ class EncoderDecoderPycuda(EncoderDecoder[TensorArray], AbstractBlockLayerPycuda
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
         """Initializes the model structure and sublayers for PyCUDA execution."""
         super()._model_init(prev_shape, x)
-        if len(x) == 2:
-            x_enc, x_dec = x
+        if len(self.x) == 2:
+            x_enc, x_dec = self.x
             mask_enc = mask_dec = None
             enc_shape = (prev_shape[0], ())
             dec_shape = (prev_shape[0], prev_shape[1], ())
         else:
-            x_enc, mask_enc, x_dec, mask_dec = x
+            x_enc, mask_enc, x_dec, mask_dec = self.x
             enc_shape = (prev_shape[0], prev_shape[1])
             dec_shape = (prev_shape[2], prev_shape[0], prev_shape[3])
         self.embedl = x_enc.shape[-1]

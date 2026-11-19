@@ -17,8 +17,6 @@ logger = logging.getLogger(__name__)
 class AdditionBlockPycuda(AdditionBlock[TensorArray], AbstractBlockLayerPycuda):
     """PyCUDA-accelerated addition block layer for parallel path summation."""
 
-    y: TensorArray
-
     def forward(self, x: TensorArray) -> TensorArray:
         """
         Performs the forward pass by summing outputs from multiple parallel paths.

@@ -60,7 +60,7 @@ class DecoderPycuda(DecoderNacho[TensorArray], AbstractBlockLayerPycuda):
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
         """Initializes the backend model and sub-layer structures."""
         super()._model_init(prev_shape, x)
-        x_dec, x_enc, mask_dec = x
+        x_dec, x_enc, mask_dec = self.x
         x_dec_shape, x_enc_shape, mask_dec_shape = prev_shape
         mha_shape = (x_dec_shape, mask_dec_shape)
 

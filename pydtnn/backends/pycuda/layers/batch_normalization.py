@@ -47,7 +47,7 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
 
         # Activations y
         self.y = TensorArray.zeros(
-            x.shape,
+            self.x.shape,
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
@@ -57,7 +57,7 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
 
         # Derivative dx
         self.dx = TensorArray.zeros(
-            x.shape,
+            self.x.shape,
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
@@ -71,7 +71,7 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
         ]
 
         self.weights_biases_mean_var_desc = cudnn.cudnnCreateTensorDescriptor()
-        cudnn.cudnnDeriveBNTensorDescriptor(self.weights_biases_mean_var_desc, x.desc, self.mode)
+        cudnn.cudnnDeriveBNTensorDescriptor(self.weights_biases_mean_var_desc, self.x.desc, self.mode)
         if self.spatial:
             self.ci, self.hi, self.wi = self.model.decode_shape(prev_shape)
         else:

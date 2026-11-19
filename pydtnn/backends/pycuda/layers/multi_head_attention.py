@@ -37,7 +37,7 @@ class MultiHeadAttentionPycuda(MultiHeadAttentionNacho[TensorArray], LayerPycuda
     def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
         """Initializes model parameters, cuDNN descriptors, and GPU memory buffers."""
         super()._model_init(prev_shape, x)
-        self.query, self.key, self.value, self.mask = x
+        self.query, self.key, self.value, self.mask = self.x
         self.shape = prev_shape
 
         self.batch = self.query.shape[0]

@@ -90,7 +90,7 @@ class Conv2DPycuda(AbstractConv2DPycuda):
 
         # Get output dimensions
         _, _, _ho, _wo = cudnn.cudnnGetConvolution2dForwardOutputDim(
-            self.conv_desc, x.desc, self.weights.desc
+            self.conv_desc, self.x.desc, self.weights.desc
         )
         assert self.ho == _ho and self.wo == _wo, "cuDNN output sizes differ from expected ones!"
 
@@ -100,7 +100,7 @@ class Conv2DPycuda(AbstractConv2DPycuda):
         self.fwd_algo = (
             cudnn.cudnnFindConvolutionForwardAlgorithm(
                 self.model.cudnn_handle,
-                x.desc,
+                self.x.desc,
                 self.weights.desc,
                 self.conv_desc,
                 self.y.desc,
@@ -114,7 +114,7 @@ class Conv2DPycuda(AbstractConv2DPycuda):
 
         local_size = cudnn.cudnnGetConvolutionForwardWorkspaceSize(
             self.model.cudnn_handle,
-            x.desc,
+            self.x.desc,
             self.weights.desc,
             self.conv_desc,
             self.y.desc,
@@ -125,7 +125,7 @@ class Conv2DPycuda(AbstractConv2DPycuda):
         self.bwd_dw_algo = (
             cudnn.cudnnFindConvolutionBackwardFilterAlgorithm(
                 self.model.cudnn_handle,
-                x.desc,
+                self.x.desc,
                 self.y.desc,
                 self.conv_desc,
                 self.weights.desc,
@@ -137,7 +137,7 @@ class Conv2DPycuda(AbstractConv2DPycuda):
 
         local_size = cudnn.cudnnGetConvolutionBackwardFilterWorkspaceSize(
             self.model.cudnn_handle,
-            x.desc,
+            self.x.desc,
             self.y.desc,
             self.conv_desc,
             self.weights.desc,
@@ -151,7 +151,7 @@ class Conv2DPycuda(AbstractConv2DPycuda):
                 self.weights.desc,
                 self.y.desc,
                 self.conv_desc,
-                x.desc,
+                self.x.desc,
                 req_algs,
             )[0].algo
             if self.model.use_cudnn_auto_conv_algo
@@ -163,7 +163,7 @@ class Conv2DPycuda(AbstractConv2DPycuda):
             self.weights.desc,
             self.y.desc,
             self.conv_desc,
-            x.desc,
+            self.x.desc,
             self.bwd_dx_algo,
         )
         self.model.backend._ensure_memory_pool(local_size)

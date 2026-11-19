@@ -21,19 +21,18 @@ class LayerNormalizationPycuda(LayerNormalization[TensorArray], LayerPycuda):
         """Initialize layer parameters and GPU buffers."""
         super()._model_init(prev_shape, x)
         self.shape = prev_shape
-        self.x = x
         self.epsilon = np.float32(self.epsilon)
 
         # Shape same as x input
         self.y = TensorArray.zeros(
-            x.shape,
+            self.x.shape,
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
             fmt_type=FormatType.TENSOR
         )
         self.dx = TensorArray.zeros(
-            x.shape,
+            self.x.shape,
             self.model.dtype,
             tensor_format=self.model.tensor_format,
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
@@ -42,7 +41,7 @@ class LayerNormalizationPycuda(LayerNormalization[TensorArray], LayerPycuda):
 
         # Shape same as x input, but batch = 1. For scaling at the end: output =
         # scale * post_normalization + bias
-        gamma_shape = (int(np.prod([x.shape[i] for i in self.axis])),)
+        gamma_shape = (int(np.prod([self.x.shape[i] for i in self.axis])),)
         self.gamma: TensorArray = TensorArray.asarray(
             np.full(gamma_shape, self.gamma_init_val, self.model.dtype),
             tensor_format=self.model.tensor_format,
@@ -74,7 +73,7 @@ class LayerNormalizationPycuda(LayerNormalization[TensorArray], LayerPycuda):
         # Shape same as x input, but last layer = 1. For mean computation across
         # the normalization axis.
         mean_shape = (
-            int(np.prod(x.shape) / np.prod([x.shape[i] for i in self.axis])),
+            int(np.prod(self.x.shape) / np.prod([self.x.shape[i] for i in self.axis])),
         )  # (*x.shape[:-2], 1, 1)
         self.std: TensorArray = TensorArray.zeros(
             mean_shape,
@@ -83,7 +82,7 @@ class LayerNormalizationPycuda(LayerNormalization[TensorArray], LayerPycuda):
             mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
             fmt_type=FormatType.NONE
         )
-        out_shape = x.shape
+        out_shape = self.x.shape
         self.xn: TensorArray = TensorArray.zeros(
             out_shape,
             self.model.dtype,

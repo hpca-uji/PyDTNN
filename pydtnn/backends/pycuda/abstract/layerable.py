@@ -46,7 +46,7 @@ class LayerablePycuda(Layerable[TensorArray], BasePycuda):
         if self.id != self.model.backend.id:
             return None
 
-        self.x = TensorArray.zeros(prev_shape, self.model.dtype,
+        self.x = TensorArray.zeros(self.prev_shape, self.model.dtype,
                                    tensor_format=self.model.tensor_format,
                                    mem_type=MemoryType.GLOBAL if self.model.use_gpudirect else MemoryType.DEVICE,
                                    fmt_type=FormatType.TENSOR)
