@@ -162,8 +162,7 @@ class ModelGpuTestCase(ModelTestCase):
         # The rest of the layers
         for i, layer in enumerate(model2.layers[1:], 1):
             if verbose_test():
-                if verbose_test():
-                    logger.info(layer)
+                logger.info(layer)
             self.set_data_to_ary(model2.layers[i - 1].y, x1[i], layer)
             out = layer.forward(model2.layers[i - 1].y)
             x2.append(out.get())

@@ -78,11 +78,10 @@ class ReduceLROnPlateau(SchedulerWithLossOrMetric):
         ):
             self.model.optimizer.learning_rate *= self.factor
             self.best_epoch = self.epoch_count
-            if self.model.comm_rank == 0:
-                logger.info(
-                    f"Metric {self.loss_or_metric} did not improve for {self.patience}"
-                    f" epochs, setting learning rate to {self.model.optimizer.learning_rate:.8f}."
-                )
+            logger.info(
+                f"Metric {self.loss_or_metric} did not improve for {self.patience}"
+                f" epochs, setting learning rate to {self.model.optimizer.learning_rate:.8f}."
+            )
 
     @classmethod
     def from_model(cls, model: Model) -> ReduceLROnPlateau:

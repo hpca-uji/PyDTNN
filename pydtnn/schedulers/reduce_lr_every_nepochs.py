@@ -60,8 +60,7 @@ class ReduceLREveryNEpochs(Scheduler):
             and self.model.optimizer.learning_rate * self.factor >= self.min_lr
         ):
             self.model.optimizer.learning_rate *= self.factor
-            if self.model.comm_rank == 0:
-                logger.info(f"Setting learning rate to {self.model.optimizer.learning_rate:.8f}!")
+            logger.info(f"Setting learning rate to {self.model.optimizer.learning_rate:.8f}!")
 
     @classmethod
     def from_model(cls, model: Model) -> ReduceLREveryNEpochs:

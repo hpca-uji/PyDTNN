@@ -61,11 +61,10 @@ class StopAtLoss(SchedulerWithLossOrMetric):
         loss = val_loss if self.is_val_metric else train_loss
         if self.compare(loss[idx], self.threshold_value):
             self.stop_training = True
-            if self.model.comm_rank == 0:
-                logger.info(
-                    f"Metric '{self.loss_or_metric}' reached threshold value {self.threshold_value},"
-                    " stop training."
-                )
+            logger.info(
+                f"Metric '{self.loss_or_metric}' reached threshold value {self.threshold_value},"
+                " stop training."
+            )
 
     @classmethod
     def from_model(cls, model: Model) -> StopAtLoss:

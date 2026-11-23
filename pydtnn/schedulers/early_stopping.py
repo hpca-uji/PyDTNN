@@ -84,10 +84,9 @@ class EarlyStopping(SchedulerWithLossOrMetric):
             # Restore weights + bias
             assert self.best_weights_filename
             self.model.load_model_state(self.best_weights_filename)
-            if self.model.comm_rank == 0:
-                logger.info(
-                    f"Metric '{self.loss_or_metric}' did not improve for {self.patience} epochs, stop training."
-                )
+            logger.info(
+                f"Metric '{self.loss_or_metric}' did not improve for {self.patience} epochs, stop training."
+            )
         # else: do nothing.
 
     @classmethod

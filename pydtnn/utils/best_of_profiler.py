@@ -39,7 +39,6 @@ class BestOfProfiler:
         """
 
         # First run
-
         problem_size = self.best_method.get_problem_size(*args, **kwargs)
         logger.info(f"{problem_size}: First run (checking outputs)")
         outputs = []
@@ -55,7 +54,6 @@ class BestOfProfiler:
                     )
 
         # Rest runs
-
         logger.info(" \nNext runs (getting times)")
         for i in range((self.best_method.total_rounds - 1) * self.best_method.total_alternatives):
             if self.best_method.best_method_has_been_found(*args, **kwargs):

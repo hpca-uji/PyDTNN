@@ -56,7 +56,7 @@ def main(config: Namespace) -> None:  # noqa: C901
             log_conf["loggers"][package_name]["handlers"].remove("file")
             log_conf["handlers"].pop("file")
         logging.config.dictConfig(log_conf)
-        header("PyDTNN benchmark")
+    header("PyDTNN benchmark")
 
     # Environment
     environ, diffs = map_factor(*metadata)
@@ -69,10 +69,9 @@ def main(config: Namespace) -> None:  # noqa: C901
     model._ensure_runnable()
 
     # Print model
-    if model.comm_rank == 0:
-        logger.info(str(config))
-        model.show_model()
-        model.show_layers()
+    logger.info(str(config))
+    model.show_model()
+    model.show_layers()
 
     # First (or unique) evaluation
     if model.evaluate_on_train or model.evaluate_only:
@@ -82,12 +81,11 @@ def main(config: Namespace) -> None:  # noqa: C901
         _ = model.evaluate()
         toc = time.time()
         delta = toc - tic
-        if model.comm_rank == 0:
-            if model.evaluate_only:
-                logger.info(f"Testing time: {delta:5.4f} s")
-                logger.info(
-                    f"Testing throughput: {model.dataset.test_nsamples / delta:5.4f} samples/s"
-                )
+        if model.evaluate_only:
+            logger.info(f"Testing time: {delta:5.4f} s")
+            logger.info(
+                f"Testing throughput: {model.dataset.test_nsamples / delta:5.4f} samples/s"
+            )
         if model.evaluate_only:
             if model.comm_rank == 0:
                 model.perf_counter.print_report()
@@ -98,9 +96,8 @@ def main(config: Namespace) -> None:  # noqa: C901
         model.comm.Barrier()
 
     # Training
-    if model.comm_rank == 0:
-        # print('# Model time: ', model.calculate_time())
-        header("Training...")
+    # print('# Model time: ', model.calculate_time())
+    header("Training...")
     # Training a model directly from a dataset
     # or alternatively, define any custom data
     # mode.dataset = CustomDataset(model, x, y)
@@ -114,33 +111,30 @@ def main(config: Namespace) -> None:  # noqa: C901
         model.comm.Barrier()
 
     # Print performance results and evaluation history
-    if model.comm_rank == 0:
-        logger.info(f"Training and validation time: {delta:5.4f} s")
-        if model.perf_counter.num_epochs > 0:
-            logger.info(
-                "Training and validation time per epoch:"
-                f" {delta / model.perf_counter.num_epochs:5.4f} s"
-            )
-            logger.info(
-                "Training and validation throughput:"
-                f" {(model.dataset.train_nsamples * model.perf_counter.num_epochs) / delta:5.4f} samples/s"
-            )
+    logger.info(f"Training and validation time: {delta:5.4f} s")
+    if model.perf_counter.num_epochs > 0:
+        logger.info(
+            "Training and validation time per epoch:"
+            f" {delta / model.perf_counter.num_epochs:5.4f} s"
+        )
+        logger.info(
+            "Training and validation throughput:"
+            f" {(model.dataset.train_nsamples * model.perf_counter.num_epochs) / delta:5.4f} samples/s"
+        )
 
     # Second (and last) evaluation
     if model.evaluate_on_train:
-        if model.comm_rank == 0:
-            header("Testing...")
+        header("Testing...")
         tic = time.time()
         model.evaluate()
         toc = time.time()
         delta = toc - tic
 
-        if model.comm_rank == 0:
-            if not model.evaluate_only:
-                logger.info(f"Testing time: {delta:5.4f} s")
-                logger.info(
-                    f"Testing throughput: {model.dataset.test_nsamples / delta:5.4f} samples/s"
-                )
+        if not model.evaluate_only:
+            logger.info(f"Testing time: {delta:5.4f} s")
+            logger.info(
+                f"Testing throughput: {model.dataset.test_nsamples / delta:5.4f} samples/s"
+            )
 
     # Print model reports
     if model.comm_rank == 0:

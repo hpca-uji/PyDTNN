@@ -100,8 +100,7 @@ class ModelCheckpoint(SchedulerWithLossOrMetric):
                 self.filename = f"{state_path}/{name}"
                 # Save the model's state.
                 self.model.save_model_state(self.filename)
-                if self.model.comm_rank == 0:
-                    logger.info(f"Saving model weights and bias in '{self.filename}'.")
+                logger.info(f"Saving model weights and bias in '{self.filename}'.")
                 # If this is a distributed training setup and we have a previous file,
                 # remove the old checkpoint to save disk space.
                 if self.model.comm_rank == 0 and self.last_filename is not None:
