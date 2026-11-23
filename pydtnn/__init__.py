@@ -284,5 +284,5 @@ metadata = [
         "environ": dict(os.environ),
     }
 ]
-if MPI is not None:
-    metadata = MPI.COMM_WORLD.allgather(metadata[0])
+if mpi_comm is not None:
+    metadata = mpi_comm.allgather(metadata[0])
