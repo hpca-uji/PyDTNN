@@ -139,12 +139,15 @@ if MPI is not None:
 
 # INIT NCCL
 nccl_comm = None
+nccl_id = None
 
 if nccl is not None:
     nccl_id = nccl.ncclGetUniqueId()
-    if mpi_comm:
-        nccl_id = mpi_comm.bcast(nccl_id)
 
+if mpi_comm is not None:
+    nccl_id = mpi_comm.bcast(nccl_id)
+
+if nccl is not None and nccl_id is not None:
     try:
         nccl_comm = nccl.ncclCommInitRank(nprocs, nccl_id, rank)
     except Exception as e:
