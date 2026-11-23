@@ -11,7 +11,7 @@ import numpy as np
 if TYPE_CHECKING:
     from pycuda import gpuarray
 
-from pydtnn import pycuda_count
+from pydtnn import pycuda_device
 from pydtnn.abstract.layerable import Layerable
 from pydtnn.layers.abstract.layer import LayerError
 from pydtnn.layers.addition_block import AdditionBlock
@@ -28,7 +28,7 @@ __all__ = ("ModelGpuTestCase",)
 logger = logging.getLogger(__name__)
 
 
-@unittest.skipUnless(pycuda_count, "requires GPU")
+@unittest.skipUnless(pycuda_device is not None, "requires GPU")
 class ModelGpuTestCase(ModelTestCase):
     """Test case for verifying model parity between CPU and GPU implementations."""
 
