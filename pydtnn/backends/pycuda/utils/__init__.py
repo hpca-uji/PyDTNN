@@ -5,17 +5,14 @@ import logging
 
 import numpy as np
 
+from pydtnn.libs import cublas
+
 __all__ = (
     "matmul_gpu",
     "matvec_gpu",
 )
 
 logger = logging.getLogger(__name__)
-
-try:
-    from pydtnn.libs import cublas
-except Exception:
-    cublas = None
 
 
 def matmul_gpu(
@@ -55,7 +52,6 @@ def matmul_gpu(
         ldc: Leading dimension of C.
         dtype: Data type of the matrices.
     """
-    assert cublas, "No cublas support"
     try:
         gemm = {np.dtype(np.float32): cublas.cublasSgemm, np.dtype(np.float64): cublas.cublasDgemm}[
             dtype
@@ -114,7 +110,6 @@ def matvec_gpu(
         ldc: Stride of vector y.
         dtype: Data type of the matrix and vectors.
     """
-    assert cublas, "No cublas support"
     try:
         gemv = {np.dtype(np.float32): cublas.cublasSgemv, np.dtype(np.float64): cublas.cublasDgemv}[
             dtype

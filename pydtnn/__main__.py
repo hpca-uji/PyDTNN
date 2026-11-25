@@ -152,7 +152,7 @@ def main(config: Namespace) -> None:  # noqa: C901
         # The next line is required if running under SLURM (it seems it is not
         # automatically called at exit)
 
-        from pydtnn.libs.mpi import MPI
+        from pydtnn.libs.mpi import MPI  # NOTE: differed to allow conditional support
         MPI.Finalize()
 
 

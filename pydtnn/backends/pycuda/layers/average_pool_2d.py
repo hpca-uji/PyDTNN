@@ -4,7 +4,7 @@ import logging
 
 from pydtnn.backends.pycuda.layers.abstract.pool_2d_layer import AbstractPool2DLayerPycuda
 from pydtnn.layers.average_pool_2d import AveragePool2D
-from pydtnn.libs import cudnn as cudnn
+from pydtnn.libs import cudnn
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor_array import TensorArray
 

@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 
 from pydtnn.datasets import select as select_dataset
-from pydtnn.libs.mpi.rc import proto as proto
 from pydtnn.losses import select as select_loss
 from pydtnn.metrics import select as select_metric
 from pydtnn.model.base import Base
@@ -121,8 +120,9 @@ class Init[T: Array](Repr[T]):  # noqa: D101 (generics not detected)
 
     def _mpi_init(self) -> None:
         """Initializes MPI communication settings and process ranks."""
-        # NOTE: differed execution
+        # NOTE: differed to allow conditional support and initialization
         from pydtnn.autoinit import mpi_comm
+        from pydtnn.libs.mpi.rc import proto
 
         # Communication type
         self.comm = None  # pyright: ignore[reportAttributeAccessIssue]

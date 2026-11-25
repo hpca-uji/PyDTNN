@@ -4,7 +4,7 @@ import logging
 from typing import Any
 
 from pydtnn.backends.pycuda.layers.abstract.block_layer import AbstractBlockLayerPycuda
-from pydtnn.backends.pycuda.libs import libcudnn as cudnn
+from pydtnn.libs import cudnn
 from pydtnn.layers.decoder_nacho import DecoderNacho
 from pydtnn.layers.encoder_nacho import EncoderNacho
 from pydtnn.layers.encoder_decoder import EncoderDecoder

@@ -5,7 +5,7 @@ from typing import Any
 
 from pydtnn.activations.tanh import Tanh
 from pydtnn.backends.pycuda.activations.abstract.activation import ActivationPycuda
-from pydtnn.libs import cudnn as cudnn
+from pydtnn.libs import cudnn
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor_array import FormatType, MemoryType, TensorArray
 

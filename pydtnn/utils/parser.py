@@ -83,48 +83,6 @@ def list_modules(path: str) -> list[str]:
     ]
 
 
-def _get_threads_per_process() -> int:
-    """Returns the number of OpenMP threads per process."""
-    #  From IBM OpenMP documentation: If you do not set OMP_NUM_THREADS, the number of processors available is the
-    #  default value to form a new team for the first encountered parallel construct.
-    threads_per_process = os.environ.get("OMP_NUM_THREADS", os.process_cpu_count())
-    return int(threads_per_process)
-
-
-def _get_mpi_protocol() -> str | None:
-    """Returns the MPI communication protocol string."""
-    try:
-        from pydtnn.libs.mpi.rc import proto, ssl
-    except Exception:
-        proto = None
-        ssl = None
-    if proto:
-        protocol = str(proto)
-    else:
-        protocol = "native"
-    if proto and ssl:
-        protocol = f"{protocol}+tls"
-    return protocol
-
-
-def _get_mpi_server() -> str | None:
-    """Returns the MPI server address."""
-    try:
-        from pydtnn.libs.mpi.rc import addr
-    except Exception:
-        addr = None
-    return addr
-
-
-def _get_mpi_port() -> int | None:
-    """Returns the MPI port number."""
-    try:
-        from pydtnn.libs.mpi.rc import port
-    except Exception:
-        port = None
-    return port
-
-
 class Namespace(argparse.Namespace):
     """Custom namespace for storing parsed arguments and group information."""
 

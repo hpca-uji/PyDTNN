@@ -21,11 +21,6 @@ from pydtnn.utils.tensor_array import FormatType, MemoryType, TensorArray
 
 # from pydtnn.utils.best_of import BestOf
 
-try:
-    from pydtnn.libs import cudnn
-except BaseException:
-    cudnn = None
-
 from copy import deepcopy
 from math import prod
 
@@ -248,11 +243,9 @@ def test_layers_gpu(model: PyDTNN_Model, dataset: np.ndarray) -> TensorArray:
     model.show()
     print("test_layers_gpu - model\n========")
     print(f"model.dtype: {model.dtype}")
-    assert cudnn
 
     print(f"TYPES_DATA_CUDA[model.dtype]: {TYPES_DATA_CUDA[model.dtype]}")
     dtype = model.dtype
-    model.cudnn_dtype = cudnn.cudnnDataType[TYPES_DATA_CUDA[model.dtype]]
     _dataset = TensorArray.zeros(
         dataset.shape,
         dtype,

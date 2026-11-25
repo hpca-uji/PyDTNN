@@ -24,12 +24,6 @@ if TYPE_CHECKING:
     from pympi.MPI import Request
 
 
-try:
-    from pydtnn.libs.mpi import MPI
-except (ImportError, ModuleNotFoundError):
-    MPI = None
-
-
 class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
     """NumPy-based implementation of the OkTopk optimizer."""
 
@@ -258,7 +252,8 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
         return self.boundaries
 
     def _space_repartition_sparse(self, acc: np.ndarray, local_th: float) -> BoundaryArray:
-        assert MPI and self.model.comm, "Communicator needed!"
+        assert self.model.comm, "Communicator needed!"
+        from pydtnn.libs.mpi import MPI  # NOTE: differed to allow conditional support
 
         sparse = SparseFlatArray.from_dense(acc).threshold(local_th)
         block_size = sparse.nnz // self.model.comm_size
@@ -319,7 +314,8 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
     def _reduce_topk_collective_allreduce_then_slice(
         self, sparse_topk: SparseFlatArray, boundaries: BoundaryArray
     ) -> SparseFlatArray:
-        assert MPI and self.model.comm, "Communicator needed!"
+        assert self.model.comm, "Communicator needed!"
+        from pydtnn.libs.mpi import MPI  # NOTE: differed to allow conditional support
         sparse_topk = self.model.comm.allreduce(sparse_topk, op=MPI.SUM)
 
         start = 0 if self.model.comm_rank == 0 else boundaries[self.model.comm_rank - 1]
@@ -334,7 +330,8 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
     def _reduce_topk_collective_region_wise_reduce_sync(
         self, sparse_topk: SparseFlatArray, boundaries: BoundaryArray
     ) -> SparseFlatArray:
-        assert MPI and self.model.comm, "Communicator needed!"
+        assert self.model.comm, "Communicator needed!"
+        from pydtnn.libs.mpi import MPI  # NOTE: differed to allow conditional support
         start = np.searchsorted(sparse_topk.indexes, 0)
 
         reduced_regions_sparse: list[SparseFlatArray] = [None] * self.model.comm_size  # pyright: ignore[reportAssignmentType]
@@ -362,7 +359,7 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
     def _reduce_topk_p2p_region_wise_reduce_static_destination(
         self, sparse_topk: SparseFlatArray, boundaries: BoundaryArray
     ) -> SparseFlatArray:
-        assert MPI and self.model.comm, "Communicator needed!"
+        assert self.model.comm, "Communicator needed!"
         # Prepare a vector region for storing the partial sums
         region_partial_sum: list[SparseFlatArray] = [None] * self.model.comm_size  # pyright: ignore[reportAssignmentType]
         for region in range(self.model.comm_size):
@@ -391,7 +388,8 @@ class OkTopkNumpy(OkTopk[np.ndarray], OptimizerNumpy):
     def _reduce_topk_p2p_region_wise_reduce_destination_rotation_and_bucketing(
         self, sparse_topk: SparseFlatArray, boundaries: BoundaryArray
     ) -> SparseFlatArray:
-        assert MPI and self.model.comm, "Communicator needed!"
+        assert self.model.comm, "Communicator needed!"
+        from pydtnn.libs.mpi import MPI  # NOTE: differed to allow conditional support
         # There are (nprocs - 1) messages to send (excluding self)
         total_sends = self.model.comm_size - 1
         requests: list[Request] = [None] * total_sends  # pyright: ignore[reportAssignmentType]

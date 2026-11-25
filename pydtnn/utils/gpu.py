@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 def nccl_dtype_from_numpy(dtype: np.dtype) -> enum.Enum:
     """Convert a Numpy DType to NCCL DType"""
-    from pydtnn.libs import nccl
+    from pydtnn.libs import nccl  # NOTE: differed to allow conditional support
     return {
         np.dtype(np.float64): nccl.DataType.Float64,
         np.dtype(np.float32): nccl.DataType.Float32,
@@ -30,7 +30,7 @@ def nccl_dtype_from_numpy(dtype: np.dtype) -> enum.Enum:
 
 def cudnn_dtype_from_numpy(dtype: np.dtype) -> int:
     """Convert a Numpy DType to cuDNN DType"""
-    from pydtnn.libs import cudnn
+    from pydtnn.libs import cudnn  # NOTE: differed to allow conditional support
     return {
         np.dtype(np.float64): cudnn.cudnnDataType["CUDNN_DATA_DOUBLE"],
         np.dtype(np.float32): cudnn.cudnnDataType["CUDNN_DATA_FLOAT"],

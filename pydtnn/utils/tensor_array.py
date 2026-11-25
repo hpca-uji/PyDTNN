@@ -151,7 +151,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
     @property
     def cudnn_tensor_format(self) -> int:
         """Get cuDNN integer constant for the current tensor format"""
-        from pydtnn.libs import cudnn
+        from pydtnn.libs import cudnn  # NOTE: differed to allow conditional support
         return cudnn.cudnnTensorFormat[f"CUDNN_TENSOR_{self.tensor_format.upper()}"]
 
     def _encode_shape(self, shape: ArrayShape) -> ArrayShape:
@@ -233,7 +233,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
         """Initializes the cuDNN descriptor."""
         match self.fmt_type:
             case FormatType.TENSOR:
-                from pydtnn.libs import cudnn
+                from pydtnn.libs import cudnn  # NOTE: differed to allow conditional support
                 n, c, h, w = self._decode_shape(self.shape)
                 desc = cudnn.cudnnCreateTensorDescriptor()
                 assert desc
@@ -242,7 +242,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
                     self.desc, self.cudnn_tensor_format, self.cudnn_dtype, n, c, h, w
                 )
             case FormatType.FILTER:
-                from pydtnn.libs import cudnn
+                from pydtnn.libs import cudnn  # NOTE: differed to allow conditional support
                 n, c, h, w = self._decode_shape(self.shape)
                 desc = cudnn.cudnnCreateFilterDescriptor()
                 assert desc
@@ -251,7 +251,7 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
                     self.desc, self.cudnn_dtype, self.cudnn_tensor_format, n, c, h, w
                 )
             case FormatType.SEQ:
-                from pydtnn.libs import cudnn
+                from pydtnn.libs import cudnn  # NOTE: differed to allow conditional support
                 desc = cudnn.cudnnCreateSeqDataDescriptor()
                 assert desc
                 self.desc = desc
@@ -286,13 +286,13 @@ class TensorArray[S: tuple, D: np.dtype]:  # noqa: D101
         """Destroys the cuDNN descriptor."""
         match self.fmt_type:
             case FormatType.TENSOR:
-                from pydtnn.libs import cudnn
+                from pydtnn.libs import cudnn  # NOTE: differed to allow conditional support
                 cudnn.cudnnDestroyTensorDescriptor(self.desc)
             case FormatType.FILTER:
-                from pydtnn.libs import cudnn
+                from pydtnn.libs import cudnn  # NOTE: differed to allow conditional support
                 cudnn.cudnnDestroyFilterDescriptor(self.desc)
             case FormatType.SEQ:
-                from pydtnn.libs import cudnn
+                from pydtnn.libs import cudnn  # NOTE: differed to allow conditional support
                 cudnn.cudnnDestroySeqDataDescriptor(self.desc)
             case FormatType.NONE:
                 pass

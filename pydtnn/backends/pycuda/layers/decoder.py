@@ -6,7 +6,7 @@ from typing import Any
 import numpy as np
 
 from pydtnn.backends.pycuda.layers.abstract.block_layer import AbstractBlockLayerPycuda
-from pydtnn.backends.pycuda.libs import libcudnn as cudnn
+from pydtnn.libs import cudnn
 from pydtnn.layers.decoder_nacho import DecoderNacho
 from pydtnn.layers.dropout import Dropout
 from pydtnn.layers.feed_forward_nacho import FeedForwardNacho

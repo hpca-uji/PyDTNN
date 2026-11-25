@@ -6,7 +6,7 @@ from typing import Any, override
 import numpy as np
 
 from pydtnn.backends.pycuda.layers.abstract.conv_2d import AbstractConv2DPycuda
-from pydtnn.libs import cudnn as cudnn
+from pydtnn.libs import cudnn
 from pydtnn.tracers.abstract.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
                                             PYDTNN_OPS_EVENTS, OpsEventEnum)
 from pydtnn.utils.constants import ArrayShape

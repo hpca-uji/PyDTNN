@@ -7,7 +7,7 @@ import numpy as np
 
 from pydtnn.backends.pycuda.layers.abstract.layer import LayerPycuda
 from pydtnn.layers.batch_normalization import BatchNormalization
-from pydtnn.libs import cudnn as cudnn
+from pydtnn.libs import cudnn
 from pydtnn.model.base import ModelMode
 from pydtnn.tracers.abstract.events import (PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT,
                                             PYDTNN_OPS_EVENTS, OpsEventEnum)
