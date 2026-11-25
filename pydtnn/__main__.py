@@ -12,6 +12,8 @@ from importlib import resources
 
 import yaml
 
+# NOTE: pydtnn imports deferred
+
 __all__ = ("main",)
 
 
@@ -20,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 def _start() -> int:
     """System entry point"""
-    from pydtnn import rank
+    from pydtnn.autoinit import rank
     from pydtnn.utils.debug import traceback_context
     from pydtnn.utils.parser import ArgumentParser
 
@@ -43,7 +45,8 @@ def _start() -> int:
 
 def main(config: Namespace) -> None:  # noqa: C901
     """Application entry point"""
-    from pydtnn import metadata, package_name, rank, timestamp
+    from pydtnn import package_name, timestamp
+    from pydtnn.autoinit import rank, metadata
     from pydtnn.model import Model
     from pydtnn.utils import header, map_factor, rand
 

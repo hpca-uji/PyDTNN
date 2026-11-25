@@ -7,7 +7,6 @@ import functools
 from pycuda.compiler import SourceModule
 from pycuda.driver import Function, Module
 
-from pydtnn import errors, pycuda_device, cublas_handle, cudnn_handle
 from pydtnn.abstract.base import Base
 from pydtnn.utils.tensor_array import TensorArray
 from pydtnn.utils.uses_cuda import UsesCudaCode
@@ -23,7 +22,8 @@ class BasePycuda(UsesCudaCode[Module, Function], Base[TensorArray]):
     def _model_init(self) -> None:
         """Initializes the model and associated CUDA kernels."""
         super()._model_init()
-        if pycuda_device is None or cublas_handle is None or cudnn_handle is None:
+        if self.model.pycuda_device is None or self.model.cublas_handle is None or self.model.cudnn_handle is None:
+            from pydtnn.autoinit import errors  # NOTE: differed execution
             raise ExceptionGroup("PyCUDA layers requires CUDA support!", errors)
         self._kernel_init()
 

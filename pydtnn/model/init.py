@@ -9,8 +9,6 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from pydtnn import (cupy_device, mpi_comm, cublas_handle, cudnn_handle,
-                    nccl_comm, pycuda_device, pycuda_stream, cupy_stream)
 from pydtnn.datasets import select as select_dataset
 from pydtnn.libs.mpi.rc import proto as proto
 from pydtnn.losses import select as select_loss
@@ -123,6 +121,9 @@ class Init[T: Array](Repr[T]):  # noqa: D101 (generics not detected)
 
     def _mpi_init(self) -> None:
         """Initializes MPI communication settings and process ranks."""
+        # NOTE: differed execution
+        from pydtnn.autoinit import mpi_comm
+
         # Communication type
         self.comm = None  # pyright: ignore[reportAttributeAccessIssue]
         if self.parallel_data or self.parallel_pipeline:
@@ -193,6 +194,10 @@ class Init[T: Array](Repr[T]):  # noqa: D101 (generics not detected)
         """Initializes CUDA, cuDNN, and NCCL backend handles."""
         # if not self.use_gpudirect and self.use_nccl:
         #     raise RuntimeError("It is necessary to have gpudirect active to work with NCCL.")
+
+        # NOTE: differed execution
+        from pydtnn.autoinit import (cublas_handle, cudnn_handle, nccl_comm,
+                                     pycuda_device, pycuda_stream, cupy_device, cupy_stream)
 
         self.nccl_comm = None  # pyright: ignore[reportAttributeAccessIssue]
         if self.use_nccl:

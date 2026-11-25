@@ -24,7 +24,7 @@ from pathlib import PurePath
 
 import numpy as np
 
-from pydtnn import package_name, pycuda_count, cupy_count
+from pydtnn import package_name
 from pydtnn.abstract.base import Base
 from pydtnn.datasets.abstract.base import Base as DatasetBase
 from pydtnn.model.base import Base as ModelBase
@@ -81,13 +81,6 @@ def list_modules(path: str) -> list[str]:
         and not resource.name.startswith("_")
         and resource.name.endswith(".py")
     ]
-
-
-def _get_mpi_processes() -> int:
-    """Returns the number of MPI processes from the environment."""
-    from pydtnn import nprocs
-
-    return nprocs
 
 
 def _get_threads_per_process() -> int:
@@ -1332,32 +1325,9 @@ class ArgumentParser(argparse.ArgumentParser):
             help=argparse.SUPPRESS,
         )
 
-        # Environment options
-        _re_group = self.add_argument_group("environment")
-        _re_group.add_argument("--pycuda-gpus", type=int, default=-1, help=argparse.SUPPRESS)
-        _re_group.add_argument("--cupy-gpus", type=int, default=-1, help=argparse.SUPPRESS)
-        _re_group.add_argument("--mpi-procs", type=int, default=-1, help=argparse.SUPPRESS)
-        _re_group.add_argument("--proc-threads", type=int, default=-1, help=argparse.SUPPRESS)
-
-        # Communication options
-        _cm_group = self.add_argument_group("communication")
-        _cm_group.add_argument("--mpi-protocol", type=str, default="", help=argparse.SUPPRESS)
-        _cm_group.add_argument("--mpi-server", type=str, default="", help=argparse.SUPPRESS)
-        _cm_group.add_argument("--mpi-port", type=int, default=-1, help=argparse.SUPPRESS)
-
     def parse_args(self, args: Sequence[str] | None = None) -> Namespace:
         """Parses command line arguments and injects runtime environment data."""
         result = super().parse_args(args, Namespace())
-
-        result.pycuda_gpus = pycuda_count
-        result.cupy_gpus = cupy_count
-        result.mpi_procs = _get_mpi_processes()
-        result.proc_threads = _get_threads_per_process()
-
-        result.mpi_protocol = _get_mpi_protocol()
-        result.mpi_server = _get_mpi_server()
-        result.mpi_port = _get_mpi_port()
-
         result.groups = self._action_groups
         return result
 

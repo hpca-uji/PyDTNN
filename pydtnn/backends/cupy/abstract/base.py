@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING
 import cupy as cp
 from cupy import RawKernel, RawModule  # pyright: ignore[reportAttributeAccessIssue]
 
-from pydtnn import errors
 from pydtnn.backends.numpy.abstract.base import BaseNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.utils.uses_cuda import UsesCudaCode
@@ -36,6 +35,7 @@ class BaseCupy(UsesCudaCode[RawModule, RawKernel], BaseNumpy):
         super()._model_init()
 
         if self.model.cupy_device is None:
+            from pydtnn.autoinit import errors  # NOTE: differed execution
             raise ExceptionGroup("CuPy layers requires CUDA support!", errors)
         elif np.ndarray is not cp.ndarray:  # pyright: ignore[reportAttributeAccessIssue]
             raise RuntimeError("CuPy layers requires PYDTNN_CUPY enabled!")

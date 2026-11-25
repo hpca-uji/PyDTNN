@@ -9,7 +9,6 @@ from typing import Any
 import numpy as np
 from tqdm import tqdm
 
-from pydtnn import MPI
 from pydtnn.datasets.abstract import Dataset
 from pydtnn.model.base import ModelMode
 from pydtnn.model.eval import Eval
@@ -333,8 +332,8 @@ class Train[T: Array](Eval[T]):  # noqa: D101 (generics not detected)
 
             if sync_epoch:
                 if self.comm:
-                    op = MPI.LAND
-                    global_terminate = self.comm.allreduce(terminate, op=op)
+                    from pydtnn.libs.mpi import MPI  # NOTE: differ import until comm validated
+                    global_terminate = self.comm.allreduce(terminate, op=MPI.LAND)
                 else:
                     global_terminate = terminate
 

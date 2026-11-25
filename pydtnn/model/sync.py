@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from pydtnn import MPI
 from pydtnn.datasets.abstract import Dataset
 from pydtnn.model.base import SyncAlgorithm, SyncParticipation
 from pydtnn.model.state import State
@@ -88,6 +87,7 @@ class Sync[T: Array](State[T]):  # noqa: D101 (generics not detected)
             The reduced data array.
         """
         assert self.comm is not None, "Reduce without communicator"
+        from pydtnn.libs.mpi import MPI  # NOTE: differ import until comm validated
         if self.use_mpi_buffers:
             self.comm.Allreduce(MPI.IN_PLACE, data, op=MPI.SUM)
         else:
@@ -105,6 +105,7 @@ class Sync[T: Array](State[T]):  # noqa: D101 (generics not detected)
             The MPI request object for the operation.
         """
         assert self.comm is not None, "Reduce without communicator"
+        from pydtnn.libs.mpi import MPI  # NOTE: differ import until comm validated
         if self.use_mpi_buffers:
             req = self.comm.Iallreduce(MPI.IN_PLACE, data, op=MPI.SUM)
         else:
