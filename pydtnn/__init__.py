@@ -1,4 +1,4 @@
-"""PyDTNN environment initialization"""
+"""PyDTNN framework package"""
 
 import logging
 import os

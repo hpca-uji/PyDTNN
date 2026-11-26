@@ -15,7 +15,6 @@ be available as a Model attribute.
 
 import argparse
 import logging
-import os
 import re
 import textwrap
 from collections.abc import Sequence
